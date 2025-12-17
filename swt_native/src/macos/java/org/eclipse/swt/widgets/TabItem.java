@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -70,7 +71,7 @@ public class TabItem extends Item {
      */
     public TabItem(TabFolder parent, int style) {
         this((ITabItem) null);
-        setImpl(new SwtTabItem(parent, style, this));
+        setImpl(Config.isEquo(TabItem.class, parent) ? new DartTabItem(parent, style, this) : new SwtTabItem(parent, style, this));
     }
 
     /**
@@ -107,7 +108,7 @@ public class TabItem extends Item {
      */
     public TabItem(TabFolder parent, int style, int index) {
         this((ITabItem) null);
-        setImpl(new SwtTabItem(parent, style, index, this));
+        setImpl(Config.isEquo(TabItem.class, parent) ? new DartTabItem(parent, style, index, this) : new SwtTabItem(parent, style, index, this));
     }
 
     protected void checkSubclass() {

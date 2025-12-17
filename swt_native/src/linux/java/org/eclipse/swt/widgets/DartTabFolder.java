@@ -19,9 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class implement the notebook user interface
@@ -53,7 +51,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class SwtTabFolder extends SwtComposite implements ITabFolder {
+public class DartTabFolder extends DartComposite implements ITabFolder {
 
     /*
 	 * Implementation note (see bug 454936, bug 480794):
@@ -81,8 +79,6 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
 	 * because the SWT API allows situation where you create a child control before you create a TabItem.
 	 */
     TabItem[] items;
-
-    ImageList imageList;
 
     /**
      * Constructs a new instance of this class given its parent
@@ -114,7 +110,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtTabFolder(Composite parent, int style, TabFolder api) {
+    public DartTabFolder(Composite parent, int style, TabFolder api) {
         super(parent, checkStyle(style), api);
     }
 
@@ -166,51 +162,20 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
 
     @Override
     long clientHandle() {
-        int index = GTK.gtk_notebook_get_current_page(getApi().handle);
-        if (index != -1 && items[index] != null) {
-            return ((SwtTabItem) items[index].getImpl()).pageHandle;
-        }
         return getApi().handle;
     }
 
     @Override
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        Point size = super.computeSizeInPixels(wHint, hHint, changed);
-        if (wHint != SWT.DEFAULT && wHint < 0)
-            wHint = 0;
-        if (hHint != SWT.DEFAULT && hHint < 0)
-            hHint = 0;
-        boolean scrollable = GTK.gtk_notebook_get_scrollable(getApi().handle);
-        GTK.gtk_notebook_set_scrollable(getApi().handle, false);
-        Point notebookSize = computeNativeSize(getApi().handle, wHint, hHint, changed);
-        GTK.gtk_notebook_set_scrollable(getApi().handle, scrollable);
-        int[] initialGap = new int[1];
-        notebookSize.x += initialGap[0] * 2;
-        size.x = Math.max(notebookSize.x, size.x);
-        size.y = Math.max(notebookSize.y, size.y);
-        return size;
+        return Sizes.compute(this);
     }
 
     @Override
     Rectangle computeTrimInPixels(int x, int y, int width, int height) {
         checkWidget();
         forceResize();
-        long clientHandle = clientHandle();
-        GtkAllocation allocation = new GtkAllocation();
-        GTK.gtk_widget_get_allocation(clientHandle, allocation);
-        int clientX = allocation.x;
-        int clientY = allocation.y;
-        x -= clientX;
-        y -= clientY;
-        width += clientX + clientX;
         if ((getApi().style & SWT.BOTTOM) != 0) {
-            int clientHeight = allocation.height;
-            GTK.gtk_widget_get_allocation(getApi().handle, allocation);
-            int parentHeight = allocation.height;
-            height += parentHeight - clientHeight;
         } else {
-            height += clientX + clientY;
         }
         return new Rectangle(x, y, width, height);
     }
@@ -240,24 +205,6 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
 
     @Override
     void createHandle(int index) {
-        getApi().state |= HANDLE;
-        fixedHandle = OS.g_object_new(((SwtDisplay) display.getImpl()).gtk_fixed_get_type(), 0);
-        if (fixedHandle == 0)
-            error(SWT.ERROR_NO_HANDLES);
-        getApi().handle = GTK.gtk_notebook_new();
-        if (getApi().handle == 0)
-            error(SWT.ERROR_NO_HANDLES);
-        if (GTK.GTK4) {
-            OS.swt_fixed_add(fixedHandle, getApi().handle);
-        } else {
-            GTK3.gtk_widget_set_has_window(fixedHandle, true);
-            GTK3.gtk_container_add(fixedHandle, getApi().handle);
-        }
-        GTK.gtk_notebook_set_show_tabs(getApi().handle, true);
-        GTK.gtk_notebook_set_scrollable(getApi().handle, true);
-        if ((getApi().style & SWT.BOTTOM) != 0) {
-            GTK.gtk_notebook_set_tab_pos(getApi().handle, GTK.GTK_POS_BOTTOM);
-        }
     }
 
     @Override
@@ -267,16 +214,9 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
     }
 
     void createItem(TabItem item, int index) {
-        int itemCount = 0;
-        if (GTK.GTK4) {
-            itemCount = GTK.gtk_notebook_get_n_pages(getApi().handle);
-        } else {
-            long list = GTK3.gtk_container_get_children(getApi().handle);
-            if (list != 0) {
-                itemCount = OS.g_list_length(list);
-                OS.g_list_free(list);
-            }
-        }
+        //int itemCount = 0;
+        ;
+        int itemCount = getItemCount();
         if (!(0 <= index && index <= itemCount))
             error(SWT.ERROR_INVALID_RANGE);
         if (itemCount == items.length) {
@@ -284,58 +224,16 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
             System.arraycopy(items, 0, newItems, 0, items.length);
             items = newItems;
         }
-        long boxHandle = gtk_box_new(GTK.GTK_ORIENTATION_HORIZONTAL, false, 0);
-        if (boxHandle == 0)
-            error(SWT.ERROR_NO_HANDLES);
-        long labelHandle = GTK.gtk_label_new_with_mnemonic(null);
-        if (labelHandle == 0)
-            error(SWT.ERROR_NO_HANDLES);
-        long imageHandle = GTK.gtk_image_new();
-        if (imageHandle == 0)
-            error(SWT.ERROR_NO_HANDLES);
-        if (GTK.GTK4) {
-            GTK4.gtk_box_append(boxHandle, imageHandle);
-            GTK4.gtk_box_append(boxHandle, labelHandle);
-        } else {
-            GTK3.gtk_container_add(boxHandle, imageHandle);
-            GTK3.gtk_container_add(boxHandle, labelHandle);
-        }
-        long pageHandle = OS.g_object_new(((SwtDisplay) display.getImpl()).gtk_fixed_get_type(), 0);
-        if (pageHandle == 0)
-            error(SWT.ERROR_NO_HANDLES);
-        OS.g_signal_handlers_block_matched(getApi().handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, SWITCH_PAGE);
-        GTK.gtk_notebook_insert_page(getApi().handle, pageHandle, boxHandle, index);
-        OS.g_signal_handlers_unblock_matched(getApi().handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, SWITCH_PAGE);
-        if (GTK.GTK4) {
-            gtk_widget_hide(imageHandle);
-        } else {
-            gtk_widget_show(boxHandle);
-            gtk_widget_show(labelHandle);
-            gtk_widget_show(pageHandle);
-        }
         item.state |= HANDLE;
-        item.handle = boxHandle;
-        ((SwtTabItem) item.getImpl()).labelHandle = labelHandle;
-        ((SwtTabItem) item.getImpl()).imageHandle = imageHandle;
-        ((SwtTabItem) item.getImpl()).pageHandle = pageHandle;
         System.arraycopy(items, index, items, index + 1, itemCount++ - index);
         items[index] = item;
         if ((getApi().state & FOREGROUND) != 0) {
-            if (item.getImpl() instanceof SwtTabItem) {
-                ((SwtTabItem) item.getImpl()).setForegroundGdkRGBA(item.handle, getForegroundGdkRGBA());
-            }
         }
         if ((getApi().state & FONT) != 0) {
             long fontDesc = getFontDescription();
-            if (item.getImpl() instanceof SwtTabItem) {
-                ((SwtTabItem) item.getImpl()).setFontDescription(fontDesc);
-            }
-            OS.pango_font_description_free(fontDesc);
+            ((DartTabItem) item.getImpl()).setFontDescription(fontDesc);
         }
         if (itemCount == 1) {
-            OS.g_signal_handlers_block_matched(getApi().handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, SWITCH_PAGE);
-            GTK.gtk_notebook_set_current_page(getApi().handle, 0);
-            OS.g_signal_handlers_unblock_matched(getApi().handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, SWITCH_PAGE);
             Event event = new Event();
             event.item = items[0];
             sendSelectionEvent(SWT.Selection, event, false);
@@ -353,26 +251,8 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
         }
         if (index == itemCount)
             error(SWT.ERROR_ITEM_NOT_REMOVED);
-        int oldIndex = GTK.gtk_notebook_get_current_page(getApi().handle);
-        OS.g_signal_handlers_block_matched(getApi().handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, SWITCH_PAGE);
-        GTK.gtk_notebook_remove_page(getApi().handle, index);
-        OS.g_signal_handlers_unblock_matched(getApi().handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, SWITCH_PAGE);
         System.arraycopy(items, index + 1, items, index, --itemCount - index);
         items[itemCount] = null;
-        if (index == oldIndex) {
-            int newIndex = GTK.gtk_notebook_get_current_page(getApi().handle);
-            if (newIndex != -1) {
-                Control control = items[newIndex].getControl();
-                if (control != null && !control.isDisposed()) {
-                    ((SwtControl) control.getImpl()).setBoundsInPixels(getClientAreaInPixels());
-                    control.setVisible(true);
-                }
-                Event event = new Event();
-                event.item = items[newIndex];
-                sendSelectionEvent(SWT.Selection, event, true);
-                // the widget could be destroyed at this point
-            }
-        }
     }
 
     @Override
@@ -390,30 +270,6 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
         for (int itemIndex = 0; itemIndex < itemCount; itemIndex++) {
             TabItem tabItem = items[itemIndex];
             if (tabItem != null && !tabItem.isDisposed()) {
-                long parentHandle = ((SwtTabItem) tabItem.getImpl()).pageHandle;
-                if (GTK.GTK4) {
-                    for (long child = GTK4.gtk_widget_get_first_child(parentHandle); child != 0; child = GTK4.gtk_widget_get_next_sibling(child)) {
-                        Widget childWidget = ((SwtDisplay) display.getImpl()).getWidget(child);
-                        if (childWidget != null && childWidget instanceof Control && childWidget != this.getApi()) {
-                            children[childrenCount] = (Control) childWidget;
-                            childrenCount++;
-                        }
-                    }
-                } else {
-                    long list = GTK3.gtk_container_get_children(parentHandle);
-                    if (list != 0) {
-                        long handle = OS.g_list_data(list);
-                        if (handle != 0) {
-                            Widget widget = ((SwtDisplay) display.getImpl()).getWidget(handle);
-                            if (widget != null && widget != this.getApi()) {
-                                if (widget instanceof Control) {
-                                    children[childrenCount++] = (Control) widget;
-                                }
-                            }
-                        }
-                        OS.g_list_free(list);
-                    }
-                }
             }
         }
         if (childrenCount == itemCount + directCount) {
@@ -450,19 +306,6 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
         checkWidget();
         if (!(0 <= index && index < getItemCount()))
             error(SWT.ERROR_INVALID_RANGE);
-        if (GTK.GTK4) {
-            long child = GTK4.gtk_widget_get_first_child(getApi().handle);
-            if (child == 0)
-                error(SWT.ERROR_CANNOT_GET_ITEM);
-        } else {
-            long list = GTK3.gtk_container_get_children(getApi().handle);
-            if (list == 0)
-                error(SWT.ERROR_CANNOT_GET_ITEM);
-            int itemCount = OS.g_list_length(list);
-            OS.g_list_free(list);
-            if (!(0 <= index && index < itemCount))
-                error(SWT.ERROR_CANNOT_GET_ITEM);
-        }
         return items[index];
     }
 
@@ -510,17 +353,12 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
      */
     public int getItemCount() {
         checkWidget();
-        int itemCount = 0;
-        if (GTK.GTK4) {
-            itemCount = GTK.gtk_notebook_get_n_pages(getApi().handle);
-        } else {
-            long list = GTK3.gtk_container_get_children(getApi().handle);
-            if (list == 0)
-                return 0;
-            itemCount = OS.g_list_length(list);
-            OS.g_list_free(list);
+        int count = 0;
+        for (int i = 0; i < items.length; i++) {
+            if (items[i] != null)
+                count++;
         }
-        return itemCount;
+        return count;
     }
 
     /**
@@ -543,7 +381,12 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
         checkWidget();
         int count = getItemCount();
         TabItem[] result = new TabItem[count];
-        System.arraycopy(items, 0, result, 0, count);
+        int index = 0;
+        for (int i = 0; i < items.length; i++) {
+            if (items[i] != null) {
+                result[index++] = items[i];
+            }
+        }
         return result;
     }
 
@@ -565,10 +408,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
      */
     public TabItem[] getSelection() {
         checkWidget();
-        int index = GTK.gtk_notebook_get_current_page(getApi().handle);
-        if (index == -1)
-            return new TabItem[0];
-        return new TabItem[] { items[index] };
+        return this.selection;
     }
 
     /**
@@ -584,49 +424,15 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
      */
     public int getSelectionIndex() {
         checkWidget();
-        return GTK.gtk_notebook_get_current_page(getApi().handle);
-    }
-
-    @Override
-    long gtk_focus(long widget, long directionType) {
-        return 0;
-    }
-
-    @Override
-    long gtk_switch_page(long notebook, long page, int page_num) {
-        TabItem item = items[page_num];
-        if (GTK.GTK4) {
-            Control control = item.getControl();
-            if (control != null && !control.isDisposed()) {
-                ((SwtControl) control.getImpl()).setBoundsInPixels(getClientAreaInPixels());
-                control.setVisible(true);
-            }
-        } else {
-            int index = GTK.gtk_notebook_get_current_page(getApi().handle);
-            if (index != -1) {
-                Control control = items[index].getControl();
-                if (control != null && !control.isDisposed()) {
-                    control.setVisible(false);
-                }
-            } else {
-                return 0;
-            }
-            Control control = item.getControl();
-            if (control != null && !control.isDisposed()) {
-                ((SwtControl) control.getImpl()).setBoundsInPixels(getClientAreaInPixels());
-                control.setVisible(true);
-            }
+        if (this.selection != null && this.selection.length > 0) {
+            return indexOf(this.selection[0]);
         }
-        Event event = new Event();
-        event.item = item;
-        sendSelectionEvent(SWT.Selection, event, false);
-        return 0;
+        return -1;
     }
 
     @Override
     void hookEvents() {
         super.hookEvents();
-        OS.g_signal_connect_closure(getApi().handle, OS.switch_page, ((SwtDisplay) display.getImpl()).getClosure(SWITCH_PAGE), false);
     }
 
     /**
@@ -670,7 +476,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
             int index = 0;
             int count = getItemCount();
             while (index < count) {
-                if (((SwtTabItem) items[index].getImpl()).control == child)
+                if (((DartTabItem) items[index].getImpl()).control == child)
                     break;
                 index++;
             }
@@ -695,7 +501,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
     boolean mnemonicHit(char key) {
         int itemCount = getItemCount();
         for (int i = 0; i < itemCount; i++) {
-            long labelHandle = ((SwtTabItem) items[i].getImpl()).labelHandle;
+            long labelHandle = ((DartTabItem) items[i].getImpl()).labelHandle;
             if (labelHandle != 0 && mnemonicHit(labelHandle, key))
                 return true;
         }
@@ -706,7 +512,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
     boolean mnemonicMatch(char key) {
         int itemCount = getItemCount();
         for (int i = 0; i < itemCount; i++) {
-            long labelHandle = ((SwtTabItem) items[i].getImpl()).labelHandle;
+            long labelHandle = ((DartTabItem) items[i].getImpl()).labelHandle;
             if (labelHandle != 0 && mnemonicHit(labelHandle, key))
                 return true;
         }
@@ -730,9 +536,6 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
     @Override
     void releaseWidget() {
         super.releaseWidget();
-        if (imageList != null)
-            imageList.dispose();
-        imageList = null;
     }
 
     @Override
@@ -741,7 +544,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
         int count = getItemCount();
         for (int i = 0; i < count; i++) {
             TabItem item = items[i];
-            if (((SwtTabItem) item.getImpl()).control == control)
+            if (((DartTabItem) item.getImpl()).control == control)
                 item.setControl(null);
         }
     }
@@ -787,26 +590,15 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
     }
 
     @Override
-    void setBackgroundGdkRGBA(long context, long handle, GdkRGBA rgba) {
-        // Form background string
-        String css = "notebook header {background-color: " + ((SwtDisplay) display.getImpl()).gtk_rgba_to_css_string(rgba) + ";}";
-        // Cache background
-        cssBackground = css;
-        // Apply background color and any cached foreground color
-        String finalCss = ((SwtDisplay) display.getImpl()).gtk_css_create_css_color_string(cssBackground, cssForeground, SWT.BACKGROUND);
-        gtk_css_provider_load_from_css(context, finalCss);
-    }
-
-    @Override
     int setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
         int result = super.setBounds(x, y, width, height, move, resize);
         if ((result & RESIZED) != 0) {
             int index = getSelectionIndex();
             if (index != -1) {
                 TabItem item = items[index];
-                Control control = ((SwtTabItem) item.getImpl()).control;
+                Control control = ((DartTabItem) item.getImpl()).control;
                 if (control != null && !control.isDisposed()) {
-                    ((SwtControl) control.getImpl()).setBoundsInPixels(getClientAreaInPixels());
+                    ((DartControl) control.getImpl()).setBoundsInPixels(getClientAreaInPixels());
                 }
             }
         }
@@ -819,18 +611,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
         TabItem[] items = getItems();
         for (int i = 0; i < items.length; i++) {
             if (items[i] != null) {
-                ((SwtTabItem) items[i].getImpl()).setFontDescription(font);
-            }
-        }
-    }
-
-    @Override
-    void setForegroundGdkRGBA(GdkRGBA rgba) {
-        super.setForegroundGdkRGBA(rgba);
-        TabItem[] items = getItems();
-        for (int i = 0; i < items.length; i++) {
-            if (items[i] != null) {
-                ((SwtTabItem) items[i].getImpl()).setForegroundRGBA(rgba);
+                ((DartTabItem) items[i].getImpl()).setFontDescription(font);
             }
         }
     }
@@ -841,7 +622,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
         if (items != null) {
             for (int i = 0; i < items.length; i++) {
                 if (items[i] != null)
-                    ((SwtTabItem) items[i].getImpl()).setOrientation(create);
+                    ((DartTabItem) items[i].getImpl()).setOrientation(create);
             }
         }
     }
@@ -860,6 +641,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
      * </ul>
      */
     public void setSelection(int index) {
+        dirty();
         checkWidget();
         if (!(0 <= index && index < getItemCount()))
             return;
@@ -867,35 +649,14 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
     }
 
     void setSelection(int index, boolean notify) {
+        if (index < 0 || index >= items.length || items[index] == null) {
+            this.selection = new TabItem[0];
+        } else {
+            this.selection = new TabItem[] { items[index] };
+        }
+        dirty();
         if (index < 0)
             return;
-        int oldIndex = GTK.gtk_notebook_get_current_page(getApi().handle);
-        if (oldIndex == index)
-            return;
-        if (oldIndex != -1) {
-            TabItem item = items[oldIndex];
-            Control control = ((SwtTabItem) item.getImpl()).control;
-            if (control != null && !control.isDisposed()) {
-                control.setVisible(false);
-            }
-        }
-        OS.g_signal_handlers_block_matched(getApi().handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, SWITCH_PAGE);
-        GTK.gtk_notebook_set_current_page(getApi().handle, index);
-        OS.g_signal_handlers_unblock_matched(getApi().handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, SWITCH_PAGE);
-        int newIndex = GTK.gtk_notebook_get_current_page(getApi().handle);
-        if (newIndex != -1) {
-            TabItem item = items[newIndex];
-            Control control = ((SwtTabItem) item.getImpl()).control;
-            if (control != null && !control.isDisposed()) {
-                ((SwtControl) control.getImpl()).setBoundsInPixels(getClientAreaInPixels());
-                control.setVisible(true);
-            }
-            if (notify) {
-                Event event = new Event();
-                event.item = item;
-                sendSelectionEvent(SWT.Selection, event, true);
-            }
-        }
     }
 
     /**
@@ -954,20 +715,44 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
     @Override
     boolean traversePage(final boolean next) {
         if (next) {
-            GTK.gtk_notebook_next_page(getApi().handle);
         } else {
-            GTK.gtk_notebook_prev_page(getApi().handle);
         }
         return true;
     }
 
+    TabItem[] selection = new TabItem[0];
+
     public TabItem[] _items() {
         return items;
+    }
+
+    public TabItem[] _selection() {
+        return selection;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                setSelection(e.index, true);
+            });
+        });
     }
 
     public TabFolder getApi() {
         if (api == null)
             api = TabFolder.createApi(this);
         return (TabFolder) api;
+    }
+
+    public VTabFolder getValue() {
+        if (value == null)
+            value = new VTabFolder(this);
+        return (VTabFolder) value;
     }
 }

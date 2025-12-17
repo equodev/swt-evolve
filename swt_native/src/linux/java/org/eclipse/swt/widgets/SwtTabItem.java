@@ -527,6 +527,34 @@ public class SwtTabItem extends SwtItem implements ITabItem {
         return 0;
     }
 
+    public long _labelHandle() {
+        return labelHandle;
+    }
+
+    public long _imageHandle() {
+        return imageHandle;
+    }
+
+    public long _pageHandle() {
+        return pageHandle;
+    }
+
+    public long _cssProvider() {
+        return cssProvider;
+    }
+
+    public Control _control() {
+        return control;
+    }
+
+    public TabFolder _parent() {
+        return parent;
+    }
+
+    public String _toolTipText() {
+        return toolTipText;
+    }
+
     public TabItem getApi() {
         if (api == null)
             api = TabItem.createApi(this);

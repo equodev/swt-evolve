@@ -205,11 +205,15 @@ public class SwtTabItem extends SwtItem implements ITabItem {
             long sizeValue = OS.objc_msgSend(nsItem.id, OS.sel_accessibilityAttributeValue_, OS.NSAccessibilitySizeAttribute());
             NSValue val = new NSValue(posValue);
             NSPoint pt = val.pointValue();
-            NSWindow window = parent.view.window();
-            // pt is the lower-left corner of the control, convert from screen based to window based
-            pt = window.convertScreenToBase(pt);
-            // convert from window based to view based
-            pt = parent.view.convertPoint_fromView_(pt, null);
+            if (parent == null || parent.getImpl() instanceof SwtTabFolder) {
+                NSWindow window = parent.view.window();
+                // pt is the lower-left corner of the control, convert from screen based to window based
+                pt = window.convertScreenToBase(pt);
+            }
+            if (parent == null || parent.getImpl() instanceof SwtTabFolder) {
+                // convert from window based to view based
+                pt = parent.view.convertPoint_fromView_(pt, null);
+            }
             val = new NSValue(sizeValue);
             NSSize size = val.sizeValue();
             result.width = (int) Math.ceil(size.width);
@@ -472,8 +476,10 @@ public class SwtTabItem extends SwtItem implements ITabItem {
     }
 
     void updateText() {
-        NSTabViewItem selected = ((NSTabView) parent.view).selectedTabViewItem();
-        updateText(selected != null && selected.id == nsItem.id);
+        if (parent == null || parent.getImpl() instanceof SwtTabFolder) {
+            NSTabViewItem selected = ((NSTabView) parent.view).selectedTabViewItem();
+            updateText(selected != null && selected.id == nsItem.id);
+        }
     }
 
     void updateText(boolean selected) {
@@ -491,6 +497,18 @@ public class SwtTabItem extends SwtItem implements ITabItem {
         attriStr = ((SwtControl) parent.getImpl()).createString(text, null, foreground, 0, false, true, true);
         //force parent to resize
         nsItem.setLabel(NSString.string());
+    }
+
+    public TabFolder _parent() {
+        return parent;
+    }
+
+    public Control _control() {
+        return control;
+    }
+
+    public String _toolTipText() {
+        return toolTipText;
     }
 
     public TabItem getApi() {

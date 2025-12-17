@@ -28,6 +28,8 @@ import '../gen/scrolledcomposite.dart';
 import '../gen/slider.dart';
 import '../gen/spinner.dart';
 import '../gen/styledtext.dart';
+import '../gen/tabfolder.dart';
+import '../gen/tabitem.dart';
 import '../gen/table.dart';
 import '../gen/tablecolumn.dart';
 import '../gen/tableitem.dart';
@@ -56,6 +58,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "SashForm" => VSashForm.fromJson(child),
     "ScrolledComposite" => VScrolledComposite.fromJson(child),
     "Spinner" => VSpinner.fromJson(child),
+    "TabFolder" => VTabFolder.fromJson(child),
     "Table" => VTable.fromJson(child),
     "ToolBar" => VToolBar.fromJson(child),
     "Tree" => VTree.fromJson(child),
@@ -73,6 +76,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "CoolItem" => VCoolItem.fromJson(child),
     "ExpandItem" => VExpandItem.fromJson(child),
     "MenuItem" => VMenuItem.fromJson(child),
+    "TabItem" => VTabItem.fromJson(child),
     "TableColumn" => VTableColumn.fromJson(child),
     "TableItem" => VTableItem.fromJson(child),
     "ToolItem" => VToolItem.fromJson(child),
@@ -104,6 +108,7 @@ Widget mapWidgetFromValue(VWidget child) {
     VScrolledComposite() =>
       ScrolledCompositeSwt(key: ValueKey(id), value: child),
     VSpinner() => SpinnerSwt(key: ValueKey(id), value: child),
+    VTabFolder() => TabFolderSwt(key: ValueKey(id), value: child),
     VTable() => TableSwt(key: ValueKey(id), value: child),
     VToolBar() => ToolBarSwt(key: ValueKey(id), value: child),
     VTree() => TreeSwt(key: ValueKey(id), value: child),
@@ -121,6 +126,7 @@ Widget mapWidgetFromValue(VWidget child) {
     VCoolItem() => CoolItemSwt(key: ValueKey(id), value: child),
     VExpandItem() => ExpandItemSwt(key: ValueKey(id), value: child),
     VMenuItem() => MenuItemSwt(key: ValueKey(id), value: child),
+    VTabItem() => TabItemSwt(key: ValueKey(id), value: child),
     VTableColumn() => TableColumnSwt(key: ValueKey(id), value: child),
     VTableItem() => TableItemSwt(key: ValueKey(id), value: child),
     VToolItem() => ToolItemSwt(key: ValueKey(id), value: child),
