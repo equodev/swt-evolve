@@ -100,6 +100,19 @@ public class Sizes {
         return new Point(impl.getItems().length * 80, 28);
     }
 
+    public static Point compute(DartTabFolder impl) {
+        TabItem[] items = impl.getItems();
+        int itemCount = items != null ? items.length : 0;
+
+        // Calculate width: each tab gets approximately 80 pixels
+        int width = itemCount > 0 ? itemCount * 80 : 200;
+
+        // Tab bar height is 28 pixels (same as CTabFolder)
+        int height = 28;
+
+        return new Point(width, height);
+    }
+
     public static Point compute(DartStyledText c) {
         return new Point(c.getText().length()*15+20, 25);
     }

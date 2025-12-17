@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2017 IBM Corporation and others.
+ *  Copyright (c) 2000, 2012 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -17,8 +17,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.win32.*;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -37,7 +36,9 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class SwtTabItem extends SwtItem implements ITabItem {
+public class DartTabItem extends DartItem implements ITabItem {
+
+    static final int IMAGE_GAP = 2;
 
     TabFolder parent;
 
@@ -75,10 +76,10 @@ public class SwtTabItem extends SwtItem implements ITabItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtTabItem(TabFolder parent, int style, TabItem api) {
+    public DartTabItem(TabFolder parent, int style, TabItem api) {
         super(parent, style, api);
         this.parent = parent;
-        ((SwtTabFolder) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());
+        ((DartTabFolder) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());
     }
 
     /**
@@ -113,45 +114,10 @@ public class SwtTabItem extends SwtItem implements ITabItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtTabItem(TabFolder parent, int style, int index, TabItem api) {
+    public DartTabItem(TabFolder parent, int style, int index, TabItem api) {
         super(parent, style, api);
         this.parent = parent;
-        ((SwtTabFolder) parent.getImpl()).createItem(this.getApi(), index);
-    }
-
-    void _setText(int index, String string) {
-        /*
-	* Bug in Windows.  In version 6.00 of COMCTL32.DLL, tab
-	* items with an image and a label that includes '&' cause
-	* the tab to draw incorrectly (even when doubled '&&').
-	* The image overlaps the label.  The fix is to remove
-	* all '&' characters from the string.
-	*/
-        if (image != null) {
-            if (string.indexOf('&') != -1) {
-                int length = string.length();
-                char[] text = new char[length];
-                string.getChars(0, length, text, 0);
-                int i = 0, j = 0;
-                for (i = 0; i < length; i++) {
-                    if (text[i] != '&')
-                        text[j++] = text[i];
-                }
-                if (j < i)
-                    string = new String(text, 0, j);
-            }
-        }
-        long hwnd = parent.handle;
-        long hHeap = OS.GetProcessHeap();
-        TCHAR buffer = new TCHAR(((SwtControl) parent.getImpl()).getCodePage(), string, true);
-        int byteCount = buffer.length() * TCHAR.sizeof;
-        long pszText = OS.HeapAlloc(hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
-        OS.MoveMemory(pszText, buffer, byteCount);
-        TCITEM tcItem = new TCITEM();
-        tcItem.mask = OS.TCIF_TEXT;
-        tcItem.pszText = pszText;
-        OS.SendMessage(hwnd, OS.TCM_SETITEM, index, tcItem);
-        OS.HeapFree(hHeap, 0, pszText);
+        ((DartTabFolder) parent.getImpl()).createItem(this.getApi(), index);
     }
 
     @Override
@@ -161,26 +127,14 @@ public class SwtTabItem extends SwtItem implements ITabItem {
     }
 
     @Override
-    void destroyWidget() {
-        ((SwtTabFolder) parent.getImpl()).destroyItem(this.getApi());
-        releaseHandle();
+    void deregister() {
+        super.deregister();
     }
 
-    /**
-     * Returns the control that is used to fill the client area of
-     * the tab folder when the user selects the tab item.  If no
-     * control has been set, return <code>null</code>.
-     *
-     * @return the control
-     *
-     * @exception SWTException <ul>
-     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
-     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
-     * </ul>
-     */
-    public Control getControl() {
-        checkWidget();
-        return control;
+    @Override
+    void destroyWidget() {
+        ((DartTabFolder) parent.getImpl()).destroyItem(this.getApi());
+        releaseHandle();
     }
 
     /**
@@ -198,16 +152,25 @@ public class SwtTabItem extends SwtItem implements ITabItem {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getBoundsInPixels(), getZoom());
+        Rectangle result = new Rectangle(0, 0, 0, 0);
+        return result;
     }
 
-    Rectangle getBoundsInPixels() {
-        int index = parent.indexOf(this.getApi());
-        if (index == -1)
-            return new Rectangle(0, 0, 0, 0);
-        RECT itemRect = new RECT();
-        OS.SendMessage(parent.handle, OS.TCM_GETITEMRECT, index, itemRect);
-        return new Rectangle(itemRect.left, itemRect.top, itemRect.right - itemRect.left, itemRect.bottom - itemRect.top);
+    /**
+     * Returns the control that is used to fill the client area of
+     * the tab folder when the user selects the tab item.  If no
+     * control has been set, return <code>null</code>.
+     *
+     * @return the control
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     */
+    public Control getControl() {
+        checkWidget();
+        return control;
     }
 
     /**
@@ -239,6 +202,11 @@ public class SwtTabItem extends SwtItem implements ITabItem {
     public String getToolTipText() {
         checkWidget();
         return toolTipText;
+    }
+
+    @Override
+    void register() {
+        super.register();
     }
 
     @Override
@@ -279,11 +247,12 @@ public class SwtTabItem extends SwtItem implements ITabItem {
      * </ul>
      */
     public void setControl(Control control) {
+        dirty();
         checkWidget();
         if (control != null) {
             if (control.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
-            if (((SwtControl) control.getImpl()).parent != parent)
+            if (((DartControl) control.getImpl()).parent != parent)
                 error(SWT.ERROR_INVALID_PARENT);
         }
         if (this.control != null && this.control.isDisposed()) {
@@ -292,47 +261,45 @@ public class SwtTabItem extends SwtItem implements ITabItem {
         Control oldControl = this.control, newControl = control;
         this.control = control;
         int index = parent.indexOf(this.getApi()), selectionIndex = parent.getSelectionIndex();
+        ;
         if (index != selectionIndex) {
             if (newControl != null) {
+                boolean hideControl = true;
                 if (selectionIndex != -1) {
                     Control selectedControl = parent.getItem(selectionIndex).getControl();
                     if (selectedControl == newControl)
-                        return;
+                        hideControl = false;
                 }
-                newControl.setVisible(false);
-                return;
+                if (hideControl)
+                    newControl.setVisible(false);
             }
+        } else {
+            if (newControl != null) {
+                newControl.setVisible(true);
+            }
+            if (oldControl != null && newControl != null && oldControl != newControl)
+                oldControl.setVisible(false);
         }
         if (newControl != null) {
-            newControl.setBounds(((SwtTabFolder) parent.getImpl()).getClientAreaInPixels());
-            newControl.setVisible(true);
+        } else {
         }
-        if (oldControl != null && newControl != null && oldControl != newControl)
-            oldControl.setVisible(false);
+        /*
+	* Feature in Cocoa.  The method setView() removes the old view from
+	* its parent.  The fix is to detected it has been removed and add
+	* it back.
+	*/
+        if (oldControl != null) {
+        }
     }
 
     @Override
     public void setImage(Image image) {
+        dirty();
         checkWidget();
         int index = parent.indexOf(this.getApi());
         if (index == -1)
             return;
         super.setImage(image);
-        /*
-	* Bug in Windows.  In version 6.00 of COMCTL32.DLL, tab
-	* items with an image and a label that includes '&' cause
-	* the tab to draw incorrectly (even when doubled '&&').
-	* The image overlaps the label.  The fix is to remove
-	* all '&' characters from the string and set the text
-	* whenever the image or text is changed.
-	*/
-        if (text.indexOf('&') != -1)
-            _setText(index, text);
-        long hwnd = parent.handle;
-        TCITEM tcItem = new TCITEM();
-        tcItem.mask = OS.TCIF_IMAGE;
-        tcItem.iImage = ((SwtTabFolder) parent.getImpl()).imageIndex(image);
-        OS.SendMessage(hwnd, OS.TCM_SETITEM, index, tcItem);
     }
 
     /**
@@ -361,41 +328,15 @@ public class SwtTabItem extends SwtItem implements ITabItem {
      */
     @Override
     public void setText(String string) {
+        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if (string.equals(text))
-            return;
         int index = parent.indexOf(this.getApi());
         if (index == -1)
             return;
         super.setText(string);
-        /*
-	 * Need to update direction since it is set via UCC which the new text
-	 * overrides
-	 */
-        int textDirection = (getApi().state & HAS_AUTO_DIRECTION) != 0 ? AUTO_TEXT_DIRECTION : getApi().style & SWT.FLIP_TEXT_DIRECTION;
-        if (!updateTextDirection(textDirection)) {
-            _setText(index, string);
-        }
-    }
-
-    @Override
-    boolean updateTextDirection(int textDirection) {
-        /* AUTO is handled by super */
-        if (super.updateTextDirection(textDirection)) {
-            int index = parent.indexOf(this.getApi());
-            if (index != -1) {
-                if ((textDirection & SWT.RIGHT_TO_LEFT) != 0) {
-                    _setText(index, RLE + text);
-                    return true;
-                } else if ((textDirection & SWT.LEFT_TO_RIGHT) != 0) {
-                    _setText(index, LRE + text);
-                    return true;
-                }
-            }
-        }
-        return false;
+        updateText();
     }
 
     /**
@@ -424,8 +365,28 @@ public class SwtTabItem extends SwtItem implements ITabItem {
      * </ul>
      */
     public void setToolTipText(String string) {
+        dirty();
         checkWidget();
         toolTipText = string;
+        ((DartControl) parent.getImpl()).checkToolTip(this.getApi());
+    }
+
+    @Override
+    String tooltipText() {
+        return toolTipText;
+    }
+
+    void updateText() {
+    }
+
+    void updateText(boolean selected) {
+        double[] foreground = ((DartControl) parent.getImpl()).foreground;
+        if (foreground == null) {
+            if (selected) {
+            } else {
+                foreground = ((DartControl) parent.getImpl()).defaultForeground().handle;
+            }
+        }
     }
 
     public TabFolder _parent() {
@@ -440,9 +401,27 @@ public class SwtTabItem extends SwtItem implements ITabItem {
         return toolTipText;
     }
 
+    public FlutterBridge getBridge() {
+        if (bridge != null)
+            return bridge;
+        Composite p = parent;
+        while (p != null && !(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
+        return p != null ? ((DartWidget) p.getImpl()).getBridge() : null;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+    }
+
     public TabItem getApi() {
         if (api == null)
             api = TabItem.createApi(this);
         return (TabItem) api;
+    }
+
+    public VTabItem getValue() {
+        if (value == null)
+            value = new VTabItem(this);
+        return (VTabItem) value;
     }
 }

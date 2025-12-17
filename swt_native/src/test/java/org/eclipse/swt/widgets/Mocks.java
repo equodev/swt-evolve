@@ -101,6 +101,18 @@ public class Mocks {
         return w;
     }
 
+    public static TabFolder tabFolder() {
+        TabFolder w = mock(TabFolder.class);
+        DartTabFolder impl = mock(DartTabFolder.class);
+        when(w.getImpl()).thenReturn(impl);
+        when(impl.getBridge()).thenReturn(new MockFlutterBridge());
+        Display display = display();
+        when(impl._display()).thenReturn(display);
+        when(impl._getChildren()).thenReturn(new Control[0]);
+        doNothing().when(impl).createItem(any(TabItem.class), anyInt());
+        return w;
+    }
+
     public static CoolBar coolBar() {
         CoolBar w = mock(CoolBar.class);
         DartCoolBar impl = mock(DartCoolBar.class);

@@ -1195,6 +1195,14 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
         tabFolder.layout(true, true);
     }
 
+    public TabItem[] _items() {
+        return items;
+    }
+
+    public boolean _createdAsRTL() {
+        return createdAsRTL;
+    }
+
     public TabFolder getApi() {
         if (api == null)
             api = TabFolder.createApi(this);

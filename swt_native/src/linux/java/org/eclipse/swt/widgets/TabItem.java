@@ -21,6 +21,7 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -73,7 +74,7 @@ public class TabItem extends Item {
      */
     public TabItem(TabFolder parent, int style) {
         this((ITabItem) null);
-        setImpl(new SwtTabItem(parent, style, this));
+        setImpl(Config.isEquo(TabItem.class, parent) ? new DartTabItem(parent, style, this) : new SwtTabItem(parent, style, this));
     }
 
     /**
@@ -110,7 +111,7 @@ public class TabItem extends Item {
      */
     public TabItem(TabFolder parent, int style, int index) {
         this((ITabItem) null);
-        setImpl(new SwtTabItem(parent, style, index, this));
+        setImpl(Config.isEquo(TabItem.class, parent) ? new DartTabItem(parent, style, index, this) : new SwtTabItem(parent, style, index, this));
     }
 
     protected void checkSubclass() {

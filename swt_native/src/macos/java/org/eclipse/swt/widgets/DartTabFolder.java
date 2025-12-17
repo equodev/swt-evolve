@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2017 IBM Corporation and others.
+ *  Copyright (c) 2000, 2012 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -18,9 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.win32.*;
-import dev.equo.swt.Config;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class implement the notebook user interface
@@ -52,7 +50,13 @@ import dev.equo.swt.Config;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class TabFolder extends Composite {
+public class DartTabFolder extends DartComposite implements ITabFolder {
+
+    TabItem[] items;
+
+    int itemCount;
+
+    boolean ignoreSelect;
 
     /**
      * Constructs a new instance of this class given its parent
@@ -84,9 +88,8 @@ public class TabFolder extends Composite {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public TabFolder(Composite parent, int style) {
-        this((ITabFolder) null);
-        setImpl(Config.isEquo(TabFolder.class, parent) ? new DartTabFolder(parent, style, this) : new SwtTabFolder(parent, style, this));
+    public DartTabFolder(Composite parent, int style, TabFolder api) {
+        super(parent, checkStyle(style), api);
     }
 
     /**
@@ -114,11 +117,95 @@ public class TabFolder extends Composite {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getImpl().addSelectionListener(listener);
+        addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
     }
 
-    protected void checkSubclass() {
-        getImpl().checkSubclass();
+    static int checkStyle(int style) {
+        style = checkBits(style, SWT.TOP, SWT.BOTTOM, 0, 0, 0, 0);
+        /*
+	* Even though it is legal to create this widget
+	* with scroll bars, they serve no useful purpose
+	* because they do not automatically scroll the
+	* widget's client area.  The fix is to clear
+	* the SWT style.
+	*/
+        return style & ~(SWT.H_SCROLL | SWT.V_SCROLL);
+    }
+
+    @Override
+    public void checkSubclass() {
+        if (!isValidSubclass())
+            error(SWT.ERROR_INVALID_SUBCLASS);
+    }
+
+    @Override
+    public Point computeSize(int wHint, int hHint, boolean changed) {
+        Point size = super.computeSize(wHint, hHint, changed);
+        if (wHint == SWT.DEFAULT && items.length > 0) {
+        }
+        return size;
+    }
+
+    @Override
+    public Rectangle computeTrim(int x, int y, int width, int height) {
+        checkWidget();
+        return super.computeTrim(x, y, width, height);
+    }
+
+    @Override
+    void createHandle() {
+    }
+
+    void createItem(TabItem item, int index) {
+        int count = itemCount;
+        if (!(0 <= index && index <= count))
+            error(SWT.ERROR_INVALID_RANGE);
+        if (count == items.length) {
+            TabItem[] newItems = new TabItem[items.length + 4];
+            System.arraycopy(items, 0, newItems, 0, items.length);
+            items = newItems;
+        }
+        System.arraycopy(items, index, items, index + 1, count - index);
+        if (index >= items.length) {
+            TabItem[] newItems = new TabItem[items.length * 2];
+            System.arraycopy(items, 0, newItems, 0, items.length);
+            items = newItems;
+        }
+        items[index] = item;
+        itemCount++;
+        ((DartWidget) item.getImpl()).createJNIRef();
+        ((DartTabItem) item.getImpl()).register();
+    }
+
+    @Override
+    void createWidget() {
+        super.createWidget();
+        items = new TabItem[4];
+    }
+
+    void destroyItem(TabItem item) {
+        int count = itemCount;
+        int index = 0;
+        while (index < count) {
+            if (items[index] == item)
+                break;
+            index++;
+        }
+        if (index == count)
+            return;
+        --count;
+        System.arraycopy(items, index + 1, items, index, count - index);
+        items[count] = null;
+        if (count == 0) {
+            items = new TabItem[4];
+        }
+        itemCount = count;
+    }
+
+    @Override
+    public Rectangle getClientArea() {
+        checkWidget();
+        return getBounds();
     }
 
     /**
@@ -137,7 +224,11 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public TabItem getItem(int index) {
-        return getImpl().getItem(index);
+        checkWidget();
+        int count = itemCount;
+        if (!(0 <= index && index < count))
+            error(SWT.ERROR_INVALID_RANGE);
+        return items[index];
     }
 
     /**
@@ -159,7 +250,12 @@ public class TabFolder extends Composite {
      * @since 3.4
      */
     public TabItem getItem(Point point) {
-        return getImpl().getItem(point);
+        checkWidget();
+        if (point == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        for (int i = 0; i < itemCount; i++) {
+        }
+        return null;
     }
 
     /**
@@ -173,7 +269,13 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public int getItemCount() {
-        return getImpl().getItemCount();
+        checkWidget();
+        int count = 0;
+        for (int i = 0; i < items.length; i++) {
+            if (items[i] != null)
+                count++;
+        }
+        return count;
     }
 
     /**
@@ -193,7 +295,16 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public TabItem[] getItems() {
-        return getImpl().getItems();
+        checkWidget();
+        int count = getItemCount();
+        TabItem[] result = new TabItem[count];
+        int index = 0;
+        for (int i = 0; i < items.length; i++) {
+            if (items[i] != null) {
+                result[index++] = items[i];
+            }
+        }
+        return result;
     }
 
     /**
@@ -213,7 +324,11 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public TabItem[] getSelection() {
-        return getImpl().getSelection();
+        checkWidget();
+        int index = getSelectionIndex();
+        if (index == -1)
+            return new TabItem[0];
+        return new TabItem[] { items[index] };
     }
 
     /**
@@ -228,7 +343,16 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public int getSelectionIndex() {
-        return getImpl().getSelectionIndex();
+        checkWidget();
+        if (this.selection != null && this.selection.length > 0) {
+            return indexOf(this.selection[0]);
+        }
+        return -1;
+    }
+
+    @Override
+    public float getThemeAlpha() {
+        return (background != null ? 1 : 0.25f) * parent.getImpl().getThemeAlpha();
     }
 
     /**
@@ -249,7 +373,75 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public int indexOf(TabItem item) {
-        return getImpl().indexOf(item);
+        checkWidget();
+        if (item == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        int count = itemCount;
+        for (int i = 0; i < count; i++) {
+            if (items[i] == item)
+                return i;
+        }
+        for (int i = 0; i < items.length; i++) {
+            if (items[i] == item)
+                return i;
+        }
+        return -1;
+    }
+
+    @Override
+    public boolean isTransparent() {
+        return true;
+    }
+
+    @Override
+    Point minimumSize(int wHint, int hHint, boolean flushCache) {
+        Control[] children = _getChildren();
+        int width = 0, height = 0;
+        for (int i = 0; i < children.length; i++) {
+            Control child = children[i];
+            int index = 0;
+            int count = itemCount;
+            while (index < count) {
+                if (((DartTabItem) items[index].getImpl()).control == child)
+                    break;
+                index++;
+            }
+            if (index == count) {
+                Rectangle rect = child.getBounds();
+                width = Math.max(width, rect.x + rect.width);
+                height = Math.max(height, rect.y + rect.height);
+            } else {
+                Point size = child.computeSize(wHint, hHint, flushCache);
+                width = Math.max(width, size.x);
+                height = Math.max(height, size.y);
+            }
+        }
+        return new Point(width, height);
+    }
+
+    @Override
+    void releaseChildren(boolean destroy) {
+        if (items != null) {
+            for (int i = 0; i < items.length; i++) {
+                TabItem item = items[i];
+                if (item != null && !item.isDisposed()) {
+                    item.getImpl().release(false);
+                }
+            }
+            items = null;
+        }
+        super.releaseChildren(destroy);
+    }
+
+    @Override
+    public void removeControl(Control control) {
+        super.removeControl(control);
+        int count = itemCount;
+        for (int i = 0; i < count; i++) {
+            TabItem item = items[i];
+            if (((DartTabItem) item.getImpl()).control == control)
+                item.setControl(null);
+        }
     }
 
     /**
@@ -270,7 +462,34 @@ public class TabFolder extends Composite {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getImpl().removeSelectionListener(listener);
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Selection, listener);
+        eventTable.unhook(SWT.DefaultSelection, listener);
+    }
+
+    @Override
+    void reskinChildren(int flags) {
+        if (items != null) {
+            for (int i = 0; i < itemCount; i++) {
+                TabItem item = items[i];
+                if (item != null)
+                    item.reskin(flags);
+            }
+        }
+        super.reskinChildren(flags);
+    }
+
+    @Override
+    void setForeground(double[] color) {
+        super.setForeground(color);
+        int index = getSelectionIndex();
+        for (int i = 0; i < itemCount; i++) {
+            ((DartTabItem) items[i].getImpl()).updateText(i == index);
+        }
     }
 
     /**
@@ -291,7 +510,10 @@ public class TabFolder extends Composite {
      * @since 3.2
      */
     public void setSelection(TabItem item) {
-        getImpl().setSelection(item);
+        checkWidget();
+        if (item == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        setSelection(new TabItem[] { item });
     }
 
     /**
@@ -310,11 +532,20 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public void setSelection(TabItem[] items) {
-        getImpl().setSelection(items);
-    }
-
-    public void setFont(Font font) {
-        getImpl().setFont(font);
+        dirty();
+        checkWidget();
+        if (items == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (items.length == 0) {
+            setSelection(-1, false, false);
+        } else {
+            for (int i = items.length - 1; i >= 0; --i) {
+                int index = indexOf(items[i]);
+                if (index != -1)
+                    setSelection(index, false, false);
+            }
+        }
+        this.selection = items;
     }
 
     /**
@@ -331,18 +562,117 @@ public class TabFolder extends Composite {
      * </ul>
      */
     public void setSelection(int index) {
-        getImpl().setSelection(index);
+        checkWidget();
+        int count = itemCount;
+        if (!(0 <= index && index < count))
+            return;
+        setSelection(index, false, false);
     }
 
-    protected TabFolder(ITabFolder impl) {
-        super(impl);
+    void setSelection(int index, boolean notify, boolean force) {
+        dirty();
+        if (!(0 <= index && index < itemCount))
+            return;
+        int currentIndex = getSelectionIndex();
+        if (!force && currentIndex == index)
+            return;
+        if (currentIndex != -1) {
+            TabItem item = items[currentIndex];
+            if (item != null) {
+                Control control = ((DartTabItem) item.getImpl()).control;
+                if (control != null && !control.isDisposed()) {
+                    control.setVisible(false);
+                }
+            }
+        }
+        // Update the selection field
+        if (index < 0 || index >= items.length || items[index] == null) {
+            this.selection = new TabItem[0];
+        } else {
+            this.selection = new TabItem[] { items[index] };
+        }
+        //ignoreSelect = true;
+        ;
+        ignoreSelect = false;
+        //index = getSelectionIndex();
+        ;
+        if (index != -1) {
+            TabItem item = items[index];
+            if (item != null) {
+                Control control = ((DartTabItem) item.getImpl()).control;
+                if (control != null && !control.isDisposed()) {
+                    control.setVisible(true);
+                }
+                if (notify) {
+                    Event event = new Event();
+                    event.item = item;
+                    sendSelectionEvent(SWT.Selection, event, true);
+                }
+            }
+        }
     }
 
-    static TabFolder createApi(ITabFolder impl) {
-        return new TabFolder(impl);
+    @Override
+    void setSmallSize() {
     }
 
-    public ITabFolder getImpl() {
-        return (ITabFolder) super.getImpl();
+    @Override
+    boolean traversePage(boolean next) {
+        int count = getItemCount();
+        if (count == 0)
+            return false;
+        int index = getSelectionIndex();
+        if (index == -1) {
+            index = 0;
+        } else {
+            int offset = (next) ? 1 : -1;
+            index = (index + offset + count) % count;
+        }
+        setSelection(index, true, false);
+        return index == getSelectionIndex();
+    }
+
+    TabItem[] selection = new TabItem[0];
+
+    public TabItem[] _items() {
+        return items;
+    }
+
+    public int _itemCount() {
+        return itemCount;
+    }
+
+    public boolean _ignoreSelect() {
+        return ignoreSelect;
+    }
+
+    public TabItem[] _selection() {
+        return selection;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
+            getDisplay().asyncExec(() -> {
+                sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                setSelection(e.index);
+            });
+        });
+    }
+
+    public TabFolder getApi() {
+        if (api == null)
+            api = TabFolder.createApi(this);
+        return (TabFolder) api;
+    }
+
+    public VTabFolder getValue() {
+        if (value == null)
+            value = new VTabFolder(this);
+        return (VTabFolder) value;
     }
 }

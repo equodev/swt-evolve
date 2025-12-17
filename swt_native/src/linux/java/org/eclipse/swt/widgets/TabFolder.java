@@ -22,6 +22,7 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class implement the notebook user interface
@@ -112,7 +113,7 @@ public class TabFolder extends Composite {
      */
     public TabFolder(Composite parent, int style) {
         this((ITabFolder) null);
-        setImpl(new SwtTabFolder(parent, style, this));
+        setImpl(Config.isEquo(TabFolder.class, parent) ? new DartTabFolder(parent, style, this) : new SwtTabFolder(parent, style, this));
     }
 
     protected void checkSubclass() {

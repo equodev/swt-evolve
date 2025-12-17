@@ -18,7 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.win32.*;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class represent a selectable user interface object
@@ -37,7 +37,7 @@ import org.eclipse.swt.internal.win32.*;
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class SwtTabItem extends SwtItem implements ITabItem {
+public class DartTabItem extends DartItem implements ITabItem {
 
     TabFolder parent;
 
@@ -75,10 +75,10 @@ public class SwtTabItem extends SwtItem implements ITabItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtTabItem(TabFolder parent, int style, TabItem api) {
+    public DartTabItem(TabFolder parent, int style, TabItem api) {
         super(parent, style, api);
         this.parent = parent;
-        ((SwtTabFolder) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());
+        ((DartTabFolder) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());
     }
 
     /**
@@ -113,10 +113,10 @@ public class SwtTabItem extends SwtItem implements ITabItem {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtTabItem(TabFolder parent, int style, int index, TabItem api) {
+    public DartTabItem(TabFolder parent, int style, int index, TabItem api) {
         super(parent, style, api);
         this.parent = parent;
-        ((SwtTabFolder) parent.getImpl()).createItem(this.getApi(), index);
+        ((DartTabFolder) parent.getImpl()).createItem(this.getApi(), index);
     }
 
     void _setText(int index, String string) {
@@ -141,17 +141,6 @@ public class SwtTabItem extends SwtItem implements ITabItem {
                     string = new String(text, 0, j);
             }
         }
-        long hwnd = parent.handle;
-        long hHeap = OS.GetProcessHeap();
-        TCHAR buffer = new TCHAR(((SwtControl) parent.getImpl()).getCodePage(), string, true);
-        int byteCount = buffer.length() * TCHAR.sizeof;
-        long pszText = OS.HeapAlloc(hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
-        OS.MoveMemory(pszText, buffer, byteCount);
-        TCITEM tcItem = new TCITEM();
-        tcItem.mask = OS.TCIF_TEXT;
-        tcItem.pszText = pszText;
-        OS.SendMessage(hwnd, OS.TCM_SETITEM, index, tcItem);
-        OS.HeapFree(hHeap, 0, pszText);
     }
 
     @Override
@@ -162,7 +151,7 @@ public class SwtTabItem extends SwtItem implements ITabItem {
 
     @Override
     void destroyWidget() {
-        ((SwtTabFolder) parent.getImpl()).destroyItem(this.getApi());
+        ((DartTabFolder) parent.getImpl()).destroyItem(this.getApi());
         releaseHandle();
     }
 
@@ -198,16 +187,14 @@ public class SwtTabItem extends SwtItem implements ITabItem {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getBoundsInPixels(), getZoom());
+        return null;
     }
 
     Rectangle getBoundsInPixels() {
         int index = parent.indexOf(this.getApi());
         if (index == -1)
             return new Rectangle(0, 0, 0, 0);
-        RECT itemRect = new RECT();
-        OS.SendMessage(parent.handle, OS.TCM_GETITEMRECT, index, itemRect);
-        return new Rectangle(itemRect.left, itemRect.top, itemRect.right - itemRect.left, itemRect.bottom - itemRect.top);
+        return null;
     }
 
     /**
@@ -279,11 +266,12 @@ public class SwtTabItem extends SwtItem implements ITabItem {
      * </ul>
      */
     public void setControl(Control control) {
+        dirty();
         checkWidget();
         if (control != null) {
             if (control.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
-            if (((SwtControl) control.getImpl()).parent != parent)
+            if (((DartControl) control.getImpl()).parent != parent)
                 error(SWT.ERROR_INVALID_PARENT);
         }
         if (this.control != null && this.control.isDisposed()) {
@@ -304,7 +292,7 @@ public class SwtTabItem extends SwtItem implements ITabItem {
             }
         }
         if (newControl != null) {
-            newControl.setBounds(((SwtTabFolder) parent.getImpl()).getClientAreaInPixels());
+            newControl.setBounds(((DartTabFolder) parent.getImpl()).getClientAreaInPixels());
             newControl.setVisible(true);
         }
         if (oldControl != null && newControl != null && oldControl != newControl)
@@ -313,6 +301,7 @@ public class SwtTabItem extends SwtItem implements ITabItem {
 
     @Override
     public void setImage(Image image) {
+        dirty();
         checkWidget();
         int index = parent.indexOf(this.getApi());
         if (index == -1)
@@ -328,11 +317,6 @@ public class SwtTabItem extends SwtItem implements ITabItem {
 	*/
         if (text.indexOf('&') != -1)
             _setText(index, text);
-        long hwnd = parent.handle;
-        TCITEM tcItem = new TCITEM();
-        tcItem.mask = OS.TCIF_IMAGE;
-        tcItem.iImage = ((SwtTabFolder) parent.getImpl()).imageIndex(image);
-        OS.SendMessage(hwnd, OS.TCM_SETITEM, index, tcItem);
     }
 
     /**
@@ -424,6 +408,7 @@ public class SwtTabItem extends SwtItem implements ITabItem {
      * </ul>
      */
     public void setToolTipText(String string) {
+        dirty();
         checkWidget();
         toolTipText = string;
     }
@@ -440,9 +425,27 @@ public class SwtTabItem extends SwtItem implements ITabItem {
         return toolTipText;
     }
 
+    public FlutterBridge getBridge() {
+        if (bridge != null)
+            return bridge;
+        Composite p = parent;
+        while (p != null && !(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
+        return p != null ? ((DartWidget) p.getImpl()).getBridge() : null;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+    }
+
     public TabItem getApi() {
         if (api == null)
             api = TabItem.createApi(this);
         return (TabItem) api;
+    }
+
+    public VTabItem getValue() {
+        if (value == null)
+            value = new VTabItem(this);
+        return (VTabItem) value;
     }
 }

@@ -3,7 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 
-public interface ITabItem extends IItem {
+public interface ITabItem extends IItem, ImplTabItem {
 
     void checkSubclass();
 

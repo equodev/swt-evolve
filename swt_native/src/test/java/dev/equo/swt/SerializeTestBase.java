@@ -123,6 +123,17 @@ public class SerializeTestBase {
         inst.fill();
     }
 
+    protected void setAll(TabItem w) {
+        InstancioObjectApi<TabItem> inst = Instancio.ofObject(w)
+                .withSettings(settings)
+                .ignore(Select.setter(Widget.class, "setImpl"))
+                .ignore(Select.field(Widget.class, "state"));
+        inst = inst
+                .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
+                .generate(Select.all(Image.class), gen -> gen.oneOf(createTestImage()));
+        inst.fill();
+    }
+
     protected void setAll(Color w) {
         // no setters
     }

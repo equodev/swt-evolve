@@ -190,7 +190,9 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
         if (item.getImpl() instanceof SwtWidget) {
             ((SwtWidget) item.getImpl()).createJNIRef();
         }
-        ((SwtTabItem) item.getImpl()).register();
+        if (item.getImpl() instanceof SwtTabItem) {
+            ((SwtTabItem) item.getImpl()).register();
+        }
         ((NSTabView) getApi().view).insertTabViewItem(nsItem, index);
     }
 
@@ -736,6 +738,18 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
                 }
             }
         }
+    }
+
+    public TabItem[] _items() {
+        return items;
+    }
+
+    public int _itemCount() {
+        return itemCount;
+    }
+
+    public boolean _ignoreSelect() {
+        return ignoreSelect;
     }
 
     public TabFolder getApi() {
