@@ -3164,6 +3164,15 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setMaximizeVisible(boolean visible) {
+        checkWidget();
+        if (!java.util.Objects.equals(this.showMax, visible)) {
+            dirty();
+        }
+        if (showMax == visible)
+            return;
+        // display maximize button
+        showMax = visible;
+        updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
     }
 
     /**
@@ -3233,6 +3242,15 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setMinimizeVisible(boolean visible) {
+        checkWidget();
+        if (!java.util.Objects.equals(this.showMin, visible)) {
+            dirty();
+        }
+        if (showMin == visible)
+            return;
+        // display minimize button
+        showMin = visible;
+        updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
     }
 
     /**
@@ -4758,14 +4776,17 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         });
         FlutterBridge.on(this, "CTabFolder2", "maximize", e -> {
             getDisplay().asyncExec(() -> {
+                CTabFolderHelper.handleMaximize(this, e);
             });
         });
         FlutterBridge.on(this, "CTabFolder2", "minimize", e -> {
             getDisplay().asyncExec(() -> {
+                CTabFolderHelper.handleMinimize(this, e);
             });
         });
         FlutterBridge.on(this, "CTabFolder2", "restore", e -> {
             getDisplay().asyncExec(() -> {
+                CTabFolderHelper.handleRestore(this, e);
             });
         });
         FlutterBridge.on(this, "CTabFolder2", "showList", e -> {

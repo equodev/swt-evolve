@@ -441,7 +441,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
         } else {
         }
-        return null;
+        return new Rectangle(0, 0, 0, 0);
     }
 
     /**

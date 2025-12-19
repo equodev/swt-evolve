@@ -429,16 +429,22 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
   void _toggleMinimize() {
     final isMinimized = state.minimized ?? false;
-    setState(() {
-      state.minimized = !isMinimized;
-    });
+    var e = VEvent();
+    if (isMinimized) {
+      widget.sendCTabFolder2restore(state, e);
+    } else {
+      widget.sendCTabFolder2minimize(state, e);
+    }
   }
 
   void _toggleMaximize() {
     final isMaximized = state.maximized ?? false;
-    setState(() {
-      state.maximized = !isMaximized;
-    });
+    var e = VEvent();
+    if (isMaximized) {
+      widget.sendCTabFolder2restore(state, e);
+    } else {
+      widget.sendCTabFolder2maximize(state, e);
+    }
   }
 
   List<CTabItem> getTabItems() {

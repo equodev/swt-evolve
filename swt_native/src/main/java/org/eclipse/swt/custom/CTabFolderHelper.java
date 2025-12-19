@@ -19,4 +19,31 @@ public class CTabFolderHelper {
                 item.dispose();
         }
     }
+
+    public static void handleMinimize(DartCTabFolder obj, Event e) {
+        CTabFolderEvent minimizeEvent = new CTabFolderEvent(obj.getApi());
+        for (CTabFolder2Listener listener : obj.folderListeners) {
+            listener.minimize(minimizeEvent);
+        }
+        obj.minimized = true;
+        obj.maximized = false;
+    }
+
+    public static void handleMaximize(DartCTabFolder obj, Event e) {
+        CTabFolderEvent maximizeEvent = new CTabFolderEvent(obj.getApi());
+        for (CTabFolder2Listener listener : obj.folderListeners) {
+            listener.maximize(maximizeEvent);
+        }
+        obj.maximized = true;
+        obj.minimized = false;
+    }
+
+    public static void handleRestore(DartCTabFolder obj, Event e) {
+        CTabFolderEvent restoreEvent = new CTabFolderEvent(obj.getApi());
+        for (CTabFolder2Listener listener : obj.folderListeners) {
+            listener.restore(restoreEvent);
+        }
+        obj.minimized = false;
+        obj.maximized = false;
+    }
 }

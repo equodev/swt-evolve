@@ -654,7 +654,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkComposited();
         register();
         subclass();
-        setDefaultFont();
+        //setDefaultFont();
+        ;
         checkMirrored();
         checkBorder();
         checkGesture();
