@@ -17,7 +17,8 @@ target_include_directories(${FLUTTER_LIBRARY_NAME} PRIVATE
 )
 
 # Add compiler definitions for DLL export
-target_compile_definitions(${FLUTTER_LIBRARY_NAME} PUBLIC FLUTTER_LIBRARY_EXPORTS)
+target_compile_definitions(${FLUTTER_LIBRARY_NAME} PUBLIC
+    FLUTTER_LIBRARY_EXPORTS)
 
 # Configure Flutter dependencies
 apply_standard_settings(${FLUTTER_LIBRARY_NAME})
@@ -26,8 +27,12 @@ set_target_properties(${FLUTTER_LIBRARY_NAME} PROPERTIES
 target_compile_features(${FLUTTER_LIBRARY_NAME} PUBLIC cxx_std_17)
 
 # Link Flutter Linux and required libraries
-target_link_libraries(${FLUTTER_LIBRARY_NAME} PRIVATE 
+target_link_libraries(${FLUTTER_LIBRARY_NAME} PRIVATE
   flutter 
+)
+
+# Interface with JNI to avoid linking unneeded libs
+target_link_libraries(${FLUTTER_LIBRARY_NAME} INTERFACE
   ${JNI_LIBRARIES}
 )
 
