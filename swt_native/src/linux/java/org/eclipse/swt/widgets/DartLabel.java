@@ -439,7 +439,7 @@ public class DartLabel extends DartControl implements ILabel {
         }
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
-        this.image = ImageUtils.copyImage(display, image);
+        this.image = GraphicsUtils.copyImage(display, image);
         if (image != null) {
         } else {
         }

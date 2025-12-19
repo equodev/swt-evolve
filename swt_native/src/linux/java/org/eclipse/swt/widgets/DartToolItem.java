@@ -715,7 +715,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             return;
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
-        this.disabledImage = ImageUtils.copyImage(display, image);
+        this.disabledImage = GraphicsUtils.copyImage(display, image);
         if (image != null) {
             if (!enabled) {
                 _setImage(image);
@@ -835,7 +835,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             return;
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
-        this.hotImage = ImageUtils.copyImage(display, image);
+        this.hotImage = GraphicsUtils.copyImage(display, image);
         if (image != null) {
         }
     }

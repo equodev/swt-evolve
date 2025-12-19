@@ -465,7 +465,6 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, InputStream stream, Image api) {
         super(device, api);
-        ImageData data = new ImageData(stream);
         if (stream == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
@@ -513,7 +512,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, String filename, Image api) {
         super(device, api);
-        this.filename = ImageUtils.getFilename(filename);
+        this.filename = GraphicsUtils.getFilename(filename);
         try {
             if (filename == null)
                 SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -555,7 +554,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, ImageFileNameProvider imageFileNameProvider, Image api) {
         super(device, api);
-        this.filename = ImageUtils.getFilename(imageFileNameProvider.getImagePath(100));
+        this.filename = GraphicsUtils.getFilename(imageFileNameProvider.getImagePath(100));
         if (imageFileNameProvider == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         this.imageFileNameProvider = imageFileNameProvider;

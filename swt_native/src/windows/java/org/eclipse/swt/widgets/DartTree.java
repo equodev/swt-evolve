@@ -2153,6 +2153,7 @@ public class DartTree extends DartComposite implements ITree {
 
     @Override
     public void setFont(Font font) {
+        font = GraphicsUtils.copyFont(font);
         dirty();
         checkWidget();
         super.setFont(font);

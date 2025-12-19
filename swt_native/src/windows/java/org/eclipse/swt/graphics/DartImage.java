@@ -525,7 +525,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, ImageFileNameProvider imageFileNameProvider, Image api) {
         super(device, api);
-        this.filename = ImageUtils.getFilename(imageFileNameProvider.getImagePath(100));
+        this.filename = GraphicsUtils.getFilename(imageFileNameProvider.getImagePath(100));
         if (imageFileNameProvider.getImagePath(100) == null) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT, null, ": ImageFileNameProvider [" + imageFileNameProvider + "] returns null fileName at 100% zoom.");
         }

@@ -3,6 +3,7 @@ package dev.equo;
 import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Display;
@@ -10,17 +11,20 @@ import org.eclipse.swt.widgets.Shell;
 
 public class GCFontSnippet {
     public static void main(String[] args) {
-        Config.forceEquo();
+        //Config.forceEquo();
+        Config.useEquo(Canvas.class);
+        //Config.useEquo(Font.class);
         Display display = new Display();
         Shell shell = new Shell(display);
         shell.setText("GC Font Variety Snippet");
         shell.setSize(600, 800);
 
+        FontData fd = new FontData("Arial", 12, SWT.NORMAL);
         // Create various fonts with different families, sizes and styles
-        Font arial12Normal = new Font(display, "Arial", 12, SWT.NORMAL);
+        Font arial12Normal = new Font(display, fd);
         Font arial16Bold = new Font(display, "Arial", 16, SWT.BOLD);
         Font arial14Italic = new Font(display, "Arial", 14, SWT.ITALIC);
-        Font arial18BoldItalic = new Font(display, "Arial", 18, SWT.BOLD | SWT.ITALIC);
+        Font arial18BoldItalic = new Font(display, new FontData("Arial", 18, SWT.BOLD | SWT.ITALIC));
 
         Font courierNew10Normal = new Font(display, "Courier New", 10, SWT.NORMAL);
         Font courierNew14Bold = new Font(display, "Courier New", 14, SWT.BOLD);

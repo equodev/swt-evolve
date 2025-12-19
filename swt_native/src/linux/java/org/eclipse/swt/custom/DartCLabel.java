@@ -896,6 +896,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
 
     @Override
     public void setFont(Font font) {
+        font = GraphicsUtils.copyFont(font);
         dirty();
         super.setFont(font);
         redraw();

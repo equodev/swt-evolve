@@ -625,6 +625,7 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     @Override
     public void setFont(Font font) {
+        font = GraphicsUtils.copyFont(font);
         dirty();
         checkWidget();
         setDropDownItems(false);

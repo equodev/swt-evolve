@@ -718,7 +718,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             error(SWT.ERROR_INVALID_ARGUMENT);
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
-        this.disabledImage = ImageUtils.copyImage(display, image);
+        this.disabledImage = GraphicsUtils.copyImage(display, image);
         updateImage(true);
     }
 
@@ -790,7 +790,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             error(SWT.ERROR_INVALID_ARGUMENT);
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
-        this.hotImage = ImageUtils.copyImage(display, image);
+        this.hotImage = GraphicsUtils.copyImage(display, image);
         updateImage(true);
     }
 

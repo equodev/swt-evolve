@@ -1334,6 +1334,7 @@ public class DartCombo extends DartComposite implements ICombo {
 
     @Override
     public void setFont(Font font) {
+        font = GraphicsUtils.copyFont(font);
         dirty();
         checkWidget();
         /*
