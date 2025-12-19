@@ -95,6 +95,7 @@ public final class DartFont extends DartResource implements IFont {
      */
     public DartFont(Device device, FontData fd, Font api) {
         super(device, api);
+        fd = GraphicsUtils.copyFontData(fd);
         if (fd == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         this.zoom = DPIUtil.getNativeDeviceZoom();
@@ -147,6 +148,9 @@ public final class DartFont extends DartResource implements IFont {
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         this.zoom = DPIUtil.getNativeDeviceZoom();
+        for (int i = 0; i < fds.length; i++) {
+            fds[i] = GraphicsUtils.copyFontData(fds[i]);
+        }
         FontData fd = fds[0];
         this.fontData = new FontData(fd);
         init();

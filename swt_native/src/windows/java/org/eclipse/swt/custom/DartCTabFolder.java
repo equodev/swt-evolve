@@ -2838,6 +2838,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
     @Override
     public void setFont(Font font) {
+        font = GraphicsUtils.copyFont(font);
         dirty();
         checkWidget();
         if (font != null && font.equals(getFont()))

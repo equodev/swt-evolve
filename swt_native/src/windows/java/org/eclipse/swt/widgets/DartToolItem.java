@@ -713,7 +713,7 @@ public class DartToolItem extends DartItem implements IToolItem {
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         parent.layout(isImageSizeChanged(disabledImage, image));
-        this.disabledImage = ImageUtils.copyImage(display, image);
+        this.disabledImage = GraphicsUtils.copyImage(display, image);
         updateImages(getEnabled() && parent.getEnabled());
     }
 
@@ -783,7 +783,7 @@ public class DartToolItem extends DartItem implements IToolItem {
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         parent.layout(isImageSizeChanged(hotImage, image));
-        this.hotImage = ImageUtils.copyImage(display, image);
+        this.hotImage = GraphicsUtils.copyImage(display, image);
         updateImages(getEnabled() && parent.getEnabled());
     }
 

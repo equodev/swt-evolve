@@ -431,7 +431,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void copyArea(Image image, int x, int y) {
         VGCCopyAreaImageintint drawOp = new VGCCopyAreaImageintint();
-        drawOp.image = ImageUtils.copyImage(display, image);
+        drawOp.image = GraphicsUtils.copyImage(display, image);
         drawOp.x = x;
         drawOp.y = y;
         FlutterBridge.send(this, "copyAreaImageintint", drawOp);
@@ -817,7 +817,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void drawImage(Image image, int x, int y) {
         VGCDrawImageImageintint drawOp = new VGCDrawImageImageintint();
-        drawOp.image = ImageUtils.copyImage(display, image);
+        drawOp.image = GraphicsUtils.copyImage(display, image);
         drawOp.x = x;
         drawOp.y = y;
         FlutterBridge.send(this, "drawImageImageintint", drawOp);
@@ -877,7 +877,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight) {
         VGCDrawImageImageintintintintintintintint drawOp = new VGCDrawImageImageintintintintintintintint();
-        drawOp.image = ImageUtils.copyImage(display, image);
+        drawOp.image = GraphicsUtils.copyImage(display, image);
         drawOp.srcX = srcX;
         drawOp.srcY = srcY;
         drawOp.srcWidth = srcWidth;
@@ -3552,6 +3552,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setFont(Font font) {
+        font = GraphicsUtils.copyFont(font);
         Font newValue = font;
         if (!java.util.Objects.equals(this.font, newValue)) {
             dirty();

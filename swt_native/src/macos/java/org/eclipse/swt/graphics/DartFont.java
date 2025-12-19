@@ -73,6 +73,7 @@ public final class DartFont extends DartResource implements IFont {
      */
     public DartFont(Device device, FontData fd, Font api) {
         super(device, api);
+        fd = GraphicsUtils.copyFontData(fd);
         if (fd == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         try {
@@ -116,6 +117,9 @@ public final class DartFont extends DartResource implements IFont {
         for (int i = 0; i < fds.length; i++) {
             if (fds[i] == null)
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        for (int i = 0; i < fds.length; i++) {
+            fds[i] = GraphicsUtils.copyFontData(fds[i]);
         }
         try {
             FontData fd = fds[0];

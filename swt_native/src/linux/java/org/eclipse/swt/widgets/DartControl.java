@@ -790,7 +790,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     int setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
         dirty();
-        Rectangle newValue = new Rectangle(x, y, width, height);
+        int finalX = move ? x : this.bounds.x;
+        int finalY = move ? y : this.bounds.y;
+        int finalWidth = resize ? width : this.bounds.width;
+        int finalHeight = resize ? height : this.bounds.height;
+        Rectangle newValue = new Rectangle(finalX, finalY, finalWidth, finalHeight);
         // bug in GTK3 the crashes new shell only. See bug 472743
         width = Math.min(width, (2 << 14) - 1);
         height = Math.min(height, (2 << 14) - 1);
@@ -3590,6 +3594,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setFont(Font font) {
+        font = GraphicsUtils.copyFont(font);
         checkWidget();
         if (!java.util.Objects.equals(this.font, font)) {
             dirty();

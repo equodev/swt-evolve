@@ -2585,7 +2585,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     void setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
         dirty();
-        Rectangle newValue = new Rectangle(x, y, width, height);
+        int finalX = move ? x : this.bounds.x;
+        int finalY = move ? y : this.bounds.y;
+        int finalWidth = resize ? width : this.bounds.width;
+        int finalHeight = resize ? height : this.bounds.height;
+        Rectangle newValue = new Rectangle(finalX, finalY, finalWidth, finalHeight);
         /*
 	* Bug in Cocoa. On Mac 10.8, a text control loses and gains focus
 	* when its bounds changes.  The fix is to ignore these events.
@@ -2797,6 +2801,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setFont(Font font) {
+        font = GraphicsUtils.copyFont(font);
         checkWidget();
         if (!java.util.Objects.equals(this.font, font)) {
             dirty();
