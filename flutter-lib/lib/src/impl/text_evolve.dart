@@ -4,9 +4,8 @@ import '../gen/swt.dart';
 import '../gen/text.dart';
 import '../gen/widget.dart';
 import '../impl/scrollable_evolve.dart';
-import '../styles.dart';
-import 'color_utils.dart';
-import 'utils/font_utils.dart';
+import '../theme/text_theme_extension.dart';
+import '../theme/text_theme_settings.dart';
 
 class TextImpl<T extends TextSwt, V extends VText>
     extends ScrollableImpl<T, V> {
@@ -39,118 +38,82 @@ class TextImpl<T extends TextSwt, V extends VText>
 
   @override
   Widget build(BuildContext context) {
-    TextAlign textAlign = _getTextAlignment();
-    bool isMultiLine = state.style.has(SWT.MULTI);
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final widgetTheme = Theme.of(context).extension<TextThemeExtension>();
 
-    Alignment alignment;
-    if (textAlign == TextAlign.center) {
-      alignment = Alignment.center;
-    } else if (textAlign == TextAlign.right) {
-      alignment = Alignment.centerRight;
-    } else {
-      alignment = Alignment.centerLeft;
-    }
+    final textAlign = getTextAlign(state.style);
+    final isMultiLine = (state.style & SWT.MULTI) != 0;
+    final enabled = state.editable ?? true;
+    final textStyle = getTextStyle(context, state, widgetTheme, colorScheme, textTheme);
+    final decoration = getInputDecoration(
+      context,
+      state,
+      widgetTheme,
+      colorScheme,
+      _controller,
+      () {
+        _controller.clear();
+        var e = VEvent()..detail = SWT.ICON_CANCEL;
+        widget.sendSelectionDefaultSelection(state, e);
+      },
+    );
+    final height = getTextFieldHeight(state, widgetTheme, isMultiLine);
+    final cursorColor = getCursorColor(state, widgetTheme, colorScheme, textTheme);
 
-    Widget textField = _StyledTextField(
+    final hasBounds = state.bounds != null && state.bounds!.width > 0 && state.bounds!.height > 0;
+
+    final shouldExpand = hasBounds && isMultiLine;
+
+    Widget textField = TextField(
       controller: _controller,
       focusNode: _focusNode,
-      enabled: state.editable ?? true,
-      obscureText: state.style.has(SWT.PASSWORD),
-      readOnly: state.style.has(SWT.READ_ONLY),
-      maxLines: isMultiLine ? null : 1,
+      enabled: enabled,
+      obscureText: (state.style & SWT.PASSWORD) != 0,
+      readOnly: (state.style & SWT.READ_ONLY) != 0,
+      maxLines: isMultiLine ? (shouldExpand ? null : null) : 1,
+      expands: shouldExpand,
       textAlign: textAlign,
-      style: _getTextStyle(),
-      decoration: _getInputDecoration(),
+      textAlignVertical: TextAlignVertical.top,
+      style: textStyle,
+      decoration: decoration,
       keyboardType: isMultiLine ? TextInputType.multiline : TextInputType.text,
       maxLength: state.textLimit,
       onChanged: _handleTextChanged,
       onSubmitted: _handleSubmitted,
-      height: isMultiLine ? state.bounds?.height.toDouble() : null,
+      cursorColor: cursorColor,
     );
-    if (isMultiLine) {
-      return textField;
+
+    if (hasBounds) {
+      return ConstrainedBox(
+        constraints: BoxConstraints(
+          minWidth: state.bounds!.width.toDouble(),
+          maxWidth: state.bounds!.width.toDouble(),
+          minHeight: state.bounds!.height.toDouble(),
+          maxHeight: state.bounds!.height.toDouble(),
+        ),
+        child: SizedBox(
+          width: state.bounds!.width.toDouble(),
+          height: state.bounds!.height.toDouble(),
+          child: textField,
+        ),
+      );
     }
+    
+    if (isMultiLine) {
+      return Container(
+        height: height,
+        child: textField,
+      );
+    }
+    
     return Align(
       alignment: Alignment.center,
       child: IntrinsicWidth(
-        child: textField,
-      ),
-    );
-  }
-
-  TextAlign _getTextAlignment() {
-    if (state.style.has(SWT.CENTER)) return TextAlign.center;
-    if (state.style.has(SWT.RIGHT)) return TextAlign.right;
-    return TextAlign.left;
-  }
-
-  TextStyle _getTextStyle() {
-    // Get text color from VColor or use default
-    final finalTextColor =
-        colorFromVColor(state.foreground, defaultColor: getForeground());
-
-    // Create TextStyle from VFont
-    return FontUtils.textStyleFromVFont(
-      state.font,
-      context,
-      color: finalTextColor,
-    );
-  }
-
-  InputDecoration _getInputDecoration() {
-    final iconColor = getIconColor();
-    final hintColor = getHintColor();
-    final bgColor =
-        colorFromVColor(state.background, defaultColor: getBackground());
-
-    return InputDecoration(
-      hintText: state.message,
-      hintStyle: TextStyle(color: hintColor),
-      isDense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      border: _getBorder(),
-      enabledBorder: _getBorder(),
-      focusedBorder: _getBorder(isFocused: true),
-      fillColor: bgColor,
-      filled: true,
-      counterText: '',
-      prefixIcon: state.style.has(SWT.SEARCH)
-          ? Icon(Icons.search, size: 16, color: iconColor)
-          : null,
-      prefixIconConstraints: const BoxConstraints(
-        minHeight: 32,
-        minWidth: 32,
-      ),
-      suffixIcon: (state.style.has(SWT.SEARCH) &&
-              state.text != null &&
-              state.text!.isNotEmpty)
-          ? IconButton(
-              icon: Icon(Icons.clear, size: 16, color: iconColor),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(
-                minHeight: 32,
-                minWidth: 32,
-              ),
-              onPressed: () {
-                _controller.clear();
-                var e = VEvent()..detail = SWT.ICON_CANCEL;
-                widget.sendSelectionDefaultSelection(state, e);
-              },
-            )
-          : null,
-      suffixIconConstraints: const BoxConstraints(
-        minHeight: 32,
-        minWidth: 32,
-      ),
-    );
-  }
-
-  InputBorder _getBorder({bool isFocused = false}) {
-    return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(4),
-      borderSide: BorderSide(
-        color: isFocused ? getBorderColorFocused() : getBorderColor(),
-        width: 1,
+        child: Container(
+          height: height,
+          child: textField,
+        ),
       ),
     );
   }
@@ -186,62 +149,3 @@ class TextImpl<T extends TextSwt, V extends VText>
   }
 }
 
-class _StyledTextField extends StatelessWidget {
-  final TextEditingController controller;
-  final FocusNode? focusNode;
-  final bool enabled;
-  final bool obscureText;
-  final bool readOnly;
-  final int? maxLines;
-  final TextAlign textAlign;
-  final TextStyle style;
-  final InputDecoration decoration;
-  final TextInputType keyboardType;
-  final int? maxLength;
-  final ValueChanged<String>? onChanged;
-  final ValueChanged<String>? onSubmitted;
-  final double? height;
-
-  const _StyledTextField({
-    Key? key,
-    required this.controller,
-    this.focusNode,
-    this.enabled = true,
-    this.obscureText = false,
-    this.readOnly = false,
-    this.maxLines,
-    this.textAlign = TextAlign.left,
-    required this.style,
-    required this.decoration,
-    this.keyboardType = TextInputType.text,
-    this.maxLength,
-    this.onChanged,
-    this.onSubmitted,
-    this.height,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: height ?? 32,
-      alignment: Alignment.center,
-      child: TextField(
-        controller: controller,
-        focusNode: focusNode,
-        enabled: enabled,
-        obscureText: obscureText,
-        readOnly: readOnly,
-        maxLines: maxLines,
-        textAlign: textAlign,
-        textAlignVertical: TextAlignVertical.center,
-        style: style,
-        decoration: decoration,
-        keyboardType: keyboardType,
-        maxLength: maxLength,
-        onChanged: onChanged,
-        onSubmitted: onSubmitted,
-        cursorColor: getForeground(),
-      ),
-    );
-  }
-}

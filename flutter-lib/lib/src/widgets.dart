@@ -10,16 +10,16 @@ import 'swt/ime.dart';
 import 'swt/canvas.dart';
 import 'swt/decorations.dart';
 import 'swt/shell.dart';
-import 'swt/label.dart';
+//import 'swt/label.dart';
 import 'swt/list.dart';
-import 'swt/text.dart';
-import 'swt/button.dart';
+//import 'swt/text.dart';
+//import 'swt/button.dart';
 import 'swt/slider.dart';
 import 'swt/item.dart';
 import 'swt/progressbar.dart';
 import 'swt/link.dart';
-import 'swt/toolbar.dart';
-import 'swt/toolitem.dart';
+//import 'swt/toolbar.dart';
+//import 'swt/toolitem.dart';
 import 'swt/table.dart';
 import 'swt/tableitem.dart';
 import 'swt/tablecolumn.dart';
@@ -36,8 +36,8 @@ import 'swt/scale.dart';
 import 'swt/scrolledcomposite.dart';
 import 'swt/expanditem.dart';
 import 'swt/expandbar.dart';
-import 'swt/coolitem.dart';
-import 'swt/coolbar.dart';
+//import 'swt/coolitem.dart';
+//import 'swt/coolbar.dart';
 import 'swt/browser.dart';
 import 'swt/sashform.dart';
 import 'swt/sash.dart';
@@ -64,16 +64,16 @@ WidgetValue mapWidgetValue(Map<String, dynamic> child) {
     "Canvas" => CanvasValue.fromJson(child),
     "Decorations" => DecorationsValue.fromJson(child),
     "Shell" => ShellValue.fromJson(child),
-    "Label" => LabelValue.fromJson(child),
+    //"Label" => LabelValue.fromJson(child),
     "List" => ListValue.fromJson(child),
-    "Text" => TextValue.fromJson(child),
-    "Button" => ButtonValue.fromJson(child),
+    //"Text" => TextValue.fromJson(child),
+    //"Button" => ButtonValue.fromJson(child),
    // "Combo" => ComboValue.fromJson(child),
     "Slider" => SliderValue.fromJson(child),
     "ProgressBar" => ProgressBarValue.fromJson(child),
     "Link" => LinkValue.fromJson(child),
-    "ToolBar" => ToolBarValue.fromJson(child),
-    "ToolItem" => ToolItemValue.fromJson(child),
+    //"ToolBar" => ToolBarValue.fromJson(child),
+    //"ToolItem" => ToolItemValue.fromJson(child),
     "Table" => TableValue.fromJson(child),
     "TableItem" => TableItemValue.fromJson(child),
     "TableColumn" => TableColumnValue.fromJson(child),
@@ -90,8 +90,8 @@ WidgetValue mapWidgetValue(Map<String, dynamic> child) {
     "ScrolledComposite" => ScrolledCompositeValue.fromJson(child),
     "ExpandItem" => ExpandItemValue.fromJson(child),
     "ExpandBar" => ExpandBarValue.fromJson(child),
-    "CoolItem" => CoolItemValue.fromJson(child),
-    "CoolBar" => CoolBarValue.fromJson(child),
+    //"CoolItem" => CoolItemValue.fromJson(child),
+    //"CoolBar" => CoolBarValue.fromJson(child),
     "Browser" => BrowserValue.fromJson(child),
     "SashForm" => SashFormValue.fromJson(child),
     "Sash" => SashValue.fromJson(child),
@@ -113,18 +113,18 @@ Widget mapWidgetFromValue(WidgetValue child) {
     "Decorations" =>
       DecorationsSwt(key: ValueKey(id), value: (child as DecorationsValue)),
     "Shell" => ShellSwt(key: ValueKey(id), value: (child as ShellValue)),
-    "Label" => LabelSwt(key: ValueKey(id), value: (child as LabelValue)),
+    //"Label" => LabelSwt(key: ValueKey(id), value: (child as LabelValue)),
     "List" => ListSwt(key: ValueKey(id), value: (child as ListValue)),
-    "Text" => TextSwt(key: ValueKey(id), value: (child as TextValue)),
-    "Button" => ButtonSwt(key: ValueKey(id), value: (child as ButtonValue)),
+    //"Text" => TextSwt(key: ValueKey(id), value: (child as TextValue)),
+    //"Button" => ButtonSwt(key: ValueKey(id), value: (child as ButtonValue)),
    // "Combo" => ComboSwt(key: ValueKey(id), value: (child as ComboValue)),
     "Slider" => SliderSwt(key: ValueKey(id), value: (child as SliderValue)),
     "ProgressBar" =>
       ProgressBarSwt(key: ValueKey(id), value: (child as ProgressBarValue)),
     "Link" => LinkSwt(key: ValueKey(id), value: (child as LinkValue)),
-    "ToolBar" => ToolBarSwt(key: ValueKey(id), value: (child as ToolBarValue)),
-    "ToolItem" =>
-      ToolItemSwt(key: ValueKey(id), value: (child as ToolItemValue)),
+    //"ToolBar" => ToolBarSwt(key: ValueKey(id), value: (child as ToolBarValue)),
+    //"ToolItem" =>
+      // ToolItemSwt(key: ValueKey(id), value: (child as ToolItemValue)),
     "Table" => TableSwt(key: ValueKey(id), value: (child as TableValue)),
     "TableItem" =>
       TableItemSwt(key: ValueKey(id), value: (child as TableItemValue)),
@@ -150,9 +150,9 @@ Widget mapWidgetFromValue(WidgetValue child) {
       ExpandItemSwt(key: ValueKey(id), value: (child as ExpandItemValue)),
     "ExpandBar" =>
       ExpandBarSwt(key: ValueKey(id), value: (child as ExpandBarValue)),
-    "CoolItem" =>
-      CoolItemSwt(key: ValueKey(id), value: (child as CoolItemValue)),
-    "CoolBar" => CoolBarSwt(key: ValueKey(id), value: (child as CoolBarValue)),
+    // "CoolItem" =>
+      //CoolItemSwt(key: ValueKey(id), value: (child as CoolItemValue)),
+    //"CoolBar" => CoolBarSwt(key: ValueKey(id), value: (child as CoolBarValue)),
     "Browser" => BrowserSwt(key: ValueKey(id), value: (child as BrowserValue)),
     "SashForm" =>
       SashFormSwt(key: ValueKey(id), value: (child as SashFormValue)),
@@ -207,6 +207,6 @@ Widget mapLayout(
         composite: composite,
         value: (layout as SashFormLayoutValue),
         children: children),
-    _ => LabelSwt(value: LabelValue.empty())
+    _ => throw "Unknown Layout type: $type"
   };
 }

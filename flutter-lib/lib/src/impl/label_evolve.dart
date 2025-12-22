@@ -1,219 +1,258 @@
 import 'package:flutter/material.dart';
-import '../gen/color.dart';
-import '../gen/font.dart';
 import '../gen/label.dart';
 import '../gen/swt.dart';
-import '../gen/widget.dart';
-import '../gen/image.dart';
 import '../impl/control_evolve.dart';
 import '../impl/color_utils.dart';
-import '../styles.dart';
+import '../impl/widget_config.dart';
 import './utils/image_utils.dart';
 import './utils/font_utils.dart';
+import '../theme/label_theme_extension.dart';
 
 class LabelImpl<T extends LabelSwt, V extends VLabel>
     extends ControlImpl<T, V> {
-  /// Helper method to build an image widget from VImage using ImageUtils
-  Widget? _buildImageWidget(VImage? image, bool enabled) {
-    return ImageUtils.buildVImage(
-      image,
-      width: null,
-      height: null,
-      enabled: enabled,
-      constraints: null,
-      useBinaryImage: true,
-      renderAsIcon: false,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
-    final text = state.text ?? '';
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final widgetTheme = Theme.of(context).extension<LabelThemeExtension>()!;
+    
+    bool hasStyle(int style) => (state.style & style) != 0;
     final enabled = state.enabled ?? true;
-    final backgroundColor = _getBackgroundColor(context);
-    final image = state.image ?? '';
-
-    Widget child;
-
-    if (state.style.has(SWT.SEPARATOR)) {
-      child = SeparatorLabel(
-        direction:
-            state.style.has(SWT.VERTICAL) ? Axis.vertical : Axis.horizontal,
-        backgroundColor: backgroundColor,
-      );
-    } else {
-      child = TextLabel(
-        text: text,
-        alignment: _getAlignment(),
-        wrap: state.style.has(SWT.WRAP),
-        vertical: state.style.has(SWT.VERTICAL),
-        image: state.image,
-        backgroundColor: backgroundColor,
-        enabled: enabled,
-        buildImageWidget: _buildImageWidget,
-        vFont: state.font,
-        textColor: state.foreground,
-      );
+    
+    // Handle separator style
+    if (hasStyle(SWT.SEPARATOR)) {
+      return _buildSeparator(context, widgetTheme, colorScheme, hasStyle);
     }
+    
+    // Handle regular label
+    return _buildLabel(context, widgetTheme, colorScheme, textTheme, hasStyle, enabled);
+  }
 
+  Widget _buildSeparator(BuildContext context, LabelThemeExtension widgetTheme, 
+      ColorScheme colorScheme, bool Function(int) hasStyle) {
+    
+    final isVertical = hasStyle(SWT.VERTICAL);
+    final separatorColor = widgetTheme.borderColor ?? colorScheme.outline;
+    final thickness = widgetTheme.borderWidth;
+    
+    final hasBounds = state.bounds != null && state.bounds!.width > 0 && state.bounds!.height > 0;
+    final constraints = hasBounds
+        ? BoxConstraints(
+            minWidth: state.bounds!.width.toDouble(),
+            maxWidth: state.bounds!.width.toDouble(),
+            minHeight: state.bounds!.height.toDouble(),
+            maxHeight: state.bounds!.height.toDouble(),
+          )
+        : BoxConstraints(
+            minHeight: widgetTheme.minHeight,
+            minWidth: widgetTheme.minWidth,
+          );
+    
     return MouseRegion(
-      onEnter: (_) => _handleMouseEnter(),
-      onExit: (_) => _handleMouseExit(),
+      onEnter: (_) => widget.sendMouseTrackMouseEnter(state, null),
+      onExit: (_) => widget.sendMouseTrackMouseExit(state, null),
       child: Focus(
         onFocusChange: (hasFocus) {
           if (hasFocus) {
-            _handleFocusIn();
+            widget.sendFocusFocusIn(state, null);
           } else {
-            _handleFocusOut();
+            widget.sendFocusFocusOut(state, null);
           }
         },
-        child: Opacity(
-          opacity: enabled ? 1.0 : 0.5,
-          child: wrap(Container(
-            padding: EdgeInsets.zero,
-            margin: EdgeInsets.zero,
-            alignment: Alignment.centerLeft,
-            // Don't set background color on the container for separators
-            color: state.style.has(SWT.SEPARATOR) ? null : backgroundColor,
-            child: child,
-          )),
+        child: wrap(
+          Container(
+            constraints: constraints,
+            child: isVertical
+                ? Container(
+                    width: thickness,
+                    color: separatorColor,
+                  )
+                : Container(
+                    height: thickness,
+                    color: separatorColor,
+                  ),
+          ),
         ),
       ),
     );
   }
 
-  TextAlign _getAlignment() {
-    if (state.style.has(SWT.CENTER)) return TextAlign.center;
-    if (state.style.has(SWT.RIGHT)) return TextAlign.right;
-    return TextAlign.left;
-  }
-
-  Color? _getBackgroundColor(BuildContext context) {
-    // If there's a background color configured from Java, use it
-    return colorFromVColor(state.background, defaultColor: Colors.transparent);
-  }
-
-  void _handleMouseEnter() {
-    widget.sendMouseTrackMouseEnter(state, null);
-  }
-
-  void _handleMouseExit() {
-    widget.sendMouseTrackMouseExit(state, null);
-  }
-
-  void _handleFocusIn() {
-    widget.sendFocusFocusIn(state, null);
-  }
-
-  void _handleFocusOut() {
-    widget.sendFocusFocusOut(state, null);
-  }
-}
-
-class SeparatorLabel extends StatelessWidget {
-  final Axis direction;
-  final Color? backgroundColor;
-
-  const SeparatorLabel({
-    super.key,
-    required this.direction,
-    this.backgroundColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final separatorColor = Color(0xFFA0A0A0);
-
-    if (direction == Axis.horizontal) {
-      // Horizontal separator
-      return Center(
-        child: Container(
-          height: 1,
-          color: separatorColor,
-        ),
-      );
-    } else {
-      // Vertical separator
-      return Center(
-        child: Container(
-          width: 1,
-          color: separatorColor,
-        ),
-      );
+  Widget _buildLabel(BuildContext context, LabelThemeExtension widgetTheme,
+      ColorScheme colorScheme, TextTheme textTheme, bool Function(int) hasStyle, bool enabled) {
+    
+    final text = state.text ?? '';
+    final hasWrap = hasStyle(SWT.WRAP);
+    final isVertical = hasStyle(SWT.VERTICAL);
+    
+    // Determine text alignment
+    TextAlign textAlign = widgetTheme.textAlign;
+    if (hasStyle(SWT.CENTER)) {
+      textAlign = TextAlign.center;
+    } else if (hasStyle(SWT.RIGHT)) {
+      textAlign = TextAlign.right;
+    } else if (hasStyle(SWT.LEFT)) {
+      textAlign = TextAlign.left;
     }
-  }
-}
+    
+    final useSwtColors = getConfigFlags().use_swt_colors ?? false;
+    final useSwtFonts = getConfigFlags().use_swt_fonts ?? false;
+    
+    final backgroundColor = useSwtColors && state.background != null
+        ? colorFromVColor(state.background, defaultColor: widgetTheme.backgroundColor)
+        : widgetTheme.backgroundColor;
+    
+    final textColor = enabled 
+        ? (useSwtColors && state.foreground != null
+            ? colorFromVColor(state.foreground, defaultColor: widgetTheme.primaryTextColor)
+            : widgetTheme.primaryTextColor)
+        : widgetTheme.disabledTextColor;
+    
+    TextStyle textStyle = enabled
+        ? widgetTheme.primaryTextStyle
+        : widgetTheme.disabledTextStyle;
+    textStyle = textStyle.copyWith(color: textColor);
+    
+    if (useSwtFonts && state.font != null) {
+      textStyle = FontUtils.textStyleFromVFont(state.font, context, color: textColor) ?? textStyle;
+    }
 
-class TextLabel extends StatelessWidget {
-  final String text;
-  final TextAlign alignment;
-  final bool wrap;
-  final bool vertical;
-  final VImage? image;
-  final Color? backgroundColor;
-  final bool enabled;
-  final Widget? Function(VImage?, bool)? buildImageWidget;
-  final VFont? vFont;
-  final VColor? textColor;
-
-  const TextLabel({
-    super.key,
-    required this.text,
-    required this.alignment,
-    required this.wrap,
-    required this.vertical,
-    this.image,
-    this.backgroundColor,
-    this.enabled = true,
-    this.buildImageWidget,
-    this.vFont,
-    this.textColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // Get text color from VColor or use theme default
-    final color = colorFromVColor(textColor,
-        defaultColor: Theme.of(context).textTheme.bodyMedium?.color);
-
-    // Create TextStyle from VFont using FontUtils or use defaults
-    final textStyle = FontUtils.textStyleFromVFont(
-      vFont,
-      context,
-      color: color,
-    );
-
+    final hasBounds = state.bounds != null && state.bounds!.width > 0 && state.bounds!.height > 0;
+    
+    final shouldWrap = hasWrap || (hasBounds && text.isNotEmpty);
+    
     Widget textWidget = Text(
       text,
-      textAlign: alignment,
-      softWrap: wrap,
-      overflow: wrap ? TextOverflow.visible : TextOverflow.ellipsis,
+      textAlign: textAlign,
+      softWrap: shouldWrap,
+      overflow: shouldWrap ? TextOverflow.visible : TextOverflow.ellipsis,
+      maxLines: shouldWrap ? null : 1,
       style: textStyle,
     );
 
-    if (vertical) {
+    if (isVertical) {
       textWidget = RotatedBox(
         quarterTurns: 3,
         child: textWidget,
       );
     }
 
-    if (image != null && image is VImage) {
-      final imageWidget = buildImageWidget?.call(image, enabled);
+
+    Widget child = hasBounds
+        ? ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: state.bounds!.width.toDouble(),
+              maxHeight: state.bounds!.height.toDouble(),
+            ),
+            child: textWidget,
+          )
+        : textWidget;
+
+    final constraints = hasBounds
+        ? BoxConstraints(
+            minWidth: state.bounds!.width.toDouble(),
+            maxWidth: state.bounds!.width.toDouble(),
+            minHeight: state.bounds!.height.toDouble(),
+            maxHeight: state.bounds!.height.toDouble(),
+          )
+        : BoxConstraints(
+            minHeight: widgetTheme.minHeight,
+            minWidth: widgetTheme.minWidth,
+            maxWidth: widgetTheme.maxWidth,
+          );
+
+    // Handle image
+    if (state.image != null) {
+      final imageWidget = ImageUtils.buildVImage(
+        state.image,
+        width: widgetTheme.iconSize,
+        height: widgetTheme.iconSize,
+        enabled: enabled,
+        constraints: null,
+        useBinaryImage: true,
+        renderAsIcon: false,
+      );
+      
       if (imageWidget != null) {
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
+        child = Row(
+          mainAxisSize: hasBounds ? MainAxisSize.max : MainAxisSize.min,
+          mainAxisAlignment: _getMainAxisAlignment(textAlign, widgetTheme),
+          crossAxisAlignment: widgetTheme.crossAxisAlignment,
           children: [
             imageWidget,
-            SizedBox(width: 8),
-            textWidget,
+            SizedBox(width: widgetTheme.iconTextSpacing),
+            Flexible(child: textWidget),
           ],
         );
       }
     }
 
-    return textWidget;
+    return MouseRegion(
+      onEnter: (_) => widget.sendMouseTrackMouseEnter(state, null),
+      onExit: (_) => widget.sendMouseTrackMouseExit(state, null),
+      child: Focus(
+        onFocusChange: (hasFocus) {
+          if (hasFocus) {
+            widget.sendFocusFocusIn(state, null);
+          } else {
+            widget.sendFocusFocusOut(state, null);
+          }
+        },
+        child: Opacity(
+          opacity: enabled ? 1.0 : 0.6,
+          child: wrap(
+            Container(
+              constraints: constraints,
+              padding: widgetTheme.padding,
+              margin: widgetTheme.margin,
+              decoration: backgroundColor != null ? BoxDecoration(
+                color: backgroundColor,
+                borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
+                border: widgetTheme.borderColor != null 
+                    ? Border.all(
+                        color: widgetTheme.borderColor!,
+                        width: widgetTheme.borderWidth,
+                      )
+                    : null,
+              ) : null,
+              child: hasBounds
+                  ? Align(
+                      alignment: _getAlignment(textAlign),
+                      child: child,
+                    )
+                  : child,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  MainAxisAlignment _getMainAxisAlignment(TextAlign textAlign, LabelThemeExtension widgetTheme) {
+    switch (textAlign) {
+      case TextAlign.center:
+        return MainAxisAlignment.center;
+      case TextAlign.right:
+      case TextAlign.end:
+        return MainAxisAlignment.end;
+      case TextAlign.left:
+      case TextAlign.start:
+      default:
+        return widgetTheme.mainAxisAlignment;
+    }
+  }
+
+  Alignment _getAlignment(TextAlign textAlign) {
+    switch (textAlign) {
+      case TextAlign.center:
+        return Alignment.center;
+      case TextAlign.right:
+      case TextAlign.end:
+        return Alignment.centerRight;
+      case TextAlign.left:
+      case TextAlign.start:
+      default:
+        return Alignment.centerLeft;
+    }
   }
 }

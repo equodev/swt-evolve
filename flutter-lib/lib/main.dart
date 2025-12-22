@@ -1,12 +1,12 @@
-import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/material.dart' as mat;
+import 'package:flutter/material.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/custom/toolbar_composite.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 import 'src/swt/composite.dart';
 import 'src/styles.dart';
+import 'src/theme/theme.dart' show createLightTheme, createDarkTheme;
 import 'dart:convert';
 
 import 'native_platform.dart' if (dart.library.html) 'web_platform.dart';
@@ -90,34 +90,26 @@ class MyApp extends StatelessWidget {
   const MyApp({
     Key? key,
     required this.contentWidget,
-    this.theme = ThemeMode.dark,
+    required this.theme,
     this.backgroundColor,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final bool useDarkTheme = getCurrentTheme();
-    final ThemeMode currentTheme = useDarkTheme ? ThemeMode.dark : ThemeMode.light;
-
-    final Color finalBackgroundColor = backgroundColor != null
-        ? Color(0xFF000000 | backgroundColor!)
-        : (useDarkTheme ? Color(0xFF2C2C2C) : Color(0xFFF2F4F7));
-
-    return FluentApp(
+    final lightTheme = createLightTheme(backgroundColor);
+    final darkTheme = createDarkTheme(backgroundColor);
+    
+    return MaterialApp(
       title: 'Flutter Demo',
-      darkTheme: FluentThemeData.dark().copyWith(
-        accentColor: Colors.blue,
-        scaffoldBackgroundColor: finalBackgroundColor,
-      ),
-      theme: FluentThemeData.light().copyWith(
-        accentColor: Colors.blue,
-        scaffoldBackgroundColor: finalBackgroundColor,
-      ),
-      themeMode: currentTheme,
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      themeMode: theme,
       debugShowCheckedModeBanner: false,
-      home: Container(
-        color: finalBackgroundColor,
-        child: contentWidget,
+      home: Scaffold(
+        backgroundColor: theme == ThemeMode.dark 
+            ? darkTheme.scaffoldBackgroundColor
+            : lightTheme.scaffoldBackgroundColor,
+        body: contentWidget,
       ),
     );
   }

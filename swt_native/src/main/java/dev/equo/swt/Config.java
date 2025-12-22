@@ -297,6 +297,8 @@ public class Config {
             configFlags.ctabfolder_visible_controls = Boolean.getBoolean("swt.evolve.ctabfolder_visible_controls");
             configFlags.image_disable_icons_replacement = Boolean.getBoolean("swt.evolve.image_disable_icons_replacement");
             configFlags.assets_path = System.getProperty("swt.evolve.assets_path");
+            configFlags.use_swt_colors = Boolean.getBoolean("swt.use_swt_colors");
+            configFlags.use_swt_fonts = Boolean.getBoolean("swt.use_swt_fonts");
         }
         return configFlags;
     }
