@@ -5,8 +5,6 @@ import org.eclipse.swt.graphics.*;
 
 public interface ImplScrollable extends ImplControl {
 
-    long _scrolledHandle();
-
     ScrollBar _horizontalBar();
 
     ScrollBar _verticalBar();

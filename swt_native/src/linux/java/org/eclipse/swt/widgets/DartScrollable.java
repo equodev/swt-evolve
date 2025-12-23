@@ -39,8 +39,6 @@ import dev.equo.swt.*;
  */
 public abstract class DartScrollable extends DartControl implements IScrollable {
 
-    long scrolledHandle;
-
     ScrollBar horizontalBar, verticalBar;
 
     /**
@@ -81,6 +79,13 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
      */
     public DartScrollable(Composite parent, int style, Scrollable api) {
         super(parent, style, api);
+        {
+            boolean scrolled = (getApi().style & (SWT.H_SCROLL | SWT.V_SCROLL)) != 0;
+            if (!scrolled) {
+                getApi().state |= THEME_BACKGROUND;
+            }
+            isScrollable = scrolled || (getApi().style & SWT.BORDER) != 0;
+        }
     }
 
     long clientHandle() {
@@ -126,14 +131,11 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
         int trimWidth = width + (border * 2), trimHeight = height + (border * 2);
         trimHeight += hScrollBarWidth();
         trimWidth += vScrollBarWidth();
-        if (scrolledHandle != 0) {
-        }
         return new Rectangle(trimX, trimY, trimWidth, trimHeight);
     }
 
     ScrollBar createScrollBar(int style) {
-        scrolledHandle = 1;
-        if (scrolledHandle == 0)
+        if (!isScrollable)
             return null;
         ScrollBar bar = new ScrollBar();
         ((DartScrollBar) bar.getImpl()).parent = this.getApi();
@@ -191,8 +193,6 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
     @Override
     void deregister() {
         super.deregister();
-        if (scrolledHandle != 0)
-            ((SwtDisplay) display.getImpl()).removeWidget(scrolledHandle);
     }
 
     void destroyScrollBar(ScrollBar bar) {
@@ -205,8 +205,6 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
     int getBorderWidthInPixels() {
         checkWidget();
         int border = 0;
-        if (scrolledHandle != 0) {
-        }
         return border;
     }
 
@@ -339,15 +337,13 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
 
     @Override
     boolean sendLeaveNotify() {
-        return scrolledHandle != 0;
+        return isScrollable;
     }
 
     @Override
     void setOrientation(boolean create) {
         super.setOrientation(create);
         if ((getApi().style & SWT.RIGHT_TO_LEFT) != 0 || !create) {
-            if (scrolledHandle != 0) {
-            }
         }
         if (horizontalBar != null)
             ((DartScrollBar) horizontalBar.getImpl()).setOrientation(create);
@@ -356,7 +352,7 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
     }
 
     boolean setScrollBarVisible(ScrollBar bar, boolean visible) {
-        if (scrolledHandle == 0)
+        if (!isScrollable)
             return false;
         if (!visible) {
         }
@@ -385,14 +381,11 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
     @Override
     void register() {
         super.register();
-        if (scrolledHandle != 0)
-            ((SwtDisplay) display.getImpl()).addWidget(scrolledHandle, this.getApi());
     }
 
     @Override
     void releaseHandle() {
         super.releaseHandle();
-        scrolledHandle = 0;
     }
 
     @Override
@@ -423,8 +416,6 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
     public long topHandle() {
         if (fixedHandle != 0)
             return fixedHandle;
-        if (scrolledHandle != 0)
-            return scrolledHandle;
         return super.topHandle();
     }
 
@@ -457,10 +448,6 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
 
     int scrollbarsMode;
 
-    public long _scrolledHandle() {
-        return scrolledHandle;
-    }
-
     public ScrollBar _horizontalBar() {
         return horizontalBar;
     }
@@ -472,6 +459,8 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
     public int _scrollbarsMode() {
         return scrollbarsMode;
     }
+
+    protected boolean isScrollable;
 
     protected void _hookEvents() {
         super._hookEvents();

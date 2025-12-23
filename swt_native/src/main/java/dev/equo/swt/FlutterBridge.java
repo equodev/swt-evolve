@@ -29,7 +29,11 @@ public abstract class FlutterBridge {
         client.createComm();
     }
 
-    private final CompletableFuture<Boolean> clientReady = new CompletableFuture<>();
+    public static void disposeClient() {
+        client.dispose();
+    }
+
+    protected final CompletableFuture<Boolean> clientReady = new CompletableFuture<>();
 
     public static FlutterBridge of(DartWidget dartControl) {
         if (bridge != null)

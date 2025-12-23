@@ -122,9 +122,9 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     @Override
     public abstract Object container(DartComposite parent);
 
-    static native long InitializeFlutterWindow(int port, long parentHandle, long widgetId, String widgetName, String theme, int backgroundColor, int parentBackgroundColor);
+    protected static native long InitializeFlutterWindow(int port, long parentHandle, long widgetId, String widgetName, String theme, int backgroundColor, int parentBackgroundColor);
 
-    static native long Dispose(long context);
+    protected static native long Dispose(long context);
 
     static native long SetBounds(long context, int x, int y, int w, int h, int vx, int vy, int vw, int vh);
 

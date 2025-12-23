@@ -676,10 +676,6 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
         return new Point(requisition.width + spacing, requisition.height + spacing);
     }
 
-    public long _scrolledHandle() {
-        return scrolledHandle;
-    }
-
     public ScrollBar _horizontalBar() {
         return horizontalBar;
     }
