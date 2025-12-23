@@ -514,6 +514,8 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public void deselect(int index) {
         checkWidget();
+        if (index == getSelectionIndex())
+            selectedIndex = -1;
         sendEvent(SWT.Modify);
         // widget could be disposed at this point
         clearSegments(false);
@@ -536,6 +538,7 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public void deselectAll() {
         checkWidget();
+        selectedIndex = -1;
         sendEvent(SWT.Modify);
         // widget could be disposed at this point
         clearSegments(false);
@@ -868,7 +871,7 @@ public class DartCombo extends DartComposite implements ICombo {
         checkWidget();
         if (noSelection)
             return -1;
-        return 0;
+        return selectedIndex;
     }
 
     /**
@@ -1153,6 +1156,9 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public void removeAll() {
         checkWidget();
+        dirty();
+        items = new String[0];
+        selectedIndex = -1;
         sendEvent(SWT.Modify);
         if (isDisposed())
             return;
@@ -1381,6 +1387,8 @@ public class DartCombo extends DartComposite implements ICombo {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        dirty();
+        items[index] = string;
         int selection = getSelectionIndex();
         remove(index, false);
         if (isDisposed())
@@ -1849,6 +1857,8 @@ public class DartCombo extends DartComposite implements ICombo {
     public int _textLimit() {
         return textLimit;
     }
+
+    int selectedIndex = -1;
 
     protected void _hookEvents() {
         super._hookEvents();
