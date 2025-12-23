@@ -79,13 +79,6 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
      */
     public DartScrollable(Composite parent, int style, Scrollable api) {
         super(parent, style, api);
-        {
-            boolean scrolled = (getApi().style & (SWT.H_SCROLL | SWT.V_SCROLL)) != 0;
-            if (!scrolled) {
-                getApi().state |= THEME_BACKGROUND;
-            }
-            isScrollable = scrolled || (getApi().style & SWT.BORDER) != 0;
-        }
     }
 
     long clientHandle() {
@@ -461,6 +454,15 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
     }
 
     protected boolean isScrollable;
+
+    @Override
+    protected void _extra_init() {
+        boolean scrolled = (getApi().style & (SWT.H_SCROLL | SWT.V_SCROLL)) != 0;
+        if (!scrolled) {
+            getApi().state |= THEME_BACKGROUND;
+        }
+        isScrollable = scrolled || (getApi().style & SWT.BORDER) != 0;
+    }
 
     protected void _hookEvents() {
         super._hookEvents();
