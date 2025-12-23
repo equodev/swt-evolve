@@ -416,6 +416,7 @@ public abstract class DartWidget implements IWidget {
         display = parent.getImpl()._display();
         reskinWidget();
         notifyCreationTracker();
+        _extra_init();
     }
 
     void _addListener(int eventType, Listener listener) {
@@ -1872,6 +1873,9 @@ public abstract class DartWidget implements IWidget {
 
     public Object _data() {
         return data;
+    }
+
+    protected void _extra_init() {
     }
 
     protected FlutterBridge bridge;

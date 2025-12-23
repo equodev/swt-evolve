@@ -106,7 +106,7 @@ sourceSets {
             test {
                 resources {
                     srcDirs(nativeSrc)
-                    include("**/*.css")
+                    include("**/*.css", "**/*.png")
                 }
             }
         }
