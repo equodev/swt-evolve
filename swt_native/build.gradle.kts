@@ -92,15 +92,23 @@ sourceSets {
     // Create source sets for all platform combinations
     oss.forEach { os ->
         create(os) {
+            val nativeSrc = "src/${os}/java"
             java {
                 setSrcDirs(listOf(
                     "src/main/java",
-                    "src/${os}/java"
+                    nativeSrc
                 ))
             }
             annotationProcessorPath += sourceSets.main.get().annotationProcessorPath
             compileClasspath += sourceSets.main.get().compileClasspath
             runtimeClasspath += sourceSets.main.get().runtimeClasspath
+
+            test {
+                resources {
+                    srcDirs(nativeSrc)
+                    include("**/*.css")
+                }
+            }
         }
     }
 }

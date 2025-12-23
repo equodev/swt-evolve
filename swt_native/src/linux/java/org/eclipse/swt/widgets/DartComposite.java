@@ -433,7 +433,7 @@ public class DartComposite extends DartScrollable implements IComposite {
     @Override
     public void fixStyle() {
         super.fixStyle();
-        if (scrolledHandle == 0)
+        if (!isScrollable)
             fixStyle(getApi().handle);
         for (Control child : _getChildren()) {
             child.getImpl().fixStyle();
@@ -619,8 +619,6 @@ public class DartComposite extends DartScrollable implements IComposite {
     void hookEvents() {
         super.hookEvents();
         if ((getApi().state & CANVAS) != 0) {
-            if (scrolledHandle != 0) {
-            }
         }
     }
 
@@ -977,7 +975,6 @@ public class DartComposite extends DartScrollable implements IComposite {
             return;
         long parentHandle = parentingHandle();
         if (sibling == 0 && parentHandle == fixedHandle) {
-            moveAbove(child, scrolledHandle != 0 ? scrolledHandle : getApi().handle);
             return;
         }
         return;
@@ -1322,7 +1319,7 @@ public class DartComposite extends DartScrollable implements IComposite {
         super.showWidget();
         if (socketHandle != 0) {
         }
-        if (scrolledHandle == 0)
+        if (!isScrollable)
             fixStyle(getApi().handle);
     }
 
