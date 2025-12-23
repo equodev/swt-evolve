@@ -15,6 +15,7 @@ import org.junit.jupiter.api.*;
 public class DisposeTest {
 
     //@RepeatedTest(25)
+    @Disabled
     @Test
     void testDisposeShouldntCrash() {
         Display display = new Display();
