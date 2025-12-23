@@ -42,8 +42,8 @@ public class Config {
                     entry(ExpandBar.class, Impl.equo),
                     entry(ExpandItem.class, Impl.equo),
                     //entry(Sash.class, Impl.equo),
-                    entry(List.class, Impl.equo)
-                    //entry(Combo.class, Impl.equo),
+                    entry(List.class, Impl.equo),
+                    entry(Combo.class, Impl.equo)
                     //entry(Group.class, Impl.equo)
                     //entry(Tree.class, Impl.equo),
                     //entry(TreeItem.class, Impl.equo),
