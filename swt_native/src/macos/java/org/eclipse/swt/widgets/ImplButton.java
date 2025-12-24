@@ -11,4 +11,6 @@ public interface ImplButton extends ImplControl {
     Image _image();
 
     boolean _grayed();
+
+    boolean isDescribedByLabel();
 }

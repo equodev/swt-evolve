@@ -132,4 +132,3 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
 
 
 }
-

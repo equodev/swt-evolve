@@ -64,6 +64,8 @@ public interface ImplControl extends ImplWidget {
 
     boolean isActive();
 
+    boolean isDescribedByLabel();
+
     boolean isDrawing();
 
     boolean isTabGroup();

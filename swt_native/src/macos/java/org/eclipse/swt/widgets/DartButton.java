@@ -328,7 +328,7 @@ public class DartButton extends DartControl implements IButton {
     }
 
     @Override
-    boolean isDescribedByLabel() {
+    public boolean isDescribedByLabel() {
         return false;
     }
 

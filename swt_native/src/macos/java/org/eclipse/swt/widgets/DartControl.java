@@ -1534,7 +1534,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
  * Answers a boolean indicating whether a Label that precedes the receiver in
  * a layout should be read by screen readers as the recevier's label.
  */
-    boolean isDescribedByLabel() {
+    public boolean isDescribedByLabel() {
         return true;
     }
 
@@ -3388,6 +3388,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             }
         }
         invalidateVisibleRegion();
+        getBridge().setZOrder(this, sibling, above);
         /* determine the receiver's new index in the parent */
         if (sibling != null) {
             if (above) {
