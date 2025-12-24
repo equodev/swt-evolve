@@ -39,6 +39,9 @@ fun getSwtOs(os: String): String = when (os) {
 fun getSwtArch(arch: String): String =
     if (arch.contains("aarch64") || arch.contains("arm")) "aarch64" else "x86_64"
 
+fun flutterExe(): String = if (System.getProperty("os.name").lowercase().contains("windows")) "flutter.bat" else "flutter"
+fun dartExe(): String = if (System.getProperty("os.name").lowercase().contains("windows")) "dart.bat" else "dart"
+
 val currentPlatform = "$currentOs-${getSwtArch(arch)}"
 
 // Read swtVersion from gradle.properties:
@@ -147,9 +150,19 @@ tasks.jar {
     dependsOn("${currentPlatform}CopyFlutterBinaries")
 }
 
+val pub = tasks.register<Exec>("pubGet") {
+    group = "build"
+    description = "Get flutter dependencies"
+    workingDir = file("../flutter-lib")
+    inputs.file("../flutter-lib/pubspec.yaml")
+    outputs.file("../flutter-lib/pubspec.lock")
+    commandLine = listOf(flutterExe(), "pub", "get")
+}
+
 val dart = tasks.register<Exec>("dartRunner") {
     group = "build"
     description = "Generate dart files"
+    dependsOn(pub)
     workingDir = file("../flutter-lib")
     inputs.files(fileTree("../flutter-lib/lib/src") {
         include("gen/*.dart")
@@ -157,7 +170,7 @@ val dart = tasks.register<Exec>("dartRunner") {
         exclude("**/*.g.dart")
     })
     outputs.files(fileTree("../flutter-lib/lib/src") { include("**/*.g.dart") })
-    commandLine = listOf("dart", "run", "build_runner", "build", "--delete-conflicting-outputs")
+    commandLine = listOf(dartExe(), "run", "build_runner", "build", "--delete-conflicting-outputs")
 }
 
 // Create tasks for each platform JAR
@@ -177,7 +190,7 @@ platforms.forEach { platform ->
     tasks.register<Exec>("${platform}FlutterLib") {
         group = "build"
         description = "Builds Flutter lib for $platform"
-        dependsOn(dart)
+        dependsOn(dart, pub)
         workingDir = file("../flutter-lib")
         inputs.dir("../flutter-lib/lib")
         inputs.dir("../flutter-lib/${osArch[0]}")
@@ -192,7 +205,7 @@ platforms.forEach { platform ->
                 commandLine = listOf("bash", "-c", "./set-arch.sh $arch && flutter build macos")
             }
             else -> {
-                val flutterCmd = if (System.getProperty("os.name").lowercase().contains("windows")) "flutter.bat" else "flutter"
+                val flutterCmd = flutterExe()
                 commandLine = listOf(flutterCmd, "build", osArch[0])
             }
         }
