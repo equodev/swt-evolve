@@ -673,7 +673,7 @@ public class SwtButton extends SwtControl implements IButton {
     }
 
     @Override
-    boolean isDescribedByLabel() {
+    public boolean isDescribedByLabel() {
         return false;
     }
 

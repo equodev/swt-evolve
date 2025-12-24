@@ -73,4 +73,22 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
             topView.release();
         }
     }
+
+    @Override
+    public void setZOrder(DartControl dartControl, Control sibling, boolean above) {
+        Control api = dartControl.getApi();
+        if (api.view != null && (sibling == null || sibling.getImpl() instanceof SwtControl)) {
+            org.eclipse.swt.internal.cocoa.NSView otherView = sibling == null ? null : ((SwtControl) sibling.getImpl()).topView();
+            org.eclipse.swt.internal.cocoa.NSView topView = api.view;
+            topView.retain();
+            topView.removeFromSuperview();
+            Composite parent = dartControl.getParent();
+            if (parent.getImpl() instanceof SwtComposite) {
+                ((SwtComposite) parent.getImpl()).contentView().addSubview(topView, above ? org.eclipse.swt.internal.cocoa.OS.NSWindowAbove : org.eclipse.swt.internal.cocoa.OS.NSWindowBelow, otherView);
+            } else if (parent.getImpl() instanceof DartComposite) {
+                ((org.eclipse.swt.internal.cocoa.NSView) ((DartComposite) parent.getImpl()).contentView()).addSubview(topView, above ? org.eclipse.swt.internal.cocoa.OS.NSWindowAbove : org.eclipse.swt.internal.cocoa.OS.NSWindowBelow, otherView);
+            }
+            topView.release();
+        }
+    }
 }

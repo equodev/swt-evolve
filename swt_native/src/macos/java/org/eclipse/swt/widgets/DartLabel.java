@@ -108,7 +108,7 @@ public class DartLabel extends DartControl implements ILabel {
 
     @Override
     public void addRelation(Control control) {
-        if (!((DartControl) control.getImpl()).isDescribedByLabel())
+        if (!control.getImpl().isDescribedByLabel())
             return;
     }
 
@@ -247,7 +247,7 @@ public class DartLabel extends DartControl implements ILabel {
     }
 
     @Override
-    boolean isDescribedByLabel() {
+    public boolean isDescribedByLabel() {
         return false;
     }
 
@@ -333,10 +333,11 @@ public class DartLabel extends DartControl implements ILabel {
         }
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
-        this.image = GraphicsUtils.copyImage(display, image);
         if (image != null) {
+            this.image = GraphicsUtils.copyImage(display, image);
             isImage = true;
         } else {
+            this.image = null;
             isImage = false;
         }
     }

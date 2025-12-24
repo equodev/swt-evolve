@@ -25,11 +25,11 @@ public class GraphicsUtils {
         }
 
         if (image.getImpl() instanceof SwtImage si) {
-            Image newImage = new Image(display, image.getImageData());
-            if (!Config.getConfigFlags().image_disable_icons_replacement && si.filename != null && newImage.getImpl() instanceof DartImage di) {
-                di.filename = si.filename;
+            DartImage dartImage = new DartImage(display, image.getImageData(), image);
+            if (!Config.getConfigFlags().image_disable_icons_replacement && si.filename != null) {
+                dartImage.filename = si.filename;
             }
-            return newImage;
+            return dartImage.getApi();
         } else {
             return image;
         }

@@ -13,6 +13,8 @@ public interface ImplLabel extends ImplControl {
 
     void addRelation(Control control);
 
+    boolean isDescribedByLabel();
+
     void removeRelation();
 
     boolean setTabItemFocus();
