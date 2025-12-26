@@ -1560,7 +1560,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
  * Answers a boolean indicating whether a Label that precedes the receiver in
  * a layout should be read by screen readers as the recevier's label.
  */
-    boolean isDescribedByLabel() {
+    public boolean isDescribedByLabel() {
         return true;
     }
 

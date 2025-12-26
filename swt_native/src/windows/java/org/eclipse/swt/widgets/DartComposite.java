@@ -402,7 +402,8 @@ public class DartComposite extends DartScrollable implements IComposite {
      */
     public Control[] getChildren() {
         checkWidget();
-        return _getChildren();
+        Control[] allChildren = _getChildren();
+        return java.util.Arrays.stream(allChildren).filter(child -> child != null && !child.isDisposed()).toArray(Control[]::new);
     }
 
     int getChildrenCount() {
@@ -830,6 +831,9 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     @Override
     void releaseParent() {
+        if (parent != null && parent.getImpl() instanceof DartComposite p) {
+            p.updateChildren();
+        }
         super.releaseParent();
         if ((getApi().state & CANVAS) != 0) {
             if ((getApi().style & SWT.TRANSPARENT) != 0) {
@@ -865,6 +869,9 @@ public class DartComposite extends DartScrollable implements IComposite {
     public void removeControl(Control control) {
         fixTabList(control);
         resizeChildren();
+        if (children != null) {
+            children = java.util.Arrays.stream(children).filter(child -> child != control).toArray(Control[]::new);
+        }
     }
 
     @Override
@@ -1267,7 +1274,10 @@ public class DartComposite extends DartScrollable implements IComposite {
     }
 
     public void dispose() {
-        if (parent.getImpl() instanceof DartComposite p) {
+        if (parent != null && !parent.isDisposed()) {
+            parent.getImpl().removeControl(this.getApi());
+        }
+        if (parent != null && !parent.isDisposed() && parent.getImpl() instanceof DartComposite p) {
             p.updateChildren();
         }
     }

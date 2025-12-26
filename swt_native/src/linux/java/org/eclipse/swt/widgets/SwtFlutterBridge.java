@@ -132,5 +132,31 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
         return GTK3.gtk_widget_get_window(eventHandle);
     }
 
-}
+    @Override
+    public void reparent(DartControl control, Composite newParent) {
+        long controlHandle = control.getApi().handle;
 
+        if (controlHandle == 0) {
+            return;
+        }
+
+        // Remove from current parent
+        long oldParent = GTK.gtk_widget_get_parent(controlHandle);
+        if (oldParent != 0) {
+            if (GTK.GTK4) {
+                GTK.gtk_widget_unparent(controlHandle);
+            } else {
+                GTK3.gtk_container_remove(oldParent, controlHandle);
+            }
+        }
+
+        // Add to new parent
+        long newParentHandle = newParent.handle;
+        if (GTK.GTK4) {
+            OS.swt_fixed_add(newParentHandle, controlHandle);
+        } else {
+            GTK3.gtk_container_add(newParentHandle, controlHandle);
+        }
+    }
+
+}

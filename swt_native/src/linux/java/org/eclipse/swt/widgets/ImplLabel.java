@@ -19,4 +19,6 @@ public interface ImplLabel extends ImplControl {
     String _text();
 
     void addRelation(Control control);
+
+    boolean isDescribedByLabel();
 }

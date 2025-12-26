@@ -2206,6 +2206,12 @@ public class SwtShell extends SwtDecorations implements IShell {
                 return;
         }
         super.setVisible(visible);
+        if (visible && OS.GetActiveWindow() == getApi().handle) {
+            Event event = new Event();
+            sendEvent(SWT.Activate, event);
+            if (isDisposed())
+                return;
+        }
         if (isDisposed())
             return;
         if (showWithParent != visible) {

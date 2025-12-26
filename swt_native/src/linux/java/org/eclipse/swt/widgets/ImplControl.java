@@ -87,6 +87,8 @@ public interface ImplControl extends ImplWidget {
 
     boolean isActive();
 
+    boolean isDescribedByLabel();
+
     void addRelation(Control control);
 
     void removeRelation();

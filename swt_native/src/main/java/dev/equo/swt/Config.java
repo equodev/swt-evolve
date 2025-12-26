@@ -43,7 +43,7 @@ public class Config {
                     entry(ExpandItem.class, Impl.equo),
                     //entry(Sash.class, Impl.equo),
                     entry(List.class, Impl.equo),
-                    entry(Combo.class, Impl.equo)
+                    entry(Combo.class, Impl.equo),
                     //entry(Group.class, Impl.equo)
                     //entry(Tree.class, Impl.equo),
                     //entry(TreeItem.class, Impl.equo),
@@ -53,6 +53,8 @@ public class Config {
                     //entry(Font.class, Impl.equo),
                     //entry(FontData.class, Impl.equo)
                     //entry(ScrolledComposite.class, Impl.equo)
+                    entry(ToolBar.class, Impl.equo),
+                    entry(ToolItem.class, Impl.equo)
             );
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -172,7 +174,7 @@ public class Config {
         }
 
         /// This is used because Eclipse creates "hidden" toolbars as children of the shell
-        if (clazz == ToolBar.class && parent instanceof Shell) {
+        if (equoEnabled.containsKey(clazz) && clazz == ToolBar.class && parent instanceof Shell) {
             return true;
         }
 
