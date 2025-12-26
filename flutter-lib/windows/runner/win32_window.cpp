@@ -143,7 +143,7 @@ bool Win32Window::Create(const std::wstring& title,
 
   //std::cout << "Win32Window::Create - Creating child window" << std::endl;
 
-  int style = WS_CHILD | WS_VISIBLE;
+  int style = WS_CHILD;
 
   HWND window = CreateWindow(
       window_class, title.c_str(), style,
@@ -160,6 +160,8 @@ bool Win32Window::Create(const std::wstring& title,
   }
 
   UpdateTheme(window);
+
+  ShowWindow(window, SW_SHOW);
 
   return OnCreate();
 }
@@ -237,12 +239,17 @@ Win32Window::MessageHandler(HWND hwnd,
             return 0;
         }
 
-        case WM_ACTIVATE:
+        case WM_ACTIVATE: {
             std::cout << "Win32Window: WM_ACTIVATE - setting focus to Flutter" << std::endl;
             if (child_content_ != nullptr) {
                 SetFocus(child_content_);
             }
+            HWND shellWindow = GetAncestor(hwnd, GA_ROOT);
+            if (shellWindow != nullptr && shellWindow != hwnd) {
+                SendMessage(shellWindow, WM_ACTIVATE, wparam, lparam);
+            }
             return 0;
+        }
 
         case WM_LBUTTONDOWN:
         case WM_RBUTTONDOWN:

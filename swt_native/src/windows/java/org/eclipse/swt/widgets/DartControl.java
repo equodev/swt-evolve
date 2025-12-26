@@ -606,6 +606,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     Widget computeTabGroup() {
         if (isTabGroup())
             return this.getApi();
+        if (parent instanceof Decorations) {
+            return parent;
+        }
         return ((DartControl) parent.getImpl()).computeTabGroup();
     }
 
@@ -1214,7 +1217,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Monitor getMonitor() {
         checkWidget();
-        return null;
+        return display.getPrimaryMonitor();
     }
 
     /**
@@ -1400,6 +1403,13 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public int getTextDirection() {
         checkWidget();
+        if (this.textDirection == AUTO_TEXT_DIRECTION) {
+            int resolved = resolveTextDirection();
+            if (resolved == SWT.NONE) {
+                return getOrientation();
+            }
+            return resolved;
+        }
         return this.textDirection;
     }
 
@@ -2958,6 +2968,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     void setLocationInPixels(int x, int y) {
         dirty();
+        this.bounds = new Rectangle(x, y, bounds.width, bounds.height);
+        getBridge().setBounds(this, bounds);
     }
 
     /**
@@ -3438,11 +3450,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Point toControl(int x, int y) {
         checkWidget();
-        return null;
+        return new Point(x, y);
     }
 
     Point toControlInPixels(int x, int y) {
-        return null;
+        return new Point(x, y);
     }
 
     /**

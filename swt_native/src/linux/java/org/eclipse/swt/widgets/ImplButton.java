@@ -29,4 +29,6 @@ public interface ImplButton extends ImplControl {
     Image _defaultDisableImage();
 
     boolean _enabled();
+
+    boolean isDescribedByLabel();
 }

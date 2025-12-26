@@ -440,13 +440,23 @@ public class DartToolBar extends DartComposite implements IToolBar {
     public int getRowCount() {
         checkWidget();
         if ((getApi().style & SWT.VERTICAL) != 0) {
+            return getItemCount();
         }
-        return 0;
+        if ((getApi().style & SWT.WRAP) != 0) {
+            // When WRAP is set and size is 0,0, each item gets its own row
+            Point size = getSizeInPixels();
+            if (size.x == 0 || size.y == 0) {
+                return getItemCount();
+            }
+            // TODO: Calculate actual row count based on wrapping
+            return 1;
+        }
+        return 1;
     }
 
     ToolItem[] _getTabItemList() {
         if (tabItemList == null)
-            return tabItemList;
+            return new ToolItem[0];
         int count = 0;
         for (ToolItem item : tabItemList) {
             if (!item.isDisposed())
@@ -533,14 +543,33 @@ public class DartToolBar extends DartComposite implements IToolBar {
         int[] id = new int[1];
         if ((getApi().style & SWT.FLAT) != 0 && !setTabGroupFocus())
             return false;
-        ((DartToolItem) items[id[0]].getImpl()).click(false);
-        return true;
+        for (int i = 0; i < items.length; i++) {
+            ToolItem item = items[i];
+            if (item != null) {
+                String text = item.getText();
+                if (text != null && findMnemonic(text) == ch) {
+                    id[0] = i;
+                    ((DartToolItem) items[id[0]].getImpl()).click(false);
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
     boolean mnemonicMatch(char ch) {
         int[] id = new int[1];
-        return findMnemonic(((DartItem) items[id[0]].getImpl()).text) != '\0';
+        for (int i = 0; i < items.length; i++) {
+            ToolItem item = items[i];
+            if (item != null) {
+                String text = item.getText();
+                if (text != null && findMnemonic(text) == ch) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -841,6 +870,16 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     public boolean _ignoreMouse() {
         return ignoreMouse;
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        if (isDisposed())
+            return;
+        if (!isValidThread())
+            error(SWT.ERROR_THREAD_INVALID_ACCESS);
+        release(true);
     }
 
     protected void _hookEvents() {

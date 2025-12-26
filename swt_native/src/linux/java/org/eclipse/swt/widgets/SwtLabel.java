@@ -115,10 +115,8 @@ public class SwtLabel extends SwtControl implements ILabel {
 
     @Override
     public void addRelation(Control control) {
-        if (control.getImpl() instanceof SwtControl) {
-            if (!((SwtControl) control.getImpl()).isDescribedByLabel())
-                return;
-        }
+        if (!control.getImpl().isDescribedByLabel())
+            return;
         if (labelHandle == 0)
             return;
         if (control.getImpl() instanceof SwtControl) {
@@ -458,7 +456,7 @@ public class SwtLabel extends SwtControl implements ILabel {
     }
 
     @Override
-    boolean isDescribedByLabel() {
+    public boolean isDescribedByLabel() {
         return false;
     }
 

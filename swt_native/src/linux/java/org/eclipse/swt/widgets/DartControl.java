@@ -322,8 +322,14 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public int getTextDirection() {
         checkWidget();
-        /* return the widget orientation */
-        return getApi().style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
+        if (this.textDirection == AUTO_TEXT_DIRECTION) {
+            int resolved = resolveTextDirection();
+            if (resolved == SWT.NONE) {
+                return getOrientation();
+            }
+            return resolved;
+        }
+        return this.textDirection != 0 ? this.textDirection : getOrientation();
     }
 
     boolean hasFocus() {
@@ -484,6 +490,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     Widget computeTabGroup() {
         if (isTabGroup())
             return this.getApi();
+        if (parent instanceof Decorations) {
+            return parent;
+        }
         return ((DartControl) parent.getImpl()).computeTabGroup();
     }
 
@@ -1104,7 +1113,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
  * Answers a boolean indicating whether a Label that precedes the receiver in
  * a layout should be read by screen readers as the recevier's label.
  */
-    boolean isDescribedByLabel() {
+    public boolean isDescribedByLabel() {
         return true;
     }
 
@@ -3936,6 +3945,13 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         }
         this.textDirection = newValue;
         checkWidget();
+        textDirection &= (SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT);
+        updateTextDirection(textDirection);
+        if (textDirection == AUTO_TEXT_DIRECTION) {
+            getApi().state |= HAS_AUTO_DIRECTION;
+        } else {
+            getApi().state &= ~HAS_AUTO_DIRECTION;
+        }
     }
 
     /**
@@ -4860,6 +4876,26 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public boolean _visible() {
         return visible;
+    }
+
+    int resolveTextDirection() {
+        /*
+                     * For generic Controls do nothing here. Text-enabled Controls will resolve
+                     * AUTO text direction according to their text content.
+                     */
+        return SWT.NONE;
+    }
+
+    boolean updateTextDirection(int textDirection) {
+        if (textDirection == AUTO_TEXT_DIRECTION) {
+            textDirection = resolveTextDirection();
+            getApi().state |= HAS_AUTO_DIRECTION;
+        } else {
+            getApi().state &= ~HAS_AUTO_DIRECTION;
+        }
+        if (textDirection == 0)
+            return false;
+        return true;
     }
 
     public FlutterBridge getBridge() {

@@ -114,7 +114,7 @@ public class DartLabel extends DartControl implements ILabel {
 
     @Override
     public void addRelation(Control control) {
-        if (!((DartControl) control.getImpl()).isDescribedByLabel())
+        if (!control.getImpl().isDescribedByLabel())
             return;
         if (labelHandle == 0)
             return;
@@ -261,7 +261,7 @@ public class DartLabel extends DartControl implements ILabel {
     }
 
     @Override
-    boolean isDescribedByLabel() {
+    public boolean isDescribedByLabel() {
         return false;
     }
 

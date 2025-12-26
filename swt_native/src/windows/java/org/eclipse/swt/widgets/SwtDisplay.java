@@ -673,7 +673,16 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     Control _getFocusControl() {
-        return findControl(OS.GetFocus());
+        Control control = findControl(OS.GetFocus());
+        if (control == null) {
+            Shell shell = getActiveShell();
+            if (shell != null && !shell.isDisposed()) {
+                if (shell.getImpl() instanceof SwtShell) {
+                    return ((SwtShell) shell.getImpl()).lastActive;
+                }
+            }
+        }
+        return control;
     }
 
     void addBar(Menu menu) {
