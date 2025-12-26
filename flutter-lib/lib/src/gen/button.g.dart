@@ -42,6 +42,7 @@ VButton _$VButtonFromJson(Map<String, dynamic> json) => VButton()
   ..image = json['image'] == null
       ? null
       : VImage.fromJson(json['image'] as Map<String, dynamic>)
+  ..primary = json['primary'] as bool?
   ..selection = json['selection'] as bool?
   ..text = json['text'] as String?;
 
@@ -67,6 +68,7 @@ Map<String, dynamic> _$VButtonToJson(VButton instance) => <String, dynamic>{
       'alignment': instance.alignment,
       'grayed': instance.grayed,
       'image': instance.image,
+      'primary': instance.primary,
       'selection': instance.selection,
       'text': instance.text,
     };

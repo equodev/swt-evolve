@@ -29,7 +29,7 @@ public class VTableItem extends VItem {
     }
 
     public void setChecked(boolean value) {
-        ((DartTableItem) impl).cached = value;
+        ((DartTableItem) impl).checked = value;
     }
 
     public Font getFont() {

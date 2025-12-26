@@ -831,6 +831,9 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     @Override
     void releaseParent() {
+        if (parent != null && parent.getImpl() instanceof DartComposite p) {
+            p.updateChildren();
+        }
         super.releaseParent();
         if ((getApi().state & CANVAS) != 0) {
             if ((getApi().style & SWT.TRANSPARENT) != 0) {

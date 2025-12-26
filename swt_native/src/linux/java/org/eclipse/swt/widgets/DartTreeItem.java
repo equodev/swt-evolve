@@ -1055,14 +1055,16 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * </ul>
      */
     public void setChecked(boolean checked) {
-        checkWidget();
-        if (!java.util.Objects.equals(this.cached, checked)) {
+        boolean newValue = checked;
+        if (!java.util.Objects.equals(this.checked, newValue)) {
             dirty();
         }
+        checkWidget();
         if ((parent.style & SWT.CHECK) == 0)
             return;
         if (_getChecked() == checked)
             return;
+        this.checked = newValue;
         cached = true;
     }
 
@@ -1500,6 +1502,8 @@ public class DartTreeItem extends DartItem implements ITreeItem {
 
     Color background;
 
+    boolean checked;
+
     Color foreground;
 
     TreeItem[] items = new TreeItem[0];
@@ -1544,6 +1548,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         return background;
     }
 
+    public boolean _checked() {
+        return checked;
+    }
+
     public Color _foreground() {
         return foreground;
     }
@@ -1564,7 +1572,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         super(parent, style, api);
         this.parent = parent;
         this.parentItem = parentItem;
-        createItem(this.getApi(), parentItem, hInsertAfter);
+        TreeHelper.createItem(this.getApi(), parentItem, hInsertAfter, parent);
     }
 
     void createItem(TreeItem item, TreeItem parentItem, int index) {

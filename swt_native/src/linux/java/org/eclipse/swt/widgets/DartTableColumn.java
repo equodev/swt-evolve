@@ -677,7 +677,7 @@ public class DartTableColumn extends DartItem implements ITableColumn {
 
     boolean moveable;
 
-    boolean resizable;
+    boolean resizable = true;
 
     public long _headerButtonCSSProvider() {
         return headerButtonCSSProvider;

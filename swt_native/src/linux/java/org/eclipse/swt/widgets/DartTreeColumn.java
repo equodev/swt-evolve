@@ -659,7 +659,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
 
     boolean moveable;
 
-    boolean resizable;
+    boolean resizable = true;
 
     public long _headerButtonCSSProvider() {
         return headerButtonCSSProvider;

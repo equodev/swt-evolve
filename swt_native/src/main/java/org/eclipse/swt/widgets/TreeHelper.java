@@ -126,6 +126,79 @@ public class TreeHelper {
         }
     }
 
+    public static void createItem(TreeItem item, TreeItem parentItem, int index, Tree parent) {
+        int count;
+        TreeItem[] items;
+        if (parentItem != null) {
+            count = ((DartTreeItem) parentItem.getImpl()).getItemCount();
+            items = ((DartTreeItem) parentItem.getImpl()).items;
+        } else {
+            count = ((DartTree) parent.getImpl()).getItemCount();
+            items = ((DartTree) parent.getImpl()).items;
+        }
+        if (index == -1)
+            index = count;
+        if (!(0 <= index && index <= count))
+            SWT.error(SWT.ERROR_INVALID_RANGE);
+
+        // Check if we need to grow the array
+        if (count >= items.length) {
+            // Array is full - need to grow
+            TreeItem[] newItems = new TreeItem[items.length + 4];
+            System.arraycopy(items, 0, newItems, 0, items.length);
+            items = newItems;
+            if (parentItem != null) {
+                ((DartTreeItem) parentItem.getImpl()).items = items;
+            } else {
+                ((DartTree) parent.getImpl()).items = items;
+            }
+        }
+
+        // Always shift and add the item
+        if (index < count) {
+            // Inserting within existing items - shift items
+            System.arraycopy(items, index, items, index + 1, count - index);
+        }
+        items[index] = item;
+
+        ((DartTreeItem) item.getImpl()).items = new TreeItem[4];
+
+        // Only fire EmptinessChanged for root items when tree becomes non-empty
+        if (parentItem == null) {
+            int treeCount = parent.getImpl().getItemCount();
+            if (treeCount == 1) {
+                Event event = new Event();
+                event.detail = 0;
+                parent.getImpl().sendEvent(SWT.EmptinessChanged, event);
+            }
+        }
+    }
+
+    public static void removeAll(DartTreeItem treeItem) {
+        /**
+         * Performance optimization, switch off redraw for high amount of elements
+         */
+        boolean disableRedraw = treeItem.parent.getImpl().getItemCount() > 30;
+        if (disableRedraw) {
+            treeItem.parent.setRedraw(false);
+        }
+        try {
+            TreeItem[] items = treeItem.items;
+            if (items != null) {
+                for (TreeItem item : items) {
+                    if (item != null && !item.isDisposed()) {
+                        item.getImpl().release(false);
+                    }
+                }
+                treeItem.items = new TreeItem[4];
+            }
+        } finally {
+            if (disableRedraw) {
+                treeItem.parent.setRedraw(true);
+            }
+        }
+    }
+
     public static int getNonNullItemCount(DartTree dartTree) {
         TreeItem[] items = dartTree.getItems();
         if (items == null) return 0;
@@ -200,4 +273,117 @@ public class TreeHelper {
             }
         }
     }
+
+    public static void setItemCount(DartTreeItem treeItem, int count) {
+        count = Math.max(0, count);
+        int currentCount = treeItem.getItemCount();
+
+        if (count == currentCount) return;
+
+        if (count > currentCount) {
+            // Need to add items
+            for (int i = currentCount; i < count; i++) {
+                new TreeItem(treeItem.getApi(), SWT.NONE);
+            }
+        } else {
+            // Need to remove items (count < currentCount)
+            int toRemove = currentCount - count;
+            int removed = 0;
+
+            // Remove from the end
+            for (int i = treeItem.items.length - 1; i >= 0 && removed < toRemove; i--) {
+                if (treeItem.items[i] != null) {
+                    treeItem.items[i].dispose();
+                    removed++;
+                }
+            }
+        }
+    }
+
+    public static long findPrevius(Tree parent, int index) {
+        if (parent == null)
+            return 0;
+        if (index < 0)
+            SWT.error(SWT.ERROR_INVALID_RANGE);
+        // Validate that index is not greater than item count
+        int count = parent.getImpl().getItemCount();
+        if (index > count)
+            SWT.error(SWT.ERROR_INVALID_RANGE);
+        return index;
+    }
+
+    public static long findPrevius(TreeItem parentItem, int index) {
+        if (parentItem == null)
+            return 0;
+        if (index < 0)
+            SWT.error(SWT.ERROR_INVALID_RANGE);
+        // Validate that index is not greater than item count
+        int count = parentItem.getImpl().getItemCount();
+        if (index > count)
+            SWT.error(SWT.ERROR_INVALID_RANGE);
+        return 0; // ????? Maybe this is not neccessary
+    }
+
+    public static int indexOf(DartTree tree, TreeItem item) {
+        TreeItem[] items = tree.items;
+        if (items == null)
+            return -1;
+        int nonNullIndex = 0;
+        for (int i = 0; i < items.length; i++) {
+            if (items[i] != null) {
+                if (items[i] == item) {
+                    return nonNullIndex;
+                }
+                nonNullIndex++;
+            }
+        }
+        return -1;
+    }
+
+    public static int indexOf(DartTreeItem tree, TreeItem item) {
+        TreeItem[] items = tree.items;
+        if (items == null)
+            return -1;
+        int nonNullIndex = 0;
+        for (int i = 0; i < items.length; i++) {
+            if (items[i] != null) {
+                if (items[i] == item) {
+                    return nonNullIndex;
+                }
+                nonNullIndex++;
+            }
+        }
+        return -1;
+    }
+
+    public static void setItemCount(DartTree tree, int count) {
+        int currentCount = tree.getItemCount();
+
+        if (count == currentCount) return;
+
+        if (count > currentCount) {
+            // Need to add items
+            for (int i = currentCount; i < count; i++) {
+                new TreeItem(tree.getApi(), SWT.NONE);
+            }
+        } else {
+            // Need to remove items (count < currentCount)
+            int toRemove = currentCount - count;
+
+            // Collect items to remove before disposing them
+            // This prevents issues when dispose() modifies the items array
+            java.util.List<TreeItem> itemsToRemove = new java.util.ArrayList<>();
+            for (int i = tree.items.length - 1; i >= 0 && itemsToRemove.size() < toRemove; i--) {
+                if (tree.items[i] != null) {
+                    itemsToRemove.add(tree.items[i]);
+                }
+            }
+
+            // Now dispose the collected items
+            for (TreeItem item : itemsToRemove) {
+                item.dispose();
+            }
+        }
+    }
+
 }

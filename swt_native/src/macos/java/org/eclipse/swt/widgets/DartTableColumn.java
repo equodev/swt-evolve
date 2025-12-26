@@ -579,7 +579,7 @@ public class DartTableColumn extends DartItem implements ITableColumn {
         return toolTipText;
     }
 
-    boolean resizable;
+    boolean resizable = true;
 
     int width;
 
