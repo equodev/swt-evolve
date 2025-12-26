@@ -184,19 +184,11 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     }
 
     static long findPrevious(Tree parent, int index) {
-        if (parent == null)
-            return 0;
-        if (index < 0)
-            SWT.error(SWT.ERROR_INVALID_RANGE);
-        return 0;
+        return TreeHelper.findPrevius(parent, index);
     }
 
     static long findPrevious(TreeItem parentItem, int index) {
-        if (parentItem == null)
-            return 0;
-        if (index < 0)
-            SWT.error(SWT.ERROR_INVALID_RANGE);
-        return 0;
+        return TreeHelper.findPrevius(parentItem, index);
     }
 
     @Override
@@ -274,6 +266,27 @@ public class DartTreeItem extends DartItem implements ITreeItem {
 
     @Override
     void destroyWidget() {
+        if (parentItem != null) {
+            TreeItem[] parentItems = ((DartTreeItem) parentItem.getImpl()).items;
+            if (parentItems != null) {
+                for (int i = 0; i < parentItems.length; i++) {
+                    if (parentItems[i] == this.getApi()) {
+                        parentItems[i] = null;
+                        break;
+                    }
+                }
+            }
+        } else {
+            TreeItem[] treeItems = ((DartTree) parent.getImpl()).items;
+            if (treeItems != null) {
+                for (int i = 0; i < treeItems.length; i++) {
+                    if (treeItems[i] == this.getApi()) {
+                        treeItems[i] = null;
+                        break;
+                    }
+                }
+            }
+        }
         ((DartTree) parent.getImpl()).destroyItem(this.getApi(), getApi().handle);
         releaseHandle();
     }
@@ -388,7 +401,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             error(SWT.ERROR_WIDGET_DISPOSED);
         if ((parent.style & SWT.CHECK) == 0)
             return false;
-        return this.cached;
+        return this.checked;
     }
 
     /**
@@ -466,7 +479,9 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public Color getForeground() {
         checkWidget();
-        return this._foreground;
+        if (!((DartTree) parent.getImpl()).checkData(this.getApi(), true))
+            error(SWT.ERROR_WIDGET_DISPOSED);
+        return _foreground != null ? _foreground : parent.getForeground();
     }
 
     /**
@@ -511,7 +526,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             error(SWT.ERROR_WIDGET_DISPOSED);
         if ((parent.style & SWT.CHECK) == 0)
             return false;
-        return this.cached;
+        return this.grayed;
     }
 
     /**
@@ -785,7 +800,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             error(SWT.ERROR_NULL_ARGUMENT);
         if (item.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
-        return 0;
+        return TreeHelper.indexOf(this, item);
     }
 
     void redraw() {
@@ -846,20 +861,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * @since 3.1
      */
     public void removeAll() {
-        checkWidget();
-        /**
-         * Performance optimization, switch off redraw for high amount of elements
-         */
-        boolean disableRedraw = ((DartTree) parent.getImpl()).cachedItemCount > 30;
-        if (disableRedraw) {
-            parent.setRedraw(false);
-        }
-        try {
-        } finally {
-            if (disableRedraw) {
-                parent.setRedraw(true);
-            }
-        }
+        TreeHelper.removeAll(this);
     }
 
     /**
@@ -958,10 +960,11 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * </ul>
      */
     public void setChecked(boolean checked) {
-        checkWidget();
-        if (!java.util.Objects.equals(this.cached, checked)) {
+        boolean newValue = checked;
+        if (!java.util.Objects.equals(this.checked, newValue)) {
             dirty();
         }
+        checkWidget();
         if ((parent.style & SWT.CHECK) == 0)
             return;
         if (checked) {
@@ -969,6 +972,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         }
         if ((parent.style & SWT.VIRTUAL) != 0)
             cached = true;
+        this.checked = newValue;
         /*
 	* Bug in Windows.  When TVM_SETITEM is used to set
 	* the state image of an item inside TVN_GETDISPINFO,
@@ -998,7 +1002,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         /* Expand or collapse the item */
         ((DartTree) parent.getImpl()).ignoreExpand = true;
         ((DartTree) parent.getImpl()).ignoreExpand = false;
-        this.expanded = newValue;
+        if (newValue && getItemCount() == 0)
+            this.expanded = false;
+        else
+            this.expanded = newValue;
     }
 
     /**
@@ -1204,10 +1211,11 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * </ul>
      */
     public void setGrayed(boolean grayed) {
-        checkWidget();
-        if (!java.util.Objects.equals(this.cached, grayed)) {
+        boolean newValue = grayed;
+        if (!java.util.Objects.equals(this.grayed, newValue)) {
             dirty();
         }
+        checkWidget();
         if ((parent.style & SWT.CHECK) == 0)
             return;
         if (grayed) {
@@ -1215,6 +1223,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         }
         if ((parent.style & SWT.VIRTUAL) != 0)
             cached = true;
+        this.grayed = newValue;
         /*
 	* Bug in Windows.  When TVM_SETITEM is used to set
 	* the state image of an item inside TVN_GETDISPINFO,
@@ -1337,8 +1346,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public void setItemCount(int count) {
         checkWidget();
-        count = Math.max(0, count);
-        ((DartTree) parent.getImpl()).setItemCount(count, getApi().handle);
+        TreeHelper.setItemCount(this, count);
     }
 
     /**
@@ -1465,9 +1473,13 @@ public class DartTreeItem extends DartItem implements ITreeItem {
 
     Color _background;
 
+    boolean checked;
+
     boolean expanded;
 
     Color _foreground;
+
+    boolean grayed;
 
     TreeItem[] items = new TreeItem[0];
 
@@ -1515,12 +1527,20 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         return _background;
     }
 
+    public boolean _checked() {
+        return checked;
+    }
+
     public boolean _expanded() {
         return expanded;
     }
 
     public Color __foreground() {
         return _foreground;
+    }
+
+    public boolean _grayed() {
+        return grayed;
     }
 
     public TreeItem[] _items() {
@@ -1543,7 +1563,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         if (tmpParent.getImpl() instanceof DartTree p) {
             p.updateChildItems();
         }
-        if (tmpParentItem.getImpl() instanceof DartTreeItem p) {
+        if (parentItem != null && tmpParentItem.getImpl() instanceof DartTreeItem p) {
             p.updateChildItems();
         }
     }
@@ -1552,46 +1572,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         super(parent, style, api);
         this.parent = parent;
         this.parentItem = parentItem;
-        createItem(this.getApi(), parentItem, hInsertAfter);
-    }
-
-    void createItem(TreeItem item, TreeItem parentItem, int index) {
-        int count;
-        TreeItem[] items;
-        if (parentItem != null) {
-            count = ((DartTreeItem) parentItem.getImpl()).getItemCount();
-            items = ((DartTreeItem) parentItem.getImpl()).items;
-        } else {
-            count = ((DartTree) parent.getImpl()).getItemCount();
-            items = ((DartTree) parent.getImpl()).items;
-        }
-        if (index == -1)
-            index = count;
-        if (!(0 <= index && index <= count))
-            error(SWT.ERROR_INVALID_RANGE);
-        if (count == items.length) {
-            TreeItem[] newItems = new TreeItem[items.length + 4];
-            System.arraycopy(items, 0, newItems, 0, items.length);
-            items = newItems;
-            if (parentItem != null) {
-                ((DartTreeItem) parentItem.getImpl()).items = items;
-            } else {
-                ((DartTree) parent.getImpl()).items = items;
-            }
-        }
-        System.arraycopy(items, index, items, index + 1, count++ - index);
-        items[index] = item;
-        ((DartTreeItem) item.getImpl()).items = new TreeItem[4];
-        if (parentItem != null) {
-            ((DartTreeItem) parentItem.getImpl()).setItemCount(count);
-        } else {
-            ((DartTree) parent.getImpl()).setItemCount(count);
-        }
-        if (parentItem == null && ((DartTree) parent.getImpl()).getItemCount() == 1) {
-            Event event = new Event();
-            event.detail = 0;
-            parent.getImpl().sendEvent(SWT.EmptinessChanged, event);
-        }
+        TreeHelper.createItem(this.getApi(), parentItem, hInsertAfter, parent);
     }
 
     public FlutterBridge getBridge() {

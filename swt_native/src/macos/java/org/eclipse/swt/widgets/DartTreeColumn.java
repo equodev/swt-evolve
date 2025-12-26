@@ -578,7 +578,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
         return toolTipText;
     }
 
-    boolean resizable;
+    boolean resizable = true;
 
     int width;
 

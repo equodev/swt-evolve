@@ -781,8 +781,8 @@ public abstract class SwtDevice implements Drawable, IDevice {
         if (debug) {
             OS.GdiSetBatchLimit(1);
         }
-        /* Initialize the system font slot */
-        systemFont = getSystemFont();
+        ///* Initialize the system font slot */systemFont = getSystemFont();
+        ;
         /* Initialize scripts list */
         long[] ppSp = new long[1];
         int[] piNumScripts = new int[1];

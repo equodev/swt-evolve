@@ -602,12 +602,21 @@ public class DartTree extends DartComposite implements ITree {
         if (item == null) {
             return;
         }
-        boolean wasEmpty = (items == null || items.length == 0 || TreeHelper.getNonNullItemCount(this) == 0);
-        if (items == null || lastID >= items.length) {
-            itemsGrowArray(Math.max(4, items == null ? 4 : items.length + 4));
+        boolean wasEmpty = (itemCount == 0);
+        int index = (int) hInsertAfter;
+        if (index == 0 && hInsertAfter == 0) {
+            index = itemCount;
         }
-        items[lastID] = item;
-        lastID++;
+        int requiredSize = Math.max(index + 1, itemCount + 1);
+        if (items == null || requiredSize > items.length) {
+            itemsGrowArray(Math.max(4, requiredSize + 4));
+        }
+        if (index < itemCount) {
+            System.arraycopy(items, index, items, index + 1, itemCount - index);
+        }
+        items[index] = item;
+        lastID = Math.max(lastID, index + 1);
+        itemCount++;
         if (wasEmpty) {
             Event event = new Event();
             event.detail = 0;
@@ -724,6 +733,21 @@ public class DartTree extends DartComposite implements ITree {
         // conservative
         cachedItemOrder = null;
         columns[columnCount] = null;
+        if (cachedItemOrder != null && cachedItemOrder.length > 0) {
+            int[] newOrder = new int[columnCount];
+            int newOrderIndex = 0;
+            for (int i = 0; i < cachedItemOrder.length; i++) {
+                int orderValue = cachedItemOrder[i];
+                if (orderValue == index) {
+                    continue;
+                } else if (orderValue > index) {
+                    newOrder[newOrderIndex++] = orderValue - 1;
+                } else {
+                    newOrder[newOrderIndex++] = orderValue;
+                }
+            }
+            cachedItemOrder = newOrder;
+        }
         for (TreeItem item : items) {
             if (item != null) {
                 if (columnCount == 0) {
@@ -840,6 +864,17 @@ public class DartTree extends DartComposite implements ITree {
 	 */
         if (getDrawing())
             updateScrollBar();
+        {
+            boolean wasNotEmpty = (itemCount > 0);
+            if (itemCount > 0) {
+                itemCount--;
+            }
+            if (wasNotEmpty && itemCount == 0) {
+                Event event = new Event();
+                event.detail = 1;
+                sendEvent(SWT.EmptinessChanged, event);
+            }
+        }
     }
 
     @Override
@@ -1175,7 +1210,7 @@ public class DartTree extends DartComposite implements ITree {
         if (columnCount == 0)
             return new int[0];
         int[] order = new int[columnCount];
-        cachedItemOrder = order.clone();
+        for (int i = 0; i < columnCount; i++) order[i] = i;
         return order;
     }
 
@@ -1624,7 +1659,7 @@ public class DartTree extends DartComposite implements ITree {
             error(SWT.ERROR_NULL_ARGUMENT);
         if (item.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
-        return 0;
+        return TreeHelper.indexOf(this, item);
     }
 
     boolean isCustomToolTip() {
@@ -1729,6 +1764,8 @@ public class DartTree extends DartComposite implements ITree {
         items = new TreeItem[4];
         scrollWidth = 0;
         setScrollWidth();
+        lastID = 0;
+        itemCount = 0;
         updateScrollBar();
     }
 
@@ -1848,6 +1885,7 @@ public class DartTree extends DartComposite implements ITree {
     public void setItemCount(int count) {
         checkWidget();
         count = Math.max(0, count);
+        TreeHelper.setItemCount(this, count);
     }
 
     void setItemCount(int count, long hParent) {
@@ -2435,6 +2473,16 @@ public class DartTree extends DartComposite implements ITree {
             if (fixScroll) {
             }
         }
+        {
+            if ((getApi().style & SWT.SINGLE) != 0) {
+                if (item != null && !item.isDisposed()) {
+                    this.selection = new TreeItem[] { item };
+                } else {
+                    this.selection = new TreeItem[0];
+                }
+                return;
+            }
+        }
         if ((getApi().style & SWT.SINGLE) != 0)
             return;
         if ((getApi().style & SWT.VIRTUAL) != 0) {
@@ -2451,7 +2499,25 @@ public class DartTree extends DartComposite implements ITree {
                 }
             }
         }
-        this.selection = newValue;
+        java.util.Set<TreeItem> uniqueItems = new java.util.LinkedHashSet<>();
+        for (int i = 0; i < items.length; i++) {
+            if (items[i] != null) {
+                uniqueItems.add(items[i]);
+            }
+        }
+        TreeItem[] validItems = uniqueItems.toArray(new TreeItem[0]);
+        java.util.Arrays.sort(validItems, (a, b) -> {
+            int indexA = -1;
+            int indexB = -1;
+            for (int i = 0; i < this.items.length; i++) {
+                if (this.items[i] == a)
+                    indexA = i;
+                if (this.items[i] == b)
+                    indexB = i;
+            }
+            return Integer.compare(indexA, indexB);
+        });
+        this.selection = validItems;
     }
 
     void expandToItem(TreeItem item) {
@@ -3030,7 +3096,10 @@ public class DartTree extends DartComposite implements ITree {
         if (items == null)
             return;
         items = java.util.Arrays.stream(items).filter(child -> child != null && !child.isDisposed()).toArray(TreeItem[]::new);
+        lastID = items.length;
     }
+
+    int itemCount;
 
     protected void _hookEvents() {
         super._hookEvents();

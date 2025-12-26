@@ -706,7 +706,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         checkComposited();
         register();
         subclass();
-        setDefaultFont();
+        //setDefaultFont();
+        ;
         checkMirrored();
         checkBorder();
         checkGesture();

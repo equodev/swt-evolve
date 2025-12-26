@@ -29,7 +29,7 @@ public class VTreeItem extends VItem {
     }
 
     public void setChecked(boolean value) {
-        ((DartTreeItem) impl).cached = value;
+        ((DartTreeItem) impl).checked = value;
     }
 
     public boolean getExpanded() {
@@ -64,7 +64,7 @@ public class VTreeItem extends VItem {
     }
 
     public void setGrayed(boolean value) {
-        ((DartTreeItem) impl).cached = value;
+        ((DartTreeItem) impl).grayed = value;
     }
 
     public TreeItem[] getItems() {

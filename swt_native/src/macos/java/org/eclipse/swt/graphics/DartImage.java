@@ -1021,7 +1021,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     @Override
     public boolean isDisposed() {
-        return false;
+        return this.device == null;
     }
 
     /**

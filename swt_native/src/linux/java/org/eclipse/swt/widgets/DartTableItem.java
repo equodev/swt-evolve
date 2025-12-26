@@ -793,14 +793,16 @@ public class DartTableItem extends DartItem implements ITableItem {
      * </ul>
      */
     public void setChecked(boolean checked) {
-        checkWidget();
-        if (!java.util.Objects.equals(this.cached, checked)) {
+        boolean newValue = checked;
+        if (!java.util.Objects.equals(this.checked, newValue)) {
             dirty();
         }
+        checkWidget();
         if ((parent.style & SWT.CHECK) == 0)
             return;
         if (_getChecked() == checked)
             return;
+        this.checked = newValue;
         cached = true;
     }
 
@@ -1210,6 +1212,8 @@ public class DartTableItem extends DartItem implements ITableItem {
 
     Color background;
 
+    boolean checked;
+
     Color foreground;
 
     int imageIndent;
@@ -1244,6 +1248,10 @@ public class DartTableItem extends DartItem implements ITableItem {
 
     public Color _background() {
         return background;
+    }
+
+    public boolean _checked() {
+        return checked;
     }
 
     public Color _foreground() {

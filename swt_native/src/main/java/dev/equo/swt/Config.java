@@ -26,7 +26,7 @@ public class Config {
         try {
             equoEnabled = Map.ofEntries(
                     entry(Button.class, Impl.equo),
-                    entry(Label.class, Impl.equo),
+                    // entry(Label.class, Impl.equo),
                     entry(CTabFolder.class, Impl.equo),
                     entry(CTabItem.class, Impl.equo),
                     entry(CTabFolderRenderer.class, Impl.equo),
@@ -38,17 +38,17 @@ public class Config {
                     //entry(TableColumn.class, Impl.equo),
                     //entry(Text.class, Impl.equo),
                     entry(Link.class, Impl.equo),
-                    //entry(Combo.class, Impl.equo),entry(Group.class, Impl.equo),
+                    //entry(Group.class, Impl.equo),
                     entry(ExpandBar.class, Impl.equo),
                     entry(ExpandItem.class, Impl.equo),
                     //entry(Sash.class, Impl.equo),
                     entry(List.class, Impl.equo),
                     entry(Combo.class, Impl.equo),
-                    entry(CCombo.class, Impl.equo)
+                    entry(CCombo.class, Impl.equo),
                     //entry(Group.class, Impl.equo)
-                    //entry(Tree.class, Impl.equo),
-                    //entry(TreeItem.class, Impl.equo),
-                    //entry(TreeColumn.class, Impl.equo),
+                    entry(Tree.class, Impl.equo),
+                    entry(TreeItem.class, Impl.equo),
+                    entry(TreeColumn.class, Impl.equo)
                     //entry(Canvas.class, Impl.equo),
                     //entry(FontMetrics.class, Impl.equo),
                     //entry(Font.class, Impl.equo),

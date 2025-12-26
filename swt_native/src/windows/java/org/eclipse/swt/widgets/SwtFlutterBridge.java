@@ -3,7 +3,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.internal.win32.OS;
 
 public class SwtFlutterBridge extends SwtFlutterBridgeBase {
-
     private DartControl focused = null;
     public SwtFlutterBridge(DartWidget widget) {
         super(widget);
@@ -50,6 +49,52 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
         }
     }
 
+    /*@Override
+    public boolean hasFocus(DartControl widget) {
+        long hwndFocus = OS.GetFocus();
+        while (hwndFocus != 0) {
+            if (hwndFocus == widget.getApi().handle)
+                return true;
+            if (((SwtDisplay) widget.getDisplay().getImpl()).getControl(hwndFocus) != null) {
+                return false;
+            }
+            hwndFocus = OS.GetParent(hwndFocus);
+        }
+        return false;
+    }*/
+    /*@Override
+    public boolean hasFocus(DartControl widget) {
+        /*
+         * If a non-SWT child of the control has focus,
+         * then this control is considered to have focus
+         * even though it does not have focus in Windows.
+         *
+        if (widget != focused) {
+            return false;
+        }
+
+        long hwndFocus = OS.GetFocus();
+        while (hwndFocus != 0) {
+            long widgetHandle = widget.getApi().handle;
+            if (hwndFocus == widgetHandle) {
+                return true;
+            }
+
+            Composite parent = widget.getParent();
+            while (parent != null) {
+                if (hwndFocus == parent.handle) {
+                    return true;
+                }
+                parent = parent.getParent();
+            }
+
+            if (((SwtDisplay) widget.getDisplay().getImpl()).getControl(hwndFocus) != null) {
+                return false;
+            }
+            hwndFocus = OS.GetParent(hwndFocus);
+        }
+        return false;
+    }*/
     @Override
     public boolean hasFocus(DartControl widget) {
         /*

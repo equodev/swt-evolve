@@ -716,6 +716,21 @@ public class DartTree extends DartComposite implements ITree {
         }
         System.arraycopy(columns, index + 1, columns, index, --columnCount - index);
         columns[columnCount] = null;
+        if (this.columnOrder != null && this.columnOrder.length > 0) {
+            int[] newOrder = new int[columnCount];
+            int newOrderIndex = 0;
+            for (int i = 0; i < this.columnOrder.length; i++) {
+                int orderValue = this.columnOrder[i];
+                if (orderValue == index) {
+                    continue;
+                } else if (orderValue > index) {
+                    newOrder[newOrderIndex++] = orderValue - 1;
+                } else {
+                    newOrder[newOrderIndex++] = orderValue;
+                }
+            }
+            this.columnOrder = newOrder;
+        }
         if (columnCount == 0) {
             setScrollWidth();
         } else {
@@ -871,8 +886,14 @@ public class DartTree extends DartComposite implements ITree {
      */
     public int[] getColumnOrder() {
         checkWidget();
+        if (columnCount == 0)
+            return new int[0];
+        if (this.columnOrder != null && this.columnOrder.length == columnCount) {
+            return this.columnOrder;
+        }
         int[] order = new int[columnCount];
         for (int i = 0; i < columnCount; i++) {
+            order[i] = i;
         }
         return order;
     }
@@ -1990,10 +2011,30 @@ public class DartTree extends DartComposite implements ITree {
         if (length == 0 || ((getApi().style & SWT.SINGLE) != 0 && length > 1))
             return;
         selectItems(items, false);
-        this.selection = newValue;
-        if (items.length > 0) {
-            for (int i = 0; i < items.length; i++) {
-                TreeItem item = items[i];
+        // Filter out null items and duplicates, then sort by tree position
+        java.util.Set<TreeItem> uniqueItems = new java.util.LinkedHashSet<>();
+        for (int i = 0; i < items.length; i++) {
+            if (items[i] != null) {
+                uniqueItems.add(items[i]);
+            }
+        }
+        TreeItem[] validItems = uniqueItems.toArray(new TreeItem[0]);
+        // Sort items by their position in the tree
+        java.util.Arrays.sort(validItems, (a, b) -> {
+            int indexA = -1;
+            int indexB = -1;
+            for (int i = 0; i < this.items.length; i++) {
+                if (this.items[i] == a)
+                    indexA = i;
+                if (this.items[i] == b)
+                    indexB = i;
+            }
+            return Integer.compare(indexA, indexB);
+        });
+        this.selection = validItems;
+        if (validItems.length > 0) {
+            for (int i = 0; i < validItems.length; i++) {
+                TreeItem item = validItems[i];
                 if (item != null) {
                     showItem(item, true);
                     break;
