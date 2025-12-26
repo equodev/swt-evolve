@@ -11,20 +11,93 @@ import '../gen/tree.dart';
 import '../gen/treeitem.dart';
 import '../gen/event.dart';
 import '../comm/comm.dart';
+import '../theme/tree_theme_extension.dart';
+import '../theme/tree_theme_settings.dart';
 
 class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   final Map<dynamic, String> treeItemExpanders = {};
   final List<String> eventNames = [];
-  final bool useDarkTheme = getCurrentTheme();
+  TreeThemeExtension? _cachedWidgetTheme;
+  List<VTreeItem>? _pendingSelection;
+  int checkboxUpdateCounter = 0; 
+  final Map<Object, Map<String, bool>> _pendingCheckboxStates = {};
+  Object? _lastSelectedItemId;
 
   @override
   Widget build(BuildContext context) {
+    _cachedWidgetTheme = Theme.of(context).extension<TreeThemeExtension>();
     return super.wrap(createTreeView());
+  }
+
+  @override
+  void setValue(V value) {
+    if (value.items != null) {
+      for (final item in value.items!) {
+        if (item.expanded == true) {
+          print('Tree setValue: Item ${item.id} is expanded, has ${item.items?.length ?? 0} children');
+        }
+      }
+    }
+    final incomingSelection = value.selection ?? [];
+    final hasLocalSelection = _pendingSelection != null && _pendingSelection!.isNotEmpty;
+    
+    bool selectionsDiffer = false;
+    if (hasLocalSelection && incomingSelection.isNotEmpty) {
+      final pendingIds = Set.from(_pendingSelection!.map((item) => item.id));
+      final incomingIds = Set.from(incomingSelection.map((item) => item.id));
+      selectionsDiffer = pendingIds.length != incomingIds.length ||
+          pendingIds.any((id) => !incomingIds.contains(id)) ||
+          incomingIds.any((id) => !pendingIds.contains(id));
+    }
+    
+    if (incomingSelection.isEmpty && hasLocalSelection) {
+      value.selection = List<VTreeItem>.from(_pendingSelection!);
+      _pendingSelection = null;
+      super.setValue(value);
+      setState(() {}); 
+    } else if (selectionsDiffer && hasLocalSelection) {
+      value.selection = List<VTreeItem>.from(_pendingSelection!);
+      _pendingSelection = null;
+      super.setValue(value);
+      setState(() {}); 
+    } else if (incomingSelection.isNotEmpty && !hasLocalSelection) {
+      _pendingSelection = null;
+      super.setValue(value);
+    } else {
+      if (incomingSelection.isNotEmpty) {
+        _pendingSelection = null;
+      }
+      super.setValue(value);
+    }
+    
+    if (_pendingCheckboxStates.isNotEmpty && value.items != null) {
+      _preserveCheckboxStates(value.items!);
+    }
+  }
+
+  void _preserveCheckboxStates(List<VWidget> items) {
+    for (final item in items) {
+      if (item is VTreeItem) {
+        final pendingState = _pendingCheckboxStates[item.id];
+        if (pendingState != null) {
+          item.checked = pendingState['checked'];
+          item.grayed = pendingState['grayed'];
+        }
+        
+        if (item.items != null) {
+          _preserveCheckboxStates(item.items!);
+        }
+      }
+    }
   }
 
   Widget createTreeView() {
     return LayoutBuilder(
-      builder: (context, constraints) {
+        builder: (context, constraints) {
+          final colorScheme = Theme.of(context).colorScheme;
+          final widgetTheme = Theme.of(context).extension<TreeThemeExtension>();
+          _cachedWidgetTheme = widgetTheme;
+        
         final double maxWidth = constraints.maxWidth.isFinite
             ? constraints.maxWidth
             : MediaQuery.of(context).size.width;
@@ -32,55 +105,62 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
             ? constraints.maxHeight
             : MediaQuery.of(context).size.height;
 
-        // Extract columns from children
         final columns = getTreeColumns();
         final treeItems = getTreeItems();
 
-        // Column and item extraction complete
+        final backgroundColor = getTreeBackgroundColor(state, widgetTheme!, colorScheme);
 
         return Focus(
           onKeyEvent: _handleKeyEvent,
           child: Container(
             width: maxWidth,
             height: maxHeight,
-            color: useDarkTheme ? const Color(0xFF1E1E1E) : Colors.white,
+            color: backgroundColor,
             child: Column(
               children: [
-                // Header row with TreeColumn widgets
                 if ((state.headerVisible == true || columns.isNotEmpty) &&
                     columns.isNotEmpty)
-                  Container(
-                    decoration: BoxDecoration(
-                      color: useDarkTheme
-                          ? const Color(0xFF2B2B2B)
-                          : Colors.grey.shade100,
-                      border: Border(
-                        bottom: BorderSide(
-                          color: useDarkTheme
-                              ? Colors.black45
-                              : Colors.grey.shade400,
-                          width: 2.0,
+                  Stack(
+                    children: [
+                      Container(
+                        height: widgetTheme!.headerHeight,
+                        color: Colors.transparent,
+                        child: TreeLinesVisibleProvider(
+                          linesVisible: state.linesVisible ?? false,
+                          child: Row(
+                            children: columns.asMap().entries.map((entry) {
+                              final int columnIndex = entry.key;
+                              final column = entry.value;
+                              final defaultWidth = widgetTheme!.columnDefaultWidth.round();
+                              final int width = column.width ?? defaultWidth;
+                              print('Tree header - Column $columnIndex: width=${column.width}, final width=$width, default=$defaultWidth');
+                              return SizedBox(
+                                width: width.toDouble(),
+                                child: getWidgetForTreeColumn(column, columnIndex),
+                              );
+                            }).toList(),
+                          ),
                         ),
                       ),
-                    ),
-                    child: Row(
-                      children: columns.map((column) {
-                        final width = column.width ?? 100;
-                        return SizedBox(
-                          width: width.toDouble(),
-                          child: getWidgetForTreeColumn(column),
-                        );
-                      }).toList(),
-                    ),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          height: 1.0,
+                          color: widgetTheme.headerBorderColor,
+                        ),
+                      ),
+                    ],
                   ),
-                // Tree content
                 Expanded(
                   child: Material(
                     color: Colors.transparent,
                     child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: treeItems,
+                      child: _buildTreeContentWithLines(
+                        treeItems,
+                        columns,
+                        widgetTheme!,
                       ),
                     ),
                   ),
@@ -96,18 +176,15 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   List<VTreeColumn> getTreeColumns() {
     List<VTreeColumn> columns = [];
 
-    // First try to get columns from TreeValue.columns (preferred)
     if (state.columns != null && state.columns!.isNotEmpty) {
       columns.addAll(state.columns!);
     }
 
-    // Also check children for TreeColumnValue objects (backward compatibility)
     if (state.items != null) {
       final childColumns = state.items!.whereType<VTreeColumn>().toList();
       columns.addAll(childColumns);
     }
 
-    // Remove duplicates (in case a column appears in both places)
     final uniqueColumns = <VTreeColumn>[];
     final seenIds = <dynamic>{};
     for (final column in columns) {
@@ -123,12 +200,10 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   List<Widget> getTreeItems() {
     List<VTreeItem> treeItems = [];
 
-    // Get tree items from state.items (filtering for VTreeItem only)
     if (state.items != null && state.items!.isNotEmpty) {
       treeItems.addAll(state.items!.whereType<VTreeItem>());
     }
 
-    // Remove duplicates (in case an item appears in both places)
     final uniqueItems = <VTreeItem>[];
     final seenIds = <dynamic>{};
     for (final item in treeItems) {
@@ -143,23 +218,77 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         .toList();
   }
 
-  Widget getWidgetForTreeColumn(VTreeColumn column) {
-    return TreeColumnSwt(value: column);
+  Widget _buildTreeContentWithLines(
+    List<Widget> treeItems,
+    List<VTreeColumn> columns,
+    TreeThemeExtension widgetTheme,
+  ) {
+    final bool linesVisible = state.linesVisible ?? false;
+    
+    if (!linesVisible || columns.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: treeItems,
+      );
+    }
+    
+    final List<double> linePositions = [];
+    double cumulativeWidth = 0.0;
+    
+    for (int i = 0; i < columns.length; i++) {
+      final column = columns[i];
+      final int width = column.width ?? widgetTheme.columnDefaultWidth.round();
+      
+      cumulativeWidth += width.toDouble();
+      
+      if (i < columns.length - 1) {
+        linePositions.add(cumulativeWidth);
+      }
+    }
+    
+    return Stack(
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: treeItems,
+        ),
+        ...linePositions.map((position) => Positioned(
+          left: position,
+          top: 0,
+          bottom: 0,
+          child: Container(
+            width: widgetTheme.columnBorderWidth,
+            color: widgetTheme.columnRightBorderColor,
+          ),
+        )),
+      ],
+    );
+  }
+
+  Widget getWidgetForTreeColumn(VTreeColumn column, int columnIndex) {
+    final columns = getTreeColumns();
+    final bool isLastColumn = columnIndex == columns.length - 1;
+    return TreeColumnIndexProvider(
+      columnIndex: columnIndex,
+      child: TreeColumnIsLastProvider(
+        isLastColumn: isLastColumn,
+        child: TreeColumnSwt(value: column),
+      ),
+    );
   }
 
   Widget getWidgetForTreeItem(VTreeItem treeItem, int level) {
-    // Set up expansion listener
     setupTreeItemExpandListener(treeItem);
 
-    // Create the item UI wrapper with data needed for rendering
     return TreeItemSwtWrapper(
+      key: ValueKey('tree_item_${treeItem.id}_${treeItem.checked}_${treeItem.grayed}'),
       treeItem: treeItem,
       level: level,
       isCheckMode: getTreeViewSelectionMode(),
       parentTree: widget,
       parentTreeValue: state,
-      treeImpl: this, // Pass tree implementation for selection management
-      treeFont: state.font, // Pass tree font for fallback
+      treeImpl: this,
+      treeFont: state.font,
     );
   }
 
@@ -170,7 +299,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   void setupTreeItemExpandListener(VTreeItem treeItemValue) {
     String eventName = "TreeItem/${treeItemValue.id}/TreeItem/Expand";
 
-    // Don't set up the same listener twice
     if (treeItemExpanders.containsKey(treeItemValue.id)) {
       return;
     }
@@ -179,7 +307,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     treeItemExpanders[treeItemValue.id] = eventName;
 
     EquoCommService.on<VTreeItem>(eventName, (VTreeItem payload) {
-      // Received expand event for item ${treeItemValue.id}, setting expanded=true
       setState(() {
         treeItemValue.items = filterNonEmptyTreeItems(payload.items);
         treeItemValue.expanded = true;
@@ -193,11 +320,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     List<VTreeItem> newItems = items
         .whereType<VTreeItem>()
         .where((treeItem) =>
-            // Filter out items that are completely empty
             (treeItem.texts != null &&
                 treeItem.texts!.any((text) => text.isNotEmpty)) ||
             (treeItem.text != null && treeItem.text!.isNotEmpty) ||
-            // Also keep items that have valid children even if text is empty
             (treeItem.items != null &&
                 treeItem.items!.whereType<VTreeItem>().any((child) =>
                     (child.text != null && child.text!.isNotEmpty) ||
@@ -217,7 +342,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     return StyleBits(state.style).has(SWT.VIRTUAL);
   }
 
-  // Selection management methods using VTree.selection field
   void handleTreeItemSelection(Object itemId,
       {bool isCtrlPressed = false, bool isShiftPressed = false}) {
     final flatIndex = _findFlatIndexForItem(itemId, 0, 0).index;
@@ -225,13 +349,17 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         'Tree selection: Item ID=$itemId, FlatIndex=$flatIndex, Ctrl=$isCtrlPressed, Shift=$isShiftPressed');
 
     final bool isMultiMode = StyleBits(state.style).has(SWT.MULTI);
+    print('  isMultiMode: $isMultiMode, style: ${state.style}, SWT.MULTI: ${SWT.MULTI}');
+    
     final item = _findTreeItemById(itemId);
 
     if (item != null) {
       setState(() {
         if (isMultiMode) {
+          print('  Calling _handleMultiSelection');
           _handleMultiSelection(item, flatIndex, isCtrlPressed, isShiftPressed);
         } else {
+          print('  Calling _handleSingleSelection');
           _handleSingleSelection(item, flatIndex);
         }
       });
@@ -239,35 +367,48 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   }
 
   void _handleSingleSelection(VTreeItem item, int flatIndex) {
-    // Set selection to single item using VTree.selection field
     state.selection = [item];
+    _pendingSelection = [item];
+    _lastSelectedItemId = item.id; 
   }
 
   void _handleMultiSelection(
       VTreeItem item, int flatIndex, bool isCtrlPressed, bool isShiftPressed) {
     final currentSelection = List<VTreeItem>.from(state.selection ?? []);
 
+    print('_handleMultiSelection - Item ID=${item.id}, FlatIndex=$flatIndex');
+    print('  isCtrlPressed: $isCtrlPressed, isShiftPressed: $isShiftPressed');
+    print('  Current selection count: ${currentSelection.length}');
+    print('  Current selection IDs: ${currentSelection.map((i) => i.id).join(", ")}');
+    print('  Last selected item ID: $_lastSelectedItemId');
+
     if (isCtrlPressed) {
-      // Ctrl+click: toggle selection
       if (currentSelection.any((selected) => selected.id == item.id)) {
+        print('  Ctrl+Click: Removing item from selection');
         currentSelection.removeWhere((selected) => selected.id == item.id);
       } else {
+        print('  Ctrl+Click: Adding item to selection');
         currentSelection.add(item);
       }
-    } else if (isShiftPressed && currentSelection.isNotEmpty) {
-      // Shift+click: range selection
-      final lastSelectedItem = currentSelection.last;
-      final lastIndex = _findFlatIndexForItem(lastSelectedItem.id, 0, 0).index;
+    } else if (isShiftPressed && _lastSelectedItemId != null) {
+      final lastIndex = _findFlatIndexForItem(_lastSelectedItemId!, 0, 0).index;
+      print('  Shift+Click: Last selected index=$lastIndex, new index=$flatIndex');
       final rangeItems = _getItemsInRange(lastIndex, flatIndex);
+      print('  Shift+Click: Range items count=${rangeItems.length}');
       currentSelection.clear();
       currentSelection.addAll(rangeItems);
     } else {
-      // Regular click: single selection (clear others)
+      print('  Normal click: Clearing and setting single selection');
       currentSelection.clear();
       currentSelection.add(item);
+      _lastSelectedItemId = item.id; 
     }
 
+    print('  Final selection count: ${currentSelection.length}');
+    print('  Final selection IDs: ${currentSelection.map((i) => i.id).join(", ")}');
+
     state.selection = currentSelection;
+    _pendingSelection = List<VTreeItem>.from(currentSelection);
   }
 
   List<VTreeItem> _getItemsInRange(int startIndex, int endIndex) {
@@ -287,7 +428,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         }
         currentIndex++;
 
-        // If expanded, process children
         if (item.expanded == true && item.items != null) {
           currentIndex = _collectItemsInRange(
               item.items!, currentIndex, startIndex, endIndex, result);
@@ -299,6 +439,56 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   bool isItemSelected(Object itemId) {
     return state.selection?.any((item) => item.id == itemId) ?? false;
+  }
+
+  bool isNextItemSelected(Object itemId) {
+    final currentIndex = findItemIndex(itemId);
+    if (currentIndex < 0) return false;
+    
+    final nextItem = _getItemAtFlatIndex(currentIndex + 1);
+    if (nextItem == null) return false;
+    
+    return isItemSelected(nextItem.id);
+  }
+
+  VTreeItem? _getItemAtFlatIndex(int targetIndex) {
+    if (state.items == null) return null;
+    return _getItemAtFlatIndexRecursive(state.items!, 0, targetIndex);
+  }
+
+  VTreeItem? _getItemAtFlatIndexRecursive(
+      List<VWidget> items, int currentIndex, int targetIndex) {
+    for (final item in items) {
+      if (item is VTreeItem) {
+        if (currentIndex == targetIndex) {
+          return item;
+        }
+        currentIndex++;
+
+        if (item.expanded == true && item.items != null) {
+          final result = _getItemAtFlatIndexRecursive(
+              item.items!, currentIndex, targetIndex);
+          if (result != null) {
+            return result;
+          }
+          currentIndex = _countAllItems(item.items!, currentIndex);
+        }
+      }
+    }
+    return null;
+  }
+
+  int _countAllItems(List<VWidget> items, int startIndex) {
+    int currentIndex = startIndex;
+    for (final item in items) {
+      if (item is VTreeItem) {
+        currentIndex++;
+        if (item.expanded == true && item.items != null) {
+          currentIndex = _countAllItems(item.items!, currentIndex);
+        }
+      }
+    }
+    return currentIndex;
   }
 
   bool isMultiSelectionMode() {
@@ -313,7 +503,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     if (!isMultiSelectionMode()) return;
 
     setState(() {
-      // Collect all items
       final allItems = <VTreeItem>[];
       _collectAllItems(state.items ?? [], allItems);
       state.selection = allItems;
@@ -337,9 +526,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     });
   }
 
-  // Selection state is now managed through state.selection field
-
-  // Helper method to find flat index of an item
   TreeItemSearchResult _findFlatIndexForItem(
       Object itemId, int currentIndex, int currentLevel) {
     if (state.items == null) {
@@ -362,7 +548,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
         currentIndex++;
 
-        // If expanded, search children
         if (item.expanded == true && item.items != null) {
           final result = _findFlatIndexRecursive(
               item.items!, itemId, currentIndex, currentLevel + 1);
@@ -378,19 +563,14 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         found: false, index: currentIndex, level: currentLevel);
   }
 
-  // Getters for selection state
   Object? get selectedItemId =>
       state.selection?.isNotEmpty == true ? state.selection!.last.id : null;
 
-  // Public method to find the flat index of an item
   int findItemIndex(Object itemId) {
     final result = _findFlatIndexForItem(itemId, 0, 0);
     return result.found ? result.index : -1;
   }
 
-  // Hierarchical path methods removed - using flat indexes only
-
-  // Keyboard navigation handler
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) {
       return KeyEventResult.ignored;
@@ -492,14 +672,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     final selectedItem = selectedItems.last;
     if (selectedItem.expanded == true &&
         (selectedItem.items?.isNotEmpty ?? false)) {
-      // Collapse expanded item
       setState(() {
         selectedItem.expanded = false;
       });
-      // Send collapse event
       _sendExpandCollapseEvent(selectedItem, false);
     } else {
-      // Navigate to parent
       final parentId = _findParentItemId(selectedItem.id);
       if (parentId != null) {
         handleTreeItemSelection(parentId);
@@ -514,15 +691,12 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     final selectedItem = selectedItems.last;
     if (selectedItem.expanded != true &&
         (selectedItem.items?.isNotEmpty ?? false)) {
-      // Expand collapsed item
       setState(() {
         selectedItem.expanded = true;
       });
-      // Send expand event
       _sendExpandCollapseEvent(selectedItem, true);
     } else if (selectedItem.expanded == true &&
         (selectedItem.items?.isNotEmpty ?? false)) {
-      // Navigate to first child
       final firstChildId = selectedItem.items!.first.id;
       handleTreeItemSelection(firstChildId);
     }
@@ -532,19 +706,21 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     final selectedItems = state.selection ?? [];
     if (selectedItems.isEmpty) return;
 
-    // Send default selection event
     final selectedItem = selectedItems.last;
-    // Create a proper Event object for enter/default selection
-    var e = VEvent();
-    e.index = _findFlatIndexForItem(selectedItem.id, 0, 0).index;
-    e.detail = 0; // No detail for enter key
-    e.x = 0;
-    e.y = 0;
-    e.width = 100;
-    e.height = 20;
-
-    // Send DefaultSelection event for Enter key
+    var e = _createDefaultEvent(selectedItem.id);
+    
     widget.sendSelectionDefaultSelection(state, e);
+  }
+  
+  VEvent _createDefaultEvent(Object itemId) {
+    var e = VEvent();
+    e.index = findItemIndex(itemId);
+    e.detail = _cachedWidgetTheme!.eventDefaultDetail;
+    e.x = _cachedWidgetTheme!.eventDefaultX;
+    e.y = _cachedWidgetTheme!.eventDefaultY;
+    e.width = _cachedWidgetTheme!.eventDefaultWidth.round();
+    e.height = _cachedWidgetTheme!.eventDefaultHeight.round();
+    return e;
   }
 
   void _handleSpaceKey() {
@@ -553,23 +729,15 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
     final selectedItem = selectedItems.last;
     if (getTreeViewSelectionMode()) {
-      // Handle checkbox toggle in CHECK mode
       setState(() {
         selectedItem.checked = !(selectedItem.checked ?? false);
       });
 
-      // Send selection event with CHECK detail
-      var e = VEvent();
-      e.index = _findFlatIndexForItem(selectedItem.id, 0, 0).index;
-      e.detail = SWT.CHECK; // Indicate this is a checkbox event
-      e.x = 0;
-      e.y = 0;
-      e.width = 100;
-      e.height = 20;
+      var e = _createDefaultEvent(selectedItem.id);
+      e.detail = SWT.CHECK;
 
       widget.sendSelectionSelection(state, e);
     } else {
-      // Regular space selection
       handleTreeItemSelection(selectedItem.id);
     }
   }
@@ -600,7 +768,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     }
   }
 
-  // Helper methods for keyboard navigation
   List<Object> _getAllVisibleItemIds() {
     final result = <Object>[];
     _collectVisibleItemIds(state.items ?? [], result);
@@ -611,7 +778,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     for (final item in items) {
       if (item is VTreeItem) {
         result.add(item.id);
-        // Only include children if the item is expanded
         if (item.expanded == true && item.items != null) {
           _collectVisibleItemIds(item.items!, result);
         }
@@ -659,6 +825,76 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     return null;
   }
 
+  List<VTreeItem> _getAllDescendants(VTreeItem item) {
+    final List<VTreeItem> descendants = [];
+    if (item.items != null) {
+      for (final child in item.items!) {
+        descendants.add(child);
+        descendants.addAll(_getAllDescendants(child));
+      }
+    }
+    return descendants;
+  }
+
+  void _addParentChain(VTreeItem item, List<VTreeItem> selection) {
+    var currentParentId = _findParentItemId(item.id);
+    while (currentParentId != null) {
+      final parent = _findTreeItemById(currentParentId);
+      if (parent != null && !selection.any((selected) => selected.id == parent.id)) {
+        selection.insert(0, parent);
+        currentParentId = _findParentItemId(parent.id);
+      } else {
+        break;
+      }
+    }
+  }
+
+  void handleCheckboxCascade(Object itemId, bool newCheckedState) {
+    final item = _findTreeItemById(itemId);
+    if (item == null) return;
+
+    setState(() {
+      checkboxUpdateCounter++;
+      
+      item.checked = newCheckedState;
+      item.grayed = false;
+      _pendingCheckboxStates[itemId] = {'checked': newCheckedState, 'grayed': false};
+
+      if (item.items != null && item.items!.isNotEmpty) {
+        final allDescendants = _getAllDescendants(item);
+        for (final descendant in allDescendants) {
+          descendant.checked = newCheckedState;
+          descendant.grayed = false;
+          _pendingCheckboxStates[descendant.id] = {'checked': newCheckedState, 'grayed': false};
+        }
+      }
+
+      final parentId = _findParentItemId(itemId);
+      if (parentId != null) {
+        _updateParentCheckboxState(parentId);
+      }
+    });
+  }
+
+  void _updateParentCheckboxState(Object parentId) {
+    final parent = _findTreeItemById(parentId);
+    if (parent == null || parent.items == null) return;
+
+    final children = parent.items!.whereType<VTreeItem>().toList();
+    if (children.isEmpty) return;
+
+    final checkedCount = children.where((child) => child.checked == true).length;
+
+    parent.checked = checkedCount > 0;
+    parent.grayed = false;
+    _pendingCheckboxStates[parentId] = {'checked': checkedCount > 0, 'grayed': false};
+
+    final grandParentId = _findParentItemId(parentId);
+    if (grandParentId != null) {
+      _updateParentCheckboxState(grandParentId);
+    }
+  }
+
   int _getItemLevel(Object itemId) {
     return _getItemLevelRecursive(state.items ?? [], itemId, 0);
   }
@@ -681,13 +917,8 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   }
 
   void _sendExpandCollapseEvent(VTreeItem item, bool expanded) {
-    var e = VEvent();
-    e.index = _findFlatIndexForItem(item.id, 0, 0).index;
-    e.detail = 0; // Remove detail for expand/collapse
-    e.x = 0;
-    e.y = 0;
-    e.width = 100;
-    e.height = 20;
+    var e = _createDefaultEvent(item.id);
+    e.detail = 0;
 
     if (expanded) {
       widget.sendTreeExpand(state, e);
@@ -727,7 +958,6 @@ class TreeItemSwtWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Store context data in InheritedWidget
     return TreeItemContextProvider(
       level: level,
       isCheckMode: isCheckMode,
@@ -748,8 +978,10 @@ class TreeItemContext {
   final bool isCheckMode;
   final TreeSwt parentTree;
   final VTree parentTreeValue;
-  final TreeImpl? treeImpl; // Add reference to tree implementation
-  final VFont? treeFont; // Add tree font for fallback
+  final TreeImpl? treeImpl;
+  final VFont? treeFont; 
+  final List<VTreeItem>? selection;
+  final int checkboxUpdateCounter;
 
   TreeItemContext({
     required this.level,
@@ -758,6 +990,8 @@ class TreeItemContext {
     required this.parentTreeValue,
     this.treeImpl,
     this.treeFont,
+    this.selection,
+    this.checkboxUpdateCounter = 0,
   });
 
   static TreeItemContext? of(BuildContext context) {
@@ -767,7 +1001,6 @@ class TreeItemContext {
   }
 }
 
-// InheritedWidget to provide context down the tree
 class TreeItemContextProvider extends InheritedWidget {
   final TreeItemContext context;
 
@@ -787,17 +1020,28 @@ class TreeItemContextProvider extends InheritedWidget {
           parentTreeValue: parentTreeValue,
           treeImpl: treeImpl,
           treeFont: treeFont,
+          selection: treeImpl?.state.selection,
+          checkboxUpdateCounter: treeImpl?.checkboxUpdateCounter ?? 0,
         ),
         super(key: key, child: child);
 
   @override
   bool updateShouldNotify(TreeItemContextProvider oldWidget) {
+    final oldSelection = oldWidget.context.selection ?? [];
+    final newSelection = context.selection ?? [];
+    final selectionChanged = oldSelection.length != newSelection.length ||
+        oldSelection.any((item) => !newSelection.any((newItem) => newItem.id == item.id)) ||
+        newSelection.any((item) => !oldSelection.any((oldItem) => oldItem.id == item.id));
+    
+    final checkboxChanged = oldWidget.context.checkboxUpdateCounter != context.checkboxUpdateCounter;
+    
     return context.level != oldWidget.context.level ||
-        context.isCheckMode != oldWidget.context.isCheckMode;
+        context.isCheckMode != oldWidget.context.isCheckMode ||
+        selectionChanged ||
+        checkboxChanged;
   }
 }
 
-// Helper class for tree item search results
 class TreeItemSearchResult {
   final bool found;
   final int index;
@@ -808,4 +1052,64 @@ class TreeItemSearchResult {
     required this.index,
     required this.level,
   });
+}
+
+class TreeColumnIndexProvider extends InheritedWidget {
+  final int columnIndex;
+
+  const TreeColumnIndexProvider({
+    super.key,
+    required this.columnIndex,
+    required super.child,
+  });
+
+  static int? of(BuildContext context) {
+    final provider = context.dependOnInheritedWidgetOfExactType<TreeColumnIndexProvider>();
+    return provider?.columnIndex;
+  }
+
+  @override
+  bool updateShouldNotify(TreeColumnIndexProvider oldWidget) {
+    return columnIndex != oldWidget.columnIndex;
+  }
+}
+
+class TreeLinesVisibleProvider extends InheritedWidget {
+  final bool linesVisible;
+
+  const TreeLinesVisibleProvider({
+    super.key,
+    required this.linesVisible,
+    required super.child,
+  });
+
+  static bool of(BuildContext context) {
+    final provider = context.dependOnInheritedWidgetOfExactType<TreeLinesVisibleProvider>();
+    return provider?.linesVisible ?? false;
+  }
+
+  @override
+  bool updateShouldNotify(TreeLinesVisibleProvider oldWidget) {
+    return linesVisible != oldWidget.linesVisible;
+  }
+}
+
+class TreeColumnIsLastProvider extends InheritedWidget {
+  final bool isLastColumn;
+
+  const TreeColumnIsLastProvider({
+    super.key,
+    required this.isLastColumn,
+    required super.child,
+  });
+
+  static bool of(BuildContext context) {
+    final provider = context.dependOnInheritedWidgetOfExactType<TreeColumnIsLastProvider>();
+    return provider?.isLastColumn ?? false;
+  }
+
+  @override
+  bool updateShouldNotify(TreeColumnIsLastProvider oldWidget) {
+    return isLastColumn != oldWidget.isLastColumn;
+  }
 }

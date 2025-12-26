@@ -1,15 +1,16 @@
 import 'dart:convert';
 
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/material.dart';
 
 import '../../comm/comm.dart';
-import '../../swt/swt.dart';
+import '../../gen/swt.dart';
+
 
 void showCustomDialog(BuildContext context, dynamic payload) {
   Map<String, dynamic> json = jsonDecode(payload);
   showDialog<String>(
     context: context,
-    builder: (context) => ContentDialog(
+    builder: (context) => AlertDialog(
       title: Text(json["title"] ?? ""),
       content: Text(json["message"] ?? ""),
       actions: getActions(context, json["style"] ?? "", json["labels"]),
@@ -19,7 +20,7 @@ void showCustomDialog(BuildContext context, dynamic payload) {
 
 List<Widget> getActions(
     BuildContext context, int style, Map<String, dynamic>? labels) {
-  const int cases = SWT.OK |
+  final int cases = SWT.OK |
       SWT.CANCEL |
       SWT.YES |
       SWT.NO |
@@ -67,23 +68,23 @@ List<Widget> getActions(
   };
 }
 
-Button createButton(BuildContext context, String textButton, int id) {
-  return Button(
-    child: Text(textButton),
+Widget createButton(BuildContext context, String textButton, int id) {
+  return TextButton(
     onPressed: () {
       Navigator.pop(context);
       EquoCommService.sendPayload("MessageBox/close", "$id");
     },
+    child: Text(textButton),
   );
 }
 
-Button createFilledButton(
+Widget createFilledButton(
     BuildContext context, String filledTextButton, int id) {
-  return FilledButton(
-    child: Text(filledTextButton),
+  return ElevatedButton(
     onPressed: () {
       Navigator.pop(context);
       EquoCommService.sendPayload("MessageBox/close", "$id");
     },
+    child: Text(filledTextButton),
   );
 }

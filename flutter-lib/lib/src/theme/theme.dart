@@ -4,6 +4,7 @@ import '../impl/widget_config.dart';
 import 'button_theme_settings.dart';
 import 'label_theme_settings.dart';
 import 'text_theme_settings.dart';
+import 'tree_theme_settings.dart';
 
 Color calculateBackgroundColor(int? backgroundColor, bool useDarkTheme) {
   return backgroundColor != null
@@ -44,6 +45,7 @@ ThemeData createLightTheme(int? backgroundColor) {
   final buttonTheme = getButtonLightTheme();
   final labelTheme = getLabelLightTheme();
   final textTheme = getTextLightTheme();
+  final treeTheme = getTreeLightTheme();
 
   return ThemeData(
     useMaterial3: true,
@@ -288,6 +290,7 @@ ThemeData createLightTheme(int? backgroundColor) {
       buttonTheme,
       labelTheme,
       textTheme,
+      treeTheme,
     ],
   );
 }
@@ -325,6 +328,7 @@ ThemeData createDarkTheme(int? backgroundColor) {
   final buttonTheme = getButtonDarkTheme();
   final labelTheme = getLabelDarkTheme();
   final textTheme = getTextDarkTheme();
+  final treeTheme = getTreeDarkTheme();
 
   return ThemeData(
     useMaterial3: true,
@@ -568,7 +572,8 @@ ThemeData createDarkTheme(int? backgroundColor) {
     extensions: <ThemeExtension<dynamic>>[
       buttonTheme,
       labelTheme,
-      textTheme,  
+      textTheme,
+      treeTheme,
     ],
   );
 }
