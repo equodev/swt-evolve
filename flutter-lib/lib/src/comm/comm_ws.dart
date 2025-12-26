@@ -194,25 +194,20 @@ class EquoComm {
     if (event == null) {
       return null;
     }
-    try {
-      final json = jsonDecode(event);
-      if (json['error'] != null) {
-        return null;
-      }
-      return SDKMessage(
-        actionId: json['actionId'],
-        payload: json['payload'],
-        error: json['error'] != null
-            ? SDKCommError(
-                code: json['error']['code'], message: json['error']['message'])
-            : null,
-        callbackId: json['callbackId'],
-      );
-    } on FormatException {
-      // Handle non-JSON messages (e.g., WebSocket close messages)
-      print('Received non-JSON message, ignoring: $event');
+    final json = jsonDecode(event);
+    if (json['error'] != null) {
+      // print(json['error']);
       return null;
     }
+    return SDKMessage(
+      actionId: json['actionId'],
+      payload: json['payload'],
+      error: json['error'] != null
+          ? SDKCommError(
+              code: json['error']['code'], message: json['error']['message'])
+          : null,
+      callbackId: json['callbackId'],
+    );
   }
 
   Future sendToJava(UserEvent userEvent,

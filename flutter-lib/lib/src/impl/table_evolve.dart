@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
-import 'package:swtflutter/src/swt/tablecolumn.dart';
+import 'package:swtflutter/src/gen/tablecolumn.dart';
 import '../impl/composite_evolve.dart';
 import '../impl/color_utils.dart';
 import '../styles.dart';

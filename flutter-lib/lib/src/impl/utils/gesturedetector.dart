@@ -1,22 +1,20 @@
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/material.dart';
 
-import '../../swt/menu.dart';
-import '../../swt/widget.dart';
-import '../../widgets.dart';
+import '../../gen/menu.dart';
+import '../../gen/widget.dart';
+import '../../gen/widgets.dart';
 
 GestureDetector createGestureDetector(
-    List<WidgetValue>? items, Widget widget, BuildContext context, state) {
-  final contextController = FlyoutController();
+    List<VWidget>? items, Widget widget, BuildContext context, state) {
   final contextAttachKey = GlobalKey();
 
   return GestureDetector(
     onSecondaryTapUp: (clickDetails) {
-      _generateMenu(context, state, contextAttachKey, contextController,
+      _generateMenu(context, state, contextAttachKey,
           clickDetails, items);
     },
-    child: FlyoutTarget(
+    child: Container(
       key: contextAttachKey,
-      controller: contextController,
       child: widget,
     ),
   );
@@ -26,10 +24,9 @@ void _generateMenu(
     BuildContext context,
     state,
     GlobalKey contextAttachKey,
-    FlyoutController contextController,
     TapUpDetails clickDetails,
-    List<WidgetValue>? items) {
-  // This calculates the position of the flyout according to the parent navigator
+    List<VWidget>? items) {
+  // This calculates the position of the menu according to the parent navigator
   final targetContext = contextAttachKey.currentContext;
   if (targetContext == null) return;
   final box = targetContext.findRenderObject() as RenderBox;
@@ -38,11 +35,19 @@ void _generateMenu(
     ancestor: Navigator.of(context).context.findRenderObject(),
   );
 
-  contextController.showFlyout(
-    barrierColor: Colors.black.withOpacity(0.1),
-    position: position,
-    builder: (context) {
-      return mapWidgetFromValue(state.menu as MenuValue);
-    },
+  // Use showMenu with proper RelativeRect
+  final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+  showMenu(
+    context: context,
+    position: RelativeRect.fromRect(
+      Rect.fromLTWH(position.dx, position.dy, 0, 0),
+      Rect.fromLTWH(0, 0, overlay.size.width, overlay.size.height),
+    ),
+    items: [
+      PopupMenuItem(
+        child: mapWidgetFromValue(state.menu as VMenu),
+      ),
+    ],
+    color: Colors.white,
   );
 }

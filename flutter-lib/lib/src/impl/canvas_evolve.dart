@@ -1,4 +1,4 @@
-import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/material.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
 import '../gen/gc.dart';

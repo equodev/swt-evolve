@@ -4,7 +4,6 @@ import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/custom/toolbar_composite.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
-import 'src/swt/composite.dart';
 import 'src/styles.dart';
 import 'src/theme/theme.dart' show createLightTheme, createDarkTheme;
 import 'dart:convert';
@@ -12,7 +11,6 @@ import 'dart:convert';
 import 'native_platform.dart' if (dart.library.html) 'web_platform.dart';
 
 import 'src/comm/comm.dart';
-import 'src/widgets.dart';
 import 'src/gen/widgets.dart' as gen;
 
 void main(List<String> args) async {
@@ -69,7 +67,7 @@ Widget createContentWidget(String widgetName, int widgetId) {
     'id': widgetId,
     'style': 0,
   };
-  return customWidget(child) ?? gen.mapWidget(child) ?? mapWidget(child);
+  return customWidget(child) ?? gen.mapWidget(child);
 }
 
 Widget? customWidget(Map<String, dynamic> child) {

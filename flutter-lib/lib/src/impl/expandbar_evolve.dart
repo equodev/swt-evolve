@@ -4,7 +4,7 @@ import '../gen/expanditem.dart';
 import '../gen/widgets.dart';
 import '../styles.dart';
 import 'package:flutter/material.dart';
-import '../swt/swt.dart';
+import '../gen/swt.dart';
 import '../impl/composite_evolve.dart';
 import 'color_utils.dart';
 import '../gen/composite.dart';
