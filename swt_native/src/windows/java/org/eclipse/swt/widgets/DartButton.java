@@ -872,6 +872,8 @@ public class DartButton extends DartControl implements IButton {
         }
     }
 
+    boolean primary;
+
     boolean selection;
 
     public String _text() {
@@ -900,6 +902,10 @@ public class DartButton extends DartControl implements IButton {
 
     public boolean _useDarkModeExplorerTheme() {
         return useDarkModeExplorerTheme;
+    }
+
+    public boolean _primary() {
+        return primary;
     }
 
     public boolean _selection() {

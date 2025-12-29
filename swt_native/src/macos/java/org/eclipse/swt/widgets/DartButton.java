@@ -642,6 +642,8 @@ public class DartButton extends DartControl implements IButton {
         super.setZOrder();
     }
 
+    boolean primary;
+
     boolean selection;
 
     public String _text() {
@@ -654,6 +656,10 @@ public class DartButton extends DartControl implements IButton {
 
     public boolean _grayed() {
         return grayed;
+    }
+
+    public boolean _primary() {
+        return primary;
     }
 
     public boolean _selection() {

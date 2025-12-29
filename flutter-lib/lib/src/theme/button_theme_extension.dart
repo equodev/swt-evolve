@@ -15,6 +15,12 @@ class ButtonThemeExtension extends ThemeExtension<ButtonThemeExtension> {
   final Color pushButtonDisabledColor;
   final Color pushButtonBorderColor;
   
+  // Secondary Button colors
+  final Color secondaryButtonColor;
+  final Color secondaryButtonHoverColor;
+  final Color secondaryButtonTextColor;
+  final Color secondaryButtonBorderColor;
+  
   // Radio Button colors
   final Color radioButtonSelectedColor;
   final Color radioButtonHoverColor;
@@ -102,6 +108,10 @@ class ButtonThemeExtension extends ThemeExtension<ButtonThemeExtension> {
     required this.pushButtonHoverColor,
     required this.pushButtonDisabledColor,
     required this.pushButtonBorderColor,
+    required this.secondaryButtonColor,
+    required this.secondaryButtonHoverColor,
+    required this.secondaryButtonTextColor,
+    required this.secondaryButtonBorderColor,
     required this.radioButtonSelectedColor,
     required this.radioButtonHoverColor,
     required this.radioButtonBorderColor,
@@ -176,6 +186,10 @@ class ButtonThemeExtension extends ThemeExtension<ButtonThemeExtension> {
     Color? pushButtonHoverColor,
     Color? pushButtonDisabledColor,
     Color? pushButtonBorderColor,
+    Color? secondaryButtonColor,
+    Color? secondaryButtonHoverColor,
+    Color? secondaryButtonTextColor,
+    Color? secondaryButtonBorderColor,
     Color? radioButtonSelectedColor,
     Color? radioButtonHoverColor,
     Color? radioButtonBorderColor,
@@ -248,6 +262,10 @@ class ButtonThemeExtension extends ThemeExtension<ButtonThemeExtension> {
       pushButtonHoverColor: pushButtonHoverColor ?? this.pushButtonHoverColor,
       pushButtonDisabledColor: pushButtonDisabledColor ?? this.pushButtonDisabledColor,
       pushButtonBorderColor: pushButtonBorderColor ?? this.pushButtonBorderColor,
+      secondaryButtonColor: secondaryButtonColor ?? this.secondaryButtonColor,
+      secondaryButtonHoverColor: secondaryButtonHoverColor ?? this.secondaryButtonHoverColor,
+      secondaryButtonTextColor: secondaryButtonTextColor ?? this.secondaryButtonTextColor,
+      secondaryButtonBorderColor: secondaryButtonBorderColor ?? this.secondaryButtonBorderColor,
       radioButtonSelectedColor: radioButtonSelectedColor ?? this.radioButtonSelectedColor,
       radioButtonHoverColor: radioButtonHoverColor ?? this.radioButtonHoverColor,
       radioButtonBorderColor: radioButtonBorderColor ?? this.radioButtonBorderColor,
@@ -334,6 +352,10 @@ class ButtonThemeExtension extends ThemeExtension<ButtonThemeExtension> {
       pushButtonHoverColor: Color.lerp(pushButtonHoverColor, other.pushButtonHoverColor, t)!,
       pushButtonDisabledColor: Color.lerp(pushButtonDisabledColor, other.pushButtonDisabledColor, t)!,
       pushButtonBorderColor: Color.lerp(pushButtonBorderColor, other.pushButtonBorderColor, t)!,
+      secondaryButtonColor: Color.lerp(secondaryButtonColor, other.secondaryButtonColor, t)!,
+      secondaryButtonHoverColor: Color.lerp(secondaryButtonHoverColor, other.secondaryButtonHoverColor, t)!,
+      secondaryButtonTextColor: Color.lerp(secondaryButtonTextColor, other.secondaryButtonTextColor, t)!,
+      secondaryButtonBorderColor: Color.lerp(secondaryButtonBorderColor, other.secondaryButtonBorderColor, t)!,
       radioButtonSelectedColor: Color.lerp(radioButtonSelectedColor, other.radioButtonSelectedColor, t)!,
       radioButtonHoverColor: Color.lerp(radioButtonHoverColor, other.radioButtonHoverColor, t)!,
       radioButtonBorderColor: Color.lerp(radioButtonBorderColor, other.radioButtonBorderColor, t)!,

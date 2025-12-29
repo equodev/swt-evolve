@@ -40,22 +40,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       ButtonThemeExtension widgetTheme, bool enabled, String? text) {
     final isPressed = state.selection ?? false;
     final hasFlat = (state.style & SWT.FLAT) != 0;
-    
-    final backgroundColor = enabled 
-        ? (isPressed 
-            ? getButtonBackgroundColor(
-                state,
-                widgetTheme,
-                colorScheme,
-                widgetTheme.pushButtonHoverColor,
-              )
-            : getButtonBackgroundColor(
-                state,
-                widgetTheme,
-                colorScheme,
-                widgetTheme.pushButtonColor ?? colorScheme.primary,
-              ))
-        : widgetTheme.pushButtonDisabledColor;
+    final isPrimary = state.primary ?? false;
     
     final hasBounds = state.bounds != null && state.bounds!.width > 0 && state.bounds!.height > 0;
     final constraints = hasBounds
@@ -67,31 +52,58 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
           )
         : null;
     
+    // Determine base colors based on primary/secondary
+    final baseBackgroundColor = enabled 
+        ? (isPrimary 
+            ? getButtonBackgroundColor(
+                state,
+                widgetTheme,
+                colorScheme,
+                widgetTheme.pushButtonColor ?? colorScheme.primary,
+              )
+            : getButtonBackgroundColor(
+                state,
+                widgetTheme,
+                colorScheme,
+                widgetTheme.secondaryButtonColor,
+              ))
+        : widgetTheme.pushButtonDisabledColor;
+    
+    final hoverBackgroundColor = enabled 
+        ? (isPrimary 
+            ? getButtonBackgroundColor(
+                state,
+                widgetTheme,
+                colorScheme,
+                widgetTheme.pushButtonHoverColor,
+              )
+            : getButtonBackgroundColor(
+                state,
+                widgetTheme,
+                colorScheme,
+                widgetTheme.secondaryButtonHoverColor,
+              ))
+        : widgetTheme.pushButtonDisabledColor;
+    
+    final borderColor = isPrimary 
+        ? widgetTheme.pushButtonBorderColor
+        : widgetTheme.secondaryButtonBorderColor;
+    
     return wrap(
-      Material(
-        color: backgroundColor,
-        elevation: hasFlat ? 0.0 : widgetTheme.pushButtonElevation,
-        borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
-        child: InkWell(
-          onTap: enabled ? _onPressed : null,
-          onHover: _onHover,
-          onFocusChange: _onFocusChange,
-          borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
-          splashColor: Colors.transparent,
-          highlightColor: Colors.transparent,
-          child: Container(
-            constraints: constraints,
-            padding: widgetTheme.pushButtonPadding,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
-              border: Border.all(
-                color: widgetTheme.pushButtonBorderColor,
-                width: widgetTheme.pushButtonBorderWidth,
-              ),
-            ),
-            child: _buildButtonContent(context, text, widgetTheme, colorScheme, textTheme, enabled, 'push', hasBounds: hasBounds),
-          ),
-        ),
+      _HoverableButton(
+        baseBackgroundColor: baseBackgroundColor,
+        hoverBackgroundColor: hoverBackgroundColor,
+        borderColor: borderColor,
+        isPressed: isPressed,
+        hasFlat: hasFlat,
+        enabled: enabled,
+        constraints: constraints,
+        widgetTheme: widgetTheme,
+        onPressed: enabled ? _onPressed : null,
+        onHover: _onHover,
+        onFocusChange: _onFocusChange,
+        isPrimary: isPrimary,
+        child: _buildButtonContent(context, text, widgetTheme, colorScheme, textTheme, enabled, 'push', isPrimary: isPrimary, hasBounds: hasBounds),
       ),
     );
   }
@@ -521,7 +533,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
   }
 
   Widget _buildButtonContent(BuildContext context, String? text, ButtonThemeExtension widgetTheme, 
-      ColorScheme colorScheme, TextTheme textTheme, bool enabled, String buttonType, {bool selected = false, bool hasBounds = false}) {
+      ColorScheme colorScheme, TextTheme textTheme, bool enabled, String buttonType, {bool selected = false, bool hasBounds = false, bool isPrimary = true}) {
     
     MainAxisAlignment alignment = MainAxisAlignment.center;
     final alignmentValue = state.alignment ?? SWT.CENTER;
@@ -546,7 +558,9 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     switch (buttonType) {
       case 'push':
         defaultTextColor = enabled 
-            ? widgetTheme.pushButtonTextColor
+            ? (isPrimary 
+                ? widgetTheme.pushButtonTextColor
+                : widgetTheme.secondaryButtonTextColor)
             : getDisabledForegroundColor(widgetTheme, colorScheme);
         fontSize = widgetTheme.pushButtonFontSize;
         fontWeight = widgetTheme.pushButtonFontWeight;
@@ -653,5 +667,95 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     } else {
       widget.sendFocusFocusOut(state, null);
     }
+  }
+}
+
+class _HoverableButton extends StatefulWidget {
+  final Color baseBackgroundColor;
+  final Color hoverBackgroundColor;
+  final Color borderColor;
+  final bool isPressed;
+  final bool hasFlat;
+  final bool enabled;
+  final BoxConstraints? constraints;
+  final ButtonThemeExtension widgetTheme;
+  final VoidCallback? onPressed;
+  final ValueChanged<bool> onHover;
+  final ValueChanged<bool> onFocusChange;
+  final bool isPrimary;
+  final Widget child;
+
+  const _HoverableButton({
+    required this.baseBackgroundColor,
+    required this.hoverBackgroundColor,
+    required this.borderColor,
+    required this.isPressed,
+    required this.hasFlat,
+    required this.enabled,
+    this.constraints,
+    required this.widgetTheme,
+    this.onPressed,
+    required this.onHover,
+    required this.onFocusChange,
+    required this.isPrimary,
+    required this.child,
+  });
+
+  @override
+  State<_HoverableButton> createState() => _HoverableButtonState();
+}
+
+class _HoverableButtonState extends State<_HoverableButton> {
+  bool _isHovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final backgroundColor = widget.enabled 
+        ? (widget.isPressed 
+            ? widget.hoverBackgroundColor
+            : (_isHovering 
+                ? widget.hoverBackgroundColor
+                : widget.baseBackgroundColor))
+        : widget.widgetTheme.pushButtonDisabledColor;
+
+    return MouseRegion(
+      onEnter: (_) {
+        setState(() {
+          _isHovering = true;
+        });
+        widget.onHover(true);
+      },
+      onExit: (_) {
+        setState(() {
+          _isHovering = false;
+        });
+        widget.onHover(false);
+      },
+      child: Material(
+        color: backgroundColor,
+        elevation: widget.hasFlat ? 0.0 : widget.widgetTheme.pushButtonElevation,
+        borderRadius: BorderRadius.circular(widget.widgetTheme.pushButtonBorderRadius),
+        child: InkWell(
+          onTap: widget.onPressed,
+          onFocusChange: widget.onFocusChange,
+          borderRadius: BorderRadius.circular(widget.widgetTheme.pushButtonBorderRadius),
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            constraints: widget.constraints,
+            padding: widget.widgetTheme.pushButtonPadding,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(widget.widgetTheme.pushButtonBorderRadius),
+              border: Border.all(
+                color: widget.borderColor,
+                width: widget.widgetTheme.pushButtonBorderWidth,
+              ),
+            ),
+            child: widget.child,
+          ),
+        ),
+      ),
+    );
   }
 }
