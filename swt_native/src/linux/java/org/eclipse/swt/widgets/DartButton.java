@@ -792,6 +792,8 @@ public class DartButton extends DartControl implements IButton {
         }
     }
 
+    boolean primary;
+
     boolean selection;
 
     public long _boxHandle() {
@@ -840,6 +842,10 @@ public class DartButton extends DartControl implements IButton {
 
     public boolean _enabled() {
         return enabled;
+    }
+
+    public boolean _primary() {
+        return primary;
     }
 
     public boolean _selection() {

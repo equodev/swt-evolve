@@ -38,6 +38,7 @@ class VButton extends VControl {
   int? alignment;
   bool? grayed;
   VImage? image;
+  bool? primary;
   bool? selection;
   String? text;
 

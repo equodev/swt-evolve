@@ -44,6 +44,19 @@ public class VButton extends VControl {
         ((DartButton) impl).image = value;
     }
 
+    public boolean getPrimary() {
+        Button button = ((DartButton) impl).getApi();
+        Shell shell = button.getShell();
+        if (shell == null) {
+            return true;
+        }
+        Button defaultButton = shell.getDefaultButton();
+        return defaultButton != null && defaultButton == button;
+    }
+
+    public void setPrimary(boolean value) {
+    }
+
     public boolean getSelection() {
         return ((DartButton) impl).getSelection();
     }

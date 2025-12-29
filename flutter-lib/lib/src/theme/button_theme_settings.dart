@@ -20,6 +20,12 @@ ButtonThemeExtension getButtonLightTheme() {
     pushButtonDisabledColor: const Color(0xFFE5E7EB),
     pushButtonBorderColor: const Color(0xFF4F46E5),
     
+    // Secondary Button colors
+    secondaryButtonColor: const Color(0xFFF2F2FE), 
+    secondaryButtonHoverColor: const Color(0xFFE5E7EB), 
+    secondaryButtonTextColor: const Color(0xFF4F46E5), 
+    secondaryButtonBorderColor: const Color(0xFF4F46E5), 
+    
     // Push Button dimensions
     pushButtonHeight: 32.0,
     pushButtonMinWidth: 80.0,
@@ -112,6 +118,12 @@ ButtonThemeExtension getButtonDarkTheme() {
     pushButtonHoverColor: const Color(0xFF4338CA),
     pushButtonDisabledColor: const Color(0xFF374151),
     pushButtonBorderColor: const Color(0xFF4F46E5),
+    
+    // Secondary Button colors
+    secondaryButtonColor: const Color(0xFFF2F2FE), 
+    secondaryButtonHoverColor: const Color(0xFF374151), 
+    secondaryButtonTextColor: const Color(0xFF4F46E5), 
+    secondaryButtonBorderColor: const Color(0xFF4F46E5), 
     
     // Push Button dimensions
     pushButtonHeight: 32.0,
