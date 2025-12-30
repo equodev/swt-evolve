@@ -61,8 +61,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
 
     int visibleItemCount = 5;
 
-    Shell popup;
-
     Button arrow;
 
     boolean hasFocus;
@@ -122,10 +120,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
         listener = event -> {
             if (isDisposed())
                 return;
-            if (popup == event.widget) {
-                popupEvent(event);
-                return;
-            }
             if (text == event.widget) {
                 textEvent(event);
                 return;
@@ -505,15 +499,10 @@ public class DartCCombo extends DartComposite implements ICCombo {
                 removeListener(SWT.Dispose, listener);
                 notifyListeners(SWT.Dispose, event);
                 event.type = SWT.None;
-                if (popup != null && !popup.isDisposed()) {
-                    list.removeListener(SWT.Dispose, listener);
-                    popup.dispose();
-                }
                 Shell shell = getShell();
                 shell.removeListener(SWT.Deactivate, listener);
                 Display display = getDisplay();
                 display.removeFilter(SWT.FocusIn, filter);
-                popup = null;
                 text = null;
                 list = null;
                 arrow = null;
@@ -566,8 +555,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
     }
 
     void createPopup(String[] items, int selectionIndex) {
-        // create shell and list
-        ;
         int style = getStyle();
         int listStyle = SWT.SINGLE | SWT.V_SCROLL | SWT.H_SCROLL;
         if ((style & SWT.FLAT) != 0)
@@ -583,8 +570,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
             list.setForeground(foreground);
         if (background != null)
             list.setBackground(background);
-        int[] popupEvents = { SWT.Close, SWT.Paint };
-        ;
         int[] listEvents = { SWT.MouseUp, SWT.Selection, SWT.Traverse, SWT.KeyDown, SWT.KeyUp, SWT.FocusIn, SWT.FocusOut, SWT.Dispose };
         for (int listEvent : listEvents) list.addListener(listEvent, listener);
         if (items != null)
@@ -662,7 +647,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
         Display display = getDisplay();
         if (!drop) {
             display.removeFilter(SWT.Selection, filter);
-            popup.setVisible(false);
             if (!isDisposed() && isFocusControl()) {
                 text.setFocus();
             }
@@ -670,15 +654,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
         }
         if (!isVisible())
             return;
-        if (getShell() != popup.getParent()) {
-            String[] items = this.items;
-            int selectionIndex = list.getSelectionIndex();
-            list.removeListener(SWT.Dispose, listener);
-            popup.dispose();
-            popup = null;
-            list = null;
-            createPopup(items, selectionIndex);
-        }
         Point comboSize = getSize();
         int itemCount = list.getItemCount();
         itemCount = (itemCount == 0) ? visibleItemCount : Math.min(visibleItemCount, itemCount);
@@ -716,8 +691,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
         ScrollBar hBar = list.getHorizontalBar();
         int emptyHBarSpace = hBar.isVisible() ? 0 : hBar.getSize().y;
         list.setSize(listRect.width, listRect.height - emptyHBarSpace);
-        popup.setBounds(x, y, width, height - emptyHBarSpace);
-        popup.setVisible(true);
         if (isFocusControl())
             list.setFocus();
         /*
@@ -1271,16 +1244,12 @@ public class DartCCombo extends DartComposite implements ICCombo {
     }
 
     boolean isDropped() {
-        return !isDisposed() && popup != null && popup.getVisible();
+        return false;
     }
 
     @Override
     public boolean isFocusControl() {
         checkWidget();
-        Predicate<Control> checkFocusControl = control -> (control != null && !control.isDisposed() && control.isFocusControl());
-        if (checkFocusControl.test(text) || checkFocusControl.test(arrow) || checkFocusControl.test(list) || checkFocusControl.test(popup)) {
-            return true;
-        }
         return super.isFocusControl();
     }
 
@@ -1308,13 +1277,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
     void listEvent(Event event) {
         switch(event.type) {
             case SWT.Dispose:
-                if (getShell() != popup.getParent()) {
-                    String[] items = this.items;
-                    int selectionIndex = list.getSelectionIndex();
-                    popup = null;
-                    list = null;
-                    createPopup(items, selectionIndex);
-                }
                 break;
             case SWT.FocusIn:
                 {
@@ -1487,8 +1449,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
         super.redraw();
         text.redraw();
         arrow.redraw();
-        if (popup.isVisible())
-            list.redraw();
     }
 
     @Override
@@ -1768,8 +1728,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
     public void setEnabled(boolean enabled) {
         dirty();
         super.setEnabled(enabled);
-        if (popup != null)
-            popup.setVisible(false);
         if (text != null)
             text.setEnabled(enabled);
         if (arrow != null)
@@ -2036,11 +1994,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
 	 */
         if (isDisposed())
             return;
-        // TEMPORARY CODE
-        if (popup == null || popup.isDisposed())
-            return;
-        if (!visible)
-            popup.setVisible(false);
     }
 
     /**
@@ -2344,7 +2297,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
         childUpdater.accept(combo.getImpl()._text());
         childUpdater.accept(combo.getImpl()._list());
         childUpdater.accept(combo.getImpl()._arrow());
-        childUpdater.accept(combo.getImpl()._popup());
     }
 
     int alignment;
@@ -2371,10 +2323,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
 
     public int _visibleItemCount() {
         return visibleItemCount;
-    }
-
-    public Shell _popup() {
-        return popup;
     }
 
     public Button _arrow() {

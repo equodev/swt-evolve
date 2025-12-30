@@ -70,8 +70,8 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     // CCombo behavior: in READ_ONLY mode, acts like a dropdown selector
     // In editable mode, allows free text input with optional list selection
     if (isReadOnly) {
-      if (isSimple || listVisible) {
-        // READ_ONLY + SIMPLE or list visible: show list always
+      if (listVisible) {
+        // READ_ONLY + list visible: show list always
         return StyledSimpleCCombo(
           controller: _controller,
           focusNode: _focusNode,
@@ -105,7 +105,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
       }
     } else {
       // Editable CCombo modes
-      if (isSimple || listVisible) {
+      if (listVisible) {
         // Editable with visible list
         return StyledSimpleCCombo(
           controller: _controller,

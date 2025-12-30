@@ -120,6 +120,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public DartText(Composite parent, int style, Text api) {
         super(parent, checkStyle(style), api);
+        selection = new Point(0, 0);
         if ((style & SWT.SEARCH) != 0) {
             if ((style & SWT.ICON_CANCEL) != 0) {
                 this.getApi().style |= SWT.ICON_CANCEL;
@@ -1509,8 +1510,12 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setSelection(int start, int end) {
         dirty();
-        Point newValue = new Point(start, end);
+        ;
         checkWidget();
+        int length = getText().length();
+        start = Math.max(0, Math.min(start, length));
+        end = Math.max(0, Math.min(end, length));
+        Point newValue = new Point(start, end);
         this.selection = newValue;
         if ((getApi().style & SWT.SINGLE) != 0) {
         } else {
