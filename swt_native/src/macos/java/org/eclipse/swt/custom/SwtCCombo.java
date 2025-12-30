@@ -2234,7 +2234,7 @@ public class SwtCCombo extends SwtComposite implements ICCombo {
         childUpdater.accept(combo.getImpl()._text());
         childUpdater.accept(combo.getImpl()._list());
         childUpdater.accept(combo.getImpl()._arrow());
-        childUpdater.accept(combo.getImpl()._popup());
+        childUpdater.accept(((SwtCCombo) combo.getImpl()).popup);
     }
 
     public Text _text() {
@@ -2247,10 +2247,6 @@ public class SwtCCombo extends SwtComposite implements ICCombo {
 
     public int _visibleItemCount() {
         return visibleItemCount;
-    }
-
-    public Shell _popup() {
-        return popup;
     }
 
     public Button _arrow() {
