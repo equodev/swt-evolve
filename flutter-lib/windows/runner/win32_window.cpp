@@ -118,15 +118,12 @@ Win32Window::Win32Window() {
 
 Win32Window::~Win32Window() {
   --g_active_window_count;
-  Destroy();
 }
 
 bool Win32Window::Create(const std::wstring& title,
                          const Point& origin,
                          const Size& size,
                          const HWND parentWnd) {
-  Destroy();
-
   const wchar_t* window_class =
       WindowClassRegistrar::GetInstance()->GetWindowClass();
 
@@ -206,13 +203,18 @@ Win32Window::MessageHandler(HWND hwnd,
     switch (message) {
         case WM_DESTROY:
             std::cout << "Win32Window: WM_DESTROY" << std::endl;
-            window_handle_ = nullptr;
-            Destroy();
+            OnDestroy();
             if (quit_on_close_) {
                 PostQuitMessage(0);
             }
             return 0;
-
+        case WM_NCDESTROY: {
+            std::cout << "Win32Window: WM_NCDESTROY" << std::endl;
+            auto self = GetThisFromHandle(hwnd);
+            SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
+            delete self;
+            return 0;
+        }
         case WM_KEYDOWN:
         case WM_KEYUP:
         case WM_CHAR:
@@ -280,7 +282,6 @@ Win32Window::MessageHandler(HWND hwnd,
 }
 
 void Win32Window::Destroy() {
-  OnDestroy();
 
   if (window_handle_) {
     DestroyWindow(window_handle_);

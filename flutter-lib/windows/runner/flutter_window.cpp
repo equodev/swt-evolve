@@ -41,7 +41,7 @@ bool FlutterWindow::OnCreate() {
 
 void FlutterWindow::OnDestroy() {
   if (flutter_controller_) {
-    flutter_controller_ = nullptr;
+    flutter_controller_.reset();
   }
 
   Win32Window::OnDestroy();
