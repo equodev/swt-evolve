@@ -1117,7 +1117,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (font != null)
             return font;
-        return this.font;
+        return display.getSystemFont();
     }
 
     /**

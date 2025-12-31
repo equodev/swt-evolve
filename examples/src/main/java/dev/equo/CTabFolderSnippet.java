@@ -20,7 +20,6 @@ import org.eclipse.swt.widgets.*;
  */
 public class CTabFolderSnippet {
     public static void main (String [] args) {
-        Config.forceEquo();
         Display display = new Display ();
 
         final Shell shell = new Shell (display);

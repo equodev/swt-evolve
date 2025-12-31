@@ -226,6 +226,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             default:
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
+        this.imageData = ((DartImage) srcImage.getImpl()).imageData;
         device = this.device;
         this.getApi().type = srcImage.type;
         this.imageDataProvider = ((DartImage) srcImage.getImpl()).imageDataProvider;
@@ -351,6 +352,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         super(device, api);
         if (data == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        this.imageData = data;
         currentDeviceZoom = zoom;
         init(data, zoom);
         init();
@@ -395,6 +397,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         if (source.width != mask.width || source.height != mask.height) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
+        this.imageData = source;
         currentDeviceZoom = DPIUtil.getDeviceZoom();
         mask = ImageData.convertMask(mask);
         ImageData image = new ImageData(source.width, source.height, source.depth, source.palette, source.scanlinePad, source.data);

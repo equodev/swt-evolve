@@ -758,7 +758,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     }
 
     Image createButtonImage(Display display, int button) {
-        return null;
+        return CTabFolderHelper.createButtonImage(this, display, button);
     }
 
     private void notifyItemCountChange() {
@@ -876,6 +876,11 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             chevronItem.setToolTipText(SWT.getMessage("SWT_ShowList"));
             chevronItem.addListener(SWT.Selection, listener);
         }
+        if (chevronImage == null) {
+            chevronImage = createButtonImage(getDisplay(), CTabFolderRenderer.PART_CHEVRON_BUTTON);
+            chevronCount = getChevronCount();
+        }
+        chevronItem.setImage(chevronImage);
         return chevronTb;
     }
 
@@ -4117,8 +4122,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     }
 
     boolean updateItems(int showIndex) {
-        setButtonBounds();
-        return false;
+        return CTabFolderHelper.updateItems(this, showIndex);
     }
 
     boolean updateTabHeight(boolean force) {
@@ -4795,12 +4799,16 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
-                sendEvent(SWT.DefaultSelection, e);
+                if (!isDisposed()) {
+                    sendEvent(SWT.DefaultSelection, e);
+                }
             });
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {
             getDisplay().asyncExec(() -> {
-                setSelection(e.index, true);
+                if (!isDisposed()) {
+                    setSelection(e.index, true);
+                }
             });
         });
     }
