@@ -12,9 +12,10 @@ import 'color_utils.dart';
 import 'icons_map.dart';
 import 'utils/font_utils.dart';
 import 'utils/image_utils.dart';
-import '../theme/tree_theme_extension.dart';
-import '../theme/tree_theme_settings.dart';
+import '../theme/theme_extensions/tree_theme_extension.dart';
+import '../theme/theme_settings/tree_theme_settings.dart';
 import '../gen/button.dart';
+import 'utils/widget_utils.dart';
 
 class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     extends ItemImpl<T, V> {
@@ -22,6 +23,23 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   TreeItemContext? _context;
   
   bool _isHovered = false;
+
+  VEvent _createEvent({int? detail, int? stateMask}) {
+    final widgetTheme = Theme.of(context).extension<TreeThemeExtension>();
+    var e = VEvent();
+    if (_context?.treeImpl != null && widgetTheme != null) {
+      e.index = _context!.treeImpl!.findItemIndex(state.id);
+      e.detail = detail ?? widgetTheme.eventDefaultDetail;
+      e.x = widgetTheme.eventDefaultX;
+      e.y = widgetTheme.eventDefaultY;
+      e.width = widgetTheme.eventDefaultWidth.round();
+      e.height = widgetTheme.eventDefaultHeight.round();
+      if (stateMask != null) {
+        e.stateMask = stateMask;
+      }
+    }
+    return e;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,9 +53,10 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   }
 
   Widget buildTreeItemContent(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     final widgetTheme = Theme.of(context).extension<TreeThemeExtension>();
+    if (widgetTheme == null) {
+      return Text(state.text ?? "");
+    }
     
     final String text = state.text ?? "";
     final List<String>? texts = state.texts;
@@ -53,29 +72,29 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     final bool enabled = _context?.parentTreeValue.enabled ?? true;
     final bool nextItemSelected = _context?.treeImpl?.isNextItemSelected(state.id) ?? false;
 
-    final textColor = getTreeItemTextColor(state, widgetTheme!, colorScheme, selected, enabled);
-    final bgColor = getTreeItemBackgroundColor(state, widgetTheme!, colorScheme, selected, _isHovered && !selected, enabled);
+    final textColor = getTreeItemTextColor(state, widgetTheme, selected, enabled);
+    final bgColor = getTreeItemBackgroundColor(state, widgetTheme, selected, _isHovered && !selected, enabled);
 
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) {
-        setState(() {
-          _isHovered = true;
-        });
-        _context?.parentTree
-            .sendMouseTrackMouseEnter(_context!.parentTreeValue, null);
-      },
-      onExit: (_) {
-        setState(() {
-          _isHovered = false;
-        });
-        _context?.parentTree
-            .sendMouseTrackMouseExit(_context!.parentTreeValue, null);
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Listener(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        MouseRegion(
+          cursor: SystemMouseCursors.click,
+          onEnter: (_) {
+            setState(() {
+              _isHovered = true;
+            });
+            _context?.parentTree
+                .sendMouseTrackMouseEnter(_context!.parentTreeValue, null);
+          },
+          onExit: (_) {
+            setState(() {
+              _isHovered = false;
+            });
+            _context?.parentTree
+                .sendMouseTrackMouseExit(_context!.parentTreeValue, null);
+          },
+          child: Listener(
             onPointerDown: (PointerDownEvent event) {
               if (event.buttons != 1) return;
               
@@ -85,102 +104,78 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               final bool isShiftPressed = pressedKeys.contains(LogicalKeyboardKey.shiftLeft) ||
                   pressedKeys.contains(LogicalKeyboardKey.shiftRight);
 
-              print('TreeItem pointerDown - Item ID=${state.id}');
-              print('  Buttons: ${event.buttons}');
-              print('  Pressed keys: ${pressedKeys.map((k) => k.keyLabel).join(", ")}');
-              print('  isCtrlPressed: $isCtrlPressed');
-              print('  isShiftPressed: $isShiftPressed');
-
               _context?.treeImpl?.handleTreeItemSelection(
                 state.id,
                 isCtrlPressed: isCtrlPressed,
                 isShiftPressed: isShiftPressed,
               );
 
-              var e = VEvent();
-              if (_context?.treeImpl != null) {
-                e.index = _context!.treeImpl!.findItemIndex(state.id);
-                e.detail = widgetTheme!.eventDefaultDetail;
-                e.x = widgetTheme.eventDefaultX;
-                e.y = widgetTheme.eventDefaultY;
-                e.width = widgetTheme.eventDefaultWidth.round();
-                e.height = widgetTheme.eventDefaultHeight.round();
-                int stateMask = 0;
-                if (isCtrlPressed) {
-                  stateMask |= SWT.CTRL;
-                }
-                if (isShiftPressed) {
-                  stateMask |= SWT.SHIFT;
-                }
-                e.stateMask = stateMask;
+              int stateMask = 0;
+              if (isCtrlPressed) {
+                stateMask |= SWT.CTRL;
               }
+              if (isShiftPressed) {
+                stateMask |= SWT.SHIFT;
+              }
+              final e = _createEvent(stateMask: stateMask);
 
               _context?.parentTree
                   .sendSelectionSelection(_context!.parentTreeValue, e);
             },
             child: GestureDetector(
               onDoubleTap: () {
-              var e = VEvent();
-              if (_context?.treeImpl != null) {
-                e.index = _context!.treeImpl!.findItemIndex(state.id);
-                e.detail = widgetTheme!.eventDefaultDetail;
-                e.x = widgetTheme.eventDefaultX;
-                e.y = widgetTheme.eventDefaultY;
-                e.width = widgetTheme.eventDefaultWidth.round();
-                e.height = widgetTheme.eventDefaultHeight.round();
-              }
-
-              _context?.parentTree
-                  .sendSelectionDefaultSelection(_context!.parentTreeValue, e);
-            },
-            child: Container(
-              constraints: BoxConstraints(
-                minHeight: widgetTheme!.itemHeight,
-              ),
-              margin: selected
-                  ? EdgeInsets.only(
-                      left: -widgetTheme.itemSelectedBorderWidth,
-                      right: -widgetTheme.itemSelectedBorderWidth,
-                      top: -widgetTheme.itemSelectedBorderWidth,
-                      bottom: nextItemSelected
-                          ? 0.0
-                          : -widgetTheme.itemSelectedBorderWidth,
-                    )
-                  : null,
-              decoration: BoxDecoration(
-                color: bgColor,
-                border: selected
-                    ? Border(
-                        left: BorderSide(
-                          color: widgetTheme.itemSelectedBorderColor,
-                          width: widgetTheme.itemSelectedBorderWidth,
-                        ),
-                        right: BorderSide(
-                          color: widgetTheme.itemSelectedBorderColor,
-                          width: widgetTheme.itemSelectedBorderWidth,
-                        ),
-                        top: BorderSide(
-                          color: widgetTheme.itemSelectedBorderColor,
-                          width: widgetTheme.itemSelectedBorderWidth,
-                        ),
+                final e = _createEvent();
+                _context?.parentTree
+                    .sendSelectionDefaultSelection(_context!.parentTreeValue, e);
+              },
+              child: Container(
+                constraints: BoxConstraints(
+                  minHeight: widgetTheme!.itemHeight,
+                ),
+                margin: selected
+                    ? EdgeInsets.only(
+                        left: -widgetTheme.itemSelectedBorderWidth,
+                        right: -widgetTheme.itemSelectedBorderWidth,
+                        top: -widgetTheme.itemSelectedBorderWidth,
                         bottom: nextItemSelected
-                            ? BorderSide.none
-                            : BorderSide(
-                                color: widgetTheme.itemSelectedBorderColor,
-                                width: widgetTheme.itemSelectedBorderWidth,
-                              ),
+                            ? 0.0
+                            : -widgetTheme.itemSelectedBorderWidth,
                       )
                     : null,
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  border: selected
+                      ? Border(
+                          left: BorderSide(
+                            color: widgetTheme.itemSelectedBorderColor,
+                            width: widgetTheme.itemSelectedBorderWidth,
+                          ),
+                          right: BorderSide(
+                            color: widgetTheme.itemSelectedBorderColor,
+                            width: widgetTheme.itemSelectedBorderWidth,
+                          ),
+                          top: BorderSide(
+                            color: widgetTheme.itemSelectedBorderColor,
+                            width: widgetTheme.itemSelectedBorderWidth,
+                          ),
+                          bottom: nextItemSelected
+                              ? BorderSide.none
+                              : BorderSide(
+                                  color: widgetTheme.itemSelectedBorderColor,
+                                  width: widgetTheme.itemSelectedBorderWidth,
+                                ),
+                        )
+                      : null,
+                ),
+                padding: widgetTheme.itemPadding,
+                child: _buildRowWithColumns(context, texts, text, textColor, widgetTheme!, level, hasChildren, expanded, isCheckMode, checked, grayed, enabled, selected, image),
               ),
-              padding: widgetTheme.itemPadding,
-              child: _buildRowWithColumns(context, texts, text, textColor, widgetTheme, colorScheme, textTheme, level, hasChildren, expanded, isCheckMode, checked, grayed, enabled, selected, image),
-            ),
             ),
           ),
+        ),
 
-          if (expanded && hasChildren) ...buildChildItems(),
-        ],
-      ),
+        if (expanded && hasChildren) ...buildChildItems(),
+      ],
     );
   }
 
@@ -212,7 +207,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   }
 
   Widget _buildRowWithColumns(BuildContext context, List<String>? texts, String text, Color textColor, 
-      TreeThemeExtension? widgetTheme, ColorScheme colorScheme, TextTheme textTheme, int level, 
+      TreeThemeExtension widgetTheme, int level, 
       bool hasChildren, bool expanded, bool isCheckMode, bool checked, bool grayed, bool enabled, 
       bool selected, VImage? image) {
     final columns = _context?.treeImpl?.getTreeColumns() ?? [];
@@ -221,101 +216,27 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     if (!hasMultipleColumns) {
       return Row(
         children: [
-          SizedBox(width: widgetTheme!.itemIndent * level),
-
-          hasChildren
-              ? MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: GestureDetector(
-                    onTap: () {
-                      if (_context == null) {
-                        print('TreeItem expand/collapse: _context is null');
-                        return;
-                      }
-
-                      if (_context!.treeImpl == null) {
-                        print('TreeItem expand/collapse: treeImpl is null for item ${state.id}');
-                        return;
-                      }
-
-                      if (expanded) {
-                        var e = VEvent();
-                        e.index = _context!.treeImpl!.findItemIndex(state.id);
-                        e.detail = widgetTheme!.eventDefaultDetail;
-                        e.x = widgetTheme.eventDefaultX;
-                        e.y = widgetTheme.eventDefaultY;
-                        e.width = widgetTheme.eventDefaultWidth.round();
-                        e.height = widgetTheme.eventDefaultHeight.round();
-
-                        print('TreeItem collapse: sending Tree/Collapse event for item ${state.id}, index=${e.index}');
-                        _context!.parentTree.sendTreeCollapse(_context!.parentTreeValue, e);
-                      } else {
-                        var e = VEvent();
-                        e.index = _context!.treeImpl!.findItemIndex(state.id);
-                        e.detail = widgetTheme!.eventDefaultDetail;
-                        e.x = widgetTheme.eventDefaultX;
-                        e.y = widgetTheme.eventDefaultY;
-                        e.width = widgetTheme.eventDefaultWidth.round();
-                        e.height = widgetTheme.eventDefaultHeight.round();
-
-                        print('TreeItem expand: sending Tree/Expand event for item ${state.id}, index=${e.index}');
-                        print('TreeItem expand: current state.expanded=${state.expanded}, state.items=${state.items?.length ?? 0}');
-                        _context!.parentTree.sendTreeExpand(_context!.parentTreeValue, e);
-                      }
-                    },
-                    child: Icon(
-                      expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-                      size: widgetTheme!.expandIconSize,
-                      color: enabled ? widgetTheme.expandIconColor : widgetTheme.expandIconDisabledColor,
-                    ),
-                  ),
-                )
-              : SizedBox(width: widgetTheme!.expandIconSize),
-          
-          if (hasChildren) SizedBox(width: widgetTheme.expandIconSpacing),
-
-          if (isCheckMode)
-            Container(
-              margin: EdgeInsets.only(right: widgetTheme!.checkboxSpacing),
-              child: _CheckboxButtonWrapper(
-                key: ValueKey('checkbox_${state.id}_$checked'),
-                checked: checked,
-                grayed: grayed,
-                enabled: enabled,
-                onChanged: () {
-                  final bool newCheckedState = grayed ? false : (checked ? false : true);
-                  _context?.treeImpl?.handleCheckboxCascade(state.id, newCheckedState);
-                  _context?.treeImpl?.handleTreeItemSelection(state.id);
-
-                  var e = VEvent();
-                  if (_context?.treeImpl != null) {
-                    e.index = _context!.treeImpl!.findItemIndex(state.id);
-                    e.detail = SWT.CHECK;
-                    e.x = widgetTheme.eventDefaultX;
-                    e.y = widgetTheme.eventDefaultY;
-                    e.width = widgetTheme.eventDefaultWidth.round();
-                    e.height = widgetTheme.eventDefaultHeight.round();
-                  }
-
-                  _context?.parentTree.sendSelectionSelection(_context!.parentTreeValue, e);
-                },
-              ),
-            ),
-
-          Container(
-            margin: EdgeInsets.only(right: widgetTheme!.itemIconSpacing),
-            child: _buildItemIcon(widgetTheme, enabled, selected, hasChildren, expanded, image),
+          _buildItemPrefix(
+            theme: widgetTheme,
+            level: level,
+            hasChildren: hasChildren,
+            expanded: expanded,
+            isCheckMode: isCheckMode,
+            checked: checked,
+            grayed: grayed,
+            enabled: enabled,
+            selected: selected,
+            image: image,
           ),
-
           Expanded(
-            child: _buildTextContent(context, texts, text, textColor, widgetTheme, colorScheme, textTheme),
+            child: _buildTextContent(context, texts, text, textColor, widgetTheme),
           ),
         ],
       );
     }
     
     final firstColumn = columns[0];
-    final double firstColumnWidth = (firstColumn.width ?? widgetTheme!.columnDefaultWidth.round()).toDouble();
+    final double firstColumnWidth = (firstColumn.width ?? widgetTheme.columnDefaultWidth.round()).toDouble();
     
     final String firstColumnText = text.isNotEmpty ? text : (texts?.isNotEmpty == true ? texts![0] : '');
     
@@ -325,119 +246,33 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           width: firstColumnWidth,
           child: Row(
             children: [
-              SizedBox(width: widgetTheme!.itemIndent * level),
-
-              hasChildren
-                  ? MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: GestureDetector(
-                        onTap: () {
-                          if (_context == null) {
-                            print('TreeItem expand/collapse: _context is null');
-                            return;
-                          }
-
-                          if (_context!.treeImpl == null) {
-                            print('TreeItem expand/collapse: treeImpl is null for item ${state.id}');
-                            return;
-                          }
-
-                          if (expanded) {
-                            var e = VEvent();
-                            e.index = _context!.treeImpl!.findItemIndex(state.id);
-                            e.detail = widgetTheme!.eventDefaultDetail;
-                            e.x = widgetTheme.eventDefaultX;
-                            e.y = widgetTheme.eventDefaultY;
-                            e.width = widgetTheme.eventDefaultWidth.round();
-                            e.height = widgetTheme.eventDefaultHeight.round();
-
-                            print('TreeItem collapse: sending Tree/Collapse event for item ${state.id}, index=${e.index}');
-                            _context!.parentTree.sendTreeCollapse(_context!.parentTreeValue, e);
-                          } else {
-                            var e = VEvent();
-                            e.index = _context!.treeImpl!.findItemIndex(state.id);
-                            e.detail = widgetTheme!.eventDefaultDetail;
-                            e.x = widgetTheme.eventDefaultX;
-                            e.y = widgetTheme.eventDefaultY;
-                            e.width = widgetTheme.eventDefaultWidth.round();
-                            e.height = widgetTheme.eventDefaultHeight.round();
-
-                            print('TreeItem expand: sending Tree/Expand event for item ${state.id}, index=${e.index}');
-                            _context!.parentTree.sendTreeExpand(_context!.parentTreeValue, e);
-                          }
-                        },
-                        child: Icon(
-                          expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-                          size: widgetTheme!.expandIconSize,
-                          color: enabled ? widgetTheme.expandIconColor : widgetTheme.expandIconDisabledColor,
-                        ),
-                      ),
-                    )
-                  : SizedBox(width: widgetTheme!.expandIconSize),
-              
-              if (hasChildren) SizedBox(width: widgetTheme.expandIconSpacing),
-
-              if (isCheckMode)
-                Container(
-                  margin: EdgeInsets.only(right: widgetTheme!.checkboxSpacing),
-                  child: _CheckboxButtonWrapper(
-                    key: ValueKey('checkbox_${state.id}_$checked'),
-                    checked: checked,
-                    grayed: grayed,
-                    enabled: enabled,
-                    onChanged: () {
-                      final bool newCheckedState = grayed ? false : (checked ? false : true);
-                      _context?.treeImpl?.handleCheckboxCascade(state.id, newCheckedState);
-                      _context?.treeImpl?.handleTreeItemSelection(state.id);
-
-                      var e = VEvent();
-                      if (_context?.treeImpl != null) {
-                        e.index = _context!.treeImpl!.findItemIndex(state.id);
-                        e.detail = SWT.CHECK;
-                        e.x = widgetTheme.eventDefaultX;
-                        e.y = widgetTheme.eventDefaultY;
-                        e.width = widgetTheme.eventDefaultWidth.round();
-                        e.height = widgetTheme.eventDefaultHeight.round();
-                      }
-
-                      _context?.parentTree.sendSelectionSelection(_context!.parentTreeValue, e);
-                    },
-                  ),
-                ),
-
-              Container(
-                margin: EdgeInsets.only(right: widgetTheme!.itemIconSpacing),
-                child: _buildItemIcon(widgetTheme, enabled, selected, hasChildren, expanded, image),
+              _buildItemPrefix(
+                theme: widgetTheme,
+                level: level,
+                hasChildren: hasChildren,
+                expanded: expanded,
+                isCheckMode: isCheckMode,
+                checked: checked,
+                grayed: grayed,
+                enabled: enabled,
+                selected: selected,
+                image: image,
               ),
-
               Expanded(
-                child: Container(
-                  padding: _getCellPaddingForAlignment(firstColumn.alignment, widgetTheme!.cellMultiColumnPadding),
-                  decoration: BoxDecoration(
-                    color: _getCellBackgroundColor(0),
-                  ),
-                  child: Text(
-                    firstColumnText,
-                    style: getTreeItemTextStyle(
-                      context,
-                      state,
-                      widgetTheme,
-                      colorScheme,
-                      textTheme,
-                      _getCellTextColor(0, textColor),
-                      _context?.treeFont,
-                    ),
-                    textAlign: _getTextAlignForColumn(firstColumn.alignment),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                child: _buildCellText(
+                  context: context,
+                  text: firstColumnText,
+                  textColor: textColor,
+                  theme: widgetTheme,
+                  columnAlignment: firstColumn.alignment,
+                  cellPadding: widgetTheme.cellMultiColumnPadding,
                 ),
               ),
             ],
           ),
         ),
         Expanded(
-          child: _buildOtherColumns(context, texts, textColor, widgetTheme, colorScheme, textTheme, columns),
+          child: _buildOtherColumns(context, texts, textColor, widgetTheme, columns),
         ),
       ],
     );
@@ -474,46 +309,28 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   }
 
   Widget _buildOtherColumns(BuildContext context, List<String>? texts, Color textColor, 
-      TreeThemeExtension? widgetTheme, ColorScheme colorScheme, TextTheme textTheme, 
+      TreeThemeExtension widgetTheme, 
       List<VTreeColumn> columns) {
     return Row(
       children: columns.skip(1).toList().asMap().entries.map<Widget>((entry) {
         final int columnIndex = entry.key + 1;
         final column = entry.value;
-        final double columnWidth = (column.width ?? widgetTheme!.columnDefaultWidth.round()).toDouble();
+        final double columnWidth = (column.width ?? widgetTheme.columnDefaultWidth.round()).toDouble();
 
         String columnText = '';
         if (texts != null && columnIndex < texts.length) {
           columnText = texts[columnIndex];
         }
 
-        final cellTextColor = _getCellTextColor(columnIndex, textColor);
-        final cellBackgroundColor = _getCellBackgroundColor(columnIndex);
-
-        final cellTextStyle = getTreeItemTextStyle(
-          context,
-          state,
-          widgetTheme!,
-          colorScheme,
-          textTheme,
-          cellTextColor,
-          _context?.treeFont,
-        );
-
         return SizedBox(
           width: columnWidth,
-          child: Container(
-            padding: _getCellPaddingForAlignment(column.alignment, widgetTheme!.cellMultiColumnPadding),
-            decoration: BoxDecoration(
-              color: cellBackgroundColor,
-            ),
-            child: Text(
-              columnText,
-              style: cellTextStyle,
-              textAlign: _getTextAlignForColumn(column.alignment),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+          child: _buildCellText(
+            context: context,
+            text: columnText,
+            textColor: textColor,
+            theme: widgetTheme,
+            columnAlignment: column.alignment,
+            cellPadding: widgetTheme.cellMultiColumnPadding,
           ),
         );
       }).toList(),
@@ -521,52 +338,34 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   }
 
   Widget _buildTextContent(BuildContext context, List<String>? texts, String text, Color textColor, 
-      TreeThemeExtension? widgetTheme, ColorScheme colorScheme, TextTheme textTheme) {
+      TreeThemeExtension widgetTheme) {
     final columns = _context?.treeImpl?.getTreeColumns() ?? [];
 
     if (columns.isEmpty) {
       final displayText =
           text.isNotEmpty ? text : (texts?.isNotEmpty == true ? texts![0] : '');
-
-      final cellTextColor = _getCellTextColor(0, textColor);
-      final cellBackgroundColor = _getCellBackgroundColor(0);
-
-      final cellTextStyle = getTreeItemTextStyle(
-        context,
-        state,
-        widgetTheme!,
-        colorScheme,
-        textTheme,
-        cellTextColor,
-        _context?.treeFont,
-      );
-
-      return Container(
-        padding: widgetTheme!.cellPadding,
-        decoration: cellBackgroundColor != null
-            ? BoxDecoration(color: cellBackgroundColor)
-            : null,
-        child: Text(
-          displayText,
-          style: cellTextStyle,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+      return _buildCellText(
+        context: context,
+        text: displayText,
+        textColor: textColor,
+        theme: widgetTheme,
+        columnAlignment: null,
+        cellPadding: widgetTheme.cellPadding,
       );
     }
 
-    return _buildTextContentWithLines(context, texts, text, textColor, widgetTheme, colorScheme, textTheme);
+    return _buildTextContentWithLines(context, texts, text, textColor, widgetTheme);
   }
 
   Widget _buildTextContentWithLines(BuildContext context, List<String>? texts, String text, Color textColor, 
-      TreeThemeExtension? widgetTheme, ColorScheme colorScheme, TextTheme textTheme) {
+      TreeThemeExtension widgetTheme) {
     final columns = _context?.treeImpl?.getTreeColumns() ?? [];
     
     return Row(
       children: columns.asMap().entries.map<Widget>((entry) {
         final int columnIndex = entry.key;
         final column = entry.value;
-        final double columnWidth = (column.width ?? widgetTheme!.columnDefaultWidth.round()).toDouble();
+        final double columnWidth = (column.width ?? widgetTheme.columnDefaultWidth.round()).toDouble();
 
         String columnText = '';
         if (columnIndex == 0) {
@@ -577,111 +376,157 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           columnText = texts[columnIndex];
         }
 
-        final cellTextColor = _getCellTextColor(columnIndex, textColor);
-        final cellBackgroundColor = _getCellBackgroundColor(columnIndex);
-
-        final cellTextStyle = getTreeItemTextStyle(
-          context,
-          state,
-          widgetTheme!,
-          colorScheme,
-          textTheme,
-          cellTextColor,
-          _context?.treeFont,
-        );
-
         return SizedBox(
           width: columnWidth,
-          child: Container(
-            padding: _getCellPaddingForAlignment(column.alignment, widgetTheme!.cellMultiColumnPadding),
-            decoration: BoxDecoration(
-              color: cellBackgroundColor,
-            ),
-            child: Text(
-              columnText,
-              style: cellTextStyle,
-              textAlign: _getTextAlignForColumn(column.alignment),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+          child: _buildCellText(
+            context: context,
+            text: columnText,
+            textColor: textColor,
+            theme: widgetTheme,
+            columnAlignment: column.alignment,
+            cellPadding: widgetTheme.cellMultiColumnPadding,
           ),
         );
       }).toList(),
     );
   }
 
-  TextAlign _getTextAlignForColumn(int? alignment) {
-    if (alignment == null) return TextAlign.left;
 
-    switch (alignment) {
-      case SWT.CENTER:
-        return TextAlign.center;
-      case SWT.RIGHT:
-        return TextAlign.right;
-      default:
-        return TextAlign.left;
+  Widget _buildExpander({
+    required TreeThemeExtension theme,
+    required bool hasChildren,
+    required bool expanded,
+    required bool enabled,
+  }) {
+    if (!hasChildren) {
+      return SizedBox(width: theme.expandIconSize);
     }
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        if (_context?.treeImpl == null) return;
+        final e = _createEvent();
+        if (expanded) {
+          _context!.parentTree.sendTreeCollapse(_context!.parentTreeValue, e);
+        } else {
+          _context!.parentTree.sendTreeExpand(_context!.parentTreeValue, e);
+        }
+      },
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: Icon(
+          expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
+          size: theme.expandIconSize,
+          color: enabled ? theme.expandIconColor : theme.expandIconDisabledColor,
+        ),
+      ),
+    );
   }
 
-  EdgeInsets _getCellPaddingForAlignment(int? alignment, EdgeInsets basePadding) {
-    if (alignment == null || alignment == SWT.LEFT || alignment == SWT.RIGHT) {
-      final extraPadding = 4.0;
-      if (alignment == SWT.LEFT) {
-        return EdgeInsets.only(
-          left: basePadding.left + extraPadding,
-          right: basePadding.right,
-          top: basePadding.top,
-          bottom: basePadding.bottom,
-        );
-      } else if (alignment == SWT.RIGHT) {
-        return EdgeInsets.only(
-          left: basePadding.left,
-          right: basePadding.right + extraPadding,
-          top: basePadding.top,
-          bottom: basePadding.bottom,
-        );
-      } else {
-        return EdgeInsets.only(
-          left: basePadding.left + extraPadding,
-          right: basePadding.right,
-          top: basePadding.top,
-          bottom: basePadding.bottom,
-        );
-      }
-    }
-    return basePadding;
+  Widget? _buildCheckbox({
+    required TreeThemeExtension theme,
+    required bool isCheckMode,
+    required bool checked,
+    required bool grayed,
+    required bool enabled,
+  }) {
+    if (!isCheckMode) return null;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        // Este GestureDetector captura el tap y evita que se propague al padre
+        // El checkbox manejará su propio evento a través de _CheckboxButtonWrapper
+      },
+      child: Container(
+        margin: EdgeInsets.only(right: theme.checkboxSpacing),
+        child: _CheckboxButtonWrapper(
+          key: ValueKey('checkbox_${state.id}_$checked'),
+          checked: checked,
+          grayed: grayed,
+          enabled: enabled,
+          onChanged: () {
+            final bool newCheckedState = grayed ? false : (checked ? false : true);
+            _context?.treeImpl?.handleCheckboxCascade(state.id, newCheckedState);
+            _context?.treeImpl?.handleTreeItemSelection(state.id);
+            final e = _createEvent(detail: SWT.CHECK);
+            _context?.parentTree.sendSelectionSelection(_context!.parentTreeValue, e);
+          },
+        ),
+      ),
+    );
   }
 
-  Color _getCellTextColor(int columnIndex, Color defaultColor) {
-    return colorFromVColor(state.foreground, defaultColor: defaultColor);
+  Widget _buildItemPrefix({
+    required TreeThemeExtension theme,
+    required int level,
+    required bool hasChildren,
+    required bool expanded,
+    required bool isCheckMode,
+    required bool checked,
+    required bool grayed,
+    required bool enabled,
+    required bool selected,
+    required VImage? image,
+  }) {
+    final checkbox = _buildCheckbox(
+      theme: theme,
+      isCheckMode: isCheckMode,
+      checked: checked,
+      grayed: grayed,
+      enabled: enabled,
+    );
+
+    return Row(
+      children: [
+        SizedBox(width: theme.itemIndent * level),
+        _buildExpander(
+          theme: theme,
+          hasChildren: hasChildren,
+          expanded: expanded,
+          enabled: enabled,
+        ),
+        if (hasChildren) SizedBox(width: theme.expandIconSpacing),
+        if (checkbox != null) checkbox,
+        Container(
+          margin: EdgeInsets.only(right: theme.itemIconSpacing),
+          child: _buildItemIcon(theme, enabled, selected, hasChildren, expanded, image),
+        ),
+      ],
+    );
   }
 
-  Color? _getCellBackgroundColor(int columnIndex) {
-    return null;
-  }
+  Widget _buildCellText({
+    required BuildContext context,
+    required String text,
+    required Color textColor,
+    required TreeThemeExtension theme,
+    required int? columnAlignment,
+    required EdgeInsets cellPadding,
+  }) {
+    final cellTextColor = getForegroundColor(foreground: state.foreground, defaultColor: textColor);
+    final cellTextStyle = getTextStyle(
+      context: context,
+      font: state.font ?? _context?.treeFont,
+      textColor: cellTextColor,
+      baseTextStyle: theme.itemTextStyle,
+    );
 
-  FontWeight _getCellFontWeight(int columnIndex) {
-    return FontWeight.normal;
-  }
-
-  Color _convertSwtColorToFlutter(dynamic swtColor, Color defaultColor) {
-    if (swtColor is Map) {
-      final red = swtColor['red'] ?? 0;
-      final green = swtColor['green'] ?? 0;
-      final blue = swtColor['blue'] ?? 0;
-      return Color.fromARGB(255, red, green, blue);
-    }
-    return defaultColor;
-  }
-
-  FontWeight _convertSwtFontToWeight(dynamic swtFont) {
-    if (swtFont is Map) {
-      final style = swtFont['style'] ?? 0;
-      if ((style & 1) != 0) {
-        return FontWeight.bold;
-      }
-    }
-    return FontWeight.normal;
+    return Container(
+      padding: adjustPaddingForAlignment(
+        basePadding: cellPadding,
+        alignment: columnAlignment,
+        extraPadding: 4.0,
+      ),
+      child: Text(
+        text,
+        style: cellTextStyle,
+        textAlign: getTextAlignFromStyle(columnAlignment ?? 0, TextAlign.left),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
   }
 }
 

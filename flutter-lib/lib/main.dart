@@ -5,7 +5,7 @@ import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/custom/toolbar_composite.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 import 'src/styles.dart';
-import 'src/theme/theme.dart' show createLightTheme, createDarkTheme;
+import 'src/theme/theme.dart' show createLightDefaultTheme, createLightNonDefaultTheme, createDarkDefaultTheme, createDarkNonDefaultTheme;
 import 'dart:convert';
 
 import 'native_platform.dart' if (dart.library.html) 'web_platform.dart';
@@ -92,10 +92,16 @@ class MyApp extends StatelessWidget {
     this.backgroundColor,
   }) : super(key: key);
 
+  static const bool useDefaultTheme = false;
+
   @override
   Widget build(BuildContext context) {
-    final lightTheme = createLightTheme(backgroundColor);
-    final darkTheme = createDarkTheme(backgroundColor);
+    final lightTheme = useDefaultTheme
+        ? createLightDefaultTheme(backgroundColor)
+        : createLightNonDefaultTheme(backgroundColor);
+    final darkTheme = useDefaultTheme
+        ? createDarkDefaultTheme(backgroundColor)
+        : createDarkNonDefaultTheme(backgroundColor);
     
     return MaterialApp(
       title: 'Flutter Demo',

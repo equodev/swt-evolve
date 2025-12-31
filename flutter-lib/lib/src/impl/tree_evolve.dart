@@ -11,8 +11,8 @@ import '../gen/tree.dart';
 import '../gen/treeitem.dart';
 import '../gen/event.dart';
 import '../comm/comm.dart';
-import '../theme/tree_theme_extension.dart';
-import '../theme/tree_theme_settings.dart';
+import '../theme/theme_extensions/tree_theme_extension.dart';
+import '../theme/theme_settings/tree_theme_settings.dart';
 
 class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   final Map<dynamic, String> treeItemExpanders = {};
@@ -31,13 +31,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   @override
   void setValue(V value) {
-    if (value.items != null) {
-      for (final item in value.items!) {
-        if (item.expanded == true) {
-          print('Tree setValue: Item ${item.id} is expanded, has ${item.items?.length ?? 0} children');
-        }
-      }
-    }
     final incomingSelection = value.selection ?? [];
     final hasLocalSelection = _pendingSelection != null && _pendingSelection!.isNotEmpty;
     
@@ -50,19 +43,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
           incomingIds.any((id) => !pendingIds.contains(id));
     }
     
-    if (incomingSelection.isEmpty && hasLocalSelection) {
+    if ((incomingSelection.isEmpty || selectionsDiffer) && hasLocalSelection) {
       value.selection = List<VTreeItem>.from(_pendingSelection!);
       _pendingSelection = null;
       super.setValue(value);
       setState(() {}); 
-    } else if (selectionsDiffer && hasLocalSelection) {
-      value.selection = List<VTreeItem>.from(_pendingSelection!);
-      _pendingSelection = null;
-      super.setValue(value);
-      setState(() {}); 
-    } else if (incomingSelection.isNotEmpty && !hasLocalSelection) {
-      _pendingSelection = null;
-      super.setValue(value);
     } else {
       if (incomingSelection.isNotEmpty) {
         _pendingSelection = null;
@@ -94,7 +79,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   Widget createTreeView() {
     return LayoutBuilder(
         builder: (context, constraints) {
-          final colorScheme = Theme.of(context).colorScheme;
           final widgetTheme = Theme.of(context).extension<TreeThemeExtension>();
           _cachedWidgetTheme = widgetTheme;
         
@@ -108,7 +92,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         final columns = getTreeColumns();
         final treeItems = getTreeItems();
 
-        final backgroundColor = getTreeBackgroundColor(state, widgetTheme!, colorScheme);
+        final backgroundColor = getTreeBackgroundColor(state, widgetTheme!);
 
         return Focus(
           onKeyEvent: _handleKeyEvent,
@@ -133,7 +117,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                               final column = entry.value;
                               final defaultWidth = widgetTheme!.columnDefaultWidth.round();
                               final int width = column.width ?? defaultWidth;
-                              print('Tree header - Column $columnIndex: width=${column.width}, final width=$width, default=$defaultWidth');
                               return SizedBox(
                                 width: width.toDouble(),
                                 child: getWidgetForTreeColumn(column, columnIndex),
@@ -344,26 +327,18 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   void handleTreeItemSelection(Object itemId,
       {bool isCtrlPressed = false, bool isShiftPressed = false}) {
-    final flatIndex = _findFlatIndexForItem(itemId, 0, 0).index;
-    print(
-        'Tree selection: Item ID=$itemId, FlatIndex=$flatIndex, Ctrl=$isCtrlPressed, Shift=$isShiftPressed');
+    final item = _findTreeItemById(itemId);
+    if (item == null) return;
 
     final bool isMultiMode = StyleBits(state.style).has(SWT.MULTI);
-    print('  isMultiMode: $isMultiMode, style: ${state.style}, SWT.MULTI: ${SWT.MULTI}');
-    
-    final item = _findTreeItemById(itemId);
-
-    if (item != null) {
-      setState(() {
-        if (isMultiMode) {
-          print('  Calling _handleMultiSelection');
-          _handleMultiSelection(item, flatIndex, isCtrlPressed, isShiftPressed);
-        } else {
-          print('  Calling _handleSingleSelection');
-          _handleSingleSelection(item, flatIndex);
-        }
-      });
-    }
+    setState(() {
+      if (isMultiMode) {
+        final flatIndex = _findFlatIndexForItem(itemId, 0, 0).index;
+        _handleMultiSelection(item, flatIndex, isCtrlPressed, isShiftPressed);
+      } else {
+        _handleSingleSelection(item, 0);
+      }
+    });
   }
 
   void _handleSingleSelection(VTreeItem item, int flatIndex) {
@@ -376,36 +351,22 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       VTreeItem item, int flatIndex, bool isCtrlPressed, bool isShiftPressed) {
     final currentSelection = List<VTreeItem>.from(state.selection ?? []);
 
-    print('_handleMultiSelection - Item ID=${item.id}, FlatIndex=$flatIndex');
-    print('  isCtrlPressed: $isCtrlPressed, isShiftPressed: $isShiftPressed');
-    print('  Current selection count: ${currentSelection.length}');
-    print('  Current selection IDs: ${currentSelection.map((i) => i.id).join(", ")}');
-    print('  Last selected item ID: $_lastSelectedItemId');
-
     if (isCtrlPressed) {
       if (currentSelection.any((selected) => selected.id == item.id)) {
-        print('  Ctrl+Click: Removing item from selection');
         currentSelection.removeWhere((selected) => selected.id == item.id);
       } else {
-        print('  Ctrl+Click: Adding item to selection');
         currentSelection.add(item);
       }
     } else if (isShiftPressed && _lastSelectedItemId != null) {
       final lastIndex = _findFlatIndexForItem(_lastSelectedItemId!, 0, 0).index;
-      print('  Shift+Click: Last selected index=$lastIndex, new index=$flatIndex');
       final rangeItems = _getItemsInRange(lastIndex, flatIndex);
-      print('  Shift+Click: Range items count=${rangeItems.length}');
       currentSelection.clear();
       currentSelection.addAll(rangeItems);
     } else {
-      print('  Normal click: Clearing and setting single selection');
       currentSelection.clear();
       currentSelection.add(item);
       _lastSelectedItemId = item.id; 
     }
-
-    print('  Final selection count: ${currentSelection.length}');
-    print('  Final selection IDs: ${currentSelection.map((i) => i.id).join(", ")}');
 
     state.selection = currentSelection;
     _pendingSelection = List<VTreeItem>.from(currentSelection);

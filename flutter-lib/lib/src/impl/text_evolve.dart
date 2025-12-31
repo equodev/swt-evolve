@@ -4,8 +4,9 @@ import '../gen/swt.dart';
 import '../gen/text.dart';
 import '../gen/widget.dart';
 import '../impl/scrollable_evolve.dart';
-import '../theme/text_theme_extension.dart';
-import '../theme/text_theme_settings.dart';
+import '../theme/theme_extensions/text_theme_extension.dart';
+import '../theme/theme_settings/text_theme_settings.dart';
+import 'utils/widget_utils.dart';
 
 class TextImpl<T extends TextSwt, V extends VText>
     extends ScrollableImpl<T, V> {
@@ -23,7 +24,6 @@ class TextImpl<T extends TextSwt, V extends VText>
   @override
   void extraSetState() {
     String newText = state.text ?? "";
-    // Only update controller if text actually changed from external source
     if (_controller.text != newText) {
       _controller.text = newText;
       if (state.textLimit != null) {
@@ -38,19 +38,34 @@ class TextImpl<T extends TextSwt, V extends VText>
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     final widgetTheme = Theme.of(context).extension<TextThemeExtension>();
+    if (widgetTheme == null) {
+      return const SizedBox.shrink();
+    }
 
-    final textAlign = getTextAlign(state.style);
-    final isMultiLine = (state.style & SWT.MULTI) != 0;
+    final textAlign = getTextAlignFromStyle(state.style, TextAlign.left);
+    final isMultiLine = hasStyle(state.style, SWT.MULTI);
     final enabled = state.editable ?? true;
-    final textStyle = getTextStyle(context, state, widgetTheme, colorScheme, textTheme);
+    final hasValidBounds = hasBounds(state.bounds);
+
+    final textField = _buildTextField(context, widgetTheme, enabled, textAlign, isMultiLine, hasValidBounds);
+
+    return _buildTextFieldWrapper(textField, widgetTheme, isMultiLine, hasValidBounds);
+  }
+
+  Widget _buildTextField(
+    BuildContext context,
+    TextThemeExtension widgetTheme,
+    bool enabled,
+    TextAlign textAlign,
+    bool isMultiLine,
+    bool hasValidBounds,
+  ) {
+    final textStyle = getTextFieldTextStyle(context, state, widgetTheme);
     final decoration = getInputDecoration(
       context,
       state,
       widgetTheme,
-      colorScheme,
       _controller,
       () {
         _controller.clear();
@@ -58,19 +73,20 @@ class TextImpl<T extends TextSwt, V extends VText>
         widget.sendSelectionDefaultSelection(state, e);
       },
     );
-    final height = getTextFieldHeight(state, widgetTheme, isMultiLine);
-    final cursorColor = getCursorColor(state, widgetTheme, colorScheme, textTheme);
 
-    final hasBounds = state.bounds != null && state.bounds!.width > 0 && state.bounds!.height > 0;
+    final cursorColor = getForegroundColor(
+      foreground: state.foreground,
+      defaultColor: widgetTheme.textColor,
+    );
 
-    final shouldExpand = hasBounds && isMultiLine;
+    final shouldExpand = hasValidBounds && isMultiLine;
 
-    Widget textField = TextField(
+    return TextField(
       controller: _controller,
       focusNode: _focusNode,
       enabled: enabled,
-      obscureText: (state.style & SWT.PASSWORD) != 0,
-      readOnly: (state.style & SWT.READ_ONLY) != 0,
+      obscureText: hasStyle(state.style, SWT.PASSWORD),
+      readOnly: hasStyle(state.style, SWT.READ_ONLY),
       maxLines: isMultiLine ? (shouldExpand ? null : null) : 1,
       expands: shouldExpand,
       textAlign: textAlign,
@@ -83,44 +99,48 @@ class TextImpl<T extends TextSwt, V extends VText>
       onSubmitted: _handleSubmitted,
       cursorColor: cursorColor,
     );
+  }
 
-    if (hasBounds) {
+  Widget _buildTextFieldWrapper(
+    Widget textField,
+    TextThemeExtension widgetTheme,
+    bool isMultiLine,
+    bool hasValidBounds,
+  ) {
+    final constraints = getConstraintsFromBounds(state.bounds);
+
+    if (hasValidBounds && constraints != null) {
       return ConstrainedBox(
-        constraints: BoxConstraints(
-          minWidth: state.bounds!.width.toDouble(),
-          maxWidth: state.bounds!.width.toDouble(),
-          minHeight: state.bounds!.height.toDouble(),
-          maxHeight: state.bounds!.height.toDouble(),
-        ),
-        child: SizedBox(
-          width: state.bounds!.width.toDouble(),
-          height: state.bounds!.height.toDouble(),
-          child: textField,
-        ),
-      );
-    }
-    
-    if (isMultiLine) {
-      return Container(
-        height: height,
+        constraints: constraints,
         child: textField,
       );
     }
     
-    return Align(
-      alignment: Alignment.center,
-      child: IntrinsicWidth(
-        child: Container(
-          height: height,
-          child: textField,
+    if (isMultiLine) {
+      final minHeight = widgetTheme.contentPadding.vertical + 
+                       (widgetTheme.fontSize * widgetTheme.lineHeight);
+      return Container(
+        constraints: BoxConstraints(
+          minHeight: minHeight,
         ),
+        child: textField,
+      );
+    }
+    
+    final minHeight = widgetTheme.contentPadding.vertical + 
+                     (widgetTheme.fontSize * widgetTheme.lineHeight);
+    return IntrinsicWidth(
+      child: Container(
+        constraints: BoxConstraints(
+          minHeight: minHeight,
+        ),
+        child: textField,
       ),
     );
   }
 
   void _handleTextChanged(String value) {
     print("Text ${state.id} text changed to: '$value'");
-    // Don't call setState here to avoid rebuilding and losing cursor position
     state.text = value;
     var e = VEvent()..text = value;
     widget.sendModifyModify(state, e);

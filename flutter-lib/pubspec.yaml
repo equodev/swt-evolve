@@ -20,6 +20,7 @@ version: 1.0.0+1
 
 environment:
   sdk: ^3.6.0
+  flutter: ">=3.27.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -38,6 +39,7 @@ dependencies:
   json_annotation: ^4.9.0
   image: ^4.0.17
   font_awesome_flutter: ^10.9.0
+  theme_tailor_annotation: ^3.1.1
 
 dev_dependencies:
   flutter_test:
@@ -51,6 +53,7 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   build_runner: ^2.3.3
   json_serializable: ^6.8.0
+  theme_tailor: ^3.1.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -64,8 +67,7 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  #assets:
-  #  - assets/svg/
+  # assets:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 
