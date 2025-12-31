@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import '../styles.dart';
 import '../impl/widget_config.dart';
-import 'button_theme_settings.dart';
-import 'label_theme_settings.dart';
-import 'text_theme_settings.dart';
-import 'tree_theme_settings.dart';
+import 'theme_settings/button_theme_settings.dart';
+import 'theme_settings/label_theme_settings.dart';
+import 'theme_settings/text_theme_settings.dart';
+import 'theme_settings/tree_theme_settings.dart';
+import 'theme_extensions/color_scheme_extension.dart';
 
 Color calculateBackgroundColor(int? backgroundColor, bool useDarkTheme) {
   return backgroundColor != null
@@ -12,294 +13,52 @@ Color calculateBackgroundColor(int? backgroundColor, bool useDarkTheme) {
       : (useDarkTheme ? const Color(0xFF2C2C2C) : const Color(0xFFF2F4F7));
 }
 
-ThemeData createLightTheme(int? backgroundColor) {
-  final bool useDarkTheme = getCurrentTheme();
-  final Color finalBackgroundColor = calculateBackgroundColor(backgroundColor, useDarkTheme);
-  
-  final colorScheme = ColorScheme.fromSeed(
-    seedColor: const Color(0xFF1847CA),
+ColorScheme createLightColorScheme() {
+  return ColorScheme.fromSeed(
+    seedColor: const Color(0xFF2236E5),
     brightness: Brightness.light,
   ).copyWith(
-    primary: const Color(0xFF1847CA),
+    primary: const Color(0xFF2236E5),
     onPrimary: const Color(0xFFFFFFFF),
-    primaryContainer: const Color(0xFF002DAD),
-    secondary: const Color(0xFF4338CA),
-    onSecondary: const Color(0xFFFFFFFF),
-    secondaryContainer: const Color(0xFF3730A3),
-    error: const Color(0xFFDC2626),
-    onError: const Color(0xFFFFFFFF),
-    errorContainer: const Color(0xFFFEE2E2),
+    primaryContainer: const Color(0xFF1B2AB2),
+    
+    secondary: const Color(0xFFF2F3FA),
+    onSecondary: const Color(0xFF0F1866),
+    secondaryContainer: const Color(0xFFE1E3F5),
+    onSecondaryContainer: const Color(0xFFC9CDF0),
+    
+    tertiary: const Color(0x00FFFFFF),
+    onTertiary: const Color(0xFF0F1866),
+    
     surface: const Color(0xFFFFFFFF),
-    onSurface: const Color(0xFF374151),
-    onSurfaceVariant: const Color(0xFF6B7280),
-    outline: const Color(0xFFD1D5DB),
-    outlineVariant: const Color(0xFFE5E7EB),
+    onSurface: const Color(0xFF171819),
+    onSurfaceVariant: const Color(0xFF797B80),
+    surfaceContainerHighest: const Color(0xFFFAFBFC),
+    surfaceContainerHigh: const Color(0xFFF7F8FA),
+    surfaceContainerLow: const Color(0xFFF0F2F5),
+    
+    outline: const Color(0x1A171819),
+    outlineVariant: const Color(0x4D171819),
+    
+    error: const Color(0xFFDC0A56),
+    onError: const Color(0xFFFFFFFF),
+    errorContainer: const Color(0xFFFAF2F4),
+    onErrorContainer: const Color(0xFF59040D),
+    
+    surfaceVariant: const Color(0xFFF0F2F5),
+    
+    // Other
     shadow: const Color(0xFF000000),
     scrim: const Color(0xFF000000),
     inverseSurface: const Color(0xFF1F2937),
     onInverseSurface: const Color(0xFFF9FAFB),
-    inversePrimary: const Color(0xFF60A5FA),
-    surfaceTint: const Color(0xFF1847CA),
-  );
-
-  final buttonTheme = getButtonLightTheme();
-  final labelTheme = getLabelLightTheme();
-  final textTheme = getTextLightTheme();
-  final treeTheme = getTreeLightTheme();
-
-  return ThemeData(
-    useMaterial3: true,
-    colorScheme: colorScheme,
-    scaffoldBackgroundColor: finalBackgroundColor,
-    textTheme: TextTheme(
-      displayLarge: TextStyle(
-        fontFamily: 'System',
-        fontSize: 57.0,
-        fontWeight: FontWeight.w400,
-        letterSpacing: -0.25,
-        color: colorScheme.onSurface,
-      ),
-      displayMedium: TextStyle(
-        fontFamily: 'System',
-        fontSize: 45.0,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.0,
-        color: colorScheme.onSurface,
-      ),
-      displaySmall: TextStyle(
-        fontFamily: 'System',
-        fontSize: 36.0,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.0,
-        color: colorScheme.onSurface,
-      ),
-      headlineLarge: TextStyle(
-        fontFamily: 'System',
-        fontSize: 32.0,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.0,
-        color: colorScheme.onSurface,
-      ),
-      headlineMedium: TextStyle(
-        fontFamily: 'System',
-        fontSize: 28.0,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.0,
-        color: colorScheme.onSurface,
-      ),
-      headlineSmall: TextStyle(
-        fontFamily: 'System',
-        fontSize: 24.0,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.0,
-        color: colorScheme.onSurface,
-      ),
-      titleLarge: TextStyle(
-        fontFamily: 'System',
-        fontSize: 22.0,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.0,
-        color: colorScheme.onSurface,
-      ),
-      titleMedium: TextStyle(
-        fontFamily: 'System',
-        fontSize: 16.0,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.15,
-        color: colorScheme.onSurface,
-      ),
-      titleSmall: TextStyle(
-        fontFamily: 'System',
-        fontSize: 14.0,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.1,
-        color: colorScheme.onSurface,
-      ),
-      labelLarge: TextStyle(
-        fontFamily: 'System',
-        fontSize: 14.0,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.1,
-        color: colorScheme.onSurface,
-      ),
-      labelMedium: TextStyle(
-        fontFamily: 'System',
-        fontSize: 12.0,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.5,
-        color: colorScheme.onSurface,
-      ),
-      labelSmall: TextStyle(
-        fontFamily: 'System',
-        fontSize: 11.0,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.5,
-        color: colorScheme.onSurface,
-      ),
-      bodyLarge: TextStyle(
-        fontFamily: 'System',
-        fontSize: 16.0,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.5,
-        color: colorScheme.onSurface,
-      ),
-      bodyMedium: TextStyle(
-        fontFamily: 'System',
-        fontSize: 14.0,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.25,
-        color: colorScheme.onSurface,
-      ),
-      bodySmall: TextStyle(
-        fontFamily: 'System',
-        fontSize: 12.0,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.4,
-        color: colorScheme.onSurfaceVariant,
-      ),
-    ),
-    primaryTextTheme: TextTheme(
-      labelLarge: TextStyle(
-        fontFamily: 'System',
-        fontSize: 14.0,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.1,
-        color: colorScheme.onPrimary,
-      ),
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: colorScheme.surface,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(6.0),
-        borderSide: BorderSide(color: colorScheme.outline),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(6.0),
-        borderSide: BorderSide(color: colorScheme.outline),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(6.0),
-        borderSide: BorderSide(color: colorScheme.primary, width: 2.0),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(6.0),
-        borderSide: BorderSide(color: colorScheme.error),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(6.0),
-        borderSide: BorderSide(color: colorScheme.error, width: 2.0),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-    ),
-    buttonTheme: ButtonThemeData(
-      textTheme: ButtonTextTheme.primary,
-      minWidth: 64.0,
-      height: 36.0,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(6.0),
-      ),
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
-        elevation: 0.0,
-        minimumSize: const Size(64.0, 36.0),
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6.0),
-        ),
-        textStyle: const TextStyle(
-          fontFamily: 'System',
-          fontSize: 14.0,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.0,
-        ),
-      ),
-    ),
-    outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: colorScheme.primary,
-        minimumSize: const Size(64.0, 36.0),
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        side: BorderSide(color: colorScheme.outline),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6.0),
-        ),
-        textStyle: const TextStyle(
-          fontFamily: 'System',
-          fontSize: 14.0,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.0,
-        ),
-      ),
-    ),
-    textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(
-        foregroundColor: colorScheme.primary,
-        minimumSize: const Size(64.0, 36.0),
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6.0),
-        ),
-        textStyle: const TextStyle(
-          fontFamily: 'System',
-          fontSize: 14.0,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.0,
-        ),
-      ),
-    ),
-    checkboxTheme: CheckboxThemeData(
-      fillColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
-        if (states.contains(MaterialState.selected)) {
-          return colorScheme.primary;
-        }
-        return null;
-      }),
-      checkColor: MaterialStateProperty.all<Color>(colorScheme.onPrimary),
-      side: BorderSide(color: colorScheme.outline, width: 2.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(3.0),
-      ),
-    ),
-    radioTheme: RadioThemeData(
-      fillColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
-        if (states.contains(MaterialState.selected)) {
-          return colorScheme.primary;
-        }
-        return colorScheme.outline;
-      }),
-    ),
-    cardTheme: CardThemeData(
-      color: colorScheme.surface,
-      elevation: 0.0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(4.0),
-        side: BorderSide(color: colorScheme.outlineVariant),
-      ),
-    ),
-    dividerTheme: DividerThemeData(
-      color: colorScheme.outlineVariant,
-      thickness: 1.0,
-      space: 1.0,
-    ),
-    extensions: <ThemeExtension<dynamic>>[
-      buttonTheme,
-      labelTheme,
-      textTheme,
-      treeTheme,
-    ],
+    inversePrimary: const Color(0xFF2236E5),
+    surfaceTint: const Color(0xFF2236E5),
   );
 }
 
-ThemeData createDarkTheme(int? backgroundColor) {
-  final bool useDarkTheme = getCurrentTheme();
-  final Color finalBackgroundColor = calculateBackgroundColor(backgroundColor, useDarkTheme);
-  
-  final colorScheme = ColorScheme.fromSeed(
+ColorScheme createDarkColorScheme() {
+  return ColorScheme.fromSeed(
     seedColor: const Color(0xFF1847CA),
     brightness: Brightness.dark,
   ).copyWith(
@@ -324,255 +83,394 @@ ThemeData createDarkTheme(int? backgroundColor) {
     inversePrimary: const Color(0xFF3B82F6),
     surfaceTint: const Color(0xFF1847CA),
   );
+}
 
-  final buttonTheme = getButtonDarkTheme();
-  final labelTheme = getLabelDarkTheme();
-  final textTheme = getTextDarkTheme();
-  final treeTheme = getTreeDarkTheme();
+ColorSchemeExtension createColorSchemeExtension() {
+  return ColorSchemeExtension(
+    primaryHovered: const Color(0xFF1E30CC),
+    primaryBorder: const Color(0xFF1B2AB2),
+    primaryBorderDisabled: const Color(0x33171819),
+    onPrimaryVariantDisabled: const Color(0x80171819),
+    
+    secondaryPressed: const Color(0xFFC9CDF0),
+    secondaryBold: const Color(0xFFE1E3F5),
+    secondaryBorder: const Color(0xFFC9CDF0),
+    secondaryBorderDisabled: const Color(0x33171819),
+    onSecondaryVariantDisabled: const Color(0x80171819),
+    
+    tertiaryPressed: const Color(0x33171819),
+    tertiaryHovered: const Color(0x1A171819),
+    tertiaryBorder: const Color(0x00FFFFFF),
+    tertiaryBorderDisabled: const Color(0x00FFFFFF),
+    onTertiaryVariantDisabled: const Color(0x80171819),
+    
+    surfaceFocused: const Color(0xFFF2F3FA),
+    surfaceBorderEnabled: const Color(0x1A171819),
+    surfaceBorderHovered: const Color(0x4D171819),
+    surfaceBorderFocused: const Color(0xFF0F1866),
+    surfaceBorderDisabled: const Color(0x33171819),
+    surfaceBorderBoldEnabled: const Color(0x80171819),
+    surfaceBorderDataDisplay: const Color(0xFFFFFFFF),
+    surfacePlaceholder: const Color(0xFF797B7F),
+    onSurfaceVariantError: const Color(0xFFDC0A56),
+    onSurfaceVariantWarning: const Color(0xFFDE7A2D),
+    onSurfaceVariantDisabled: const Color(0x80171819),
+    onSurfaceVariantSmallError: const Color(0xFF99073C),
+    
+    errorHovered: const Color(0xFFB20846),
+    errorBorder: const Color(0xFF99073C),
+    errorBorderDisabled: const Color(0x33171819),
+    onErrorVariantDisabled: const Color(0x80171819),
+    errorContainerPressed: const Color(0xFFF0C9D4),
+    errorContainerHovered: const Color(0xFFF5E1E6),
+    onErrorContainerVariantError: const Color(0xFF99073C),
+    onErrorContainerVariantDisabled: const Color(0x80171819),
+    onErrorContainerBorder: const Color(0xFFF0C9D4),
+    onErrorContainerBorderDisabled: const Color(0x33171819),
+    onErrorContainerBorderHovered: const Color(0xFFDC0A56),
+    onErrorContainerBorderEnabled: const Color(0xFFF0C9D4),
+    onErrorContainerBorderFocused: const Color(0xFF59040D),
+    onErrorContainerPlaceholder: const Color(0xFFDC0A56),
+    errorTextEnabled: const Color(0x00FFFFFF),
+    errorTextHovered: const Color(0xFFFAF2F4),
+    errorTextPressed: const Color(0xFFF5E1E6),
+    onErrorTextVariant: const Color(0xFF59040D),
+    onErrorTextVariantDisabled: const Color(0x80171819),
+    
+    warning: const Color(0xFFDE7A2D),
+    warningPressed: const Color(0xFF99541F),
+    warningHovered: const Color(0xFFB26224),
+    onWarning: const Color(0xFFFFFFFF),
+    onWarningVariantDisabled: const Color(0x80171819),
+    warningBorder: const Color(0xFF99541F),
+    warningBorderDisabled: const Color(0x33171819),
+    warningTextEnabled: const Color(0x00FFFFFF),
+    warningTextPressed: const Color(0xFFF5EAE1),
+    warningTextHovered: const Color(0xFFFAF3ED),
+    onWarningTextVariant: const Color(0xFF4D2100),
+    onWarningTextVariantDisabled: const Color(0x80171819),
+    warningContainer: const Color(0xFFFAF3ED),
+    warningContainerPressed: const Color(0xFFF0DAC9),
+    warningContainerHovered: const Color(0xFFF5EAE1),
+    onWarningContainerVariant: const Color(0xFF59040D),
+    onWarningContainerVariantDisabled: const Color(0x80171819),
+    onWarningContainerBorder: const Color(0xFFF0DAC9),
+    onWarningContainerBorderDisabled: const Color(0x33171819),
+    
+    success: const Color(0xFF1BBB77),
+    successPressed: const Color(0xFF128051),
+    successHovered: const Color(0xFF169961),
+    onSuccess: const Color(0xFFFFFFFF),
+    onSuccessVariantDisabled: const Color(0x80171819),
+    successBorder: const Color(0xFF128051),
+    successBorderDisabled: const Color(0x33171819),
+    successContainer: const Color(0xFFE6F2ED),
+    successContainerPressed: const Color(0xFFC1E5D6),
+    successContainerHovered: const Color(0xFFDAEDE5),
+    onSuccessContainerVariant: const Color(0xFF0C3322),
+    onSuccessContainerVariantDisabled: const Color(0x80171819),
+    onSuccessContainerBorder: const Color(0xFFC1E5D6),
+    onSuccessContainerBorderDisabled: const Color(0x33171819),
+    
+    statusDefault: const Color(0xFF606266),
+    statusOnDefault: const Color(0xFFFFFFFF),
+    statusDefaultContainer: const Color(0xFFE9EBF0),
+    statusOnDefaultContainer: const Color(0xFF2F3033),
+    statusInform: const Color(0xFF2236E5),
+    statusOnInform: const Color(0xFFFFFFFF),
+    statusInformContainer: const Color(0xFFF2F3FA),
+    statusOnInformContainer: const Color(0xFF0F1866),
+    statusOnErrorContainer: const Color(0xFF59040D),
+    statusSuccess: const Color(0xFF1BBB77),
+    statusOnSuccessContainer: const Color(0xFF0C3322),
+    statusWarning: const Color(0xFFDE7A2D),
+    statusWarningContainer: const Color(0xFFFAF3ED),
+    statusOnWarningContainer: const Color(0xFF4D2100),
+    statusCaution: const Color(0xFFD4DB2D),
+    statusOnCaution: const Color(0xFF4A4D00),
+    statusCautionContainer: const Color(0xFFF9FAED),
+    statusOnCautionContainer: const Color(0xFF4A4D00),
+    
+    neutral: const Color(0xFFF0F2F5),
+    onNeutralBorder: const Color(0xFFFFFFFF),
+    onNeutralVariant: const Color(0xFF171819),
+    
+    stateDefaultEnabled: const Color(0x00FFFFFF),
+    stateDefaultHovered: const Color(0x1F000000),
+    stateDefaultPressed: const Color(0x33000000),
+    stateOnContainerEnabled: const Color(0x00FFFFFF),
+    stateOnContainerHovered: const Color(0x0A000000),
+    stateOnContainerPressed: const Color(0x14000000),
+    
+    labelInputDefault: const Color(0xFF47494D),
+    labelInputDisabled: const Color(0xFF47494D),
+  );
+}
+
+TextTheme createMaterialTextTheme(ColorScheme colorScheme) {
+  return TextTheme(
+    displayLarge: TextStyle(
+      fontFamily: 'Inter',
+      fontSize: 48.0,
+      fontWeight: FontWeight.w500,
+      letterSpacing: -0.96,
+      height: 56.0 / 48.0, 
+      color: colorScheme.onSurface,
+    ),
+    headlineLarge: TextStyle(
+      fontFamily: 'Inter',
+      fontSize: 32.0,
+      fontWeight: FontWeight.w600,
+      letterSpacing: -1.0,
+      height: 40.0 / 32.0, 
+      color: colorScheme.onSurface,
+    ),
+    titleLarge: TextStyle(
+      fontFamily: 'Inter',
+      fontSize: 24.0,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.0,
+      height: 32.0 / 24.0, 
+      color: colorScheme.onSurface,
+      ),
+    titleMedium: TextStyle(
+      fontFamily: 'Inter',
+      fontSize: 16.0,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.32,
+      height: 24.0 / 16.0, 
+      color: colorScheme.onSurface,
+    ),
+    titleSmall: TextStyle(
+      fontFamily: 'Inter',
+      fontSize: 14.0,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.14,
+      height: 20.0 / 14.0, 
+      color: colorScheme.onSurface,
+    ),
+    labelMedium: TextStyle(
+      fontFamily: 'Inter',
+      fontSize: 14.0,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 0.0,
+      height: 20.0 / 14.0, 
+      color: colorScheme.onSurface,
+    ),
+    labelSmall: TextStyle(
+      fontFamily: 'Inter',
+      fontSize: 12.0,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 0.24,
+      height: 16.0 / 12.0, 
+      color: colorScheme.onSurface,
+    ),
+    bodyLarge: TextStyle(
+      fontFamily: 'Inter',
+      fontSize: 16.0,
+      fontWeight: FontWeight.w400,
+      letterSpacing: 0.0,
+      height: 24.0 / 16.0, 
+      color: colorScheme.onSurface,
+    ),
+    bodyMedium: TextStyle(
+      fontFamily: 'Inter',
+      fontSize: 14.0,
+      fontWeight: FontWeight.w400,
+      letterSpacing: 0.0,
+      height: 20.0 / 14.0, 
+      color: colorScheme.onSurface,
+    ),
+    bodySmall: TextStyle(
+      fontFamily: 'Inter',
+      fontSize: 12.0,
+      fontWeight: FontWeight.w400,
+      letterSpacing: 0.24,
+      height: 16.0 / 12.0, 
+      color: colorScheme.onSurfaceVariant,
+    ),
+  );
+}
+
+ThemeData createLightDefaultTheme(int? backgroundColor) {
+  final bool useDarkTheme = getCurrentTheme();
+  final Color finalBackgroundColor = calculateBackgroundColor(backgroundColor, useDarkTheme);
+  
+  final colorScheme = ColorScheme.fromSeed(
+    seedColor: const Color(0xFF1847CA),
+    brightness: Brightness.light,
+  );
+
+  final defaultTextTheme = ThemeData(useMaterial3: true, colorScheme: colorScheme).textTheme;
+  final colorSchemeExtension = createColorSchemeExtension();
+  
+  final textThemeExtension = getTextLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final buttonTheme = getButtonLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final labelTheme = getLabelLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final treeTheme = getTreeLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
 
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
     scaffoldBackgroundColor: finalBackgroundColor,
-    textTheme: TextTheme(
-      displayLarge: TextStyle(
-        fontFamily: 'System',
-        fontSize: 57.0,
-        fontWeight: FontWeight.w400,
-        letterSpacing: -0.25,
-        color: colorScheme.onSurface,
-      ),
-      displayMedium: TextStyle(
-        fontFamily: 'System',
-        fontSize: 45.0,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.0,
-        color: colorScheme.onSurface,
-      ),
-      displaySmall: TextStyle(
-        fontFamily: 'System',
-        fontSize: 36.0,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.0,
-        color: colorScheme.onSurface,
-      ),
-      headlineLarge: TextStyle(
-        fontFamily: 'System',
-        fontSize: 32.0,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.0,
-        color: colorScheme.onSurface,
-      ),
-      headlineMedium: TextStyle(
-        fontFamily: 'System',
-        fontSize: 28.0,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.0,
-        color: colorScheme.onSurface,
-      ),
-      headlineSmall: TextStyle(
-        fontFamily: 'System',
-        fontSize: 24.0,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.0,
-        color: colorScheme.onSurface,
-      ),
-      titleLarge: TextStyle(
-        fontFamily: 'System',
-        fontSize: 22.0,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.0,
-        color: colorScheme.onSurface,
-      ),
-      titleMedium: TextStyle(
-        fontFamily: 'System',
-        fontSize: 16.0,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.15,
-        color: colorScheme.onSurface,
-      ),
-      titleSmall: TextStyle(
-        fontFamily: 'System',
-        fontSize: 14.0,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.1,
-        color: colorScheme.onSurface,
-      ),
-      labelLarge: TextStyle(
-        fontFamily: 'System',
-        fontSize: 14.0,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.1,
-        color: colorScheme.onSurface,
-      ),
-      labelMedium: TextStyle(
-        fontFamily: 'System',
-        fontSize: 12.0,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.5,
-        color: colorScheme.onSurface,
-      ),
-      labelSmall: TextStyle(
-        fontFamily: 'System',
-        fontSize: 11.0,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.5,
-        color: colorScheme.onSurface,
-      ),
-      bodyLarge: TextStyle(
-        fontFamily: 'System',
-        fontSize: 16.0,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.5,
-        color: colorScheme.onSurface,
-      ),
-      bodyMedium: TextStyle(
-        fontFamily: 'System',
-        fontSize: 14.0,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.25,
-        color: colorScheme.onSurface,
-      ),
-      bodySmall: TextStyle(
-        fontFamily: 'System',
-        fontSize: 12.0,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.4,
-        color: colorScheme.onSurfaceVariant,
-      ),
-    ),
-    primaryTextTheme: TextTheme(
-      labelLarge: TextStyle(
-        fontFamily: 'System',
-        fontSize: 14.0,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.1,
-        color: colorScheme.onPrimary,
-      ),
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: colorScheme.surface,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(6.0),
-        borderSide: BorderSide(color: colorScheme.outline),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(6.0),
-        borderSide: BorderSide(color: colorScheme.outline),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(6.0),
-        borderSide: BorderSide(color: colorScheme.primary, width: 2.0),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(6.0),
-        borderSide: BorderSide(color: colorScheme.error),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(6.0),
-        borderSide: BorderSide(color: colorScheme.error, width: 2.0),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-    ),
-    buttonTheme: ButtonThemeData(
-      textTheme: ButtonTextTheme.primary,
-      minWidth: 64.0,
-      height: 36.0,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(6.0),
-      ),
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
-        elevation: 0.0,
-        minimumSize: const Size(64.0, 36.0),
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6.0),
-        ),
-        textStyle: const TextStyle(
-          fontFamily: 'System',
-          fontSize: 14.0,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.0,
-        ),
-      ),
-    ),
-    outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: colorScheme.primary,
-        minimumSize: const Size(64.0, 36.0),
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        side: BorderSide(color: colorScheme.outline),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6.0),
-        ),
-        textStyle: const TextStyle(
-          fontFamily: 'System',
-          fontSize: 14.0,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.0,
-        ),
-      ),
-    ),
-    textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(
-        foregroundColor: colorScheme.primary,
-        minimumSize: const Size(64.0, 36.0),
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6.0),
-        ),
-        textStyle: const TextStyle(
-          fontFamily: 'System',
-          fontSize: 14.0,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.0,
-        ),
-      ),
-    ),
-    checkboxTheme: CheckboxThemeData(
-      fillColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
-        if (states.contains(MaterialState.selected)) {
-          return colorScheme.primary;
-        }
-        return null;
-      }),
-      checkColor: MaterialStateProperty.all<Color>(colorScheme.onPrimary),
-      side: BorderSide(color: colorScheme.outline, width: 2.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(3.0),
-      ),
-    ),
-    radioTheme: RadioThemeData(
-      fillColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
-        if (states.contains(MaterialState.selected)) {
-          return colorScheme.primary;
-        }
-        return colorScheme.outline;
-      }),
-    ),
-    cardTheme: CardThemeData(
-      color: colorScheme.surface,
-      elevation: 0.0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(4.0),
-        side: BorderSide(color: colorScheme.outlineVariant),
-      ),
-    ),
-    dividerTheme: DividerThemeData(
-      color: colorScheme.outlineVariant,
-      thickness: 1.0,
-      space: 1.0,
-    ),
     extensions: <ThemeExtension<dynamic>>[
+      colorSchemeExtension,
       buttonTheme,
       labelTheme,
-      textTheme,
+      textThemeExtension,
+      treeTheme,
+    ],
+  );
+}
+
+ThemeData createLightNonDefaultTheme(int? backgroundColor) {
+  final bool useDarkTheme = getCurrentTheme();
+  final Color finalBackgroundColor = calculateBackgroundColor(backgroundColor, useDarkTheme);
+  
+  final colorScheme = createLightColorScheme();
+  final colorSchemeExtension = createColorSchemeExtension();
+
+  final materialTextTheme = createMaterialTextTheme(colorScheme);
+  final textThemeExtension = getTextLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+
+  final buttonTheme = getButtonLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final labelTheme = getLabelLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final treeTheme = getTreeLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+
+  return ThemeData(
+    useMaterial3: true,
+    colorScheme: colorScheme,
+    scaffoldBackgroundColor: finalBackgroundColor,
+    textTheme: materialTextTheme,
+    extensions: <ThemeExtension<dynamic>>[
+      colorSchemeExtension,
+      buttonTheme,
+      labelTheme,
+      textThemeExtension,
+      treeTheme,
+    ],
+  );
+}
+
+ThemeData createDarkDefaultTheme(int? backgroundColor) {
+  final bool useDarkTheme = getCurrentTheme();
+  final Color finalBackgroundColor = calculateBackgroundColor(backgroundColor, useDarkTheme);
+  
+  final colorScheme = ColorScheme.fromSeed(
+    seedColor: const Color(0xFF1847CA),
+    brightness: Brightness.dark,
+  );
+
+  final defaultTextTheme = ThemeData(useMaterial3: true, colorScheme: colorScheme).textTheme;
+  final colorSchemeExtension = createColorSchemeExtension();
+  
+  final textThemeExtension = getTextDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final buttonTheme = getButtonDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final labelTheme = getLabelDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final treeTheme = getTreeDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+
+  return ThemeData(
+    useMaterial3: true,
+    colorScheme: colorScheme,
+    scaffoldBackgroundColor: finalBackgroundColor,
+    extensions: <ThemeExtension<dynamic>>[
+      colorSchemeExtension,
+      buttonTheme,
+      labelTheme,
+      textThemeExtension,
+      treeTheme,
+    ],
+  );
+}
+
+ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
+  final bool useDarkTheme = getCurrentTheme();
+  final Color finalBackgroundColor = calculateBackgroundColor(backgroundColor, useDarkTheme);
+  
+  final colorScheme = createDarkColorScheme();
+  final colorSchemeExtension = createColorSchemeExtension();
+
+  final materialTextTheme = createMaterialTextTheme(colorScheme);
+  final textThemeExtension = getTextDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+
+  final buttonTheme = getButtonDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final labelTheme = getLabelDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final treeTheme = getTreeDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+
+  return ThemeData(
+    useMaterial3: true,
+    colorScheme: colorScheme,
+    scaffoldBackgroundColor: finalBackgroundColor,
+    textTheme: materialTextTheme,
+    extensions: <ThemeExtension<dynamic>>[
+      colorSchemeExtension,
+      buttonTheme,
+      labelTheme,
+      textThemeExtension,
       treeTheme,
     ],
   );

@@ -167,9 +167,14 @@ val dart = tasks.register<Exec>("dartRunner") {
     inputs.files(fileTree("../flutter-lib/lib/src") {
         include("gen/*.dart")
         include("swt/*.dart")
+        include("theme/theme_extensions/*.dart")
         exclude("**/*.g.dart")
+        exclude("**/*.tailor.dart")
     })
-    outputs.files(fileTree("../flutter-lib/lib/src") { include("**/*.g.dart") })
+    outputs.files(fileTree("../flutter-lib/lib/src") { 
+        include("**/*.g.dart") 
+        include("**/*.tailor.dart") 
+    })
     commandLine = listOf(dartExe(), "run", "build_runner", "build", "--delete-conflicting-outputs")
 }
 

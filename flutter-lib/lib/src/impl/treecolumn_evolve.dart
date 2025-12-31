@@ -4,8 +4,9 @@ import '../gen/event.dart';
 import '../gen/swt.dart';
 import '../impl/item_evolve.dart';
 import '../impl/widget_config.dart';
-import '../theme/tree_theme_extension.dart';
+import '../theme/theme_extensions/tree_theme_extension.dart';
 import 'tree_evolve.dart';
+import 'utils/widget_utils.dart';
 
 class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     extends ItemImpl<T, V> {
@@ -13,10 +14,109 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
   bool _isDragging = false;
   double _startDragOffset = 0.0;
 
+  double _calculateLeftPadding(bool isFirstColumn, TreeThemeExtension theme) {
+    if (!isFirstColumn) return 0.0;
+    return theme.expandIconSize + 
+           theme.expandIconSpacing + 
+           theme.itemIconSize + 
+           theme.itemIconSpacing;
+  }
+
+  VEvent _createEvent({
+    required TreeThemeExtension theme,
+    required int width,
+    int? x,
+    int? y,
+  }) {
+    var e = VEvent();
+    e.x = x ?? theme.eventDefaultX;
+    e.y = y ?? theme.eventDefaultY;
+    e.width = width;
+    e.height = theme.eventDefaultHeight.round();
+    return e;
+  }
+
+  void _handleDragStart(LongPressStartDetails details) {
+    setState(() {
+      _isDragging = true;
+      _startDragOffset = details.localPosition.dx;
+    });
+  }
+
+  void _handleDragUpdate(
+    LongPressMoveUpdateDetails details,
+    TreeThemeExtension theme,
+    int width,
+  ) {
+    if (!_isDragging) return;
+    
+    final dragDistance = details.localPosition.dx - _startDragOffset;
+    if (dragDistance.abs() > theme.columnDragThreshold) {
+      final e = _createEvent(
+        theme: theme,
+        width: width,
+        x: details.localPosition.dx.round(),
+        y: details.localPosition.dy.round(),
+      );
+      widget.sendControlMove(state, e);
+    }
+  }
+
+  void _handleDragEnd() {
+    setState(() {
+      _isDragging = false;
+      _startDragOffset = 0.0;
+    });
+  }
+
+  Widget _buildColumnContent({
+    required TreeThemeExtension theme,
+    required String text,
+    required Color textColor,
+    required EdgeInsets adjustedPadding,
+    required MainAxisAlignment textAlignment,
+    required TextAlign textAlign,
+    required Color bgColor,
+  }) {
+    return Container(
+      padding: adjustedPadding,
+      decoration: BoxDecoration(color: bgColor),
+      child: Row(
+        mainAxisAlignment: textAlignment,
+        children: [
+          Expanded(
+            child: Text(
+              text,
+              style: (theme.columnTextStyle ?? const TextStyle()).copyWith(
+                color: textColor,
+              ),
+              textAlign: textAlign,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildColumnBorder({
+    required TreeThemeExtension theme,
+  }) {
+    return Positioned(
+      right: 0,
+      top: theme.headerColumnBorderVerticalMargin,
+      bottom: theme.headerColumnBorderVerticalMargin,
+      child: Container(
+        width: theme.columnBorderWidth,
+        color: theme.columnRightBorderColor,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final widgetTheme = Theme.of(context).extension<TreeThemeExtension>();
+    final widgetTheme = Theme.of(context).extension<TreeThemeExtension>()!;
     
     final int? columnIndex = TreeColumnIndexProvider.of(context);
     final bool isFirstColumn = columnIndex == 0;
@@ -26,158 +126,54 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     final String text = state.text ?? "";
     final int? alignment = state.alignment;
     final bool moveable = state.moveable ?? false;
-    
-    final int width = state.width ?? widgetTheme!.columnDefaultWidth.round();
+    final int width = state.width ?? widgetTheme.columnDefaultWidth.round();
 
-    final Color textColor = widgetTheme!.columnTextColor;
+    final Color textColor = widgetTheme.columnTextColor;
     final Color bgColor = _isDragging
         ? widgetTheme.columnDraggingBackgroundColor
         : Colors.transparent;
         
-    final double leftPadding = isFirstColumn 
-        ? widgetTheme!.expandIconSize + 
-          widgetTheme.expandIconSpacing + 
-          widgetTheme.itemIconSize + 
-          widgetTheme.itemIconSpacing
-        : 0.0;
+    final double leftPadding = _calculateLeftPadding(isFirstColumn, widgetTheme);
+    final textAlign = getTextAlignFromStyle(alignment ?? 0, TextAlign.left);
+    final textAlignment = getMainAxisAlignmentFromTextAlign(textAlign, MainAxisAlignment.start);
     
-    final EdgeInsets basePadding = widgetTheme.columnPadding;
-    final double extraPadding = 4.0;
-    final EdgeInsets adjustedPadding;
-    
-    if (alignment == null || alignment == SWT.LEFT) {
-      adjustedPadding = EdgeInsets.only(
-        left: basePadding.left + leftPadding + extraPadding,
-        right: basePadding.right,
-        top: basePadding.top,
-        bottom: basePadding.bottom,
-      );
-    } else if (alignment == SWT.RIGHT) {
-      adjustedPadding = EdgeInsets.only(
-        left: basePadding.left + leftPadding,
-        right: basePadding.right + extraPadding,
-        top: basePadding.top,
-        bottom: basePadding.bottom,
-      );
-    } else {
-      adjustedPadding = EdgeInsets.only(
-        left: basePadding.left + leftPadding,
-        right: basePadding.right,
-        top: basePadding.top,
-        bottom: basePadding.bottom,
-      );
-    }
-
-    MainAxisAlignment textAlignment = MainAxisAlignment.start;
-    if (alignment != null) {
-      switch (alignment) {
-        case SWT.CENTER:
-          textAlignment = MainAxisAlignment.center;
-          break;
-        case SWT.RIGHT:
-          textAlignment = MainAxisAlignment.end;
-          break;
-        default:
-          textAlignment = MainAxisAlignment.start;
-      }
-    }
+    const double extraPadding = 4.0;
+    final adjustedPadding = adjustPaddingForAlignment(
+      basePadding: widgetTheme.columnPadding,
+      alignment: alignment,
+      leftPadding: leftPadding,
+      extraPadding: extraPadding,
+    );
 
     return MouseRegion(
       cursor: moveable ? SystemMouseCursors.grab : SystemMouseCursors.click,
       child: GestureDetector(
         onTap: () {
-          var e = VEvent();
-          e.x = widgetTheme!.eventDefaultX;
-          e.y = widgetTheme.eventDefaultY;
-          e.width = width;
-          e.height = widgetTheme.eventDefaultHeight.round();
+          final e = _createEvent(theme: widgetTheme, width: width);
           widget.sendSelectionSelection(state, e);
         },
-        onLongPressStart: moveable
-            ? (details) {
-                setState(() {
-                  _isDragging = true;
-                  _startDragOffset = details.localPosition.dx;
-                });
-              }
-            : null,
+        onLongPressStart: moveable ? _handleDragStart : null,
         onLongPressMoveUpdate: moveable
-            ? (details) {
-                if (_isDragging) {
-                  final dragDistance =
-                      details.localPosition.dx - _startDragOffset;
-                  final threshold = widgetTheme!.columnDragThreshold;
-                  if (dragDistance.abs() > threshold) {
-                    var e = VEvent();
-                    e.x = details.localPosition.dx.round();
-                    e.y = details.localPosition.dy.round();
-                    e.width = width;
-                    e.height = widgetTheme.eventDefaultHeight.round();
-                    widget.sendControlMove(state, e);
-                  }
-                }
-              }
+            ? (details) => _handleDragUpdate(details, widgetTheme, width)
             : null,
-        onLongPressEnd: moveable
-            ? (details) {
-                setState(() {
-                  _isDragging = false;
-                  _startDragOffset = 0.0;
-                });
-              }
-            : null,
+        onLongPressEnd: moveable ? (_) => _handleDragEnd() : null,
         child: Stack(
           children: [
-            Container(
-              padding: adjustedPadding,
-              decoration: BoxDecoration(
-                color: bgColor,
-              ),
-              child: Row(
-                mainAxisAlignment: textAlignment,
-                children: [
-                  Expanded(
-                    child: Text(
-                      text,
-                      style: TextStyle(
-                        color: textColor,
-                        fontWeight: widgetTheme!.columnFontWeight,
-                        fontSize: widgetTheme.columnFontSize,
-                      ),
-                      textAlign: _getTextAlign(alignment),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
+            _buildColumnContent(
+              theme: widgetTheme,
+              text: text,
+              textColor: textColor,
+              adjustedPadding: adjustedPadding,
+              textAlignment: textAlignment,
+              textAlign: textAlign,
+              bgColor: bgColor,
             ),
             if (linesVisible && !isLastColumn)
-              Positioned(
-                right: 0,
-                top: widgetTheme!.headerColumnBorderVerticalMargin,
-                bottom: widgetTheme!.headerColumnBorderVerticalMargin,
-                child: Container(
-                  width: widgetTheme.columnBorderWidth,
-                  color: widgetTheme.columnRightBorderColor,
-                ),
-              ),
+              _buildColumnBorder(theme: widgetTheme),
           ],
         ),
       ),
     );
   }
 
-  TextAlign _getTextAlign(int? alignment) {
-    if (alignment == null) return TextAlign.left;
-
-    switch (alignment) {
-      case SWT.CENTER:
-        return TextAlign.center;
-      case SWT.RIGHT:
-        return TextAlign.right;
-      default:
-        return TextAlign.left;
-    }
-  }
 }
