@@ -198,6 +198,8 @@ public final class DartFont extends DartResource implements IFont {
      */
     @Override
     public int hashCode() {
+        if (fontData[0] == null)
+            return 0;
         return Objects.hash(fontData[0].name, fontData[0].height, fontData[0].style);
     }
 

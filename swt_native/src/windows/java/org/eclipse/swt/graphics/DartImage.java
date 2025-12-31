@@ -230,7 +230,6 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                             break;
                         case SWT.ICON:
                             for (ImageHandle imageHandle : ((DartImage) srcImage.getImpl()).zoomLevelToImageHandle.values()) {
-                                Rectangle rect = imageHandle.getBounds();
                             }
                             break;
                         default:
@@ -261,6 +260,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             default:
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
+        this.imageData = ((DartImage) srcImage.getImpl()).imageData;
         init();
         ((SwtDevice) this.device.getImpl()).registerResourceWithZoomSupport(this.getApi());
     }
@@ -338,6 +338,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         super(device, api);
         if (data == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        this.imageData = data;
         init();
         ((SwtDevice) this.device.getImpl()).registerResourceWithZoomSupport(this.getApi());
     }
@@ -346,6 +347,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         super(device, api);
         if (data == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        this.imageData = data;
         init();
         ((SwtDevice) this.device.getImpl()).registerResourceWithZoomSupport(this.getApi());
     }
@@ -389,6 +391,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         if (source.width != mask.width || source.height != mask.height) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
+        this.imageData = source;
         init();
         ((SwtDevice) this.device.getImpl()).registerResourceWithZoomSupport(this.getApi());
     }

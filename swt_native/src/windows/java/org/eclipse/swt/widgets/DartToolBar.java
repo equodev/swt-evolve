@@ -872,16 +872,6 @@ public class DartToolBar extends DartComposite implements IToolBar {
         return ignoreMouse;
     }
 
-    @Override
-    public void dispose() {
-        super.dispose();
-        if (isDisposed())
-            return;
-        if (!isValidThread())
-            error(SWT.ERROR_THREAD_INVALID_ACCESS);
-        release(true);
-    }
-
     protected void _hookEvents() {
         super._hookEvents();
     }
