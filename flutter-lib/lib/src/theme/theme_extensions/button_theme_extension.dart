@@ -42,6 +42,7 @@ class ButtonThemeExtension extends ThemeExtension<ButtonThemeExtension> with _$B
   // Radio Button colors
   final Color radioButtonSelectedColor;
   final Color radioButtonHoverColor;
+  final Color radioButtonSelectedHoverColor;
   final Color radioButtonBorderColor;
   final Color radioButtonTextColor;
   
@@ -123,6 +124,7 @@ class ButtonThemeExtension extends ThemeExtension<ButtonThemeExtension> with _$B
     required this.secondaryButtonBorderColor,
     required this.radioButtonSelectedColor,
     required this.radioButtonHoverColor,
+    required this.radioButtonSelectedHoverColor,
     required this.radioButtonBorderColor,
     required this.radioButtonTextColor,
     required this.dropdownButtonTextColor,

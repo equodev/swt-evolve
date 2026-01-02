@@ -22,6 +22,16 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   int checkboxUpdateCounter = 0; 
   final Map<Object, Map<String, bool>> _pendingCheckboxStates = {};
   Object? _lastSelectedItemId;
+  ScrollController? _horizontalController;
+  ScrollController? _verticalController;
+
+  @override
+  void initState() {
+    super.initState();
+    _horizontalController = ScrollController();
+    _verticalController = ScrollController();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -94,61 +104,68 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
         final backgroundColor = getTreeBackgroundColor(state, widgetTheme!);
 
-        return Focus(
-          onKeyEvent: _handleKeyEvent,
-          child: Container(
-            width: maxWidth,
-            height: maxHeight,
-            color: backgroundColor,
-            child: Column(
-              children: [
-                if ((state.headerVisible == true || columns.isNotEmpty) &&
-                    columns.isNotEmpty)
-                  Stack(
-                    children: [
-                      Container(
-                        height: widgetTheme!.headerHeight,
-                        color: Colors.transparent,
-                        child: TreeLinesVisibleProvider(
-                          linesVisible: state.linesVisible ?? false,
-                          child: Row(
-                            children: columns.asMap().entries.map((entry) {
-                              final int columnIndex = entry.key;
-                              final column = entry.value;
-                              final defaultWidth = widgetTheme!.columnDefaultWidth.round();
-                              final int width = column.width ?? defaultWidth;
-                              return SizedBox(
-                                width: width.toDouble(),
-                                child: getWidgetForTreeColumn(column, columnIndex),
-                              );
-                            }).toList(),
+        final bool hasVScroll = StyleBits(state.style).has(SWT.V_SCROLL);
+        final bool hasHScroll = StyleBits(state.style).has(SWT.H_SCROLL);
+        
+        return ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+          child: Focus(
+            onKeyEvent: _handleKeyEvent,
+            child: Container(
+              width: maxWidth,
+              height: maxHeight,
+              color: backgroundColor,
+              child: Column(
+                children: [
+                  if ((state.headerVisible == true || columns.isNotEmpty) &&
+                      columns.isNotEmpty)
+                    Stack(
+                      children: [
+                        Container(
+                          height: widgetTheme!.headerHeight,
+                          color: Colors.transparent,
+                          child: TreeLinesVisibleProvider(
+                            linesVisible: state.linesVisible ?? false,
+                            child: Row(
+                              children: columns.asMap().entries.map((entry) {
+                                final int columnIndex = entry.key;
+                                final column = entry.value;
+                                final defaultWidth = widgetTheme!.columnDefaultWidth.round();
+                                final int width = column.width ?? defaultWidth;
+                                return SizedBox(
+                                  width: width.toDouble(),
+                                  child: getWidgetForTreeColumn(column, columnIndex),
+                                );
+                              }).toList(),
+                            ),
                           ),
                         ),
-                      ),
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        child: Container(
-                          height: 1.0,
-                          color: widgetTheme.headerBorderColor,
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            height: 1.0,
+                            color: widgetTheme.headerBorderColor,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                Expanded(
-                  child: Material(
-                    color: Colors.transparent,
-                    child: SingleChildScrollView(
-                      child: _buildTreeContentWithLines(
+                      ],
+                    ),
+                  Expanded(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: _buildScrollableContent(
                         treeItems,
                         columns,
                         widgetTheme!,
+                        context,
+                        hasVScroll,
+                        hasHScroll,
                       ),
                     ),
-                  ),
-                )
-              ],
+                  )
+                ],
+              ),
             ),
           ),
         );
@@ -201,6 +218,120 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         .toList();
   }
 
+  Widget _buildScrollableContent(
+    List<Widget> treeItems,
+    List<VTreeColumn> columns,
+    TreeThemeExtension widgetTheme,
+    BuildContext context,
+    bool hasVScroll,
+    bool hasHScroll,
+  ) {
+    Widget content = _buildTreeContentWithLines(
+      treeItems,
+      columns,
+      widgetTheme,
+    );
+    
+    double? totalWidth = _calculateTotalWidth(hasHScroll, columns, widgetTheme);
+    Widget horizontalContent = _buildHorizontalContent(content, totalWidth);
+    
+    if (hasVScroll && hasHScroll) {
+      return _buildBothScrollbars(context, horizontalContent);
+    } else if (hasVScroll) {
+      return _buildVerticalScrollbar(context, content);
+    } else if (hasHScroll) {
+      return _buildHorizontalScrollbar(context, horizontalContent);
+    } else {
+      return _buildNoScrollbars(context, content);
+    }
+  }
+
+  double? _calculateTotalWidth(bool hasHScroll, List<VTreeColumn> columns, TreeThemeExtension widgetTheme) {
+    if (!hasHScroll || columns.isEmpty) return null;
+    double calculatedWidth = 0.0;
+    for (final column in columns) {
+      calculatedWidth += (column.width ?? widgetTheme.columnDefaultWidth.round()).toDouble();
+    }
+    return calculatedWidth;
+  }
+
+  Widget _buildHorizontalContent(Widget content, double? totalWidth) {
+    if (totalWidth != null) {
+      return SizedBox(width: totalWidth, child: content);
+    }
+    return content;
+  }
+
+  Widget _buildBothScrollbars(BuildContext context, Widget horizontalContent) {
+    Widget horizontalScrollView = SingleChildScrollView(
+      controller: _horizontalController,
+      scrollDirection: Axis.horizontal,
+      child: horizontalContent,
+    );
+    
+    return Scrollbar(
+      controller: _verticalController,
+      thumbVisibility: true,
+      notificationPredicate: (notification) => notification.depth == 0,
+      child: Scrollbar(
+        controller: _horizontalController,
+        thumbVisibility: true,
+        notificationPredicate: (notification) => notification.depth == 1,
+        child: ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+          child: SingleChildScrollView(
+            controller: _verticalController,
+            scrollDirection: Axis.vertical,
+            child: horizontalScrollView,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVerticalScrollbar(BuildContext context, Widget content) {
+    return Scrollbar(
+      controller: _verticalController,
+      thumbVisibility: true,
+      child: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+        child: SingleChildScrollView(
+          controller: _verticalController,
+          scrollDirection: Axis.vertical,
+          child: content,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHorizontalScrollbar(BuildContext context, Widget horizontalContent) {
+    return Scrollbar(
+      controller: _horizontalController,
+      thumbVisibility: true,
+      child: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+        child: SingleChildScrollView(
+          controller: _horizontalController,
+          scrollDirection: Axis.horizontal,
+          child: horizontalContent,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoScrollbars(BuildContext context, Widget content) {
+    return ScrollConfiguration(
+      behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.vertical,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: content,
+        ),
+      ),
+    );
+  }
+
   Widget _buildTreeContentWithLines(
     List<Widget> treeItems,
     List<VTreeColumn> columns,
@@ -208,11 +339,15 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   ) {
     final bool linesVisible = state.linesVisible ?? false;
     
-    if (!linesVisible || columns.isEmpty) {
-      return Column(
+    Widget itemsColumn = IntrinsicWidth(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: treeItems,
-      );
+      ),
+    );
+    
+    if (!linesVisible || columns.isEmpty) {
+      return itemsColumn;
     }
     
     final List<double> linePositions = [];
@@ -231,10 +366,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     
     return Stack(
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: treeItems,
-        ),
+        itemsColumn,
         ...linePositions.map((position) => Positioned(
           left: position,
           top: 0,
@@ -890,10 +1022,12 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   @override
   void dispose() {
-    super.dispose();
+    _horizontalController?.dispose();
+    _verticalController?.dispose();
     for (String eventName in eventNames) {
       EquoCommService.remove(eventName);
     }
+    super.dispose();
   }
 }
 

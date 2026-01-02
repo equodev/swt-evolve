@@ -33,6 +33,7 @@ mixin _$ButtonThemeExtensionTailorMixin
   Color get secondaryButtonBorderColor;
   Color get radioButtonSelectedColor;
   Color get radioButtonHoverColor;
+  Color get radioButtonSelectedHoverColor;
   Color get radioButtonBorderColor;
   Color get radioButtonTextColor;
   Color get dropdownButtonTextColor;
@@ -92,6 +93,7 @@ mixin _$ButtonThemeExtensionTailorMixin
     Color? secondaryButtonBorderColor,
     Color? radioButtonSelectedColor,
     Color? radioButtonHoverColor,
+    Color? radioButtonSelectedHoverColor,
     Color? radioButtonBorderColor,
     Color? radioButtonTextColor,
     Color? dropdownButtonTextColor,
@@ -161,6 +163,8 @@ mixin _$ButtonThemeExtensionTailorMixin
           radioButtonSelectedColor ?? this.radioButtonSelectedColor,
       radioButtonHoverColor:
           radioButtonHoverColor ?? this.radioButtonHoverColor,
+      radioButtonSelectedHoverColor:
+          radioButtonSelectedHoverColor ?? this.radioButtonSelectedHoverColor,
       radioButtonBorderColor:
           radioButtonBorderColor ?? this.radioButtonBorderColor,
       radioButtonTextColor: radioButtonTextColor ?? this.radioButtonTextColor,
@@ -264,6 +268,8 @@ mixin _$ButtonThemeExtensionTailorMixin
           radioButtonSelectedColor, other.radioButtonSelectedColor, t)!,
       radioButtonHoverColor:
           Color.lerp(radioButtonHoverColor, other.radioButtonHoverColor, t)!,
+      radioButtonSelectedHoverColor: Color.lerp(radioButtonSelectedHoverColor,
+          other.radioButtonSelectedHoverColor, t)!,
       radioButtonBorderColor:
           Color.lerp(radioButtonBorderColor, other.radioButtonBorderColor, t)!,
       radioButtonTextColor:
@@ -387,6 +393,8 @@ mixin _$ButtonThemeExtensionTailorMixin
                 radioButtonSelectedColor, other.radioButtonSelectedColor) &&
             const DeepCollectionEquality()
                 .equals(radioButtonHoverColor, other.radioButtonHoverColor) &&
+            const DeepCollectionEquality().equals(radioButtonSelectedHoverColor,
+                other.radioButtonSelectedHoverColor) &&
             const DeepCollectionEquality()
                 .equals(radioButtonBorderColor, other.radioButtonBorderColor) &&
             const DeepCollectionEquality()
@@ -421,10 +429,8 @@ mixin _$ButtonThemeExtensionTailorMixin
                 checkboxGrayedBorderRadius, other.checkboxGrayedBorderRadius) &&
             const DeepCollectionEquality()
                 .equals(pushButtonBorderWidth, other.pushButtonBorderWidth) &&
-            const DeepCollectionEquality()
-                .equals(radioButtonBorderWidth, other.radioButtonBorderWidth) &&
-            const DeepCollectionEquality()
-                .equals(radioButtonSelectedBorderWidth, other.radioButtonSelectedBorderWidth) &&
+            const DeepCollectionEquality().equals(radioButtonBorderWidth, other.radioButtonBorderWidth) &&
+            const DeepCollectionEquality().equals(radioButtonSelectedBorderWidth, other.radioButtonSelectedBorderWidth) &&
             const DeepCollectionEquality().equals(dropdownButtonBorderWidth, other.dropdownButtonBorderWidth) &&
             const DeepCollectionEquality().equals(checkboxBorderWidth, other.checkboxBorderWidth) &&
             const DeepCollectionEquality().equals(pushButtonFontStyle, other.pushButtonFontStyle) &&
@@ -468,6 +474,7 @@ mixin _$ButtonThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(secondaryButtonBorderColor),
       const DeepCollectionEquality().hash(radioButtonSelectedColor),
       const DeepCollectionEquality().hash(radioButtonHoverColor),
+      const DeepCollectionEquality().hash(radioButtonSelectedHoverColor),
       const DeepCollectionEquality().hash(radioButtonBorderColor),
       const DeepCollectionEquality().hash(radioButtonTextColor),
       const DeepCollectionEquality().hash(dropdownButtonTextColor),
@@ -539,6 +546,8 @@ extension ButtonThemeExtensionBuildContextProps on BuildContext {
   Color get radioButtonSelectedColor =>
       buttonThemeExtension.radioButtonSelectedColor;
   Color get radioButtonHoverColor => buttonThemeExtension.radioButtonHoverColor;
+  Color get radioButtonSelectedHoverColor =>
+      buttonThemeExtension.radioButtonSelectedHoverColor;
   Color get radioButtonBorderColor =>
       buttonThemeExtension.radioButtonBorderColor;
   Color get radioButtonTextColor => buttonThemeExtension.radioButtonTextColor;

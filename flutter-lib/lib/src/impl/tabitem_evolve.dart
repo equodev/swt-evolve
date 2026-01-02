@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import '../gen/tabitem.dart';
+import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../impl/item_evolve.dart';
 import './utils/image_utils.dart';
-import 'widget_config.dart';
+import '../theme/theme_extensions/tabitem_theme_extension.dart';
+import 'utils/widget_utils.dart';
 import 'utils/text_utils.dart';
 
 class TabItemImpl<T extends TabItemSwt, V extends VTabItem>
     extends ItemImpl<T, V> {
   /// Helper method to build an image widget from VImage using ImageUtils
-  Widget? _buildImageWidget() {
+  Widget? _buildImageWidget(TabItemThemeExtension widgetTheme) {
     if (state.image == null) return null;
 
     return ImageUtils.buildVImage(
       state.image,
-      size: AppSizes.tabIconSize,
+      size: widgetTheme.iconSize,
       enabled: true,
       useBinaryImage: false,
       renderAsIcon: true,
@@ -24,32 +26,34 @@ class TabItemImpl<T extends TabItemSwt, V extends VTabItem>
 
   @override
   Widget build(BuildContext context) {
-    return buildTabItemContent(context);
-  }
+    final widgetTheme = Theme.of(context).extension<TabItemThemeExtension>()!;
+    final imageWidget = _buildImageWidget(widgetTheme);
 
-  Widget buildTabItemContent(BuildContext context) {
-    final imageWidget = _buildImageWidget();
+    final textColor = widgetTheme.textColor;
+    final textStyle = (widgetTheme.textStyle ?? const TextStyle()).copyWith(color: textColor);
+
+    final alignment = getMainAxisAlignmentFromTextAlign(
+      getTextAlignFromStyle(state.style, TextAlign.start),
+      MainAxisAlignment.start,
+    );
 
     return Padding(
-      padding: const EdgeInsets.only(right: 2.0),
+      padding: widgetTheme.containerPadding,
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: alignment,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (imageWidget != null)
             Padding(
-              padding: const EdgeInsets.only(bottom: 1.0, right: 3.0),
+              padding: widgetTheme.imagePadding,
               child: imageWidget,
             ),
           Padding(
-            padding: const EdgeInsets.only(bottom: 2.0),
+            padding: widgetTheme.textPadding,
             child: Text(
               stripAccelerators(state.text) ?? "",
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.getTextColor(),
-              ),
+              style: textStyle,
             ),
           ),
         ],

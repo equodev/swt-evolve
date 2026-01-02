@@ -52,6 +52,8 @@ ButtonThemeExtension _$ButtonThemeExtensionFromJson(
           .fromJson(json['radioButtonSelectedColor'] as String),
       radioButtonHoverColor: const ColorConverter()
           .fromJson(json['radioButtonHoverColor'] as String),
+      radioButtonSelectedHoverColor: const ColorConverter()
+          .fromJson(json['radioButtonSelectedHoverColor'] as String),
       radioButtonBorderColor: const ColorConverter()
           .fromJson(json['radioButtonBorderColor'] as String),
       radioButtonTextColor: const ColorConverter()
@@ -158,6 +160,8 @@ Map<String, dynamic> _$ButtonThemeExtensionToJson(
           const ColorConverter().toJson(instance.radioButtonSelectedColor),
       'radioButtonHoverColor':
           const ColorConverter().toJson(instance.radioButtonHoverColor),
+      'radioButtonSelectedHoverColor':
+          const ColorConverter().toJson(instance.radioButtonSelectedHoverColor),
       'radioButtonBorderColor':
           const ColorConverter().toJson(instance.radioButtonBorderColor),
       'radioButtonTextColor':
