@@ -45,6 +45,7 @@ public class Config {
                     entry(List.class, Impl.equo),
                     entry(Combo.class, Impl.equo),
                     entry(CCombo.class, Impl.equo),
+                    entry(ToolBar.class, Impl.equo),
                     //entry(Group.class, Impl.equo)
                     entry(Tree.class, Impl.equo),
                     entry(TreeItem.class, Impl.equo),

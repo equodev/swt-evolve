@@ -2810,16 +2810,15 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setFont(Font font) {
-        font = GraphicsUtils.copyFont(font);
         checkWidget();
-        if (!java.util.Objects.equals(this.font, font)) {
+        if (font != null && font.isDisposed()) {
+            error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        Font copiedFont = GraphicsUtils.copyFont(font);
+        if (!java.util.Objects.equals(this.font, copiedFont)) {
             dirty();
         }
-        if (font != null) {
-            if (font.isDisposed())
-                error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        this.font = font;
+        this.font = copiedFont;
     }
 
     /**
