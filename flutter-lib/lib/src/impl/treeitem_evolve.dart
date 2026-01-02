@@ -23,6 +23,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   TreeItemContext? _context;
   
   bool _isHovered = false;
+  bool _hasCheckedForChildren = false;
 
   VEvent _createEvent({int? detail, int? stateMask}) {
     final widgetTheme = Theme.of(context).extension<TreeThemeExtension>();
@@ -72,108 +73,46 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     final bool enabled = _context?.parentTreeValue.enabled ?? true;
     final bool nextItemSelected = _context?.treeImpl?.isNextItemSelected(state.id) ?? false;
 
+    if (expanded || hasChildren || _hasCheckedForChildren) {
+      _hasCheckedForChildren = true;
+    }
+    
+    final bool mightHaveChildren = !hasChildren && !expanded && !_hasCheckedForChildren;
+    
+    if (mightHaveChildren && _context?.treeImpl != null && _context?.parentTree != null) {
+      _hasCheckedForChildren = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _context?.treeImpl != null && _context?.parentTree != null) {
+          final e = _createEvent();
+          _context!.parentTree.sendTreeExpand(_context!.parentTreeValue, e);
+        }
+      });
+    }
+
     final textColor = getTreeItemTextColor(state, widgetTheme, selected, enabled);
     final bgColor = getTreeItemBackgroundColor(state, widgetTheme, selected, _isHovered && !selected, enabled);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        MouseRegion(
-          cursor: SystemMouseCursors.click,
-          onEnter: (_) {
-            setState(() {
-              _isHovered = true;
-            });
-            _context?.parentTree
-                .sendMouseTrackMouseEnter(_context!.parentTreeValue, null);
-          },
-          onExit: (_) {
-            setState(() {
-              _isHovered = false;
-            });
-            _context?.parentTree
-                .sendMouseTrackMouseExit(_context!.parentTreeValue, null);
-          },
-          child: Listener(
-            onPointerDown: (PointerDownEvent event) {
-              if (event.buttons != 1) return;
-              
-              final pressedKeys = HardwareKeyboard.instance.logicalKeysPressed;
-              final bool isCtrlPressed = pressedKeys.contains(LogicalKeyboardKey.controlLeft) ||
-                  pressedKeys.contains(LogicalKeyboardKey.controlRight);
-              final bool isShiftPressed = pressedKeys.contains(LogicalKeyboardKey.shiftLeft) ||
-                  pressedKeys.contains(LogicalKeyboardKey.shiftRight);
-
-              _context?.treeImpl?.handleTreeItemSelection(
-                state.id,
-                isCtrlPressed: isCtrlPressed,
-                isShiftPressed: isShiftPressed,
-              );
-
-              int stateMask = 0;
-              if (isCtrlPressed) {
-                stateMask |= SWT.CTRL;
-              }
-              if (isShiftPressed) {
-                stateMask |= SWT.SHIFT;
-              }
-              final e = _createEvent(stateMask: stateMask);
-
-              _context?.parentTree
-                  .sendSelectionSelection(_context!.parentTreeValue, e);
-            },
-            child: GestureDetector(
-              onDoubleTap: () {
-                final e = _createEvent();
-                _context?.parentTree
-                    .sendSelectionDefaultSelection(_context!.parentTreeValue, e);
-              },
-              child: Container(
-                constraints: BoxConstraints(
-                  minHeight: widgetTheme!.itemHeight,
-                ),
-                margin: selected
-                    ? EdgeInsets.only(
-                        left: -widgetTheme.itemSelectedBorderWidth,
-                        right: -widgetTheme.itemSelectedBorderWidth,
-                        top: -widgetTheme.itemSelectedBorderWidth,
-                        bottom: nextItemSelected
-                            ? 0.0
-                            : -widgetTheme.itemSelectedBorderWidth,
-                      )
-                    : null,
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  border: selected
-                      ? Border(
-                          left: BorderSide(
-                            color: widgetTheme.itemSelectedBorderColor,
-                            width: widgetTheme.itemSelectedBorderWidth,
-                          ),
-                          right: BorderSide(
-                            color: widgetTheme.itemSelectedBorderColor,
-                            width: widgetTheme.itemSelectedBorderWidth,
-                          ),
-                          top: BorderSide(
-                            color: widgetTheme.itemSelectedBorderColor,
-                            width: widgetTheme.itemSelectedBorderWidth,
-                          ),
-                          bottom: nextItemSelected
-                              ? BorderSide.none
-                              : BorderSide(
-                                  color: widgetTheme.itemSelectedBorderColor,
-                                  width: widgetTheme.itemSelectedBorderWidth,
-                                ),
-                        )
-                      : null,
-                ),
-                padding: widgetTheme.itemPadding,
-                child: _buildRowWithColumns(context, texts, text, textColor, widgetTheme!, level, hasChildren, expanded, isCheckMode, checked, grayed, enabled, selected, image),
-              ),
-            ),
-          ),
+        _buildItemRow(
+          context: context,
+          widgetTheme: widgetTheme!,
+          texts: texts,
+          text: text,
+          textColor: textColor,
+          level: level,
+          hasChildren: hasChildren,
+          expanded: expanded,
+          isCheckMode: isCheckMode,
+          checked: checked,
+          grayed: grayed,
+          enabled: enabled,
+          selected: selected,
+          image: image,
+          bgColor: bgColor,
+          nextItemSelected: nextItemSelected,
         ),
-
         if (expanded && hasChildren) ...buildChildItems(),
       ],
     );
@@ -280,32 +219,35 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
   Widget _buildItemIcon(TreeThemeExtension? widgetTheme, bool enabled, bool selected, 
       bool hasChildren, bool expanded, VImage? image) {
-    return image != null
-        ? ImageUtils.buildVImage(
-            image,
-            size: widgetTheme!.itemIconSize,
-            width: widgetTheme.itemIconSize,
-            height: widgetTheme.itemIconSize,
-            color: enabled
-                ? (selected ? widgetTheme.itemIconSelectedColor : widgetTheme.itemIconColor)
-                : widgetTheme.itemIconDisabledColor,
-            enabled: enabled,
-            useBinaryImage: true,
-            renderAsIcon: true,
-          ) ?? Icon(
-            hasChildren ? (expanded ? Icons.folder_open : Icons.folder) : Icons.cloud,
-            size: widgetTheme.itemIconSize,
-            color: enabled
-                ? (selected ? widgetTheme.itemIconSelectedColor : widgetTheme.itemIconColor)
-                : widgetTheme.itemIconDisabledColor,
-          )
-        : Icon(
-            hasChildren ? (expanded ? Icons.folder_open : Icons.folder) : Icons.cloud,
-            size: widgetTheme!.itemIconSize,
-            color: enabled
-                ? (selected ? widgetTheme.itemIconSelectedColor : widgetTheme.itemIconColor)
-                : widgetTheme.itemIconDisabledColor,
-          );
+    final Color iconColor = _getItemIconColor(widgetTheme!, enabled, selected);
+    final IconData iconData = _getItemIconData(hasChildren, expanded);
+    
+    if (image != null) {
+      return ImageUtils.buildVImage(
+        image,
+        size: widgetTheme.itemIconSize,
+        width: widgetTheme.itemIconSize,
+        height: widgetTheme.itemIconSize,
+        color: iconColor,
+        enabled: enabled,
+        useBinaryImage: true,
+        renderAsIcon: true,
+      ) ?? Icon(iconData, size: widgetTheme.itemIconSize, color: iconColor);
+    }
+    
+    return Icon(iconData, size: widgetTheme.itemIconSize, color: iconColor);
+  }
+
+  Color _getItemIconColor(TreeThemeExtension theme, bool enabled, bool selected) {
+    if (!enabled) return theme.itemIconDisabledColor;
+    return selected ? theme.itemIconSelectedColor : theme.itemIconColor;
+  }
+
+  IconData _getItemIconData(bool hasChildren, bool expanded) {
+    if (hasChildren) {
+      return expanded ? Icons.folder_open : Icons.folder;
+    }
+    return Icons.cloud;
   }
 
   Widget _buildOtherColumns(BuildContext context, List<String>? texts, Color textColor, 
@@ -315,25 +257,44 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       children: columns.skip(1).toList().asMap().entries.map<Widget>((entry) {
         final int columnIndex = entry.key + 1;
         final column = entry.value;
-        final double columnWidth = (column.width ?? widgetTheme.columnDefaultWidth.round()).toDouble();
-
-        String columnText = '';
-        if (texts != null && columnIndex < texts.length) {
-          columnText = texts[columnIndex];
-        }
-
-        return SizedBox(
-          width: columnWidth,
-          child: _buildCellText(
-            context: context,
-            text: columnText,
-            textColor: textColor,
-            theme: widgetTheme,
-            columnAlignment: column.alignment,
-            cellPadding: widgetTheme.cellMultiColumnPadding,
-          ),
+        final String columnText = _getColumnText(texts, columnIndex);
+        
+        return _buildColumnCell(
+          context: context,
+          text: columnText,
+          textColor: textColor,
+          theme: widgetTheme,
+          column: column,
         );
       }).toList(),
+    );
+  }
+
+  String _getColumnText(List<String>? texts, int columnIndex) {
+    if (texts != null && columnIndex < texts.length) {
+      return texts[columnIndex];
+    }
+    return '';
+  }
+
+  Widget _buildColumnCell({
+    required BuildContext context,
+    required String text,
+    required Color textColor,
+    required TreeThemeExtension theme,
+    required VTreeColumn column,
+  }) {
+    final double columnWidth = (column.width ?? theme.columnDefaultWidth.round()).toDouble();
+    return SizedBox(
+      width: columnWidth,
+      child: _buildCellText(
+        context: context,
+        text: text,
+        textColor: textColor,
+        theme: theme,
+        columnAlignment: column.alignment,
+        cellPadding: theme.cellMultiColumnPadding,
+      ),
     );
   }
 
@@ -365,27 +326,16 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       children: columns.asMap().entries.map<Widget>((entry) {
         final int columnIndex = entry.key;
         final column = entry.value;
-        final double columnWidth = (column.width ?? widgetTheme.columnDefaultWidth.round()).toDouble();
-
-        String columnText = '';
-        if (columnIndex == 0) {
-          columnText = text.isNotEmpty
-              ? text
-              : (texts?.isNotEmpty == true ? texts![0] : '');
-        } else if (texts != null && columnIndex < texts.length) {
-          columnText = texts[columnIndex];
-        }
-
-        return SizedBox(
-          width: columnWidth,
-          child: _buildCellText(
-            context: context,
-            text: columnText,
-            textColor: textColor,
-            theme: widgetTheme,
-            columnAlignment: column.alignment,
-            cellPadding: widgetTheme.cellMultiColumnPadding,
-          ),
+        final String columnText = columnIndex == 0 
+            ? (text.isNotEmpty ? text : (texts?.isNotEmpty == true ? texts![0] : ''))
+            : _getColumnText(texts, columnIndex);
+        
+        return _buildColumnCell(
+          context: context,
+          text: columnText,
+          textColor: textColor,
+          theme: widgetTheme,
+          column: column,
         );
       }).toList(),
     );
@@ -399,9 +349,14 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     required bool enabled,
   }) {
     if (!hasChildren) {
-      return SizedBox(width: theme.expandIconSize);
+      return SizedBox(
+        width: theme.expandIconSize,
+        height: theme.expandIconSize,
+      );
     }
-
+    
+    final Color arrowColor = enabled ? theme.expandIconColor : theme.expandIconDisabledColor;
+    
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
@@ -418,7 +373,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         child: Icon(
           expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
           size: theme.expandIconSize,
-          color: enabled ? theme.expandIconColor : theme.expandIconDisabledColor,
+          color: arrowColor,
         ),
       ),
     );
@@ -436,8 +391,6 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        // Este GestureDetector captura el tap y evita que se propague al padre
-        // El checkbox manejará su propio evento a través de _CheckboxButtonWrapper
       },
       child: Container(
         margin: EdgeInsets.only(right: theme.checkboxSpacing),
@@ -487,13 +440,152 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           expanded: expanded,
           enabled: enabled,
         ),
-        if (hasChildren) SizedBox(width: theme.expandIconSpacing),
+        SizedBox(width: theme.expandIconSpacing),
         if (checkbox != null) checkbox,
         Container(
           margin: EdgeInsets.only(right: theme.itemIconSpacing),
           child: _buildItemIcon(theme, enabled, selected, hasChildren, expanded, image),
         ),
       ],
+    );
+  }
+
+  Widget _buildItemRow({
+    required BuildContext context,
+    required TreeThemeExtension widgetTheme,
+    required List<String>? texts,
+    required String text,
+    required Color textColor,
+    required int level,
+    required bool hasChildren,
+    required bool expanded,
+    required bool isCheckMode,
+    required bool checked,
+    required bool grayed,
+    required bool enabled,
+    required bool selected,
+    required VImage? image,
+    required Color bgColor,
+    required bool nextItemSelected,
+  }) {
+    final double expanderAreaWidth = widgetTheme.itemIndent * level + 
+        widgetTheme.expandIconSize + 
+        widgetTheme.expandIconSpacing;
+    
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) {
+        setState(() {
+          _isHovered = true;
+        });
+        _context?.parentTree
+            .sendMouseTrackMouseEnter(_context!.parentTreeValue, null);
+      },
+      onExit: (_) {
+        setState(() {
+          _isHovered = false;
+        });
+        _context?.parentTree
+            .sendMouseTrackMouseExit(_context!.parentTreeValue, null);
+      },
+      child: Listener(
+        onPointerDown: (PointerDownEvent event) {
+          if (event.buttons != 1) return;
+          
+          final localPosition = event.localPosition;
+          if (localPosition.dx < expanderAreaWidth && hasChildren) {
+            return;
+          }
+          
+          final pressedKeys = HardwareKeyboard.instance.logicalKeysPressed;
+          final bool isCtrlPressed = pressedKeys.contains(LogicalKeyboardKey.controlLeft) ||
+              pressedKeys.contains(LogicalKeyboardKey.controlRight);
+          final bool isShiftPressed = pressedKeys.contains(LogicalKeyboardKey.shiftLeft) ||
+              pressedKeys.contains(LogicalKeyboardKey.shiftRight);
+
+          _context?.treeImpl?.handleTreeItemSelection(
+            state.id,
+            isCtrlPressed: isCtrlPressed,
+            isShiftPressed: isShiftPressed,
+          );
+
+          int stateMask = 0;
+          if (isCtrlPressed) {
+            stateMask |= SWT.CTRL;
+          }
+          if (isShiftPressed) {
+            stateMask |= SWT.SHIFT;
+          }
+          final e = _createEvent(stateMask: stateMask);
+
+          _context?.parentTree
+              .sendSelectionSelection(_context!.parentTreeValue, e);
+        },
+        child: GestureDetector(
+          onDoubleTap: () {
+            final e = _createEvent();
+            _context?.parentTree
+                .sendSelectionDefaultSelection(_context!.parentTreeValue, e);
+          },
+          child: Container(
+            constraints: BoxConstraints(
+              minHeight: widgetTheme.itemHeight,
+            ),
+            margin: selected
+                ? EdgeInsets.only(
+                    left: -widgetTheme.itemSelectedBorderWidth,
+                    right: -widgetTheme.itemSelectedBorderWidth,
+                    top: -widgetTheme.itemSelectedBorderWidth,
+                    bottom: nextItemSelected
+                        ? 0.0
+                        : -widgetTheme.itemSelectedBorderWidth,
+                  )
+                : null,
+            decoration: BoxDecoration(
+              color: bgColor,
+              border: selected
+                  ? Border(
+                      left: BorderSide(
+                        color: widgetTheme.itemSelectedBorderColor,
+                        width: widgetTheme.itemSelectedBorderWidth,
+                      ),
+                      right: BorderSide(
+                        color: widgetTheme.itemSelectedBorderColor,
+                        width: widgetTheme.itemSelectedBorderWidth,
+                      ),
+                      top: BorderSide(
+                        color: widgetTheme.itemSelectedBorderColor,
+                        width: widgetTheme.itemSelectedBorderWidth,
+                      ),
+                      bottom: nextItemSelected
+                          ? BorderSide.none
+                          : BorderSide(
+                              color: widgetTheme.itemSelectedBorderColor,
+                              width: widgetTheme.itemSelectedBorderWidth,
+                            ),
+                    )
+                  : null,
+            ),
+            padding: widgetTheme.itemPadding,
+            child: _buildRowWithColumns(
+              context, 
+              texts, 
+              text, 
+              textColor, 
+              widgetTheme, 
+              level, 
+              hasChildren, 
+              expanded, 
+              isCheckMode, 
+              checked, 
+              grayed, 
+              enabled, 
+              selected, 
+              image,
+            ),
+          ),
+        ),
+      ),
     );
   }
 

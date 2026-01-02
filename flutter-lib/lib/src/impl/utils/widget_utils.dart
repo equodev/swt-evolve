@@ -56,14 +56,14 @@ Color? getBackgroundColor({
   return defaultColor;
 }
 
-/// Gets foreground/text color with SWT color support
+/// Gets foreground/text color with SWT font support
 Color getForegroundColor({
   required VColor? foreground,
   required Color defaultColor,
 }) {
-  final useSwtColors = getConfigFlags().use_swt_colors ?? false;
+  final useSwtFonts = getConfigFlags().use_swt_fonts ?? false;
   
-  if (useSwtColors && foreground != null) {
+  if (useSwtFonts && foreground != null) {
     return colorFromVColor(foreground, defaultColor: defaultColor);
   }
   

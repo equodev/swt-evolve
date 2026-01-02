@@ -7,6 +7,8 @@ import '../gen/tabitem.dart';
 import '../gen/widget.dart';
 import '../gen/widgets.dart';
 import '../impl/composite_evolve.dart';
+import '../theme/theme_extensions/tabfolder_theme_extension.dart';
+import 'utils/widget_utils.dart';
 import 'widget_config.dart';
 
 class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
@@ -41,18 +43,14 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
 
     final selectedItem = state.selection!.first;
     final items = state.items ?? [];
-
-    for (int i = 0; i < items.length; i++) {
-      if (items[i].id == selectedItem.id) {
-        return i;
-      }
-    }
-
-    return 0;
+    final index = items.indexWhere((item) => item.id == selectedItem.id);
+    
+    return index >= 0 ? index : 0;
   }
 
   @override
   Widget build(BuildContext context) {
+    final widgetTheme = Theme.of(context).extension<TabFolderThemeExtension>()!;
     final tabItems = getTabItems();
     final tabBodies = getTabBodies();
 
@@ -60,34 +58,50 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
       return Container();
     }
 
-    final double tabHeight = 28.0;
+    final hasValidBounds = hasBounds(state.bounds);
+    final constraints = getConstraintsFromBounds(state.bounds);
 
-    return Column(
+    final tabContent = _buildTabContent(tabBodies);
+    
+    Widget content = Column(
+      mainAxisSize: hasValidBounds ? MainAxisSize.max : MainAxisSize.min,
       children: [
-        buildTabBar(tabItems, tabHeight),
-        Expanded(
-          child: IndexedStack(
-            index: _selectedIndex < tabBodies.length ? _selectedIndex : 0,
-            children: tabBodies,
-          ),
-        ),
+        buildTabBar(context, widgetTheme, tabItems),
+        if (hasValidBounds) Expanded(child: tabContent) else tabContent,
       ],
+    );
+
+    if (hasValidBounds) {
+      return ConstrainedBox(
+        constraints: constraints!,
+        child: content,
+      );
+    }
+
+    return content;
+  }
+
+  Widget _buildTabContent(List<Widget> tabBodies) {
+    return IndexedStack(
+      index: _selectedIndex < tabBodies.length ? _selectedIndex : 0,
+      children: tabBodies,
     );
   }
 
-  Widget buildTabBar(List<TabItem> tabItems, double height) {
-    final backgroundColor = AppColors.getBackgroundColor();
-    final borderColor = AppColors.getBorderColor();
-
+  Widget buildTabBar(BuildContext context, TabFolderThemeExtension widgetTheme, List<TabItem> tabItems) {
+    final hasValidBounds = hasBounds(state.bounds);
+    
     return Container(
-      height: height,
+      width: hasValidBounds ? double.infinity : null,
       decoration: BoxDecoration(
-        color: backgroundColor,
+        color: widgetTheme.tabBarBackgroundColor,
         border: Border(
-          bottom: BorderSide(color: borderColor, width: 1),
+          bottom: BorderSide(color: widgetTheme.tabBarBorderColor, width: widgetTheme.tabBorderWidth),
         ),
       ),
       child: Row(
+        mainAxisSize: hasValidBounds ? MainAxisSize.max : MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           ...tabItems.asMap().entries.map((entry) {
             final int index = entry.key;
@@ -95,13 +109,13 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
 
             return _buildTab(
               context: context,
+              widgetTheme: widgetTheme,
               isSelected: index == _selectedIndex,
               tab: tab,
               onTap: () => _handleTabSelection(index),
               index: index,
             );
           }).toList(),
-          Spacer(),
         ],
       ),
     );
@@ -109,43 +123,37 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
 
   Widget _buildTab({
     required BuildContext context,
+    required TabFolderThemeExtension widgetTheme,
     required bool isSelected,
     required TabItem tab,
     required VoidCallback onTap,
     required int index,
   }) {
-    final backgroundColor = AppColors.getBackgroundColor();
-    final selectedColor = AppColors.getSelectedColor();
-    final borderColor = AppColors.getBorderColor();
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         onDoubleTap: () => _handleDefaultSelection(index),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          margin: isSelected ? const EdgeInsets.only(bottom: -1) : EdgeInsets.zero,
+          padding: EdgeInsets.symmetric(horizontal: widgetTheme.tabPadding),
+          margin: isSelected ? EdgeInsets.only(bottom: -widgetTheme.tabSelectedBorderWidth) : EdgeInsets.zero,
+          constraints: const BoxConstraints(minHeight: 0),
           decoration: BoxDecoration(
-            color: isSelected ? selectedColor : backgroundColor,
+            color: isSelected ? widgetTheme.tabSelectedBackgroundColor : widgetTheme.tabBackgroundColor,
             border: Border(
-              right: BorderSide(color: borderColor, width: 1),
+              right: BorderSide(color: widgetTheme.tabBorderColor, width: widgetTheme.tabBorderWidth),
               bottom: isSelected
-                  ? BorderSide(color: selectedColor, width: 2)
-                  : BorderSide(color: borderColor, width: 1),
+                  ? BorderSide(color: widgetTheme.tabSelectedBorderColor, width: widgetTheme.tabSelectedBorderWidth)
+                  : BorderSide(color: widgetTheme.tabBorderColor, width: widgetTheme.tabBorderWidth),
             ),
           ),
           child: Center(
             child: tab.customContent ??
                 Text(
                   tab.label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isSelected
-                        ? AppColors.getSelectedTextColor()
-                        : AppColors.getTextColor(),
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  ),
+                  style: isSelected
+                      ? (widgetTheme.tabSelectedTextStyle ?? const TextStyle()).copyWith(color: widgetTheme.tabSelectedTextColor)
+                      : (widgetTheme.tabTextStyle ?? const TextStyle()).copyWith(color: widgetTheme.tabTextColor),
                 ),
           ),
         ),
@@ -153,43 +161,29 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     );
   }
 
-  void _handleTabSelection(int index) {
+  void _updateSelection(int index) {
     setState(() {
       _selectedIndex = index;
-
-      // Update state.selection to match the selected item
       if (state.items != null && index < state.items!.length) {
         state.selection = [state.items![index]];
       }
     });
+  }
 
+  void _handleTabSelection(int index) {
+    _updateSelection(index);
     var e = VEvent()..index = index;
     widget.sendSelectionSelection(state, e);
   }
 
   void _handleDefaultSelection(int index) {
-    // First select the tab
-    setState(() {
-      _selectedIndex = index;
-
-      // Update state.selection to match the selected item
-      if (state.items != null && index < state.items!.length) {
-        state.selection = [state.items![index]];
-      }
-    });
-
-    // Then send the default selection event
+    _updateSelection(index);
     var e = VEvent()..index = index;
     widget.sendSelectionDefaultSelection(state, e);
   }
 
   List<TabItem> getTabItems() {
-    if (state.items == null) {
-      return [];
-    }
-    return state.items!
-        .map((tabItem) => getWidgetForTabItem(tabItem))
-        .toList();
+    return state.items?.map((tabItem) => getWidgetForTabItem(tabItem)).toList() ?? [];
   }
 
   TabItem getWidgetForTabItem(VTabItem tabItem) {
@@ -203,10 +197,7 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
   }
 
   List<Widget> getTabBodies() {
-    if (state.items == null) {
-      return <Widget>[];
-    }
-    return state.items!.map((e) => tabBody(e)).toList();
+    return state.items?.map((e) => tabBody(e)).toList() ?? [];
   }
 
   Widget tabBody(VTabItem e) {

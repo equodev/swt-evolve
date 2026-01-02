@@ -73,6 +73,7 @@ ButtonThemeExtension _getButtonTheme({
     // Radio Button colors
     radioButtonSelectedColor: colorScheme.primary,
     radioButtonHoverColor: colorScheme.surfaceVariant,
+    radioButtonSelectedHoverColor: Color.lerp(colorScheme.primary, Colors.black, 0.2) ?? colorScheme.primaryContainer,
     radioButtonBorderColor: colorScheme.outline,
     radioButtonTextColor: textTheme.bodyMedium?.color ?? colorScheme.onSurface,
     
@@ -150,11 +151,8 @@ Color getButtonBackgroundColor(
       ? widgetTheme.pushButtonColor
       : widgetTheme.secondaryButtonColor);
   
-  final useSwtColors = getConfigFlags().use_swt_colors ?? false;
-  
-  if (useSwtColors && state.background != null) {
-    return colorFromVColor(state.background, defaultColor: finalDefaultColor);
-  }
+  // Note: SWT background color is applied to the container behind the button,
+  // not to the button itself. The button colors remain from the theme.
   
   return finalDefaultColor;
 }

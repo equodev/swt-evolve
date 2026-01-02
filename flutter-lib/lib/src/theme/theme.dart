@@ -4,6 +4,8 @@ import '../impl/widget_config.dart';
 import 'theme_settings/button_theme_settings.dart';
 import 'theme_settings/label_theme_settings.dart';
 import 'theme_settings/text_theme_settings.dart';
+import 'theme_settings/tabfolder_theme_settings.dart';
+import 'theme_settings/tabitem_theme_settings.dart';
 import 'theme_settings/tree_theme_settings.dart';
 import 'theme_extensions/color_scheme_extension.dart';
 
@@ -319,6 +321,16 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final tabFolderTheme = getTabFolderLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final tabItemTheme = getTabItemLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   final treeTheme = getTreeLightTheme(
     colorScheme: colorScheme,
     textTheme: defaultTextTheme,
@@ -334,6 +346,8 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
       buttonTheme,
       labelTheme,
       textThemeExtension,
+      tabFolderTheme,
+      tabItemTheme,
       treeTheme,
     ],
   );
@@ -363,6 +377,16 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final tabFolderTheme = getTabFolderLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final tabItemTheme = getTabItemLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   final treeTheme = getTreeLightTheme(
     colorScheme: colorScheme,
     textTheme: materialTextTheme,
@@ -379,6 +403,8 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
       buttonTheme,
       labelTheme,
       textThemeExtension,
+      tabFolderTheme,
+      tabItemTheme,
       treeTheme,
     ],
   );
@@ -411,6 +437,16 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final tabFolderTheme = getTabFolderDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final tabItemTheme = getTabItemDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   final treeTheme = getTreeDarkTheme(
     colorScheme: colorScheme,
     textTheme: defaultTextTheme,
@@ -426,6 +462,8 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
       buttonTheme,
       labelTheme,
       textThemeExtension,
+      tabFolderTheme,
+      tabItemTheme,
       treeTheme,
     ],
   );
@@ -455,6 +493,16 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final tabFolderTheme = getTabFolderDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final tabItemTheme = getTabItemDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   final treeTheme = getTreeDarkTheme(
     colorScheme: colorScheme,
     textTheme: materialTextTheme,
@@ -471,6 +519,8 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
       buttonTheme,
       labelTheme,
       textThemeExtension,
+      tabFolderTheme,
+      tabItemTheme,
       treeTheme,
     ],
   );
