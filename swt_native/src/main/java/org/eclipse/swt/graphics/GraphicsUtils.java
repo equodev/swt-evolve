@@ -49,10 +49,8 @@ public class GraphicsUtils {
         }
 
         if (fontData.getImpl() instanceof SwtFontData) {
-            // Create a new FontData using the copy constructor
             return new FontData(fontData);
         } else {
-            // Already DartFontData, return as-is
             return fontData;
         }
     }
@@ -70,19 +68,14 @@ public class GraphicsUtils {
         if (font == null) {
             return null;
         }
-
         if (font.getImpl() instanceof SwtFont) {
-            FontData[] fontDataArray = font.getFontData();
-            if (fontDataArray != null && fontDataArray.length > 0) {
-                FontData copiedFontData = copyFontData(fontDataArray[0]);
-                return new Font(font.getDevice(), copiedFontData);
-            }
-            return font;
+            FontData copiedFontData = copyFontData(font.getFontData()[0]);
+            DartFont dartFont = new DartFont(font.getDevice(), copiedFontData, font);
+            return dartFont.getApi();
         } else {
             return font;
         }
     }
-
     /**
      * Extracts the filename (without extension) from a given file path.
      *
