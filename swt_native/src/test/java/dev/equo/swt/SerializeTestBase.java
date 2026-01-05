@@ -262,6 +262,7 @@ public class SerializeTestBase {
             inst.ignore(Select.types().of(Class.forName("org.eclipse.swt.internal.cocoa.NSObject")));
         } catch (ClassNotFoundException e) {}
         inst = inst
+                .lenient()
                 .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
                 .generate(Select.all(boolean.class), gen -> gen.booleans().probability(1.0))
                 .generate(Select.all(int.class), gen -> gen.ints().range(1, 1000));

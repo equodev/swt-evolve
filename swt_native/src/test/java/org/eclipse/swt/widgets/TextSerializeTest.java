@@ -26,7 +26,7 @@ class TextSerializeTest extends SerializeTestBase {
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Text")
-               .containsEntry("echoChar", String.valueOf(w.getEchoChar()))
+               .containsEntry("echoCharacter", String.valueOf(w.getEchoChar()))
                .containsEntry("message", json(w.getMessage()))
                .containsEntry("text", json(w.getText()))
                .containsEntry("toolTipText", json(w.getToolTipText()))

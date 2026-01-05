@@ -1896,7 +1896,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
         if (selection == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         text.setSelection(selection.x, selection.y);
-        this.selection = selection;
+        this.selection = text.getSelection();
         dirty();
     }
 

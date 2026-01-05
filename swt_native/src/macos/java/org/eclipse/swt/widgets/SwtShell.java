@@ -2686,6 +2686,23 @@ public class SwtShell extends SwtDecorations implements IShell {
         closeWidget(true);
     }
 
+    ToolTip[] toolTips;
+
+    void addToolTip(ToolTip toolTip) {
+        if (toolTips == null)
+            toolTips = new ToolTip[4];
+        for (int i = 0; i < toolTips.length; i++) {
+            if (toolTips[i] == null) {
+                toolTips[i] = toolTip;
+                return;
+            }
+        }
+        ToolTip[] newToolTips = new ToolTip[toolTips.length + 4];
+        newToolTips[toolTips.length] = toolTip;
+        System.arraycopy(toolTips, 0, newToolTips, 0, toolTips.length);
+        toolTips = newToolTips;
+    }
+
     public Shell getApi() {
         if (api == null)
             api = Shell.createApi(this);

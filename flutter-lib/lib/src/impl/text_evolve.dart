@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../gen/event.dart';
+import '../gen/point.dart';
 import '../gen/swt.dart';
 import '../gen/text.dart';
 import '../gen/widget.dart';
@@ -17,8 +18,11 @@ class TextImpl<T extends TextSwt, V extends VText>
   void initState() {
     super.initState();
     _controller = TextEditingController(text: state.text);
+    _controller.addListener(_updateCaretPosition);
     _focusNode = FocusNode();
     _focusNode!.addListener(_handleFocusChange);
+    // Initialize caret position
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateCaretPosition());
   }
 
   @override
@@ -32,6 +36,17 @@ class TextImpl<T extends TextSwt, V extends VText>
           selection: TextSelection.collapsed(offset: _controller.text.length),
           composing: TextRange.empty,
         );
+      }
+    }
+
+    // Update controller selection if it changed from Java side
+    if (state.selection != null) {
+      final newSelection = TextSelection(
+        baseOffset: state.selection!.x,
+        extentOffset: state.selection!.y,
+      );
+      if (_controller.selection != newSelection) {
+        _controller.selection = newSelection;
       }
     }
   }
@@ -160,8 +175,25 @@ class TextImpl<T extends TextSwt, V extends VText>
     }
   }
 
+  void _updateCaretPosition() {
+    if (!mounted) return;
+
+    // Get the character index position of the cursor
+    final cursorOffset = _controller.selection.baseOffset;
+
+    // Only update if position actually changed
+    if (state.caretPosition == null || state.caretPosition != cursorOffset) {
+      state.caretPosition = cursorOffset;
+
+      // Send the caret position to Java via Verify event
+      var e = VEvent()..start = cursorOffset;
+      widget.sendVerifyVerify(state, e);
+    }
+  }
+
   @override
   void dispose() {
+    _controller.removeListener(_updateCaretPosition);
     _controller.dispose();
     _focusNode?.removeListener(_handleFocusChange);
     _focusNode?.dispose();
