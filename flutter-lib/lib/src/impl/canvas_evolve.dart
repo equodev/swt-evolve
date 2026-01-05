@@ -6,6 +6,7 @@ import '../gen/canvas.dart';
 import '../gen/widgets.dart';
 import 'composite_evolve.dart';
 import '../custom/toolbar_composite.dart';
+import 'color_utils.dart';
 
 abstract class Shape {
   void draw(Canvas c);
@@ -18,7 +19,8 @@ abstract class Shape {
 class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     extends CompositeImpl<T, V> {
   List<Shape> shapes = [];
-  Color bg = Colors.transparent;
+  // Use background color from state (comes from Java shell background)
+  Color get bg => colorFromVColor(state.background, defaultColor: const Color(0xFFF0F0F0));
   Color fg = Colors.black;
   Color gcBg = Colors.transparent;
 

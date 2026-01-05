@@ -7,6 +7,8 @@ import 'theme_settings/text_theme_settings.dart';
 import 'theme_settings/tabfolder_theme_settings.dart';
 import 'theme_settings/tabitem_theme_settings.dart';
 import 'theme_settings/tree_theme_settings.dart';
+import 'theme_settings/ctabfolder_theme_settings.dart';
+import 'theme_settings/ctabitem_theme_settings.dart';
 import 'theme_extensions/color_scheme_extension.dart';
 
 Color calculateBackgroundColor(int? backgroundColor, bool useDarkTheme) {
@@ -336,6 +338,16 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final ctabFolderTheme = getCTabFolderLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final ctabItemTheme = getCTabItemLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
 
   return ThemeData(
     useMaterial3: true,
@@ -349,6 +361,8 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
       tabFolderTheme,
       tabItemTheme,
       treeTheme,
+      ctabFolderTheme,
+      ctabItemTheme,
     ],
   );
 }
@@ -392,6 +406,16 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final ctabFolderTheme = getCTabFolderLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final ctabItemTheme = getCTabItemLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
 
   return ThemeData(
     useMaterial3: true,
@@ -406,6 +430,8 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
       tabFolderTheme,
       tabItemTheme,
       treeTheme,
+      ctabFolderTheme,
+      ctabItemTheme,
     ],
   );
 }
@@ -452,6 +478,16 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final ctabFolderTheme = getCTabFolderDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final ctabItemTheme = getCTabItemDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
 
   return ThemeData(
     useMaterial3: true,
@@ -465,6 +501,8 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
       tabFolderTheme,
       tabItemTheme,
       treeTheme,
+      ctabFolderTheme,
+      ctabItemTheme,
     ],
   );
 }
@@ -508,6 +546,16 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final ctabFolderTheme = getCTabFolderDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final ctabItemTheme = getCTabItemDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
 
   return ThemeData(
     useMaterial3: true,
@@ -522,6 +570,8 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
       tabFolderTheme,
       tabItemTheme,
       treeTheme,
+      ctabFolderTheme,
+      ctabItemTheme,
     ],
   );
 }

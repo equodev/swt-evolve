@@ -52,12 +52,21 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     return const Size(100, 100);
   }
 
+  Color get canvasBg {
+    final canvas = context.findAncestorWidgetOfExactType<CanvasSwt>();
+    if (canvas != null && canvas.value.id == state.id) {
+      final canvasState = context.findAncestorStateOfType<CanvasImpl>();
+      return canvasState?.bg ?? const Color(0xFFF0F0F0);
+    }
+    return const Color(0xFFF0F0F0);
+  }
+
   //todo sendPaintPaint should be called everytime gc redraws and also make shapes list empty
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
       size: bounds,
-      painter: ScenePainter(List.unmodifiable(shapes)),
+      painter: ScenePainter(canvasBg, List.unmodifiable(shapes)),
     );
   }
 
@@ -691,12 +700,13 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
 /* ─────────────── ScenePainter ─────────────── */
 
 class ScenePainter extends CustomPainter {
-  ScenePainter(this.shapes);
+  ScenePainter(this.bg, this.shapes);
+  final Color bg;
   final List<Shape> shapes;
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(Offset.zero & size, Paint()..color = Color(0xFFFFFFFF));
+    canvas.drawRect(Offset.zero & size, Paint()..color = bg);
     canvas.save();
 
     for (final s in shapes) {
@@ -707,7 +717,7 @@ class ScenePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(ScenePainter o) => o.shapes != shapes;
+  bool shouldRepaint(ScenePainter o) => o.bg != bg || o.shapes != shapes;
 }
 
 abstract class Shape {

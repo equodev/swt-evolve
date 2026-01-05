@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
@@ -12,24 +13,41 @@ import '../gen/event.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../gen/widgets.dart';
+import '../gen/color.dart';
+import '../gen/image.dart';
 import '../custom/toolbar_composite.dart';
 import 'composite_evolve.dart';
 import 'icons_map.dart';
 import 'widget_config.dart';
+import '../theme/theme_extensions/ctabfolder_theme_extension.dart';
+import 'utils/widget_utils.dart';
+import 'utils/image_utils.dart';
+import 'color_utils.dart';
 
 class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     extends CompositeImpl<T, V> {
-  final bool useDarkTheme = getCurrentTheme();
   late int _selectedIndex;
   bool _hoveringTopBar = false;
+  bool _scrollbarVisible = false;
+  Timer? _scrollbarHideTimer;
+  final GlobalKey _tabBarKey = GlobalKey();
+  late final ScrollController _horizontalScrollController;
 
   @override
   void initState() {
     super.initState();
     _selectedIndex = state.selection ?? 0;
+    _horizontalScrollController = ScrollController();
 
     var e = VEvent()..index = _selectedIndex;
     widget.sendSelectionSelection(state, e);
+  }
+
+  @override
+  void dispose() {
+    _scrollbarHideTimer?.cancel();
+    _horizontalScrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -38,39 +56,57 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     if (state.selection != null && state.selection != _selectedIndex) {
       _selectedIndex = state.selection!;
     }
+    if (state.minimized != null || state.maximized != null) {
+      setState(() {});
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final widgetTheme = Theme.of(context).extension<CTabFolderThemeExtension>()!;
     final tabItems = getTabItems();
     final tabBodies = getTabBodies();
 
     final useSimpleStyle = false;
     final isSingle = state.single ?? false;
     final isTabBottom = state.tabPosition == SWT.BOTTOM ?? false;
+    final isMinimized = state.minimized ?? false;
+    final isMaximized = state.maximized ?? false;
 
-    final double tabHeight =
-        (state.tabHeight != null && state.tabHeight != SWT.DEFAULT)
-            ? state.tabHeight!.toDouble()
-            : 28.0;
+    final double? tabHeight = (state.tabHeight != null && state.tabHeight != SWT.DEFAULT)
+        ? state.tabHeight!.toDouble()
+        : null;
 
-    return Column(
+    final constraints = getConstraintsFromBounds(state.bounds);
+
+    Widget column = Column(
       children: [
         if (!isTabBottom)
-          buildTabBar(tabItems, tabHeight, useSimpleStyle, isSingle),
-        Expanded(
-          child: IndexedStack(
-            index: _selectedIndex < tabBodies.length ? _selectedIndex : 0,
-            children: tabBodies,
+          buildTabBar(context, widgetTheme, tabItems, tabHeight, useSimpleStyle, isSingle),
+        if (!isMinimized)
+          Expanded(
+            child: IndexedStack(
+              index: _selectedIndex < tabBodies.length ? _selectedIndex : 0,
+              children: tabBodies,
+            ),
           ),
-        ),
         if (isTabBottom)
-          buildTabBar(tabItems, tabHeight, useSimpleStyle, isSingle),
+          buildTabBar(context, widgetTheme, tabItems, tabHeight, useSimpleStyle, isSingle),
       ],
     );
+
+    if (constraints != null) {
+      return ConstrainedBox(
+        constraints: constraints,
+        child: column,
+      );
+    }
+
+    return column;
   }
 
-  Widget buildTabBar(List<CTabItem> tabItems, double height,
+  Widget buildTabBar(BuildContext context, CTabFolderThemeExtension widgetTheme,
+      List<CTabItem> tabItems, double? height,
       bool useSimpleStyle, bool isSingle) {
     List<CTabItem> visibleTabs = isSingle
         ? (_selectedIndex < tabItems.length ? [tabItems[_selectedIndex]] : [])
@@ -78,176 +114,202 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
     final topRightComposite = getTopRightComposite();
     if (useSimpleStyle) {
-      return buildSimpleTabBar(visibleTabs, height);
+      return buildSimpleTabBar(context, widgetTheme, visibleTabs, height);
     } else {
-      return buildAdvancedTabBar(visibleTabs, height, topRightComposite);
+      return buildAdvancedTabBar(context, widgetTheme, visibleTabs, height, topRightComposite);
     }
   }
 
-  Widget buildSimpleTabBar(List<CTabItem> tabs, double height) {
-    final theme = Theme.of(context);
-    final backgroundColor = AppColors.getBackgroundColor();
-    final borderColor = AppColors.getBorderColor();
+  Widget buildSimpleTabBar(BuildContext context, CTabFolderThemeExtension widgetTheme,
+      List<CTabItem> tabs, double? height) {
+    final isTabBottom = state.tabPosition == SWT.BOTTOM ?? false;
+    Widget tabBarContent = Row(
+      children: [
+        Expanded(
+          child: _buildHorizontalScrollableTabs(
+            widgetTheme: widgetTheme,
+            child: Row(
+              children: [
+                ...tabs.asMap().entries.map((entry) {
+                  final int index = entry.key;
+                  final CTabItem tab = entry.value;
 
-    return Container(
-      height: height,
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        border: Border(
-          bottom: BorderSide(color: borderColor, width: 1),
+                  return _buildSimpleTab(
+                    context: context,
+                    widgetTheme: widgetTheme,
+                    isSelected: index == _selectedIndex,
+                    tab: tab,
+                    onTap: () => _handleTabSelection(index),
+                    onClose:
+                        tab.showCloseButton ? () => _handleTabClose(index) : null,
+                    isTabBottom: isTabBottom,
+                  );
+                }).toList(),
+              ],
+            ),
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          ...tabs.asMap().entries.map((entry) {
-            final int index = entry.key;
-            final CTabItem tab = entry.value;
+      ],
+    );
 
-            return _buildSimpleTab(
-              context: context,
-              isSelected: index == _selectedIndex,
-              tab: tab,
-              onTap: () => _handleTabSelection(index),
-              onClose:
-                  tab.showCloseButton ? () => _handleTabClose(index) : null,
-            );
-          }).toList(),
-          Spacer(),
-        ],
-      ),
+    return _buildTabBarContainer(
+      widgetTheme: widgetTheme,
+      height: height,
+      child: tabBarContent,
+      isTabBottom: isTabBottom,
     );
   }
 
-  Widget buildAdvancedTabBar(
-      List<CTabItem> tabs, double height, VComposite? topRightComposite) {
-    final theme = Theme.of(context);
-    final backgroundColor = AppColors.getBackgroundColor();
-    final borderColor = AppColors.getBorderColor();
-
+  Widget buildAdvancedTabBar(BuildContext context, CTabFolderThemeExtension widgetTheme,
+      List<CTabItem> tabs, double? height, VComposite? topRightComposite) {
+    final isTabBottom = state.tabPosition == SWT.BOTTOM ?? false;
     final showMinimizeButton = state.minimizeVisible ?? true;
     final showMaximizeButton = state.maximizeVisible ?? true;
     final isMinimized = state.minimized ?? false;
     final isMaximized = state.maximized ?? false;
+    final topRightAlignment = state.topRightAlignment ?? SWT.RIGHT;
+
+    Widget tabBarContent = Row(
+      key: _tabBarKey,
+      children: [
+        Expanded(
+          child: _buildHorizontalScrollableTabs(
+            widgetTheme: widgetTheme,
+            child: Row(
+              children: [
+                ...tabs.asMap().entries.map((entry) {
+                  final int index = entry.key;
+                  final CTabItem tab = entry.value;
+
+                  return _buildAdvancedTab(
+                    context: context,
+                    widgetTheme: widgetTheme,
+                    isSelected: index == _selectedIndex,
+                    tab: tab,
+                    onTap: () => _handleTabSelection(index),
+                    onClose:
+                        tab.showCloseButton ? () => _handleTabClose(index) : null,
+                    isTabBottom: isTabBottom,
+                  );
+                }),
+              ],
+            ),
+          ),
+        ),
+        _buildTopRightControls(
+          context: context,
+          widgetTheme: widgetTheme,
+          topRightComposite: topRightComposite,
+          showMinimizeButton: showMinimizeButton,
+          showMaximizeButton: showMaximizeButton,
+          isMinimized: isMinimized,
+          isMaximized: isMaximized,
+          alignment: topRightAlignment,
+        ),
+      ],
+    );
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hoveringTopBar = true),
       onExit: (_) => setState(() => _hoveringTopBar = false),
-      child: Container(
+      child: _buildTabBarContainer(
+        widgetTheme: widgetTheme,
         height: height,
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          border: Border(bottom: BorderSide(color: borderColor, width: 1)),
-        ),
-        child: Row(
-          children: [
-            ...tabs.asMap().entries.map((entry) {
-              final int index = entry.key;
-              final CTabItem tab = entry.value;
-
-              return _buildAdvancedTab(
-                context: context,
-                isSelected: index == _selectedIndex,
-                tab: tab,
-                onTap: () => _handleTabSelection(index),
-                onClose:
-                    tab.showCloseButton ? () => _handleTabClose(index) : null,
-              );
-            }),
-            const Spacer(),
-            if (topRightComposite != null ||
-                showMinimizeButton ||
-                showMaximizeButton)
-              _HoverReveal(
-                visible: getConfigFlags().ctabfolder_visible_controls == true
-                    ? true
-                    : _hoveringTopBar,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (topRightComposite != null)
-                      _buildTopRightComposite(topRightComposite),
-                    if (showMinimizeButton)
-                      _buildControlButton(
-                        icon: isMinimized ? Icons.maximize : Icons.minimize,
-                        onTap: _toggleMinimize,
-                      ),
-                    if (showMaximizeButton)
-                      _buildControlButton(
-                        icon: isMaximized
-                            ? Icons.fullscreen_exit
-                            : Icons.fullscreen,
-                        onTap: _toggleMaximize,
-                      ),
-                    const SizedBox(width: 4),
-                  ],
-                ),
-              ),
-          ],
-        ),
+        child: tabBarContent,
+        isTabBottom: isTabBottom,
       ),
     );
   }
 
   Widget _buildSimpleTab({
     required BuildContext context,
+    required CTabFolderThemeExtension widgetTheme,
     required bool isSelected,
     required CTabItem tab,
     required VoidCallback onTap,
     VoidCallback? onClose,
+    required bool isTabBottom,
   }) {
-    final theme = Theme.of(context);
-    final isDark = useDarkTheme;
+    final textColor = isSelected
+        ? getForegroundColor(
+            foreground: state.selectionForeground,
+            defaultColor: widgetTheme.tabSelectedTextColor,
+          )
+        : widgetTheme.tabTextColor.withOpacity(widgetTheme.tabUnselectedTextOpacity);
+    final backgroundColor = isSelected
+        ? getBackgroundColor(
+            background: state.selectionBackground,
+            defaultColor: widgetTheme.tabSelectedBackgroundColor,
+          ) ?? widgetTheme.tabSelectedBackgroundColor
+        : widgetTheme.tabBackgroundColor;
+    final textStyle = isSelected
+        ? widgetTheme.tabSelectedTextStyle
+        : widgetTheme.tabTextStyle;
 
-    final backgroundColor = AppColors.getBackgroundColor();
-    final selectedColor = AppColors.getSelectedColor();
-    final borderColor = AppColors.getBorderColor();
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          height: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(
-            color: isSelected ? selectedColor : backgroundColor,
-            border: Border(
-              right: BorderSide(color: borderColor, width: 1),
-              bottom: isSelected
-                  ? BorderSide(color: selectedColor, width: 1)
-                  : BorderSide(color: borderColor, width: 1),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: double.infinity,
+        padding: EdgeInsets.symmetric(
+          horizontal: widgetTheme.tabHorizontalPadding,
+          vertical: widgetTheme.tabVerticalPadding,
+        ),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          border: Border(
+            right: BorderSide(
+              color: widgetTheme.tabBorderColor,
+              width: widgetTheme.tabBorderWidth,
             ),
+            bottom: !isTabBottom && isSelected
+                ? BorderSide(
+                    color: backgroundColor,
+                    width: (state.selectionBarThickness != null && state.selectionBarThickness! > 0)
+                        ? state.selectionBarThickness!.toDouble()
+                        : widgetTheme.tabSelectedBorderWidth,
+                  )
+                : !isTabBottom
+                    ? BorderSide(
+                        color: widgetTheme.tabBorderColor,
+                        width: widgetTheme.tabBorderWidth,
+                      )
+                    : BorderSide.none,
+            top: isTabBottom && isSelected
+                ? BorderSide(
+                    color: backgroundColor,
+                    width: (state.selectionBarThickness != null && state.selectionBarThickness! > 0)
+                        ? state.selectionBarThickness!.toDouble()
+                        : widgetTheme.tabSelectedBorderWidth,
+                  )
+                : isTabBottom
+                    ? BorderSide(
+                        color: widgetTheme.tabBorderColor,
+                        width: widgetTheme.tabBorderWidth,
+                      )
+                    : BorderSide.none,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              tab.customContent ??
-                  Text(
-                    tab.label,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isSelected
-                          ? AppColors.getSelectedTextColor()
-                          : AppColors.getTextColor(),
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                  ),
-              if (onClose != null) ...[
-                const SizedBox(width: 4),
-                InkWell(
-                  onTap: onClose,
-                  child: Icon(
-                    Icons.close,
-                    size: AppSizes.tabCloseIconSize,
-                    color: isSelected
-                        ? AppColors.getSelectedTextColor()
-                        : AppColors.getTextColor(),
-                  ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            tab.customContent ??
+                Text(
+                  _getTabText(tab.label),
+                  style: textStyle?.copyWith(color: textColor) ??
+                      TextStyle(color: textColor),
                 ),
-              ],
+            if (onClose != null) ...[
+              SizedBox(width: widgetTheme.tabCloseButtonSpacing),
+              GestureDetector(
+                onTap: onClose,
+                child: Icon(
+                  Icons.close,
+                  size: widgetTheme.tabCloseIconSize,
+                  color: textColor,
+                ),
+              ),
             ],
-          ),
+          ],
         ),
       ),
     );
@@ -255,49 +317,97 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
   Widget _buildAdvancedTab({
     required BuildContext context,
+    required CTabFolderThemeExtension widgetTheme,
     required bool isSelected,
     required CTabItem tab,
     required VoidCallback onTap,
     VoidCallback? onClose,
+    required bool isTabBottom,
   }) {
-    final theme = Theme.of(context);
-    final isDark = useDarkTheme;
-
-    final backgroundColor = AppColors.getBackgroundColor();
-    final selectedColor = AppColors.getSelectedColor();
-    final borderColor = AppColors.getBorderColor();
-
-    final highlightColor = AppColors.highlight;
-
     final showUnselectedClose = state.unselectedCloseVisible ?? false;
     final shouldShowClose =
         (onClose != null) && (isSelected || showUnselectedClose);
 
     final showUnselectedImage = state.unselectedImageVisible ?? false;
-    final shouldShowImage = isSelected || showUnselectedImage;
+    final showSelectedImage = state.selectedImageVisible ?? true;
+    final shouldShowImage = (isSelected && showSelectedImage) || (!isSelected && showUnselectedImage);
 
     final showHighlight = state.highlightEnabled ?? true;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          height: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(
-            color: isSelected ? selectedColor : backgroundColor,
+    final textColor = isSelected
+        ? getForegroundColor(
+            foreground: state.selectionForeground,
+            defaultColor: widgetTheme.tabSelectedTextColor,
+          )
+        : widgetTheme.tabTextColor.withOpacity(widgetTheme.tabUnselectedTextOpacity);
+    final backgroundColor = isSelected
+        ? getBackgroundColor(
+            background: state.selectionBackground,
+            defaultColor: widgetTheme.tabSelectedBackgroundColor,
+          ) ?? widgetTheme.tabSelectedBackgroundColor
+        : widgetTheme.tabBackgroundColor;
+    final textStyle = isSelected
+        ? widgetTheme.tabSelectedTextStyle
+        : widgetTheme.tabTextStyle;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: double.infinity,
+        padding: EdgeInsets.symmetric(
+          horizontal: widgetTheme.tabHorizontalPadding,
+          vertical: widgetTheme.tabVerticalPadding,
+        ),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          image: isSelected ? _buildSelectionBgImage() : null,
             border: Border(
-              top: isSelected && showHighlight
-                  ? BorderSide(color: highlightColor, width: 2)
-                  : BorderSide.none,
-              right: BorderSide(color: borderColor, width: 1),
+              top: !isTabBottom && isSelected && showHighlight
+                  ? BorderSide(
+                      color: widgetTheme.tabHighlightColor,
+                      width: widgetTheme.tabHighlightBorderWidth,
+                    )
+                  : isTabBottom && isSelected
+                      ? BorderSide(
+                          color: backgroundColor,
+                          width: (state.selectionBarThickness != null && state.selectionBarThickness! > 0)
+                              ? state.selectionBarThickness!.toDouble()
+                              : widgetTheme.tabSelectedBorderWidth,
+                        )
+                      : isTabBottom
+                          ? BorderSide(
+                              color: widgetTheme.tabBorderColor,
+                              width: widgetTheme.tabBorderWidth,
+                            )
+                          : BorderSide.none,
+              right: BorderSide(
+                color: widgetTheme.tabBorderColor,
+                width: widgetTheme.tabBorderWidth,
+              ),
               left: isSelected
-                  ? BorderSide(color: borderColor, width: 1)
+                  ? BorderSide(
+                      color: widgetTheme.tabBorderColor,
+                      width: widgetTheme.tabBorderWidth,
+                    )
                   : BorderSide.none,
-              bottom: isSelected
-                  ? BorderSide(color: selectedColor, width: 1)
-                  : BorderSide(color: borderColor, width: 1),
+              bottom: !isTabBottom && isSelected
+                  ? BorderSide(
+                      color: backgroundColor,
+                      width: (state.selectionBarThickness != null && state.selectionBarThickness! > 0)
+                          ? state.selectionBarThickness!.toDouble()
+                          : widgetTheme.tabSelectedBorderWidth,
+                    )
+                  : !isTabBottom
+                      ? BorderSide(
+                          color: widgetTheme.tabBorderColor,
+                          width: widgetTheme.tabBorderWidth,
+                        )
+                      : isTabBottom && isSelected && showHighlight
+                          ? BorderSide(
+                              color: widgetTheme.tabHighlightColor,
+                              width: widgetTheme.tabHighlightBorderWidth,
+                            )
+                          : BorderSide.none,
             ),
           ),
           child: Row(
@@ -305,14 +415,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             children: [
               tab.customContent != null
                   ? DefaultTextStyle(
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isSelected
-                            ? AppColors.getSelectedTextColor()
-                            : AppColors.getTextColor(),
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.normal,
-                      ),
+                      style: textStyle?.copyWith(color: textColor) ??
+                          TextStyle(color: textColor),
                       child: tab.customContent!,
                     )
                   : Row(
@@ -320,53 +424,50 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
                       children: [
                         if (tab.image != null && shouldShowImage)
                           Padding(
-                            padding:
-                                const EdgeInsets.only(bottom: 1.0, right: 3.0),
+                            padding: EdgeInsets.only(
+                              bottom: widgetTheme.tabIconBottomPadding,
+                              right: widgetTheme.tabIconTextSpacing,
+                            ),
                             child: !iconMap.containsKey(tab.image)
                                 ? Image.file(
                                     File(tab.image!),
-                                    width: AppSizes.tabIconSize,
-                                    height: AppSizes.tabIconSize,
+                                    width: widgetTheme.tabIconSize,
+                                    height: widgetTheme.tabIconSize,
                                   )
                                 : Icon(
                                     getIconByName(tab.image!),
-                                    size: AppSizes.tabIconSize,
-                                    color: isSelected
-                                        ? AppColors.getSelectedTextColor()
-                                        : AppColors.getTextColor(),
+                                    size: widgetTheme.tabIconSize,
+                                    color: textColor,
                                   ),
                           ),
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 2.0),
+                          padding: EdgeInsets.only(
+                            bottom: widgetTheme.tabTextBottomPadding,
+                          ),
                           child: Text(
-                            tab.label,
-                            style: TextStyle(
-                              fontSize: AppSizes.tabTextSize,
-                              color: isSelected
-                                  ? AppColors.getSelectedTextColor()
-                                  : AppColors.getTextColor(),
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
-                            ),
+                            _getTabText(tab.label),
+                            style: textStyle?.copyWith(color: textColor) ??
+                                TextStyle(color: textColor),
                           ),
                         ),
                       ],
                     ),
               if (shouldShowClose) ...[
-                const SizedBox(width: 6),
+                SizedBox(width: widgetTheme.tabCloseButtonSpacing),
                 MouseRegion(
                   cursor: SystemMouseCursors.click,
                   child: GestureDetector(
                     onTap: onClose,
                     child: Padding(
-                      padding: const EdgeInsets.only(bottom: 1.0),
+                      padding: EdgeInsets.only(
+                        bottom: widgetTheme.tabCloseIconBottomPadding,
+                      ),
                       child: Icon(
                         Icons.close,
-                        size: AppSizes.tabCloseIconSize,
+                        size: widgetTheme.tabCloseIconSize,
                         color: isSelected
-                            ? AppColors.getSelectedTextColor().withOpacity(0.9)
-                            : AppColors.getTextColor().withOpacity(0.7),
+                            ? textColor.withOpacity(widgetTheme.tabCloseButtonSelectedOpacity)
+                            : textColor.withOpacity(widgetTheme.tabCloseButtonUnselectedOpacity),
                       ),
                     ),
                   ),
@@ -375,7 +476,6 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             ],
           ),
         ),
-      ),
     );
   }
 
@@ -384,31 +484,127 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   }
 
   VComposite? getTopRightComposite() {
-    if (state.topRight == null) {
-      return null;
-    }
-    if (state.topRight is VComposite) {
-      return state.topRight as VComposite;
-    }
-    return null;
+    return state.topRight is VComposite ? state.topRight as VComposite : null;
   }
 
   Widget _buildControlButton({
+    required BuildContext context,
+    required CTabFolderThemeExtension widgetTheme,
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Icon(
-            icon,
-            size: AppSizes.controlButtonSize,
-            color: AppColors.getColor(true),
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: widgetTheme.controlButtonHorizontalPadding,
+        ),
+        child: Icon(
+          icon,
+          size: widgetTheme.controlButtonSize,
+          color: widgetTheme.controlButtonColor,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHorizontalScrollableTabs({
+    required CTabFolderThemeExtension widgetTheme,
+    required Widget child,
+  }) {
+    return NotificationListener<ScrollUpdateNotification>(
+      onNotification: (notification) {
+        // Show scrollbar when user is scrolling
+        _showScrollbar();
+        // Hide after scrolling stops
+        _hideScrollbarAfterDelay();
+        return false;
+      },
+      child: MouseRegion(
+        onEnter: (_) {
+          _showScrollbar();
+        },
+        onExit: (_) {
+          // Hide after a delay to allow interaction with scrollbar
+          _hideScrollbarAfterDelay();
+        },
+        child: Listener(
+          onPointerDown: (_) {
+            _showScrollbar();
+          },
+          child: Scrollbar(
+            controller: _horizontalScrollController,
+            thumbVisibility: _scrollbarVisible,
+            thickness: widgetTheme.tabScrollbarThickness,
+            child: SingleChildScrollView(
+              controller: _horizontalScrollController,
+              scrollDirection: Axis.horizontal,
+              child: child,
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _hideScrollbarAfterDelay() {
+    _scrollbarHideTimer?.cancel();
+    _scrollbarHideTimer = Timer(const Duration(milliseconds: 800), () {
+      if (mounted && _scrollbarVisible) {
+        setState(() {
+          _scrollbarVisible = false;
+        });
+      }
+    });
+  }
+
+  void _showScrollbar() {
+    _scrollbarHideTimer?.cancel();
+    if (!_scrollbarVisible) {
+      setState(() {
+        _scrollbarVisible = true;
+      });
+    }
+  }
+
+  Widget _buildTabBarContainer({
+    required CTabFolderThemeExtension widgetTheme,
+    required double? height,
+    required Widget child,
+    required bool isTabBottom,
+  }) {
+    final borderVisible = state.borderVisible ?? true;
+    final decoration = BoxDecoration(
+      color: widgetTheme.tabBarBackgroundColor,
+      border: borderVisible
+          ? (isTabBottom
+              ? Border(
+                  top: BorderSide(
+                    color: widgetTheme.tabBarBorderColor,
+                    width: widgetTheme.tabBorderWidth,
+                  ),
+                )
+              : Border(
+                  bottom: BorderSide(
+                    color: widgetTheme.tabBarBorderColor,
+                    width: widgetTheme.tabBorderWidth,
+                  ),
+                ))
+          : null,
+    );
+
+    if (height != null) {
+      return Container(
+        height: height,
+        decoration: decoration,
+        child: child,
+      );
+    }
+
+    return IntrinsicHeight(
+      child: Container(
+        decoration: decoration,
+        child: child,
       ),
     );
   }
@@ -420,11 +616,6 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     });
     var e = VEvent()..index = index;
     widget.sendSelectionSelection(state, e);
-  }
-
-  void _handleTabClose(int index) {
-    var e = VEvent()..index = index;
-    widget.sendCTabFolder2close(state, e);
   }
 
   void _toggleMinimize() {
@@ -462,7 +653,6 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
     return CTabItem(
       label: tabItem.text ?? "",
-      // image: tabItem.image,
       showCloseButton: tabItem.showClose ?? false,
       customContent: tabItemWidget,
       toolTipText: tabItem.toolTipText,
@@ -470,10 +660,10 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   }
 
   List<Widget> getTabBodies() {
-    if (state.children == null) {
+    if (state.items == null) {
       return <Widget>[];
     }
-    return state.children!
+    return state.items!
         .whereType<VCTabItem>()
         .map((e) => tabBody(e))
         .toList();
@@ -481,9 +671,112 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
   Widget tabBody(VCTabItem e) {
     if (e.control != null) {
-      return mapWidgetFromValue(e.control!!);
+      final control = e.control!;
+      
+      if (hasBounds(control.bounds)) {
+        final bounds = control.bounds!;
+        return SizedBox(
+          width: bounds.width.toDouble(),
+          height: bounds.height.toDouble(),
+          child: mapWidgetFromValue(control),
+        );
+      } else {
+        return SizedBox.expand(
+          child: mapWidgetFromValue(control),
+        );
+      }
     }
     return Container();
+  }
+
+  String _getTabText(String label) {
+    final minChars = state.minimumCharacters;
+    if (minChars != null && minChars > 0 && label.length > minChars) {
+      return '${label.substring(0, minChars)}...';
+    }
+    return label;
+  }
+
+
+  DecorationImage? _buildSelectionBgImage() {
+    final image = state.selectionBgImage;
+    if (image == null) return null;
+    
+    // For now, we'll use the filename if available
+    // In a full implementation, you'd need to handle imageData as well
+    if (image.filename != null && image.filename!.isNotEmpty) {
+      try {
+        return DecorationImage(
+          image: FileImage(File(image.filename!)),
+          fit: BoxFit.cover,
+        );
+      } catch (e) {
+        // If file doesn't exist, return null
+        return null;
+      }
+    }
+    
+    return null;
+  }
+
+  Widget _buildTopRightControls({
+    required BuildContext context,
+    required CTabFolderThemeExtension widgetTheme,
+    required VComposite? topRightComposite,
+    required bool showMinimizeButton,
+    required bool showMaximizeButton,
+    required bool isMinimized,
+    required bool isMaximized,
+    required int alignment,
+  }) {
+    final hasControls = topRightComposite != null || showMinimizeButton || showMaximizeButton;
+    if (!hasControls) return const SizedBox.shrink();
+
+    final controls = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (topRightComposite != null)
+          _buildTopRightComposite(topRightComposite),
+        if (showMinimizeButton)
+          _buildControlButton(
+            context: context,
+            widgetTheme: widgetTheme,
+            icon: isMinimized ? Icons.maximize : Icons.minimize,
+            onTap: _toggleMinimize,
+          ),
+        if (showMaximizeButton)
+          _buildControlButton(
+            context: context,
+            widgetTheme: widgetTheme,
+            icon: isMaximized ? Icons.fullscreen_exit : Icons.fullscreen,
+            onTap: _toggleMaximize,
+          ),
+        SizedBox(width: widgetTheme.controlButtonSpacing),
+      ],
+    );
+
+    final revealWidget = _HoverReveal(
+      visible: getConfigFlags().ctabfolder_visible_controls == true
+          ? true
+          : _hoveringTopBar,
+      revealDuration: widgetTheme.hoverRevealDuration,
+      hideDuration: widgetTheme.hoverHideDuration,
+      child: controls,
+    );
+
+    if (alignment == SWT.LEFT) {
+      return revealWidget;
+    } else if (alignment == SWT.CENTER) {
+      return Expanded(child: Center(child: revealWidget));
+    } else {
+      return revealWidget;
+    }
+  }
+
+  void _handleTabClose(int index) {
+    var e = VEvent()..index = index;
+    widget.sendCTabFolder2close(state, e);
+    widget.sendCTabFolderitemClosed(state, e);
   }
 }
 
@@ -510,8 +803,15 @@ class CTabItem {
 class _HoverReveal extends StatelessWidget {
   final bool visible;
   final Widget child;
+  final Duration revealDuration;
+  final Duration hideDuration;
 
-  const _HoverReveal({required this.visible, required this.child});
+  const _HoverReveal({
+    required this.visible,
+    required this.child,
+    required this.revealDuration,
+    required this.hideDuration,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -522,7 +822,7 @@ class _HoverReveal extends StatelessWidget {
       maintainState: true,
       child: AnimatedOpacity(
         opacity: visible ? 1.0 : 0.0,
-        duration: Duration(milliseconds: visible ? 250 : 500),
+        duration: visible ? revealDuration : hideDuration,
         curve: Curves.easeOut,
         child: IgnorePointer(
           ignoring: !visible,
