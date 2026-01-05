@@ -365,7 +365,8 @@ public class DartComposite extends DartScrollable implements IComposite {
      */
     public Control[] getChildren() {
         checkWidget();
-        return _getChildren();
+        Control[] allChildren = _getChildren();
+        return java.util.Arrays.stream(allChildren).filter(child -> child != null && !child.isDisposed()).toArray(Control[]::new);
     }
 
     /**
