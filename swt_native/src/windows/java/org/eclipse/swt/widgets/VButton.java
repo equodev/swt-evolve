@@ -46,11 +46,15 @@ public class VButton extends VControl {
 
     public boolean getPrimary() {
         Button button = ((DartButton) impl).getApi();
-        Shell shell = button.getShell();
-        if (shell == null) {
+        Composite parent = button.getImpl()._parent();
+        while (parent != null && !(parent instanceof Shell)) {
+            parent = parent.getImpl()._parent();
+        }
+        if (parent == null) {
             return true;
         }
-        Button defaultButton = shell.getDefaultButton();
+        Shell shell = (Shell) parent;
+        Button defaultButton = ((SwtDecorations) shell.getImpl()).defaultButton;
         return defaultButton != null && defaultButton == button;
     }
 
