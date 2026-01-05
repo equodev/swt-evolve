@@ -1117,7 +1117,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (font != null)
             return font;
-        return display.getSystemFont();
+        return swtFont();
     }
 
     /**
@@ -4162,6 +4162,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public boolean _visible() {
         return visible;
+    }
+
+    Font swtFont() {
+        return new Font(display, "Segoe UI", 9, SWT.NORMAL);
     }
 
     public FlutterBridge getBridge() {

@@ -213,6 +213,8 @@ public final class DartFontData implements IFontData {
         if (fontData == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
+        this.name = fontData.getName();
+        this.style = fontData.getStyle();
         this.getApi().height = fontData.height;
         this.lang = fontData.getImpl()._lang();
         this.country = fontData.getImpl()._country();
@@ -270,9 +272,14 @@ public final class DartFontData implements IFontData {
     public boolean equals(Object object) {
         if (object == this.getApi())
             return true;
-        if (!(object instanceof FontData))
+        if (!(object instanceof FontData data))
             return false;
-        return false;
+        if (this.name == null) {
+            if (data.getName() != null)
+                return false;
+        } else if (!this.name.equals(data.getName()))
+            return false;
+        return getApi().height == data.height && this.style == data.getStyle();
     }
 
     long EnumLocalesProc(long lpLocaleString) {
@@ -362,8 +369,7 @@ public final class DartFontData implements IFontData {
      * @see #setStyle
      */
     public int getStyle() {
-        int style = SWT.NORMAL;
-        return style;
+        return this.style;
     }
 
     /**
@@ -378,7 +384,8 @@ public final class DartFontData implements IFontData {
      */
     @Override
     public int hashCode() {
-        return 0;
+        int nameHash = (this.name != null) ? this.name.hashCode() : 0;
+        return nameHash ^ getHeight() << 8 ^ this.style;
     }
 
     /**

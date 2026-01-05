@@ -71,6 +71,8 @@ public final class DartFont extends DartResource implements IFont {
         this.fontData = null;
         this.handle = handle;
         this.zoom = zoom;
+        FontData systemFontData = new FontData("System", 9, SWT.NORMAL);
+        this._fontData = new FontData[] { systemFontData };
     }
 
     /**
@@ -100,6 +102,7 @@ public final class DartFont extends DartResource implements IFont {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         this.zoom = DPIUtil.getNativeDeviceZoom();
         this.fontData = new FontData(fd);
+        this._fontData = new FontData[] { this.fontData };
         init();
     }
 
@@ -109,6 +112,7 @@ public final class DartFont extends DartResource implements IFont {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         this.zoom = zoom;
         this.fontData = new FontData(fd);
+        this._fontData = new FontData[] { this.fontData };
         init();
     }
 
@@ -153,6 +157,7 @@ public final class DartFont extends DartResource implements IFont {
         }
         FontData fd = fds[0];
         this.fontData = new FontData(fd);
+        this._fontData = new FontData[] { this.fontData };
         init();
     }
 
@@ -186,6 +191,7 @@ public final class DartFont extends DartResource implements IFont {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         this.zoom = DPIUtil.getNativeDeviceZoom();
         this.fontData = new FontData(name, height, style);
+        this._fontData = new FontData[] { this.fontData };
         init();
     }
 
