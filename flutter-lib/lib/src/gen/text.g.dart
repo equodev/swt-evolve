@@ -38,9 +38,13 @@ VText _$VTextFromJson(Map<String, dynamic> json) => VText()
   ..touchEnabled = json['touchEnabled'] as bool?
   ..visible = json['visible'] as bool?
   ..scrollbarsMode = (json['scrollbarsMode'] as num?)?.toInt()
+  ..caretPosition = (json['caretPosition'] as num?)?.toInt()
   ..doubleClickEnabled = json['doubleClickEnabled'] as bool?
-  ..echoChar = (json['echoChar'] as num?)?.toInt()
+  ..echoCharacter = (json['echoCharacter'] as num?)?.toInt()
   ..editable = json['editable'] as bool?
+  ..hiddenText = (json['hiddenText'] as List<dynamic>?)
+      ?.map((e) => (e as num).toInt())
+      .toList()
   ..message = json['message'] as String?
   ..selection = json['selection'] == null
       ? null
@@ -73,9 +77,11 @@ Map<String, dynamic> _$VTextToJson(VText instance) => <String, dynamic>{
       'touchEnabled': instance.touchEnabled,
       'visible': instance.visible,
       'scrollbarsMode': instance.scrollbarsMode,
+      'caretPosition': instance.caretPosition,
       'doubleClickEnabled': instance.doubleClickEnabled,
-      'echoChar': instance.echoChar,
+      'echoCharacter': instance.echoCharacter,
       'editable': instance.editable,
+      'hiddenText': instance.hiddenText,
       'message': instance.message,
       'selection': instance.selection,
       'tabs': instance.tabs,

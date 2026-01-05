@@ -279,29 +279,16 @@ public class DartText extends DartScrollable implements IText {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        string = SwtDisplay.withCrLf(string);
         if (hooks(SWT.Verify) || filters(SWT.Verify)) {
+            int charCount = getCharCount();
+            string = verifyText(string, charCount, charCount);
             if (string == null)
                 return;
         }
-        clearSegments(true);
-        /*
-	* Feature in Windows.  When an edit control with ES_MULTILINE
-	* style that does not have the WS_VSCROLL style is full (i.e.
-	* there is no space at the end to draw any more characters),
-	* EM_REPLACESEL sends a WM_CHAR with a backspace character
-	* to remove any further text that is added.  This is an
-	* implementation detail of the edit control that is unexpected
-	* and can cause endless recursion when EM_REPLACESEL is sent
-	* from a WM_CHAR handler.  The fix is to ignore calling the
-	* handler from WM_CHAR.
-	*/
-        ignoreCharacter = true;
-        ignoreCharacter = false;
-        if ((getApi().state & HAS_AUTO_DIRECTION) != 0) {
-            super.updateTextDirection(AUTO_TEXT_DIRECTION);
-        }
-        applySegments();
+        setSelection(getCharCount());
+        insertEditText(string);
+        if (string.length() != 0)
+            sendEvent(SWT.Modify);
     }
 
     void applySegments() {
@@ -601,21 +588,10 @@ public class DartText extends DartScrollable implements IText {
      */
     public int getCaretPosition() {
         checkWidget();
-        int[] start = new int[1], end = new int[1];
-        /*
-	* In Windows, there is no API to get the position of the caret
-	* when the selection is not an i-beam.  The best that can be done
-	* is to query the pixel position of the current caret and compare
-	* it to the pixel position of the start and end of the selection.
-	*
-	* NOTE:  This does not work when the i-beam belongs to another
-	* control.  In this case, guess that the i-beam is at the start
-	* of the selection.
-	*/
-        int caret = start[0];
-        if (start[0] != end[0]) {
+        if (selection != null) {
+            return selection.x;
         }
-        return untranslateOffset(caret);
+        return 0;
     }
 
     /**
@@ -630,7 +606,8 @@ public class DartText extends DartScrollable implements IText {
      */
     public int getCharCount() {
         checkWidget();
-        return 0;
+        String currentText = getText();
+        return currentText != null ? currentText.length() : 0;
     }
 
     /**
@@ -672,7 +649,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public char getEchoChar() {
         checkWidget();
-        return this.echoChar;
+        return this.echoCharacter;
     }
 
     /**
@@ -702,7 +679,26 @@ public class DartText extends DartScrollable implements IText {
      */
     public int getLineCount() {
         checkWidget();
-        return 0;
+        String string = getText();
+        int length = string.length();
+        // Empty string = 1 empty line
+        if (length == 0)
+            return 1;
+        // Start with 1 (first line)
+        int count = 1;
+        for (int i = 0; i < length; i++) {
+            char c = string.charAt(i);
+            if (c == '\n') {
+                count++;
+            } else if (c == '\r') {
+                count++;
+                // If it's \r\n, skip the \n to avoid counting twice
+                if (i + 1 < length && string.charAt(i + 1) == '\n') {
+                    i++;
+                }
+            }
+        }
+        return count;
     }
 
     /**
@@ -860,12 +856,10 @@ public class DartText extends DartScrollable implements IText {
      */
     public String getSelectionText() {
         checkWidget();
-        int[] start = new int[1], end = new int[1];
-        if (start[0] == end[0])
+        Point selection = getSelection();
+        if (selection.x == selection.y)
             return "";
-        if (segments != null) {
-        }
-        return null;
+        return new String(getEditText(selection.x, selection.y - 1));
     }
 
     /**
@@ -966,12 +960,14 @@ public class DartText extends DartScrollable implements IText {
         if (start > end)
             return "";
         start = Math.max(0, start);
+        String str = getText();
+        start = Math.min(start, str.length());
         /*
 	* NOTE: The current implementation uses substring ()
 	* which can reference a potentially large character
 	* array.
 	*/
-        return getText().substring(start, end + 1);
+        return str.substring(start, Math.min(end + 1, str.length()));
     }
 
     /**
@@ -1245,6 +1241,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public void selectAll() {
         checkWidget();
+        setSelection(0, getCharCount());
     }
 
     @Override
@@ -1316,7 +1313,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setEchoChar(char echo) {
         char newValue = echo;
-        if (!java.util.Objects.equals(this.echoChar, newValue)) {
+        if (!java.util.Objects.equals(this.echoCharacter, newValue)) {
             dirty();
         }
         checkWidget();
@@ -1324,7 +1321,7 @@ public class DartText extends DartScrollable implements IText {
             return;
         allowPasswordChar = true;
         allowPasswordChar = false;
-        this.echoChar = newValue;
+        this.echoCharacter = newValue;
     }
 
     /**
@@ -1449,11 +1446,8 @@ public class DartText extends DartScrollable implements IText {
      * </ul>
      */
     public void setSelection(int start) {
-        dirty();
-        Point newValue = new Point(start, start);
         checkWidget();
-        start = translateOffset(start);
-        this.selection = newValue;
+        setSelection(start, start);
     }
 
     /**
@@ -1483,11 +1477,14 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setSelection(int start, int end) {
         dirty();
-        Point newValue = new Point(start, end);
         checkWidget();
-        start = translateOffset(start);
-        end = translateOffset(end);
+        int length = getCharCount();
+        int min = Math.min(Math.max(Math.min(start, end), 0), length);
+        int max = Math.min(Math.max(Math.max(start, end), 0), length);
+        Point newValue = new Point(min, max);
         this.selection = newValue;
+        // the caret is in the start of the selection
+        this.caretPosition = min;
     }
 
     @Override
@@ -1613,6 +1610,7 @@ public class DartText extends DartScrollable implements IText {
         if ((getApi().state & HAS_AUTO_DIRECTION) != 0) {
             super.updateTextDirection(AUTO_TEXT_DIRECTION);
         }
+        selection = null;
         applySegments();
         this.text = newValue;
     }
@@ -1844,9 +1842,13 @@ public class DartText extends DartScrollable implements IText {
         ((DartText) text.getImpl()).setMargins();
     }
 
-    char echoChar;
+    int caretPosition;
+
+    char echoCharacter;
 
     boolean editable;
+
+    char[] hiddenText = new char[0];
 
     Point selection;
 
@@ -1906,12 +1908,20 @@ public class DartText extends DartScrollable implements IText {
         return hwndActiveIcon;
     }
 
-    public char _echoChar() {
-        return echoChar;
+    public int _caretPosition() {
+        return caretPosition;
+    }
+
+    public char _echoCharacter() {
+        return echoCharacter;
     }
 
     public boolean _editable() {
         return editable;
+    }
+
+    public char[] _hiddenText() {
+        return hiddenText;
     }
 
     public Point _selection() {
@@ -1932,6 +1942,110 @@ public class DartText extends DartScrollable implements IText {
 
     public int _topIndex() {
         return topIndex;
+    }
+
+    String verifyText(String string, int start, int end) {
+        Event event = new Event();
+        event.text = string;
+        event.start = start;
+        event.end = end;
+        /*
+                     * It is possible (but unlikely), that application
+                     * code could have disposed the widget in the verify
+                     * event. If this happens, answer null to cancel
+                     * the operation.
+                     */
+        sendEvent(SWT.Verify, event);
+        if (!event.doit || isDisposed())
+            return null;
+        return event.text;
+    }
+
+    void insertEditText(String string) {
+        _insertEditText(string, false);
+    }
+
+    void _insertEditText(String string, boolean enableUndo) {
+        int length = string.length();
+        Point selection = getSelection();
+        if (hasFocus() && hiddenText == null) {
+            if (textLimit != Text.LIMIT) {
+                int charCount = getCharCount();
+                int selectionLength = selection.y - selection.x;
+                if (charCount - selectionLength + length > textLimit) {
+                    length = textLimit - charCount + selectionLength;
+                    length = Math.max(0, length);
+                }
+            }
+            char[] buffer = new char[length];
+            string.getChars(0, buffer.length, buffer, 0);
+        } else {
+            String oldText = getText();
+            if (textLimit != Text.LIMIT) {
+                int charCount = oldText.length();
+                if (charCount - (selection.y - selection.x) + length > textLimit) {
+                    string = string.substring(0, textLimit - charCount + (selection.y - selection.x));
+                }
+            }
+            String newText = oldText.substring(0, selection.x) + string + oldText.substring(selection.y);
+            setEditText(newText);
+            setSelection(selection.x + string.length());
+        }
+    }
+
+    void setEditText(String string) {
+        char[] text = new char[string.length()];
+        string.getChars(0, text.length, text, 0);
+        setEditText(text);
+    }
+
+    void setEditText(char[] text) {
+        char[] buffer;
+        int length = Math.min(text.length, textLimit);
+        if ((getApi().style & SWT.PASSWORD) == 0 && echoCharacter != '\0') {
+            hiddenText = new char[length];
+            buffer = new char[length];
+            for (int i = 0; i < length; i++) {
+                hiddenText[i] = text[i];
+                buffer[i] = echoCharacter;
+            }
+        } else {
+            hiddenText = null;
+            buffer = text;
+        }
+        this.text = new String(buffer, 0, Math.min(buffer.length, length));
+    }
+
+    char[] getEditText() {
+        if (hiddenText != null) {
+            char[] text = new char[hiddenText.length];
+            System.arraycopy(hiddenText, 0, text, 0, text.length);
+            return text;
+        }
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        } else {
+        }
+        String str = this.text != null ? this.text : "";
+        char[] result = new char[str.length()];
+        str.getChars(0, result.length, result, 0);
+        return result;
+    }
+
+    char[] getEditText(int start, int end) {
+        String str = getText();
+        int length = str.length();
+        end = Math.min(end, length - 1);
+        if (start > end)
+            return new char[0];
+        start = Math.max(0, start);
+        int rangeLength = Math.max(0, end - start + 1);
+        char[] buffer = new char[rangeLength];
+        if (hiddenText != null) {
+            System.arraycopy(hiddenText, start, buffer, 0, buffer.length);
+        } else {
+            str.getChars(start, start + rangeLength, buffer, 0);
+        }
+        return buffer;
     }
 
     protected void _hookEvents() {

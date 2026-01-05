@@ -112,30 +112,8 @@ public class DartToolTip extends DartWidget implements IToolTip {
     public DartToolTip(Shell parent, int style, ToolTip api) {
         super(parent, checkStyle(style), api);
         this.parent = parent;
-        this.autohide = true;
-        x = y = -1;
-        Display display = getDisplay();
-        tip = new Shell(parent, SWT.ON_TOP | SWT.NO_TRIM);
-        Color background = display.getSystemColor(SWT.COLOR_INFO_BACKGROUND);
-        tip.setBackground(background);
-        listener = event -> {
-            switch(event.type) {
-                case SWT.Dispose:
-                    onDispose(event);
-                    break;
-                case SWT.Paint:
-                    onPaint(event);
-                    break;
-                case SWT.MouseDown:
-                    onMouseDown(event);
-                    break;
-            }
-        };
-        addListener(SWT.Dispose, listener);
-        tip.addListener(SWT.Paint, listener);
-        tip.addListener(SWT.MouseDown, listener);
-        parentListener = event -> dispose();
-        parent.addListener(SWT.Dispose, parentListener);
+        createWidget();
+        ((SwtShell) parent.getImpl()).addToolTip(this.getApi());
     }
 
     static int checkStyle(int style) {
@@ -338,6 +316,8 @@ public class DartToolTip extends DartWidget implements IToolTip {
      */
     public boolean getVisible() {
         checkWidget();
+        if (tip == null)
+            return false;
         return tip.getVisible();
     }
 
@@ -722,6 +702,14 @@ public class DartToolTip extends DartWidget implements IToolTip {
 
     public boolean _visible() {
         return visible;
+    }
+
+    void createWidget() {
+        super.createWidget();
+        text = "";
+        message = "";
+        x = y = -1;
+        autohide = true;
     }
 
     public FlutterBridge getBridge() {

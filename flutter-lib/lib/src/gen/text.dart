@@ -48,9 +48,11 @@ class VText extends VScrollable {
     swt = "Text";
   }
 
+  int? caretPosition;
   bool? doubleClickEnabled;
-  int? echoChar;
+  int? echoCharacter;
   bool? editable;
+  List<int>? hiddenText;
   String? message;
   VPoint? selection;
   int? tabs;

@@ -334,11 +334,16 @@ public class DartText extends DartScrollable implements IText {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        clearSegments(true);
-        if ((getApi().style & SWT.SINGLE) != 0) {
-        } else {
+        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
+            int charCount = getCharCount();
+            string = verifyText(string, charCount, charCount);
+            if (string == null)
+                return;
         }
-        applySegments();
+        setSelection(getCharCount());
+        insertEditText(string);
+        if (string.length() != 0)
+            sendEvent(SWT.Modify);
     }
 
     void applySegments() {
@@ -637,8 +642,8 @@ public class DartText extends DartScrollable implements IText {
      */
     public int getCaretPosition() {
         checkWidget();
-        if ((getApi().style & SWT.SINGLE) != 0) {
-        } else {
+        if (selection != null) {
+            return selection.x;
         }
         return 0;
     }
@@ -655,10 +660,8 @@ public class DartText extends DartScrollable implements IText {
      */
     public int getCharCount() {
         checkWidget();
-        if ((getApi().style & SWT.SINGLE) != 0) {
-        } else {
-        }
-        return 0;
+        String currentText = getText();
+        return currentText != null ? currentText.length() : 0;
     }
 
     /**
@@ -702,7 +705,7 @@ public class DartText extends DartScrollable implements IText {
         checkWidget();
         if ((getApi().style & SWT.SINGLE) != 0) {
         }
-        return echoChar;
+        return echoCharacter;
     }
 
     /**
@@ -736,7 +739,26 @@ public class DartText extends DartScrollable implements IText {
         checkWidget();
         if ((getApi().style & SWT.SINGLE) != 0)
             return 1;
-        return 0;
+        String string = getText();
+        int length = string.length();
+        // Empty string = 1 empty line
+        if (length == 0)
+            return 1;
+        // Start with 1 (first line)
+        int count = 1;
+        for (int i = 0; i < length; i++) {
+            char c = string.charAt(i);
+            if (c == '\n') {
+                count++;
+            } else if (c == '\r') {
+                count++;
+                // If it's \r\n, skip the \n to avoid counting twice
+                if (i + 1 < length && string.charAt(i + 1) == '\n') {
+                    i++;
+                }
+            }
+        }
+        return count;
     }
 
     /**
@@ -844,8 +866,8 @@ public class DartText extends DartScrollable implements IText {
      */
     public Point getSelection() {
         checkWidget();
-        if ((getApi().style & SWT.SINGLE) != 0) {
-        } else {
+        if (selection == null) {
+            return new Point(0, 0);
         }
         return this.selection;
     }
@@ -863,7 +885,7 @@ public class DartText extends DartScrollable implements IText {
     public int getSelectionCount() {
         checkWidget();
         Point selection = getSelection();
-        return Math.abs(selection.y - selection.x);
+        return selection.y - selection.x;
     }
 
     /**
@@ -879,7 +901,9 @@ public class DartText extends DartScrollable implements IText {
     public String getSelectionText() {
         checkWidget();
         Point selection = getSelection();
-        return getText().substring(selection.x, selection.y);
+        if (selection.x == selection.y)
+            return "";
+        return new String(getEditText(selection.x, selection.y - 1));
     }
 
     /**
@@ -949,17 +973,18 @@ public class DartText extends DartScrollable implements IText {
         if (!(start <= end && 0 <= end))
             return "";
         String str = getText();
-        int length = str.length();
-        end = Math.min(end, length - 1);
+        ;
+        ;
         if (start > end)
             return "";
         start = Math.max(0, start);
+        start = Math.min(start, str.length());
         /*
 	* NOTE: The current implementation uses substring ()
 	* which can reference a potentially large character
 	* array.
 	*/
-        return str.substring(start, end + 1);
+        return str.substring(start, Math.min(end + 1, str.length()));
     }
 
     /**
@@ -1286,9 +1311,7 @@ public class DartText extends DartScrollable implements IText {
      */
     public void selectAll() {
         checkWidget();
-        if ((getApi().style & SWT.SINGLE) != 0) {
-        } else {
-        }
+        setSelection(0, getCharCount());
     }
 
     @Override
@@ -1348,11 +1371,11 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setEchoChar(char echo) {
         char newValue = echo;
-        if (!java.util.Objects.equals(this.echoChar, newValue)) {
+        if (!java.util.Objects.equals(this.echoCharacter, newValue)) {
             dirty();
         }
         checkWidget();
-        this.echoChar = newValue;
+        this.echoCharacter = newValue;
         if ((getApi().style & SWT.SINGLE) != 0) {
         }
     }
@@ -1468,14 +1491,8 @@ public class DartText extends DartScrollable implements IText {
      * </ul>
      */
     public void setSelection(int start) {
-        dirty();
-        Point newValue = new Point(start, start);
         checkWidget();
-        start = translateOffset(start);
-        this.selection = newValue;
-        if ((getApi().style & SWT.SINGLE) != 0) {
-        } else {
-        }
+        setSelection(start, start);
     }
 
     /**
@@ -1505,14 +1522,14 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setSelection(int start, int end) {
         dirty();
-        Point newValue = new Point(start, end);
         checkWidget();
-        start = translateOffset(start);
-        end = translateOffset(end);
+        int length = getCharCount();
+        int min = Math.min(Math.max(Math.min(start, end), 0), length);
+        int max = Math.min(Math.max(Math.max(start, end), 0), length);
+        Point newValue = new Point(min, max);
         this.selection = newValue;
-        if ((getApi().style & SWT.SINGLE) != 0) {
-        } else {
-        }
+        // the caret is in the start of the selection
+        this.caretPosition = min;
     }
 
     /**
@@ -1676,6 +1693,7 @@ public class DartText extends DartScrollable implements IText {
         if ((getApi().style & SWT.SINGLE) != 0) {
         } else {
         }
+        selection = null;
         sendEvent(SWT.Modify);
         this.text = newValue;
         applySegments();
@@ -1813,9 +1831,13 @@ public class DartText extends DartScrollable implements IText {
         return event.text;
     }
 
-    char echoChar;
+    int caretPosition;
+
+    char echoCharacter;
 
     boolean editable;
+
+    char[] hiddenText = new char[0];
 
     Point selection;
 
@@ -1879,12 +1901,20 @@ public class DartText extends DartScrollable implements IText {
         return currentAdjustment;
     }
 
-    public char _echoChar() {
-        return echoChar;
+    public int _caretPosition() {
+        return caretPosition;
+    }
+
+    public char _echoCharacter() {
+        return echoCharacter;
     }
 
     public boolean _editable() {
         return editable;
+    }
+
+    public char[] _hiddenText() {
+        return hiddenText;
     }
 
     public Point _selection() {
@@ -1905,6 +1935,93 @@ public class DartText extends DartScrollable implements IText {
 
     public int _topIndex() {
         return topIndex;
+    }
+
+    void insertEditText(String string) {
+        _insertEditText(string, false);
+    }
+
+    void _insertEditText(String string, boolean enableUndo) {
+        int length = string.length();
+        Point selection = getSelection();
+        if (hasFocus() && hiddenText == null) {
+            if (textLimit != Text.LIMIT) {
+                int charCount = getCharCount();
+                int selectionLength = selection.y - selection.x;
+                if (charCount - selectionLength + length > textLimit) {
+                    length = textLimit - charCount + selectionLength;
+                    length = Math.max(0, length);
+                }
+            }
+            char[] buffer = new char[length];
+            string.getChars(0, buffer.length, buffer, 0);
+        } else {
+            String oldText = getText();
+            if (textLimit != Text.LIMIT) {
+                int charCount = oldText.length();
+                if (charCount - (selection.y - selection.x) + length > textLimit) {
+                    string = string.substring(0, textLimit - charCount + (selection.y - selection.x));
+                }
+            }
+            String newText = oldText.substring(0, selection.x) + string + oldText.substring(selection.y);
+            setEditText(newText);
+            setSelection(selection.x + string.length());
+        }
+    }
+
+    void setEditText(String string) {
+        char[] text = new char[string.length()];
+        string.getChars(0, text.length, text, 0);
+        setEditText(text);
+    }
+
+    void setEditText(char[] text) {
+        char[] buffer;
+        int length = Math.min(text.length, textLimit);
+        if ((getApi().style & SWT.PASSWORD) == 0 && echoCharacter != '\0') {
+            hiddenText = new char[length];
+            buffer = new char[length];
+            for (int i = 0; i < length; i++) {
+                hiddenText[i] = text[i];
+                buffer[i] = echoCharacter;
+            }
+        } else {
+            hiddenText = null;
+            buffer = text;
+        }
+        this.text = new String(buffer, 0, Math.min(buffer.length, length));
+    }
+
+    char[] getEditText() {
+        if (hiddenText != null) {
+            char[] text = new char[hiddenText.length];
+            System.arraycopy(hiddenText, 0, text, 0, text.length);
+            return text;
+        }
+        if ((getApi().style & SWT.SINGLE) != 0) {
+        } else {
+        }
+        String str = this.text != null ? this.text : "";
+        char[] result = new char[str.length()];
+        str.getChars(0, result.length, result, 0);
+        return result;
+    }
+
+    char[] getEditText(int start, int end) {
+        String str = getText();
+        int length = str.length();
+        end = Math.min(end, length - 1);
+        if (start > end)
+            return new char[0];
+        start = Math.max(0, start);
+        int rangeLength = Math.max(0, end - start + 1);
+        char[] buffer = new char[rangeLength];
+        if (hiddenText != null) {
+            System.arraycopy(hiddenText, start, buffer, 0, buffer.length);
+        } else {
+            str.getChars(start, start + rangeLength, buffer, 0);
+        }
+        return buffer;
     }
 
     protected void _hookEvents() {

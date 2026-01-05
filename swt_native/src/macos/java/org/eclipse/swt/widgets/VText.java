@@ -17,6 +17,14 @@ public class VText extends VScrollable {
         super(impl);
     }
 
+    public int getCaretPosition() {
+        return ((DartText) impl).getCaretPosition();
+    }
+
+    public void setCaretPosition(int value) {
+        ((DartText) impl).caretPosition = value;
+    }
+
     public boolean getDoubleClickEnabled() {
         return ((DartText) impl).getDoubleClickEnabled();
     }
@@ -25,11 +33,11 @@ public class VText extends VScrollable {
         ((DartText) impl).doubleClick = value;
     }
 
-    public char getEchoChar() {
+    public char getEchoCharacter() {
         return ((DartText) impl).getEchoChar();
     }
 
-    public void setEchoChar(char value) {
+    public void setEchoCharacter(char value) {
         ((DartText) impl).echoCharacter = value;
     }
 
@@ -41,6 +49,14 @@ public class VText extends VScrollable {
         ((DartText) impl).editable = value;
     }
 
+    public char[] getHiddenText() {
+        return ((DartText) impl).hiddenText;
+    }
+
+    public void setHiddenText(char[] value) {
+        ((DartText) impl).hiddenText = value;
+    }
+
     public String getMessage() {
         return ((DartText) impl).getMessage();
     }
@@ -50,7 +66,7 @@ public class VText extends VScrollable {
     }
 
     public Point getSelection() {
-        return ((DartText) impl).selection;
+        return ((DartText) impl).getSelection();
     }
 
     public void setSelection(Point value) {
