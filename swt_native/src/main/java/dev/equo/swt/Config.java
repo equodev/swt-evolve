@@ -120,6 +120,8 @@ public class Config {
             if (frame != null && frame.getFileName() != null && frame.getFileName().startsWith(DART)) {
                 return true;
             }
+            if (frame != null && frame.getFileName().startsWith("SwtFont"))
+                break;
         }
         return false;
     }

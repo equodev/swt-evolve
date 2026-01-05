@@ -1109,8 +1109,8 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         OS.MoveMemory(bmi, bmiHeader, BITMAPINFOHEADER.sizeof);
         long[] pBits = new long[1];
         long memDib = OS.CreateDIBSection(0, bmi, OS.DIB_RGB_COLORS, pBits, 0, 0);
-        if (memDib == 0)
-            SWT.error(SWT.ERROR_NO_HANDLES);
+        //if (memDib == 0)    SWT.error(SWT.ERROR_NO_HANDLES);
+        ;
         long oldMemBitmap = OS.SelectObject(memHdc, memDib);
         BITMAP dibBM = new BITMAP();
         OS.GetObject(memDib, BITMAP.sizeof, dibBM);
@@ -1210,8 +1210,8 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         OS.MoveMemory(bmi, bmiHeader, BITMAPINFOHEADER.sizeof);
         long[] pBits = new long[1];
         long memDib = OS.CreateDIBSection(0, bmi, OS.DIB_RGB_COLORS, pBits, 0, 0);
-        if (memDib == 0)
-            SWT.error(SWT.ERROR_NO_HANDLES);
+        //if (memDib == 0)    SWT.error(SWT.ERROR_NO_HANDLES);
+        ;
         long oldMemBitmap = OS.SelectObject(memHdc, memDib);
         BITMAP dibBM = new BITMAP();
         OS.GetObject(memDib, BITMAP.sizeof, dibBM);

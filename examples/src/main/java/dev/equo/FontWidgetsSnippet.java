@@ -2,11 +2,15 @@ package dev.equo;
 
 import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.TextLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.*;
+
+import javax.swing.text.TableView;
 
 /**
  * Comprehensive snippet to test Font support across multiple SWT widgets
@@ -69,8 +73,8 @@ public class FontWidgetsSnippet {
         createTree(shell, "Tree with Times 14 Italic", times14Italic);
 
         // 10. StyledText widget
-        createStyledText(shell, "StyledText with Arial 14", arial14);
-        createStyledText(shell, "StyledText with Verdana 12 Bold", verdana12Bold);
+//        createStyledText(shell, "StyledText with Arial 14", arial14);
+//        createStyledText(shell, "StyledText with Verdana 12 Bold", verdana12Bold);
 
         shell.open();
         while (!shell.isDisposed()) {
