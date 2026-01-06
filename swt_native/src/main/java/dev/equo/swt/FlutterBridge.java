@@ -224,6 +224,8 @@ public abstract class FlutterBridge {
             if (!clientReady.isDone()) {
                 System.out.println("ClientReady "+event(control));
                 clientReady.complete(true);
+                // Send properties AFTER Flutter is ready to receive them
+                sendSwtEvolveProperties();
             } else { // hot reload
                 dirty(control);
                 update();
