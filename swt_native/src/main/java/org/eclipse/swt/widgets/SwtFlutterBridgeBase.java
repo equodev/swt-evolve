@@ -12,7 +12,7 @@ import org.eclipse.swt.internal.Platform;
 import java.util.*;
 
 public abstract class SwtFlutterBridgeBase extends FlutterBridge {
-    private final DartWidget forWidget;
+    protected final DartWidget forWidget;
     protected long context; 
 
     static {

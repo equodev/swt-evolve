@@ -24,6 +24,21 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
     }
 
     @Override
+    public void destroy(DartWidget control) {
+        StackWalker walker = StackWalker.getInstance();
+
+        StackWalker.StackFrame frame = walker.walk(stream -> stream.filter(f -> f.getMethodName().equals("WM_CLOSE")).findFirst().orElse(null));
+        if (frame != null) {
+            if (control instanceof DartControl dartControl && control == forWidget) {
+                context = 0;
+                destroyHandle(dartControl);
+            }
+            return;
+        }
+        super.destroy(control);
+    }
+
+    @Override
     protected void destroyHandle(DartControl control) {
         ((SwtDisplay) control.display.getImpl()).removeControl(control.getApi().handle);
         control.getApi().handle = 0;
