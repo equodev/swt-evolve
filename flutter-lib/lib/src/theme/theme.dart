@@ -9,6 +9,8 @@ import 'theme_settings/tabitem_theme_settings.dart';
 import 'theme_settings/tree_theme_settings.dart';
 import 'theme_settings/ctabfolder_theme_settings.dart';
 import 'theme_settings/ctabitem_theme_settings.dart';
+import 'theme_settings/toolbar_theme_settings.dart';
+import 'theme_settings/toolitem_theme_settings.dart';
 import 'theme_extensions/color_scheme_extension.dart';
 
 Color calculateBackgroundColor(int? backgroundColor, bool useDarkTheme) {
@@ -348,6 +350,16 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final toolbarTheme = getToolBarLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final toolItemTheme = getToolItemLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
 
   return ThemeData(
     useMaterial3: true,
@@ -363,6 +375,8 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
       treeTheme,
       ctabFolderTheme,
       ctabItemTheme,
+      toolbarTheme,
+      toolItemTheme,
     ],
   );
 }
@@ -416,6 +430,16 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final toolbarTheme = getToolBarLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final toolItemTheme = getToolItemLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
 
   return ThemeData(
     useMaterial3: true,
@@ -432,6 +456,8 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
       treeTheme,
       ctabFolderTheme,
       ctabItemTheme,
+      toolbarTheme,
+      toolItemTheme,
     ],
   );
 }
@@ -488,6 +514,16 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final toolbarTheme = getToolBarDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final toolItemTheme = getToolItemDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
 
   return ThemeData(
     useMaterial3: true,
@@ -503,6 +539,8 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
       treeTheme,
       ctabFolderTheme,
       ctabItemTheme,
+      toolbarTheme,
+      toolItemTheme,
     ],
   );
 }
@@ -556,6 +594,16 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final toolbarTheme = getToolBarDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final toolItemTheme = getToolItemDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
 
   return ThemeData(
     useMaterial3: true,
@@ -572,6 +620,8 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
       treeTheme,
       ctabFolderTheme,
       ctabItemTheme,
+      toolbarTheme,
+      toolItemTheme,
     ],
   );
 }
