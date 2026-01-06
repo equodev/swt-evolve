@@ -9,39 +9,91 @@ import '../gen/widget.dart';
 import '../gen/image.dart';
 import '../impl/item_evolve.dart';
 import './utils/image_utils.dart';
+import './utils/widget_utils.dart';
+import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import 'dart:ui';
 
 class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     extends ItemImpl<T, V> {
   bool _isHovered = false;
+  Widget? _cachedImageWidget;
+  VImage? _cachedImage;
+  double? _cachedIconSize;
+  Color? _cachedIconColor;
+  bool? _cachedEnabled;
 
-  /// Helper method to build an image widget from VImage using ImageUtils
-  /// Uses FutureBuilder to support async AssetsManager replacement
-  Widget _buildImageWidget(VImage? image, bool enabled) {
+  double _calculateIconSize(BoxConstraints? constraints, double defaultSize) {
+    if (constraints == null) return defaultSize;
+    
+    if (constraints.minWidth > 0 && 
+        constraints.maxWidth.isFinite && 
+        constraints.minWidth == constraints.maxWidth) {
+      return constraints.minWidth;
+    }
+    
+    if (constraints.minWidth > 0 && constraints.minHeight > 0) {
+      return constraints.minWidth < constraints.minHeight 
+          ? constraints.minWidth 
+          : constraints.minHeight;
+    }
+    
+    if (constraints.maxWidth.isFinite && constraints.maxHeight.isFinite) {
+      return constraints.maxWidth < constraints.maxHeight 
+          ? constraints.maxWidth 
+          : constraints.maxHeight;
+    }
+    
+    return defaultSize;
+  }
+
+  Widget _buildImageWidget(VImage? image, bool enabled, BoxConstraints? constraints, double defaultIconSize, Color iconColor, ToolItemThemeExtension widgetTheme) {
+    final iconSize = _calculateIconSize(constraints, defaultIconSize);
+    
+    final imageChanged = _cachedImage != image;
+    final sizeChanged = _cachedIconSize != iconSize;
+    final colorChanged = _cachedIconColor != iconColor;
+    final enabledChanged = _cachedEnabled != enabled;
+    
+    if (imageChanged || sizeChanged || colorChanged || enabledChanged) {
+      _cachedImage = image;
+      _cachedIconSize = iconSize;
+      _cachedIconColor = iconColor;
+      _cachedEnabled = enabled;
+      _cachedImageWidget = null;
+    }
+    
+    if (_cachedImageWidget != null) {
+      return _cachedImageWidget!;
+    }
+    
+    final imageKey = image?.filename ?? image?.imageData?.hashCode.toString() ?? 'no-image';
+    final futureKey = '${imageKey}_${iconSize}_${iconColor.value}_$enabled';
+    
     return FutureBuilder<Widget?>(
+      key: ValueKey(futureKey),
       future: ImageUtils.buildVImageAsync(
         image,
+        size: iconSize,
+        color: iconColor,
         enabled: enabled,
-        constraints: const BoxConstraints(
-          minWidth: AppSizes.toolbarMinSize,
-          minHeight: AppSizes.toolbarMinSize,
-        ),
+        constraints: constraints,
         useBinaryImage: true,
         renderAsIcon: true,
       ),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          return snapshot.data ?? const SizedBox.shrink();
+        if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+          final widget = snapshot.data ?? const SizedBox.shrink();
+          _cachedImageWidget = widget;
+          return widget;
         }
-        // Show placeholder while loading
-        return const SizedBox(
-          width: AppSizes.toolbarMinSize,
-          height: AppSizes.toolbarMinSize,
+        return SizedBox(
+          width: iconSize,
+          height: iconSize,
           child: Center(
             child: SizedBox(
-              width: 12,
-              height: 12,
-              child: CircularProgressIndicator(strokeWidth: 2),
+              width: iconSize * widgetTheme.loadingIndicatorSizeFactor,
+              height: iconSize * widgetTheme.loadingIndicatorSizeFactor,
+              child: CircularProgressIndicator(strokeWidth: widgetTheme.loadingIndicatorStrokeWidth),
             ),
           ),
         );
@@ -49,22 +101,56 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     );
   }
 
-  /// Helper method to get the appropriate image based on state and hover
   VImage? _getImageForState(bool enabled) {
-    // Priority order: disabled > hot > normal
     if (!enabled && state.disabledImage != null) {
       return state.disabledImage;
     }
-    // HotImage should show when item is enabled AND hovered
     if (enabled && _isHovered && state.hotImage != null) {
       return state.hotImage;
     }
-    // Default to normal image
     return state.image;
   }
 
-  /// Helper method to create a reusable toolbar button wrapper
+  Widget _buildClickableButton({
+    required VoidCallback? onTap,
+    required bool enabled,
+    required ToolItemThemeExtension widgetTheme,
+    required Widget child,
+    required Color hoverBackgroundColor,
+    bool useMouseRegion = true,
+  }) {
+    Widget button = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        splashColor: widgetTheme.hoverColor.withOpacity(widgetTheme.splashOpacity),
+        highlightColor: widgetTheme.hoverColor.withOpacity(widgetTheme.highlightOpacity),
+        borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
+        child: Container(
+          padding: widgetTheme.buttonPadding,
+          decoration: BoxDecoration(
+            color: hoverBackgroundColor,
+            borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
+          ),
+          child: child,
+        ),
+      ),
+    );
+    
+    if (useMouseRegion) {
+      button = MouseRegion(
+        onEnter: enabled ? (_) => setState(() => _isHovered = true) : null,
+        onExit: enabled ? (_) => setState(() => _isHovered = false) : null,
+        child: button,
+      );
+    }
+    
+    return button;
+  }
+
   Widget _buildToolbarButton({
+    required BuildContext context,
+    required ToolItemThemeExtension widgetTheme,
     required bool enabled,
     required Widget child,
     VoidCallback? onTap,
@@ -73,52 +159,157 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     String? tooltip,
     bool isDropdown = false,
   }) {
-    return Material(
-      color: backgroundColor ?? Colors.transparent,
-      borderRadius: BorderRadius.circular(AppSizes.borderRadius),
+    final textColor = getForegroundColor(
+      foreground: state.foreground,
+      defaultColor: enabled ? widgetTheme.enabledColor : widgetTheme.disabledColor,
+    );
+    
+    final bgColor = getBackgroundColor(
+      background: state.background,
+      defaultColor: backgroundColor ?? Colors.transparent,
+    );
+    
+    Widget hoverableContent;
+    
+    if (isDropdown) {
+      Widget mainContentButton = Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: enabled ? () {
+            setState(() => _isHovered = false);
+            if (onTap != null) {
+              onTap();
+            } else {
+              onPressed();
+            }
+          } : null,
+          splashColor: widgetTheme.hoverColor.withOpacity(widgetTheme.splashOpacity),
+          highlightColor: widgetTheme.hoverColor.withOpacity(widgetTheme.highlightOpacity),
+          borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
+          child: child,
+        ),
+      );
+      
+      Widget dropdownArrow = Material(
+        color: Colors.transparent,
       child: InkWell(
-          onTap: enabled ? (onTap ?? onPressed) : null,
-          onHover: (h) => setState(() => _isHovered = h),
-        hoverColor: AppColors.getHoverColor(),
-        borderRadius: BorderRadius.circular(AppSizes.borderRadius),
-        child: ConstrainedBox(
-          constraints: constraints ?? AppConstraints.toolbarConstraints,
-          child: Tooltip(
-            message: tooltip ?? state.toolTipText ?? '',
-            preferBelow: false,
-            verticalOffset: 0,
-            margin: const EdgeInsets.symmetric(horizontal: 20),
-            waitDuration: const Duration(seconds: 1),
-            child: isDropdown
-                ? Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                child,
-                GestureDetector(
-                  onTap: enabled ? openMenu : null,
+          onTap: enabled ? () {
+            setState(() => _isHovered = false);
+            openMenu();
+          } : null,
+          splashColor: widgetTheme.hoverColor.withOpacity(widgetTheme.splashOpacity),
+          highlightColor: widgetTheme.hoverColor.withOpacity(widgetTheme.highlightOpacity),
+          borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
+          child: MouseRegion(
+            cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
                   child: Icon(
                     Icons.arrow_drop_down,
-                    size: 12,
-                    color: AppColors.getColor(enabled),
-                  ),
-                ),
-              ],
-            )
-                : child,
+              size: widgetTheme.dropdownArrowSize,
+              color: textColor,
+            ),
           ),
         ),
+      );
+      
+      Widget separator = Container(
+        width: widgetTheme.separatorBarWidth,
+        margin: widgetTheme.separatorBarMargin,
+        color: _isHovered && enabled 
+            ? textColor.withOpacity(widgetTheme.separatorOpacity)
+            : Colors.transparent,
+      );
+      
+      hoverableContent = IntrinsicWidth(
+        child: IntrinsicHeight(
+          child: MouseRegion(
+            onEnter: enabled ? (_) => setState(() => _isHovered = true) : null,
+            onExit: enabled ? (_) => setState(() => _isHovered = false) : null,
+            child: Container(
+              padding: widgetTheme.buttonPadding,
+              decoration: BoxDecoration(
+                color: enabled && _isHovered ? widgetTheme.hoverColor : Colors.transparent,
+                borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  mainContentButton,
+                  separator,
+                  dropdownArrow,
+              ],
+              ),
+            ),
+          ),
+        ),
+      );
+    } else {
+      hoverableContent = IntrinsicWidth(
+        child: IntrinsicHeight(
+          child: _buildClickableButton(
+            onTap: enabled ? () {
+              setState(() => _isHovered = false);
+              if (onTap != null) {
+                onTap();
+              } else {
+                onPressed();
+              }
+            } : null,
+            enabled: enabled,
+            widgetTheme: widgetTheme,
+            hoverBackgroundColor: enabled && _isHovered ? widgetTheme.hoverColor : Colors.transparent,
+            child: child,
+          ),
+        ),
+      );
+    }
+    
+    hoverableContent = Tooltip(
+      message: tooltip ?? state.toolTipText ?? '',
+      preferBelow: widgetTheme.tooltipPreferBelow,
+      verticalOffset: widgetTheme.tooltipVerticalOffset,
+      margin: widgetTheme.tooltipMargin,
+      waitDuration: widgetTheme.tooltipWaitDuration,
+      child: hoverableContent,
+    );
+    
+    return Container(
+      constraints: constraints,
+      color: bgColor,
+      child: Center(
+        child: hoverableContent,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final widgetTheme = Theme.of(context).extension<ToolItemThemeExtension>()!;
     var text = state.text;
-
     var enabled = state.enabled ?? false;
     var bits = SWT.PUSH | SWT.CHECK | SWT.RADIO | SWT.SEPARATOR | SWT.DROP_DOWN;
+    
+    BoxConstraints? constraints;
+    if (state.width != null && state.width! > 0) {
+      constraints = BoxConstraints(
+        minWidth: state.width!.toDouble(),
+        maxWidth: state.width!.toDouble(),
+      );
+    }
+
+    final textColor = getForegroundColor(
+      foreground: state.foreground,
+      defaultColor: enabled ? widgetTheme.enabledColor : widgetTheme.disabledColor,
+    );
+    
+    final textStyle = getTextStyle(
+      context: context,
+      font: null,
+      textColor: textColor,
+      baseTextStyle: widgetTheme.fontStyle,
+    );
 
     return Container(
+      constraints: constraints,
       child: switch (state.style & bits) {
         SWT.CHECK => () {
           final image = _getImageForState(enabled);
@@ -126,22 +317,27 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
 
           Widget child;
           if (image != null) {
-            child = _buildImageWidget(image, enabled);
+            child = _buildImageWidget(image, enabled, constraints, widgetTheme.defaultIconSize, textColor, widgetTheme);
           } else {
             child = Icon(
               isChecked ? Icons.check_box : Icons.check_box_outline_blank,
-              size: AppSizes.toolbarIconLarge,
-              color: AppColors.getColor(enabled),
+              size: widgetTheme.iconSize,
+              color: textColor,
             );
           }
 
           return _buildToolbarButton(
+            context: context,
+            widgetTheme: widgetTheme,
             enabled: enabled,
-            backgroundColor:
-            isChecked ? AppColors.getHoverColor() : Colors.transparent,
+            backgroundColor: Colors.transparent,
+            constraints: constraints,
             onTap: () {
+              setState(() {
+                state.selection = !isChecked;
+                _isHovered = false;
+              });
               onPressed();
-              setState(() => state.selection = !isChecked);
             },
             child: child,
           );
@@ -152,22 +348,28 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
 
           Widget child;
           if (image != null) {
-            child = _buildImageWidget(image, enabled);
+            child = _buildImageWidget(image, enabled, constraints, widgetTheme.defaultIconSize, textColor, widgetTheme);
           } else {
             child = Icon(
               isSelected
                   ? Icons.radio_button_checked
                   : Icons.radio_button_unchecked,
-              size: AppSizes.toolbarIconLarge,
-              color: AppColors.getColor(enabled),
+              size: widgetTheme.iconSize,
+              color: textColor,
             );
           }
 
           return _buildToolbarButton(
+            context: context,
+            widgetTheme: widgetTheme,
             enabled: enabled,
+            constraints: constraints,
             onTap: () {
+              setState(() {
+                state.selection = !isSelected;
+                _isHovered = false;
+              });
               onPressed();
-              setState(() => state.selection = !isSelected);
             },
             child: child,
           );
@@ -177,28 +379,41 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
 
           if (image != null) {
             return _buildToolbarButton(
+              context: context,
+              widgetTheme: widgetTheme,
               enabled: enabled,
               tooltip: state.toolTipText ?? text ?? '',
-              child: _buildImageWidget(image, enabled),
+              constraints: constraints,
+              child: _buildImageWidget(image, enabled, constraints, widgetTheme.defaultIconSize, textColor, widgetTheme),
               isDropdown: true,
             );
           } else if (text != null && text.isNotEmpty) {
             return _buildToolbarButton(
+              context: context,
+              widgetTheme: widgetTheme,
               enabled: enabled,
               tooltip: state.toolTipText ?? text ?? '',
+              constraints: constraints,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                padding: widgetTheme.textPadding,
                 child: Center(
                   child: Text(
                     text!,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: AppSizes.toolbarTextSize,
-                      color: AppColors.getColor(enabled),
-                    ),
+                    style: textStyle,
                   ),
                 ),
               ),
+              isDropdown: true,
+            );
+          } else {
+            return _buildToolbarButton(
+              context: context,
+              widgetTheme: widgetTheme,
+              enabled: enabled,
+              tooltip: state.toolTipText ?? '',
+              constraints: constraints,
+              child: SizedBox(width: widgetTheme.emptyButtonSize, height: widgetTheme.emptyButtonSize),
               isDropdown: true,
             );
           }
@@ -208,36 +423,49 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
 
           if (image != null) {
             return _buildToolbarButton(
+              context: context,
+              widgetTheme: widgetTheme,
               enabled: enabled,
               tooltip: state.toolTipText ?? text ?? '',
-              child: _buildImageWidget(image, enabled),
+              constraints: constraints,
+              child: _buildImageWidget(image, enabled, constraints, widgetTheme.defaultIconSize, textColor, widgetTheme),
             );
           } else if (text != null && text.isNotEmpty) {
             return _buildToolbarButton(
+              context: context,
+              widgetTheme: widgetTheme,
               enabled: enabled,
               tooltip: state.toolTipText ?? text ?? '',
+              constraints: constraints,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                padding: widgetTheme.textPadding,
                 child: Center(
                   child: Text(
                     text!,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: AppSizes.toolbarTextSize,
-                      color: AppColors.getColor(enabled),
-                    ),
+                    style: textStyle,
                   ),
                 ),
               ),
             );
+          } else {
+            return _buildToolbarButton(
+              context: context,
+              widgetTheme: widgetTheme,
+              enabled: enabled,
+              tooltip: state.toolTipText ?? '',
+              constraints: constraints,
+              child: SizedBox(width: widgetTheme.emptyButtonSize, height: widgetTheme.emptyButtonSize),
+            );
           }
         }(),
         SWT.SEPARATOR => () {
-          return const VerticalDivider(
-            width: AppSizes.separatorWidth,
-            thickness: AppSizes.separatorThickness,
-            indent: AppSizes.separatorIndent,
-            endIndent: AppSizes.separatorIndent,
+          return VerticalDivider(
+            width: widgetTheme.separatorWidth,
+            thickness: widgetTheme.separatorThickness,
+            indent: widgetTheme.separatorIndent,
+            endIndent: widgetTheme.separatorIndent,
+            color: widgetTheme.separatorColor,
           );
         }(),
         _ => () {
@@ -245,27 +473,39 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
 
           if (image != null) {
             return _buildToolbarButton(
+              context: context,
+              widgetTheme: widgetTheme,
               enabled: enabled,
               tooltip: state.toolTipText ?? text ?? '',
-              child: _buildImageWidget(image, enabled),
+              constraints: constraints,
+              child: _buildImageWidget(image, enabled, constraints, widgetTheme.defaultIconSize, textColor, widgetTheme),
             );
           } else if (text != null && text.isNotEmpty) {
             return _buildToolbarButton(
+              context: context,
+              widgetTheme: widgetTheme,
               enabled: enabled,
               tooltip: state.toolTipText ?? text ?? '',
+              constraints: constraints,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                padding: widgetTheme.textPadding,
                 child: Center(
                   child: Text(
                     text,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: AppSizes.toolbarTextSize,
-                      color: AppColors.getColor(enabled),
-                    ),
+                    style: textStyle,
                   ),
                 ),
               ),
+            );
+          } else {
+            return _buildToolbarButton(
+              context: context,
+              widgetTheme: widgetTheme,
+              enabled: enabled,
+              tooltip: state.toolTipText ?? '',
+              constraints: constraints,
+              child: SizedBox(width: widgetTheme.emptyButtonSize, height: widgetTheme.emptyButtonSize),
             );
           }
         }(),
