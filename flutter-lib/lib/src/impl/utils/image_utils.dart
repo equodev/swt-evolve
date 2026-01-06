@@ -11,6 +11,8 @@ import '../widget_config.dart';
 class ImageUtils {
   static final Map<String, Widget> _iconCache = {};
   static final Map<String, Widget> _imageCache = {};
+  // Cache for async image loading Futures to prevent recreation on every rebuild
+  static final Map<String, Future<Widget?>> _futureCache = {};
 
   static Widget? buildIconWidget(
     String filename, {
@@ -254,6 +256,7 @@ class ImageUtils {
   }
 
   /// Async version that supports AssetsManager replacement
+  /// Caches Futures to prevent recreation on every rebuild
   static Future<Widget?> buildVImageAsync(
     VImage? image, {
     double? size,
@@ -264,15 +267,54 @@ class ImageUtils {
     BoxConstraints? constraints,
     bool useBinaryImage = true,
     bool renderAsIcon = true,
-  }) async {
-    if (image == null) return null;
+  }) {
+    if (image == null) {
+      return Future.value(null);
+    }
 
+    // Generate cache key based on all parameters that affect the result
+    final cacheKey = 'future-${image.filename ?? ''}-${image.imageData?.data?.length ?? 0}-'
+        '${size ?? width ?? height ?? 'default'}-${color?.value ?? 'default'}-$enabled-$renderAsIcon';
+
+    // Return cached Future if it exists
+    if (_futureCache.containsKey(cacheKey)) {
+      return _futureCache[cacheKey]!;
+    }
+
+    // Create and cache the Future
+    final future = _buildVImageAsyncImpl(
+      image,
+      size: size,
+      width: width,
+      height: height,
+      color: color,
+      enabled: enabled,
+      constraints: constraints,
+      useBinaryImage: useBinaryImage,
+      renderAsIcon: renderAsIcon,
+    );
+
+    _futureCache[cacheKey] = future;
+    return future;
+  }
+
+  /// Internal implementation that actually loads the image
+  static Future<Widget?> _buildVImageAsyncImpl(
+    VImage image, {
+    double? size,
+    double? width,
+    double? height,
+    Color? color,
+    required bool enabled,
+    BoxConstraints? constraints,
+    required bool useBinaryImage,
+    required bool renderAsIcon,
+  }) async {
     // Try AssetsManager replacement first (if filename exists)
     if (image.filename?.isNotEmpty ?? false) {
       try {
         final replacement = await AssetsManager.loadReplacement(image.filename!);
         if (replacement != null) {
-          print('AssetsManager: Using replacement for ${image.filename}');
           return _buildReplacementWidget(
             replacement,
             filename: image.filename!,
@@ -286,7 +328,7 @@ class ImageUtils {
           );
         }
       } catch (e) {
-        print('AssetsManager: Error loading replacement for ${image.filename}: $e');
+        // Silently ignore AssetsManager errors
       }
     }
 
@@ -298,7 +340,9 @@ class ImageUtils {
         color: color,
         enabled: enabled,
       );
-      if (iconWidget != null) return iconWidget;
+      if (iconWidget != null) {
+        return iconWidget;
+      }
     }
 
     // Try binary image data
@@ -389,11 +433,13 @@ class ImageUtils {
   static void clearCache() {
     _iconCache.clear();
     _imageCache.clear();
+    _futureCache.clear();
   }
 
   static Map<String, int> getCacheStats() => {
         'iconCache': _iconCache.length,
         'imageCache': _imageCache.length,
+        'futureCache': _futureCache.length,
       };
 
   // Byte array utilities

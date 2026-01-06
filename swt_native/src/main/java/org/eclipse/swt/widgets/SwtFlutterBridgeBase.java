@@ -76,7 +76,6 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
 
         context = InitializeFlutterWindow(client.getPort(), getHandle(parent), id(control), widgetName(control), theme, backgroundColorInt, parentBackgroundColorInt);
 
-        sendSwtEvolveProperties();
         long view = GetView(context);
         setHandle(control, view);
     }

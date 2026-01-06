@@ -217,24 +217,39 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     );
   }
 
-  Widget _buildItemIcon(TreeThemeExtension? widgetTheme, bool enabled, bool selected, 
+  Widget _buildItemIcon(TreeThemeExtension? widgetTheme, bool enabled, bool selected,
       bool hasChildren, bool expanded, VImage? image) {
     final Color iconColor = _getItemIconColor(widgetTheme!, enabled, selected);
     final IconData iconData = _getItemIconData(hasChildren, expanded);
-    
+
     if (image != null) {
-      return ImageUtils.buildVImage(
-        image,
-        size: widgetTheme.itemIconSize,
-        width: widgetTheme.itemIconSize,
-        height: widgetTheme.itemIconSize,
-        color: iconColor,
-        enabled: enabled,
-        useBinaryImage: true,
-        renderAsIcon: true,
-      ) ?? Icon(iconData, size: widgetTheme.itemIconSize, color: iconColor);
+      return FutureBuilder<Widget?>(
+        future: ImageUtils.buildVImageAsync(
+          image,
+          enabled: enabled,
+          constraints: BoxConstraints(
+            minWidth: widgetTheme.itemIconSize,
+            minHeight: widgetTheme.itemIconSize,
+            maxWidth: widgetTheme.itemIconSize,
+            maxHeight: widgetTheme.itemIconSize,
+          ),
+          useBinaryImage: true,
+          renderAsIcon: true,
+        ),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            return snapshot.data ?? Icon(iconData, size: widgetTheme.itemIconSize, color: iconColor);
+          }
+          // Show default icon while loading
+          return SizedBox(
+            width: widgetTheme.itemIconSize,
+            height: widgetTheme.itemIconSize,
+            child: Icon(iconData, size: widgetTheme.itemIconSize, color: iconColor),
+          );
+        },
+      );
     }
-    
+
     return Icon(iconData, size: widgetTheme.itemIconSize, color: iconColor);
   }
 

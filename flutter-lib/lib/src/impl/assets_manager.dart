@@ -7,9 +7,23 @@ import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
 class AssetsManager {
+  static String? _cachedAssetsPath;
+  static bool _hasAttemptedResolve = false;
+
   static Future<String?> _resolveAssetsPath() async {
+    // Return cached value if we've already resolved it successfully
+    if (_cachedAssetsPath != null) {
+      return _cachedAssetsPath;
+    }
+
     var configPath = getConfigFlags().assets_path;
-    if (configPath == null) return null;
+
+    if (configPath == null) {
+      if (!_hasAttemptedResolve) {
+        _hasAttemptedResolve = true;
+      }
+      return null;
+    }
 
     configPath = configPath.replaceAll('"', '');
 
@@ -20,13 +34,12 @@ class AssetsManager {
       absolutePath = configPath;
     }
 
-    print('AssetsManager: assets_path resolved to = $absolutePath');
-
     if (!await Directory(absolutePath).exists()) {
-      print('AssetsManager: Directory $absolutePath does not exist');
       return null;
     }
 
+    // Cache the successful result
+    _cachedAssetsPath = absolutePath;
     return absolutePath;
   }
 
@@ -52,7 +65,6 @@ class AssetsManager {
       try {
         final file = File('$assetsPath/$base.$format');
         if (await file.exists()) {
-          print('AssetsManager: Found replacement file: ${file.path}');
           if (format == 'svg') {
             return await file.readAsString();
           } else {
@@ -63,10 +75,9 @@ class AssetsManager {
           }
         }
       } catch (e) {
-        print('AssetsManager: Error loading $base.$format: $e');
+        // Silently ignore errors
       }
     }
-    print('AssetsManager: No replacement found for $filename (searched as $base.[svg|png|jpg|jpeg])');
     return null;
   }
 }
