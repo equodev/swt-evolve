@@ -113,11 +113,14 @@ void WindowClassRegistrar::UnregisterWindowClass() {
 }
 
 Win32Window::Win32Window() {
-  ++g_active_window_count;
 }
 
 Win32Window::~Win32Window() {
   --g_active_window_count;
+  if (g_active_window_count == 0) {
+    std::cout << "Win32Window::~Win32Window unregistering window class" << std::endl;
+    WindowClassRegistrar::GetInstance()->UnregisterWindowClass();
+  }
 }
 
 bool Win32Window::Create(const std::wstring& title,
@@ -155,6 +158,8 @@ bool Win32Window::Create(const std::wstring& title,
     std::cout << "Win32Window::Create - Failed to create window, error=" << error << std::endl;
     return false;
   }
+
+  ++g_active_window_count;
 
   UpdateTheme(window);
 
@@ -199,17 +204,17 @@ Win32Window::MessageHandler(HWND hwnd,
                             UINT const message,
                             WPARAM const wparam,
                             LPARAM const lparam) noexcept {
-
     switch (message) {
-        case WM_DESTROY:
+        case WM_DESTROY: {
             std::cout << "Win32Window: WM_DESTROY" << std::endl;
-            OnDestroy();
             if (quit_on_close_) {
                 PostQuitMessage(0);
             }
             return 0;
+        }
         case WM_NCDESTROY: {
             std::cout << "Win32Window: WM_NCDESTROY" << std::endl;
+            OnDestroy();
             auto self = GetThisFromHandle(hwnd);
             SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
             delete self;
@@ -278,17 +283,13 @@ Win32Window::MessageHandler(HWND hwnd,
             return 0;
     }
 
-    return DefWindowProc(window_handle_, message, wparam, lparam);
+    return DefWindowProc(hwnd, message, wparam, lparam);
 }
 
 void Win32Window::Destroy() {
-
   if (window_handle_) {
     DestroyWindow(window_handle_);
     window_handle_ = nullptr;
-  }
-  if (g_active_window_count == 0) {
-    WindowClassRegistrar::GetInstance()->UnregisterWindowClass();
   }
 }
 
