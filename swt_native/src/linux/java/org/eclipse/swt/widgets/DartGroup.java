@@ -112,35 +112,17 @@ public class DartGroup extends DartComposite implements IGroup {
 
     @Override
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.compute(this);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override
     Rectangle computeTrimInPixels(int x, int y, int width, int height) {
-        checkWidget();
-        forceResize();
-        return new Rectangle(x, y, width, height);
+        return Sizes.computeTrim(this, x, y, width, height);
     }
 
     @Override
     Rectangle getClientAreaInPixels() {
-        Rectangle clientRectangle = super.getClientAreaInPixels();
-        /*
-	* Bug 453827 Child position fix.
-	* SWT's calls to gtk_widget_size_allocate and gtk_widget_set_allocation
-	* causes GTK+ to move the clientHandle's SwtFixed down by the size of the label.
-	* These calls can come up from 'shell' and group has no control over these calls.
-	*
-	* This is an undesired side-effect. Client handle's x & y positions should never
-	* be incremented as this is an internal sub-container.
-	*
-	* Note: 0 by 0 was chosen as 1 by 1 shifts controls beyond their original pos.
-	* The long term fix would be to not use widget_*_allocation from higher containers
-	* like shell and to not use	gtkframe in non-group widgets (e.g used in label atm).
-	*/
-        clientRectangle.x = 0;
-        clientRectangle.y = 0;
-        return clientRectangle;
+        return Sizes.getClientArea(this);
     }
 
     @Override

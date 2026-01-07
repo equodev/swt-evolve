@@ -61,18 +61,29 @@ class FlutterBridgeController {
                 return flutterView
             }
         } else {
-            print("FlutterBridgeController.initialize 5")
-            // Create a new window if no parent (fallback case)
+            print("FlutterBridgeController.initialize 5 - Headless mode (offscreen window)")
+            // Create an offscreen window to trigger Flutter engine
             let window = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
-                styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                styleMask: [.borderless],
                 backing: .buffered,
                 defer: false)
-            
+
             window.contentViewController = flutterViewController
-            window.center()
-            window.makeKeyAndOrderFront(nil)
-            
+
+            // Try to trigger the engine by ordering the window offscreen
+            window.orderBack(nil)
+
+            if let flutterView = flutterViewController?.view {
+                // Set explicit frame - don't rely on window.contentLayoutRect
+                let explicitFrame = NSRect(x: 0, y: 0, width: 800, height: 600)
+                flutterView.frame = explicitFrame
+                self.view = flutterView
+                print("Headless mode: Actual frame is \(flutterView.frame)")
+            } else {
+                print("ERROR: flutterViewController.view is nil!")
+            }
+
             self.window = window
         }
         RegisterGeneratedPlugins(registry: flutterViewController!)

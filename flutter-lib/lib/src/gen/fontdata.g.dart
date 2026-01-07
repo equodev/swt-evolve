@@ -13,8 +13,8 @@ VFontData _$VFontDataFromJson(Map<String, dynamic> json) => VFontData()
   ..style = (json['style'] as num).toInt();
 
 Map<String, dynamic> _$VFontDataToJson(VFontData instance) => <String, dynamic>{
-      'height': instance.height,
-      'locale': instance.locale,
-      'name': instance.name,
-      'style': instance.style,
-    };
+  'height': instance.height,
+  'locale': instance.locale,
+  'name': instance.name,
+  'style': instance.style,
+};

@@ -280,7 +280,8 @@ mixin _$ColorSchemeExtensionTailorMixin
           errorContainerHovered ?? this.errorContainerHovered,
       onErrorContainerVariantError:
           onErrorContainerVariantError ?? this.onErrorContainerVariantError,
-      onErrorContainerVariantDisabled: onErrorContainerVariantDisabled ??
+      onErrorContainerVariantDisabled:
+          onErrorContainerVariantDisabled ??
           this.onErrorContainerVariantDisabled,
       onErrorContainerBorder:
           onErrorContainerBorder ?? this.onErrorContainerBorder,
@@ -322,11 +323,13 @@ mixin _$ColorSchemeExtensionTailorMixin
           warningContainerHovered ?? this.warningContainerHovered,
       onWarningContainerVariant:
           onWarningContainerVariant ?? this.onWarningContainerVariant,
-      onWarningContainerVariantDisabled: onWarningContainerVariantDisabled ??
+      onWarningContainerVariantDisabled:
+          onWarningContainerVariantDisabled ??
           this.onWarningContainerVariantDisabled,
       onWarningContainerBorder:
           onWarningContainerBorder ?? this.onWarningContainerBorder,
-      onWarningContainerBorderDisabled: onWarningContainerBorderDisabled ??
+      onWarningContainerBorderDisabled:
+          onWarningContainerBorderDisabled ??
           this.onWarningContainerBorderDisabled,
       success: success ?? this.success,
       successPressed: successPressed ?? this.successPressed,
@@ -344,11 +347,13 @@ mixin _$ColorSchemeExtensionTailorMixin
           successContainerHovered ?? this.successContainerHovered,
       onSuccessContainerVariant:
           onSuccessContainerVariant ?? this.onSuccessContainerVariant,
-      onSuccessContainerVariantDisabled: onSuccessContainerVariantDisabled ??
+      onSuccessContainerVariantDisabled:
+          onSuccessContainerVariantDisabled ??
           this.onSuccessContainerVariantDisabled,
       onSuccessContainerBorder:
           onSuccessContainerBorder ?? this.onSuccessContainerBorder,
-      onSuccessContainerBorderDisabled: onSuccessContainerBorderDisabled ??
+      onSuccessContainerBorderDisabled:
+          onSuccessContainerBorderDisabled ??
           this.onSuccessContainerBorderDisabled,
       statusDefault: statusDefault ?? this.statusDefault,
       statusOnDefault: statusOnDefault ?? this.statusOnDefault,
@@ -397,203 +402,426 @@ mixin _$ColorSchemeExtensionTailorMixin
 
   @override
   ColorSchemeExtension lerp(
-      covariant ThemeExtension<ColorSchemeExtension>? other, double t) {
+    covariant ThemeExtension<ColorSchemeExtension>? other,
+    double t,
+  ) {
     if (other is! ColorSchemeExtension) return this as ColorSchemeExtension;
     return ColorSchemeExtension(
       primaryHovered: Color.lerp(primaryHovered, other.primaryHovered, t)!,
       primaryBorder: Color.lerp(primaryBorder, other.primaryBorder, t)!,
-      primaryBorderDisabled:
-          Color.lerp(primaryBorderDisabled, other.primaryBorderDisabled, t)!,
+      primaryBorderDisabled: Color.lerp(
+        primaryBorderDisabled,
+        other.primaryBorderDisabled,
+        t,
+      )!,
       onPrimaryVariantDisabled: Color.lerp(
-          onPrimaryVariantDisabled, other.onPrimaryVariantDisabled, t)!,
-      secondaryPressed:
-          Color.lerp(secondaryPressed, other.secondaryPressed, t)!,
+        onPrimaryVariantDisabled,
+        other.onPrimaryVariantDisabled,
+        t,
+      )!,
+      secondaryPressed: Color.lerp(
+        secondaryPressed,
+        other.secondaryPressed,
+        t,
+      )!,
       secondaryBold: Color.lerp(secondaryBold, other.secondaryBold, t)!,
       secondaryBorder: Color.lerp(secondaryBorder, other.secondaryBorder, t)!,
       secondaryBorderDisabled: Color.lerp(
-          secondaryBorderDisabled, other.secondaryBorderDisabled, t)!,
+        secondaryBorderDisabled,
+        other.secondaryBorderDisabled,
+        t,
+      )!,
       onSecondaryVariantDisabled: Color.lerp(
-          onSecondaryVariantDisabled, other.onSecondaryVariantDisabled, t)!,
+        onSecondaryVariantDisabled,
+        other.onSecondaryVariantDisabled,
+        t,
+      )!,
       tertiaryPressed: Color.lerp(tertiaryPressed, other.tertiaryPressed, t)!,
       tertiaryHovered: Color.lerp(tertiaryHovered, other.tertiaryHovered, t)!,
       tertiaryBorder: Color.lerp(tertiaryBorder, other.tertiaryBorder, t)!,
-      tertiaryBorderDisabled:
-          Color.lerp(tertiaryBorderDisabled, other.tertiaryBorderDisabled, t)!,
+      tertiaryBorderDisabled: Color.lerp(
+        tertiaryBorderDisabled,
+        other.tertiaryBorderDisabled,
+        t,
+      )!,
       onTertiaryVariantDisabled: Color.lerp(
-          onTertiaryVariantDisabled, other.onTertiaryVariantDisabled, t)!,
+        onTertiaryVariantDisabled,
+        other.onTertiaryVariantDisabled,
+        t,
+      )!,
       surfaceFocused: Color.lerp(surfaceFocused, other.surfaceFocused, t)!,
-      surfaceBorderEnabled:
-          Color.lerp(surfaceBorderEnabled, other.surfaceBorderEnabled, t)!,
-      surfaceBorderHovered:
-          Color.lerp(surfaceBorderHovered, other.surfaceBorderHovered, t)!,
-      surfaceBorderFocused:
-          Color.lerp(surfaceBorderFocused, other.surfaceBorderFocused, t)!,
-      surfaceBorderDisabled:
-          Color.lerp(surfaceBorderDisabled, other.surfaceBorderDisabled, t)!,
+      surfaceBorderEnabled: Color.lerp(
+        surfaceBorderEnabled,
+        other.surfaceBorderEnabled,
+        t,
+      )!,
+      surfaceBorderHovered: Color.lerp(
+        surfaceBorderHovered,
+        other.surfaceBorderHovered,
+        t,
+      )!,
+      surfaceBorderFocused: Color.lerp(
+        surfaceBorderFocused,
+        other.surfaceBorderFocused,
+        t,
+      )!,
+      surfaceBorderDisabled: Color.lerp(
+        surfaceBorderDisabled,
+        other.surfaceBorderDisabled,
+        t,
+      )!,
       surfaceBorderBoldEnabled: Color.lerp(
-          surfaceBorderBoldEnabled, other.surfaceBorderBoldEnabled, t)!,
+        surfaceBorderBoldEnabled,
+        other.surfaceBorderBoldEnabled,
+        t,
+      )!,
       surfaceBorderDataDisplay: Color.lerp(
-          surfaceBorderDataDisplay, other.surfaceBorderDataDisplay, t)!,
-      surfacePlaceholder:
-          Color.lerp(surfacePlaceholder, other.surfacePlaceholder, t)!,
-      onSurfaceVariantError:
-          Color.lerp(onSurfaceVariantError, other.onSurfaceVariantError, t)!,
+        surfaceBorderDataDisplay,
+        other.surfaceBorderDataDisplay,
+        t,
+      )!,
+      surfacePlaceholder: Color.lerp(
+        surfacePlaceholder,
+        other.surfacePlaceholder,
+        t,
+      )!,
+      onSurfaceVariantError: Color.lerp(
+        onSurfaceVariantError,
+        other.onSurfaceVariantError,
+        t,
+      )!,
       onSurfaceVariantWarning: Color.lerp(
-          onSurfaceVariantWarning, other.onSurfaceVariantWarning, t)!,
+        onSurfaceVariantWarning,
+        other.onSurfaceVariantWarning,
+        t,
+      )!,
       onSurfaceVariantDisabled: Color.lerp(
-          onSurfaceVariantDisabled, other.onSurfaceVariantDisabled, t)!,
+        onSurfaceVariantDisabled,
+        other.onSurfaceVariantDisabled,
+        t,
+      )!,
       onSurfaceVariantSmallError: Color.lerp(
-          onSurfaceVariantSmallError, other.onSurfaceVariantSmallError, t)!,
+        onSurfaceVariantSmallError,
+        other.onSurfaceVariantSmallError,
+        t,
+      )!,
       errorHovered: Color.lerp(errorHovered, other.errorHovered, t)!,
       errorBorder: Color.lerp(errorBorder, other.errorBorder, t)!,
-      errorBorderDisabled:
-          Color.lerp(errorBorderDisabled, other.errorBorderDisabled, t)!,
-      onErrorVariantDisabled:
-          Color.lerp(onErrorVariantDisabled, other.onErrorVariantDisabled, t)!,
-      errorContainerPressed:
-          Color.lerp(errorContainerPressed, other.errorContainerPressed, t)!,
-      errorContainerHovered:
-          Color.lerp(errorContainerHovered, other.errorContainerHovered, t)!,
+      errorBorderDisabled: Color.lerp(
+        errorBorderDisabled,
+        other.errorBorderDisabled,
+        t,
+      )!,
+      onErrorVariantDisabled: Color.lerp(
+        onErrorVariantDisabled,
+        other.onErrorVariantDisabled,
+        t,
+      )!,
+      errorContainerPressed: Color.lerp(
+        errorContainerPressed,
+        other.errorContainerPressed,
+        t,
+      )!,
+      errorContainerHovered: Color.lerp(
+        errorContainerHovered,
+        other.errorContainerHovered,
+        t,
+      )!,
       onErrorContainerVariantError: Color.lerp(
-          onErrorContainerVariantError, other.onErrorContainerVariantError, t)!,
+        onErrorContainerVariantError,
+        other.onErrorContainerVariantError,
+        t,
+      )!,
       onErrorContainerVariantDisabled: Color.lerp(
-          onErrorContainerVariantDisabled,
-          other.onErrorContainerVariantDisabled,
-          t)!,
-      onErrorContainerBorder:
-          Color.lerp(onErrorContainerBorder, other.onErrorContainerBorder, t)!,
-      onErrorContainerBorderDisabled: Color.lerp(onErrorContainerBorderDisabled,
-          other.onErrorContainerBorderDisabled, t)!,
-      onErrorContainerBorderHovered: Color.lerp(onErrorContainerBorderHovered,
-          other.onErrorContainerBorderHovered, t)!,
-      onErrorContainerBorderEnabled: Color.lerp(onErrorContainerBorderEnabled,
-          other.onErrorContainerBorderEnabled, t)!,
-      onErrorContainerBorderFocused: Color.lerp(onErrorContainerBorderFocused,
-          other.onErrorContainerBorderFocused, t)!,
+        onErrorContainerVariantDisabled,
+        other.onErrorContainerVariantDisabled,
+        t,
+      )!,
+      onErrorContainerBorder: Color.lerp(
+        onErrorContainerBorder,
+        other.onErrorContainerBorder,
+        t,
+      )!,
+      onErrorContainerBorderDisabled: Color.lerp(
+        onErrorContainerBorderDisabled,
+        other.onErrorContainerBorderDisabled,
+        t,
+      )!,
+      onErrorContainerBorderHovered: Color.lerp(
+        onErrorContainerBorderHovered,
+        other.onErrorContainerBorderHovered,
+        t,
+      )!,
+      onErrorContainerBorderEnabled: Color.lerp(
+        onErrorContainerBorderEnabled,
+        other.onErrorContainerBorderEnabled,
+        t,
+      )!,
+      onErrorContainerBorderFocused: Color.lerp(
+        onErrorContainerBorderFocused,
+        other.onErrorContainerBorderFocused,
+        t,
+      )!,
       onErrorContainerPlaceholder: Color.lerp(
-          onErrorContainerPlaceholder, other.onErrorContainerPlaceholder, t)!,
-      errorTextEnabled:
-          Color.lerp(errorTextEnabled, other.errorTextEnabled, t)!,
-      errorTextHovered:
-          Color.lerp(errorTextHovered, other.errorTextHovered, t)!,
-      errorTextPressed:
-          Color.lerp(errorTextPressed, other.errorTextPressed, t)!,
-      onErrorTextVariant:
-          Color.lerp(onErrorTextVariant, other.onErrorTextVariant, t)!,
+        onErrorContainerPlaceholder,
+        other.onErrorContainerPlaceholder,
+        t,
+      )!,
+      errorTextEnabled: Color.lerp(
+        errorTextEnabled,
+        other.errorTextEnabled,
+        t,
+      )!,
+      errorTextHovered: Color.lerp(
+        errorTextHovered,
+        other.errorTextHovered,
+        t,
+      )!,
+      errorTextPressed: Color.lerp(
+        errorTextPressed,
+        other.errorTextPressed,
+        t,
+      )!,
+      onErrorTextVariant: Color.lerp(
+        onErrorTextVariant,
+        other.onErrorTextVariant,
+        t,
+      )!,
       onErrorTextVariantDisabled: Color.lerp(
-          onErrorTextVariantDisabled, other.onErrorTextVariantDisabled, t)!,
+        onErrorTextVariantDisabled,
+        other.onErrorTextVariantDisabled,
+        t,
+      )!,
       warning: Color.lerp(warning, other.warning, t)!,
       warningPressed: Color.lerp(warningPressed, other.warningPressed, t)!,
       warningHovered: Color.lerp(warningHovered, other.warningHovered, t)!,
       onWarning: Color.lerp(onWarning, other.onWarning, t)!,
       onWarningVariantDisabled: Color.lerp(
-          onWarningVariantDisabled, other.onWarningVariantDisabled, t)!,
+        onWarningVariantDisabled,
+        other.onWarningVariantDisabled,
+        t,
+      )!,
       warningBorder: Color.lerp(warningBorder, other.warningBorder, t)!,
-      warningBorderDisabled:
-          Color.lerp(warningBorderDisabled, other.warningBorderDisabled, t)!,
-      warningTextEnabled:
-          Color.lerp(warningTextEnabled, other.warningTextEnabled, t)!,
-      warningTextPressed:
-          Color.lerp(warningTextPressed, other.warningTextPressed, t)!,
-      warningTextHovered:
-          Color.lerp(warningTextHovered, other.warningTextHovered, t)!,
-      onWarningTextVariant:
-          Color.lerp(onWarningTextVariant, other.onWarningTextVariant, t)!,
+      warningBorderDisabled: Color.lerp(
+        warningBorderDisabled,
+        other.warningBorderDisabled,
+        t,
+      )!,
+      warningTextEnabled: Color.lerp(
+        warningTextEnabled,
+        other.warningTextEnabled,
+        t,
+      )!,
+      warningTextPressed: Color.lerp(
+        warningTextPressed,
+        other.warningTextPressed,
+        t,
+      )!,
+      warningTextHovered: Color.lerp(
+        warningTextHovered,
+        other.warningTextHovered,
+        t,
+      )!,
+      onWarningTextVariant: Color.lerp(
+        onWarningTextVariant,
+        other.onWarningTextVariant,
+        t,
+      )!,
       onWarningTextVariantDisabled: Color.lerp(
-          onWarningTextVariantDisabled, other.onWarningTextVariantDisabled, t)!,
-      warningContainer:
-          Color.lerp(warningContainer, other.warningContainer, t)!,
+        onWarningTextVariantDisabled,
+        other.onWarningTextVariantDisabled,
+        t,
+      )!,
+      warningContainer: Color.lerp(
+        warningContainer,
+        other.warningContainer,
+        t,
+      )!,
       warningContainerPressed: Color.lerp(
-          warningContainerPressed, other.warningContainerPressed, t)!,
+        warningContainerPressed,
+        other.warningContainerPressed,
+        t,
+      )!,
       warningContainerHovered: Color.lerp(
-          warningContainerHovered, other.warningContainerHovered, t)!,
+        warningContainerHovered,
+        other.warningContainerHovered,
+        t,
+      )!,
       onWarningContainerVariant: Color.lerp(
-          onWarningContainerVariant, other.onWarningContainerVariant, t)!,
+        onWarningContainerVariant,
+        other.onWarningContainerVariant,
+        t,
+      )!,
       onWarningContainerVariantDisabled: Color.lerp(
-          onWarningContainerVariantDisabled,
-          other.onWarningContainerVariantDisabled,
-          t)!,
+        onWarningContainerVariantDisabled,
+        other.onWarningContainerVariantDisabled,
+        t,
+      )!,
       onWarningContainerBorder: Color.lerp(
-          onWarningContainerBorder, other.onWarningContainerBorder, t)!,
+        onWarningContainerBorder,
+        other.onWarningContainerBorder,
+        t,
+      )!,
       onWarningContainerBorderDisabled: Color.lerp(
-          onWarningContainerBorderDisabled,
-          other.onWarningContainerBorderDisabled,
-          t)!,
+        onWarningContainerBorderDisabled,
+        other.onWarningContainerBorderDisabled,
+        t,
+      )!,
       success: Color.lerp(success, other.success, t)!,
       successPressed: Color.lerp(successPressed, other.successPressed, t)!,
       successHovered: Color.lerp(successHovered, other.successHovered, t)!,
       onSuccess: Color.lerp(onSuccess, other.onSuccess, t)!,
       onSuccessVariantDisabled: Color.lerp(
-          onSuccessVariantDisabled, other.onSuccessVariantDisabled, t)!,
+        onSuccessVariantDisabled,
+        other.onSuccessVariantDisabled,
+        t,
+      )!,
       successBorder: Color.lerp(successBorder, other.successBorder, t)!,
-      successBorderDisabled:
-          Color.lerp(successBorderDisabled, other.successBorderDisabled, t)!,
-      successContainer:
-          Color.lerp(successContainer, other.successContainer, t)!,
+      successBorderDisabled: Color.lerp(
+        successBorderDisabled,
+        other.successBorderDisabled,
+        t,
+      )!,
+      successContainer: Color.lerp(
+        successContainer,
+        other.successContainer,
+        t,
+      )!,
       successContainerPressed: Color.lerp(
-          successContainerPressed, other.successContainerPressed, t)!,
+        successContainerPressed,
+        other.successContainerPressed,
+        t,
+      )!,
       successContainerHovered: Color.lerp(
-          successContainerHovered, other.successContainerHovered, t)!,
+        successContainerHovered,
+        other.successContainerHovered,
+        t,
+      )!,
       onSuccessContainerVariant: Color.lerp(
-          onSuccessContainerVariant, other.onSuccessContainerVariant, t)!,
+        onSuccessContainerVariant,
+        other.onSuccessContainerVariant,
+        t,
+      )!,
       onSuccessContainerVariantDisabled: Color.lerp(
-          onSuccessContainerVariantDisabled,
-          other.onSuccessContainerVariantDisabled,
-          t)!,
+        onSuccessContainerVariantDisabled,
+        other.onSuccessContainerVariantDisabled,
+        t,
+      )!,
       onSuccessContainerBorder: Color.lerp(
-          onSuccessContainerBorder, other.onSuccessContainerBorder, t)!,
+        onSuccessContainerBorder,
+        other.onSuccessContainerBorder,
+        t,
+      )!,
       onSuccessContainerBorderDisabled: Color.lerp(
-          onSuccessContainerBorderDisabled,
-          other.onSuccessContainerBorderDisabled,
-          t)!,
+        onSuccessContainerBorderDisabled,
+        other.onSuccessContainerBorderDisabled,
+        t,
+      )!,
       statusDefault: Color.lerp(statusDefault, other.statusDefault, t)!,
       statusOnDefault: Color.lerp(statusOnDefault, other.statusOnDefault, t)!,
-      statusDefaultContainer:
-          Color.lerp(statusDefaultContainer, other.statusDefaultContainer, t)!,
+      statusDefaultContainer: Color.lerp(
+        statusDefaultContainer,
+        other.statusDefaultContainer,
+        t,
+      )!,
       statusOnDefaultContainer: Color.lerp(
-          statusOnDefaultContainer, other.statusOnDefaultContainer, t)!,
+        statusOnDefaultContainer,
+        other.statusOnDefaultContainer,
+        t,
+      )!,
       statusInform: Color.lerp(statusInform, other.statusInform, t)!,
       statusOnInform: Color.lerp(statusOnInform, other.statusOnInform, t)!,
-      statusInformContainer:
-          Color.lerp(statusInformContainer, other.statusInformContainer, t)!,
+      statusInformContainer: Color.lerp(
+        statusInformContainer,
+        other.statusInformContainer,
+        t,
+      )!,
       statusOnInformContainer: Color.lerp(
-          statusOnInformContainer, other.statusOnInformContainer, t)!,
-      statusOnErrorContainer:
-          Color.lerp(statusOnErrorContainer, other.statusOnErrorContainer, t)!,
+        statusOnInformContainer,
+        other.statusOnInformContainer,
+        t,
+      )!,
+      statusOnErrorContainer: Color.lerp(
+        statusOnErrorContainer,
+        other.statusOnErrorContainer,
+        t,
+      )!,
       statusSuccess: Color.lerp(statusSuccess, other.statusSuccess, t)!,
       statusOnSuccessContainer: Color.lerp(
-          statusOnSuccessContainer, other.statusOnSuccessContainer, t)!,
+        statusOnSuccessContainer,
+        other.statusOnSuccessContainer,
+        t,
+      )!,
       statusWarning: Color.lerp(statusWarning, other.statusWarning, t)!,
-      statusWarningContainer:
-          Color.lerp(statusWarningContainer, other.statusWarningContainer, t)!,
+      statusWarningContainer: Color.lerp(
+        statusWarningContainer,
+        other.statusWarningContainer,
+        t,
+      )!,
       statusOnWarningContainer: Color.lerp(
-          statusOnWarningContainer, other.statusOnWarningContainer, t)!,
+        statusOnWarningContainer,
+        other.statusOnWarningContainer,
+        t,
+      )!,
       statusCaution: Color.lerp(statusCaution, other.statusCaution, t)!,
       statusOnCaution: Color.lerp(statusOnCaution, other.statusOnCaution, t)!,
-      statusCautionContainer:
-          Color.lerp(statusCautionContainer, other.statusCautionContainer, t)!,
+      statusCautionContainer: Color.lerp(
+        statusCautionContainer,
+        other.statusCautionContainer,
+        t,
+      )!,
       statusOnCautionContainer: Color.lerp(
-          statusOnCautionContainer, other.statusOnCautionContainer, t)!,
+        statusOnCautionContainer,
+        other.statusOnCautionContainer,
+        t,
+      )!,
       neutral: Color.lerp(neutral, other.neutral, t)!,
       onNeutralBorder: Color.lerp(onNeutralBorder, other.onNeutralBorder, t)!,
-      onNeutralVariant:
-          Color.lerp(onNeutralVariant, other.onNeutralVariant, t)!,
-      stateDefaultEnabled:
-          Color.lerp(stateDefaultEnabled, other.stateDefaultEnabled, t)!,
-      stateDefaultHovered:
-          Color.lerp(stateDefaultHovered, other.stateDefaultHovered, t)!,
-      stateDefaultPressed:
-          Color.lerp(stateDefaultPressed, other.stateDefaultPressed, t)!,
+      onNeutralVariant: Color.lerp(
+        onNeutralVariant,
+        other.onNeutralVariant,
+        t,
+      )!,
+      stateDefaultEnabled: Color.lerp(
+        stateDefaultEnabled,
+        other.stateDefaultEnabled,
+        t,
+      )!,
+      stateDefaultHovered: Color.lerp(
+        stateDefaultHovered,
+        other.stateDefaultHovered,
+        t,
+      )!,
+      stateDefaultPressed: Color.lerp(
+        stateDefaultPressed,
+        other.stateDefaultPressed,
+        t,
+      )!,
       stateOnContainerEnabled: Color.lerp(
-          stateOnContainerEnabled, other.stateOnContainerEnabled, t)!,
+        stateOnContainerEnabled,
+        other.stateOnContainerEnabled,
+        t,
+      )!,
       stateOnContainerHovered: Color.lerp(
-          stateOnContainerHovered, other.stateOnContainerHovered, t)!,
+        stateOnContainerHovered,
+        other.stateOnContainerHovered,
+        t,
+      )!,
       stateOnContainerPressed: Color.lerp(
-          stateOnContainerPressed, other.stateOnContainerPressed, t)!,
-      labelInputDefault:
-          Color.lerp(labelInputDefault, other.labelInputDefault, t)!,
-      labelInputDisabled:
-          Color.lerp(labelInputDisabled, other.labelInputDisabled, t)!,
+        stateOnContainerPressed,
+        other.stateOnContainerPressed,
+        t,
+      )!,
+      labelInputDefault: Color.lerp(
+        labelInputDefault,
+        other.labelInputDefault,
+        t,
+      )!,
+      labelInputDisabled: Color.lerp(
+        labelInputDisabled,
+        other.labelInputDisabled,
+        t,
+      )!,
     );
   }
 
@@ -602,152 +830,419 @@ mixin _$ColorSchemeExtensionTailorMixin
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is ColorSchemeExtension &&
-            const DeepCollectionEquality()
-                .equals(primaryHovered, other.primaryHovered) &&
-            const DeepCollectionEquality()
-                .equals(primaryBorder, other.primaryBorder) &&
-            const DeepCollectionEquality()
-                .equals(primaryBorderDisabled, other.primaryBorderDisabled) &&
             const DeepCollectionEquality().equals(
-                onPrimaryVariantDisabled, other.onPrimaryVariantDisabled) &&
-            const DeepCollectionEquality()
-                .equals(secondaryPressed, other.secondaryPressed) &&
-            const DeepCollectionEquality()
-                .equals(secondaryBold, other.secondaryBold) &&
-            const DeepCollectionEquality()
-                .equals(secondaryBorder, other.secondaryBorder) &&
+              primaryHovered,
+              other.primaryHovered,
+            ) &&
             const DeepCollectionEquality().equals(
-                secondaryBorderDisabled, other.secondaryBorderDisabled) &&
+              primaryBorder,
+              other.primaryBorder,
+            ) &&
             const DeepCollectionEquality().equals(
-                onSecondaryVariantDisabled, other.onSecondaryVariantDisabled) &&
-            const DeepCollectionEquality()
-                .equals(tertiaryPressed, other.tertiaryPressed) &&
-            const DeepCollectionEquality()
-                .equals(tertiaryHovered, other.tertiaryHovered) &&
-            const DeepCollectionEquality()
-                .equals(tertiaryBorder, other.tertiaryBorder) &&
-            const DeepCollectionEquality()
-                .equals(tertiaryBorderDisabled, other.tertiaryBorderDisabled) &&
+              primaryBorderDisabled,
+              other.primaryBorderDisabled,
+            ) &&
             const DeepCollectionEquality().equals(
-                onTertiaryVariantDisabled, other.onTertiaryVariantDisabled) &&
-            const DeepCollectionEquality()
-                .equals(surfaceFocused, other.surfaceFocused) &&
-            const DeepCollectionEquality()
-                .equals(surfaceBorderEnabled, other.surfaceBorderEnabled) &&
-            const DeepCollectionEquality()
-                .equals(surfaceBorderHovered, other.surfaceBorderHovered) &&
-            const DeepCollectionEquality()
-                .equals(surfaceBorderFocused, other.surfaceBorderFocused) &&
-            const DeepCollectionEquality()
-                .equals(surfaceBorderDisabled, other.surfaceBorderDisabled) &&
+              onPrimaryVariantDisabled,
+              other.onPrimaryVariantDisabled,
+            ) &&
             const DeepCollectionEquality().equals(
-                surfaceBorderBoldEnabled, other.surfaceBorderBoldEnabled) &&
+              secondaryPressed,
+              other.secondaryPressed,
+            ) &&
             const DeepCollectionEquality().equals(
-                surfaceBorderDataDisplay, other.surfaceBorderDataDisplay) &&
-            const DeepCollectionEquality()
-                .equals(surfacePlaceholder, other.surfacePlaceholder) &&
-            const DeepCollectionEquality()
-                .equals(onSurfaceVariantError, other.onSurfaceVariantError) &&
+              secondaryBold,
+              other.secondaryBold,
+            ) &&
             const DeepCollectionEquality().equals(
-                onSurfaceVariantWarning, other.onSurfaceVariantWarning) &&
+              secondaryBorder,
+              other.secondaryBorder,
+            ) &&
             const DeepCollectionEquality().equals(
-                onSurfaceVariantDisabled, other.onSurfaceVariantDisabled) &&
+              secondaryBorderDisabled,
+              other.secondaryBorderDisabled,
+            ) &&
             const DeepCollectionEquality().equals(
-                onSurfaceVariantSmallError, other.onSurfaceVariantSmallError) &&
-            const DeepCollectionEquality()
-                .equals(errorHovered, other.errorHovered) &&
-            const DeepCollectionEquality()
-                .equals(errorBorder, other.errorBorder) &&
-            const DeepCollectionEquality()
-                .equals(errorBorderDisabled, other.errorBorderDisabled) &&
-            const DeepCollectionEquality()
-                .equals(onErrorVariantDisabled, other.onErrorVariantDisabled) &&
-            const DeepCollectionEquality()
-                .equals(errorContainerPressed, other.errorContainerPressed) &&
-            const DeepCollectionEquality()
-                .equals(errorContainerHovered, other.errorContainerHovered) &&
-            const DeepCollectionEquality().equals(onErrorContainerVariantError,
-                other.onErrorContainerVariantError) &&
+              onSecondaryVariantDisabled,
+              other.onSecondaryVariantDisabled,
+            ) &&
             const DeepCollectionEquality().equals(
-                onErrorContainerVariantDisabled,
-                other.onErrorContainerVariantDisabled) &&
-            const DeepCollectionEquality()
-                .equals(onErrorContainerBorder, other.onErrorContainerBorder) &&
+              tertiaryPressed,
+              other.tertiaryPressed,
+            ) &&
             const DeepCollectionEquality().equals(
-                onErrorContainerBorderDisabled,
-                other.onErrorContainerBorderDisabled) &&
-            const DeepCollectionEquality().equals(onErrorContainerBorderHovered,
-                other.onErrorContainerBorderHovered) &&
-            const DeepCollectionEquality().equals(onErrorContainerBorderEnabled, other.onErrorContainerBorderEnabled) &&
-            const DeepCollectionEquality().equals(onErrorContainerBorderFocused, other.onErrorContainerBorderFocused) &&
-            const DeepCollectionEquality().equals(onErrorContainerPlaceholder, other.onErrorContainerPlaceholder) &&
-            const DeepCollectionEquality().equals(errorTextEnabled, other.errorTextEnabled) &&
-            const DeepCollectionEquality().equals(errorTextHovered, other.errorTextHovered) &&
-            const DeepCollectionEquality().equals(errorTextPressed, other.errorTextPressed) &&
-            const DeepCollectionEquality().equals(onErrorTextVariant, other.onErrorTextVariant) &&
-            const DeepCollectionEquality().equals(onErrorTextVariantDisabled, other.onErrorTextVariantDisabled) &&
+              tertiaryHovered,
+              other.tertiaryHovered,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tertiaryBorder,
+              other.tertiaryBorder,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tertiaryBorderDisabled,
+              other.tertiaryBorderDisabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onTertiaryVariantDisabled,
+              other.onTertiaryVariantDisabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              surfaceFocused,
+              other.surfaceFocused,
+            ) &&
+            const DeepCollectionEquality().equals(
+              surfaceBorderEnabled,
+              other.surfaceBorderEnabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              surfaceBorderHovered,
+              other.surfaceBorderHovered,
+            ) &&
+            const DeepCollectionEquality().equals(
+              surfaceBorderFocused,
+              other.surfaceBorderFocused,
+            ) &&
+            const DeepCollectionEquality().equals(
+              surfaceBorderDisabled,
+              other.surfaceBorderDisabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              surfaceBorderBoldEnabled,
+              other.surfaceBorderBoldEnabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              surfaceBorderDataDisplay,
+              other.surfaceBorderDataDisplay,
+            ) &&
+            const DeepCollectionEquality().equals(
+              surfacePlaceholder,
+              other.surfacePlaceholder,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onSurfaceVariantError,
+              other.onSurfaceVariantError,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onSurfaceVariantWarning,
+              other.onSurfaceVariantWarning,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onSurfaceVariantDisabled,
+              other.onSurfaceVariantDisabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onSurfaceVariantSmallError,
+              other.onSurfaceVariantSmallError,
+            ) &&
+            const DeepCollectionEquality().equals(
+              errorHovered,
+              other.errorHovered,
+            ) &&
+            const DeepCollectionEquality().equals(
+              errorBorder,
+              other.errorBorder,
+            ) &&
+            const DeepCollectionEquality().equals(
+              errorBorderDisabled,
+              other.errorBorderDisabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onErrorVariantDisabled,
+              other.onErrorVariantDisabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              errorContainerPressed,
+              other.errorContainerPressed,
+            ) &&
+            const DeepCollectionEquality().equals(
+              errorContainerHovered,
+              other.errorContainerHovered,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onErrorContainerVariantError,
+              other.onErrorContainerVariantError,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onErrorContainerVariantDisabled,
+              other.onErrorContainerVariantDisabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onErrorContainerBorder,
+              other.onErrorContainerBorder,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onErrorContainerBorderDisabled,
+              other.onErrorContainerBorderDisabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onErrorContainerBorderHovered,
+              other.onErrorContainerBorderHovered,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onErrorContainerBorderEnabled,
+              other.onErrorContainerBorderEnabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onErrorContainerBorderFocused,
+              other.onErrorContainerBorderFocused,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onErrorContainerPlaceholder,
+              other.onErrorContainerPlaceholder,
+            ) &&
+            const DeepCollectionEquality().equals(
+              errorTextEnabled,
+              other.errorTextEnabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              errorTextHovered,
+              other.errorTextHovered,
+            ) &&
+            const DeepCollectionEquality().equals(
+              errorTextPressed,
+              other.errorTextPressed,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onErrorTextVariant,
+              other.onErrorTextVariant,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onErrorTextVariantDisabled,
+              other.onErrorTextVariantDisabled,
+            ) &&
             const DeepCollectionEquality().equals(warning, other.warning) &&
-            const DeepCollectionEquality().equals(warningPressed, other.warningPressed) &&
-            const DeepCollectionEquality().equals(warningHovered, other.warningHovered) &&
+            const DeepCollectionEquality().equals(
+              warningPressed,
+              other.warningPressed,
+            ) &&
+            const DeepCollectionEquality().equals(
+              warningHovered,
+              other.warningHovered,
+            ) &&
             const DeepCollectionEquality().equals(onWarning, other.onWarning) &&
-            const DeepCollectionEquality().equals(onWarningVariantDisabled, other.onWarningVariantDisabled) &&
-            const DeepCollectionEquality().equals(warningBorder, other.warningBorder) &&
-            const DeepCollectionEquality().equals(warningBorderDisabled, other.warningBorderDisabled) &&
-            const DeepCollectionEquality().equals(warningTextEnabled, other.warningTextEnabled) &&
-            const DeepCollectionEquality().equals(warningTextPressed, other.warningTextPressed) &&
-            const DeepCollectionEquality().equals(warningTextHovered, other.warningTextHovered) &&
-            const DeepCollectionEquality().equals(onWarningTextVariant, other.onWarningTextVariant) &&
-            const DeepCollectionEquality().equals(onWarningTextVariantDisabled, other.onWarningTextVariantDisabled) &&
-            const DeepCollectionEquality().equals(warningContainer, other.warningContainer) &&
-            const DeepCollectionEquality().equals(warningContainerPressed, other.warningContainerPressed) &&
-            const DeepCollectionEquality().equals(warningContainerHovered, other.warningContainerHovered) &&
-            const DeepCollectionEquality().equals(onWarningContainerVariant, other.onWarningContainerVariant) &&
-            const DeepCollectionEquality().equals(onWarningContainerVariantDisabled, other.onWarningContainerVariantDisabled) &&
-            const DeepCollectionEquality().equals(onWarningContainerBorder, other.onWarningContainerBorder) &&
-            const DeepCollectionEquality().equals(onWarningContainerBorderDisabled, other.onWarningContainerBorderDisabled) &&
+            const DeepCollectionEquality().equals(
+              onWarningVariantDisabled,
+              other.onWarningVariantDisabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              warningBorder,
+              other.warningBorder,
+            ) &&
+            const DeepCollectionEquality().equals(
+              warningBorderDisabled,
+              other.warningBorderDisabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              warningTextEnabled,
+              other.warningTextEnabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              warningTextPressed,
+              other.warningTextPressed,
+            ) &&
+            const DeepCollectionEquality().equals(
+              warningTextHovered,
+              other.warningTextHovered,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onWarningTextVariant,
+              other.onWarningTextVariant,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onWarningTextVariantDisabled,
+              other.onWarningTextVariantDisabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              warningContainer,
+              other.warningContainer,
+            ) &&
+            const DeepCollectionEquality().equals(
+              warningContainerPressed,
+              other.warningContainerPressed,
+            ) &&
+            const DeepCollectionEquality().equals(
+              warningContainerHovered,
+              other.warningContainerHovered,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onWarningContainerVariant,
+              other.onWarningContainerVariant,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onWarningContainerVariantDisabled,
+              other.onWarningContainerVariantDisabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onWarningContainerBorder,
+              other.onWarningContainerBorder,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onWarningContainerBorderDisabled,
+              other.onWarningContainerBorderDisabled,
+            ) &&
             const DeepCollectionEquality().equals(success, other.success) &&
-            const DeepCollectionEquality().equals(successPressed, other.successPressed) &&
-            const DeepCollectionEquality().equals(successHovered, other.successHovered) &&
+            const DeepCollectionEquality().equals(
+              successPressed,
+              other.successPressed,
+            ) &&
+            const DeepCollectionEquality().equals(
+              successHovered,
+              other.successHovered,
+            ) &&
             const DeepCollectionEquality().equals(onSuccess, other.onSuccess) &&
-            const DeepCollectionEquality().equals(onSuccessVariantDisabled, other.onSuccessVariantDisabled) &&
-            const DeepCollectionEquality().equals(successBorder, other.successBorder) &&
-            const DeepCollectionEquality().equals(successBorderDisabled, other.successBorderDisabled) &&
-            const DeepCollectionEquality().equals(successContainer, other.successContainer) &&
-            const DeepCollectionEquality().equals(successContainerPressed, other.successContainerPressed) &&
-            const DeepCollectionEquality().equals(successContainerHovered, other.successContainerHovered) &&
-            const DeepCollectionEquality().equals(onSuccessContainerVariant, other.onSuccessContainerVariant) &&
-            const DeepCollectionEquality().equals(onSuccessContainerVariantDisabled, other.onSuccessContainerVariantDisabled) &&
-            const DeepCollectionEquality().equals(onSuccessContainerBorder, other.onSuccessContainerBorder) &&
-            const DeepCollectionEquality().equals(onSuccessContainerBorderDisabled, other.onSuccessContainerBorderDisabled) &&
-            const DeepCollectionEquality().equals(statusDefault, other.statusDefault) &&
-            const DeepCollectionEquality().equals(statusOnDefault, other.statusOnDefault) &&
-            const DeepCollectionEquality().equals(statusDefaultContainer, other.statusDefaultContainer) &&
-            const DeepCollectionEquality().equals(statusOnDefaultContainer, other.statusOnDefaultContainer) &&
-            const DeepCollectionEquality().equals(statusInform, other.statusInform) &&
-            const DeepCollectionEquality().equals(statusOnInform, other.statusOnInform) &&
-            const DeepCollectionEquality().equals(statusInformContainer, other.statusInformContainer) &&
-            const DeepCollectionEquality().equals(statusOnInformContainer, other.statusOnInformContainer) &&
-            const DeepCollectionEquality().equals(statusOnErrorContainer, other.statusOnErrorContainer) &&
-            const DeepCollectionEquality().equals(statusSuccess, other.statusSuccess) &&
-            const DeepCollectionEquality().equals(statusOnSuccessContainer, other.statusOnSuccessContainer) &&
-            const DeepCollectionEquality().equals(statusWarning, other.statusWarning) &&
-            const DeepCollectionEquality().equals(statusWarningContainer, other.statusWarningContainer) &&
-            const DeepCollectionEquality().equals(statusOnWarningContainer, other.statusOnWarningContainer) &&
-            const DeepCollectionEquality().equals(statusCaution, other.statusCaution) &&
-            const DeepCollectionEquality().equals(statusOnCaution, other.statusOnCaution) &&
-            const DeepCollectionEquality().equals(statusCautionContainer, other.statusCautionContainer) &&
-            const DeepCollectionEquality().equals(statusOnCautionContainer, other.statusOnCautionContainer) &&
+            const DeepCollectionEquality().equals(
+              onSuccessVariantDisabled,
+              other.onSuccessVariantDisabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              successBorder,
+              other.successBorder,
+            ) &&
+            const DeepCollectionEquality().equals(
+              successBorderDisabled,
+              other.successBorderDisabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              successContainer,
+              other.successContainer,
+            ) &&
+            const DeepCollectionEquality().equals(
+              successContainerPressed,
+              other.successContainerPressed,
+            ) &&
+            const DeepCollectionEquality().equals(
+              successContainerHovered,
+              other.successContainerHovered,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onSuccessContainerVariant,
+              other.onSuccessContainerVariant,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onSuccessContainerVariantDisabled,
+              other.onSuccessContainerVariantDisabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onSuccessContainerBorder,
+              other.onSuccessContainerBorder,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onSuccessContainerBorderDisabled,
+              other.onSuccessContainerBorderDisabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              statusDefault,
+              other.statusDefault,
+            ) &&
+            const DeepCollectionEquality().equals(
+              statusOnDefault,
+              other.statusOnDefault,
+            ) &&
+            const DeepCollectionEquality().equals(
+              statusDefaultContainer,
+              other.statusDefaultContainer,
+            ) &&
+            const DeepCollectionEquality().equals(
+              statusOnDefaultContainer,
+              other.statusOnDefaultContainer,
+            ) &&
+            const DeepCollectionEquality().equals(
+              statusInform,
+              other.statusInform,
+            ) &&
+            const DeepCollectionEquality().equals(
+              statusOnInform,
+              other.statusOnInform,
+            ) &&
+            const DeepCollectionEquality().equals(
+              statusInformContainer,
+              other.statusInformContainer,
+            ) &&
+            const DeepCollectionEquality().equals(
+              statusOnInformContainer,
+              other.statusOnInformContainer,
+            ) &&
+            const DeepCollectionEquality().equals(
+              statusOnErrorContainer,
+              other.statusOnErrorContainer,
+            ) &&
+            const DeepCollectionEquality().equals(
+              statusSuccess,
+              other.statusSuccess,
+            ) &&
+            const DeepCollectionEquality().equals(
+              statusOnSuccessContainer,
+              other.statusOnSuccessContainer,
+            ) &&
+            const DeepCollectionEquality().equals(
+              statusWarning,
+              other.statusWarning,
+            ) &&
+            const DeepCollectionEquality().equals(
+              statusWarningContainer,
+              other.statusWarningContainer,
+            ) &&
+            const DeepCollectionEquality().equals(
+              statusOnWarningContainer,
+              other.statusOnWarningContainer,
+            ) &&
+            const DeepCollectionEquality().equals(
+              statusCaution,
+              other.statusCaution,
+            ) &&
+            const DeepCollectionEquality().equals(
+              statusOnCaution,
+              other.statusOnCaution,
+            ) &&
+            const DeepCollectionEquality().equals(
+              statusCautionContainer,
+              other.statusCautionContainer,
+            ) &&
+            const DeepCollectionEquality().equals(
+              statusOnCautionContainer,
+              other.statusOnCautionContainer,
+            ) &&
             const DeepCollectionEquality().equals(neutral, other.neutral) &&
-            const DeepCollectionEquality().equals(onNeutralBorder, other.onNeutralBorder) &&
-            const DeepCollectionEquality().equals(onNeutralVariant, other.onNeutralVariant) &&
-            const DeepCollectionEquality().equals(stateDefaultEnabled, other.stateDefaultEnabled) &&
-            const DeepCollectionEquality().equals(stateDefaultHovered, other.stateDefaultHovered) &&
-            const DeepCollectionEquality().equals(stateDefaultPressed, other.stateDefaultPressed) &&
-            const DeepCollectionEquality().equals(stateOnContainerEnabled, other.stateOnContainerEnabled) &&
-            const DeepCollectionEquality().equals(stateOnContainerHovered, other.stateOnContainerHovered) &&
-            const DeepCollectionEquality().equals(stateOnContainerPressed, other.stateOnContainerPressed) &&
-            const DeepCollectionEquality().equals(labelInputDefault, other.labelInputDefault) &&
-            const DeepCollectionEquality().equals(labelInputDisabled, other.labelInputDisabled));
+            const DeepCollectionEquality().equals(
+              onNeutralBorder,
+              other.onNeutralBorder,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onNeutralVariant,
+              other.onNeutralVariant,
+            ) &&
+            const DeepCollectionEquality().equals(
+              stateDefaultEnabled,
+              other.stateDefaultEnabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              stateDefaultHovered,
+              other.stateDefaultHovered,
+            ) &&
+            const DeepCollectionEquality().equals(
+              stateDefaultPressed,
+              other.stateDefaultPressed,
+            ) &&
+            const DeepCollectionEquality().equals(
+              stateOnContainerEnabled,
+              other.stateOnContainerEnabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              stateOnContainerHovered,
+              other.stateOnContainerHovered,
+            ) &&
+            const DeepCollectionEquality().equals(
+              stateOnContainerPressed,
+              other.stateOnContainerPressed,
+            ) &&
+            const DeepCollectionEquality().equals(
+              labelInputDefault,
+              other.labelInputDefault,
+            ) &&
+            const DeepCollectionEquality().equals(
+              labelInputDisabled,
+              other.labelInputDisabled,
+            ));
   }
 
   @override

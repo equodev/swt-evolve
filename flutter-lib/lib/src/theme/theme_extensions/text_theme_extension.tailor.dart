@@ -160,42 +160,75 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
 
   @override
   TextThemeExtension lerp(
-      covariant ThemeExtension<TextThemeExtension>? other, double t) {
+    covariant ThemeExtension<TextThemeExtension>? other,
+    double t,
+  ) {
     if (other is! TextThemeExtension) return this as TextThemeExtension;
     return TextThemeExtension(
       textColor: Color.lerp(textColor, other.textColor, t)!,
-      disabledTextColor:
-          Color.lerp(disabledTextColor, other.disabledTextColor, t)!,
-      placeholderColor:
-          Color.lerp(placeholderColor, other.placeholderColor, t)!,
+      disabledTextColor: Color.lerp(
+        disabledTextColor,
+        other.disabledTextColor,
+        t,
+      )!,
+      placeholderColor: Color.lerp(
+        placeholderColor,
+        other.placeholderColor,
+        t,
+      )!,
       helperTextColor: Color.lerp(helperTextColor, other.helperTextColor, t)!,
       errorTextColor: Color.lerp(errorTextColor, other.errorTextColor, t)!,
       backgroundColor: Color.lerp(backgroundColor, other.backgroundColor, t)!,
       disabledBackgroundColor: Color.lerp(
-          disabledBackgroundColor, other.disabledBackgroundColor, t)!,
-      hoverBackgroundColor:
-          Color.lerp(hoverBackgroundColor, other.hoverBackgroundColor, t)!,
-      focusedBackgroundColor:
-          Color.lerp(focusedBackgroundColor, other.focusedBackgroundColor, t)!,
+        disabledBackgroundColor,
+        other.disabledBackgroundColor,
+        t,
+      )!,
+      hoverBackgroundColor: Color.lerp(
+        hoverBackgroundColor,
+        other.hoverBackgroundColor,
+        t,
+      )!,
+      focusedBackgroundColor: Color.lerp(
+        focusedBackgroundColor,
+        other.focusedBackgroundColor,
+        t,
+      )!,
       borderColor: Color.lerp(borderColor, other.borderColor, t)!,
-      hoverBorderColor:
-          Color.lerp(hoverBorderColor, other.hoverBorderColor, t)!,
-      focusedBorderColor:
-          Color.lerp(focusedBorderColor, other.focusedBorderColor, t)!,
-      errorBorderColor:
-          Color.lerp(errorBorderColor, other.errorBorderColor, t)!,
-      disabledBorderColor:
-          Color.lerp(disabledBorderColor, other.disabledBorderColor, t)!,
+      hoverBorderColor: Color.lerp(
+        hoverBorderColor,
+        other.hoverBorderColor,
+        t,
+      )!,
+      focusedBorderColor: Color.lerp(
+        focusedBorderColor,
+        other.focusedBorderColor,
+        t,
+      )!,
+      errorBorderColor: Color.lerp(
+        errorBorderColor,
+        other.errorBorderColor,
+        t,
+      )!,
+      disabledBorderColor: Color.lerp(
+        disabledBorderColor,
+        other.disabledBorderColor,
+        t,
+      )!,
       prefixIconColor: Color.lerp(prefixIconColor, other.prefixIconColor, t)!,
       suffixIconColor: Color.lerp(suffixIconColor, other.suffixIconColor, t)!,
-      disabledIconColor:
-          Color.lerp(disabledIconColor, other.disabledIconColor, t)!,
+      disabledIconColor: Color.lerp(
+        disabledIconColor,
+        other.disabledIconColor,
+        t,
+      )!,
       errorIconColor: Color.lerp(errorIconColor, other.errorIconColor, t)!,
       borderRadius: t < 0.5 ? borderRadius : other.borderRadius,
       borderWidth: t < 0.5 ? borderWidth : other.borderWidth,
       hoverBorderWidth: t < 0.5 ? hoverBorderWidth : other.hoverBorderWidth,
-      focusedBorderWidth:
-          t < 0.5 ? focusedBorderWidth : other.focusedBorderWidth,
+      focusedBorderWidth: t < 0.5
+          ? focusedBorderWidth
+          : other.focusedBorderWidth,
       errorBorderWidth: t < 0.5 ? errorBorderWidth : other.errorBorderWidth,
       contentPadding: t < 0.5 ? contentPadding : other.contentPadding,
       prefixPadding: t < 0.5 ? prefixPadding : other.prefixPadding,
@@ -207,26 +240,38 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
       fontFamily: t < 0.5 ? fontFamily : other.fontFamily,
       letterSpacing: t < 0.5 ? letterSpacing : other.letterSpacing,
       lineHeight: t < 0.5 ? lineHeight : other.lineHeight,
-      helperTextFontSize:
-          t < 0.5 ? helperTextFontSize : other.helperTextFontSize,
+      helperTextFontSize: t < 0.5
+          ? helperTextFontSize
+          : other.helperTextFontSize,
       helperTextSpacing: t < 0.5 ? helperTextSpacing : other.helperTextSpacing,
       prefixIconSize: t < 0.5 ? prefixIconSize : other.prefixIconSize,
       suffixIconSize: t < 0.5 ? suffixIconSize : other.suffixIconSize,
       errorIconSize: t < 0.5 ? errorIconSize : other.errorIconSize,
-      focusAnimationDuration:
-          t < 0.5 ? focusAnimationDuration : other.focusAnimationDuration,
-      focusAnimationCurve:
-          t < 0.5 ? focusAnimationCurve : other.focusAnimationCurve,
-      hoverAnimationDuration:
-          t < 0.5 ? hoverAnimationDuration : other.hoverAnimationDuration,
-      hoverAnimationCurve:
-          t < 0.5 ? hoverAnimationCurve : other.hoverAnimationCurve,
-      passwordToggleColor:
-          Color.lerp(passwordToggleColor, other.passwordToggleColor, t)!,
+      focusAnimationDuration: t < 0.5
+          ? focusAnimationDuration
+          : other.focusAnimationDuration,
+      focusAnimationCurve: t < 0.5
+          ? focusAnimationCurve
+          : other.focusAnimationCurve,
+      hoverAnimationDuration: t < 0.5
+          ? hoverAnimationDuration
+          : other.hoverAnimationDuration,
+      hoverAnimationCurve: t < 0.5
+          ? hoverAnimationCurve
+          : other.hoverAnimationCurve,
+      passwordToggleColor: Color.lerp(
+        passwordToggleColor,
+        other.passwordToggleColor,
+        t,
+      )!,
       passwordToggleHoverColor: Color.lerp(
-          passwordToggleHoverColor, other.passwordToggleHoverColor, t)!,
-      passwordToggleSize:
-          t < 0.5 ? passwordToggleSize : other.passwordToggleSize,
+        passwordToggleHoverColor,
+        other.passwordToggleHoverColor,
+        t,
+      )!,
+      passwordToggleSize: t < 0.5
+          ? passwordToggleSize
+          : other.passwordToggleSize,
     );
   }
 
@@ -236,93 +281,179 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
         (other.runtimeType == runtimeType &&
             other is TextThemeExtension &&
             const DeepCollectionEquality().equals(textColor, other.textColor) &&
-            const DeepCollectionEquality()
-                .equals(disabledTextColor, other.disabledTextColor) &&
-            const DeepCollectionEquality()
-                .equals(placeholderColor, other.placeholderColor) &&
-            const DeepCollectionEquality()
-                .equals(helperTextColor, other.helperTextColor) &&
-            const DeepCollectionEquality()
-                .equals(errorTextColor, other.errorTextColor) &&
-            const DeepCollectionEquality()
-                .equals(backgroundColor, other.backgroundColor) &&
             const DeepCollectionEquality().equals(
-                disabledBackgroundColor, other.disabledBackgroundColor) &&
-            const DeepCollectionEquality()
-                .equals(hoverBackgroundColor, other.hoverBackgroundColor) &&
-            const DeepCollectionEquality()
-                .equals(focusedBackgroundColor, other.focusedBackgroundColor) &&
-            const DeepCollectionEquality()
-                .equals(borderColor, other.borderColor) &&
-            const DeepCollectionEquality()
-                .equals(hoverBorderColor, other.hoverBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(focusedBorderColor, other.focusedBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(errorBorderColor, other.errorBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(disabledBorderColor, other.disabledBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(prefixIconColor, other.prefixIconColor) &&
-            const DeepCollectionEquality()
-                .equals(suffixIconColor, other.suffixIconColor) &&
-            const DeepCollectionEquality()
-                .equals(disabledIconColor, other.disabledIconColor) &&
-            const DeepCollectionEquality()
-                .equals(errorIconColor, other.errorIconColor) &&
-            const DeepCollectionEquality()
-                .equals(borderRadius, other.borderRadius) &&
-            const DeepCollectionEquality()
-                .equals(borderWidth, other.borderWidth) &&
-            const DeepCollectionEquality()
-                .equals(hoverBorderWidth, other.hoverBorderWidth) &&
-            const DeepCollectionEquality()
-                .equals(focusedBorderWidth, other.focusedBorderWidth) &&
-            const DeepCollectionEquality()
-                .equals(errorBorderWidth, other.errorBorderWidth) &&
-            const DeepCollectionEquality()
-                .equals(contentPadding, other.contentPadding) &&
-            const DeepCollectionEquality()
-                .equals(prefixPadding, other.prefixPadding) &&
-            const DeepCollectionEquality()
-                .equals(suffixPadding, other.suffixPadding) &&
-            const DeepCollectionEquality()
-                .equals(prefixIconSpacing, other.prefixIconSpacing) &&
-            const DeepCollectionEquality()
-                .equals(suffixIconSpacing, other.suffixIconSpacing) &&
+              disabledTextColor,
+              other.disabledTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              placeholderColor,
+              other.placeholderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              helperTextColor,
+              other.helperTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              errorTextColor,
+              other.errorTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              backgroundColor,
+              other.backgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              disabledBackgroundColor,
+              other.disabledBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              hoverBackgroundColor,
+              other.hoverBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              focusedBackgroundColor,
+              other.focusedBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              borderColor,
+              other.borderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              hoverBorderColor,
+              other.hoverBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              focusedBorderColor,
+              other.focusedBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              errorBorderColor,
+              other.errorBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              disabledBorderColor,
+              other.disabledBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              prefixIconColor,
+              other.prefixIconColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              suffixIconColor,
+              other.suffixIconColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              disabledIconColor,
+              other.disabledIconColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              errorIconColor,
+              other.errorIconColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              borderRadius,
+              other.borderRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
+              borderWidth,
+              other.borderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              hoverBorderWidth,
+              other.hoverBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              focusedBorderWidth,
+              other.focusedBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              errorBorderWidth,
+              other.errorBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              contentPadding,
+              other.contentPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              prefixPadding,
+              other.prefixPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              suffixPadding,
+              other.suffixPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              prefixIconSpacing,
+              other.prefixIconSpacing,
+            ) &&
+            const DeepCollectionEquality().equals(
+              suffixIconSpacing,
+              other.suffixIconSpacing,
+            ) &&
             const DeepCollectionEquality().equals(fontSize, other.fontSize) &&
-            const DeepCollectionEquality()
-                .equals(fontWeight, other.fontWeight) &&
-            const DeepCollectionEquality()
-                .equals(fontFamily, other.fontFamily) &&
-            const DeepCollectionEquality()
-                .equals(letterSpacing, other.letterSpacing) &&
-            const DeepCollectionEquality()
-                .equals(lineHeight, other.lineHeight) &&
-            const DeepCollectionEquality()
-                .equals(helperTextFontSize, other.helperTextFontSize) &&
-            const DeepCollectionEquality()
-                .equals(helperTextSpacing, other.helperTextSpacing) &&
-            const DeepCollectionEquality()
-                .equals(prefixIconSize, other.prefixIconSize) &&
-            const DeepCollectionEquality()
-                .equals(suffixIconSize, other.suffixIconSize) &&
-            const DeepCollectionEquality()
-                .equals(errorIconSize, other.errorIconSize) &&
-            const DeepCollectionEquality()
-                .equals(focusAnimationDuration, other.focusAnimationDuration) &&
-            const DeepCollectionEquality()
-                .equals(focusAnimationCurve, other.focusAnimationCurve) &&
-            const DeepCollectionEquality()
-                .equals(hoverAnimationDuration, other.hoverAnimationDuration) &&
-            const DeepCollectionEquality()
-                .equals(hoverAnimationCurve, other.hoverAnimationCurve) &&
-            const DeepCollectionEquality()
-                .equals(passwordToggleColor, other.passwordToggleColor) &&
             const DeepCollectionEquality().equals(
-                passwordToggleHoverColor, other.passwordToggleHoverColor) &&
-            const DeepCollectionEquality()
-                .equals(passwordToggleSize, other.passwordToggleSize));
+              fontWeight,
+              other.fontWeight,
+            ) &&
+            const DeepCollectionEquality().equals(
+              fontFamily,
+              other.fontFamily,
+            ) &&
+            const DeepCollectionEquality().equals(
+              letterSpacing,
+              other.letterSpacing,
+            ) &&
+            const DeepCollectionEquality().equals(
+              lineHeight,
+              other.lineHeight,
+            ) &&
+            const DeepCollectionEquality().equals(
+              helperTextFontSize,
+              other.helperTextFontSize,
+            ) &&
+            const DeepCollectionEquality().equals(
+              helperTextSpacing,
+              other.helperTextSpacing,
+            ) &&
+            const DeepCollectionEquality().equals(
+              prefixIconSize,
+              other.prefixIconSize,
+            ) &&
+            const DeepCollectionEquality().equals(
+              suffixIconSize,
+              other.suffixIconSize,
+            ) &&
+            const DeepCollectionEquality().equals(
+              errorIconSize,
+              other.errorIconSize,
+            ) &&
+            const DeepCollectionEquality().equals(
+              focusAnimationDuration,
+              other.focusAnimationDuration,
+            ) &&
+            const DeepCollectionEquality().equals(
+              focusAnimationCurve,
+              other.focusAnimationCurve,
+            ) &&
+            const DeepCollectionEquality().equals(
+              hoverAnimationDuration,
+              other.hoverAnimationDuration,
+            ) &&
+            const DeepCollectionEquality().equals(
+              hoverAnimationCurve,
+              other.hoverAnimationCurve,
+            ) &&
+            const DeepCollectionEquality().equals(
+              passwordToggleColor,
+              other.passwordToggleColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              passwordToggleHoverColor,
+              other.passwordToggleHoverColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              passwordToggleSize,
+              other.passwordToggleSize,
+            ));
   }
 
   @override

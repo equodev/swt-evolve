@@ -45,11 +45,6 @@ class LabelThemeExtension extends ThemeExtension<LabelThemeExtension> with _$Lab
   final TextStyle? disabledTextStyle;
   final TextStyle? linkTextStyle;
   
-  // Dimensions
-  final double minHeight;
-  final double minWidth;
-  final double maxWidth;
-  
   // Spacing and padding
   final EdgeInsets padding;
   final EdgeInsets margin;
@@ -103,9 +98,6 @@ class LabelThemeExtension extends ThemeExtension<LabelThemeExtension> with _$Lab
     this.successTextStyle,
     this.disabledTextStyle,
     this.linkTextStyle,
-    required this.minHeight,
-    required this.minWidth,
-    required this.maxWidth,
     required this.padding,
     required this.margin,
     required this.iconTextSpacing,

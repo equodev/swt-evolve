@@ -15,6 +15,12 @@ public class ConfigFlags {
 
     public boolean use_swt_fonts;
 
+    public static ConfigFlags use_swt_fonts(boolean v) {
+        ConfigFlags configFlags = new ConfigFlags();
+        configFlags.use_swt_fonts = v;
+        return Config.setConfigFlags(configFlags);
+    }
+
     @Override
     public String toString() {
         return "ConfigFlags{" +

@@ -34,6 +34,8 @@ public class VTableItem extends VItem {
 
     public Font getFont() {
         Font val = ((DartTableItem) impl).font;
+        if (val != null && !(val.getImpl() instanceof SwtFont))
+            return GraphicsUtils.copyFont(val);
         if (val != null && !(val.getImpl() instanceof DartFont))
             return null;
         return val;

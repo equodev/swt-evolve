@@ -107,16 +107,12 @@ public class DartGroup extends DartComposite implements IGroup {
 
     @Override
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.compute(this);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override
     Rectangle computeTrimInPixels(int x, int y, int width, int height) {
-        checkWidget();
-        Rectangle trim = super.computeTrimInPixels(x, y, width, height);
-        trim.x -= CLIENT_INSET;
-        trim.width += CLIENT_INSET * 2;
-        return trim;
+        return Sizes.computeTrim(this, x, y, width, height);
     }
 
     @Override
@@ -157,9 +153,7 @@ public class DartGroup extends DartComposite implements IGroup {
 
     @Override
     Rectangle getClientAreaInPixels() {
-        checkWidget();
-        forceResize();
-        return null;
+        return Sizes.getClientArea(this);
     }
 
     @Override

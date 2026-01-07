@@ -329,17 +329,12 @@ public class DartText extends DartScrollable implements IText {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return Sizes.compute(this);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        Rectangle result = super.computeTrim(x, y, width, height);
-        if ((getApi().style & SWT.SINGLE) != 0) {
-            if ((getApi().style & SWT.SEARCH) != 0) {
-            }
-        }
-        return result;
+        return Sizes.computeTrim(this, x, y, width, height);
     }
 
     /**

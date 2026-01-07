@@ -113,18 +113,11 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
      * @see #getClientArea
      */
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        checkWidget();
-        return computeTrimInPixels(x, y, width, height);
+        return Sizes.computeTrim(this, x, y, width, height);
     }
 
     Rectangle computeTrimInPixels(int x, int y, int width, int height) {
-        checkWidget();
-        int border = 0;
-        int trimX = x - border, trimY = y - border;
-        int trimWidth = width + (border * 2), trimHeight = height + (border * 2);
-        trimHeight += hScrollBarWidth();
-        trimWidth += vScrollBarWidth();
-        return new Rectangle(trimX, trimY, trimWidth, trimHeight);
+        return Sizes.computeTrim(this, x, y, width, height);
     }
 
     ScrollBar createScrollBar(int style) {
@@ -216,12 +209,11 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
      * @see #computeTrim
      */
     public Rectangle getClientArea() {
-        return getBounds();
+        return Sizes.getClientArea(this);
     }
 
     Rectangle getClientAreaInPixels() {
-        checkWidget();
-        return getBounds();
+        return Sizes.getClientArea(this);
     }
 
     /**

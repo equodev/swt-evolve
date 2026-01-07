@@ -13,8 +13,8 @@ VColor _$VColorFromJson(Map<String, dynamic> json) => VColor()
   ..red = (json['red'] as num).toInt();
 
 Map<String, dynamic> _$VColorToJson(VColor instance) => <String, dynamic>{
-      'alpha': instance.alpha,
-      'blue': instance.blue,
-      'green': instance.green,
-      'red': instance.red,
-    };
+  'alpha': instance.alpha,
+  'blue': instance.blue,
+  'green': instance.green,
+  'red': instance.red,
+};

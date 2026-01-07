@@ -3,6 +3,7 @@ package dev.equo.swt;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.*;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -10,6 +11,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.composite;
 
+@ExtendWith(Mocks.class)
 public class FlutterBridgeFilterTest extends SerializeTestBase {
 
     @Test

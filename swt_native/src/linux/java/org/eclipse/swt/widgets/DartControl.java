@@ -607,21 +607,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @see "computeTrim, getClientArea for controls that implement them"
      */
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        if (wHint != SWT.DEFAULT && wHint < 0)
-            wHint = 0;
-        if (hHint != SWT.DEFAULT && hHint < 0)
-            hHint = 0;
-        return computeSizeInPixels(wHint, hHint, changed);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        if (wHint != SWT.DEFAULT && wHint < 0)
-            wHint = 0;
-        if (hHint != SWT.DEFAULT && hHint < 0)
-            hHint = 0;
-        return computeNativeSize(getApi().handle, wHint, hHint, changed);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     Point computeNativeSize(long h, int wHint, int hHint, boolean changed) {

@@ -48,11 +48,11 @@ Color? getBackgroundColor({
   required Color? defaultColor,
 }) {
   final useSwtColors = getConfigFlags().use_swt_colors ?? false;
-  
+
   if (useSwtColors && background != null) {
     return colorFromVColor(background, defaultColor: defaultColor);
   }
-  
+
   return defaultColor;
 }
 
@@ -62,11 +62,11 @@ Color getForegroundColor({
   required Color defaultColor,
 }) {
   final useSwtFonts = getConfigFlags().use_swt_fonts ?? false;
-  
+
   if (useSwtFonts && foreground != null) {
     return colorFromVColor(foreground, defaultColor: defaultColor);
   }
-  
+
   return defaultColor;
 }
 
@@ -80,12 +80,13 @@ TextStyle getTextStyle({
   final useSwtFonts = getConfigFlags().use_swt_fonts ?? false;
 
   if (useSwtFonts && font != null) {
-    return FontUtils.textStyleFromVFont(font, context, color: textColor) 
-        ?? baseTextStyle?.copyWith(color: textColor) 
-        ?? TextStyle(color: textColor);
+    return FontUtils.textStyleFromVFont(font, context, color: textColor) ??
+        baseTextStyle?.copyWith(color: textColor) ??
+        TextStyle(color: textColor);
   }
 
-  return baseTextStyle?.copyWith(color: textColor) ?? TextStyle(color: textColor);
+  return baseTextStyle?.copyWith(color: textColor) ??
+      TextStyle(color: textColor);
 }
 
 /// Determines if text should wrap based on style and bounds
@@ -161,4 +162,3 @@ EdgeInsets adjustPaddingForAlignment({
     );
   }
 }
-

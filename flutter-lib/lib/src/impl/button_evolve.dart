@@ -455,7 +455,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
           if (text?.isNotEmpty == true && leadingSpacing != null)
             SizedBox(width: leadingSpacing),
         ],
-        if (state.image != null) ...[
+        if (hasImage()) ...[
           _buildImageWidget(),
           if (text?.isNotEmpty == true) 
             SizedBox(width: widgetTheme.imageTextSpacing),
@@ -476,6 +476,8 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       ],
     );
   }
+
+  bool hasImage() => state.image != null && state.image?.imageData != null && state.image?.imageData?.data != null;
 
   Widget _buildImageWidget() {
     if (state.image?.imageData?.data == null) return const SizedBox.shrink();

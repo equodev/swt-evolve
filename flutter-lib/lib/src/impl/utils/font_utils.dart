@@ -28,8 +28,11 @@ class FontUtils {
 
   /// Create a TextStyle from VFont and optional color.
   /// If no font is provided, returns the system default font with size 12.
-  static TextStyle textStyleFromVFont(VFont? vFont, BuildContext context,
-      {Color? color}) {
+  static TextStyle textStyleFromVFont(
+    VFont? vFont,
+    BuildContext context, {
+    Color? color,
+  }) {
     final defaultStyle = DefaultTextStyle.of(context).style;
 
     if (vFont == null || vFont.fontData == null || vFont.fontData!.isEmpty) {
@@ -41,18 +44,21 @@ class FontUtils {
   }
 
   /// Create a TextStyle from VFontData and optional color
-  static TextStyle _createTextStyleFromFontData(VFontData fontData,
-      {Color? color}) {
+  static TextStyle _createTextStyleFromFontData(
+    VFontData fontData, {
+    Color? color,
+  }) {
     const defaultFontSize = 12.0;
-    const defaultFontName = 'SF Pro Display';
+    const defaultFontName = 'System';
 
-    final fontName =
-        fontData.name?.isNotEmpty == true ? fontData.name! : defaultFontName;
+    final fontName = fontData.name?.isNotEmpty == true
+        ? fontData.name!
+        : defaultFontName;
     final fontSize = fontData.height?.toDouble() ?? defaultFontSize;
     final swtStyle = fontData.style ?? 0;
 
     final (fontWeight, fontStyle) = convertSwtFontStyle(swtStyle);
-
+    //print("Using font $fontName $fontSize ${fontWeight.value} ${fontStyle}");
     return TextStyle(
       fontFamily: fontName,
       fontSize: fontSize,
@@ -65,22 +71,12 @@ class FontUtils {
   /// Get font properties as a map for easy access
   static Map<String, dynamic> getFontProperties(VFont? vFont) {
     if (vFont == null) {
-      return {
-        'name': null,
-        'height': null,
-        'style': null,
-        'locale': null,
-      };
+      return {'name': null, 'height': null, 'style': null, 'locale': null};
     }
 
     final fontDataList = vFont.fontData;
     if (fontDataList == null || fontDataList.isEmpty) {
-      return {
-        'name': null,
-        'height': null,
-        'style': null,
-        'locale': null,
-      };
+      return {'name': null, 'height': null, 'style': null, 'locale': null};
     }
 
     final fontData = fontDataList.first;
@@ -107,8 +103,11 @@ class FontUtils {
   }
 
   /// Print color data for debugging
-  static void printColorData(VColor? vColor,
-      {String? context, String? colorName}) {
+  static void printColorData(
+    VColor? vColor, {
+    String? context,
+    String? colorName,
+  }) {
     final prefix = context != null ? '[$context] ' : '';
     final name = colorName != null ? '$colorName ' : '';
 
@@ -116,7 +115,8 @@ class FontUtils {
     print('${prefix}Color available: ${vColor != null}');
     if (vColor != null) {
       print(
-          '${prefix}ARGB: (${vColor.alpha}, ${vColor.red}, ${vColor.green}, ${vColor.blue})');
+        '${prefix}ARGB: (${vColor.alpha}, ${vColor.red}, ${vColor.green}, ${vColor.blue})',
+      );
     }
     print('${prefix}==================');
   }

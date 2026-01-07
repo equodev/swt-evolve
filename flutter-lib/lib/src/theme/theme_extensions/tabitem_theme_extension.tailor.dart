@@ -45,12 +45,17 @@ mixin _$TabItemThemeExtensionTailorMixin
 
   @override
   TabItemThemeExtension lerp(
-      covariant ThemeExtension<TabItemThemeExtension>? other, double t) {
+    covariant ThemeExtension<TabItemThemeExtension>? other,
+    double t,
+  ) {
     if (other is! TabItemThemeExtension) return this as TabItemThemeExtension;
     return TabItemThemeExtension(
       textColor: Color.lerp(textColor, other.textColor, t)!,
-      disabledTextColor:
-          Color.lerp(disabledTextColor, other.disabledTextColor, t)!,
+      disabledTextColor: Color.lerp(
+        disabledTextColor,
+        other.disabledTextColor,
+        t,
+      )!,
       iconSize: t < 0.5 ? iconSize : other.iconSize,
       containerPadding: t < 0.5 ? containerPadding : other.containerPadding,
       imagePadding: t < 0.5 ? imagePadding : other.imagePadding,
@@ -66,17 +71,27 @@ mixin _$TabItemThemeExtensionTailorMixin
         (other.runtimeType == runtimeType &&
             other is TabItemThemeExtension &&
             const DeepCollectionEquality().equals(textColor, other.textColor) &&
-            const DeepCollectionEquality()
-                .equals(disabledTextColor, other.disabledTextColor) &&
+            const DeepCollectionEquality().equals(
+              disabledTextColor,
+              other.disabledTextColor,
+            ) &&
             const DeepCollectionEquality().equals(iconSize, other.iconSize) &&
-            const DeepCollectionEquality()
-                .equals(containerPadding, other.containerPadding) &&
-            const DeepCollectionEquality()
-                .equals(imagePadding, other.imagePadding) &&
-            const DeepCollectionEquality()
-                .equals(textPadding, other.textPadding) &&
-            const DeepCollectionEquality()
-                .equals(imageTextSpacing, other.imageTextSpacing) &&
+            const DeepCollectionEquality().equals(
+              containerPadding,
+              other.containerPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              imagePadding,
+              other.imagePadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              textPadding,
+              other.textPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              imageTextSpacing,
+              other.imageTextSpacing,
+            ) &&
             const DeepCollectionEquality().equals(textStyle, other.textStyle));
   }
 

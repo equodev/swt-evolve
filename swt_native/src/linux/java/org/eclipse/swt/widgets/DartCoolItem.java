@@ -233,18 +233,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      * @see Scrollable#getClientArea
      */
     public Point computeSize(int wHint, int hHint) {
-        checkWidget();
-        int width = wHint, height = hHint;
-        if (wHint == SWT.DEFAULT)
-            width = 32;
-        if (hHint == SWT.DEFAULT)
-            height = 32;
-        if ((parent.style & SWT.VERTICAL) != 0) {
-            height += MINIMUM_WIDTH;
-        } else {
-            width += MINIMUM_WIDTH;
-        }
-        return new Point(width, height);
+        return Sizes.computeSize(this, wHint, hHint);
     }
 
     @Override

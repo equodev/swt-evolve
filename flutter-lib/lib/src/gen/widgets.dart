@@ -87,7 +87,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "Menu" => VMenu.fromJson(child),
     "ScrollBar" => VScrollBar.fromJson(child),
     "ToolTip" => VToolTip.fromJson(child),
-    _ => throw "Unknown Widget Value $type"
+    _ => throw "Unknown Widget Value $type",
   };
 }
 
@@ -105,8 +105,10 @@ Widget mapWidgetFromValue(VWidget child) {
     VExpandBar() => ExpandBarSwt(key: ValueKey(id), value: child),
     VGroup() => GroupSwt(key: ValueKey(id), value: child),
     VSashForm() => SashFormSwt(key: ValueKey(id), value: child),
-    VScrolledComposite() =>
-      ScrolledCompositeSwt(key: ValueKey(id), value: child),
+    VScrolledComposite() => ScrolledCompositeSwt(
+      key: ValueKey(id),
+      value: child,
+    ),
     VSpinner() => SpinnerSwt(key: ValueKey(id), value: child),
     VTabFolder() => TabFolderSwt(key: ValueKey(id), value: child),
     VTable() => TableSwt(key: ValueKey(id), value: child),
@@ -137,7 +139,7 @@ Widget mapWidgetFromValue(VWidget child) {
     VMenu() => MenuSwt(key: ValueKey(id), value: child),
     VScrollBar() => ScrollBarSwt(key: ValueKey(id), value: child),
     VToolTip() => ToolTipSwt(key: ValueKey(id), value: child),
-    _ => throw "No widget for Value $type"
+    _ => throw "No widget for Value $type",
   };
 }
 

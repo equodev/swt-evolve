@@ -411,25 +411,12 @@ public class DartText extends DartScrollable implements IText {
 
     @Override
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.compute(this);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override
     Rectangle computeTrimInPixels(int x, int y, int width, int height) {
-        checkWidget();
-        Rectangle rect = super.computeTrimInPixels(x, y, width, height);
-        if ((getApi().style & SWT.H_SCROLL) != 0)
-            rect.width++;
-        if ((getApi().style & SWT.BORDER) != 0) {
-            rect.x -= 1;
-            rect.y -= 1;
-            rect.width += 2;
-            rect.height += 2;
-            // When WS_BORDER is used instead of WS_EX_CLIENTEDGE, compensate the size difference
-            if (isUseWsBorder()) {
-            }
-        }
-        return rect;
+        return Sizes.computeTrim(this, x, y, width, height);
     }
 
     /**

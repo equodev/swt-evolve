@@ -505,7 +505,7 @@ public class DartTree extends DartComposite implements ITree {
 
     @Override
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.compute(this);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     void copyModel(long oldModel, int oldStart, long newModel, int newStart, long oldParent, long newParent, int modelLength) {
@@ -786,8 +786,7 @@ public class DartTree extends DartComposite implements ITree {
 
     @Override
     Rectangle getClientAreaInPixels() {
-        checkWidget();
-        return null;
+        return Sizes.getClientArea(this);
     }
 
     @Override

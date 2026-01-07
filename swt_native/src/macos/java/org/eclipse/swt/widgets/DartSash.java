@@ -129,20 +129,7 @@ public class DartSash extends DartControl implements ISash {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        int width = 0, height = 0;
-        if ((getApi().style & SWT.HORIZONTAL) != 0) {
-            width += DEFAULT_WIDTH;
-            height += 5;
-        } else {
-            width += 5;
-            height += DEFAULT_HEIGHT;
-        }
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
-        return new Point(width, height);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override

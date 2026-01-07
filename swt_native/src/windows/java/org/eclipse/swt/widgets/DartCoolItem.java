@@ -191,12 +191,24 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      * @see Scrollable#getClientArea
      */
     public Point computeSize(int wHint, int hHint) {
-        checkWidget();
-        return Sizes.compute(this);
+        return Sizes.computeSize(this, wHint, hHint);
     }
 
     Point computeSizeInPixels(int wHint, int hHint) {
-        return Sizes.compute(this);
+        int index = parent.indexOf(this.getApi());
+        if (index == -1)
+            return new Point(0, 0);
+        int width = wHint, height = hHint;
+        if (wHint == SWT.DEFAULT)
+            width = 32;
+        if (hHint == SWT.DEFAULT)
+            height = 32;
+        if ((parent.style & SWT.VERTICAL) != 0) {
+            height += ((DartCoolBar) parent.getImpl()).getMargin(index);
+        } else {
+            width += ((DartCoolBar) parent.getImpl()).getMargin(index);
+        }
+        return new Point(width, height);
     }
 
     @Override
@@ -235,15 +247,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
     }
 
     Rectangle getClientArea() {
-        checkWidget();
-        int index = parent.indexOf(this.getApi());
-        if (index == -1)
-            return new Rectangle(0, 0, 0, 0);
-        if ((parent.style & SWT.FLAT) == 0) {
-        }
-        if (index == 0) {
-        }
-        return getBounds();
+        return Sizes.getClientArea(this);
     }
 
     /**

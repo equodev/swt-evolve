@@ -1,4 +1,4 @@
-package dev.equo;
+package dev.equo.internal;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;

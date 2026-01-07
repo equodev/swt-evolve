@@ -212,7 +212,8 @@ mixin _$ButtonThemeExtensionTailorMixin
           radioButtonTextSpacing ?? this.radioButtonTextSpacing,
       dropdownButtonIconSize:
           dropdownButtonIconSize ?? this.dropdownButtonIconSize,
-      checkboxCheckmarkSizeMultiplier: checkboxCheckmarkSizeMultiplier ??
+      checkboxCheckmarkSizeMultiplier:
+          checkboxCheckmarkSizeMultiplier ??
           this.checkboxCheckmarkSizeMultiplier,
       checkboxGrayedMarginMultiplier:
           checkboxGrayedMarginMultiplier ?? this.checkboxGrayedMarginMultiplier,
@@ -226,110 +227,219 @@ mixin _$ButtonThemeExtensionTailorMixin
 
   @override
   ButtonThemeExtension lerp(
-      covariant ThemeExtension<ButtonThemeExtension>? other, double t) {
+    covariant ThemeExtension<ButtonThemeExtension>? other,
+    double t,
+  ) {
     if (other is! ButtonThemeExtension) return this as ButtonThemeExtension;
     return ButtonThemeExtension(
       buttonPressDelay: t < 0.5 ? buttonPressDelay : other.buttonPressDelay,
-      enableTapAnimation:
-          t < 0.5 ? enableTapAnimation : other.enableTapAnimation,
+      enableTapAnimation: t < 0.5
+          ? enableTapAnimation
+          : other.enableTapAnimation,
       splashColor: Color.lerp(splashColor, other.splashColor, t)!,
       highlightColor: Color.lerp(highlightColor, other.highlightColor, t)!,
       pushButtonColor: Color.lerp(pushButtonColor, other.pushButtonColor, t)!,
-      selectableButtonColor:
-          Color.lerp(selectableButtonColor, other.selectableButtonColor, t)!,
-      toggleButtonColor:
-          Color.lerp(toggleButtonColor, other.toggleButtonColor, t)!,
+      selectableButtonColor: Color.lerp(
+        selectableButtonColor,
+        other.selectableButtonColor,
+        t,
+      )!,
+      toggleButtonColor: Color.lerp(
+        toggleButtonColor,
+        other.toggleButtonColor,
+        t,
+      )!,
       toggleButtonBorderColor: Color.lerp(
-          toggleButtonBorderColor, other.toggleButtonBorderColor, t)!,
-      dropdownButtonColor:
-          Color.lerp(dropdownButtonColor, other.dropdownButtonColor, t)!,
+        toggleButtonBorderColor,
+        other.toggleButtonBorderColor,
+        t,
+      )!,
+      dropdownButtonColor: Color.lerp(
+        dropdownButtonColor,
+        other.dropdownButtonColor,
+        t,
+      )!,
       checkboxColor: Color.lerp(checkboxColor, other.checkboxColor, t)!,
-      pushButtonTextColor:
-          Color.lerp(pushButtonTextColor, other.pushButtonTextColor, t)!,
-      pushButtonHoverColor:
-          Color.lerp(pushButtonHoverColor, other.pushButtonHoverColor, t)!,
-      pushButtonPressedColor:
-          Color.lerp(pushButtonPressedColor, other.pushButtonPressedColor, t)!,
+      pushButtonTextColor: Color.lerp(
+        pushButtonTextColor,
+        other.pushButtonTextColor,
+        t,
+      )!,
+      pushButtonHoverColor: Color.lerp(
+        pushButtonHoverColor,
+        other.pushButtonHoverColor,
+        t,
+      )!,
+      pushButtonPressedColor: Color.lerp(
+        pushButtonPressedColor,
+        other.pushButtonPressedColor,
+        t,
+      )!,
       pushButtonDisabledColor: Color.lerp(
-          pushButtonDisabledColor, other.pushButtonDisabledColor, t)!,
-      pushButtonBorderColor:
-          Color.lerp(pushButtonBorderColor, other.pushButtonBorderColor, t)!,
-      secondaryButtonColor:
-          Color.lerp(secondaryButtonColor, other.secondaryButtonColor, t)!,
+        pushButtonDisabledColor,
+        other.pushButtonDisabledColor,
+        t,
+      )!,
+      pushButtonBorderColor: Color.lerp(
+        pushButtonBorderColor,
+        other.pushButtonBorderColor,
+        t,
+      )!,
+      secondaryButtonColor: Color.lerp(
+        secondaryButtonColor,
+        other.secondaryButtonColor,
+        t,
+      )!,
       secondaryButtonHoverColor: Color.lerp(
-          secondaryButtonHoverColor, other.secondaryButtonHoverColor, t)!,
+        secondaryButtonHoverColor,
+        other.secondaryButtonHoverColor,
+        t,
+      )!,
       secondaryButtonPressedColor: Color.lerp(
-          secondaryButtonPressedColor, other.secondaryButtonPressedColor, t)!,
+        secondaryButtonPressedColor,
+        other.secondaryButtonPressedColor,
+        t,
+      )!,
       secondaryButtonTextColor: Color.lerp(
-          secondaryButtonTextColor, other.secondaryButtonTextColor, t)!,
+        secondaryButtonTextColor,
+        other.secondaryButtonTextColor,
+        t,
+      )!,
       secondaryButtonBorderColor: Color.lerp(
-          secondaryButtonBorderColor, other.secondaryButtonBorderColor, t)!,
+        secondaryButtonBorderColor,
+        other.secondaryButtonBorderColor,
+        t,
+      )!,
       radioButtonSelectedColor: Color.lerp(
-          radioButtonSelectedColor, other.radioButtonSelectedColor, t)!,
-      radioButtonHoverColor:
-          Color.lerp(radioButtonHoverColor, other.radioButtonHoverColor, t)!,
-      radioButtonSelectedHoverColor: Color.lerp(radioButtonSelectedHoverColor,
-          other.radioButtonSelectedHoverColor, t)!,
-      radioButtonBorderColor:
-          Color.lerp(radioButtonBorderColor, other.radioButtonBorderColor, t)!,
-      radioButtonTextColor:
-          Color.lerp(radioButtonTextColor, other.radioButtonTextColor, t)!,
+        radioButtonSelectedColor,
+        other.radioButtonSelectedColor,
+        t,
+      )!,
+      radioButtonHoverColor: Color.lerp(
+        radioButtonHoverColor,
+        other.radioButtonHoverColor,
+        t,
+      )!,
+      radioButtonSelectedHoverColor: Color.lerp(
+        radioButtonSelectedHoverColor,
+        other.radioButtonSelectedHoverColor,
+        t,
+      )!,
+      radioButtonBorderColor: Color.lerp(
+        radioButtonBorderColor,
+        other.radioButtonBorderColor,
+        t,
+      )!,
+      radioButtonTextColor: Color.lerp(
+        radioButtonTextColor,
+        other.radioButtonTextColor,
+        t,
+      )!,
       dropdownButtonTextColor: Color.lerp(
-          dropdownButtonTextColor, other.dropdownButtonTextColor, t)!,
+        dropdownButtonTextColor,
+        other.dropdownButtonTextColor,
+        t,
+      )!,
       dropdownButtonHoverColor: Color.lerp(
-          dropdownButtonHoverColor, other.dropdownButtonHoverColor, t)!,
+        dropdownButtonHoverColor,
+        other.dropdownButtonHoverColor,
+        t,
+      )!,
       dropdownButtonBorderColor: Color.lerp(
-          dropdownButtonBorderColor, other.dropdownButtonBorderColor, t)!,
+        dropdownButtonBorderColor,
+        other.dropdownButtonBorderColor,
+        t,
+      )!,
       dropdownButtonIconColor: Color.lerp(
-          dropdownButtonIconColor, other.dropdownButtonIconColor, t)!,
-      checkboxSelectedColor:
-          Color.lerp(checkboxSelectedColor, other.checkboxSelectedColor, t)!,
-      checkboxBorderColor:
-          Color.lerp(checkboxBorderColor, other.checkboxBorderColor, t)!,
-      checkboxCheckmarkColor:
-          Color.lerp(checkboxCheckmarkColor, other.checkboxCheckmarkColor, t)!,
-      checkboxTextColor:
-          Color.lerp(checkboxTextColor, other.checkboxTextColor, t)!,
-      checkboxHoverColor:
-          Color.lerp(checkboxHoverColor, other.checkboxHoverColor, t)!,
-      pushButtonBorderRadius:
-          t < 0.5 ? pushButtonBorderRadius : other.pushButtonBorderRadius,
-      radioButtonBorderRadius:
-          t < 0.5 ? radioButtonBorderRadius : other.radioButtonBorderRadius,
+        dropdownButtonIconColor,
+        other.dropdownButtonIconColor,
+        t,
+      )!,
+      checkboxSelectedColor: Color.lerp(
+        checkboxSelectedColor,
+        other.checkboxSelectedColor,
+        t,
+      )!,
+      checkboxBorderColor: Color.lerp(
+        checkboxBorderColor,
+        other.checkboxBorderColor,
+        t,
+      )!,
+      checkboxCheckmarkColor: Color.lerp(
+        checkboxCheckmarkColor,
+        other.checkboxCheckmarkColor,
+        t,
+      )!,
+      checkboxTextColor: Color.lerp(
+        checkboxTextColor,
+        other.checkboxTextColor,
+        t,
+      )!,
+      checkboxHoverColor: Color.lerp(
+        checkboxHoverColor,
+        other.checkboxHoverColor,
+        t,
+      )!,
+      pushButtonBorderRadius: t < 0.5
+          ? pushButtonBorderRadius
+          : other.pushButtonBorderRadius,
+      radioButtonBorderRadius: t < 0.5
+          ? radioButtonBorderRadius
+          : other.radioButtonBorderRadius,
       dropdownButtonBorderRadius: t < 0.5
           ? dropdownButtonBorderRadius
           : other.dropdownButtonBorderRadius,
-      checkboxBorderRadius:
-          t < 0.5 ? checkboxBorderRadius : other.checkboxBorderRadius,
+      checkboxBorderRadius: t < 0.5
+          ? checkboxBorderRadius
+          : other.checkboxBorderRadius,
       checkboxGrayedBorderRadius: t < 0.5
           ? checkboxGrayedBorderRadius
           : other.checkboxGrayedBorderRadius,
-      pushButtonBorderWidth:
-          t < 0.5 ? pushButtonBorderWidth : other.pushButtonBorderWidth,
-      radioButtonBorderWidth:
-          t < 0.5 ? radioButtonBorderWidth : other.radioButtonBorderWidth,
+      pushButtonBorderWidth: t < 0.5
+          ? pushButtonBorderWidth
+          : other.pushButtonBorderWidth,
+      radioButtonBorderWidth: t < 0.5
+          ? radioButtonBorderWidth
+          : other.radioButtonBorderWidth,
       radioButtonSelectedBorderWidth: t < 0.5
           ? radioButtonSelectedBorderWidth
           : other.radioButtonSelectedBorderWidth,
-      dropdownButtonBorderWidth:
-          t < 0.5 ? dropdownButtonBorderWidth : other.dropdownButtonBorderWidth,
-      checkboxBorderWidth:
-          t < 0.5 ? checkboxBorderWidth : other.checkboxBorderWidth,
-      pushButtonFontStyle:
-          TextStyle.lerp(pushButtonFontStyle, other.pushButtonFontStyle, t),
-      radioButtonFontStyle:
-          TextStyle.lerp(radioButtonFontStyle, other.radioButtonFontStyle, t),
+      dropdownButtonBorderWidth: t < 0.5
+          ? dropdownButtonBorderWidth
+          : other.dropdownButtonBorderWidth,
+      checkboxBorderWidth: t < 0.5
+          ? checkboxBorderWidth
+          : other.checkboxBorderWidth,
+      pushButtonFontStyle: TextStyle.lerp(
+        pushButtonFontStyle,
+        other.pushButtonFontStyle,
+        t,
+      ),
+      radioButtonFontStyle: TextStyle.lerp(
+        radioButtonFontStyle,
+        other.radioButtonFontStyle,
+        t,
+      ),
       dropdownButtonFontStyle: TextStyle.lerp(
-          dropdownButtonFontStyle, other.dropdownButtonFontStyle, t),
-      checkboxFontStyle:
-          TextStyle.lerp(checkboxFontStyle, other.checkboxFontStyle, t),
+        dropdownButtonFontStyle,
+        other.dropdownButtonFontStyle,
+        t,
+      ),
+      checkboxFontStyle: TextStyle.lerp(
+        checkboxFontStyle,
+        other.checkboxFontStyle,
+        t,
+      ),
       radioButtonSize: t < 0.5 ? radioButtonSize : other.radioButtonSize,
-      radioButtonInnerSize:
-          t < 0.5 ? radioButtonInnerSize : other.radioButtonInnerSize,
-      radioButtonTextSpacing:
-          t < 0.5 ? radioButtonTextSpacing : other.radioButtonTextSpacing,
-      dropdownButtonIconSize:
-          t < 0.5 ? dropdownButtonIconSize : other.dropdownButtonIconSize,
+      radioButtonInnerSize: t < 0.5
+          ? radioButtonInnerSize
+          : other.radioButtonInnerSize,
+      radioButtonTextSpacing: t < 0.5
+          ? radioButtonTextSpacing
+          : other.radioButtonTextSpacing,
+      dropdownButtonIconSize: t < 0.5
+          ? dropdownButtonIconSize
+          : other.dropdownButtonIconSize,
       checkboxCheckmarkSizeMultiplier: t < 0.5
           ? checkboxCheckmarkSizeMultiplier
           : other.checkboxCheckmarkSizeMultiplier,
@@ -338,9 +448,15 @@ mixin _$ButtonThemeExtensionTailorMixin
           : other.checkboxGrayedMarginMultiplier,
       imageTextSpacing: t < 0.5 ? imageTextSpacing : other.imageTextSpacing,
       disabledBackgroundColor: Color.lerp(
-          disabledBackgroundColor, other.disabledBackgroundColor, t)!,
+        disabledBackgroundColor,
+        other.disabledBackgroundColor,
+        t,
+      )!,
       disabledForegroundColor: Color.lerp(
-          disabledForegroundColor, other.disabledForegroundColor, t)!,
+        disabledForegroundColor,
+        other.disabledForegroundColor,
+        t,
+      )!,
     );
   }
 
@@ -349,103 +465,234 @@ mixin _$ButtonThemeExtensionTailorMixin
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is ButtonThemeExtension &&
-            const DeepCollectionEquality()
-                .equals(buttonPressDelay, other.buttonPressDelay) &&
-            const DeepCollectionEquality()
-                .equals(enableTapAnimation, other.enableTapAnimation) &&
-            const DeepCollectionEquality()
-                .equals(splashColor, other.splashColor) &&
-            const DeepCollectionEquality()
-                .equals(highlightColor, other.highlightColor) &&
-            const DeepCollectionEquality()
-                .equals(pushButtonColor, other.pushButtonColor) &&
-            const DeepCollectionEquality()
-                .equals(selectableButtonColor, other.selectableButtonColor) &&
-            const DeepCollectionEquality()
-                .equals(toggleButtonColor, other.toggleButtonColor) &&
             const DeepCollectionEquality().equals(
-                toggleButtonBorderColor, other.toggleButtonBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(dropdownButtonColor, other.dropdownButtonColor) &&
-            const DeepCollectionEquality()
-                .equals(checkboxColor, other.checkboxColor) &&
-            const DeepCollectionEquality()
-                .equals(pushButtonTextColor, other.pushButtonTextColor) &&
-            const DeepCollectionEquality()
-                .equals(pushButtonHoverColor, other.pushButtonHoverColor) &&
-            const DeepCollectionEquality()
-                .equals(pushButtonPressedColor, other.pushButtonPressedColor) &&
+              buttonPressDelay,
+              other.buttonPressDelay,
+            ) &&
             const DeepCollectionEquality().equals(
-                pushButtonDisabledColor, other.pushButtonDisabledColor) &&
-            const DeepCollectionEquality()
-                .equals(pushButtonBorderColor, other.pushButtonBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(secondaryButtonColor, other.secondaryButtonColor) &&
+              enableTapAnimation,
+              other.enableTapAnimation,
+            ) &&
             const DeepCollectionEquality().equals(
-                secondaryButtonHoverColor, other.secondaryButtonHoverColor) &&
-            const DeepCollectionEquality().equals(secondaryButtonPressedColor,
-                other.secondaryButtonPressedColor) &&
+              splashColor,
+              other.splashColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                secondaryButtonTextColor, other.secondaryButtonTextColor) &&
+              highlightColor,
+              other.highlightColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                secondaryButtonBorderColor, other.secondaryButtonBorderColor) &&
+              pushButtonColor,
+              other.pushButtonColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                radioButtonSelectedColor, other.radioButtonSelectedColor) &&
-            const DeepCollectionEquality()
-                .equals(radioButtonHoverColor, other.radioButtonHoverColor) &&
-            const DeepCollectionEquality().equals(radioButtonSelectedHoverColor,
-                other.radioButtonSelectedHoverColor) &&
-            const DeepCollectionEquality()
-                .equals(radioButtonBorderColor, other.radioButtonBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(radioButtonTextColor, other.radioButtonTextColor) &&
+              selectableButtonColor,
+              other.selectableButtonColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                dropdownButtonTextColor, other.dropdownButtonTextColor) &&
+              toggleButtonColor,
+              other.toggleButtonColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                dropdownButtonHoverColor, other.dropdownButtonHoverColor) &&
+              toggleButtonBorderColor,
+              other.toggleButtonBorderColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                dropdownButtonBorderColor, other.dropdownButtonBorderColor) &&
+              dropdownButtonColor,
+              other.dropdownButtonColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                dropdownButtonIconColor, other.dropdownButtonIconColor) &&
-            const DeepCollectionEquality()
-                .equals(checkboxSelectedColor, other.checkboxSelectedColor) &&
-            const DeepCollectionEquality()
-                .equals(checkboxBorderColor, other.checkboxBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(checkboxCheckmarkColor, other.checkboxCheckmarkColor) &&
-            const DeepCollectionEquality()
-                .equals(checkboxTextColor, other.checkboxTextColor) &&
-            const DeepCollectionEquality()
-                .equals(checkboxHoverColor, other.checkboxHoverColor) &&
-            const DeepCollectionEquality()
-                .equals(pushButtonBorderRadius, other.pushButtonBorderRadius) &&
+              checkboxColor,
+              other.checkboxColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                radioButtonBorderRadius, other.radioButtonBorderRadius) &&
+              pushButtonTextColor,
+              other.pushButtonTextColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                dropdownButtonBorderRadius, other.dropdownButtonBorderRadius) &&
-            const DeepCollectionEquality()
-                .equals(checkboxBorderRadius, other.checkboxBorderRadius) &&
+              pushButtonHoverColor,
+              other.pushButtonHoverColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                checkboxGrayedBorderRadius, other.checkboxGrayedBorderRadius) &&
-            const DeepCollectionEquality()
-                .equals(pushButtonBorderWidth, other.pushButtonBorderWidth) &&
-            const DeepCollectionEquality().equals(radioButtonBorderWidth, other.radioButtonBorderWidth) &&
-            const DeepCollectionEquality().equals(radioButtonSelectedBorderWidth, other.radioButtonSelectedBorderWidth) &&
-            const DeepCollectionEquality().equals(dropdownButtonBorderWidth, other.dropdownButtonBorderWidth) &&
-            const DeepCollectionEquality().equals(checkboxBorderWidth, other.checkboxBorderWidth) &&
-            const DeepCollectionEquality().equals(pushButtonFontStyle, other.pushButtonFontStyle) &&
-            const DeepCollectionEquality().equals(radioButtonFontStyle, other.radioButtonFontStyle) &&
-            const DeepCollectionEquality().equals(dropdownButtonFontStyle, other.dropdownButtonFontStyle) &&
-            const DeepCollectionEquality().equals(checkboxFontStyle, other.checkboxFontStyle) &&
-            const DeepCollectionEquality().equals(radioButtonSize, other.radioButtonSize) &&
-            const DeepCollectionEquality().equals(radioButtonInnerSize, other.radioButtonInnerSize) &&
-            const DeepCollectionEquality().equals(radioButtonTextSpacing, other.radioButtonTextSpacing) &&
-            const DeepCollectionEquality().equals(dropdownButtonIconSize, other.dropdownButtonIconSize) &&
-            const DeepCollectionEquality().equals(checkboxCheckmarkSizeMultiplier, other.checkboxCheckmarkSizeMultiplier) &&
-            const DeepCollectionEquality().equals(checkboxGrayedMarginMultiplier, other.checkboxGrayedMarginMultiplier) &&
-            const DeepCollectionEquality().equals(imageTextSpacing, other.imageTextSpacing) &&
-            const DeepCollectionEquality().equals(disabledBackgroundColor, other.disabledBackgroundColor) &&
-            const DeepCollectionEquality().equals(disabledForegroundColor, other.disabledForegroundColor));
+              pushButtonPressedColor,
+              other.pushButtonPressedColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              pushButtonDisabledColor,
+              other.pushButtonDisabledColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              pushButtonBorderColor,
+              other.pushButtonBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              secondaryButtonColor,
+              other.secondaryButtonColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              secondaryButtonHoverColor,
+              other.secondaryButtonHoverColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              secondaryButtonPressedColor,
+              other.secondaryButtonPressedColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              secondaryButtonTextColor,
+              other.secondaryButtonTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              secondaryButtonBorderColor,
+              other.secondaryButtonBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              radioButtonSelectedColor,
+              other.radioButtonSelectedColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              radioButtonHoverColor,
+              other.radioButtonHoverColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              radioButtonSelectedHoverColor,
+              other.radioButtonSelectedHoverColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              radioButtonBorderColor,
+              other.radioButtonBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              radioButtonTextColor,
+              other.radioButtonTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dropdownButtonTextColor,
+              other.dropdownButtonTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dropdownButtonHoverColor,
+              other.dropdownButtonHoverColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dropdownButtonBorderColor,
+              other.dropdownButtonBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dropdownButtonIconColor,
+              other.dropdownButtonIconColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxSelectedColor,
+              other.checkboxSelectedColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxBorderColor,
+              other.checkboxBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxCheckmarkColor,
+              other.checkboxCheckmarkColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxTextColor,
+              other.checkboxTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxHoverColor,
+              other.checkboxHoverColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              pushButtonBorderRadius,
+              other.pushButtonBorderRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
+              radioButtonBorderRadius,
+              other.radioButtonBorderRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dropdownButtonBorderRadius,
+              other.dropdownButtonBorderRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxBorderRadius,
+              other.checkboxBorderRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxGrayedBorderRadius,
+              other.checkboxGrayedBorderRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
+              pushButtonBorderWidth,
+              other.pushButtonBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              radioButtonBorderWidth,
+              other.radioButtonBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              radioButtonSelectedBorderWidth,
+              other.radioButtonSelectedBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dropdownButtonBorderWidth,
+              other.dropdownButtonBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxBorderWidth,
+              other.checkboxBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              pushButtonFontStyle,
+              other.pushButtonFontStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              radioButtonFontStyle,
+              other.radioButtonFontStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dropdownButtonFontStyle,
+              other.dropdownButtonFontStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxFontStyle,
+              other.checkboxFontStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              radioButtonSize,
+              other.radioButtonSize,
+            ) &&
+            const DeepCollectionEquality().equals(
+              radioButtonInnerSize,
+              other.radioButtonInnerSize,
+            ) &&
+            const DeepCollectionEquality().equals(
+              radioButtonTextSpacing,
+              other.radioButtonTextSpacing,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dropdownButtonIconSize,
+              other.dropdownButtonIconSize,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxCheckmarkSizeMultiplier,
+              other.checkboxCheckmarkSizeMultiplier,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxGrayedMarginMultiplier,
+              other.checkboxGrayedMarginMultiplier,
+            ) &&
+            const DeepCollectionEquality().equals(
+              imageTextSpacing,
+              other.imageTextSpacing,
+            ) &&
+            const DeepCollectionEquality().equals(
+              disabledBackgroundColor,
+              other.disabledBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              disabledForegroundColor,
+              other.disabledForegroundColor,
+            ));
   }
 
   @override

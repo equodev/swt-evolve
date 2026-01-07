@@ -16,7 +16,6 @@ public class Config {
     static Impl mainToolbarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.maintoolbar", Impl.equo.name()));
     static Impl sideBarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.sidebar", Impl.equo.name()));
 
-
     private static final String os = System.getProperty("os.name").toLowerCase();
     static final Map<Class<?>, Impl> equoEnabled;
     private static boolean toolBarDrawn;
@@ -29,8 +28,8 @@ public class Config {
                     // entry(Label.class, Impl.equo),
                     entry(CTabFolder.class, Impl.equo),
                     entry(CTabItem.class, Impl.equo),
-                    //entry(CTabFolderRenderer.class, Impl.equo),
-                    //entry(Class.forName("org.eclipse.swt.custom.CTabFolderLayout"), Impl.equo),
+                    entry(CTabFolderRenderer.class, Impl.equo),
+                    entry(Class.forName("org.eclipse.swt.custom.CTabFolderLayout"), Impl.equo),
                     //entry(StyledText.class, Impl.equo),
                     //entry(Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo),
                     //entry(Table.class, Impl.equo),
@@ -86,6 +85,10 @@ public class Config {
 
     public static void useEclipse(Class<?> clazz) {
         System.setProperty(getKey(clazz), Impl.eclipse.name());
+    }
+
+    public static void clear(Class<?> clazz) {
+        System.clearProperty(getKey(clazz));
     }
 
     public static boolean isEquo(Class<?> clazz) {
@@ -295,6 +298,11 @@ public class Config {
 
     private static ConfigFlags configFlags;
 
+    public static ConfigFlags setConfigFlags(ConfigFlags flags) {
+        configFlags = flags;
+        return configFlags;
+    }
+
     public static ConfigFlags getConfigFlags() {
         if (configFlags == null) {
             configFlags = new ConfigFlags();
@@ -325,4 +333,18 @@ public class Config {
 
         return target.getSimpleName();
     }
+
+    public static String asString() {
+        StringBuilder buffer = new StringBuilder("=== CONFIG ===");
+        buffer.append("defaultImpl=").append(defaultImpl).append("\n");
+        buffer.append("mainToolbarImpl=").append(mainToolbarImpl).append("\n");
+        buffer.append("sideBarImpl=").append(sideBarImpl).append("\n");
+        buffer.append("forceEclipse=").append(forceEclipse).append("\n");
+        System.getProperties().forEach((k, v) -> {
+            if (k.toString().startsWith(PROPERTY_PREFIX))
+                buffer.append(k).append("=").append(v).append("\n");
+        });
+        return buffer.toString();
+    }
+
 }

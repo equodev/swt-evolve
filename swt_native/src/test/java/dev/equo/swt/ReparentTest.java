@@ -1,6 +1,5 @@
 package dev.equo.swt;
 
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.*;
 import org.junit.jupiter.api.Test;

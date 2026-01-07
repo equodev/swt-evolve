@@ -138,7 +138,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
 
     @Override
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.compute(this);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override

@@ -141,16 +141,12 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        Point size = super.computeSize(wHint, hHint, changed);
-        if (wHint == SWT.DEFAULT && items.length > 0) {
-        }
-        return size;
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        checkWidget();
-        return super.computeTrim(x, y, width, height);
+        return Sizes.computeTrim(this, x, y, width, height);
     }
 
     @Override
@@ -205,8 +201,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
 
     @Override
     public Rectangle getClientArea() {
-        checkWidget();
-        return getBounds();
+        return Sizes.getClientArea(this);
     }
 
     /**
@@ -396,28 +391,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
 
     @Override
     Point minimumSize(int wHint, int hHint, boolean flushCache) {
-        Control[] children = _getChildren();
-        int width = 0, height = 0;
-        for (int i = 0; i < children.length; i++) {
-            Control child = children[i];
-            int index = 0;
-            int count = itemCount;
-            while (index < count) {
-                if (((DartTabItem) items[index].getImpl()).control == child)
-                    break;
-                index++;
-            }
-            if (index == count) {
-                Rectangle rect = child.getBounds();
-                width = Math.max(width, rect.x + rect.width);
-                height = Math.max(height, rect.y + rect.height);
-            } else {
-                Point size = child.computeSize(wHint, hHint, flushCache);
-                width = Math.max(width, size.x);
-                height = Math.max(height, size.y);
-            }
-        }
-        return new Point(width, height);
+        return Sizes.minimumSize(this, wHint, hHint, flushCache);
     }
 
     @Override

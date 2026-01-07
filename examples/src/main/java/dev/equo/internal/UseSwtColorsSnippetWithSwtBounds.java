@@ -1,4 +1,4 @@
-package dev.equo;
+package dev.equo.internal;
 
 import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;

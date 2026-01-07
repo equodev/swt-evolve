@@ -147,17 +147,12 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
 
     @Override
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.compute(this);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override
     Rectangle computeTrimInPixels(int x, int y, int width, int height) {
-        checkWidget();
-        forceResize();
-        if ((getApi().style & SWT.BOTTOM) != 0) {
-        } else {
-        }
-        return new Rectangle(x, y, width, height);
+        return Sizes.computeTrim(this, x, y, width, height);
     }
 
     void createItem(TabItem item, int index) {
@@ -190,9 +185,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
 
     @Override
     Rectangle getClientAreaInPixels() {
-        checkWidget();
-        forceResize();
-        return null;
+        return Sizes.getClientArea(this);
     }
 
     /**
@@ -369,8 +362,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
 
     @Override
     Point minimumSize(int wHint, int hHint, boolean flushCache) {
-        int width = 0, height = 0;
-        return new Point(width, height);
+        return Sizes.minimumSize(this, wHint, hHint, flushCache);
     }
 
     @Override

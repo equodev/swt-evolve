@@ -108,10 +108,7 @@ public class DartGroup extends DartComposite implements IGroup {
 
     @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        checkWidget();
-        ignoreResize = true;
-        ignoreResize = false;
-        return super.computeTrim(x, y, width, height);
+        return Sizes.computeTrim(this, x, y, width, height);
     }
 
     @Override
@@ -125,8 +122,7 @@ public class DartGroup extends DartComposite implements IGroup {
 
     @Override
     public Rectangle getClientArea() {
-        checkWidget();
-        return getBounds();
+        return Sizes.getClientArea(this);
     }
 
     @Override
@@ -241,12 +237,6 @@ public class DartGroup extends DartComposite implements IGroup {
 
     public int _vMargin() {
         return vMargin;
-    }
-
-    @Override
-    public Point computeSize(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        return Sizes.compute(this);
     }
 
     protected void _hookEvents() {

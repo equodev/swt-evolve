@@ -208,19 +208,7 @@ public final class DartFont extends DartResource implements IFont {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (height < 0)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        Point dpi = ((SwtDevice) device.getImpl()).dpi, screenDPI = ((SwtDevice) device.getImpl()).getScreenDPI();
-        float size = height * dpi.y / screenDPI.y;
         fontData[0] = new FontData(name, height, style);
-        getApi().handle = 1;
-        if (fontString != null) {
-            if (getApi().handle == 0)
-                SWT.error(SWT.ERROR_NO_HANDLES);
-        } else {
-            if (getApi().handle == 0)
-                SWT.error(SWT.ERROR_NO_HANDLES);
-            if (size > 0) {
-            }
-        }
     }
 
     /**

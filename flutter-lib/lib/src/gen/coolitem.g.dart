@@ -25,12 +25,12 @@ VCoolItem _$VCoolItemFromJson(Map<String, dynamic> json) => VCoolItem()
       : VPoint.fromJson(json['preferredSize'] as Map<String, dynamic>);
 
 Map<String, dynamic> _$VCoolItemToJson(VCoolItem instance) => <String, dynamic>{
-      'swt': instance.swt,
-      'id': instance.id,
-      'style': instance.style,
-      'image': instance.image,
-      'text': instance.text,
-      'control': instance.control,
-      'minimumSize': instance.minimumSize,
-      'preferredSize': instance.preferredSize,
-    };
+  'swt': instance.swt,
+  'id': instance.id,
+  'style': instance.style,
+  'image': instance.image,
+  'text': instance.text,
+  'control': instance.control,
+  'minimumSize': instance.minimumSize,
+  'preferredSize': instance.preferredSize,
+};

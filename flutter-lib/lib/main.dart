@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:swtflutter/src/gen/point.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/custom/toolbar_composite.dart';
@@ -12,6 +13,9 @@ import 'native_platform.dart' if (dart.library.html) 'web_platform.dart';
 
 import 'src/comm/comm.dart';
 import 'src/gen/widgets.dart' as gen;
+import 'fontSize.dart' as font_size;
+import 'imageSize.dart' as image_size;
+import 'widgetSize.dart' as widget_size;
 
 void main(List<String> args) async {
   if (args.isNotEmpty) {
@@ -21,9 +25,28 @@ void main(List<String> args) async {
 
   int? widgetId = getWidgetId(args);
   String? widgetName = getWidgetName(args);
-  if (widgetId == null || widgetName == null) {
+  if (widgetId == null || widgetName == null || widgetName.isEmpty) {
     return;
   }
+
+  WidgetsFlutterBinding.ensureInitialized();
+
+  if (widgetName == "FontSizeBridge") {
+    font_size.measureRequest(widgetName, widgetId);
+    sendClientReady(widgetName, widgetId, sendWindowSize: true);
+    return;
+  }
+  else if (widgetName == "ImageSizeBridge") {
+    image_size.measureRequest(widgetName, widgetId);
+    sendClientReady(widgetName, widgetId, sendWindowSize: true);
+    return;
+  }
+  else if (widgetName == "WidgetSizeBridge") {
+    widget_size.measureRequest(widgetName, widgetId);
+    sendClientReady(widgetName, widgetId, sendWindowSize: true);
+    return;
+  }
+
   var theme = getTheme(args) == "dark" ? ThemeMode.dark : ThemeMode.light;
   int? backgroundColor = getBackgroundColor(args);
   int? parentBackgroundColor = getParentBackgroundColor(args);
@@ -34,17 +57,28 @@ void main(List<String> args) async {
 
   initSwtEvolveProperties();
 
-  WidgetsFlutterBinding.ensureInitialized();
-
   Widget contentWidget = createContentWidget(widgetName!, widgetId!);
 
-  runApp(MyApp(
+  runApp(EvolveApp(
     contentWidget: contentWidget,
     theme: theme,
     backgroundColor: backgroundColor,
   ));
 
-  EquoCommService.send("${widgetName}/${widgetId}/ClientReady");
+  sendClientReady(widgetName, widgetId);
+}
+
+void sendClientReady(String widgetName, int widgetId, {bool sendWindowSize = false}) {
+  if (sendWindowSize) {
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    final size = view.physicalSize / view.devicePixelRatio;
+    final point = VPoint()
+      ..x = size.width.round()
+      ..y = size.height.round();
+    EquoCommService.sendPayload("${widgetName}/${widgetId}/ClientReady", point);
+  } else {
+    EquoCommService.send("${widgetName}/${widgetId}/ClientReady");
+  }
   print("Sent ${widgetName}/${widgetId}/ClientReady");
 }
 
@@ -80,12 +114,12 @@ Widget? customWidget(Map<String, dynamic> child) {
   };
 }
 
-class MyApp extends StatelessWidget {
+class EvolveApp extends StatelessWidget {
   final Widget contentWidget;
   final ThemeMode theme;
   final int? backgroundColor;
 
-  const MyApp({
+  const EvolveApp({
     Key? key,
     required this.contentWidget,
     required this.theme,
@@ -104,7 +138,7 @@ class MyApp extends StatelessWidget {
         : createDarkNonDefaultTheme(backgroundColor);
     
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Evolve',
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: theme,

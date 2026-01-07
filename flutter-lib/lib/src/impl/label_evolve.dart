@@ -34,7 +34,7 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     final thickness = widgetTheme.borderWidth;
     
     final hasValidBounds = hasBounds(state.bounds);
-    final constraints = getConstraintsFromBounds(state.bounds);
+    final constraints = hasValidBounds ? getConstraintsFromBounds(state.bounds) : isVertical ? BoxConstraints(maxHeight: 7) : BoxConstraints(maxWidth: 7);
     
     return MouseRegion(
       onEnter: (_) => widget.sendMouseTrackMouseEnter(state, null),
@@ -173,8 +173,8 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     if (state.image != null) {
       imageWidget = ImageUtils.buildVImage(
         state.image,
-        width: widgetTheme.iconSize,
-        height: widgetTheme.iconSize,
+        width: state.image?.imageData?.width?.toDouble() ?? widgetTheme.iconSize,
+        height: state.image?.imageData?.height?.toDouble() ?? widgetTheme.iconSize,
         enabled: enabled,
         constraints: null,
         useBinaryImage: true,

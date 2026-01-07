@@ -198,30 +198,7 @@ public class DartList extends DartScrollable implements IList {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        int width = 0;
-        if (wHint == SWT.DEFAULT) {
-            for (int i = 0; i < items.length; i++) {
-                if (items[i] != null) {
-                }
-            }
-            width += CELL_GAP;
-        } else {
-            width = wHint;
-        }
-        if (width <= 0)
-            width = DEFAULT_WIDTH;
-        int height = 0;
-        if (hHint == SWT.DEFAULT) {
-            int itemHeight = getItemHeight() + CELL_GAP;
-            height = itemCount * itemHeight;
-        } else {
-            height = hHint;
-        }
-        if (height <= 0)
-            height = DEFAULT_HEIGHT;
-        Rectangle rect = computeTrim(0, 0, width, height);
-        return new Point(rect.width, rect.height);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override

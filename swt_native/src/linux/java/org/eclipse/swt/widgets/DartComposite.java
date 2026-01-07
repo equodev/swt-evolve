@@ -229,36 +229,7 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     @Override
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        ((SwtDisplay) display.getImpl()).runSkin();
-        if (wHint != SWT.DEFAULT && wHint < 0)
-            wHint = 0;
-        if (hHint != SWT.DEFAULT && hHint < 0)
-            hHint = 0;
-        Point size;
-        if (layout != null) {
-            if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
-                changed |= (getApi().state & LAYOUT_CHANGED) != 0;
-                size = layout.computeSize(this.getApi(), wHint, hHint, changed);
-                getApi().state &= ~LAYOUT_CHANGED;
-            } else {
-                size = new Point(wHint, hHint);
-            }
-        } else {
-            size = minimumSize(wHint, hHint, changed);
-            if (size.x == 0)
-                size.x = DEFAULT_WIDTH;
-            if (size.y == 0)
-                size.y = DEFAULT_HEIGHT;
-        }
-        if (wHint != SWT.DEFAULT)
-            size.x = wHint;
-        if (hHint != SWT.DEFAULT)
-            size.y = hHint;
-        Rectangle trim = computeTrim(0, 0, size.x, size.y);
-        if (size.y == 64)
-            trim.height = 32;
-        return new Point(trim.width, trim.height);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override
@@ -532,13 +503,7 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     @Override
     Rectangle getClientAreaInPixels() {
-        checkWidget();
-        if ((getApi().state & CANVAS) != 0) {
-            if ((getApi().state & ZERO_WIDTH) != 0 && (getApi().state & ZERO_HEIGHT) != 0) {
-                return new Rectangle(0, 0, 0, 0);
-            }
-        }
-        return super.getClientAreaInPixels();
+        return Sizes.getClientArea(this);
     }
 
     /**
@@ -992,18 +957,7 @@ public class DartComposite extends DartScrollable implements IComposite {
     }
 
     Point minimumSize(int wHint, int hHint, boolean changed) {
-        /*
-	 * Since getClientArea can be overridden by subclasses, we cannot
-	 * call getClientAreaInPixels directly.
-	 */
-        Rectangle clientArea = getClientArea();
-        int width = 0, height = 0;
-        for (Control child : _getChildren()) {
-            Rectangle rect = child.getBounds();
-            width = Math.max(width, rect.x - clientArea.x + rect.width);
-            height = Math.max(height, rect.y - clientArea.y + rect.height);
-        }
-        return new Point(width, height);
+        return Sizes.minimumSize(this, wHint, hHint, changed);
     }
 
     public long parentingHandle() {

@@ -7,7 +7,7 @@ import 'comm_api.dart';
 
 class EquoCommService {
   static int port = 0;
-  static final impl = EquoComm(host: "localhost", port: _getPort());
+  static final impl = _getPort() != 0 ? _EquoComm(host: "localhost", port: _getPort()) : _NoImpl();
 
   static void onRaw(String userEventActionId, CommCallback<dynamic> onSuccess) {
     // print("comm ws onraw: $userEventActionId");
@@ -56,7 +56,9 @@ class EquoCommService {
 
   static Future setPort(int port) async {
     EquoCommService.port = port;
-    await EquoCommService.impl.ws;
+    if (port != 0) {
+      await (EquoCommService.impl as _EquoComm).ws;
+    }
   }
 
   static int _getPort() {
@@ -109,11 +111,32 @@ class UserEventCallback {
       {this.id, required this.onSuccess, this.onError, this.args});
 }
 
-class EquoComm {
+abstract class _EquoCommI {
+  void on(String userEventActionId, void Function(dynamic payload) callback) {}
+  Future send<T>(String userEventActionId, [Payload? payload, SendArgs? args]) async {}
+  void remove(userEventActionId) {}
+}
+
+class _NoImpl implements _EquoCommI {
+  @override
+  void on(String userEventActionId, void Function(dynamic payload) callback) {
+  }
+
+  @override
+  Future send<T>(String userEventActionId, [Payload? payload, SendArgs? args]) {
+    throw UnimplementedError();
+  }
+
+  @override
+  void remove(userEventActionId) {
+  }
+}
+
+class _EquoComm implements _EquoCommI {
   Map<String, UserEventCallback> userEventCallbacks = {};
   Future<WebSocket> ws;
 
-  EquoComm({String? host, int? port})
+  _EquoComm({String? host, int? port})
       : ws = WebSocket.connect("ws://$host:$port") {
     ws.then((websocket) {
       websocket.listen((event) {
@@ -140,13 +163,13 @@ class EquoComm {
           if (message.callbackId != null) {
             Future(() async {
               callback.onSuccess(message.payload!);
-              sendToJava(
+              _sendToJava(
                   UserEvent(actionId: message.callbackId!, payload: null));
             }).catchError((error) {
               var userError = SDKCommError(code: -1, message: '');
               if (error is String) {
                 userError.message = error;
-                sendToJava(UserEvent(
+                _sendToJava(UserEvent(
                     actionId: message.callbackId!,
                     payload: userError,
                     error: SDKCommError(code: 1, message: '')));
@@ -155,7 +178,7 @@ class EquoComm {
                   userError.code = error.code;
                 }
                 userError.message = jsonEncode(error);
-                sendToJava(UserEvent(
+                _sendToJava(UserEvent(
                     actionId: message.callbackId!,
                     payload: userError,
                     error: SDKCommError(code: 1, message: '')));
@@ -210,7 +233,7 @@ class EquoComm {
     );
   }
 
-  Future sendToJava(UserEvent userEvent,
+  Future _sendToJava(UserEvent userEvent,
       [UserEventCallback? callback, SendArgs? args]) {
     final event = jsonEncode({
       'actionId': userEvent.actionId,
@@ -227,7 +250,7 @@ class EquoComm {
 
   Future send<T>(String actionId, [Payload? payload, SendArgs? args]) {
     final userEvent = UserEvent(actionId: actionId, payload: payload);
-    return sendToJava(userEvent, null, args);
+    return _sendToJava(userEvent, null, args);
   }
 
   void on(
@@ -238,7 +261,8 @@ class EquoComm {
     userEventCallbacks[userEventActionId] = callback;
   }
 
-  void remove(String userEventActionId) {
+  @override
+  void remove(userEventActionId) {
     userEventCallbacks.remove(userEventActionId);
   }
 }

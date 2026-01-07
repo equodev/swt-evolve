@@ -18,8 +18,11 @@ class ScrolledCompositeSwt<V extends VScrolledComposite>
   const ScrolledCompositeSwt({super.key, required super.value});
 
   @override
-  State createState() => ScrolledCompositeImpl<
-      ScrolledCompositeSwt<VScrolledComposite>, VScrolledComposite>();
+  State createState() =>
+      ScrolledCompositeImpl<
+        ScrolledCompositeSwt<VScrolledComposite>,
+        VScrolledComposite
+      >();
 }
 
 @JsonSerializable()

@@ -123,37 +123,7 @@ public class DartLabel extends DartControl implements ILabel {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        int width = DEFAULT_WIDTH;
-        int height = DEFAULT_HEIGHT;
-        if ((getApi().style & SWT.SEPARATOR) != 0) {
-            if ((getApi().style & SWT.HORIZONTAL) != 0) {
-            } else {
-            }
-            if (wHint != SWT.DEFAULT)
-                width = wHint;
-            if (hHint != SWT.DEFAULT)
-                height = hHint;
-            int border = getBorderWidth();
-            width += border * 2;
-            height += border * 2;
-            return new Point(width, height);
-        }
-        if (isImage) {
-            if (image != null) {
-            } else {
-                width = height = 0;
-            }
-        } else {
-            if ((getApi().style & SWT.WRAP) != 0 && wHint != SWT.DEFAULT) {
-            } else {
-            }
-        }
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
-        return new Point(width, height);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override

@@ -201,16 +201,7 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     @Override
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        ((SwtDisplay) display.getImpl()).runSkin();
-        if (layout != null) {
-            if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
-                changed |= (getApi().state & LAYOUT_CHANGED) != 0;
-                getApi().state &= ~LAYOUT_CHANGED;
-            } else {
-            }
-        } else {
-        }
-        return null;
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     /**
@@ -815,8 +806,7 @@ public class DartComposite extends DartScrollable implements IComposite {
     }
 
     Point minimumSize(int wHint, int hHint, boolean changed) {
-        int width = 0, height = 0;
-        return new Point(width, height);
+        return Sizes.minimumSize(this, wHint, hHint, changed);
     }
 
     @Override

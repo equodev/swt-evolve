@@ -586,21 +586,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @see "computeTrim, getClientArea for controls that implement them"
      */
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        return Sizes.compute(this);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        int width = DEFAULT_WIDTH;
-        int height = DEFAULT_HEIGHT;
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
-        int border = getBorderWidthInPixels();
-        width += border * 2;
-        height += border * 2;
-        return new Point(width, height);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     Widget computeTabGroup() {
@@ -1117,7 +1107,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (font != null)
             return font;
-        return swtFont();
+        return display.getSystemFont();
     }
 
     /**
@@ -4162,10 +4152,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public boolean _visible() {
         return visible;
-    }
-
-    Font swtFont() {
-        return new Font(display, "Segoe UI", 9, SWT.NORMAL);
     }
 
     public FlutterBridge getBridge() {

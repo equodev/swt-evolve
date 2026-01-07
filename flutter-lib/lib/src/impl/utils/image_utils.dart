@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -30,7 +31,8 @@ class ImageUtils {
     final iconData = getIconByName(filename);
     if (iconData == null) return null;
 
-    final isFontAwesome = (iconData.fontPackage == 'font_awesome_flutter') ||
+    final isFontAwesome =
+        (iconData.fontPackage == 'font_awesome_flutter') ||
         (iconData.fontFamily ?? '').toLowerCase().contains('fontawesome');
 
     final iconSize =
@@ -47,17 +49,15 @@ class ImageUtils {
     }
 
     // Apply opacity for disabled icons
-    iconWidget = Opacity(
-      opacity: enabled ? 1.0 : 0.5,
-      child: iconWidget,
-    );
+    iconWidget = Opacity(opacity: enabled ? 1.0 : 0.5, child: iconWidget);
 
     _iconCache[cacheKey] = iconWidget;
     return iconWidget;
   }
 
-  static Widget? _buildBinaryImage(
-    Uint8List bytes, {
+  static Widget? _buildBinaryImage({
+    Uint8List? bytes,
+    String? file,
     double? size,
     double? width,
     double? height,
@@ -67,8 +67,10 @@ class ImageUtils {
     bool renderAsIcon = true,
   }) {
     final cacheKey = renderAsIcon
-        ? 'icon-${bytes.length}-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled'
-        : 'img-${bytes.length}-${width ?? 'default'}-${height ?? 'default'}-$enabled';
+        ? 'icon-${bytes?.length ?? file ?? 'none'}-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled'
+        : (file != null)
+        ? 'img-${file}-${width ?? 'default'}-${height ?? 'default'}-$enabled'
+        : 'img-${bytes?.length ?? 'none'}-${width ?? 'default'}-${height ?? 'default'}-$enabled';
 
     if (_imageCache.containsKey(cacheKey)) {
       return _imageCache[cacheKey];
@@ -83,7 +85,8 @@ class ImageUtils {
         final imageColor = color ?? AppColors.getColor(enabled);
 
         imageWidget = ConstrainedBox(
-          constraints: constraints ??
+          constraints:
+              constraints ??
               BoxConstraints(
                 minWidth: AppSizes.toolbarMinSize,
                 minHeight: AppSizes.toolbarMinSize,
@@ -95,7 +98,7 @@ class ImageUtils {
                 width: imageSize,
                 height: imageSize,
                 child: ImageIcon(
-                  MemoryImage(bytes),
+                  MemoryImage(bytes!),
                   size: imageSize,
                   color: imageColor,
                 ),
@@ -105,23 +108,35 @@ class ImageUtils {
         );
       } else {
         // Real image rendering (for labels)
+        // Prefer file path for now (most reliable for tests)
+        Image image;
+        if (bytes != null) {
+          image = Image.memory(
+            bytes,
+            width: width,
+            height: height,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) =>
+                Icon(Icons.broken_image, size: width ?? height ?? 32),
+          );
+        } else if (file != null) {
+          image = Image.file(
+            File(file),
+            width: width,
+            height: height,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) =>
+                Icon(Icons.broken_image, size: width ?? height ?? 32),
+          );
+        } else {
+          print("ERROR: No image source");
+          image = Image.memory(Uint8List(0)); // fallback
+        }
         imageWidget = ConstrainedBox(
-          constraints: constraints ??
-              BoxConstraints(
-                maxWidth: width ?? 64,
-                maxHeight: height ?? 64,
-              ),
-          child: Opacity(
-            opacity: enabled ? 1.0 : 0.5,
-            child: Image.memory(
-              bytes,
-              width: width,
-              height: height,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) =>
-                  Icon(Icons.broken_image, size: width ?? height ?? 32),
-            ),
-          ),
+          constraints:
+              constraints ??
+              BoxConstraints(maxWidth: width ?? 64, maxHeight: height ?? 64),
+          child: Opacity(opacity: enabled ? 1.0 : 0.5, child: image),
         );
       }
 
@@ -129,8 +144,9 @@ class ImageUtils {
       return imageWidget;
     } catch (e) {
       print('Error decoding image bytes: $e');
-      final fallbackSize =
-          renderAsIcon ? (size ?? AppSizes.icon) : (width ?? height ?? 32);
+      final fallbackSize = renderAsIcon
+          ? (size ?? AppSizes.icon)
+          : (width ?? height ?? 32);
       return Icon(Icons.broken_image, size: fallbackSize);
     }
   }
@@ -163,7 +179,8 @@ class ImageUtils {
 
       if (renderAsIcon) {
         widget = ConstrainedBox(
-          constraints: constraints ??
+          constraints:
+              constraints ??
               BoxConstraints(
                 minWidth: AppSizes.toolbarMinSize,
                 minHeight: AppSizes.toolbarMinSize,
@@ -186,11 +203,9 @@ class ImageUtils {
         );
       } else {
         widget = ConstrainedBox(
-          constraints: constraints ??
-              BoxConstraints(
-                maxWidth: width ?? 64,
-                maxHeight: height ?? 64,
-              ),
+          constraints:
+              constraints ??
+              BoxConstraints(maxWidth: width ?? 64, maxHeight: height ?? 64),
           child: Opacity(
             opacity: enabled ? 1.0 : 0.5,
             child: SvgPicture.string(
@@ -208,7 +223,8 @@ class ImageUtils {
 
       if (renderAsIcon) {
         widget = ConstrainedBox(
-          constraints: constraints ??
+          constraints:
+              constraints ??
               BoxConstraints(
                 minWidth: AppSizes.toolbarMinSize,
                 minHeight: AppSizes.toolbarMinSize,
@@ -231,11 +247,9 @@ class ImageUtils {
         );
       } else {
         widget = ConstrainedBox(
-          constraints: constraints ??
-              BoxConstraints(
-                maxWidth: width ?? 64,
-                maxHeight: height ?? 64,
-              ),
+          constraints:
+              constraints ??
+              BoxConstraints(maxWidth: width ?? 64, maxHeight: height ?? 64),
           child: Opacity(
             opacity: enabled ? 1.0 : 0.5,
             child: RawImage(
@@ -273,7 +287,8 @@ class ImageUtils {
     }
 
     // Generate cache key based on all parameters that affect the result
-    final cacheKey = 'future-${image.filename ?? ''}-${image.imageData?.data?.length ?? 0}-'
+    final cacheKey =
+        'future-${image.filename ?? ''}-${image.imageData?.data?.length ?? 0}-'
         '${size ?? width ?? height ?? 'default'}-${color?.value ?? 'default'}-$enabled-$renderAsIcon';
 
     // Return cached Future if it exists
@@ -313,7 +328,9 @@ class ImageUtils {
     // Try AssetsManager replacement first (if filename exists)
     if (image.filename?.isNotEmpty ?? false) {
       try {
-        final replacement = await AssetsManager.loadReplacement(image.filename!);
+        final replacement = await AssetsManager.loadReplacement(
+          image.filename!,
+        );
         if (replacement != null) {
           return _buildReplacementWidget(
             replacement,
@@ -348,7 +365,7 @@ class ImageUtils {
     // Try binary image data
     if (useBinaryImage && image.imageData?.data != null) {
       return _buildBinaryImage(
-        Uint8List.fromList(image.imageData!.data!),
+        bytes: Uint8List.fromList(image.imageData!.data!),
         size: size,
         width: width,
         height: height,
@@ -388,9 +405,13 @@ class ImageUtils {
     }
 
     // Try binary image data
-    if (useBinaryImage && image.imageData?.data != null) {
+    if (useBinaryImage &&
+        (image.imageData?.data != null || image.filename != null)) {
       return _buildBinaryImage(
-        Uint8List.fromList(image.imageData!.data!),
+        bytes: (image.imageData?.data != null)
+            ? Uint8List.fromList(image.imageData!.data!)
+            : null,
+        file: (image.filename != null) ? image.filename : null,
         size: size,
         width: width,
         height: height,
@@ -404,31 +425,6 @@ class ImageUtils {
     return null;
   }
 
-  // Public APIs - Binary images
-  static Widget? buildImageWidget(Uint8List bytes,
-          {double? size,
-          Color? color,
-          bool enabled = true,
-          BoxConstraints? constraints}) =>
-      _buildBinaryImage(bytes,
-          size: size,
-          color: color,
-          enabled: enabled,
-          constraints: constraints,
-          renderAsIcon: true);
-
-  static Widget? buildRealImageWidget(Uint8List bytes,
-          {double? width,
-          double? height,
-          bool enabled = true,
-          BoxConstraints? constraints}) =>
-      _buildBinaryImage(bytes,
-          width: width,
-          height: height,
-          enabled: enabled,
-          constraints: constraints,
-          renderAsIcon: false);
-
   // Cache management
   static void clearCache() {
     _iconCache.clear();
@@ -437,10 +433,10 @@ class ImageUtils {
   }
 
   static Map<String, int> getCacheStats() => {
-        'iconCache': _iconCache.length,
-        'imageCache': _imageCache.length,
-        'futureCache': _futureCache.length,
-      };
+    'iconCache': _iconCache.length,
+    'imageCache': _imageCache.length,
+    'futureCache': _futureCache.length,
+  };
 
   // Byte array utilities
   static List<int>? parseByteArray(dynamic value) {

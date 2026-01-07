@@ -65,11 +65,6 @@ LabelThemeExtension _getLabelTheme({
       decoration: TextDecoration.underline,
     ),
     
-    // Dimensions
-    minHeight: 20.0,
-    minWidth: 0.0,
-    maxWidth: double.infinity,
-    
     // Spacing and padding
     padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
     margin: EdgeInsets.zero,
