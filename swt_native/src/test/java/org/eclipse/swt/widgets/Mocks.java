@@ -1,12 +1,15 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.MockFlutterBridge;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.DartCTabFolder;
 import org.eclipse.swt.graphics.*;
 import org.instancio.Instancio;
 import org.instancio.InstancioObjectApi;
 import org.instancio.Select;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -15,7 +18,18 @@ import java.lang.reflect.Method;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
-public class Mocks {
+public class Mocks implements AfterEachCallback {
+
+    private static Display display;
+
+    @Override
+    public void afterEach(ExtensionContext context) throws Exception {
+        if (display != null) {
+            Mocks.dispose(display);
+            display = null;
+        }
+    }
+
     public static Shell shell() {
         Display display = display();
         return shell(display);
@@ -43,11 +57,13 @@ public class Mocks {
     }
 
     public static Display display() {
+        if (display != null)
+            return display;
         Display display = mock(Display.class);
         SwtDisplay swtDisplay = mock(SwtDisplay.class);
         when(swtDisplay.isValidThread()).thenReturn(true);
         swtDisplay.thread = Thread.currentThread();
-        SwtDisplay.Default =  display;
+        SwtDisplay.Default = display;
         SwtDisplay.register(display);
         when(display.getThread()).thenCallRealMethod();
         when(display.getImpl()).thenReturn(swtDisplay);
@@ -56,7 +72,6 @@ public class Mocks {
             when(getSystemColor.invoke(swtDisplay, anyInt())).thenReturn(new Color(10, 10, 10));
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
         when(display.getSystemColor(anyInt())).thenReturn(new Color(red(), green(), blue()));
-        when(display.getSystemFont()).thenReturn(mock(org.eclipse.swt.graphics.Font.class));
         when(display.getSystemCursor(anyInt())).thenReturn(mock(Cursor.class));
         when(swtDisplay.getThread()).thenCallRealMethod();
         org.eclipse.swt.graphics.Mocks.device(display, swtDisplay);
@@ -70,6 +85,7 @@ public class Mocks {
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+        Mocks.display = display;
         return display;
     }
 
@@ -260,4 +276,11 @@ public class Mocks {
     public static org.eclipse.swt.graphics.FontData fontData() {
         return new org.eclipse.swt.graphics.FontData("Arial", 12, org.eclipse.swt.SWT.NORMAL);
     }
+
+    public static void dispose(Display current) {
+        if (SwtDisplay.Default == current)
+            SwtDisplay.Default = null;
+        SwtDisplay.deregister(current);
+    }
+
 }

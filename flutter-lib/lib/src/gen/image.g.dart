@@ -16,7 +16,7 @@ VImage _$VImageFromJson(Map<String, dynamic> json) => VImage()
       : VImageData.fromJson(json['imageData'] as Map<String, dynamic>);
 
 Map<String, dynamic> _$VImageToJson(VImage instance) => <String, dynamic>{
-      'background': instance.background,
-      'filename': instance.filename,
-      'imageData': instance.imageData,
-    };
+  'background': instance.background,
+  'filename': instance.filename,
+  'imageData': instance.imageData,
+};

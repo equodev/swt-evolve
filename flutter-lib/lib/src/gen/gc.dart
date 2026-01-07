@@ -27,97 +27,147 @@ abstract class GCState<T extends GCSwt, V extends VGC>
   }
 
   void _registerListeners() {
-    onOp("copyAreaImageintint",
-        (p) => onCopyAreaImageintint(VGCCopyAreaImageintint.fromJson(p)));
     onOp(
-        "copyAreaintintintintintint",
-        (p) => onCopyAreaintintintintintint(
-            VGCCopyAreaintintintintintint.fromJson(p)));
+      "copyAreaImageintint",
+      (p) => onCopyAreaImageintint(VGCCopyAreaImageintint.fromJson(p)),
+    );
     onOp(
-        "copyAreaintintintintintintboolean",
-        (p) => onCopyAreaintintintintintintboolean(
-            VGCCopyAreaintintintintintintboolean.fromJson(p)));
+      "copyAreaintintintintintint",
+      (p) => onCopyAreaintintintintintint(
+        VGCCopyAreaintintintintintint.fromJson(p),
+      ),
+    );
     onOp(
-        "drawArcintintintintintint",
-        (p) => onDrawArcintintintintintint(
-            VGCDrawArcintintintintintint.fromJson(p)));
-    onOp("drawFocusintintintint",
-        (p) => onDrawFocusintintintint(VGCDrawFocusintintintint.fromJson(p)));
-    onOp("drawImageImageintint",
-        (p) => onDrawImageImageintint(VGCDrawImageImageintint.fromJson(p)));
+      "copyAreaintintintintintintboolean",
+      (p) => onCopyAreaintintintintintintboolean(
+        VGCCopyAreaintintintintintintboolean.fromJson(p),
+      ),
+    );
     onOp(
-        "drawImageImageintintintintintintintint",
-        (p) => onDrawImageImageintintintintintintintint(
-            VGCDrawImageImageintintintintintintintint.fromJson(p)));
-    onOp("drawLineintintintint",
-        (p) => onDrawLineintintintint(VGCDrawLineintintintint.fromJson(p)));
-    onOp("drawOvalintintintint",
-        (p) => onDrawOvalintintintint(VGCDrawOvalintintintint.fromJson(p)));
-    onOp("drawPointintint",
-        (p) => onDrawPointintint(VGCDrawPointintint.fromJson(p)));
-    onOp("drawPolygonint",
-        (p) => onDrawPolygonint(VGCDrawPolygonint.fromJson(p)));
-    onOp("drawPolylineint",
-        (p) => onDrawPolylineint(VGCDrawPolylineint.fromJson(p)));
-    onOp("drawRectangleRectangle",
-        (p) => onDrawRectangleRectangle(VGCDrawRectangleRectangle.fromJson(p)));
+      "drawArcintintintintintint",
+      (p) =>
+          onDrawArcintintintintintint(VGCDrawArcintintintintintint.fromJson(p)),
+    );
     onOp(
-        "drawRectangleintintintint",
-        (p) => onDrawRectangleintintintint(
-            VGCDrawRectangleintintintint.fromJson(p)));
+      "drawFocusintintintint",
+      (p) => onDrawFocusintintintint(VGCDrawFocusintintintint.fromJson(p)),
+    );
     onOp(
-        "drawRoundRectangleintintintintintint",
-        (p) => onDrawRoundRectangleintintintintintint(
-            VGCDrawRoundRectangleintintintintintint.fromJson(p)));
-    onOp("drawStringStringintint",
-        (p) => onDrawStringStringintint(VGCDrawStringStringintint.fromJson(p)));
+      "drawImageImageintint",
+      (p) => onDrawImageImageintint(VGCDrawImageImageintint.fromJson(p)),
+    );
     onOp(
-        "drawStringStringintintboolean",
-        (p) => onDrawStringStringintintboolean(
-            VGCDrawStringStringintintboolean.fromJson(p)));
-    onOp("drawTextStringintint",
-        (p) => onDrawTextStringintint(VGCDrawTextStringintint.fromJson(p)));
+      "drawImageImageintintintintintintintint",
+      (p) => onDrawImageImageintintintintintintintint(
+        VGCDrawImageImageintintintintintintintint.fromJson(p),
+      ),
+    );
     onOp(
-        "drawTextStringintintboolean",
-        (p) => onDrawTextStringintintboolean(
-            VGCDrawTextStringintintboolean.fromJson(p)));
+      "drawLineintintintint",
+      (p) => onDrawLineintintintint(VGCDrawLineintintintint.fromJson(p)),
+    );
     onOp(
-        "drawTextStringintintint",
-        (p) =>
-            onDrawTextStringintintint(VGCDrawTextStringintintint.fromJson(p)));
+      "drawOvalintintintint",
+      (p) => onDrawOvalintintintint(VGCDrawOvalintintintint.fromJson(p)),
+    );
     onOp(
-        "fillArcintintintintintint",
-        (p) => onFillArcintintintintintint(
-            VGCFillArcintintintintintint.fromJson(p)));
+      "drawPointintint",
+      (p) => onDrawPointintint(VGCDrawPointintint.fromJson(p)),
+    );
     onOp(
-        "fillGradientRectangleintintintintboolean",
-        (p) => onFillGradientRectangleintintintintboolean(
-            VGCFillGradientRectangleintintintintboolean.fromJson(p)));
-    onOp("fillOvalintintintint",
-        (p) => onFillOvalintintintint(VGCFillOvalintintintint.fromJson(p)));
-    onOp("fillPolygonint",
-        (p) => onFillPolygonint(VGCFillPolygonint.fromJson(p)));
-    onOp("fillRectangleRectangle",
-        (p) => onFillRectangleRectangle(VGCFillRectangleRectangle.fromJson(p)));
+      "drawPolygonint",
+      (p) => onDrawPolygonint(VGCDrawPolygonint.fromJson(p)),
+    );
     onOp(
-        "fillRectangleintintintint",
-        (p) => onFillRectangleintintintint(
-            VGCFillRectangleintintintint.fromJson(p)));
+      "drawPolylineint",
+      (p) => onDrawPolylineint(VGCDrawPolylineint.fromJson(p)),
+    );
     onOp(
-        "fillRoundRectangleintintintintintint",
-        (p) => onFillRoundRectangleintintintintintint(
-            VGCFillRoundRectangleintintintintintint.fromJson(p)));
+      "drawRectangleRectangle",
+      (p) => onDrawRectangleRectangle(VGCDrawRectangleRectangle.fromJson(p)),
+    );
+    onOp(
+      "drawRectangleintintintint",
+      (p) =>
+          onDrawRectangleintintintint(VGCDrawRectangleintintintint.fromJson(p)),
+    );
+    onOp(
+      "drawRoundRectangleintintintintintint",
+      (p) => onDrawRoundRectangleintintintintintint(
+        VGCDrawRoundRectangleintintintintintint.fromJson(p),
+      ),
+    );
+    onOp(
+      "drawStringStringintint",
+      (p) => onDrawStringStringintint(VGCDrawStringStringintint.fromJson(p)),
+    );
+    onOp(
+      "drawStringStringintintboolean",
+      (p) => onDrawStringStringintintboolean(
+        VGCDrawStringStringintintboolean.fromJson(p),
+      ),
+    );
+    onOp(
+      "drawTextStringintint",
+      (p) => onDrawTextStringintint(VGCDrawTextStringintint.fromJson(p)),
+    );
+    onOp(
+      "drawTextStringintintboolean",
+      (p) => onDrawTextStringintintboolean(
+        VGCDrawTextStringintintboolean.fromJson(p),
+      ),
+    );
+    onOp(
+      "drawTextStringintintint",
+      (p) => onDrawTextStringintintint(VGCDrawTextStringintintint.fromJson(p)),
+    );
+    onOp(
+      "fillArcintintintintintint",
+      (p) =>
+          onFillArcintintintintintint(VGCFillArcintintintintintint.fromJson(p)),
+    );
+    onOp(
+      "fillGradientRectangleintintintintboolean",
+      (p) => onFillGradientRectangleintintintintboolean(
+        VGCFillGradientRectangleintintintintboolean.fromJson(p),
+      ),
+    );
+    onOp(
+      "fillOvalintintintint",
+      (p) => onFillOvalintintintint(VGCFillOvalintintintint.fromJson(p)),
+    );
+    onOp(
+      "fillPolygonint",
+      (p) => onFillPolygonint(VGCFillPolygonint.fromJson(p)),
+    );
+    onOp(
+      "fillRectangleRectangle",
+      (p) => onFillRectangleRectangle(VGCFillRectangleRectangle.fromJson(p)),
+    );
+    onOp(
+      "fillRectangleintintintint",
+      (p) =>
+          onFillRectangleintintintint(VGCFillRectangleintintintint.fromJson(p)),
+    );
+    onOp(
+      "fillRoundRectangleintintintintintint",
+      (p) => onFillRoundRectangleintintintintintint(
+        VGCFillRoundRectangleintintintintintint.fromJson(p),
+      ),
+    );
   }
 
   void onCopyAreaImageintint(VGCCopyAreaImageintint opArgs);
   void onCopyAreaintintintintintint(VGCCopyAreaintintintintintint opArgs);
   void onCopyAreaintintintintintintboolean(
-      VGCCopyAreaintintintintintintboolean opArgs);
+    VGCCopyAreaintintintintintintboolean opArgs,
+  );
   void onDrawArcintintintintintint(VGCDrawArcintintintintintint opArgs);
   void onDrawFocusintintintint(VGCDrawFocusintintintint opArgs);
   void onDrawImageImageintint(VGCDrawImageImageintint opArgs);
   void onDrawImageImageintintintintintintintint(
-      VGCDrawImageImageintintintintintintintint opArgs);
+    VGCDrawImageImageintintintintintintintint opArgs,
+  );
   void onDrawLineintintintint(VGCDrawLineintintintint opArgs);
   void onDrawOvalintintintint(VGCDrawOvalintintintint opArgs);
   void onDrawPointintint(VGCDrawPointintint opArgs);
@@ -126,7 +176,8 @@ abstract class GCState<T extends GCSwt, V extends VGC>
   void onDrawRectangleRectangle(VGCDrawRectangleRectangle opArgs);
   void onDrawRectangleintintintint(VGCDrawRectangleintintintint opArgs);
   void onDrawRoundRectangleintintintintintint(
-      VGCDrawRoundRectangleintintintintintint opArgs);
+    VGCDrawRoundRectangleintintintintintint opArgs,
+  );
   void onDrawStringStringintint(VGCDrawStringStringintint opArgs);
   void onDrawStringStringintintboolean(VGCDrawStringStringintintboolean opArgs);
   void onDrawTextStringintint(VGCDrawTextStringintint opArgs);
@@ -134,13 +185,15 @@ abstract class GCState<T extends GCSwt, V extends VGC>
   void onDrawTextStringintintint(VGCDrawTextStringintintint opArgs);
   void onFillArcintintintintintint(VGCFillArcintintintintintint opArgs);
   void onFillGradientRectangleintintintintboolean(
-      VGCFillGradientRectangleintintintintboolean opArgs);
+    VGCFillGradientRectangleintintintintboolean opArgs,
+  );
   void onFillOvalintintintint(VGCFillOvalintintintint opArgs);
   void onFillPolygonint(VGCFillPolygonint opArgs);
   void onFillRectangleRectangle(VGCFillRectangleRectangle opArgs);
   void onFillRectangleintintintint(VGCFillRectangleintintintint opArgs);
   void onFillRoundRectangleintintintintintint(
-      VGCFillRoundRectangleintintintintintint opArgs);
+    VGCFillRoundRectangleintintintintintint opArgs,
+  );
 }
 
 @JsonSerializable()
@@ -193,13 +246,14 @@ class VGCCopyAreaintintintintintint {
   int destX;
   int destY;
 
-  VGCCopyAreaintintintintintint(
-      {this.srcX = 0,
-      this.srcY = 0,
-      this.width = 0,
-      this.height = 0,
-      this.destX = 0,
-      this.destY = 0});
+  VGCCopyAreaintintintintintint({
+    this.srcX = 0,
+    this.srcY = 0,
+    this.width = 0,
+    this.height = 0,
+    this.destX = 0,
+    this.destY = 0,
+  });
 
   factory VGCCopyAreaintintintintintint.fromJson(Map<String, dynamic> json) =>
       _$VGCCopyAreaintintintintintintFromJson(json);
@@ -216,18 +270,19 @@ class VGCCopyAreaintintintintintintboolean {
   int destY;
   bool paint;
 
-  VGCCopyAreaintintintintintintboolean(
-      {this.srcX = 0,
-      this.srcY = 0,
-      this.width = 0,
-      this.height = 0,
-      this.destX = 0,
-      this.destY = 0,
-      this.paint = false});
+  VGCCopyAreaintintintintintintboolean({
+    this.srcX = 0,
+    this.srcY = 0,
+    this.width = 0,
+    this.height = 0,
+    this.destX = 0,
+    this.destY = 0,
+    this.paint = false,
+  });
 
   factory VGCCopyAreaintintintintintintboolean.fromJson(
-          Map<String, dynamic> json) =>
-      _$VGCCopyAreaintintintintintintbooleanFromJson(json);
+    Map<String, dynamic> json,
+  ) => _$VGCCopyAreaintintintintintintbooleanFromJson(json);
   Map<String, dynamic> toJson() =>
       _$VGCCopyAreaintintintintintintbooleanToJson(this);
 }
@@ -241,13 +296,14 @@ class VGCDrawArcintintintintintint {
   int startAngle;
   int arcAngle;
 
-  VGCDrawArcintintintintintint(
-      {this.x = 0,
-      this.y = 0,
-      this.width = 0,
-      this.height = 0,
-      this.startAngle = 0,
-      this.arcAngle = 0});
+  VGCDrawArcintintintintintint({
+    this.x = 0,
+    this.y = 0,
+    this.width = 0,
+    this.height = 0,
+    this.startAngle = 0,
+    this.arcAngle = 0,
+  });
 
   factory VGCDrawArcintintintintintint.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawArcintintintintintintFromJson(json);
@@ -261,8 +317,12 @@ class VGCDrawFocusintintintint {
   int width;
   int height;
 
-  VGCDrawFocusintintintint(
-      {this.x = 0, this.y = 0, this.width = 0, this.height = 0});
+  VGCDrawFocusintintintint({
+    this.x = 0,
+    this.y = 0,
+    this.width = 0,
+    this.height = 0,
+  });
 
   factory VGCDrawFocusintintintint.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawFocusintintintintFromJson(json);
@@ -294,19 +354,20 @@ class VGCDrawImageImageintintintintintintintint {
   int destWidth;
   int destHeight;
 
-  VGCDrawImageImageintintintintintintintint(
-      {this.srcX = 0,
-      this.srcY = 0,
-      this.srcWidth = 0,
-      this.srcHeight = 0,
-      this.destX = 0,
-      this.destY = 0,
-      this.destWidth = 0,
-      this.destHeight = 0});
+  VGCDrawImageImageintintintintintintintint({
+    this.srcX = 0,
+    this.srcY = 0,
+    this.srcWidth = 0,
+    this.srcHeight = 0,
+    this.destX = 0,
+    this.destY = 0,
+    this.destWidth = 0,
+    this.destHeight = 0,
+  });
 
   factory VGCDrawImageImageintintintintintintintint.fromJson(
-          Map<String, dynamic> json) =>
-      _$VGCDrawImageImageintintintintintintintintFromJson(json);
+    Map<String, dynamic> json,
+  ) => _$VGCDrawImageImageintintintintintintintintFromJson(json);
   Map<String, dynamic> toJson() =>
       _$VGCDrawImageImageintintintintintintintintToJson(this);
 }
@@ -332,8 +393,12 @@ class VGCDrawOvalintintintint {
   int width;
   int height;
 
-  VGCDrawOvalintintintint(
-      {this.x = 0, this.y = 0, this.width = 0, this.height = 0});
+  VGCDrawOvalintintintint({
+    this.x = 0,
+    this.y = 0,
+    this.width = 0,
+    this.height = 0,
+  });
 
   factory VGCDrawOvalintintintint.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawOvalintintintintFromJson(json);
@@ -392,8 +457,12 @@ class VGCDrawRectangleintintintint {
   int width;
   int height;
 
-  VGCDrawRectangleintintintint(
-      {this.x = 0, this.y = 0, this.width = 0, this.height = 0});
+  VGCDrawRectangleintintintint({
+    this.x = 0,
+    this.y = 0,
+    this.width = 0,
+    this.height = 0,
+  });
 
   factory VGCDrawRectangleintintintint.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawRectangleintintintintFromJson(json);
@@ -409,17 +478,18 @@ class VGCDrawRoundRectangleintintintintintint {
   int arcWidth;
   int arcHeight;
 
-  VGCDrawRoundRectangleintintintintintint(
-      {this.x = 0,
-      this.y = 0,
-      this.width = 0,
-      this.height = 0,
-      this.arcWidth = 0,
-      this.arcHeight = 0});
+  VGCDrawRoundRectangleintintintintintint({
+    this.x = 0,
+    this.y = 0,
+    this.width = 0,
+    this.height = 0,
+    this.arcWidth = 0,
+    this.arcHeight = 0,
+  });
 
   factory VGCDrawRoundRectangleintintintintintint.fromJson(
-          Map<String, dynamic> json) =>
-      _$VGCDrawRoundRectangleintintintintintintFromJson(json);
+    Map<String, dynamic> json,
+  ) => _$VGCDrawRoundRectangleintintintintintintFromJson(json);
   Map<String, dynamic> toJson() =>
       _$VGCDrawRoundRectangleintintintintintintToJson(this);
 }
@@ -444,12 +514,16 @@ class VGCDrawStringStringintintboolean {
   int y;
   bool isTransparent;
 
-  VGCDrawStringStringintintboolean(
-      {this.string = '', this.x = 0, this.y = 0, this.isTransparent = false});
+  VGCDrawStringStringintintboolean({
+    this.string = '',
+    this.x = 0,
+    this.y = 0,
+    this.isTransparent = false,
+  });
 
   factory VGCDrawStringStringintintboolean.fromJson(
-          Map<String, dynamic> json) =>
-      _$VGCDrawStringStringintintbooleanFromJson(json);
+    Map<String, dynamic> json,
+  ) => _$VGCDrawStringStringintintbooleanFromJson(json);
   Map<String, dynamic> toJson() =>
       _$VGCDrawStringStringintintbooleanToJson(this);
 }
@@ -474,8 +548,12 @@ class VGCDrawTextStringintintboolean {
   int y;
   bool isTransparent;
 
-  VGCDrawTextStringintintboolean(
-      {this.string = '', this.x = 0, this.y = 0, this.isTransparent = false});
+  VGCDrawTextStringintintboolean({
+    this.string = '',
+    this.x = 0,
+    this.y = 0,
+    this.isTransparent = false,
+  });
 
   factory VGCDrawTextStringintintboolean.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawTextStringintintbooleanFromJson(json);
@@ -489,8 +567,12 @@ class VGCDrawTextStringintintint {
   int y;
   int flags;
 
-  VGCDrawTextStringintintint(
-      {this.string = '', this.x = 0, this.y = 0, this.flags = 0});
+  VGCDrawTextStringintintint({
+    this.string = '',
+    this.x = 0,
+    this.y = 0,
+    this.flags = 0,
+  });
 
   factory VGCDrawTextStringintintint.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawTextStringintintintFromJson(json);
@@ -506,13 +588,14 @@ class VGCFillArcintintintintintint {
   int startAngle;
   int arcAngle;
 
-  VGCFillArcintintintintintint(
-      {this.x = 0,
-      this.y = 0,
-      this.width = 0,
-      this.height = 0,
-      this.startAngle = 0,
-      this.arcAngle = 0});
+  VGCFillArcintintintintintint({
+    this.x = 0,
+    this.y = 0,
+    this.width = 0,
+    this.height = 0,
+    this.startAngle = 0,
+    this.arcAngle = 0,
+  });
 
   factory VGCFillArcintintintintintint.fromJson(Map<String, dynamic> json) =>
       _$VGCFillArcintintintintintintFromJson(json);
@@ -527,16 +610,17 @@ class VGCFillGradientRectangleintintintintboolean {
   int height;
   bool vertical;
 
-  VGCFillGradientRectangleintintintintboolean(
-      {this.x = 0,
-      this.y = 0,
-      this.width = 0,
-      this.height = 0,
-      this.vertical = false});
+  VGCFillGradientRectangleintintintintboolean({
+    this.x = 0,
+    this.y = 0,
+    this.width = 0,
+    this.height = 0,
+    this.vertical = false,
+  });
 
   factory VGCFillGradientRectangleintintintintboolean.fromJson(
-          Map<String, dynamic> json) =>
-      _$VGCFillGradientRectangleintintintintbooleanFromJson(json);
+    Map<String, dynamic> json,
+  ) => _$VGCFillGradientRectangleintintintintbooleanFromJson(json);
   Map<String, dynamic> toJson() =>
       _$VGCFillGradientRectangleintintintintbooleanToJson(this);
 }
@@ -548,8 +632,12 @@ class VGCFillOvalintintintint {
   int width;
   int height;
 
-  VGCFillOvalintintintint(
-      {this.x = 0, this.y = 0, this.width = 0, this.height = 0});
+  VGCFillOvalintintintint({
+    this.x = 0,
+    this.y = 0,
+    this.width = 0,
+    this.height = 0,
+  });
 
   factory VGCFillOvalintintintint.fromJson(Map<String, dynamic> json) =>
       _$VGCFillOvalintintintintFromJson(json);
@@ -585,8 +673,12 @@ class VGCFillRectangleintintintint {
   int width;
   int height;
 
-  VGCFillRectangleintintintint(
-      {this.x = 0, this.y = 0, this.width = 0, this.height = 0});
+  VGCFillRectangleintintintint({
+    this.x = 0,
+    this.y = 0,
+    this.width = 0,
+    this.height = 0,
+  });
 
   factory VGCFillRectangleintintintint.fromJson(Map<String, dynamic> json) =>
       _$VGCFillRectangleintintintintFromJson(json);
@@ -602,17 +694,18 @@ class VGCFillRoundRectangleintintintintintint {
   int arcWidth;
   int arcHeight;
 
-  VGCFillRoundRectangleintintintintintint(
-      {this.x = 0,
-      this.y = 0,
-      this.width = 0,
-      this.height = 0,
-      this.arcWidth = 0,
-      this.arcHeight = 0});
+  VGCFillRoundRectangleintintintintintint({
+    this.x = 0,
+    this.y = 0,
+    this.width = 0,
+    this.height = 0,
+    this.arcWidth = 0,
+    this.arcHeight = 0,
+  });
 
   factory VGCFillRoundRectangleintintintintintint.fromJson(
-          Map<String, dynamic> json) =>
-      _$VGCFillRoundRectangleintintintintintintFromJson(json);
+    Map<String, dynamic> json,
+  ) => _$VGCFillRoundRectangleintintintintintintFromJson(json);
   Map<String, dynamic> toJson() =>
       _$VGCFillRoundRectangleintintintintintintToJson(this);
 }

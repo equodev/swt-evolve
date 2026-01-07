@@ -96,48 +96,96 @@ mixin _$TabFolderThemeExtensionTailorMixin
 
   @override
   TabFolderThemeExtension lerp(
-      covariant ThemeExtension<TabFolderThemeExtension>? other, double t) {
+    covariant ThemeExtension<TabFolderThemeExtension>? other,
+    double t,
+  ) {
     if (other is! TabFolderThemeExtension)
       return this as TabFolderThemeExtension;
     return TabFolderThemeExtension(
-      tabBarBackgroundColor:
-          Color.lerp(tabBarBackgroundColor, other.tabBarBackgroundColor, t)!,
-      tabBarBorderColor:
-          Color.lerp(tabBarBorderColor, other.tabBarBorderColor, t)!,
-      tabBackgroundColor:
-          Color.lerp(tabBackgroundColor, other.tabBackgroundColor, t)!,
+      tabBarBackgroundColor: Color.lerp(
+        tabBarBackgroundColor,
+        other.tabBarBackgroundColor,
+        t,
+      )!,
+      tabBarBorderColor: Color.lerp(
+        tabBarBorderColor,
+        other.tabBarBorderColor,
+        t,
+      )!,
+      tabBackgroundColor: Color.lerp(
+        tabBackgroundColor,
+        other.tabBackgroundColor,
+        t,
+      )!,
       tabSelectedBackgroundColor: Color.lerp(
-          tabSelectedBackgroundColor, other.tabSelectedBackgroundColor, t)!,
+        tabSelectedBackgroundColor,
+        other.tabSelectedBackgroundColor,
+        t,
+      )!,
       tabHoverBackgroundColor: Color.lerp(
-          tabHoverBackgroundColor, other.tabHoverBackgroundColor, t)!,
+        tabHoverBackgroundColor,
+        other.tabHoverBackgroundColor,
+        t,
+      )!,
       tabDisabledBackgroundColor: Color.lerp(
-          tabDisabledBackgroundColor, other.tabDisabledBackgroundColor, t)!,
+        tabDisabledBackgroundColor,
+        other.tabDisabledBackgroundColor,
+        t,
+      )!,
       tabBorderColor: Color.lerp(tabBorderColor, other.tabBorderColor, t)!,
-      tabSelectedBorderColor:
-          Color.lerp(tabSelectedBorderColor, other.tabSelectedBorderColor, t)!,
-      tabHoverBorderColor:
-          Color.lerp(tabHoverBorderColor, other.tabHoverBorderColor, t)!,
-      tabDisabledBorderColor:
-          Color.lerp(tabDisabledBorderColor, other.tabDisabledBorderColor, t)!,
+      tabSelectedBorderColor: Color.lerp(
+        tabSelectedBorderColor,
+        other.tabSelectedBorderColor,
+        t,
+      )!,
+      tabHoverBorderColor: Color.lerp(
+        tabHoverBorderColor,
+        other.tabHoverBorderColor,
+        t,
+      )!,
+      tabDisabledBorderColor: Color.lerp(
+        tabDisabledBorderColor,
+        other.tabDisabledBorderColor,
+        t,
+      )!,
       tabTextColor: Color.lerp(tabTextColor, other.tabTextColor, t)!,
-      tabSelectedTextColor:
-          Color.lerp(tabSelectedTextColor, other.tabSelectedTextColor, t)!,
-      tabHoverTextColor:
-          Color.lerp(tabHoverTextColor, other.tabHoverTextColor, t)!,
-      tabDisabledTextColor:
-          Color.lerp(tabDisabledTextColor, other.tabDisabledTextColor, t)!,
+      tabSelectedTextColor: Color.lerp(
+        tabSelectedTextColor,
+        other.tabSelectedTextColor,
+        t,
+      )!,
+      tabHoverTextColor: Color.lerp(
+        tabHoverTextColor,
+        other.tabHoverTextColor,
+        t,
+      )!,
+      tabDisabledTextColor: Color.lerp(
+        tabDisabledTextColor,
+        other.tabDisabledTextColor,
+        t,
+      )!,
       tabBorderWidth: t < 0.5 ? tabBorderWidth : other.tabBorderWidth,
-      tabSelectedBorderWidth:
-          t < 0.5 ? tabSelectedBorderWidth : other.tabSelectedBorderWidth,
+      tabSelectedBorderWidth: t < 0.5
+          ? tabSelectedBorderWidth
+          : other.tabSelectedBorderWidth,
       tabBorderRadius: t < 0.5 ? tabBorderRadius : other.tabBorderRadius,
       tabPadding: t < 0.5 ? tabPadding : other.tabPadding,
       tabTextStyle: TextStyle.lerp(tabTextStyle, other.tabTextStyle, t),
-      tabSelectedTextStyle:
-          TextStyle.lerp(tabSelectedTextStyle, other.tabSelectedTextStyle, t),
+      tabSelectedTextStyle: TextStyle.lerp(
+        tabSelectedTextStyle,
+        other.tabSelectedTextStyle,
+        t,
+      ),
       tabContentBackgroundColor: Color.lerp(
-          tabContentBackgroundColor, other.tabContentBackgroundColor, t)!,
-      tabContentBorderColor:
-          Color.lerp(tabContentBorderColor, other.tabContentBorderColor, t)!,
+        tabContentBackgroundColor,
+        other.tabContentBackgroundColor,
+        t,
+      )!,
+      tabContentBorderColor: Color.lerp(
+        tabContentBorderColor,
+        other.tabContentBorderColor,
+        t,
+      )!,
     );
   }
 
@@ -146,50 +194,94 @@ mixin _$TabFolderThemeExtensionTailorMixin
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is TabFolderThemeExtension &&
-            const DeepCollectionEquality()
-                .equals(tabBarBackgroundColor, other.tabBarBackgroundColor) &&
-            const DeepCollectionEquality()
-                .equals(tabBarBorderColor, other.tabBarBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(tabBackgroundColor, other.tabBackgroundColor) &&
             const DeepCollectionEquality().equals(
-                tabSelectedBackgroundColor, other.tabSelectedBackgroundColor) &&
+              tabBarBackgroundColor,
+              other.tabBarBackgroundColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                tabHoverBackgroundColor, other.tabHoverBackgroundColor) &&
+              tabBarBorderColor,
+              other.tabBarBorderColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                tabDisabledBackgroundColor, other.tabDisabledBackgroundColor) &&
-            const DeepCollectionEquality()
-                .equals(tabBorderColor, other.tabBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(tabSelectedBorderColor, other.tabSelectedBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(tabHoverBorderColor, other.tabHoverBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(tabDisabledBorderColor, other.tabDisabledBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(tabTextColor, other.tabTextColor) &&
-            const DeepCollectionEquality()
-                .equals(tabSelectedTextColor, other.tabSelectedTextColor) &&
-            const DeepCollectionEquality()
-                .equals(tabHoverTextColor, other.tabHoverTextColor) &&
-            const DeepCollectionEquality()
-                .equals(tabDisabledTextColor, other.tabDisabledTextColor) &&
-            const DeepCollectionEquality()
-                .equals(tabBorderWidth, other.tabBorderWidth) &&
-            const DeepCollectionEquality()
-                .equals(tabSelectedBorderWidth, other.tabSelectedBorderWidth) &&
-            const DeepCollectionEquality()
-                .equals(tabBorderRadius, other.tabBorderRadius) &&
-            const DeepCollectionEquality()
-                .equals(tabPadding, other.tabPadding) &&
-            const DeepCollectionEquality()
-                .equals(tabTextStyle, other.tabTextStyle) &&
-            const DeepCollectionEquality()
-                .equals(tabSelectedTextStyle, other.tabSelectedTextStyle) &&
+              tabBackgroundColor,
+              other.tabBackgroundColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                tabContentBackgroundColor, other.tabContentBackgroundColor) &&
-            const DeepCollectionEquality()
-                .equals(tabContentBorderColor, other.tabContentBorderColor));
+              tabSelectedBackgroundColor,
+              other.tabSelectedBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabHoverBackgroundColor,
+              other.tabHoverBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabDisabledBackgroundColor,
+              other.tabDisabledBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabBorderColor,
+              other.tabBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabSelectedBorderColor,
+              other.tabSelectedBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabHoverBorderColor,
+              other.tabHoverBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabDisabledBorderColor,
+              other.tabDisabledBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabTextColor,
+              other.tabTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabSelectedTextColor,
+              other.tabSelectedTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabHoverTextColor,
+              other.tabHoverTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabDisabledTextColor,
+              other.tabDisabledTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabBorderWidth,
+              other.tabBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabSelectedBorderWidth,
+              other.tabSelectedBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabBorderRadius,
+              other.tabBorderRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabPadding,
+              other.tabPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabTextStyle,
+              other.tabTextStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabSelectedTextStyle,
+              other.tabSelectedTextStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabContentBackgroundColor,
+              other.tabContentBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabContentBorderColor,
+              other.tabContentBorderColor,
+            ));
   }
 
   @override

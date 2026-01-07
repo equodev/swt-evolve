@@ -167,17 +167,7 @@ public class DartButton extends DartControl implements IButton {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        if ((getApi().style & SWT.ARROW) != 0) {
-            // TODO use some OS metric instead of hardcoded values
-            int width = wHint != SWT.DEFAULT ? wHint : 14;
-            int height = hHint != SWT.DEFAULT ? hHint : 14;
-            return new Point(width, height);
-        }
-        if ((getApi().style & SWT.WRAP) != 0 && wHint != SWT.DEFAULT) {
-        } else {
-        }
-        return Sizes.compute(this);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override

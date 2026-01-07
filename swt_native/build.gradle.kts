@@ -68,8 +68,6 @@ dependencies {
         exclude(group = "dev.equo", module = "com.equo.comm.common")
     }
 
-    implementation(libs.auto.value.annotations)
-    annotationProcessor(libs.auto.value.annotations)
     implementation(libs.dsl.json)
     annotationProcessor(libs.dsl.json)
 
@@ -109,7 +107,7 @@ sourceSets {
             test {
                 resources {
                     srcDirs(nativeSrc)
-                    include("**/*.css", "**/*.png")
+                    include("**/*.css", "**/*.png", "**/*.bmp", "**/*.gif", "**/*.svg", "**/*.jpg")
                 }
             }
         }
@@ -123,9 +121,9 @@ tasks.compileJava {
 
 tasks.test {
     useJUnitPlatform()
-    dependsOn("${currentPlatform}ExtractNatives")
-//    if (org.gradle.internal.os.OperatingSystem.current().isMacOsX)
-//        jvmArgs = listOf("-XstartOnFirstThread")
+    dependsOn("${currentPlatform}ExtractNatives", "${currentPlatform}CopyFlutterBinaries")
+    if (org.gradle.internal.os.OperatingSystem.current().isMacOsX)
+        jvmArgs = listOf("-XstartOnFirstThread")
     systemProperty("swt.library.path", layout.buildDirectory.dir("natives/$currentPlatform").get().toString())
     if (System.getProperty("test.debug") != null)
         jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")

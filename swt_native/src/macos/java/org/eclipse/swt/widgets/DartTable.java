@@ -395,7 +395,7 @@ public class DartTable extends DartComposite implements ITable {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return Sizes.compute(this);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     void createColumn(TableItem item, int index) {
@@ -727,9 +727,7 @@ public class DartTable extends DartComposite implements ITable {
 
     @Override
     public Rectangle getClientArea() {
-        checkWidget();
-        Rectangle rect = super.getClientArea();
-        return rect;
+        return Sizes.getClientArea(this);
     }
 
     /**

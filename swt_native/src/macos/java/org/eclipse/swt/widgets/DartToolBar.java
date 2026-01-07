@@ -156,26 +156,12 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        int width = wHint, height = hHint;
-        if (wHint == SWT.DEFAULT)
-            width = 0x7FFFFFFF;
-        if (hHint == SWT.DEFAULT)
-            height = 0x7FFFFFFF;
-        int[] result = layout(width, height, false);
-        Point extent = new Point(result[1], result[2]);
-        if (wHint != SWT.DEFAULT)
-            extent.x = wHint;
-        if (hHint != SWT.DEFAULT)
-            extent.y = hHint;
-        Rectangle trim = computeTrim(0, 0, extent.x, extent.y);
-        return new Point(trim.width, trim.height);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        checkWidget();
-        return new Rectangle(x, y, width, height);
+        return Sizes.computeTrim(this, x, y, width, height);
     }
 
     @Override

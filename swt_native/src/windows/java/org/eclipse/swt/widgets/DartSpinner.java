@@ -184,19 +184,12 @@ public class DartSpinner extends DartComposite implements ISpinner {
 
     @Override
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.compute(this);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override
     Rectangle computeTrimInPixels(int x, int y, int width, int height) {
-        checkWidget();
-        if ((getApi().style & SWT.BORDER) != 0) {
-            x -= 1;
-            y -= 1;
-            width += 2;
-            height += 2;
-        }
-        return new Rectangle(x, y, width, height);
+        return Sizes.computeTrim(this, x, y, width, height);
     }
 
     /**

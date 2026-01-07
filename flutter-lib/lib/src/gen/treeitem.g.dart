@@ -32,17 +32,17 @@ VTreeItem _$VTreeItemFromJson(Map<String, dynamic> json) => VTreeItem()
   ..texts = (json['texts'] as List<dynamic>?)?.map((e) => e as String).toList();
 
 Map<String, dynamic> _$VTreeItemToJson(VTreeItem instance) => <String, dynamic>{
-      'swt': instance.swt,
-      'id': instance.id,
-      'style': instance.style,
-      'image': instance.image,
-      'text': instance.text,
-      'background': instance.background,
-      'checked': instance.checked,
-      'expanded': instance.expanded,
-      'font': instance.font,
-      'foreground': instance.foreground,
-      'grayed': instance.grayed,
-      'items': instance.items,
-      'texts': instance.texts,
-    };
+  'swt': instance.swt,
+  'id': instance.id,
+  'style': instance.style,
+  'image': instance.image,
+  'text': instance.text,
+  'background': instance.background,
+  'checked': instance.checked,
+  'expanded': instance.expanded,
+  'font': instance.font,
+  'foreground': instance.foreground,
+  'grayed': instance.grayed,
+  'items': instance.items,
+  'texts': instance.texts,
+};

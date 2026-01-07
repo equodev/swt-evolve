@@ -51,25 +51,45 @@ mixin _$CTabItemThemeExtensionTailorMixin
 
   @override
   CTabItemThemeExtension lerp(
-      covariant ThemeExtension<CTabItemThemeExtension>? other, double t) {
+    covariant ThemeExtension<CTabItemThemeExtension>? other,
+    double t,
+  ) {
     if (other is! CTabItemThemeExtension) return this as CTabItemThemeExtension;
     return CTabItemThemeExtension(
-      tabItemTextColor:
-          Color.lerp(tabItemTextColor, other.tabItemTextColor, t)!,
+      tabItemTextColor: Color.lerp(
+        tabItemTextColor,
+        other.tabItemTextColor,
+        t,
+      )!,
       tabItemSelectedTextColor: Color.lerp(
-          tabItemSelectedTextColor, other.tabItemSelectedTextColor, t)!,
+        tabItemSelectedTextColor,
+        other.tabItemSelectedTextColor,
+        t,
+      )!,
       tabItemDisabledTextColor: Color.lerp(
-          tabItemDisabledTextColor, other.tabItemDisabledTextColor, t)!,
-      tabItemTextStyle:
-          TextStyle.lerp(tabItemTextStyle, other.tabItemTextStyle, t),
+        tabItemDisabledTextColor,
+        other.tabItemDisabledTextColor,
+        t,
+      )!,
+      tabItemTextStyle: TextStyle.lerp(
+        tabItemTextStyle,
+        other.tabItemTextStyle,
+        t,
+      ),
       tabItemSelectedTextStyle: TextStyle.lerp(
-          tabItemSelectedTextStyle, other.tabItemSelectedTextStyle, t),
-      tabItemHorizontalPadding:
-          t < 0.5 ? tabItemHorizontalPadding : other.tabItemHorizontalPadding,
-      tabItemVerticalPadding:
-          t < 0.5 ? tabItemVerticalPadding : other.tabItemVerticalPadding,
-      tabItemImageTextSpacing:
-          t < 0.5 ? tabItemImageTextSpacing : other.tabItemImageTextSpacing,
+        tabItemSelectedTextStyle,
+        other.tabItemSelectedTextStyle,
+        t,
+      ),
+      tabItemHorizontalPadding: t < 0.5
+          ? tabItemHorizontalPadding
+          : other.tabItemHorizontalPadding,
+      tabItemVerticalPadding: t < 0.5
+          ? tabItemVerticalPadding
+          : other.tabItemVerticalPadding,
+      tabItemImageTextSpacing: t < 0.5
+          ? tabItemImageTextSpacing
+          : other.tabItemImageTextSpacing,
     );
   }
 
@@ -78,22 +98,38 @@ mixin _$CTabItemThemeExtensionTailorMixin
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is CTabItemThemeExtension &&
-            const DeepCollectionEquality()
-                .equals(tabItemTextColor, other.tabItemTextColor) &&
             const DeepCollectionEquality().equals(
-                tabItemSelectedTextColor, other.tabItemSelectedTextColor) &&
+              tabItemTextColor,
+              other.tabItemTextColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                tabItemDisabledTextColor, other.tabItemDisabledTextColor) &&
-            const DeepCollectionEquality()
-                .equals(tabItemTextStyle, other.tabItemTextStyle) &&
+              tabItemSelectedTextColor,
+              other.tabItemSelectedTextColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                tabItemSelectedTextStyle, other.tabItemSelectedTextStyle) &&
+              tabItemDisabledTextColor,
+              other.tabItemDisabledTextColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                tabItemHorizontalPadding, other.tabItemHorizontalPadding) &&
-            const DeepCollectionEquality()
-                .equals(tabItemVerticalPadding, other.tabItemVerticalPadding) &&
+              tabItemTextStyle,
+              other.tabItemTextStyle,
+            ) &&
             const DeepCollectionEquality().equals(
-                tabItemImageTextSpacing, other.tabItemImageTextSpacing));
+              tabItemSelectedTextStyle,
+              other.tabItemSelectedTextStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabItemHorizontalPadding,
+              other.tabItemHorizontalPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabItemVerticalPadding,
+              other.tabItemVerticalPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabItemImageTextSpacing,
+              other.tabItemImageTextSpacing,
+            ));
   }
 
   @override

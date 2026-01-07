@@ -19,12 +19,12 @@ VToolTip _$VToolTipFromJson(Map<String, dynamic> json) => VToolTip()
   ..visible = json['visible'] as bool?;
 
 Map<String, dynamic> _$VToolTipToJson(VToolTip instance) => <String, dynamic>{
-      'swt': instance.swt,
-      'id': instance.id,
-      'style': instance.style,
-      'autoHide': instance.autoHide,
-      'location': instance.location,
-      'message': instance.message,
-      'text': instance.text,
-      'visible': instance.visible,
-    };
+  'swt': instance.swt,
+  'id': instance.id,
+  'style': instance.style,
+  'autoHide': instance.autoHide,
+  'location': instance.location,
+  'message': instance.message,
+  'text': instance.text,
+  'visible': instance.visible,
+};

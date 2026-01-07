@@ -600,17 +600,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @see "computeTrim, getClientArea for controls that implement them"
      */
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        int width = DEFAULT_WIDTH;
-        int height = DEFAULT_HEIGHT;
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
-        int border = getBorderWidth();
-        width += border * 2;
-        height += border * 2;
-        return new Point(width, height);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     Widget computeTabGroup() {
@@ -672,9 +662,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     Font defaultFont() {
-        if (((SwtDisplay) display.getImpl()).smallFonts)
-            return display.getSystemFont();
-        return SwtFont.cocoa_new(display, display.getSystemFont().handle);
+        return display.getSystemFont();
     }
 
     Color defaultForeground() {

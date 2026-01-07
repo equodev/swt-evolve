@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/font.dart';
 import 'package:swtflutter/src/gen/color.dart';
+import 'package:swtflutter/src/nolayout.dart';
 import '../gen/control.dart';
 import '../gen/group.dart';
 import '../gen/widget.dart';
@@ -32,6 +34,7 @@ class GroupImpl<T extends GroupSwt, V extends VGroup>
         focusNode: _focusNode,
         child: _StyledGroup(
           text: text,
+          composite: state,
           width: state.bounds?.width.toDouble(),
           height: state.bounds?.height.toDouble(),
           children: children,
@@ -65,9 +68,11 @@ class _StyledGroup extends StatelessWidget {
   final List<VControl>? children;
   final VFont? vFont;
   final VColor? textColor;
+  final VComposite composite;
 
   const _StyledGroup({
     Key? key,
+    required this.composite,
     required this.text,
     this.width,
     this.height,
@@ -91,36 +96,6 @@ class _StyledGroup extends StatelessWidget {
       color: finalTextColor,
     );
 
-    // Build children widgets with horizontal layout
-    List<Widget> spacedChildren = [];
-    if (children != null && children!.isNotEmpty) {
-      for (int i = 0; i < children!.length; i++) {
-        final child = children![i] as VWidget;
-        final childWidget = mapWidgetFromValue(child);
-
-        // Only wrap CCombo and similar widgets that need bounded constraints
-        // Keep Labels and Buttons at their natural size
-        final needsFlexible = child.swt == 'CCombo' || child.swt == 'Combo' ||
-                              child.swt == 'Text' || child.swt == 'List';
-
-        if (needsFlexible) {
-          spacedChildren.add(
-            Flexible(
-              flex: 1,
-              fit: FlexFit.loose,
-              child: childWidget,
-            ),
-          );
-        } else {
-          spacedChildren.add(childWidget);
-        }
-
-        if (i < children!.length - 1) {
-          spacedChildren.add(const SizedBox(width: 8));
-        }
-      }
-    }
-
     return SizedBox(
       width: width,
       height: height,
@@ -141,17 +116,8 @@ class _StyledGroup extends StatelessWidget {
                   style: textStyle,
                 ),
               ),
-            // Children container
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: spacedChildren,
-                ),
-              ),
-            ),
+            if (children != null)
+              NoLayout(children: children!, composite: composite)
           ],
         ),
       ),

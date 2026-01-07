@@ -12,7 +12,7 @@ VWidget _$VWidgetFromJson(Map<String, dynamic> json) => VWidget()
   ..style = (json['style'] as num).toInt();
 
 Map<String, dynamic> _$VWidgetToJson(VWidget instance) => <String, dynamic>{
-      'swt': instance.swt,
-      'id': instance.id,
-      'style': instance.style,
-    };
+  'swt': instance.swt,
+  'id': instance.id,
+  'style': instance.style,
+};

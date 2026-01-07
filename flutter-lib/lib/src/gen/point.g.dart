@@ -11,6 +11,6 @@ VPoint _$VPointFromJson(Map<String, dynamic> json) => VPoint()
   ..y = (json['y'] as num).toInt();
 
 Map<String, dynamic> _$VPointToJson(VPoint instance) => <String, dynamic>{
-      'x': instance.x,
-      'y': instance.y,
-    };
+  'x': instance.x,
+  'y': instance.y,
+};

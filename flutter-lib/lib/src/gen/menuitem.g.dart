@@ -24,15 +24,15 @@ VMenuItem _$VMenuItemFromJson(Map<String, dynamic> json) => VMenuItem()
   ..toolTipText = json['toolTipText'] as String?;
 
 Map<String, dynamic> _$VMenuItemToJson(VMenuItem instance) => <String, dynamic>{
-      'swt': instance.swt,
-      'id': instance.id,
-      'style': instance.style,
-      'image': instance.image,
-      'text': instance.text,
-      'ID': instance.ID,
-      'accelerator': instance.accelerator,
-      'enabled': instance.enabled,
-      'menu': instance.menu,
-      'selection': instance.selection,
-      'toolTipText': instance.toolTipText,
-    };
+  'swt': instance.swt,
+  'id': instance.id,
+  'style': instance.style,
+  'image': instance.image,
+  'text': instance.text,
+  'ID': instance.ID,
+  'accelerator': instance.accelerator,
+  'enabled': instance.enabled,
+  'menu': instance.menu,
+  'selection': instance.selection,
+  'toolTipText': instance.toolTipText,
+};

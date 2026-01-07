@@ -175,13 +175,12 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     @Override
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.compute(this);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override
     Rectangle computeTrimInPixels(int x, int y, int width, int height) {
-        Rectangle trim = super.computeTrimInPixels(x, y, width, height);
-        return trim;
+        return Sizes.computeTrim(this, x, y, width, height);
     }
 
     @Override

@@ -70,7 +70,7 @@ public class GraphicsUtils {
         }
         if (font.getImpl() instanceof SwtFont) {
             FontData copiedFontData = copyFontData(font.getFontData()[0]);
-            DartFont dartFont = new DartFont(font.getDevice(), copiedFontData, font);
+            DartFont dartFont = new DartFont(font.getDevice(), copiedFontData, null);
             return dartFont.getApi();
         } else {
             return font;

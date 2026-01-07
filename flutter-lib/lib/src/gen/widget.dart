@@ -71,10 +71,7 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
 @JsonSerializable()
 class VWidget {
   VWidget() : this.empty();
-  VWidget.empty()
-      : swt = "Widget",
-        id = 1,
-        style = 0;
+  VWidget.empty() : swt = "Widget", id = 1, style = 0;
 
   String swt;
   int id;

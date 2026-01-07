@@ -181,7 +181,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return Sizes.compute(this);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     void createItem(ExpandItem item, int style, int index) {

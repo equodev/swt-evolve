@@ -33,16 +33,16 @@ VCTabItem _$VCTabItemFromJson(Map<String, dynamic> json) => VCTabItem()
   ..toolTipText = json['toolTipText'] as String?;
 
 Map<String, dynamic> _$VCTabItemToJson(VCTabItem instance) => <String, dynamic>{
-      'swt': instance.swt,
-      'id': instance.id,
-      'style': instance.style,
-      'image': instance.image,
-      'text': instance.text,
-      'control': instance.control,
-      'disabledImage': instance.disabledImage,
-      'font': instance.font,
-      'foreground': instance.foreground,
-      'selectionForeground': instance.selectionForeground,
-      'showClose': instance.showClose,
-      'toolTipText': instance.toolTipText,
-    };
+  'swt': instance.swt,
+  'id': instance.id,
+  'style': instance.style,
+  'image': instance.image,
+  'text': instance.text,
+  'control': instance.control,
+  'disabledImage': instance.disabledImage,
+  'font': instance.font,
+  'foreground': instance.foreground,
+  'selectionForeground': instance.selectionForeground,
+  'showClose': instance.showClose,
+  'toolTipText': instance.toolTipText,
+};

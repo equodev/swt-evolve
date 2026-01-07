@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="48" height="48" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect x="0" y="0" width="48" height="48" fill="rgb(100,150,200)"/>
+  <!-- Border -->
+  <rect x="0" y="0" width="48" height="48" fill="none" stroke="black" stroke-width="1"/>
+  <!-- Center pattern -->
+  <rect x="18" y="18" width="12" height="12" fill="white"/>
+</svg>

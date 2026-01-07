@@ -163,32 +163,7 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        ((SwtDisplay) display.getImpl()).runSkin();
-        Point size;
-        if (layout != null) {
-            if ((wHint == SWT.DEFAULT) || (hHint == SWT.DEFAULT)) {
-                changed |= (getApi().state & LAYOUT_CHANGED) != 0;
-                size = layout.computeSize(this.getApi(), wHint, hHint, changed);
-                getApi().state &= ~LAYOUT_CHANGED;
-            } else {
-                size = new Point(wHint, hHint);
-            }
-        } else {
-            size = minimumSize(wHint, hHint, changed);
-            if (size.x == 0)
-                size.x = DEFAULT_WIDTH;
-            if (size.y == 0)
-                size.y = DEFAULT_HEIGHT;
-        }
-        if (wHint != SWT.DEFAULT)
-            size.x = wHint;
-        if (hHint != SWT.DEFAULT)
-            size.y = hHint;
-        Rectangle trim = computeTrim(0, 0, size.x, size.y);
-        if (size.y == 64)
-            trim.height = 32;
-        return new Point(trim.width, trim.height);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override
@@ -365,8 +340,7 @@ public class DartComposite extends DartScrollable implements IComposite {
      */
     public Control[] getChildren() {
         checkWidget();
-        Control[] allChildren = _getChildren();
-        return java.util.Arrays.stream(allChildren).filter(child -> child != null && !child.isDisposed()).toArray(Control[]::new);
+        return _getChildren();
     }
 
     /**
@@ -802,15 +776,7 @@ public class DartComposite extends DartScrollable implements IComposite {
     }
 
     Point minimumSize(int wHint, int Hint, boolean changed) {
-        Control[] children = _getChildren();
-        Rectangle clientArea = getClientArea();
-        int width = 0, height = 0;
-        for (int i = 0; i < children.length; i++) {
-            Rectangle rect = children[i].getBounds();
-            width = Math.max(width, rect.x - clientArea.x + rect.width);
-            height = Math.max(height, rect.y - clientArea.y + rect.height);
-        }
-        return new Point(width, height);
+        return Sizes.minimumSize(this, wHint, Hint, changed);
     }
 
     @Override

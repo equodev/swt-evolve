@@ -56,7 +56,8 @@ VStyledText _$VStyledTextFromJson(Map<String, dynamic> json) => VStyledText()
   ..blockSelectionBounds = json['blockSelectionBounds'] == null
       ? null
       : VRectangle.fromJson(
-          json['blockSelectionBounds'] as Map<String, dynamic>)
+          json['blockSelectionBounds'] as Map<String, dynamic>,
+        )
   ..bottomMargin = (json['bottomMargin'] as num?)?.toInt()
   ..caretOffset = (json['caretOffset'] as num?)?.toInt()
   ..columnX = (json['columnX'] as num?)?.toInt()

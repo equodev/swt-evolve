@@ -12,5 +12,5 @@ VFont _$VFontFromJson(Map<String, dynamic> json) => VFont()
       .toList();
 
 Map<String, dynamic> _$VFontToJson(VFont instance) => <String, dynamic>{
-      'fontData': instance.fontData,
-    };
+  'fontData': instance.fontData,
+};

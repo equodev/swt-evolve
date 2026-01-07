@@ -744,17 +744,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     //}
     @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
-        checkWidget();
-        Rectangle trim = renderer.computeTrim(CTabFolderRenderer.PART_BODY, SWT.NONE, x, y, width, height);
-        Point size = new Point(width, height);
-        int wrapHeight = getWrappedHeight(size);
-        if (onBottom) {
-            trim.height += wrapHeight;
-        } else {
-            trim.y -= wrapHeight;
-            trim.height += wrapHeight;
-        }
-        return trim;
+        return Sizes.computeTrim(this, x, y, width, height);
     }
 
     Image createButtonImage(Display display, int button) {
@@ -903,22 +893,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
     @Override
     public Rectangle getClientArea() {
-        checkWidget();
-        //TODO: HACK - find a better way to get padding
-        Rectangle trim = renderer.computeTrim(CTabFolderRenderer.PART_BODY, SWT.FILL, 0, 0, 0, 0);
-        Point size = getSize();
-        int wrapHeight = getWrappedHeight(size);
-        if (onBottom) {
-            trim.height += wrapHeight;
-        } else {
-            trim.y -= wrapHeight;
-            trim.height += wrapHeight;
-        }
-        if (minimized)
-            return new Rectangle(-trim.x, -trim.y, 0, 0);
-        int width = size.x - trim.width;
-        int height = size.y - trim.height;
-        return new Rectangle(-trim.x, -trim.y, width, height);
+        return Sizes.getClientArea(this);
     }
 
     /**

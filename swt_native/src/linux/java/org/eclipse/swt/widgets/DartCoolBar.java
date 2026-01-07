@@ -166,34 +166,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        int width = 0, height = 0;
-        wrapItems((getApi().style & SWT.VERTICAL) != 0 ? hHint : wHint);
-        boolean flat = (getApi().style & SWT.FLAT) != 0;
-        for (int row = 0; row < items.length; row++) {
-            int rowWidth = 0, rowHeight = 0;
-            for (int i = 0; i < items[row].length; i++) {
-                CoolItem item = items[row][i];
-                rowWidth += ((DartCoolItem) item.getImpl()).preferredWidth;
-                rowHeight = Math.max(rowHeight, ((DartCoolItem) item.getImpl()).preferredHeight);
-            }
-            height += rowHeight;
-            if (!flat && row > 0)
-                height += ROW_SPACING;
-            width = Math.max(width, rowWidth);
-        }
-        wrapItems(getWidth());
-        if (width == 0)
-            width = DEFAULT_COOLBAR_WIDTH;
-        if (height == 0)
-            height = DEFAULT_COOLBAR_HEIGHT;
-        Point size = fixPoint(width, height);
-        if (wHint != SWT.DEFAULT)
-            size.x = wHint;
-        if (hHint != SWT.DEFAULT)
-            size.y = hHint;
-        Rectangle trim = computeTrim(0, 0, size.x, size.y);
-        return new Point(trim.width, trim.height);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     CoolItem getGrabbedItem(int x, int y) {

@@ -30,9 +30,6 @@ mixin _$LabelThemeExtensionTailorMixin on ThemeExtension<LabelThemeExtension> {
   TextStyle? get successTextStyle;
   TextStyle? get disabledTextStyle;
   TextStyle? get linkTextStyle;
-  double get minHeight;
-  double get minWidth;
-  double get maxWidth;
   EdgeInsets get padding;
   EdgeInsets get margin;
   double get iconTextSpacing;
@@ -75,9 +72,6 @@ mixin _$LabelThemeExtensionTailorMixin on ThemeExtension<LabelThemeExtension> {
     TextStyle? successTextStyle,
     TextStyle? disabledTextStyle,
     TextStyle? linkTextStyle,
-    double? minHeight,
-    double? minWidth,
-    double? maxWidth,
     EdgeInsets? padding,
     EdgeInsets? margin,
     double? iconTextSpacing,
@@ -120,9 +114,6 @@ mixin _$LabelThemeExtensionTailorMixin on ThemeExtension<LabelThemeExtension> {
       successTextStyle: successTextStyle ?? this.successTextStyle,
       disabledTextStyle: disabledTextStyle ?? this.disabledTextStyle,
       linkTextStyle: linkTextStyle ?? this.linkTextStyle,
-      minHeight: minHeight ?? this.minHeight,
-      minWidth: minWidth ?? this.minWidth,
-      maxWidth: maxWidth ?? this.maxWidth,
       padding: padding ?? this.padding,
       margin: margin ?? this.margin,
       iconTextSpacing: iconTextSpacing ?? this.iconTextSpacing,
@@ -148,45 +139,83 @@ mixin _$LabelThemeExtensionTailorMixin on ThemeExtension<LabelThemeExtension> {
 
   @override
   LabelThemeExtension lerp(
-      covariant ThemeExtension<LabelThemeExtension>? other, double t) {
+    covariant ThemeExtension<LabelThemeExtension>? other,
+    double t,
+  ) {
     if (other is! LabelThemeExtension) return this as LabelThemeExtension;
     return LabelThemeExtension(
-      primaryTextColor:
-          Color.lerp(primaryTextColor, other.primaryTextColor, t)!,
-      secondaryTextColor:
-          Color.lerp(secondaryTextColor, other.secondaryTextColor, t)!,
+      primaryTextColor: Color.lerp(
+        primaryTextColor,
+        other.primaryTextColor,
+        t,
+      )!,
+      secondaryTextColor: Color.lerp(
+        secondaryTextColor,
+        other.secondaryTextColor,
+        t,
+      )!,
       errorTextColor: Color.lerp(errorTextColor, other.errorTextColor, t)!,
-      warningTextColor:
-          Color.lerp(warningTextColor, other.warningTextColor, t)!,
-      successTextColor:
-          Color.lerp(successTextColor, other.successTextColor, t)!,
-      disabledTextColor:
-          Color.lerp(disabledTextColor, other.disabledTextColor, t)!,
+      warningTextColor: Color.lerp(
+        warningTextColor,
+        other.warningTextColor,
+        t,
+      )!,
+      successTextColor: Color.lerp(
+        successTextColor,
+        other.successTextColor,
+        t,
+      )!,
+      disabledTextColor: Color.lerp(
+        disabledTextColor,
+        other.disabledTextColor,
+        t,
+      )!,
       linkTextColor: Color.lerp(linkTextColor, other.linkTextColor, t)!,
-      linkHoverTextColor:
-          Color.lerp(linkHoverTextColor, other.linkHoverTextColor, t)!,
+      linkHoverTextColor: Color.lerp(
+        linkHoverTextColor,
+        other.linkHoverTextColor,
+        t,
+      )!,
       backgroundColor: Color.lerp(backgroundColor, other.backgroundColor, t),
-      hoverBackgroundColor:
-          Color.lerp(hoverBackgroundColor, other.hoverBackgroundColor, t),
-      selectedBackgroundColor:
-          Color.lerp(selectedBackgroundColor, other.selectedBackgroundColor, t),
+      hoverBackgroundColor: Color.lerp(
+        hoverBackgroundColor,
+        other.hoverBackgroundColor,
+        t,
+      ),
+      selectedBackgroundColor: Color.lerp(
+        selectedBackgroundColor,
+        other.selectedBackgroundColor,
+        t,
+      ),
       borderColor: Color.lerp(borderColor, other.borderColor, t),
       focusBorderColor: Color.lerp(focusBorderColor, other.focusBorderColor, t),
-      primaryTextStyle:
-          TextStyle.lerp(primaryTextStyle, other.primaryTextStyle, t),
-      secondaryTextStyle:
-          TextStyle.lerp(secondaryTextStyle, other.secondaryTextStyle, t),
+      primaryTextStyle: TextStyle.lerp(
+        primaryTextStyle,
+        other.primaryTextStyle,
+        t,
+      ),
+      secondaryTextStyle: TextStyle.lerp(
+        secondaryTextStyle,
+        other.secondaryTextStyle,
+        t,
+      ),
       errorTextStyle: TextStyle.lerp(errorTextStyle, other.errorTextStyle, t),
-      warningTextStyle:
-          TextStyle.lerp(warningTextStyle, other.warningTextStyle, t),
-      successTextStyle:
-          TextStyle.lerp(successTextStyle, other.successTextStyle, t),
-      disabledTextStyle:
-          TextStyle.lerp(disabledTextStyle, other.disabledTextStyle, t),
+      warningTextStyle: TextStyle.lerp(
+        warningTextStyle,
+        other.warningTextStyle,
+        t,
+      ),
+      successTextStyle: TextStyle.lerp(
+        successTextStyle,
+        other.successTextStyle,
+        t,
+      ),
+      disabledTextStyle: TextStyle.lerp(
+        disabledTextStyle,
+        other.disabledTextStyle,
+        t,
+      ),
       linkTextStyle: TextStyle.lerp(linkTextStyle, other.linkTextStyle, t),
-      minHeight: t < 0.5 ? minHeight : other.minHeight,
-      minWidth: t < 0.5 ? minWidth : other.minWidth,
-      maxWidth: t < 0.5 ? maxWidth : other.maxWidth,
       padding: t < 0.5 ? padding : other.padding,
       margin: t < 0.5 ? margin : other.margin,
       iconTextSpacing: t < 0.5 ? iconTextSpacing : other.iconTextSpacing,
@@ -199,17 +228,21 @@ mixin _$LabelThemeExtensionTailorMixin on ThemeExtension<LabelThemeExtension> {
       isSelectable: t < 0.5 ? isSelectable : other.isSelectable,
       showTooltip: t < 0.5 ? showTooltip : other.showTooltip,
       disabledOpacity: t < 0.5 ? disabledOpacity : other.disabledOpacity,
-      hoverAnimationDuration:
-          t < 0.5 ? hoverAnimationDuration : other.hoverAnimationDuration,
+      hoverAnimationDuration: t < 0.5
+          ? hoverAnimationDuration
+          : other.hoverAnimationDuration,
       textAlign: t < 0.5 ? textAlign : other.textAlign,
       mainAxisAlignment: t < 0.5 ? mainAxisAlignment : other.mainAxisAlignment,
-      crossAxisAlignment:
-          t < 0.5 ? crossAxisAlignment : other.crossAxisAlignment,
+      crossAxisAlignment: t < 0.5
+          ? crossAxisAlignment
+          : other.crossAxisAlignment,
       textDecoration: t < 0.5 ? textDecoration : other.textDecoration,
-      hoverTextDecoration:
-          t < 0.5 ? hoverTextDecoration : other.hoverTextDecoration,
-      decorationThickness:
-          t < 0.5 ? decorationThickness : other.decorationThickness,
+      hoverTextDecoration: t < 0.5
+          ? hoverTextDecoration
+          : other.hoverTextDecoration,
+      decorationThickness: t < 0.5
+          ? decorationThickness
+          : other.decorationThickness,
     );
   }
 
@@ -218,83 +251,150 @@ mixin _$LabelThemeExtensionTailorMixin on ThemeExtension<LabelThemeExtension> {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is LabelThemeExtension &&
-            const DeepCollectionEquality()
-                .equals(primaryTextColor, other.primaryTextColor) &&
-            const DeepCollectionEquality()
-                .equals(secondaryTextColor, other.secondaryTextColor) &&
-            const DeepCollectionEquality()
-                .equals(errorTextColor, other.errorTextColor) &&
-            const DeepCollectionEquality()
-                .equals(warningTextColor, other.warningTextColor) &&
-            const DeepCollectionEquality()
-                .equals(successTextColor, other.successTextColor) &&
-            const DeepCollectionEquality()
-                .equals(disabledTextColor, other.disabledTextColor) &&
-            const DeepCollectionEquality()
-                .equals(linkTextColor, other.linkTextColor) &&
-            const DeepCollectionEquality()
-                .equals(linkHoverTextColor, other.linkHoverTextColor) &&
-            const DeepCollectionEquality()
-                .equals(backgroundColor, other.backgroundColor) &&
-            const DeepCollectionEquality()
-                .equals(hoverBackgroundColor, other.hoverBackgroundColor) &&
             const DeepCollectionEquality().equals(
-                selectedBackgroundColor, other.selectedBackgroundColor) &&
-            const DeepCollectionEquality()
-                .equals(borderColor, other.borderColor) &&
-            const DeepCollectionEquality()
-                .equals(focusBorderColor, other.focusBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(primaryTextStyle, other.primaryTextStyle) &&
-            const DeepCollectionEquality()
-                .equals(secondaryTextStyle, other.secondaryTextStyle) &&
-            const DeepCollectionEquality()
-                .equals(errorTextStyle, other.errorTextStyle) &&
-            const DeepCollectionEquality()
-                .equals(warningTextStyle, other.warningTextStyle) &&
-            const DeepCollectionEquality()
-                .equals(successTextStyle, other.successTextStyle) &&
-            const DeepCollectionEquality()
-                .equals(disabledTextStyle, other.disabledTextStyle) &&
-            const DeepCollectionEquality()
-                .equals(linkTextStyle, other.linkTextStyle) &&
-            const DeepCollectionEquality().equals(minHeight, other.minHeight) &&
-            const DeepCollectionEquality().equals(minWidth, other.minWidth) &&
-            const DeepCollectionEquality().equals(maxWidth, other.maxWidth) &&
+              primaryTextColor,
+              other.primaryTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              secondaryTextColor,
+              other.secondaryTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              errorTextColor,
+              other.errorTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              warningTextColor,
+              other.warningTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              successTextColor,
+              other.successTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              disabledTextColor,
+              other.disabledTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              linkTextColor,
+              other.linkTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              linkHoverTextColor,
+              other.linkHoverTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              backgroundColor,
+              other.backgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              hoverBackgroundColor,
+              other.hoverBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              selectedBackgroundColor,
+              other.selectedBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              borderColor,
+              other.borderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              focusBorderColor,
+              other.focusBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              primaryTextStyle,
+              other.primaryTextStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              secondaryTextStyle,
+              other.secondaryTextStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              errorTextStyle,
+              other.errorTextStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              warningTextStyle,
+              other.warningTextStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              successTextStyle,
+              other.successTextStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              disabledTextStyle,
+              other.disabledTextStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              linkTextStyle,
+              other.linkTextStyle,
+            ) &&
             const DeepCollectionEquality().equals(padding, other.padding) &&
             const DeepCollectionEquality().equals(margin, other.margin) &&
-            const DeepCollectionEquality()
-                .equals(iconTextSpacing, other.iconTextSpacing) &&
-            const DeepCollectionEquality()
-                .equals(borderRadius, other.borderRadius) &&
-            const DeepCollectionEquality()
-                .equals(borderWidth, other.borderWidth) &&
-            const DeepCollectionEquality()
-                .equals(focusBorderWidth, other.focusBorderWidth) &&
+            const DeepCollectionEquality().equals(
+              iconTextSpacing,
+              other.iconTextSpacing,
+            ) &&
+            const DeepCollectionEquality().equals(
+              borderRadius,
+              other.borderRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
+              borderWidth,
+              other.borderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              focusBorderWidth,
+              other.focusBorderWidth,
+            ) &&
             const DeepCollectionEquality().equals(iconSize, other.iconSize) &&
-            const DeepCollectionEquality()
-                .equals(smallIconSize, other.smallIconSize) &&
-            const DeepCollectionEquality()
-                .equals(largeIconSize, other.largeIconSize) &&
-            const DeepCollectionEquality()
-                .equals(isSelectable, other.isSelectable) &&
-            const DeepCollectionEquality()
-                .equals(showTooltip, other.showTooltip) &&
-            const DeepCollectionEquality()
-                .equals(disabledOpacity, other.disabledOpacity) &&
-            const DeepCollectionEquality()
-                .equals(hoverAnimationDuration, other.hoverAnimationDuration) &&
+            const DeepCollectionEquality().equals(
+              smallIconSize,
+              other.smallIconSize,
+            ) &&
+            const DeepCollectionEquality().equals(
+              largeIconSize,
+              other.largeIconSize,
+            ) &&
+            const DeepCollectionEquality().equals(
+              isSelectable,
+              other.isSelectable,
+            ) &&
+            const DeepCollectionEquality().equals(
+              showTooltip,
+              other.showTooltip,
+            ) &&
+            const DeepCollectionEquality().equals(
+              disabledOpacity,
+              other.disabledOpacity,
+            ) &&
+            const DeepCollectionEquality().equals(
+              hoverAnimationDuration,
+              other.hoverAnimationDuration,
+            ) &&
             const DeepCollectionEquality().equals(textAlign, other.textAlign) &&
-            const DeepCollectionEquality()
-                .equals(mainAxisAlignment, other.mainAxisAlignment) &&
-            const DeepCollectionEquality()
-                .equals(crossAxisAlignment, other.crossAxisAlignment) &&
-            const DeepCollectionEquality()
-                .equals(textDecoration, other.textDecoration) &&
-            const DeepCollectionEquality()
-                .equals(hoverTextDecoration, other.hoverTextDecoration) &&
-            const DeepCollectionEquality()
-                .equals(decorationThickness, other.decorationThickness));
+            const DeepCollectionEquality().equals(
+              mainAxisAlignment,
+              other.mainAxisAlignment,
+            ) &&
+            const DeepCollectionEquality().equals(
+              crossAxisAlignment,
+              other.crossAxisAlignment,
+            ) &&
+            const DeepCollectionEquality().equals(
+              textDecoration,
+              other.textDecoration,
+            ) &&
+            const DeepCollectionEquality().equals(
+              hoverTextDecoration,
+              other.hoverTextDecoration,
+            ) &&
+            const DeepCollectionEquality().equals(
+              decorationThickness,
+              other.decorationThickness,
+            ));
   }
 
   @override
@@ -321,9 +421,6 @@ mixin _$LabelThemeExtensionTailorMixin on ThemeExtension<LabelThemeExtension> {
       const DeepCollectionEquality().hash(successTextStyle),
       const DeepCollectionEquality().hash(disabledTextStyle),
       const DeepCollectionEquality().hash(linkTextStyle),
-      const DeepCollectionEquality().hash(minHeight),
-      const DeepCollectionEquality().hash(minWidth),
-      const DeepCollectionEquality().hash(maxWidth),
       const DeepCollectionEquality().hash(padding),
       const DeepCollectionEquality().hash(margin),
       const DeepCollectionEquality().hash(iconTextSpacing),
@@ -371,9 +468,6 @@ extension LabelThemeExtensionBuildContextProps on BuildContext {
   TextStyle? get successTextStyle => labelThemeExtension.successTextStyle;
   TextStyle? get disabledTextStyle => labelThemeExtension.disabledTextStyle;
   TextStyle? get linkTextStyle => labelThemeExtension.linkTextStyle;
-  double get minHeight => labelThemeExtension.minHeight;
-  double get minWidth => labelThemeExtension.minWidth;
-  double get maxWidth => labelThemeExtension.maxWidth;
   EdgeInsets get padding => labelThemeExtension.padding;
   EdgeInsets get margin => labelThemeExtension.margin;
   double get iconTextSpacing => labelThemeExtension.iconTextSpacing;

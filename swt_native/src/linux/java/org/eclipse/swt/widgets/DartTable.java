@@ -482,7 +482,7 @@ public class DartTable extends DartComposite implements ITable {
 
     @Override
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.compute(this);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     void copyModel(long oldModel, int oldStart, long newModel, int newStart, int modelLength) {
@@ -840,8 +840,7 @@ public class DartTable extends DartComposite implements ITable {
 
     @Override
     Rectangle getClientAreaInPixels() {
-        checkWidget();
-        return null;
+        return Sizes.getClientArea(this);
     }
 
     @Override

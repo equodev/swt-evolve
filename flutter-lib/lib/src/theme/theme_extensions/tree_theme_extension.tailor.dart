@@ -217,7 +217,8 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
           checkboxDisabledColor ?? this.checkboxDisabledColor,
       checkboxBorderWidth: checkboxBorderWidth ?? this.checkboxBorderWidth,
       checkboxBorderRadius: checkboxBorderRadius ?? this.checkboxBorderRadius,
-      checkboxCheckmarkSizeMultiplier: checkboxCheckmarkSizeMultiplier ??
+      checkboxCheckmarkSizeMultiplier:
+          checkboxCheckmarkSizeMultiplier ??
           this.checkboxCheckmarkSizeMultiplier,
       checkboxGrayedMarginMultiplier:
           checkboxGrayedMarginMultiplier ?? this.checkboxGrayedMarginMultiplier,
@@ -242,7 +243,8 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
       headerHeight: headerHeight ?? this.headerHeight,
       headerPadding: headerPadding ?? this.headerPadding,
       headerBorderWidth: headerBorderWidth ?? this.headerBorderWidth,
-      headerColumnBorderVerticalMargin: headerColumnBorderVerticalMargin ??
+      headerColumnBorderVerticalMargin:
+          headerColumnBorderVerticalMargin ??
           this.headerColumnBorderVerticalMargin,
       itemTextStyle: itemTextStyle ?? this.itemTextStyle,
       headerTextStyle: headerTextStyle ?? this.headerTextStyle,
@@ -291,55 +293,111 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
 
   @override
   TreeThemeExtension lerp(
-      covariant ThemeExtension<TreeThemeExtension>? other, double t) {
+    covariant ThemeExtension<TreeThemeExtension>? other,
+    double t,
+  ) {
     if (other is! TreeThemeExtension) return this as TreeThemeExtension;
     return TreeThemeExtension(
       backgroundColor: Color.lerp(backgroundColor, other.backgroundColor, t)!,
       disabledBackgroundColor: Color.lerp(
-          disabledBackgroundColor, other.disabledBackgroundColor, t)!,
-      hoverBackgroundColor:
-          Color.lerp(hoverBackgroundColor, other.hoverBackgroundColor, t)!,
+        disabledBackgroundColor,
+        other.disabledBackgroundColor,
+        t,
+      )!,
+      hoverBackgroundColor: Color.lerp(
+        hoverBackgroundColor,
+        other.hoverBackgroundColor,
+        t,
+      )!,
       selectedBackgroundColor: Color.lerp(
-          selectedBackgroundColor, other.selectedBackgroundColor, t)!,
+        selectedBackgroundColor,
+        other.selectedBackgroundColor,
+        t,
+      )!,
       itemTextColor: Color.lerp(itemTextColor, other.itemTextColor, t)!,
-      itemSelectedTextColor:
-          Color.lerp(itemSelectedTextColor, other.itemSelectedTextColor, t)!,
-      itemDisabledTextColor:
-          Color.lerp(itemDisabledTextColor, other.itemDisabledTextColor, t)!,
+      itemSelectedTextColor: Color.lerp(
+        itemSelectedTextColor,
+        other.itemSelectedTextColor,
+        t,
+      )!,
+      itemDisabledTextColor: Color.lerp(
+        itemDisabledTextColor,
+        other.itemDisabledTextColor,
+        t,
+      )!,
       itemHoverBackgroundColor: Color.lerp(
-          itemHoverBackgroundColor, other.itemHoverBackgroundColor, t)!,
+        itemHoverBackgroundColor,
+        other.itemHoverBackgroundColor,
+        t,
+      )!,
       itemSelectedBorderColor: Color.lerp(
-          itemSelectedBorderColor, other.itemSelectedBorderColor, t)!,
-      itemSelectedBorderWidth:
-          t < 0.5 ? itemSelectedBorderWidth : other.itemSelectedBorderWidth,
-      headerBackgroundColor:
-          Color.lerp(headerBackgroundColor, other.headerBackgroundColor, t)!,
+        itemSelectedBorderColor,
+        other.itemSelectedBorderColor,
+        t,
+      )!,
+      itemSelectedBorderWidth: t < 0.5
+          ? itemSelectedBorderWidth
+          : other.itemSelectedBorderWidth,
+      headerBackgroundColor: Color.lerp(
+        headerBackgroundColor,
+        other.headerBackgroundColor,
+        t,
+      )!,
       headerTextColor: Color.lerp(headerTextColor, other.headerTextColor, t)!,
-      headerBorderColor:
-          Color.lerp(headerBorderColor, other.headerBorderColor, t)!,
+      headerBorderColor: Color.lerp(
+        headerBorderColor,
+        other.headerBorderColor,
+        t,
+      )!,
       expandIconColor: Color.lerp(expandIconColor, other.expandIconColor, t)!,
-      expandIconHoverColor:
-          Color.lerp(expandIconHoverColor, other.expandIconHoverColor, t)!,
+      expandIconHoverColor: Color.lerp(
+        expandIconHoverColor,
+        other.expandIconHoverColor,
+        t,
+      )!,
       expandIconDisabledColor: Color.lerp(
-          expandIconDisabledColor, other.expandIconDisabledColor, t)!,
+        expandIconDisabledColor,
+        other.expandIconDisabledColor,
+        t,
+      )!,
       itemIconColor: Color.lerp(itemIconColor, other.itemIconColor, t)!,
-      itemIconSelectedColor:
-          Color.lerp(itemIconSelectedColor, other.itemIconSelectedColor, t)!,
-      itemIconDisabledColor:
-          Color.lerp(itemIconDisabledColor, other.itemIconDisabledColor, t)!,
+      itemIconSelectedColor: Color.lerp(
+        itemIconSelectedColor,
+        other.itemIconSelectedColor,
+        t,
+      )!,
+      itemIconDisabledColor: Color.lerp(
+        itemIconDisabledColor,
+        other.itemIconDisabledColor,
+        t,
+      )!,
       checkboxColor: Color.lerp(checkboxColor, other.checkboxColor, t)!,
-      checkboxSelectedColor:
-          Color.lerp(checkboxSelectedColor, other.checkboxSelectedColor, t)!,
-      checkboxBorderColor:
-          Color.lerp(checkboxBorderColor, other.checkboxBorderColor, t)!,
-      checkboxCheckmarkColor:
-          Color.lerp(checkboxCheckmarkColor, other.checkboxCheckmarkColor, t)!,
-      checkboxDisabledColor:
-          Color.lerp(checkboxDisabledColor, other.checkboxDisabledColor, t)!,
-      checkboxBorderWidth:
-          t < 0.5 ? checkboxBorderWidth : other.checkboxBorderWidth,
-      checkboxBorderRadius:
-          t < 0.5 ? checkboxBorderRadius : other.checkboxBorderRadius,
+      checkboxSelectedColor: Color.lerp(
+        checkboxSelectedColor,
+        other.checkboxSelectedColor,
+        t,
+      )!,
+      checkboxBorderColor: Color.lerp(
+        checkboxBorderColor,
+        other.checkboxBorderColor,
+        t,
+      )!,
+      checkboxCheckmarkColor: Color.lerp(
+        checkboxCheckmarkColor,
+        other.checkboxCheckmarkColor,
+        t,
+      )!,
+      checkboxDisabledColor: Color.lerp(
+        checkboxDisabledColor,
+        other.checkboxDisabledColor,
+        t,
+      )!,
+      checkboxBorderWidth: t < 0.5
+          ? checkboxBorderWidth
+          : other.checkboxBorderWidth,
+      checkboxBorderRadius: t < 0.5
+          ? checkboxBorderRadius
+          : other.checkboxBorderRadius,
       checkboxCheckmarkSizeMultiplier: t < 0.5
           ? checkboxCheckmarkSizeMultiplier
           : other.checkboxCheckmarkSizeMultiplier,
@@ -349,11 +407,17 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
       checkboxGrayedBorderRadius: t < 0.5
           ? checkboxGrayedBorderRadius
           : other.checkboxGrayedBorderRadius,
-      badgeBackgroundColor:
-          Color.lerp(badgeBackgroundColor, other.badgeBackgroundColor, t)!,
+      badgeBackgroundColor: Color.lerp(
+        badgeBackgroundColor,
+        other.badgeBackgroundColor,
+        t,
+      )!,
       badgeTextColor: Color.lerp(badgeTextColor, other.badgeTextColor, t)!,
-      badgeBorderColor:
-          Color.lerp(badgeBorderColor, other.badgeBorderColor, t)!,
+      badgeBorderColor: Color.lerp(
+        badgeBorderColor,
+        other.badgeBorderColor,
+        t,
+      )!,
       itemHeight: t < 0.5 ? itemHeight : other.itemHeight,
       itemIndent: t < 0.5 ? itemIndent : other.itemIndent,
       expandIconSize: t < 0.5 ? expandIconSize : other.expandIconSize,
@@ -374,56 +438,87 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
           ? headerColumnBorderVerticalMargin
           : other.headerColumnBorderVerticalMargin,
       itemTextStyle: TextStyle.lerp(itemTextStyle, other.itemTextStyle, t),
-      headerTextStyle:
-          TextStyle.lerp(headerTextStyle, other.headerTextStyle, t),
+      headerTextStyle: TextStyle.lerp(
+        headerTextStyle,
+        other.headerTextStyle,
+        t,
+      ),
       badgeTextStyle: TextStyle.lerp(badgeTextStyle, other.badgeTextStyle, t),
-      columnTextStyle:
-          TextStyle.lerp(columnTextStyle, other.columnTextStyle, t),
-      hoverAnimationDuration:
-          t < 0.5 ? hoverAnimationDuration : other.hoverAnimationDuration,
-      hoverAnimationCurve:
-          t < 0.5 ? hoverAnimationCurve : other.hoverAnimationCurve,
+      columnTextStyle: TextStyle.lerp(
+        columnTextStyle,
+        other.columnTextStyle,
+        t,
+      ),
+      hoverAnimationDuration: t < 0.5
+          ? hoverAnimationDuration
+          : other.hoverAnimationDuration,
+      hoverAnimationCurve: t < 0.5
+          ? hoverAnimationCurve
+          : other.hoverAnimationCurve,
       selectionAnimationDuration: t < 0.5
           ? selectionAnimationDuration
           : other.selectionAnimationDuration,
-      selectionAnimationCurve:
-          t < 0.5 ? selectionAnimationCurve : other.selectionAnimationCurve,
+      selectionAnimationCurve: t < 0.5
+          ? selectionAnimationCurve
+          : other.selectionAnimationCurve,
       borderWidth: t < 0.5 ? borderWidth : other.borderWidth,
       borderColor: Color.lerp(borderColor, other.borderColor, t)!,
       borderRadius: t < 0.5 ? borderRadius : other.borderRadius,
       columnTextColor: Color.lerp(columnTextColor, other.columnTextColor, t)!,
-      columnBackgroundColor:
-          Color.lerp(columnBackgroundColor, other.columnBackgroundColor, t)!,
-      columnDraggingBackgroundColor: Color.lerp(columnDraggingBackgroundColor,
-          other.columnDraggingBackgroundColor, t)!,
-      columnBorderColor:
-          Color.lerp(columnBorderColor, other.columnBorderColor, t)!,
-      columnRightBorderColor:
-          Color.lerp(columnRightBorderColor, other.columnRightBorderColor, t)!,
+      columnBackgroundColor: Color.lerp(
+        columnBackgroundColor,
+        other.columnBackgroundColor,
+        t,
+      )!,
+      columnDraggingBackgroundColor: Color.lerp(
+        columnDraggingBackgroundColor,
+        other.columnDraggingBackgroundColor,
+        t,
+      )!,
+      columnBorderColor: Color.lerp(
+        columnBorderColor,
+        other.columnBorderColor,
+        t,
+      )!,
+      columnRightBorderColor: Color.lerp(
+        columnRightBorderColor,
+        other.columnRightBorderColor,
+        t,
+      )!,
       columnResizeHandleColor: Color.lerp(
-          columnResizeHandleColor, other.columnResizeHandleColor, t)!,
+        columnResizeHandleColor,
+        other.columnResizeHandleColor,
+        t,
+      )!,
       columnPadding: t < 0.5 ? columnPadding : other.columnPadding,
       columnBorderWidth: t < 0.5 ? columnBorderWidth : other.columnBorderWidth,
-      columnResizeHandleWidth:
-          t < 0.5 ? columnResizeHandleWidth : other.columnResizeHandleWidth,
-      columnResizeHandleMargin:
-          t < 0.5 ? columnResizeHandleMargin : other.columnResizeHandleMargin,
-      columnDefaultWidth:
-          t < 0.5 ? columnDefaultWidth : other.columnDefaultWidth,
+      columnResizeHandleWidth: t < 0.5
+          ? columnResizeHandleWidth
+          : other.columnResizeHandleWidth,
+      columnResizeHandleMargin: t < 0.5
+          ? columnResizeHandleMargin
+          : other.columnResizeHandleMargin,
+      columnDefaultWidth: t < 0.5
+          ? columnDefaultWidth
+          : other.columnDefaultWidth,
       columnMinWidth: t < 0.5 ? columnMinWidth : other.columnMinWidth,
       columnMaxWidth: t < 0.5 ? columnMaxWidth : other.columnMaxWidth,
-      columnDragThreshold:
-          t < 0.5 ? columnDragThreshold : other.columnDragThreshold,
+      columnDragThreshold: t < 0.5
+          ? columnDragThreshold
+          : other.columnDragThreshold,
       cellPadding: t < 0.5 ? cellPadding : other.cellPadding,
-      cellMultiColumnPadding:
-          t < 0.5 ? cellMultiColumnPadding : other.cellMultiColumnPadding,
+      cellMultiColumnPadding: t < 0.5
+          ? cellMultiColumnPadding
+          : other.cellMultiColumnPadding,
       eventDefaultWidth: t < 0.5 ? eventDefaultWidth : other.eventDefaultWidth,
-      eventDefaultHeight:
-          t < 0.5 ? eventDefaultHeight : other.eventDefaultHeight,
+      eventDefaultHeight: t < 0.5
+          ? eventDefaultHeight
+          : other.eventDefaultHeight,
       eventDefaultX: t < 0.5 ? eventDefaultX : other.eventDefaultX,
       eventDefaultY: t < 0.5 ? eventDefaultY : other.eventDefaultY,
-      eventDefaultDetail:
-          t < 0.5 ? eventDefaultDetail : other.eventDefaultDetail,
+      eventDefaultDetail: t < 0.5
+          ? eventDefaultDetail
+          : other.eventDefaultDetail,
     );
   }
 
@@ -432,126 +527,327 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is TreeThemeExtension &&
-            const DeepCollectionEquality()
-                .equals(backgroundColor, other.backgroundColor) &&
             const DeepCollectionEquality().equals(
-                disabledBackgroundColor, other.disabledBackgroundColor) &&
-            const DeepCollectionEquality()
-                .equals(hoverBackgroundColor, other.hoverBackgroundColor) &&
+              backgroundColor,
+              other.backgroundColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                selectedBackgroundColor, other.selectedBackgroundColor) &&
-            const DeepCollectionEquality()
-                .equals(itemTextColor, other.itemTextColor) &&
-            const DeepCollectionEquality()
-                .equals(itemSelectedTextColor, other.itemSelectedTextColor) &&
-            const DeepCollectionEquality()
-                .equals(itemDisabledTextColor, other.itemDisabledTextColor) &&
+              disabledBackgroundColor,
+              other.disabledBackgroundColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                itemHoverBackgroundColor, other.itemHoverBackgroundColor) &&
+              hoverBackgroundColor,
+              other.hoverBackgroundColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                itemSelectedBorderColor, other.itemSelectedBorderColor) &&
+              selectedBackgroundColor,
+              other.selectedBackgroundColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                itemSelectedBorderWidth, other.itemSelectedBorderWidth) &&
-            const DeepCollectionEquality()
-                .equals(headerBackgroundColor, other.headerBackgroundColor) &&
-            const DeepCollectionEquality()
-                .equals(headerTextColor, other.headerTextColor) &&
-            const DeepCollectionEquality()
-                .equals(headerBorderColor, other.headerBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(expandIconColor, other.expandIconColor) &&
-            const DeepCollectionEquality()
-                .equals(expandIconHoverColor, other.expandIconHoverColor) &&
+              itemTextColor,
+              other.itemTextColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                expandIconDisabledColor, other.expandIconDisabledColor) &&
-            const DeepCollectionEquality()
-                .equals(itemIconColor, other.itemIconColor) &&
-            const DeepCollectionEquality()
-                .equals(itemIconSelectedColor, other.itemIconSelectedColor) &&
-            const DeepCollectionEquality()
-                .equals(itemIconDisabledColor, other.itemIconDisabledColor) &&
-            const DeepCollectionEquality()
-                .equals(checkboxColor, other.checkboxColor) &&
-            const DeepCollectionEquality()
-                .equals(checkboxSelectedColor, other.checkboxSelectedColor) &&
-            const DeepCollectionEquality()
-                .equals(checkboxBorderColor, other.checkboxBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(checkboxCheckmarkColor, other.checkboxCheckmarkColor) &&
-            const DeepCollectionEquality()
-                .equals(checkboxDisabledColor, other.checkboxDisabledColor) &&
-            const DeepCollectionEquality()
-                .equals(checkboxBorderWidth, other.checkboxBorderWidth) &&
-            const DeepCollectionEquality()
-                .equals(checkboxBorderRadius, other.checkboxBorderRadius) &&
+              itemSelectedTextColor,
+              other.itemSelectedTextColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                checkboxCheckmarkSizeMultiplier,
-                other.checkboxCheckmarkSizeMultiplier) &&
+              itemDisabledTextColor,
+              other.itemDisabledTextColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                checkboxGrayedMarginMultiplier,
-                other.checkboxGrayedMarginMultiplier) &&
+              itemHoverBackgroundColor,
+              other.itemHoverBackgroundColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                checkboxGrayedBorderRadius, other.checkboxGrayedBorderRadius) &&
-            const DeepCollectionEquality()
-                .equals(badgeBackgroundColor, other.badgeBackgroundColor) &&
-            const DeepCollectionEquality()
-                .equals(badgeTextColor, other.badgeTextColor) &&
-            const DeepCollectionEquality()
-                .equals(badgeBorderColor, other.badgeBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(itemHeight, other.itemHeight) &&
-            const DeepCollectionEquality()
-                .equals(itemIndent, other.itemIndent) &&
-            const DeepCollectionEquality()
-                .equals(expandIconSize, other.expandIconSize) &&
-            const DeepCollectionEquality()
-                .equals(itemIconSize, other.itemIconSize) &&
-            const DeepCollectionEquality()
-                .equals(checkboxSize, other.checkboxSize) &&
+              itemSelectedBorderColor,
+              other.itemSelectedBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              itemSelectedBorderWidth,
+              other.itemSelectedBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              headerBackgroundColor,
+              other.headerBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              headerTextColor,
+              other.headerTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              headerBorderColor,
+              other.headerBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              expandIconColor,
+              other.expandIconColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              expandIconHoverColor,
+              other.expandIconHoverColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              expandIconDisabledColor,
+              other.expandIconDisabledColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              itemIconColor,
+              other.itemIconColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              itemIconSelectedColor,
+              other.itemIconSelectedColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              itemIconDisabledColor,
+              other.itemIconDisabledColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxColor,
+              other.checkboxColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxSelectedColor,
+              other.checkboxSelectedColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxBorderColor,
+              other.checkboxBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxCheckmarkColor,
+              other.checkboxCheckmarkColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxDisabledColor,
+              other.checkboxDisabledColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxBorderWidth,
+              other.checkboxBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxBorderRadius,
+              other.checkboxBorderRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxCheckmarkSizeMultiplier,
+              other.checkboxCheckmarkSizeMultiplier,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxGrayedMarginMultiplier,
+              other.checkboxGrayedMarginMultiplier,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxGrayedBorderRadius,
+              other.checkboxGrayedBorderRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
+              badgeBackgroundColor,
+              other.badgeBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              badgeTextColor,
+              other.badgeTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              badgeBorderColor,
+              other.badgeBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              itemHeight,
+              other.itemHeight,
+            ) &&
+            const DeepCollectionEquality().equals(
+              itemIndent,
+              other.itemIndent,
+            ) &&
+            const DeepCollectionEquality().equals(
+              expandIconSize,
+              other.expandIconSize,
+            ) &&
+            const DeepCollectionEquality().equals(
+              itemIconSize,
+              other.itemIconSize,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxSize,
+              other.checkboxSize,
+            ) &&
             const DeepCollectionEquality().equals(badgeSize, other.badgeSize) &&
-            const DeepCollectionEquality().equals(badgeBorderRadius, other.badgeBorderRadius) &&
-            const DeepCollectionEquality().equals(badgeBorderWidth, other.badgeBorderWidth) &&
-            const DeepCollectionEquality().equals(itemPadding, other.itemPadding) &&
-            const DeepCollectionEquality().equals(expandIconSpacing, other.expandIconSpacing) &&
-            const DeepCollectionEquality().equals(itemIconSpacing, other.itemIconSpacing) &&
-            const DeepCollectionEquality().equals(checkboxSpacing, other.checkboxSpacing) &&
-            const DeepCollectionEquality().equals(badgeSpacing, other.badgeSpacing) &&
-            const DeepCollectionEquality().equals(headerHeight, other.headerHeight) &&
-            const DeepCollectionEquality().equals(headerPadding, other.headerPadding) &&
-            const DeepCollectionEquality().equals(headerBorderWidth, other.headerBorderWidth) &&
-            const DeepCollectionEquality().equals(headerColumnBorderVerticalMargin, other.headerColumnBorderVerticalMargin) &&
-            const DeepCollectionEquality().equals(itemTextStyle, other.itemTextStyle) &&
-            const DeepCollectionEquality().equals(headerTextStyle, other.headerTextStyle) &&
-            const DeepCollectionEquality().equals(badgeTextStyle, other.badgeTextStyle) &&
-            const DeepCollectionEquality().equals(columnTextStyle, other.columnTextStyle) &&
-            const DeepCollectionEquality().equals(hoverAnimationDuration, other.hoverAnimationDuration) &&
-            const DeepCollectionEquality().equals(hoverAnimationCurve, other.hoverAnimationCurve) &&
-            const DeepCollectionEquality().equals(selectionAnimationDuration, other.selectionAnimationDuration) &&
-            const DeepCollectionEquality().equals(selectionAnimationCurve, other.selectionAnimationCurve) &&
-            const DeepCollectionEquality().equals(borderWidth, other.borderWidth) &&
-            const DeepCollectionEquality().equals(borderColor, other.borderColor) &&
-            const DeepCollectionEquality().equals(borderRadius, other.borderRadius) &&
-            const DeepCollectionEquality().equals(columnTextColor, other.columnTextColor) &&
-            const DeepCollectionEquality().equals(columnBackgroundColor, other.columnBackgroundColor) &&
-            const DeepCollectionEquality().equals(columnDraggingBackgroundColor, other.columnDraggingBackgroundColor) &&
-            const DeepCollectionEquality().equals(columnBorderColor, other.columnBorderColor) &&
-            const DeepCollectionEquality().equals(columnRightBorderColor, other.columnRightBorderColor) &&
-            const DeepCollectionEquality().equals(columnResizeHandleColor, other.columnResizeHandleColor) &&
-            const DeepCollectionEquality().equals(columnPadding, other.columnPadding) &&
-            const DeepCollectionEquality().equals(columnBorderWidth, other.columnBorderWidth) &&
-            const DeepCollectionEquality().equals(columnResizeHandleWidth, other.columnResizeHandleWidth) &&
-            const DeepCollectionEquality().equals(columnResizeHandleMargin, other.columnResizeHandleMargin) &&
-            const DeepCollectionEquality().equals(columnDefaultWidth, other.columnDefaultWidth) &&
-            const DeepCollectionEquality().equals(columnMinWidth, other.columnMinWidth) &&
-            const DeepCollectionEquality().equals(columnMaxWidth, other.columnMaxWidth) &&
-            const DeepCollectionEquality().equals(columnDragThreshold, other.columnDragThreshold) &&
-            const DeepCollectionEquality().equals(cellPadding, other.cellPadding) &&
-            const DeepCollectionEquality().equals(cellMultiColumnPadding, other.cellMultiColumnPadding) &&
-            const DeepCollectionEquality().equals(eventDefaultWidth, other.eventDefaultWidth) &&
-            const DeepCollectionEquality().equals(eventDefaultHeight, other.eventDefaultHeight) &&
-            const DeepCollectionEquality().equals(eventDefaultX, other.eventDefaultX) &&
-            const DeepCollectionEquality().equals(eventDefaultY, other.eventDefaultY) &&
-            const DeepCollectionEquality().equals(eventDefaultDetail, other.eventDefaultDetail));
+            const DeepCollectionEquality().equals(
+              badgeBorderRadius,
+              other.badgeBorderRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
+              badgeBorderWidth,
+              other.badgeBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              itemPadding,
+              other.itemPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              expandIconSpacing,
+              other.expandIconSpacing,
+            ) &&
+            const DeepCollectionEquality().equals(
+              itemIconSpacing,
+              other.itemIconSpacing,
+            ) &&
+            const DeepCollectionEquality().equals(
+              checkboxSpacing,
+              other.checkboxSpacing,
+            ) &&
+            const DeepCollectionEquality().equals(
+              badgeSpacing,
+              other.badgeSpacing,
+            ) &&
+            const DeepCollectionEquality().equals(
+              headerHeight,
+              other.headerHeight,
+            ) &&
+            const DeepCollectionEquality().equals(
+              headerPadding,
+              other.headerPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              headerBorderWidth,
+              other.headerBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              headerColumnBorderVerticalMargin,
+              other.headerColumnBorderVerticalMargin,
+            ) &&
+            const DeepCollectionEquality().equals(
+              itemTextStyle,
+              other.itemTextStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              headerTextStyle,
+              other.headerTextStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              badgeTextStyle,
+              other.badgeTextStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              columnTextStyle,
+              other.columnTextStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              hoverAnimationDuration,
+              other.hoverAnimationDuration,
+            ) &&
+            const DeepCollectionEquality().equals(
+              hoverAnimationCurve,
+              other.hoverAnimationCurve,
+            ) &&
+            const DeepCollectionEquality().equals(
+              selectionAnimationDuration,
+              other.selectionAnimationDuration,
+            ) &&
+            const DeepCollectionEquality().equals(
+              selectionAnimationCurve,
+              other.selectionAnimationCurve,
+            ) &&
+            const DeepCollectionEquality().equals(
+              borderWidth,
+              other.borderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              borderColor,
+              other.borderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              borderRadius,
+              other.borderRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
+              columnTextColor,
+              other.columnTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              columnBackgroundColor,
+              other.columnBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              columnDraggingBackgroundColor,
+              other.columnDraggingBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              columnBorderColor,
+              other.columnBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              columnRightBorderColor,
+              other.columnRightBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              columnResizeHandleColor,
+              other.columnResizeHandleColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              columnPadding,
+              other.columnPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              columnBorderWidth,
+              other.columnBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              columnResizeHandleWidth,
+              other.columnResizeHandleWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              columnResizeHandleMargin,
+              other.columnResizeHandleMargin,
+            ) &&
+            const DeepCollectionEquality().equals(
+              columnDefaultWidth,
+              other.columnDefaultWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              columnMinWidth,
+              other.columnMinWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              columnMaxWidth,
+              other.columnMaxWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              columnDragThreshold,
+              other.columnDragThreshold,
+            ) &&
+            const DeepCollectionEquality().equals(
+              cellPadding,
+              other.cellPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              cellMultiColumnPadding,
+              other.cellMultiColumnPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              eventDefaultWidth,
+              other.eventDefaultWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              eventDefaultHeight,
+              other.eventDefaultHeight,
+            ) &&
+            const DeepCollectionEquality().equals(
+              eventDefaultX,
+              other.eventDefaultX,
+            ) &&
+            const DeepCollectionEquality().equals(
+              eventDefaultY,
+              other.eventDefaultY,
+            ) &&
+            const DeepCollectionEquality().equals(
+              eventDefaultDetail,
+              other.eventDefaultDetail,
+            ));
   }
 
   @override

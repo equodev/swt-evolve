@@ -42,6 +42,8 @@ public class VTreeItem extends VItem {
 
     public Font getFont() {
         Font val = ((DartTreeItem) impl).font;
+        if (val != null && !(val.getImpl() instanceof SwtFont))
+            return GraphicsUtils.copyFont(val);
         if (val != null && !(val.getImpl() instanceof DartFont))
             return null;
         return val;

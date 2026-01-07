@@ -13,7 +13,7 @@ import java.util.*;
 
 public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     protected final DartWidget forWidget;
-    protected long context; 
+    protected long context;
 
     static {
         FlutterLibraryLoader.initialize();
@@ -51,7 +51,7 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     }
 
     void initFlutterView(Composite parent, DartControl control) {
-        super.onReady(control);
+        super.onReady(control, Void.class);
 
         boolean isDark = Display.isSystemDarkTheme();
         String theme = isDark ? "dark" : "light";
@@ -87,6 +87,7 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     @Override
     public void destroy(DartWidget control) {
         if (control instanceof DartControl dartControl && control == forWidget) {
+            super.destroy(control);
             // Dispose Flutter context FIRST to handle view disconnection
             Dispose(context);
             context = 0;

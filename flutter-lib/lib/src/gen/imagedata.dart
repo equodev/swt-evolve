@@ -10,21 +10,24 @@ class VImageData {
 
   int? alpha;
   @JsonKey(
-      fromJson: ImageUtils.parseByteArray,
-      toJson: ImageUtils.serializeByteArray)
+    fromJson: ImageUtils.parseByteArray,
+    toJson: ImageUtils.serializeByteArray,
+  )
   List<int>? alphaData;
   int? bytesPerLine;
   @JsonKey(
-      fromJson: ImageUtils.parseByteArray,
-      toJson: ImageUtils.serializeByteArray)
+    fromJson: ImageUtils.parseByteArray,
+    toJson: ImageUtils.serializeByteArray,
+  )
   List<int>? data;
   int? delayTime;
   int? depth;
   int? disposalMethod;
   int? height;
   @JsonKey(
-      fromJson: ImageUtils.parseByteArray,
-      toJson: ImageUtils.serializeByteArray)
+    fromJson: ImageUtils.parseByteArray,
+    toJson: ImageUtils.serializeByteArray,
+  )
   List<int>? maskData;
   int? maskPad;
   int? scanlinePad;

@@ -72,4 +72,6 @@ tasks.register<JavaExec>("runExample") {
     if (System.getProperty("os.name").lowercase().contains("mac")) {
         jvmArgs("-XstartOnFirstThread")
     }
+    if (System.getProperty("test.debug") != null)
+        jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
 }

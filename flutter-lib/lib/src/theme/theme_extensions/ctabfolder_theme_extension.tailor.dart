@@ -126,7 +126,8 @@ mixin _$CTabFolderThemeExtensionTailorMixin
           tabUnselectedTextOpacity ?? this.tabUnselectedTextOpacity,
       tabCloseButtonSelectedOpacity:
           tabCloseButtonSelectedOpacity ?? this.tabCloseButtonSelectedOpacity,
-      tabCloseButtonUnselectedOpacity: tabCloseButtonUnselectedOpacity ??
+      tabCloseButtonUnselectedOpacity:
+          tabCloseButtonUnselectedOpacity ??
           this.tabCloseButtonUnselectedOpacity,
       tabHighlightColor: tabHighlightColor ?? this.tabHighlightColor,
       tabBorderWidth: tabBorderWidth ?? this.tabBorderWidth,
@@ -168,90 +169,159 @@ mixin _$CTabFolderThemeExtensionTailorMixin
 
   @override
   CTabFolderThemeExtension lerp(
-      covariant ThemeExtension<CTabFolderThemeExtension>? other, double t) {
+    covariant ThemeExtension<CTabFolderThemeExtension>? other,
+    double t,
+  ) {
     if (other is! CTabFolderThemeExtension)
       return this as CTabFolderThemeExtension;
     return CTabFolderThemeExtension(
-      tabBarBackgroundColor:
-          Color.lerp(tabBarBackgroundColor, other.tabBarBackgroundColor, t)!,
-      tabBarBorderColor:
-          Color.lerp(tabBarBorderColor, other.tabBarBorderColor, t)!,
-      tabBackgroundColor:
-          Color.lerp(tabBackgroundColor, other.tabBackgroundColor, t)!,
+      tabBarBackgroundColor: Color.lerp(
+        tabBarBackgroundColor,
+        other.tabBarBackgroundColor,
+        t,
+      )!,
+      tabBarBorderColor: Color.lerp(
+        tabBarBorderColor,
+        other.tabBarBorderColor,
+        t,
+      )!,
+      tabBackgroundColor: Color.lerp(
+        tabBackgroundColor,
+        other.tabBackgroundColor,
+        t,
+      )!,
       tabSelectedBackgroundColor: Color.lerp(
-          tabSelectedBackgroundColor, other.tabSelectedBackgroundColor, t)!,
+        tabSelectedBackgroundColor,
+        other.tabSelectedBackgroundColor,
+        t,
+      )!,
       tabHoverBackgroundColor: Color.lerp(
-          tabHoverBackgroundColor, other.tabHoverBackgroundColor, t)!,
+        tabHoverBackgroundColor,
+        other.tabHoverBackgroundColor,
+        t,
+      )!,
       tabDisabledBackgroundColor: Color.lerp(
-          tabDisabledBackgroundColor, other.tabDisabledBackgroundColor, t)!,
+        tabDisabledBackgroundColor,
+        other.tabDisabledBackgroundColor,
+        t,
+      )!,
       tabBorderColor: Color.lerp(tabBorderColor, other.tabBorderColor, t)!,
-      tabSelectedBorderColor:
-          Color.lerp(tabSelectedBorderColor, other.tabSelectedBorderColor, t)!,
-      tabHoverBorderColor:
-          Color.lerp(tabHoverBorderColor, other.tabHoverBorderColor, t)!,
-      tabDisabledBorderColor:
-          Color.lerp(tabDisabledBorderColor, other.tabDisabledBorderColor, t)!,
+      tabSelectedBorderColor: Color.lerp(
+        tabSelectedBorderColor,
+        other.tabSelectedBorderColor,
+        t,
+      )!,
+      tabHoverBorderColor: Color.lerp(
+        tabHoverBorderColor,
+        other.tabHoverBorderColor,
+        t,
+      )!,
+      tabDisabledBorderColor: Color.lerp(
+        tabDisabledBorderColor,
+        other.tabDisabledBorderColor,
+        t,
+      )!,
       tabTextColor: Color.lerp(tabTextColor, other.tabTextColor, t)!,
-      tabSelectedTextColor:
-          Color.lerp(tabSelectedTextColor, other.tabSelectedTextColor, t)!,
-      tabHoverTextColor:
-          Color.lerp(tabHoverTextColor, other.tabHoverTextColor, t)!,
-      tabDisabledTextColor:
-          Color.lerp(tabDisabledTextColor, other.tabDisabledTextColor, t)!,
-      tabUnselectedTextOpacity:
-          t < 0.5 ? tabUnselectedTextOpacity : other.tabUnselectedTextOpacity,
+      tabSelectedTextColor: Color.lerp(
+        tabSelectedTextColor,
+        other.tabSelectedTextColor,
+        t,
+      )!,
+      tabHoverTextColor: Color.lerp(
+        tabHoverTextColor,
+        other.tabHoverTextColor,
+        t,
+      )!,
+      tabDisabledTextColor: Color.lerp(
+        tabDisabledTextColor,
+        other.tabDisabledTextColor,
+        t,
+      )!,
+      tabUnselectedTextOpacity: t < 0.5
+          ? tabUnselectedTextOpacity
+          : other.tabUnselectedTextOpacity,
       tabCloseButtonSelectedOpacity: t < 0.5
           ? tabCloseButtonSelectedOpacity
           : other.tabCloseButtonSelectedOpacity,
       tabCloseButtonUnselectedOpacity: t < 0.5
           ? tabCloseButtonUnselectedOpacity
           : other.tabCloseButtonUnselectedOpacity,
-      tabHighlightColor:
-          Color.lerp(tabHighlightColor, other.tabHighlightColor, t)!,
+      tabHighlightColor: Color.lerp(
+        tabHighlightColor,
+        other.tabHighlightColor,
+        t,
+      )!,
       tabBorderWidth: t < 0.5 ? tabBorderWidth : other.tabBorderWidth,
-      tabSelectedBorderWidth:
-          t < 0.5 ? tabSelectedBorderWidth : other.tabSelectedBorderWidth,
-      tabHighlightBorderWidth:
-          t < 0.5 ? tabHighlightBorderWidth : other.tabHighlightBorderWidth,
+      tabSelectedBorderWidth: t < 0.5
+          ? tabSelectedBorderWidth
+          : other.tabSelectedBorderWidth,
+      tabHighlightBorderWidth: t < 0.5
+          ? tabHighlightBorderWidth
+          : other.tabHighlightBorderWidth,
       tabBorderRadius: t < 0.5 ? tabBorderRadius : other.tabBorderRadius,
-      tabHorizontalPadding:
-          t < 0.5 ? tabHorizontalPadding : other.tabHorizontalPadding,
-      tabVerticalPadding:
-          t < 0.5 ? tabVerticalPadding : other.tabVerticalPadding,
+      tabHorizontalPadding: t < 0.5
+          ? tabHorizontalPadding
+          : other.tabHorizontalPadding,
+      tabVerticalPadding: t < 0.5
+          ? tabVerticalPadding
+          : other.tabVerticalPadding,
       tabTextStyle: TextStyle.lerp(tabTextStyle, other.tabTextStyle, t),
-      tabSelectedTextStyle:
-          TextStyle.lerp(tabSelectedTextStyle, other.tabSelectedTextStyle, t),
+      tabSelectedTextStyle: TextStyle.lerp(
+        tabSelectedTextStyle,
+        other.tabSelectedTextStyle,
+        t,
+      ),
       tabContentBackgroundColor: Color.lerp(
-          tabContentBackgroundColor, other.tabContentBackgroundColor, t)!,
-      tabContentBorderColor:
-          Color.lerp(tabContentBorderColor, other.tabContentBorderColor, t)!,
+        tabContentBackgroundColor,
+        other.tabContentBackgroundColor,
+        t,
+      )!,
+      tabContentBorderColor: Color.lerp(
+        tabContentBorderColor,
+        other.tabContentBorderColor,
+        t,
+      )!,
       tabIconSize: t < 0.5 ? tabIconSize : other.tabIconSize,
       tabCloseIconSize: t < 0.5 ? tabCloseIconSize : other.tabCloseIconSize,
       controlButtonSize: t < 0.5 ? controlButtonSize : other.controlButtonSize,
-      tabIconTextSpacing:
-          t < 0.5 ? tabIconTextSpacing : other.tabIconTextSpacing,
-      tabCloseButtonSpacing:
-          t < 0.5 ? tabCloseButtonSpacing : other.tabCloseButtonSpacing,
-      tabIconBottomPadding:
-          t < 0.5 ? tabIconBottomPadding : other.tabIconBottomPadding,
-      tabTextBottomPadding:
-          t < 0.5 ? tabTextBottomPadding : other.tabTextBottomPadding,
-      tabCloseIconBottomPadding:
-          t < 0.5 ? tabCloseIconBottomPadding : other.tabCloseIconBottomPadding,
-      controlButtonColor:
-          Color.lerp(controlButtonColor, other.controlButtonColor, t)!,
+      tabIconTextSpacing: t < 0.5
+          ? tabIconTextSpacing
+          : other.tabIconTextSpacing,
+      tabCloseButtonSpacing: t < 0.5
+          ? tabCloseButtonSpacing
+          : other.tabCloseButtonSpacing,
+      tabIconBottomPadding: t < 0.5
+          ? tabIconBottomPadding
+          : other.tabIconBottomPadding,
+      tabTextBottomPadding: t < 0.5
+          ? tabTextBottomPadding
+          : other.tabTextBottomPadding,
+      tabCloseIconBottomPadding: t < 0.5
+          ? tabCloseIconBottomPadding
+          : other.tabCloseIconBottomPadding,
+      controlButtonColor: Color.lerp(
+        controlButtonColor,
+        other.controlButtonColor,
+        t,
+      )!,
       controlButtonHoverColor: Color.lerp(
-          controlButtonHoverColor, other.controlButtonHoverColor, t)!,
+        controlButtonHoverColor,
+        other.controlButtonHoverColor,
+        t,
+      )!,
       controlButtonHorizontalPadding: t < 0.5
           ? controlButtonHorizontalPadding
           : other.controlButtonHorizontalPadding,
-      controlButtonSpacing:
-          t < 0.5 ? controlButtonSpacing : other.controlButtonSpacing,
-      hoverRevealDuration:
-          t < 0.5 ? hoverRevealDuration : other.hoverRevealDuration,
+      controlButtonSpacing: t < 0.5
+          ? controlButtonSpacing
+          : other.controlButtonSpacing,
+      hoverRevealDuration: t < 0.5
+          ? hoverRevealDuration
+          : other.hoverRevealDuration,
       hoverHideDuration: t < 0.5 ? hoverHideDuration : other.hoverHideDuration,
-      tabScrollbarThickness:
-          t < 0.5 ? tabScrollbarThickness : other.tabScrollbarThickness,
+      tabScrollbarThickness: t < 0.5
+          ? tabScrollbarThickness
+          : other.tabScrollbarThickness,
     );
   }
 
@@ -260,86 +330,178 @@ mixin _$CTabFolderThemeExtensionTailorMixin
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is CTabFolderThemeExtension &&
-            const DeepCollectionEquality()
-                .equals(tabBarBackgroundColor, other.tabBarBackgroundColor) &&
-            const DeepCollectionEquality()
-                .equals(tabBarBorderColor, other.tabBarBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(tabBackgroundColor, other.tabBackgroundColor) &&
             const DeepCollectionEquality().equals(
-                tabSelectedBackgroundColor, other.tabSelectedBackgroundColor) &&
+              tabBarBackgroundColor,
+              other.tabBarBackgroundColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                tabHoverBackgroundColor, other.tabHoverBackgroundColor) &&
+              tabBarBorderColor,
+              other.tabBarBorderColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                tabDisabledBackgroundColor, other.tabDisabledBackgroundColor) &&
-            const DeepCollectionEquality()
-                .equals(tabBorderColor, other.tabBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(tabSelectedBorderColor, other.tabSelectedBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(tabHoverBorderColor, other.tabHoverBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(tabDisabledBorderColor, other.tabDisabledBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(tabTextColor, other.tabTextColor) &&
-            const DeepCollectionEquality()
-                .equals(tabSelectedTextColor, other.tabSelectedTextColor) &&
-            const DeepCollectionEquality()
-                .equals(tabHoverTextColor, other.tabHoverTextColor) &&
-            const DeepCollectionEquality()
-                .equals(tabDisabledTextColor, other.tabDisabledTextColor) &&
+              tabBackgroundColor,
+              other.tabBackgroundColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                tabUnselectedTextOpacity, other.tabUnselectedTextOpacity) &&
-            const DeepCollectionEquality().equals(tabCloseButtonSelectedOpacity,
-                other.tabCloseButtonSelectedOpacity) &&
+              tabSelectedBackgroundColor,
+              other.tabSelectedBackgroundColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                tabCloseButtonUnselectedOpacity,
-                other.tabCloseButtonUnselectedOpacity) &&
-            const DeepCollectionEquality()
-                .equals(tabHighlightColor, other.tabHighlightColor) &&
-            const DeepCollectionEquality()
-                .equals(tabBorderWidth, other.tabBorderWidth) &&
-            const DeepCollectionEquality()
-                .equals(tabSelectedBorderWidth, other.tabSelectedBorderWidth) &&
+              tabHoverBackgroundColor,
+              other.tabHoverBackgroundColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                tabHighlightBorderWidth, other.tabHighlightBorderWidth) &&
-            const DeepCollectionEquality()
-                .equals(tabBorderRadius, other.tabBorderRadius) &&
-            const DeepCollectionEquality()
-                .equals(tabHorizontalPadding, other.tabHorizontalPadding) &&
-            const DeepCollectionEquality()
-                .equals(tabVerticalPadding, other.tabVerticalPadding) &&
-            const DeepCollectionEquality()
-                .equals(tabTextStyle, other.tabTextStyle) &&
-            const DeepCollectionEquality()
-                .equals(tabSelectedTextStyle, other.tabSelectedTextStyle) &&
+              tabDisabledBackgroundColor,
+              other.tabDisabledBackgroundColor,
+            ) &&
             const DeepCollectionEquality().equals(
-                tabContentBackgroundColor, other.tabContentBackgroundColor) &&
-            const DeepCollectionEquality()
-                .equals(tabContentBorderColor, other.tabContentBorderColor) &&
-            const DeepCollectionEquality()
-                .equals(tabIconSize, other.tabIconSize) &&
-            const DeepCollectionEquality()
-                .equals(tabCloseIconSize, other.tabCloseIconSize) &&
-            const DeepCollectionEquality()
-                .equals(controlButtonSize, other.controlButtonSize) &&
-            const DeepCollectionEquality()
-                .equals(tabIconTextSpacing, other.tabIconTextSpacing) &&
-            const DeepCollectionEquality()
-                .equals(tabCloseButtonSpacing, other.tabCloseButtonSpacing) &&
-            const DeepCollectionEquality()
-                .equals(tabIconBottomPadding, other.tabIconBottomPadding) &&
-            const DeepCollectionEquality()
-                .equals(tabTextBottomPadding, other.tabTextBottomPadding) &&
-            const DeepCollectionEquality()
-                .equals(tabCloseIconBottomPadding, other.tabCloseIconBottomPadding) &&
-            const DeepCollectionEquality().equals(controlButtonColor, other.controlButtonColor) &&
-            const DeepCollectionEquality().equals(controlButtonHoverColor, other.controlButtonHoverColor) &&
-            const DeepCollectionEquality().equals(controlButtonHorizontalPadding, other.controlButtonHorizontalPadding) &&
-            const DeepCollectionEquality().equals(controlButtonSpacing, other.controlButtonSpacing) &&
-            const DeepCollectionEquality().equals(hoverRevealDuration, other.hoverRevealDuration) &&
-            const DeepCollectionEquality().equals(hoverHideDuration, other.hoverHideDuration) &&
-            const DeepCollectionEquality().equals(tabScrollbarThickness, other.tabScrollbarThickness));
+              tabBorderColor,
+              other.tabBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabSelectedBorderColor,
+              other.tabSelectedBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabHoverBorderColor,
+              other.tabHoverBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabDisabledBorderColor,
+              other.tabDisabledBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabTextColor,
+              other.tabTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabSelectedTextColor,
+              other.tabSelectedTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabHoverTextColor,
+              other.tabHoverTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabDisabledTextColor,
+              other.tabDisabledTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabUnselectedTextOpacity,
+              other.tabUnselectedTextOpacity,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabCloseButtonSelectedOpacity,
+              other.tabCloseButtonSelectedOpacity,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabCloseButtonUnselectedOpacity,
+              other.tabCloseButtonUnselectedOpacity,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabHighlightColor,
+              other.tabHighlightColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabBorderWidth,
+              other.tabBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabSelectedBorderWidth,
+              other.tabSelectedBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabHighlightBorderWidth,
+              other.tabHighlightBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabBorderRadius,
+              other.tabBorderRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabHorizontalPadding,
+              other.tabHorizontalPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabVerticalPadding,
+              other.tabVerticalPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabTextStyle,
+              other.tabTextStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabSelectedTextStyle,
+              other.tabSelectedTextStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabContentBackgroundColor,
+              other.tabContentBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabContentBorderColor,
+              other.tabContentBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabIconSize,
+              other.tabIconSize,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabCloseIconSize,
+              other.tabCloseIconSize,
+            ) &&
+            const DeepCollectionEquality().equals(
+              controlButtonSize,
+              other.controlButtonSize,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabIconTextSpacing,
+              other.tabIconTextSpacing,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabCloseButtonSpacing,
+              other.tabCloseButtonSpacing,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabIconBottomPadding,
+              other.tabIconBottomPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabTextBottomPadding,
+              other.tabTextBottomPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabCloseIconBottomPadding,
+              other.tabCloseIconBottomPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              controlButtonColor,
+              other.controlButtonColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              controlButtonHoverColor,
+              other.controlButtonHoverColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              controlButtonHorizontalPadding,
+              other.controlButtonHorizontalPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              controlButtonSpacing,
+              other.controlButtonSpacing,
+            ) &&
+            const DeepCollectionEquality().equals(
+              hoverRevealDuration,
+              other.hoverRevealDuration,
+            ) &&
+            const DeepCollectionEquality().equals(
+              hoverHideDuration,
+              other.hoverHideDuration,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabScrollbarThickness,
+              other.tabScrollbarThickness,
+            ));
   }
 
   @override

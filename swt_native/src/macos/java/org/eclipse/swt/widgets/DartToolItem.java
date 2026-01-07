@@ -211,38 +211,7 @@ public class DartToolItem extends DartItem implements IToolItem {
     }
 
     Point computeSize() {
-        checkWidget();
-        int width = 0, height = 0;
-        if ((getApi().style & SWT.SEPARATOR) != 0) {
-            // In the unified toolbar case the width is ignored if 0, DEFAULT, or SEPARATOR_FILL.
-            if ((parent.style & SWT.HORIZONTAL) != 0) {
-                width = getWidth();
-                if (width <= 0)
-                    width = DEFAULT_SEPARATOR_WIDTH;
-                height = DEFAULT_HEIGHT;
-            } else {
-                width = DEFAULT_WIDTH;
-                height = getWidth();
-                if (height <= 0)
-                    height = DEFAULT_SEPARATOR_WIDTH;
-            }
-            if (control != null) {
-                height = Math.max(height, ((DartControl) control.getImpl()).getMininumHeight());
-            }
-        } else {
-            if (text.length() != 0 || image != null) {
-            } else {
-                width = DEFAULT_WIDTH;
-                height = DEFAULT_HEIGHT;
-            }
-            if ((getApi().style & SWT.DROP_DOWN) != 0) {
-                width += ARROW_WIDTH + INSET;
-            }
-            {
-                height -= 2;
-            }
-        }
-        return new Point(width, height);
+        return Sizes.computeSize(this);
     }
 
     @Override

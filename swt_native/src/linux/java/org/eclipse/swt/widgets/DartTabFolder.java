@@ -167,40 +167,17 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
 
     @Override
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.compute(this);
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override
     Rectangle computeTrimInPixels(int x, int y, int width, int height) {
-        checkWidget();
-        forceResize();
-        if ((getApi().style & SWT.BOTTOM) != 0) {
-        } else {
-        }
-        return new Rectangle(x, y, width, height);
+        return Sizes.computeTrim(this, x, y, width, height);
     }
 
     @Override
     Rectangle getClientAreaInPixels() {
-        Rectangle clientRectangle = super.getClientAreaInPixels();
-        /*
-	* Bug 454936 (see also other 454936 references)
-	* SWT's calls to gtk_widget_size_allocate and gtk_widget_set_allocation
-	* causes GTK+ to move the clientHandle's SwtFixed down by the size of the labels.
-	* These calls can come up from 'shell' and TabFolder has no control over these calls.
-	*
-	* This is an undesired side-effect. Client handle's x & y positions should never
-	* be incremented as this is an internal sub-container.
-	*
-	* Note: 0 by 0 was chosen as 1 by 1 shifts controls beyond their original pos.
-	* The long term fix would be to not use widget_*_allocation from higher containers,
-	* but this would require removal of swtFixed.
-	*
-	* This is Gtk3-specific for Tabfolder as the architecture is changed in gtk3 only.
-	*/
-        clientRectangle.x = 0;
-        clientRectangle.y = 0;
-        return clientRectangle;
+        return Sizes.getClientArea(this);
     }
 
     @Override
@@ -469,32 +446,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
 
     @Override
     Point minimumSize(int wHint, int hHint, boolean flushCache) {
-        Control[] children = _getChildren();
-        int width = 0, height = 0;
-        for (int i = 0; i < children.length; i++) {
-            Control child = children[i];
-            int index = 0;
-            int count = getItemCount();
-            while (index < count) {
-                if (((DartTabItem) items[index].getImpl()).control == child)
-                    break;
-                index++;
-            }
-            if (index == count) {
-                Rectangle rect = child.getBounds();
-                width = Math.max(width, rect.x + rect.width);
-                height = Math.max(height, rect.y + rect.height);
-            } else {
-                /*
-			 * Since computeSize can be overridden by subclasses, we cannot
-			 * call computeSizeInPixels directly.
-			 */
-                Point size = child.computeSize(wHint, hHint, flushCache);
-                width = Math.max(width, size.x);
-                height = Math.max(height, size.y);
-            }
-        }
-        return new Point(width, height);
+        return Sizes.minimumSize(this, wHint, hHint, flushCache);
     }
 
     @Override

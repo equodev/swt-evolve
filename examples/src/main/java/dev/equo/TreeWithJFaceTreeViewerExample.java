@@ -1,10 +1,7 @@
 package dev.equo;
 
 import dev.equo.swt.Config;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
-import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
-import org.eclipse.jface.viewers.TreeViewer;
+import org.eclipse.jface.viewers.*;
 import org.eclipse.jface.window.ApplicationWindow;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.*;
@@ -96,5 +93,101 @@ public class TreeWithJFaceTreeViewerExample extends ApplicationWindow {
         super.configureShell(shell);
         shell.setText("Tree with JFace TreeViewer Example");
         shell.setSize(400, 300);
+    }
+
+    public static class ViewLabelProvider extends LabelProvider {
+
+        @Override
+        public String getText(Object element) {
+            if (element instanceof TreeNode) {
+                return ((TreeNode) element).getName();
+            }
+            return super.getText(element);
+        }
+    }
+
+    public static class ViewContentProvider implements ITreeContentProvider {
+
+        @Override
+        public Object[] getElements(Object inputElement) {
+            if (inputElement instanceof List) {
+                return ((List<?>) inputElement).toArray();
+            }
+            return new Object[0];
+        }
+
+        @Override
+        public Object[] getChildren(Object parentElement) {
+            if (parentElement instanceof TreeNode) {
+                return ((TreeNode) parentElement).getChildren().toArray();
+            }
+            return new Object[0];
+        }
+
+        @Override
+        public Object getParent(Object element) {
+            if (element instanceof TreeNode) {
+                return ((TreeNode) element).getParent();
+            }
+            return null;
+        }
+
+        @Override
+        public boolean hasChildren(Object element) {
+            if (element instanceof TreeNode) {
+                return ((TreeNode) element).hasChildren();
+            }
+            return false;
+        }
+
+        @Override
+        public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+            // Not used in this example
+        }
+
+        @Override
+        public void dispose() {
+            // Not used in this example
+        }
+    }
+
+    public static class TreeNode {
+        private String name;
+        private List<TreeNode> children = new ArrayList<>();
+        private TreeNode parent;
+
+        public TreeNode(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void addChild(TreeNode child) {
+            children.add(child);
+            child.setParent(this);
+        }
+
+        public List<TreeNode> getChildren() {
+            return children;
+        }
+
+        public TreeNode getParent() {
+            return parent;
+        }
+
+        public void setParent(TreeNode parent) {
+            this.parent = parent;
+        }
+
+        public boolean hasChildren() {
+            return !children.isEmpty();
+        }
+
+        @Override
+        public String toString() {
+            return getName();
+        }
     }
 }

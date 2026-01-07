@@ -23,5 +23,4 @@ instancio-junit = { group = "org.instancio", name = "instancio-junit", version.r
 
 # Core dependencies
 equo-comm-ws = { group = "dev.equo", name = "com.equo.comm.ws.provider", version.ref = "equo-comm" }
-auto-value-annotations = { group = "com.google.auto.value", name = "auto-value-annotations", version.ref = "auto-value" }
 dsl-json = { group = "com.dslplatform", name = "dsl-json", version.ref = "dsl-json" }

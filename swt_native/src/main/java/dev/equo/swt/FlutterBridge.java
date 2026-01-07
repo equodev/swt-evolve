@@ -20,20 +20,28 @@ import static dev.equo.swt.Config.getConfigFlags;
 public abstract class FlutterBridge {
     private static final String DEV_EQU_SWT_NEW = "dev.equ.swt.new";
     protected static final FlutterClient client;
-    private static final Serializer serializer = new Serializer();
+    protected static final Serializer serializer = new Serializer();
     private static final Set<Object> dirty = new HashSet<>();
     private static FlutterBridge bridge;
+    private static boolean keepClient = false;
 
     static {
         client = new FlutterClient();
         client.createComm();
     }
 
+    protected final CompletableFuture<Boolean> clientReady = new CompletableFuture<>();
+
     public static void disposeClient() {
-        client.dispose();
+        if (!keepClient)
+            client.dispose();
+        keepClient = false;
     }
 
-    protected final CompletableFuture<Boolean> clientReady = new CompletableFuture<>();
+    public static void disposeDisplayAndContinue(Display display) {
+        keepClient = true;
+        display.dispose();
+    }
 
     public static FlutterBridge of(DartWidget dartControl) {
         if (bridge != null)
@@ -160,7 +168,7 @@ public abstract class FlutterBridge {
         return null;
     }
 
-    private static void serializeAndSend(String eventName, Object args) throws IOException {
+    protected static void serializeAndSend(String eventName, Object args) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         serializer.to(args, out);
         String serialized = out.toString(StandardCharsets.UTF_8);
@@ -198,12 +206,17 @@ public abstract class FlutterBridge {
         });
     }
 
-    public static void onPayload(DartWidget widget, String event, Consumer<Object> cb) {
-        String eventName =  eventName(widget, event);
+    public static void onPayload(Object widget, String event, Consumer<Object> cb) {
+        String eventName = eventName(widget, event);
         client.getComm().on(eventName, p -> {
             System.out.println(eventName + ", payload:"+p);
             cb.accept(p);
         });
+    }
+
+    public static void removeEvent(Object widget, String event) {
+        String eventName = eventName(widget, event);
+        client.getComm().remove(eventName);
     }
 
     public static void send(DartResource resource, String event, Object args) {
@@ -217,12 +230,15 @@ public abstract class FlutterBridge {
         }
     }
 
-    protected void onReady(DartControl control) {
+    protected <P> CompletableFuture<P> onReady(Object control, Class<P> payloadClass) {
         setNotNew(control);
         dirty(control);
-        client.getComm().on(event(control,"ClientReady"), p -> {
+        CompletableFuture<P> readyPayload = (payloadClass != null) ? new CompletableFuture<>() : null;
+        client.getComm().on(event(control,"ClientReady"), payloadClass, p -> {
             if (!clientReady.isDone()) {
                 System.out.println("ClientReady "+event(control));
+                if (readyPayload != null)
+                    readyPayload.complete(p);
                 clientReady.complete(true);
                 // Send properties AFTER Flutter is ready to receive them
                 sendSwtEvolveProperties();
@@ -231,6 +247,14 @@ public abstract class FlutterBridge {
                 update();
             }
         });
+        return readyPayload;
+    }
+
+    private void dirty(Object obj) {
+        if (obj instanceof DartControl c)
+            dirty(c);
+        if (obj instanceof DartResource r)
+            dirty(r);
     }
 
     public void dirty(DartResource resource) {
@@ -269,7 +293,7 @@ public abstract class FlutterBridge {
         if (w instanceof DartResource) {
             return w.getClass().getSimpleName().substring(4);
         }
-        return null;
+        return w.getClass().getSimpleName();
     }
 
     public static String eventName(Object w, String event) {
@@ -283,7 +307,9 @@ public abstract class FlutterBridge {
         return ev;
     }
 
-    public abstract void destroy(DartWidget control);
+    public void destroy(DartWidget control) {
+        client.getComm().remove(event(control,"ClientReady"));
+    }
 
     public void setBounds(DartControl dartControl, Rectangle bounds) {
     }
@@ -315,7 +341,7 @@ public abstract class FlutterBridge {
         if (w instanceof DartResource) {
             return ((DartResource) w).getApi().hashCode();
         }
-        return 0;
+        return w.hashCode();
     }
 
     static long id(Widget w) {

@@ -19,10 +19,10 @@ VCaret _$VCaretFromJson(Map<String, dynamic> json) => VCaret()
   ..visible = json['visible'] as bool?;
 
 Map<String, dynamic> _$VCaretToJson(VCaret instance) => <String, dynamic>{
-      'swt': instance.swt,
-      'id': instance.id,
-      'style': instance.style,
-      'font': instance.font,
-      'image': instance.image,
-      'visible': instance.visible,
-    };
+  'swt': instance.swt,
+  'id': instance.id,
+  'style': instance.style,
+  'font': instance.font,
+  'image': instance.image,
+  'visible': instance.visible,
+};

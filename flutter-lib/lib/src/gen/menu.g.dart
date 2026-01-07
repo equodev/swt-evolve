@@ -27,14 +27,14 @@ VMenu _$VMenuFromJson(Map<String, dynamic> json) => VMenu()
   ..visible = json['visible'] as bool?;
 
 Map<String, dynamic> _$VMenuToJson(VMenu instance) => <String, dynamic>{
-      'swt': instance.swt,
-      'id': instance.id,
-      'style': instance.style,
-      'defaultItem': instance.defaultItem,
-      'enabled': instance.enabled,
-      'items': instance.items,
-      'location': instance.location,
-      'orientation': instance.orientation,
-      'parentMenu': instance.parentMenu,
-      'visible': instance.visible,
-    };
+  'swt': instance.swt,
+  'id': instance.id,
+  'style': instance.style,
+  'defaultItem': instance.defaultItem,
+  'enabled': instance.enabled,
+  'items': instance.items,
+  'location': instance.location,
+  'orientation': instance.orientation,
+  'parentMenu': instance.parentMenu,
+  'visible': instance.visible,
+};

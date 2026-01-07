@@ -83,6 +83,8 @@ public class VControl extends VWidget {
 
     public Font getFont() {
         Font val = ((DartControl) impl).font;
+        if (val != null && !(val.getImpl() instanceof SwtFont))
+            return GraphicsUtils.copyFont(val);
         if (val != null && !(val.getImpl() instanceof DartFont))
             return null;
         return val;
