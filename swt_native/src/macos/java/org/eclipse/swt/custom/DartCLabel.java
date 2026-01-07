@@ -154,6 +154,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         if ((style & SWT.LEFT) != 0)
             align = SWT.LEFT;
         addPaintListener(this::onPaint);
+        this.background = new Color(0, 0, 0, 0);
         addTraverseListener(event -> {
             if (event.detail == SWT.TRAVERSE_MNEMONIC) {
                 onMnemonic(event);
@@ -907,7 +908,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
             dirty();
         }
         if (image != this.image) {
-            this.image = image;
+            this.image = GraphicsUtils.copyImage(getDisplay(), image);
             redraw();
         }
     }
