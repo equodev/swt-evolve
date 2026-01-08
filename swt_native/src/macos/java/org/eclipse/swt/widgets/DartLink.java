@@ -135,6 +135,7 @@ public class DartLink extends DartControl implements ILink {
     void createWidget() {
         super.createWidget();
         text = "";
+        _linkForeground = display.getSystemColor(SWT.COLOR_LINK_FOREGROUND);
         offsets = new Point[0];
         ids = new String[0];
         mnemonics = new int[0];
@@ -471,7 +472,7 @@ public class DartLink extends DartControl implements ILink {
      * @since 3.105
      */
     public void setLinkForeground(Color color) {
-        Color newValue = color;
+        Color newValue = color != null ? color : display.getSystemColor(SWT.COLOR_LINK_FOREGROUND);
         if (!java.util.Objects.equals(this._linkForeground, newValue)) {
             dirty();
         }
