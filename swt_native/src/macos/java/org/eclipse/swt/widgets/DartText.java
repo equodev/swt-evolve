@@ -1886,27 +1886,37 @@ public class DartText extends DartScrollable implements IText {
         super._hookEvents();
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
-                setText(e.text);
+                if (!isDisposed()) {
+                    setText(e.text);
+                }
             });
         });
         FlutterBridge.on(this, "Segment", "Segments", e -> {
             getDisplay().asyncExec(() -> {
-                sendEvent(SWT.Segments, e);
+                if (!isDisposed()) {
+                    sendEvent(SWT.Segments, e);
+                }
             });
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
-                sendEvent(SWT.DefaultSelection, e);
+                if (!isDisposed()) {
+                    sendEvent(SWT.DefaultSelection, e);
+                }
             });
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {
             getDisplay().asyncExec(() -> {
-                setSelection(e.index);
+                if (!isDisposed()) {
+                    setSelection(e.index);
+                }
             });
         });
         FlutterBridge.on(this, "Verify", "Verify", e -> {
             getDisplay().asyncExec(() -> {
-                sendEvent(SWT.Verify, e);
+                if (!isDisposed()) {
+                    sendEvent(SWT.Verify, e);
+                }
             });
         });
     }

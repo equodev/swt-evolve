@@ -747,6 +747,7 @@ public class DartTree extends DartComposite implements ITree {
                 }
             }
             cachedItemOrder = newOrder;
+            columnOrder = newOrder;
         }
         for (TreeItem item : items) {
             if (item != null) {
@@ -825,12 +826,7 @@ public class DartTree extends DartComposite implements ITree {
         updateImageList();
         updateScrollBar();
         if (columnCount != 0) {
-            int[] newOrder = getColumnOrderFromOS();
             TreeColumn[] newColumns = new TreeColumn[columnCount - orderIndex];
-            for (int i = orderIndex; i < newOrder.length; i++) {
-                newColumns[i - orderIndex] = columns[newOrder[i]];
-                ((DartTreeColumn) newColumns[i - orderIndex].getImpl()).updateToolTip(newOrder[i]);
-            }
             for (TreeColumn newColumn : newColumns) {
                 if (!newColumn.isDisposed()) {
                     newColumn.getImpl().sendEvent(SWT.Move);
@@ -1202,16 +1198,7 @@ public class DartTree extends DartComposite implements ITree {
         if (cachedItemOrder != null) {
             return cachedItemOrder.clone();
         }
-        int[] order = getColumnOrderFromOS();
-        return order;
-    }
-
-    private int[] getColumnOrderFromOS() {
-        if (columnCount == 0)
-            return new int[0];
-        int[] order = new int[columnCount];
-        for (int i = 0; i < columnCount; i++) order[i] = i;
-        return order;
+        return this.columnOrder;
     }
 
     /**
@@ -2143,10 +2130,11 @@ public class DartTree extends DartComposite implements ITree {
      * @since 3.2
      */
     public void setColumnOrder(int[] order) {
-        checkWidget();
-        if (!java.util.Objects.equals(this.cachedItemOrder, order)) {
+        int[] newValue = order;
+        if (!java.util.Objects.equals(this.columnOrder, newValue)) {
             dirty();
         }
+        checkWidget();
         if (order == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (columnCount == 0) {
@@ -2169,6 +2157,7 @@ public class DartTree extends DartComposite implements ITree {
             if (index != oldOrder[i])
                 reorder = true;
         }
+        this.columnOrder = newValue;
         if (reorder) {
             for (int i = 0; i < columnCount; i++) {
             }
@@ -2866,6 +2855,8 @@ public class DartTree extends DartComposite implements ITree {
         ((DartTree) tree.getImpl()).setCheckboxImageList();
     }
 
+    int[] columnOrder = new int[0];
+
     Color _headerBackground;
 
     Color _headerForeground;
@@ -3070,6 +3061,10 @@ public class DartTree extends DartComposite implements ITree {
 
     public int _cachedItemCount() {
         return cachedItemCount;
+    }
+
+    public int[] _columnOrder() {
+        return columnOrder;
     }
 
     public Color __headerBackground() {

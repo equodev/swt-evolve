@@ -1024,25 +1024,24 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      * @since 3.104
      */
     public void setToolTipText(String toolTip) {
-        String newValue = toolTip;
-        if (!java.util.Objects.equals(this.toolTipText, newValue)) {
-            dirty();
-        }
         checkWidget();
-        if (toolTip == null && itemToolTip != null) {
-            if (!itemToolTip.isDisposed()) {
+        String newValue = toolTip;
+        if (!java.util.Objects.equals(this.toolTipText, newValue))
+            dirty();
+        this.toolTipText = newValue;
+        if (toolTip == null || toolTip.trim().isEmpty()) {
+            if (itemToolTip != null && !itemToolTip.isDisposed()) {
                 itemToolTip.setVisible(false);
                 itemToolTip.dispose();
             }
             itemToolTip = null;
-        }
-        if (toolTip == null || toolTip.trim().length() == 0 || (itemToolTip != null && !itemToolTip.isDisposed() && toolTip.equals(itemToolTip.getMessage())))
             return;
-        if (itemToolTip != null)
-            itemToolTip.dispose();
-        ;
-        itemToolTip.setMessage(toolTip);
-        this.toolTipText = newValue;
+        }
+        if (itemToolTip == null || itemToolTip.isDisposed()) {
+            itemToolTip = new ToolTip(parent.getShell(), SWT.BALLOON);
+        }
+        if (!toolTip.equals(itemToolTip.getMessage()))
+            itemToolTip.setMessage(toolTip);
         itemToolTip.setVisible(false);
     }
 

@@ -2943,7 +2943,7 @@ public final class DartGC extends DartResource implements IGC {
 
     int lineCap;
 
-    int[] lineDash = new int[0];
+    int[] lineDash;
 
     int lineJoin;
 

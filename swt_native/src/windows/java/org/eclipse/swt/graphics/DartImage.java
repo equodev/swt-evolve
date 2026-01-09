@@ -454,6 +454,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         if (stream == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         init();
+        ImageData data = new ImageData(stream);
+        init(data, 100);
         ((SwtDevice) this.device.getImpl()).registerResourceWithZoomSupport(this.getApi());
     }
 
@@ -1205,14 +1207,17 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         if (i.scanlinePad != 4 && (i.bytesPerLine % 4 != 0)) {
             data = ImageData.convertPad(data, i.width, i.height, i.depth, i.scanlinePad, 4);
         }
+        //if (i.getTransparencyType() == SWT.TRANSPARENCY_MASK) {    /* Get the HDC for the device */    long hDC = device.internal_new_GC(null);    /* Create the color bitmap */    long hdcSrc = OS.CreateCompatibleDC(hDC);    OS.SelectObject(hdcSrc, hDib);    long hBitmap = OS.CreateCompatibleBitmap(hDC, i.width, i.height);    if (hBitmap == 0)        SWT.error(SWT.ERROR_NO_HANDLES);    long hdcDest = OS.CreateCompatibleDC(hDC);    OS.SelectObject(hdcDest, hBitmap);    OS.BitBlt(hdcDest, 0, 0, i.width, i.height, hdcSrc, 0, 0, OS.SRCCOPY);    /* Release the HDC for the device */    device.internal_dispose_GC(hDC, null);    /* Create the mask. Windows requires icon masks to have a scanline pad of 2. */    byte[] maskData = ImageData.convertPad(i.maskData, i.width, i.height, 1, i.maskPad, 2);    long hMask = OS.CreateBitmap(i.width, i.height, 1, 1, maskData);    if (hMask == 0)        SWT.error(SWT.ERROR_NO_HANDLES);    OS.SelectObject(hdcSrc, hMask);    OS.PatBlt(hdcSrc, 0, 0, i.width, i.height, OS.DSTINVERT);    OS.DeleteDC(hdcSrc);    OS.DeleteDC(hdcDest);    OS.DeleteObject(hDib);    return new HandleForImageDataContainer(SWT.ICON, i, new long[] { hBitmap, hMask });} else {    return new HandleForImageDataContainer(SWT.BITMAP, i, new long[] { hDib });}
+        ;
         if (i.getTransparencyType() == SWT.TRANSPARENCY_MASK) {
             /* Get the HDC for the device */
             long hDC = device.internal_new_GC(null);
             /* Release the HDC for the device */
             device.internal_dispose_GC(hDC, null);
+            return new HandleForImageDataContainer(SWT.ICON, i, new long[] { 1L });
         } else {
+            return new HandleForImageDataContainer(SWT.BITMAP, i, new long[] { 1L });
         }
-        return null;
     }
 
     private void setImageMetadataForHandle(ImageHandle imageMetadata, Integer zoom) {

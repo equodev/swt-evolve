@@ -35,7 +35,7 @@ public class Config {
                     //entry(Table.class, Impl.equo),
                     //entry(TableItem.class, Impl.equo),
                     //entry(TableColumn.class, Impl.equo),
-                    //entry(Text.class, Impl.equo),
+                    entry(Text.class, Impl.equo),
                     entry(Link.class, Impl.equo),
                     //entry(Group.class, Impl.equo),
                     //entry(ExpandBar.class, Impl.equo),

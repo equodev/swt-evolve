@@ -851,9 +851,11 @@ public class DartCombo extends DartComposite implements ICombo {
     public Point getSelection() {
         checkWidget();
         if ((getApi().style & SWT.DROP_DOWN) != 0 && (getApi().style & SWT.READ_ONLY) != 0) {
+            int length = 0;
+            return new Point(0, length);
         }
         int[] start = new int[1], end = new int[1];
-        return new Point(untranslateOffset(start[0]), untranslateOffset(end[0]));
+        return this.selection;
     }
 
     /**

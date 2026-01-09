@@ -379,7 +379,8 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
         if (((DartCTabFolder) getApi().parent.getImpl()).selectionBgImage != null || (((DartCTabFolder) getApi().parent.getImpl()).selectionGradientColors != null && ((DartCTabFolder) getApi().parent.getImpl()).selectionGradientColors.length > 1)) {
             innerRGB = null;
         }
-        RGB outerRGB = getApi().parent.getBackground().getRGB();
+        Color parentBackground = getApi().parent.getBackground();
+        RGB outerRGB = parentBackground != null ? parentBackground.getRGB() : null;
         if (((DartCTabFolder) getApi().parent.getImpl()).gradientColors != null && ((DartCTabFolder) getApi().parent.getImpl()).gradientColors.length > 1) {
             outerRGB = null;
         }
@@ -399,8 +400,8 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
             int blue = from.blue + 2 * (to.blue - from.blue) / 3;
             selectedInnerColor = new Color(red, green, blue);
         }
-        /* compute the tabArea color */
-        outerRGB = getApi().parent.getParent().getBackground().getRGB();
+        Color grandParentBackground = getApi().parent.getParent().getBackground();
+        outerRGB = grandParentBackground != null ? grandParentBackground.getRGB() : null;
         if (outerRGB != null) {
             RGB from = lineRGB;
             RGB to = outerRGB;

@@ -1433,7 +1433,15 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     @Override
     public void setText(String string) {
         checkWidget();
-        setText(0, string);
+        dirty();
+        if (strings == null) {
+            strings = new String[1];
+        }
+        if (Objects.equals(strings[0], text)) {
+            return;
+        }
+        strings[0] = text;
+        cached = true;
     }
 
     /*public*/
