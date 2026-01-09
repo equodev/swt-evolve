@@ -380,7 +380,7 @@ public class DartList extends DartScrollable implements IList {
      */
     public String getItem(int index) {
         checkWidget();
-        if (items == null || index < 0 || index >= items.length) {
+        if (items == null || index < 0 || index >= itemCount) {
             error(SWT.ERROR_INVALID_RANGE);
         }
         return items[index];

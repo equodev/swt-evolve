@@ -505,7 +505,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return new Widget[0];
     }
 
-    Control computeTabRoot() {
+    public Control computeTabRoot() {
         Control[] tabList = parent.getImpl()._getTabList();
         if (tabList != null) {
             int index = 0;
@@ -519,10 +519,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                     return this.getApi();
             }
         }
-        if (parent instanceof Decorations) {
-            return parent;
-        }
-        return ((DartControl) parent.getImpl()).computeTabRoot();
+        return parent.getImpl().computeTabRoot();
     }
 
     void checkBuffered() {
