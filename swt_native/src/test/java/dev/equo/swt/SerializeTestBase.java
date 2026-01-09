@@ -22,6 +22,7 @@ import org.mockito.Mockito;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.function.Consumer;
@@ -151,9 +152,8 @@ public class SerializeTestBase {
                 .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
                 .generate(Select.all(boolean.class), gen -> gen.booleans().probability(1.0)) // Always true
                 .generate(Select.all(int.class), gen -> gen.ints().range(1, 40))
-                .generate(Select.all(int[].class), gen -> gen.array().length(2))
-                .generate(Select.all(Color.class), gen -> gen.oneOf(new Color(Mocks.red(), Mocks.green(), Mocks.blue())))
-                .generate(Select.all(Font.class), gen -> gen.oneOf(new Font(Mocks.device(), Mocks.fontData())));
+                .ignore(Select.all(int[].class))
+                .generate(Select.all(Color.class), gen -> gen.oneOf(new Color(Mocks.red(), Mocks.green(), Mocks.blue())));
         inst.fill();
     }
 

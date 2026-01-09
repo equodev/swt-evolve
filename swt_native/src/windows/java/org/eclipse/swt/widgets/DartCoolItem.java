@@ -498,6 +498,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
 	*/
         if (!((DartCoolBar) parent.getImpl()).isLastItemOfRow(index)) {
         }
+        this.size = new Point(width, height);
     }
 
     /**

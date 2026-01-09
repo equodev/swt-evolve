@@ -18,11 +18,11 @@ public class VTree extends VComposite {
     }
 
     public int[] getColumnOrder() {
-        return ((DartTree) impl).cachedItemOrder;
+        return ((DartTree) impl).columnOrder;
     }
 
     public void setColumnOrder(int[] value) {
-        ((DartTree) impl).cachedItemOrder = value;
+        ((DartTree) impl).columnOrder = value;
     }
 
     public TreeColumn[] getColumns() {

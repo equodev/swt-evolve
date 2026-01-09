@@ -282,7 +282,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
      */
     public int getItemCount() {
         checkWidget();
-        return this.items != null ? this.items.length : 0;
+        return this.originalItems != null ? this.originalItems.length : 0;
     }
 
     /**
@@ -355,7 +355,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
     }
 
     Point[] getItemSizesInPixels() {
-        return null;
+        return this.itemSizes;
     }
 
     int getLastIndexOfRow(int index) {
