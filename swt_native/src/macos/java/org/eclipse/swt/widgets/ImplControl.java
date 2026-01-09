@@ -44,6 +44,8 @@ public interface ImplControl extends ImplWidget {
 
     Widget[] computeTabList();
 
+    Control computeTabRoot();
+
     Cursor findCursor();
 
     Control findBackgroundControl();

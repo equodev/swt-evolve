@@ -302,7 +302,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
     }
 
     @Override
-    Control computeTabRoot() {
+    public Control computeTabRoot() {
         return this.getApi();
     }
 

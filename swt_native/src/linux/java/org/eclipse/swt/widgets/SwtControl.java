@@ -747,7 +747,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return new Widget[0];
     }
 
-    Control computeTabRoot() {
+    public Control computeTabRoot() {
         Control[] tabList = parent.getImpl()._getTabList();
         if (tabList != null) {
             int index = 0;
@@ -761,7 +761,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                     return this.getApi();
             }
         }
-        return ((SwtControl) parent.getImpl()).computeTabRoot();
+        return parent.getImpl().computeTabRoot();
     }
 
     void checkBuffered() {

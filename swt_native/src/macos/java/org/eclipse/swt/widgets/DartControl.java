@@ -621,7 +621,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return new Widget[0];
     }
 
-    Control computeTabRoot() {
+    public Control computeTabRoot() {
         Control[] tabList = parent.getImpl()._getTabList();
         if (tabList != null) {
             int index = 0;
@@ -635,10 +635,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                     return this.getApi();
             }
         }
-        if (parent instanceof Decorations) {
-            return parent;
-        }
-        return ((DartControl) parent.getImpl()).computeTabRoot();
+        return parent.getImpl().computeTabRoot();
     }
 
     @Override
@@ -1475,6 +1472,19 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     @Override
     public long internal_new_GC(GCData data) {
+        if (data != null) {
+            int mask = SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
+            if ((data.style & mask) == 0) {
+                data.style |= getApi().style & (mask | SWT.MIRRORED);
+            }
+            data.device = display;
+            data.foreground = getForegroundColor().handle;
+            Control control = findBackgroundControl();
+            if (control == null)
+                control = this.getApi();
+            data.background = control.getImpl().getBackgroundColor().handle;
+            data.font = font != null ? font : defaultFont();
+        }
         return 0;
     }
 
@@ -2798,15 +2808,16 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setFont(Font font) {
+        font = GraphicsUtils.copyFont(font);
         checkWidget();
-        if (font != null && font.isDisposed()) {
-            error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        Font copiedFont = GraphicsUtils.copyFont(font);
-        if (!java.util.Objects.equals(this.font, copiedFont)) {
+        if (!java.util.Objects.equals(this.font, font)) {
             dirty();
         }
-        this.font = copiedFont;
+        if (font != null) {
+            if (font.isDisposed())
+                error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        this.font = font;
     }
 
     /**

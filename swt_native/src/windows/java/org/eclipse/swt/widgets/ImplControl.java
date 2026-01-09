@@ -39,6 +39,8 @@ public interface ImplControl extends ImplWidget {
 
     int _backgroundAlpha();
 
+    Control computeTabRoot();
+
     Widget[] computeTabList();
 
     Control findBackgroundControl();

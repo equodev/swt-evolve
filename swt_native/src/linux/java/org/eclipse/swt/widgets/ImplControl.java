@@ -81,6 +81,8 @@ public interface ImplControl extends ImplWidget {
 
     Widget[] computeTabList();
 
+    Control computeTabRoot();
+
     void markLayout(boolean changed, boolean all);
 
     Point getSizeInPixels();

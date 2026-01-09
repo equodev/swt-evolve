@@ -8651,7 +8651,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      * @since 3.2
      */
     public void setAlignment(int alignment) {
-        dirty();
         checkWidget();
         if (!java.util.Objects.equals(this.alignment, alignment)) {
             dirty();
@@ -10618,8 +10617,10 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setSelectionRange(int start, int length) {
         dirty();
+        Point newValue = new Point(selectionRange.x, selectionRange.y);
+        dirty();
+        this.selectionRange = newValue;
         setSelectionRanges(new int[] { start, length });
-        this.selectionRange = new Point(selection[0].x, selection[0].y - selection[0].x);
     }
 
     /**
@@ -10670,8 +10671,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         }
         setSelection(fixedRanges, false, true);
         setCaretLocations();
-        this.selectionRange = new Point(selection[0].x, selection[0].y - selection[0].x);
-        this.selectionRanges = ranges;
     }
 
     /**
