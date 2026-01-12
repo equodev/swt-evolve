@@ -15,6 +15,8 @@ public class ConfigFlags {
 
     public boolean use_swt_fonts;
 
+    public boolean use_special_dropdown_button;
+
     public static ConfigFlags use_swt_fonts(boolean v) {
         ConfigFlags configFlags = new ConfigFlags();
         configFlags.use_swt_fonts = v;

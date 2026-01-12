@@ -20,6 +20,8 @@ class ToolBarThemeExtension extends ThemeExtension<ToolBarThemeExtension> with _
   final double shadowBlurRadius;
   final Offset shadowOffset;
   final EdgeInsets itemPadding;
+  final Color compositeBackgroundColor;
+  final Color toolbarBackgroundColor;
   
   const ToolBarThemeExtension({
     required this.backgroundColor,
@@ -30,6 +32,8 @@ class ToolBarThemeExtension extends ThemeExtension<ToolBarThemeExtension> with _
     required this.shadowBlurRadius,
     required this.shadowOffset,
     required this.itemPadding,
+    required this.compositeBackgroundColor,
+    required this.toolbarBackgroundColor,
   });
 
 

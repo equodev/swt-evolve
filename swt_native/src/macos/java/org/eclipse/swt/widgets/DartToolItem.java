@@ -43,7 +43,7 @@ import dev.equo.swt.*;
  */
 public class DartToolItem extends DartItem implements IToolItem {
 
-    int width = DEFAULT_SEPARATOR_WIDTH;
+    int width;
 
     ToolBar parent;
 

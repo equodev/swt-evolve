@@ -50,6 +50,8 @@ mixin _$ToolItemThemeExtensionTailorMixin
   String get segmentKeywordText;
   String get segmentDebugText;
   String get specialDropdownTooltipText;
+  String? get specialDropdownImageFilename;
+  String get specialDropdownText;
   Color get specialDropdownBackgroundColor;
   Color get specialDropdownTextColor;
   Color get specialDropdownSeparatorColor;
@@ -98,6 +100,8 @@ mixin _$ToolItemThemeExtensionTailorMixin
     String? segmentKeywordText,
     String? segmentDebugText,
     String? specialDropdownTooltipText,
+    String? specialDropdownImageFilename,
+    String? specialDropdownText,
     Color? specialDropdownBackgroundColor,
     Color? specialDropdownTextColor,
     Color? specialDropdownSeparatorColor,
@@ -134,7 +138,8 @@ mixin _$ToolItemThemeExtensionTailorMixin
       segmentSelectedBackgroundColor:
           segmentSelectedBackgroundColor ?? this.segmentSelectedBackgroundColor,
       segmentInnerColor: segmentInnerColor ?? this.segmentInnerColor,
-      segmentUnselectedBackgroundColor: segmentUnselectedBackgroundColor ??
+      segmentUnselectedBackgroundColor:
+          segmentUnselectedBackgroundColor ??
           this.segmentUnselectedBackgroundColor,
       segmentSelectedTextColor:
           segmentSelectedTextColor ?? this.segmentSelectedTextColor,
@@ -155,6 +160,9 @@ mixin _$ToolItemThemeExtensionTailorMixin
       segmentDebugText: segmentDebugText ?? this.segmentDebugText,
       specialDropdownTooltipText:
           specialDropdownTooltipText ?? this.specialDropdownTooltipText,
+      specialDropdownImageFilename:
+          specialDropdownImageFilename ?? this.specialDropdownImageFilename,
+      specialDropdownText: specialDropdownText ?? this.specialDropdownText,
       specialDropdownBackgroundColor:
           specialDropdownBackgroundColor ?? this.specialDropdownBackgroundColor,
       specialDropdownTextColor:
@@ -172,21 +180,30 @@ mixin _$ToolItemThemeExtensionTailorMixin
 
   @override
   ToolItemThemeExtension lerp(
-      covariant ThemeExtension<ToolItemThemeExtension>? other, double t) {
+    covariant ThemeExtension<ToolItemThemeExtension>? other,
+    double t,
+  ) {
     if (other is! ToolItemThemeExtension) return this as ToolItemThemeExtension;
     return ToolItemThemeExtension(
       enabledColor: Color.lerp(enabledColor, other.enabledColor, t)!,
       disabledColor: Color.lerp(disabledColor, other.disabledColor, t)!,
       hoverColor: Color.lerp(hoverColor, other.hoverColor, t)!,
       selectedBackgroundColor: Color.lerp(
-          selectedBackgroundColor, other.selectedBackgroundColor, t)!,
+        selectedBackgroundColor,
+        other.selectedBackgroundColor,
+        t,
+      )!,
       separatorColor: Color.lerp(separatorColor, other.separatorColor, t)!,
-      dropdownIconColor:
-          Color.lerp(dropdownIconColor, other.dropdownIconColor, t)!,
+      dropdownIconColor: Color.lerp(
+        dropdownIconColor,
+        other.dropdownIconColor,
+        t,
+      )!,
       borderRadius: t < 0.5 ? borderRadius : other.borderRadius,
       separatorWidth: t < 0.5 ? separatorWidth : other.separatorWidth,
-      separatorThickness:
-          t < 0.5 ? separatorThickness : other.separatorThickness,
+      separatorThickness: t < 0.5
+          ? separatorThickness
+          : other.separatorThickness,
       separatorIndent: t < 0.5 ? separatorIndent : other.separatorIndent,
       fontStyle: TextStyle.lerp(fontStyle, other.fontStyle, t),
       defaultIconSize: t < 0.5 ? defaultIconSize : other.defaultIconSize,
@@ -199,25 +216,41 @@ mixin _$ToolItemThemeExtensionTailorMixin
       highlightOpacity: t < 0.5 ? highlightOpacity : other.highlightOpacity,
       separatorOpacity: t < 0.5 ? separatorOpacity : other.separatorOpacity,
       separatorBarWidth: t < 0.5 ? separatorBarWidth : other.separatorBarWidth,
-      separatorBarMargin:
-          t < 0.5 ? separatorBarMargin : other.separatorBarMargin,
+      separatorBarMargin: t < 0.5
+          ? separatorBarMargin
+          : other.separatorBarMargin,
       tooltipMargin: t < 0.5 ? tooltipMargin : other.tooltipMargin,
-      tooltipWaitDuration:
-          t < 0.5 ? tooltipWaitDuration : other.tooltipWaitDuration,
-      segmentSelectedBackgroundColor: Color.lerp(segmentSelectedBackgroundColor,
-          other.segmentSelectedBackgroundColor, t)!,
-      segmentInnerColor:
-          Color.lerp(segmentInnerColor, other.segmentInnerColor, t)!,
+      tooltipWaitDuration: t < 0.5
+          ? tooltipWaitDuration
+          : other.tooltipWaitDuration,
+      segmentSelectedBackgroundColor: Color.lerp(
+        segmentSelectedBackgroundColor,
+        other.segmentSelectedBackgroundColor,
+        t,
+      )!,
+      segmentInnerColor: Color.lerp(
+        segmentInnerColor,
+        other.segmentInnerColor,
+        t,
+      )!,
       segmentUnselectedBackgroundColor: Color.lerp(
-          segmentUnselectedBackgroundColor,
-          other.segmentUnselectedBackgroundColor,
-          t)!,
+        segmentUnselectedBackgroundColor,
+        other.segmentUnselectedBackgroundColor,
+        t,
+      )!,
       segmentSelectedTextColor: Color.lerp(
-          segmentSelectedTextColor, other.segmentSelectedTextColor, t)!,
+        segmentSelectedTextColor,
+        other.segmentSelectedTextColor,
+        t,
+      )!,
       segmentUnselectedTextColor: Color.lerp(
-          segmentUnselectedTextColor, other.segmentUnselectedTextColor, t)!,
-      segmentBorderRadius:
-          t < 0.5 ? segmentBorderRadius : other.segmentBorderRadius,
+        segmentUnselectedTextColor,
+        other.segmentUnselectedTextColor,
+        t,
+      )!,
+      segmentBorderRadius: t < 0.5
+          ? segmentBorderRadius
+          : other.segmentBorderRadius,
       segmentPadding: t < 0.5 ? segmentPadding : other.segmentPadding,
       loadingIndicatorSizeFactor: t < 0.5
           ? loadingIndicatorSizeFactor
@@ -225,28 +258,51 @@ mixin _$ToolItemThemeExtensionTailorMixin
       loadingIndicatorStrokeWidth: t < 0.5
           ? loadingIndicatorStrokeWidth
           : other.loadingIndicatorStrokeWidth,
-      tooltipPreferBelow:
-          t < 0.5 ? tooltipPreferBelow : other.tooltipPreferBelow,
-      tooltipVerticalOffset:
-          t < 0.5 ? tooltipVerticalOffset : other.tooltipVerticalOffset,
-      segmentAnimationDuration:
-          t < 0.5 ? segmentAnimationDuration : other.segmentAnimationDuration,
-      segmentKeywordText:
-          t < 0.5 ? segmentKeywordText : other.segmentKeywordText,
+      tooltipPreferBelow: t < 0.5
+          ? tooltipPreferBelow
+          : other.tooltipPreferBelow,
+      tooltipVerticalOffset: t < 0.5
+          ? tooltipVerticalOffset
+          : other.tooltipVerticalOffset,
+      segmentAnimationDuration: t < 0.5
+          ? segmentAnimationDuration
+          : other.segmentAnimationDuration,
+      segmentKeywordText: t < 0.5
+          ? segmentKeywordText
+          : other.segmentKeywordText,
       segmentDebugText: t < 0.5 ? segmentDebugText : other.segmentDebugText,
       specialDropdownTooltipText: t < 0.5
           ? specialDropdownTooltipText
           : other.specialDropdownTooltipText,
-      specialDropdownBackgroundColor: Color.lerp(specialDropdownBackgroundColor,
-          other.specialDropdownBackgroundColor, t)!,
+      specialDropdownImageFilename: t < 0.5
+          ? specialDropdownImageFilename
+          : other.specialDropdownImageFilename,
+      specialDropdownText: t < 0.5
+          ? specialDropdownText
+          : other.specialDropdownText,
+      specialDropdownBackgroundColor: Color.lerp(
+        specialDropdownBackgroundColor,
+        other.specialDropdownBackgroundColor,
+        t,
+      )!,
       specialDropdownTextColor: Color.lerp(
-          specialDropdownTextColor, other.specialDropdownTextColor, t)!,
-      specialDropdownSeparatorColor: Color.lerp(specialDropdownSeparatorColor,
-          other.specialDropdownSeparatorColor, t)!,
+        specialDropdownTextColor,
+        other.specialDropdownTextColor,
+        t,
+      )!,
+      specialDropdownSeparatorColor: Color.lerp(
+        specialDropdownSeparatorColor,
+        other.specialDropdownSeparatorColor,
+        t,
+      )!,
       specialDropdownArrowColor: Color.lerp(
-          specialDropdownArrowColor, other.specialDropdownArrowColor, t)!,
-      specialDropdownPadding:
-          t < 0.5 ? specialDropdownPadding : other.specialDropdownPadding,
+        specialDropdownArrowColor,
+        other.specialDropdownArrowColor,
+        t,
+      )!,
+      specialDropdownPadding: t < 0.5
+          ? specialDropdownPadding
+          : other.specialDropdownPadding,
       specialDropdownItemSpacing: t < 0.5
           ? specialDropdownItemSpacing
           : other.specialDropdownItemSpacing,
@@ -258,86 +314,188 @@ mixin _$ToolItemThemeExtensionTailorMixin
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is ToolItemThemeExtension &&
-            const DeepCollectionEquality()
-                .equals(enabledColor, other.enabledColor) &&
-            const DeepCollectionEquality()
-                .equals(disabledColor, other.disabledColor) &&
-            const DeepCollectionEquality()
-                .equals(hoverColor, other.hoverColor) &&
             const DeepCollectionEquality().equals(
-                selectedBackgroundColor, other.selectedBackgroundColor) &&
-            const DeepCollectionEquality()
-                .equals(separatorColor, other.separatorColor) &&
-            const DeepCollectionEquality()
-                .equals(dropdownIconColor, other.dropdownIconColor) &&
-            const DeepCollectionEquality()
-                .equals(borderRadius, other.borderRadius) &&
-            const DeepCollectionEquality()
-                .equals(separatorWidth, other.separatorWidth) &&
-            const DeepCollectionEquality()
-                .equals(separatorThickness, other.separatorThickness) &&
-            const DeepCollectionEquality()
-                .equals(separatorIndent, other.separatorIndent) &&
+              enabledColor,
+              other.enabledColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              disabledColor,
+              other.disabledColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              hoverColor,
+              other.hoverColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              selectedBackgroundColor,
+              other.selectedBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              separatorColor,
+              other.separatorColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dropdownIconColor,
+              other.dropdownIconColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              borderRadius,
+              other.borderRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
+              separatorWidth,
+              other.separatorWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              separatorThickness,
+              other.separatorThickness,
+            ) &&
+            const DeepCollectionEquality().equals(
+              separatorIndent,
+              other.separatorIndent,
+            ) &&
             const DeepCollectionEquality().equals(fontStyle, other.fontStyle) &&
-            const DeepCollectionEquality()
-                .equals(defaultIconSize, other.defaultIconSize) &&
+            const DeepCollectionEquality().equals(
+              defaultIconSize,
+              other.defaultIconSize,
+            ) &&
             const DeepCollectionEquality().equals(iconSize, other.iconSize) &&
-            const DeepCollectionEquality()
-                .equals(emptyButtonSize, other.emptyButtonSize) &&
-            const DeepCollectionEquality()
-                .equals(dropdownArrowSize, other.dropdownArrowSize) &&
-            const DeepCollectionEquality()
-                .equals(buttonPadding, other.buttonPadding) &&
-            const DeepCollectionEquality()
-                .equals(textPadding, other.textPadding) &&
-            const DeepCollectionEquality()
-                .equals(splashOpacity, other.splashOpacity) &&
-            const DeepCollectionEquality()
-                .equals(highlightOpacity, other.highlightOpacity) &&
-            const DeepCollectionEquality()
-                .equals(separatorOpacity, other.separatorOpacity) &&
-            const DeepCollectionEquality()
-                .equals(separatorBarWidth, other.separatorBarWidth) &&
-            const DeepCollectionEquality()
-                .equals(separatorBarMargin, other.separatorBarMargin) &&
-            const DeepCollectionEquality()
-                .equals(tooltipMargin, other.tooltipMargin) &&
-            const DeepCollectionEquality()
-                .equals(tooltipWaitDuration, other.tooltipWaitDuration) &&
             const DeepCollectionEquality().equals(
-                segmentSelectedBackgroundColor,
-                other.segmentSelectedBackgroundColor) &&
-            const DeepCollectionEquality()
-                .equals(segmentInnerColor, other.segmentInnerColor) &&
+              emptyButtonSize,
+              other.emptyButtonSize,
+            ) &&
             const DeepCollectionEquality().equals(
-                segmentUnselectedBackgroundColor,
-                other.segmentUnselectedBackgroundColor) &&
+              dropdownArrowSize,
+              other.dropdownArrowSize,
+            ) &&
             const DeepCollectionEquality().equals(
-                segmentSelectedTextColor, other.segmentSelectedTextColor) &&
+              buttonPadding,
+              other.buttonPadding,
+            ) &&
             const DeepCollectionEquality().equals(
-                segmentUnselectedTextColor, other.segmentUnselectedTextColor) &&
-            const DeepCollectionEquality()
-                .equals(segmentBorderRadius, other.segmentBorderRadius) &&
-            const DeepCollectionEquality()
-                .equals(segmentPadding, other.segmentPadding) &&
+              textPadding,
+              other.textPadding,
+            ) &&
             const DeepCollectionEquality().equals(
-                loadingIndicatorSizeFactor, other.loadingIndicatorSizeFactor) &&
-            const DeepCollectionEquality().equals(loadingIndicatorStrokeWidth,
-                other.loadingIndicatorStrokeWidth) &&
-            const DeepCollectionEquality()
-                .equals(tooltipPreferBelow, other.tooltipPreferBelow) &&
-            const DeepCollectionEquality()
-                .equals(tooltipVerticalOffset, other.tooltipVerticalOffset) &&
-            const DeepCollectionEquality().equals(segmentAnimationDuration, other.segmentAnimationDuration) &&
-            const DeepCollectionEquality().equals(segmentKeywordText, other.segmentKeywordText) &&
-            const DeepCollectionEquality().equals(segmentDebugText, other.segmentDebugText) &&
-            const DeepCollectionEquality().equals(specialDropdownTooltipText, other.specialDropdownTooltipText) &&
-            const DeepCollectionEquality().equals(specialDropdownBackgroundColor, other.specialDropdownBackgroundColor) &&
-            const DeepCollectionEquality().equals(specialDropdownTextColor, other.specialDropdownTextColor) &&
-            const DeepCollectionEquality().equals(specialDropdownSeparatorColor, other.specialDropdownSeparatorColor) &&
-            const DeepCollectionEquality().equals(specialDropdownArrowColor, other.specialDropdownArrowColor) &&
-            const DeepCollectionEquality().equals(specialDropdownPadding, other.specialDropdownPadding) &&
-            const DeepCollectionEquality().equals(specialDropdownItemSpacing, other.specialDropdownItemSpacing));
+              splashOpacity,
+              other.splashOpacity,
+            ) &&
+            const DeepCollectionEquality().equals(
+              highlightOpacity,
+              other.highlightOpacity,
+            ) &&
+            const DeepCollectionEquality().equals(
+              separatorOpacity,
+              other.separatorOpacity,
+            ) &&
+            const DeepCollectionEquality().equals(
+              separatorBarWidth,
+              other.separatorBarWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              separatorBarMargin,
+              other.separatorBarMargin,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tooltipMargin,
+              other.tooltipMargin,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tooltipWaitDuration,
+              other.tooltipWaitDuration,
+            ) &&
+            const DeepCollectionEquality().equals(
+              segmentSelectedBackgroundColor,
+              other.segmentSelectedBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              segmentInnerColor,
+              other.segmentInnerColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              segmentUnselectedBackgroundColor,
+              other.segmentUnselectedBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              segmentSelectedTextColor,
+              other.segmentSelectedTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              segmentUnselectedTextColor,
+              other.segmentUnselectedTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              segmentBorderRadius,
+              other.segmentBorderRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
+              segmentPadding,
+              other.segmentPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              loadingIndicatorSizeFactor,
+              other.loadingIndicatorSizeFactor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              loadingIndicatorStrokeWidth,
+              other.loadingIndicatorStrokeWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tooltipPreferBelow,
+              other.tooltipPreferBelow,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tooltipVerticalOffset,
+              other.tooltipVerticalOffset,
+            ) &&
+            const DeepCollectionEquality().equals(
+              segmentAnimationDuration,
+              other.segmentAnimationDuration,
+            ) &&
+            const DeepCollectionEquality().equals(
+              segmentKeywordText,
+              other.segmentKeywordText,
+            ) &&
+            const DeepCollectionEquality().equals(
+              segmentDebugText,
+              other.segmentDebugText,
+            ) &&
+            const DeepCollectionEquality().equals(
+              specialDropdownTooltipText,
+              other.specialDropdownTooltipText,
+            ) &&
+            const DeepCollectionEquality().equals(
+              specialDropdownImageFilename,
+              other.specialDropdownImageFilename,
+            ) &&
+            const DeepCollectionEquality().equals(
+              specialDropdownText,
+              other.specialDropdownText,
+            ) &&
+            const DeepCollectionEquality().equals(
+              specialDropdownBackgroundColor,
+              other.specialDropdownBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              specialDropdownTextColor,
+              other.specialDropdownTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              specialDropdownSeparatorColor,
+              other.specialDropdownSeparatorColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              specialDropdownArrowColor,
+              other.specialDropdownArrowColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              specialDropdownPadding,
+              other.specialDropdownPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              specialDropdownItemSpacing,
+              other.specialDropdownItemSpacing,
+            ));
   }
 
   @override
@@ -383,6 +541,8 @@ mixin _$ToolItemThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(segmentKeywordText),
       const DeepCollectionEquality().hash(segmentDebugText),
       const DeepCollectionEquality().hash(specialDropdownTooltipText),
+      const DeepCollectionEquality().hash(specialDropdownImageFilename),
+      const DeepCollectionEquality().hash(specialDropdownText),
       const DeepCollectionEquality().hash(specialDropdownBackgroundColor),
       const DeepCollectionEquality().hash(specialDropdownTextColor),
       const DeepCollectionEquality().hash(specialDropdownSeparatorColor),
@@ -447,6 +607,9 @@ extension ToolItemThemeExtensionBuildContextProps on BuildContext {
   String get segmentDebugText => toolItemThemeExtension.segmentDebugText;
   String get specialDropdownTooltipText =>
       toolItemThemeExtension.specialDropdownTooltipText;
+  String? get specialDropdownImageFilename =>
+      toolItemThemeExtension.specialDropdownImageFilename;
+  String get specialDropdownText => toolItemThemeExtension.specialDropdownText;
   Color get specialDropdownBackgroundColor =>
       toolItemThemeExtension.specialDropdownBackgroundColor;
   Color get specialDropdownTextColor =>

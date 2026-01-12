@@ -117,10 +117,10 @@ ColorSchemeExtension createColorSchemeExtension() {
     surfaceBorderDisabled: const Color(0x33171819),
     surfaceBorderBoldEnabled: const Color(0x80171819),
     surfaceBorderDataDisplay: const Color(0xFFFFFFFF),
-    surfacePlaceholder: const Color(0xFF797B7F),
+    surfacePlaceholder: const Color(0xFF797B7F), 
     onSurfaceVariantError: const Color(0xFFDC0A56),
-    onSurfaceVariantWarning: const Color(0xFFDE7A2D),
-    onSurfaceVariantDisabled: const Color(0x80171819),
+    onSurfaceVariantWarning: const Color(0xFFDE7A2D), 
+    onSurfaceVariantDisabled: const Color(0x17181980),
     onSurfaceVariantSmallError: const Color(0xFF99073C),
     
     errorHovered: const Color(0xFFB20846),

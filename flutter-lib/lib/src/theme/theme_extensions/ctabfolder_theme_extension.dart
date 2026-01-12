@@ -11,6 +11,8 @@ part 'ctabfolder_theme_extension.g.dart';
 @ColorConverter()
 @DurationConverter()
 @TextStyleConverter()
+@EdgeInsetsConverter()
+@OffsetConverter()
 class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> with _$CTabFolderThemeExtensionTailorMixin {
   // Tab bar colors
   final Color tabBarBackgroundColor;
@@ -81,6 +83,7 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
   final Color controlButtonHoverColor;
   final double controlButtonHorizontalPadding;
   final double controlButtonSpacing;
+  final double controlButtonScale;
   
   // Hover reveal animation
   final Duration hoverRevealDuration;
@@ -88,6 +91,18 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
   
   // Scrollbar
   final double tabScrollbarThickness;
+  
+  // Top right controls overlay shadow
+  final Color topRightControlsShadowColor;
+  final double topRightControlsShadowOpacity;
+  final double topRightControlsShadowBlurRadius;
+  final Offset topRightControlsShadowOffset;
+  
+  // Top right controls padding
+  final EdgeInsets topRightControlsPadding;
+  
+  // Scrollbar hide delay
+  final Duration scrollbarHideDelay;
   
   const CTabFolderThemeExtension({
     required this.tabBarBackgroundColor,
@@ -130,9 +145,16 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
     required this.controlButtonHoverColor,
     required this.controlButtonHorizontalPadding,
     required this.controlButtonSpacing,
+    required this.controlButtonScale,
     required this.hoverRevealDuration,
     required this.hoverHideDuration,
     required this.tabScrollbarThickness,
+    required this.topRightControlsShadowColor,
+    required this.topRightControlsShadowOpacity,
+    required this.topRightControlsShadowBlurRadius,
+    required this.topRightControlsShadowOffset,
+    required this.topRightControlsPadding,
+    required this.scrollbarHideDelay,
   });
 
   factory CTabFolderThemeExtension.fromJson(Map<String, dynamic> json) =>

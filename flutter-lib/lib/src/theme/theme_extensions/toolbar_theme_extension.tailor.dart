@@ -19,6 +19,8 @@ mixin _$ToolBarThemeExtensionTailorMixin
   double get shadowBlurRadius;
   Offset get shadowOffset;
   EdgeInsets get itemPadding;
+  Color get compositeBackgroundColor;
+  Color get toolbarBackgroundColor;
 
   @override
   ToolBarThemeExtension copyWith({
@@ -30,6 +32,8 @@ mixin _$ToolBarThemeExtensionTailorMixin
     double? shadowBlurRadius,
     Offset? shadowOffset,
     EdgeInsets? itemPadding,
+    Color? compositeBackgroundColor,
+    Color? toolbarBackgroundColor,
   }) {
     return ToolBarThemeExtension(
       backgroundColor: backgroundColor ?? this.backgroundColor,
@@ -40,12 +44,18 @@ mixin _$ToolBarThemeExtensionTailorMixin
       shadowBlurRadius: shadowBlurRadius ?? this.shadowBlurRadius,
       shadowOffset: shadowOffset ?? this.shadowOffset,
       itemPadding: itemPadding ?? this.itemPadding,
+      compositeBackgroundColor:
+          compositeBackgroundColor ?? this.compositeBackgroundColor,
+      toolbarBackgroundColor:
+          toolbarBackgroundColor ?? this.toolbarBackgroundColor,
     );
   }
 
   @override
   ToolBarThemeExtension lerp(
-      covariant ThemeExtension<ToolBarThemeExtension>? other, double t) {
+    covariant ThemeExtension<ToolBarThemeExtension>? other,
+    double t,
+  ) {
     if (other is! ToolBarThemeExtension) return this as ToolBarThemeExtension;
     return ToolBarThemeExtension(
       backgroundColor: Color.lerp(backgroundColor, other.backgroundColor, t)!,
@@ -56,6 +66,16 @@ mixin _$ToolBarThemeExtensionTailorMixin
       shadowBlurRadius: t < 0.5 ? shadowBlurRadius : other.shadowBlurRadius,
       shadowOffset: t < 0.5 ? shadowOffset : other.shadowOffset,
       itemPadding: t < 0.5 ? itemPadding : other.itemPadding,
+      compositeBackgroundColor: Color.lerp(
+        compositeBackgroundColor,
+        other.compositeBackgroundColor,
+        t,
+      )!,
+      toolbarBackgroundColor: Color.lerp(
+        toolbarBackgroundColor,
+        other.toolbarBackgroundColor,
+        t,
+      )!,
     );
   }
 
@@ -64,22 +84,46 @@ mixin _$ToolBarThemeExtensionTailorMixin
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is ToolBarThemeExtension &&
-            const DeepCollectionEquality()
-                .equals(backgroundColor, other.backgroundColor) &&
-            const DeepCollectionEquality()
-                .equals(borderColor, other.borderColor) &&
-            const DeepCollectionEquality()
-                .equals(borderWidth, other.borderWidth) &&
-            const DeepCollectionEquality()
-                .equals(shadowColor, other.shadowColor) &&
-            const DeepCollectionEquality()
-                .equals(shadowOpacity, other.shadowOpacity) &&
-            const DeepCollectionEquality()
-                .equals(shadowBlurRadius, other.shadowBlurRadius) &&
-            const DeepCollectionEquality()
-                .equals(shadowOffset, other.shadowOffset) &&
-            const DeepCollectionEquality()
-                .equals(itemPadding, other.itemPadding));
+            const DeepCollectionEquality().equals(
+              backgroundColor,
+              other.backgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              borderColor,
+              other.borderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              borderWidth,
+              other.borderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              shadowColor,
+              other.shadowColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              shadowOpacity,
+              other.shadowOpacity,
+            ) &&
+            const DeepCollectionEquality().equals(
+              shadowBlurRadius,
+              other.shadowBlurRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
+              shadowOffset,
+              other.shadowOffset,
+            ) &&
+            const DeepCollectionEquality().equals(
+              itemPadding,
+              other.itemPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              compositeBackgroundColor,
+              other.compositeBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              toolbarBackgroundColor,
+              other.toolbarBackgroundColor,
+            ));
   }
 
   @override
@@ -94,6 +138,8 @@ mixin _$ToolBarThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(shadowBlurRadius),
       const DeepCollectionEquality().hash(shadowOffset),
       const DeepCollectionEquality().hash(itemPadding),
+      const DeepCollectionEquality().hash(compositeBackgroundColor),
+      const DeepCollectionEquality().hash(toolbarBackgroundColor),
     );
   }
 }
@@ -109,4 +155,8 @@ extension ToolBarThemeExtensionBuildContextProps on BuildContext {
   double get shadowBlurRadius => toolBarThemeExtension.shadowBlurRadius;
   Offset get shadowOffset => toolBarThemeExtension.shadowOffset;
   EdgeInsets get itemPadding => toolBarThemeExtension.itemPadding;
+  Color get compositeBackgroundColor =>
+      toolBarThemeExtension.compositeBackgroundColor;
+  Color get toolbarBackgroundColor =>
+      toolBarThemeExtension.toolbarBackgroundColor;
 }
