@@ -12,7 +12,8 @@ ConfigFlags _$ConfigFlagsFromJson(Map<String, dynamic> json) => ConfigFlags()
       json['image_disable_icons_replacement'] as bool?
   ..assets_path = json['assets_path'] as String?
   ..use_swt_colors = json['use_swt_colors'] as bool?
-  ..use_swt_fonts = json['use_swt_fonts'] as bool?;
+  ..use_swt_fonts = json['use_swt_fonts'] as bool?
+  ..use_special_dropdown_button = json['use_special_dropdown_button'] as bool?;
 
 Map<String, dynamic> _$ConfigFlagsToJson(
   ConfigFlags instance,
@@ -22,4 +23,5 @@ Map<String, dynamic> _$ConfigFlagsToJson(
   'assets_path': instance.assets_path,
   'use_swt_colors': instance.use_swt_colors,
   'use_swt_fonts': instance.use_swt_fonts,
+  'use_special_dropdown_button': instance.use_special_dropdown_button,
 };

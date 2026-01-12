@@ -11,6 +11,7 @@ import '../impl/item_evolve.dart';
 import './utils/image_utils.dart';
 import './utils/widget_utils.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
+import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import 'dart:ui';
 
 class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
@@ -51,10 +52,10 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     
     final imageChanged = _cachedImage != image;
     final sizeChanged = _cachedIconSize != iconSize;
-    final colorChanged = _cachedIconColor != iconColor;
     final enabledChanged = _cachedEnabled != enabled;
+    final colorChanged = !enabled && _cachedIconColor != iconColor;
     
-    if (imageChanged || sizeChanged || colorChanged || enabledChanged) {
+    if (imageChanged || sizeChanged || enabledChanged || colorChanged) {
       _cachedImage = image;
       _cachedIconSize = iconSize;
       _cachedIconColor = iconColor;
@@ -67,14 +68,16 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     }
     
     final imageKey = image?.filename ?? image?.imageData?.hashCode.toString() ?? 'no-image';
-    final futureKey = '${imageKey}_${iconSize}_${iconColor.value}_$enabled';
+    final futureKey = enabled 
+        ? '${imageKey}_${iconSize}_$enabled'
+        : '${imageKey}_${iconSize}_${iconColor.value}_$enabled';
     
     return FutureBuilder<Widget?>(
       key: ValueKey(futureKey),
       future: ImageUtils.buildVImageAsync(
         image,
         size: iconSize,
-        color: iconColor,
+        color: enabled ? null : iconColor,
         enabled: enabled,
         constraints: constraints,
         useBinaryImage: true,
@@ -164,9 +167,12 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
       defaultColor: enabled ? widgetTheme.enabledColor : widgetTheme.disabledColor,
     );
     
+    final toolbarTheme = Theme.of(context).extension<ToolBarThemeExtension>();
+    final defaultBackgroundColor = toolbarTheme?.toolbarBackgroundColor ?? Colors.white;
+    
     final bgColor = getBackgroundColor(
       background: state.background,
-      defaultColor: backgroundColor ?? Colors.transparent,
+      defaultColor: backgroundColor ?? defaultBackgroundColor,
     );
     
     Widget hoverableContent;
@@ -275,9 +281,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     return Container(
       constraints: constraints,
       color: bgColor,
-      child: Center(
-        child: hoverableContent,
-      ),
+      child: hoverableContent,
     );
   }
 
@@ -326,11 +330,14 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
             );
           }
 
+          final toolbarTheme = Theme.of(context).extension<ToolBarThemeExtension>();
+          final defaultBackgroundColor = toolbarTheme?.compositeBackgroundColor ?? Colors.white;
+          
           return _buildToolbarButton(
             context: context,
             widgetTheme: widgetTheme,
             enabled: enabled,
-            backgroundColor: Colors.transparent,
+            backgroundColor: defaultBackgroundColor,
             constraints: constraints,
             onTap: () {
               setState(() {

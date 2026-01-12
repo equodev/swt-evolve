@@ -26,15 +26,29 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     final hasShadowOut = style.has(SWT.SHADOW_OUT);
     final isRightToLeft = style.has(SWT.RIGHT_TO_LEFT);
 
-    final backgroundColor = getSwtBackgroundColor(context) ?? widgetTheme.backgroundColor;
+    final backgroundColor = getSwtBackgroundColor(context) ?? widgetTheme.toolbarBackgroundColor;
 
     return Builder(builder: (context) {
+      final toolItemTheme = Theme.of(context).extension<ToolItemThemeExtension>();
+      final iconSize = toolItemTheme?.defaultIconSize ?? 24.0;
+      
       Widget bar;
       if (shouldWrap) {
+        final limitedToolItems = toolItems.map((item) {
+          return ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: isVertical ? iconSize : double.infinity,
+              maxHeight: isVertical ? double.infinity : iconSize,
+            ),
+            child: item,
+          );
+        }).toList();
+        
         bar = Wrap(
           direction: isVertical ? Axis.vertical : Axis.horizontal,
           textDirection: isRightToLeft ? TextDirection.rtl : TextDirection.ltr,
-          children: toolItems,
+          crossAxisAlignment: WrapCrossAlignment.start,
+          children: limitedToolItems,
         );
       } else {
         bar = SingleChildScrollView(
@@ -81,7 +95,7 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
           alignment: Alignment.topLeft,
           child: Container(
             decoration: decoration,
-            child: bar,
+          child: bar,
           ),
         ),
       );
@@ -103,15 +117,16 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     final keywordTextLower = toolItemTheme.segmentKeywordText.toLowerCase();
     final debugTextLower = toolItemTheme.segmentDebugText.toLowerCase();
     final specialDropdownTooltipText = toolItemTheme.specialDropdownTooltipText;
+    final specialDropdownImageFilename = toolItemTheme.specialDropdownImageFilename;
     
     final hasKeyword = items.any((item) => item.text?.trim().toLowerCase() == keywordTextLower);
     final hasDebug = items.any((item) => item.text?.trim().toLowerCase() == debugTextLower);
     
     if (hasKeyword && hasDebug) {
-      return _buildGroupedItems(items, context, keywordTextLower, debugTextLower, specialDropdownTooltipText);
+      return _buildGroupedItems(items, context, keywordTextLower, debugTextLower, specialDropdownTooltipText, specialDropdownImageFilename);
     }
 
-    return _buildGroupedItems(items, context, keywordTextLower, debugTextLower, specialDropdownTooltipText);
+    return _buildGroupedItems(items, context, keywordTextLower, debugTextLower, specialDropdownTooltipText, specialDropdownImageFilename);
   }
 
   List<Widget> _buildGroupedItems(
@@ -120,6 +135,7 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     String keywordTextLower,
     String debugTextLower,
     String specialDropdownTooltipText,
+    String? specialDropdownImageFilename,
   ) {
     final result = <Widget>[];
     final processedIndices = <int>{};
@@ -132,11 +148,22 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
       final item = items[i];
       final text = item.text?.trim().toLowerCase();
       final tooltipText = item.toolTipText?.trim();
+      final imageFilename = item.image?.filename;
       
-      if (tooltipText == specialDropdownTooltipText && (item.style & SWT.DROP_DOWN) != 0) {
-        result.add(_buildSpecialDropdown(context, item));
-        processedIndices.add(i);
-        continue;
+      final useSpecialDropdown = getConfigFlags().use_special_dropdown_button ?? true;
+
+      print('useSpecialDropdown: $useSpecialDropdown');
+      
+      if (useSpecialDropdown) {
+        final matchesByText = text == specialDropdownTooltipText.toLowerCase();
+        final matchesByTooltip = tooltipText == specialDropdownTooltipText;
+        final matchesByImage = specialDropdownImageFilename != null && imageFilename == specialDropdownImageFilename;
+        
+        if (matchesByText || matchesByTooltip || matchesByImage) {
+          result.add(_buildSpecialDropdown(context, item));
+          processedIndices.add(i);
+          continue;
+        }
       }
       
       if (text == keywordTextLower || text == debugTextLower) {
@@ -172,30 +199,38 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
   }
 
   Widget _buildSegmentControl(BuildContext context, VToolItem keywordItem, VToolItem debugItem) {
-    return Center(
-      child: _SegmentControlWidget(
-        keywordItem: keywordItem,
-        debugItem: debugItem,
-      ),
+    return _SegmentControlWidget(
+      keywordItem: keywordItem,
+      debugItem: debugItem,
     );
   }
 
   Widget _buildSpecialDropdown(BuildContext context, VToolItem toolItem) {
-    return Center(
-      child: _SpecialDropdownWidget(
-        toolItem: toolItem,
-      ),
+    return _SpecialDropdownWidget(
+      toolItem: toolItem,
     );
   }
 
 
-  Widget getWidgetForToolItem(VToolItem toolItem, ToolBarThemeExtension widgetTheme) {
+  Widget getWidgetForToolItem(VToolItem toolItem, ToolBarThemeExtension widgetTheme, {bool shouldLimitSize = false, double? maxSize}) {
     final itemWidget = ToolItemSwt(value: toolItem);
-
-    return Padding(
+    
+    Widget result = Padding(
       padding: widgetTheme.itemPadding,
       child: itemWidget,
     );
+    
+    if (shouldLimitSize && maxSize != null) {
+      result = ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: maxSize,
+          maxHeight: maxSize,
+        ),
+        child: result,
+      );
+    }
+    
+    return result;
   }
 }
 
@@ -272,59 +307,65 @@ class _SegmentControlWidgetState extends State<_SegmentControlWidget> {
     final selectedWidth = keywordSelected ? keywordWidth : debugWidth;
     final leftPosition = keywordSelected ? 0.0 : keywordWidth;
     
-    return IntrinsicHeight(
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: widgetTheme.segmentPadding.vertical),
-        decoration: BoxDecoration(
-          color: widgetTheme.segmentUnselectedBackgroundColor,
-          borderRadius: BorderRadius.circular(widgetTheme.segmentBorderRadius),
-        ),
-        child: Stack(
-          children: [
-            AnimatedPositioned(
-              duration: widgetTheme.segmentAnimationDuration,
-              curve: Curves.easeInOut,
-              left: leftPosition,
-              top: 0,
-              bottom: 0,
-              child: Container(
-                width: selectedWidth,
-                decoration: BoxDecoration(
-                  color: widgetTheme.segmentInnerColor,
-                  borderRadius: BorderRadius.circular(widgetTheme.segmentBorderRadius),
+    final toolbarTheme = Theme.of(context).extension<ToolBarThemeExtension>();
+    final backgroundColor = toolbarTheme?.compositeBackgroundColor ?? Colors.white;
+    
+    return Container(
+      color: backgroundColor,
+      child: IntrinsicHeight(
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: widgetTheme.segmentPadding.vertical),
+          decoration: BoxDecoration(
+            color: widgetTheme.segmentUnselectedBackgroundColor,
+            borderRadius: BorderRadius.circular(widgetTheme.segmentBorderRadius),
+          ),
+          child: Stack(
+            children: [
+              AnimatedPositioned(
+                duration: widgetTheme.segmentAnimationDuration,
+                curve: Curves.easeInOut,
+                left: leftPosition,
+                top: 0,
+                bottom: 0,
+                child: Container(
+                  width: selectedWidth,
+                  decoration: BoxDecoration(
+                    color: widgetTheme.segmentInnerColor,
+                    borderRadius: BorderRadius.circular(widgetTheme.segmentBorderRadius),
+                  ),
                 ),
               ),
-            ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildSegmentButton(
-                  context: context,
-                  widgetTheme: widgetTheme,
-                  toolItem: keywordText,
-                  otherToolItem: debugText,
-                  isSelected: keywordSelected,
-                  enabled: keywordEnabled,
-                  text: widgetTheme.segmentKeywordText,
-                ),
-                _buildSegmentButton(
-                  context: context,
-                  widgetTheme: widgetTheme,
-                  toolItem: debugText,
-                  otherToolItem: keywordText,
-                  isSelected: debugSelected,
-                  enabled: debugEnabled,
-                  text: widgetTheme.segmentDebugText,
-                ),
-              ],
-            ),
-          ],
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildSegmentButtonWrapper(
+                    context: context,
+                    widgetTheme: widgetTheme,
+                    toolItem: keywordText,
+                    otherToolItem: debugText,
+                    isSelected: keywordSelected,
+                    enabled: keywordEnabled,
+                    text: widgetTheme.segmentKeywordText,
+                  ),
+                  _buildSegmentButtonWrapper(
+                    context: context,
+                    widgetTheme: widgetTheme,
+                    toolItem: debugText,
+                    otherToolItem: keywordText,
+                    isSelected: debugSelected,
+                    enabled: debugEnabled,
+                    text: widgetTheme.segmentDebugText,
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildSegmentButton({
+  Widget _buildSegmentButtonWrapper({
     required BuildContext context,
     required ToolItemThemeExtension widgetTheme,
     required VToolItem toolItem,
@@ -344,31 +385,19 @@ class _SegmentControlWidgetState extends State<_SegmentControlWidget> {
       baseTextStyle: widgetTheme.fontStyle,
     );
     
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: enabled ? () {
-          if (!isSelected) {
-            otherToolItem.selection = false;
-            toolItem.selection = true;
-            final itemWidget = ToolItemSwt(value: toolItem);
-            itemWidget.sendSelectionSelection(toolItem, null);
-            setState(() {});
-          }
-        } : null,
-        splashColor: widgetTheme.segmentInnerColor.withOpacity(widgetTheme.splashOpacity),
-        highlightColor: widgetTheme.segmentInnerColor.withOpacity(widgetTheme.highlightOpacity),
-        borderRadius: BorderRadius.circular(widgetTheme.segmentBorderRadius),
-        child: Container(
-          padding: widgetTheme.segmentPadding,
-          child: Center(
-            child: AnimatedDefaultTextStyle(
-              duration: widgetTheme.segmentAnimationDuration,
-              style: textStyle,
-              child: Text(
-                text,
-                textAlign: TextAlign.center,
-              ),
+    return GestureDetector(
+      onTap: enabled ? () {
+        ToolItemSwt(value: toolItem).sendSelectionSelection(toolItem, null);
+      } : null,
+      child: Container(
+        padding: widgetTheme.segmentPadding,
+        child: Center(
+          child: AnimatedDefaultTextStyle(
+            duration: widgetTheme.segmentAnimationDuration,
+            style: textStyle,
+            child: Text(
+              text,
+              textAlign: TextAlign.center,
             ),
           ),
         ),
@@ -393,7 +422,7 @@ class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<ToolItemThemeExtension>()!;
     final enabled = widget.toolItem.enabled ?? true;
-    final text = widget.toolItem.text ?? '';
+    final text = widgetTheme.specialDropdownText;
     
     final textStyle = getTextStyle(
       context: context,
@@ -411,18 +440,36 @@ class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
         } : null,
         splashColor: widgetTheme.specialDropdownTextColor.withOpacity(widgetTheme.splashOpacity),
         highlightColor: widgetTheme.specialDropdownTextColor.withOpacity(widgetTheme.highlightOpacity),
-        borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
-        child: Padding(
-          padding: widgetTheme.textPadding,
-          child: Center(
-            child: Text(
-              text,
-              style: textStyle,
-              textAlign: TextAlign.center,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(widgetTheme.borderRadius),
+          bottomLeft: Radius.circular(widgetTheme.borderRadius),
+        ),
+        child: Container(
+          padding: widgetTheme.specialDropdownPadding,
+          decoration: BoxDecoration(
+            color: widgetTheme.specialDropdownBackgroundColor,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(widgetTheme.borderRadius),
+              bottomLeft: Radius.circular(widgetTheme.borderRadius),
+            ),
+          ),
+          child: Padding(
+            padding: widgetTheme.textPadding,
+            child: Center(
+              child: Text(
+                text,
+                style: textStyle,
+                textAlign: TextAlign.center,
+              ),
             ),
           ),
         ),
       ),
+    );
+    
+    Widget separator = Container(
+      width: widgetTheme.separatorBarWidth,
+      color: widgetTheme.specialDropdownSeparatorColor,
     );
     
     Widget dropdownArrow = Material(
@@ -434,43 +481,41 @@ class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
         } : null,
         splashColor: widgetTheme.specialDropdownTextColor.withOpacity(widgetTheme.splashOpacity),
         highlightColor: widgetTheme.specialDropdownTextColor.withOpacity(widgetTheme.highlightOpacity),
-        borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
-        child: MouseRegion(
-          cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-          child: Icon(
-            Icons.arrow_drop_down,
-            size: widgetTheme.dropdownArrowSize,
-            color: widgetTheme.specialDropdownArrowColor,
+        borderRadius: BorderRadius.only(
+          topRight: Radius.circular(widgetTheme.borderRadius),
+          bottomRight: Radius.circular(widgetTheme.borderRadius),
+        ),
+        child: Container(
+          padding: widgetTheme.specialDropdownPadding,
+          decoration: BoxDecoration(
+            color: widgetTheme.specialDropdownBackgroundColor,
+            borderRadius: BorderRadius.only(
+              topRight: Radius.circular(widgetTheme.borderRadius),
+              bottomRight: Radius.circular(widgetTheme.borderRadius),
+            ),
+          ),
+          child: MouseRegion(
+            cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+            child: Icon(
+              Icons.arrow_drop_down,
+              size: widgetTheme.dropdownArrowSize,
+              color: widgetTheme.specialDropdownArrowColor,
+            ),
           ),
         ),
       ),
     );
     
-    Widget separator = Container(
-      width: widgetTheme.separatorBarWidth,
-      color: widgetTheme.specialDropdownSeparatorColor,
-    );
-    
     return IntrinsicWidth(
       child: IntrinsicHeight(
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: widgetTheme.buttonPadding.horizontal,
-            vertical: widgetTheme.specialDropdownPadding.vertical,
-          ),
-          decoration: BoxDecoration(
-            color: widgetTheme.specialDropdownBackgroundColor,
-            borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              mainContentButton,
-              separator,
-              dropdownArrow,
-            ],
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            mainContentButton,
+            separator,
+            dropdownArrow,
+          ],
         ),
       ),
     );

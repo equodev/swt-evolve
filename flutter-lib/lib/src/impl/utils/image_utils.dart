@@ -84,28 +84,39 @@ class ImageUtils {
         final imageSize = size ?? AppSizes.icon;
         final imageColor = color ?? AppColors.getColor(enabled);
 
-        imageWidget = ConstrainedBox(
-          constraints:
-              constraints ??
-              BoxConstraints(
-                minWidth: AppSizes.toolbarMinSize,
-                minHeight: AppSizes.toolbarMinSize,
-              ),
-          child: Opacity(
-            opacity: enabled ? 1.0 : 0.5,
-            child: Center(
-              child: SizedBox(
-                width: imageSize,
-                height: imageSize,
-                child: ImageIcon(
-                  MemoryImage(bytes!),
-                  size: imageSize,
-                  color: imageColor,
-                ),
-              ),
-            ),
+        Widget iconContent = SizedBox(
+          width: imageSize,
+          height: imageSize,
+          child: ImageIcon(
+            MemoryImage(bytes!),
+            size: imageSize,
+            color: imageColor,
           ),
         );
+
+        if (color == null) {
+          iconContent = Opacity(
+            opacity: enabled ? 1.0 : 0.5,
+            child: iconContent,
+          );
+        }
+
+        if (constraints != null) {
+          imageWidget = ConstrainedBox(
+            constraints: constraints,
+            child: iconContent,
+          );
+        } else if (size == null) {
+          imageWidget = ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: AppSizes.toolbarMinSize,
+              minHeight: AppSizes.toolbarMinSize,
+            ),
+            child: iconContent,
+          );
+        } else {
+          imageWidget = iconContent;
+        }
       } else {
         // Real image rendering (for labels)
         // Prefer file path for now (most reliable for tests)
@@ -175,46 +186,63 @@ class ImageUtils {
     if (replacement is String) {
       // SVG replacement
       final svgSize = size ?? width ?? height ?? AppSizes.icon;
-      final svgColor = color ?? AppColors.getColor(enabled);
 
       if (renderAsIcon) {
-        widget = ConstrainedBox(
-          constraints:
-              constraints ??
-              BoxConstraints(
-                minWidth: AppSizes.toolbarMinSize,
-                minHeight: AppSizes.toolbarMinSize,
-              ),
-          child: Opacity(
-            opacity: enabled ? 1.0 : 0.5,
-            child: Center(
-              child: SizedBox(
-                width: svgSize,
-                height: svgSize,
-                child: SvgPicture.string(
-                  replacement,
-                  width: svgSize,
-                  height: svgSize,
-                  colorFilter: ColorFilter.mode(svgColor, BlendMode.srcIn),
-                ),
-              ),
-            ),
+        Widget svgContent = SizedBox(
+          width: svgSize,
+          height: svgSize,
+          child: SvgPicture.string(
+            replacement,
+            width: svgSize,
+            height: svgSize,
+            colorFilter: color != null ? ColorFilter.mode(color!, BlendMode.srcIn) : null,
           ),
         );
+
+        if (color == null) {
+          svgContent = Opacity(
+            opacity: enabled ? 1.0 : 0.5,
+            child: svgContent,
+          );
+        }
+
+        if (constraints != null) {
+          widget = ConstrainedBox(
+            constraints: constraints,
+            child: svgContent,
+          );
+        } else if (size == null && width == null && height == null) {
+          widget = ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: AppSizes.toolbarMinSize,
+              minHeight: AppSizes.toolbarMinSize,
+            ),
+            child: svgContent,
+          );
+        } else {
+          widget = svgContent;
+        }
       } else {
+        Widget svgWidget = SvgPicture.string(
+          replacement,
+          width: width,
+          height: height,
+          fit: BoxFit.contain,
+          colorFilter: color != null ? ColorFilter.mode(color!, BlendMode.srcIn) : null,
+        );
+        
+        if (color == null) {
+          svgWidget = Opacity(
+            opacity: enabled ? 1.0 : 0.5,
+            child: svgWidget,
+          );
+        }
+        
         widget = ConstrainedBox(
           constraints:
               constraints ??
               BoxConstraints(maxWidth: width ?? 64, maxHeight: height ?? 64),
-          child: Opacity(
-            opacity: enabled ? 1.0 : 0.5,
-            child: SvgPicture.string(
-              replacement,
-              width: width,
-              height: height,
-              fit: BoxFit.contain,
-            ),
-          ),
+          child: svgWidget,
         );
       }
     } else if (replacement is ui.Image) {
@@ -222,43 +250,80 @@ class ImageUtils {
       final imageSize = size ?? width ?? height ?? AppSizes.icon;
 
       if (renderAsIcon) {
-        widget = ConstrainedBox(
-          constraints:
-              constraints ??
-              BoxConstraints(
-                minWidth: AppSizes.toolbarMinSize,
-                minHeight: AppSizes.toolbarMinSize,
-              ),
-          child: Opacity(
-            opacity: enabled ? 1.0 : 0.5,
-            child: Center(
-              child: SizedBox(
-                width: imageSize,
-                height: imageSize,
-                child: RawImage(
+        Widget imageContent = SizedBox(
+          width: imageSize,
+          height: imageSize,
+          child: color != null
+              ? ColorFiltered(
+                  colorFilter: ColorFilter.mode(color!, BlendMode.srcIn),
+                  child: RawImage(
+                    image: replacement,
+                    width: imageSize,
+                    height: imageSize,
+                    fit: BoxFit.contain,
+                  ),
+                )
+              : RawImage(
                   image: replacement,
                   width: imageSize,
                   height: imageSize,
                   fit: BoxFit.contain,
                 ),
-              ),
-            ),
-          ),
         );
+
+        if (color == null) {
+          imageContent = Opacity(
+            opacity: enabled ? 1.0 : 0.5,
+            child: imageContent,
+          );
+        }
+
+        if (constraints != null) {
+          widget = ConstrainedBox(
+            constraints: constraints,
+            child: imageContent,
+          );
+        } else if (size == null && width == null && height == null) {
+          widget = ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: AppSizes.toolbarMinSize,
+              minHeight: AppSizes.toolbarMinSize,
+            ),
+            child: imageContent,
+          );
+        } else {
+          widget = imageContent;
+        }
       } else {
+        Widget imageWidget = color != null
+            ? ColorFiltered(
+                colorFilter: ColorFilter.mode(color!, BlendMode.srcIn),
+                child: RawImage(
+                  image: replacement,
+                  width: width,
+                  height: height,
+                  fit: BoxFit.contain,
+                ),
+              )
+            : RawImage(
+                image: replacement,
+                width: width,
+                height: height,
+                fit: BoxFit.contain,
+              );
+        
+        if (color == null) {
+          imageWidget = Opacity(
+            opacity: enabled ? 1.0 : 0.5,
+            child: imageWidget,
+          );
+        }
+        
         widget = ConstrainedBox(
           constraints:
               constraints ??
               BoxConstraints(maxWidth: width ?? 64, maxHeight: height ?? 64),
-          child: Opacity(
-            opacity: enabled ? 1.0 : 0.5,
-            child: RawImage(
-              image: replacement,
-              width: width,
-              height: height,
-              fit: BoxFit.contain,
-            ),
-          ),
+          child: imageWidget,
         );
       }
     }

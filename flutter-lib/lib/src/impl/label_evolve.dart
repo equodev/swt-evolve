@@ -36,6 +36,25 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = hasValidBounds ? getConstraintsFromBounds(state.bounds) : isVertical ? BoxConstraints(maxHeight: 7) : BoxConstraints(maxWidth: 7);
     
+Widget separator;
+    if (isVertical) {
+      separator = VerticalDivider(
+        width: thickness,
+        thickness: thickness,
+        color: separatorColor,
+        indent: 0,
+        endIndent: 0,
+      );
+    } else {
+      separator = Divider(
+        height: thickness,
+        thickness: thickness,
+        color: separatorColor,
+        indent: 0,
+        endIndent: 0,
+      );
+    }
+
     return MouseRegion(
       onEnter: (_) => widget.sendMouseTrackMouseEnter(state, null),
       onExit: (_) => widget.sendMouseTrackMouseExit(state, null),
@@ -48,18 +67,13 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
           }
         },
         child: wrap(
-          Container(
-            constraints: constraints,
-            child: isVertical
-                ? Container(
-                    width: thickness,
-                    color: separatorColor,
-                  )
-                : Container(
-                    height: thickness,
-                    color: separatorColor,
-                  ),
-          ),
+          constraints != null
+              ? SizedBox(
+                  width: isVertical ? thickness : constraints.maxWidth,
+                  height: isVertical ? constraints.maxHeight : thickness,
+                  child: separator,
+                )
+              : separator,
         ),
       ),
     );

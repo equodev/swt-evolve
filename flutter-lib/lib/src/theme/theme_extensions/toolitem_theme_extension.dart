@@ -52,6 +52,8 @@ class ToolItemThemeExtension extends ThemeExtension<ToolItemThemeExtension> with
   final String segmentKeywordText;
   final String segmentDebugText;
   final String specialDropdownTooltipText;
+  final String? specialDropdownImageFilename;
+  final String specialDropdownText;
   final Color specialDropdownBackgroundColor;
   final Color specialDropdownTextColor;
   final Color specialDropdownSeparatorColor;
@@ -98,6 +100,8 @@ class ToolItemThemeExtension extends ThemeExtension<ToolItemThemeExtension> with
     required this.segmentKeywordText,
     required this.segmentDebugText,
     required this.specialDropdownTooltipText,
+    this.specialDropdownImageFilename,
+    required this.specialDropdownText,
     required this.specialDropdownBackgroundColor,
     required this.specialDropdownTextColor,
     required this.specialDropdownSeparatorColor,

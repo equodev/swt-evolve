@@ -32,6 +32,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   Timer? _scrollbarHideTimer;
   final GlobalKey _tabBarKey = GlobalKey();
   late final ScrollController _horizontalScrollController;
+  bool _isMinimizeHovered = false;
+  bool _isMaximizeHovered = false;
 
   @override
   void initState() {
@@ -129,12 +131,12 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
           child: _buildHorizontalScrollableTabs(
             widgetTheme: widgetTheme,
             child: Row(
-              children: [
-                ...tabs.asMap().entries.map((entry) {
-                  final int index = entry.key;
-                  final CTabItem tab = entry.value;
+              children: tabs.asMap().entries.map((entry) {
+                final int index = entry.key;
+                final CTabItem tab = entry.value;
 
-                  return _buildSimpleTab(
+                return Expanded(
+                  child: _buildSimpleTab(
                     context: context,
                     widgetTheme: widgetTheme,
                     isSelected: index == _selectedIndex,
@@ -143,9 +145,9 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
                     onClose:
                         tab.showCloseButton ? () => _handleTabClose(index) : null,
                     isTabBottom: isTabBottom,
-                  );
-                }).toList(),
-              ],
+                  ),
+                );
+              }).toList(),
             ),
           ),
         ),
@@ -176,12 +178,12 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
           child: _buildHorizontalScrollableTabs(
             widgetTheme: widgetTheme,
             child: Row(
-              children: [
-                ...tabs.asMap().entries.map((entry) {
-                  final int index = entry.key;
-                  final CTabItem tab = entry.value;
+              children: tabs.asMap().entries.map((entry) {
+                final int index = entry.key;
+                final CTabItem tab = entry.value;
 
-                  return _buildAdvancedTab(
+                return Expanded(
+                  child: _buildAdvancedTab(
                     context: context,
                     widgetTheme: widgetTheme,
                     isSelected: index == _selectedIndex,
@@ -190,23 +192,24 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
                     onClose:
                         tab.showCloseButton ? () => _handleTabClose(index) : null,
                     isTabBottom: isTabBottom,
-                  );
-                }),
-              ],
+                  ),
+                );
+              }).toList(),
             ),
           ),
         ),
-        _buildTopRightControls(
-          context: context,
-          widgetTheme: widgetTheme,
-          topRightComposite: topRightComposite,
-          showMinimizeButton: showMinimizeButton,
-          showMaximizeButton: showMaximizeButton,
-          isMinimized: isMinimized,
-          isMaximized: isMaximized,
-          alignment: topRightAlignment,
-        ),
       ],
+    );
+
+    final topRightControls = _buildTopRightControls(
+      context: context,
+      widgetTheme: widgetTheme,
+      topRightComposite: topRightComposite,
+      showMinimizeButton: showMinimizeButton,
+      showMaximizeButton: showMaximizeButton,
+      isMinimized: isMinimized,
+      isMaximized: isMaximized,
+      alignment: topRightAlignment,
     );
 
     return MouseRegion(
@@ -215,7 +218,16 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
       child: _buildTabBarContainer(
         widgetTheme: widgetTheme,
         height: height,
-        child: tabBarContent,
+        child: Stack(
+          children: [
+            tabBarContent,
+            Positioned(
+              right: 0,
+              top: 0,
+              child: topRightControls,
+            ),
+          ],
+        ),
         isTabBottom: isTabBottom,
       ),
     );
@@ -492,17 +504,39 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     required CTabFolderThemeExtension widgetTheme,
     required IconData icon,
     required VoidCallback onTap,
+    required bool isHovered,
+    required ValueChanged<bool> onHoverChanged,
+    bool enabled = true,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: widgetTheme.controlButtonHorizontalPadding,
-        ),
-        child: Icon(
-          icon,
-          size: widgetTheme.controlButtonSize,
-          color: widgetTheme.controlButtonColor,
+    return MouseRegion(
+      onEnter: (_) {
+        onHoverChanged(true);
+      },
+      onExit: (_) {
+        onHoverChanged(false);
+      },
+      cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          splashColor: widgetTheme.controlButtonHoverColor.withOpacity(0.3),
+          highlightColor: widgetTheme.controlButtonHoverColor.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(4),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: widgetTheme.controlButtonHorizontalPadding,
+            ),
+            decoration: BoxDecoration(
+              color: isHovered ? widgetTheme.controlButtonHoverColor.withOpacity(0.1) : Colors.transparent,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Icon(
+              icon,
+              size: widgetTheme.controlButtonSize,
+              color: widgetTheme.controlButtonColor,
+            ),
+          ),
         ),
       ),
     );
@@ -512,44 +546,48 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     required CTabFolderThemeExtension widgetTheme,
     required Widget child,
   }) {
-    return NotificationListener<ScrollUpdateNotification>(
-      onNotification: (notification) {
-        // Show scrollbar when user is scrolling
-        _showScrollbar();
-        // Hide after scrolling stops
-        _hideScrollbarAfterDelay();
-        return false;
-      },
-      child: MouseRegion(
-        onEnter: (_) {
-          _showScrollbar();
-        },
-        onExit: (_) {
-          // Hide after a delay to allow interaction with scrollbar
-          _hideScrollbarAfterDelay();
-        },
-        child: Listener(
-          onPointerDown: (_) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return NotificationListener<ScrollUpdateNotification>(
+          onNotification: (notification) {
             _showScrollbar();
+            _hideScrollbarAfterDelay(widgetTheme.scrollbarHideDelay);
+            return false;
           },
-          child: Scrollbar(
-            controller: _horizontalScrollController,
-            thumbVisibility: _scrollbarVisible,
-            thickness: widgetTheme.tabScrollbarThickness,
-            child: SingleChildScrollView(
-              controller: _horizontalScrollController,
-              scrollDirection: Axis.horizontal,
-              child: child,
+          child: MouseRegion(
+            onEnter: (_) {
+              _showScrollbar();
+            },
+            onExit: (_) {
+              _hideScrollbarAfterDelay(widgetTheme.scrollbarHideDelay);
+            },
+            child: Listener(
+              onPointerDown: (_) {
+                _showScrollbar();
+              },
+              child: Scrollbar(
+                controller: _horizontalScrollController,
+                thumbVisibility: _scrollbarVisible,
+                thickness: widgetTheme.tabScrollbarThickness,
+                child: SingleChildScrollView(
+                  controller: _horizontalScrollController,
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                    child: child,
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  void _hideScrollbarAfterDelay() {
+  void _hideScrollbarAfterDelay(Duration delay) {
     _scrollbarHideTimer?.cancel();
-    _scrollbarHideTimer = Timer(const Duration(milliseconds: 800), () {
+    _scrollbarHideTimer = Timer(delay, () {
       if (mounted && _scrollbarVisible) {
         setState(() {
           _scrollbarVisible = false;
@@ -738,38 +776,88 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
         if (topRightComposite != null)
           _buildTopRightComposite(topRightComposite),
         if (showMinimizeButton)
-          _buildControlButton(
-            context: context,
-            widgetTheme: widgetTheme,
-            icon: isMinimized ? Icons.maximize : Icons.minimize,
-            onTap: _toggleMinimize,
+          Builder(
+            builder: (context) {
+              final isVisible = getConfigFlags().ctabfolder_visible_controls == true
+                  ? true
+                  : _hoveringTopBar;
+              return _buildControlButton(
+                context: context,
+                widgetTheme: widgetTheme,
+                icon: isMinimized ? Icons.maximize : Icons.minimize,
+                onTap: isVisible ? _toggleMinimize : () {},
+                isHovered: _isMinimizeHovered,
+                onHoverChanged: (hovered) {
+                  setState(() {
+                    _isMinimizeHovered = hovered;
+                  });
+                },
+                enabled: true, 
+              );
+            },
           ),
         if (showMaximizeButton)
-          _buildControlButton(
-            context: context,
-            widgetTheme: widgetTheme,
-            icon: isMaximized ? Icons.fullscreen_exit : Icons.fullscreen,
-            onTap: _toggleMaximize,
+          Builder(
+            builder: (context) {
+              final isVisible = getConfigFlags().ctabfolder_visible_controls == true
+                  ? true
+                  : _hoveringTopBar;
+              return _buildControlButton(
+                context: context,
+                widgetTheme: widgetTheme,
+                icon: isMaximized ? Icons.fullscreen_exit : Icons.fullscreen,
+                onTap: isVisible ? _toggleMaximize : () {},
+                isHovered: _isMaximizeHovered,
+                onHoverChanged: (hovered) {
+                  setState(() {
+                    _isMaximizeHovered = hovered;
+                  });
+                },
+                enabled: true,
+              );
+            },
           ),
-        SizedBox(width: widgetTheme.controlButtonSpacing),
       ],
     );
 
+    final isControlsVisible = getConfigFlags().ctabfolder_visible_controls == true
+        ? true
+        : _hoveringTopBar;
+    
     final revealWidget = _HoverReveal(
-      visible: getConfigFlags().ctabfolder_visible_controls == true
-          ? true
-          : _hoveringTopBar,
+      visible: isControlsVisible,
       revealDuration: widgetTheme.hoverRevealDuration,
       hideDuration: widgetTheme.hoverHideDuration,
-      child: controls,
+      child: Align(
+        alignment: Alignment.topRight,
+        child: Container(
+          decoration: BoxDecoration(
+            color: widgetTheme.tabBarBackgroundColor,
+            boxShadow: [
+              BoxShadow(
+                color: widgetTheme.topRightControlsShadowColor.withOpacity(widgetTheme.topRightControlsShadowOpacity),
+                blurRadius: widgetTheme.topRightControlsShadowBlurRadius,
+                offset: widgetTheme.topRightControlsShadowOffset,
+              ),
+            ],
+          ),
+          child: controls,
+        ),
+      ),
+    );
+
+    final scaledWidget = Transform.scale(
+      scale: widgetTheme.controlButtonScale,
+      alignment: Alignment.topRight,
+      child: revealWidget,
     );
 
     if (alignment == SWT.LEFT) {
-      return revealWidget;
+      return scaledWidget;
     } else if (alignment == SWT.CENTER) {
-      return Expanded(child: Center(child: revealWidget));
+      return Expanded(child: Center(child: scaledWidget));
     } else {
-      return revealWidget;
+      return scaledWidget;
     }
   }
 
@@ -824,11 +912,9 @@ class _HoverReveal extends StatelessWidget {
         opacity: visible ? 1.0 : 0.0,
         duration: visible ? revealDuration : hideDuration,
         curve: Curves.easeOut,
-        child: IgnorePointer(
-          ignoring: !visible,
-          child: child,
-        ),
+        child: child,
       ),
     );
   }
 }
+

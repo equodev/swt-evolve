@@ -75,7 +75,7 @@ CTabFolderThemeExtension _getCTabFolderTheme({
     tabBorderRadius: 0.0,
     
     // Tab padding
-    tabHorizontalPadding: 8.0,
+    tabHorizontalPadding: 6.0,
     tabVerticalPadding: 0.0,
     
     // Tab typography
@@ -93,9 +93,9 @@ CTabFolderThemeExtension _getCTabFolderTheme({
     tabContentBorderColor: colorSchemeExtension.surfaceBorderEnabled,
     
     // Tab sizes
-    tabIconSize: 16.0,
-    tabCloseIconSize: 14.0,
-    controlButtonSize: 16.0,
+    tabIconSize: 14.0,
+    tabCloseIconSize: 12.0,
+    controlButtonSize: 14.0,
     
     // Tab spacing
     tabIconTextSpacing: 3.0,
@@ -108,9 +108,10 @@ CTabFolderThemeExtension _getCTabFolderTheme({
     
     // Control buttons
     controlButtonColor: colorScheme.onSurface,
-    controlButtonHoverColor: colorScheme.primary,
-    controlButtonHorizontalPadding: 4.0,
-    controlButtonSpacing: 4.0,
+    controlButtonHoverColor: colorSchemeExtension.stateDefaultHovered,
+    controlButtonHorizontalPadding: 2.0,
+    controlButtonSpacing: 2.0,
+    controlButtonScale: 0.5,
     
     // Hover reveal animation
     hoverRevealDuration: const Duration(milliseconds: 250),
@@ -118,6 +119,18 @@ CTabFolderThemeExtension _getCTabFolderTheme({
     
     // Scrollbar
     tabScrollbarThickness: 2.0,
+    
+    // Top right controls overlay shadow
+    topRightControlsShadowColor: Colors.black,
+    topRightControlsShadowOpacity: 0.1,
+    topRightControlsShadowBlurRadius: 4.0,
+    topRightControlsShadowOffset: const Offset(0, 2),
+    
+    // Top right controls padding
+    topRightControlsPadding: const EdgeInsets.symmetric(horizontal: 4.0),
+    
+    // Scrollbar hide delay
+    scrollbarHideDelay: const Duration(milliseconds: 800),
   );
 }
 

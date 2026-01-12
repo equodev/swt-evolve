@@ -5,6 +5,7 @@ import '../gen/composite.dart';
 import '../gen/control.dart';
 import '../gen/widgets.dart';
 import '../impl/composite_evolve.dart';
+import '../theme/theme_extensions/toolbar_theme_extension.dart';
 
 class ToolbarComposite extends CompositeSwt<VComposite> {
   const ToolbarComposite({super.key, required super.value});
@@ -22,11 +23,26 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
       return wrap(const SizedBox.shrink());
     }
 
-    final widgets = children.map((child) => buildMapWidgetFromValue(child)).toList();
+    final widgetTheme = Theme.of(context).extension<ToolBarThemeExtension>();
+    final backgroundColor = widgetTheme?.toolbarBackgroundColor ?? Colors.white;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: widgets,
+    final widgets = children.map((child) => buildMapWidgetFromValue(child)).toList();
+    
+    return Container(
+      height: 38,
+      color: backgroundColor,
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          ...widgets,
+          Expanded(
+            child: Container(
+              color: backgroundColor,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -50,6 +66,9 @@ class SideBarComposite extends CompositeSwt<VComposite> {
 class SideBarCompositeImpl extends CompositeImpl<SideBarComposite, VComposite> {
   @override
   Widget buildComposite() {
+    final widgetTheme = Theme.of(context).extension<ToolBarThemeExtension>();
+    final backgroundColor = widgetTheme?.compositeBackgroundColor ?? Colors.white;
+
     final children = state.children;
 
     if (children == null || children.isEmpty) {
@@ -58,9 +77,13 @@ class SideBarCompositeImpl extends CompositeImpl<SideBarComposite, VComposite> {
 
     final widgets = children.map((child) => buildMapWidgetFromValue(child)).toList();
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: widgets,
+    return Container(
+      color: backgroundColor,
+      height: double.infinity,
+      child: Column(
+        mainAxisSize: MainAxisSize.max,
+        children: widgets,
+      ),
     );
   }
 

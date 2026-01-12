@@ -51,9 +51,16 @@ mixin _$CTabFolderThemeExtensionTailorMixin
   Color get controlButtonHoverColor;
   double get controlButtonHorizontalPadding;
   double get controlButtonSpacing;
+  double get controlButtonScale;
   Duration get hoverRevealDuration;
   Duration get hoverHideDuration;
   double get tabScrollbarThickness;
+  Color get topRightControlsShadowColor;
+  double get topRightControlsShadowOpacity;
+  double get topRightControlsShadowBlurRadius;
+  Offset get topRightControlsShadowOffset;
+  EdgeInsets get topRightControlsPadding;
+  Duration get scrollbarHideDelay;
 
   @override
   CTabFolderThemeExtension copyWith({
@@ -97,9 +104,16 @@ mixin _$CTabFolderThemeExtensionTailorMixin
     Color? controlButtonHoverColor,
     double? controlButtonHorizontalPadding,
     double? controlButtonSpacing,
+    double? controlButtonScale,
     Duration? hoverRevealDuration,
     Duration? hoverHideDuration,
     double? tabScrollbarThickness,
+    Color? topRightControlsShadowColor,
+    double? topRightControlsShadowOpacity,
+    double? topRightControlsShadowBlurRadius,
+    Offset? topRightControlsShadowOffset,
+    EdgeInsets? topRightControlsPadding,
+    Duration? scrollbarHideDelay,
   }) {
     return CTabFolderThemeExtension(
       tabBarBackgroundColor:
@@ -160,10 +174,23 @@ mixin _$CTabFolderThemeExtensionTailorMixin
       controlButtonHorizontalPadding:
           controlButtonHorizontalPadding ?? this.controlButtonHorizontalPadding,
       controlButtonSpacing: controlButtonSpacing ?? this.controlButtonSpacing,
+      controlButtonScale: controlButtonScale ?? this.controlButtonScale,
       hoverRevealDuration: hoverRevealDuration ?? this.hoverRevealDuration,
       hoverHideDuration: hoverHideDuration ?? this.hoverHideDuration,
       tabScrollbarThickness:
           tabScrollbarThickness ?? this.tabScrollbarThickness,
+      topRightControlsShadowColor:
+          topRightControlsShadowColor ?? this.topRightControlsShadowColor,
+      topRightControlsShadowOpacity:
+          topRightControlsShadowOpacity ?? this.topRightControlsShadowOpacity,
+      topRightControlsShadowBlurRadius:
+          topRightControlsShadowBlurRadius ??
+          this.topRightControlsShadowBlurRadius,
+      topRightControlsShadowOffset:
+          topRightControlsShadowOffset ?? this.topRightControlsShadowOffset,
+      topRightControlsPadding:
+          topRightControlsPadding ?? this.topRightControlsPadding,
+      scrollbarHideDelay: scrollbarHideDelay ?? this.scrollbarHideDelay,
     );
   }
 
@@ -315,6 +342,9 @@ mixin _$CTabFolderThemeExtensionTailorMixin
       controlButtonSpacing: t < 0.5
           ? controlButtonSpacing
           : other.controlButtonSpacing,
+      controlButtonScale: t < 0.5
+          ? controlButtonScale
+          : other.controlButtonScale,
       hoverRevealDuration: t < 0.5
           ? hoverRevealDuration
           : other.hoverRevealDuration,
@@ -322,6 +352,26 @@ mixin _$CTabFolderThemeExtensionTailorMixin
       tabScrollbarThickness: t < 0.5
           ? tabScrollbarThickness
           : other.tabScrollbarThickness,
+      topRightControlsShadowColor: Color.lerp(
+        topRightControlsShadowColor,
+        other.topRightControlsShadowColor,
+        t,
+      )!,
+      topRightControlsShadowOpacity: t < 0.5
+          ? topRightControlsShadowOpacity
+          : other.topRightControlsShadowOpacity,
+      topRightControlsShadowBlurRadius: t < 0.5
+          ? topRightControlsShadowBlurRadius
+          : other.topRightControlsShadowBlurRadius,
+      topRightControlsShadowOffset: t < 0.5
+          ? topRightControlsShadowOffset
+          : other.topRightControlsShadowOffset,
+      topRightControlsPadding: t < 0.5
+          ? topRightControlsPadding
+          : other.topRightControlsPadding,
+      scrollbarHideDelay: t < 0.5
+          ? scrollbarHideDelay
+          : other.scrollbarHideDelay,
     );
   }
 
@@ -491,6 +541,10 @@ mixin _$CTabFolderThemeExtensionTailorMixin
               other.controlButtonSpacing,
             ) &&
             const DeepCollectionEquality().equals(
+              controlButtonScale,
+              other.controlButtonScale,
+            ) &&
+            const DeepCollectionEquality().equals(
               hoverRevealDuration,
               other.hoverRevealDuration,
             ) &&
@@ -501,6 +555,30 @@ mixin _$CTabFolderThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               tabScrollbarThickness,
               other.tabScrollbarThickness,
+            ) &&
+            const DeepCollectionEquality().equals(
+              topRightControlsShadowColor,
+              other.topRightControlsShadowColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              topRightControlsShadowOpacity,
+              other.topRightControlsShadowOpacity,
+            ) &&
+            const DeepCollectionEquality().equals(
+              topRightControlsShadowBlurRadius,
+              other.topRightControlsShadowBlurRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
+              topRightControlsShadowOffset,
+              other.topRightControlsShadowOffset,
+            ) &&
+            const DeepCollectionEquality().equals(
+              topRightControlsPadding,
+              other.topRightControlsPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              scrollbarHideDelay,
+              other.scrollbarHideDelay,
             ));
   }
 
@@ -548,9 +626,16 @@ mixin _$CTabFolderThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(controlButtonHoverColor),
       const DeepCollectionEquality().hash(controlButtonHorizontalPadding),
       const DeepCollectionEquality().hash(controlButtonSpacing),
+      const DeepCollectionEquality().hash(controlButtonScale),
       const DeepCollectionEquality().hash(hoverRevealDuration),
       const DeepCollectionEquality().hash(hoverHideDuration),
       const DeepCollectionEquality().hash(tabScrollbarThickness),
+      const DeepCollectionEquality().hash(topRightControlsShadowColor),
+      const DeepCollectionEquality().hash(topRightControlsShadowOpacity),
+      const DeepCollectionEquality().hash(topRightControlsShadowBlurRadius),
+      const DeepCollectionEquality().hash(topRightControlsShadowOffset),
+      const DeepCollectionEquality().hash(topRightControlsPadding),
+      const DeepCollectionEquality().hash(scrollbarHideDelay),
     ]);
   }
 }
@@ -622,9 +707,22 @@ extension CTabFolderThemeExtensionBuildContextProps on BuildContext {
       cTabFolderThemeExtension.controlButtonHorizontalPadding;
   double get controlButtonSpacing =>
       cTabFolderThemeExtension.controlButtonSpacing;
+  double get controlButtonScale => cTabFolderThemeExtension.controlButtonScale;
   Duration get hoverRevealDuration =>
       cTabFolderThemeExtension.hoverRevealDuration;
   Duration get hoverHideDuration => cTabFolderThemeExtension.hoverHideDuration;
   double get tabScrollbarThickness =>
       cTabFolderThemeExtension.tabScrollbarThickness;
+  Color get topRightControlsShadowColor =>
+      cTabFolderThemeExtension.topRightControlsShadowColor;
+  double get topRightControlsShadowOpacity =>
+      cTabFolderThemeExtension.topRightControlsShadowOpacity;
+  double get topRightControlsShadowBlurRadius =>
+      cTabFolderThemeExtension.topRightControlsShadowBlurRadius;
+  Offset get topRightControlsShadowOffset =>
+      cTabFolderThemeExtension.topRightControlsShadowOffset;
+  EdgeInsets get topRightControlsPadding =>
+      cTabFolderThemeExtension.topRightControlsPadding;
+  Duration get scrollbarHideDelay =>
+      cTabFolderThemeExtension.scrollbarHideDelay;
 }

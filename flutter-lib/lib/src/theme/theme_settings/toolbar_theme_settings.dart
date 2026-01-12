@@ -42,7 +42,9 @@ ToolBarThemeExtension _getToolBarTheme({
     shadowOpacity: 0.2,
     shadowBlurRadius: 4.0,
     shadowOffset: const Offset(2, 2),
-    itemPadding: const EdgeInsets.symmetric(horizontal: 2.0),
+    itemPadding: EdgeInsets.zero,
+    compositeBackgroundColor: Colors.white,
+    toolbarBackgroundColor: Colors.white,
   );
 }
 

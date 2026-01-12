@@ -11,6 +11,7 @@ class ConfigFlags {
   String? assets_path;
   bool? use_swt_colors; 
   bool? use_swt_fonts;
+  bool? use_special_dropdown_button;
 
   factory ConfigFlags.fromJson(Map<String, dynamic> json) =>
       _$ConfigFlagsFromJson(json);

@@ -94,6 +94,7 @@ CTabFolderThemeExtension _$CTabFolderThemeExtensionFromJson(
   controlButtonHorizontalPadding:
       (json['controlButtonHorizontalPadding'] as num).toDouble(),
   controlButtonSpacing: (json['controlButtonSpacing'] as num).toDouble(),
+  controlButtonScale: (json['controlButtonScale'] as num).toDouble(),
   hoverRevealDuration: Duration(
     microseconds: (json['hoverRevealDuration'] as num).toInt(),
   ),
@@ -101,6 +102,22 @@ CTabFolderThemeExtension _$CTabFolderThemeExtensionFromJson(
     microseconds: (json['hoverHideDuration'] as num).toInt(),
   ),
   tabScrollbarThickness: (json['tabScrollbarThickness'] as num).toDouble(),
+  topRightControlsShadowColor: const ColorConverter().fromJson(
+    json['topRightControlsShadowColor'] as String,
+  ),
+  topRightControlsShadowOpacity: (json['topRightControlsShadowOpacity'] as num)
+      .toDouble(),
+  topRightControlsShadowBlurRadius:
+      (json['topRightControlsShadowBlurRadius'] as num).toDouble(),
+  topRightControlsShadowOffset: const OffsetConverter().fromJson(
+    json['topRightControlsShadowOffset'] as Map<String, dynamic>,
+  ),
+  topRightControlsPadding: const EdgeInsetsConverter().fromJson(
+    json['topRightControlsPadding'] as Map<String, dynamic>,
+  ),
+  scrollbarHideDelay: Duration(
+    microseconds: (json['scrollbarHideDelay'] as num).toInt(),
+  ),
 );
 
 Map<String, dynamic> _$CTabFolderThemeExtensionToJson(
@@ -182,7 +199,20 @@ Map<String, dynamic> _$CTabFolderThemeExtensionToJson(
   ),
   'controlButtonHorizontalPadding': instance.controlButtonHorizontalPadding,
   'controlButtonSpacing': instance.controlButtonSpacing,
+  'controlButtonScale': instance.controlButtonScale,
   'hoverRevealDuration': instance.hoverRevealDuration.inMicroseconds,
   'hoverHideDuration': instance.hoverHideDuration.inMicroseconds,
   'tabScrollbarThickness': instance.tabScrollbarThickness,
+  'topRightControlsShadowColor': const ColorConverter().toJson(
+    instance.topRightControlsShadowColor,
+  ),
+  'topRightControlsShadowOpacity': instance.topRightControlsShadowOpacity,
+  'topRightControlsShadowBlurRadius': instance.topRightControlsShadowBlurRadius,
+  'topRightControlsShadowOffset': const OffsetConverter().toJson(
+    instance.topRightControlsShadowOffset,
+  ),
+  'topRightControlsPadding': const EdgeInsetsConverter().toJson(
+    instance.topRightControlsPadding,
+  ),
+  'scrollbarHideDelay': instance.scrollbarHideDelay.inMicroseconds,
 };

@@ -339,9 +339,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   ) {
     final bool linesVisible = state.linesVisible ?? false;
     
-    Widget itemsColumn = IntrinsicWidth(
+    Widget itemsColumn = SizedBox(
+      width: double.infinity,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: treeItems,
       ),
     );
@@ -395,6 +397,8 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   Widget getWidgetForTreeItem(VTreeItem treeItem, int level) {
     setupTreeItemExpandListener(treeItem);
 
+    final treeWidth = state.bounds?.width?.toDouble();
+
     return TreeItemSwtWrapper(
       key: ValueKey('tree_item_${treeItem.id}_${treeItem.checked}_${treeItem.grayed}'),
       treeItem: treeItem,
@@ -404,6 +408,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       parentTreeValue: state,
       treeImpl: this,
       treeFont: state.font,
+      treeWidth: treeWidth,
     );
   }
 
@@ -1039,6 +1044,7 @@ class TreeItemSwtWrapper extends StatelessWidget {
   final VTree parentTreeValue;
   final TreeImpl? treeImpl;
   final VFont? treeFont;
+  final double? treeWidth;
 
   const TreeItemSwtWrapper({
     Key? key,
@@ -1049,6 +1055,7 @@ class TreeItemSwtWrapper extends StatelessWidget {
     required this.parentTreeValue,
     this.treeImpl,
     this.treeFont,
+    this.treeWidth,
   }) : super(key: key);
 
   @override
@@ -1060,6 +1067,7 @@ class TreeItemSwtWrapper extends StatelessWidget {
       parentTreeValue: parentTreeValue,
       treeImpl: treeImpl,
       treeFont: treeFont,
+      treeWidth: treeWidth,
       child: TreeItemSwt(
         value: treeItem,
         key: ValueKey('tree_item_${treeItem.id}'),
@@ -1077,6 +1085,7 @@ class TreeItemContext {
   final VFont? treeFont; 
   final List<VTreeItem>? selection;
   final int checkboxUpdateCounter;
+  final double? treeWidth;
 
   TreeItemContext({
     required this.level,
@@ -1087,6 +1096,7 @@ class TreeItemContext {
     this.treeFont,
     this.selection,
     this.checkboxUpdateCounter = 0,
+    this.treeWidth,
   });
 
   static TreeItemContext? of(BuildContext context) {
@@ -1107,6 +1117,7 @@ class TreeItemContextProvider extends InheritedWidget {
     required VTree parentTreeValue,
     TreeImpl? treeImpl,
     VFont? treeFont,
+    double? treeWidth,
     required Widget child,
   })  : context = TreeItemContext(
           level: level,
@@ -1117,6 +1128,7 @@ class TreeItemContextProvider extends InheritedWidget {
           treeFont: treeFont,
           selection: treeImpl?.state.selection,
           checkboxUpdateCounter: treeImpl?.checkboxUpdateCounter ?? 0,
+          treeWidth: treeWidth,
         ),
         super(key: key, child: child);
 

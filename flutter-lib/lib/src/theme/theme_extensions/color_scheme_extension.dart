@@ -65,7 +65,6 @@ class ColorSchemeExtension extends ThemeExtension<ColorSchemeExtension> with _$C
   final Color onErrorTextVariant; // sys.color.on_error_text.variant.default #59040D
   final Color onErrorTextVariantDisabled; // sys.color.on_error_text.variant.disabled #17181980
   
-  // Warning colors (no están en ColorScheme estándar)
   final Color warning; // sys.color.warning.default #DE7A2D
   final Color warningPressed; // sys.color.warning.pressed #99541F
   final Color warningHovered; // sys.color.warning.hovered #B26224
@@ -86,7 +85,6 @@ class ColorSchemeExtension extends ThemeExtension<ColorSchemeExtension> with _$C
   final Color onWarningContainerBorder; // sys.color.on_warning_container.border.default #F0DAC9
   final Color onWarningContainerBorderDisabled; // sys.color.on_warning_container.border.disabled #17181933
   
-  // Success colors (no están en ColorScheme estándar)
   final Color success; // sys.color.success.enabled #1BBB77
   final Color successPressed; // sys.color.success.pressed #128051
   final Color successHovered; // sys.color.success.hovered #169961
