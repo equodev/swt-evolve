@@ -29,19 +29,23 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
     final widgets = children.map((child) => buildMapWidgetFromValue(child)).toList();
     
     return Container(
-      height: 38,
-      color: backgroundColor,
-      child: Row(
-        mainAxisSize: MainAxisSize.max,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          ...widgets,
-          Expanded(
-            child: Container(
-              color: backgroundColor,
+      decoration: BoxDecoration(
+        color: backgroundColor
+      ),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Row(
+          mainAxisSize: MainAxisSize.max,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            ...widgets,
+            Expanded(
+              child: Container(
+                color: backgroundColor,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

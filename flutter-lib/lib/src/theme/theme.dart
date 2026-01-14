@@ -11,6 +11,7 @@ import 'theme_settings/ctabfolder_theme_settings.dart';
 import 'theme_settings/ctabitem_theme_settings.dart';
 import 'theme_settings/toolbar_theme_settings.dart';
 import 'theme_settings/toolitem_theme_settings.dart';
+import 'theme_settings/table_theme_settings.dart';
 import 'theme_extensions/color_scheme_extension.dart';
 
 Color calculateBackgroundColor(int? backgroundColor, bool useDarkTheme) {
@@ -360,6 +361,11 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final tableTheme = getTableLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
 
   return ThemeData(
     useMaterial3: true,
@@ -377,6 +383,7 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
       ctabItemTheme,
       toolbarTheme,
       toolItemTheme,
+      tableTheme,
     ],
   );
 }
@@ -440,6 +447,11 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final tableTheme = getTableLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
 
   return ThemeData(
     useMaterial3: true,
@@ -458,6 +470,7 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
       ctabItemTheme,
       toolbarTheme,
       toolItemTheme,
+      tableTheme,
     ],
   );
 }
@@ -524,6 +537,11 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final tableTheme = getTableDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
 
   return ThemeData(
     useMaterial3: true,
@@ -541,6 +559,7 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
       ctabItemTheme,
       toolbarTheme,
       toolItemTheme,
+      tableTheme,
     ],
   );
 }
@@ -604,6 +623,11 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final tableTheme = getTableDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
 
   return ThemeData(
     useMaterial3: true,
@@ -622,6 +646,7 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
       ctabItemTheme,
       toolbarTheme,
       toolItemTheme,
+      tableTheme,
     ],
   );
 }

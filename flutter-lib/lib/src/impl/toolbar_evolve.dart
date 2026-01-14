@@ -47,7 +47,7 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
         bar = Wrap(
           direction: isVertical ? Axis.vertical : Axis.horizontal,
           textDirection: isRightToLeft ? TextDirection.rtl : TextDirection.ltr,
-          crossAxisAlignment: WrapCrossAlignment.start,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: limitedToolItems,
         );
       } else {
@@ -57,13 +57,13 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
           child: isVertical
               ? Column(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: toolItems,
                 )
               : Row(
                   mainAxisSize: MainAxisSize.min,
                   textDirection: isRightToLeft ? TextDirection.rtl : TextDirection.ltr,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: toolItems,
                 ),
         );
@@ -92,7 +92,7 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
 
       return super.wrap(
         Align(
-          alignment: Alignment.topLeft,
+          alignment: Alignment.centerLeft,
           child: Container(
             decoration: decoration,
           child: bar,

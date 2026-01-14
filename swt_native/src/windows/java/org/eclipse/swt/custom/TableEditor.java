@@ -86,6 +86,9 @@ public class TableEditor extends ControlEditor {
     public TableEditor(Table table) {
         this((ITableEditor) null);
         setImpl(new SwtTableEditor(table, this));
+        if (table.getImpl() instanceof DartTable) {
+            ((DartTable) table.getImpl())._setEditable(true);
+        }
     }
 
     /**
