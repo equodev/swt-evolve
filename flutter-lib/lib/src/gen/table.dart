@@ -22,6 +22,10 @@ class TableSwt<V extends VTable> extends CompositeSwt<V> {
   @override
   State createState() => TableImpl<TableSwt<VTable>, VTable>();
 
+  void sendModifyModify(V val, VEvent? payload) {
+    sendEvent(val, "Modify/Modify", payload);
+  }
+
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
     sendEvent(val, "Selection/DefaultSelection", payload);
   }
@@ -40,6 +44,7 @@ class VTable extends VComposite {
 
   List<int>? columnOrder;
   List<VTableColumn>? columns;
+  bool? editable;
   VColor? headerBackground;
   VColor? headerForeground;
   bool? headerVisible;

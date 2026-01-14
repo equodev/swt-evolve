@@ -41,7 +41,7 @@ ToolItemThemeExtension _getToolItemTheme({
     selectedBackgroundColor: colorSchemeExtension.stateDefaultHovered,
     separatorColor: colorScheme.outline,
     dropdownIconColor: colorScheme.onSurfaceVariant,
-    borderRadius: 4.0,
+    borderRadius: 0.0,
     separatorWidth: 20.0,
     separatorThickness: 1.0,
     separatorIndent: 8.0,
