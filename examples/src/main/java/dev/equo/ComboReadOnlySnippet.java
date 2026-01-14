@@ -18,6 +18,7 @@ public class ComboReadOnlySnippet {
 
 		Display display = new Display();
 		Shell shell = new Shell(display);
+		shell.setSize(300, 300);
 		shell.setText("ComboReadOnlySnippet - Selection Test");
 		shell.setLayout(new GridLayout(1, false));
 
@@ -25,7 +26,8 @@ public class ComboReadOnlySnippet {
 		Group group1 = new Group(shell, SWT.NONE);
 		group1.setText("READ_ONLY Combo");
 		group1.setLayout(new GridLayout(2, false));
-		group1.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		GridData groupData = new GridData(SWT.FILL, SWT.FILL, true, true);
+		group1.setLayoutData(groupData);
 
 		Label label1 = new Label(group1, SWT.NONE);
 		label1.setText("READ_ONLY:");
@@ -39,7 +41,6 @@ public class ComboReadOnlySnippet {
 		readOnlyCombo.addSelectionListener(widgetSelectedAdapter(e ->
 				System.out.println("READ_ONLY Selection: " + readOnlyCombo.getText())));
 
-		shell.pack();
 		shell.open();
 
 		while (!shell.isDisposed()) {
