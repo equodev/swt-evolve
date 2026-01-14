@@ -9322,7 +9322,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     @Override
     public void setFont(Font font) {
-        font = GraphicsUtils.copyFont(font);
         dirty();
         checkWidget();
         int oldLineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();

@@ -2566,6 +2566,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @since 3.2
      */
     public void setBackgroundImage(Image image) {
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
         if (!java.util.Objects.equals(this.backgroundImage, image)) {
             dirty();

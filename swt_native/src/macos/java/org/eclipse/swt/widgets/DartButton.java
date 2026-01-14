@@ -501,6 +501,7 @@ public class DartButton extends DartControl implements IButton {
      * </ul>
      */
     public void setImage(Image image) {
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
         if (!java.util.Objects.equals(this.image, image)) {
             dirty();

@@ -2818,7 +2818,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
     @Override
     public void setFont(Font font) {
-        font = GraphicsUtils.copyFont(font);
         dirty();
         checkWidget();
         if (font != null && font.equals(getFont()))
@@ -3659,6 +3658,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * </ul>
      */
     public void setSelectionBackground(Image image) {
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
         if (!java.util.Objects.equals(this.selectionBgImage, image)) {
             dirty();

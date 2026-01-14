@@ -293,6 +293,7 @@ public class DartLabel extends DartControl implements ILabel {
      * </ul>
      */
     public void setImage(Image image) {
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
         if (!java.util.Objects.equals(this.image, image)) {
             dirty();
@@ -301,7 +302,7 @@ public class DartLabel extends DartControl implements ILabel {
             return;
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
-        this.image = GraphicsUtils.copyImage(display, image);
+        this.image = image;
         isImageMode = (image != null);
         updateStyleBits(getEnabled());
     }

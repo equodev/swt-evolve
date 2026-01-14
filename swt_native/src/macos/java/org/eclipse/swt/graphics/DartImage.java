@@ -248,7 +248,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             default:
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        this.imageData = ((DartImage) srcImage.getImpl()).imageData;
+        this.imageData = GraphicsUtils.copyImageData(((DartImage) srcImage.getImpl()).imageData);
         try {
             this.getApi().type = srcImage.type;
             /* Copy alpha information (transparent pixel and alpha data) for 100% & 200% image representations from source image*/
@@ -355,6 +355,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, ImageData data, Image api) {
         super(device, api);
+        data = GraphicsUtils.copyImageData(data);
         try {
             init(data, 100);
             init();
@@ -401,7 +402,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         if (source.width != mask.width || source.height != mask.height) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
+        source = GraphicsUtils.copyImageData(source);
         this.imageData = source;
+        mask = GraphicsUtils.copyImageData(mask);
         try {
             mask = ImageData.convertMask(mask);
             ImageData image = new ImageData(source.width, source.height, source.depth, source.palette, source.scanlinePad, source.data);
@@ -613,6 +616,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         ImageData data = imageDataProvider.getImageData(100);
         if (data == null)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        data = GraphicsUtils.copyImageData(data);
         try {
             init(data, 100);
             init();
@@ -926,6 +930,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     private void initWithSupplier(Function<Integer, Boolean> canLoadAtZoom, Function<Integer, ImageData> zoomToImageData) {
         ImageData imageData = zoomToImageData.apply(100);
+        imageData = GraphicsUtils.copyImageData(imageData);
         init(imageData, 100);
         if (canLoadAtZoom.apply(200)) {
             alphaInfo_200 = new AlphaInfo();

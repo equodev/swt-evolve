@@ -401,6 +401,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      */
     @Deprecated
     public void setDisabledImage(Image image) {
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
         if (!java.util.Objects.equals(this.disabledImage, image)) {
             dirty();

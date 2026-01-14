@@ -1248,7 +1248,6 @@ public class DartText extends DartScrollable implements IText {
 
     @Override
     public void setFont(Font font) {
-        font = GraphicsUtils.copyFont(font);
         dirty();
         checkWidget();
         super.setFont(font);

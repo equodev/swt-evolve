@@ -509,7 +509,6 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
 
     @Override
     public void setFont(Font font) {
-        font = GraphicsUtils.copyFont(font);
         dirty();
         checkWidget();
         Rectangle oldRect = getClientAreaInPixels();

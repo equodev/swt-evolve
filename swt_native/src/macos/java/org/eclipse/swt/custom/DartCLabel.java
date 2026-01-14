@@ -846,6 +846,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * </ul>
      */
     public void setBackground(Image image) {
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
         if (!java.util.Objects.equals(this.backgroundImage, image)) {
             dirty();
@@ -885,7 +886,6 @@ public class DartCLabel extends DartCanvas implements ICLabel {
 
     @Override
     public void setFont(Font font) {
-        font = GraphicsUtils.copyFont(font);
         dirty();
         super.setFont(font);
         redraw();
@@ -903,12 +903,13 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * </ul>
      */
     public void setImage(Image image) {
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
         if (!java.util.Objects.equals(this.image, image)) {
             dirty();
         }
         if (image != this.image) {
-            this.image = GraphicsUtils.copyImage(getDisplay(), image);
+            this.image = image;
             redraw();
         }
     }
