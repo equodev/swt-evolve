@@ -412,7 +412,6 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
 
     @Override
     public void setFont(Font font) {
-        font = GraphicsUtils.copyFont(font);
         dirty();
         super.setFont(font);
         this.font = font;

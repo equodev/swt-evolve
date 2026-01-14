@@ -1959,7 +1959,6 @@ public class DartTable extends DartComposite implements ITable {
 
     @Override
     public void setFont(Font font) {
-        font = GraphicsUtils.copyFont(font);
         dirty();
         checkWidget();
         /*

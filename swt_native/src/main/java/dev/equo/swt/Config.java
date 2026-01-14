@@ -46,15 +46,26 @@ public class Config {
                     entry(CCombo.class, Impl.equo),
                     entry(CLabel.class, Impl.equo),
                     entry(ToolBar.class, Impl.equo),
-                    //entry(Group.class, Impl.equo)
                     entry(Tree.class, Impl.equo),
                     entry(TreeItem.class, Impl.equo),
                     entry(TreeColumn.class, Impl.equo)
                     //entry(Canvas.class, Impl.equo),
-                    //entry(FontMetrics.class, Impl.equo),
-                    //entry(Font.class, Impl.equo),
-                    //entry(FontData.class, Impl.equo)
                     //entry(ScrolledComposite.class, Impl.equo)
+                    //entry(Menu.class, Impl.equo)
+                    //entry(MenuItem.class, Impl.equo),
+                    //entry(TabFolder.class, Impl.equo),
+                    //entry(TabItem.class, Impl.equo),
+                    //entry(CoolBar.class, Impl.equo),
+                    //entry(ProgressBar.class, Impl.equo),
+                    //entry(Scale.class, Impl.equo),
+                    //entry(Slider.class, Impl.equo),
+                    //entry(Spinner.class, Impl.equo),
+                    //entry(ToolTip.class, Impl.equo),
+                    //entry(Shell.class, Impl.equo),
+                    //entry(Composite.class, Impl.equo),
+                    //entry(DateTime.class, Impl.equo),
+                    //entry(Tray.class, Impl.equo),
+                    //entry(TrayItem.class, Impl.equo)
             );
         } catch (Exception e) {
             throw new RuntimeException(e);

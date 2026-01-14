@@ -677,6 +677,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setDisabledImage(Image image) {
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
         if (!java.util.Objects.equals(this.disabledImage, image)) {
             dirty();
@@ -687,7 +688,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             error(SWT.ERROR_INVALID_ARGUMENT);
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
-        this.disabledImage = GraphicsUtils.copyImage(display, image);
+        disabledImage = image;
         updateImage(true);
     }
 
@@ -749,6 +750,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      * </ul>
      */
     public void setHotImage(Image image) {
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
         if (!java.util.Objects.equals(this.hotImage, image)) {
             dirty();
@@ -759,7 +761,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             error(SWT.ERROR_INVALID_ARGUMENT);
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
-        this.hotImage = GraphicsUtils.copyImage(display, image);
+        hotImage = image;
         updateImage(true);
     }
 

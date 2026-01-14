@@ -449,6 +449,7 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setImage(Image image) {
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
         if (!java.util.Objects.equals(this.image, image)) {
             dirty();

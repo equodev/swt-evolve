@@ -11,9 +11,25 @@ import org.eclipse.swt.widgets.Display;
 public class GraphicsUtils {
 
     /**
+     * Creates a copy of an ImageData.
+     * This is used internally by DartImage constructors to make defensive copies
+     * of ImageData passed from external sources.
+     *
+     * @param imageData the image data to copy (can be null)
+     * @return a copy of the image data, or null if input is null
+     */
+    public static ImageData copyImageData(ImageData imageData) {
+        if (imageData == null) {
+            return null;
+        }
+        return (ImageData) imageData.clone();
+    }
+
+    /**
      * Creates a copy of an Image, converting from SWT to Dart implementation if needed.
      * If the image is already a DartImage, it is returned as-is.
      * If the image is a SwtImage, a new DartImage is created with the same image data.
+     * Note: getImageData() already returns a copy, so no additional cloning is needed here.
      *
      * @param display the display on which to create the new image
      * @param image the image to copy (can be null)
@@ -25,7 +41,8 @@ public class GraphicsUtils {
         }
 
         if (image.getImpl() instanceof SwtImage si) {
-            DartImage dartImage = new DartImage(display, image.getImageData(), image);
+            ImageData imageData = image.getImageData();
+            DartImage dartImage = new DartImage(display, imageData, null);
             if (!Config.getConfigFlags().image_disable_icons_replacement && si.filename != null) {
                 dartImage.filename = si.filename;
             }

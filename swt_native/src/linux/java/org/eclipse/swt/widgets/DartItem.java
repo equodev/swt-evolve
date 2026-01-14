@@ -178,6 +178,7 @@ public abstract class DartItem extends DartWidget implements IItem {
      * </ul>
      */
     public void setImage(Image image) {
+        image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
         if (!java.util.Objects.equals(this.image, image)) {
             dirty();
@@ -186,7 +187,7 @@ public abstract class DartItem extends DartWidget implements IItem {
             return;
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
-        this.image = GraphicsUtils.copyImage(display, image);
+        this.image = image;
     }
 
     /**
