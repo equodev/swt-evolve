@@ -9,11 +9,17 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.Platform;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.*;
 
 public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     protected final DartWidget forWidget;
     protected long context;
+
+    // Cached theme to avoid reading preferences file multiple times
+    private static String cachedTheme = null;
 
     static {
         FlutterLibraryLoader.initialize();
@@ -50,12 +56,82 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
         return null;
     }
 
+    private String readThemeFromPreferences() {
+        try {
+            // Get workspace location from OSGi system property
+            String workspaceLocation = System.getProperty("osgi.instance.area");
+            if (workspaceLocation == null) {
+                return null;
+            }
+
+            // Remove "file:" prefix if present
+            if (workspaceLocation.startsWith("file:")) {
+                workspaceLocation = workspaceLocation.substring(5);
+            }
+
+            // Build path to theme preferences file
+            File prefsFile = new File(workspaceLocation,
+                ".metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.e4.ui.css.swt.theme.prefs");
+
+            if (!prefsFile.exists()) {
+                System.out.println("Theme preferences file not found: " + prefsFile.getAbsolutePath());
+                return null;
+            }
+
+            // Read and parse the properties file
+            Properties props = new Properties();
+            try (FileInputStream fis = new FileInputStream(prefsFile)) {
+                props.load(fis);
+            }
+
+            String themeId = props.getProperty("themeid");
+            if (themeId == null) {
+                System.out.println("No themeid found in preferences");
+                return null;
+            }
+
+            System.out.println("Eclipse theme ID from preferences: " + themeId);
+
+            // Determine if it's dark or light based on theme ID
+            if (themeId.toLowerCase().contains("dark")) {
+                return "dark";
+            } else if (themeId.toLowerCase().contains("light") ||
+                       themeId.toLowerCase().contains("default") || themeId.toLowerCase().contains("classic")) {
+                return "light";
+            }
+
+            return null;
+
+        } catch (Exception e) {
+            System.err.println("Unexpected error reading theme: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private String detectTheme() {
+        if (cachedTheme != null) {
+            System.out.println("Cached theme " + cachedTheme);
+            return cachedTheme;
+        }
+
+        String theme = readThemeFromPreferences();
+        if (theme != null) {
+            cachedTheme = theme;
+            return theme;
+        }
+        // Fallback to OS theme
+        boolean isDark = Display.isSystemDarkTheme();
+        theme = isDark ? "dark" : "light";
+        System.out.println("Using OS theme (fallback): " + theme);
+        cachedTheme = theme;
+        return theme;
+    }
+
     void initFlutterView(Composite parent, DartControl control) {
         super.onReady(control, Void.class);
 
-        boolean isDark = Display.isSystemDarkTheme();
-        String theme = isDark ? "dark" : "light";
-        System.out.println("Detected theme: " + theme);
+        String theme = detectTheme();
+        System.out.println("Final detected theme: " + theme);
 
         Color backgroundColor = parent.getShell().getBackground();
         System.out.println("Color from Shell: " + backgroundColor);
