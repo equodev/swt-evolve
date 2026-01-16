@@ -52,6 +52,7 @@ VTree _$VTreeFromJson(Map<String, dynamic> json) => VTree()
   ..columns = (json['columns'] as List<dynamic>?)
       ?.map((e) => VTreeColumn.fromJson(e as Map<String, dynamic>))
       .toList()
+  ..editable = json['editable'] as bool?
   ..headerBackground = json['headerBackground'] == null
       ? null
       : VColor.fromJson(json['headerBackground'] as Map<String, dynamic>)
@@ -100,6 +101,7 @@ Map<String, dynamic> _$VTreeToJson(VTree instance) => <String, dynamic>{
   'tabList': instance.tabList,
   'columnOrder': instance.columnOrder,
   'columns': instance.columns,
+  'editable': instance.editable,
   'headerBackground': instance.headerBackground,
   'headerForeground': instance.headerForeground,
   'headerVisible': instance.headerVisible,

@@ -16,7 +16,7 @@ import '../theme/theme_settings/tree_theme_settings.dart';
 
 class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   final Map<dynamic, String> treeItemExpanders = {};
-  final List<String> eventNames = [];
+  final   List<String> eventNames = [];
   TreeThemeExtension? _cachedWidgetTheme;
   List<VTreeItem>? _pendingSelection;
   int checkboxUpdateCounter = 0; 
@@ -24,6 +24,10 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   Object? _lastSelectedItemId;
   ScrollController? _horizontalController;
   ScrollController? _verticalController;
+  Object? _editingItemId;
+  TextEditingController? _editingController;
+  FocusNode? _editingFocusNode;
+  VoidCallback? _editingFocusListener;
 
   @override
   void initState() {
@@ -805,9 +809,99 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     if (selectedItems.isEmpty) return;
 
     final selectedItem = selectedItems.last;
-    var e = _createDefaultEvent(selectedItem.id);
     
-    widget.sendSelectionDefaultSelection(state, e);
+    // If already editing, finish editing
+    if (_editingItemId != null && _editingItemId == selectedItem.id) {
+      finishEditing();
+      return;
+    }
+    
+    // Only allow editing if the tree is editable
+    if (state.editable != true) {
+      return;
+    }
+    
+    // Otherwise, start editing
+    startEditing(selectedItem.id);
+  }
+  
+  void startEditing(Object itemId) {
+    // Only allow editing if the tree is editable
+    if (state.editable != true) {
+      return;
+    }
+    
+    final item = _findTreeItemById(itemId);
+    if (item == null) return;
+    
+    // Clean up any existing editing state first
+    if (_editingFocusNode != null) {
+      _editingFocusNode!.removeListener(_editingFocusListener!);
+      _editingFocusNode!.dispose();
+    }
+    if (_editingController != null) {
+      _editingController!.dispose();
+    }
+    
+    // Create new editing state
+    final initialText = item.text ?? "";
+    _editingController = TextEditingController(text: initialText);
+    _editingFocusNode = FocusNode();
+    
+    // Create and add listener
+    _editingFocusListener = () {
+      if (_editingFocusNode != null && !_editingFocusNode!.hasFocus) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            finishEditing();
+          }
+        });
+      }
+    };
+    _editingFocusNode!.addListener(_editingFocusListener!);
+    
+    setState(() {
+      _editingItemId = itemId;
+    });
+    
+    // Request focus after the frame is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _editingFocusNode?.requestFocus();
+    });
+  }
+  
+  void finishEditing() {
+    final itemId = _editingItemId;
+    final controller = _editingController;
+    final focusNode = _editingFocusNode;
+    final listener = _editingFocusListener;
+    
+    // Remove listener before disposing
+    if (focusNode != null && listener != null) {
+      focusNode.removeListener(listener);
+    }
+    
+    if (itemId != null && controller != null) {
+      final newText = controller.text;
+      final item = _findTreeItemById(itemId);
+      
+      if (item != null) {
+        final event = VEvent()
+          ..text = newText
+          ..index = findItemIndex(itemId);
+        
+        widget.sendModifyModify(state, event);
+      }
+    }
+    
+    setState(() {
+      controller?.dispose();
+      focusNode?.dispose();
+      _editingItemId = null;
+      _editingController = null;
+      _editingFocusNode = null;
+      _editingFocusListener = null;
+    });
   }
   
   VEvent _createDefaultEvent(Object itemId) {
@@ -1029,6 +1123,15 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   void dispose() {
     _horizontalController?.dispose();
     _verticalController?.dispose();
+    // Clean up editing resources
+    if (_editingFocusNode != null) {
+      _editingFocusNode!.removeListener(_editingFocusListener ?? () {});
+      _editingFocusNode!.dispose();
+      _editingFocusNode = null;
+    }
+    _editingController?.dispose();
+    _editingController = null;
+    _editingFocusListener = null;
     for (String eventName in eventNames) {
       EquoCommService.remove(eventName);
     }
@@ -1045,6 +1148,9 @@ class TreeItemSwtWrapper extends StatelessWidget {
   final TreeImpl? treeImpl;
   final VFont? treeFont;
   final double? treeWidth;
+  final Object? editingItemId;
+  final TextEditingController? editingController;
+  final FocusNode? editingFocusNode;
 
   const TreeItemSwtWrapper({
     Key? key,
@@ -1056,6 +1162,9 @@ class TreeItemSwtWrapper extends StatelessWidget {
     this.treeImpl,
     this.treeFont,
     this.treeWidth,
+    this.editingItemId,
+    this.editingController,
+    this.editingFocusNode,
   }) : super(key: key);
 
   @override
@@ -1068,6 +1177,9 @@ class TreeItemSwtWrapper extends StatelessWidget {
       treeImpl: treeImpl,
       treeFont: treeFont,
       treeWidth: treeWidth,
+      editingItemId: treeImpl?._editingItemId,
+      editingController: treeImpl?._editingController,
+      editingFocusNode: treeImpl?._editingFocusNode,
       child: TreeItemSwt(
         value: treeItem,
         key: ValueKey('tree_item_${treeItem.id}'),
@@ -1086,6 +1198,9 @@ class TreeItemContext {
   final List<VTreeItem>? selection;
   final int checkboxUpdateCounter;
   final double? treeWidth;
+  final Object? editingItemId;
+  final TextEditingController? editingController;
+  final FocusNode? editingFocusNode;
 
   TreeItemContext({
     required this.level,
@@ -1097,6 +1212,9 @@ class TreeItemContext {
     this.selection,
     this.checkboxUpdateCounter = 0,
     this.treeWidth,
+    this.editingItemId,
+    this.editingController,
+    this.editingFocusNode,
   });
 
   static TreeItemContext? of(BuildContext context) {
@@ -1118,6 +1236,9 @@ class TreeItemContextProvider extends InheritedWidget {
     TreeImpl? treeImpl,
     VFont? treeFont,
     double? treeWidth,
+    Object? editingItemId,
+    TextEditingController? editingController,
+    FocusNode? editingFocusNode,
     required Widget child,
   })  : context = TreeItemContext(
           level: level,
@@ -1129,6 +1250,9 @@ class TreeItemContextProvider extends InheritedWidget {
           selection: treeImpl?.state.selection,
           checkboxUpdateCounter: treeImpl?.checkboxUpdateCounter ?? 0,
           treeWidth: treeWidth,
+          editingItemId: editingItemId,
+          editingController: editingController,
+          editingFocusNode: editingFocusNode,
         ),
         super(key: key, child: child);
 
@@ -1141,11 +1265,13 @@ class TreeItemContextProvider extends InheritedWidget {
         newSelection.any((item) => !oldSelection.any((oldItem) => oldItem.id == item.id));
     
     final checkboxChanged = oldWidget.context.checkboxUpdateCounter != context.checkboxUpdateCounter;
+    final editingChanged = oldWidget.context.editingItemId != context.editingItemId;
     
     return context.level != oldWidget.context.level ||
         context.isCheckMode != oldWidget.context.isCheckMode ||
         selectionChanged ||
-        checkboxChanged;
+        checkboxChanged ||
+        editingChanged;
   }
 }
 

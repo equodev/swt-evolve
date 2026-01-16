@@ -386,4 +386,20 @@ public class TreeHelper {
         }
     }
 
+    /**
+     * Handles a Modify event from Flutter and updates the text of the corresponding TreeItem.
+     * 
+     * @param tree the DartTree instance
+     * @param event the event containing the index and text
+     */
+    public static void handleModify(DartTree tree, Event event) {
+        if (event.text != null && event.index >= 0) {
+            TreeItem item = getVisibleItemAtIndex(tree, event.index);
+            if (item != null) {
+                item.setText(event.text);
+                tree.dirty();
+            }
+        }
+    }
+
 }

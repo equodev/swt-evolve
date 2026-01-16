@@ -2447,6 +2447,8 @@ public class DartTable extends DartComposite implements ITable {
 
     int[] columnOrder = new int[0];
 
+    boolean editable = false;
+
     Color _headerBackground;
 
     Color _headerForeground;
@@ -2543,6 +2545,10 @@ public class DartTable extends DartComposite implements ITable {
         return columnOrder;
     }
 
+    public boolean _editable() {
+        return editable;
+    }
+
     public Color __headerBackground() {
         return _headerBackground;
     }
@@ -2567,8 +2573,20 @@ public class DartTable extends DartComposite implements ITable {
         return topIndex;
     }
 
+    public void _setEditable(boolean value) {
+        if (this.editable != value) {
+            this.editable = value;
+            dirty();
+        }
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
+        FlutterBridge.on(this, "Modify", "Modify", e -> {
+            getDisplay().asyncExec(() -> {
+                TableHelper.handleModify(this, e);
+            });
+        });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
                 TableHelper.sendSelection(this, e, SWT.DefaultSelection);

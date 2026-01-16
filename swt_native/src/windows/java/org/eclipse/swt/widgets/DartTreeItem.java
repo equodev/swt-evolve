@@ -670,7 +670,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public Rectangle getImageBounds(int index) {
         checkWidget();
-        return null;
+        return new Rectangle(0, 0, 0, 0);
     }
 
     Rectangle getImageBoundsInPixels(int index) {
@@ -1433,15 +1433,23 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     @Override
     public void setText(String string) {
         checkWidget();
-        dirty();
-        if (strings == null) {
-            strings = new String[1];
-        }
-        if (Objects.equals(strings[0], text)) {
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (string.equals(text)) {
             return;
         }
-        strings[0] = text;
-        cached = true;
+        dirty();
+        super.setText(string);
+        int count = Math.max(1, parent.getColumnCount());
+        if (strings == null) {
+            strings = new String[count];
+            strings[0] = text;
+        }
+        if (strings != null && (strings[0] == null || !string.equals(strings[0]))) {
+            strings[0] = string;
+        }
+        if ((parent.style & SWT.VIRTUAL) != 0)
+            cached = true;
     }
 
     /*public*/

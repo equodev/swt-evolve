@@ -22,6 +22,10 @@ class TreeSwt<V extends VTree> extends CompositeSwt<V> {
   @override
   State createState() => TreeImpl<TreeSwt<VTree>, VTree>();
 
+  void sendModifyModify(V val, VEvent? payload) {
+    sendEvent(val, "Modify/Modify", payload);
+  }
+
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
     sendEvent(val, "Selection/DefaultSelection", payload);
   }
@@ -48,6 +52,7 @@ class VTree extends VComposite {
 
   List<int>? columnOrder;
   List<VTreeColumn>? columns;
+  bool? editable;
   VColor? headerBackground;
   VColor? headerForeground;
   bool? headerVisible;
