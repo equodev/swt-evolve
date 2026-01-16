@@ -39,6 +39,14 @@ public class VTree extends VComposite {
         ((DartTree) impl).columns = value;
     }
 
+    public boolean getEditable() {
+        return ((DartTree) impl).editable;
+    }
+
+    public void setEditable(boolean value) {
+        ((DartTree) impl).editable = value;
+    }
+
     public Color getHeaderBackground() {
         return ((DartTree) impl).getHeaderBackground();
     }

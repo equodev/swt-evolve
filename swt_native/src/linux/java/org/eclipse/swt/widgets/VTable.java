@@ -39,6 +39,14 @@ public class VTable extends VComposite {
         ((DartTable) impl).columns = value;
     }
 
+    public boolean getEditable() {
+        return ((DartTable) impl)._editable();
+    }
+
+    public void setEditable(boolean value) {
+        ((DartTable) impl)._setEditable(value);
+    }
+
     public Color getHeaderBackground() {
         return ((DartTable) impl).headerBackground;
     }

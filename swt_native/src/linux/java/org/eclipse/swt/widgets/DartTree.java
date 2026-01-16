@@ -2416,6 +2416,8 @@ public class DartTree extends DartComposite implements ITree {
 
     int[] columnOrder = new int[0];
 
+    boolean editable = false;
+
     boolean linesVisible;
 
     TreeItem[] selection = new TreeItem[0];
@@ -2560,6 +2562,10 @@ public class DartTree extends DartComposite implements ITree {
         return columnOrder;
     }
 
+    public boolean _editable() {
+        return editable;
+    }
+
     public boolean _linesVisible() {
         return linesVisible;
     }
@@ -2574,8 +2580,20 @@ public class DartTree extends DartComposite implements ITree {
         items = java.util.Arrays.stream(items).filter(child -> child != null && !child.isDisposed()).toArray(TreeItem[]::new);
     }
 
+    public void _setEditable(boolean value) {
+        if (this.editable != value) {
+            this.editable = value;
+            dirty();
+        }
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
+        FlutterBridge.on(this, "Modify", "Modify", e -> {
+            getDisplay().asyncExec(() -> {
+                TreeHelper.handleModify(this, e);
+            });
+        });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
                 TreeHelper.sendSelection(this, e, SWT.DefaultSelection);

@@ -153,6 +153,9 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         treeImpl: _context?.treeImpl,
         treeFont: _context?.treeFont,
         treeWidth: _context?.treeWidth,
+        editingItemId: _context?.editingItemId,
+        editingController: _context?.editingController,
+        editingFocusNode: _context?.editingFocusNode,
         child: TreeItemSwt(
           value: childItem,
           key: ValueKey('tree_child_item_${childItem.id}_${childItem.checked}_${childItem.grayed}'),
@@ -221,6 +224,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                   theme: widgetTheme,
                   columnAlignment: firstColumn.alignment,
                   cellPadding: widgetTheme.cellMultiColumnPadding,
+                  columnIndex: 0,
                 ),
               ),
             ],
@@ -296,6 +300,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           textColor: textColor,
           theme: widgetTheme,
           column: column,
+          columnIndex: columnIndex,
         );
       }).toList(),
     );
@@ -314,6 +319,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     required Color textColor,
     required TreeThemeExtension theme,
     required VTreeColumn column,
+    required int columnIndex,
   }) {
     final double columnWidth = (column.width ?? theme.columnDefaultWidth.round()).toDouble();
     return SizedBox(
@@ -325,6 +331,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         theme: theme,
         columnAlignment: column.alignment,
         cellPadding: theme.cellMultiColumnPadding,
+        columnIndex: columnIndex,
       ),
     );
   }
@@ -343,6 +350,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         theme: widgetTheme,
         columnAlignment: null,
         cellPadding: widgetTheme.cellPadding,
+        columnIndex: 0,
       );
     }
 
@@ -367,6 +375,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           textColor: textColor,
           theme: widgetTheme,
           column: column,
+          columnIndex: columnIndex,
         );
       }).toList(),
     );
@@ -572,6 +581,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onDoubleTap: () {
+              // Send default selection event for double click on non-text areas
               final e = _createEvent();
               _context?.parentTree
                   .sendSelectionDefaultSelection(_context!.parentTreeValue, e);
@@ -647,6 +657,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     required TreeThemeExtension theme,
     required int? columnAlignment,
     required EdgeInsets cellPadding,
+    required int columnIndex,
   }) {
     final cellTextColor = getForegroundColor(foreground: state.foreground, defaultColor: textColor);
     final cellTextStyle = getTextStyle(
@@ -656,20 +667,97 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       baseTextStyle: theme.itemTextStyle,
     );
 
-    return Container(
-      padding: adjustPaddingForAlignment(
-        basePadding: cellPadding,
-        alignment: columnAlignment,
-        extraPadding: 4.0,
-      ),
-      child: Text(
-        text,
-        style: cellTextStyle,
-        textAlign: getTextAlignFromStyle(columnAlignment ?? 0, TextAlign.left),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
+    // Only allow editing on the first column (columnIndex 0)
+    final isEditing = columnIndex == 0 &&
+                     _context?.editingItemId == state.id && 
+                     _context?.editingController != null && 
+                     _context?.editingFocusNode != null;
+
+    Widget textWidget = isEditing
+        ? TextField(
+              controller: _context!.editingController!,
+              focusNode: _context!.editingFocusNode!,
+              style: cellTextStyle,
+              textAlign: getTextAlignFromStyle(columnAlignment ?? 0, TextAlign.left),
+              decoration: InputDecoration(
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+                border: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                enabledBorder: InputBorder.none,
+              ),
+              onSubmitted: (value) {
+                if (_context?.treeImpl != null) {
+                  _context!.treeImpl!.finishEditing();
+                }
+              },
+              onEditingComplete: () {
+                if (_context?.treeImpl != null) {
+                  _context!.treeImpl!.finishEditing();
+                }
+              },
+            )
+          : Text(
+              text,
+              style: cellTextStyle,
+              textAlign: getTextAlignFromStyle(columnAlignment ?? 0, TextAlign.left),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            );
+
+    // Wrap text in GestureDetector for double-click editing (only first column)
+    // Use deferToChild so only the text area triggers editing, not the padding
+    if (columnIndex == 0 && 
+        _context?.parentTreeValue.editable == true && 
+        !isEditing &&
+        _context?.treeImpl != null) {
+      textWidget = GestureDetector(
+        behavior: HitTestBehavior.deferToChild,
+        onDoubleTap: () {
+          // Start editing on double tap over the text
+          if (_context?.editingItemId != state.id && _context?.treeImpl != null) {
+            _context!.treeImpl!.startEditing(state.id);
+          }
+        },
+        child: textWidget,
+      );
+    }
+
+    final adjustedPadding = adjustPaddingForAlignment(
+      basePadding: cellPadding,
+      alignment: columnAlignment,
+      extraPadding: 4.0,
     );
+
+    // Wrap textWidget to prevent it from expanding beyond its content
+    // This ensures the GestureDetector only captures clicks on the actual text
+    Widget contentWidget = textWidget;
+    if (columnIndex == 0 && 
+        _context?.parentTreeValue.editable == true && 
+        !isEditing) {
+      // Use IntrinsicWidth to limit the clickable area to the actual text width
+      // Then align it according to the column alignment
+      final alignment = _getAlignmentFromStyle(columnAlignment ?? 0);
+      contentWidget = Align(
+        alignment: alignment,
+        child: IntrinsicWidth(
+          child: textWidget,
+        ),
+      );
+    }
+
+    return Container(
+      padding: adjustedPadding,
+      child: contentWidget,
+    );
+  }
+
+  Alignment _getAlignmentFromStyle(int alignment) {
+    if (alignment == SWT.CENTER) return Alignment.center;
+    if (alignment == SWT.RIGHT || alignment == SWT.TRAIL) {
+      return Alignment.centerRight;
+    }
+    return Alignment.centerLeft;
   }
 }
 

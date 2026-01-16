@@ -84,6 +84,9 @@ public class TreeEditor extends ControlEditor {
     public TreeEditor(Tree tree) {
         this((ITreeEditor) null);
         setImpl(new SwtTreeEditor(tree, this));
+        if (tree.getImpl() instanceof DartTree) {
+            ((DartTree) tree.getImpl())._setEditable(true);
+        }
     }
 
     /**
