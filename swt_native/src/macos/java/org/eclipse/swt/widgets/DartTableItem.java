@@ -490,14 +490,16 @@ public class DartTableItem extends DartItem implements ITableItem {
         if (!(0 <= index && index < Math.max(1, ((DartTable) parent.getImpl()).columnCount)))
             return new Rectangle(0, 0, 0, 0);
         Image image = index == 0 ? this.image : (images != null) ? images[index] : null;
-        if (((DartTable) parent.getImpl()).columnCount == 0) {
-            index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
-        } else {
-        }
+        // We return a basic Rectangle with width=0 if no image,
+        // or with the image bounds width if there is an image
+        int width = 0;
+        int height = 0;
         if (image != null) {
-        } else {
+            Rectangle imgBounds = image.getBounds();
+            width = imgBounds.width;
+            height = imgBounds.height;
         }
-        return null;
+        return new Rectangle(0, 0, width, height);
     }
 
     /**
