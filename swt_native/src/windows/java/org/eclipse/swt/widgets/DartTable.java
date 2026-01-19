@@ -23,6 +23,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import java.util.Objects;
+import java.util.Arrays;
 import dev.equo.swt.*;
 
 /**
@@ -1738,12 +1739,6 @@ public class DartTable extends DartComposite implements ITable {
             return;
         ignoreSelect = true;
         ignoreSelect = false;
-        {
-            selection = new int[items.length];
-            for (int i = 0; i < items.length; ++i) {
-                selection[i] = i;
-            }
-        }
     }
 
     Event sendMeasureItemEvent(TableItem item, int row, int column, long hDC) {
