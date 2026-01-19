@@ -278,7 +278,7 @@ public final class SwtFont extends SwtResource implements IFont {
      * @noreference This method is not intended to be referenced by clients.
      */
     public static Font cocoa_new(Device device, NSFont handle) {
-        Font font = new Font(device);
+        Font font = new SwtFont(device, null).getApi();
         font.handle = handle;
         ///*	 * When created this way, Font doesn't own its .handle, and	 * for this reason it can't be disposed. Tell leak detector	 * to just ignore it.	 */font.ignoreNonDisposed();
         ;

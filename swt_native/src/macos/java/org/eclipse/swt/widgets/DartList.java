@@ -236,8 +236,7 @@ public class DartList extends DartScrollable implements IList {
     public void deselect(int index) {
         checkWidget();
         if (0 <= index && index < itemCount) {
-            ignoreSelect = true;
-            ignoreSelect = false;
+            ListHelper.deselectIndex(this, index);
         }
     }
 
@@ -266,12 +265,9 @@ public class DartList extends DartScrollable implements IList {
         end = Math.min(itemCount - 1, end);
         if (start == 0 && end == itemCount - 1) {
             deselectAll();
-        } else {
-            ignoreSelect = true;
-            for (int i = start; i <= end; i++) {
-            }
-            ignoreSelect = false;
+            return;
         }
+        ListHelper.deselectRange(this, start, end);
     }
 
     /**
@@ -295,10 +291,9 @@ public class DartList extends DartScrollable implements IList {
         checkWidget();
         if (indices == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        ignoreSelect = true;
-        for (int i = 0; i < indices.length; i++) {
-        }
-        ignoreSelect = false;
+        if (indices.length == 0)
+            return;
+        ListHelper.deselectIndices(this, indices);
     }
 
     /**
@@ -360,7 +355,7 @@ public class DartList extends DartScrollable implements IList {
      */
     public int getFocusIndex() {
         checkWidget();
-        return 0;
+        return getSelectionIndex();
     }
 
     /**
@@ -414,7 +409,7 @@ public class DartList extends DartScrollable implements IList {
      */
     public int getItemHeight() {
         checkWidget();
-        return 0;
+        return ListHelper.getItemHeight(this);
     }
 
     /**
@@ -458,13 +453,12 @@ public class DartList extends DartScrollable implements IList {
      */
     public String[] getSelection() {
         checkWidget();
-        {
-            String[] result = new String[selection.length];
-            for (int i = 0; i < selection.length; ++i) {
-                result[i] = items[selection[i]];
-            }
-            return result;
+        int[] sortedIndices = getSelectionIndices();
+        String[] result = new String[sortedIndices.length];
+        for (int i = 0; i < sortedIndices.length; i++) {
+            result[i] = items[sortedIndices[i]];
         }
+        return result;
     }
 
     /**
@@ -495,7 +489,7 @@ public class DartList extends DartScrollable implements IList {
      */
     public int getSelectionIndex() {
         checkWidget();
-        return (this.selection != null && this.selection.length > 0) ? this.selection[0] : -1;
+        return ListHelper.getMinSelectionIndex(this);
     }
 
     /**
@@ -516,7 +510,7 @@ public class DartList extends DartScrollable implements IList {
      */
     public int[] getSelectionIndices() {
         checkWidget();
-        return this.selection;
+        return ListHelper.getSelectionIndicesSorted(this);
     }
 
     /**
@@ -613,7 +607,7 @@ public class DartList extends DartScrollable implements IList {
         checkWidget();
         if (!(0 <= index && index < itemCount))
             return false;
-        return false;
+        return ListHelper.isIndexSelected(this, index);
     }
 
     @Override
@@ -681,8 +675,28 @@ public class DartList extends DartScrollable implements IList {
         if (!(0 <= start && start <= end && end < itemCount)) {
             error(SWT.ERROR_INVALID_RANGE);
         }
-        int length = end - start + 1;
-        for (int i = 0; i < length; i++) remove(start, false);
+        int removeCount = end - start + 1;
+        int[] oldSelection = getSelectionIndices();
+        if (oldSelection.length > 0) {
+            int newCount = 0;
+            int[] newSelection = new int[oldSelection.length];
+            for (int idx : oldSelection) {
+                if (idx < start) {
+                    newSelection[newCount++] = idx;
+                } else if (idx > end) {
+                    newSelection[newCount++] = idx - removeCount;
+                }
+            }
+            if (newCount != oldSelection.length) {
+                select(java.util.Arrays.copyOf(newSelection, newCount), newCount, true);
+            }
+        }
+        System.arraycopy(items, end + 1, items, start, itemCount - end - 1);
+        for (int i = itemCount - removeCount; i < itemCount; i++) {
+            items[i] = null;
+        }
+        itemCount -= removeCount;
+        updateRowCount();
         setScrollWidth();
     }
 
@@ -808,14 +822,8 @@ public class DartList extends DartScrollable implements IList {
      * </ul>
      */
     public void select(int index) {
-        dirty();
-        int[] newValue = new int[] { index };
         checkWidget();
-        this.selection = newValue;
-        if (0 <= index && index < itemCount) {
-            ignoreSelect = true;
-            ignoreSelect = false;
-        }
+        ListHelper.selectIndex(this, index, itemCount, getApi().style);
     }
 
     /**
@@ -841,22 +849,8 @@ public class DartList extends DartScrollable implements IList {
      * @see List#setSelection(int,int)
      */
     public void select(int start, int end) {
-        dirty();
-        int[] newValue = new int[] { start };
         checkWidget();
-        if (end < 0 || start > end || ((getApi().style & SWT.SINGLE) != 0 && start != end))
-            return;
-        if (itemCount == 0 || start >= itemCount)
-            return;
-        this.selection = newValue;
-        if (start == 0 && end == itemCount - 1) {
-            selectAll();
-        } else {
-            start = Math.max(0, start);
-            end = Math.min(end, itemCount - 1);
-            ignoreSelect = true;
-            ignoreSelect = false;
-        }
+        ListHelper.selectRange(this, start, end, itemCount, getApi().style);
     }
 
     /**
@@ -882,32 +876,15 @@ public class DartList extends DartScrollable implements IList {
      * @see List#setSelection(int[])
      */
     public void select(int[] indices) {
-        int[] newValue = indices;
-        if (!java.util.Objects.equals(this.selection, newValue)) {
-            dirty();
-        }
         checkWidget();
         if (indices == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        int length = indices.length;
-        if (length == 0 || ((getApi().style & SWT.SINGLE) != 0 && length > 1))
-            return;
-        int count = 0;
-        for (int i = 0; i < length; i++) {
-            int index = indices[i];
-            if (index >= 0 && index < itemCount) {
-                count++;
-            }
-        }
-        if (count > 0) {
-            ignoreSelect = true;
-            ignoreSelect = false;
-        }
-        this.selection = newValue;
+        ListHelper.selectIndices(this, indices, itemCount, getApi().style);
     }
 
     void select(int[] indices, int count, boolean clear) {
-        int[] newValue = indices;
+        int[] newValue = new int[count];
+        System.arraycopy(indices, 0, newValue, 0, count);
         if (!java.util.Objects.equals(this.selection, newValue)) {
             dirty();
         }
@@ -930,8 +907,7 @@ public class DartList extends DartScrollable implements IList {
         checkWidget();
         if ((getApi().style & SWT.SINGLE) != 0)
             return;
-        ignoreSelect = true;
-        ignoreSelect = false;
+        ListHelper.selectAll(this, itemCount);
     }
 
     @Override
@@ -1034,11 +1010,12 @@ public class DartList extends DartScrollable implements IList {
      */
     public void setSelection(int index) {
         dirty();
-        int[] newValue = new int[] { index };
+        ;
         checkWidget();
         deselectAll();
-        this.selection = newValue;
+        ;
         if (0 <= index && index < itemCount) {
+            this.selection = new int[] { index };
             ignoreSelect = true;
             ignoreSelect = false;
             showIndex(index);
@@ -1068,19 +1045,13 @@ public class DartList extends DartScrollable implements IList {
      * @see List#select(int,int)
      */
     public void setSelection(int start, int end) {
-        dirty();
-        int[] newValue = new int[] { start };
         checkWidget();
         deselectAll();
         if (end < 0 || start > end || ((getApi().style & SWT.SINGLE) != 0 && start != end))
             return;
         if (itemCount == 0 || start >= itemCount)
             return;
-        start = Math.max(0, start);
-        end = Math.min(end, itemCount - 1);
-        ignoreSelect = true;
-        ignoreSelect = false;
-        this.selection = newValue;
+        ListHelper.setSelectionRange(this, start, end, itemCount, getApi().style);
         showIndex(end);
     }
 
@@ -1118,7 +1089,7 @@ public class DartList extends DartScrollable implements IList {
         int count = 0;
         for (int i = 0; i < length; i++) {
             int index = indices[length - i - 1];
-            if (index >= 0 && index < itemCount) {
+            if (index >= 0 && index < itemCount && !ListHelper.containsIndex(newIndices, count, index)) {
                 newIndices[count++] = index;
             }
         }
@@ -1156,35 +1127,9 @@ public class DartList extends DartScrollable implements IList {
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         deselectAll();
-        int length = items.length;
-        if (length == 0 || ((getApi().style & SWT.SINGLE) != 0 && length > 1))
-            return;
-        int count = 0;
-        int[] indices = new int[length];
-        for (int i = 0; i < length; i++) {
-            String string = items[length - i - 1];
-            if ((getApi().style & SWT.SINGLE) != 0) {
-                int index = indexOf(string, 0);
-                if (index != -1) {
-                    count = 1;
-                    indices = new int[] { index };
-                }
-            } else {
-                int index = 0;
-                while ((index = indexOf(string, index)) != -1) {
-                    if (count == indices.length) {
-                        int[] newIds = new int[indices.length + 4];
-                        System.arraycopy(indices, 0, newIds, 0, indices.length);
-                        indices = newIds;
-                    }
-                    indices[count++] = index;
-                    index++;
-                }
-            }
-        }
-        if (count > 0) {
-            select(indices, count, true);
-            showIndex(indices[0]);
+        int firstIndex = ListHelper.setSelectionStrings(this, items, itemCount, getApi().style);
+        if (firstIndex != -1) {
+            showIndex(firstIndex);
         }
     }
 
@@ -1201,12 +1146,8 @@ public class DartList extends DartScrollable implements IList {
      * </ul>
      */
     public void setTopIndex(int index) {
-        int newValue = index;
-        if (!java.util.Objects.equals(this.topIndex, newValue)) {
-            dirty();
-        }
         checkWidget();
-        this.topIndex = newValue;
+        ListHelper.setTopIndex(this, index, itemCount);
     }
 
     void showIndex(int index) {

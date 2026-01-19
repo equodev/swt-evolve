@@ -22,6 +22,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 import java.util.Objects;
+import java.util.Arrays;
 import dev.equo.swt.*;
 
 /**
@@ -1988,12 +1989,6 @@ public class DartTable extends DartComposite implements ITable {
         boolean fixColumn = showFirstColumn();
         if (fixColumn)
             hideFirstColumn();
-        {
-            selection = new int[items.length];
-            for (int i = 0; i < items.length; ++i) {
-                selection[i] = i;
-            }
-        }
     }
 
     void selectFocusIndex(int index) {
