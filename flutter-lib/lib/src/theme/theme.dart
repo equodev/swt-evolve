@@ -14,6 +14,7 @@ import 'theme_settings/toolitem_theme_settings.dart';
 import 'theme_settings/table_theme_settings.dart';
 import 'theme_settings/combo_theme_settings.dart';
 import 'theme_extensions/color_scheme_extension.dart';
+import 'theme_settings/ccombo_theme_settings.dart';
 
 Color calculateBackgroundColor(int? backgroundColor, bool useDarkTheme) {
   return backgroundColor != null
@@ -372,6 +373,11 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final ccomboTheme = getCComboLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
 
   return ThemeData(
     useMaterial3: true,
@@ -391,6 +397,7 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
       toolItemTheme,
       tableTheme,
       comboTheme,
+      ccomboTheme,
     ],
   );
 }
@@ -464,6 +471,11 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final ccomboTheme = getCComboDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -483,6 +495,7 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
       toolItemTheme,
       tableTheme,
       comboTheme,
+      ccomboTheme,
     ],
   );
 }
@@ -559,6 +572,11 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final ccomboTheme = getCComboDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -577,6 +595,8 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
       toolItemTheme,
       tableTheme,
       comboTheme,
+      ccomboTheme,
+      ccomboTheme,
     ],
   );
 }
@@ -650,6 +670,11 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final ccomboTheme = getCComboDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -669,6 +694,7 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
       toolItemTheme,
       tableTheme,
       comboTheme,
+      ccomboTheme,
     ],
   );
 }

@@ -5,30 +5,17 @@ import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../impl/composite_evolve.dart';
 import '../styles.dart';
+import '../theme/theme_extensions/ccombo_theme_extension.dart';
+import 'utils/text_utils.dart';
+import 'utils/widget_utils.dart';
 import 'color_utils.dart';
-import 'widget_config.dart';
-
-// Helper functions to get colors with custom color support
-Color getCComboBackgroundColor(BuildContext context) {
-  final parentState = context.findAncestorStateOfType<CComboImpl>();
-  if (parentState != null) {
-    return colorFromVColor(parentState.state.background, defaultColor: getBackground());
-  }
-  return getBackground();
-}
-
-Color getCComboForegroundColor(BuildContext context) {
-  final parentState = context.findAncestorStateOfType<CComboImpl>();
-  if (parentState != null) {
-    return colorFromVColor(parentState.state.foreground, defaultColor: getForeground());
-  }
-  return getForeground();
-}
 
 class CComboImpl<T extends CComboSwt, V extends VCCombo>
     extends CompositeImpl<T, V> {
   late TextEditingController _controller;
   FocusNode? _focusNode;
+  bool _isFocused = false;
+  bool _isHovered = false;
 
   @override
   void initState() {
@@ -43,107 +30,95 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     String newText = state.text ?? "";
     if (_controller.text != newText) {
       _controller.text = newText;
-      if (state.textLimit != null) {
-        _controller.value = _controller.value.copyWith(
-          text: _controller.text,
-          selection: TextSelection.collapsed(offset: _controller.text.length),
-          composing: TextRange.empty,
-        );
-      }
+      _controller.selection = TextSelection.collapsed(offset: newText.length);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return IntrinsicWidth(
-        child: buildCCombo(),
-      );
-  }
-
-  Widget buildCCombo() {
+    final widgetTheme = Theme.of(context).extension<CComboThemeExtension>()!;
     final styleBits = StyleBits(state.style);
     final bool isReadOnly = styleBits.has(SWT.READ_ONLY);
     final bool isSimple = styleBits.has(SWT.SIMPLE);
     final bool isEnabled = state.enabled ?? true;
     final bool listVisible = state.listVisible ?? false;
 
-    // CCombo behavior: in READ_ONLY mode, acts like a dropdown selector
-    // In editable mode, allows free text input with optional list selection
-    if (isReadOnly) {
-      if (listVisible) {
-        // READ_ONLY + list visible: show list always
-        return StyledSimpleCCombo(
-          controller: _controller,
-          focusNode: _focusNode,
-          items: state.items ?? [],
-          value: state.text,
-          onChanged: isEnabled ? onChanged : null,
-          onTextChanged: null, // No text changes in READ_ONLY
-          onTextSubmitted: null,
-          textLimit: state.textLimit,
-          readOnly: true,
-          alignment: state.alignment,
-          onMouseEnter: handleMouseEnter,
-          onMouseExit: handleMouseExit,
-          onFocusIn: handleFocusIn,
-          onFocusOut: handleFocusOut,
-        );
-      } else {
-        // READ_ONLY + DROP_DOWN: standard dropdown
-        return StyledCComboDropdown(
-          items: state.items ?? [],
-          value: state.text,
-          onChanged: isEnabled ? onChanged : null,
-          alignment: state.alignment,
-          listVisible: listVisible,
-          style: state.style,
-          onMouseEnter: handleMouseEnter,
-          onMouseExit: handleMouseExit,
-          onFocusIn: handleFocusIn,
-          onFocusOut: handleFocusOut,
-        );
-      }
-    } else {
-      // Editable CCombo modes
-      if (listVisible) {
-        // Editable with visible list
-        return StyledSimpleCCombo(
-          controller: _controller,
-          focusNode: _focusNode,
-          items: state.items ?? [],
-          value: state.text,
-          onChanged: isEnabled ? onChanged : null,
-          onTextChanged: onTextChanged,
-          onTextSubmitted: onTextSubmitted,
-          textLimit: state.textLimit,
-          readOnly: false,
-          alignment: state.alignment,
-          onMouseEnter: handleMouseEnter,
-          onMouseExit: handleMouseExit,
-          onFocusIn: handleFocusIn,
-          onFocusOut: handleFocusOut,
-        );
-      } else {
-        // Editable dropdown (default)
-        return StyledEditableCCombo(
-          controller: _controller,
-          focusNode: _focusNode,
-          items: state.items ?? [],
-          value: state.text,
-          onChanged: isEnabled ? onChanged : null,
-          onTextChanged: onTextChanged,
-          onTextSubmitted: onTextSubmitted,
-          textLimit: state.textLimit,
-          alignment: state.alignment,
-          listVisible: listVisible,
-          enabled: isEnabled,
-          onMouseEnter: handleMouseEnter,
-          onMouseExit: handleMouseExit,
-          onFocusIn: handleFocusIn,
-          onFocusOut: handleFocusOut,
-        );
-      }
+    // Custom colors support
+    final customBg = state.background != null 
+        ? colorFromVColor(state.background!, defaultColor: widgetTheme.backgroundColor)
+        : null;
+    final customFg = state.foreground != null
+        ? colorFromVColor(state.foreground!, defaultColor: widgetTheme.textColor)
+        : null;
+
+    final bool isActive = _isFocused || _isHovered;
+    final Color currentBg = !isEnabled
+        ? widgetTheme.disabledBackgroundColor
+        : customBg ?? widgetTheme.backgroundColor;
+    
+    final Color currentBorderColor = !isEnabled
+        ? widgetTheme.disabledBorderColor
+        : (isActive ? widgetTheme.borderColor : Colors.transparent);
+
+    final textColor = !isEnabled
+        ? widgetTheme.disabledTextColor
+        : customFg ?? widgetTheme.textColor;
+    
+    final textStyle = getTextStyle(
+      context: context,
+      font: state.font,
+      textColor: textColor,
+      baseTextStyle: widgetTheme.textStyle,
+    );
+
+    final borderWidth = styleBits.has(SWT.BORDER) ? 3.0 : widgetTheme.borderWidth;
+
+    // Simple mode with visible list
+    if (isSimple || listVisible) {
+      return _StyledSimpleCCombo(
+        state: state,
+        widgetTheme: widgetTheme,
+        controller: _controller,
+        focusNode: _focusNode,
+        items: state.items ?? [],
+        enabled: isEnabled,
+        readOnly: isReadOnly,
+        textStyle: textStyle,
+        backgroundColor: currentBg,
+        borderColor: currentBorderColor,
+        borderWidth: borderWidth,
+        onChanged: isEnabled ? onChanged : null,
+        onTextChanged: onTextChanged,
+        onTextSubmitted: onTextSubmitted,
+        onMouseEnter: handleMouseEnter,
+        onMouseExit: handleMouseExit,
+      );
     }
+
+    // Dropdown mode
+    return MouseRegion(
+      onEnter: (_) => setState(() { _isHovered = true; handleMouseEnter(); }),
+      onExit: (_) => setState(() { _isHovered = false; handleMouseExit(); }),
+      child: AnimatedContainer(
+        duration: widgetTheme.animationDuration,
+        decoration: BoxDecoration(
+          color: currentBg,
+          borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
+          border: Border.all(color: currentBorderColor, width: borderWidth),
+        ),
+        child: _StyledDropdownCCombo(
+          state: state,
+          widgetTheme: widgetTheme,
+          controller: _controller,
+          focusNode: _focusNode,
+          items: state.items ?? [],
+          enabled: isEnabled,
+          isReadOnly: isReadOnly,
+          textStyle: textStyle,
+          onSelected: isEnabled ? onChanged : null,
+        ),
+      ),
+    );
   }
 
   void onChanged(String? value) {
@@ -151,43 +126,29 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
       state.text = value;
       _controller.text = value ?? "";
     });
-    var e = VEvent()..text = value;
-    widget.sendSelectionSelection(state, e);
+    widget.sendSelectionSelection(state, VEvent()..text = value);
   }
 
   void onTextChanged(String value) {
     state.text = value;
-    var e = VEvent()..text = value;
-    widget.sendModifyModify(state, e);
+    widget.sendModifyModify(state, VEvent()..text = value);
   }
 
   void onTextSubmitted(String text) {
-    var e = VEvent()..text = text;
-    widget.sendSelectionDefaultSelection(state, e);
-    widget.sendVerifyVerify(state, e);
+    widget.sendSelectionDefaultSelection(state, VEvent()..text = text);
+    widget.sendVerifyVerify(state, VEvent()..text = text);
   }
 
-  void handleMouseEnter() {
-    widget.sendMouseTrackMouseEnter(state, null);
-  }
-
-  void handleMouseExit() {
-    widget.sendMouseTrackMouseExit(state, null);
-  }
-
-  void handleFocusIn() {
-    widget.sendFocusFocusIn(state, null);
-  }
-
-  void handleFocusOut() {
-    widget.sendFocusFocusOut(state, null);
-  }
+  void handleMouseEnter() => widget.sendMouseTrackMouseEnter(state, null);
+  void handleMouseExit() => widget.sendMouseTrackMouseExit(state, null);
 
   void _handleFocusChange() {
+    if (!mounted) return;
+    setState(() => _isFocused = _focusNode!.hasFocus);
     if (_focusNode!.hasFocus) {
-      handleFocusIn();
+      widget.sendFocusFocusIn(state, null);
     } else {
-      handleFocusOut();
+      widget.sendFocusFocusOut(state, null);
     }
   }
 
@@ -200,444 +161,225 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
   }
 }
 
-// Styled CCombo Widgets
-
-/// Dropdown for READ_ONLY CCombo
-class StyledCComboDropdown extends StatelessWidget {
+// Dropdown mode widget (READ_ONLY or editable dropdown)
+class _StyledDropdownCCombo extends StatelessWidget {
+  final VCCombo state;
+  final CComboThemeExtension widgetTheme;
+  final TextEditingController controller;
+  final FocusNode? focusNode;
   final List<String> items;
-  final String? value;
-  final ValueChanged<String?>? onChanged;
-  final int? alignment;
-  final bool listVisible;
-  final int? style;
-  final VoidCallback? onMouseEnter;
-  final VoidCallback? onMouseExit;
-  final VoidCallback? onFocusIn;
-  final VoidCallback? onFocusOut;
+  final bool enabled;
+  final bool isReadOnly;
+  final TextStyle textStyle;
+  final ValueChanged<String?>? onSelected;
 
-  const StyledCComboDropdown({
-    Key? key,
+  const _StyledDropdownCCombo({
+    required this.state,
+    required this.widgetTheme,
+    required this.controller,
+    this.focusNode,
     required this.items,
-    this.value,
-    this.onChanged,
-    this.alignment,
-    this.listVisible = false,
-    this.style,
-    this.onMouseEnter,
-    this.onMouseExit,
-    this.onFocusIn,
-    this.onFocusOut,
-  }) : super(key: key);
-
-  BoxBorder? _getBorder() {
-    final styleBits = StyleBits(style ?? 0);
-    if (!styleBits.has(SWT.BORDER) && !styleBits.has(SWT.FLAT)) {
-      return null;
-    }
-
-    final Color visibleBorderColor = getCurrentTheme()
-        ? const Color(0xFF808080)
-        : const Color(0xFF404040);
-
-    if (styleBits.has(SWT.FLAT)) {
-      return Border.all(
-        color: visibleBorderColor.withOpacity(0.7),
-        width: 1.5
-      );
-    }
-
-    return Border.all(color: visibleBorderColor, width: 3.0);
-  }
+    required this.enabled,
+    required this.isReadOnly,
+    required this.textStyle,
+    this.onSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final Color backgroundColor = getCComboBackgroundColor(context);
-    final Color textColor = getCComboForegroundColor(context);
-    final Color iconColor = getIconColor();
-
-    final String? dropdownValue =
-        (value != null && items.isNotEmpty && items.contains(value))
-            ? value
-            : null;
-
-    final textAlign = _getTextAlign();
-
-    if (items.isEmpty) {
-      return Container(
-        height: 32,
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(4),
-          border: _getBorder(),
-        ),
-        alignment: _getAlignment(),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Text(value ?? '',
-            textAlign: textAlign,
-            style: TextStyle(color: textColor, fontSize: 12)),
-      );
+    if (isReadOnly && focusNode != null) {
+      focusNode!.canRequestFocus = false;
     }
 
-    return IntrinsicWidth(
-      child: MouseRegion(
-        onEnter: (_) => onMouseEnter?.call(),
-        onExit: (_) => onMouseExit?.call(),
-        child: Focus(
-          onFocusChange: (hasFocus) {
-            if (hasFocus) {
-              onFocusIn?.call();
-            } else {
-              onFocusOut?.call();
-            }
-          },
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              height: 32,
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(4),
-                border: _getBorder(),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: dropdownValue,
-                  isExpanded: false,
-                  items: items.map((String item) {
-                    final bool isSelected = item == value;
-                    return DropdownMenuItem<String>(
-                      value: item,
-                      child: ColoredBox(
-                        color: isSelected
-                            ? getBackgroundSelected()
-                            : Colors.transparent,
-                        child: Container(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          alignment: _getAlignment(),
-                          child: Text(item,
-                              textAlign: textAlign,
-                              style: TextStyle(color: textColor, fontSize: 12)),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                  isDense: true,
-                  itemHeight: 32,
-                  onChanged: onChanged,
-                  style: TextStyle(color: textColor, fontSize: 12),
-                  dropdownColor: backgroundColor,
-                  icon: Icon(Icons.arrow_drop_down, color: iconColor, size: 20),
-                ),
-              ),
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final hasConstraints = hasBounds(state.bounds);
+        final width = hasConstraints ? constraints.maxWidth : null;
+
+        return DropdownMenu<String>(
+          enabled: enabled,
+          focusNode: focusNode,
+          controller: controller,
+          width: width,
+          initialSelection: state.text,
+          requestFocusOnTap: !isReadOnly,
+          enableSearch: !isReadOnly,
+          textStyle: textStyle,
+          textAlign: _getTextAlign(),
+          inputDecorationTheme: InputDecorationTheme(
+            border: InputBorder.none,
+            isDense: true,
+            contentPadding: widgetTheme.textFieldPadding,
           ),
-        ),
-      ),
+          menuStyle: MenuStyle(
+            backgroundColor: WidgetStateProperty.all(widgetTheme.backgroundColor),
+            alignment: _getMenuAlignment(),
+          ),
+          trailingIcon: Icon(
+            Icons.arrow_drop_down,
+            color: enabled ? widgetTheme.iconColor : widgetTheme.disabledIconColor,
+            size: widgetTheme.iconSize,
+          ),
+          onSelected: onSelected,
+          dropdownMenuEntries: items.map<DropdownMenuEntry<String>>((item) {
+            final bool isSelected = item == state.text;
+            return DropdownMenuEntry<String>(
+              value: item,
+              label: item,
+              labelWidget: Align(
+                alignment: _getAlignment(),
+                child: Text(item, style: textStyle),
+              ),
+              style: MenuItemButton.styleFrom(
+                foregroundColor: textStyle.color,
+                minimumSize: Size(width ?? 0, widgetTheme.itemHeight),
+                padding: widgetTheme.textFieldPadding,
+                overlayColor: widgetTheme.hoverBackgroundColor,
+                backgroundColor: isSelected
+                    ? widgetTheme.selectedItemBackgroundColor
+                    : Colors.transparent,
+              ),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 
   TextAlign _getTextAlign() {
-    if (alignment == SWT.CENTER) return TextAlign.center;
-    if (alignment == SWT.RIGHT || alignment == SWT.TRAIL) return TextAlign.right;
+    if (state.alignment == SWT.CENTER) return TextAlign.center;
+    if (state.alignment == SWT.RIGHT || state.alignment == SWT.TRAIL) {
+      return TextAlign.right;
+    }
     return TextAlign.left;
   }
 
   Alignment _getAlignment() {
-    if (alignment == SWT.CENTER) return Alignment.center;
-    if (alignment == SWT.RIGHT || alignment == SWT.TRAIL) {
+    if (state.alignment == SWT.CENTER) return Alignment.center;
+    if (state.alignment == SWT.RIGHT || state.alignment == SWT.TRAIL) {
       return Alignment.centerRight;
     }
     return Alignment.centerLeft;
   }
+
+  AlignmentGeometry? _getMenuAlignment() {
+    if (state.alignment == SWT.RIGHT || state.alignment == SWT.TRAIL) {
+      return AlignmentDirectional.topEnd;
+    }
+    return null;
+  }
 }
 
-/// Simple CCombo with always visible list
-class StyledSimpleCCombo extends StatelessWidget {
+// Simple mode widget (always visible list)
+class _StyledSimpleCCombo extends StatelessWidget {
+  final VCCombo state;
+  final CComboThemeExtension widgetTheme;
   final TextEditingController controller;
   final FocusNode? focusNode;
   final List<String> items;
-  final String? value;
+  final bool enabled;
+  final bool readOnly;
+  final TextStyle textStyle;
+  final Color backgroundColor;
+  final Color borderColor;
+  final double borderWidth;
   final ValueChanged<String?>? onChanged;
   final ValueChanged<String>? onTextChanged;
   final ValueChanged<String>? onTextSubmitted;
-  final int? textLimit;
-  final bool readOnly;
-  final int? alignment;
   final VoidCallback? onMouseEnter;
   final VoidCallback? onMouseExit;
-  final VoidCallback? onFocusIn;
-  final VoidCallback? onFocusOut;
 
-  const StyledSimpleCCombo({
-    Key? key,
+  const _StyledSimpleCCombo({
+    required this.state,
+    required this.widgetTheme,
     required this.controller,
     this.focusNode,
     required this.items,
-    this.value,
+    required this.enabled,
+    required this.readOnly,
+    required this.textStyle,
+    required this.backgroundColor,
+    required this.borderColor,
+    required this.borderWidth,
     this.onChanged,
     this.onTextChanged,
     this.onTextSubmitted,
-    this.textLimit,
-    this.readOnly = false,
-    this.alignment,
     this.onMouseEnter,
     this.onMouseExit,
-    this.onFocusIn,
-    this.onFocusOut,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    final Color backgroundColor = getCComboBackgroundColor(context);
-    final Color textColor = getCComboForegroundColor(context);
-    final Color borderColor = getBorderColor();
-
-    final textAlign = _getTextAlign();
-
     return MouseRegion(
       onEnter: (_) => onMouseEnter?.call(),
       onExit: (_) => onMouseExit?.call(),
-      child: Material(
-        color: Colors.transparent,
-        child: IntrinsicHeight(
-          child: Container(
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: borderColor),
+      child: Container(
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
+          border: Border.all(color: borderColor, width: borderWidth),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Text field
+            Padding(
+              padding: widgetTheme.textFieldPadding,
+              child: TextField(
+                controller: controller,
+                focusNode: focusNode,
+                enabled: enabled,
+                readOnly: readOnly,
+                textAlign: _getTextAlign(),
+                style: textStyle,
+                decoration: const InputDecoration.collapsed(hintText: ''),
+                maxLength: state.textLimit,
+                onChanged: readOnly ? null : onTextChanged,
+                onSubmitted: readOnly ? null : onTextSubmitted,
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Text field at top
-                SizedBox(
-                  height: 32,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    child: TextField(
-                      controller: controller,
-                      focusNode: focusNode,
-                      readOnly: readOnly,
-                      textAlign: textAlign,
-                      textAlignVertical: TextAlignVertical.center,
-                      style: TextStyle(color: textColor, fontSize: 12),
-                      decoration: InputDecoration.collapsed(
-                        hintText: '',
-                      ),
-                      maxLines: 1,
-                      maxLength: textLimit,
-                      onChanged: readOnly ? null : onTextChanged,
-                      onSubmitted: readOnly ? null : onTextSubmitted,
-                    ),
-                  ),
+            // Divider
+            if (items.isNotEmpty)
+              Divider(
+                height: widgetTheme.dividerHeight,
+                thickness: widgetTheme.dividerThickness,
+                color: widgetTheme.dividerColor,
+              ),
+            // Items list
+            ...items.map((item) {
+              final bool isSelected = item == state.text;
+              return InkWell(
+                hoverColor: widgetTheme.hoverBackgroundColor.withOpacity(0.1),
+                onTap: enabled ? () => onChanged?.call(item) : null,
+                child: Container(
+                  height: widgetTheme.itemHeight,
+                  padding: widgetTheme.textFieldPadding,
+                  color: isSelected
+                      ? widgetTheme.selectedItemBackgroundColor
+                      : Colors.transparent,
+                  alignment: _getAlignment(),
+                  child: Text(item, style: textStyle),
                 ),
-                // Separator
-                if (items.isNotEmpty)
-                  Divider(height: 1, thickness: 1, color: borderColor),
-                // Visible list
-                if (items.isNotEmpty)
-                  ...items.asMap().entries.map((entry) {
-                    final item = entry.value;
-                    final bool isSelected = item == value;
-                    return InkWell(
-                      onTap: () => onChanged?.call(item),
-                      child: Container(
-                        height: 32,
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        color: isSelected
-                            ? getBackgroundSelected()
-                            : Colors.transparent,
-                        alignment: _getAlignment(),
-                        child: Text(
-                          item,
-                          textAlign: textAlign,
-                          style: TextStyle(color: textColor, fontSize: 12),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-              ],
-            ),
-          ),
+              );
+            }),
+          ],
         ),
       ),
     );
   }
 
   TextAlign _getTextAlign() {
-    if (alignment == SWT.CENTER) return TextAlign.center;
-    if (alignment == SWT.RIGHT || alignment == SWT.TRAIL) return TextAlign.right;
-    return TextAlign.left;
-  }
-
-  Alignment _getAlignment() {
-    if (alignment == SWT.CENTER) return Alignment.center;
-    if (alignment == SWT.RIGHT || alignment == SWT.TRAIL) {
-      return Alignment.centerRight;
+    if (state.alignment == SWT.CENTER) return TextAlign.center;
+    if (state.alignment == SWT.RIGHT || state.alignment == SWT.TRAIL) {
+      return TextAlign.right;
     }
-    return Alignment.centerLeft;
-  }
-}
-
-/// Editable CCombo with dropdown
-class StyledEditableCCombo extends StatelessWidget {
-  final TextEditingController controller;
-  final FocusNode? focusNode;
-  final List<String> items;
-  final String? value;
-  final ValueChanged<String?>? onChanged;
-  final ValueChanged<String>? onTextChanged;
-  final ValueChanged<String>? onTextSubmitted;
-  final int? textLimit;
-  final int? alignment;
-  final bool listVisible;
-  final bool enabled;
-  final VoidCallback? onMouseEnter;
-  final VoidCallback? onMouseExit;
-  final VoidCallback? onFocusIn;
-  final VoidCallback? onFocusOut;
-
-  const StyledEditableCCombo({
-    Key? key,
-    required this.controller,
-    this.focusNode,
-    required this.items,
-    this.value,
-    this.onChanged,
-    this.onTextChanged,
-    this.onTextSubmitted,
-    this.textLimit,
-    this.alignment,
-    this.listVisible = false,
-    this.enabled = true,
-    this.onMouseEnter,
-    this.onMouseExit,
-    this.onFocusIn,
-    this.onFocusOut,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final Color backgroundColor = getCComboBackgroundColor(context);
-    final Color textColor = getCComboForegroundColor(context);
-    final Color borderColor = getBorderColor();
-    final Color iconColor = getIconColor();
-
-    final String? dropdownValue =
-        (value != null && items.isNotEmpty && items.contains(value))
-            ? value
-            : null;
-
-    final textAlign = _getTextAlign();
-
-    return IntrinsicWidth(
-      child: MouseRegion(
-          onEnter: (_) => onMouseEnter?.call(),
-          onExit: (_) => onMouseExit?.call(),
-          child: Focus(
-            onFocusChange: (hasFocus) {
-              if (hasFocus) {
-                onFocusIn?.call();
-              } else {
-                onFocusOut?.call();
-              }
-            },
-            child: Material(
-              color: Colors.transparent,
-              child: Container(
-                height: 32,
-                constraints: BoxConstraints(minWidth: 120),
-                decoration: BoxDecoration(
-                  color: backgroundColor,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: borderColor),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      child: IntrinsicWidth(
-                        child: TextField(
-                          controller: controller,
-                          focusNode: focusNode,
-                          enabled: enabled,
-                          textAlign: textAlign,
-                          textAlignVertical: TextAlignVertical.center,
-                          style: TextStyle(color: textColor, fontSize: 12),
-                          decoration: InputDecoration(
-                            border: InputBorder.none,
-                            contentPadding:
-                                EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            isDense: true,
-                            counterText: '',
-                          ),
-                          maxLines: 1,
-                          maxLength: textLimit,
-                          onChanged: enabled ? onTextChanged : null,
-                          onSubmitted: enabled ? onTextSubmitted : null,
-                        ),
-                      ),
-                    ),
-                    if (items.isNotEmpty)
-                      SizedBox(
-                        height: 32,
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: dropdownValue,
-                            items: items.map((String item) {
-                              final bool isSelected = item == value;
-                              return DropdownMenuItem<String>(
-                                value: item,
-                                child: ColoredBox(
-                                  color: isSelected
-                                      ? getBackgroundSelected()
-                                      : Colors.transparent,
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 4),
-                                    alignment: _getAlignment(),
-                                    child: Text(item,
-                                        textAlign: textAlign,
-                                        style: TextStyle(
-                                            color: textColor, fontSize: 12)),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                            isDense: true,
-                            itemHeight: 32,
-                            onChanged: onChanged,
-                            style: TextStyle(color: textColor, fontSize: 12),
-                            dropdownColor: backgroundColor,
-                            icon: Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: Icon(Icons.arrow_drop_down,
-                                  color: iconColor, size: 20),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-      ),
-    );
-  }
-
-  TextAlign _getTextAlign() {
-    if (alignment == SWT.CENTER) return TextAlign.center;
-    if (alignment == SWT.RIGHT || alignment == SWT.TRAIL) return TextAlign.right;
     return TextAlign.left;
   }
 
   Alignment _getAlignment() {
-    if (alignment == SWT.CENTER) return Alignment.center;
-    if (alignment == SWT.RIGHT || alignment == SWT.TRAIL) {
+    if (state.alignment == SWT.CENTER) return Alignment.center;
+    if (state.alignment == SWT.RIGHT || state.alignment == SWT.TRAIL) {
       return Alignment.centerRight;
     }
     return Alignment.centerLeft;
