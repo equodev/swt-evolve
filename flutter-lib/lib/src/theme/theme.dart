@@ -12,6 +12,7 @@ import 'theme_settings/ctabitem_theme_settings.dart';
 import 'theme_settings/toolbar_theme_settings.dart';
 import 'theme_settings/toolitem_theme_settings.dart';
 import 'theme_settings/table_theme_settings.dart';
+import 'theme_settings/combo_theme_settings.dart';
 import 'theme_extensions/color_scheme_extension.dart';
 
 Color calculateBackgroundColor(int? backgroundColor, bool useDarkTheme) {
@@ -25,42 +26,42 @@ ColorScheme createLightColorScheme() {
     seedColor: const Color(0xFF2236E5),
     brightness: Brightness.light,
   ).copyWith(
-    primary: const Color(0xFF2236E5),
-    onPrimary: const Color(0xFFFFFFFF),
-    primaryContainer: const Color(0xFF1B2AB2),
+    primary: const Color(0xFF2236E5), // #2236E5
+    onPrimary: const Color(0xFFFFFFFF), // #FFFFFF
+    primaryContainer: const Color(0xFF1B2AB2), // #1B2AB2
     
-    secondary: const Color(0xFFF2F3FA),
-    onSecondary: const Color(0xFF0F1866),
-    secondaryContainer: const Color(0xFFE1E3F5),
-    onSecondaryContainer: const Color(0xFFC9CDF0),
+    secondary: const Color(0xFFF2F3FA), // #F2F3FA
+    onSecondary: const Color(0xFF0F1866), // #0F1866
+    secondaryContainer: const Color(0xFFE1E3F5), // #E1E3F5
+    onSecondaryContainer: const Color(0xFFC9CDF0), // #C9CDF0
     
-    tertiary: const Color(0x00FFFFFF),
-    onTertiary: const Color(0xFF0F1866),
+    tertiary: const Color(0x00FFFFFF), // #FFFFFF
+    onTertiary: const Color(0xFF0F1866), // #0F1866
     
-    surface: const Color(0xFFFFFFFF),
-    onSurface: const Color(0xFF171819),
-    onSurfaceVariant: const Color(0xFF797B80),
-    surfaceContainerHighest: const Color(0xFFFAFBFC),
-    surfaceContainerHigh: const Color(0xFFF7F8FA),
-    surfaceContainerLow: const Color(0xFFF0F2F5),
+    surface: const Color(0xFFFFFFFF), // #FFFFFF
+    onSurface: const Color(0xFF171819), // #171819
+    onSurfaceVariant: const Color(0xFF797B80), // #797B80
+    surfaceContainerHighest: const Color(0xFFFAFBFC), // #FAFBFC
+    surfaceContainerHigh: const Color(0xFFF7F8FA), // #F7F8FA
+    surfaceContainerLow: const Color(0xFFF0F2F5), // #F0F2F5
     
-    outline: const Color(0x1A171819),
-    outlineVariant: const Color(0x4D171819),
+    outline: const Color(0x1A171819), // #1A171819
+    outlineVariant: const Color(0x4D171819), // #4D171819
     
-    error: const Color(0xFFDC0A56),
-    onError: const Color(0xFFFFFFFF),
-    errorContainer: const Color(0xFFFAF2F4),
-    onErrorContainer: const Color(0xFF59040D),
+    error: const Color(0xFFDC0A56), // #DC0A56
+    onError: const Color(0xFFFFFFFF), // #FFFFFF
+    errorContainer: const Color(0xFFFAF2F4), // #FAF2F4
+    onErrorContainer: const Color(0xFF59040D), // #59040D
     
-    surfaceVariant: const Color(0xFFF0F2F5),
+    surfaceVariant: const Color(0xFFF0F2F5), // #F0F2F5
     
     // Other
-    shadow: const Color(0xFF000000),
-    scrim: const Color(0xFF000000),
-    inverseSurface: const Color(0xFF1F2937),
-    onInverseSurface: const Color(0xFFF9FAFB),
-    inversePrimary: const Color(0xFF2236E5),
-    surfaceTint: const Color(0xFF2236E5),
+    shadow: const Color(0xFF000000), // #000000
+    scrim: const Color(0xFF000000), // #000000
+    inverseSurface: const Color(0xFF1F2937), // #1F2937
+    onInverseSurface: const Color(0xFFF9FAFB), // #F9FAFB
+    inversePrimary: const Color(0xFF2236E5), // #2236E5
+    surfaceTint: const Color(0xFF2236E5), // #2236E5
   );
 }
 
@@ -94,123 +95,123 @@ ColorScheme createDarkColorScheme() {
 
 ColorSchemeExtension createColorSchemeExtension() {
   return ColorSchemeExtension(
-    primaryHovered: const Color(0xFF1E30CC),
-    primaryBorder: const Color(0xFF1B2AB2),
-    primaryBorderDisabled: const Color(0x33171819),
-    onPrimaryVariantDisabled: const Color(0x80171819),
+    primaryHovered: const Color(0xFF1E30CC), // #1E30CC
+    primaryBorder: const Color(0xFF1B2AB2), // #1B2AB2
+    primaryBorderDisabled: const Color(0x33171819), // #33171819
+    onPrimaryVariantDisabled: const Color(0x80171819), // #80171819
     
-    secondaryPressed: const Color(0xFFC9CDF0),
-    secondaryBold: const Color(0xFFE1E3F5),
-    secondaryBorder: const Color(0xFFC9CDF0),
-    secondaryBorderDisabled: const Color(0x33171819),
-    onSecondaryVariantDisabled: const Color(0x80171819),
+    secondaryPressed: const Color(0xFFC9CDF0), // #C9CDF0
+    secondaryBold: const Color(0xFFE1E3F5), // #E1E3F5
+    secondaryBorder: const Color(0xFFC9CDF0), // #C9CDF0
+    secondaryBorderDisabled: const Color(0x33171819), // #33171819
+    onSecondaryVariantDisabled: const Color(0x80171819), // #80171819
     
-    tertiaryPressed: const Color(0x33171819),
-    tertiaryHovered: const Color(0x1A171819),
-    tertiaryBorder: const Color(0x00FFFFFF),
-    tertiaryBorderDisabled: const Color(0x00FFFFFF),
-    onTertiaryVariantDisabled: const Color(0x80171819),
+    tertiaryPressed: const Color(0x33171819), // #33171819
+    tertiaryHovered: const Color(0x1A171819), // #1A171819
+    tertiaryBorder: const Color(0x00FFFFFF), // #00FFFFFF
+    tertiaryBorderDisabled: const Color(0x00FFFFFF), // #00FFFFFF
+    onTertiaryVariantDisabled: const Color(0x80171819), // #80171819
     
-    surfaceFocused: const Color(0xFFF2F3FA),
-    surfaceBorderEnabled: const Color(0x1A171819),
-    surfaceBorderHovered: const Color(0x4D171819),
-    surfaceBorderFocused: const Color(0xFF0F1866),
-    surfaceBorderDisabled: const Color(0x33171819),
-    surfaceBorderBoldEnabled: const Color(0x80171819),
-    surfaceBorderDataDisplay: const Color(0xFFFFFFFF),
-    surfacePlaceholder: const Color(0xFF797B7F), 
-    onSurfaceVariantError: const Color(0xFFDC0A56),
-    onSurfaceVariantWarning: const Color(0xFFDE7A2D), 
-    onSurfaceVariantDisabled: const Color(0x17181980),
-    onSurfaceVariantSmallError: const Color(0xFF99073C),
+    surfaceFocused: const Color(0xFFF2F3FA), // #F2F3FA
+    surfaceBorderEnabled: const Color(0x1A171819), // #1A171819
+    surfaceBorderHovered: const Color(0x4D171819), // #4D171819
+    surfaceBorderFocused: const Color(0xFF0F1866), // #0F1866
+    surfaceBorderDisabled: const Color(0x33171819), // #33171819
+    surfaceBorderBoldEnabled: const Color(0x80171819), // #80171819
+    surfaceBorderDataDisplay: const Color(0xFFFFFFFF), // #FFFFFFFF
+    surfacePlaceholder: const Color(0xFF797B7F), // #797B7F
+    onSurfaceVariantError: const Color(0xFFDC0A56), // #DC0A56
+    onSurfaceVariantWarning: const Color(0xFFDE7A2D), // #DE7A2D
+    onSurfaceVariantDisabled: const Color(0x17181980), // #17181980
+    onSurfaceVariantSmallError: const Color(0xFF99073C), // #99073C
     
-    errorHovered: const Color(0xFFB20846),
-    errorBorder: const Color(0xFF99073C),
-    errorBorderDisabled: const Color(0x33171819),
-    onErrorVariantDisabled: const Color(0x80171819),
-    errorContainerPressed: const Color(0xFFF0C9D4),
-    errorContainerHovered: const Color(0xFFF5E1E6),
-    onErrorContainerVariantError: const Color(0xFF99073C),
-    onErrorContainerVariantDisabled: const Color(0x80171819),
-    onErrorContainerBorder: const Color(0xFFF0C9D4),
-    onErrorContainerBorderDisabled: const Color(0x33171819),
-    onErrorContainerBorderHovered: const Color(0xFFDC0A56),
-    onErrorContainerBorderEnabled: const Color(0xFFF0C9D4),
-    onErrorContainerBorderFocused: const Color(0xFF59040D),
-    onErrorContainerPlaceholder: const Color(0xFFDC0A56),
-    errorTextEnabled: const Color(0x00FFFFFF),
-    errorTextHovered: const Color(0xFFFAF2F4),
-    errorTextPressed: const Color(0xFFF5E1E6),
-    onErrorTextVariant: const Color(0xFF59040D),
-    onErrorTextVariantDisabled: const Color(0x80171819),
+    errorHovered: const Color(0xFFB20846), // #B20846
+    errorBorder: const Color(0xFF99073C), // #99073C
+    errorBorderDisabled: const Color(0x33171819), // #33171819
+    onErrorVariantDisabled: const Color(0x80171819), // #80171819
+    errorContainerPressed: const Color(0xFFF0C9D4), // #F0C9D4
+    errorContainerHovered: const Color(0xFFF5E1E6), // #F5E1E6
+    onErrorContainerVariantError: const Color(0xFF99073C), // #99073C
+    onErrorContainerVariantDisabled: const Color(0x80171819), // #80171819
+    onErrorContainerBorder: const Color(0xFFF0C9D4), // #F0C9D4
+    onErrorContainerBorderDisabled: const Color(0x33171819), // #33171819
+    onErrorContainerBorderHovered: const Color(0xFFDC0A56), // #DC0A56
+    onErrorContainerBorderEnabled: const Color(0xFFF0C9D4), // #F0C9D4
+    onErrorContainerBorderFocused: const Color(0xFF59040D), // #59040D
+    onErrorContainerPlaceholder: const Color(0xFFDC0A56), // #DC0A56
+    errorTextEnabled: const Color(0x00FFFFFF), // #00FFFFFF
+    errorTextHovered: const Color(0xFFFAF2F4), // #FAF2F4
+    errorTextPressed: const Color(0xFFF5E1E6), // #F5E1E6
+    onErrorTextVariant: const Color(0xFF59040D), // #59040D
+    onErrorTextVariantDisabled: const Color(0x80171819), // #80171819
     
-    warning: const Color(0xFFDE7A2D),
-    warningPressed: const Color(0xFF99541F),
-    warningHovered: const Color(0xFFB26224),
-    onWarning: const Color(0xFFFFFFFF),
-    onWarningVariantDisabled: const Color(0x80171819),
-    warningBorder: const Color(0xFF99541F),
-    warningBorderDisabled: const Color(0x33171819),
-    warningTextEnabled: const Color(0x00FFFFFF),
-    warningTextPressed: const Color(0xFFF5EAE1),
-    warningTextHovered: const Color(0xFFFAF3ED),
-    onWarningTextVariant: const Color(0xFF4D2100),
-    onWarningTextVariantDisabled: const Color(0x80171819),
-    warningContainer: const Color(0xFFFAF3ED),
-    warningContainerPressed: const Color(0xFFF0DAC9),
-    warningContainerHovered: const Color(0xFFF5EAE1),
-    onWarningContainerVariant: const Color(0xFF59040D),
-    onWarningContainerVariantDisabled: const Color(0x80171819),
-    onWarningContainerBorder: const Color(0xFFF0DAC9),
-    onWarningContainerBorderDisabled: const Color(0x33171819),
+    warning: const Color(0xFFDE7A2D), // #DE7A2D
+    warningPressed: const Color(0xFF99541F), // #99541F
+    warningHovered: const Color(0xFFB26224), // #B26224
+    onWarning: const Color(0xFFFFFFFF), // #FFFFFF
+    onWarningVariantDisabled: const Color(0x80171819), // #80171819
+    warningBorder: const Color(0xFF99541F), // #99541F
+    warningBorderDisabled: const Color(0x33171819), // #33171819
+    warningTextEnabled: const Color(0x00FFFFFF), // #00FFFFFF
+    warningTextPressed: const Color(0xFFF5EAE1), // #F5EAE1
+    warningTextHovered: const Color(0xFFFAF3ED), // #FAF3ED
+    onWarningTextVariant: const Color(0xFF4D2100), // #4D2100
+    onWarningTextVariantDisabled: const Color(0x80171819), // #80171819
+    warningContainer: const Color(0xFFFAF3ED), // #FAF3ED
+    warningContainerPressed: const Color(0xFFF0DAC9), // #F0DAC9
+    warningContainerHovered: const Color(0xFFF5EAE1), // #F5EAE1
+    onWarningContainerVariant: const Color(0xFF59040D), // #59040D
+    onWarningContainerVariantDisabled: const Color(0x80171819), // #80171819
+    onWarningContainerBorder: const Color(0xFFF0DAC9), // #F0DAC9   
+    onWarningContainerBorderDisabled: const Color(0x33171819), // #33171819
     
-    success: const Color(0xFF1BBB77),
-    successPressed: const Color(0xFF128051),
-    successHovered: const Color(0xFF169961),
-    onSuccess: const Color(0xFFFFFFFF),
+    success: const Color(0xFF1BBB77), // #1BBB77
+    successPressed: const Color(0xFF128051), // #128051
+    successHovered: const Color(0xFF169961), // #169961
+    onSuccess: const Color(0xFFFFFFFF), // #FFFFFF
     onSuccessVariantDisabled: const Color(0x80171819),
-    successBorder: const Color(0xFF128051),
-    successBorderDisabled: const Color(0x33171819),
-    successContainer: const Color(0xFFE6F2ED),
-    successContainerPressed: const Color(0xFFC1E5D6),
-    successContainerHovered: const Color(0xFFDAEDE5),
-    onSuccessContainerVariant: const Color(0xFF0C3322),
-    onSuccessContainerVariantDisabled: const Color(0x80171819),
-    onSuccessContainerBorder: const Color(0xFFC1E5D6),
-    onSuccessContainerBorderDisabled: const Color(0x33171819),
+    successBorder: const Color(0xFF128051), // #128051  
+    successBorderDisabled: const Color(0x33171819), // #33171819
+    successContainer: const Color(0xFFE6F2ED), // #E6F2ED
+    successContainerPressed: const Color(0xFFC1E5D6), // #C1E5D6
+    successContainerHovered: const Color(0xFFDAEDE5), // #DAEDE5
+    onSuccessContainerVariant: const Color(0xFF0C3322), // #0C3322
+    onSuccessContainerVariantDisabled: const Color(0x80171819), // #80171819
+    onSuccessContainerBorder: const Color(0xFFC1E5D6), // #C1E5D6
+    onSuccessContainerBorderDisabled: const Color(0x33171819), // #33171819
     
-    statusDefault: const Color(0xFF606266),
-    statusOnDefault: const Color(0xFFFFFFFF),
-    statusDefaultContainer: const Color(0xFFE9EBF0),
-    statusOnDefaultContainer: const Color(0xFF2F3033),
-    statusInform: const Color(0xFF2236E5),
-    statusOnInform: const Color(0xFFFFFFFF),
-    statusInformContainer: const Color(0xFFF2F3FA),
-    statusOnInformContainer: const Color(0xFF0F1866),
-    statusOnErrorContainer: const Color(0xFF59040D),
-    statusSuccess: const Color(0xFF1BBB77),
+    statusDefault: const Color(0xFF606266), // #606266
+    statusOnDefault: const Color(0xFFFFFFFF), // #FFFFFF
+    statusDefaultContainer: const Color(0xFFE9EBF0), // #E9EBF0
+    statusOnDefaultContainer: const Color(0xFF2F3033), // #2F3033
+    statusInform: const Color(0xFF2236E5), // #2236E5
+    statusOnInform: const Color(0xFFFFFFFF), // #FFFFFF
+    statusInformContainer: const Color(0xFFF2F3FA), // #F2F3FA
+    statusOnInformContainer: const Color(0xFF0F1866), // #0F1866
+    statusOnErrorContainer: const Color(0xFF59040D), // #59040D
+    statusSuccess: const Color(0xFF1BBB77), // #1BBB77
     statusOnSuccessContainer: const Color(0xFF0C3322),
-    statusWarning: const Color(0xFFDE7A2D),
-    statusWarningContainer: const Color(0xFFFAF3ED),
-    statusOnWarningContainer: const Color(0xFF4D2100),
-    statusCaution: const Color(0xFFD4DB2D),
-    statusOnCaution: const Color(0xFF4A4D00),
-    statusCautionContainer: const Color(0xFFF9FAED),
-    statusOnCautionContainer: const Color(0xFF4A4D00),
+    statusWarning: const Color(0xFFDE7A2D), // #DE7A2D
+    statusWarningContainer: const Color(0xFFFAF3ED), // #FAF3ED
+    statusOnWarningContainer: const Color(0xFF4D2100), // #4D2100
+    statusCaution: const Color(0xFFD4DB2D), // #D4DB2D
+    statusOnCaution: const Color(0xFF4A4D00), // #4A4D00
+    statusCautionContainer: const Color(0xFFF9FAED), // #F9FAED
+    statusOnCautionContainer: const Color(0xFF4A4D00), // #4A4D00
     
-    neutral: const Color(0xFFF0F2F5),
-    onNeutralBorder: const Color(0xFFFFFFFF),
-    onNeutralVariant: const Color(0xFF171819),
+    neutral: const Color(0xFFF0F2F5), // #F0F2F5
+    onNeutralBorder: const Color(0xFFFFFFFF), // #FFFFFF
+    onNeutralVariant: const Color(0xFF171819), // #171819
     
-    stateDefaultEnabled: const Color(0x00FFFFFF),
-    stateDefaultHovered: const Color(0x1F000000),
-    stateDefaultPressed: const Color(0x33000000),
-    stateOnContainerEnabled: const Color(0x00FFFFFF),
-    stateOnContainerHovered: const Color(0x0A000000),
-    stateOnContainerPressed: const Color(0x14000000),
+    stateDefaultEnabled: const Color(0x00FFFFFF), // #00FFFFFF
+    stateDefaultHovered: const Color(0x1F000000), // #1F000000
+    stateDefaultPressed: const Color(0x33000000), // #33000000
+    stateOnContainerEnabled: const Color(0x00FFFFFF), // #00FFFFFF  
+    stateOnContainerHovered: const Color(0x0A000000), // #0A000000
+    stateOnContainerPressed: const Color(0x14000000), // #14000000
     
-    labelInputDefault: const Color(0xFF47494D),
-    labelInputDisabled: const Color(0xFF47494D),
+    labelInputDefault: const Color(0xFF47494D), // #47494D
+    labelInputDisabled: const Color(0xFF47494D), // #47494D
   );
 }
 
@@ -366,6 +367,11 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final comboTheme = getComboLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
 
   return ThemeData(
     useMaterial3: true,
@@ -384,6 +390,7 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
       toolbarTheme,
       toolItemTheme,
       tableTheme,
+      comboTheme,
     ],
   );
 }
@@ -452,7 +459,11 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
-
+  final comboTheme = getComboLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -471,6 +482,7 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
       toolbarTheme,
       toolItemTheme,
       tableTheme,
+      comboTheme,
     ],
   );
 }
@@ -542,7 +554,11 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
-
+  final comboTheme = getComboDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -560,6 +576,7 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
       toolbarTheme,
       toolItemTheme,
       tableTheme,
+      comboTheme,
     ],
   );
 }
@@ -628,7 +645,11 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
-
+  final comboTheme = getComboDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -647,6 +668,7 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
       toolbarTheme,
       toolItemTheme,
       tableTheme,
+      comboTheme,
     ],
   );
 }

@@ -5,13 +5,17 @@ import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../impl/composite_evolve.dart';
 import '../styles.dart';
-import 'color_utils.dart';
+import '../theme/theme_extensions/combo_theme_extension.dart';
+import 'utils/text_utils.dart';
 import 'widget_config.dart';
+import 'utils/widget_utils.dart';
 
 class ComboImpl<T extends ComboSwt, V extends VCombo>
     extends CompositeImpl<T, V> {
   late TextEditingController _controller;
   FocusNode? _focusNode;
+  bool _isFocused = false;
+  bool _isHovered = false;
 
   @override
   void initState() {
@@ -26,95 +30,81 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     String newText = state.text ?? "";
     if (_controller.text != newText) {
       _controller.text = newText;
-      if (state.textLimit != null) {
-        _controller.value = _controller.value.copyWith(
-          text: _controller.text,
-          selection: TextSelection.collapsed(offset: _controller.text.length),
-          composing: TextRange.empty,
-        );
-      }
+      _controller.selection = TextSelection.collapsed(offset: newText.length);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return buildCombo();
-  }
-
-  Widget buildCombo() {
+    final widgetTheme = Theme.of(context).extension<ComboThemeExtension>()!;
     final styleBits = StyleBits(state.style);
     final bool isReadOnly = styleBits.has(SWT.READ_ONLY);
     final bool isSimple = styleBits.has(SWT.SIMPLE);
     final bool isEnabled = state.enabled ?? true;
 
-    // READ_ONLY: no editable, solo selección desde lista
-    if (isReadOnly) {
-      if (isSimple) {
-        // READ_ONLY + SIMPLE: lista visible, no editable
-        return StyledSimpleCombo(
-          controller: _controller,
-          focusNode: _focusNode,
-          items: state.items ?? [],
-          value: state.text,
-          onChanged: isEnabled ? onChanged : null,
-          onTextChanged: null, // No text changes allowed in READ_ONLY
-          onTextSubmitted: null, // No text submission in READ_ONLY
-          textLimit: state.textLimit,
-          readOnly: true,
-          onMouseEnter: handleMouseEnter,
-          onMouseExit: handleMouseExit,
-          onFocusIn: handleFocusIn,
-          onFocusOut: handleFocusOut,
-        );
-      } else {
-        // READ_ONLY + DROP_DOWN (o solo READ_ONLY por defecto): dropdown, no editable
-        return StyledDropdownButton(
-          items: state.items ?? [],
-          value: state.text,
-          onChanged: isEnabled ? onChanged : null,
-          onMouseEnter: handleMouseEnter,
-          onMouseExit: handleMouseExit,
-          onFocusIn: handleFocusIn,
-          onFocusOut: handleFocusOut,
-        );
-      }
-    } else {
-      // Editable combos
-      if (isSimple) {
-        // SIMPLE: lista visible, editable
-        return StyledSimpleCombo(
-          controller: _controller,
-          focusNode: _focusNode,
-          items: state.items ?? [],
-          value: state.text,
-          onChanged: isEnabled ? onChanged : null,
-          onTextChanged: onTextChanged,
-          onTextSubmitted: onTextSubmitted,
-          textLimit: state.textLimit,
-          readOnly: false,
-          onMouseEnter: handleMouseEnter,
-          onMouseExit: handleMouseExit,
-          onFocusIn: handleFocusIn,
-          onFocusOut: handleFocusOut,
-        );
-      } else {
-        // DROP_DOWN (o por defecto): dropdown, editable
-        return StyledEditableCombo(
-          controller: _controller,
-          focusNode: _focusNode,
-          items: state.items ?? [],
-          value: state.text,
-          onChanged: isEnabled ? onChanged : null,
-          onTextChanged: onTextChanged,
-          onTextSubmitted: onTextSubmitted,
-          textLimit: state.textLimit,
-          onMouseEnter: handleMouseEnter,
-          onMouseExit: handleMouseExit,
-          onFocusIn: handleFocusIn,
-          onFocusOut: handleFocusOut,
-        );
-      }
+    final bool isActive = _isFocused || _isHovered;
+    final Color currentBg = isEnabled 
+        ? widgetTheme.backgroundColor 
+        : widgetTheme.disabledBackgroundColor;
+    
+    final Color currentBorderColor = isActive 
+        ? widgetTheme.borderColor 
+        : Colors.transparent; 
+
+    final textColor = isEnabled ? widgetTheme.textColor : widgetTheme.disabledTextColor;
+    
+    final textStyle = getTextStyle(
+      context: context, 
+      font: state.font, 
+      textColor: textColor, 
+      baseTextStyle: widgetTheme.textStyle
+    );
+
+    if (isSimple) {
+      return _StyledSimpleCombo(
+        state: state,
+        widgetTheme: widgetTheme,
+        controller: _controller,
+        focusNode: _focusNode,
+        items: state.items ?? [],
+        value: state.text,
+        enabled: isEnabled,
+        readOnly: isReadOnly,
+        textStyle: textStyle,
+        onChanged: isEnabled ? onChanged : null,
+        onTextChanged: onTextChanged,
+        onTextSubmitted: onTextSubmitted,
+        onMouseEnter: handleMouseEnter,
+        onMouseExit: handleMouseExit,
+      );
     }
+
+    return MouseRegion(
+      onEnter: (_) => setState(() { _isHovered = true; handleMouseEnter(); }),
+      onExit: (_) => setState(() { _isHovered = false; handleMouseExit(); }),
+      child: AnimatedContainer(
+        duration: widgetTheme.animationDuration,
+        decoration: BoxDecoration(
+          color: currentBg,
+          borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
+          border: Border.all(
+            color: currentBorderColor, 
+            width: isActive ? widgetTheme.borderWidth : widgetTheme.borderWidth
+          ),
+        ),
+        child: _StyledDropdownMenu(
+          state: state,
+          widgetTheme: widgetTheme,
+          controller: _controller,
+          focusNode: _focusNode,
+          items: state.items ?? [],
+          enabled: isEnabled,
+          isReadOnly: isReadOnly,
+          textStyle: textStyle,
+          onSelected: isEnabled ? onChanged : null,
+        ),
+      ),
+    );
   }
 
   void onChanged(String? value) {
@@ -122,43 +112,29 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
       state.text = value;
       _controller.text = value ?? "";
     });
-    var e = VEvent()..text = value;
-    widget.sendSelectionSelection(state, e);
+    widget.sendSelectionSelection(state, VEvent()..text = value);
   }
 
   void onTextChanged(String value) {
     state.text = value;
-    var e = VEvent()..text = value;
-    widget.sendModifyModify(state, e);
+    widget.sendModifyModify(state, VEvent()..text = value);
   }
 
   void onTextSubmitted(String text) {
-    var e = VEvent()..text = text;
-    widget.sendSelectionDefaultSelection(state, e);
-    widget.sendVerifyVerify(state, e);
+    widget.sendSelectionDefaultSelection(state, VEvent()..text = text);
+    widget.sendVerifyVerify(state, VEvent()..text = text);
   }
 
-  void handleMouseEnter() {
-    widget.sendMouseTrackMouseEnter(state, null);
-  }
-
-  void handleMouseExit() {
-    widget.sendMouseTrackMouseExit(state, null);
-  }
-
-  void handleFocusIn() {
-    widget.sendFocusFocusIn(state, null);
-  }
-
-  void handleFocusOut() {
-    widget.sendFocusFocusOut(state, null);
-  }
-
+  void handleMouseEnter() => widget.sendMouseTrackMouseEnter(state, null);
+  void handleMouseExit() => widget.sendMouseTrackMouseExit(state, null);
+  
   void _handleFocusChange() {
+    if (!mounted) return;
+    setState(() => _isFocused = _focusNode!.hasFocus);
     if (_focusNode!.hasFocus) {
-      handleFocusIn();
+      widget.sendFocusFocusIn(state, null);
     } else {
-      handleFocusOut();
+      widget.sendFocusFocusOut(state, null);
     }
   }
 
@@ -171,343 +147,148 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
   }
 }
 
-// Styled Combo Widgets
-
-class StyledDropdownButton extends StatelessWidget {
+class _StyledDropdownMenu extends StatelessWidget {
+  final VCombo state;
+  final ComboThemeExtension widgetTheme;
+  final TextEditingController controller;
+  final FocusNode? focusNode;
   final List<String> items;
-  final String? value;
-  final ValueChanged<String?>? onChanged;
-  final VoidCallback? onMouseEnter;
-  final VoidCallback? onMouseExit;
-  final VoidCallback? onFocusIn;
-  final VoidCallback? onFocusOut;
+  final bool enabled;
+  final bool isReadOnly;
+  final TextStyle textStyle;
+  final ValueChanged<String?>? onSelected;
 
-  const StyledDropdownButton({
-    Key? key,
+  const _StyledDropdownMenu({
+    required this.state,
+    required this.widgetTheme,
+    required this.controller,
+    this.focusNode,
     required this.items,
-    this.value,
-    this.onChanged,
-    this.onMouseEnter,
-    this.onMouseExit,
-    this.onFocusIn,
-    this.onFocusOut,
-  }) : super(key: key);
+    required this.enabled,
+    required this.isReadOnly,
+    required this.textStyle,
+    this.onSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final Color backgroundColor = getBackground();
-    final Color textColor = getForeground();
-    final Color borderColor = getBorderColor();
-    final Color iconColor = getIconColor();
-
-    final String? dropdownValue =
-        (value != null && items.isNotEmpty && items.contains(value))
-            ? value
-            : null;
-
-    if (items.isEmpty) {
-      return Container(
-        height: 32,
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: borderColor),
-        ),
-        alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child:
-            Text(value ?? '', style: TextStyle(color: textColor, fontSize: 12)),
-      );
+    if (isReadOnly && focusNode != null) {
+      focusNode!.canRequestFocus = false;
     }
 
-    return MouseRegion(
-      onEnter: (_) => onMouseEnter?.call(),
-      onExit: (_) => onMouseExit?.call(),
-      child: Focus(
-        onFocusChange: (hasFocus) {
-          if (hasFocus) {
-            onFocusIn?.call();
-          } else {
-            onFocusOut?.call();
-          }
-        },
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            height: 32,
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: borderColor),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: dropdownValue,
-                isExpanded: true,
-                items: items.map((String item) {
-                  final bool isSelected = item == value;
-                  return DropdownMenuItem<String>(
-                    value: item,
-                    child: ColoredBox(
-                      color: isSelected
-                          ? getBackgroundSelected()
-                          : Colors.transparent,
-                      child: Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        child: Text(item,
-                            style: TextStyle(color: textColor, fontSize: 12)),
-                      ),
-                    ),
-                  );
-                }).toList(),
-                isDense: true,
-                itemHeight: 32,
-                onChanged: onChanged,
-                style: TextStyle(color: textColor, fontSize: 12),
-                dropdownColor: backgroundColor,
-                icon: Icon(Icons.arrow_drop_down, color: iconColor, size: 20),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return DropdownMenu<String>(
+          enabled: enabled,
+          focusNode: focusNode,
+          controller: controller,
+          width: constraints.maxWidth, 
+          initialSelection: state.text,
+          requestFocusOnTap: !isReadOnly, 
+          enableSearch: !isReadOnly,
+          textStyle: textStyle,
+          inputDecorationTheme: InputDecorationTheme(
+            border: InputBorder.none,
+            isDense: true,
+            contentPadding: widgetTheme.textFieldPadding,
+          ),
+          menuStyle: MenuStyle(
+            backgroundColor: WidgetStateProperty.all(widgetTheme.backgroundColor),
+          ),
+          trailingIcon: Icon(Icons.arrow_drop_down, color: widgetTheme.iconColor),
+          onSelected: onSelected,
+          dropdownMenuEntries: items.map<DropdownMenuEntry<String>>((item) {
+            final bool isSelected = item == state.text;
+            return DropdownMenuEntry<String>(
+              value: item,
+              label: item,
+              style: MenuItemButton.styleFrom(
+                foregroundColor: textStyle.color,
+                minimumSize: Size(constraints.maxWidth, widgetTheme.itemHeight),
+                padding: widgetTheme.textFieldPadding,
+                overlayColor: widgetTheme.hoverBackgroundColor,
+                backgroundColor: isSelected 
+                    ? widgetTheme.selectedItemBackgroundColor 
+                    : Colors.transparent,
               ),
-            ),
-          ),
-        ),
-      ),
+            );
+          }).toList(),
+        );
+      }
     );
   }
 }
 
-class StyledSimpleCombo extends StatelessWidget {
+class _StyledSimpleCombo extends StatelessWidget {
+  final VCombo state;
+  final ComboThemeExtension widgetTheme;
   final TextEditingController controller;
   final FocusNode? focusNode;
   final List<String> items;
   final String? value;
-  final ValueChanged<String?>? onChanged;
-  final ValueChanged<String>? onTextChanged;
-  final ValueChanged<String>? onTextSubmitted;
-  final int? textLimit;
+  final bool enabled;
   final bool readOnly;
-  final VoidCallback? onMouseEnter;
-  final VoidCallback? onMouseExit;
-  final VoidCallback? onFocusIn;
-  final VoidCallback? onFocusOut;
-
-  const StyledSimpleCombo({
-    Key? key,
-    required this.controller,
-    this.focusNode,
-    required this.items,
-    this.value,
-    this.onChanged,
-    this.onTextChanged,
-    this.onTextSubmitted,
-    this.textLimit,
-    this.readOnly = false,
-    this.onMouseEnter,
-    this.onMouseExit,
-    this.onFocusIn,
-    this.onFocusOut,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final Color backgroundColor = getBackground();
-    final Color textColor = getForeground();
-    final Color borderColor = getBorderColor();
-
-    // SIMPLE combo: TextField arriba, lista visible permanentemente abajo
-    return MouseRegion(
-      onEnter: (_) => onMouseEnter?.call(),
-      onExit: (_) => onMouseExit?.call(),
-      child: Material(
-        color: Colors.transparent,
-        child: IntrinsicHeight(
-          child: Container(
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: borderColor),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // TextField editable
-                SizedBox(
-                  height: 32,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    child: TextField(
-                      controller: controller,
-                      focusNode: focusNode,
-                      readOnly: readOnly,
-                      style: TextStyle(color: textColor, fontSize: 12),
-                      decoration: InputDecoration.collapsed(
-                        hintText: '',
-                      ),
-                      maxLines: 1,
-                      maxLength: textLimit,
-                      onChanged: readOnly ? null : onTextChanged,
-                      onSubmitted: readOnly ? null : onTextSubmitted,
-                    ),
-                  ),
-                ),
-                // Separador
-                if (items.isNotEmpty)
-                  Divider(height: 1, thickness: 1, color: borderColor),
-                // Lista visible permanentemente
-                if (items.isNotEmpty)
-                  ...items.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final item = entry.value;
-                    final bool isSelected = item == value;
-                    return InkWell(
-                      onTap: () => onChanged?.call(item),
-                      child: Container(
-                        height: 32,
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        color: isSelected
-                            ? getBackgroundSelected()
-                            : Colors.transparent,
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          item,
-                          style: TextStyle(color: textColor, fontSize: 12),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class StyledEditableCombo extends StatelessWidget {
-  final TextEditingController controller;
-  final FocusNode? focusNode;
-  final List<String> items;
-  final String? value;
+  final TextStyle textStyle;
   final ValueChanged<String?>? onChanged;
   final ValueChanged<String>? onTextChanged;
   final ValueChanged<String>? onTextSubmitted;
-  final int? textLimit;
   final VoidCallback? onMouseEnter;
   final VoidCallback? onMouseExit;
-  final VoidCallback? onFocusIn;
-  final VoidCallback? onFocusOut;
 
-  const StyledEditableCombo({
-    Key? key,
+  const _StyledSimpleCombo({
+    required this.state,
+    required this.widgetTheme,
     required this.controller,
     this.focusNode,
     required this.items,
     this.value,
+    required this.textStyle,
     this.onChanged,
     this.onTextChanged,
     this.onTextSubmitted,
-    this.textLimit,
+    required this.enabled,
+    required this.readOnly,
     this.onMouseEnter,
     this.onMouseExit,
-    this.onFocusIn,
-    this.onFocusOut,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    final Color backgroundColor = getBackground();
-    final Color textColor = getForeground();
-    final Color borderColor = getBorderColor();
-    final Color iconColor = getIconColor();
-
-    // Only use value if it exists in items, otherwise use null
-    final String? dropdownValue =
-        (value != null && items.isNotEmpty && items.contains(value))
-            ? value
-            : null;
-
     return MouseRegion(
       onEnter: (_) => onMouseEnter?.call(),
       onExit: (_) => onMouseExit?.call(),
-      child: Focus(
-        onFocusChange: (hasFocus) {
-          if (hasFocus) {
-            onFocusIn?.call();
-          } else {
-            onFocusOut?.call();
-          }
-        },
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            height: 32,
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: borderColor),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: controller,
-                    focusNode: focusNode,
-                    textAlignVertical: TextAlignVertical.center,
-                    style: TextStyle(color: textColor, fontSize: 12),
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      isDense: true,
-                      counterText: '',
-                    ),
-                    maxLines: 1,
-                    maxLength: textLimit,
-                    onChanged: onTextChanged,
-                    onSubmitted: onTextSubmitted,
-                  ),
-                ),
-                if (items.isNotEmpty)
-                  DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: dropdownValue,
-                      items: items.map((String item) {
-                        final bool isSelected = item == value;
-                        return DropdownMenuItem<String>(
-                          value: item,
-                          child: ColoredBox(
-                            color: isSelected
-                                ? getBackgroundSelected()
-                                : Colors.transparent,
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 4),
-                              child: Text(item,
-                                  style: TextStyle(
-                                      color: textColor, fontSize: 12)),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                      isDense: true,
-                      itemHeight: 32,
-                      onChanged: onChanged,
-                      style: TextStyle(color: textColor, fontSize: 12),
-                      dropdownColor: backgroundColor,
-                      icon: Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: Icon(Icons.arrow_drop_down,
-                            color: iconColor, size: 20),
-                      ),
-                    ),
-                  ),
-              ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: widgetTheme.textFieldPadding,
+            child: TextField(
+              controller: controller,
+              focusNode: focusNode,
+              readOnly: readOnly,
+              style: textStyle,
+              decoration: const InputDecoration.collapsed(hintText: ''),
+              onChanged: readOnly ? null : onTextChanged,
+              onSubmitted: readOnly ? null : onTextSubmitted,
             ),
           ),
-        ),
+          if (items.isNotEmpty)
+            Divider(height: widgetTheme.dividerHeight, thickness: widgetTheme.dividerThickness, color: widgetTheme.dividerColor),
+          ...items.map((item) {
+            final bool isSelected = item == value;
+            return InkWell(
+              hoverColor: widgetTheme.hoverBackgroundColor.withOpacity(0.1),
+              onTap: enabled ? () => onChanged?.call(item) : null,
+              child: Container(
+                width: double.infinity,
+                color: isSelected ? widgetTheme.selectedItemBackgroundColor : Colors.transparent,
+                alignment: Alignment.centerLeft,
+                child: Text(item, style: textStyle),
+              ),
+            );
+          }),
+        ],
       ),
     );
   }
