@@ -224,6 +224,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             Positioned(
               right: 0,
               top: 0,
+              bottom: 0,
               child: topRightControls,
             ),
           ],
@@ -524,9 +525,11 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
           highlightColor: widgetTheme.controlButtonHoverColor.withOpacity(0.2),
           borderRadius: BorderRadius.circular(4),
           child: Container(
+            height: double.infinity,
             padding: EdgeInsets.symmetric(
               horizontal: widgetTheme.controlButtonHorizontalPadding,
             ),
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: isHovered ? widgetTheme.controlButtonHoverColor.withOpacity(0.1) : Colors.transparent,
               borderRadius: BorderRadius.circular(4),
@@ -772,6 +775,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
     final controls = Row(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (topRightComposite != null)
           _buildTopRightComposite(topRightComposite),
@@ -831,6 +835,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
       child: Align(
         alignment: Alignment.topRight,
         child: Container(
+          height: double.infinity,
           decoration: BoxDecoration(
             color: widgetTheme.tabBarBackgroundColor,
             boxShadow: [

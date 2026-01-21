@@ -16,6 +16,7 @@ import 'theme_settings/combo_theme_settings.dart';
 import 'theme_extensions/color_scheme_extension.dart';
 import 'theme_settings/ccombo_theme_settings.dart';
 import 'theme_settings/progressbar_theme_settings.dart';
+import 'theme_settings/list_theme_settings.dart';
 
 Color calculateBackgroundColor(int? backgroundColor, bool useDarkTheme) {
   return backgroundColor != null
@@ -384,6 +385,11 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final listTheme = getListLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -404,6 +410,7 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
       comboTheme,
       ccomboTheme,
       progressBarTheme,
+      listTheme,
     ],
   );
 }
@@ -487,6 +494,11 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final listTheme = getListLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -508,6 +520,7 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
       comboTheme,
       ccomboTheme,
       progressBarTheme,
+      listTheme,
     ],
   );
 }
@@ -594,6 +607,11 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final listTheme = getListDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -614,6 +632,7 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
       comboTheme,
       ccomboTheme,
       progressBarTheme,
+      listTheme,
     ],
   );
 }
@@ -697,6 +716,11 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final listTheme = getListDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -718,6 +742,7 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
       comboTheme,
       ccomboTheme,
       progressBarTheme,
+      listTheme,
     ],
   );
 }
