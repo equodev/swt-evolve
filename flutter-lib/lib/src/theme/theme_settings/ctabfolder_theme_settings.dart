@@ -111,7 +111,7 @@ CTabFolderThemeExtension _getCTabFolderTheme({
     controlButtonHoverColor: colorSchemeExtension.stateDefaultHovered,
     controlButtonHorizontalPadding: 2.0,
     controlButtonSpacing: 2.0,
-    controlButtonScale: 0.5,
+    controlButtonScale: 1,
     
     // Hover reveal animation
     hoverRevealDuration: const Duration(milliseconds: 250),

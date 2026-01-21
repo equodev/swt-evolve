@@ -1,31 +1,40 @@
 import 'package:flutter/material.dart';
-import 'package:swtflutter/src/gen/color.dart';
-import 'package:swtflutter/src/gen/font.dart';
 import '../gen/event.dart';
 import '../gen/list.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../impl/scrollable_evolve.dart';
 import '../styles.dart';
-import 'color_utils.dart';
-import 'utils/font_utils.dart';
+import '../theme/theme_extensions/list_theme_extension.dart';
+import 'utils/text_utils.dart';
+import 'utils/widget_utils.dart';
 
 class ListImpl<T extends ListSwt, V extends VList>
     extends ScrollableImpl<T, V> {
   @override
   Widget build(BuildContext context) {
+    final widgetTheme = Theme.of(context).extension<ListThemeExtension>()!;
+    
     state.selection ??= <int>[];
     state.items ??= <String>[];
 
+    final styleBits = StyleBits(state.style);
+    final isMultiSelect = styleBits.has(SWT.MULTI);
+    final isEnabled = state.enabled ?? true;
+    
+    final hasConstraints = hasBounds(state.bounds);
+    final width = hasConstraints ? state.bounds!.width.toDouble() : null;
+    final height = hasConstraints ? state.bounds!.height.toDouble() : null;
+
     return _StyledList(
+      widgetTheme: widgetTheme,
+      state: state,
       items: state.items!,
       selection: _convertIndicesToItems(state.items!, state.selection!),
-      enabled: state.enabled ?? true,
-      isMultiSelect: state.style.has(SWT.MULTI),
-      width: state.bounds?.width.toDouble(),
-      height: state.bounds?.height.toDouble(),
-      vFont: state.font,
-      textColor: state.foreground,
+      enabled: isEnabled,
+      isMultiSelect: isMultiSelect,
+      width: width,
+      height: height,
       onSelectionChanged: (selectedItems) {
         setState(() {
           state.selection = _convertItemsToIndices(state.items!, selectedItems);
@@ -61,6 +70,8 @@ class ListImpl<T extends ListSwt, V extends VList>
 }
 
 class _StyledList extends StatefulWidget {
+  final ListThemeExtension widgetTheme;
+  final VList state;
   final List<String> items;
   final List<String> selection;
   final bool enabled;
@@ -73,11 +84,10 @@ class _StyledList extends StatefulWidget {
   final VoidCallback onFocusOut;
   final double? width;
   final double? height;
-  final VFont? vFont;
-  final VColor? textColor;
 
   const _StyledList({
-    Key? key,
+    required this.widgetTheme,
+    required this.state,
     required this.items,
     required this.selection,
     required this.enabled,
@@ -90,25 +100,32 @@ class _StyledList extends StatefulWidget {
     required this.onFocusOut,
     this.width,
     this.height,
-    this.vFont,
-    this.textColor,
-  }) : super(key: key);
+  });
 
   @override
-  _StyledListState createState() => _StyledListState();
+  State<_StyledList> createState() => _StyledListState();
 }
 
 class _StyledListState extends State<_StyledList> {
+  bool _isFocused = false;
+
   @override
   Widget build(BuildContext context) {
-    final containerBgColor = getBackground();
-    final borderColor = getBorderColor();
+    final theme = widget.widgetTheme;
+    final backgroundColor = widget.enabled
+        ? theme.backgroundColor
+        : theme.disabledBackgroundColor;
+    
+    final borderColor = _isFocused
+        ? theme.focusedBorderColor
+        : theme.borderColor;
 
     return MouseRegion(
       onEnter: (_) => widget.onMouseEnter(),
       onExit: (_) => widget.onMouseExit(),
       child: Focus(
         onFocusChange: (hasFocus) {
+          setState(() => _isFocused = hasFocus);
           if (hasFocus) {
             widget.onFocusIn();
           } else {
@@ -120,29 +137,32 @@ class _StyledListState extends State<_StyledList> {
           height: widget.height,
           child: Container(
             decoration: BoxDecoration(
-              color: containerBgColor,
+              color: backgroundColor,
               border: Border.all(
                 color: borderColor,
-                width: 1,
+                width: theme.borderWidth,
               ),
+              borderRadius: BorderRadius.circular(theme.borderRadius),
             ),
-            child: ListView.builder(
-              itemCount: widget.items.length,
-              itemExtent: 24,
-              itemBuilder: (context, index) {
-                final item = widget.items[index];
-                final isSelected = widget.selection.contains(item);
-                return _ListItem(
-                  item: item,
-                  isSelected: isSelected,
-                  enabled: widget.enabled,
-                  vFont: widget.vFont,
-                  textColor: widget.textColor,
-                  onTap: () => _handleItemTap(item),
-                  onDoubleTap: () => widget.onItemDoubleClick(item),
-                );
-              },
-            ),
+            child: widget.items.isEmpty
+                ? const SizedBox.shrink()
+                : ListView.builder(
+                    itemCount: widget.items.length,
+                    itemExtent: theme.itemHeight,
+                    itemBuilder: (context, index) {
+                      final item = widget.items[index];
+                      final isSelected = widget.selection.contains(item);
+                      return _ListItem(
+                        widgetTheme: theme,
+                        state: widget.state,
+                        item: item,
+                        isSelected: isSelected,
+                        enabled: widget.enabled,
+                        onTap: () => _handleItemTap(item),
+                        onDoubleTap: () => widget.onItemDoubleClick(item),
+                      );
+                    },
+                  ),
           ),
         ),
       ),
@@ -167,54 +187,96 @@ class _StyledListState extends State<_StyledList> {
   }
 }
 
-class _ListItem extends StatelessWidget {
+class _ListItem extends StatefulWidget {
+  final ListThemeExtension widgetTheme;
+  final VList state;
   final String item;
   final bool isSelected;
   final bool enabled;
-  final VFont? vFont;
-  final VColor? textColor;
   final VoidCallback onTap;
   final VoidCallback onDoubleTap;
 
   const _ListItem({
-    Key? key,
+    required this.widgetTheme,
+    required this.state,
     required this.item,
     required this.isSelected,
     required this.enabled,
-    this.vFont,
-    this.textColor,
     required this.onTap,
     required this.onDoubleTap,
-  }) : super(key: key);
+  });
+
+  @override
+  State<_ListItem> createState() => _ListItemState();
+}
+
+class _ListItemState extends State<_ListItem> {
+  bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColor =
-        isSelected ? getBackgroundSelected() : getBackground();
+    final theme = widget.widgetTheme;
+    
+    final baseBackgroundColor = !widget.enabled
+        ? theme.disabledBackgroundColor
+        : theme.backgroundColor;
+    
+    final selectedOverlayColor = theme.selectedItemBackgroundColor;
+    final hoverOverlayColor = theme.hoverItemBackgroundColor;
+    
+    final textColor = !widget.enabled
+        ? theme.disabledTextColor
+        : widget.isSelected
+            ? theme.selectedItemTextColor
+            : theme.textColor;
 
-    // Get text color - if textColor (VColor) is provided, use it, otherwise use default
-    final finalTextColor = colorFromVColor(textColor,
-        defaultColor: (enabled ? getForeground() : getForegroundDisabled()));
-
-    // Create TextStyle from VFont
-    final textStyle = FontUtils.textStyleFromVFont(
-      vFont,
-      context,
-      color: finalTextColor,
+    final textStyle = getTextStyle(
+      context: context,
+      font: widget.state.font,
+      textColor: textColor,
+      baseTextStyle: theme.textStyle,
     );
 
-    return GestureDetector(
-      onTap: onTap,
-      onDoubleTap: onDoubleTap,
-      child: Container(
-        height: 24,
-        color: backgroundColor,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        alignment: Alignment.centerLeft,
-        child: Text(
-          item,
-          style: textStyle,
-          overflow: TextOverflow.ellipsis,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        onDoubleTap: widget.onDoubleTap,
+        child: Stack(
+          children: [
+            Container(
+              height: theme.itemHeight,
+              color: baseBackgroundColor,
+              padding: theme.itemPadding,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                widget.item,
+                style: textStyle,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (widget.isSelected && widget.enabled)
+              AnimatedOpacity(
+                duration: theme.animationDuration,
+                curve: Curves.easeInOut,
+                opacity: 0.3,
+                child: Container(
+                  height: theme.itemHeight,
+                  color: selectedOverlayColor,
+                ),
+              ),
+            if (!widget.isSelected && widget.enabled)
+              AnimatedOpacity(
+                duration: theme.animationDuration,
+                curve: Curves.easeInOut,
+                opacity: _isHovered ? 0.1 : 0.0,
+                child: Container(
+                  height: theme.itemHeight,
+                  color: hoverOverlayColor,
+                ),
+              ),
+          ],
         ),
       ),
     );
