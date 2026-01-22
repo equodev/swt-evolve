@@ -806,6 +806,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             updateButtons();
             setButtonBounds();
             redraw();
+            requestLayout();
+            updateFolder(UPDATE_TAB_HEIGHT | REDRAW_TABS);
             notifyItemCountChange();
             return;
         }
@@ -827,6 +829,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             selectedIndex = -1;
             int nextSelection = mru ? priority[0] : Math.max(0, index - 1);
             setSelection(nextSelection, true);
+            dirty();
             if (control != null && !control.isDisposed()) {
                 control.setVisible(false);
             }

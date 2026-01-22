@@ -14,6 +14,7 @@ import 'utils/text_utils.dart';
 import '../theme/theme_extensions/ctabitem_theme_extension.dart';
 import '../theme/theme_extensions/ctabfolder_theme_extension.dart';
 import 'utils/widget_utils.dart';
+import 'ctabfolder_evolve.dart';
 
 class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     extends ItemImpl<T, V> {
@@ -47,8 +48,12 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     final imageWidget = _buildImageWidget(context, itemTheme, folderTheme, state.image);
 
     final text = stripAccelerators(state.text) ?? "";
-    final textStyle = itemTheme.tabItemTextStyle;
-    final textColor = itemTheme.tabItemTextColor;
+    final isSelected = TabItemContext.of(context)?.isSelected ?? false;
+    final textColor = isSelected
+        ? itemTheme.tabItemSelectedTextColor
+        : itemTheme.tabItemTextColor;
+    final textStyle = itemTheme.tabItemTextStyle?.copyWith(color: textColor)
+        ?? TextStyle(color: textColor);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -73,8 +78,7 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
             ),
             child: Text(
               text,
-              style: textStyle?.copyWith(color: textColor) ??
-                  TextStyle(color: textColor),
+              style: textStyle,
             ),
           ),
         ],

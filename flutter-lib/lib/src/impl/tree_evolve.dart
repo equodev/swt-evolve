@@ -809,31 +809,31 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     if (selectedItems.isEmpty) return;
 
     final selectedItem = selectedItems.last;
-    
+
     // If already editing, finish editing
     if (_editingItemId != null && _editingItemId == selectedItem.id) {
       finishEditing();
       return;
     }
-    
+
     // Only allow editing if the tree is editable
     if (state.editable != true) {
       return;
     }
-    
+
     // Otherwise, start editing
     startEditing(selectedItem.id);
   }
-  
+
   void startEditing(Object itemId) {
     // Only allow editing if the tree is editable
     if (state.editable != true) {
       return;
     }
-    
+
     final item = _findTreeItemById(itemId);
     if (item == null) return;
-    
+
     // Clean up any existing editing state first
     if (_editingFocusNode != null) {
       _editingFocusNode!.removeListener(_editingFocusListener!);
@@ -842,7 +842,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     if (_editingController != null) {
       _editingController!.dispose();
     }
-    
+
     // Create new editing state
     final initialText = item.text ?? "";
     _editingController = TextEditingController(text: initialText);
@@ -859,41 +859,41 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       }
     };
     _editingFocusNode!.addListener(_editingFocusListener!);
-    
+
     setState(() {
       _editingItemId = itemId;
     });
-    
+
     // Request focus after the frame is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _editingFocusNode?.requestFocus();
     });
   }
-  
+
   void finishEditing() {
     final itemId = _editingItemId;
     final controller = _editingController;
     final focusNode = _editingFocusNode;
     final listener = _editingFocusListener;
-    
+
     // Remove listener before disposing
     if (focusNode != null && listener != null) {
       focusNode.removeListener(listener);
     }
-    
+
     if (itemId != null && controller != null) {
       final newText = controller.text;
       final item = _findTreeItemById(itemId);
-      
+
       if (item != null) {
         final event = VEvent()
           ..text = newText
           ..index = findItemIndex(itemId);
-        
+
         widget.sendModifyModify(state, event);
       }
     }
-    
+
     setState(() {
       controller?.dispose();
       focusNode?.dispose();
@@ -1266,7 +1266,7 @@ class TreeItemContextProvider extends InheritedWidget {
     
     final checkboxChanged = oldWidget.context.checkboxUpdateCounter != context.checkboxUpdateCounter;
     final editingChanged = oldWidget.context.editingItemId != context.editingItemId;
-    
+
     return context.level != oldWidget.context.level ||
         context.isCheckMode != oldWidget.context.isCheckMode ||
         selectionChanged ||

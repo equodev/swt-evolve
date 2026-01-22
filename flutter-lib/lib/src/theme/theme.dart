@@ -165,7 +165,7 @@ ColorSchemeExtension createColorSchemeExtension() {
     warningContainerHovered: const Color(0xFFF5EAE1), // #F5EAE1
     onWarningContainerVariant: const Color(0xFF59040D), // #59040D
     onWarningContainerVariantDisabled: const Color(0x80171819), // #80171819
-    onWarningContainerBorder: const Color(0xFFF0DAC9), // #F0DAC9   
+    onWarningContainerBorder: const Color(0xFFF0DAC9), // #F0DAC9
     onWarningContainerBorderDisabled: const Color(0x33171819), // #33171819
     
     success: const Color(0xFF1BBB77), // #1BBB77
@@ -173,7 +173,7 @@ ColorSchemeExtension createColorSchemeExtension() {
     successHovered: const Color(0xFF169961), // #169961
     onSuccess: const Color(0xFFFFFFFF), // #FFFFFF
     onSuccessVariantDisabled: const Color(0x80171819),
-    successBorder: const Color(0xFF128051), // #128051  
+    successBorder: const Color(0xFF128051), // #128051
     successBorderDisabled: const Color(0x33171819), // #33171819
     successContainer: const Color(0xFFE6F2ED), // #E6F2ED
     successContainerPressed: const Color(0xFFC1E5D6), // #C1E5D6
@@ -209,7 +209,7 @@ ColorSchemeExtension createColorSchemeExtension() {
     stateDefaultEnabled: const Color(0x00FFFFFF), // #00FFFFFF
     stateDefaultHovered: const Color(0x1F000000), // #1F000000
     stateDefaultPressed: const Color(0x33000000), // #33000000
-    stateOnContainerEnabled: const Color(0x00FFFFFF), // #00FFFFFF  
+    stateOnContainerEnabled: const Color(0x00FFFFFF), // #00FFFFFF
     stateOnContainerHovered: const Color(0x0A000000), // #0A000000
     stateOnContainerPressed: const Color(0x14000000), // #14000000
     

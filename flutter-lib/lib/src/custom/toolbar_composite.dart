@@ -27,7 +27,7 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
     final backgroundColor = widgetTheme?.toolbarBackgroundColor ?? Colors.white;
 
     final widgets = children.map((child) => buildMapWidgetFromValue(child)).toList();
-    
+
     return Container(
       decoration: BoxDecoration(
         color: backgroundColor

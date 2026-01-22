@@ -523,7 +523,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         totalTreeWidth = calculatedWidth;
       }
     }
-    
+
     return SizedBox(
       width: totalTreeWidth ?? double.infinity,
       child: MouseRegion(
@@ -546,12 +546,12 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           behavior: HitTestBehavior.opaque,
           onPointerDown: (PointerDownEvent event) {
             if (event.buttons != 1) return;
-            
+
             final localPosition = event.localPosition;
             if (localPosition.dx < expanderAreaWidth && hasChildren) {
               return;
             }
-            
+
             final pressedKeys = RawKeyboard.instance.keysPressed;
             final isCtrlPressed = pressedKeys.contains(LogicalKeyboardKey.controlLeft) ||
                 pressedKeys.contains(LogicalKeyboardKey.controlRight) ||
@@ -559,7 +559,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                 pressedKeys.contains(LogicalKeyboardKey.metaRight);
             final isShiftPressed = pressedKeys.contains(LogicalKeyboardKey.shiftLeft) ||
                 pressedKeys.contains(LogicalKeyboardKey.shiftRight);
-            
+
             _context?.treeImpl?.handleTreeItemSelection(
               state.id,
               isCtrlPressed: isCtrlPressed,
@@ -628,19 +628,19 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               ),
               padding: widgetTheme.itemPadding,
               child: _buildRowWithColumns(
-                context, 
-                texts, 
-                text, 
-                textColor, 
-                widgetTheme, 
-                level, 
-                hasChildren, 
-                expanded, 
-                isCheckMode, 
-                checked, 
-                grayed, 
-                enabled, 
-                selected, 
+                context,
+                texts,
+                text,
+                textColor,
+                widgetTheme,
+                level,
+                hasChildren,
+                expanded,
+                isCheckMode,
+                checked,
+                grayed,
+                enabled,
+                selected,
                 image,
               ),
             ),
@@ -669,8 +669,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
     // Only allow editing on the first column (columnIndex 0)
     final isEditing = columnIndex == 0 &&
-                     _context?.editingItemId == state.id && 
-                     _context?.editingController != null && 
+                     _context?.editingItemId == state.id &&
+                     _context?.editingController != null &&
                      _context?.editingFocusNode != null;
 
     Widget textWidget = isEditing
@@ -707,8 +707,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
     // Wrap text in GestureDetector for double-click editing (only first column)
     // Use deferToChild so only the text area triggers editing, not the padding
-    if (columnIndex == 0 && 
-        _context?.parentTreeValue.editable == true && 
+    if (columnIndex == 0 &&
+        _context?.parentTreeValue.editable == true &&
         !isEditing &&
         _context?.treeImpl != null) {
       textWidget = GestureDetector(
@@ -732,8 +732,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     // Wrap textWidget to prevent it from expanding beyond its content
     // This ensures the GestureDetector only captures clicks on the actual text
     Widget contentWidget = textWidget;
-    if (columnIndex == 0 && 
-        _context?.parentTreeValue.editable == true && 
+    if (columnIndex == 0 &&
+        _context?.parentTreeValue.editable == true &&
         !isEditing) {
       // Use IntrinsicWidth to limit the clickable area to the actual text width
       // Then align it according to the column alignment
