@@ -343,6 +343,11 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
         try {
+            if (srcImage.getImpl() instanceof DartImage dartSrc) {
+                init(dartSrc.getImageData(), 100);
+                init();
+                return;
+            }
             this.getApi().type = srcImage.type;
             /* Get source image size */
             NSSize size = srcImage.handle.size();

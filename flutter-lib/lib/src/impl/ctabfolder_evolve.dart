@@ -40,9 +40,6 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     super.initState();
     _selectedIndex = state.selection ?? 0;
     _horizontalScrollController = ScrollController();
-
-    var e = VEvent()..index = _selectedIndex;
-    widget.sendSelectionSelection(state, e);
   }
 
   @override
@@ -55,9 +52,26 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   @override
   void extraSetState() {
     super.extraSetState();
-    if (state.selection != null && state.selection != _selectedIndex) {
-      _selectedIndex = state.selection!;
+    final itemCount = state.items?.length ?? 0;
+
+    // If Java sent a valid selection, use it
+    if (state.selection != null && state.selection! >= 0 && state.selection! < itemCount) {
+      if (_selectedIndex != state.selection!) {
+        _selectedIndex = state.selection!;
+      }
     }
+    // If state.selection is null (means 0 in Java due to skipDefaultValues) or out of range,
+    // ensure _selectedIndex is valid
+    else if (itemCount > 0) {
+      if (_selectedIndex >= itemCount) {
+        // _selectedIndex is out of range after tab removal, adjust it
+        _selectedIndex = itemCount - 1;
+      } else if (state.selection == null && _selectedIndex != 0) {
+        // state.selection=null means Java has selection=0, update if different
+        _selectedIndex = 0;
+      }
+    }
+
     if (state.minimized != null || state.maximized != null) {
       setState(() {});
     }
@@ -427,9 +441,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             mainAxisSize: MainAxisSize.min,
             children: [
               tab.customContent != null
-                  ? DefaultTextStyle(
-                      style: textStyle?.copyWith(color: textColor) ??
-                          TextStyle(color: textColor),
+                  ? TabItemContextProvider(
+                      isSelected: isSelected,
                       child: tab.customContent!,
                     )
                   : Row(
@@ -713,7 +726,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   Widget tabBody(VCTabItem e) {
     if (e.control != null) {
       final control = e.control!;
-      
+
       if (hasBounds(control.bounds)) {
         final bounds = control.bounds!;
         return SizedBox(
@@ -920,6 +933,36 @@ class _HoverReveal extends StatelessWidget {
         child: child,
       ),
     );
+  }
+}
+
+class TabItemContext {
+  final bool isSelected;
+
+  TabItemContext({
+    required this.isSelected,
+  });
+
+  static TabItemContext? of(BuildContext context) {
+    final provider =
+        context.dependOnInheritedWidgetOfExactType<TabItemContextProvider>();
+    return provider?.context;
+  }
+}
+
+class TabItemContextProvider extends InheritedWidget {
+  final TabItemContext context;
+
+  TabItemContextProvider({
+    Key? key,
+    required bool isSelected,
+    required Widget child,
+  })  : context = TabItemContext(isSelected: isSelected),
+        super(key: key, child: child);
+
+  @override
+  bool updateShouldNotify(TabItemContextProvider oldWidget) {
+    return context.isSelected != oldWidget.context.isSelected;
   }
 }
 
