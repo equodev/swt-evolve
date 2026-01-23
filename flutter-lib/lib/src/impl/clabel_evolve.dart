@@ -6,15 +6,154 @@ import '../gen/swt.dart';
 import '../impl/canvas_evolve.dart';
 import '../impl/color_utils.dart';
 import './utils/image_utils.dart';
+import './utils/widget_utils.dart';
+import '../theme/theme_extensions/clabel_theme_extension.dart';
 
 class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
     extends CanvasImpl<T, V> {
 
-  /// Helper method to build an image widget from VImage using ImageUtils with async support
-  Widget _buildImageWidget(VImage? image, bool enabled) {
+  @override
+  Widget build(BuildContext context) {
+    final widgetTheme = Theme.of(context).extension<CLabelThemeExtension>()!;
+
+    final enabled = state.enabled ?? true;
+
+    return _buildCLabel(context, widgetTheme, enabled);
+  }
+
+  Widget _buildCLabel(BuildContext context, CLabelThemeExtension widgetTheme, bool enabled) {
+    // Treat "<none>" as empty text
+    final rawText = state.text ?? '';
+    final text = rawText == '<none>' ? '' : rawText;
+    final image = state.image;
+
+    final textAlign = _getTextAlignFromAlignment(state.alignment, widgetTheme.textAlign);
+    final backgroundColor = getBackgroundColor(
+      background: state.background,
+      defaultColor: widgetTheme.backgroundColor,
+    );
+    final hasValidBounds = hasBounds(state.bounds);
+    final constraints = getConstraintsFromBounds(state.bounds);
+
+    final child = _buildCLabelContent(context, widgetTheme, enabled, text, image, textAlign, hasValidBounds);
+
+    // Margins from state
+    final padding = EdgeInsets.fromLTRB(
+      (state.leftMargin ?? 0).toDouble(),
+      (state.topMargin ?? 0).toDouble(),
+      (state.rightMargin ?? 0).toDouble(),
+      (state.bottomMargin ?? 0).toDouble(),
+    );
+
+    return wrap(
+      Opacity(
+        opacity: enabled ? 1.0 : widgetTheme.disabledOpacity,
+        child: Container(
+          constraints: constraints,
+          padding: padding,
+          decoration: backgroundColor != null
+              ? BoxDecoration(color: backgroundColor)
+              : null,
+          alignment: hasValidBounds ? getAlignmentFromTextAlign(textAlign) : null,
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCLabelContent(
+    BuildContext context,
+    CLabelThemeExtension widgetTheme,
+    bool enabled,
+    String text,
+    VImage? image,
+    TextAlign textAlign,
+    bool hasValidBounds,
+  ) {
+    final textColor = enabled
+        ? getForegroundColor(
+            foreground: state.foreground,
+            defaultColor: widgetTheme.primaryTextColor,
+          )
+        : widgetTheme.disabledTextColor;
+
+    final textStyle = enabled
+        ? widgetTheme.primaryTextStyle?.copyWith(color: textColor)!
+        : widgetTheme.disabledTextStyle?.copyWith(color: textColor)!;
+
+    Widget? imageWidget;
+    if (image != null) {
+      imageWidget = _buildImageWidget(image, enabled, widgetTheme.iconSize);
+    }
+
+    if (image != null && text.isNotEmpty) {
+      // Image + Text
+      return Row(
+        mainAxisSize: hasValidBounds ? MainAxisSize.max : MainAxisSize.min,
+        mainAxisAlignment: getMainAxisAlignmentFromTextAlign(textAlign, widgetTheme.mainAxisAlignment),
+        crossAxisAlignment: widgetTheme.crossAxisAlignment,
+        children: [
+          imageWidget!,
+          SizedBox(width: widgetTheme.iconTextSpacing),
+          Flexible(
+            child: hasValidBounds
+                ? ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: state.bounds!.width.toDouble(),
+                      maxHeight: state.bounds!.height.toDouble(),
+                    ),
+                    child: Text(
+                      text,
+                      textAlign: textAlign,
+                      overflow: TextOverflow.ellipsis,
+                      style: textStyle,
+                    ),
+                  )
+                : Text(
+                    text,
+                    textAlign: textAlign,
+                    overflow: TextOverflow.ellipsis,
+                    style: textStyle,
+                  ),
+          ),
+        ],
+      );
+    } else if (image != null) {
+      // Only image
+      return imageWidget!;
+    } else if (text.isNotEmpty) {
+      // Only text
+      return hasValidBounds
+          ? ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: state.bounds!.width.toDouble(),
+                maxHeight: state.bounds!.height.toDouble(),
+              ),
+              child: Text(
+                text,
+                textAlign: textAlign,
+                overflow: TextOverflow.ellipsis,
+                style: textStyle,
+              ),
+            )
+          : Text(
+              text,
+              textAlign: textAlign,
+              overflow: TextOverflow.ellipsis,
+              style: textStyle,
+            );
+    } else {
+      // Empty CLabel
+      return const SizedBox.shrink();
+    }
+  }
+
+  Widget _buildImageWidget(VImage? image, bool enabled, double iconSize) {
     return FutureBuilder<Widget?>(
       future: ImageUtils.buildVImageAsync(
         image,
+        width: image?.imageData?.width?.toDouble() ?? iconSize,
+        height: image?.imageData?.height?.toDouble() ?? iconSize,
         enabled: enabled,
         constraints: null,
         useBinaryImage: true,
@@ -25,14 +164,14 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
           return snapshot.data ?? const SizedBox.shrink();
         }
         // Show placeholder while loading
-        return const SizedBox(
-          width: 16,
-          height: 16,
+        return SizedBox(
+          width: iconSize,
+          height: iconSize,
           child: Center(
             child: SizedBox(
-              width: 12,
-              height: 12,
-              child: CircularProgressIndicator(strokeWidth: 2),
+              width: iconSize * 0.75,
+              height: iconSize * 0.75,
+              child: const CircularProgressIndicator(strokeWidth: 2),
             ),
           ),
         );
@@ -40,118 +179,12 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // Treat "<none>" as empty text
-    final rawText = state.text ?? '';
-    final text = rawText == '<none>' ? '' : rawText;
-    final enabled = state.enabled ?? true;
-    final image = state.image;
-
-    final alignment = _getAlignment();
-
-    final backgroundColor = colorFromVColor(
-      state.background,
-      defaultColor: Colors.transparent
-    );
-
-    final textColor = colorFromVColor(
-      state.foreground,
-      defaultColor: Theme.of(context).textTheme.bodyMedium?.color
-    );
-
-    Widget content;
-
-    if (image != null && text.isNotEmpty) {
-      // Image + Text
-      final imageWidget = _buildImageWidget(image, enabled);
-      content = Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: _getMainAxisAlignment(alignment),
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          imageWidget,
-          const SizedBox(width: 4),
-          Flexible(
-            child: Text(
-              text,
-              textAlign: alignment,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                color: textColor,
-              ),
-            ),
-          ),
-        ],
-      );
-    } else if (image != null) {
-      // Only image
-      content = _buildImageWidget(image, enabled);
-    } else if (text.isNotEmpty) {
-      // Only text
-      content = Text(
-        text,
-        textAlign: alignment,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontSize: 12,
-          color: textColor,
-        ),
-      );
-    } else {
-      // Empty CLabel
-      content = const SizedBox.shrink();
+  TextAlign _getTextAlignFromAlignment(int? alignment, TextAlign defaultAlign) {
+    if (alignment != null) {
+      if ((alignment & SWT.CENTER) != 0) return TextAlign.center;
+      if ((alignment & SWT.RIGHT) != 0) return TextAlign.right;
+      if ((alignment & SWT.LEFT) != 0) return TextAlign.left;
     }
-
-    // Render with content
-    return wrap(
-      Opacity(
-        opacity: enabled ? 1.0 : 0.5,
-        child: Container(
-          decoration: BoxDecoration(
-            color: backgroundColor,
-          ),
-          padding: EdgeInsets.fromLTRB(
-            (state.leftMargin ?? 0).toDouble(),
-            (state.topMargin ?? 0).toDouble(),
-            (state.rightMargin ?? 0).toDouble(),
-            (state.bottomMargin ?? 0).toDouble(),
-          ),
-          alignment: _getContainerAlignment(alignment),
-          child: content,
-        ),
-      ),
-    );
-  }
-
-  TextAlign _getAlignment() {
-    if (state.alignment != null) {
-      if ((state.alignment! & SWT.CENTER) != 0) return TextAlign.center;
-      if ((state.alignment! & SWT.RIGHT) != 0) return TextAlign.right;
-    }
-    return TextAlign.left;
-  }
-
-  MainAxisAlignment _getMainAxisAlignment(TextAlign alignment) {
-    switch (alignment) {
-      case TextAlign.center:
-        return MainAxisAlignment.center;
-      case TextAlign.right:
-        return MainAxisAlignment.end;
-      default:
-        return MainAxisAlignment.start;
-    }
-  }
-
-  Alignment _getContainerAlignment(TextAlign alignment) {
-    switch (alignment) {
-      case TextAlign.center:
-        return Alignment.center;
-      case TextAlign.right:
-        return Alignment.centerRight;
-      default:
-        return Alignment.centerLeft;
-    }
+    return defaultAlign;
   }
 }
