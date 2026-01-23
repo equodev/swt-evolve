@@ -17,6 +17,8 @@ import 'theme_extensions/color_scheme_extension.dart';
 import 'theme_settings/ccombo_theme_settings.dart';
 import 'theme_settings/progressbar_theme_settings.dart';
 import 'theme_settings/list_theme_settings.dart';
+import 'theme_settings/clabel_theme_settings.dart';
+import 'theme_settings/link_theme_settings.dart';
 
 Color calculateBackgroundColor(int? backgroundColor, bool useDarkTheme) {
   return backgroundColor != null
@@ -390,6 +392,16 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final clabelTheme = getCLabelLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final linkTheme = getLinkLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -411,6 +423,8 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
       ccomboTheme,
       progressBarTheme,
       listTheme,
+      clabelTheme,
+      linkTheme,
     ],
   );
 }
@@ -499,6 +513,16 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final clabelTheme = getCLabelLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final linkTheme = getLinkLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -521,6 +545,8 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
       ccomboTheme,
       progressBarTheme,
       listTheme,
+      clabelTheme,
+      linkTheme,
     ],
   );
 }
@@ -612,6 +638,16 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final clabelTheme = getCLabelDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final linkTheme = getLinkDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -633,6 +669,8 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
       ccomboTheme,
       progressBarTheme,
       listTheme,
+      clabelTheme,
+      linkTheme,
     ],
   );
 }
@@ -721,6 +759,16 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final clabelTheme = getCLabelDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final linkTheme = getLinkDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -743,6 +791,8 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
       ccomboTheme,
       progressBarTheme,
       listTheme,
+      clabelTheme,
+      linkTheme,
     ],
   );
 }

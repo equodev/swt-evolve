@@ -1,29 +1,39 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:swtflutter/src/gen/font.dart';
-import '../gen/color.dart';
 import '../gen/event.dart';
 import '../gen/link.dart';
 import '../impl/control_evolve.dart';
-import 'color_utils.dart';
-import 'utils/font_utils.dart';
+import './utils/widget_utils.dart';
+import './utils/font_utils.dart';
+import '../theme/theme_extensions/link_theme_extension.dart';
 
 class LinkImpl<T extends LinkSwt, V extends VLink> extends ControlImpl<T, V> {
   @override
   Widget build(BuildContext context) {
-    return super.wrap(_buildLink());
-  }
+    final widgetTheme = Theme.of(context).extension<LinkThemeExtension>()!;
 
-  Widget _buildLink() {
-    final text = state.text ?? '';
     final enabled = state.enabled ?? true;
 
-    return StyledLink(
+    return _buildLink(context, widgetTheme, enabled);
+  }
+
+  Widget _buildLink(BuildContext context, LinkThemeExtension widgetTheme, bool enabled) {
+    final text = state.text ?? '';
+    final hasValidBounds = hasBounds(state.bounds);
+    final constraints = getConstraintsFromBounds(state.bounds);
+
+    final backgroundColor = getBackgroundColor(
+      background: state.background,
+      defaultColor: widgetTheme.backgroundColor,
+    );
+
+    final child = StyledLink(
       text: text,
       enabled: enabled,
       linkForeground: state.linkForeground,
-      backgroundColor: state.background,
+      backgroundColor: null,
       vFont: state.font,
+      widgetTheme: widgetTheme,
       onTap: (url) {
         if (enabled) {
           var e = VEvent()..text = url;
@@ -35,15 +45,31 @@ class LinkImpl<T extends LinkSwt, V extends VLink> extends ControlImpl<T, V> {
       onFocusIn: () => widget.sendFocusFocusIn(state, null),
       onFocusOut: () => widget.sendFocusFocusOut(state, null),
     );
+
+    return Opacity(
+      opacity: enabled ? 1.0 : widgetTheme.disabledOpacity,
+      child: wrap(
+        Container(
+          constraints: constraints ?? BoxConstraints(minHeight: widgetTheme.minHeight),
+          padding: widgetTheme.padding,
+          alignment: hasValidBounds ? getAlignmentFromTextAlign(widgetTheme.textAlign) : null,
+          decoration: backgroundColor != null
+              ? BoxDecoration(color: backgroundColor)
+              : null,
+          child: child,
+        ),
+      ),
+    );
   }
 }
 
 class StyledLink extends StatefulWidget {
   final String text;
   final bool enabled;
-  final VColor? linkForeground;
-  final VColor? backgroundColor;
-  final VFont? vFont;
+  final dynamic linkForeground;
+  final dynamic backgroundColor;
+  final dynamic vFont;
+  final LinkThemeExtension widgetTheme;
   final Function(String) onTap;
   final VoidCallback? onMouseEnter;
   final VoidCallback? onMouseExit;
@@ -57,6 +83,7 @@ class StyledLink extends StatefulWidget {
     this.linkForeground,
     this.backgroundColor,
     this.vFont,
+    required this.widgetTheme,
     required this.onTap,
     this.onMouseEnter,
     this.onMouseExit,
@@ -92,13 +119,7 @@ class _StyledLinkState extends State<StyledLink> {
             widget.onFocusOut?.call();
           }
         },
-        child: Container(
-          height: 32,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          alignment: Alignment.centerLeft,
-          color: colorFromVColor(widget.backgroundColor),
-          child: _buildRichText(),
-        ),
+        child: _buildRichText(),
       ),
     );
   }
@@ -106,15 +127,20 @@ class _StyledLinkState extends State<StyledLink> {
   Widget _buildRichText() {
     final List<TextSpan> spans = _parseText(widget.text);
 
-    // Get text color from VColor or use default
-    final finalTextColor =
-        colorFromVColor(widget.linkForeground, defaultColor: getForeground());
+    final textColor = widget.enabled
+        ? getForegroundColor(
+            foreground: widget.linkForeground,
+            defaultColor: widget.widgetTheme.textColor,
+          )
+        : widget.widgetTheme.disabledTextColor;
 
-    // Create TextStyle from VFont
-    final baseTextStyle = FontUtils.textStyleFromVFont(
-      widget.vFont,
-      context,
-      color: finalTextColor,
+    final baseTextStyle = getTextStyle(
+      context: context,
+      font: widget.vFont,
+      textColor: textColor,
+      baseTextStyle: widget.enabled
+          ? widget.widgetTheme.textStyle
+          : widget.widgetTheme.disabledTextStyle,
     );
 
     return RichText(
@@ -131,10 +157,18 @@ class _StyledLinkState extends State<StyledLink> {
         caseSensitive: false);
     final matches = regex.allMatches(text);
 
-    // Use custom linkForeground if available, otherwise use default
-    final Color? linkColor =
-        colorFromVColor(widget.linkForeground, defaultColor: getLinkColor());
-    final Color disabledColor = getForegroundDisabled();
+    final linkColor = widget.enabled
+        ? getForegroundColor(
+            foreground: widget.linkForeground,
+            defaultColor: (_isHovered || _isFocused)
+                ? widget.widgetTheme.linkHoverTextColor
+                : widget.widgetTheme.linkTextColor,
+          )
+        : widget.widgetTheme.disabledTextColor;
+
+    final linkDecoration = (_isHovered || _isFocused)
+        ? widget.widgetTheme.linkHoverDecoration
+        : widget.widgetTheme.linkDecoration;
 
     return matches.map((match) {
       if (match.group(2) != null) {
@@ -143,9 +177,8 @@ class _StyledLinkState extends State<StyledLink> {
         return TextSpan(
           text: linkText,
           style: TextStyle(
-            color: widget.enabled ? linkColor : disabledColor,
-            decoration:
-                _isHovered || _isFocused ? TextDecoration.underline : null,
+            color: linkColor,
+            decoration: linkDecoration,
             height: 1.0,
           ),
           recognizer: widget.enabled
