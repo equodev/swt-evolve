@@ -19,6 +19,9 @@ import 'theme_settings/progressbar_theme_settings.dart';
 import 'theme_settings/list_theme_settings.dart';
 import 'theme_settings/clabel_theme_settings.dart';
 import 'theme_settings/link_theme_settings.dart';
+import 'theme_settings/group_theme_settings.dart';
+import 'theme_settings/expandbar_theme_settings.dart';
+import 'theme_settings/expanditem_theme_settings.dart';
 
 Color calculateBackgroundColor(int? backgroundColor, bool useDarkTheme) {
   return backgroundColor != null
@@ -402,6 +405,21 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final groupTheme = getGroupLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final expandBarTheme = getExpandBarLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final expandItemTheme = getExpandItemLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -425,6 +443,9 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
       listTheme,
       clabelTheme,
       linkTheme,
+      groupTheme,
+      expandBarTheme,
+      expandItemTheme,
     ],
   );
 }
@@ -523,6 +544,21 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final groupTheme = getGroupLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final expandBarTheme = getExpandBarLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final expandItemTheme = getExpandItemLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -547,6 +583,9 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
       listTheme,
       clabelTheme,
       linkTheme,
+      groupTheme,
+      expandBarTheme,
+      expandItemTheme,
     ],
   );
 }
@@ -648,6 +687,21 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final groupTheme = getGroupDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final expandBarTheme = getExpandBarDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final expandItemTheme = getExpandItemDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -671,6 +725,9 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
       listTheme,
       clabelTheme,
       linkTheme,
+      groupTheme,
+      expandBarTheme,
+      expandItemTheme,
     ],
   );
 }
@@ -768,6 +825,21 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
     colorScheme: colorScheme,
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
+  );  
+  final groupTheme = getGroupDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final expandBarTheme = getExpandBarDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final expandItemTheme = getExpandItemDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
   );
   return ThemeData(
     useMaterial3: true,
@@ -793,6 +865,9 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
       listTheme,
       clabelTheme,
       linkTheme,
+      groupTheme,
+      expandBarTheme,
+      expandItemTheme,
     ],
   );
 }
