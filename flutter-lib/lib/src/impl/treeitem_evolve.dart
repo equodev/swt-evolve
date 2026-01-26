@@ -237,52 +237,45 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     );
   }
 
-  Widget _buildItemIcon(TreeThemeExtension? widgetTheme, bool enabled, bool selected,
+  Widget? _buildItemIcon(TreeThemeExtension? widgetTheme, bool enabled, bool selected,
       bool hasChildren, bool expanded, VImage? image) {
-    final Color iconColor = _getItemIconColor(widgetTheme!, enabled, selected);
-    final IconData iconData = _getItemIconData(hasChildren, expanded);
-
-    if (image != null) {
-      return FutureBuilder<Widget?>(
-        future: ImageUtils.buildVImageAsync(
-          image,
-          enabled: enabled,
-          constraints: BoxConstraints(
-            minWidth: widgetTheme.itemIconSize,
-            minHeight: widgetTheme.itemIconSize,
-            maxWidth: widgetTheme.itemIconSize,
-            maxHeight: widgetTheme.itemIconSize,
-          ),
-          useBinaryImage: true,
-          renderAsIcon: true,
-        ),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            return snapshot.data ?? Icon(iconData, size: widgetTheme.itemIconSize, color: iconColor);
-          }
-          // Show default icon while loading
-          return SizedBox(
-            width: widgetTheme.itemIconSize,
-            height: widgetTheme.itemIconSize,
-            child: Icon(iconData, size: widgetTheme.itemIconSize, color: iconColor),
-          );
-        },
-      );
+    // Only show an icon if explicitly provided
+    if (image == null) {
+      return null;
     }
 
-    return Icon(iconData, size: widgetTheme.itemIconSize, color: iconColor);
+    final Color iconColor = _getItemIconColor(widgetTheme!, enabled, selected);
+
+    return FutureBuilder<Widget?>(
+      future: ImageUtils.buildVImageAsync(
+        image,
+        enabled: enabled,
+        constraints: BoxConstraints(
+          minWidth: widgetTheme.itemIconSize,
+          minHeight: widgetTheme.itemIconSize,
+          maxWidth: widgetTheme.itemIconSize,
+          maxHeight: widgetTheme.itemIconSize,
+        ),
+        useBinaryImage: false,
+        renderAsIcon: true,
+      ),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done && snapshot.data != null) {
+          return snapshot.data!;
+        }
+        // Return null if image fails to load
+        return SizedBox(
+          width: widgetTheme.itemIconSize,
+          height: widgetTheme.itemIconSize,
+        );
+      },
+    );
   }
+
 
   Color _getItemIconColor(TreeThemeExtension theme, bool enabled, bool selected) {
     if (!enabled) return theme.itemIconDisabledColor;
     return selected ? theme.itemIconSelectedColor : theme.itemIconColor;
-  }
-
-  IconData _getItemIconData(bool hasChildren, bool expanded) {
-    if (hasChildren) {
-      return expanded ? Icons.folder_open : Icons.folder;
-    }
-    return Icons.cloud;
   }
 
   Widget _buildOtherColumns(BuildContext context, List<String>? texts, Color textColor, 
@@ -471,6 +464,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       enabled: enabled,
     );
 
+    final icon = _buildItemIcon(theme, enabled, selected, hasChildren, expanded, image);
+
     return Row(
       children: [
         SizedBox(width: theme.itemIndent * level),
@@ -482,10 +477,11 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         ),
         SizedBox(width: theme.expandIconSpacing),
         if (checkbox != null) checkbox,
-        Container(
-          margin: EdgeInsets.only(right: theme.itemIconSpacing),
-          child: _buildItemIcon(theme, enabled, selected, hasChildren, expanded, image),
-        ),
+         if (icon != null)
+          Container(
+            margin: EdgeInsets.only(right: theme.itemIconSpacing),
+            child: icon,
+          ),
       ],
     );
   }
