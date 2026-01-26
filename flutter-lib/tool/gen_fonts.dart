@@ -4,18 +4,25 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/rendering.dart';
-import 'all_fonts.dart';
+
+part 'all_fonts_macos.dart';
+//part 'all_fonts_linux.dart';
+part 'all_fonts_windows.dart';
 
 const BASE_SIZE = 10;
+final Map<String, List<(String, FontStyle, FontWeight)>> AllFonts = {};
 
 /// Run this as a Flutter app/script
 /// Writes two files:
 ///   - build/font_metrics.json
 ///   - GenFontMetrics.java
-Future<void> main() async {
+Future<void> main(List<String> args) async {
+  _add_fonts_macos(AllFonts);
+  // _add_fonts_linux(AllFonts);
+  _add_fonts_windows(AllFonts);
+  final os = args[0]!;
+  final fonts = AllFonts[os]!;
   WidgetsFlutterBinding.ensureInitialized();
-
-  final fonts = AllFonts;
 
   final sizes = [4, 6, 8, BASE_SIZE, 17, 20, 25, 40, 80, 160];
 
@@ -117,8 +124,9 @@ Future<void> main() async {
 
   final javaSrc = generateJava(out);
   final javaFile = File(
-    '../swt_native/src/main/java/dev/equo/swt/GenFontMetrics.java',
+    '../swt_native/src/$os/java/dev/equo/swt/GenFontMetrics.java',
   );
+  javaFile.parent.createSync(recursive: true);
   javaFile.writeAsStringSync(javaSrc);
   print('Wrote ${javaFile.path}');
   exit(0);

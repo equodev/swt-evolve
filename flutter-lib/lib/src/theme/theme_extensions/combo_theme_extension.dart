@@ -35,9 +35,8 @@ class ComboThemeExtension extends ThemeExtension<ComboThemeExtension> with _$Com
   final EdgeInsets itemPadding;
 
   // Sizes
-  final double height;
-  final double itemHeight;
   final double iconSize;
+  final double iconSpacing;
   
   // Font styles
   final TextStyle? textStyle;
@@ -66,9 +65,8 @@ class ComboThemeExtension extends ThemeExtension<ComboThemeExtension> with _$Com
     required this.textFieldPadding,
     required this.itemPadding,
     required this.dividerThickness,
-    required this.height,
-    required this.itemHeight,
     required this.iconSize,
+    required this.iconSpacing,
     this.textStyle,
     this.itemTextStyle,
     required this.dividerColor,

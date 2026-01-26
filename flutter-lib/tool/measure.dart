@@ -30,7 +30,8 @@ String widgetName(String fqn) => fqn.split('.').last;
 // Measurement test case - generic for any widget
 class MeasurementCase {
   final String fqn;
-  final String name;
+  String name;
+  final String style; // Style name like "LEFT", "READ_ONLY", "HORIZONTAL|SEPARATOR"
   final Map<String, dynamic> expectedComponents;
   final Widget Function(GlobalKey key) widgetBuilder;
   final bool useFontTheme;
@@ -38,10 +39,11 @@ class MeasurementCase {
   MeasurementCase({
     required String descr,
     required this.fqn,
+    required this.style,
     required this.expectedComponents,
     required this.widgetBuilder,
     this.useFontTheme = false,
-  }) : name = "${widgetName(fqn).toLowerCase()}_$descr";
+  }) : name = "${widgetName(fqn)}_${style}_$descr";
 
   Widget buildWidget(GlobalKey key) {
     return RepaintBoundary(child: widgetBuilder(key));
@@ -52,7 +54,9 @@ class MeasurementCase {
 class MeasurementResult {
   final String fqn;
   final String name;
+  final String style; // Style name like "LEFT", "READ_ONLY", "HORIZONTAL|SEPARATOR"
   final Size finalSize;
+  final Map<String, dynamic> expectedComponents;
   final Map<String, dynamic> discoveredComponents;
   final Map<String, RenderBoxInfo> renderBoxHierarchy;
   final bool useFontTheme;
@@ -60,7 +64,9 @@ class MeasurementResult {
   MeasurementResult(
     this.fqn,
     this.name,
+    this.style,
     this.finalSize,
+    this.expectedComponents,
     this.discoveredComponents,
     this.renderBoxHierarchy,
     this.useFontTheme,
@@ -80,7 +86,7 @@ class MeasurementResult {
 class RenderBoxInfo {
   final String type;
   final Size size;
-  final EdgeInsets? padding;
+  final EdgeInsetsGeometry? padding;
   final EdgeInsets? border;
   final EdgeInsets? margin;
   final int depth;
@@ -118,10 +124,10 @@ class RenderBoxInfo {
         },
       if (padding != null)
         'padding': {
-          'left': padding!.left,
-          'top': padding!.top,
-          'right': padding!.right,
-          'bottom': padding!.bottom,
+          'left': (padding is EdgeInsetsDirectional) ? (padding as EdgeInsetsDirectional)!.start : (padding as EdgeInsets)!.left,
+          'top': (padding is EdgeInsetsDirectional) ? (padding as EdgeInsetsDirectional)!.top : (padding as EdgeInsets)!.top,
+          'right': (padding is EdgeInsetsDirectional) ? (padding as EdgeInsetsDirectional)!.end : (padding as EdgeInsets)!.right,
+          'bottom': (padding is EdgeInsetsDirectional) ? (padding as EdgeInsetsDirectional)!.bottom : (padding as EdgeInsets)!.bottom,
         },
       if (border != null)
         'border': {
@@ -208,7 +214,9 @@ class WidgetMeasurer {
       if (currentCaseIndex >= themeSamplingCases.length) {
         return Container();
       }
-      return themeSamplingCases[currentCaseIndex].buildWidget(key);
+      var tCase = themeSamplingCases[currentCaseIndex];
+      tCase.name = "${widgetName(tCase.fqn)}_${tCase.style}_theme${getCurrentThemeName()}";
+      return tCase.buildWidget(key);
     }
   }
 
@@ -256,7 +264,7 @@ class WidgetMeasurer {
     print('=== [$phaseLabel] Measuring: ${testCase.name} ===');
     print('Final size: $size');
 
-    if (ENABLE_SCREENSHOTS && currentPhase == 1) {
+    if (ENABLE_SCREENSHOTS) {
       await captureScreenshot(renderBox, testCase.fqn, testCase.name);
     }
 
@@ -277,7 +285,9 @@ class WidgetMeasurer {
       final result = MeasurementResult(
         testCase.fqn,
         testCase.name,
+        testCase.style,
         size,
+        testCase.expectedComponents,
         discoveredComponents,
         hierarchy,
         testCase.useFontTheme,
@@ -290,30 +300,27 @@ class WidgetMeasurer {
         if (textInfo['textStyle'] != null) {
           final textStyleMap = textInfo['textStyle'] as Map<String, dynamic>;
 
-          // Parse widget type and style from test case name
-          final parts = testCase.name.split('_');
-          if (parts.length >= 2) {
-            final widgetType = parts[0]; // e.g., "label"
-            final style = parts[1].toUpperCase(); // e.g., "HORIZONTAL"
-            final key = '$widgetType:$style';
+          // Use style from test case directly (no parsing needed)
+          final widgetType = widgetName(testCase.fqn);
+          final style = testCase.style;
+          final key = '$widgetType:$style';
 
-            final themeName = getCurrentThemeName();
-            extractedThemes.putIfAbsent(themeName, () => {});
-            extractedThemes[themeName]![key] = {
-              'fontFamily': textStyleMap['fontFamily'] ?? 'System',
-              'fontSize': (textStyleMap['fontSize'] as double?)?.toInt() ?? 12,
-              'fontBold':
-                  textStyleMap['fontWeight'] != null &&
-                  (textStyleMap['fontWeight'] as int) >= FontWeight.w600.index,
-              'fontItalic':
-                  textStyleMap['fontStyle'] != null &&
-                  (textStyleMap['fontStyle'] as int) == FontStyle.italic.index,
-            };
+          final themeName = getCurrentThemeName();
+          extractedThemes.putIfAbsent(themeName, () => {});
+          extractedThemes[themeName]![key] = {
+            'fontFamily': textStyleMap['fontFamily'] ?? 'System',
+            'fontSize': (textStyleMap['fontSize'] as double?)?.toInt() ?? 12,
+            'fontBold':
+                textStyleMap['fontWeight'] != null &&
+                (textStyleMap['fontWeight'] as int) >= FontWeight.w600.index,
+            'fontItalic':
+                textStyleMap['fontStyle'] != null &&
+                (textStyleMap['fontStyle'] as int) == FontStyle.italic.index,
+          };
 
-            print(
-              '  Extracted TextStyle for $themeName/$key: ${extractedThemes[themeName]![key]}',
-            );
-          }
+          print(
+            '  Extracted TextStyle for $themeName/$key: ${extractedThemes[themeName]![key]}',
+          );
         }
       }
     }
@@ -455,6 +462,14 @@ class WidgetMeasurer {
       }
     }
 
+    // Find widget types that have theme sampling cases but no extracted text
+    // These need a default theme with TextStyle.def()
+    final widgetTypesWithThemeCases = <String, String>{};
+    for (var testCase in themeSamplingCases) {
+      final widgetType = widgetName(testCase.fqn);
+      widgetTypesWithThemeCases[widgetType] = testCase.fqn;
+    }
+
     // Generate theme file per widget type
     for (var entry in byWidgetType.entries) {
       final widgetType = entry.key;
@@ -465,20 +480,31 @@ class WidgetMeasurer {
 
       _generateJavaWidgetThemeFromExtracted(fqn, widgetType, themesByStyle);
     }
+
+    // Generate default theme for widgets without text
+    for (var entry in widgetTypesWithThemeCases.entries) {
+      final widgetType = entry.key;
+      final fqn = entry.value;
+
+      if (!byWidgetType.containsKey(widgetType)) {
+        print('Generating default theme for $widgetType (no text component)');
+        _generateJavaWidgetThemeFromExtracted(fqn, widgetType, null);
+      }
+    }
   }
 
   RenderBoxInfo _analyzeRenderBox(RenderBox renderBox, int depth) {
     final type = renderBox.runtimeType.toString();
     final size = renderBox.size;
 
-    EdgeInsets? padding;
+    EdgeInsetsGeometry? padding;
     EdgeInsets? border;
     EdgeInsets? margin;
     String? textContent;
     String? imageSource;
 
     if (renderBox is RenderPadding) {
-      padding = renderBox.padding as EdgeInsets?;
+      padding = renderBox.padding as EdgeInsetsGeometry?;
     }
 
     if (renderBox is RenderDecoratedBox) {
@@ -504,6 +530,15 @@ class WidgetMeasurer {
       // Extract TextStyle from the TextSpan
       if (inlineSpan is TextSpan) {
         textStyle = inlineSpan.style;
+      }
+    } else if (renderBox is RenderEditable) {
+      // Handle TextField/TextFormField which use RenderEditable
+      final inlineSpan = renderBox.text;
+      if (inlineSpan != null) {
+        textContent = inlineSpan.toPlainText();
+        if (inlineSpan is TextSpan) {
+          textStyle = inlineSpan.style;
+        }
       }
     }
 
@@ -600,13 +635,11 @@ class WidgetMeasurer {
     final groupedResults = <String, List<MeasurementResult>>{};
 
     for (var result in results) {
-      final parts = result.name.split('_');
-      if (parts.length >= 2) {
-        final widgetType = parts[0]; // e.g., "btn" -> "Button"
-        final style = parts[1]; // e.g., "push" -> "PUSH"
-        final key = '$widgetType:$style';
-        groupedResults.putIfAbsent(key, () => []).add(result);
-      }
+      // Use the style field directly instead of parsing from name
+      final widgetType = widgetName(result.fqn);
+      final style = result.style;
+      final key = '$widgetType:$style';
+      groupedResults.putIfAbsent(key, () => []).add(result);
     }
 
     final analyses = <WidgetAnalysis>[];
@@ -678,15 +711,22 @@ class WidgetMeasurer {
       }
     }
 
-    // Check if empty text affects sizing (e.g., Label measures empty text "", Button doesn't)
+    // Check if empty text affects sizing (e.g., Label measures empty text "", Button CHECK/RADIO have indicator padding)
+    // This is true if: the expected text was empty AND either:
+    //   1. Empty text was discovered (widget renders empty text), OR
+    //   2. Widget size indicates a fixed element like checkbox/radio indicator is present
     bool emptyTextAffectsSizing = false;
     for (var result in styleResults) {
-      if (result.discoveredComponents.containsKey('text')) {
-        final textInfo = result.discoveredComponents['text'];
-        final textContent = textInfo['content'] as String?;
-        if (textContent != null && textContent.isEmpty) {
-          emptyTextAffectsSizing = true;
-          break;
+      // Check if this was an empty text test case
+      if (result.expectedComponents.containsKey('text')) {
+        final expectedText = result.expectedComponents['text'] as String?;
+        if (expectedText != null && expectedText.isEmpty) {
+          // Empty text was expected
+          if (result.discoveredComponents.containsKey('text')) {
+            // Text was discovered even when empty - definitely affects sizing (e.g., Label)
+            emptyTextAffectsSizing = true;
+            break;
+          }
         }
       }
     }
@@ -891,7 +931,7 @@ class WidgetMeasurer {
     final capitalizedWidgetType =
         widgetType[0].toUpperCase() + widgetType.substring(1);
     return WidgetAnalysis(
-      '${capitalizedWidgetType}_${style.toUpperCase()}',
+      '${capitalizedWidgetType}-${style.toUpperCase()}',
       styleResults,
       constants,
       algorithm,
@@ -1041,7 +1081,7 @@ class WidgetMeasurer {
     // Generate inner classes only for unique constant sets
     for (var group in groupsByConstants.values) {
       // Use the simplest (shortest) style name for the class
-      final styles = group.map((a) => a.widgetType.split('_')[1]).toList();
+      final styles = group.map((a) => a.widgetType.split('-')[1]).toList();
       styles.sort((a, b) => a.length.compareTo(b.length));
       final representativeStyle = styles.first;
       final javaClassName = representativeStyle.replaceAll('|', '_');
@@ -1088,6 +1128,14 @@ class WidgetMeasurer {
         }
       }
 
+      // Generate EMPTY_TEXT_AFFECTS_SIZING constant for text-based widgets
+      if (!isConstantSize) {
+        final emptyTextAffectsSizing = constants['emptyTextAffectsSizing'] as bool;
+        buffer.writeln(
+          '        static final boolean EMPTY_TEXT_AFFECTS_SIZING = $emptyTextAffectsSizing;',
+        );
+      }
+
       buffer.writeln('    }');
       buffer.writeln();
     }
@@ -1099,12 +1147,7 @@ class WidgetMeasurer {
 
     // Check if any style is VERTICAL
     final hasVerticalStyle = analyses.any(
-      (a) => a.widgetType.split('_')[1] == 'VERTICAL',
-    );
-
-    // Check if empty text affects sizing (should be consistent across all styles of a widget)
-    final emptyTextAffectsSizing = analyses.any(
-      (a) => a.derivedConstants['emptyTextAffectsSizing'] == true,
+      (a) => a.widgetType.split('-')[1] == 'VERTICAL',
     );
 
     // Generate computeSize method (public API)
@@ -1144,9 +1187,12 @@ class WidgetMeasurer {
         buffer.writeln('${indent}width = $styleName.MIN_WIDTH;');
         buffer.writeln('${indent}height = $styleName.MIN_HEIGHT;');
       } else {
+        // Make padding conditional on text/image existence when empty text doesn't affect sizing
+        final emptyTextAffectsSizing = constants['emptyTextAffectsSizing'] as bool;
+
         // Text-based widget - calculate size based on text, image, spacing, and padding
         if (hasAnyTextBasedWidget) {
-          buffer.writeln('${indent}m.text = computeText(widget, m);');
+          buffer.writeln('${indent}m.text = computeText(widget, m, $styleName.EMPTY_TEXT_AFFECTS_SIZING);');
         }
         if (hasAnyImageSupport) {
           buffer.writeln('${indent}m.image = computeImage(widget);');
@@ -1189,22 +1235,20 @@ class WidgetMeasurer {
           textHeightExpr = textY;
         }
 
-        // Make padding conditional on text/image existence when empty text doesn't affect sizing
-        final emptyTextAffectsSizing =
-            constants['emptyTextAffectsSizing'] as bool;
+        // // Make padding conditional on text/image existence when empty text doesn't affect sizing
+        // final emptyTextAffectsSizing =
+        //     constants['emptyTextAffectsSizing'] as bool;
+
+        // Width: conditionally add padding when text exists
+        // If IMAGE_SPACING is present, don't check for image - it's already handled separately
+        final widthCondition = (hasAnyImageSupport && imageAffectsWidth && !hasImageSpacing)
+            ? '($textX > 0 || m.image.x() > 0)'
+            : '$textX > 0';
 
         if (useHorizontalPadding) {
-          if (emptyTextAffectsSizing) {
-            // Always add padding (for widgets like Label)
-            buffer.writeln(
-              '${indent}width = Math.max($textWidthExpr + $styleName.HORIZONTAL_PADDING, $styleName.MIN_WIDTH);',
-            );
-          } else {
-            // Conditionally add padding only when text exists (for widgets like Button)
-            buffer.writeln(
-              '${indent}width = Math.max($textWidthExpr + ($textX > 0 ? $styleName.HORIZONTAL_PADDING : 0), $styleName.MIN_WIDTH);',
-            );
-          }
+          buffer.writeln(
+            '${indent}width = Math.max($textWidthExpr + ($widthCondition ? $styleName.HORIZONTAL_PADDING : 0), $styleName.MIN_WIDTH);',
+          );
         } else {
           buffer.writeln(
             '${indent}width = Math.max($textWidthExpr, $styleName.MIN_WIDTH);',
@@ -1240,22 +1284,22 @@ class WidgetMeasurer {
       ..sort((a, b) {
         final aMinStyles = a
             .map(
-              (analysis) => analysis.widgetType.split('_')[1].split('|').length,
+              (analysis) => analysis.widgetType.split('-')[1].split('|').length,
             )
             .reduce((min, count) => count < min ? count : min);
         final bMinStyles = b
             .map(
-              (analysis) => analysis.widgetType.split('_')[1].split('|').length,
+              (analysis) => analysis.widgetType.split('-')[1].split('|').length,
             )
             .reduce((min, count) => count < min ? count : min);
         final aMaxStyles = a
             .map(
-              (analysis) => analysis.widgetType.split('_')[1].split('|').length,
+              (analysis) => analysis.widgetType.split('-')[1].split('|').length,
             )
             .reduce((max, count) => count > max ? count : max);
         final bMaxStyles = b
             .map(
-              (analysis) => analysis.widgetType.split('_')[1].split('|').length,
+              (analysis) => analysis.widgetType.split('-')[1].split('|').length,
             )
             .reduce((max, count) => count > max ? count : max);
         // Sort by max styles descending, then by min styles descending
@@ -1265,7 +1309,7 @@ class WidgetMeasurer {
 
     // Determine fallback (use first analysis as fallback)
     final fallbackAnalysis = analyses.first;
-    final fallbackStyle = fallbackAnalysis.widgetType.split('_')[1];
+    final fallbackStyle = fallbackAnalysis.widgetType.split('-')[1];
     final fallbackJavaClassName = fallbackStyle.replaceAll('|', '_');
     final fallbackClassName = styleToClassName[fallbackStyle]!;
 
@@ -1274,7 +1318,7 @@ class WidgetMeasurer {
 
     for (int i = 0; i < sortedGroups.length; i++) {
       final group = sortedGroups[i];
-      final styles = group.map((a) => a.widgetType.split('_')[1]).toList();
+      final styles = group.map((a) => a.widgetType.split('-')[1]).toList();
 
       // Get the representative class name
       final javaClassName = styleToClassName[styles.first]!;
@@ -1340,18 +1384,34 @@ class WidgetMeasurer {
         ? ' // ${fallbackStyles.join(', ')}'
         : ' // default';
 
-    buffer.writeln('        } else {$fallbackComment');
-    generateSizeCalculation(
-      fallbackClassName,
-      fallbackIsConstantSize,
-      fallbackUseHorizontalPadding,
-      fallbackUseVerticalPadding,
-      fallbackImageAffectsWidth,
-      fallbackImageAffectsHeight,
-      fallbackConstants,
-      fallbackIsVertical,
-    );
-    buffer.writeln('        }');
+    if (branchCount > 0) {
+      // There were if/else if branches, so we need an else block
+      buffer.writeln('        } else {$fallbackComment');
+      generateSizeCalculation(
+        fallbackClassName,
+        fallbackIsConstantSize,
+        fallbackUseHorizontalPadding,
+        fallbackUseVerticalPadding,
+        fallbackImageAffectsWidth,
+        fallbackImageAffectsHeight,
+        fallbackConstants,
+        fallbackIsVertical,
+      );
+      buffer.writeln('        }');
+    } else {
+      // No branches - all styles use the same constants, just generate the code directly
+      generateSizeCalculation(
+        fallbackClassName,
+        fallbackIsConstantSize,
+        fallbackUseHorizontalPadding,
+        fallbackUseVerticalPadding,
+        fallbackImageAffectsWidth,
+        fallbackImageAffectsHeight,
+        fallbackConstants,
+        fallbackIsVertical,
+        indent: '        ',
+      );
+    }
     buffer.writeln();
     buffer.writeln(
       '        m.widget = new Point((int) Math.ceil(width), (int) Math.ceil(height));',
@@ -1379,16 +1439,18 @@ class WidgetMeasurer {
     // Generate computeText helper if any style is text-based
     if (hasAnyTextBasedWidget) {
       buffer.writeln(
-        '    private static PointD computeText(Dart$widgetType widget, Measure m) {',
+        '    private static PointD computeText(Dart$widgetType widget, Measure m, boolean emptyTextAffectsSizing) {',
       );
       buffer.writeln('        String text = widget.getText();');
-
-      // Use different null check based on whether empty text affects sizing
-      if (emptyTextAffectsSizing) {
-        buffer.writeln('        if (text != null) {');
-      } else {
-        buffer.writeln('        if (text != null && !text.isEmpty()) {');
+      // PASSWORD style only applies to Text widget
+      if (widgetType == 'Text') {
+        buffer.writeln('        if (text != null && hasFlags(widget.getStyle(), SWT.PASSWORD)) {');
+        buffer.writeln('            text = "*".repeat(text.length());');
+        buffer.writeln('        }');
       }
+
+      // Use parameter to decide whether empty text should be measured
+      buffer.writeln('        if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {');
 
       buffer.writeln(
         '            if (!Config.getConfigFlags().use_swt_fonts) {',
@@ -1421,33 +1483,36 @@ class WidgetMeasurer {
   void _generateJavaWidgetThemeFromExtracted(
     String fqn,
     String widgetType,
-    Map<String, Map<String, dynamic>> themesByStyle,
+    Map<String, Map<String, dynamic>>? themesByStyle,
   ) {
     // themesByStyle format: themeName -> styleName -> textStyle
+    // If null, widget has no text - use TextStyle.def()
     // We need to generate methods for each theme: getNonDefaultTheme(), getDefaultTheme(), etc.
 
-    final capitalizedWidgetType =
-        widgetType[0].toUpperCase() + widgetType.substring(1);
+    final widgetClass = widgetName(fqn);
 
     // Check if all styles have the same textStyle for ALL themes
+    // Also true when themesByStyle is null (no text, use default)
     bool allStylesSameForAllThemes = true;
-    for (var themeEntry in themesByStyle.entries) {
-      final stylesMap = themeEntry.value;
-      Map<String, dynamic>? firstTextStyle;
-      for (var textStyle in stylesMap.values) {
-        if (firstTextStyle == null) {
-          firstTextStyle = textStyle;
-        } else {
-          if (textStyle['fontFamily'] != firstTextStyle['fontFamily'] ||
-              textStyle['fontSize'] != firstTextStyle['fontSize'] ||
-              textStyle['fontBold'] != firstTextStyle['fontBold'] ||
-              textStyle['fontItalic'] != firstTextStyle['fontItalic']) {
-            allStylesSameForAllThemes = false;
-            break;
+    if (themesByStyle != null) {
+      for (var themeEntry in themesByStyle.entries) {
+        final stylesMap = themeEntry.value;
+        Map<String, dynamic>? firstTextStyle;
+        for (var textStyle in stylesMap.values) {
+          if (firstTextStyle == null) {
+            firstTextStyle = textStyle;
+          } else {
+            if (textStyle['fontFamily'] != firstTextStyle['fontFamily'] ||
+                textStyle['fontSize'] != firstTextStyle['fontSize'] ||
+                textStyle['fontBold'] != firstTextStyle['fontBold'] ||
+                textStyle['fontItalic'] != firstTextStyle['fontItalic']) {
+              allStylesSameForAllThemes = false;
+              break;
+            }
           }
         }
+        if (!allStylesSameForAllThemes) break;
       }
-      if (!allStylesSameForAllThemes) break;
     }
 
     final buffer = StringBuffer();
@@ -1455,37 +1520,54 @@ class WidgetMeasurer {
     buffer.writeln();
 
     if (allStylesSameForAllThemes) {
-      // Simple case: single textStyle across all styles
+      // Simple case: single textStyle across all styles (or no text at all)
       buffer.writeln(
-        'public record ${capitalizedWidgetType}Theme (TextStyle textStyle) {',
+        'public record ${widgetClass}Theme (TextStyle textStyle) {',
       );
-      buffer.writeln('    public static ${capitalizedWidgetType}Theme get() {');
+      buffer.writeln('    public static ${widgetClass}Theme get() {');
       buffer.writeln(
-        '        return Themes.getTheme().${widgetType.toLowerCase()};',
+        '        return Themes.getTheme().${widgetField(widgetClass)};',
       );
       buffer.writeln('    }');
       buffer.writeln();
 
-      // Generate one method per theme
-      for (var themeEntry in themesByStyle.entries) {
-        final themeName = themeEntry.key;
-        final stylesMap = themeEntry.value;
-        final textStyle = stylesMap.values.first; // All styles are the same
+      if (themesByStyle != null) {
+        // Generate one method per theme with extracted text styles
+        for (var themeEntry in themesByStyle.entries) {
+          final themeName = themeEntry.key;
+          final stylesMap = themeEntry.value;
+          final textStyle = stylesMap.values.first; // All styles are the same
 
-        final fontFamily = ((textStyle['fontFamily'] ?? 'System') as String)
-            .replaceAll(".AppleSystemUIFont", "System");
-        final fontSize = textStyle['fontSize'] ?? 12;
-        final fontBold = textStyle['fontBold'] ?? false;
-        final fontItalic = textStyle['fontItalic'] ?? false;
+          final fontFamily = ((textStyle['fontFamily'] ?? 'System') as String)
+              .replaceAll(".AppleSystemUIFont", "System")
+              .replaceAll("Roboto", "System")
+              .replaceAll("Segoe UI", "System");
+          final fontSize = textStyle['fontSize'] ?? 12;
+          final fontBold = textStyle['fontBold'] ?? false;
+          final fontItalic = textStyle['fontItalic'] ?? false;
 
-        buffer.writeln(
-          '    public static ${capitalizedWidgetType}Theme get${themeName}Theme() {',
-        );
-        buffer.writeln(
-          '        return new ${capitalizedWidgetType}Theme(new TextStyle("$fontFamily", $fontSize, $fontBold, $fontItalic));',
-        );
-        buffer.writeln('    }');
-        buffer.writeln();
+          buffer.writeln(
+            '    public static ${widgetClass}Theme get${themeName}Theme() {',
+          );
+          buffer.writeln(
+            '        return new ${widgetClass}Theme(new TextStyle("$fontFamily", $fontSize, $fontBold, $fontItalic));',
+          );
+          buffer.writeln('    }');
+          buffer.writeln();
+        }
+      } else {
+        // No text component - generate default themes using TextStyle.def()
+        for (var themeConfig in themesToMeasure) {
+          final themeName = themeConfig.name;
+          buffer.writeln(
+            '    public static ${widgetClass}Theme get${themeName}Theme() {',
+          );
+          buffer.writeln(
+            '        return new ${widgetClass}Theme(TextStyle.def());',
+          );
+          buffer.writeln('    }');
+          buffer.writeln();
+        }
       }
       buffer.writeln('}');
     } else {
@@ -1493,18 +1575,19 @@ class WidgetMeasurer {
       buffer.writeln('import java.util.Map;');
       buffer.writeln();
       buffer.writeln(
-        'public record ${capitalizedWidgetType}Theme (Map<String, TextStyle> textStyles) {',
+        'public record ${widgetClass}Theme (Map<String, TextStyle> textStyles) {',
       );
-      buffer.writeln('    public static ${capitalizedWidgetType}Theme get() {');
+      buffer.writeln('    public static ${widgetClass}Theme get() {');
       buffer.writeln(
-        '        return Themes.getTheme().${widgetType.toLowerCase()};',
+        '        return Themes.getTheme().${widgetField(widgetClass)};',
       );
       buffer.writeln('    }');
       buffer.writeln();
       buffer.writeln('    public TextStyle getTextStyle(int style) {');
 
       // Use styles from first theme to generate the getTextStyle method
-      final firstTheme = themesByStyle.values.first;
+      // themesByStyle is guaranteed non-null here (else branch only reached when styles differ)
+      final firstTheme = themesByStyle!.values.first;
       int count = 0;
       for (var styleName in firstTheme.keys) {
         final prefix = count == 0 ? '        if' : '        } else if';
@@ -1527,15 +1610,15 @@ class WidgetMeasurer {
       buffer.writeln();
 
       // Generate one method per theme
-      for (var themeEntry in themesByStyle.entries) {
+      for (var themeEntry in themesByStyle!.entries) {
         final themeName = themeEntry.key;
         final stylesMap = themeEntry.value;
 
         buffer.writeln(
-          '    public static ${capitalizedWidgetType}Theme get${themeName}Theme() {',
+          '    public static ${widgetClass}Theme get${themeName}Theme() {',
         );
         buffer.writeln(
-          '        return new ${capitalizedWidgetType}Theme(Map.of(',
+          '        return new ${widgetClass}Theme(Map.of(',
         );
 
         final entries = <String>[];
@@ -1543,7 +1626,9 @@ class WidgetMeasurer {
           final styleName = styleEntry.key;
           final textStyle = styleEntry.value;
           final fontFamily = ((textStyle['fontFamily'] ?? 'System') as String)
-              .replaceAll(".AppleSystemUIFont", "System");
+              .replaceAll(".AppleSystemUIFont", "System")
+              .replaceAll("Roboto", "System")
+              .replaceAll("Segoe UI", "System");
           final fontSize = textStyle['fontSize'] ?? 12;
           final fontBold = textStyle['fontBold'] ?? false;
           final fontItalic = textStyle['fontItalic'] ?? false;
@@ -1561,11 +1646,13 @@ class WidgetMeasurer {
     }
 
     final themeFile = File(
-      '../swt_native/src/main/java/dev/equo/swt/size/${capitalizedWidgetType}Theme.java',
+      '../swt_native/src/main/java/dev/equo/swt/size/${widgetClass}Theme.java',
     );
     themeFile.writeAsStringSync(buffer.toString());
     print('Generated: ${themeFile.path}');
   }
+
+  String widgetField(String widgetType) => widgetType[0].toLowerCase() + widgetType.substring(1);
 }
 
 // Test app that runs measurements

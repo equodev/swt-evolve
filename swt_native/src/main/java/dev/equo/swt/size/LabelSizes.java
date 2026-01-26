@@ -25,6 +25,7 @@ public class LabelSizes {
         static final double HORIZONTAL_PADDING = 8.0;
         static final double VERTICAL_PADDING = 4.0;
         static final double IMAGE_SPACING = 8.0;
+        static final boolean EMPTY_TEXT_AFFECTS_SIZING = false;
     }
 
     static class HORIZONTAL_SEPARATOR {
@@ -38,6 +39,7 @@ public class LabelSizes {
         static final double HORIZONTAL_PADDING = 8.0;
         static final double VERTICAL_PADDING = 4.0;
         static final double IMAGE_SPACING = 8.0;
+        static final boolean EMPTY_TEXT_AFFECTS_SIZING = false;
     }
 
     static class VERTICAL_SEPARATOR {
@@ -63,12 +65,12 @@ public class LabelSizes {
             width = VERTICAL_SEPARATOR.MIN_WIDTH;
             height = VERTICAL_SEPARATOR.MIN_HEIGHT;
         } else if (hasFlags(style, SWT.VERTICAL)) {
-            m.text = computeText(widget, m);
+            m.text = computeText(widget, m, VERTICAL.EMPTY_TEXT_AFFECTS_SIZING);
             m.image = computeImage(widget);
             width = Math.max((m.text.y() + m.image.x() + (m.image.x() > 0 ? VERTICAL.IMAGE_SPACING : 0)) + (m.text.y() > 0 ? VERTICAL.HORIZONTAL_PADDING : 0), VERTICAL.MIN_WIDTH);
             height = Math.max(Math.max(m.text.x(), m.image.y()) + ((m.text.x() > 0 || m.image.y() > 0) ? VERTICAL.VERTICAL_PADDING : 0), VERTICAL.MIN_HEIGHT);
         } else { // HORIZONTAL
-            m.text = computeText(widget, m);
+            m.text = computeText(widget, m, HORIZONTAL.EMPTY_TEXT_AFFECTS_SIZING);
             m.image = computeImage(widget);
             width = Math.max((m.text.x() + m.image.x() + (m.image.x() > 0 ? HORIZONTAL.IMAGE_SPACING : 0)) + (m.text.x() > 0 ? HORIZONTAL.HORIZONTAL_PADDING : 0), HORIZONTAL.MIN_WIDTH);
             height = Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? HORIZONTAL.VERTICAL_PADDING : 0), HORIZONTAL.MIN_HEIGHT);
@@ -86,9 +88,9 @@ public class LabelSizes {
         return PointD.zero;
     }
 
-    private static PointD computeText(DartLabel widget, Measure m) {
+    private static PointD computeText(DartLabel widget, Measure m, boolean emptyTextAffectsSizing) {
         String text = widget.getText();
-        if (text != null && !text.isEmpty()) {
+        if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
             if (!Config.getConfigFlags().use_swt_fonts) {
                 m.textStyle = LabelTheme.get().textStyle();
             } else {

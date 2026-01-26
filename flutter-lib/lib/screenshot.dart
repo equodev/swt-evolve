@@ -4,7 +4,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
-Future<void> captureScreenshot(RenderBox renderBox, String fqn, String caseName) async {
+Future<void> captureScreenshot(RenderBox? renderBox, String fqn, String caseName) async {
+  if (renderBox == null) return;
   try {
     RenderRepaintBoundary? boundary;
     RenderObject? current = renderBox;
@@ -33,6 +34,7 @@ Future<void> captureScreenshot(RenderBox renderBox, String fqn, String caseName)
       screenshotsDir.createSync(recursive: true);
     }
 
+    caseName = caseName.replaceAll("|", "+");
     final file = File('${screenshotsDir.path}/$caseName.png');
     await file.writeAsBytes(byteData.buffer.asUint8List());
     print('Screenshot saved: ${file.path}');

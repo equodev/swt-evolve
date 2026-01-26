@@ -94,7 +94,7 @@ ButtonThemeExtension _getButtonTheme({
     
     // Border radius
     pushButtonBorderRadius: 4.0,
-    radioButtonBorderRadius: 20.0,
+    radioButtonBorderRadius: 16.8,
     dropdownButtonBorderRadius: 4.0,
     checkboxBorderRadius: 2.0,
     checkboxGrayedBorderRadius: 1.0,
@@ -112,7 +112,7 @@ ButtonThemeExtension _getButtonTheme({
     checkboxFontStyle: textTheme.bodyMedium,
     
     // Radio Button sizes
-    radioButtonSize: 20.0,
+    radioButtonSize: 16.8,
     radioButtonInnerSize: 8.0,
     radioButtonTextSpacing: 8.0,
     
@@ -120,6 +120,7 @@ ButtonThemeExtension _getButtonTheme({
     dropdownButtonIconSize: 24.0,
     
     // Checkbox sizes
+    checkboxSize: 16.8,
     checkboxCheckmarkSizeMultiplier: 0.7,
     checkboxGrayedMarginMultiplier: 0.17,
     
@@ -194,15 +195,38 @@ Color getPushButtonBorderColor(
       : widgetTheme.secondaryButtonBorderColor;
 }
 
-double getCheckboxSize(VButton state, double? fontSize) {
+double getCheckboxSize(
+  VButton state,
+  ButtonThemeExtension widgetTheme, {
+  double? textLineHeight,
+  bool? hasText,
+  bool? hasImage,
+}) {
   if (hasBounds(state.bounds)) {
-    return (state.bounds!.height.toDouble() * 0.7).clamp(16.0, 24.0);
+    // Use minimum of width/height to make a square
+    final minDimension = state.bounds!.width < state.bounds!.height
+        ? state.bounds!.width.toDouble()
+        : state.bounds!.height.toDouble();
+    return minDimension;
   }
   
-  if (fontSize != null) {
-    return (fontSize * 1.2).clamp(16.0, 24.0);
+  return widgetTheme.checkboxSize;
+}
+
+double getRadioButtonSize(
+  VButton state,
+  ButtonThemeExtension widgetTheme, {
+  double? textLineHeight,
+  bool? hasText,
+  bool? hasImage,
+}) {
+  if (hasBounds(state.bounds)) {
+    final minDimension = state.bounds!.width < state.bounds!.height
+        ? state.bounds!.width.toDouble()
+        : state.bounds!.height.toDouble();
+    return minDimension;
   }
-  
-  return 18.0;
+
+  return widgetTheme.radioButtonSize;
 }
 

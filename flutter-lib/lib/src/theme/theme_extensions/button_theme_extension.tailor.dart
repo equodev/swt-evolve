@@ -63,6 +63,7 @@ mixin _$ButtonThemeExtensionTailorMixin
   double get radioButtonInnerSize;
   double get radioButtonTextSpacing;
   double get dropdownButtonIconSize;
+  double get checkboxSize;
   double get checkboxCheckmarkSizeMultiplier;
   double get checkboxGrayedMarginMultiplier;
   double get imageTextSpacing;
@@ -123,6 +124,7 @@ mixin _$ButtonThemeExtensionTailorMixin
     double? radioButtonInnerSize,
     double? radioButtonTextSpacing,
     double? dropdownButtonIconSize,
+    double? checkboxSize,
     double? checkboxCheckmarkSizeMultiplier,
     double? checkboxGrayedMarginMultiplier,
     double? imageTextSpacing,
@@ -212,6 +214,7 @@ mixin _$ButtonThemeExtensionTailorMixin
           radioButtonTextSpacing ?? this.radioButtonTextSpacing,
       dropdownButtonIconSize:
           dropdownButtonIconSize ?? this.dropdownButtonIconSize,
+      checkboxSize: checkboxSize ?? this.checkboxSize,
       checkboxCheckmarkSizeMultiplier:
           checkboxCheckmarkSizeMultiplier ??
           this.checkboxCheckmarkSizeMultiplier,
@@ -440,6 +443,7 @@ mixin _$ButtonThemeExtensionTailorMixin
       dropdownButtonIconSize: t < 0.5
           ? dropdownButtonIconSize
           : other.dropdownButtonIconSize,
+      checkboxSize: t < 0.5 ? checkboxSize : other.checkboxSize,
       checkboxCheckmarkSizeMultiplier: t < 0.5
           ? checkboxCheckmarkSizeMultiplier
           : other.checkboxCheckmarkSizeMultiplier,
@@ -674,6 +678,10 @@ mixin _$ButtonThemeExtensionTailorMixin
               other.dropdownButtonIconSize,
             ) &&
             const DeepCollectionEquality().equals(
+              checkboxSize,
+              other.checkboxSize,
+            ) &&
+            const DeepCollectionEquality().equals(
               checkboxCheckmarkSizeMultiplier,
               other.checkboxCheckmarkSizeMultiplier,
             ) &&
@@ -751,6 +759,7 @@ mixin _$ButtonThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(radioButtonInnerSize),
       const DeepCollectionEquality().hash(radioButtonTextSpacing),
       const DeepCollectionEquality().hash(dropdownButtonIconSize),
+      const DeepCollectionEquality().hash(checkboxSize),
       const DeepCollectionEquality().hash(checkboxCheckmarkSizeMultiplier),
       const DeepCollectionEquality().hash(checkboxGrayedMarginMultiplier),
       const DeepCollectionEquality().hash(imageTextSpacing),
@@ -843,6 +852,7 @@ extension ButtonThemeExtensionBuildContextProps on BuildContext {
       buttonThemeExtension.radioButtonTextSpacing;
   double get dropdownButtonIconSize =>
       buttonThemeExtension.dropdownButtonIconSize;
+  double get checkboxSize => buttonThemeExtension.checkboxSize;
   double get checkboxCheckmarkSizeMultiplier =>
       buttonThemeExtension.checkboxCheckmarkSizeMultiplier;
   double get checkboxGrayedMarginMultiplier =>

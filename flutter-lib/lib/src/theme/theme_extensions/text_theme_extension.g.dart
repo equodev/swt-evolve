@@ -48,18 +48,6 @@ TextThemeExtension _$TextThemeExtensionFromJson(Map<String, dynamic> json) =>
       disabledBorderColor: const ColorConverter().fromJson(
         json['disabledBorderColor'] as String,
       ),
-      prefixIconColor: const ColorConverter().fromJson(
-        json['prefixIconColor'] as String,
-      ),
-      suffixIconColor: const ColorConverter().fromJson(
-        json['suffixIconColor'] as String,
-      ),
-      disabledIconColor: const ColorConverter().fromJson(
-        json['disabledIconColor'] as String,
-      ),
-      errorIconColor: const ColorConverter().fromJson(
-        json['errorIconColor'] as String,
-      ),
       borderRadius: (json['borderRadius'] as num).toDouble(),
       borderWidth: (json['borderWidth'] as num).toDouble(),
       hoverBorderWidth: (json['hoverBorderWidth'] as num).toDouble(),
@@ -68,14 +56,6 @@ TextThemeExtension _$TextThemeExtensionFromJson(Map<String, dynamic> json) =>
       contentPadding: const EdgeInsetsConverter().fromJson(
         json['contentPadding'] as Map<String, dynamic>,
       ),
-      prefixPadding: const EdgeInsetsConverter().fromJson(
-        json['prefixPadding'] as Map<String, dynamic>,
-      ),
-      suffixPadding: const EdgeInsetsConverter().fromJson(
-        json['suffixPadding'] as Map<String, dynamic>,
-      ),
-      prefixIconSpacing: (json['prefixIconSpacing'] as num).toDouble(),
-      suffixIconSpacing: (json['suffixIconSpacing'] as num).toDouble(),
       fontSize: (json['fontSize'] as num).toDouble(),
       fontWeight: const FontWeightConverter().fromJson(
         (json['fontWeight'] as num).toInt(),
@@ -85,9 +65,6 @@ TextThemeExtension _$TextThemeExtensionFromJson(Map<String, dynamic> json) =>
       lineHeight: (json['lineHeight'] as num).toDouble(),
       helperTextFontSize: (json['helperTextFontSize'] as num).toDouble(),
       helperTextSpacing: (json['helperTextSpacing'] as num).toDouble(),
-      prefixIconSize: (json['prefixIconSize'] as num).toDouble(),
-      suffixIconSize: (json['suffixIconSize'] as num).toDouble(),
-      errorIconSize: (json['errorIconSize'] as num).toDouble(),
       focusAnimationDuration: Duration(
         microseconds: (json['focusAnimationDuration'] as num).toInt(),
       ),
@@ -138,22 +115,12 @@ Map<String, dynamic> _$TextThemeExtensionToJson(
   'disabledBorderColor': const ColorConverter().toJson(
     instance.disabledBorderColor,
   ),
-  'prefixIconColor': const ColorConverter().toJson(instance.prefixIconColor),
-  'suffixIconColor': const ColorConverter().toJson(instance.suffixIconColor),
-  'disabledIconColor': const ColorConverter().toJson(
-    instance.disabledIconColor,
-  ),
-  'errorIconColor': const ColorConverter().toJson(instance.errorIconColor),
   'borderRadius': instance.borderRadius,
   'borderWidth': instance.borderWidth,
   'hoverBorderWidth': instance.hoverBorderWidth,
   'focusedBorderWidth': instance.focusedBorderWidth,
   'errorBorderWidth': instance.errorBorderWidth,
   'contentPadding': const EdgeInsetsConverter().toJson(instance.contentPadding),
-  'prefixPadding': const EdgeInsetsConverter().toJson(instance.prefixPadding),
-  'suffixPadding': const EdgeInsetsConverter().toJson(instance.suffixPadding),
-  'prefixIconSpacing': instance.prefixIconSpacing,
-  'suffixIconSpacing': instance.suffixIconSpacing,
   'fontSize': instance.fontSize,
   'fontWeight': const FontWeightConverter().toJson(instance.fontWeight),
   'fontFamily': instance.fontFamily,
@@ -161,9 +128,6 @@ Map<String, dynamic> _$TextThemeExtensionToJson(
   'lineHeight': instance.lineHeight,
   'helperTextFontSize': instance.helperTextFontSize,
   'helperTextSpacing': instance.helperTextSpacing,
-  'prefixIconSize': instance.prefixIconSize,
-  'suffixIconSize': instance.suffixIconSize,
-  'errorIconSize': instance.errorIconSize,
   'focusAnimationDuration': instance.focusAnimationDuration.inMicroseconds,
   'focusAnimationCurve': const CurveConverter().toJson(
     instance.focusAnimationCurve,

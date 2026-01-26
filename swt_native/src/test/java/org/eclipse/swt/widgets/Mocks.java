@@ -74,6 +74,9 @@ public class Mocks implements AfterEachCallback {
         when(display.getSystemColor(anyInt())).thenReturn(new Color(red(), green(), blue()));
         when(display.getSystemCursor(anyInt())).thenReturn(mock(Cursor.class));
         when(swtDisplay.getThread()).thenCallRealMethod();
+        Monitor monitor = mock(Monitor.class);
+        when(monitor.getClientArea()).thenReturn(new Rectangle(0, 0, 1280, 720));
+        when(display.getMonitors()).thenReturn(new Monitor[] {monitor});
         org.eclipse.swt.graphics.Mocks.device(display, swtDisplay);
 
         try {

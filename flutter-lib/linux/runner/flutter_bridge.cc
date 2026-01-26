@@ -134,9 +134,16 @@ Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_SetBounds(
     jint height, jint vx, jint vy, jint vwidth, jint vheight) {
   FlutterWindow *window = reinterpret_cast<FlutterWindow *>(context);
   g_print("Setting bounds to flutter view: %d, %d, %d, %d\n", vx, vy, vwidth, vheight);
-  
+
   if (!window->view) {
     return;
   }
   gtk_widget_set_size_request(window->view, vwidth, vheight);
+}
+
+// No-op on Linux - message pumping not needed (GLib main loop handles it automatically)
+JNIEXPORT jint JNICALL
+Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_PumpMessages(
+    JNIEnv *env, jclass cls, jint maxMessages) {
+  return 0;
 }

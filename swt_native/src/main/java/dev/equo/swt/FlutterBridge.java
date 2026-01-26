@@ -348,7 +348,7 @@ public abstract class FlutterBridge {
         return w.hashCode();
     }
 
-    public void sendSwtEvolveProperties() {
+    protected void sendSwtEvolveProperties() {
         ConfigFlags properties = getConfigFlags();
         System.out.println("will send: " + properties);
         try {

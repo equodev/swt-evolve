@@ -1204,25 +1204,6 @@ public class DartCombo extends DartComposite implements ICombo {
     }
 
     @Override
-    void setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
-        /*
-	 * Feature in Cocoa.  Attempting to create an NSComboBox with a
-	 * height > 27 spews a very long warning message to stdout and
-	 * often draws the combo incorrectly.
-	 * The workaround is to limit the height of editable Combos to the
-	 * height that is required to display their text. For multiline text,
-	 * limit the height to frame height.
-	 */
-        if ((getApi().style & SWT.READ_ONLY) == 0) {
-            int hLimit = 0;
-            if (hLimit == 0) {
-            }
-            height = Math.min(height, hLimit);
-        }
-        super.setBounds(x, y, width, height, move, resize);
-    }
-
-    @Override
     void setForeground(double[] color) {
         super.setForeground(color);
         updateItems();

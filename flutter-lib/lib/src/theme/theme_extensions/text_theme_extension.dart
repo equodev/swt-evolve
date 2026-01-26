@@ -34,12 +34,6 @@ class TextThemeExtension extends ThemeExtension<TextThemeExtension> with _$TextT
   final Color errorBorderColor;
   final Color disabledBorderColor;
   
-  // Icon colors
-  final Color prefixIconColor;
-  final Color suffixIconColor;
-  final Color disabledIconColor;
-  final Color errorIconColor;
-  
   // Border properties
   final double borderRadius;
   final double borderWidth;
@@ -49,10 +43,6 @@ class TextThemeExtension extends ThemeExtension<TextThemeExtension> with _$TextT
   
   // Padding and spacing
   final EdgeInsets contentPadding;
-  final EdgeInsets prefixPadding;
-  final EdgeInsets suffixPadding;
-  final double prefixIconSpacing;
-  final double suffixIconSpacing;
   
   // Typography
   final double fontSize;
@@ -64,11 +54,6 @@ class TextThemeExtension extends ThemeExtension<TextThemeExtension> with _$TextT
   // Helper text
   final double helperTextFontSize;
   final double helperTextSpacing;
-  
-  // Icon sizes
-  final double prefixIconSize;
-  final double suffixIconSize;
-  final double errorIconSize;
   
   // Interactive properties
   final Duration focusAnimationDuration;
@@ -96,20 +81,12 @@ class TextThemeExtension extends ThemeExtension<TextThemeExtension> with _$TextT
     required this.focusedBorderColor,
     required this.errorBorderColor,
     required this.disabledBorderColor,
-    required this.prefixIconColor,
-    required this.suffixIconColor,
-    required this.disabledIconColor,
-    required this.errorIconColor,
     required this.borderRadius,
     required this.borderWidth,
     required this.hoverBorderWidth,
     required this.focusedBorderWidth,
     required this.errorBorderWidth,
     required this.contentPadding,
-    required this.prefixPadding,
-    required this.suffixPadding,
-    required this.prefixIconSpacing,
-    required this.suffixIconSpacing,
     required this.fontSize,
     required this.fontWeight,
     this.fontFamily,
@@ -117,9 +94,6 @@ class TextThemeExtension extends ThemeExtension<TextThemeExtension> with _$TextT
     required this.lineHeight,
     required this.helperTextFontSize,
     required this.helperTextSpacing,
-    required this.prefixIconSize,
-    required this.suffixIconSize,
-    required this.errorIconSize,
     required this.focusAnimationDuration,
     required this.focusAnimationCurve,
     required this.hoverAnimationDuration,

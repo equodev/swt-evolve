@@ -137,6 +137,7 @@ ButtonThemeExtension _$ButtonThemeExtensionFromJson(
   radioButtonInnerSize: (json['radioButtonInnerSize'] as num).toDouble(),
   radioButtonTextSpacing: (json['radioButtonTextSpacing'] as num).toDouble(),
   dropdownButtonIconSize: (json['dropdownButtonIconSize'] as num).toDouble(),
+  checkboxSize: (json['checkboxSize'] as num).toDouble(),
   checkboxCheckmarkSizeMultiplier:
       (json['checkboxCheckmarkSizeMultiplier'] as num).toDouble(),
   checkboxGrayedMarginMultiplier:
@@ -269,6 +270,7 @@ Map<String, dynamic> _$ButtonThemeExtensionToJson(
   'radioButtonInnerSize': instance.radioButtonInnerSize,
   'radioButtonTextSpacing': instance.radioButtonTextSpacing,
   'dropdownButtonIconSize': instance.dropdownButtonIconSize,
+  'checkboxSize': instance.checkboxSize,
   'checkboxCheckmarkSizeMultiplier': instance.checkboxCheckmarkSizeMultiplier,
   'checkboxGrayedMarginMultiplier': instance.checkboxGrayedMarginMultiplier,
   'imageTextSpacing': instance.imageTextSpacing,

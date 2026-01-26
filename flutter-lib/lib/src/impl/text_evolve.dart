@@ -28,24 +28,20 @@ class TextImpl<T extends TextSwt, V extends VText>
   @override
   void extraSetState() {
     String newText = state.text ?? "";
-    if (_controller.text != newText) {
-      _controller.text = newText;
-      if (state.textLimit != null) {
-        _controller.value = _controller.value.copyWith(
-          text: _controller.text,
-          selection: TextSelection.collapsed(offset: _controller.text.length),
-          composing: TextRange.empty,
-        );
-      }
-    }
+    bool textChanged = _controller.text != newText;
 
-    // Update controller selection if it changed from Java side
-    if (state.selection != null) {
-      final newSelection = TextSelection(
-        baseOffset: state.selection!.x,
-        extentOffset: state.selection!.y,
+    if (textChanged) {
+      _controller.value = _controller.value.copyWith(
+        text: newText,
+        selection: TextSelection.collapsed(offset: newText.length),
+        composing: TextRange.empty,
       );
-      if (_controller.selection != newSelection) {
+
+      if (state.selection != null) {
+        final newSelection = TextSelection(
+          baseOffset: state.selection!.x,
+          extentOffset: state.selection!.y,
+        );
         _controller.selection = newSelection;
       }
     }
@@ -102,10 +98,9 @@ class TextImpl<T extends TextSwt, V extends VText>
       enabled: enabled,
       obscureText: hasStyle(state.style, SWT.PASSWORD),
       readOnly: hasStyle(state.style, SWT.READ_ONLY),
-      maxLines: isMultiLine ? (shouldExpand ? null : null) : 1,
+      maxLines: isMultiLine && !hasStyle(state.style, SWT.PASSWORD)? (shouldExpand ? null : null) : 1,
       expands: shouldExpand,
       textAlign: textAlign,
-      textAlignVertical: TextAlignVertical.top,
       style: textStyle,
       decoration: decoration,
       keyboardType: isMultiLine ? TextInputType.multiline : TextInputType.text,
@@ -121,6 +116,7 @@ class TextImpl<T extends TextSwt, V extends VText>
     TextThemeExtension widgetTheme,
     bool isMultiLine,
     bool hasValidBounds,
+
   ) {
     final constraints = getConstraintsFromBounds(state.bounds);
 
@@ -130,27 +126,9 @@ class TextImpl<T extends TextSwt, V extends VText>
         child: textField,
       );
     }
-    
-    if (isMultiLine) {
-      final minHeight = widgetTheme.contentPadding.vertical + 
-                       (widgetTheme.fontSize * widgetTheme.lineHeight);
-      return Container(
-        constraints: BoxConstraints(
-          minHeight: minHeight,
-        ),
-        child: textField,
-      );
-    }
-    
-    final minHeight = widgetTheme.contentPadding.vertical + 
-                     (widgetTheme.fontSize * widgetTheme.lineHeight);
+
     return IntrinsicWidth(
-      child: Container(
-        constraints: BoxConstraints(
-          minHeight: minHeight,
-        ),
         child: textField,
-      ),
     );
   }
 

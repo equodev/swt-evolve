@@ -208,6 +208,6 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
 
     static native long GetView(long context);
 
-
+    protected static native int PumpMessages(int maxMessages);
 }
 

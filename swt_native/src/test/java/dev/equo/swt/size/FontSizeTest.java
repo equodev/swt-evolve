@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisabledOnOs({OS.WINDOWS, OS.LINUX})
+@DisabledOnOs({OS.LINUX})
 public class FontSizeTest extends SizeAssert {
 
     @RegisterExtension()
@@ -89,8 +89,7 @@ public class FontSizeTest extends SizeAssert {
 
         CompletableFuture<PointD> result = staticBridge.measure(font, fontSize, text);
 
-        assertThat(result)
-                .succeedsWithin(Duration.ofSeconds(2));
+        assertCompletes(result);
         assertThat(javaSize).satisfies(similarTextSize(result.get()));
     }
 

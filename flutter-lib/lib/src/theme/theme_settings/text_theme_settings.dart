@@ -60,14 +60,7 @@ TextThemeExtension _getTextTheme({
     hoverBorderColor: colorSchemeExtension.surfaceBorderHovered,
     focusedBorderColor: colorSchemeExtension.surfaceBorderFocused,
     errorBorderColor: colorScheme.error,
-    disabledBorderColor: colorSchemeExtension.surfaceBorderDisabled,
-    
-    // Icon colors
-    prefixIconColor: colorScheme.onSurfaceVariant,
-    suffixIconColor: colorScheme.onSurfaceVariant,
-    disabledIconColor: colorScheme.onSurface.withOpacity(0.38),
-    errorIconColor: colorScheme.error,
-    
+    disabledBorderColor: colorSchemeExtension.surfaceBorderDisabled,    
     
     // Border properties
     borderRadius: 4.0,
@@ -78,10 +71,6 @@ TextThemeExtension _getTextTheme({
     
     // Padding and spacing
     contentPadding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
-    prefixPadding: const EdgeInsets.only(left: 12.0),
-    suffixPadding: const EdgeInsets.only(right: 12.0),
-    prefixIconSpacing: 8.0,
-    suffixIconSpacing: 8.0,
     
     // Typography
     fontSize: baseTextStyle.fontSize ?? 14.0,
@@ -93,11 +82,6 @@ TextThemeExtension _getTextTheme({
     // Helper text
     helperTextFontSize: 12.0,
     helperTextSpacing: 4.0,
-    
-    // Icon sizes
-    prefixIconSize: 20.0,
-    suffixIconSize: 20.0,
-    errorIconSize: 16.0,
     
     // Interactive properties
     focusAnimationDuration: const Duration(milliseconds: 200),
@@ -160,13 +144,7 @@ InputDecoration getInputDecoration(
     defaultColor: defaultBgColor,
   ) ?? defaultBgColor;
   
-  final iconColor = enabled
-      ? widgetTheme.prefixIconColor
-      : widgetTheme.disabledIconColor;
   final hintColor = widgetTheme.placeholderColor;
-  
-  final iconSize = widgetTheme.prefixIconSize;
-  final iconConstraints = iconSize * 1.5;
   
   final normalBorderColor = widgetTheme.borderColor;
   final focusedBorderColor = widgetTheme.focusedBorderColor;
@@ -174,8 +152,6 @@ InputDecoration getInputDecoration(
   final borderWidth = widgetTheme.borderWidth;
   final focusedBorderWidth = widgetTheme.focusedBorderWidth;
   final borderRadius = widgetTheme.borderRadius;
-
-  final hasSearchStyle = hasStyle(state.style, SWT.SEARCH);
 
   return InputDecoration(
     hintText: state.message,
@@ -200,31 +176,7 @@ InputDecoration getInputDecoration(
     ),
     fillColor: bgColor,
     filled: true,
-    counterText: '',
-    prefixIcon: hasSearchStyle
-        ? Icon(Icons.search, size: iconSize, color: iconColor)
-        : null,
-    prefixIconConstraints: BoxConstraints(
-      minHeight: iconConstraints,
-      minWidth: iconConstraints,
-    ),
-    suffixIcon: (hasSearchStyle &&
-            state.text != null &&
-            state.text!.isNotEmpty)
-        ? IconButton(
-            icon: Icon(Icons.clear, size: iconSize, color: iconColor),
-            padding: EdgeInsets.zero,
-            constraints: BoxConstraints(
-              minHeight: iconConstraints,
-              minWidth: iconConstraints,
-            ),
-            onPressed: onClear,
-          )
-        : null,
-    suffixIconConstraints: BoxConstraints(
-      minHeight: iconConstraints,
-      minWidth: iconConstraints,
-    ),
+    counterText: ''
   );
 }
 

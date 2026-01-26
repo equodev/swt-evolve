@@ -44,7 +44,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     final bool listVisible = state.listVisible ?? false;
 
     // Custom colors support
-    final customBg = state.background != null 
+    final customBg = state.background != null
         ? colorFromVColor(state.background!, defaultColor: widgetTheme.backgroundColor)
         : null;
     final customFg = state.foreground != null
@@ -55,7 +55,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     final Color currentBg = !isEnabled
         ? widgetTheme.disabledBackgroundColor
         : customBg ?? widgetTheme.backgroundColor;
-    
+
     final Color currentBorderColor = !isEnabled
         ? widgetTheme.disabledBorderColor
         : (isActive ? widgetTheme.borderColor : Colors.transparent);
@@ -63,7 +63,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     final textColor = !isEnabled
         ? widgetTheme.disabledTextColor
         : customFg ?? widgetTheme.textColor;
-    
+
     final textStyle = getTextStyle(
       context: context,
       font: state.font,
@@ -73,9 +73,15 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
 
     final borderWidth = styleBits.has(SWT.BORDER) ? 3.0 : widgetTheme.borderWidth;
 
+    final hasConstraints = hasBounds(state.bounds);
+    final double? width = hasConstraints ? state.bounds!.width.toDouble() : null;
+    final double? height = hasConstraints ? state.bounds!.height.toDouble() : null;
+
+    Widget result;
+
     // Simple mode with visible list
     if (isSimple || listVisible) {
-      return _StyledSimpleCCombo(
+      result = _StyledSimpleCCombo(
         state: state,
         widgetTheme: widgetTheme,
         controller: _controller,
@@ -93,32 +99,42 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
         onMouseEnter: handleMouseEnter,
         onMouseExit: handleMouseExit,
       );
+    } else {
+      // Dropdown mode
+      result = MouseRegion(
+        onEnter: (_) => setState(() { _isHovered = true; handleMouseEnter(); }),
+        onExit: (_) => setState(() { _isHovered = false; handleMouseExit(); }),
+        child: AnimatedContainer(
+          duration: widgetTheme.animationDuration,
+          decoration: BoxDecoration(
+            color: currentBg,
+            borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
+            border: Border.all(color: currentBorderColor, width: borderWidth),
+          ),
+          child: _StyledDropdownCCombo(
+            state: state,
+            widgetTheme: widgetTheme,
+            controller: _controller,
+            focusNode: _focusNode,
+            items: state.items ?? [],
+            enabled: isEnabled,
+            isReadOnly: isReadOnly,
+            textStyle: textStyle,
+            onSelected: isEnabled ? onChanged : null,
+          ),
+        ),
+      );
     }
 
-    // Dropdown mode
-    return MouseRegion(
-      onEnter: (_) => setState(() { _isHovered = true; handleMouseEnter(); }),
-      onExit: (_) => setState(() { _isHovered = false; handleMouseExit(); }),
-      child: AnimatedContainer(
-        duration: widgetTheme.animationDuration,
-        decoration: BoxDecoration(
-          color: currentBg,
-          borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
-          border: Border.all(color: currentBorderColor, width: borderWidth),
-        ),
-        child: _StyledDropdownCCombo(
-          state: state,
-          widgetTheme: widgetTheme,
-          controller: _controller,
-          focusNode: _focusNode,
-          items: state.items ?? [],
-          enabled: isEnabled,
-          isReadOnly: isReadOnly,
-          textStyle: textStyle,
-          onSelected: isEnabled ? onChanged : null,
-        ),
-      ),
-    );
+    if (hasConstraints) {
+      return SizedBox(
+        width: width,
+        height: height,
+        child: result,
+      );
+    }
+
+    return result;
   }
 
   void onChanged(String? value) {
@@ -160,8 +176,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     super.dispose();
   }
 }
-
-// Dropdown mode widget (READ_ONLY or editable dropdown)
+  
 class _StyledDropdownCCombo extends StatelessWidget {
   final VCCombo state;
   final CComboThemeExtension widgetTheme;
@@ -185,64 +200,83 @@ class _StyledDropdownCCombo extends StatelessWidget {
     this.onSelected,
   });
 
+  double _calculateMinWidth() {
+    double maxTextWidth = 0;
+    final textToMeasure = [state.text ?? '', ...items];
+
+    for (final text in textToMeasure) {
+      final textPainter = TextPainter(
+        text: TextSpan(text: text, style: textStyle),
+        maxLines: 1,
+        textDirection: TextDirection.ltr,
+      )..layout();
+      if (textPainter.width > maxTextWidth) {
+        maxTextWidth = textPainter.width;
+      }
+    }
+
+    final horizontalPadding = widgetTheme.textFieldPadding.horizontal;
+    final iconWidth = widgetTheme.iconSize;
+    const extraPadding = 16.0;
+
+    return maxTextWidth + horizontalPadding + iconWidth + extraPadding;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isReadOnly && focusNode != null) {
       focusNode!.canRequestFocus = false;
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final hasConstraints = hasBounds(state.bounds);
-        final width = hasConstraints ? constraints.maxWidth : null;
+    final width = hasBounds(state.bounds)
+        ? state.bounds!.width.toDouble()
+        : _calculateMinWidth();
 
-        return DropdownMenu<String>(
-          enabled: enabled,
-          focusNode: focusNode,
-          controller: controller,
-          width: width,
-          initialSelection: state.text,
-          requestFocusOnTap: !isReadOnly,
-          enableSearch: !isReadOnly,
-          textStyle: textStyle,
-          textAlign: _getTextAlign(),
-          inputDecorationTheme: InputDecorationTheme(
-            border: InputBorder.none,
-            isDense: true,
-            contentPadding: widgetTheme.textFieldPadding,
+    return DropdownMenu<String>(
+      enabled: enabled,
+      focusNode: focusNode,
+      controller: controller,
+      width: width,
+      initialSelection: state.text,
+      requestFocusOnTap: !isReadOnly,
+      enableSearch: !isReadOnly,
+      textStyle: textStyle,
+      textAlign: _getTextAlign(),
+      inputDecorationTheme: InputDecorationTheme(
+        border: InputBorder.none,
+        isDense: true,
+        contentPadding: widgetTheme.textFieldPadding,
+      ),
+      menuStyle: MenuStyle(
+        backgroundColor: WidgetStateProperty.all(widgetTheme.backgroundColor),
+        alignment: _getMenuAlignment(),
+      ),
+      trailingIcon: Icon(
+        Icons.arrow_drop_down,
+        color: enabled ? widgetTheme.iconColor : widgetTheme.disabledIconColor,
+        size: widgetTheme.iconSize,
+      ),
+      onSelected: onSelected,
+      dropdownMenuEntries: items.map<DropdownMenuEntry<String>>((item) {
+        final bool isSelected = item == state.text;
+        return DropdownMenuEntry<String>(
+          value: item,
+          label: item,
+          labelWidget: Align(
+            alignment: _getAlignment(),
+            child: Text(item, style: textStyle),
           ),
-          menuStyle: MenuStyle(
-            backgroundColor: WidgetStateProperty.all(widgetTheme.backgroundColor),
-            alignment: _getMenuAlignment(),
+          style: MenuItemButton.styleFrom(
+            foregroundColor: textStyle.color,
+            minimumSize: Size(width, widgetTheme.itemHeight),
+            padding: widgetTheme.textFieldPadding,
+            overlayColor: widgetTheme.hoverBackgroundColor,
+            backgroundColor: isSelected
+                ? widgetTheme.selectedItemBackgroundColor
+                : Colors.transparent,
           ),
-          trailingIcon: Icon(
-            Icons.arrow_drop_down,
-            color: enabled ? widgetTheme.iconColor : widgetTheme.disabledIconColor,
-            size: widgetTheme.iconSize,
-          ),
-          onSelected: onSelected,
-          dropdownMenuEntries: items.map<DropdownMenuEntry<String>>((item) {
-            final bool isSelected = item == state.text;
-            return DropdownMenuEntry<String>(
-              value: item,
-              label: item,
-              labelWidget: Align(
-                alignment: _getAlignment(),
-                child: Text(item, style: textStyle),
-              ),
-              style: MenuItemButton.styleFrom(
-                foregroundColor: textStyle.color,
-                minimumSize: Size(width ?? 0, widgetTheme.itemHeight),
-                padding: widgetTheme.textFieldPadding,
-                overlayColor: widgetTheme.hoverBackgroundColor,
-                backgroundColor: isSelected
-                    ? widgetTheme.selectedItemBackgroundColor
-                    : Colors.transparent,
-              ),
-            );
-          }).toList(),
         );
-      },
+      }).toList(),
     );
   }
 
@@ -270,7 +304,6 @@ class _StyledDropdownCCombo extends StatelessWidget {
   }
 }
 
-// Simple mode widget (always visible list)
 class _StyledSimpleCCombo extends StatelessWidget {
   final VCCombo state;
   final CComboThemeExtension widgetTheme;
@@ -321,7 +354,7 @@ class _StyledSimpleCCombo extends StatelessWidget {
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Text field
             Padding(

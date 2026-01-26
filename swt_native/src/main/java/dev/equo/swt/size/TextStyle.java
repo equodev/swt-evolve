@@ -11,4 +11,8 @@ public record TextStyle(String name, int size, boolean italic, boolean bold) {
         return new TextStyle(fd.getName(), fd.getHeight(), FontMetricsUtil.isItalic(fd), FontMetricsUtil.isBold(fd));
     }
 
+    public static TextStyle def() {
+        return new TextStyle("System", 10, false, false);
+    }
+
 }

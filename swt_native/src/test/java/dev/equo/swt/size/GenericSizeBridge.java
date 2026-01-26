@@ -47,6 +47,14 @@ abstract class GenericSizeBridge<REQUEST, SERIALIZED, RESULT> extends SwtFlutter
     }
 
     /**
+     * Pump messages to allow Flutter/Dart async operations to progress.
+     * Must be called from the same thread that created the Flutter window.
+     */
+    static void pumpMessages(int maxMessages) {
+        PumpMessages(maxMessages);
+    }
+
+    /**
      * Convert the serialized result to the final result type.
      * Override this if conversion is needed (e.g., double[] to PointD).
      */
@@ -71,9 +79,10 @@ abstract class GenericSizeBridge<REQUEST, SERIALIZED, RESULT> extends SwtFlutter
 
     private void initFlutterView() {
         CompletableFuture<Point> windowSize = super.onReady(this, Point.class);
-        CompletableFuture<Void> windowReady = windowSize.thenAccept((p) ->
-            this.windowSize = (p != null && p.x != 0 && p.y != 0) ? p : this.windowSize
-        );
+        CompletableFuture<Void> windowReady = windowSize.thenAccept((p) -> {
+            System.out.println("Received windowSize "+p);
+            this.windowSize = p;
+        });
         ctx = InitializeFlutterWindow(client.getPort(), 0, id(this), widgetName(this), "", 0, 0);
         onPayload(this, responseChannel, p -> {
             ByteArrayInputStream in = new ByteArrayInputStream(((String) p).getBytes(StandardCharsets.UTF_8));
@@ -115,5 +124,9 @@ abstract class GenericSizeBridge<REQUEST, SERIALIZED, RESULT> extends SwtFlutter
 
     @Override
     public void reparent(DartControl control, Composite newParent) {
+    }
+
+    @Override
+    protected void sendSwtEvolveProperties() {
     }
 }
