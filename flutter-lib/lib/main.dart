@@ -33,12 +33,12 @@ void main(List<String> args) async {
 
   if (widgetName == "FontSizeBridge") {
     font_size.measureRequest(widgetName, widgetId);
-    sendClientReady(widgetName, widgetId, sendWindowSize: true);
+    sendClientReady(widgetName, widgetId);
     return;
   }
   else if (widgetName == "ImageSizeBridge") {
     image_size.measureRequest(widgetName, widgetId);
-    sendClientReady(widgetName, widgetId, sendWindowSize: true);
+    sendClientReady(widgetName, widgetId);
     return;
   }
   else if (widgetName == "WidgetSizeBridge") {
@@ -70,16 +70,23 @@ void main(List<String> args) async {
 
 void sendClientReady(String widgetName, int widgetId, {bool sendWindowSize = false}) {
   if (sendWindowSize) {
-    final view = WidgetsBinding.instance.platformDispatcher.views.first;
-    final size = view.physicalSize / view.devicePixelRatio;
-    final point = VPoint()
-      ..x = size.width.round()
-      ..y = size.height.round();
-    EquoCommService.sendPayload("${widgetName}/${widgetId}/ClientReady", point);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final view = WidgetsBinding.instance.platformDispatcher.views.first;
+      final size = view.physicalSize / view.devicePixelRatio;
+      final point = VPoint()
+        ..x = 1280
+        ..y = 720;
+      if (size.width > 0 && size.height > 0) {
+          point.x = size.width.round();
+          point.y = size.height.round();
+      }
+      // print("Sent ${widgetName}/${widgetId}/ClientReady with windowSize ${point.x}x${point.y}");
+      EquoCommService.sendPayload("${widgetName}/${widgetId}/ClientReady", point);
+    });
   } else {
+    // print("Sent ${widgetName}/${widgetId}/ClientReady");
     EquoCommService.send("${widgetName}/${widgetId}/ClientReady");
   }
-  print("Sent ${widgetName}/${widgetId}/ClientReady");
 }
 
 void initSwtEvolveProperties() {

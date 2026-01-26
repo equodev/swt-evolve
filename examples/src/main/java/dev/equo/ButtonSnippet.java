@@ -35,6 +35,10 @@ public class ButtonSnippet {
         checkButton.setText ("This is a check button");
         checkButton.addSelectionListener(widgetSelectedAdapter(e -> System.out.println("Check button clicked")));
 
+        Button radioButton = new Button (shell, SWT.RADIO);
+        radioButton.setText ("This is a radio button");
+        radioButton.addSelectionListener(widgetSelectedAdapter(e -> System.out.println("Radio button clicked")));
+
         shell.setLayout (new RowLayout(SWT.VERTICAL));
         shell.setSize(250, 150);
         shell.open ();

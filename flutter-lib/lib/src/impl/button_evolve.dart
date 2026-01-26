@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'dart:typed_data';
 import '../gen/button.dart';
 import '../gen/swt.dart';
 import '../impl/control_evolve.dart';
 import '../theme/theme_extensions/button_theme_extension.dart';
 import '../theme/theme_settings/button_theme_settings.dart';
+import 'utils/image_utils.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 import 'widget_config.dart';
@@ -45,8 +45,6 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     return button;
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<ButtonThemeExtension>()!;
@@ -58,8 +56,6 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       return _buildCheckBox(context, widgetTheme, enabled, text);
     } else if (hasStyle(state.style, SWT.RADIO)) {
       return _buildRadioButton(context, widgetTheme, enabled, text);
-    } else if (hasStyle(state.style, SWT.DROP_DOWN)) {
-      return _buildDropdownButton(context, widgetTheme, enabled, text);
     } else if (hasStyle(state.style, SWT.TOGGLE)) {
       return _buildToggleButton(context, widgetTheme, enabled, text);
     } else if (hasStyle(state.style, SWT.ARROW)) {
@@ -73,7 +69,6 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     final isPressed = state.selection ?? false;
     final hasFlat = hasStyle(state.style, SWT.FLAT);
     final isPrimary = state.primary ?? false;
-    
     final constraints = getConstraintsFromBounds(state.bounds);
     final hasValidBounds = hasBounds(state.bounds);
     
@@ -134,19 +129,19 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
 
   Widget _buildToggleButton(BuildContext context, ButtonThemeExtension widgetTheme, bool enabled, String? text) {
     final isSelected = state.selection ?? false;
-    
+
     final backgroundColor = getButtonBackgroundColor(
       state,
       widgetTheme,
-      isSelected 
+      isSelected
           ? widgetTheme.selectableButtonColor
           : widgetTheme.toggleButtonColor,
       enabled: enabled,
     );
-    
+
     final constraints = getConstraintsFromBounds(state.bounds);
     final hasValidBounds = hasBounds(state.bounds);
-    
+
     Widget button = Material(
       color: backgroundColor,
       borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
@@ -190,8 +185,9 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     
     final constraints = getConstraintsFromBounds(state.bounds);
     final hasValidBounds = hasBounds(state.bounds);
-    
-    final checkboxSize = getCheckboxSize(state, widgetTheme.checkboxFontStyle?.fontSize);
+    final textStyle = getTextStyle(context: context, font: state.font, textColor: enabled ? widgetTheme.checkboxTextColor : widgetTheme.disabledForegroundColor, baseTextStyle: widgetTheme.checkboxFontStyle);
+
+    final checkboxSize = getCheckboxSize(state, widgetTheme, textLineHeight: textStyle.height ?? 14.0, hasText: state.text?.isNotEmpty == true, hasImage: state.image != null && state.image?.imageData != null);
     
     final checkboxWidget = _HoverableCheckboxRadio(
       size: checkboxSize,
@@ -252,8 +248,8 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     
     final constraints = getConstraintsFromBounds(state.bounds);
     final hasValidBounds = hasBounds(state.bounds);
-    
-    final radioButtonSize = widgetTheme.radioButtonSize;
+    final textStyle = getTextStyle(context: context, font: state.font, textColor: enabled ? widgetTheme.radioButtonTextColor : widgetTheme.disabledForegroundColor, baseTextStyle: widgetTheme.radioButtonFontStyle);
+    final radioButtonSize = getRadioButtonSize(state, widgetTheme, textLineHeight: textStyle.height ?? 14.0, hasText: state.text?.isNotEmpty == true, hasImage: state.image != null && state.image?.imageData != null);
     final radioButtonInnerSize = widgetTheme.radioButtonInnerSize;
     final radioButtonBorderRadius = widgetTheme.radioButtonBorderRadius;
     
@@ -315,56 +311,6 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     return wrap(_wrapWithSwtBackground(context, button));
   }
 
-  Widget _buildDropdownButton(BuildContext context, ButtonThemeExtension widgetTheme, bool enabled, String? text) {
-    
-    final constraints = getConstraintsFromBounds(state.bounds);
-    final hasValidBounds = hasBounds(state.bounds);
-    
-    Widget button = Material(
-      borderRadius: BorderRadius.circular(widgetTheme.dropdownButtonBorderRadius),
-      child: InkWell(
-        onTap: enabled ? _onPressed : null,
-        onHover: _onHover,
-        onFocusChange: _onFocusChange,
-        borderRadius: BorderRadius.circular(widgetTheme.dropdownButtonBorderRadius),
-        child: AnimatedContainer(
-          duration: widgetTheme.buttonPressDelay,
-          constraints: constraints,
-          decoration: BoxDecoration(
-            color: enabled 
-                ? widgetTheme.dropdownButtonColor
-                : widgetTheme.disabledBackgroundColor,
-            borderRadius: BorderRadius.circular(widgetTheme.dropdownButtonBorderRadius),
-            border: Border.all(
-              color: widgetTheme.dropdownButtonBorderColor,
-              width: widgetTheme.dropdownButtonBorderWidth,
-            ),
-          ),
-          child: _buildButtonContent(
-            context,
-            text,
-            widgetTheme,
-            enabled,
-            enabled
-                ? widgetTheme.dropdownButtonTextColor
-                : widgetTheme.disabledForegroundColor,
-            widgetTheme.dropdownButtonFontStyle,
-            hasBounds: hasValidBounds,
-            trailingWidget: Icon(
-              Icons.arrow_drop_down,
-              size: widgetTheme.dropdownButtonIconSize,
-              color: enabled 
-                  ? widgetTheme.dropdownButtonIconColor
-                  : widgetTheme.disabledForegroundColor,
-            ),
-          ),
-        ),
-      ),
-    );
-    
-    return wrap(_wrapWithSwtBackground(context, button));
-  }
-
   Widget _buildArrowButton(BuildContext context, ButtonThemeExtension widgetTheme, bool enabled, String? text) {
     final alignment = state.alignment ?? SWT.CENTER;
     final arrowIcon = _getArrowIcon(alignment);
@@ -409,84 +355,115 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     return wrap(_wrapWithSwtBackground(context, button));
   }
 
-  Widget _buildButtonContent(
-    BuildContext context,
-    String? text,
-    ButtonThemeExtension widgetTheme,
-    bool enabled,
-    Color defaultTextColor,
-    TextStyle? baseTextStyle, {
-    bool hasBounds = false,
-    Widget? leadingWidget,
-    double? leadingSpacing,
-    Widget? trailingWidget,
-  }) {
-    final swtAlignment = state.alignment ?? SWT.CENTER;
-    final alignment = swtAlignment == SWT.LEFT
-        ? MainAxisAlignment.start
-        : swtAlignment == SWT.RIGHT
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.center;
+  
+ Widget _buildButtonContent(
+  BuildContext context,
+  String? text,
+  ButtonThemeExtension widgetTheme,
+  bool enabled,
+  Color defaultTextColor,
+  TextStyle? baseTextStyle, {
+  bool hasBounds = false,
+  Widget? leadingWidget,
+  double? leadingSpacing,
+  Widget? trailingWidget,
+  bool includeImage = true,
+}) {
+  final bool hasText = text?.isNotEmpty == true;
+  final swtAlignment = state.alignment ?? SWT.CENTER;
 
-    final textColor = getForegroundColor(
-      foreground: state.foreground,
-      defaultColor: defaultTextColor,
-    );
-    
-    final textStyle = getTextStyle(
-      context: context,
-      font: state.font,
-      textColor: textColor,
-      baseTextStyle: baseTextStyle,
-    );
-    
-    final shouldWrap = shouldWrapText(
-      style: state.style,
-      hasValidBounds: hasBounds,
-      text: text ?? '',
-    );
-    
-    return Row(
-      mainAxisSize: hasBounds ? MainAxisSize.max : MainAxisSize.min,
-      mainAxisAlignment: alignment,
-      children: [
-        if (leadingWidget != null) ...[
-          leadingWidget,
-          if (text?.isNotEmpty == true && leadingSpacing != null)
-            SizedBox(width: leadingSpacing),
-        ],
-        if (hasImage()) ...[
-          _buildImageWidget(),
-          if (text?.isNotEmpty == true) 
-            SizedBox(width: widgetTheme.imageTextSpacing),
-        ],
-          if (text?.isNotEmpty == true)
-          Flexible(
-            child: Text(
-              text!,
-              style: textStyle,
-              overflow: shouldWrap ? TextOverflow.visible : TextOverflow.ellipsis,
-              maxLines: shouldWrap ? null : 1,
-            ),
-          ),
-        if (trailingWidget != null) ...[
-          SizedBox(width: widgetTheme.imageTextSpacing),
-          trailingWidget,
-        ],
+  Widget? imageWidget;
+  if (includeImage && state.image != null && state.image?.imageData != null) {
+    final double imageWidth = state.image!.imageData!.width?.toDouble() ?? 0;
+    final double imageHeight = state.image!.imageData!.height?.toDouble() ?? 0;
+
+    if (imageWidth > 0 && imageHeight > 0) {
+      final builtImage = ImageUtils.buildVImage(
+        state.image,
+        width: imageWidth,
+        height: imageHeight,
+        enabled: enabled,
+        constraints: null,
+        useBinaryImage: true,
+        renderAsIcon: false,
+      );
+
+      if (builtImage != null) {
+        imageWidget = SizedBox(
+          width: imageWidth,
+          height: imageHeight,
+          child: builtImage,
+        );
+      }
+    }
+  }
+
+  final alignment = (imageWidget != null)
+      ? MainAxisAlignment.start
+      : swtAlignment == SWT.LEFT
+          ? MainAxisAlignment.start
+          : swtAlignment == SWT.RIGHT
+              ? MainAxisAlignment.end
+              : MainAxisAlignment.center;
+
+  final textColor = getForegroundColor(
+    foreground: state.foreground,
+    defaultColor: defaultTextColor,
+  );
+
+  final textStyle = getTextStyle(
+    context: context,
+    font: state.font,
+    textColor: textColor,
+    baseTextStyle: baseTextStyle,
+  );
+
+  final shouldWrap = shouldWrapText(
+    style: state.style,
+    hasValidBounds: hasBounds,
+    text: text ?? '',
+  );
+
+  Widget rowContent = Row(
+    mainAxisSize: hasBounds ? MainAxisSize.max : MainAxisSize.min,
+    mainAxisAlignment: alignment,
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      if (leadingWidget != null) ...[
+        leadingWidget,
+        if (hasText || imageWidget != null)
+          SizedBox(width: leadingSpacing),
       ],
+
+      if (imageWidget != null)
+        hasBounds ? Flexible(child: imageWidget) : imageWidget,
+
+      if (hasText)
+        Flexible(
+          child: Text(
+            text!,
+            style: textStyle,
+            overflow: shouldWrap ? TextOverflow.visible : TextOverflow.ellipsis,
+            maxLines: shouldWrap ? null : 1,
+          ),
+        ),
+
+      if (trailingWidget != null) ...[
+        if (hasText || imageWidget != null)
+          SizedBox(width: widgetTheme.imageTextSpacing),
+        trailingWidget,
+      ],
+    ],
+  );
+
+  if (leadingWidget != null) {
+    return IntrinsicHeight(
+      child: rowContent,
     );
   }
 
-  bool hasImage() => state.image != null && state.image?.imageData != null && state.image?.imageData?.data != null;
-
-  Widget _buildImageWidget() {
-    if (state.image?.imageData?.data == null) return const SizedBox.shrink();
-    
-    return Image.memory(
-      Uint8List.fromList(state.image!.imageData!.data!),
-      fit: BoxFit.contain,
-    );
-  }
+  return rowContent;
+}
 
   void _onPressed() {
     if (hasStyle(state.style, SWT.CHECK) || hasStyle(state.style, SWT.RADIO) || hasStyle(state.style, SWT.TOGGLE)) {
@@ -567,15 +544,11 @@ class _HoverableButtonState extends State<_HoverableButton> {
 
     return MouseRegion(
       onEnter: (_) {
-        setState(() {
-          _isHovering = true;
-        });
+        setState(() => _isHovering = true);
         widget.onHover(true);
       },
       onExit: (_) {
-        setState(() {
-          _isHovering = false;
-        });
+        setState(() => _isHovering = false);
         widget.onHover(false);
       },
       child: Material(
@@ -737,15 +710,11 @@ class _HoverableCheckboxRadioState extends State<_HoverableCheckboxRadio> {
 
     return MouseRegion(
       onEnter: (_) {
-        setState(() {
-          _isHovering = true;
-        });
+        setState(() => _isHovering = true);
         widget.onHover(true);
       },
       onExit: (_) {
-        setState(() {
-          _isHovering = false;
-        });
+        setState(() => _isHovering = false);
         widget.onHover(false);
       },
       child: GestureDetector(

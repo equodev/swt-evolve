@@ -126,7 +126,8 @@ Win32Window::~Win32Window() {
 bool Win32Window::Create(const std::wstring& title,
                          const Point& origin,
                          const Size& size,
-                         const HWND parentWnd) {
+                         const HWND parentWnd,
+                         bool headless) {
   const wchar_t* window_class =
       WindowClassRegistrar::GetInstance()->GetWindowClass();
 
@@ -136,14 +137,25 @@ bool Win32Window::Create(const std::wstring& title,
   UINT dpi = FlutterDesktopGetDpiForMonitor(monitor);
   double scale_factor = dpi / 96.0;
 
-  if (!parentWnd) {
-    std::cout << "Win32Window::Create - No parent window provided" << std::endl;
-    return false;
+  // Store headless flag
+  headless_ = headless;
+
+  // Determine window style based on whether we have a parent
+  int style;
+  int showCmd;
+  if (parentWnd) {
+    // Embedded mode: child window
+    style = WS_CHILD;
+    showCmd = SW_SHOW;
+  } else if (headless) {
+    // Headless mode: borderless window (not shown)
+    style = WS_POPUP;
+    showCmd = SW_SHOWNOACTIVATE;
+  } else {
+    // Standalone mode: visible window for development
+    style = WS_OVERLAPPEDWINDOW;
+    showCmd = SW_SHOW;
   }
-
-  //std::cout << "Win32Window::Create - Creating child window" << std::endl;
-
-  int style = WS_CHILD;
 
   HWND window = CreateWindow(
       window_class, title.c_str(), style,
@@ -151,7 +163,7 @@ bool Win32Window::Create(const std::wstring& title,
       Scale(size.width, scale_factor), Scale(size.height, scale_factor),
       parentWnd, nullptr, GetModuleHandle(nullptr), this);
 
-  std::cout << "Win32Window::Create - Created window=" << window << std::endl;
+  std::cout << "Win32Window::Create - Created window=" << window << " headless=" << (parentWnd ? "false" : "true") << std::endl;
 
   if (!window) {
     DWORD error = GetLastError();
@@ -163,12 +175,17 @@ bool Win32Window::Create(const std::wstring& title,
 
   UpdateTheme(window);
 
-  ShowWindow(window, SW_SHOW);
+  if (parentWnd)
+      ShowWindow(window, showCmd);
 
   return OnCreate();
 }
 
 bool Win32Window::Show() {
+  // Don't show window in headless mode
+  if (headless_) {
+    return true;
+  }
   return ShowWindow(window_handle_, SW_SHOWNORMAL);
 }
 

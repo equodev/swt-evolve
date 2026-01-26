@@ -9,7 +9,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Map;
@@ -18,8 +17,8 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisabledOnOs({OS.WINDOWS, OS.LINUX})
-public class ImageSizeTest {
+@DisabledOnOs({OS.LINUX})
+public class ImageSizeTest extends SizeAssert {
 
     @RegisterExtension()
     private static final ImageSizeBridge staticBridge = new ImageSizeBridge();
@@ -48,15 +47,13 @@ public class ImageSizeTest {
 
         CompletableFuture<PointD> result = staticBridge.measure(imageBytes);
 
-        assertThat(result).succeedsWithin(Duration.ofSeconds(2));
-        PointD flutterSize = result.get();
+        PointD flutterSize = assertCompletes(result);
 
         assertThat(flutterSize.x()).as("Width for " + imagePath).isEqualTo(javaSize.x());
         assertThat(flutterSize.y()).as("Height for " + imagePath).isEqualTo(javaSize.y());
 
         System.out.println("PASS: " + imagePath + " Java: " + javaSize + " Flutter: " + flutterSize);
     }
-
 
     static class ImageSizeBridge extends GenericSizeBridge<Map<String, String>, double[], PointD> {
 

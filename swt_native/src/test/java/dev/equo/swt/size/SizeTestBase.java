@@ -12,10 +12,11 @@ import org.eclipse.swt.widgets.Mocks;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Named;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -87,6 +88,22 @@ public abstract class SizeTestBase extends SizeAssert {
         );
     }
 
+    protected static Stream<Arguments> buildCases(Stream<Style> styles, int texts, int sizes) {
+        return styles.flatMap(style ->
+                getTexts(texts).flatMap(text ->
+                        getSizes(sizes).mapToObj(size ->
+                                Arguments.of(Named.of(style.name, style.value), text, Named.of(size == FromTheme ? "theme" : String.valueOf(size), size))
+                        )
+                )
+        );
+    }
+
+    protected static Stream<Arguments> buildCases(Stream<Style> styles) {
+        return styles.map(style ->
+           Arguments.of(Named.of(style.name, style.value))
+        );
+    }
+
     protected static Font createFont(int fontSize) {
         FontData fontData = new FontData("System", fontSize, SWT.NORMAL);
         return new Font(Display.getCurrent(), fontData);
@@ -94,11 +111,6 @@ public abstract class SizeTestBase extends SizeAssert {
 
     protected static Image createImage(String path) {
         return new Image(null, SizeTestBase.class.getResourceAsStream("/images/"+path+".png"));
-    }
-
-    protected Measure assertCompletes(CompletableFuture<Measure> result) {
-        return assertThat(result).succeedsWithin(Duration.ofSeconds(5))
-                .actual();
     }
 
     protected static Consumer<Measure> isEmptyText(String text) {
@@ -123,7 +135,9 @@ public abstract class SizeTestBase extends SizeAssert {
         }
     }
 
-    static class WidgetSizeBridge extends GenericSizeBridge<Map<String, Object>, Measure, Measure> {
+    static class WidgetSizeBridge extends GenericSizeBridge<Map<String, Object>, Measure, Measure> implements BeforeEachCallback {
+
+        private String caseName;
 
         public WidgetSizeBridge() {
             super("widgetSize", Measure.class);
@@ -135,11 +149,16 @@ public abstract class SizeTestBase extends SizeAssert {
         }
 
         protected CompletableFuture<Measure> measure(DartWidget w) {
-            return measure(Map.of("widget", w));
+            return measure(Map.of("widget", w, "name", caseName));
         }
 
         public CompletableFuture<Measure> measure(DartWidget w, ConfigFlags config) {
-            return measure(Map.of("widget", w, "config", config));
+            return measure(Map.of("widget", w, "config", config, "name", caseName));
+        }
+
+        @Override
+        public void beforeEach(ExtensionContext context) throws Exception {
+            caseName = context.getDisplayName();
         }
     }
 

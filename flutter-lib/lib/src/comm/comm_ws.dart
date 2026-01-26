@@ -124,7 +124,7 @@ class _NoImpl implements _EquoCommI {
 
   @override
   Future send<T>(String userEventActionId, [Payload? payload, SendArgs? args]) {
-    throw UnimplementedError();
+    return Future.value();
   }
 
   @override

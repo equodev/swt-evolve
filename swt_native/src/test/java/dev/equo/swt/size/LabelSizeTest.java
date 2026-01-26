@@ -14,7 +14,7 @@ import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.*;
 
-@DisabledOnOs({ OS.WINDOWS, OS.LINUX })
+@DisabledOnOs(OS.LINUX)
 class LabelSizeTest extends SizeTestBase {
 
     @RegisterExtension

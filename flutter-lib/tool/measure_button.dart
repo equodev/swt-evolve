@@ -41,7 +41,7 @@ void setupCases(WidgetMeasurer measurer) {
       for (final fontSize in Fonts) {
         for (final image in Images) {
           final caseName =
-              '${style.$1.toLowerCase()}_${text.$1}_font${fontSize}_${(image != null) ? '${image.$1}x${image.$2}' : 'noimg'}';
+              '${text.$1}_font${fontSize}_${(image != null) ? '${image.$1}x${image.$2}' : 'noimg'}';
           measurer.addTestCase(
             createCase(
               caseName,
@@ -57,12 +57,7 @@ void setupCases(WidgetMeasurer measurer) {
     }
 
     measurer.addThemeCase(
-      createCase(
-        '${style.$1.toLowerCase()}_theme',
-        style,
-        "Sample",
-        useFontTheme: true,
-      ),
+      createCase('theme', style, "Sample", useFontTheme: true),
     );
   }
 
@@ -85,6 +80,7 @@ MeasurementCase createCase(
   );
   return MeasurementCase(
     descr: caseName,
+    style: style.$1,
     useFontTheme: useFontTheme,
     fqn: 'org.eclipse.swt.widgets.Button',
     expectedComponents: expectedComponents,

@@ -23,9 +23,8 @@ mixin _$ComboThemeExtensionTailorMixin on ThemeExtension<ComboThemeExtension> {
   double get borderWidth;
   EdgeInsets get textFieldPadding;
   EdgeInsets get itemPadding;
-  double get height;
-  double get itemHeight;
   double get iconSize;
+  double get iconSpacing;
   TextStyle? get textStyle;
   TextStyle? get itemTextStyle;
   Color get dividerColor;
@@ -48,9 +47,8 @@ mixin _$ComboThemeExtensionTailorMixin on ThemeExtension<ComboThemeExtension> {
     double? borderWidth,
     EdgeInsets? textFieldPadding,
     EdgeInsets? itemPadding,
-    double? height,
-    double? itemHeight,
     double? iconSize,
+    double? iconSpacing,
     TextStyle? textStyle,
     TextStyle? itemTextStyle,
     Color? dividerColor,
@@ -74,9 +72,8 @@ mixin _$ComboThemeExtensionTailorMixin on ThemeExtension<ComboThemeExtension> {
       borderWidth: borderWidth ?? this.borderWidth,
       textFieldPadding: textFieldPadding ?? this.textFieldPadding,
       itemPadding: itemPadding ?? this.itemPadding,
-      height: height ?? this.height,
-      itemHeight: itemHeight ?? this.itemHeight,
       iconSize: iconSize ?? this.iconSize,
+      iconSpacing: iconSpacing ?? this.iconSpacing,
       textStyle: textStyle ?? this.textStyle,
       itemTextStyle: itemTextStyle ?? this.itemTextStyle,
       dividerColor: dividerColor ?? this.dividerColor,
@@ -126,9 +123,8 @@ mixin _$ComboThemeExtensionTailorMixin on ThemeExtension<ComboThemeExtension> {
       borderWidth: t < 0.5 ? borderWidth : other.borderWidth,
       textFieldPadding: t < 0.5 ? textFieldPadding : other.textFieldPadding,
       itemPadding: t < 0.5 ? itemPadding : other.itemPadding,
-      height: t < 0.5 ? height : other.height,
-      itemHeight: t < 0.5 ? itemHeight : other.itemHeight,
       iconSize: t < 0.5 ? iconSize : other.iconSize,
+      iconSpacing: t < 0.5 ? iconSpacing : other.iconSpacing,
       textStyle: TextStyle.lerp(textStyle, other.textStyle, t),
       itemTextStyle: TextStyle.lerp(itemTextStyle, other.itemTextStyle, t),
       dividerColor: Color.lerp(dividerColor, other.dividerColor, t)!,
@@ -189,12 +185,11 @@ mixin _$ComboThemeExtensionTailorMixin on ThemeExtension<ComboThemeExtension> {
               itemPadding,
               other.itemPadding,
             ) &&
-            const DeepCollectionEquality().equals(height, other.height) &&
-            const DeepCollectionEquality().equals(
-              itemHeight,
-              other.itemHeight,
-            ) &&
             const DeepCollectionEquality().equals(iconSize, other.iconSize) &&
+            const DeepCollectionEquality().equals(
+              iconSpacing,
+              other.iconSpacing,
+            ) &&
             const DeepCollectionEquality().equals(textStyle, other.textStyle) &&
             const DeepCollectionEquality().equals(
               itemTextStyle,
@@ -235,9 +230,8 @@ mixin _$ComboThemeExtensionTailorMixin on ThemeExtension<ComboThemeExtension> {
       const DeepCollectionEquality().hash(borderWidth),
       const DeepCollectionEquality().hash(textFieldPadding),
       const DeepCollectionEquality().hash(itemPadding),
-      const DeepCollectionEquality().hash(height),
-      const DeepCollectionEquality().hash(itemHeight),
       const DeepCollectionEquality().hash(iconSize),
+      const DeepCollectionEquality().hash(iconSpacing),
       const DeepCollectionEquality().hash(textStyle),
       const DeepCollectionEquality().hash(itemTextStyle),
       const DeepCollectionEquality().hash(dividerColor),
@@ -266,9 +260,8 @@ extension ComboThemeExtensionBuildContextProps on BuildContext {
   double get borderWidth => comboThemeExtension.borderWidth;
   EdgeInsets get textFieldPadding => comboThemeExtension.textFieldPadding;
   EdgeInsets get itemPadding => comboThemeExtension.itemPadding;
-  double get height => comboThemeExtension.height;
-  double get itemHeight => comboThemeExtension.itemHeight;
   double get iconSize => comboThemeExtension.iconSize;
+  double get iconSpacing => comboThemeExtension.iconSpacing;
   TextStyle? get textStyle => comboThemeExtension.textStyle;
   TextStyle? get itemTextStyle => comboThemeExtension.itemTextStyle;
   Color get dividerColor => comboThemeExtension.dividerColor;

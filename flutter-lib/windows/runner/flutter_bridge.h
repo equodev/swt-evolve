@@ -21,6 +21,8 @@ JNIEXPORT void JNICALL Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_Dispose
 
 JNIEXPORT void JNICALL Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_SetBounds(JNIEnv* env, jclass cls, jlong context, jint x, jint y, jint width, jint height, jint vx, jint vy, jint vwidth, jint vheight);
 
+JNIEXPORT jint JNICALL Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_PumpMessages(JNIEnv* env, jclass cls, jint maxMessages);
+
 #ifdef __cplusplus
 }
 #endif

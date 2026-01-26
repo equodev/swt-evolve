@@ -34,7 +34,8 @@ class Win32Window {
   // consistent size this function will scale the inputted width and height as
   // as appropriate for the default monitor. The window is invisible until
   // |Show| is called. Returns true if the window was created successfully.
-  bool Create(const std::wstring& title, const Point& origin, const Size& size, const HWND parentWnd);
+  // If |headless| is true, the window will not be shown (for test mode).
+  bool Create(const std::wstring& title, const Point& origin, const Size& size, const HWND parentWnd, bool headless = false);
 
   // Show the current window. Returns true if the window was successfully shown.
   bool Show();
@@ -94,6 +95,8 @@ class Win32Window {
   static void UpdateTheme(HWND const window);
 
   bool quit_on_close_ = false;
+
+  bool headless_ = false;
 
   // window handle for top level window.
   HWND window_handle_ = nullptr;

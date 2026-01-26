@@ -4,6 +4,7 @@ import org.eclipse.swt.graphics.Point;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -12,12 +13,26 @@ public class SizeAssert {
 
     private static final double TEXT_TOLERANCE_PERCENT = 12/100.0; // 12%
     private static final double TOLERANCE_PERCENT = 5/100.0; // 5%
-    private TestInfo info;
+    public static final int WAIT = 5;
+    protected TestInfo info;
 
     @BeforeEach
     void info(TestInfo info) {
         this.info = info;
-        info.getDisplayName();
+    }
+
+    static <R> R assertCompletes(CompletableFuture<R> result) {
+        long timeout = System.currentTimeMillis() + (WAIT * 1000);
+        while (!result.isDone() && System.currentTimeMillis() < timeout) {
+            // Pump messages on main thread while waiting for result
+            GenericSizeBridge.pumpMessages(1);
+        }
+        assertThat(result).as("future did not compete in %s", WAIT).isDone();
+        try {
+            return result.get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     protected Consumer<Measure> similarSize(Measure expected) {
@@ -63,6 +78,8 @@ public class SizeAssert {
             } else if (flutter == null && java.x() == 0) {
                 message = String.format("%s: No text in Flutter, empty text in Java", info.getDisplayName());
             } else {
+                assertThat(java).as("Java text size is null but Flutter is %s", flutter).isNotNull();
+                assertThat(flutter).as("Flutter text size is null but Java is %s", java).isNotNull();
                 double xDiff = (long) Math.abs(flutter.x() - java.x());
                 double yDiff = (long) Math.abs(flutter.y() - java.y());
 

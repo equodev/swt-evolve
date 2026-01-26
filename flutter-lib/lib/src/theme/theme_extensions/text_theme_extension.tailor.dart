@@ -24,20 +24,12 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
   Color get focusedBorderColor;
   Color get errorBorderColor;
   Color get disabledBorderColor;
-  Color get prefixIconColor;
-  Color get suffixIconColor;
-  Color get disabledIconColor;
-  Color get errorIconColor;
   double get borderRadius;
   double get borderWidth;
   double get hoverBorderWidth;
   double get focusedBorderWidth;
   double get errorBorderWidth;
   EdgeInsets get contentPadding;
-  EdgeInsets get prefixPadding;
-  EdgeInsets get suffixPadding;
-  double get prefixIconSpacing;
-  double get suffixIconSpacing;
   double get fontSize;
   FontWeight get fontWeight;
   String? get fontFamily;
@@ -45,9 +37,6 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
   double get lineHeight;
   double get helperTextFontSize;
   double get helperTextSpacing;
-  double get prefixIconSize;
-  double get suffixIconSize;
-  double get errorIconSize;
   Duration get focusAnimationDuration;
   Curve get focusAnimationCurve;
   Duration get hoverAnimationDuration;
@@ -72,20 +61,12 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
     Color? focusedBorderColor,
     Color? errorBorderColor,
     Color? disabledBorderColor,
-    Color? prefixIconColor,
-    Color? suffixIconColor,
-    Color? disabledIconColor,
-    Color? errorIconColor,
     double? borderRadius,
     double? borderWidth,
     double? hoverBorderWidth,
     double? focusedBorderWidth,
     double? errorBorderWidth,
     EdgeInsets? contentPadding,
-    EdgeInsets? prefixPadding,
-    EdgeInsets? suffixPadding,
-    double? prefixIconSpacing,
-    double? suffixIconSpacing,
     double? fontSize,
     FontWeight? fontWeight,
     String? fontFamily,
@@ -93,9 +74,6 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
     double? lineHeight,
     double? helperTextFontSize,
     double? helperTextSpacing,
-    double? prefixIconSize,
-    double? suffixIconSize,
-    double? errorIconSize,
     Duration? focusAnimationDuration,
     Curve? focusAnimationCurve,
     Duration? hoverAnimationDuration,
@@ -121,20 +99,12 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
       focusedBorderColor: focusedBorderColor ?? this.focusedBorderColor,
       errorBorderColor: errorBorderColor ?? this.errorBorderColor,
       disabledBorderColor: disabledBorderColor ?? this.disabledBorderColor,
-      prefixIconColor: prefixIconColor ?? this.prefixIconColor,
-      suffixIconColor: suffixIconColor ?? this.suffixIconColor,
-      disabledIconColor: disabledIconColor ?? this.disabledIconColor,
-      errorIconColor: errorIconColor ?? this.errorIconColor,
       borderRadius: borderRadius ?? this.borderRadius,
       borderWidth: borderWidth ?? this.borderWidth,
       hoverBorderWidth: hoverBorderWidth ?? this.hoverBorderWidth,
       focusedBorderWidth: focusedBorderWidth ?? this.focusedBorderWidth,
       errorBorderWidth: errorBorderWidth ?? this.errorBorderWidth,
       contentPadding: contentPadding ?? this.contentPadding,
-      prefixPadding: prefixPadding ?? this.prefixPadding,
-      suffixPadding: suffixPadding ?? this.suffixPadding,
-      prefixIconSpacing: prefixIconSpacing ?? this.prefixIconSpacing,
-      suffixIconSpacing: suffixIconSpacing ?? this.suffixIconSpacing,
       fontSize: fontSize ?? this.fontSize,
       fontWeight: fontWeight ?? this.fontWeight,
       fontFamily: fontFamily ?? this.fontFamily,
@@ -142,9 +112,6 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
       lineHeight: lineHeight ?? this.lineHeight,
       helperTextFontSize: helperTextFontSize ?? this.helperTextFontSize,
       helperTextSpacing: helperTextSpacing ?? this.helperTextSpacing,
-      prefixIconSize: prefixIconSize ?? this.prefixIconSize,
-      suffixIconSize: suffixIconSize ?? this.suffixIconSize,
-      errorIconSize: errorIconSize ?? this.errorIconSize,
       focusAnimationDuration:
           focusAnimationDuration ?? this.focusAnimationDuration,
       focusAnimationCurve: focusAnimationCurve ?? this.focusAnimationCurve,
@@ -215,14 +182,6 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
         other.disabledBorderColor,
         t,
       )!,
-      prefixIconColor: Color.lerp(prefixIconColor, other.prefixIconColor, t)!,
-      suffixIconColor: Color.lerp(suffixIconColor, other.suffixIconColor, t)!,
-      disabledIconColor: Color.lerp(
-        disabledIconColor,
-        other.disabledIconColor,
-        t,
-      )!,
-      errorIconColor: Color.lerp(errorIconColor, other.errorIconColor, t)!,
       borderRadius: t < 0.5 ? borderRadius : other.borderRadius,
       borderWidth: t < 0.5 ? borderWidth : other.borderWidth,
       hoverBorderWidth: t < 0.5 ? hoverBorderWidth : other.hoverBorderWidth,
@@ -231,10 +190,6 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
           : other.focusedBorderWidth,
       errorBorderWidth: t < 0.5 ? errorBorderWidth : other.errorBorderWidth,
       contentPadding: t < 0.5 ? contentPadding : other.contentPadding,
-      prefixPadding: t < 0.5 ? prefixPadding : other.prefixPadding,
-      suffixPadding: t < 0.5 ? suffixPadding : other.suffixPadding,
-      prefixIconSpacing: t < 0.5 ? prefixIconSpacing : other.prefixIconSpacing,
-      suffixIconSpacing: t < 0.5 ? suffixIconSpacing : other.suffixIconSpacing,
       fontSize: t < 0.5 ? fontSize : other.fontSize,
       fontWeight: t < 0.5 ? fontWeight : other.fontWeight,
       fontFamily: t < 0.5 ? fontFamily : other.fontFamily,
@@ -244,9 +199,6 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
           ? helperTextFontSize
           : other.helperTextFontSize,
       helperTextSpacing: t < 0.5 ? helperTextSpacing : other.helperTextSpacing,
-      prefixIconSize: t < 0.5 ? prefixIconSize : other.prefixIconSize,
-      suffixIconSize: t < 0.5 ? suffixIconSize : other.suffixIconSize,
-      errorIconSize: t < 0.5 ? errorIconSize : other.errorIconSize,
       focusAnimationDuration: t < 0.5
           ? focusAnimationDuration
           : other.focusAnimationDuration,
@@ -334,22 +286,6 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
               other.disabledBorderColor,
             ) &&
             const DeepCollectionEquality().equals(
-              prefixIconColor,
-              other.prefixIconColor,
-            ) &&
-            const DeepCollectionEquality().equals(
-              suffixIconColor,
-              other.suffixIconColor,
-            ) &&
-            const DeepCollectionEquality().equals(
-              disabledIconColor,
-              other.disabledIconColor,
-            ) &&
-            const DeepCollectionEquality().equals(
-              errorIconColor,
-              other.errorIconColor,
-            ) &&
-            const DeepCollectionEquality().equals(
               borderRadius,
               other.borderRadius,
             ) &&
@@ -372,22 +308,6 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
             const DeepCollectionEquality().equals(
               contentPadding,
               other.contentPadding,
-            ) &&
-            const DeepCollectionEquality().equals(
-              prefixPadding,
-              other.prefixPadding,
-            ) &&
-            const DeepCollectionEquality().equals(
-              suffixPadding,
-              other.suffixPadding,
-            ) &&
-            const DeepCollectionEquality().equals(
-              prefixIconSpacing,
-              other.prefixIconSpacing,
-            ) &&
-            const DeepCollectionEquality().equals(
-              suffixIconSpacing,
-              other.suffixIconSpacing,
             ) &&
             const DeepCollectionEquality().equals(fontSize, other.fontSize) &&
             const DeepCollectionEquality().equals(
@@ -413,18 +333,6 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
             const DeepCollectionEquality().equals(
               helperTextSpacing,
               other.helperTextSpacing,
-            ) &&
-            const DeepCollectionEquality().equals(
-              prefixIconSize,
-              other.prefixIconSize,
-            ) &&
-            const DeepCollectionEquality().equals(
-              suffixIconSize,
-              other.suffixIconSize,
-            ) &&
-            const DeepCollectionEquality().equals(
-              errorIconSize,
-              other.errorIconSize,
             ) &&
             const DeepCollectionEquality().equals(
               focusAnimationDuration,
@@ -474,20 +382,12 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
       const DeepCollectionEquality().hash(focusedBorderColor),
       const DeepCollectionEquality().hash(errorBorderColor),
       const DeepCollectionEquality().hash(disabledBorderColor),
-      const DeepCollectionEquality().hash(prefixIconColor),
-      const DeepCollectionEquality().hash(suffixIconColor),
-      const DeepCollectionEquality().hash(disabledIconColor),
-      const DeepCollectionEquality().hash(errorIconColor),
       const DeepCollectionEquality().hash(borderRadius),
       const DeepCollectionEquality().hash(borderWidth),
       const DeepCollectionEquality().hash(hoverBorderWidth),
       const DeepCollectionEquality().hash(focusedBorderWidth),
       const DeepCollectionEquality().hash(errorBorderWidth),
       const DeepCollectionEquality().hash(contentPadding),
-      const DeepCollectionEquality().hash(prefixPadding),
-      const DeepCollectionEquality().hash(suffixPadding),
-      const DeepCollectionEquality().hash(prefixIconSpacing),
-      const DeepCollectionEquality().hash(suffixIconSpacing),
       const DeepCollectionEquality().hash(fontSize),
       const DeepCollectionEquality().hash(fontWeight),
       const DeepCollectionEquality().hash(fontFamily),
@@ -495,9 +395,6 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
       const DeepCollectionEquality().hash(lineHeight),
       const DeepCollectionEquality().hash(helperTextFontSize),
       const DeepCollectionEquality().hash(helperTextSpacing),
-      const DeepCollectionEquality().hash(prefixIconSize),
-      const DeepCollectionEquality().hash(suffixIconSize),
-      const DeepCollectionEquality().hash(errorIconSize),
       const DeepCollectionEquality().hash(focusAnimationDuration),
       const DeepCollectionEquality().hash(focusAnimationCurve),
       const DeepCollectionEquality().hash(hoverAnimationDuration),
@@ -527,20 +424,12 @@ extension TextThemeExtensionBuildContextProps on BuildContext {
   Color get focusedBorderColor => textThemeExtension.focusedBorderColor;
   Color get errorBorderColor => textThemeExtension.errorBorderColor;
   Color get disabledBorderColor => textThemeExtension.disabledBorderColor;
-  Color get prefixIconColor => textThemeExtension.prefixIconColor;
-  Color get suffixIconColor => textThemeExtension.suffixIconColor;
-  Color get disabledIconColor => textThemeExtension.disabledIconColor;
-  Color get errorIconColor => textThemeExtension.errorIconColor;
   double get borderRadius => textThemeExtension.borderRadius;
   double get borderWidth => textThemeExtension.borderWidth;
   double get hoverBorderWidth => textThemeExtension.hoverBorderWidth;
   double get focusedBorderWidth => textThemeExtension.focusedBorderWidth;
   double get errorBorderWidth => textThemeExtension.errorBorderWidth;
   EdgeInsets get contentPadding => textThemeExtension.contentPadding;
-  EdgeInsets get prefixPadding => textThemeExtension.prefixPadding;
-  EdgeInsets get suffixPadding => textThemeExtension.suffixPadding;
-  double get prefixIconSpacing => textThemeExtension.prefixIconSpacing;
-  double get suffixIconSpacing => textThemeExtension.suffixIconSpacing;
   double get fontSize => textThemeExtension.fontSize;
   FontWeight get fontWeight => textThemeExtension.fontWeight;
   String? get fontFamily => textThemeExtension.fontFamily;
@@ -548,9 +437,6 @@ extension TextThemeExtensionBuildContextProps on BuildContext {
   double get lineHeight => textThemeExtension.lineHeight;
   double get helperTextFontSize => textThemeExtension.helperTextFontSize;
   double get helperTextSpacing => textThemeExtension.helperTextSpacing;
-  double get prefixIconSize => textThemeExtension.prefixIconSize;
-  double get suffixIconSize => textThemeExtension.suffixIconSize;
-  double get errorIconSize => textThemeExtension.errorIconSize;
   Duration get focusAnimationDuration =>
       textThemeExtension.focusAnimationDuration;
   Curve get focusAnimationCurve => textThemeExtension.focusAnimationCurve;

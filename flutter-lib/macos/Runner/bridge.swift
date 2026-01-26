@@ -64,7 +64,7 @@ class FlutterBridgeController {
             print("FlutterBridgeController.initialize 5 - Headless mode (offscreen window)")
             // Create an offscreen window to trigger Flutter engine
             let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
+                contentRect: NSRect(x: 0, y: 0, width: 1280, height: 720),
                 styleMask: [.borderless],
                 backing: .buffered,
                 defer: false)
@@ -76,7 +76,7 @@ class FlutterBridgeController {
 
             if let flutterView = flutterViewController?.view {
                 // Set explicit frame - don't rely on window.contentLayoutRect
-                let explicitFrame = NSRect(x: 0, y: 0, width: 800, height: 600)
+                let explicitFrame = NSRect(x: 0, y: 0, width: 1280, height: 720)
                 flutterView.frame = explicitFrame
                 self.view = flutterView
                 print("Headless mode: Actual frame is \(flutterView.frame)")
@@ -172,6 +172,12 @@ public func SetBounds(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: 
 // print("Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_SetBounds")
     let controller = context != 0 ? unsafeBitCast(UInt(context), to: FlutterBridgeController.self) : nil
     controller!.setFrame(x: x, y: y, w: width, h: height, vx: vx, vy: vy, vw: vwidth, vh: vheight)
+}
+
+// No-op on macOS - message pumping not needed (run loop handles it automatically)
+@_cdecl("Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_PumpMessages")
+public func PumpMessages(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, maxMessages: jint) -> jint {
+    return 0
 }
 
 class FlippedView: NSView {

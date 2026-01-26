@@ -34,21 +34,17 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     final thickness = widgetTheme.borderWidth;
     
     final hasValidBounds = hasBounds(state.bounds);
-    final constraints = hasValidBounds ? getConstraintsFromBounds(state.bounds) : isVertical ? BoxConstraints(maxHeight: 7) : BoxConstraints(maxWidth: 7);
+    final constraints = hasValidBounds ? getConstraintsFromBounds(state.bounds) : isVertical ? BoxConstraints(maxHeight: 7, maxWidth: thickness) : BoxConstraints(maxWidth: 7, maxHeight: thickness);
     
 Widget separator;
     if (isVertical) {
       separator = VerticalDivider(
-        width: thickness,
-        thickness: thickness,
         color: separatorColor,
         indent: 0,
         endIndent: 0,
       );
     } else {
       separator = Divider(
-        height: thickness,
-        thickness: thickness,
         color: separatorColor,
         indent: 0,
         endIndent: 0,
@@ -69,8 +65,8 @@ Widget separator;
         child: wrap(
           constraints != null
               ? SizedBox(
-                  width: isVertical ? thickness : constraints.maxWidth,
-                  height: isVertical ? constraints.maxHeight : thickness,
+                  width: constraints.maxWidth,
+                  height:  constraints.maxHeight,
                   child: separator,
                 )
               : separator,

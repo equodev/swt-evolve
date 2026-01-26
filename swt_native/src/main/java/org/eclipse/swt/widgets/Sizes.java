@@ -1,7 +1,6 @@
 package org.eclipse.swt.widgets;
 
-import dev.equo.swt.size.ButtonSizes;
-import dev.equo.swt.size.LabelSizes;
+import dev.equo.swt.size.*;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.DartCCombo;
 import org.eclipse.swt.custom.DartCLabel;
@@ -52,36 +51,12 @@ public class Sizes {
         return new Point(150, 50);
     }
 
-    public static Point computeSize(DartButton dartButton, int wHint, int hHint, boolean changed) {
-        return ButtonSizes.computeSize(dartButton, wHint, hHint, changed);
+    public static Point computeSize(DartButton c, int wHint, int hHint, boolean changed) {
+        return ButtonSizes.computeSize(c, wHint, hHint, changed);
     }
 
     public static Point computeSize(DartCCombo c, int wHint, int hHint, boolean changed) {
-        int maxLength = 0;
-        String[] items = c._items();
-        if (items != null) {
-            for (String item : items) {
-                if (item != null && item.length() > maxLength) {
-                    maxLength = item.length();
-                }
-            }
-        }
-
-        String text = c.getText();
-        int textLength = (text != null ? text.length() : 0);
-        maxLength = Math.max(maxLength, textLength);
-
-        int width = maxLength > 0 ? (int)(maxLength * AVERAGE_CHAR_WIDTH + 2 * HORIZONTAL_PADDING) : 100;
-        width += 30;
-
-        int height = 25;
-        if ((c.getStyle() & SWT.SIMPLE) != 0) {
-            int visibleCount = c.getApi().getVisibleItemCount();
-            int itemCount = items != null ? items.length : 0;
-            height = Math.min(visibleCount, itemCount) * 24 + 32;
-        }
-
-        return new Point(Math.max(width, 120), height);
+        return CComboSizes.computeSize(c, wHint, hHint, changed);
     }
 
     public static Point computeSize(DartCLabel dartCLabel, int wHint, int hHint, boolean changed) {
@@ -89,31 +64,7 @@ public class Sizes {
     }
 
     public static Point computeSize(DartCombo c, int wHint, int hHint, boolean changed) {
-        int maxLength = 0;
-        String[] items = c._items();
-        if (items != null) {
-            for (String item : items) {
-                if (item != null && item.length() > maxLength) {
-                    maxLength = item.length();
-                }
-            }
-        }
-
-        String text = c._text();
-        int textLength = (text != null ? text.length() : 0);
-        maxLength = Math.max(maxLength, textLength);
-
-        int width = maxLength > 0 ? (int)(maxLength * AVERAGE_CHAR_WIDTH + 2 * HORIZONTAL_PADDING) : 100;
-        width += 30;
-
-        int height = 25;
-        if ((c.getApi().style & org.eclipse.swt.SWT.SIMPLE) != 0) {
-            int visibleCount = c.getApi().getVisibleItemCount();
-            int itemCount = items != null ? items.length : 0;
-            height = Math.min(visibleCount, itemCount) * 24 + 32;
-        }
-
-        return new Point(Math.max(width, 120), height);
+        return ComboSizes.computeSize(c, wHint, hHint, changed);
     }
 
     public static Point computeSize(DartComposite composite, int wHint, int hHint, boolean changed) {
@@ -223,8 +174,8 @@ public class Sizes {
         return new Point(maxWidth, totalHeight);
     }
 
-    public static Point computeSize(DartLabel dartLabel, int wHint, int hHint, boolean changed) {
-        return LabelSizes.computeSize(dartLabel, wHint, hHint, changed);
+    public static Point computeSize(DartLabel c, int wHint, int hHint, boolean changed) {
+        return LabelSizes.computeSize(c, wHint, hHint, changed);
     }
 
     public static Point computeSize(DartLink c, int wHint, int hHint, boolean changed) {
@@ -259,14 +210,7 @@ public class Sizes {
     }
 
     public static Point computeSize(DartProgressBar c, int wHint, int hHint, boolean changed) {
-        int style = c.getApi().style;
-        boolean isVertical = (style & org.eclipse.swt.SWT.VERTICAL) != 0;
-
-        if (isVertical) {
-            return new Point(20, 200);
-        } else {
-            return new Point(200, 20);
-        }
+        return ProgressBarSizes.computeSize(c, wHint, hHint, changed);
     }
 
     public static Point computeSize(DartSash w, int wHint, int hHint, boolean changed) {
@@ -400,31 +344,7 @@ public class Sizes {
     }
 
     public static Point computeSize(DartText c, int wHint, int hHint, boolean changed) {
-        String text = c._text();
-        int textLength = (text != null ? text.length() : 0);
-
-        if ((c.getApi().style & org.eclipse.swt.SWT.MULTI) != 0) {
-            int width = 200;
-            if (text != null && !text.isEmpty()) {
-                String[] lines = text.split("\n");
-                int maxLineLength = 0;
-                for (String line : lines) {
-                    if (line.length() > maxLineLength) {
-                        maxLineLength = line.length();
-                    }
-                }
-                width = (int)(maxLineLength * AVERAGE_CHAR_WIDTH + 2 * HORIZONTAL_PADDING);
-            }
-            return new Point(Math.max(width, 200), 120);
-        }
-
-        int width = (int)(textLength * AVERAGE_CHAR_WIDTH + 2 * HORIZONTAL_PADDING);
-
-        if ((c.getApi().style & org.eclipse.swt.SWT.SEARCH) != 0) {
-            width += 64;
-        }
-
-        return new Point(Math.max(width, 100), 32);
+        return TextSizes.computeSize(c, wHint, hHint, changed);
     }
 
     public static Rectangle computeTrim(DartGroup widget, int x, int y, int width, int height) {

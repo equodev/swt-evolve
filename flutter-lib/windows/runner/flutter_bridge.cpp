@@ -121,6 +121,22 @@ std::wstring GetDllPath() {
     return L""; // Return an empty wide string on failure
 }
 
+int pumpMessages(int maxMessages) {
+    ::MSG msg;
+    int count = 0;
+    for (int i = 0; i < maxMessages; i++) {
+        if (::PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+            ::TranslateMessage(&msg);
+            ::DispatchMessage(&msg);
+            count++;
+        } else {
+            break;
+        }
+    }
+//    std::cout<<"Processed "<<count<<" messages"<<std::endl;
+    return count;
+}
+
 void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::string widgetName, std::string theme, int backgroundColor, int parentBackgroundColor) {
     std::cout<<"InitializeFlutterWindow"<<std::endl;
   // Attach to console when present (e.g., 'flutter run') or create a new console when running with a debugger.
@@ -151,15 +167,22 @@ void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::
 //   HWND parentWnd = CreateWindowW(kWindowClassName, L"mainWindow", WS_OVERLAPPEDWINDOW,
 //       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
 
+  FlutterWindow* window = new FlutterWindow(project);
+
   if (!parentWnd)
   {
-    std::cout<<"Main END1 "<<__FILE__<<__LINE__<<std::endl;
-    return 0;
+    std::cout<<"InitializeFlutterWindow - Headless mode (offscreen window)"<<__FILE__<<__LINE__<<std::endl;
+    Win32Window::Point origin(10, 10);
+    Win32Window::Size size(1280, 720);
+    if (!window->Create(L"swtflutter", origin, size, 0, true)) {
+      std::cout<<"InitializeFlutterWindow - Error1"<<__FILE__<<__LINE__<<std::endl;
+      return 0;
+    }
+    window->SetQuitOnClose(true);
+    pumpMessages(1);
+    return window;
   }
 
-//  window = std::make_unique<FlutterWindow>(*project.get());
-//  FlutterWindow* window = new FlutterWindow(*project.get());
-  FlutterWindow* window = new FlutterWindow(project);
   // FlutterWindow window(*project.get());
 //  Win32Window::Point origin(0, 0);
 //  Win32Window::Size size(600, 500);
@@ -167,7 +190,7 @@ void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::
   GetClientRect((HWND)parentWnd, &frame);
   Win32Window::Point origin(0, 0);
   Win32Window::Size size(frame.right - frame.left, frame.bottom - frame.top);
-  if (!window->Create(L"swtflutter1", origin, size, (HWND)parentWnd)) {
+  if (!window->Create(L"swtflutter1", origin, size, (HWND)parentWnd), false) {
     return 0;
   }
 //  window->SetQuitOnClose(true);
@@ -287,3 +310,10 @@ JNIEXPORT void JNICALL Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_SetBoun
     Win32Window::Size vsize(vwidth, vheight);
     window->Move(origin, size, vorigin, vsize);
 }
+
+// Pump Windows messages to allow Flutter/Dart async operations to progress
+// Java should call this periodically in headless mode
+JNIEXPORT jint JNICALL Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_PumpMessages(JNIEnv* env, jclass cls, jint maxMessages) {
+    return pumpMessages(maxMessages);
+}
+

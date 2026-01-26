@@ -91,6 +91,7 @@ class ButtonThemeExtension extends ThemeExtension<ButtonThemeExtension> with _$B
   final double dropdownButtonIconSize;
   
   // Checkbox sizes
+  final double checkboxSize;
   final double checkboxCheckmarkSizeMultiplier;
   final double checkboxGrayedMarginMultiplier;
   
@@ -154,6 +155,7 @@ class ButtonThemeExtension extends ThemeExtension<ButtonThemeExtension> with _$B
     required this.radioButtonInnerSize,
     required this.radioButtonTextSpacing,
     required this.dropdownButtonIconSize,
+    required this.checkboxSize,
     required this.checkboxCheckmarkSizeMultiplier,
     required this.checkboxGrayedMarginMultiplier,
     required this.imageTextSpacing,

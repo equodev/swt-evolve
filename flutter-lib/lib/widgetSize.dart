@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:swtflutter/screenshot.dart';
 import 'package:swtflutter/src/gen/point.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/widget.dart';
@@ -16,6 +17,8 @@ import 'package:swtflutter/src/theme/theme.dart';
 import 'main.dart';
 import 'src/comm/comm.dart';
 
+const SCREENSHOT = false;
+
 class MeasurementResult {
   final Size widget;
   final Size? text;
@@ -25,22 +28,22 @@ class MeasurementResult {
   MeasurementResult(this.widget, this.text, this.textStyle, this.image);
 }
 
-MeasurementResult _measureCurrentCase(GlobalKey key) {
+(MeasurementResult, RenderBox?) _measureCurrentCase(GlobalKey key) {
   final context = key.currentContext;
   if (context == null) {
     print("ERROR: context is null - widget not in tree");
-    return MeasurementResult(Size.zero, null, null, null);
+    return (MeasurementResult(Size.zero, null, null, null), null);
   }
 
   final renderBox = context.findRenderObject() as RenderBox?;
   if (renderBox == null) {
     print("ERROR: renderBox is null");
-    return MeasurementResult(Size.zero, null, null, null);
+    return (MeasurementResult(Size.zero, null, null, null), null);
   }
 
   if (!renderBox.hasSize) {
     print("ERROR: renderBox has no size (not laid out yet)");
-    return MeasurementResult(Size.zero, null, null, null);
+    return (MeasurementResult(Size.zero, null, null, null), null);
   }
 
   printSizes(renderBox);
@@ -48,7 +51,7 @@ MeasurementResult _measureCurrentCase(GlobalKey key) {
   final (textSize, textStyle) = _findTextSize(renderBox);
   final imageSize = _findImageSize(renderBox);
 
-  return MeasurementResult(widgetSize, textSize, textStyle, imageSize);
+  return (MeasurementResult(widgetSize, textSize, textStyle, imageSize), renderBox);
 }
 
 (Size?, TextStyle?) _findTextSize(RenderBox renderBox) {
@@ -61,7 +64,17 @@ MeasurementResult _measureCurrentCase(GlobalKey key) {
       }
       return (renderBox.size, null);
     }
+  } else if (renderBox is RenderEditable) {
+    final inlineSpan = renderBox.text;
+    if (inlineSpan != null) {
+      final textContent = inlineSpan.toPlainText();
+      if (inlineSpan is TextSpan) {
+        return (renderBox.size, inlineSpan.style);
+      }
+    }
+    return (renderBox.size, null);
   }
+
   (Size?, TextStyle?) result = (null, null);
   renderBox.visitChildren((child) {
     if (result.$1 == null && child is RenderBox) {
@@ -86,7 +99,7 @@ Size? _findImageSize(RenderBox renderBox) {
 
 void printSizes(RenderBox renderBox) {
   var size = renderBox.size;
-  print("flutter size for ${renderBox}: ${size.width}x${size.height}");
+  // print("flutter size for ${renderBox}: ${size.width}x${size.height}");
   renderBox.visitChildren((child) {
     if (child is RenderBox) {
       printSizes(child);
@@ -95,7 +108,6 @@ void printSizes(RenderBox renderBox) {
 }
 
 void measureRequest(String bridge, int id) {
-  WidgetsFlutterBinding.ensureInitialized();
   print("Listen on $bridge/$id/widgetSizeRequest");
   EquoCommService.onRaw("$bridge/$id/widgetSizeRequest", (payload) {
     print("on $bridge/$id/sizeRequest $payload");
@@ -109,13 +121,19 @@ void measureRequest(String bridge, int id) {
     }
 
     final key = GlobalKey();
-    final widget = mapWidget(widgetConfig["widget"]);
+    var widgetValue = widgetConfig["widget"];
+    final widget = mapWidget(widgetValue);
+    final widgetName = widgetValue["swt"];
+    final caseName = widgetConfig["name"] as String;
     final testApp = _TestApp(KeyedSubtree(key: key, child: widget), bridge, id);
     runApp(testApp);
 
     // Schedule callback after widget is run, and wait for it to be fully laid out
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-        final result = _measureCurrentCase(key);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final (result, renderBox) = _measureCurrentCase(key);
+        if (SCREENSHOT) {
+          await captureScreenshot(renderBox, widgetName, caseName);
+        }
 
         final response = {
           'widget': {'x': result.widget.width.round(), 'y': result.widget.height.round()},
@@ -124,10 +142,11 @@ void measureRequest(String bridge, int id) {
           'image': result.image != null ? {'x': result.image!.width, 'y': result.image!.height} : null,
         };
 
-        print("send $bridge/$id/widgetSizeResponse $response");
+        // print("send $bridge/$id/widgetSizeResponse $response");
         EquoCommService.sendPayload("$bridge/$id/widgetSizeResponse", jsonEncode(response));
     });
   });
+  runApp(SizedBox());
 }
 
 class _TestApp extends StatefulWidget {
