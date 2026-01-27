@@ -126,7 +126,10 @@ ButtonThemeExtension _getButtonTheme({
     
     // Common sizes
     imageTextSpacing: 8.0,
-    
+
+    // Push Button padding
+    pushButtonPadding: const EdgeInsets.only(left: 8.0, right: 8.0, top: 3.0, bottom: 5.0),
+
     // Disabled colors
     disabledBackgroundColor: colorScheme.surfaceVariant,
     disabledForegroundColor: colorSchemeExtension.onSurfaceVariantDisabled,

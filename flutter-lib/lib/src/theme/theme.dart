@@ -22,6 +22,10 @@ import 'theme_settings/link_theme_settings.dart';
 import 'theme_settings/group_theme_settings.dart';
 import 'theme_settings/expandbar_theme_settings.dart';
 import 'theme_settings/expanditem_theme_settings.dart';
+import 'theme_settings/slider_theme_settings.dart';
+import 'theme_settings/spinner_theme_settings.dart';
+import 'theme_settings/scrolledcomposite_theme_settings.dart';
+import 'theme_settings/scale_theme_settings.dart';
 
 Color calculateBackgroundColor(int? backgroundColor, bool useDarkTheme) {
   return backgroundColor != null
@@ -420,6 +424,26 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final sliderTheme = getSliderLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final spinnerTheme = getSpinnerLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final scrolledCompositeTheme = getScrolledCompositeLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final scaleTheme = getScaleLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -446,6 +470,10 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
       groupTheme,
       expandBarTheme,
       expandItemTheme,
+      sliderTheme,
+      spinnerTheme,
+      scrolledCompositeTheme,
+      scaleTheme,
     ],
   );
 }
@@ -559,6 +587,26 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final sliderTheme = getSliderLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final spinnerTheme = getSpinnerLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final scrolledCompositeTheme = getScrolledCompositeLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final scaleTheme = getScaleLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -586,6 +634,10 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
       groupTheme,
       expandBarTheme,
       expandItemTheme,
+      sliderTheme,
+      spinnerTheme,
+      scrolledCompositeTheme,
+      scaleTheme,
     ],
   );
 }
@@ -702,6 +754,26 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final sliderTheme = getSliderDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final spinnerTheme = getSpinnerDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final scrolledCompositeTheme = getScrolledCompositeDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final scaleTheme = getScaleDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -728,6 +800,10 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
       groupTheme,
       expandBarTheme,
       expandItemTheme,
+      sliderTheme,
+      spinnerTheme,
+      scrolledCompositeTheme,
+      scaleTheme,
     ],
   );
 }
@@ -841,6 +917,26 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final sliderTheme = getSliderDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final spinnerTheme = getSpinnerDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final scrolledCompositeTheme = getScrolledCompositeDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final scaleTheme = getScaleDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -868,6 +964,10 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
       groupTheme,
       expandBarTheme,
       expandItemTheme,
+      sliderTheme,
+      spinnerTheme,
+      scrolledCompositeTheme,
+      scaleTheme,
     ],
   );
 }

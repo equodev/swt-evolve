@@ -33,6 +33,14 @@ public class ButtonSizes {
     }
 
     static class PUSH {
+        static final double MIN_WIDTH = 18.0;
+        static final double MIN_HEIGHT = 10.0;
+        static final double HORIZONTAL_PADDING = 18.0;
+        static final double VERTICAL_PADDING = 10.0;
+        static final boolean EMPTY_TEXT_AFFECTS_SIZING = false;
+    }
+
+    static class TOGGLE {
         static final double MIN_WIDTH = 2.0;
         static final double MIN_HEIGHT = 2.0;
         static final double HORIZONTAL_PADDING = 2.0;
@@ -56,11 +64,16 @@ public class ButtonSizes {
             m.image = computeImage(widget);
             width = Math.max((m.text.x() + m.image.x()) + ((m.text.x() > 0 || m.image.x() > 0) ? CHECK.HORIZONTAL_PADDING : 0), CHECK.MIN_WIDTH);
             height = Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? CHECK.VERTICAL_PADDING : 0), CHECK.MIN_HEIGHT);
-        } else if (hasFlags(style, SWT.PUSH) || hasFlags(style, (SWT.PUSH | SWT.FLAT)) || hasFlags(style, (SWT.PUSH | SWT.WRAP)) || hasFlags(style, SWT.TOGGLE) || hasFlags(style, (SWT.TOGGLE | SWT.FLAT)) || hasFlags(style, (SWT.TOGGLE | SWT.WRAP))) {
+        } else if (hasFlags(style, SWT.PUSH) || hasFlags(style, (SWT.PUSH | SWT.FLAT)) || hasFlags(style, (SWT.PUSH | SWT.WRAP))) {
             m.text = computeText(widget, m, PUSH.EMPTY_TEXT_AFFECTS_SIZING);
             m.image = computeImage(widget);
             width = Math.max((m.text.x() + m.image.x()) + ((m.text.x() > 0 || m.image.x() > 0) ? PUSH.HORIZONTAL_PADDING : 0), PUSH.MIN_WIDTH);
             height = Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? PUSH.VERTICAL_PADDING : 0), PUSH.MIN_HEIGHT);
+        } else if (hasFlags(style, SWT.TOGGLE) || hasFlags(style, (SWT.TOGGLE | SWT.FLAT)) || hasFlags(style, (SWT.TOGGLE | SWT.WRAP))) {
+            m.text = computeText(widget, m, TOGGLE.EMPTY_TEXT_AFFECTS_SIZING);
+            m.image = computeImage(widget);
+            width = Math.max((m.text.x() + m.image.x()) + ((m.text.x() > 0 || m.image.x() > 0) ? TOGGLE.HORIZONTAL_PADDING : 0), TOGGLE.MIN_WIDTH);
+            height = Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? TOGGLE.VERTICAL_PADDING : 0), TOGGLE.MIN_HEIGHT);
         } else { // ARROW, ARROW|FLAT, ARROW|WRAP
             width = ARROW.MIN_WIDTH;
             height = ARROW.MIN_HEIGHT;

@@ -11,6 +11,7 @@ part 'button_theme_extension.g.dart';
 @ColorConverter()
 @DurationConverter()
 @TextStyleConverter()
+@EdgeInsetsConverter()
 class ButtonThemeExtension extends ThemeExtension<ButtonThemeExtension> with _$ButtonThemeExtensionTailorMixin {
   final Duration buttonPressDelay;
   final bool enableTapAnimation;
@@ -97,6 +98,9 @@ class ButtonThemeExtension extends ThemeExtension<ButtonThemeExtension> with _$B
   
   // Common sizes
   final double imageTextSpacing;
+
+  // Push Button padding
+  final EdgeInsets pushButtonPadding;
   
   // Disabled colors
   final Color disabledBackgroundColor;
@@ -159,6 +163,7 @@ class ButtonThemeExtension extends ThemeExtension<ButtonThemeExtension> with _$B
     required this.checkboxCheckmarkSizeMultiplier,
     required this.checkboxGrayedMarginMultiplier,
     required this.imageTextSpacing,
+    required this.pushButtonPadding,
     required this.disabledBackgroundColor,
     required this.disabledForegroundColor,
   });
