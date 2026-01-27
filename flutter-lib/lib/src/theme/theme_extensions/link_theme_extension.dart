@@ -34,7 +34,6 @@ class LinkThemeExtension extends ThemeExtension<LinkThemeExtension> with _$LinkT
 
   // Spacing and padding
   final EdgeInsets padding;
-  final double minHeight;
 
   // Interactive properties
   final double disabledOpacity;
@@ -58,7 +57,6 @@ class LinkThemeExtension extends ThemeExtension<LinkThemeExtension> with _$LinkT
     this.linkTextStyle,
     this.disabledTextStyle,
     required this.padding,
-    required this.minHeight,
     required this.disabledOpacity,
     required this.hoverAnimationDuration,
     required this.linkDecoration,

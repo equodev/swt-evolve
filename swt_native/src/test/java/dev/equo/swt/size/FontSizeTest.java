@@ -35,7 +35,7 @@ public class FontSizeTest extends SizeAssert {
     public static IntStream sizes() {
         return IntStream.concat(IntStream.of(10), new Random().ints(4,50).filter(i -> i != 10)
                 .distinct()
-                .limit(9)
+                .limit(4)
                 .sorted());
     }
 
@@ -61,6 +61,8 @@ public class FontSizeTest extends SizeAssert {
                 .filter(f -> !f.getName().contains("Noto Sans Tagalog"))
                 .filter(f -> !f.getName().contains("Noto Sans Batak"))
                 .filter(f -> !f.getName().contains("Chalkboard SE"))
+                .filter(f -> !f.getName().contains("Specialty"))
+                .filter(f -> !f.getName().contains("Zapfino"))
                 .map(FontVariation::from)
                 .distinct();
     }

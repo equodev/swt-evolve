@@ -38,7 +38,6 @@ LinkThemeExtension _$LinkThemeExtensionFromJson(Map<String, dynamic> json) =>
       padding: const EdgeInsetsConverter().fromJson(
         json['padding'] as Map<String, dynamic>,
       ),
-      minHeight: (json['minHeight'] as num).toDouble(),
       disabledOpacity: (json['disabledOpacity'] as num).toDouble(),
       hoverAnimationDuration: Duration(
         microseconds: (json['hoverAnimationDuration'] as num).toInt(),
@@ -79,7 +78,6 @@ Map<String, dynamic> _$LinkThemeExtensionToJson(
     instance.disabledTextStyle,
   ),
   'padding': const EdgeInsetsConverter().toJson(instance.padding),
-  'minHeight': instance.minHeight,
   'disabledOpacity': instance.disabledOpacity,
   'hoverAnimationDuration': instance.hoverAnimationDuration.inMicroseconds,
   'linkDecoration': const TextDecorationConverter().toJson(

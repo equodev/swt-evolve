@@ -59,8 +59,8 @@ public class Sizes {
         return CComboSizes.computeSize(c, wHint, hHint, changed);
     }
 
-    public static Point computeSize(DartCLabel dartCLabel, int wHint, int hHint, boolean changed) {
-        return new Point(100, 100);
+    public static Point computeSize(DartCLabel c, int wHint, int hHint, boolean changed) {
+        return CLabelSizes.computeSize(c, wHint, hHint, changed);
     }
 
     public static Point computeSize(DartCombo c, int wHint, int hHint, boolean changed) {
@@ -179,17 +179,7 @@ public class Sizes {
     }
 
     public static Point computeSize(DartLink c, int wHint, int hHint, boolean changed) {
-        String text = c._text();
-        if (text == null || text.isEmpty()) {
-            return new Point(100, 32);
-        }
-
-        String plainText = text.replaceAll("<a[^>]*>", "").replaceAll("</a>", "");
-        int textLength = plainText.length();
-
-        int width = (int)(textLength * AVERAGE_CHAR_WIDTH + 2 * HORIZONTAL_PADDING);
-
-        return new Point(Math.max(width, 100), 32);
+        return LinkSizes.computeSize(c, wHint, hHint, changed);
     }
 
     public static Point computeSize(DartList c, int wHint, int hHint, boolean changed) {

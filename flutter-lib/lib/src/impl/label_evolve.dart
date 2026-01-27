@@ -36,7 +36,7 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = hasValidBounds ? getConstraintsFromBounds(state.bounds) : isVertical ? BoxConstraints(maxHeight: 7, maxWidth: thickness) : BoxConstraints(maxWidth: 7, maxHeight: thickness);
     
-Widget separator;
+    Widget separator;
     if (isVertical) {
       separator = VerticalDivider(
         color: separatorColor,
