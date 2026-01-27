@@ -4,47 +4,72 @@ import '../gen/slider.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../impl/control_evolve.dart';
-import '../styles.dart';
-import 'color_utils.dart';
+import '../theme/theme_extensions/slider_theme_extension.dart';
+import 'utils/widget_utils.dart';
 
 class SliderImpl<T extends SliderSwt, V extends VSlider>
     extends ControlImpl<T, V> {
   @override
   Widget build(BuildContext context) {
-    // Initialize values with defaults
-    state.minimum ??= 0;
-    state.maximum ??= 100;
-    state.selection ??= 0;
-    state.increment ??= 1;
-    state.pageIncrement ??= 10;
-    state.thumb ??= 10;
+    final widgetTheme = Theme.of(context).extension<SliderThemeExtension>()!;
 
-    // Ensure selection is within bounds
+    final minimum = state.minimum ?? widgetTheme.minimum;
+    final maximum = state.maximum ?? widgetTheme.maximum;
+    final selection = state.selection ?? widgetTheme.selection;
+    final increment = state.increment ?? widgetTheme.increment;
+    final pageIncrement = state.pageIncrement ?? widgetTheme.pageIncrement;
+    final thumb = state.thumb ?? widgetTheme.thumb;
+
     final currentValue =
-        state.selection!.clamp(state.minimum!, state.maximum!).toDouble();
+        selection!.clamp(minimum, maximum).toDouble();
 
-    // Use bounds if available, otherwise use default size from Sizes.java
-    final width = state.bounds?.width.toDouble() ?? 200.0;
-    final height = state.bounds?.height.toDouble() ?? 40.0;
-    final isVertical = state.style.has(SWT.VERTICAL);
+    final enabled = state.enabled ?? true;
+    final isVertical = hasStyle(state.style, SWT.VERTICAL);
+
+    final hasValidBounds = hasBounds(state.bounds);
+    final double width;
+    final double height;
+
+    if (hasValidBounds) {
+      width = state.bounds!.width.toDouble();
+      height = state.bounds!.height.toDouble();
+    } else {
+      if (isVertical) {
+        width = widgetTheme.minVerticalWidth;
+        height = widgetTheme.minVerticalHeight;
+      } else {
+        width = widgetTheme.minWidth;
+        height = widgetTheme.minHeight;
+      }
+    }
+
+    final activeTrackColor = getSliderActiveTrackColor(state, widgetTheme, enabled: enabled);
+    final inactiveTrackColor = getSliderInactiveTrackColor(state, widgetTheme, enabled: enabled);
+    final thumbColor = getSliderThumbColor(state, widgetTheme, enabled: enabled);
 
     return wrap(
-      _SimpleSlider(
+      _StyledSlider(
         value: currentValue,
-        min: state.minimum!.toDouble(),
-        max: state.maximum!.toDouble(),
-        enabled: state.enabled ?? true,
+        min: minimum.toDouble(),
+        max: maximum.toDouble(),
+        enabled: enabled,
         width: width,
         height: height,
         isVertical: isVertical,
+        hasValidBounds: hasValidBounds,
+        widgetTheme: widgetTheme,
+        activeTrackColor: activeTrackColor,
+        inactiveTrackColor: inactiveTrackColor,
+        thumbColor: thumbColor,
+        increment: increment,
+        pageIncrement: pageIncrement,
+        thumb: thumb,
         onChanged: (value) {
-          // Don't call setState here - wait for Java to respond
           state.selection = value.round();
           var e = VEvent()..index = state.selection;
           widget.sendSelectionSelection(state, e);
         },
         onChangeEnd: (value) {
-          // Don't call setState here - wait for Java to respond
           state.selection = value.round();
           var e = VEvent()..index = state.selection;
           widget.sendSelectionDefaultSelection(state, e);
@@ -54,7 +79,49 @@ class SliderImpl<T extends SliderSwt, V extends VSlider>
   }
 }
 
-class _SimpleSlider extends StatefulWidget {
+Color getSliderActiveTrackColor(
+  VSlider state,
+  SliderThemeExtension widgetTheme, {
+  required bool enabled,
+}) {
+  if (!enabled) {
+    return widgetTheme.disabledActiveTrackColor;
+  }
+  return getForegroundColor(
+    foreground: state.foreground,
+    defaultColor: widgetTheme.activeTrackColor,
+  );
+}
+
+Color getSliderInactiveTrackColor(
+  VSlider state,
+  SliderThemeExtension widgetTheme, {
+  required bool enabled,
+}) {
+  if (!enabled) {
+    return widgetTheme.disabledInactiveTrackColor;
+  }
+  return getBackgroundColor(
+    background: state.background,
+    defaultColor: widgetTheme.inactiveTrackColor,
+  ) ?? widgetTheme.inactiveTrackColor;
+}
+
+Color getSliderThumbColor(
+  VSlider state,
+  SliderThemeExtension widgetTheme, {
+  required bool enabled,
+}) {
+  if (!enabled) {
+    return widgetTheme.disabledThumbColor;
+  }
+  return getForegroundColor(
+    foreground: state.foreground,
+    defaultColor: widgetTheme.thumbColor,
+  );
+}
+
+class _StyledSlider extends StatefulWidget {
   final double value;
   final double min;
   final double max;
@@ -64,9 +131,16 @@ class _SimpleSlider extends StatefulWidget {
   final double width;
   final double height;
   final bool isVertical;
+  final bool hasValidBounds;
+  final SliderThemeExtension widgetTheme;
+  final Color activeTrackColor;
+  final Color inactiveTrackColor;
+  final Color thumbColor;
+  final int increment;
+  final int pageIncrement;
+  final int thumb;
 
-  const _SimpleSlider({
-    Key? key,
+  const _StyledSlider({
     required this.value,
     required this.min,
     required this.max,
@@ -76,29 +150,38 @@ class _SimpleSlider extends StatefulWidget {
     required this.width,
     required this.height,
     required this.isVertical,
-  }) : super(key: key);
+    required this.hasValidBounds,
+    required this.widgetTheme,
+    required this.activeTrackColor,
+    required this.inactiveTrackColor,
+    required this.thumbColor,
+    required this.increment,
+    required this.pageIncrement,
+    required this.thumb,
+  });
 
   @override
-  _SimpleSliderState createState() => _SimpleSliderState();
+  _StyledSliderState createState() => _StyledSliderState();
 }
 
-class _SimpleSliderState extends State<_SimpleSlider> {
-  double? _localValue; // Temporary value during drag for smooth UI
+class _StyledSliderState extends State<_StyledSlider> {
+  double? _localValue;
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = getAccentColor();
-    final inactiveColor = getBorderColor();
-
-    // Use local value during drag, otherwise use prop value
     final displayValue = _localValue ?? widget.value;
 
     final slider = SliderTheme(
       data: SliderThemeData(
-        activeTrackColor: accentColor,
-        inactiveTrackColor: inactiveColor,
-        thumbColor: accentColor,
-        overlayColor: Colors.transparent,
+        activeTrackColor: widget.activeTrackColor,
+        inactiveTrackColor: widget.inactiveTrackColor,
+        thumbColor: widget.thumbColor,
+        overlayColor: widget.widgetTheme.overlayColor,
+        trackHeight: widget.widgetTheme.trackHeight,
+        thumbShape: RoundSliderThumbShape(
+          enabledThumbRadius: widget.widgetTheme.thumbRadius,
+        ),
+        trackShape: const RoundedRectSliderTrackShape(),
       ),
       child: Slider(
         value: displayValue.clamp(widget.min, widget.max),
@@ -106,7 +189,6 @@ class _SimpleSliderState extends State<_SimpleSlider> {
         max: widget.max,
         onChanged: widget.enabled
             ? (value) {
-                // Update local value for smooth UI during drag
                 setState(() {
                   _localValue = value;
                 });
@@ -115,7 +197,6 @@ class _SimpleSliderState extends State<_SimpleSlider> {
             : null,
         onChangeEnd: widget.enabled
             ? (value) {
-                // Clear local value and let Java's response be the source of truth
                 setState(() {
                   _localValue = null;
                 });
@@ -125,28 +206,24 @@ class _SimpleSliderState extends State<_SimpleSlider> {
       ),
     );
 
+    Widget result;
     if (widget.isVertical) {
-      // For vertical sliders, rotate the horizontal slider 90 degrees counter-clockwise
-      return Container(
-        width: widget.width,
-        height: widget.height,
-        child: RotatedBox(
-          quarterTurns:
-              3, // 270 degrees counter-clockwise (same as 90 degrees clockwise)
-          child: SizedBox(
-            width: widget.height, // Swap width and height because of rotation
-            height: widget.width,
-            child: slider,
-          ),
+      result = RotatedBox(
+        quarterTurns: 3,
+        child: SizedBox(
+          width: widget.height,
+          height: widget.width,
+          child: slider,
         ),
       );
     } else {
-      // Horizontal slider
-      return Container(
-        width: widget.width,
-        height: widget.height,
-        child: slider,
-      );
+      result = slider;
     }
+
+    return SizedBox(
+      width: widget.width,
+      height: widget.height,
+      child: result,
+    );
   }
 }

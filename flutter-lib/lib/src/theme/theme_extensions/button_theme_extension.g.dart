@@ -143,6 +143,9 @@ ButtonThemeExtension _$ButtonThemeExtensionFromJson(
   checkboxGrayedMarginMultiplier:
       (json['checkboxGrayedMarginMultiplier'] as num).toDouble(),
   imageTextSpacing: (json['imageTextSpacing'] as num).toDouble(),
+  pushButtonPadding: const EdgeInsetsConverter().fromJson(
+    json['pushButtonPadding'] as Map<String, dynamic>,
+  ),
   disabledBackgroundColor: const ColorConverter().fromJson(
     json['disabledBackgroundColor'] as String,
   ),
@@ -274,6 +277,9 @@ Map<String, dynamic> _$ButtonThemeExtensionToJson(
   'checkboxCheckmarkSizeMultiplier': instance.checkboxCheckmarkSizeMultiplier,
   'checkboxGrayedMarginMultiplier': instance.checkboxGrayedMarginMultiplier,
   'imageTextSpacing': instance.imageTextSpacing,
+  'pushButtonPadding': const EdgeInsetsConverter().toJson(
+    instance.pushButtonPadding,
+  ),
   'disabledBackgroundColor': const ColorConverter().toJson(
     instance.disabledBackgroundColor,
   ),

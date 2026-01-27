@@ -67,6 +67,7 @@ mixin _$ButtonThemeExtensionTailorMixin
   double get checkboxCheckmarkSizeMultiplier;
   double get checkboxGrayedMarginMultiplier;
   double get imageTextSpacing;
+  EdgeInsets get pushButtonPadding;
   Color get disabledBackgroundColor;
   Color get disabledForegroundColor;
 
@@ -128,6 +129,7 @@ mixin _$ButtonThemeExtensionTailorMixin
     double? checkboxCheckmarkSizeMultiplier,
     double? checkboxGrayedMarginMultiplier,
     double? imageTextSpacing,
+    EdgeInsets? pushButtonPadding,
     Color? disabledBackgroundColor,
     Color? disabledForegroundColor,
   }) {
@@ -221,6 +223,7 @@ mixin _$ButtonThemeExtensionTailorMixin
       checkboxGrayedMarginMultiplier:
           checkboxGrayedMarginMultiplier ?? this.checkboxGrayedMarginMultiplier,
       imageTextSpacing: imageTextSpacing ?? this.imageTextSpacing,
+      pushButtonPadding: pushButtonPadding ?? this.pushButtonPadding,
       disabledBackgroundColor:
           disabledBackgroundColor ?? this.disabledBackgroundColor,
       disabledForegroundColor:
@@ -451,6 +454,7 @@ mixin _$ButtonThemeExtensionTailorMixin
           ? checkboxGrayedMarginMultiplier
           : other.checkboxGrayedMarginMultiplier,
       imageTextSpacing: t < 0.5 ? imageTextSpacing : other.imageTextSpacing,
+      pushButtonPadding: t < 0.5 ? pushButtonPadding : other.pushButtonPadding,
       disabledBackgroundColor: Color.lerp(
         disabledBackgroundColor,
         other.disabledBackgroundColor,
@@ -694,6 +698,10 @@ mixin _$ButtonThemeExtensionTailorMixin
               other.imageTextSpacing,
             ) &&
             const DeepCollectionEquality().equals(
+              pushButtonPadding,
+              other.pushButtonPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
               disabledBackgroundColor,
               other.disabledBackgroundColor,
             ) &&
@@ -763,6 +771,7 @@ mixin _$ButtonThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(checkboxCheckmarkSizeMultiplier),
       const DeepCollectionEquality().hash(checkboxGrayedMarginMultiplier),
       const DeepCollectionEquality().hash(imageTextSpacing),
+      const DeepCollectionEquality().hash(pushButtonPadding),
       const DeepCollectionEquality().hash(disabledBackgroundColor),
       const DeepCollectionEquality().hash(disabledForegroundColor),
     ]);
@@ -858,6 +867,7 @@ extension ButtonThemeExtensionBuildContextProps on BuildContext {
   double get checkboxGrayedMarginMultiplier =>
       buttonThemeExtension.checkboxGrayedMarginMultiplier;
   double get imageTextSpacing => buttonThemeExtension.imageTextSpacing;
+  EdgeInsets get pushButtonPadding => buttonThemeExtension.pushButtonPadding;
   Color get disabledBackgroundColor =>
       buttonThemeExtension.disabledBackgroundColor;
   Color get disabledForegroundColor =>

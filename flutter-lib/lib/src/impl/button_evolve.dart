@@ -570,6 +570,7 @@ class _HoverableButtonState extends State<_HoverableButton> {
                 width: widget.widgetTheme.pushButtonBorderWidth,
               ),
             ),
+            padding: widget.widgetTheme.pushButtonPadding,
             child: widget.child,
           ),
         ),
