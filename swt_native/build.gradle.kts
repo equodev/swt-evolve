@@ -123,7 +123,12 @@ tasks.compileJava {
 tasks.test {
     useJUnitPlatform()
     testLogging {
-        events = setOf(TestLogEvent.PASSED, TestLogEvent.FAILED, TestLogEvent.SKIPPED, TestLogEvent.STANDARD_OUT, TestLogEvent.STANDARD_ERROR)
+        if (System.getProperty("quietTests") != null) {
+            events = setOf(TestLogEvent.FAILED)
+            showStandardStreams = false
+        } else {
+            events = setOf(TestLogEvent.PASSED, TestLogEvent.FAILED, TestLogEvent.SKIPPED, TestLogEvent.STANDARD_OUT, TestLogEvent.STANDARD_ERROR)
+        }
     }
     dependsOn("${currentPlatform}ExtractNatives", "${currentPlatform}CopyFlutterBinaries")
     if (org.gradle.internal.os.OperatingSystem.current().isMacOsX)
@@ -159,6 +164,13 @@ val pub = tasks.register<Exec>("pubGet") {
     inputs.file("../flutter-lib/pubspec.yaml")
     outputs.file("../flutter-lib/pubspec.lock")
     commandLine = listOf(flutterExe(), "pub", "get")
+}
+
+tasks.register<Exec>("analyze") {
+    group = "build"
+    description = "Flutter analyze"
+    workingDir = file("../flutter-lib")
+    commandLine = listOf(flutterExe(), "analyze")
 }
 
 val dart = tasks.register<Exec>("dartRunner") {
