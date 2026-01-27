@@ -50,7 +50,7 @@ class LinkImpl<T extends LinkSwt, V extends VLink> extends ControlImpl<T, V> {
       opacity: enabled ? 1.0 : widgetTheme.disabledOpacity,
       child: wrap(
         Container(
-          constraints: constraints ?? BoxConstraints(minHeight: widgetTheme.minHeight),
+          constraints: constraints,
           padding: widgetTheme.padding,
           alignment: hasValidBounds ? getAlignmentFromTextAlign(widgetTheme.textAlign) : null,
           decoration: backgroundColor != null
@@ -125,8 +125,6 @@ class _StyledLinkState extends State<StyledLink> {
   }
 
   Widget _buildRichText() {
-    final List<TextSpan> spans = _parseText(widget.text);
-
     final textColor = widget.enabled
         ? getForegroundColor(
             foreground: widget.linkForeground,
@@ -143,6 +141,17 @@ class _StyledLinkState extends State<StyledLink> {
           : widget.widgetTheme.disabledTextStyle,
     );
 
+    final hasLinks = widget.text.contains('<a');
+    if (!hasLinks) {
+      return Text(
+        widget.text,
+        style: baseTextStyle,
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      );
+    }
+
+    final List<TextSpan> spans = _parseText(widget.text);
     return RichText(
       text: TextSpan(
         children: spans,
@@ -178,8 +187,7 @@ class _StyledLinkState extends State<StyledLink> {
           text: linkText,
           style: TextStyle(
             color: linkColor,
-            decoration: linkDecoration,
-            height: 1.0,
+            decoration: linkDecoration
           ),
           recognizer: widget.enabled
               ? (TapGestureRecognizer()..onTap = () => widget.onTap(url))

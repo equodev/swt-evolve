@@ -67,12 +67,12 @@ public class LabelSizes {
         } else if (hasFlags(style, SWT.VERTICAL)) {
             m.text = computeText(widget, m, VERTICAL.EMPTY_TEXT_AFFECTS_SIZING);
             m.image = computeImage(widget);
-            width = Math.max((m.text.y() + m.image.x() + (m.image.x() > 0 ? VERTICAL.IMAGE_SPACING : 0)) + (m.text.y() > 0 ? VERTICAL.HORIZONTAL_PADDING : 0), VERTICAL.MIN_WIDTH);
+            width = Math.max((m.text.y() + m.image.x() + (m.image.x() > 0 && m.text.y() > 0 ? VERTICAL.IMAGE_SPACING : 0)) + ((m.text.y() > 0 || m.image.x() > 0) ? VERTICAL.HORIZONTAL_PADDING : 0), VERTICAL.MIN_WIDTH);
             height = Math.max(Math.max(m.text.x(), m.image.y()) + ((m.text.x() > 0 || m.image.y() > 0) ? VERTICAL.VERTICAL_PADDING : 0), VERTICAL.MIN_HEIGHT);
         } else { // HORIZONTAL
             m.text = computeText(widget, m, HORIZONTAL.EMPTY_TEXT_AFFECTS_SIZING);
             m.image = computeImage(widget);
-            width = Math.max((m.text.x() + m.image.x() + (m.image.x() > 0 ? HORIZONTAL.IMAGE_SPACING : 0)) + (m.text.x() > 0 ? HORIZONTAL.HORIZONTAL_PADDING : 0), HORIZONTAL.MIN_WIDTH);
+            width = Math.max((m.text.x() + m.image.x() + (m.image.x() > 0 && m.text.x() > 0 ? HORIZONTAL.IMAGE_SPACING : 0)) + ((m.text.x() > 0 || m.image.x() > 0) ? HORIZONTAL.HORIZONTAL_PADDING : 0), HORIZONTAL.MIN_WIDTH);
             height = Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? HORIZONTAL.VERTICAL_PADDING : 0), HORIZONTAL.MIN_HEIGHT);
         }
 

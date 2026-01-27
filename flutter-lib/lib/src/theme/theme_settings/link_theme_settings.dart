@@ -48,22 +48,14 @@ LinkThemeExtension _getLinkTheme({
     hoverBackgroundColor: null,
 
     // Font styles
-    textStyle: baseTextStyle.copyWith(
-      color: colorScheme.onSurface,
-      height: 1.0,
-    ),
-    linkTextStyle: baseTextStyle.copyWith(
-      color: colorScheme.primary,
-      height: 1.0,
-    ),
-    disabledTextStyle: baseTextStyle.copyWith(
-      color: colorSchemeExtension.onSurfaceVariantDisabled,
-      height: 1.0,
-    ),
+    textStyle: baseTextStyle,
+    linkTextStyle: baseTextStyle,
+    disabledTextStyle: baseTextStyle,
 
     // Spacing and padding
-    padding: const EdgeInsets.symmetric(horizontal: 12.0),
-    minHeight: 32.0,
+    // vertical: 2.0 adds 4px total (2 top + 2 bottom) to compensate for
+    // font metrics difference between Flutter and Java/SWT
+    padding: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 2.0),
 
     // Interactive properties
     disabledOpacity: 0.6,

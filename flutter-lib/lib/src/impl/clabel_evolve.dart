@@ -7,6 +7,7 @@ import '../impl/canvas_evolve.dart';
 import '../impl/color_utils.dart';
 import './utils/image_utils.dart';
 import './utils/widget_utils.dart';
+import './utils/font_utils.dart';
 import '../theme/theme_extensions/clabel_theme_extension.dart';
 
 class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
@@ -37,13 +38,15 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
 
     final child = _buildCLabelContent(context, widgetTheme, enabled, text, image, textAlign, hasValidBounds);
 
-    // Margins from state
-    final padding = EdgeInsets.fromLTRB(
-      (state.leftMargin ?? 0).toDouble(),
-      (state.topMargin ?? 0).toDouble(),
-      (state.rightMargin ?? 0).toDouble(),
-      (state.bottomMargin ?? 0).toDouble(),
-    );
+    // Only apply margins when there's valid bounds
+    final padding = (hasValidBounds)
+        ? EdgeInsets.fromLTRB(
+            (state.leftMargin ?? 0).toDouble(),
+            (state.topMargin ?? 0).toDouble(),
+            (state.rightMargin ?? 0).toDouble(),
+            (state.bottomMargin ?? 0).toDouble(),
+          )
+        : EdgeInsets.zero;
 
     return wrap(
       Opacity(
@@ -77,13 +80,18 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
           )
         : widgetTheme.disabledTextColor;
 
-    final textStyle = enabled
-        ? widgetTheme.primaryTextStyle?.copyWith(color: textColor)!
-        : widgetTheme.disabledTextStyle?.copyWith(color: textColor)!;
+    final textStyle = getTextStyle(
+      context: context,
+      font: state.font,
+      textColor: textColor,
+      baseTextStyle: enabled
+          ? widgetTheme.primaryTextStyle
+          : widgetTheme.disabledTextStyle,
+    );
 
     Widget? imageWidget;
     if (image != null) {
-      imageWidget = _buildImageWidget(image, enabled, widgetTheme.iconSize);
+      imageWidget = _buildImageWidget(image, enabled);
     }
 
     if (image != null && text.isNotEmpty) {
@@ -148,34 +156,15 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
     }
   }
 
-  Widget _buildImageWidget(VImage? image, bool enabled, double iconSize) {
-    return FutureBuilder<Widget?>(
-      future: ImageUtils.buildVImageAsync(
-        image,
-        width: image?.imageData?.width?.toDouble() ?? iconSize,
-        height: image?.imageData?.height?.toDouble() ?? iconSize,
-        enabled: enabled,
-        constraints: null,
-        useBinaryImage: true,
-        renderAsIcon: false,
-      ),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          return snapshot.data ?? const SizedBox.shrink();
-        }
-        // Show placeholder while loading
-        return SizedBox(
-          width: iconSize,
-          height: iconSize,
-          child: Center(
-            child: SizedBox(
-              width: iconSize * 0.75,
-              height: iconSize * 0.75,
-              child: const CircularProgressIndicator(strokeWidth: 2),
-            ),
-          ),
-        );
-      },
+  Widget? _buildImageWidget(VImage? image, bool enabled) {
+    return ImageUtils.buildVImage(
+      image,
+      width: image?.imageData?.width?.toDouble() ?? 0,
+      height: image?.imageData?.height?.toDouble() ?? 0,
+      enabled: enabled,
+      constraints: null,
+      useBinaryImage: true,
+      renderAsIcon: false,
     );
   }
 

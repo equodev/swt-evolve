@@ -13,9 +13,8 @@ import 'measure_data.dart';
 
 // Configuration
 const bool ENABLE_SCREENSHOTS = true;
-const Duration MEASUREMENT_DELAY = Duration.zero;
+const bool ENABLE_INTERACTIVITY = true; // When true, starts paused with controls
 const FromTheme = -1;
-// const Duration MEASUREMENT_DELAY = Duration(seconds: 2);
 
 // Theme configuration for multi-theme measurement
 class ThemeConfig {
@@ -177,10 +176,9 @@ class WidgetAnalysis {
 class WidgetMeasurer {
   final List<MeasurementCase> testCases = [];
   final List<MeasurementCase> themeSamplingCases = [];
-  final List<MeasurementResult> results = [];
+  // Map from case name to result - allows re-running without duplicates
+  final Map<String, MeasurementResult> resultsMap = {};
   int currentCaseIndex = 0;
-
-  final Duration measurementDelay;
 
   // Threshold for determining if padding is consistent (low variance = consistent padding)
   static const double VARIANCE_THRESHOLD = 5.0;
@@ -192,7 +190,13 @@ class WidgetMeasurer {
   // Map: themeName -> widgetType:style -> textStyle
   Map<String, Map<String, Map<String, dynamic>>> extractedThemes = {};
 
-  WidgetMeasurer({this.measurementDelay = MEASUREMENT_DELAY});
+  // Interactive controls state
+  bool isPaused = ENABLE_INTERACTIVITY;
+  bool isFinished = false;
+
+  WidgetMeasurer();
+
+  List<MeasurementResult> get results => resultsMap.values.toList();
 
   void addTestCase(MeasurementCase testCase) {
     testCases.add(testCase);
@@ -221,15 +225,15 @@ class WidgetMeasurer {
   }
 
   ThemeData getCurrentTheme() {
-    if (themesToMeasure.isEmpty) {
+    if (themesToMeasure.isEmpty || currentThemeIndex >= themesToMeasure.length) {
       return ThemeData();
     }
     return themesToMeasure[currentThemeIndex].themeFactory();
   }
 
   String getCurrentThemeName() {
-    if (themesToMeasure.isEmpty) {
-      return 'Unknown';
+    if (themesToMeasure.isEmpty || currentThemeIndex >= themesToMeasure.length) {
+      return '';
     }
     return themesToMeasure[currentThemeIndex].name;
   }
@@ -281,7 +285,7 @@ class WidgetMeasurer {
     print('Discovered components: $discoveredComponents');
 
     if (currentPhase == 1) {
-      // Phase 1: Store full results for sizing analysis
+      // Phase 1: Store full results for sizing analysis (map allows re-running)
       final result = MeasurementResult(
         testCase.fqn,
         testCase.name,
@@ -292,7 +296,7 @@ class WidgetMeasurer {
         hierarchy,
         testCase.useFontTheme,
       );
-      results.add(result);
+      resultsMap[testCase.name] = result;
     } else {
       // Phase 2: Extract TextStyle only
       if (discoveredComponents.containsKey('text')) {
@@ -351,9 +355,134 @@ class WidgetMeasurer {
     }
   }
 
+  // Get all cases for the current phase (for dropdown)
+  List<MeasurementCase> get currentPhaseCases {
+    return currentPhase == 1 ? testCases : themeSamplingCases;
+  }
+
+  // Get total case count for current phase
+  int get totalCasesInPhase {
+    return currentPhaseCases.length;
+  }
+
+  // Get all cases across all phases (for unified dropdown)
+  List<(int phase, int themeIdx, MeasurementCase case_)> get allCases {
+    final result = <(int, int, MeasurementCase)>[];
+    // Phase 1: sizing cases
+    for (var c in testCases) {
+      result.add((1, 0, c));
+    }
+    // Phase 2: theme sampling cases for each theme
+    for (int t = 0; t < themesToMeasure.length; t++) {
+      for (var c in themeSamplingCases) {
+        result.add((2, t, c));
+      }
+    }
+    return result;
+  }
+
+  // Get total case count across all phases
+  int get totalAllCases {
+    return testCases.length + (themeSamplingCases.length * themesToMeasure.length);
+  }
+
+  // Get current global index (across all phases)
+  int get globalIndex {
+    if (currentPhase == 1) {
+      return currentCaseIndex;
+    } else {
+      return testCases.length + (currentThemeIndex * themeSamplingCases.length) + currentCaseIndex;
+    }
+  }
+
+  // Navigate to previous case (across phases)
+  void goToPrevious() {
+    // Handle finished state - go to last valid case
+    if (isFinished || (currentPhase == 2 && currentThemeIndex >= themesToMeasure.length)) {
+      currentPhase = 2;
+      currentThemeIndex = themesToMeasure.length - 1;
+      currentCaseIndex = themeSamplingCases.length - 1;
+      isFinished = false;
+      return;
+    }
+
+    if (currentCaseIndex > 0) {
+      currentCaseIndex--;
+    } else if (currentPhase == 2 && currentThemeIndex > 0) {
+      // Go to previous theme's last case
+      currentThemeIndex--;
+      currentCaseIndex = themeSamplingCases.length - 1;
+    } else if (currentPhase == 2 && currentThemeIndex == 0) {
+      // Go back to phase 1's last case
+      currentPhase = 1;
+      currentCaseIndex = testCases.length - 1;
+    }
+    isFinished = false;
+  }
+
+  // Navigate to next case (across phases)
+  void goToNext() {
+    isFinished = false;
+    if (currentPhase == 1) {
+      if (currentCaseIndex < testCases.length - 1) {
+        currentCaseIndex++;
+      } else if (themeSamplingCases.isNotEmpty && themesToMeasure.isNotEmpty) {
+        // Move to phase 2
+        currentPhase = 2;
+        currentThemeIndex = 0;
+        currentCaseIndex = 0;
+      }
+    } else {
+      if (currentCaseIndex < themeSamplingCases.length - 1) {
+        currentCaseIndex++;
+      } else if (currentThemeIndex < themesToMeasure.length - 1) {
+        // Move to next theme
+        currentThemeIndex++;
+        currentCaseIndex = 0;
+      }
+      // At the very end, don't advance further
+    }
+  }
+
+  // Jump to specific global index (across all phases)
+  void goToGlobalIndex(int globalIdx) {
+    if (globalIdx < 0) return;
+
+    if (globalIdx < testCases.length) {
+      // Phase 1
+      currentPhase = 1;
+      currentCaseIndex = globalIdx;
+      isFinished = false;
+    } else {
+      // Phase 2
+      final phase2Idx = globalIdx - testCases.length;
+      if (themeSamplingCases.isEmpty) return;
+      final themeIdx = phase2Idx ~/ themeSamplingCases.length;
+      final caseIdx = phase2Idx % themeSamplingCases.length;
+
+      if (themeIdx < themesToMeasure.length) {
+        currentPhase = 2;
+        currentThemeIndex = themeIdx;
+        currentCaseIndex = caseIdx;
+        isFinished = false;
+      }
+    }
+  }
+
+  // Toggle play/pause
+  void togglePause() {
+    isPaused = !isPaused;
+  }
+
+  // Reset to beginning of current phase
+  void reset() {
+    currentCaseIndex = 0;
+    isFinished = false;
+  }
+
   void _finishPhase1() {
     print('=== PHASE 1 COMPLETE (Sizing Analysis) ===');
-    print('Total sizing cases measured: ${results.length}');
+    print('Total sizing cases measured: ${resultsMap.length}');
 
     // Analyze sizing and export (but don't generate themes yet)
     final analyses = _analyzeResultsByStyle();
@@ -375,7 +504,8 @@ class WidgetMeasurer {
     } else {
       // No theme sampling needed, finish immediately
       print('No theme sampling configured, measurements complete.');
-      if (measurementDelay == Duration.zero) exit(0);
+      isFinished = true;
+      if (!ENABLE_INTERACTIVITY) exit(0);
     }
   }
 
@@ -398,23 +528,17 @@ class WidgetMeasurer {
 
   void _finishAllMeasurements() {
     print('\n=== ALL MEASUREMENTS COMPLETE ===');
-    print('Total sizing cases: ${results.length}');
+    print('Total sizing cases: ${resultsMap.length}');
     print('Total themes sampled: ${extractedThemes.length}');
 
     // Now generate theme files from extractedThemes
     _exportThemeResults();
 
-    if (measurementDelay == Duration.zero) exit(0);
+    isFinished = true;
+    if (!ENABLE_INTERACTIVITY) exit(0);
   }
 
   void _exportSizingResults(List<WidgetAnalysis> analyses) {
-    final combinedJson = {'analyses': analyses.map((a) => a.toJson()).toList()};
-
-    final json = JsonEncoder.withIndent('  ').convert(combinedJson);
-
-    final file = File('./build/measurements.json');
-    file.writeAsStringSync(json);
-
     // Group analyses by FQN
     final byFqn = <String, List<WidgetAnalysis>>{};
     for (var analysis in analyses) {
@@ -422,10 +546,20 @@ class WidgetMeasurer {
       byFqn.putIfAbsent(fqn, () => []).add(analysis);
     }
 
-    // Generate sizing Java files only (no themes yet)
+    // Generate per-widget JSON files and Java sizing files
     for (var entry in byFqn.entries) {
       final fqn = entry.key;
       final widgetAnalyses = entry.value;
+      final widgetType = widgetName(fqn).toLowerCase();
+
+      // Write per-widget JSON file
+      final widgetJson = {'analyses': widgetAnalyses.map((a) => a.toJson()).toList()};
+      final json = JsonEncoder.withIndent('  ').convert(widgetJson);
+      final file = File('./build/measurements_$widgetType.json');
+      file.writeAsStringSync(json);
+      print('Exported: ${file.path}');
+
+      // Generate Java sizing file
       _generateJavaWidgetSizes(fqn, widgetAnalyses);
     }
 
@@ -434,8 +568,6 @@ class WidgetMeasurer {
       print(analysis.algorithm);
       print('Constants: ${analysis.derivedConstants}\n');
     }
-
-    print('\nExported sizing results to ${file.path}');
   }
 
   void _exportThemeResults() {
@@ -1206,11 +1338,11 @@ class WidgetMeasurer {
         final textX = isVertical ? 'm.text.y()' : 'm.text.x()';
         final textY = isVertical ? 'm.text.x()' : 'm.text.y()';
 
-        // Width calculation: for horizontal layout, conditionally include image spacing when image exists
+        // Width calculation: for horizontal layout, conditionally include image spacing when BOTH image AND text exist
         String textWidthExpr;
         if (imageAffectsWidth && hasImageSpacing) {
           textWidthExpr =
-              '($textX + m.image.x() + (m.image.x() > 0 ? $styleName.IMAGE_SPACING : 0))';
+              '($textX + m.image.x() + (m.image.x() > 0 && $textX > 0 ? $styleName.IMAGE_SPACING : 0))';
         } else if (imageAffectsWidth) {
           textWidthExpr = '($textX + m.image.x())';
         } else {
@@ -1224,9 +1356,9 @@ class WidgetMeasurer {
             // Horizontal layout - no spacing needed in height
             textHeightExpr = 'Math.max($textY, m.image.y())';
           } else if (hasImageSpacing) {
-            // Vertical layout with conditional spacing
+            // Vertical layout with conditional spacing - only when BOTH image AND text exist
             textHeightExpr =
-                '($textY + m.image.y() + (m.image.y() > 0 ? $styleName.IMAGE_SPACING : 0))';
+                '($textY + m.image.y() + (m.image.y() > 0 && $textY > 0 ? $styleName.IMAGE_SPACING : 0))';
           } else {
             // Vertical layout without spacing
             textHeightExpr = '($textY + m.image.y())';
@@ -1239,9 +1371,9 @@ class WidgetMeasurer {
         // final emptyTextAffectsSizing =
         //     constants['emptyTextAffectsSizing'] as bool;
 
-        // Width: conditionally add padding when text exists
-        // If IMAGE_SPACING is present, don't check for image - it's already handled separately
-        final widthCondition = (hasAnyImageSupport && imageAffectsWidth && !hasImageSpacing)
+        // Width: conditionally add padding when ANY content exists (image or text)
+        // Since IMAGE_SPACING only applies when BOTH exist, HORIZONTAL_PADDING must handle image-only cases
+        final widthCondition = (hasAnyImageSupport && imageAffectsWidth)
             ? '($textX > 0 || m.image.x() > 0)'
             : '$textX > 0';
 
@@ -1667,58 +1799,139 @@ class MeasurementApp extends StatefulWidget {
 
 class _MeasurementAppState extends State<MeasurementApp> {
   GlobalKey _key = GlobalKey();
+  bool _isRunning = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _measureCurrentCase();
+      if (!widget.measurer.isPaused) {
+        _startMeasuring();
+      }
     });
   }
 
+  void _startMeasuring() {
+    if (_isRunning) return;
+    _isRunning = true;
+    _measureCurrentCase();
+  }
+
   Future<void> _measureCurrentCase() async {
+    if (widget.measurer.isPaused) {
+      _isRunning = false;
+      return;
+    }
+
     // Always call measureCurrentCase to allow it to detect completion and trigger phase transitions
     final previousPhase = widget.measurer.currentPhase;
     await widget.measurer.measureCurrentCase(_key);
 
     // Continue if we transitioned phases OR if there are more cases in current phase
     final phaseChanged = widget.measurer.currentPhase != previousPhase;
-    if (phaseChanged || widget.measurer.hasMoreCases()) {
+    if ((phaseChanged || widget.measurer.hasMoreCases()) && !widget.measurer.isPaused) {
       setState(() {
         _key = GlobalKey();
       });
 
-      if (widget.measurer.measurementDelay > Duration.zero) {
-        await Future.delayed(widget.measurer.measurementDelay);
-      }
-
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _measureCurrentCase();
       });
+    } else {
+      _isRunning = false;
+      setState(() {}); // Update UI to reflect completion
     }
-    // If no more cases and no phase change, we're done
+  }
+
+  Future<void> _measureSingleCase() async {
+    // Save full state before measuring (measureCurrentCase may advance/transition)
+    final savedPhase = widget.measurer.currentPhase;
+    final savedThemeIndex = widget.measurer.currentThemeIndex;
+    final savedIndex = widget.measurer.currentCaseIndex;
+    final wasFinished = widget.measurer.isFinished;
+
+    await widget.measurer.measureCurrentCase(_key);
+
+    // Always restore state for manual single-case measurement
+    widget.measurer.currentPhase = savedPhase;
+    widget.measurer.currentThemeIndex = savedThemeIndex;
+    widget.measurer.currentCaseIndex = savedIndex;
+    widget.measurer.isFinished = wasFinished;
+
+    setState(() {
+      _key = GlobalKey();
+    });
+  }
+
+  void _onPlayPause() {
+    setState(() {
+      widget.measurer.togglePause();
+    });
+    if (!widget.measurer.isPaused) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _startMeasuring();
+      });
+    }
+  }
+
+  void _onPrevious() {
+    setState(() {
+      widget.measurer.goToPrevious();
+      _key = GlobalKey();
+    });
+    // Measure the case after navigating
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _measureSingleCase();
+    });
+  }
+
+  void _onNext() {
+    setState(() {
+      widget.measurer.goToNext();
+      _key = GlobalKey();
+    });
+    // Measure the case after navigating
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _measureSingleCase();
+    });
+  }
+
+  void _onCaseSelected(int? index) {
+    if (index != null) {
+      setState(() {
+        widget.measurer.goToGlobalIndex(index);
+        _key = GlobalKey();
+      });
+      // Measure the selected case
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _measureSingleCase();
+      });
+    }
+  }
+
+  void _onRunCurrent() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _measureSingleCase();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final measurer = widget.measurer;
-    final currentIndex = measurer.currentCaseIndex;
+    final globalIdx = measurer.globalIndex;
+    final totalCases = measurer.totalAllCases;
+    final allCases = measurer.allCases;
     final currentPhase = measurer.currentPhase;
 
     // Display different info based on phase
-    String statusText;
-    if (currentPhase == 1) {
-      final totalCases = measurer.testCases.length;
-      statusText = currentIndex < totalCases
-          ? 'Phase 1: Sizing ${currentIndex + 1}/$totalCases'
-          : 'Phase 1 Complete';
+    String phaseText;
+    if (measurer.isFinished) {
+      phaseText = 'Complete';
+    } else if (currentPhase == 1) {
+      phaseText = 'P1: Sizing';
     } else {
-      final totalCases = measurer.themeSamplingCases.length;
       final themeName = measurer.getCurrentThemeName();
-      statusText = currentIndex < totalCases
-          ? 'Phase 2: $themeName ${currentIndex + 1}/$totalCases'
-          : 'Phase 2 Complete';
-      print(statusText);
+      phaseText = 'P2: $themeName';
     }
 
     // Use a unique key for MaterialApp that changes when theme changes
@@ -1732,7 +1945,93 @@ class _MeasurementAppState extends State<MeasurementApp> {
       darkTheme: measurer.getCurrentTheme(),
       themeMode: ThemeMode.light,
       home: Scaffold(
-        appBar: AppBar(title: Text(statusText)),
+        appBar: AppBar(
+          title: Stack(
+            children: [
+              // Phase info (left-aligned, vertically centered)
+              // Positioned.fill(
+              //   child: Align(
+              //     alignment: Alignment.centerLeft,
+              //     child: Text(measurer.isFinished ? phaseText : '$phaseText ${currentIndex + 1}/$totalCases', style: const TextStyle(fontSize: 14)),
+              //   ),
+              // ),
+              // Buttons (truly centered)
+              Positioned.fill(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.skip_previous),
+                        onPressed: globalIdx > 0 ? _onPrevious : null,
+                        tooltip: 'Previous',
+                        iconSize: 20,
+                      ),
+                      IconButton(
+                        icon: Icon(measurer.isPaused ? Icons.play_arrow : Icons.pause),
+                        onPressed: _onPlayPause,
+                        tooltip: measurer.isPaused ? 'Play' : 'Pause',
+                        iconSize: 20,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.skip_next),
+                        onPressed: globalIdx < totalCases - 1 ? _onNext : null,
+                        tooltip: 'Next',
+                        iconSize: 20,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.refresh),
+                        onPressed: _onRunCurrent,
+                        tooltip: 'Run current',
+                        iconSize: 20,
+                      ),
+                      SizedBox(width: 8),
+                      Text(measurer.isFinished ? phaseText : '$phaseText ${globalIdx + 1}/$totalCases', style: const TextStyle(fontSize: 14))
+                    ],
+                  ),
+              ),
+              // Dropdown (right-aligned)
+              Align(
+                alignment: Alignment.centerRight,
+                child: SizedBox(
+                  width: 360,
+                  child: DropdownButton<int>(
+                    value: globalIdx < totalCases ? globalIdx : null,
+                    isExpanded: true,
+                    underline: Container(),
+                    items: List.generate(totalCases, (i) {
+                      final entry = allCases[i];
+                      final phase = entry.$1;
+                      final themeIdx = entry.$2;
+                      final caseItem = entry.$3;
+                      final isSelected = i == globalIdx;
+                      // Build label with phase info
+                      String prefix;
+                      if (phase == 1) {
+                        prefix = 'P1';
+                      } else {
+                        final themeName = measurer.themesToMeasure[themeIdx].name;
+                        prefix = 'P2:$themeName';
+                      }
+                      return DropdownMenuItem<int>(
+                        value: i,
+                        child: Text(
+                          '${i + 1}. [$prefix] ${caseItem.name}',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isSelected ? Colors.indigo : null,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      );
+                    }),
+                    onChanged: _onCaseSelected,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
         body: measurer.buildCurrentCase(_key),
       ),
     );

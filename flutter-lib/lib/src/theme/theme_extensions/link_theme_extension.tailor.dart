@@ -20,7 +20,6 @@ mixin _$LinkThemeExtensionTailorMixin on ThemeExtension<LinkThemeExtension> {
   TextStyle? get linkTextStyle;
   TextStyle? get disabledTextStyle;
   EdgeInsets get padding;
-  double get minHeight;
   double get disabledOpacity;
   Duration get hoverAnimationDuration;
   TextDecoration get linkDecoration;
@@ -39,7 +38,6 @@ mixin _$LinkThemeExtensionTailorMixin on ThemeExtension<LinkThemeExtension> {
     TextStyle? linkTextStyle,
     TextStyle? disabledTextStyle,
     EdgeInsets? padding,
-    double? minHeight,
     double? disabledOpacity,
     Duration? hoverAnimationDuration,
     TextDecoration? linkDecoration,
@@ -57,7 +55,6 @@ mixin _$LinkThemeExtensionTailorMixin on ThemeExtension<LinkThemeExtension> {
       linkTextStyle: linkTextStyle ?? this.linkTextStyle,
       disabledTextStyle: disabledTextStyle ?? this.disabledTextStyle,
       padding: padding ?? this.padding,
-      minHeight: minHeight ?? this.minHeight,
       disabledOpacity: disabledOpacity ?? this.disabledOpacity,
       hoverAnimationDuration:
           hoverAnimationDuration ?? this.hoverAnimationDuration,
@@ -100,7 +97,6 @@ mixin _$LinkThemeExtensionTailorMixin on ThemeExtension<LinkThemeExtension> {
         t,
       ),
       padding: t < 0.5 ? padding : other.padding,
-      minHeight: t < 0.5 ? minHeight : other.minHeight,
       disabledOpacity: t < 0.5 ? disabledOpacity : other.disabledOpacity,
       hoverAnimationDuration: t < 0.5
           ? hoverAnimationDuration
@@ -149,7 +145,6 @@ mixin _$LinkThemeExtensionTailorMixin on ThemeExtension<LinkThemeExtension> {
               other.disabledTextStyle,
             ) &&
             const DeepCollectionEquality().equals(padding, other.padding) &&
-            const DeepCollectionEquality().equals(minHeight, other.minHeight) &&
             const DeepCollectionEquality().equals(
               disabledOpacity,
               other.disabledOpacity,
@@ -183,7 +178,6 @@ mixin _$LinkThemeExtensionTailorMixin on ThemeExtension<LinkThemeExtension> {
       const DeepCollectionEquality().hash(linkTextStyle),
       const DeepCollectionEquality().hash(disabledTextStyle),
       const DeepCollectionEquality().hash(padding),
-      const DeepCollectionEquality().hash(minHeight),
       const DeepCollectionEquality().hash(disabledOpacity),
       const DeepCollectionEquality().hash(hoverAnimationDuration),
       const DeepCollectionEquality().hash(linkDecoration),
@@ -206,7 +200,6 @@ extension LinkThemeExtensionBuildContextProps on BuildContext {
   TextStyle? get linkTextStyle => linkThemeExtension.linkTextStyle;
   TextStyle? get disabledTextStyle => linkThemeExtension.disabledTextStyle;
   EdgeInsets get padding => linkThemeExtension.padding;
-  double get minHeight => linkThemeExtension.minHeight;
   double get disabledOpacity => linkThemeExtension.disabledOpacity;
   Duration get hoverAnimationDuration =>
       linkThemeExtension.hoverAnimationDuration;

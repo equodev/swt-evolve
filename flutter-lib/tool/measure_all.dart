@@ -3,8 +3,10 @@ import 'package:swtflutter/src/theme/theme.dart';
 import './measure.dart';
 import './measure_button.dart' as button;
 import './measure_ccombo.dart' as ccombo;
+import './measure_clabel.dart' as clabel;
 import './measure_combo.dart' as combo;
 import './measure_label.dart' as label;
+import './measure_link.dart' as link;
 import './measure_progressbar.dart' as progressbar;
 import './measure_text.dart' as text;
 
@@ -13,8 +15,10 @@ void main() {
 
   button.setupCases(measurer);
   ccombo.setupCases(measurer);
+  clabel.setupCases(measurer);
   combo.setupCases(measurer);
   label.setupCases(measurer);
+  link.setupCases(measurer);
   progressbar.setupCases(measurer);
   text.setupCases(measurer);
 
