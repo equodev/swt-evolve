@@ -604,7 +604,7 @@ public class DartTree extends DartComposite implements ITree {
         }
         boolean wasEmpty = (itemCount == 0);
         int index = (int) hInsertAfter;
-        if (index == 0 && hInsertAfter == 0) {
+        if (index == -1 && hInsertAfter == -1) {
             index = itemCount;
         }
         int requiredSize = Math.max(index + 1, itemCount + 1);

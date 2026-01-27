@@ -80,7 +80,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * @see Widget#getStyle
      */
     public DartTreeItem(Tree parent, int style, TreeItem api) {
-        this(parent, style, 0, 0, 0, api);
+        this(parent, style, 0, -1, 0, api);
     }
 
     /**
