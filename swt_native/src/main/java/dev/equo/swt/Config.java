@@ -13,8 +13,8 @@ public class Config {
     public enum Impl {eclipse, equo, force_equo}
 
     static Impl defaultImpl = Impl.valueOf(System.getProperty("dev.equo.swt.default", Impl.equo.name()));
-    static Impl mainToolbarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.maintoolbar", Impl.equo.name()));
-    static Impl sideBarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.sidebar", Impl.equo.name()));
+    static Impl mainToolbarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.maintoolbar", defaultImpl.name()));
+    static Impl sideBarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.sidebar", defaultImpl.name()));
 
     private static final String os = System.getProperty("os.name").toLowerCase();
     static final Map<Class<?>, Impl> equoEnabled;
@@ -248,9 +248,13 @@ public class Config {
     }
 
     public static IWidget getCompositeImpl(Composite parent, int style, Composite composite) {
-        if (!forceEclipse && mainToolbarImpl == Impl.equo && isMainToolbarComposite(Composite.class, parent))
+        // In eclipse mode, always use SWT implementation without any special handling
+        if (defaultImpl == Impl.eclipse || forceEclipse) {
+            return new SwtComposite(parent, style, composite);
+        }
+        if (mainToolbarImpl == Impl.equo && isMainToolbarComposite(Composite.class, parent))
             return new DartMainToolbar(parent, style, composite);
-        if (!forceEclipse && sideBarImpl == Impl.equo && isSideToolbarComposite(Composite.class, parent))
+        if (sideBarImpl == Impl.equo && isSideToolbarComposite(Composite.class, parent))
             return new DartSideBar(parent, style, composite);
         if (Config.isEquo(Composite.class, parent))
             return new DartComposite(parent, style, composite);
