@@ -2896,10 +2896,7 @@ public final class DartGC extends DartResource implements IGC {
     public Point textExtent(String string, int flags) {
         if (string == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        try {
-        } finally {
-        }
-        return null;
+        return GCHelper.textExtent(string, flags, data.font);
     }
 
     /**

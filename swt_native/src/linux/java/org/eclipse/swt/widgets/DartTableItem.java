@@ -1262,6 +1262,10 @@ public class DartTableItem extends DartItem implements ITableItem {
         return imageIndent;
     }
 
+    public Image[] _images() {
+        return null;
+    }
+
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;

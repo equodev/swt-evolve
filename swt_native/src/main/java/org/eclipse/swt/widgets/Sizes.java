@@ -6,6 +6,7 @@ import org.eclipse.swt.custom.DartCCombo;
 import org.eclipse.swt.custom.DartCLabel;
 import org.eclipse.swt.custom.DartCTabFolder;
 import org.eclipse.swt.custom.DartStyledText;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 
@@ -343,6 +344,72 @@ public class Sizes {
 
     public static Rectangle computeTrim(DartScrollable widget, int x, int y, int width, int height) {
         return new Rectangle(x, y, width, height);
+    }
+
+    public static Rectangle getBounds(DartTableItem item) {
+        Table parent = item._parent();
+        int itemIndex = parent.indexOf(item.getApi());
+        if (itemIndex == -1)
+            return new Rectangle(0, 0, 0, 0);
+        DartTable dartTable = (DartTable) parent.getImpl();
+        int itemHeight = dartTable.getItemHeight();
+        if (itemHeight <= 0)
+            itemHeight = 20;
+        int headerHeight = dartTable.getHeaderHeight();
+        int y = headerHeight + (itemIndex * itemHeight);
+        Rectangle parentBounds = parent.getBounds();
+        int width = parentBounds != null ? parentBounds.width : 100;
+        return new Rectangle(0, y, width, itemHeight);
+    }
+
+    public static Rectangle getBounds(DartTableItem item, int index) {
+        Table parent = item._parent();
+        DartTable dartTable = (DartTable) parent.getImpl();
+        int columnCount = dartTable.columnCount;
+        if (!(0 <= index && index < Math.max(1, columnCount)))
+            return new Rectangle(0, 0, 0, 0);
+        int itemIndex = parent.indexOf(item.getApi());
+        if (itemIndex == -1)
+            return new Rectangle(0, 0, 0, 0);
+        int itemHeight = dartTable.getItemHeight();
+        if (itemHeight <= 0)
+            itemHeight = 20;
+        int headerHeight = dartTable.getHeaderHeight();
+        int y = headerHeight + (itemIndex * itemHeight);
+        int x = 0;
+        int width = 100;
+        if (columnCount > 0) {
+            TableColumn[] columns = dartTable.getColumns();
+            for (int i = 0; i < index && i < columns.length; i++) {
+                x += columns[i].getWidth();
+            }
+            if (index < columns.length) {
+                width = columns[index].getWidth();
+            }
+        } else {
+            Rectangle parentBounds = parent.getBounds();
+            width = parentBounds != null ? parentBounds.width : 100;
+        }
+        return new Rectangle(x, y, width, itemHeight);
+    }
+
+    public static Rectangle getTextBounds(DartTableItem item, int index) {
+        Table parent = item._parent();
+        DartTable dartTable = (DartTable) parent.getImpl();
+        int columnCount = dartTable.columnCount;
+        if (!(0 <= index && index < Math.max(1, columnCount)))
+            return new Rectangle(0, 0, 0, 0);
+        Rectangle cellBounds = getBounds(item, index);
+        if (cellBounds == null)
+            return new Rectangle(0, 0, 0, 0);
+        Image[] images = item._images();
+        Image image = index == 0 ? item.getImage() : (images != null && index < images.length) ? images[index] : null;
+        int imageWidth = 0;
+        if (image != null) {
+            Rectangle imageBounds = image.getBounds();
+            imageWidth = imageBounds.width + 4;
+        }
+        return new Rectangle(cellBounds.x + imageWidth, cellBounds.y, Math.max(0, cellBounds.width - imageWidth), cellBounds.height);
     }
 
     public static Rectangle getBounds(DartToolItem item) {

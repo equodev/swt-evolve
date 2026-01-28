@@ -737,6 +737,21 @@ public class DartTree extends DartComposite implements ITree {
         } else {
             this.itemCount = count;
         }
+        if (selection != null && selection.length > 0) {
+            int selIndex = -1;
+            for (int i = 0; i < selection.length; i++) {
+                if (selection[i] == item) {
+                    selIndex = i;
+                    break;
+                }
+            }
+            if (selIndex != -1) {
+                TreeItem[] newSelection = new TreeItem[selection.length - 1];
+                System.arraycopy(selection, 0, newSelection, 0, selIndex);
+                System.arraycopy(selection, selIndex + 1, newSelection, selIndex, selection.length - selIndex - 1);
+                selection = newSelection;
+            }
+        }
         if (getDrawing()) {
             if (parentItem != null) {
             } else {
@@ -1355,6 +1370,7 @@ public class DartTree extends DartComposite implements ITree {
             }
         }
         items = null;
+        selection = new TreeItem[0];
         if (columns != null) {
             for (int i = 0; i < columnCount; i++) {
                 TreeColumn column = columns[i];
@@ -1397,6 +1413,7 @@ public class DartTree extends DartComposite implements ITree {
         itemCount = 0;
         imageBounds = null;
         insertItem = null;
+        selection = new TreeItem[0];
         ignoreSelect = true;
         ignoreSelect = false;
         setScrollWidth();
