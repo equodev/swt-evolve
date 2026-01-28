@@ -91,25 +91,19 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     }
 
     final menuKey = GlobalKey<State<MenuSwt>>();
-    final widgetKey = GlobalKey();
+    final stackKey = GlobalKey();
 
     return Stack(
+      key: stackKey,
       children: [
         GestureDetector(
-          key: widgetKey,
           onSecondaryTapUp: (details) {
-            final RenderBox? renderBox = widgetKey.currentContext?.findRenderObject() as RenderBox?;
-            if (renderBox != null) {
-              final position = renderBox.localToGlobal(Offset.zero);
-              final size = renderBox.size;
-              final menuPosition = Offset(
-                position.dx + size.width / 2 + 10,
-                position.dy + size.height / 2 + 10
-              );
-
+            final RenderBox? stackBox = stackKey.currentContext?.findRenderObject() as RenderBox?;
+            if (stackBox != null) {
+              final localPosition = stackBox.globalToLocal(details.globalPosition);
               final menuState = menuKey.currentState;
               if (menuState != null && menuState is MenuImpl) {
-                menuState.openContextMenuAt(context, menuPosition);
+                menuState.openContextMenuAt(context, localPosition);
               }
             }
           },

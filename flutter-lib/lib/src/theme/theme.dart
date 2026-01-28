@@ -26,6 +26,8 @@ import 'theme_settings/slider_theme_settings.dart';
 import 'theme_settings/spinner_theme_settings.dart';
 import 'theme_settings/scrolledcomposite_theme_settings.dart';
 import 'theme_settings/scale_theme_settings.dart';
+import 'theme_settings/menu_theme_settings.dart';
+import 'theme_settings/menuitem_theme_settings.dart';
 
 Color calculateBackgroundColor(int? backgroundColor, bool useDarkTheme) {
   return backgroundColor != null
@@ -444,6 +446,16 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final menuTheme = getMenuLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final menuItemTheme = getMenuItemLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -474,6 +486,8 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
       spinnerTheme,
       scrolledCompositeTheme,
       scaleTheme,
+      menuTheme,
+      menuItemTheme,
     ],
   );
 }
@@ -607,6 +621,16 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final menuTheme = getMenuLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final menuItemTheme = getMenuItemLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -638,6 +662,8 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
       spinnerTheme,
       scrolledCompositeTheme,
       scaleTheme,
+      menuTheme,
+      menuItemTheme,
     ],
   );
 }
@@ -774,6 +800,16 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final menuTheme = getMenuDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final menuItemTheme = getMenuItemDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -804,6 +840,8 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
       spinnerTheme,
       scrolledCompositeTheme,
       scaleTheme,
+      menuTheme,
+      menuItemTheme,
     ],
   );
 }
@@ -937,6 +975,16 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final menuTheme = getMenuDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final menuItemTheme = getMenuItemDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -968,6 +1016,8 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
       spinnerTheme,
       scrolledCompositeTheme,
       scaleTheme,
+      menuTheme,
+      menuItemTheme,
     ],
   );
 }
