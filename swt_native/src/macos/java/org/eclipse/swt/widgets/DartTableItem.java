@@ -264,20 +264,7 @@ public class DartTableItem extends DartItem implements ITableItem {
         checkWidget();
         if (!((DartTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
-        if (image != null) {
-        }
-        Font font = null;
-        if (font == null)
-            font = this.font;
-        if (font == null)
-            font = ((DartControl) parent.getImpl()).font;
-        if (font == null)
-            font = ((DartControl) parent.getImpl()).defaultFont();
-        if (font.extraTraits != 0) {
-        } else {
-        }
-        // Inlined for performance.  Also prevents a NPE or potential loop, because cellSize() will
-        return null;
+        return Sizes.getBounds(this);
     }
 
     /**
@@ -296,13 +283,7 @@ public class DartTableItem extends DartItem implements ITableItem {
         checkWidget();
         if (!((DartTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
-        if (!(0 <= index && index < Math.max(1, ((DartTable) parent.getImpl()).columnCount)))
-            return new Rectangle(0, 0, 0, 0);
-        if (((DartTable) parent.getImpl()).columnCount == 0) {
-            index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
-        } else {
-        }
-        return null;
+        return Sizes.getBounds(this, index);
     }
 
     /**
@@ -490,8 +471,6 @@ public class DartTableItem extends DartItem implements ITableItem {
         if (!(0 <= index && index < Math.max(1, ((DartTable) parent.getImpl()).columnCount)))
             return new Rectangle(0, 0, 0, 0);
         Image image = index == 0 ? this.image : (images != null) ? images[index] : null;
-        // We return a basic Rectangle with width=0 if no image,
-        // or with the image bounds width if there is an image
         int width = 0;
         int height = 0;
         if (image != null) {
@@ -599,16 +578,7 @@ public class DartTableItem extends DartItem implements ITableItem {
         checkWidget();
         if (!((DartTable) parent.getImpl()).checkData(this.getApi()))
             error(SWT.ERROR_WIDGET_DISPOSED);
-        if (!(0 <= index && index < Math.max(1, ((DartTable) parent.getImpl()).columnCount)))
-            return new Rectangle(0, 0, 0, 0);
-        Image image = index == 0 ? this.image : (images != null) ? images[index] : null;
-        if (((DartTable) parent.getImpl()).columnCount == 0) {
-            index = (parent.style & SWT.CHECK) != 0 ? 1 : 0;
-        } else {
-        }
-        if (image != null) {
-        }
-        return null;
+        return Sizes.getTextBounds(this, index);
     }
 
     @Override

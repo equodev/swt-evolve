@@ -876,6 +876,7 @@ public abstract class DartWidget implements IWidget {
             ((SwtDisplay) display.getImpl()).tooltipTarget = null;
         eventTable = null;
         data = null;
+        getApi().state &= ~KEYED_DATA;
     }
 
     /**

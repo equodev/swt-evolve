@@ -31,7 +31,7 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     return Builder(builder: (context) {
       final toolItemTheme = Theme.of(context).extension<ToolItemThemeExtension>();
       final iconSize = toolItemTheme?.defaultIconSize ?? 24.0;
-
+      
       Widget bar;
       if (shouldWrap) {
         final limitedToolItems = toolItems.map((item) {
@@ -43,7 +43,7 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
             child: item,
           );
         }).toList();
-
+        
         bar = Wrap(
           direction: isVertical ? Axis.vertical : Axis.horizontal,
           textDirection: isRightToLeft ? TextDirection.rtl : TextDirection.ltr,
@@ -118,7 +118,7 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     final debugTextLower = toolItemTheme.segmentDebugText.toLowerCase();
     final specialDropdownTooltipText = toolItemTheme.specialDropdownTooltipText;
     final specialDropdownImageFilename = toolItemTheme.specialDropdownImageFilename;
-
+    
     final hasKeyword = items.any((item) => item.text?.trim().toLowerCase() == keywordTextLower);
     final hasDebug = items.any((item) => item.text?.trim().toLowerCase() == debugTextLower);
     
@@ -149,16 +149,14 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
       final text = item.text?.trim().toLowerCase();
       final tooltipText = item.toolTipText?.trim();
       final imageFilename = item.image?.filename;
-
+      
       final useSpecialDropdown = getConfigFlags().use_special_dropdown_button ?? true;
-
-      print('useSpecialDropdown: $useSpecialDropdown');
 
       if (useSpecialDropdown) {
         final matchesByText = text == specialDropdownTooltipText.toLowerCase();
         final matchesByTooltip = tooltipText == specialDropdownTooltipText;
         final matchesByImage = specialDropdownImageFilename != null && imageFilename == specialDropdownImageFilename;
-
+        
         if (matchesByText || matchesByTooltip || matchesByImage) {
           result.add(_buildSpecialDropdown(context, item));
           processedIndices.add(i);
@@ -214,12 +212,12 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
 
   Widget getWidgetForToolItem(VToolItem toolItem, ToolBarThemeExtension widgetTheme, {bool shouldLimitSize = false, double? maxSize}) {
     final itemWidget = ToolItemSwt(value: toolItem);
-
+    
     Widget result = Padding(
       padding: widgetTheme.itemPadding,
       child: itemWidget,
     );
-
+    
     if (shouldLimitSize && maxSize != null) {
       result = ConstrainedBox(
         constraints: BoxConstraints(
@@ -229,7 +227,7 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
         child: result,
       );
     }
-
+    
     return result;
   }
 }
@@ -309,7 +307,7 @@ class _SegmentControlWidgetState extends State<_SegmentControlWidget> {
     
     final toolbarTheme = Theme.of(context).extension<ToolBarThemeExtension>();
     final backgroundColor = toolbarTheme?.compositeBackgroundColor ?? Colors.white;
-
+    
     return Container(
       color: backgroundColor,
       child: IntrinsicHeight(
@@ -466,7 +464,7 @@ class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
         ),
       ),
     );
-
+    
     Widget separator = Container(
       width: widgetTheme.separatorBarWidth,
       color: widgetTheme.specialDropdownSeparatorColor,

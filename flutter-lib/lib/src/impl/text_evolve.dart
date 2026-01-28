@@ -164,7 +164,9 @@ class TextImpl<T extends TextSwt, V extends VText>
       state.caretPosition = cursorOffset;
 
       // Send the caret position to Java via Verify event
-      var e = VEvent()..start = cursorOffset;
+      var e = VEvent()
+        ..start = cursorOffset
+        ..text = "";
       widget.sendVerifyVerify(state, e);
     }
   }
