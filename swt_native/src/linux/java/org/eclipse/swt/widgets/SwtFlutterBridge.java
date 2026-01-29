@@ -67,14 +67,15 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
     }
 
     @Override
-    public void setFocus(DartControl dartControl) {
+    public boolean setFocus(DartControl dartControl) {
         long focusHandle = GetView(context);
 //        long focusHandle = dartControl.getApi().handle;
         if (GTK.gtk_widget_has_focus(focusHandle))
-            return;
+            return true;
         /* When the control is zero sized it must be realized */
         GTK.gtk_widget_realize(focusHandle);
         GTK.gtk_widget_grab_focus(focusHandle);
+        return GTK.gtk_widget_has_focus(focusHandle);
     }
 
     @Override

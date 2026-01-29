@@ -186,8 +186,8 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
                         bounds.x, bounds.y, bounds.width, bounds.height);
             }
 
-//            dartControl.resized();
-//            dartControl.sendEvent(SWT.Resize);
+            //dartControl.resized();
+            //dartControl.sendEvent(SWT.Resize);
             if (dartControl instanceof DartComposite c && c.layout != null) {
                 c.markLayout(false, false);
                 c.updateLayout(false);
