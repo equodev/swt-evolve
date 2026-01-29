@@ -114,6 +114,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         this.parent = parent;
         createWidget();
         ControlUtils.addToParentChildren(this);
+        notifyCreationTracker();
     }
 
     /**

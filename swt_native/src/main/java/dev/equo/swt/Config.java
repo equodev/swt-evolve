@@ -18,8 +18,10 @@ public class Config {
 
     private static final String os = System.getProperty("os.name").toLowerCase();
     static final Map<Class<?>, Impl> equoEnabled;
-    private static boolean toolBarDrawn;
     private static boolean forceEclipse = false;
+
+    static boolean idTracker = Boolean.getBoolean("dev.equo.swt.tracker");
+    static IdWidgetTracker widgetTracker;
 
     static {
         try {
@@ -106,10 +108,18 @@ public class Config {
     public static boolean isEquo(Class<?> clazz) {
         if (forceEclipse) return false;
         // Per-widget override
-        String forcedImpl = System.getProperty(getKey(clazz));
-        if (forcedImpl != null) {
-            return Impl.equo.name().equals(forcedImpl);
+        if (isEquoForced(clazz)) {
+            return true;
         }
+
+        if (defaultImpl == Impl.force_equo)
+            return true;
+
+        if ((defaultImpl == Impl.equo && equoEnabled.containsKey(clazz)))
+            return true;
+
+        if (isCreatedInsideDart())
+            return true;
 
         if (defaultImpl == Impl.eclipse) {
             return false;
@@ -118,13 +128,7 @@ public class Config {
         if (isEditor(clazz)) {
             return false;
         }
-
-        if (defaultImpl == Impl.force_equo)
-            return true;
-
-        if ((defaultImpl == Impl.equo && equoEnabled.containsKey(clazz)))
-            return true;
-        return isCreatedInsideDart();
+        return false;
     }
 
     private static boolean isCreatedInsideDart() {
@@ -144,9 +148,8 @@ public class Config {
     public static boolean isEquo(Class<?> clazz, Drawable parent) {
         if (forceEclipse) return false;
         // Per-widget override
-        String forcedImpl = System.getProperty(getKey(clazz));
-        if (forcedImpl != null) {
-            return Impl.equo.name().equals(forcedImpl);
+        if (isEquoForced(clazz)) {
+            return true;
         }
 
         if (defaultImpl == Impl.eclipse) {
@@ -165,12 +168,33 @@ public class Config {
         return parent != null && parent.getImpl() instanceof org.eclipse.swt.widgets.DartMenu;
     }
 
-    public static boolean isEquo(Class<?> clazz, Scrollable parent) {
-        if (forceEclipse) return false;
-        // Per-widget override
+    static boolean isEquoForced(Class<?> clazz) {
         String forcedImpl = System.getProperty(getKey(clazz));
         if (forcedImpl != null) {
             return Impl.equo.name().equals(forcedImpl);
+        }
+        return false;
+    }
+
+    public static boolean isEquo(Class<?> clazz, Scrollable parent) {
+        if (idTracker && widgetTracker == null) {
+            widgetTracker = new IdWidgetTracker();
+            widgetTracker.startTracking();
+        }
+
+        if (forceEclipse) return false;
+
+        // Per-id override
+        if (parent instanceof Composite c) {
+            String id = getId(clazz, c);
+            String forcedImpl = System.getProperty(PROPERTY_PREFIX+id);
+            if (forcedImpl != null) {
+                return Impl.equo.name().equals(forcedImpl);
+            }
+        }
+        // Per-widget override
+        if (isEquoForced(clazz)) {
+            return true;
         }
 
         // Check parent data for per-widget override
@@ -186,12 +210,9 @@ public class Config {
         }
         if (defaultImpl == Impl.force_equo)
             return true;
-        if (defaultImpl == Impl.eclipse) {
-            return false;
-        }
 
         /// This is used because Eclipse creates "hidden" toolbars as children of the shell
-        if (clazz == ToolBar.class && parent instanceof Shell) {
+        if (clazz == ToolBar.class && parent instanceof Shell && (isEquoForced(CTabFolder.class) || defaultImpl == Impl.equo)) {
             return true;
         }
 
@@ -208,12 +229,11 @@ public class Config {
             if (caller != null && caller.getClassName().contains("FigureCanvas"))
                 return true;
         }
-        if (isEquo(clazz))
-            return true;
         if (parent != null && clazz == Caret.class && parent.getImpl().getClass().getSimpleName().startsWith(DART))
             return true;
-
-        return parent != null && parent.getImpl().getClass().getSimpleName().startsWith(DART) && !isCTabFolderBody(clazz, parent);
+        if (parent != null && parent.getImpl().getClass().getSimpleName().startsWith(DART) && !isCTabFolderBody(clazz, parent))
+            return true;
+        return isEquo(clazz);
     }
 
     private static final String E4_MAIN_TOOLBAR_CLASS = "org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout";
@@ -221,12 +241,12 @@ public class Config {
 
     private static boolean isMainToolbarComposite(Class<?> clazz, Composite parent) {
         String id = getId(clazz, parent);
-        return id.equals("//Shell//-1//Composite//1") && isInStackTrace(E4_MAIN_TOOLBAR_CLASS, E4_MAIN_TOOLBAR_METHOD);
+        return id.equals("/Shell/-1/Composite/1") && isInStackTrace(E4_MAIN_TOOLBAR_CLASS, E4_MAIN_TOOLBAR_METHOD);
     }
 
     private static boolean isSideToolbarComposite(Class<?> clazz, Composite parent) {
         String id = getId(clazz, parent);
-        return (id.equals("//Shell//-1//Composite//3") || id.equals("//Shell//-1//Composite//4")) && isInStackTrace(E4_MAIN_TOOLBAR_CLASS, E4_MAIN_TOOLBAR_METHOD);
+        return (id.equals("/Shell/-1/Composite/3") || id.equals("/Shell/-1/Composite/4")) && isInStackTrace(E4_MAIN_TOOLBAR_CLASS, E4_MAIN_TOOLBAR_METHOD);
     }
 
     private static boolean isCTabFolderBody(Class<?> clazz, Scrollable parent) {
@@ -248,16 +268,15 @@ public class Config {
     }
 
     public static IWidget getCompositeImpl(Composite parent, int style, Composite composite) {
+        if (Config.isEquo(Composite.class, parent))
+            return new DartComposite(parent, style, composite);
         // In eclipse mode, always use SWT implementation without any special handling
-        if (defaultImpl == Impl.eclipse || forceEclipse) {
+        if (defaultImpl == Impl.eclipse || forceEclipse)
             return new SwtComposite(parent, style, composite);
-        }
         if (mainToolbarImpl == Impl.equo && isMainToolbarComposite(Composite.class, parent))
             return new DartMainToolbar(parent, style, composite);
         if (sideBarImpl == Impl.equo && isSideToolbarComposite(Composite.class, parent))
             return new DartSideBar(parent, style, composite);
-        if (Config.isEquo(Composite.class, parent))
-            return new DartComposite(parent, style, composite);
         return new SwtComposite(parent, style, composite);
     }
 
@@ -298,12 +317,19 @@ public class Config {
         return isInStackTrace(E4_CLASS, E4_METHOD);
     }
 
-    private static String getId(Class<?> clazz, Composite parent) {
+    static String getId(Class<?> clazz, Composite parent) {
         String id = "";
-        while (clazz != null) {
-            id = "//" + clazz.getSimpleName() + "//" + (parent != null && parent.getChildren() != null ? parent.getChildren().length : -1) + id;
-            clazz = (parent != null) ? parent.getClass() : null;
-            parent = (parent != null) ? parent.getParent() : null;
+        Class<?> idClass = clazz;
+        Composite idParent = parent;
+        while (idClass != null) {
+            String simpleName = idClass.getSimpleName();
+            if (simpleName.isEmpty()) {
+                String[] split = idClass.getName().split("\\.");
+                simpleName = split[split.length-1];
+            }
+            id = "/" + simpleName + "/" + (idParent != null && idParent.getChildren() != null ? idParent.getChildren().length : -1) + id;
+            idClass = (idParent != null) ? idParent.getClass() : null;
+            idParent = (idParent != null) ? idParent.getParent() : null;
         }
         return id;
     }

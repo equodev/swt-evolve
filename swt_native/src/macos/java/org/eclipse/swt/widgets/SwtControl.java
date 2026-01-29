@@ -129,6 +129,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         super(parent, style, api);
         this.parent = parent;
         createWidget();
+        notifyCreationTracker();
     }
 
     @Override
