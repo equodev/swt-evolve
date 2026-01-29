@@ -174,6 +174,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         this.parent = parent;
         createWidget(0);
         ControlUtils.addToParentChildren(this);
+        notifyCreationTracker();
     }
 
     Font defaultFont() {
