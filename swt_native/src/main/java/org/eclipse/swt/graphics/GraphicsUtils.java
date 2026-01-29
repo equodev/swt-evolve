@@ -66,7 +66,7 @@ public class GraphicsUtils {
         }
 
         if (fontData.getImpl() instanceof SwtFontData) {
-            return new FontData(fontData);
+            return new DartFontData(fontData, null).getApi();
         } else {
             return fontData;
         }

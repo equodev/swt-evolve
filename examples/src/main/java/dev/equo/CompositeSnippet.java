@@ -19,7 +19,20 @@ public class CompositeSnippet {
         shell.setText("Composite Snippet");
         shell.setLayout(new FillLayout());
 
-        Composite composite = new Composite(shell, SWT.BORDER);
+        Composite comp = createButtons(shell);
+        new Label(comp, SWT.BORDER);
+        comp = createButtons(comp);
+        comp.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 3, 1));
+
+        shell.open ();
+        while (!shell.isDisposed ()) {
+            if (!display.readAndDispatch ()) display.sleep ();
+        }
+        display.dispose ();
+    }
+
+    private static Composite createButtons(Composite parent) {
+        Composite composite = new Composite(parent, SWT.BORDER);
         composite.setLayout(new GridLayout(4, false));
 
         Button b = new Button(composite, SWT.PUSH);
@@ -71,10 +84,6 @@ public class CompositeSnippet {
         b.setText("FILL, FILL");
         b.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 
-        shell.open ();
-        while (!shell.isDisposed ()) {
-            if (!display.readAndDispatch ()) display.sleep ();
-        }
-        display.dispose ();
+        return composite;
     }
 }
