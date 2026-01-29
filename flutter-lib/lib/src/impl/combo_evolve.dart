@@ -17,7 +17,6 @@ class ComboImpl<T extends ComboSwt, V extends VCombo> extends CompositeImpl<T, V
   final FocusNode _focusNode = FocusNode();
   final OverlayPortalController _overlayController = OverlayPortalController();
   final LayerLink _layerLink = LayerLink();
-
   bool _isFocused = false;
   final bool _isHovered = false;
 
@@ -43,14 +42,14 @@ class ComboImpl<T extends ComboSwt, V extends VCombo> extends CompositeImpl<T, V
         textDirection: TextDirection.ltr,
         maxLines: 1,
       )..layout();
-      
+
       if (painter.width > maxTextWidth) maxTextWidth = painter.width + 2;
       if (painter.height > maxTextHeight) maxTextHeight = painter.height + 2;
     }
 
     final double width = maxTextWidth + theme.textFieldPadding.horizontal + (isSimple ? 0 : theme.iconSpacing + theme.iconSize);
     final double height = maxTextHeight + theme.textFieldPadding.vertical;
-    
+
     return Size(width, height);
   }
 
@@ -66,8 +65,8 @@ class ComboImpl<T extends ComboSwt, V extends VCombo> extends CompositeImpl<T, V
   void _handleFocusChange() {
     if (!mounted) return;
     setState(() => _isFocused = _focusNode.hasFocus);
-    _focusNode.hasFocus 
-        ? widget.sendFocusFocusIn(state, null) 
+    _focusNode.hasFocus
+        ? widget.sendFocusFocusIn(state, null)
         : widget.sendFocusFocusOut(state, null);
   }
 
@@ -82,8 +81,8 @@ class ComboImpl<T extends ComboSwt, V extends VCombo> extends CompositeImpl<T, V
 
     final Color bgColor = getComboBackgroundColor(state, theme, enabled: isEnabled);
     final Color textColor = getComboTextColor(state, theme, enabled: isEnabled);
-    final Color borderColor = isEnabled && (_isFocused || _isHovered) 
-        ? theme.borderColor 
+    final Color borderColor = isEnabled && (_isFocused || _isHovered)
+        ? theme.borderColor
         : (isEnabled ? theme.dividerColor : theme.disabledBorderColor);
     final Color iconColor = getComboIconColor(theme, enabled: isEnabled);
 
@@ -96,8 +95,8 @@ class ComboImpl<T extends ComboSwt, V extends VCombo> extends CompositeImpl<T, V
 
     final Size preferredSize = _calculatePreferredSize(textStyle, theme, isSimple);
 
-    final double width = hasFixedSize 
-        ? state.bounds!.width.toDouble() 
+    final double width = hasFixedSize
+        ? state.bounds!.width.toDouble()
         : preferredSize.width;
 
     final double? height = hasFixedSize
@@ -106,34 +105,34 @@ class ComboImpl<T extends ComboSwt, V extends VCombo> extends CompositeImpl<T, V
 
     final Widget content = isSimple
         ? _SimpleComboLayout(
-            state: state,
-            theme: theme,
-            controller: _controller,
-            focusNode: _focusNode,
-            textStyle: textStyle,
-            isEnabled: isEnabled,
-            isReadOnly: isReadOnly,
-            bgColor: bgColor,
-            borderColor: borderColor,
-            onSelected: _onItemSelected,
-            hasFixedSize: hasFixedSize,
-          )
+      state: state,
+      theme: theme,
+      controller: _controller,
+      focusNode: _focusNode,
+      textStyle: textStyle,
+      isEnabled: isEnabled,
+      isReadOnly: isReadOnly,
+      bgColor: bgColor,
+      borderColor: borderColor,
+      onSelected: _onItemSelected,
+      hasFixedSize: hasFixedSize,
+    )
         : _DropdownComboLayout(
-            state: state,
-            theme: theme,
-            controller: _controller,
-            focusNode: _focusNode,
-            textStyle: textStyle,
-            isEnabled: isEnabled,
-            isReadOnly: isReadOnly,
-            bgColor: bgColor,
-            borderColor: borderColor,
-            iconColor: iconColor,
-            overlayController: _overlayController,
-            layerLink: _layerLink,
-            onSelected: _onItemSelected,
-            width: width,
-          );
+      state: state,
+      theme: theme,
+      controller: _controller,
+      focusNode: _focusNode,
+      textStyle: textStyle,
+      isEnabled: isEnabled,
+      isReadOnly: isReadOnly,
+      bgColor: bgColor,
+      borderColor: borderColor,
+      iconColor: iconColor,
+      overlayController: _overlayController,
+      layerLink: _layerLink,
+      onSelected: _onItemSelected,
+      width: width,
+    );
 
     return SizedBox(
       width: width,
@@ -182,13 +181,14 @@ class _DropdownComboLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CompositedTransformTarget(
-      link: layerLink,
-      child: OverlayPortal(
-        controller: overlayController,
-        overlayChildBuilder: (context) => _buildOverlay(),
+    return OverlayPortal(
+      controller: overlayController,
+      overlayChildBuilder: (_) => _buildOverlay(),
+      child: CompositedTransformTarget(
+        link: layerLink,
         child: GestureDetector(
-          onTap: isEnabled ? () => overlayController.toggle() : null,
+          behavior: HitTestBehavior.opaque,
+          onTap: isEnabled ? overlayController.toggle : null,
           child: Container(
             decoration: BoxDecoration(
               color: bgColor,
@@ -200,13 +200,16 @@ class _DropdownComboLayout extends StatelessWidget {
                 Expanded(
                   child: Padding(
                     padding: theme.textFieldPadding,
-                    child: EditableText(
-                      controller: controller,
-                      focusNode: focusNode,
-                      readOnly: isReadOnly,
-                      style: textStyle,
-                      cursorColor: textStyle.color ?? theme.textColor,
-                      backgroundCursorColor: bgColor,
+                    child: IgnorePointer(
+                      ignoring: true,
+                      child: EditableText(
+                        controller: controller,
+                        focusNode: focusNode,
+                        readOnly: isReadOnly,
+                        style: textStyle,
+                        cursorColor: textStyle.color ?? theme.textColor,
+                        backgroundCursorColor: bgColor,
+                      ),
                     ),
                   ),
                 ),
@@ -233,7 +236,7 @@ class _DropdownComboLayout extends StatelessWidget {
             width: width,
             decoration: BoxDecoration(
               color: theme.backgroundColor,
-              borderRadius: BorderRadius.circular(theme.borderRadius),  
+              borderRadius: BorderRadius.circular(theme.borderRadius),
               border: Border.all(color: theme.dividerColor, width: theme.borderWidth),
             ),
             child: SingleChildScrollView(
@@ -340,8 +343,8 @@ class _ComboItemState extends State<_ComboItem> {
 
   @override
   Widget build(BuildContext context) {
-    final Color bgColor = widget.isSelected 
-        ? widget.theme.selectedItemBackgroundColor 
+    final Color bgColor = widget.isSelected
+        ? widget.theme.selectedItemBackgroundColor
         : (_itemHovered ? widget.theme.hoverBackgroundColor : const Color(0x00000000));
 
     return MouseRegion(

@@ -6,6 +6,7 @@ import '../impl/color_utils.dart';
 import '../impl/widget_config.dart';
 import './utils/image_utils.dart';
 import './utils/font_utils.dart';
+import './utils/text_utils.dart';
 import './utils/widget_utils.dart';
 import '../theme/theme_extensions/label_theme_extension.dart';
 
@@ -76,7 +77,7 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
   }
 
   Widget _buildLabel(BuildContext context, LabelThemeExtension widgetTheme, bool enabled) {
-    final text = state.text ?? '';
+    final text = stripAccelerators(state.text);
     final textAlign = getTextAlignFromStyle(state.style, widgetTheme.textAlign);
     final backgroundColor = getBackgroundColor(
       background: state.background,
