@@ -32,12 +32,11 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
     }
 
     @Override
-    public void setFocus(DartControl widget) {
-        focused = widget;
+    public boolean setFocus(DartControl widget) {
         NSView focusView = widget.getApi().view;
-//        if (!focusView.canBecomeKeyView())
-//            return;
-        boolean rest = forceFocus(widget, focusView);
+        if (focusView == null)
+            return false;
+        return forceFocus(widget, focusView);
     }
 
     @Override
@@ -58,9 +57,6 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
     }
 
     boolean forceFocus(DartControl widget, NSView focusView) {
-        if (focusView == null) {
-            return false;
-        }
         NSWindow window = focusView.window();
         if (window == null) {
             return false;

@@ -868,8 +868,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             return false;
         if (isFocusControl())
             return true;
-        getBridge().setFocus(this);
         ((SwtDecorations) shell.getImpl()).setSavedFocus(null);
+        boolean result = getBridge().setFocus(this);
         /*
 	* This code is intentionally commented.
 	*

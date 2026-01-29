@@ -314,7 +314,8 @@ public abstract class FlutterBridge {
     public void setBounds(DartControl dartControl, Rectangle bounds) {
     }
 
-    public void setFocus(DartControl dartControl) {
+    public boolean setFocus(DartControl dartControl) {
+        return false;
     }
 
     public boolean hasFocus(DartControl dartControl) {

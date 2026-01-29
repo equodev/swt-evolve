@@ -857,8 +857,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             return false;
         if (isFocusControl())
             return true;
-        getBridge().setFocus(this);
         ((SwtDecorations) shell.getImpl()).setSavedFocus(null);
+        boolean result = getBridge().setFocus(this);
         if (isDisposed())
             return false;
         ((SwtDecorations) shell.getImpl()).setSavedFocus(this.getApi());
@@ -874,7 +874,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         ((SwtDecorations) shell.getImpl()).bringToTop(false);
         if (isDisposed())
             return false;
-        return true;
+        return result;
     }
 
     boolean gestureEvent(long id, long eventPtr, int detail) {
@@ -2610,8 +2610,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         } else if (resize) {
         }
         this.bounds = newValue;
-        ((SwtDisplay) display.getImpl()).ignoreFocusControl = oldIgnoreFocusControl;
         getBridge().setBounds(this, bounds);
+        ((SwtDisplay) display.getImpl()).ignoreFocusControl = oldIgnoreFocusControl;
+        ;
     }
 
     /**

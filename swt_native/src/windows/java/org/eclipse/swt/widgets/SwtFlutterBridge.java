@@ -45,7 +45,7 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
     }
 
     @Override
-    public void setFocus(DartControl control) {
+    public boolean setFocus(DartControl control) {
         focused = control;
         long handle = control.getApi().handle;
 
@@ -61,7 +61,9 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
 
         if (handle != 0) {
             OS.SetFocus(handle);
+            return OS.GetFocus() == handle;
         }
+        return false;
     }
 
     /*@Override
