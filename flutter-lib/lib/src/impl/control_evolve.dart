@@ -6,6 +6,7 @@ import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../styles.dart';
 import '../impl/menu_evolve.dart';
+import '../theme/theme_extensions/tooltip_theme_extension.dart';
 import 'widget_config.dart';
 
 abstract class ControlImpl<T extends ControlSwt, V extends VControl>
@@ -74,9 +75,17 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
     // Wrap with Tooltip if toolTipText is set
     if (state.toolTipText != null && state.toolTipText!.isNotEmpty) {
+      final tooltipTheme = Theme.of(context).extension<TooltipThemeExtension>();
       widget = Tooltip(
         message: state.toolTipText!,
-        waitDuration: const Duration(milliseconds: 500),
+        waitDuration: tooltipTheme?.waitDuration!,
+        decoration: tooltipTheme != null
+            ? BoxDecoration(
+                color: tooltipTheme.backgroundColor,
+                borderRadius: BorderRadius.circular(tooltipTheme.borderRadius),
+              )
+            : null,
+        textStyle: tooltipTheme?.messageTextStyle,
         child: widget,
       );
     }

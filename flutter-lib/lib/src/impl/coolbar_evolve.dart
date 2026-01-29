@@ -1,78 +1,35 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:swtflutter/src/gen/coolitem.dart';
 import '../gen/coolbar.dart';
 import '../gen/swt.dart';
-import '../gen/widget.dart';
 import '../impl/composite_evolve.dart';
-import 'package:swtflutter/src/impl/widget_config.dart';
-import '../styles.dart';
-import 'color_utils.dart';
+import '../theme/theme_extensions/coolbar_theme_extension.dart';
+import 'utils/widget_utils.dart';
 
 class CoolBarImpl<T extends CoolBarSwt, V extends VCoolBar>
     extends CompositeImpl<T, V> {
   @override
   Widget build(BuildContext context) {
-    final coolItems = getCoolItems();
-    final style = StyleBits(state.style);
-    final isVertical = style.has(SWT.VERTICAL);
-    final isLocked = state.locked ?? false;
-    final wrapIndices = state.wrapIndices ?? [];
-
-    final boundsHeight = state.bounds?.height ?? 0;
-    final boundsWidth = state.bounds?.width ?? 0;
-
-    // For horizontal: use height, for vertical: use width
-    final crossAxisSize = isVertical
-        ? ((boundsWidth > 0) ? boundsWidth.toDouble() : 25.0)
-        : ((boundsHeight > 0) ? boundsHeight.toDouble() : 25.0);
-
-    Widget coolBarContent;
-
-    // Use wrapped layout if wrapIndices are provided
-    if (wrapIndices.isNotEmpty) {
-      coolBarContent = _buildWrappedCoolBar(coolItems, wrapIndices, isVertical);
-    } else {
-      // Simple single row/column layout
-      coolBarContent = isVertical
-          ? Column(
-              mainAxisSize: MainAxisSize.max,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: coolItems,
-            )
-          : Row(
-              mainAxisSize: MainAxisSize.max,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: coolItems,
-            );
-    }
+    final theme = Theme.of(context).extension<CoolBarThemeExtension>()!;
+    final style = state.style;
+    final isVertical = hasStyle(style, SWT.VERTICAL);
+    final hasValidBounds = hasBounds(state.bounds);
 
     return MouseRegion(
       onEnter: (_) => widget.sendMouseTrackMouseEnter(state, null),
       onExit: (_) => widget.sendMouseTrackMouseExit(state, null),
       child: Focus(
-        onFocusChange: (hasFocus) {
-          if (hasFocus) {
-            widget.sendFocusFocusIn(state, null);
-          } else {
-            widget.sendFocusFocusOut(state, null);
-          }
-        },
+        onFocusChange: _onFocusChange,
         child: Builder(builder: (context) {
           return super.wrap(
-            Container(
-              width: isVertical ? crossAxisSize : double.infinity,
-              height: isVertical ? double.infinity : crossAxisSize,
-              decoration: BoxDecoration(
-                color: getBackground(),
-                border: Border.all(
-                  color: getBorderColor(),
-                  width: 1,
-                ),
-              ),
-              child: coolBarContent,
+            _CoolBarContainer(
+              theme: theme,
+              isVertical: isVertical,
+              hasValidBounds: hasValidBounds,
+              crossAxisSize: _getCrossAxisSize(theme, isVertical),
+              backgroundColor: _getBackgroundColor(context, theme),
+              borderColor: _getBorderColor(theme),
+              child: _buildContent(theme, isVertical, hasValidBounds),
             ),
           );
         }),
@@ -80,25 +37,167 @@ class CoolBarImpl<T extends CoolBarSwt, V extends VCoolBar>
     );
   }
 
-  Widget _buildWrappedCoolBar(
-    List<Widget> coolItems,
-    List<int> wrapIndices,
-    bool isVertical,
-  ) {
-    List<List<Widget>> wrappedItems = [];
-    int currentIndex = 0;
+  Widget _buildContent(CoolBarThemeExtension theme, bool isVertical, bool hasValidBounds) {
+    final coolItems = _getCoolItems(theme);
+    final wrapIndices = state.wrapIndices ?? [];
 
-    for (int i = 0; i < wrapIndices.length; i++) {
-      int endIndex = wrapIndices[i];
-      if (endIndex > currentIndex && endIndex <= coolItems.length) {
-        wrappedItems.add(coolItems.sublist(currentIndex, endIndex));
-        currentIndex = endIndex;
+    if (wrapIndices.isNotEmpty) {
+      return _WrappedCoolBarContent(
+        items: coolItems,
+        wrapIndices: wrapIndices,
+        isVertical: isVertical,
+      );
+    }
+
+    return _SimpleCoolBarContent(
+      items: coolItems,
+      isVertical: isVertical,
+      hasValidBounds: hasValidBounds,
+    );
+  }
+
+  List<Widget> _getCoolItems(CoolBarThemeExtension theme) {
+    if (state.items == null) return [];
+
+    final items = state.items!;
+    final itemOrder = state.itemOrder;
+    final itemSizes = state.itemSizes;
+
+    final orderedItems = (itemOrder != null && itemOrder.isNotEmpty)
+        ? itemOrder
+            .where((i) => i >= 0 && i < items.length)
+            .map((i) => items[i])
+            .toList()
+        : items;
+
+    return orderedItems.asMap().entries.map((entry) {
+      final index = entry.key;
+      final coolItem = entry.value;
+
+      if (itemSizes != null && index < itemSizes.length) {
+        coolItem.preferredSize ??= itemSizes[index];
       }
+
+      return CoolItemSwt(value: coolItem);
+    }).toList();
+  }
+
+  double? _getCrossAxisSize(CoolBarThemeExtension theme, bool isVertical) {
+    final bounds = state.bounds;
+    if (hasBounds(bounds)) {
+      return isVertical
+          ? bounds!.width.toDouble()
+          : bounds!.height.toDouble();
+    }
+    return null;
+  }
+
+  Color _getBackgroundColor(BuildContext context, CoolBarThemeExtension theme) {
+    return getBackgroundColor(
+      background: state.background,
+      defaultColor: theme.backgroundColor,
+    ) ?? theme.backgroundColor;
+  }
+
+  Color _getBorderColor(CoolBarThemeExtension theme) {
+    return theme.borderColor;
+  }
+
+  void _onFocusChange(bool hasFocus) {
+    if (hasFocus) {
+      widget.sendFocusFocusIn(state, null);
+    } else {
+      widget.sendFocusFocusOut(state, null);
+    }
+  }
+}
+
+class _CoolBarContainer extends StatelessWidget {
+  final CoolBarThemeExtension theme;
+  final bool isVertical;
+  final bool hasValidBounds;
+  final double? crossAxisSize;
+  final Color backgroundColor;
+  final Color borderColor;
+  final Widget child;
+
+  const _CoolBarContainer({
+    required this.theme,
+    required this.isVertical,
+    required this.hasValidBounds,
+    required this.crossAxisSize,
+    required this.backgroundColor,
+    required this.borderColor,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: theme.animationDuration,
+      width: isVertical ? crossAxisSize : (hasValidBounds ? double.infinity : null),
+      height: isVertical ? (hasValidBounds ? double.infinity : null) : crossAxisSize,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(theme.borderRadius),
+        border: Border.all(
+          color: borderColor,
+          width: theme.borderWidth,
+        ),
+      ),
+      padding: theme.padding,
+      child: child,
+    );
+  }
+}
+
+class _SimpleCoolBarContent extends StatelessWidget {
+  final List<Widget> items;
+  final bool isVertical;
+  final bool hasValidBounds;
+
+  const _SimpleCoolBarContent({
+    required this.items,
+    required this.isVertical,
+    required this.hasValidBounds,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final mainAxisSize = hasValidBounds ? MainAxisSize.max : MainAxisSize.min;
+
+    if (isVertical) {
+      return Column(
+        mainAxisSize: mainAxisSize,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: items,
+      );
     }
 
-    if (currentIndex < coolItems.length) {
-      wrappedItems.add(coolItems.sublist(currentIndex));
-    }
+    return Row(
+      mainAxisSize: mainAxisSize,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: items,
+    );
+  }
+}
+
+class _WrappedCoolBarContent extends StatelessWidget {
+  final List<Widget> items;
+  final List<int> wrapIndices;
+  final bool isVertical;
+
+  const _WrappedCoolBarContent({
+    required this.items,
+    required this.wrapIndices,
+    required this.isVertical,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final wrappedItems = _buildWrappedItems();
 
     return SingleChildScrollView(
       scrollDirection: isVertical ? Axis.horizontal : Axis.vertical,
@@ -106,68 +205,43 @@ class CoolBarImpl<T extends CoolBarSwt, V extends VCoolBar>
           ? Row(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: wrappedItems.map((items) {
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: items,
-                );
-              }).toList(),
+              children: wrappedItems
+                  .map((group) => Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: group,
+                      ))
+                  .toList(),
             )
           : Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: wrappedItems.map((items) {
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: items,
-                );
-              }).toList(),
+              children: wrappedItems
+                  .map((group) => Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: group,
+                      ))
+                  .toList(),
             ),
     );
   }
 
-  List<Widget> getCoolItems() {
-    if (state.items == null) {
-      return [];
+  List<List<Widget>> _buildWrappedItems() {
+    final List<List<Widget>> result = [];
+    int currentIndex = 0;
+
+    for (final endIndex in wrapIndices) {
+      if (endIndex > currentIndex && endIndex <= items.length) {
+        result.add(items.sublist(currentIndex, endIndex));
+        currentIndex = endIndex;
+      }
     }
 
-    final itemOrder = state.itemOrder;
-    final items = state.items!;
-    final itemSizes = state.itemSizes;
-
-    List<VCoolItem> orderedItems;
-    if (itemOrder != null && itemOrder.isNotEmpty) {
-      orderedItems = [];
-      for (int index in itemOrder) {
-        if (index >= 0 && index < items.length) {
-          orderedItems.add(items[index]);
-        }
-      }
-    } else {
-      orderedItems = items;
+    if (currentIndex < items.length) {
+      result.add(items.sublist(currentIndex));
     }
 
-    return orderedItems.asMap().entries.map((entry) {
-      final index = entry.key;
-      final coolItem = entry.value;
-
-      if (itemSizes != null && index < itemSizes.length) {
-        final size = itemSizes[index];
-        coolItem.preferredSize ??= size;
-      }
-
-      return getWidgetForCoolItem(coolItem);
-    }).toList();
-  }
-
-  Widget getWidgetForCoolItem(VCoolItem coolItem) {
-    final itemWidget = CoolItemSwt(value: coolItem);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
-      child: itemWidget,
-    );
+    return result;
   }
 }

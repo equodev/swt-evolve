@@ -8,6 +8,7 @@ import './measure_combo.dart' as combo;
 import './measure_label.dart' as label;
 import './measure_link.dart' as link;
 import './measure_progressbar.dart' as progressbar;
+import './measure_sash.dart' as sash;
 import './measure_scale.dart' as scale;
 import './measure_slider.dart' as slider;
 import './measure_text.dart' as text;
@@ -22,6 +23,7 @@ void main() {
   label.setupCases(measurer);
   link.setupCases(measurer);
   progressbar.setupCases(measurer);
+  sash.setupCases(measurer);
   scale.setupCases(measurer);
   slider.setupCases(measurer);
   text.setupCases(measurer);

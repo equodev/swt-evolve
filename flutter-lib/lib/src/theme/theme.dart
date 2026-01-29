@@ -28,6 +28,11 @@ import 'theme_settings/scrolledcomposite_theme_settings.dart';
 import 'theme_settings/scale_theme_settings.dart';
 import 'theme_settings/menu_theme_settings.dart';
 import 'theme_settings/menuitem_theme_settings.dart';
+import 'theme_settings/coolbar_theme_settings.dart';
+import 'theme_settings/coolitem_theme_settings.dart';
+import 'theme_settings/tooltip_theme_settings.dart';
+import 'theme_settings/sash_theme_settings.dart';
+import 'theme_settings/canvas_theme_settings.dart';
 
 Color calculateBackgroundColor(int? backgroundColor, bool useDarkTheme) {
   return backgroundColor != null
@@ -456,6 +461,31 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final coolBarTheme = getCoolBarLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final coolItemTheme = getCoolItemLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final tooltipTheme = getTooltipLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final sashTheme = getSashLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final canvasTheme = getCanvasLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -488,6 +518,11 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
       scaleTheme,
       menuTheme,
       menuItemTheme,
+      coolBarTheme,
+      coolItemTheme,
+      tooltipTheme,
+      sashTheme,
+      canvasTheme,
     ],
   );
 }
@@ -631,6 +666,31 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final coolBarTheme = getCoolBarLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final coolItemTheme = getCoolItemLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final tooltipTheme = getTooltipLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final sashTheme = getSashLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final canvasTheme = getCanvasLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -664,6 +724,11 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
       scaleTheme,
       menuTheme,
       menuItemTheme,
+      coolBarTheme,
+      coolItemTheme,
+      tooltipTheme,
+      sashTheme,
+      canvasTheme,
     ],
   );
 }
@@ -810,6 +875,31 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final coolBarTheme = getCoolBarDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final coolItemTheme = getCoolItemDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final tooltipTheme = getTooltipDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final sashTheme = getSashDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final canvasTheme = getCanvasDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -842,6 +932,11 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
       scaleTheme,
       menuTheme,
       menuItemTheme,
+      coolBarTheme,
+      coolItemTheme,
+      tooltipTheme,
+      sashTheme,
+      canvasTheme,
     ],
   );
 }
@@ -985,6 +1080,31 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final coolBarTheme = getCoolBarDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final coolItemTheme = getCoolItemDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final tooltipTheme = getTooltipDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final sashTheme = getSashDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
+  final canvasTheme = getCanvasDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -1018,6 +1138,11 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
       scaleTheme,
       menuTheme,
       menuItemTheme,
+      coolBarTheme,
+      coolItemTheme,
+      tooltipTheme,
+      sashTheme,
+      canvasTheme,
     ],
   );
 }

@@ -3,9 +3,10 @@ import '../gen/event.dart';
 import '../gen/sash.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
-import '../impl/color_utils.dart';
 import '../impl/control_evolve.dart';
 import '../impl/composite_evolve.dart';
+import '../impl/utils/widget_utils.dart';
+import '../theme/theme_extensions/sash_theme_extension.dart';
 import 'package:swtflutter/src/styles.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
@@ -94,13 +95,16 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
     final isHorizontal = hasStyle(SWT.HORIZONTAL);
     final enabled = state.enabled ?? true;
 
-    Color sashColor = colorFromVColor(
-      state.background,
-      defaultColor: AppColors.getBackgroundColor(),
-    );
+    final widgetTheme = Theme.of(context).extension<SashThemeExtension>()!;
+    Color sashColor = getBackgroundColor(
+      background: state.background,
+      defaultColor: widgetTheme.backgroundColor,
+    ) ?? widgetTheme.backgroundColor;
 
-    final width = bounds?.width?.toDouble();
-    final height = bounds?.height?.toDouble();
+    final boundsWidth = bounds?.width?.toDouble() ?? 0;
+    final boundsHeight = bounds?.height?.toDouble() ?? 0;
+    final width = boundsWidth > 0 ? boundsWidth : widgetTheme.defaultSize;
+    final height = boundsHeight > 0 ? boundsHeight : widgetTheme.defaultSize;
 
     Widget sashContent = MouseRegion(
       onEnter: (_) => handleMouseEnter(),
@@ -131,6 +135,10 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
           child: Container(
             width: width,
             height: height,
+            constraints: BoxConstraints(
+              maxHeight: height,
+              maxWidth: width,
+            ),
             color: sashColor,
           ),
         ),
@@ -140,14 +148,6 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
     if (_localX != null) {
       lastAppliedX = _localX;
       lastAppliedY = _localY;
-    }
-
-    if (lastAppliedX != null) {
-      return Positioned(
-        left: lastAppliedX!.toDouble(),
-        top: lastAppliedY?.toDouble() ?? 0,
-        child: sashContent,
-      );
     }
 
     return sashContent;
