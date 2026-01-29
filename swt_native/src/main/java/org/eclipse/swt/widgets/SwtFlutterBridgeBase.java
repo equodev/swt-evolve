@@ -192,6 +192,11 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
                 c.markLayout(false, false);
                 c.updateLayout(false);
             }
+        } else {
+            if (dartControl instanceof DartComposite c && c.layout != null) {
+                c.markLayout(false, false);
+                c.updateLayout(false);
+            }
         }
     }
 

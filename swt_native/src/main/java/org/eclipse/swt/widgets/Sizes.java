@@ -433,7 +433,8 @@ public class Sizes {
     }
 
     public static Rectangle getClientArea(DartScrollable widget) {
-        return widget.getBounds();
+        Rectangle b = widget.getBounds();
+        return new Rectangle(0, 0, Math.max(0, b.width), Math.max(0, b.height));
     }
 
     public static Point getSize(DartScrollBar scrollBar) {
