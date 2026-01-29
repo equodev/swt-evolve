@@ -7,6 +7,8 @@ import '../gen/widgets.dart';
 import 'composite_evolve.dart';
 import '../custom/toolbar_composite.dart';
 import 'color_utils.dart';
+import 'utils/widget_utils.dart';
+import '../theme/theme_extensions/canvas_theme_extension.dart';
 
 abstract class Shape {
   void draw(Canvas c);
@@ -19,9 +21,12 @@ abstract class Shape {
 class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     extends CompositeImpl<T, V> {
   List<Shape> shapes = [];
-  // Use background color from state (comes from Java shell background)
-  Color get bg => colorFromVColor(state.background, defaultColor: const Color(0xFFF0F0F0));
-  Color fg = Colors.black;
+
+  CanvasThemeExtension get _theme =>
+      Theme.of(context).extension<CanvasThemeExtension>()!;
+
+  Color get bg => colorFromVColor(state.background, defaultColor: _theme.backgroundColor);
+  Color get fg => _theme.foregroundColor;
   Color gcBg = Colors.transparent;
 
   final int _alpha = 255;
@@ -45,15 +50,33 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
 
   @override
   Widget build(BuildContext context) {
-    final children = state.children;
+    final widgetTheme = _theme;
+    final hasValidBounds = hasBounds(state.bounds);
+    final constraints = getConstraintsFromBounds(state.bounds);
 
     VGC gc = VGC.empty()..id = state.id;
-    return GCSwt<VGC>(value: gc);
-  }
+    Widget child = GCSwt<VGC>(value: gc);
+
+    if (hasValidBounds && constraints != null) {
+      return ConstrainedBox(
+        constraints: constraints,
+        child: child,
+      );
+    }
+
+    return SizedBox(
+      width: widgetTheme.defaultWidth,
+      height: widgetTheme.defaultHeight,
+      child: child,
+    );
+ }
 
   Size getBounds() {
-    return Size((state.bounds?.width ?? 100).toDouble(),
-        (state.bounds?.height ?? 100).toDouble());
+    if (hasBounds(state.bounds)) {
+      return Size(
+          state.bounds!.width.toDouble(), state.bounds!.height.toDouble());
+    }
+    return Size(_theme.defaultWidth, _theme.defaultHeight);
   }
 
   Color rgbMapToColor(Map<String, dynamic> m) => Color.fromARGB(

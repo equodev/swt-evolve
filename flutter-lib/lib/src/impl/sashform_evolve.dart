@@ -8,6 +8,7 @@ import '../gen/widget.dart';
 import '../gen/widgets.dart';
 import '../impl/composite_evolve.dart';
 import '../styles.dart';
+import '../theme/theme_extensions/sash_theme_extension.dart';
 import 'color_utils.dart';
 
 class SashFormImpl<T extends SashFormSwt, V extends VSashForm>
@@ -30,7 +31,8 @@ class SashFormImpl<T extends SashFormSwt, V extends VSashForm>
     }
 
     final isVertical = state.style.has(SWT.VERTICAL);
-    final sashWidth = (state.sashWidth ?? 3).toDouble();
+    final widgetTheme = Theme.of(context).extension<SashThemeExtension>()!;
+    final sashWidth = (state.sashWidth ?? widgetTheme.hitAreaSize).toDouble();
 
     List<int> weights = state.weights ?? List.filled(children.length, 1);
 
@@ -44,6 +46,7 @@ class SashFormImpl<T extends SashFormSwt, V extends VSashForm>
         weights: weights,
         isVertical: isVertical,
         sashWidth: sashWidth,
+        sashTheme: widgetTheme,
         onWeightsChanged: (newWeights) {
           setState(() {
             state.weights = newWeights;
@@ -63,6 +66,7 @@ class _SashFormLayout extends StatefulWidget {
   final List<int> weights;
   final bool isVertical;
   final double sashWidth;
+  final SashThemeExtension sashTheme;
   final Function(List<int>) onWeightsChanged;
   final VoidCallback onMouseEnter;
   final VoidCallback onMouseExit;
@@ -75,6 +79,7 @@ class _SashFormLayout extends StatefulWidget {
     required this.weights,
     required this.isVertical,
     required this.sashWidth,
+    required this.sashTheme,
     required this.onWeightsChanged,
     required this.onMouseEnter,
     required this.onMouseExit,
@@ -250,11 +255,11 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
   }
 
   Widget _buildSash(int index, bool isVertical, double position, double crossAxisSize, BoxConstraints constraints) {
-    final sashColor = getBorderColor();
-    final sashColorHover = getAccentColor();
+    final theme = widget.sashTheme;
+    final sashColor = theme.sashColor;
+    final sashColorHover = theme.sashHoverColor;
     final isDragging = _draggingSashIndex == index;
-
-    const double hitAreaSize = 5.0;
+    final hitAreaSize = theme.hitAreaSize;
 
     Widget sashWidget = MouseRegion(
       cursor: isVertical
@@ -287,8 +292,8 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
               width: isVertical ? 30 : hitAreaSize,
               height: isVertical ? hitAreaSize : 30,
               color: isDragging
-                  ? sashColorHover.withOpacity(0.8)
-                  : sashColor.withOpacity(0.5),
+                  ? sashColorHover.withOpacity(theme.sashCenterHoverOpacity)
+                  : sashColor.withOpacity(theme.sashCenterOpacity),
             ),
           ),
         ),

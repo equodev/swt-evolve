@@ -1,75 +1,105 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:swtflutter/src/gen/control.dart';
-import 'package:swtflutter/src/gen/point.dart';
-import 'package:swtflutter/src/impl/widget_config.dart';
-import '../gen/swt.dart';
 import '../gen/coolitem.dart';
-import '../gen/widget.dart';
 import '../gen/widgets.dart';
 import '../impl/item_evolve.dart';
-import 'color_utils.dart';
+import '../theme/theme_extensions/coolitem_theme_extension.dart';
 
 class CoolItemImpl<T extends CoolItemSwt, V extends VCoolItem>
     extends ItemImpl<T, V> {
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context).extension<CoolItemThemeExtension>()!;
     final control = state.control;
     final text = state.text;
-    final preferredSize = state.preferredSize;
-    final minimumSize = state.minimumSize;
-    final controlBounds = control?.bounds;
-    final width = controlBounds?.width?.toDouble() ?? preferredSize?.x?.toDouble();
+    final width = _getWidth();
+    final constraints = _getConstraints(width);
 
-    return _buildCoolItemWrapper(
-      child: _buildCoolItemContent(control, text),
-      width: width,
+    return _CoolItemContainer(
+      constraints: constraints,
+      onPressed: _onPressed,
+      onDoubleClick: _onDoubleClick,
+      child: _buildContent(context, theme, control, text),
     );
   }
 
-  Widget _buildCoolItemContent(VControl? control, String? text) {
+  Widget _buildContent(
+    BuildContext context,
+    CoolItemThemeExtension theme,
+    VControl? control,
+    String? text,
+  ) {
     if (control != null) {
       return mapWidgetFromValue(control);
-    } else if (text != null && text.isNotEmpty) {
+    }
+
+    if (text != null && text.isNotEmpty) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+        padding: theme.contentPadding,
         child: Text(
           text,
-          style: TextStyle(
-            fontSize: AppSizes.toolbarTextSize,
-            color: getForeground(),
-          ),
+          style: theme.textStyle,
         ),
       );
-    } else {
-      return const SizedBox.shrink();
     }
+
+    return const SizedBox.shrink();
   }
 
-  Widget _buildCoolItemWrapper({
-    required Widget child,
-    double? width,
-  }) {
-    final alignedChild = Align(
-      alignment: Alignment.center,
-      child: child,
-    );
+  double? _getWidth() {
+    final controlBounds = state.control?.bounds;
+    final preferredSize = state.preferredSize;
 
+    return controlBounds?.width?.toDouble() ?? preferredSize?.x?.toDouble();
+  }
+
+  BoxConstraints? _getConstraints(double? width) {
     if (width != null && width > 0) {
-      return SizedBox(
-        width: width,
-        child: alignedChild,
+      return BoxConstraints(
+        minWidth: width,
+        maxWidth: width,
       );
     }
-
-    return alignedChild;
+    return null;
   }
 
-  void onPressed() {
+  void _onPressed() {
     widget.sendSelectionSelection(state, null);
   }
 
-  void onDoubleClick() {
+  void _onDoubleClick() {
     widget.sendSelectionDefaultSelection(state, null);
+  }
+}
+
+class _CoolItemContainer extends StatelessWidget {
+  final BoxConstraints? constraints;
+  final VoidCallback onPressed;
+  final VoidCallback onDoubleClick;
+  final Widget child;
+
+  const _CoolItemContainer({
+    required this.constraints,
+    required this.onPressed,
+    required this.onDoubleClick,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Widget content = child;
+
+    if (constraints != null) {
+      content = ConstrainedBox(
+        constraints: constraints!,
+        child: content,
+      );
+    }
+
+    return GestureDetector(
+      onTap: onPressed,
+      onDoubleTap: onDoubleClick,
+      child: content,
+    );
   }
 }

@@ -205,48 +205,15 @@ public class Sizes {
     }
 
     public static Point computeSize(DartSash w, int wHint, int hHint, boolean changed) {
-        if (wHint != SWT.DEFAULT && wHint < 0) wHint = 0;
-        if (hHint != SWT.DEFAULT && hHint < 0) hHint = 0;
-
-        int DEFAULT_CROSS_AXIS_SIZE = 3;
-        int border = w.getBorderWidth();
-        int width = border * 2;
-        int height = border * 2;
-
-        if ((w.getApi().style & SWT.HORIZONTAL) != 0) {
-            width += 64;
-            height += DEFAULT_CROSS_AXIS_SIZE;
-        } else {
-            width += DEFAULT_CROSS_AXIS_SIZE;
-            height += 64;
-        }
-
-        if (wHint != SWT.DEFAULT) width = wHint + (border * 2);
-        if (hHint != SWT.DEFAULT) height = hHint + (border * 2);
-
-        return new Point(width, height);
+        return SashSizes.computeSize(w, wHint, hHint, changed);
     }
 
     public static Point computeSize(DartScale c, int wHint, int hHint, boolean changed) {
-        int style = c.getApi().style;
-        boolean isVertical = (style & org.eclipse.swt.SWT.VERTICAL) != 0;
-
-        if (isVertical) {
-            return new Point(40, 200);
-        } else {
-            return new Point(200, 40);
-        }
+        return ScaleSizes.computeSize(c, wHint, hHint, changed);
     }
 
     public static Point computeSize(DartSlider c, int wHint, int hHint, boolean changed) {
-        int style = c.getApi().style;
-        boolean isVertical = (style & org.eclipse.swt.SWT.VERTICAL) != 0;
-
-        if (isVertical) {
-            return new Point(48, 250);
-        } else {
-            return new Point(250, 48);
-        }
+        return SliderSizes.computeSize(c, wHint, hHint, changed);
     }
 
     public static Point computeSize(DartSpinner c, int wHint, int hHint, boolean changed) {

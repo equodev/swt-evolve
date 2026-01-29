@@ -2,7 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'dart:typed_data';
 import 'dart:convert';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../gen/canvas.dart';
 import '../gen/color.dart';
@@ -15,6 +15,7 @@ import './utils/image_utils.dart';
 import './utils/font_utils.dart';
 import 'assets_manager.dart';
 import 'color_utils.dart';
+import '../theme/theme_extensions/canvas_theme_extension.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_svg/flutter_svg.dart';
@@ -43,22 +44,26 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
         state.clipping!.y?.toDouble() ?? 0, width, height);
   }
 
+  CanvasThemeExtension get _canvasTheme =>
+      Theme.of(context).extension<CanvasThemeExtension>()!;
+
   Size get bounds {
     final canvas = context.findAncestorWidgetOfExactType<CanvasSwt>();
     if (canvas != null && canvas.value.id == state.id) {
       final canvasState = context.findAncestorStateOfType<CanvasImpl>();
-      return canvasState?.getBounds() ?? const Size(100, 100);
+      return canvasState?.getBounds() ??
+          Size(_canvasTheme.defaultWidth, _canvasTheme.defaultHeight);
     }
-    return const Size(100, 100);
+    return Size(_canvasTheme.defaultWidth, _canvasTheme.defaultHeight);
   }
 
   Color get canvasBg {
     final canvas = context.findAncestorWidgetOfExactType<CanvasSwt>();
     if (canvas != null && canvas.value.id == state.id) {
       final canvasState = context.findAncestorStateOfType<CanvasImpl>();
-      return canvasState?.bg ?? const Color(0xFFF0F0F0);
+      return canvasState?.bg ?? _canvasTheme.backgroundColor;
     }
-    return const Color(0xFFF0F0F0);
+    return _canvasTheme.backgroundColor;
   }
 
   //todo sendPaintPaint should be called everytime gc redraws and also make shapes list empty
