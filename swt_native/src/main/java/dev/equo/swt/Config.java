@@ -4,7 +4,9 @@ import org.eclipse.swt.custom.*;
 import org.eclipse.swt.widgets.*;
 import org.eclipse.swt.graphics.*;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.Map.entry;
 
@@ -76,6 +78,60 @@ public class Config {
 
     static final String PROPERTY_PREFIX = "dev.equo.swt.";
     static final String DART = "Dart";
+
+    /**
+     * Widget dependency groups. All widgets in the same group should be activated together.
+     * When any widget in a group is activated via system property, all other widgets in the
+     * same group are also activated (unless explicitly disabled).
+     */
+    static final java.util.List<Set<String>> WIDGET_DEPENDENCY_GROUPS = java.util.List.of(
+            // TabFolder group
+            Set.of("TabFolder", "TabItem"),
+            // CTabFolder group
+            Set.of("CTabFolder", "CTabItem", "CTabFolderLayout", "CTabFolderRenderer"),
+            // Table group
+            Set.of("Table", "TableColumn", "TableItem"),
+            // Tree group
+            Set.of("Tree", "TreeColumn", "TreeItem"),
+            // ToolBar group
+            Set.of("ToolBar", "ToolItem"),
+            // CoolBar group
+            Set.of("CoolBar", "CoolItem"),
+            // Menu group
+            Set.of("Menu", "MenuItem"),
+            // ExpandBar group
+            Set.of("ExpandBar", "ExpandItem"),
+            // StyledText group
+            Set.of("StyledText", "StyledTextRenderer"),
+            // TaskBar group
+            Set.of("TaskBar", "TaskItem")
+    );
+
+    /** Cache mapping widget simple names to their dependency group */
+    private static final Map<String, Set<String>> widgetToGroupCache = new HashMap<>();
+
+    static {
+        // Build the cache for fast lookup
+        for (Set<String> group : WIDGET_DEPENDENCY_GROUPS) {
+            for (String widget : group) {
+                widgetToGroupCache.put(widget, group);
+            }
+        }
+    }
+
+    /**
+     * Gets the dependency group for a widget, or null if it has no dependencies.
+     */
+    static Set<String> getDependencyGroup(String widgetSimpleName) {
+        return widgetToGroupCache.get(widgetSimpleName);
+    }
+
+    /**
+     * Gets the dependency group for a widget class.
+     */
+    static Set<String> getDependencyGroup(Class<?> clazz) {
+        return getDependencyGroup(clazz.getSimpleName());
+    }
 
     public static void defaultToEquo() {
         defaultImpl = Impl.equo;
@@ -169,10 +225,31 @@ public class Config {
     }
 
     static boolean isEquoForced(Class<?> clazz) {
+        // First check if this specific widget is explicitly set
         String forcedImpl = System.getProperty(getKey(clazz));
         if (forcedImpl != null) {
-            return Impl.equo.name().equals(forcedImpl);
+            // If explicitly set to eclipse, respect that
+            if (Impl.eclipse.name().equals(forcedImpl)) {
+                return false;
+            }
+            // If explicitly set to equo, return true
+            if (Impl.equo.name().equals(forcedImpl)) {
+                return true;
+            }
         }
+
+        // Check if any widget in the same dependency group is forced to equo
+        // (only if this widget is not explicitly disabled)
+        Set<String> dependencyGroup = getDependencyGroup(clazz);
+        if (dependencyGroup != null) {
+            for (String dependentWidget : dependencyGroup) {
+                String dependentImpl = System.getProperty(PROPERTY_PREFIX + dependentWidget);
+                if (dependentImpl != null && Impl.equo.name().equals(dependentImpl)) {
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 

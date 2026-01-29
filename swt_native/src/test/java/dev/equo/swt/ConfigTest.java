@@ -1,8 +1,10 @@
 package dev.equo.swt;
 
+import org.eclipse.swt.custom.CTabFolder;
+import org.eclipse.swt.custom.CTabFolderRenderer;
 import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.*;
 import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,7 +21,20 @@ public class ConfigTest {
         Config.defaultImpl = Config.Impl.eclipse;
         System.clearProperty("dev.equo.swt.Point");
         System.clearProperty("dev.equo.swt.CTabItem");
+        System.clearProperty("dev.equo.swt.CTabFolder");
+        System.clearProperty("dev.equo.swt.CTabFolderRenderer");
+        System.clearProperty("dev.equo.swt.CTabFolderLayout");
         System.clearProperty("dev.equo.swt.Button");
+        System.clearProperty("dev.equo.swt.Tree");
+        System.clearProperty("dev.equo.swt.TreeItem");
+        System.clearProperty("dev.equo.swt.TreeColumn");
+        System.clearProperty("dev.equo.swt.Table");
+        System.clearProperty("dev.equo.swt.TableItem");
+        System.clearProperty("dev.equo.swt.TableColumn");
+        System.clearProperty("dev.equo.swt.ToolBar");
+        System.clearProperty("dev.equo.swt.ToolItem");
+        System.clearProperty("dev.equo.swt.Menu");
+        System.clearProperty("dev.equo.swt.MenuItem");
     }
 
     @Test
@@ -133,6 +148,186 @@ public class ConfigTest {
             assertThat(Config.isEquo(CTabItem.class)).isTrue();
         }
 
+    }
+
+    @Nested
+    class DependentWidgetActivation {
+
+        @AfterEach
+        void cleanup() {
+            System.clearProperty("dev.equo.swt.Tree");
+            System.clearProperty("dev.equo.swt.TreeItem");
+            System.clearProperty("dev.equo.swt.TreeColumn");
+            System.clearProperty("dev.equo.swt.Table");
+            System.clearProperty("dev.equo.swt.TableItem");
+            System.clearProperty("dev.equo.swt.TableColumn");
+            System.clearProperty("dev.equo.swt.CTabFolder");
+            System.clearProperty("dev.equo.swt.CTabItem");
+            System.clearProperty("dev.equo.swt.CTabFolderRenderer");
+            System.clearProperty("dev.equo.swt.CTabFolderLayout");
+            System.clearProperty("dev.equo.swt.ToolBar");
+            System.clearProperty("dev.equo.swt.ToolItem");
+            System.clearProperty("dev.equo.swt.Menu");
+            System.clearProperty("dev.equo.swt.MenuItem");
+            System.clearProperty("dev.equo.swt.TaskBar");
+            System.clearProperty("dev.equo.swt.TaskItem");
+            Config.defaultToEclipse();
+        }
+
+        // Tree group tests
+        @Test
+        void activating_tree_should_activate_treeitem() {
+            Config.defaultToEclipse();
+            System.setProperty("dev.equo.swt.Tree", "equo");
+            assertThat(Config.isEquoForced(Tree.class)).isTrue();
+            assertThat(Config.isEquoForced(TreeItem.class)).isTrue();
+            assertThat(Config.isEquoForced(TreeColumn.class)).isTrue();
+        }
+
+        @Test
+        void activating_treeitem_should_activate_tree_and_treecolumn() {
+            Config.defaultToEclipse();
+            System.setProperty("dev.equo.swt.TreeItem", "equo");
+            assertThat(Config.isEquoForced(Tree.class)).isTrue();
+            assertThat(Config.isEquoForced(TreeItem.class)).isTrue();
+            assertThat(Config.isEquoForced(TreeColumn.class)).isTrue();
+        }
+
+        @Test
+        void activating_treecolumn_should_activate_tree_and_treeitem() {
+            Config.defaultToEclipse();
+            System.setProperty("dev.equo.swt.TreeColumn", "equo");
+            assertThat(Config.isEquoForced(Tree.class)).isTrue();
+            assertThat(Config.isEquoForced(TreeItem.class)).isTrue();
+            assertThat(Config.isEquoForced(TreeColumn.class)).isTrue();
+        }
+
+        // Table group tests
+        @Test
+        void activating_table_should_activate_tableitem_and_tablecolumn() {
+            Config.defaultToEclipse();
+            System.setProperty("dev.equo.swt.Table", "equo");
+            assertThat(Config.isEquoForced(Table.class)).isTrue();
+            assertThat(Config.isEquoForced(TableItem.class)).isTrue();
+            assertThat(Config.isEquoForced(TableColumn.class)).isTrue();
+        }
+
+        @Test
+        void activating_tableitem_should_activate_table_and_tablecolumn() {
+            Config.defaultToEclipse();
+            System.setProperty("dev.equo.swt.TableItem", "equo");
+            assertThat(Config.isEquoForced(Table.class)).isTrue();
+            assertThat(Config.isEquoForced(TableItem.class)).isTrue();
+            assertThat(Config.isEquoForced(TableColumn.class)).isTrue();
+        }
+
+        // CTabFolder group tests
+        @Test
+        void activating_ctabfolder_should_activate_ctabitem_and_renderer() {
+            Config.defaultToEclipse();
+            System.setProperty("dev.equo.swt.CTabFolder", "equo");
+            assertThat(Config.isEquoForced(CTabFolder.class)).isTrue();
+            assertThat(Config.isEquoForced(CTabItem.class)).isTrue();
+            assertThat(Config.isEquoForced(CTabFolderRenderer.class)).isTrue();
+        }
+
+        @Test
+        void activating_ctabitem_should_activate_ctabfolder_and_renderer() {
+            Config.defaultToEclipse();
+            System.setProperty("dev.equo.swt.CTabItem", "equo");
+            assertThat(Config.isEquoForced(CTabFolder.class)).isTrue();
+            assertThat(Config.isEquoForced(CTabItem.class)).isTrue();
+            assertThat(Config.isEquoForced(CTabFolderRenderer.class)).isTrue();
+        }
+
+        // ToolBar group tests
+        @Test
+        void activating_toolbar_should_activate_toolitem() {
+            Config.defaultToEclipse();
+            System.setProperty("dev.equo.swt.ToolBar", "equo");
+            assertThat(Config.isEquoForced(ToolBar.class)).isTrue();
+            assertThat(Config.isEquoForced(ToolItem.class)).isTrue();
+        }
+
+        @Test
+        void activating_toolitem_should_activate_toolbar() {
+            Config.defaultToEclipse();
+            System.setProperty("dev.equo.swt.ToolItem", "equo");
+            assertThat(Config.isEquoForced(ToolBar.class)).isTrue();
+            assertThat(Config.isEquoForced(ToolItem.class)).isTrue();
+        }
+
+        // Explicit disable should override group activation
+        @Test
+        void explicit_disable_should_override_group_activation() {
+            Config.defaultToEclipse();
+            System.setProperty("dev.equo.swt.Tree", "equo");
+            System.setProperty("dev.equo.swt.TreeItem", "eclipse");
+            assertThat(Config.isEquoForced(Tree.class)).isTrue();
+            assertThat(Config.isEquoForced(TreeItem.class)).isFalse();
+            assertThat(Config.isEquoForced(TreeColumn.class)).isTrue();
+        }
+
+        @Test
+        void explicit_disable_of_parent_should_not_affect_child_group_activation() {
+            Config.defaultToEclipse();
+            System.setProperty("dev.equo.swt.Tree", "eclipse");
+            System.setProperty("dev.equo.swt.TreeItem", "equo");
+            assertThat(Config.isEquoForced(Tree.class)).isFalse();
+            assertThat(Config.isEquoForced(TreeItem.class)).isTrue();
+            assertThat(Config.isEquoForced(TreeColumn.class)).isTrue();
+        }
+
+        // Widgets without dependencies should not be affected
+        @Test
+        void widgets_without_dependencies_should_not_be_affected() {
+            Config.defaultToEclipse();
+            System.setProperty("dev.equo.swt.Tree", "equo");
+            assertThat(Config.isEquoForced(Button.class)).isFalse();
+            assertThat(Config.isEquoForced(Label.class)).isFalse();
+        }
+
+        // Test getDependencyGroup
+        @Test
+        void should_return_correct_dependency_group_for_tree() {
+            var group = Config.getDependencyGroup(Tree.class);
+            assertThat(group).containsExactlyInAnyOrder("Tree", "TreeItem", "TreeColumn");
+        }
+
+        @Test
+        void should_return_correct_dependency_group_for_table() {
+            var group = Config.getDependencyGroup(Table.class);
+            assertThat(group).containsExactlyInAnyOrder("Table", "TableItem", "TableColumn");
+        }
+
+        @Test
+        void should_return_null_for_widgets_without_dependencies() {
+            var group = Config.getDependencyGroup(Button.class);
+            assertThat(group).isNull();
+        }
+
+        // TaskBar group tests
+        @Test
+        void activating_taskbar_should_activate_taskitem() {
+            Config.defaultToEclipse();
+            System.setProperty("dev.equo.swt.TaskBar", "equo");
+            assertThat(Config.isEquoForced(TaskBar.class)).isTrue();
+            assertThat(Config.isEquoForced(TaskItem.class)).isTrue();
+        }
+
+        @Test
+        void activating_taskitem_should_activate_taskbar() {
+            Config.defaultToEclipse();
+            System.setProperty("dev.equo.swt.TaskItem", "equo");
+            assertThat(Config.isEquoForced(TaskBar.class)).isTrue();
+            assertThat(Config.isEquoForced(TaskItem.class)).isTrue();
+        }
+
+        @Test
+        void should_return_correct_dependency_group_for_taskbar() {
+            var group = Config.getDependencyGroup(TaskBar.class);
+            assertThat(group).containsExactlyInAnyOrder("TaskBar", "TaskItem");
+        }
     }
 
 }
