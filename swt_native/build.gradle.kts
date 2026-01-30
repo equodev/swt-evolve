@@ -236,6 +236,12 @@ platforms.forEach { platform ->
         if (currentPlatform == platform && System.getProperty("skipFlutterLib") == null)
             dependsOn("${platform}FlutterLib")
 
+        // For macOS, both architectures share the same output directory, so we need to
+        // ensure proper ordering to avoid Gradle's implicit dependency validation error
+        if (osArch[0] == "macos") {
+            mustRunAfter("macos-aarch64FlutterLib", "macos-x86_64FlutterLib")
+        }
+
         val flutterArch = if (osArch[1] == "aarch64") "arm64" else "x64"
         when (osArch[0]) {
             "macos" -> {

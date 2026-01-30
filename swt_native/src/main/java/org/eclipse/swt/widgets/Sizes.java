@@ -6,6 +6,7 @@ import org.eclipse.swt.custom.DartCCombo;
 import org.eclipse.swt.custom.DartCLabel;
 import org.eclipse.swt.custom.DartCTabFolder;
 import org.eclipse.swt.custom.DartStyledText;
+import org.eclipse.swt.graphics.GCHelper;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -254,12 +255,59 @@ public class Sizes {
     }
 
     public static Point computeSize(DartToolBar c, int wHint, int hHint, boolean changed) {
-        return new Point(c.getItems().length * 20, 20);
+        ToolItem[] items = c.getItems();
+        int itemCount = items.length;
+
+        if (itemCount == 0) {
+            return new Point(DartToolItem.DEFAULT_WIDTH, DartToolItem.DEFAULT_HEIGHT);
+        }
+
+        boolean isVertical = (c.getApi().style & SWT.VERTICAL) != 0;
+
+        int totalWidth = 0;
+        int totalHeight = 0;
+        int maxWidth = 0;
+        int maxHeight = 0;
+
+        for (ToolItem item : items) {
+            DartToolItem dartItem = (DartToolItem) item.getImpl();
+            Point itemSize = computeSize(dartItem);
+
+            totalWidth += itemSize.x;
+            totalHeight += itemSize.y;
+            maxWidth = Math.max(maxWidth, itemSize.x);
+            maxHeight = Math.max(maxHeight, itemSize.y);
+        }
+
+        int width, height;
+        if (isVertical) {
+            // Vertical toolbar: width = max item width, height = sum of heights
+            width = maxWidth;
+            height = totalHeight;
+        } else {
+            // Horizontal toolbar: width = sum of widths, height = max item height
+            width = totalWidth;
+            height = maxHeight;
+        }
+
+        // Apply hints if provided
+        if (wHint != SWT.DEFAULT) {
+            width = wHint;
+        }
+        if (hHint != SWT.DEFAULT) {
+            height = hHint;
+        }
+
+        return new Point(width, height);
     }
 
     public static Point computeSize(DartToolItem w) {
         int width = 0, height = 0;
-        if ((w.getApi().style & SWT.SEPARATOR) != 0) {
+        boolean isSeparator = (w.getApi().style & SWT.SEPARATOR) != 0;
+        boolean hasText = w.text != null && w.text.length() != 0;
+        boolean hasImage = w.image != null;
+
+        if (isSeparator) {
             // In the unified toolbar case the width is ignored if 0, DEFAULT, or SEPARATOR_FILL.
             if ((w.parent.style & SWT.HORIZONTAL) != 0) {
                 width = w.getWidth();
@@ -276,16 +324,59 @@ public class Sizes {
                 height = Math.max(height, 0);
             }
         } else {
-            if (w.text.length() != 0 || w.image != null) {
+            if (hasText || hasImage) {
+                // Calculate size based on image and/or text
+                int imageWidth = 0, imageHeight = 0;
+                int textWidth = 0, textHeight = 0;
+
+                if (hasImage) {
+                    Rectangle imageBounds = w.image.getBounds();
+                    imageWidth = imageBounds.width;
+                    imageHeight = imageBounds.height;
+                }
+
+                if (hasText) {
+                    Point textSize = GCHelper.textExtent(w.text, SWT.DRAW_MNEMONIC, w.parent.getFont());
+                    textWidth = textSize.x;
+                    textHeight = textSize.y;
+                }
+
+                // Check if toolbar has RIGHT style (text beside image) or default (text below image)
+                boolean rightStyle = (w.parent.style & SWT.RIGHT) != 0;
+
+                if (hasImage && hasText) {
+                    if (rightStyle) {
+                        // Text beside image: width = image + spacing + text, height = max
+                        width = imageWidth + DartToolItem.INSET + textWidth;
+                        height = Math.max(imageHeight, textHeight);
+                    } else {
+                        // Text below image: width = max, height = image + spacing + text
+                        width = Math.max(imageWidth, textWidth);
+                        height = imageHeight + DartToolItem.INSET + textHeight;
+                    }
+                } else if (hasImage) {
+                    width = imageWidth;
+                    height = imageHeight;
+                } else if (hasText) {
+                    width = textWidth;
+                    height = textHeight;
+                }
+
+                // Add padding/inset around the content
+                width += DartToolItem.INSET * 2;
+                height += DartToolItem.INSET * 2;
+
+                // Ensure minimum size
+                width = Math.max(width, DartToolItem.DEFAULT_WIDTH);
+                height = Math.max(height, DartToolItem.DEFAULT_HEIGHT);
             } else {
                 width = DartToolItem.DEFAULT_WIDTH;
                 height = DartToolItem.DEFAULT_HEIGHT;
             }
+
             if ((w.getApi().style & SWT.DROP_DOWN) != 0) {
-                width += 5 + 3;
-            }
-            {
-                height -= 2;
+                // Add space for dropdown arrow
+                width += DartToolItem.ARROW_WIDTH + DartToolItem.INSET;
             }
         }
         return new Point(width, height);
