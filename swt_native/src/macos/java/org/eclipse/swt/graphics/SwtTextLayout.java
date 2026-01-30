@@ -601,9 +601,9 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                         if (style == null)
                             continue;
                         boolean drawUnderline = style.underline && !isUnderlineSupported(style);
-                        drawUnderline = drawUnderline && (j + 1 == stylesCount || !((SwtTextStyle) style.getImpl()).isAdherentUnderline(styles[j + 1].style));
+                        drawUnderline = drawUnderline && (j + 1 == stylesCount || !style.isAdherentUnderline(styles[j + 1].style));
                         boolean drawBorder = style.borderStyle != SWT.NONE;
-                        drawBorder = drawBorder && (j + 1 == stylesCount || !((SwtTextStyle) style.getImpl()).isAdherentBorder(styles[j + 1].style));
+                        drawBorder = drawBorder && (j + 1 == stylesCount || !style.isAdherentBorder(styles[j + 1].style));
                         if (!drawUnderline && !drawBorder)
                             continue;
                         int end = j + 1 < stylesCount ? translateOffset(styles[j + 1].start - 1) : length;
@@ -612,7 +612,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                             int lineEnd = untranslateOffset(lineOffsets[i + 1] - 1);
                             if (drawUnderline) {
                                 int start = run.start;
-                                for (int k = j; k > 0 && ((SwtTextStyle) style.getImpl()).isAdherentUnderline(styles[k - 1].style); k--) {
+                                for (int k = j; k > 0 && style.isAdherentUnderline(styles[k - 1].style); k--) {
                                     start = styles[k - 1].start;
                                 }
                                 start = translateOffset(start);
@@ -684,7 +684,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                             }
                             if (drawBorder) {
                                 int start = run.start;
-                                for (int k = j; k > 0 && ((SwtTextStyle) style.getImpl()).isAdherentBorder(styles[k - 1].style); k--) {
+                                for (int k = j; k > 0 && style.isAdherentBorder(styles[k - 1].style); k--) {
                                     start = styles[k - 1].start;
                                 }
                                 start = translateOffset(start);

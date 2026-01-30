@@ -885,7 +885,7 @@ class SwtStyledTextRenderer implements IStyledTextRenderer {
         StyleRange[] styles = getStylesForLine(lineIndex);
         if (styles != null) {
             for (StyleRange style : styles) {
-                if (((SwtStyleRange) style.getImpl()).isVariableHeight()) {
+                if (style.isVariableHeight()) {
                     // style is variable height
                     return true;
                 }
@@ -1288,7 +1288,7 @@ class SwtStyledTextRenderer implements IStyledTextRenderer {
                 styleCount = styles.length;
                 if (((SwtStyledText) styledText.getImpl()).isFixedLineHeight()) {
                     for (int i = 0; i < styleCount; i++) {
-                        if (((SwtStyleRange) styles[i].getImpl()).isVariableHeight()) {
+                        if (styles[i].isVariableHeight()) {
                             ((SwtStyledText) styledText.getImpl()).hasStyleWithVariableHeight = true;
                             ((SwtStyledText) styledText.getImpl()).verticalScrollOffset = -1;
                             styledText.redraw();

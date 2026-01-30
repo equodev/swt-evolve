@@ -22,6 +22,7 @@ public class StyledTextSnippet4 {
 public static void main(String[] args) throws ClassNotFoundException {
 	Config.useEquo(StyledText.class);
 	Config.useEquo(Class.forName("org.eclipse.swt.custom.StyledTextRenderer"));
+	Config.useEquo(StyleRange.class);
 
 	Display display = new Display();
 	Shell shell = new Shell(display);

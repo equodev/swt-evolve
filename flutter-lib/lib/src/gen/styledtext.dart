@@ -11,6 +11,8 @@ import '../gen/image.dart';
 import '../gen/menu.dart';
 import '../gen/point.dart';
 import '../gen/rectangle.dart';
+import '../gen/styledtextrenderer.dart';
+import '../gen/stylerange.dart';
 import '../impl/styledtext_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
@@ -107,6 +109,7 @@ class VStyledText extends VCanvas {
   VPoint? selectionRange;
   List<int>? selectionRanges;
   int? styleRange;
+  List<VStyleRange>? styleRanges;
   List<int>? tabStops;
   int? tabs;
   String? text;
@@ -118,6 +121,7 @@ class VStyledText extends VCanvas {
   bool? wordWrap;
   int? wrapIndent;
 
+  VStyledTextRenderer? renderer;
   factory VStyledText.fromJson(Map<String, dynamic> json) =>
       _$VStyledTextFromJson(json);
   Map<String, dynamic> toJson() => _$VStyledTextToJson(this);

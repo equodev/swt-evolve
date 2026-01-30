@@ -16,6 +16,9 @@
 package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
+import com.dslplatform.json.CompiledJson;
+import com.dslplatform.json.CompiledJson.*;
+import com.dslplatform.json.JsonAttribute;
 
 /**
  * <code>TextStyle</code> defines a set of styles that can be applied
@@ -40,21 +43,25 @@ import org.eclipse.swt.*;
  *
  * @since 3.0
  */
+@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.EXPLICIT)
 public class TextStyle {
 
     /**
      * the font of the style
      */
+    @JsonAttribute()
     public Font font;
 
     /**
      * the foreground of the style
      */
+    @JsonAttribute()
     public Color foreground;
 
     /**
      * the background of the style
      */
+    @JsonAttribute()
     public Color background;
 
     /**
@@ -63,6 +70,7 @@ public class TextStyle {
      *
      * @since 3.1
      */
+    @JsonAttribute()
     public boolean underline;
 
     /**
@@ -70,6 +78,7 @@ public class TextStyle {
      *
      * @since 3.4
      */
+    @JsonAttribute()
     public Color underlineColor;
 
     /**
@@ -89,6 +98,7 @@ public class TextStyle {
      *
      * @since 3.4
      */
+    @JsonAttribute()
     public int underlineStyle;
 
     /**
@@ -96,6 +106,7 @@ public class TextStyle {
      *
      * @since 3.1
      */
+    @JsonAttribute()
     public boolean strikeout;
 
     /**
@@ -103,6 +114,7 @@ public class TextStyle {
      *
      * @since 3.4
      */
+    @JsonAttribute()
     public Color strikeoutColor;
 
     /**
@@ -120,6 +132,7 @@ public class TextStyle {
      *
      * @since 3.4
      */
+    @JsonAttribute()
     public int borderStyle;
 
     /**
@@ -127,6 +140,7 @@ public class TextStyle {
      *
      * @since 3.4
      */
+    @JsonAttribute()
     public Color borderColor;
 
     /**
@@ -134,6 +148,7 @@ public class TextStyle {
      *
      * @since 3.2
      */
+    @JsonAttribute(ignore = true)
     public GlyphMetrics metrics;
 
     /**
@@ -141,6 +156,7 @@ public class TextStyle {
      *
      * @since 3.2
      */
+    @JsonAttribute()
     public int rise;
 
     /**
@@ -149,6 +165,7 @@ public class TextStyle {
      *
      * @since 3.5
      */
+    @JsonAttribute(ignore = true)
     public Object data;
 
     /**
@@ -157,8 +174,6 @@ public class TextStyle {
      * @since 3.4
      */
     public TextStyle() {
-        this((ITextStyle) null);
-        setImpl(new SwtTextStyle(this));
     }
 
     /**
@@ -170,8 +185,15 @@ public class TextStyle {
      * @param background the background color of the style, <code>null</code> if none
      */
     public TextStyle(Font font, Color foreground, Color background) {
-        this((ITextStyle) null);
-        setImpl(new SwtTextStyle(font, foreground, background, this));
+        if (font != null && font.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        if (foreground != null && foreground.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        if (background != null && background.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        this.font = font;
+        this.foreground = foreground;
+        this.background = background;
     }
 
     /**
@@ -182,8 +204,21 @@ public class TextStyle {
      * @since 3.4
      */
     public TextStyle(TextStyle style) {
-        this((ITextStyle) null);
-        setImpl(new SwtTextStyle(style, this));
+        if (style == null)
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        font = style.font;
+        foreground = style.foreground;
+        background = style.background;
+        underline = style.underline;
+        underlineColor = style.underlineColor;
+        underlineStyle = style.underlineStyle;
+        strikeout = style.strikeout;
+        strikeoutColor = style.strikeoutColor;
+        borderStyle = style.borderStyle;
+        borderColor = style.borderColor;
+        metrics = style.metrics;
+        rise = style.rise;
+        data = style.data;
     }
 
     /**
@@ -196,8 +231,67 @@ public class TextStyle {
      *
      * @see #hashCode()
      */
+    @Override
     public boolean equals(Object object) {
-        return getImpl().equals(object);
+        if (object == this)
+            return true;
+        if (object == null)
+            return false;
+        if (!(object instanceof TextStyle style))
+            return false;
+        if (foreground != null) {
+            if (!foreground.equals(style.foreground))
+                return false;
+        } else if (style.foreground != null)
+            return false;
+        if (background != null) {
+            if (!background.equals(style.background))
+                return false;
+        } else if (style.background != null)
+            return false;
+        if (font != null) {
+            if (!font.equals(style.font))
+                return false;
+        } else if (style.font != null)
+            return false;
+        if (metrics != null) {
+            if (!metrics.equals(style.metrics))
+                return false;
+        } else if (style.metrics != null)
+            return false;
+        if (underline != style.underline)
+            return false;
+        if (underlineStyle != style.underlineStyle)
+            return false;
+        if (borderStyle != style.borderStyle)
+            return false;
+        if (strikeout != style.strikeout)
+            return false;
+        if (rise != style.rise)
+            return false;
+        if (underlineColor != null) {
+            if (!underlineColor.equals(style.underlineColor))
+                return false;
+        } else if (style.underlineColor != null)
+            return false;
+        if (strikeoutColor != null) {
+            if (!strikeoutColor.equals(style.strikeoutColor))
+                return false;
+        } else if (style.strikeoutColor != null)
+            return false;
+        if (underlineStyle != style.underlineStyle)
+            return false;
+        if (borderColor != null) {
+            if (!borderColor.equals(style.borderColor))
+                return false;
+        } else if (style.borderColor != null)
+            return false;
+        if (data != null) {
+            if (!data.equals(style.data))
+                return false;
+        } else if (style.data != null)
+            return false;
+        return true;
     }
 
     /**
@@ -210,8 +304,98 @@ public class TextStyle {
      *
      * @see #equals(Object)
      */
+    @Override
     public int hashCode() {
-        return getImpl().hashCode();
+        int hash = 0;
+        if (foreground != null)
+            hash ^= foreground.hashCode();
+        if (background != null)
+            hash ^= background.hashCode();
+        if (font != null)
+            hash ^= font.hashCode();
+        if (metrics != null)
+            hash ^= metrics.hashCode();
+        if (underline)
+            hash ^= (hash << 1);
+        if (strikeout)
+            hash ^= (hash << 2);
+        hash ^= rise;
+        if (underlineColor != null)
+            hash ^= underlineColor.hashCode();
+        if (strikeoutColor != null)
+            hash ^= strikeoutColor.hashCode();
+        if (borderColor != null)
+            hash ^= borderColor.hashCode();
+        hash ^= underlineStyle;
+        return hash;
+    }
+
+    boolean isAdherentBorder(TextStyle style) {
+        if (this == style)
+            return true;
+        if (style == null)
+            return false;
+        if (borderStyle != style.borderStyle)
+            return false;
+        if (borderColor != null) {
+            if (!borderColor.equals(style.borderColor))
+                return false;
+        } else {
+            if (style.borderColor != null)
+                return false;
+            if (foreground != null) {
+                if (!foreground.equals(style.foreground))
+                    return false;
+            } else if (style.foreground != null)
+                return false;
+        }
+        return true;
+    }
+
+    boolean isAdherentUnderline(TextStyle style) {
+        if (this == style)
+            return true;
+        if (style == null)
+            return false;
+        if (underline != style.underline)
+            return false;
+        if (underlineStyle != style.underlineStyle)
+            return false;
+        if (underlineColor != null) {
+            if (!underlineColor.equals(style.underlineColor))
+                return false;
+        } else {
+            if (style.underlineColor != null)
+                return false;
+            if (foreground != null) {
+                if (!foreground.equals(style.foreground))
+                    return false;
+            } else if (style.foreground != null)
+                return false;
+        }
+        return true;
+    }
+
+    boolean isAdherentStrikeout(TextStyle style) {
+        if (this == style)
+            return true;
+        if (style == null)
+            return false;
+        if (strikeout != style.strikeout)
+            return false;
+        if (strikeoutColor != null) {
+            if (!strikeoutColor.equals(style.strikeoutColor))
+                return false;
+        } else {
+            if (style.strikeoutColor != null)
+                return false;
+            if (foreground != null) {
+                if (!foreground.equals(style.foreground))
+                    return false;
+            } else if (style.foreground != null)
+                return false;
+        }
+        return true;
     }
 
     /**
@@ -220,27 +404,125 @@ public class TextStyle {
      *
      * @return a string representation of the <code>TextStyle</code>
      */
+    @Override
     public String toString() {
-        return getImpl().toString();
-    }
-
-    protected ITextStyle impl;
-
-    protected TextStyle(ITextStyle impl) {
-        if (impl != null)
-            impl.setApi(this);
-    }
-
-    static TextStyle createApi(ITextStyle impl) {
-        return new TextStyle(impl);
-    }
-
-    public ITextStyle getImpl() {
-        return impl;
-    }
-
-    protected TextStyle setImpl(ITextStyle impl) {
-        this.impl = impl;
-        return this;
+        //$NON-NLS-1$
+        StringBuilder buffer = new StringBuilder("TextStyle {");
+        int startLength = buffer.length();
+        if (font != null) {
+            //$NON-NLS-1$
+            if (buffer.length() > startLength)
+                buffer.append(", ");
+            //$NON-NLS-1$
+            buffer.append("font=");
+            buffer.append(font);
+        }
+        if (foreground != null) {
+            //$NON-NLS-1$
+            if (buffer.length() > startLength)
+                buffer.append(", ");
+            //$NON-NLS-1$
+            buffer.append("foreground=");
+            buffer.append(foreground);
+        }
+        if (background != null) {
+            //$NON-NLS-1$
+            if (buffer.length() > startLength)
+                buffer.append(", ");
+            //$NON-NLS-1$
+            buffer.append("background=");
+            buffer.append(background);
+        }
+        if (underline) {
+            //$NON-NLS-1$
+            if (buffer.length() > startLength)
+                buffer.append(", ");
+            //$NON-NLS-1$
+            buffer.append("underline=");
+            switch(underlineStyle) {
+                //$NON-NLS-1$
+                case SWT.UNDERLINE_SINGLE:
+                    buffer.append("single");
+                    break;
+                //$NON-NLS-1$
+                case SWT.UNDERLINE_DOUBLE:
+                    buffer.append("double");
+                    break;
+                //$NON-NLS-1$
+                case SWT.UNDERLINE_SQUIGGLE:
+                    buffer.append("squiggle");
+                    break;
+                //$NON-NLS-1$
+                case SWT.UNDERLINE_ERROR:
+                    buffer.append("error");
+                    break;
+                //$NON-NLS-1$
+                case SWT.UNDERLINE_LINK:
+                    buffer.append("link");
+                    break;
+            }
+            if (underlineColor != null) {
+                //$NON-NLS-1$
+                buffer.append(", underlineColor=");
+                buffer.append(underlineColor);
+            }
+        }
+        if (strikeout) {
+            //$NON-NLS-1$
+            if (buffer.length() > startLength)
+                buffer.append(", ");
+            //$NON-NLS-1$
+            buffer.append("striked out");
+            if (strikeoutColor != null) {
+                //$NON-NLS-1$
+                buffer.append(", strikeoutColor=");
+                buffer.append(strikeoutColor);
+            }
+        }
+        if (borderStyle != SWT.NONE) {
+            //$NON-NLS-1$
+            if (buffer.length() > startLength)
+                buffer.append(", ");
+            //$NON-NLS-1$
+            buffer.append("border=");
+            switch(borderStyle) {
+                //$NON-NLS-1$
+                case SWT.BORDER_SOLID:
+                    buffer.append("solid");
+                    break;
+                //$NON-NLS-1$
+                case SWT.BORDER_DOT:
+                    buffer.append("dot");
+                    break;
+                //$NON-NLS-1$
+                case SWT.BORDER_DASH:
+                    buffer.append("dash");
+                    break;
+            }
+            if (borderColor != null) {
+                //$NON-NLS-1$
+                buffer.append(", borderColor=");
+                buffer.append(borderColor);
+            }
+        }
+        if (rise != 0) {
+            //$NON-NLS-1$
+            if (buffer.length() > startLength)
+                buffer.append(", ");
+            //$NON-NLS-1$
+            buffer.append("rise=");
+            buffer.append(rise);
+        }
+        if (metrics != null) {
+            //$NON-NLS-1$
+            if (buffer.length() > startLength)
+                buffer.append(", ");
+            //$NON-NLS-1$
+            buffer.append("metrics=");
+            buffer.append(metrics);
+        }
+        //$NON-NLS-1$
+        buffer.append("}");
+        return buffer.toString();
     }
 }

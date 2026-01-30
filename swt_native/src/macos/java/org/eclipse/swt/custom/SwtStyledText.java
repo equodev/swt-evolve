@@ -9127,7 +9127,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                         isTextAlignedAtBottom &= ((style.font == null || Objects.equals(style.font, getFont())) && style.rise >= 0 && (style.metrics == null || style.metrics.descent <= 0));
                     }
                 }
-                if (!isTextAlignedAtBottom || (styleAtOffset != null && ((SwtStyleRange) styleAtOffset.getImpl()).isVariableHeight())) {
+                if (!isTextAlignedAtBottom || (styleAtOffset != null && styleAtOffset.isVariableHeight())) {
                     if (isDefaultCaret) {
                         direction = SWT.DEFAULT;
                         caretHeight = graphicalLineHeight;
@@ -10888,7 +10888,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                     SWT.error(SWT.ERROR_INVALID_ARGUMENT);
                 if (lastOffset > rangeStart)
                     SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-                hasStyleWithVariableHeight |= ((SwtStyleRange) styles[i].getImpl()).isVariableHeight();
+                hasStyleWithVariableHeight |= styles[i].isVariableHeight();
                 lastOffset = rangeStart + rangeLength;
             }
         }
@@ -10923,7 +10923,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         // re-evaluate variable height with all styles (including new ones)
         hasStyleWithVariableHeight = false;
         for (StyleRange style : getStyleRanges(false)) {
-            hasStyleWithVariableHeight = ((SwtStyleRange) style.getImpl()).isVariableHeight();
+            hasStyleWithVariableHeight = style.isVariableHeight();
             if (hasStyleWithVariableHeight)
                 break;
         }

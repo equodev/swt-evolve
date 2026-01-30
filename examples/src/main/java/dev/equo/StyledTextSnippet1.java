@@ -5,7 +5,6 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.layout.FillLayout;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
@@ -22,11 +21,13 @@ public class StyledTextSnippet1 {
 public static void main(String[] args) throws ClassNotFoundException {
 	Config.useEquo(StyledText.class);
 	Config.useEquo(Class.forName("org.eclipse.swt.custom.StyledTextRenderer"));
+	Config.useEquo(StyleRange.class);
 
 	Display display = new Display();
 	Shell shell = new Shell(display);
 	shell.setText("StyledText Snippet 1");
 	shell.setLayout(new FillLayout());
+	shell.setSize(400, 100);
 	StyledText text = new StyledText (shell, SWT.BORDER);
 	text.setText("0123456789 ABCDEFGHIJKLM NOPQRSTUVWXYZ");
 	StyleRange style1 = new StyleRange();
@@ -45,7 +46,6 @@ public static void main(String[] args) throws ClassNotFoundException {
 	style3.background = display.getSystemColor(SWT.COLOR_BLUE);
 	text.setStyleRange(style3);
 
-	shell.pack();
 	shell.open();
 	while (!shell.isDisposed()) {
 		if (!display.readAndDispatch())

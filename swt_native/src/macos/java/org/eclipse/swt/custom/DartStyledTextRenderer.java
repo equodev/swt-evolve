@@ -127,7 +127,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
 
     final static int VERTICAL_INDENT = 1 << 9;
 
-    static class LineSizeInfo {
+    static public class LineSizeInfo {
 
         private static final int RESETED_SIZE = -1;
 
@@ -193,7 +193,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         }
     }
 
-    static class LineInfo {
+    static public class LineInfo {
 
         int flags;
 
@@ -406,25 +406,10 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
                     return;
                 int i;
                 long start = System.currentTimeMillis();
-                for (i = 0; i < lineCount; i++) {
-                    LineSizeInfo line = getLineSize(i);
-                    if (line.needsRecalculateSize()) {
-                        calculate(i, 1);
-                        if (System.currentTimeMillis() - start > IDLE_TIME)
-                            break;
-                    }
-                }
-                if (i < lineCount) {
-                    Display display = styledText.getDisplay();
-                    display.asyncExec(this);
-                } else {
-                    idleRunning = false;
-                    ((DartStyledText) styledText.getImpl()).setScrollBars(true);
-                    ScrollBar bar = styledText.getVerticalBar();
-                    if (bar != null) {
-                        bar.setSelection(((DartStyledText) styledText.getImpl()).getVerticalScrollOffset());
-                    }
-                }
+                //for (i = 0; i < lineCount; i++) {    LineSizeInfo line = getLineSize(i);    if (line.needsRecalculateSize()) {        calculate(i, 1);        if (System.currentTimeMillis() - start > IDLE_TIME)            break;    }}
+                ;
+                //if (i < lineCount) {    Display display = styledText.getDisplay();    display.asyncExec(this);} else {    idleRunning = false;    styledText.setScrollBars(true);    ScrollBar bar = styledText.getVerticalBar();    if (bar != null) {        bar.setSelection(styledText.getVerticalScrollOffset());    }}
+                ;
             }
         };
         Display display = styledText.getDisplay();
@@ -720,22 +705,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
     }
 
     Font getFont(int style) {
-        switch(style) {
-            case SWT.BOLD:
-                if (boldFont != null)
-                    return boldFont;
-                return boldFont = new Font(device, getFontData(style));
-            case SWT.ITALIC:
-                if (italicFont != null)
-                    return italicFont;
-                return italicFont = new Font(device, getFontData(style));
-            case SWT.BOLD | SWT.ITALIC:
-                if (boldItalicFont != null)
-                    return boldItalicFont;
-                return boldItalicFont = new Font(device, getFontData(style));
-            default:
-                return regularFont;
-        }
+        return StyledTextHelper.getFont(this, style);
     }
 
     FontData[] getFontData(int style) {
@@ -859,11 +829,10 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
     int getLineHeight(int lineIndex, boolean exact) {
         LineSizeInfo line = getLineSize(lineIndex);
         if (line.needsRecalculateHeight()) {
-            // here we are in "variable line height", the call of calculate which uses TextLayout is very slow
-            // so use the average line height of all calculated lines when many heights are needed e.g. for scrolling.
             if (isVariableHeight(lineIndex)) {
                 if (exact) {
-                    calculate(lineIndex, 1);
+                    int wrapWidth = ((DartStyledText) styledText.getImpl()).isWordWrap() ? ((DartStyledText) styledText.getImpl()).getWrapWidth() : 0;
+                    line.height = StyledTextHelper.getLineHeightForLine(this, content, lineIndex, wrapWidth) + getLineSpacing(lineIndex) + getLineVerticalIndent(lineIndex);
                 } else {
                     return Math.round(averageLineHeight);
                 }
@@ -891,7 +860,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         StyleRange[] styles = getStylesForLine(lineIndex);
         if (styles != null) {
             for (StyleRange style : styles) {
-                if (((SwtStyleRange) style.getImpl()).isVariableHeight()) {
+                if (style.isVariableHeight()) {
                     // style is variable height
                     return true;
                 }
@@ -1152,7 +1121,8 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
 			 */
                 lineSpacingComputing = true;
                 ((DartStyledText) styledText.getImpl()).resetCache(lineIndex, 1);
-                ((DartStyledText) styledText.getImpl()).setCaretLocations();
+                //styledText.setCaretLocations();
+                ;
                 styledText.redraw();
             } finally {
                 lineSpacingComputing = false;
@@ -1294,7 +1264,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
                 styleCount = styles.length;
                 if (((DartStyledText) styledText.getImpl()).isFixedLineHeight()) {
                     for (int i = 0; i < styleCount; i++) {
-                        if (((SwtStyleRange) styles[i].getImpl()).isVariableHeight()) {
+                        if (styles[i].isVariableHeight()) {
                             ((DartStyledText) styledText.getImpl()).hasStyleWithVariableHeight = true;
                             ((DartStyledText) styledText.getImpl()).verticalScrollOffset = -1;
                             styledText.redraw();
@@ -1503,46 +1473,13 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             }
         }
         if (styledText != null && ((DartStyledText) styledText.getImpl()).isFixedLineHeight()) {
-            int index = -1;
-            int lineCount = layout.getLineCount();
-            int height = getLineHeight();
-            for (int i = 0; i < lineCount; i++) {
-                int lineHeight = layout.getLineBounds(i).height;
-                if (lineHeight > height) {
-                    height = lineHeight;
-                    index = i;
-                }
-            }
-            if (index != -1) {
-                FontMetrics metrics = layout.getLineMetrics(index);
-                ascent = metrics.getAscent() + metrics.getLeading();
-                descent = metrics.getDescent();
-                if (layouts != null) {
-                    for (TextLayout l : layouts) {
-                        if (l != null && l != layout) {
-                            l.setAscent(ascent);
-                            l.setDescent(descent);
-                        }
+            if (layouts != null) {
+                for (TextLayout l : layouts) {
+                    if (l != null && l != layout) {
+                        l.setAscent(ascent);
+                        l.setDescent(descent);
                     }
                 }
-                ((DartStyledText) styledText.getImpl()).calculateScrollBars();
-                if (((DartStyledText) styledText.getImpl()).verticalScrollOffset != 0) {
-                    int topIndex = ((DartStyledText) styledText.getImpl()).topIndex;
-                    int topIndexY = ((DartStyledText) styledText.getImpl()).topIndexY;
-                    int lineHeight = getLineHeight();
-                    int newVerticalScrollOffset;
-                    if (topIndexY >= 0) {
-                        newVerticalScrollOffset = (topIndex - 1) * lineHeight + lineHeight - topIndexY;
-                    } else {
-                        newVerticalScrollOffset = topIndex * lineHeight - topIndexY;
-                    }
-                    ((DartStyledText) styledText.getImpl()).scrollVertical(newVerticalScrollOffset - ((DartStyledText) styledText.getImpl()).verticalScrollOffset, true);
-                }
-                if (((DartStyledText) styledText.getImpl()).isBidiCaret())
-                    ((DartStyledText) styledText.getImpl()).createCaretBitmaps();
-                ((DartStyledText) styledText.getImpl()).caretDirection = SWT.NULL;
-                ((DartStyledText) styledText.getImpl()).setCaretLocations();
-                styledText.redraw();
             }
         }
         return layout;
@@ -1635,6 +1572,18 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
     }
 
     void setFont(Font font, int tabs) {
+        tabLength = tabs;
+        if (font != null) {
+            if (boldFont != null)
+                boldFont.dispose();
+            if (italicFont != null)
+                italicFont.dispose();
+            if (boldItalicFont != null)
+                boldItalicFont.dispose();
+            boldFont = italicFont = boldItalicFont = null;
+            regularFont = font;
+            StyledTextHelper.updateRendererFontMetrics(this, font, tabs);
+        }
     }
 
     void setLineAlignment(int startLine, int count, int alignment) {
@@ -2365,5 +2314,13 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         this.api = api;
         if (api != null)
             api.impl = this;
+    }
+
+    protected VStyledTextRenderer value;
+
+    public VStyledTextRenderer getValue() {
+        if (value == null)
+            value = new VStyledTextRenderer(this);
+        return (VStyledTextRenderer) value;
     }
 }

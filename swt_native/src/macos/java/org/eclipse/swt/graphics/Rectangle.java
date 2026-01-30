@@ -20,6 +20,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.CompiledJson;
 import com.dslplatform.json.CompiledJson.*;
+import com.dslplatform.json.JsonAttribute;
 
 /**
  * Instances of this class represent rectangular areas in an

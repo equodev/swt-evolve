@@ -4,12 +4,9 @@ import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
-import org.intellij.lang.annotations.JdkConstants;
 
 /**
  * Combines character-level styling with paragraph-level formatting in SWT StyledText.
@@ -32,9 +29,8 @@ public class StyledTextSnippet3 {
     public static void main(String [] args) throws ClassNotFoundException {
         Config.useEquo(StyledText.class);
         Config.useEquo(Class.forName("org.eclipse.swt.custom.StyledTextRenderer"));
+        Config.useEquo(StyleRange.class);
 
-        Config.useEclipse(Font.class);
-        Config.useEclipse(FontData.class);
         Display display = new Display();
         Shell shell = new Shell(display);
         shell.setText("StyledText Snippet 3");

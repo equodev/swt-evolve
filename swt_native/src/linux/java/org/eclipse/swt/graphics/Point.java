@@ -19,6 +19,7 @@ import java.io.*;
 import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.CompiledJson;
 import com.dslplatform.json.CompiledJson.*;
+import com.dslplatform.json.JsonAttribute;
 
 /**
  * Instances of this class represent places on the (x, y)

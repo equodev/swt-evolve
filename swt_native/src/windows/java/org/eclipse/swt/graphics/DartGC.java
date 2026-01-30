@@ -2715,6 +2715,7 @@ public final class DartGC extends DartResource implements IGC {
             return null;
         int[] lineDashes = new int[data.lineDashes.length];
         for (int i = 0; i < lineDashes.length; i++) {
+            lineDashes[i] = (int) data.lineDashes[i];
         }
         return lineDashes;
     }

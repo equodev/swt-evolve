@@ -30,9 +30,6 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     }
 
     public static SwtFlutterBridge of(DartWidget widget) {
-        if (widget instanceof DartStyledText){
-            StyledTextBridge.hookevents(widget);
-        }
         if (widget instanceof DartControl dartControl && dartControl.parent.getImpl() instanceof SwtComposite) {
 //            SwtComposite parentComposite = new SwtComposite(dartControl.parent, SWT.NONE, null);
             SwtFlutterBridge bridge = new SwtFlutterBridge(widget);

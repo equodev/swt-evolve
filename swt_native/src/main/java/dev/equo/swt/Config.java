@@ -34,8 +34,8 @@ public class Config {
                     entry(CTabItem.class, Impl.equo),
                     entry(CTabFolderRenderer.class, Impl.equo),
                     entry(Class.forName("org.eclipse.swt.custom.CTabFolderLayout"), Impl.equo),
-                    //entry(StyledText.class, Impl.equo),
-                    //entry(Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo),
+                    entry(StyledText.class, Impl.equo),
+                    entry(Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo),
                     entry(Table.class, Impl.equo),
                     entry(TableItem.class, Impl.equo),
                     entry(TableColumn.class, Impl.equo),
@@ -181,9 +181,6 @@ public class Config {
             return false;
         }
 
-        if (isEditor(clazz)) {
-            return false;
-        }
         return false;
     }
 
@@ -282,9 +279,6 @@ public class Config {
             else if (data instanceof String) return Impl.equo.name().equals(data);
         }
 
-        if (isEditor(clazz)) {
-            return false;
-        }
         if (defaultImpl == Impl.force_equo)
             return true;
 

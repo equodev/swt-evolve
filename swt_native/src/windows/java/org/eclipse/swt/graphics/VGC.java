@@ -85,7 +85,7 @@ public class VGC extends VResource {
 
     public Font getFont() {
         Font val = ((DartGC) impl).font;
-        if (val != null && !(val.getImpl() instanceof SwtFont))
+        if (val != null && val.getImpl() instanceof SwtFont)
             return GraphicsUtils.copyFont(val);
         if (val != null && !(val.getImpl() instanceof DartFont))
             return null;

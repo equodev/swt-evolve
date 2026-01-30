@@ -101,18 +101,6 @@ public abstract class FlutterBridge {
             if (isDisposed(widget)) break;
             CompletableFuture<Void> future = getBridge(widget).clientReady.thenRun(() -> {
                 try {
-                    if (widget instanceof DartStyledText){
-                        getDisplay(widget).asyncExec(() -> {
-                            StyledTextBridge.drawStyledText((DartStyledText) widget,
-                                ((DartStyledText) widget).getLocation().x,
-                                ((DartStyledText) widget).getLocation().y,
-                                ((DartStyledText) widget).getCaret(),
-                                id(widget),
-                                client
-                            );
-                        });
-
-                    }
                     if (!isNew(widget) || widget instanceof DartToolTip) { // send with the parent
                         synchronized (dirty) { // undirty if it was dirtied while waiting foe clientReady
                             dirty.remove(widget);
