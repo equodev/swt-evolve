@@ -101,7 +101,7 @@ TextStyle getTextFieldTextStyle(
   VText state,
   TextThemeExtension widgetTheme,
 ) {
-  final enabled = state.editable ?? true;
+  final enabled = state.enabled ?? false;
   
   final textColor = enabled 
       ? getForegroundColor(
@@ -134,7 +134,7 @@ InputDecoration getInputDecoration(
   TextEditingController controller,
   Function() onClear,
 ) {
-  final enabled = state.editable ?? true;
+  final enabled = state.enabled ?? false;
   
   final defaultBgColor = enabled
       ? widgetTheme.backgroundColor

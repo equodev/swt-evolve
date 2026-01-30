@@ -209,7 +209,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
       theme,
       isSelected,
       false,
-      state.enabled ?? true,
+      state.enabled ?? false,
       rowIndex % 2 == 1,
     );
 
@@ -234,6 +234,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
   }
 
   void handleRowTap(int index, VTableItem item) {
+    if (state.enabled != true) return;
     setState(() {
       if (_selectedRowIndex == index) {
         _selectedRowIndex = -1;
@@ -251,6 +252,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
   }
 
   void handleRowDoubleTap(int index, VTableItem item) {
+    if (state.enabled != true) return;
     setState(() {
       _selectedRowIndex = index;
       state.selection ??= [];

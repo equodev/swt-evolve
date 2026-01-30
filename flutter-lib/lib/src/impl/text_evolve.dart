@@ -56,7 +56,8 @@ class TextImpl<T extends TextSwt, V extends VText>
 
     final textAlign = getTextAlignFromStyle(state.style, TextAlign.left);
     final isMultiLine = hasStyle(state.style, SWT.MULTI);
-    final enabled = state.editable ?? true;
+    final enabled = state.enabled ?? false;
+    final editable = state.editable ?? true;
     final hasValidBounds = hasBounds(state.bounds);
 
     final textField = _buildTextField(context, widgetTheme, enabled, textAlign, isMultiLine, hasValidBounds);
@@ -97,7 +98,7 @@ class TextImpl<T extends TextSwt, V extends VText>
       focusNode: _focusNode,
       enabled: enabled,
       obscureText: hasStyle(state.style, SWT.PASSWORD),
-      readOnly: hasStyle(state.style, SWT.READ_ONLY),
+      readOnly: !(state.editable ?? true) || hasStyle(state.style, SWT.READ_ONLY),
       maxLines: isMultiLine && !hasStyle(state.style, SWT.PASSWORD)? (shouldExpand ? null : null) : 1,
       expands: shouldExpand,
       textAlign: textAlign,

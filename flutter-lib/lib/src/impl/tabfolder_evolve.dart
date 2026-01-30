@@ -7,6 +7,7 @@ import '../gen/tabitem.dart';
 import '../gen/widget.dart';
 import '../gen/widgets.dart';
 import '../impl/composite_evolve.dart';
+import '../impl/ctabfolder_evolve.dart';
 import '../theme/theme_extensions/tabfolder_theme_extension.dart';
 import 'utils/widget_utils.dart';
 import 'widget_config.dart';
@@ -129,35 +130,59 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     required VoidCallback onTap,
     required int index,
   }) {
-    return Material(
+    final enabled = state.enabled ?? false;
+
+    // Determine colors based on enabled state
+    final backgroundColor = !enabled
+        ? widgetTheme.tabDisabledBackgroundColor
+        : (isSelected ? widgetTheme.tabSelectedBackgroundColor : widgetTheme.tabBackgroundColor);
+    final borderColor = !enabled
+        ? widgetTheme.tabDisabledBorderColor
+        : widgetTheme.tabBorderColor;
+    final bottomBorderColor = !enabled
+        ? widgetTheme.tabDisabledBorderColor
+        : (isSelected ? widgetTheme.tabSelectedBorderColor : widgetTheme.tabBorderColor);
+    final textColor = !enabled
+        ? widgetTheme.tabDisabledTextColor
+        : (isSelected ? widgetTheme.tabSelectedTextColor : widgetTheme.tabTextColor);
+
+    return MouseRegion(
+      cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
-        onDoubleTap: () => _handleDefaultSelection(index),
+        onTap: enabled ? onTap : null,
+        onDoubleTap: enabled ? () => _handleDefaultSelection(index) : null,
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: widgetTheme.tabPadding),
-          margin: isSelected ? EdgeInsets.only(bottom: -widgetTheme.tabSelectedBorderWidth) : EdgeInsets.zero,
+          margin: isSelected && enabled ? EdgeInsets.only(bottom: -widgetTheme.tabSelectedBorderWidth) : EdgeInsets.zero,
           constraints: const BoxConstraints(minHeight: 0),
           decoration: BoxDecoration(
-            color: isSelected ? widgetTheme.tabSelectedBackgroundColor : widgetTheme.tabBackgroundColor,
+            color: backgroundColor,
             border: Border(
-              right: BorderSide(color: widgetTheme.tabBorderColor, width: widgetTheme.tabBorderWidth),
-              bottom: isSelected
-                  ? BorderSide(color: widgetTheme.tabSelectedBorderColor, width: widgetTheme.tabSelectedBorderWidth)
-                  : BorderSide(color: widgetTheme.tabBorderColor, width: widgetTheme.tabBorderWidth),
+              right: BorderSide(color: borderColor, width: widgetTheme.tabBorderWidth),
+              bottom: isSelected && enabled
+                  ? BorderSide(color: bottomBorderColor, width: widgetTheme.tabSelectedBorderWidth)
+                  : BorderSide(color: borderColor, width: widgetTheme.tabBorderWidth),
             ),
           ),
           child: Center(
-            child: tab.customContent ??
-                Text(
-                  tab.label,
-                  style: isSelected
-                      ? (widgetTheme.tabSelectedTextStyle ?? const TextStyle()).copyWith(color: widgetTheme.tabSelectedTextColor)
-                      : (widgetTheme.tabTextStyle ?? const TextStyle()).copyWith(color: widgetTheme.tabTextColor),
-                ),
+            child: tab.customContent != null
+                ? TabItemContextProvider(
+                    isSelected: isSelected,
+                    isEnabled: enabled,
+                    child: tab.customContent!,
+                  )
+                : Text(
+                    tab.label,
+                    style: isSelected && enabled
+                        ? (widgetTheme.tabSelectedTextStyle ?? const TextStyle()).copyWith(color: textColor)
+                        : (widgetTheme.tabTextStyle ?? const TextStyle()).copyWith(color: textColor),
+                  ),
           ),
         ),
       ),
+    ),
     );
   }
 
@@ -171,12 +196,14 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
   }
 
   void _handleTabSelection(int index) {
+    if (state.enabled != true) return;
     _updateSelection(index);
     var e = VEvent()..index = index;
     widget.sendSelectionSelection(state, e);
   }
 
   void _handleDefaultSelection(int index) {
+    if (state.enabled != true) return;
     _updateSelection(index);
     var e = VEvent()..index = index;
     widget.sendSelectionDefaultSelection(state, e);

@@ -4,6 +4,7 @@ import '../gen/tabitem.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../impl/item_evolve.dart';
+import '../impl/ctabfolder_evolve.dart';
 import './utils/image_utils.dart';
 import '../theme/theme_extensions/tabitem_theme_extension.dart';
 import 'utils/widget_utils.dart';
@@ -29,7 +30,9 @@ class TabItemImpl<T extends TabItemSwt, V extends VTabItem>
     final widgetTheme = Theme.of(context).extension<TabItemThemeExtension>()!;
     final imageWidget = _buildImageWidget(widgetTheme);
 
-    final textColor = widgetTheme.textColor;
+    final tabItemContext = TabItemContext.of(context);
+    final isEnabled = tabItemContext?.isEnabled ?? true;
+    final textColor = isEnabled ? widgetTheme.textColor : widgetTheme.disabledTextColor;
     final textStyle = (widgetTheme.textStyle ?? const TextStyle()).copyWith(color: textColor);
 
     final alignment = getMainAxisAlignmentFromTextAlign(

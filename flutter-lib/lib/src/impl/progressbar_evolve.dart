@@ -264,7 +264,7 @@ class _IndeterminateProgressPainter extends CustomPainter {
     final rect = Rect.fromLTWH(
       offset.clamp(0.0, size.width),
       0,
-      barWidth.clamp(0.0, size.width - offset),
+      barWidth.clamp(0.0, (size.width - offset.clamp(0.0, size.width)).clamp(0.0, size.width)),
       size.height,
     );
 

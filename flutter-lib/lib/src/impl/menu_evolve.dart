@@ -59,7 +59,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<MenuThemeExtension>()!;
 
-    final enabled = state.enabled ?? true;
+    final enabled = state.enabled ?? false;
     final visible = state.visible ?? false;
     final orientation = state.orientation ?? SWT.LEFT_TO_RIGHT;
 
@@ -221,7 +221,7 @@ class _MenuBarItemState extends State<_MenuBarItem> {
   @override
   Widget build(BuildContext context) {
     final style = StyleBits(widget.item.style);
-    final enabled = widget.item.enabled ?? true;
+    final enabled = widget.item.enabled ?? false;
     final widgetTheme = Theme.of(context).extension<MenuThemeExtension>()!;
     if (style.has(SWT.SEPARATOR)) {
       return Container(

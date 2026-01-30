@@ -257,23 +257,35 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     VoidCallback? onClose,
     required bool isTabBottom,
   }) {
-    final textColor = isSelected
-        ? getForegroundColor(
-            foreground: state.selectionForeground,
-            defaultColor: widgetTheme.tabSelectedTextColor,
-          )
-        : widgetTheme.tabTextColor.withOpacity(widgetTheme.tabUnselectedTextOpacity);
-    final backgroundColor = isSelected
-        ? getBackgroundColor(
-            background: state.selectionBackground,
-            defaultColor: widgetTheme.tabSelectedBackgroundColor,
-          ) ?? widgetTheme.tabSelectedBackgroundColor
-        : widgetTheme.tabBackgroundColor;
-    final textStyle = isSelected
+    final enabled = state.enabled ?? false;
+
+    // Determine colors based on enabled state
+    final textColor = !enabled
+        ? widgetTheme.tabDisabledTextColor
+        : (isSelected
+            ? getForegroundColor(
+                foreground: state.selectionForeground,
+                defaultColor: widgetTheme.tabSelectedTextColor,
+              )
+            : widgetTheme.tabTextColor.withOpacity(widgetTheme.tabUnselectedTextOpacity));
+    final backgroundColor = !enabled
+        ? widgetTheme.tabDisabledBackgroundColor
+        : (isSelected
+            ? getBackgroundColor(
+                background: state.selectionBackground,
+                defaultColor: widgetTheme.tabSelectedBackgroundColor,
+              ) ?? widgetTheme.tabSelectedBackgroundColor
+            : widgetTheme.tabBackgroundColor);
+    final borderColor = !enabled
+        ? widgetTheme.tabDisabledBorderColor
+        : widgetTheme.tabBorderColor;
+    final textStyle = isSelected && enabled
         ? widgetTheme.tabSelectedTextStyle
         : widgetTheme.tabTextStyle;
 
-    return GestureDetector(
+    return MouseRegion(
+      cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: GestureDetector(
       onTap: onTap,
       child: Container(
         height: double.infinity,
@@ -285,10 +297,10 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
           color: backgroundColor,
           border: Border(
             right: BorderSide(
-              color: widgetTheme.tabBorderColor,
+              color: borderColor,
               width: widgetTheme.tabBorderWidth,
             ),
-            bottom: !isTabBottom && isSelected
+            bottom: !isTabBottom && isSelected && enabled
                 ? BorderSide(
                     color: backgroundColor,
                     width: (state.selectionBarThickness != null && state.selectionBarThickness! > 0)
@@ -297,11 +309,11 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
                   )
                 : !isTabBottom
                     ? BorderSide(
-                        color: widgetTheme.tabBorderColor,
+                        color: borderColor,
                         width: widgetTheme.tabBorderWidth,
                       )
                     : BorderSide.none,
-            top: isTabBottom && isSelected
+            top: isTabBottom && isSelected && enabled
                 ? BorderSide(
                     color: backgroundColor,
                     width: (state.selectionBarThickness != null && state.selectionBarThickness! > 0)
@@ -310,7 +322,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
                   )
                 : isTabBottom
                     ? BorderSide(
-                        color: widgetTheme.tabBorderColor,
+                        color: borderColor,
                         width: widgetTheme.tabBorderWidth,
                       )
                     : BorderSide.none,
@@ -339,6 +351,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -359,25 +372,36 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     final showSelectedImage = state.selectedImageVisible ?? true;
     final shouldShowImage = (isSelected && showSelectedImage) || (!isSelected && showUnselectedImage);
 
-    final showHighlight = state.highlightEnabled ?? true;
+    final showHighlight = state.highlightEnabled ?? false;
+    final enabled = state.enabled ?? false;
 
-    final textColor = isSelected
-        ? getForegroundColor(
-            foreground: state.selectionForeground,
-            defaultColor: widgetTheme.tabSelectedTextColor,
-          )
-        : widgetTheme.tabTextColor.withOpacity(widgetTheme.tabUnselectedTextOpacity);
-    final backgroundColor = isSelected
-        ? getBackgroundColor(
-            background: state.selectionBackground,
-            defaultColor: widgetTheme.tabSelectedBackgroundColor,
-          ) ?? widgetTheme.tabSelectedBackgroundColor
-        : widgetTheme.tabBackgroundColor;
-    final textStyle = isSelected
+    // Determine colors based on enabled state
+    final textColor = !enabled
+        ? widgetTheme.tabDisabledTextColor
+        : (isSelected
+            ? getForegroundColor(
+                foreground: state.selectionForeground,
+                defaultColor: widgetTheme.tabSelectedTextColor,
+              )
+            : widgetTheme.tabTextColor.withOpacity(widgetTheme.tabUnselectedTextOpacity));
+    final backgroundColor = !enabled
+        ? widgetTheme.tabDisabledBackgroundColor
+        : (isSelected
+            ? getBackgroundColor(
+                background: state.selectionBackground,
+                defaultColor: widgetTheme.tabSelectedBackgroundColor,
+              ) ?? widgetTheme.tabSelectedBackgroundColor
+            : widgetTheme.tabBackgroundColor);
+    final borderColor = !enabled
+        ? widgetTheme.tabDisabledBorderColor
+        : widgetTheme.tabBorderColor;
+    final textStyle = isSelected && enabled
         ? widgetTheme.tabSelectedTextStyle
         : widgetTheme.tabTextStyle;
 
-    return GestureDetector(
+    return MouseRegion(
+      cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: GestureDetector(
       onTap: onTap,
       child: Container(
         height: double.infinity,
@@ -387,14 +411,14 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
         ),
         decoration: BoxDecoration(
           color: backgroundColor,
-          image: isSelected ? _buildSelectionBgImage() : null,
+          image: isSelected && enabled ? _buildSelectionBgImage() : null,
             border: Border(
-              top: !isTabBottom && isSelected && showHighlight
+              top: !isTabBottom && isSelected && enabled && showHighlight
                   ? BorderSide(
                       color: widgetTheme.tabHighlightColor,
                       width: widgetTheme.tabHighlightBorderWidth,
                     )
-                  : isTabBottom && isSelected
+                  : isTabBottom && isSelected && enabled
                       ? BorderSide(
                           color: backgroundColor,
                           width: (state.selectionBarThickness != null && state.selectionBarThickness! > 0)
@@ -403,21 +427,21 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
                         )
                       : isTabBottom
                           ? BorderSide(
-                              color: widgetTheme.tabBorderColor,
+                              color: borderColor,
                               width: widgetTheme.tabBorderWidth,
                             )
                           : BorderSide.none,
               right: BorderSide(
-                color: widgetTheme.tabBorderColor,
+                color: borderColor,
                 width: widgetTheme.tabBorderWidth,
               ),
-              left: isSelected
+              left: isSelected && enabled
                   ? BorderSide(
-                      color: widgetTheme.tabBorderColor,
+                      color: borderColor,
                       width: widgetTheme.tabBorderWidth,
                     )
                   : BorderSide.none,
-              bottom: !isTabBottom && isSelected
+              bottom: !isTabBottom && isSelected && enabled
                   ? BorderSide(
                       color: backgroundColor,
                       width: (state.selectionBarThickness != null && state.selectionBarThickness! > 0)
@@ -426,10 +450,10 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
                     )
                   : !isTabBottom
                       ? BorderSide(
-                          color: widgetTheme.tabBorderColor,
+                          color: borderColor,
                           width: widgetTheme.tabBorderWidth,
                         )
-                      : isTabBottom && isSelected && showHighlight
+                      : isTabBottom && isSelected && enabled && showHighlight
                           ? BorderSide(
                               color: widgetTheme.tabHighlightColor,
                               width: widgetTheme.tabHighlightBorderWidth,
@@ -443,6 +467,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
               tab.customContent != null
                   ? TabItemContextProvider(
                       isSelected: isSelected,
+                      isEnabled: enabled,
                       child: tab.customContent!,
                     )
                   : Row(
@@ -481,7 +506,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
               if (shouldShowClose) ...[
                 SizedBox(width: widgetTheme.tabCloseButtonSpacing),
                 MouseRegion(
-                  cursor: SystemMouseCursors.click,
+                  cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
                   child: GestureDetector(
                     onTap: onClose,
                     child: Padding(
@@ -502,6 +527,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             ],
           ),
         ),
+    ),
     );
   }
 
@@ -664,6 +690,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   }
 
   void _handleTabSelection(int index) {
+    if (state.enabled != true) return;
     setState(() {
       _selectedIndex = index;
       state.selection = index;
@@ -673,6 +700,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   }
 
   void _toggleMinimize() {
+    if (state.enabled != true) return;
     final isMinimized = state.minimized ?? false;
     var e = VEvent();
     if (isMinimized) {
@@ -683,6 +711,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   }
 
   void _toggleMaximize() {
+    if (state.enabled != true) return;
     final isMaximized = state.maximized ?? false;
     var e = VEvent();
     if (isMaximized) {
@@ -880,6 +909,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   }
 
   void _handleTabClose(int index) {
+    if (state.enabled != true) return;
     var e = VEvent()..index = index;
     widget.sendCTabFolder2close(state, e);
     widget.sendCTabFolderitemClosed(state, e);
@@ -938,9 +968,11 @@ class _HoverReveal extends StatelessWidget {
 
 class TabItemContext {
   final bool isSelected;
+  final bool isEnabled;
 
   TabItemContext({
     required this.isSelected,
+    required this.isEnabled,
   });
 
   static TabItemContext? of(BuildContext context) {
@@ -956,13 +988,15 @@ class TabItemContextProvider extends InheritedWidget {
   TabItemContextProvider({
     Key? key,
     required bool isSelected,
+    required bool isEnabled,
     required Widget child,
-  })  : context = TabItemContext(isSelected: isSelected),
+  })  : context = TabItemContext(isSelected: isSelected, isEnabled: isEnabled),
         super(key: key, child: child);
 
   @override
   bool updateShouldNotify(TabItemContextProvider oldWidget) {
-    return context.isSelected != oldWidget.context.isSelected;
+    return context.isSelected != oldWidget.context.isSelected ||
+        context.isEnabled != oldWidget.context.isEnabled;
   }
 }
 

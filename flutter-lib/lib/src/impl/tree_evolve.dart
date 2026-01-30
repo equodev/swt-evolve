@@ -468,6 +468,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   void handleTreeItemSelection(Object itemId,
       {bool isCtrlPressed = false, bool isShiftPressed = false}) {
+    if (state.enabled != true) return;
     final item = _findTreeItemById(itemId);
     if (item == null) return;
 
@@ -675,6 +676,10 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    if (state.enabled != true) {
       return KeyEventResult.ignored;
     }
 
@@ -1042,6 +1047,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   }
 
   void handleCheckboxCascade(Object itemId, bool newCheckedState) {
+    if (state.enabled != true) return;
     final item = _findTreeItemById(itemId);
     if (item == null) return;
 

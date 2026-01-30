@@ -70,7 +70,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     final VImage? image = state.image;
 
     final bool selected = _context?.treeImpl?.isItemSelected(state.id) ?? false;
-    final bool enabled = _context?.parentTreeValue.enabled ?? true;
+    final bool enabled = _context?.parentTreeValue.enabled ?? false;
     final bool nextItemSelected = _context?.treeImpl?.isNextItemSelected(state.id) ?? false;
 
     if (expanded || hasChildren || _hasCheckedForChildren) {
@@ -393,6 +393,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
+        if (!enabled) return;
         if (_context?.treeImpl == null) return;
         final e = _createEvent();
         if (expanded) {
@@ -402,7 +403,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         }
       },
       child: MouseRegion(
-        cursor: SystemMouseCursors.click,
+        cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
         child: Icon(
           expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
           size: theme.expandIconSize,
@@ -433,6 +434,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           grayed: grayed,
           enabled: enabled,
           onChanged: () {
+            if (!enabled) return;
             final bool newCheckedState = grayed ? false : (checked ? false : true);
             _context?.treeImpl?.handleCheckboxCascade(state.id, newCheckedState);
             _context?.treeImpl?.handleTreeItemSelection(state.id);
@@ -523,7 +525,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     return SizedBox(
       width: totalTreeWidth ?? double.infinity,
       child: MouseRegion(
-        cursor: SystemMouseCursors.click,
+        cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
         onEnter: (_) {
           setState(() {
             _isHovered = true;
@@ -541,6 +543,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         child: Listener(
           behavior: HitTestBehavior.opaque,
           onPointerDown: (PointerDownEvent event) {
+            if (!enabled) return;
             if (event.buttons != 1) return;
 
             final localPosition = event.localPosition;
@@ -577,6 +580,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onDoubleTap: () {
+              if (!enabled) return;
               // Send default selection event for double click on non-text areas
               final e = _createEvent();
               _context?.parentTree
@@ -703,7 +707,9 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
     // Wrap text in GestureDetector for double-click editing (only first column)
     // Use deferToChild so only the text area triggers editing, not the padding
+    final bool parentEnabled = _context?.parentTreeValue.enabled ?? false;
     if (columnIndex == 0 &&
+        parentEnabled &&
         _context?.parentTreeValue.editable == true &&
         !isEditing &&
         _context?.treeImpl != null) {
