@@ -189,8 +189,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     public SwtControl(Composite parent, int style, Control api) {
         super(parent, style, api);
         this.parent = parent;
-        createWidget(0);
         notifyCreationTracker();
+        createWidget(0);
     }
 
     Font defaultFont() {

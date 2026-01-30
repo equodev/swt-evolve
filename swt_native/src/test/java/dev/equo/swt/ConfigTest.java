@@ -4,10 +4,14 @@ import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabFolderRenderer;
 import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.*;
 import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
 
 public class ConfigTest {
 
@@ -327,6 +331,66 @@ public class ConfigTest {
         void should_return_correct_dependency_group_for_taskbar() {
             var group = Config.getDependencyGroup(TaskBar.class);
             assertThat(group).containsExactlyInAnyOrder("TaskBar", "TaskItem");
+        }
+    }
+
+    @Nested
+    class GetId {
+
+        private Composite mockComposite(Composite parent, Control... children) {
+            Composite c = mock(Composite.class);
+            when(c.getChildren()).thenReturn(children);
+            when(c.getParent()).thenReturn(parent);
+            return c;
+        }
+
+        private final String C = mock(Composite.class).getClass().getSimpleName();
+
+        @Test
+        void leaf_widget_position_is_parent_children_count() {
+            Composite root = mockComposite(null, mock(Control.class), mock(Control.class));
+
+            String id = Config.getId(Button.class, root);
+
+            assertThat(id).isEqualTo("/" + C + "/-1/Button/3");
+        }
+
+        @Test
+        void parent_position_should_be_its_index_not_sibling_count() {
+            Composite grandparent = mock(Composite.class);
+            Composite parent = mockComposite(grandparent);
+            when(grandparent.getChildren()).thenReturn(new Control[]{mock(Control.class), parent, mock(Control.class)});
+
+            String id = Config.getId(Button.class, parent);
+
+            assertThat(id).isEqualTo("/" + C + "/-1/" + C + "/2/Button/1");
+        }
+
+        @Test
+        void first_child_parent_position_should_be_zero() {
+            Composite root = mock(Composite.class);
+            Composite parent = mockComposite(root, mock(Control.class));
+            when(root.getChildren()).thenReturn(new Control[]{parent, mock(Control.class), mock(Control.class)});
+
+            String id = Config.getId(Button.class, parent);
+
+            assertThat(id).isEqualTo("/" + C + "/-1/" + C + "/1/Button/2");
+        }
+
+        @Test
+        void deeply_nested_positions_should_reflect_indices() {
+            Composite root = mock(Composite.class);
+            when(root.getParent()).thenReturn(null);
+
+            Composite grandparent = mockComposite(root);
+            when(root.getChildren()).thenReturn(new Control[]{mock(Control.class), grandparent, mock(Control.class)});
+
+            Composite parent = mockComposite(grandparent, mock(Control.class), mock(Control.class));
+            when(grandparent.getChildren()).thenReturn(new Control[]{mock(Control.class), parent, mock(Control.class), mock(Control.class)});
+
+            String id = Config.getId(Button.class, parent);
+
+            assertThat(id).isEqualTo("/" + C + "/-1/" + C + "/2/" + C + "/2/Button/3");
         }
     }
 

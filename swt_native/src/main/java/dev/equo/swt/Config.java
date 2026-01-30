@@ -394,17 +394,34 @@ public class Config {
         String id = "";
         Class<?> idClass = clazz;
         Composite idParent = parent;
+        Composite child = null;
         while (idClass != null) {
             String simpleName = idClass.getSimpleName();
             if (simpleName.isEmpty()) {
                 String[] split = idClass.getName().split("\\.");
                 simpleName = split[split.length-1];
             }
-            id = "/" + simpleName + "/" + (idParent != null && idParent.getChildren() != null ? idParent.getChildren().length : -1) + id;
+            int position;
+            if (idParent == null || idParent.getChildren() == null) {
+                position = -1;
+            } else if (child == null) {
+                position = idParent.getChildren().length + 1;
+            } else {
+                position = indexOfChild(idParent.getChildren(), child);
+            }
+            id = "/" + simpleName + "/" + position + id;
+            child = idParent;
             idClass = (idParent != null) ? idParent.getClass() : null;
             idParent = (idParent != null) ? idParent.getParent() : null;
         }
         return id;
+    }
+
+    private static int indexOfChild(Control[] children, Composite target) {
+        for (int i = 0; i < children.length; i++) {
+            if (children[i] == target) return i+1;
+        }
+        return -1;
     }
 
     private static String getKey(Class<?> clazz) {
