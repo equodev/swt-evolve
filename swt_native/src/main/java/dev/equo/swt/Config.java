@@ -314,12 +314,12 @@ public class Config {
 
     private static boolean isMainToolbarComposite(Class<?> clazz, Composite parent) {
         String id = getId(clazz, parent);
-        return id.equals("/Shell/-1/Composite/1") && isInStackTrace(E4_MAIN_TOOLBAR_CLASS, E4_MAIN_TOOLBAR_METHOD);
+        return id.equals("/Shell/-1/Composite/2") && isInStackTrace(E4_MAIN_TOOLBAR_CLASS, E4_MAIN_TOOLBAR_METHOD);
     }
 
     private static boolean isSideToolbarComposite(Class<?> clazz, Composite parent) {
         String id = getId(clazz, parent);
-        return (id.equals("/Shell/-1/Composite/3") || id.equals("/Shell/-1/Composite/4")) && isInStackTrace(E4_MAIN_TOOLBAR_CLASS, E4_MAIN_TOOLBAR_METHOD);
+        return (id.equals("/Shell/-1/Composite/4") || id.equals("/Shell/-1/Composite/5")) && isInStackTrace(E4_MAIN_TOOLBAR_CLASS, E4_MAIN_TOOLBAR_METHOD);
     }
 
     private static boolean isCTabFolderBody(Class<?> clazz, Scrollable parent) {

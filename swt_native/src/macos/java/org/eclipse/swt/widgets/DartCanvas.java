@@ -369,13 +369,15 @@ public class DartCanvas extends DartComposite implements ICanvas {
     @Override
     public void redraw() {
         super.redraw();
-        ControlHelper.paint(this);
+        if (this.getClass() == DartCanvas.class)
+            ControlHelper.paint(this);
     }
 
     @Override
     public void redraw(int x, int y, int width, int height, boolean all) {
         super.redraw(x, y, width, height, all);
-        ControlHelper.paint(this);
+        if (this.getClass() == DartCanvas.class)
+            ControlHelper.paint(this);
     }
 
     @Override
