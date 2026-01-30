@@ -141,6 +141,14 @@ public class SerializeTestBase {
         // no setters
     }
 
+    protected void setAll(org.eclipse.swt.custom.StyleRange sr) {
+        // StyleRange fields are typically set via constructor or direct field access
+    }
+
+    protected void setAll(org.eclipse.swt.graphics.TextStyle ts) {
+        // TextStyle fields are typically set via constructor or direct field access
+    }
+
     protected void setAll(GC w) {
         InstancioObjectApi<GC> inst = Instancio.ofObject(w)
                 .withSettings(settings);

@@ -1049,11 +1049,11 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
             return null;
         clipRect = addClipRect(run, clipRect, pRect, selectionStart, selectionEnd);
         boolean lastRunVisible = drawClip != null && (x + run.x + run.width) > (drawClip.x + drawClip.width);
-        if (index + 1 >= line.length || lastRunVisible || line[index + 1].lineBreak || !((SwtTextStyle) style.getImpl()).isAdherentBorder(line[index + 1].style)) {
+        if (index + 1 >= line.length || lastRunVisible || line[index + 1].lineBreak || !style.isAdherentBorder(line[index + 1].style)) {
             int left = run.x;
             int start = run.start;
             int end = run.start + run.length - 1;
-            for (int i = index; i > 0 && ((SwtTextStyle) style.getImpl()).isAdherentBorder(line[i - 1].style); i--) {
+            for (int i = index; i > 0 && style.isAdherentBorder(line[i - 1].style); i--) {
                 left = line[i - 1].x;
                 start = Math.min(start, line[i - 1].start);
                 end = Math.max(end, line[i - 1].start + line[i - 1].length - 1);
@@ -1143,11 +1143,11 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
             return null;
         clipRect = addClipRect(run, clipRect, pRect, selectionStart, selectionEnd);
         boolean lastRunVisible = drawClip != null && (x + run.x + run.width) > (drawClip.x + drawClip.width);
-        if (index + 1 >= line.length || lastRunVisible || line[index + 1].lineBreak || !((SwtTextStyle) style.getImpl()).isAdherentBorder(line[index + 1].style)) {
+        if (index + 1 >= line.length || lastRunVisible || line[index + 1].lineBreak || !style.isAdherentBorder(line[index + 1].style)) {
             int left = run.x;
             int start = run.start;
             int end = run.start + run.length - 1;
-            for (int i = index; i > 0 && ((SwtTextStyle) style.getImpl()).isAdherentBorder(line[i - 1].style); i--) {
+            for (int i = index; i > 0 && style.isAdherentBorder(line[i - 1].style); i--) {
                 left = line[i - 1].x;
                 start = Math.min(start, line[i - 1].start);
                 end = Math.max(end, line[i - 1].start + line[i - 1].length - 1);
@@ -1436,11 +1436,11 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
             return null;
         clipRect = addClipRect(run, clipRect, pRect, selectionStart, selectionEnd);
         boolean lastRunVisible = drawClip != null && (x + run.x + run.width) > (drawClip.x + drawClip.width);
-        if (index + 1 >= line.length || lastRunVisible || line[index + 1].lineBreak || !((SwtTextStyle) style.getImpl()).isAdherentStrikeout(line[index + 1].style)) {
+        if (index + 1 >= line.length || lastRunVisible || line[index + 1].lineBreak || !style.isAdherentStrikeout(line[index + 1].style)) {
             int left = run.x;
             int start = run.start;
             int end = run.start + run.length - 1;
-            for (int i = index; i > 0 && ((SwtTextStyle) style.getImpl()).isAdherentStrikeout(line[i - 1].style); i--) {
+            for (int i = index; i > 0 && style.isAdherentStrikeout(line[i - 1].style); i--) {
                 left = line[i - 1].x;
                 start = Math.min(start, line[i - 1].start);
                 end = Math.max(end, line[i - 1].start + line[i - 1].length - 1);
@@ -1490,11 +1490,11 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
             return null;
         clipRect = addClipRect(run, clipRect, pRect, selectionStart, selectionEnd);
         boolean lastRunVisible = drawClip != null && (x + run.x + run.width) > (drawClip.x + drawClip.width);
-        if (index + 1 >= line.length || lastRunVisible || line[index + 1].lineBreak || !((SwtTextStyle) style.getImpl()).isAdherentStrikeout(line[index + 1].style)) {
+        if (index + 1 >= line.length || lastRunVisible || line[index + 1].lineBreak || !style.isAdherentStrikeout(line[index + 1].style)) {
             int left = run.x;
             int start = run.start;
             int end = run.start + run.length - 1;
-            for (int i = index; i > 0 && ((SwtTextStyle) style.getImpl()).isAdherentStrikeout(line[i - 1].style); i--) {
+            for (int i = index; i > 0 && style.isAdherentStrikeout(line[i - 1].style); i--) {
                 left = line[i - 1].x;
                 start = Math.min(start, line[i - 1].start);
                 end = Math.max(end, line[i - 1].start + line[i - 1].length - 1);
@@ -1553,11 +1553,11 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
             return null;
         clipRect = addClipRect(run, clipRect, pRect, selectionStart, selectionEnd);
         boolean lastRunVisible = drawClip != null && (x + run.x + run.width) > (drawClip.x + drawClip.width);
-        if (index + 1 >= line.length || lastRunVisible || line[index + 1].lineBreak || !((SwtTextStyle) style.getImpl()).isAdherentUnderline(line[index + 1].style)) {
+        if (index + 1 >= line.length || lastRunVisible || line[index + 1].lineBreak || !style.isAdherentUnderline(line[index + 1].style)) {
             int left = run.x;
             int start = run.start;
             int end = run.start + run.length - 1;
-            for (int i = index; i > 0 && ((SwtTextStyle) style.getImpl()).isAdherentUnderline(line[i - 1].style); i--) {
+            for (int i = index; i > 0 && style.isAdherentUnderline(line[i - 1].style); i--) {
                 left = line[i - 1].x;
                 start = Math.min(start, line[i - 1].start);
                 end = Math.max(end, line[i - 1].start + line[i - 1].length - 1);
@@ -1692,11 +1692,11 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
             return null;
         clipRect = addClipRect(run, clipRect, pRect, selectionStart, selectionEnd);
         boolean lastRunVisible = drawClip != null && (x + run.x + run.width) > (drawClip.x + drawClip.width);
-        if (index + 1 >= line.length || lastRunVisible || line[index + 1].lineBreak || !((SwtTextStyle) style.getImpl()).isAdherentUnderline(line[index + 1].style)) {
+        if (index + 1 >= line.length || lastRunVisible || line[index + 1].lineBreak || !style.isAdherentUnderline(line[index + 1].style)) {
             int left = run.x;
             int start = run.start;
             int end = run.start + run.length - 1;
-            for (int i = index; i > 0 && ((SwtTextStyle) style.getImpl()).isAdherentUnderline(line[i - 1].style); i--) {
+            for (int i = index; i > 0 && style.isAdherentUnderline(line[i - 1].style); i--) {
                 left = line[i - 1].x;
                 start = Math.min(start, line[i - 1].start);
                 end = Math.max(end, line[i - 1].start + line[i - 1].length - 1);

@@ -843,9 +843,9 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
             if (style == null)
                 continue;
             boolean drawBorder = style.borderStyle != SWT.NONE;
-            if (drawBorder && !((SwtTextStyle) style.getImpl()).isAdherentBorder(styles[i + 1].style)) {
+            if (drawBorder && !style.isAdherentBorder(styles[i + 1].style)) {
                 int start = styles[i].start;
-                for (int j = i; j > 0 && ((SwtTextStyle) style.getImpl()).isAdherentBorder(styles[j - 1].style); j--) {
+                for (int j = i; j > 0 && style.isAdherentBorder(styles[j - 1].style); j--) {
                     start = styles[j - 1].start;
                 }
                 start = translateOffset(start);

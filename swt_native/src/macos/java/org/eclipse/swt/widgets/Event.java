@@ -44,6 +44,7 @@ public class Event {
      *
      * @since 2.0
      */
+    @JsonAttribute(ignore = true)
     public Display display;
 
     /**
@@ -310,6 +311,7 @@ public class Event {
     /**
      * a field for application use
      */
+    @JsonAttribute(ignore = true)
     public Object data;
 
     /**
@@ -317,6 +319,7 @@ public class Event {
      *
      * @since 3.7
      */
+    @JsonAttribute(ignore = true)
     public Touch[] touches;
 
     /**

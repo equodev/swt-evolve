@@ -3565,7 +3565,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      */
     public void setFont(Font font) {
         checkWidget();
-        Font newFont = font;
+        Font newFont = GraphicsUtils.copyFontToSwt(font);
         if (newFont != null) {
             if (newFont.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);

@@ -54,11 +54,13 @@ class FontUtils {
     final fontName = fontData.name?.isNotEmpty == true
         ? fontData.name!
         : defaultFontName;
-    final fontSize = fontData.height?.toDouble() ?? defaultFontSize;
+    // SWT font height is in points, Flutter fontSize is in logical pixels
+    // Convert points to pixels: pixels = points × (96 DPI / 72 points per inch)
+    final fontHeightPoints = fontData.height?.toDouble() ?? defaultFontSize;
+    final fontSize = fontHeightPoints * (96 / 72);
     final swtStyle = fontData.style ?? 0;
 
     final (fontWeight, fontStyle) = convertSwtFontStyle(swtStyle);
-    //print("Using font $fontName $fontSize ${fontWeight.value} ${fontStyle}");
     return TextStyle(
       fontFamily: fontName,
       fontSize: fontSize,

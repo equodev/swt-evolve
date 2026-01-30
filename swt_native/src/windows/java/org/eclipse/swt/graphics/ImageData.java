@@ -101,6 +101,7 @@ public final class ImageData implements Cloneable {
     /**
      * The color table for the image.
      */
+    @JsonAttribute(ignore = true)
     public PaletteData palette;
 
     /**

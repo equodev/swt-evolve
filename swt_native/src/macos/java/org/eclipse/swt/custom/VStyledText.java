@@ -251,7 +251,6 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).columnX = value;
     }
 
-    @JsonAttribute(ignore = true)
     public StyleRange[] getStyleRanges() {
         StyleRange[] values = ((DartStyledText) impl).getStyleRanges();
         if (values == null)
@@ -345,6 +344,19 @@ public class VStyledText extends VCanvas {
 
     public void setWrapIndent(int value) {
         ((DartStyledText) impl).wrapIndent = value;
+    }
+
+    @JsonAttribute(nullable = true)
+    public VStyledTextRenderer getRenderer() {
+        DartStyledText dartImpl = (DartStyledText) impl;
+        if (dartImpl.renderer == null)
+            return null;
+        if (!(dartImpl.renderer.getImpl() instanceof DartStyledTextRenderer))
+            return null;
+        return new VStyledTextRenderer((DartStyledTextRenderer) dartImpl.renderer.getImpl());
+    }
+
+    public void setRenderer(VStyledTextRenderer value) {
     }
 
     @JsonConverter(target = StyledText.class)

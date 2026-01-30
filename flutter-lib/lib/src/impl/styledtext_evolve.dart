@@ -2,13 +2,17 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:swtflutter/src/gen/event.dart';
 import '../comm/comm.dart';
+import '../gen/event.dart';
+import '../gen/color.dart';
+import '../gen/stylerange.dart';
 import '../gen/styledtext.dart';
+import '../gen/styledtextrenderer.dart';
 import '../gen/widget.dart';
 import '../impl/canvas_evolve.dart';
 import 'widget_config.dart';
 import 'utils/font_utils.dart';
+import 'color_utils.dart';
 
 class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     extends CanvasImpl<T, V> {
@@ -21,7 +25,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   bool _isInLocalEditMode = false;
 
   bool _isSelecting = false;
-  // Offset? _selectionStartPosition;
   int? _selectionStartOffset;
 
   bool _editable = true;
@@ -30,184 +33,310 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   final bool useDarkTheme = getCurrentTheme();
 
   @override
+  Color get bg => colorFromVColor(state.background, defaultColor: const Color(0x00000000));
+
+  @override
   void initState() {
     super.initState();
-    registerListeners();
   }
 
   @override
   void extraSetState() {
     super.extraSetState();
-    _editable = state.editable ?? false;
-    _wordWrap = state.wordWrap ?? false;
+    _editable = state.editable ?? true;  // SWT default is editable
+    _wordWrap = state.wordWrap ?? true;  // SWT default with WRAP style
+    _buildTextShapeFromState();
+  }
+
+  /// Build TextShape from serialized state data
+  void _buildTextShapeFromState() {
+    final originalText = state.text ?? '';
+    final text = originalText.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    if (text.isEmpty && state.renderer == null) return;
+
+    final styledTextId = state.id;
+    final caretOffset = _adjustOffsetForNormalizedText(originalText, state.caretOffset ?? 0);
+
+    // Build editing state from renderer style ranges
+    final editingState = _buildEditingStateFromRenderer();
+
+    // Get default text style
+    final defaultStyle = _getDefaultTextStyle();
+
+    // Build caret info
+    final caretColor = useDarkTheme ? const Color(0xFFFFFFFF) : applyAlpha(fg);
+    final caretHeight = (defaultStyle.fontSize ?? 12.0) * 1.2;
+    final caretInfo = CaretInfo(
+      offset: caretOffset,
+      width: 1.0,
+      height: caretHeight,
+      color: caretColor,
+      visible: true,
+      blinking: true,
+      styledTextId: styledTextId,
+      blinkRate: 500,
+    );
+
+    final textShape = TextShape(
+      text,
+      const Offset(0, 0),
+      defaultStyle,
+      clipRect,
+      null,
+      caretInfo,
+      _wordWrap,
+      _getCanvasSize(),
+      _editable,
+      styledTextId,
+      (newText, caretPos) {},
+      editingState,
+      null,
+    );
+
+    // Update shapes list - remove old shape with same id and add new one
+    shapes = shapes.where((shape) {
+      return !(shape is TextShape && shape.styledTextId == styledTextId);
+    }).toList();
+
+    // Update editable text shape if we're editing this one, or add to shapes list
+    if (_isEditingText && _editableTextShape?.styledTextId == styledTextId) {
+      if (!_isInLocalEditMode) {
+        _editableTextShape = textShape;
+      }
+    } else {
+      shapes = [...shapes, textShape];
+    }
+  }
+
+  /// Adjust offset from original text (with \r\n) to normalized text (with \n only)
+  /// Counts how many \r characters appear before the given offset and subtracts them
+  int _adjustOffsetForNormalizedText(String originalText, int offset) {
+    if (offset <= 0) return 0;
+    int adjustment = 0;
+    final maxIndex = offset < originalText.length ? offset : originalText.length;
+    for (int i = 0; i < maxIndex; i++) {
+      if (originalText[i] == '\r' && i + 1 < originalText.length && originalText[i + 1] == '\n') {
+        adjustment++;
+      }
+    }
+    return offset - adjustment;
+  }
+
+  /// Build TextEditingState from renderer's styleRanges and lineProperties
+  TextEditingState _buildEditingStateFromRenderer() {
+    final renderer = state.renderer;
+    final originalText = state.text ?? '';
+    final normalizedText = originalText.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+
+    List<StyleRange> characterRanges = [];
+
+    if (renderer?.styles != null && renderer!.styles!.isNotEmpty) {
+      final styles = renderer.styles!;
+      final ranges = renderer.ranges;
+      final count = renderer.styleCount ?? styles.length;
+
+      for (int i = 0; i < count && i < styles.length; i++) {
+        final vRange = styles[i];
+        final style = _convertVStyleRangeToTextStyle(vRange);
+
+        int start, length;
+        if (ranges != null && (i * 2) + 1 < ranges.length) {
+          start = ranges[i * 2];
+          length = ranges[i * 2 + 1];
+        } else {
+          start = vRange.start;
+          length = vRange.length;
+        }
+
+        final adjustedStart = _adjustOffsetForNormalizedText(originalText, start);
+        final adjustedEnd = _adjustOffsetForNormalizedText(originalText, start + length);
+        characterRanges.add(StyleRange(
+          start: adjustedStart,
+          end: adjustedEnd,
+          style: style,
+        ));
+      }
+    } else if (normalizedText.isNotEmpty) {
+      // Default range for entire text
+      final defaultStyle = _getDefaultTextStyle();
+      characterRanges.add(StyleRange(
+        start: 0,
+        end: normalizedText.length,
+        style: defaultStyle,
+      ));
+    }
+
+    // Sort ranges by start position
+    characterRanges.sort((a, b) => a.start.compareTo(b.start));
+
+    if (characterRanges.isNotEmpty) {
+      List<StyleRange> dedupedRanges = [];
+      for (final range in characterRanges) {
+        bool isDuplicate = dedupedRanges.any((existing) =>
+            existing.start <= range.start && existing.end >= range.end);
+        if (!isDuplicate) {
+          dedupedRanges.add(range);
+        }
+      }
+      characterRanges = dedupedRanges;
+    }
+
+    // Build line properties from renderer - array index corresponds to line index
+    // (nulls are preserved in the array to maintain position mapping)
+    Map<int, LineProperties> lineProps = {};
+    if (renderer?.lines != null && renderer!.lines!.isNotEmpty) {
+      for (int i = 0; i < renderer.lines!.length; i++) {
+        final vLineInfo = renderer.lines![i];
+        if (vLineInfo != null) {
+          lineProps[i] = LineProperties(
+            alignment: vLineInfo.alignment,
+            indent: vLineInfo.indent,
+            justify: vLineInfo.justify,
+          );
+        }
+      }
+    }
+
+    return TextEditingState(
+      characterRanges: characterRanges,
+      lineProperties: lineProps,
+    );
+  }
+
+  /// Convert VStyleRange to Flutter TextStyle
+  TextStyle _convertVStyleRangeToTextStyle(VStyleRange vRange) {
+    final defaultTextColor = useDarkTheme ? const Color(0xFFFFFFFF) : applyAlpha(fg);
+    final baseStyle = _getDefaultTextStyle();
+
+    Color? foreground;
+    if (vRange.foreground != null) {
+      foreground = colorFromVColor(vRange.foreground);
+    }
+
+    Color? background;
+    if (vRange.background != null) {
+      background = colorFromVColor(vRange.background);
+    }
+
+    final (fontWeight, fontStyle) = FontUtils.convertSwtFontStyle(vRange.fontStyle);
+
+    // Get font info from VStyleRange.font if available, otherwise use renderer's font
+    double? fontSize = baseStyle.fontSize;
+    String? fontFamily = baseStyle.fontFamily;
+    if (vRange.font?.fontData != null && vRange.font!.fontData!.isNotEmpty) {
+      final fontData = vRange.font!.fontData!.first;
+      fontSize = fontData.height?.toDouble() ?? fontSize;
+      fontFamily = fontData.name ?? fontFamily;
+    }
+
+    // Build decoration
+    TextDecoration? decoration;
+    List<TextDecoration> decorations = [];
+    if (vRange.underline == true) {
+      decorations.add(TextDecoration.underline);
+    }
+    if (vRange.strikeout == true) {
+      decorations.add(TextDecoration.lineThrough);
+    }
+    if (decorations.isNotEmpty) {
+      decoration = TextDecoration.combine(decorations);
+    }
+
+    return TextStyle(
+      fontSize: fontSize,
+      fontFamily: fontFamily,
+      fontWeight: fontWeight,
+      fontStyle: fontStyle,
+      color: foreground ?? defaultTextColor,
+      backgroundColor: background,
+      decoration: decoration,
+      decorationColor: foreground ?? defaultTextColor,
+    );
+  }
+
+  /// Get default text style from state.font or fallback
+  TextStyle _getDefaultTextStyle() {
+    final defaultTextColor = useDarkTheme ? const Color(0xFFFFFFFF) : applyAlpha(fg);
+
+    if (state.font != null) {
+      return FontUtils.textStyleFromVFont(
+        state.font,
+        context,
+        color: defaultTextColor,
+      );
+    }
+
+    // Fallback to renderer's regular font
+    final renderer = state.renderer;
+    if (renderer?.regularFont != null) {
+      return FontUtils.textStyleFromVFont(
+        renderer!.regularFont,
+        context,
+        color: defaultTextColor,
+      );
+    }
+
+    return TextStyle(
+      fontSize: 12,
+      color: defaultTextColor,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        CustomPaint(
-          size: const Size(100, 100),
-          painter: ScenePainter(
-              bg,
-              List.unmodifiable([
-                ...shapes,
-                if (_editableTextShape != null) _editableTextShape!
-              ])),
-        ),
-        Positioned.fill(
-          child: RawKeyboardListener(
-            focusNode: FocusNode(),
-            autofocus: _isEditingText,
-            onKey: _handleKeyEvent,
-            child: GestureDetector(
-              onTapDown: (details) => _handleTapDown(details.localPosition),
-              onTapUp: (details) => _handleTapUp(details.localPosition),
-              onPanStart: (details) => _handlePanStart(details.localPosition),
-              onPanUpdate: (details) => _handlePanUpdate(details.localPosition),
-              onPanEnd: (details) => _handlePanEnd(),
-              behavior: HitTestBehavior.translucent,
-              child: Container(),
+    final bounds = getBounds();
+
+    return SizedBox(
+      width: bounds.width,
+      height: bounds.height,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: CustomPaint(
+              painter: ScenePainter(
+                  bg,
+                  List.unmodifiable([
+                    ...shapes,
+                    if (_editableTextShape != null) _editableTextShape!
+                  ])),
             ),
           ),
-        ),
-      ],
+          Positioned.fill(
+            child: RawKeyboardListener(
+              focusNode: FocusNode(),
+              autofocus: _isEditingText,
+              onKey: _handleKeyEvent,
+              child: GestureDetector(
+                onTapDown: (details) => _handleTapDown(details.localPosition),
+                onTapUp: (details) => _handleTapUp(details.localPosition),
+                onPanStart: (details) => _handlePanStart(details.localPosition),
+                onPanUpdate: (details) => _handlePanUpdate(details.localPosition),
+                onPanEnd: (details) => _handlePanEnd(),
+                behavior: HitTestBehavior.translucent,
+                child: Container(),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  //----------send Java-----------------
-  void sendObjectEvent(V val, String ev, Object payload) {
-    print("send ${val.swt}/${val.id}/$ev");
-    EquoCommService.sendPayload("${val.swt}/${val.id}/$ev", payload);
-  }
+  //-----------Events to Java-----------------
 
-  void handleTextModify() {
-    final newText = VEvent()..text = _editableTextShape!.text;
-    widget.sendModifyModify(state, newText);
-  }
-
-  void handleRangeModify() {
-    final currentText = _editableTextShape!.text;
-    if (currentText.isEmpty) return;
-
-    List<Map<String, Object>> newRanges = [];
-
-    if (_localEditingState!.characterRanges.isNotEmpty) {
-      final validRanges = _localEditingState!.characterRanges
-          .where((range) => range.start >= 0 && range.end <= currentText.length)
-          .toList();
-      newRanges = _convertCharacterRangesToJava(validRanges);
-    } else {
-      final defaultRange = StyleRange(
-        start: 0,
-        end: currentText.length,
-        style: _originalServerTextShape!.style,
-      );
-      newRanges = _convertCharacterRangesToJava([defaultRange]);
+  void _sendSelectionChange() {
+    if (_editableTextShape?.selectionInfo != null &&
+        _editableTextShape!.selectionInfo!.hasSelection) {
+      final sel = _editableTextShape!.selectionInfo!;
+      final event = VEvent()
+        ..start = sel.normalizedStart
+        ..end = sel.normalizedEnd
+        ..text = _editableTextShape!.getSelectedText();
+      widget.sendSelectionSelection(state, event);
     }
-    sendObjectEvent(state, "RangeModify", newRanges);
   }
 
-  void handleLineInfoModify() {
-    if (_localEditingState?.lineProperties.isEmpty ?? true) return;
-    Map<String, Object> newLineProperties =
-        _convertLinePropertiesToJava(_localEditingState!.lineProperties);
-    sendObjectEvent(state, "LineInfoModify", newLineProperties);
-  }
-
-  void handleCaretModify() {
-    final exactCaretPosition = _editableTextShape!.caretInfo?.offset ?? 0;
-    final newCaret = VEvent()..start = exactCaretPosition;
-    widget.sendModifyModify(state, newCaret);
-  }
-
-  List<Map<String, Object>> _convertCharacterRangesToJava(
-      List<StyleRange> ranges) {
-    return ranges.map((range) {
-      Map<String, Object> javaRange = {};
-
-      javaRange['startIndex'] = range.start;
-      javaRange['endIndex'] = range.end;
-
-      final style = range.style;
-
-      if (style.color != null) {
-        javaRange['foreground'] = {
-          'red': style.color!.red,
-          'green': style.color!.green,
-          'blue': style.color!.blue,
-          'alpha': style.color!.alpha,
-        };
-      }
-
-      if (style.backgroundColor != null) {
-        javaRange['background'] = {
-          'red': style.backgroundColor!.red,
-          'green': style.backgroundColor!.green,
-          'blue': style.backgroundColor!.blue,
-          'alpha': style.backgroundColor!.alpha,
-        };
-      }
-
-      int fontStyle = 0;
-      if (style.fontWeight == FontWeight.bold &&
-          style.fontStyle == FontStyle.italic) {
-        fontStyle = 3;
-      } else if (style.fontWeight == FontWeight.bold) {
-        fontStyle = 1;
-      } else if (style.fontStyle == FontStyle.italic) {
-        fontStyle = 2;
-      }
-      javaRange['fontStyle'] = fontStyle;
-
-      if (style.fontSize != null) {
-        javaRange['fontSize'] = style.fontSize!.round();
-      }
-
-      if (style.fontFamily != null) {
-        javaRange['fontName'] = style.fontFamily!;
-      }
-
-      if (style.decoration != null) {
-        if (style.decoration!.contains(TextDecoration.underline)) {
-          javaRange['underline'] = true;
-          javaRange['underlineStyle'] = 1;
-        }
-        if (style.decoration!.contains(TextDecoration.lineThrough)) {
-          javaRange['strikeout'] = true;
-        }
-      }
-
-      return javaRange;
-    }).toList();
-  }
-
-  Map<String, Object> _convertLinePropertiesToJava(
-      Map<int, LineProperties> lineProps) {
-    Map<String, Object> javaLineProps = {};
-
-    lineProps.forEach((lineIndex, props) {
-      Map<String, Object> lineData = {};
-
-      if (props.alignment != null) {
-        lineData['alignment'] = props.alignment!;
-      }
-      if (props.indent != null) {
-        lineData['indent'] = props.indent!;
-      }
-      if (props.justify != null) {
-        lineData['justify'] = props.justify!;
-      }
-
-      if (lineData.isNotEmpty) {
-        javaLineProps[lineIndex.toString()] = lineData;
-      }
-    });
-
-    return javaLineProps;
-  }
-
-  //-----------edition----------------
+  //-----------Edition----------------
   void _handleTap(Offset position) {
     final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
@@ -261,7 +390,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
                 _editableTextShape!.clearSelection().moveCaret(caretOffset);
 
             _isSelecting = false;
-            // _selectionStartPosition = null;
             _selectionStartOffset = null;
           });
 
@@ -286,8 +414,10 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       TextShape? newShape;
 
       if (event.logicalKey == LogicalKeyboardKey.backspace) {
+        if (!_editable) return;
         newShape = currentShape.backspace();
       } else if (event.logicalKey == LogicalKeyboardKey.delete) {
+        if (!_editable) return;
         newShape = currentShape.delete();
       } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
         final newOffset = (currentShape.caretInfo?.offset ?? 0) - 1;
@@ -306,41 +436,21 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         }
         newShape = (newShape ?? currentShape).moveCaret(newOffset);
       } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-        if (currentShape.wordWrap == true) {
-          final newOffset = _calculateVerticalNavigation(currentShape, -1);
-          if (isShiftPressed) {
-            newShape = currentShape.extendSelectionTo(newOffset);
-          } else {
-            newShape = currentShape.clearSelection();
-          }
-          newShape = (newShape ?? currentShape).moveCaret(newOffset);
+        final newOffset = _calculateLineBasedVerticalNavigation(currentShape, -1);
+        if (isShiftPressed) {
+          newShape = currentShape.extendSelectionTo(newOffset);
         } else {
-          final newOffset = 0;
-          if (isShiftPressed) {
-            newShape = currentShape.extendSelectionTo(newOffset);
-          } else {
-            newShape = currentShape.clearSelection();
-          }
-          newShape = (newShape ?? currentShape).moveCaret(newOffset);
+          newShape = currentShape.clearSelection();
         }
+        newShape = (newShape ?? currentShape).moveCaret(newOffset);
       } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-        if (currentShape.wordWrap == true) {
-          final newOffset = _calculateVerticalNavigation(currentShape, 1);
-          if (isShiftPressed) {
-            newShape = currentShape.extendSelectionTo(newOffset);
-          } else {
-            newShape = currentShape.clearSelection();
-          }
-          newShape = (newShape ?? currentShape).moveCaret(newOffset);
+        final newOffset = _calculateLineBasedVerticalNavigation(currentShape, 1);
+        if (isShiftPressed) {
+          newShape = currentShape.extendSelectionTo(newOffset);
         } else {
-          final newOffset = currentShape.text.length;
-          if (isShiftPressed) {
-            newShape = currentShape.extendSelectionTo(newOffset);
-          } else {
-            newShape = currentShape.clearSelection();
-          }
-          newShape = (newShape ?? currentShape).moveCaret(newOffset);
+          newShape = currentShape.clearSelection();
         }
+        newShape = (newShape ?? currentShape).moveCaret(newOffset);
       } else if (event.logicalKey == LogicalKeyboardKey.home) {
         int newOffset;
         if (currentShape.wordWrap == true) {
@@ -382,23 +492,24 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         final selectedText = currentShape.getSelectedText();
         if (selectedText.isNotEmpty) {
           Clipboard.setData(ClipboardData(text: selectedText));
-          newShape = currentShape.deleteSelection();
+          if (_editable) {
+            newShape = currentShape.deleteSelection();
+          }
         }
       } else if (event.logicalKey == LogicalKeyboardKey.keyV &&
           event.data.isControlPressed) {
-        _handlePaste();
+        if (_editable) {
+          _handlePaste();
+        }
         return;
       } else if (event.logicalKey == LogicalKeyboardKey.escape) {
         newShape = currentShape.clearSelection();
       } else if (event.logicalKey == LogicalKeyboardKey.enter) {
-        if (currentShape.wordWrap == true) {
-          newShape = currentShape.insertText(
-              '\n', currentShape.caretInfo?.offset ?? 0);
-        } else {
-          _stopEditing();
-          return;
-        }
+        if (!_editable) return;
+        newShape = currentShape.insertText(
+            '\n', currentShape.caretInfo?.offset ?? 0);
       } else if (event.character != null && event.character!.isNotEmpty) {
+        if (!_editable) return;
         final char = event.character!;
         if (char.codeUnitAt(0) >= 32) {
           newShape = currentShape.insertText(
@@ -417,7 +528,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   }
 
   void _handlePaste() async {
-    if (!_isEditingText || _editableTextShape == null) return;
+    if (!_isEditingText || _editableTextShape == null || !_editable) return;
 
     try {
       final data = await Clipboard.getData('text/plain');
@@ -432,12 +543,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         });
       }
     } catch (e) {
-      print('Error pasting: $e');
+      // Error pasting
     }
   }
 
   void _handleTapDown(Offset position) {
-    // _selectionStartPosition = position;
     _isSelecting = false;
   }
 
@@ -446,7 +556,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       _handleTap(position);
     }
     _isSelecting = false;
-    // _selectionStartPosition = null;
     _selectionStartOffset = null;
   }
 
@@ -502,8 +611,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   void _handlePanEnd() {
     _isSelecting = false;
-    // _selectionStartPosition = null;
     _selectionStartOffset = null;
+    _sendSelectionChange();
   }
 
   void _startCaretBlinking() {
@@ -531,7 +640,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     _enterLocalEditMode(textShape);
     setState(() {
       _isEditingText = true;
-      shapes.removeAt(shapeIndex);
+      if (shapeIndex >= 0 && shapeIndex < shapes.length) {
+        shapes.removeAt(shapeIndex);
+      }
     });
   }
 
@@ -545,91 +656,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     _updateLocalTextShape();
   }
 
-  TextEditingState _createEditingStateFromServerData(
-    String text,
-    List<dynamic> ranges,
-    double defaultFontSize,
-    String defaultFontName,
-    int defaultFontStyle,
-    Map<int, LineProperties> lineProperties,
-  ) {
-    List<StyleRange> characterRanges = [];
-
-    if (text.isNotEmpty) {
-      final defaultTextColor =
-          useDarkTheme ? Color(0xFFFFFFFF) : applyAlpha(fg);
-
-      final defaultStyle = TextStyle(
-        fontSize: defaultFontSize,
-        fontFamily: defaultFontName,
-        fontWeight:
-            defaultFontStyle & 1 != 0 ? FontWeight.bold : FontWeight.normal,
-        fontStyle:
-            defaultFontStyle & 2 != 0 ? FontStyle.italic : FontStyle.normal,
-        color: defaultTextColor,
-      );
-
-      characterRanges.add(StyleRange(
-        start: 0,
-        end: text.length,
-        style: defaultStyle,
-      ));
-    }
-
-    for (final range in ranges) {
-      if (range is Map<String, dynamic>) {
-        final start = range['startIndex'] ?? 0;
-        final end = range['endIndex'] ?? 0;
-
-        if (start >= 0 && end > start && end <= text.length) {
-          final style = _buildTextStyleFromRange(
-            range,
-            defaultFontSize,
-            defaultFontName,
-            defaultFontStyle,
-          );
-
-          final defaultTextColor =
-              useDarkTheme ? Color(0xFFFFFFFF) : applyAlpha(fg);
-
-          characterRanges.removeWhere((r) =>
-              r.start <= start &&
-              r.end >= end &&
-              r.style.color == defaultTextColor &&
-              r.style.fontSize == defaultFontSize);
-
-          characterRanges.add(StyleRange(
-            start: start,
-            end: end,
-            style: style,
-          ));
-        }
-      }
-    }
-
-    characterRanges.sort((a, b) => a.start.compareTo(b.start));
-
-    return TextEditingState(
-      characterRanges: characterRanges,
-      lineProperties: lineProperties,
-    );
-  }
-
-  int _getLineFromOffset(int offset, String text) {
-    if (text.isEmpty || offset <= 0) return 0;
-
-    int lineCount = 0;
-    for (int i = 0; i < offset && i < text.length; i++) {
-      if (text[i] == '\n') {
-        lineCount++;
-      }
-    }
-    return lineCount;
-  }
-
   TextEditingState _extractEditingStateFromTextShape(TextShape textShape) {
     List<StyleRange> characterRanges = [];
-    Map<int, LineProperties> lineProperties = {};
 
     if (textShape.editingState != null) {
       return textShape.editingState!;
@@ -640,7 +668,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
           textShape.textSpan!, characterRanges, 0);
     } else {
       final defaultTextColor =
-          useDarkTheme ? Color(0xFFFFFFFF) : textShape.style.color;
+          useDarkTheme ? const Color(0xFFFFFFFF) : textShape.style.color;
 
       characterRanges.add(StyleRange(
         start: 0,
@@ -651,7 +679,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
     return TextEditingState(
       characterRanges: characterRanges,
-      lineProperties: lineProperties,
+      lineProperties: const {},
     );
   }
 
@@ -696,9 +724,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       _originalServerTextShape!.clipRect,
       null,
       _originalServerTextShape!.caretInfo,
-      _wordWrap,
-      _getCanvasSize(),
-      _wordWrap,
+      _originalServerTextShape!.wordWrap,
+      _originalServerTextShape!.canvasSize,
+      _originalServerTextShape!.editable,
       _originalServerTextShape!.styledTextId,
       (newText, caretOffset) {},
       _localEditingState,
@@ -712,12 +740,90 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     _localEditingState = null;
   }
 
+  /// Build a VStyledText with updated text, caret, and style ranges
+  VStyledText _buildUpdatedVStyledText() {
+    final updatedState = VStyledText()
+      ..id = state.id
+      ..swt = state.swt
+      ..text = _editableTextShape!.text
+      ..caretOffset = _editableTextShape!.caretInfo?.offset ?? 0;
+
+    // Build renderer with style ranges
+    if (_localEditingState != null) {
+      final renderer = VStyledTextRenderer();
+      renderer.styles = _convertLocalRangesToVStyleRanges();
+      updatedState.renderer = renderer;
+    }
+
+    return updatedState;
+  }
+
+  /// Convert local StyleRange list to VStyleRange list for serialization
+  List<VStyleRange> _convertLocalRangesToVStyleRanges() {
+    if (_localEditingState == null) return [];
+
+    final currentText = _editableTextShape?.text ?? '';
+    final validRanges = _localEditingState!.characterRanges
+        .where((range) => range.start >= 0 && range.end <= currentText.length)
+        .toList();
+
+    return validRanges.map((range) {
+      final vRange = VStyleRange()
+        ..start = range.start
+        ..length = range.end - range.start;
+
+      final style = range.style;
+
+      // Convert foreground color
+      if (style.color != null) {
+        vRange.foreground = VColor()
+          ..red = style.color!.red
+          ..green = style.color!.green
+          ..blue = style.color!.blue
+          ..alpha = style.color!.alpha;
+      }
+
+      // Convert background color
+      if (style.backgroundColor != null) {
+        vRange.background = VColor()
+          ..red = style.backgroundColor!.red
+          ..green = style.backgroundColor!.green
+          ..blue = style.backgroundColor!.blue
+          ..alpha = style.backgroundColor!.alpha;
+      }
+
+      // Convert font style
+      int fontStyle = 0;
+      if (style.fontWeight == FontWeight.bold &&
+          style.fontStyle == FontStyle.italic) {
+        fontStyle = 3; // BOLD | ITALIC
+      } else if (style.fontWeight == FontWeight.bold) {
+        fontStyle = 1; // BOLD
+      } else if (style.fontStyle == FontStyle.italic) {
+        fontStyle = 2; // ITALIC
+      }
+      vRange.fontStyle = fontStyle;
+
+      // Convert decorations
+      if (style.decoration != null) {
+        if (style.decoration!.contains(TextDecoration.underline)) {
+          vRange.underline = true;
+          vRange.underlineStyle = 1;
+        }
+        if (style.decoration!.contains(TextDecoration.lineThrough)) {
+          vRange.strikeout = true;
+        }
+      }
+
+      return vRange;
+    }).toList();
+  }
+
   void _stopEditing() {
-    if (_isInLocalEditMode) {
-      handleTextModify();
-      handleRangeModify();
-      handleLineInfoModify();
-      handleCaretModify();
+    if (_isInLocalEditMode && _editableTextShape != null) {
+      // Send all updated state in a single event
+      final updatedState = _buildUpdatedVStyledText();
+      EquoCommService.sendPayload("${state.swt}/${state.id}/StateUpdate", updatedState);
     }
 
     _cleanupLocalEditMode();
@@ -754,6 +860,53 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     return -1;
   }
 
+  /// Navigate vertically based on explicit line breaks (\n) in the text
+  int _calculateLineBasedVerticalNavigation(TextShape textShape, int direction) {
+    final text = textShape.text;
+    final currentOffset = textShape.caretInfo?.offset ?? 0;
+    final lines = text.split('\n');
+
+    // Find current line and position within line
+    int currentLineIndex = 0;
+    int lineStartOffset = 0;
+    int positionInLine = currentOffset;
+
+    for (int i = 0; i < lines.length; i++) {
+      final lineLength = lines[i].length;
+      final lineEndOffset = lineStartOffset + lineLength;
+
+      if (currentOffset <= lineEndOffset) {
+        currentLineIndex = i;
+        positionInLine = currentOffset - lineStartOffset;
+        break;
+      }
+
+      lineStartOffset = lineEndOffset + 1; // +1 for the \n
+    }
+
+    // Calculate target line
+    final targetLineIndex = currentLineIndex + direction;
+
+    // Bounds check
+    if (targetLineIndex < 0) {
+      return 0; // Go to start of text
+    }
+    if (targetLineIndex >= lines.length) {
+      return text.length; // Go to end of text
+    }
+
+    // Calculate offset in target line
+    int targetLineStartOffset = 0;
+    for (int i = 0; i < targetLineIndex; i++) {
+      targetLineStartOffset += lines[i].length + 1; // +1 for \n
+    }
+
+    final targetLineLength = lines[targetLineIndex].length;
+    final targetPositionInLine = positionInLine.clamp(0, targetLineLength);
+
+    return targetLineStartOffset + targetPositionInLine;
+  }
+
   int _calculateVerticalNavigation(TextShape textShape, int direction) {
     final canvasSize = _getCanvasSize();
     if (canvasSize == null) return textShape.caretInfo?.offset ?? 0;
@@ -773,270 +926,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
     return renderBox?.size;
   }
-
-  TextSpan _buildUnifiedTextSpan(
-    String text,
-    List<dynamic> ranges,
-    double defaultFontSize,
-    String defaultFontName,
-    int defaultFontStyle,
-  ) {
-    if (ranges.isEmpty) {
-      return TextSpan(
-        text: text,
-        style: _getDefaultTextStyle(
-            defaultFontSize, defaultFontName, defaultFontStyle),
-      );
-    }
-
-    ranges
-        .sort((a, b) => (a['startIndex'] ?? 0).compareTo(b['startIndex'] ?? 0));
-
-    List<TextSpan> children = [];
-    int currentPos = 0;
-
-    for (final range in ranges) {
-      final start = range['startIndex'] ?? 0;
-      final end = range['endIndex'] ?? 0;
-
-      if (start >= end || start >= text.length) continue;
-      final actualEnd = end.clamp(0, text.length);
-
-      if (currentPos < start) {
-        final unstyledText = text.substring(currentPos, start);
-        children.add(TextSpan(
-          text: unstyledText,
-          style: _getDefaultTextStyle(
-              defaultFontSize, defaultFontName, defaultFontStyle),
-        ));
-      }
-
-      final styledText = text.substring(start, actualEnd);
-      final rangeStyle = _buildTextStyleFromRange(
-        range,
-        defaultFontSize,
-        defaultFontName,
-        defaultFontStyle,
-      );
-
-      children.add(TextSpan(
-        text: styledText,
-        style: rangeStyle,
-      ));
-
-      currentPos = actualEnd;
-    }
-
-    if (currentPos < text.length) {
-      final remainingText = text.substring(currentPos);
-      children.add(TextSpan(
-        text: remainingText,
-        style: _getDefaultTextStyle(
-            defaultFontSize, defaultFontName, defaultFontStyle),
-      ));
-    }
-
-    return TextSpan(children: children);
-  }
-
-  TextStyle _buildTextStyleFromRange(
-    Map<String, dynamic> range,
-    double defaultFontSize,
-    String defaultFontName,
-    int defaultFontStyle,
-  ) {
-    final fontSize = (range['fontSize'] ?? defaultFontSize).toDouble();
-    final fontName = range['fontName'] ?? defaultFontName;
-    final fontStyle = range['fontStyle'] ?? defaultFontStyle;
-    final strikeout = range['strikeout'] ?? false;
-
-    final styleMap = _convertSwtFontStyle(fontStyle);
-    final weight = styleMap['weight'] as FontWeight;
-    final style = styleMap['style'] as FontStyle;
-
-    final foreground = range.containsKey('foreground')
-        ? rgbMapToColor(range['foreground'])
-        : (useDarkTheme ? Color(0xFFFFFFFF) : fg);
-
-    final background = range.containsKey('background')
-        ? rgbMapToColor(range['background'])
-        : null;
-
-    return TextStyle(
-      fontSize: fontSize,
-      fontFamily: fontName,
-      fontWeight: weight,
-      fontStyle: style,
-      color: applyAlpha(foreground),
-      backgroundColor: background != null ? applyAlpha(background) : null,
-      decoration: strikeout ? TextDecoration.lineThrough : TextDecoration.none,
-      decorationColor: applyAlpha(foreground),
-      decorationThickness: 2.0,
-    );
-  }
-
-  TextStyle _getDefaultTextStyle(
-      double fontSize, String fontName, int fontStyle) {
-    final defaultTextColor = useDarkTheme ? Color(0xFFFFFFFF) : applyAlpha(fg);
-
-    // Try to use state.font first, fall back to server defaults
-    if (state.font != null) {
-      final textStyle = FontUtils.textStyleFromVFont(
-        state.font,
-        context,
-        color: defaultTextColor,
-      );
-      return textStyle;
-    }
-
-    // Fall back to server-provided font data
-    final (weight, style) = FontUtils.convertSwtFontStyle(fontStyle);
-
-    return TextStyle(
-      fontSize: fontSize,
-      fontFamily: fontName,
-      fontWeight: weight,
-      fontStyle: style,
-      color: defaultTextColor,
-    );
-  }
-
-  Map<String, dynamic> _convertSwtFontStyle(int swtFontStyle) {
-    FontWeight weight = FontWeight.normal;
-    FontStyle style = FontStyle.normal;
-
-    switch (swtFontStyle) {
-      case 1:
-        weight = FontWeight.bold;
-        break;
-      case 2:
-        style = FontStyle.italic;
-        break;
-      case 3:
-        weight = FontWeight.bold;
-        style = FontStyle.italic;
-        break;
-    }
-
-    return {
-      'weight': weight,
-      'style': style,
-    };
-  }
-
-  void registerListeners() {
-    _styledTextListener();
-  }
-
-  void _styledTextListener() => EquoCommService.onRaw("DrawStyledText", (m) {
-        if (m is Map<String, dynamic>) {
-          final styledTextId = m['styledTextId'] as int?;
-          final text = m['text'] ?? '';
-
-          if (_isInLocalEditMode &&
-              styledTextId == _originalServerTextShape?.styledTextId &&
-              text != _editableTextShape?.text) {
-            return;
-          }
-
-          final x = (m['x'] ?? 0).toDouble();
-          final y = (m['y'] ?? 0).toDouble();
-          final defaultFontSize = (m['fontSize'] ?? 14).toDouble();
-          final defaultFontName = m['fontName'] ?? 'Segoe UI';
-          final defaultFontStyle = m['fontStyle'] ?? 0;
-          final List<dynamic> ranges = m['styleRanges'] ?? [];
-
-          final caretInfoMap = m['caretInfo'] as Map<String, dynamic>?;
-          CaretInfo? caretInfo;
-
-          if (caretInfoMap != null && styledTextId != null) {
-            final caretColor =
-                useDarkTheme ? Color(0xFFFFFFFF) : applyAlpha(fg);
-            caretInfo = CaretInfo(
-              offset: caretInfoMap['offset'] as int? ?? 0,
-              width: (caretInfoMap['width'] as int? ?? 1).toDouble(),
-              height: (caretInfoMap['height'] as int? ?? 0).toDouble(),
-              color: caretColor,
-              visible: caretInfoMap['visible'] as bool? ?? true,
-              blinking: true,
-              styledTextId: styledTextId,
-              blinkRate: caretInfoMap['blinkRate'] as int? ?? 500,
-            );
-          }
-
-          Map<int, LineProperties> lineProperties = {};
-          if (m.containsKey('lineProperties')) {
-            final linePropsData = m['lineProperties'] as Map<String, dynamic>?;
-            if (linePropsData != null) {
-              linePropsData.forEach((lineIndexStr, propsData) {
-                final lineIndex = int.tryParse(lineIndexStr);
-                if (lineIndex != null && propsData is Map<String, dynamic>) {
-                  lineProperties[lineIndex] = LineProperties(
-                    alignment: propsData['alignment'] as int?,
-                    indent: propsData['indent'] as int?,
-                    justify: propsData['justify'] as bool?,
-                  );
-                }
-              });
-            }
-          }
-
-          final editingState = _createEditingStateFromServerData(
-            text,
-            ranges,
-            defaultFontSize,
-            defaultFontName,
-            defaultFontStyle,
-            lineProperties,
-          );
-
-          final textToUse = (_isInLocalEditMode &&
-                  styledTextId == _originalServerTextShape?.styledTextId)
-              ? _editableTextShape?.text ?? text
-              : text;
-
-          final textShape = TextShape(
-            textToUse,
-            Offset(x, y),
-            TextStyle(
-              fontSize: defaultFontSize,
-              fontFamily: defaultFontName,
-              fontWeight: defaultFontStyle & 1 != 0
-                  ? FontWeight.bold
-                  : FontWeight.normal,
-              fontStyle: defaultFontStyle & 2 != 0
-                  ? FontStyle.italic
-                  : FontStyle.normal,
-              color: useDarkTheme ? Color(0xFFFFFFFF) : applyAlpha(fg),
-            ),
-            clipRect,
-            null,
-            caretInfo,
-            _wordWrap,
-            _getCanvasSize(),
-            _editable,
-            styledTextId,
-            (newText, caretOffset) {},
-            editingState,
-            null,
-          );
-
-          setState(() {
-            if (styledTextId != null) {
-              shapes = shapes.where((shape) {
-                return !(shape is TextShape &&
-                    shape.styledTextId == styledTextId);
-              }).toList();
-            }
-
-            shapes = [...shapes, textShape];
-
-            if (styledTextId == _editableTextShape?.styledTextId) {
-              _editableTextShape = textShape;
-            }
-          });
-        }
-      });
 }
 
 class TextShape extends Shape {
@@ -1121,7 +1010,7 @@ class TextShape extends Shape {
       );
 
       double maxW = double.infinity;
-      if (canvasSize != null) {
+      if (wordWrap == true && canvasSize != null) {
         maxW = canvasSize!.width - paintOffset.dx - indent.toDouble();
         if (maxW <= 0) maxW = double.infinity;
       }
@@ -1575,12 +1464,14 @@ class TextShape extends Shape {
   TextShape insertText(String insertText, int position) {
     String newText;
     int newCaretPos;
+    int insertPosition = position;
 
     if (selectionInfo != null && selectionInfo!.hasSelection) {
       final start = selectionInfo!.normalizedStart;
       final end = selectionInfo!.normalizedEnd;
       newText = text.substring(0, start) + insertText + text.substring(end);
       newCaretPos = start + insertText.length;
+      insertPosition = start;
     } else {
       newText =
           text.substring(0, position) + insertText + text.substring(position);
@@ -1590,25 +1481,38 @@ class TextShape extends Shape {
     TextEditingState? newEditingState;
 
     if (editingState != null) {
-      newEditingState =
-          TextEditor.insertText(text, insertText, position, editingState!);
+      if (selectionInfo != null && selectionInfo!.hasSelection) {
+        // When replacing selection: first delete the selected range, then insert
+        final start = selectionInfo!.normalizedStart;
+        final end = selectionInfo!.normalizedEnd;
+        final afterDelete = TextEditor.deleteText(text, start, end, editingState!);
+        newEditingState = TextEditor.insertText(
+          text.substring(0, start) + text.substring(end),
+          insertText,
+          start,
+          afterDelete,
+        );
+      } else {
+        newEditingState =
+            TextEditor.insertText(text, insertText, position, editingState!);
+      }
     } else {
-      final currentStyle = _getStyleAtPosition(position);
+      final currentStyle = _getStyleAtPosition(insertPosition);
 
       newEditingState = TextEditingState(
         characterRanges: [
-          if (position > 0) StyleRange(start: 0, end: position, style: style),
+          if (insertPosition > 0) StyleRange(start: 0, end: insertPosition, style: style),
           StyleRange(
-              start: position,
-              end: position + insertText.length,
+              start: insertPosition,
+              end: insertPosition + insertText.length,
               style: currentStyle),
-          if (position < text.length)
+          if (insertPosition < text.length)
             StyleRange(
-                start: position + insertText.length,
+                start: insertPosition + insertText.length,
                 end: newText.length,
                 style: style),
         ].where((range) => range.start < range.end).toList(),
-        lineProperties: editingState?.lineProperties ?? {},
+        lineProperties: editingState?.lineProperties ?? const {},
       );
     }
 
@@ -1627,11 +1531,7 @@ class TextShape extends Shape {
     }
 
     final useDarkTheme = getCurrentTheme();
-    return useDarkTheme ? style.copyWith(color: Color(0xFFFFFFFF)) : style;
-  }
-
-  int _getLineFromOffset(int offset, String text) {
-    return '\n'.allMatches(text.substring(0, offset)).length;
+    return useDarkTheme ? style.copyWith(color: const Color(0xFFFFFFFF)) : style;
   }
 
   TextShape deleteText(int start, int end) {
@@ -1650,7 +1550,7 @@ class TextShape extends Shape {
       newEditingState =
           TextEditor.deleteText(text, actualStart, actualEnd, editingState!);
     } else if (newText.isEmpty) {
-      newEditingState = TextEditingState(
+      newEditingState = const TextEditingState(
         characterRanges: [],
         lineProperties: {},
       );
@@ -1926,91 +1826,12 @@ class StyleRange {
   final int start;
   final int end;
   final TextStyle style;
-  final Map<String, dynamic> meta;
 
-  StyleRange({
+  const StyleRange({
     required this.start,
     required this.end,
     required this.style,
-    this.meta = const {},
   });
-
-  StyleRange.fromMap(Map<String, dynamic> data, TextStyle defaultStyle)
-      : start = data['startIndex'] ?? 0,
-        end = data['endIndex'] ?? 0,
-        style = _buildStyleFromMap(data, defaultStyle),
-        meta = {
-          if (data.containsKey('lineAlignment'))
-            'lineAlignment': data['lineAlignment'],
-          if (data.containsKey('lineIndent')) 'lineIndent': data['lineIndent'],
-          if (data.containsKey('lineJustify'))
-            'lineJustify': data['lineJustify'],
-        };
-
-  static TextStyle _buildStyleFromMap(
-      Map<String, dynamic> data, TextStyle defaultStyle) {
-    Color? color;
-    Color? backgroundColor;
-    FontWeight? fontWeight;
-    FontStyle? fontStyle;
-    double? fontSize;
-    String? fontFamily;
-    TextDecoration? decoration;
-
-    if (data['foreground'] != null) {
-      final fg = data['foreground'] as Map<String, dynamic>;
-      color = Color.fromARGB(
-        fg['alpha'] ?? 255,
-        fg['red'] ?? 0,
-        fg['green'] ?? 0,
-        fg['blue'] ?? 0,
-      );
-    }
-
-    if (data['background'] != null) {
-      final bg = data['background'] as Map<String, dynamic>;
-      backgroundColor = Color.fromARGB(
-        bg['alpha'] ?? 255,
-        bg['red'] ?? 0,
-        bg['green'] ?? 0,
-        bg['blue'] ?? 0,
-      );
-    }
-
-    final swtFontStyle = data['fontStyle'] ?? 0;
-    if (swtFontStyle & 1 != 0) fontWeight = FontWeight.bold;
-    if (swtFontStyle & 2 != 0) fontStyle = FontStyle.italic;
-
-    if (data['fontSize'] != null) {
-      fontSize = (data['fontSize'] as num).toDouble();
-    }
-
-    if (data['fontName'] != null) {
-      fontFamily = data['fontName'] as String;
-    }
-
-    List<TextDecoration> decorations = [];
-    if (data['underline'] == true) {
-      decorations.add(TextDecoration.underline);
-    }
-    if (data['strikeout'] == true) {
-      decorations.add(TextDecoration.lineThrough);
-    }
-    if (decorations.isNotEmpty) {
-      decoration = TextDecoration.combine(decorations);
-    }
-
-    return defaultStyle.copyWith(
-      color: color,
-      backgroundColor: backgroundColor,
-      fontWeight: fontWeight,
-      fontStyle: fontStyle,
-      fontSize: fontSize,
-      fontFamily: fontFamily,
-      decoration: decoration,
-      decorationColor: color,
-    );
-  }
 }
 
 class SelectionInfo {

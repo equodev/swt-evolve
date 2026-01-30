@@ -17,7 +17,7 @@ public class VCaret extends VWidget {
 
     public Font getFont() {
         Font val = ((DartCaret) impl).font;
-        if (val != null && !(val.getImpl() instanceof SwtFont))
+        if (val != null && val.getImpl() instanceof SwtFont)
             return GraphicsUtils.copyFont(val);
         if (val != null && !(val.getImpl() instanceof DartFont))
             return null;

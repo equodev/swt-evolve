@@ -248,11 +248,12 @@ public final class SwtFontData implements IFontData {
         if (fontData == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
-        this.getApi().height = fontData.height;
-        this.lang = fontData.getImpl()._lang();
-        this.country = fontData.getImpl()._country();
-        this.variant = fontData.getImpl()._variant();
-        this.getApi().data = cloneLogFont(fontData);
+        FontData swtFontData = GraphicsUtils.copyFontDataToSwt(fontData);
+        this.getApi().height = swtFontData.height;
+        this.lang = swtFontData.getImpl()._lang();
+        this.country = swtFontData.getImpl()._country();
+        this.variant = swtFontData.getImpl()._variant();
+        this.getApi().data = cloneLogFont(swtFontData);
     }
 
     private static LOGFONT cloneLogFont(FontData fontData) {
@@ -343,6 +344,9 @@ public final class SwtFontData implements IFontData {
             return false;
         FontData fd = (FontData) object;
         LOGFONT lf = fd.data;
+        if (lf == null || getApi().data == null) {
+            return getApi().height == fd.height && getName().equals(fd.getName()) && getStyle() == fd.getStyle();
+        }
         return getApi().data.lfCharSet == lf.lfCharSet && /*
 		* This code is intentionally commented.  When creating
 		* a FontData, lfHeight is not necessarily set.  Instead

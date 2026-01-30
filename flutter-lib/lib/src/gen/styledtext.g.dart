@@ -96,6 +96,9 @@ VStyledText _$VStyledTextFromJson(Map<String, dynamic> json) => VStyledText()
       ?.map((e) => (e as num).toInt())
       .toList()
   ..styleRange = (json['styleRange'] as num?)?.toInt()
+  ..styleRanges = (json['styleRanges'] as List<dynamic>?)
+      ?.map((e) => VStyleRange.fromJson(e as Map<String, dynamic>))
+      .toList()
   ..tabStops = (json['tabStops'] as List<dynamic>?)
       ?.map((e) => (e as num).toInt())
       .toList()
@@ -107,7 +110,10 @@ VStyledText _$VStyledTextFromJson(Map<String, dynamic> json) => VStyledText()
   ..topPixel = (json['topPixel'] as num?)?.toInt()
   ..verticalScrollOffset = (json['verticalScrollOffset'] as num?)?.toInt()
   ..wordWrap = json['wordWrap'] as bool?
-  ..wrapIndent = (json['wrapIndent'] as num?)?.toInt();
+  ..wrapIndent = (json['wrapIndent'] as num?)?.toInt()
+  ..renderer = json['renderer'] == null
+      ? null
+      : VStyledTextRenderer.fromJson(json['renderer'] as Map<String, dynamic>);
 
 Map<String, dynamic> _$VStyledTextToJson(VStyledText instance) =>
     <String, dynamic>{
@@ -162,6 +168,7 @@ Map<String, dynamic> _$VStyledTextToJson(VStyledText instance) =>
       'selectionRange': instance.selectionRange,
       'selectionRanges': instance.selectionRanges,
       'styleRange': instance.styleRange,
+      'styleRanges': instance.styleRanges,
       'tabStops': instance.tabStops,
       'tabs': instance.tabs,
       'text': instance.text,
@@ -172,4 +179,5 @@ Map<String, dynamic> _$VStyledTextToJson(VStyledText instance) =>
       'verticalScrollOffset': instance.verticalScrollOffset,
       'wordWrap': instance.wordWrap,
       'wrapIndent': instance.wrapIndent,
+      'renderer': instance.renderer,
     };

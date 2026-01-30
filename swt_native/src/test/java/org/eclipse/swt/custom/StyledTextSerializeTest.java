@@ -27,6 +27,8 @@ class StyledTextSerializeTest extends SerializeTestBase {
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "StyledText")
+               .hasEntrySatisfying("styleRanges", p -> assertThatJson(p).isArray()
+                                                                        .hasSameSizeAs(w.getStyleRanges()))
                .containsEntry("text", json(w.getText()))
                .containsEntry("toolTipText", json(w.getToolTipText()))
                .containsEntry("style", w.getStyle());

@@ -32,7 +32,7 @@ public class GraphicsUtils {
      * Note: getImageData() already returns a copy, so no additional cloning is needed here.
      *
      * @param display the display on which to create the new image
-     * @param image   the image to copy (can be null)
+     * @param image the image to copy (can be null)
      * @return a copy of the image as a DartImage, or null if input is null
      */
     public static Image copyImage(Display display, Image image) {
@@ -66,7 +66,9 @@ public class GraphicsUtils {
         }
 
         if (fontData.getImpl() instanceof SwtFontData) {
-            return new DartFontData(fontData, null).getApi();
+            FontData copy = new FontData((IFontData) null);
+            copy.setImpl(new DartFontData(fontData, copy));
+            return copy;
         } else {
             return fontData;
         }
@@ -132,7 +134,6 @@ public class GraphicsUtils {
         }
         return fontData;
     }
-
 
     /**
      * Extracts the filename (without extension) from a given file path.

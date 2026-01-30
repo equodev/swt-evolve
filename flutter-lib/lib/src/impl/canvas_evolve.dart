@@ -96,7 +96,6 @@ class ScenePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(Offset.zero & size, Paint()..color = bg);
     for (final s in shapes) {
       s.draw(canvas);
     }
