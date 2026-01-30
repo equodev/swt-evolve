@@ -217,20 +217,25 @@ class _EquoComm implements _EquoCommI {
     if (event == null) {
       return null;
     }
-    final json = jsonDecode(event);
-    if (json['error'] != null) {
-      // print(json['error']);
+    try {
+      final json = jsonDecode(event);
+      if (json['error'] != null) {
+        // print(json['error']);
+        return null;
+      }
+      return SDKMessage(
+        actionId: json['actionId'],
+        payload: json['payload'],
+        error: json['error'] != null
+            ? SDKCommError(
+                code: json['error']['code'], message: json['error']['message'])
+            : null,
+        callbackId: json['callbackId'],
+      );
+    } catch (e) {
+      // not json, ignore
       return null;
     }
-    return SDKMessage(
-      actionId: json['actionId'],
-      payload: json['payload'],
-      error: json['error'] != null
-          ? SDKCommError(
-              code: json['error']['code'], message: json['error']['message'])
-          : null,
-      callbackId: json['callbackId'],
-    );
   }
 
   Future _sendToJava(UserEvent userEvent,
