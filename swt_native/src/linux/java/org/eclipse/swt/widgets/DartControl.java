@@ -2948,7 +2948,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void redraw() {
         checkWidget();
         redraw(false);
-        ControlHelper.paint(this);
     }
 
     void redraw(boolean all) {
@@ -2997,7 +2996,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if ((getApi().style & SWT.MIRRORED) != 0)
             x = getClientWidth() - width - x;
         redrawWidget(x, y, width, height, false, all, false);
-        ControlHelper.paint(this);
     }
 
     void redrawChildren() {
