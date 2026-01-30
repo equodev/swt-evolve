@@ -57,19 +57,31 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     VGC gc = VGC.empty()..id = state.id;
     Widget child = GCSwt<VGC>(value: gc);
 
+    Widget content;
     if (hasValidBounds && constraints != null) {
-      return ConstrainedBox(
+      content = ConstrainedBox(
         constraints: constraints,
+        child: child,
+      );
+    } else {
+      content = SizedBox(
+        width: widgetTheme.defaultWidth,
+        height: widgetTheme.defaultHeight,
         child: child,
       );
     }
 
-    return SizedBox(
-      width: widgetTheme.defaultWidth,
-      height: widgetTheme.defaultHeight,
-      child: child,
+    return Listener(
+      onPointerDown: (_) => widget.sendMouseMouseDown(state, null),
+      onPointerUp: (_) => widget.sendMouseMouseUp(state, null),
+      child: MouseRegion(
+        onEnter: (_) => widget.sendMouseTrackMouseEnter(state, null),
+        onExit: (_) => widget.sendMouseTrackMouseExit(state, null),
+        onHover: (_) => widget.sendMouseTrackMouseHover(state, null),
+        child: content,
+      ),
     );
- }
+  }
 
   Size getBounds() {
     if (hasBounds(state.bounds)) {

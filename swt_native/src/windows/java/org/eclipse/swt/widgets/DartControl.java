@@ -1940,6 +1940,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void redraw() {
         checkWidget();
+        ControlHelper.paint(this);
     }
 
     /**
@@ -1983,6 +1984,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (width <= 0 || height <= 0)
             return;
+        ControlHelper.paint(this);
     }
 
     boolean redrawChildren() {
@@ -4255,17 +4257,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         });
         FlutterBridge.on(this, "Paint", "Paint", e -> {
             getDisplay().asyncExec(() -> {
-                try {
-                    if (!Class.forName("org.eclipse.draw2d.FigureCanvas").isInstance(getApi())) {
-                        Event event = new Event();
-                        event.gc = new GC(this.getApi());
-                        sendEvent(SWT.Paint, event);
-                    }
-                } catch (ClassNotFoundException ex) {
-                    Event event = new Event();
-                    event.gc = new GC(this.getApi());
-                    sendEvent(SWT.Paint, event);
-                }
+                ControlHelper.paint(this, e);
             });
         });
         FlutterBridge.on(this, "Touch", "Touch", e -> {

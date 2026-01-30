@@ -205,14 +205,16 @@ public class Config {
             return true;
         }
 
-        if (defaultImpl == Impl.eclipse) {
+        if (parent instanceof Canvas && clazz == GC.class && ((Canvas) parent).getImpl() instanceof DartCanvas)
+            return true;
+
+        if (defaultImpl == Impl.eclipse)
             return false;
-        }
 
         if (defaultImpl == Impl.force_equo)
             return true;
 
-        return parent instanceof Canvas && clazz == GC.class && ((Canvas) parent).getImpl() instanceof DartCanvas;
+        return false;
     }
 
     public static boolean isEquo(Class<?> clazz, org.eclipse.swt.widgets.Menu parent) {
