@@ -47,7 +47,12 @@ class SwtAccessibleTableHeader extends SwtAccessible implements IAccessibleTable
                         AccessibleControlListener listener = ((SwtAccessible) parent.getImpl()).accessibleControlListeners.get(j);
                         listener.getChild(event);
                     }
-                    ((SwtAccessible) event.accessible.getImpl()).parent = SwtAccessibleTableHeader.this.getApi();
+                    if (event.accessible.getImpl() instanceof DartAccessible) {
+                        ((DartAccessible) event.accessible.getImpl()).parent = SwtAccessibleTableHeader.this.getApi();
+                    }
+                    if (event.accessible.getImpl() instanceof SwtAccessible) {
+                        ((SwtAccessible) event.accessible.getImpl()).parent = SwtAccessibleTableHeader.this.getApi();
+                    }
                     children[i] = event.accessible;
                 }
                 e.children = children;
@@ -70,7 +75,12 @@ class SwtAccessibleTableHeader extends SwtAccessible implements IAccessibleTable
                         AccessibleControlListener listener = ((SwtAccessible) parent.getImpl()).accessibleControlListeners.get(j);
                         listener.getChild(event);
                     }
-                    ((SwtAccessible) event.accessible.getImpl()).parent = SwtAccessibleTableHeader.this.getApi();
+                    if (event.accessible.getImpl() instanceof DartAccessible) {
+                        ((DartAccessible) event.accessible.getImpl()).parent = SwtAccessibleTableHeader.this.getApi();
+                    }
+                    if (event.accessible.getImpl() instanceof SwtAccessible) {
+                        ((SwtAccessible) event.accessible.getImpl()).parent = SwtAccessibleTableHeader.this.getApi();
+                    }
                     children[i] = event.accessible;
                 }
                 // Ask first child for position.

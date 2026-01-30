@@ -155,9 +155,11 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     long accessibilityActionDescription(long id, long sel, long arg0) {
         if (id == accessibleHandle() && accessible != null) {
             NSString actionName = new NSString(arg0);
-            id returnValue = ((SwtAccessible) accessible.getImpl()).internal_accessibilityActionDescription(actionName, ACC.CHILDID_SELF);
-            if (returnValue != null)
-                return returnValue.id;
+            if (accessible.getImpl() instanceof SwtAccessible) {
+                id returnValue = ((SwtAccessible) accessible.getImpl()).internal_accessibilityActionDescription(actionName, ACC.CHILDID_SELF);
+                if (returnValue != null)
+                    return returnValue.id;
+            }
         }
         return super.accessibilityActionDescription(id, sel, arg0);
     }
@@ -167,9 +169,11 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         long returnValue = super.accessibilityActionNames(id, sel);
         if (handleIsAccessible(id)) {
             if (accessible != null) {
-                NSArray baseArray = ((SwtAccessible) accessible.getImpl()).internal_accessibilityActionNames(ACC.CHILDID_SELF);
-                if (baseArray != null)
-                    returnValue = baseArray.id;
+                if (accessible.getImpl() instanceof SwtAccessible) {
+                    NSArray baseArray = ((SwtAccessible) accessible.getImpl()).internal_accessibilityActionNames(ACC.CHILDID_SELF);
+                    if (baseArray != null)
+                        returnValue = baseArray.id;
+                }
             }
             if (hooks(SWT.MenuDetect) || (menu != null && !menu.isDisposed())) {
                 NSArray baseArray = new NSArray(returnValue);
@@ -186,9 +190,11 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     long accessibilityAttributeNames(long id, long sel) {
         long returnValue = 0;
         if (handleIsAccessible(id) && accessible != null) {
-            // See if the accessible is defining the attribute set for the control.
-            id value = ((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeNames(ACC.CHILDID_SELF);
-            returnValue = (value != null ? value.id : 0);
+            if (accessible.getImpl() instanceof SwtAccessible) {
+                // See if the accessible is defining the attribute set for the control.
+                id value = ((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeNames(ACC.CHILDID_SELF);
+                returnValue = (value != null ? value.id : 0);
+            }
             // If not, ask Cocoa for the set for this control.
             if (returnValue == 0)
                 returnValue = super.accessibilityAttributeNames(id, sel);
@@ -214,9 +220,11 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     @Override
     long accessibilityParameterizedAttributeNames(long id, long sel) {
         if (handleIsAccessible(id) && accessible != null) {
-            NSArray returnValue = ((SwtAccessible) accessible.getImpl()).internal_accessibilityParameterizedAttributeNames(ACC.CHILDID_SELF);
-            if (returnValue != null)
-                return returnValue.id;
+            if (accessible.getImpl() instanceof SwtAccessible) {
+                NSArray returnValue = ((SwtAccessible) accessible.getImpl()).internal_accessibilityParameterizedAttributeNames(ACC.CHILDID_SELF);
+                if (returnValue != null)
+                    return returnValue.id;
+            }
         }
         return super.accessibilityParameterizedAttributeNames(id, sel);
     }
@@ -225,8 +233,10 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     void accessibilityPerformAction(long id, long sel, long arg0) {
         if (handleIsAccessible(id) && accessible != null) {
             NSString action = new NSString(arg0);
-            if (((SwtAccessible) accessible.getImpl()).internal_accessibilityPerformAction(action, ACC.CHILDID_SELF))
-                return;
+            if (accessible.getImpl() instanceof SwtAccessible) {
+                if (((SwtAccessible) accessible.getImpl()).internal_accessibilityPerformAction(action, ACC.CHILDID_SELF))
+                    return;
+            }
         }
         super.accessibilityPerformAction(id, sel, arg0);
     }
@@ -235,7 +245,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     long accessibilityFocusedUIElement(long id, long sel) {
         id returnValue = null;
         if (handleIsAccessible(id) && accessible != null) {
-            returnValue = ((SwtAccessible) accessible.getImpl()).internal_accessibilityFocusedUIElement(ACC.CHILDID_SELF);
+            if (accessible.getImpl() instanceof SwtAccessible) {
+                returnValue = ((SwtAccessible) accessible.getImpl()).internal_accessibilityFocusedUIElement(ACC.CHILDID_SELF);
+            }
         }
         // If we had an accessible and it didn't handle the attribute request, let the
         // superclass handle it.
@@ -249,7 +261,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     long accessibilityHitTest(long id, long sel, NSPoint point) {
         id returnValue = null;
         if (handleIsAccessible(id) && accessible != null) {
-            returnValue = ((SwtAccessible) accessible.getImpl()).internal_accessibilityHitTest(point, ACC.CHILDID_SELF);
+            if (accessible.getImpl() instanceof SwtAccessible) {
+                returnValue = ((SwtAccessible) accessible.getImpl()).internal_accessibilityHitTest(point, ACC.CHILDID_SELF);
+            }
         }
         // If we had an accessible and it didn't handle the attribute request, let the
         // superclass handle it.
@@ -265,7 +279,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         long returnValue = 0;
         id returnObject = null;
         if (handleIsAccessible(id) && accessible != null) {
-            returnObject = ((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeValue(attribute, ACC.CHILDID_SELF);
+            if (accessible.getImpl() instanceof SwtAccessible) {
+                returnObject = ((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeValue(attribute, ACC.CHILDID_SELF);
+            }
         }
         // If we had an accessible and it didn't handle the attribute request, let the
         // superclass handle it.
@@ -291,7 +307,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         id returnValue = null;
         if (handleIsAccessible(id) && accessible != null) {
             id parameter = new id(arg1);
-            returnValue = ((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeValue_forParameter(attribute, parameter, ACC.CHILDID_SELF);
+            if (accessible.getImpl() instanceof SwtAccessible) {
+                returnValue = ((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeValue_forParameter(attribute, parameter, ACC.CHILDID_SELF);
+            }
         }
         // If we had an accessible and it didn't handle the attribute request, let the
         // superclass handle it.
@@ -306,7 +324,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         boolean returnValue = false;
         if (handleIsAccessible(id) && accessible != null) {
             NSString attribute = new NSString(arg0);
-            returnValue = ((SwtAccessible) accessible.getImpl()).internal_accessibilityIsAttributeSettable(attribute, ACC.CHILDID_SELF);
+            if (accessible.getImpl() instanceof SwtAccessible) {
+                returnValue = ((SwtAccessible) accessible.getImpl()).internal_accessibilityIsAttributeSettable(attribute, ACC.CHILDID_SELF);
+            }
         }
         if (!returnValue) {
             returnValue = super.accessibilityIsAttributeSettable(id, sel, arg0);
@@ -319,7 +339,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (handleIsAccessible(id) && accessible != null) {
             id value = new id(arg0);
             NSString attribute = new NSString(arg1);
-            ((SwtAccessible) accessible.getImpl()).internal_accessibilitySetValue_forAttribute(value, attribute, ACC.CHILDID_SELF);
+            if (accessible.getImpl() instanceof SwtAccessible) {
+                ((SwtAccessible) accessible.getImpl()).internal_accessibilitySetValue_forAttribute(value, attribute, ACC.CHILDID_SELF);
+            }
         } else {
             super.accessibilitySetValue_forAttribute(id, sel, arg0, arg1);
         }

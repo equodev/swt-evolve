@@ -2,6 +2,8 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.MockFlutterBridge;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.accessibility.Accessible;
+import org.eclipse.swt.accessibility.DartAccessible;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.DartCTabFolder;
 import org.eclipse.swt.graphics.*;
@@ -218,6 +220,15 @@ public class Mocks implements AfterEachCallback {
 
     public static Control control() {
         return shell();
+    }
+
+    public static Accessible accessible() { // TODO: Enabled AccessibleSerializeTest
+        Control ctrl = control();
+        Accessible w = mock(Accessible.class);
+        DartAccessible impl = mock(DartAccessible.class);
+        when(w.getImpl()).thenReturn(impl);
+        when(impl._control()).thenReturn(ctrl);
+        return w;
     }
 
     public static Menu menu() {

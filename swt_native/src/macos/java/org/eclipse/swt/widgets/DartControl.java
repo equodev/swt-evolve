@@ -1779,7 +1779,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     Accessible new_Accessible(Control control) {
-        return SwtAccessible.internal_new_Accessible(this.getApi());
+        return DartAccessible.internal_new_Accessible(this.getApi());
     }
 
     /**

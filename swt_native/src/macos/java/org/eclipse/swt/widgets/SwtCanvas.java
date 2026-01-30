@@ -347,7 +347,9 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
         }
         if (newSelection != null) {
             Accessible acc = getAccessible();
-            ((SwtAccessible) acc.getImpl()).internal_accessibilitySetValue_forAttribute(newSelection, OS.NSAccessibilitySelectedTextAttribute, ACC.CHILDID_SELF);
+            if (acc.getImpl() instanceof SwtAccessible) {
+                ((SwtAccessible) acc.getImpl()).internal_accessibilitySetValue_forAttribute(newSelection, OS.NSAccessibilitySelectedTextAttribute, ACC.CHILDID_SELF);
+            }
             result = true;
         }
         return result;
@@ -647,18 +649,20 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
             if (acc != null) {
                 // This returns null if there are no additional overrides. Since this is only checked to see if there is
                 // a StyledText or other control that supports reading and writing of the selection there's no need to bother
-                // with checking the default values. They will be picked up in the default implementation.
-                NSArray attributes = ((SwtAccessible) acc.getImpl()).internal_accessibilityAttributeNames(ACC.CHILDID_SELF);
-                if (attributes != null) {
-                    boolean canReturn = attributes.containsObject(OS.NSAccessibilitySelectedTextAttribute);
-                    boolean canSend = ((SwtAccessible) acc.getImpl()).internal_accessibilityIsAttributeSettable(OS.NSAccessibilitySelectedTextAttribute, ACC.CHILDID_SELF);
-                    boolean canHandlePBoardType = supportedPboardTypes.containsObject(new id(sendType)) && supportedPboardTypes.containsObject(new id(returnType));
-                    if (canReturn && canSend && canHandlePBoardType) {
-                        id selection = ((SwtAccessible) acc.getImpl()).internal_accessibilityAttributeValue(OS.NSAccessibilitySelectedTextAttribute, ACC.CHILDID_SELF);
-                        if (selection != null) {
-                            NSString selectionString = new NSString(selection);
-                            if (selectionString.length() > 0)
-                                return getApi().view.id;
+                if (acc.getImpl() instanceof SwtAccessible) {
+                    // with checking the default values. They will be picked up in the default implementation.
+                    NSArray attributes = ((SwtAccessible) acc.getImpl()).internal_accessibilityAttributeNames(ACC.CHILDID_SELF);
+                    if (attributes != null) {
+                        boolean canReturn = attributes.containsObject(OS.NSAccessibilitySelectedTextAttribute);
+                        boolean canSend = ((SwtAccessible) acc.getImpl()).internal_accessibilityIsAttributeSettable(OS.NSAccessibilitySelectedTextAttribute, ACC.CHILDID_SELF);
+                        boolean canHandlePBoardType = supportedPboardTypes.containsObject(new id(sendType)) && supportedPboardTypes.containsObject(new id(returnType));
+                        if (canReturn && canSend && canHandlePBoardType) {
+                            id selection = ((SwtAccessible) acc.getImpl()).internal_accessibilityAttributeValue(OS.NSAccessibilitySelectedTextAttribute, ACC.CHILDID_SELF);
+                            if (selection != null) {
+                                NSString selectionString = new NSString(selection);
+                                if (selectionString.length() > 0)
+                                    return getApi().view.id;
+                            }
                         }
                     }
                 }
@@ -715,11 +719,13 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
         boolean result = false;
         if (type.isEqualToString(OS.NSPasteboardTypeString)) {
             Accessible acc = getAccessible();
-            id selection = ((SwtAccessible) acc.getImpl()).internal_accessibilityAttributeValue(OS.NSAccessibilitySelectedTextAttribute, ACC.CHILDID_SELF);
-            if (selection != null) {
-                NSString selectionString = new NSString(selection);
-                if (selectionString.length() > 0)
-                    result = pboard.setString(selectionString, OS.NSPasteboardTypeString);
+            if (acc.getImpl() instanceof SwtAccessible) {
+                id selection = ((SwtAccessible) acc.getImpl()).internal_accessibilityAttributeValue(OS.NSAccessibilitySelectedTextAttribute, ACC.CHILDID_SELF);
+                if (selection != null) {
+                    NSString selectionString = new NSString(selection);
+                    if (selectionString.length() > 0)
+                        result = pboard.setString(selectionString, OS.NSPasteboardTypeString);
+                }
             }
         }
         return result;

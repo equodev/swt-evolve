@@ -24,6 +24,7 @@ import org.eclipse.swt.internal.ole.win32.*;
 import org.eclipse.swt.internal.win32.*;
 import org.eclipse.swt.ole.win32.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class provide a bridge between application
@@ -66,7 +67,7 @@ public class Accessible {
      */
     public Accessible(Accessible parent) {
         this((IIAccessible) null);
-        setImpl(new SwtAccessible(parent, this));
+        setImpl(Config.isEquo(Accessible.class, parent) ? new DartAccessible(parent, this) : new SwtAccessible(parent, this));
     }
 
     /**
@@ -76,17 +77,17 @@ public class Accessible {
     @Deprecated
     protected Accessible() {
         this((IIAccessible) null);
-        setImpl(new SwtAccessible(this));
+        setImpl(Config.isEquo(Accessible.class) ? new DartAccessible(this) : new SwtAccessible(this));
     }
 
     Accessible(Control control) {
         this((IIAccessible) null);
-        setImpl(new SwtAccessible(control, this));
+        setImpl(Config.isEquo(Accessible.class) ? new DartAccessible(control, this) : new SwtAccessible(control, this));
     }
 
     Accessible(Accessible parent, long iaccessible_address) {
         this((IIAccessible) null);
-        setImpl(new SwtAccessible(parent, iaccessible_address, this));
+        setImpl(Config.isEquo(Accessible.class, parent) ? new DartAccessible(parent, iaccessible_address, this) : new SwtAccessible(parent, iaccessible_address, this));
     }
 
     // This method is intentionally commented. We are not providing IAccessibleComponent at this time.
@@ -440,22 +441,6 @@ public class Accessible {
      */
     public void internal_dispose_Accessible() {
         getImpl().internal_dispose_Accessible();
-    }
-
-    /**
-     * Invokes platform specific functionality to handle a window message.
-     * <p>
-     * <b>IMPORTANT:</b> This method is <em>not</em> part of the public
-     * API for <code>Accessible</code>. It is marked public only so that it
-     * can be shared within the packages provided by SWT. It is not
-     * available on all platforms, and should never be called from
-     * application code.
-     * </p>
-     *
-     * @noreference This method is not intended to be referenced by clients.
-     */
-    public long internal_WM_GETOBJECT(long wParam, long lParam) {
-        return getImpl().internal_WM_GETOBJECT(wParam, lParam);
     }
 
     /**

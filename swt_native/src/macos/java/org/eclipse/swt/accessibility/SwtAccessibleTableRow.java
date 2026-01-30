@@ -51,7 +51,12 @@ class SwtAccessibleTableRow extends SwtAccessible implements IAccessibleTableRow
                         listener.getCell(event);
                     }
                     if (event.accessible != null) {
-                        ((SwtAccessible) event.accessible.getImpl()).parent = SwtAccessibleTableRow.this.getApi();
+                        if (event.accessible.getImpl() instanceof DartAccessible) {
+                            ((DartAccessible) event.accessible.getImpl()).parent = SwtAccessibleTableRow.this.getApi();
+                        }
+                        if (event.accessible.getImpl() instanceof SwtAccessible) {
+                            ((SwtAccessible) event.accessible.getImpl()).parent = SwtAccessibleTableRow.this.getApi();
+                        }
                     }
                     children[i] = event.accessible;
                 }
@@ -164,7 +169,12 @@ class SwtAccessibleTableRow extends SwtAccessible implements IAccessibleTableRow
             NSValue sizeObj = (NSValue) ((SwtAccessible) children[j].getImpl()).getSizeAttribute(index);
             NSSize size = sizeObj.sizeValue();
             if (position.x <= e.x && e.x <= position.x + size.width) {
-                ((SwtAccessible) children[j].getImpl()).parent = this.getApi();
+                if (children[j].getImpl() instanceof DartAccessible) {
+                    ((DartAccessible) children[j].getImpl()).parent = this.getApi();
+                }
+                if (children[j].getImpl() instanceof SwtAccessible) {
+                    ((SwtAccessible) children[j].getImpl()).parent = this.getApi();
+                }
                 e.accessible = children[j];
                 break;
             }

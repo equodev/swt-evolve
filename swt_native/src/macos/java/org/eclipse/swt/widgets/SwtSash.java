@@ -121,8 +121,10 @@ public class SwtSash extends SwtControl implements ISash {
                 extraAttributes.addObject(OS.NSAccessibilityTitleAttribute);
                 for (int i = (int) extraAttributes.count() - 1; i >= 0; i--) {
                     NSString attribute = new NSString(extraAttributes.objectAtIndex(i).id);
-                    if (((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeValue(attribute, ACC.CHILDID_SELF) != null) {
-                        ourAttributes.addObject(extraAttributes.objectAtIndex(i));
+                    if (accessible.getImpl() instanceof SwtAccessible) {
+                        if (((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeValue(attribute, ACC.CHILDID_SELF) != null) {
+                            ourAttributes.addObject(extraAttributes.objectAtIndex(i));
+                        }
                     }
                 }
             }
@@ -137,9 +139,11 @@ public class SwtSash extends SwtControl implements ISash {
         long returnValue = 0;
         NSString attributeName = new NSString(arg0);
         if (accessible != null) {
-            id returnObject = ((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeValue(attributeName, ACC.CHILDID_SELF);
-            if (returnObject != null)
-                returnValue = returnObject.id;
+            if (accessible.getImpl() instanceof SwtAccessible) {
+                id returnObject = ((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeValue(attributeName, ACC.CHILDID_SELF);
+                if (returnObject != null)
+                    returnValue = returnObject.id;
+            }
         }
         if (returnValue != 0)
             return returnValue;

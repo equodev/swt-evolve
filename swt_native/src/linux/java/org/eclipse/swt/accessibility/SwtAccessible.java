@@ -119,7 +119,7 @@ public class SwtAccessible implements IAccessible {
     public SwtAccessible(Accessible parent, Accessible api) {
         setApi(api);
         this.parent = checkNull(parent);
-        this.control = ((SwtAccessible) parent.getImpl()).control;
+        this.control = parent.getImpl()._control();
         if (((SwtAccessible) parent.getImpl()).children == null)
             ((SwtAccessible) parent.getImpl()).children = new ArrayList<>();
         ((SwtAccessible) parent.getImpl()).children.add(this.getApi());
@@ -1177,6 +1177,66 @@ public class SwtAccessible implements IAccessible {
         if (accessibleObject != null) {
             accessibleObject.textSelectionChanged();
         }
+    }
+
+    public List<AccessibleListener> _accessibleListeners() {
+        return accessibleListeners;
+    }
+
+    public List<AccessibleControlListener> _accessibleControlListeners() {
+        return accessibleControlListeners;
+    }
+
+    public List<AccessibleTextListener> _accessibleTextListeners() {
+        return accessibleTextListeners;
+    }
+
+    public List<AccessibleActionListener> _accessibleActionListeners() {
+        return accessibleActionListeners;
+    }
+
+    public List<AccessibleEditableTextListener> _accessibleEditableTextListeners() {
+        return accessibleEditableTextListeners;
+    }
+
+    public List<AccessibleHyperlinkListener> _accessibleHyperlinkListeners() {
+        return accessibleHyperlinkListeners;
+    }
+
+    public List<AccessibleTableListener> _accessibleTableListeners() {
+        return accessibleTableListeners;
+    }
+
+    public List<AccessibleTableCellListener> _accessibleTableCellListeners() {
+        return accessibleTableCellListeners;
+    }
+
+    public List<AccessibleTextExtendedListener> _accessibleTextExtendedListeners() {
+        return accessibleTextExtendedListeners;
+    }
+
+    public List<AccessibleValueListener> _accessibleValueListeners() {
+        return accessibleValueListeners;
+    }
+
+    public List<AccessibleAttributeListener> _accessibleAttributeListeners() {
+        return accessibleAttributeListeners;
+    }
+
+    public Accessible _parent() {
+        return parent;
+    }
+
+    public AccessibleObject _accessibleObject() {
+        return accessibleObject;
+    }
+
+    public Control _control() {
+        return control;
+    }
+
+    public List<Accessible> _children() {
+        return children;
     }
 
     public Accessible getApi() {

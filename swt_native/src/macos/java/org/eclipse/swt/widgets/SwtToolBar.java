@@ -120,9 +120,11 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
     long accessibilityAttributeValue(long id, long sel, long arg0) {
         NSString nsAttributeName = new NSString(arg0);
         if (id == accessibleHandle() && accessible != null) {
-            id returnObject = ((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeValue(nsAttributeName, ACC.CHILDID_SELF);
-            if (returnObject != null)
-                return returnObject.id;
+            if (accessible.getImpl() instanceof SwtAccessible) {
+                id returnObject = ((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeValue(nsAttributeName, ACC.CHILDID_SELF);
+                if (returnObject != null)
+                    return returnObject.id;
+            }
         }
         if (nsAttributeName.isEqualToString(OS.NSAccessibilityRoleAttribute) || nsAttributeName.isEqualToString(OS.NSAccessibilityRoleDescriptionAttribute)) {
             NSString role = OS.NSAccessibilityToolbarRole;
