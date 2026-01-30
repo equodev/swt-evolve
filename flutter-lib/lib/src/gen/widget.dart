@@ -12,7 +12,7 @@ abstract class WidgetSwt<V extends VWidget> extends StatefulWidget {
   const WidgetSwt({super.key, required this.value});
 
   void sendEvent(V val, String ev, VEvent? payload) {
-    print("send ${val.swt}/${val.id}/$ev");
+    // print("send ${val.swt}/${val.id}/$ev");
     if (payload == null) {
       EquoCommService.send("${val.swt}/${val.id}/$ev");
     } else {

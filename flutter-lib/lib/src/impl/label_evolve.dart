@@ -88,40 +88,45 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     
     final child = _buildLabelContent(context, widgetTheme, enabled, text, textAlign, hasValidBounds);
 
-    return MouseRegion(
-      onEnter: (_) => widget.sendMouseTrackMouseEnter(state, null),
-      onExit: (_) => widget.sendMouseTrackMouseExit(state, null),
-      child: Focus(
-        onFocusChange: (hasFocus) {
-          if (hasFocus) {
-            widget.sendFocusFocusIn(state, null);
-          } else {
-            widget.sendFocusFocusOut(state, null);
-          }
-        },
-        child: Opacity(
-          opacity: enabled ? 1.0 : widgetTheme.disabledOpacity,
-          child: wrap(
-            Container(
-              constraints: constraints,
-              padding: widgetTheme.padding,
-              margin: widgetTheme.margin,
-              decoration: backgroundColor != null ? BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
-                border: widgetTheme.borderColor != null 
-                    ? Border.all(
-                        color: widgetTheme.borderColor!,
-                        width: widgetTheme.borderWidth,
-                      )
-                    : null,
-              ) : null,
-              child: hasValidBounds
-                  ? Align(
-                      alignment: getAlignmentFromTextAlign(textAlign),
-                      child: child,
-                    )
-                  : child,
+    return Listener(
+      onPointerDown: (_) => widget.sendMouseMouseDown(state, null),
+      onPointerUp: (_) => widget.sendMouseMouseUp(state, null),
+      child: MouseRegion(
+        onEnter: (_) => widget.sendMouseTrackMouseEnter(state, null),
+        onExit: (_) => widget.sendMouseTrackMouseExit(state, null),
+        onHover: (_) => widget.sendMouseTrackMouseHover(state, null),
+        child: Focus(
+          onFocusChange: (hasFocus) {
+            if (hasFocus) {
+              widget.sendFocusFocusIn(state, null);
+            } else {
+              widget.sendFocusFocusOut(state, null);
+            }
+          },
+          child: Opacity(
+            opacity: enabled ? 1.0 : widgetTheme.disabledOpacity,
+            child: wrap(
+              Container(
+                constraints: constraints,
+                padding: widgetTheme.padding,
+                margin: widgetTheme.margin,
+                decoration: backgroundColor != null ? BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
+                  border: widgetTheme.borderColor != null
+                      ? Border.all(
+                    color: widgetTheme.borderColor!,
+                    width: widgetTheme.borderWidth,
+                  )
+                      : null,
+                ) : null,
+                child: hasValidBounds
+                    ? Align(
+                  alignment: getAlignmentFromTextAlign(textAlign),
+                  child: child,
+                )
+                    : child,
+              ),
             ),
           ),
         ),
