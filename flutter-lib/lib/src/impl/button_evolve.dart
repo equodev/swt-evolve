@@ -49,7 +49,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<ButtonThemeExtension>()!;
 
-    final enabled = state.enabled ?? true;
+    final enabled = state.enabled ?? false;
     final text = stripAccelerators(state.text);
 
     if (hasStyle(state.style, SWT.CHECK)) {

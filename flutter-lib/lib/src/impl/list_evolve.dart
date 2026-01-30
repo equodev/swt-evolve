@@ -20,7 +20,7 @@ class ListImpl<T extends ListSwt, V extends VList>
 
     final styleBits = StyleBits(state.style);
     final isMultiSelect = styleBits.has(SWT.MULTI);
-    final isEnabled = state.enabled ?? true;
+    final isEnabled = state.enabled ?? false;
     
     final hasConstraints = hasBounds(state.bounds);
     final width = hasConstraints ? state.bounds!.width.toDouble() : null;

@@ -45,7 +45,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
   List<Widget> buildCells(BuildContext context, TableThemeExtension theme) {
     final cellTexts = state.texts ?? [];
     final rowIndex = _context?.rowIndex ?? 0;
-    final enabled = _context?.parentTableValue.enabled ?? true;
+    final enabled = _context?.parentTableValue.enabled ?? false;
     final isSelected = _context?.tableImpl?.isItemSelected(state) ?? false;
     final hasCheckStyle = _context?.parentTableValue.style != null &&
         (_context!.parentTableValue.style! & SWT.CHECK) != 0;
@@ -93,12 +93,12 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
 
     return GestureDetector(
       onTap: () {
-        if (!isEditing && _context?.tableImpl != null) {
+        if (!isEditing && enabled && _context?.tableImpl != null) {
           _context!.tableImpl!.handleRowTap(rowIndex, state);
         }
       },
       onDoubleTap: () {
-        if (!isEditing && _context?.tableImpl != null) {
+        if (!isEditing && enabled && _context?.tableImpl != null) {
           _context!.tableImpl!.startEditing(rowIndex, columnIndex, cellText);
         }
       },
@@ -161,6 +161,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         grayed: grayed,
         enabled: enabled,
         onChanged: () {
+          if (!enabled) return;
           final newCheckedState = grayed ? false : !checked;
           state.checked = newCheckedState;
           if (_context?.tableImpl != null) {

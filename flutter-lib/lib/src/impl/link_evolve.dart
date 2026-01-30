@@ -12,7 +12,7 @@ class LinkImpl<T extends LinkSwt, V extends VLink> extends ControlImpl<T, V> {
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<LinkThemeExtension>()!;
 
-    final enabled = state.enabled ?? true;
+    final enabled = state.enabled ?? false;
 
     return _buildLink(context, widgetTheme, enabled);
   }

@@ -40,7 +40,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
     final widgetTheme = Theme.of(context).extension<MenuItemThemeExtension>()!;
     final menuTheme = Theme.of(context).extension<MenuThemeExtension>()!;
     final style = StyleBits(state.style);
-    final isEnabled = state.enabled ?? true;
+    final isEnabled = state.enabled ?? false;
 
     if (_isRadio) {
       _registerRadioCallback(context);

@@ -73,7 +73,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo> extends CompositeImpl<T, V
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).extension<ComboThemeExtension>()!;
-    final bool isEnabled = state.enabled ?? true;
+    final bool isEnabled = state.enabled ?? false;
     final styleBits = StyleBits(state.style);
     final bool isSimple = styleBits.has(SWT.SIMPLE);
     final bool isReadOnly = styleBits.has(SWT.READ_ONLY);

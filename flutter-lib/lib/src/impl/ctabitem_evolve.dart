@@ -48,10 +48,14 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     final imageWidget = _buildImageWidget(context, itemTheme, folderTheme, state.image);
 
     final text = stripAccelerators(state.text) ?? "";
-    final isSelected = TabItemContext.of(context)?.isSelected ?? false;
-    final textColor = isSelected
-        ? itemTheme.tabItemSelectedTextColor
-        : itemTheme.tabItemTextColor;
+    final tabItemContext = TabItemContext.of(context);
+    final isSelected = tabItemContext?.isSelected ?? false;
+    final isEnabled = tabItemContext?.isEnabled ?? true;
+    final textColor = !isEnabled
+        ? itemTheme.tabItemDisabledTextColor
+        : (isSelected
+            ? itemTheme.tabItemSelectedTextColor
+            : itemTheme.tabItemTextColor);
     final textStyle = itemTheme.tabItemTextStyle?.copyWith(color: textColor)
         ?? TextStyle(color: textColor);
 
