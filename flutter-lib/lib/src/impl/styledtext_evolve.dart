@@ -263,6 +263,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         state.font,
         context,
         color: defaultTextColor,
+        applyDpiScaling: true,
       );
     }
 
@@ -273,6 +274,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         renderer!.regularFont,
         context,
         color: defaultTextColor,
+        applyDpiScaling: true,
       );
     }
 

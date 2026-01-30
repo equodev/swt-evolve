@@ -28,10 +28,12 @@ class FontUtils {
 
   /// Create a TextStyle from VFont and optional color.
   /// If no font is provided, returns the system default font with size 12.
+  /// Set [applyDpiScaling] to true for StyledText widgets that need DPI conversion.
   static TextStyle textStyleFromVFont(
     VFont? vFont,
     BuildContext context, {
     Color? color,
+    bool applyDpiScaling = false,
   }) {
     final defaultStyle = DefaultTextStyle.of(context).style;
 
@@ -40,13 +42,15 @@ class FontUtils {
     }
 
     final fontData = vFont.fontData!.first;
-    return _createTextStyleFromFontData(fontData, color: color);
+    return _createTextStyleFromFontData(fontData, color: color, applyDpiScaling: applyDpiScaling);
   }
 
-  /// Create a TextStyle from VFontData and optional color
+  /// Create a TextStyle from VFontData and optional color.
+  /// Set [applyDpiScaling] to true for StyledText widgets that need DPI conversion.
   static TextStyle _createTextStyleFromFontData(
     VFontData fontData, {
     Color? color,
+    bool applyDpiScaling = false,
   }) {
     const defaultFontSize = 12.0;
     const defaultFontName = 'System';
@@ -54,10 +58,10 @@ class FontUtils {
     final fontName = fontData.name?.isNotEmpty == true
         ? fontData.name!
         : defaultFontName;
-    // SWT font height is in points, Flutter fontSize is in logical pixels
-    // Convert points to pixels: pixels = points × (96 DPI / 72 points per inch)
     final fontHeightPoints = fontData.height?.toDouble() ?? defaultFontSize;
-    final fontSize = fontHeightPoints * (96 / 72);
+    // Only apply DPI conversion for StyledText widgets
+    // Convert points to pixels: pixels = points × (96 DPI / 72 points per inch)
+    final fontSize = applyDpiScaling ? fontHeightPoints * (96 / 72) : fontHeightPoints;
     final swtStyle = fontData.style ?? 0;
 
     final (fontWeight, fontStyle) = convertSwtFontStyle(swtStyle);
