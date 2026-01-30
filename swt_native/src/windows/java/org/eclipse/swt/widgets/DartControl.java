@@ -1940,7 +1940,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void redraw() {
         checkWidget();
-        ControlHelper.paint(this);
     }
 
     /**
@@ -1984,7 +1983,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (width <= 0 || height <= 0)
             return;
-        ControlHelper.paint(this);
     }
 
     boolean redrawChildren() {

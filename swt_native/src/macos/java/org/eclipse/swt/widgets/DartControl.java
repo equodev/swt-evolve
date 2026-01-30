@@ -1898,7 +1898,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void redraw() {
         checkWidget();
-        ControlHelper.paint(this);
     }
 
     void redraw(boolean children) {
@@ -1943,7 +1942,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void redraw(int x, int y, int width, int height, boolean all) {
         checkWidget();
-        ControlHelper.paint(this);
     }
 
     long regionToRects(long message, long rgn, long r, long path) {

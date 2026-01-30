@@ -367,6 +367,18 @@ public class DartCanvas extends DartComposite implements ICanvas {
     }
 
     @Override
+    public void redraw() {
+        super.redraw();
+        ControlHelper.paint(this);
+    }
+
+    @Override
+    public void redraw(int x, int y, int width, int height, boolean all) {
+        super.redraw(x, y, width, height, all);
+        ControlHelper.paint(this);
+    }
+
+    @Override
     void checkBuffered() {
         if ((getApi().state & CANVAS) == 0) {
             getApi().style &= ~SWT.DOUBLE_BUFFERED;
