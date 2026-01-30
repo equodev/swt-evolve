@@ -66,8 +66,9 @@ class ImageUtils {
     BoxConstraints? constraints,
     bool renderAsIcon = true,
   }) {
+    final preserveColors = getConfigFlags().preserve_icon_colors ?? false;
     final cacheKey = renderAsIcon
-        ? 'icon-${bytes?.length ?? file ?? 'none'}-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled'
+        ? 'icon-${bytes?.length ?? file ?? 'none'}-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled-$preserveColors'
         : (file != null)
         ? 'img-${file}-${width ?? 'default'}-${height ?? 'default'}-$enabled'
         : 'img-${bytes?.length ?? 'none'}-${width ?? 'default'}-${height ?? 'default'}-$enabled';
@@ -82,19 +83,39 @@ class ImageUtils {
       if (renderAsIcon) {
         // Icon rendering (for toolbars)
         final imageSize = size ?? AppSizes.icon;
-        final imageColor = color ?? AppColors.getColor(enabled);
 
-        Widget iconContent = SizedBox(
-          width: imageSize,
-          height: imageSize,
-          child: ImageIcon(
-            MemoryImage(bytes!),
-            size: imageSize,
-            color: imageColor,
-          ),
-        );
+        Widget iconContent;
 
-        if (color == null) {
+        if (color != null || !preserveColors) {
+          // Apply color filter if color is explicitly provided or preserve_icon_colors is false
+          final imageColor = color ?? AppColors.getColor(enabled);
+          iconContent = SizedBox(
+            width: imageSize,
+            height: imageSize,
+            child: ImageIcon(
+              MemoryImage(bytes!),
+              size: imageSize,
+              color: imageColor,
+            ),
+          );
+          if (color == null) {
+            iconContent = Opacity(
+              opacity: enabled ? 1.0 : 0.5,
+              child: iconContent,
+            );
+          }
+        } else {
+          // preserve_icon_colors=true and no explicit color - show image as-is
+          iconContent = SizedBox(
+            width: imageSize,
+            height: imageSize,
+            child: Image.memory(
+              bytes!,
+              width: imageSize,
+              height: imageSize,
+              fit: BoxFit.contain,
+            ),
+          );
           iconContent = Opacity(
             opacity: enabled ? 1.0 : 0.5,
             child: iconContent,

@@ -1099,6 +1099,10 @@ public class DartToolItem extends DartItem implements IToolItem {
         return width;
     }
 
+    static final int INSET = 3;
+
+    static final int ARROW_WIDTH = 5;
+
     private void sendOpenMenu(Event e) {
         if (e == null)
             e = new Event();

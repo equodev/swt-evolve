@@ -17,6 +17,8 @@ public class ConfigFlags {
 
     public boolean use_special_dropdown_button;
 
+    public boolean preserve_icon_colors;
+
     public static ConfigFlags use_swt_fonts(boolean v) {
         ConfigFlags configFlags = new ConfigFlags();
         configFlags.use_swt_fonts = v;
@@ -31,6 +33,7 @@ public class ConfigFlags {
                 ", assets_path=" + assets_path +
                 ", use_swt_colors=" + use_swt_colors +
                 ", use_swt_fonts=" + use_swt_fonts +
+                ", preserve_icon_colors=" + preserve_icon_colors +
                 '}';
     }
 }

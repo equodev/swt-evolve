@@ -40,6 +40,8 @@ public final class DartFont extends DartResource implements IFont {
 
     DartFont(Device device, Font api) {
         super(device, api);
+        FontData systemFontData = new FontData("System", 9, SWT.NORMAL);
+        fontData[0] = systemFontData;
     }
 
     /**
