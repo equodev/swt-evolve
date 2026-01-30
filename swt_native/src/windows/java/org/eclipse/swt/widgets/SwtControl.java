@@ -5493,9 +5493,11 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 
     LRESULT WM_GETOBJECT(long wParam, long lParam) {
         if (accessible != null) {
-            long result = accessible.internal_WM_GETOBJECT(wParam, lParam);
-            if (result != 0)
-                return new LRESULT(result);
+            if (accessible.getImpl() instanceof SwtAccessible) {
+                long result = ((SwtAccessible) accessible.getImpl()).internal_WM_GETOBJECT(wParam, lParam);
+                if (result != 0)
+                    return new LRESULT(result);
+            }
         }
         return null;
     }

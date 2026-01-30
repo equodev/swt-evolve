@@ -528,7 +528,7 @@ class AccessibleObject {
             List<AccessibleEditableTextListener> listeners = ((SwtAccessible) accessible.getImpl()).accessibleEditableTextListeners;
             int length = size(listeners);
             if (length > 0) {
-                Display display = ((SwtAccessible) accessible.getImpl()).control.getDisplay();
+                Display display = accessible.getImpl()._control().getDisplay();
                 long fontDesc = OS.pango_font_description_new();
                 boolean createFont = false;
                 TextStyle style = new TextStyle();
@@ -1239,7 +1239,7 @@ class AccessibleObject {
                 int posinset = (event.groupIndex != -1) ? event.groupIndex : 0;
                 if (setsize == 0 && posinset == 0) {
                     /* Determine position and count for radio buttons. */
-                    Control control = ((SwtAccessible) accessible.getImpl()).control;
+                    Control control = accessible.getImpl()._control();
                     if (control instanceof Button && ((control.getStyle() & SWT.RADIO) != 0)) {
                         Control[] children = control.getParent().getChildren();
                         posinset = 1;
@@ -4657,7 +4657,7 @@ class AccessibleObject {
             return null;
         if (object.accessible == null)
             return null;
-        Control control = ((SwtAccessible) object.accessible.getImpl()).control;
+        Control control = object.accessible.getImpl()._control();
         if (control == null || control.isDisposed())
             return null;
         return object;
@@ -4856,9 +4856,10 @@ class AccessibleObject {
     }
 
     void addRelation(int type, Accessible target) {
-        AccessibleObject targetAccessibleObject = ((SwtAccessible) target.getImpl()).getAccessibleObject();
-        if (targetAccessibleObject != null) {
-            /*
+        if (target.getImpl() instanceof SwtAccessible) {
+            AccessibleObject targetAccessibleObject = ((SwtAccessible) target.getImpl()).getAccessibleObject();
+            if (targetAccessibleObject != null) {
+                /*
 			 * FIXME: Workaround for https://bugs.eclipse.org/312451
 			 *
 			 * This null check is conceptually wrong and will probably cause
@@ -4866,7 +4867,8 @@ class AccessibleObject {
 			 * circumstances the target doesn't have an accessibleObject, that's
 			 * the best way we know to avoid throwing an NPE.
 			 */
-            ATK.atk_object_add_relationship(atkHandle, toATKRelation(type), targetAccessibleObject.atkHandle);
+                ATK.atk_object_add_relationship(atkHandle, toATKRelation(type), targetAccessibleObject.atkHandle);
+            }
         }
     }
 
@@ -4890,9 +4892,10 @@ class AccessibleObject {
     }
 
     void removeRelation(int type, Accessible target) {
-        AccessibleObject targetAccessibleObject = ((SwtAccessible) target.getImpl()).getAccessibleObject();
-        if (targetAccessibleObject != null) {
-            /*
+        if (target.getImpl() instanceof SwtAccessible) {
+            AccessibleObject targetAccessibleObject = ((SwtAccessible) target.getImpl()).getAccessibleObject();
+            if (targetAccessibleObject != null) {
+                /*
 			 * FIXME: Workaround for https://bugs.eclipse.org/312451
 			 *
 			 * This null check is conceptually wrong and will probably cause
@@ -4900,7 +4903,8 @@ class AccessibleObject {
 			 * circumstances the target doesn't have an accessibleObject, that's
 			 * the best way we know to avoid throwing an NPE.
 			 */
-            ATK.atk_object_remove_relationship(atkHandle, toATKRelation(type), targetAccessibleObject.atkHandle);
+                ATK.atk_object_remove_relationship(atkHandle, toATKRelation(type), targetAccessibleObject.atkHandle);
+            }
         }
     }
 

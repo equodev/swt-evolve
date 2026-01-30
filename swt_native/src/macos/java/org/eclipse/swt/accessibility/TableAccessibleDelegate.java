@@ -82,16 +82,18 @@ class TableAccessibleDelegate {
                 Monitor primaryMonitor = SwtDisplay.getCurrent().getPrimaryMonitor();
                 testPoint.y = primaryMonitor.getBounds().height - e.y;
                 for (AccessibleTableRow row : childRowToIdMap.values()) {
-                    NSValue locationValue = new NSValue(((SwtAccessible) row.getImpl()).getPositionAttribute(ACC.CHILDID_SELF).id);
-                    NSPoint location = locationValue.pointValue();
-                    NSValue sizeValue = new NSValue(((SwtAccessible) row.getImpl()).getSizeAttribute(ACC.CHILDID_SELF));
-                    NSSize size = sizeValue.sizeValue();
-                    if (location.y < testPoint.y && testPoint.y < (location.y + size.height)) {
-                        AccessibleControlEvent e2 = new AccessibleControlEvent(e.getSource());
-                        e2.x = (int) testPoint.x;
-                        e2.y = (int) testPoint.y;
-                        ((SwtAccessibleTableRow) row.getImpl()).getChildAtPoint(e);
-                        break;
+                    if (row.getImpl() instanceof SwtAccessible) {
+                        NSValue locationValue = new NSValue(((SwtAccessible) row.getImpl()).getPositionAttribute(ACC.CHILDID_SELF).id);
+                        NSPoint location = locationValue.pointValue();
+                        NSValue sizeValue = new NSValue(((SwtAccessible) row.getImpl()).getSizeAttribute(ACC.CHILDID_SELF));
+                        NSSize size = sizeValue.sizeValue();
+                        if (location.y < testPoint.y && testPoint.y < (location.y + size.height)) {
+                            AccessibleControlEvent e2 = new AccessibleControlEvent(e.getSource());
+                            e2.x = (int) testPoint.x;
+                            e2.y = (int) testPoint.y;
+                            ((SwtAccessibleTableRow) row.getImpl()).getChildAtPoint(e);
+                            break;
+                        }
                     }
                 }
             }
@@ -107,15 +109,17 @@ class TableAccessibleDelegate {
                 if (event.selected != null) {
                     int[] selected = event.selected;
                     for (int i = 0; i < selected.length; i++) {
-                        if (selected[i] == ((SwtAccessible) tableAccessible.getImpl()).index) {
+                        if (selected[i] == tableAccessible.getImpl()._index()) {
                             state |= ACC.STATE_SELECTED;
                             break;
                         }
                     }
                 }
-                NSNumber focusedObject = (NSNumber) ((SwtAccessible) tableAccessible.getImpl()).getFocusedAttribute(ACC.CHILDID_SELF);
-                if (focusedObject.boolValue()) {
-                    state |= ACC.STATE_FOCUSED;
+                if (tableAccessible.getImpl() instanceof SwtAccessible) {
+                    NSNumber focusedObject = (NSNumber) ((SwtAccessible) tableAccessible.getImpl()).getFocusedAttribute(ACC.CHILDID_SELF);
+                    if (focusedObject.boolValue()) {
+                        state |= ACC.STATE_FOCUSED;
+                    }
                 }
                 e.detail = state;
             }
@@ -244,7 +248,7 @@ class TableAccessibleDelegate {
     void release() {
         if (childRowToIdMap != null) {
             for (AccessibleTableRow delegate : childRowToIdMap.values()) {
-                SWTAccessibleDelegate childDelegate = ((SwtAccessible) delegate.getImpl()).delegate;
+                SWTAccessibleDelegate childDelegate = delegate.getImpl()._delegate();
                 if (childDelegate != null) {
                     childDelegate.internal_dispose_SWTAccessibleDelegate();
                     childDelegate.release();
@@ -255,7 +259,7 @@ class TableAccessibleDelegate {
         }
         if (childColumnToIdMap != null) {
             for (AccessibleTableColumn delegate : childColumnToIdMap.values()) {
-                SWTAccessibleDelegate childDelegate = ((SwtAccessible) delegate.getImpl()).delegate;
+                SWTAccessibleDelegate childDelegate = delegate.getImpl()._delegate();
                 if (childDelegate != null) {
                     childDelegate.internal_dispose_SWTAccessibleDelegate();
                     childDelegate.release();

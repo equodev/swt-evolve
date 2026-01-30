@@ -22,6 +22,7 @@ import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class provide a bridge between application
@@ -64,7 +65,7 @@ public class Accessible {
      */
     public Accessible(Accessible parent) {
         this((IAccessible) null);
-        setImpl(new SwtAccessible(parent, this));
+        setImpl(Config.isEquo(Accessible.class, parent) ? new DartAccessible(parent, this) : new SwtAccessible(parent, this));
     }
 
     /**
@@ -74,12 +75,12 @@ public class Accessible {
     @Deprecated
     protected Accessible() {
         this((IAccessible) null);
-        setImpl(new SwtAccessible(this));
+        setImpl(Config.isEquo(Accessible.class) ? new DartAccessible(this) : new SwtAccessible(this));
     }
 
     Accessible(Control control) {
         this((IAccessible) null);
-        setImpl(new SwtAccessible(control, this));
+        setImpl(Config.isEquo(Accessible.class) ? new DartAccessible(control, this) : new SwtAccessible(control, this));
     }
 
     /**

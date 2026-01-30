@@ -96,7 +96,9 @@ class SWTAccessibleDelegate extends NSObject {
     NSArray accessibilityActionNames() {
         if (actionNames != null)
             return retainedAutoreleased(actionNames);
-        actionNames = ((SwtAccessible) accessible.getImpl()).internal_accessibilityActionNames(childID);
+        if (accessible.getImpl() instanceof SwtAccessible) {
+            actionNames = ((SwtAccessible) accessible.getImpl()).internal_accessibilityActionNames(childID);
+        }
         actionNames.retain();
         return retainedAutoreleased(actionNames);
     }
@@ -104,7 +106,9 @@ class SWTAccessibleDelegate extends NSObject {
     NSArray accessibilityAttributeNames() {
         if (attributeNames != null)
             return retainedAutoreleased(attributeNames);
-        attributeNames = ((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeNames(childID);
+        if (accessible.getImpl() instanceof SwtAccessible) {
+            attributeNames = ((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeNames(childID);
+        }
         if (attributeNames == null)
             return null;
         attributeNames.retain();
@@ -112,20 +116,28 @@ class SWTAccessibleDelegate extends NSObject {
     }
 
     id accessibilityAttributeValue(NSString attribute) {
-        return ((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeValue(attribute, childID);
+        if (accessible.getImpl() instanceof SwtAccessible) {
+            return ((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeValue(attribute, childID);
+        } else
+            return null;
     }
 
     // parameterized attribute methods
     NSArray accessibilityParameterizedAttributeNames() {
         if (parameterizedAttributeNames != null)
             return retainedAutoreleased(parameterizedAttributeNames);
-        parameterizedAttributeNames = ((SwtAccessible) accessible.getImpl()).internal_accessibilityParameterizedAttributeNames(childID);
+        if (accessible.getImpl() instanceof SwtAccessible) {
+            parameterizedAttributeNames = ((SwtAccessible) accessible.getImpl()).internal_accessibilityParameterizedAttributeNames(childID);
+        }
         parameterizedAttributeNames.retain();
         return retainedAutoreleased(parameterizedAttributeNames);
     }
 
     id accessibilityAttributeValue_forParameter(NSString attribute, id parameter) {
-        return ((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeValue_forParameter(attribute, parameter, childID);
+        if (accessible.getImpl() instanceof SwtAccessible) {
+            return ((SwtAccessible) accessible.getImpl()).internal_accessibilityAttributeValue_forParameter(attribute, parameter, childID);
+        } else
+            return null;
     }
 
     // Return YES if the UIElement doesn't show up to the outside world - i.e. its parent should return the UIElement's children as its own - cutting the UIElement out. E.g. NSControls are ignored when they are single-celled.
@@ -134,29 +146,45 @@ class SWTAccessibleDelegate extends NSObject {
     }
 
     boolean accessibilityIsAttributeSettable(NSString attribute) {
-        return ((SwtAccessible) accessible.getImpl()).internal_accessibilityIsAttributeSettable(attribute, childID);
+        if (accessible.getImpl() instanceof SwtAccessible) {
+            return ((SwtAccessible) accessible.getImpl()).internal_accessibilityIsAttributeSettable(attribute, childID);
+        } else
+            return false;
     }
 
     // Returns the deepest descendant of the UIElement hierarchy that contains the point. You can assume the point has already been determined to lie within the receiver. Override this method to do deeper hit testing within a UIElement - e.g. a NSMatrix would test its cells. The point is bottom-left relative screen coordinates.
     id accessibilityHitTest(NSPoint point) {
-        return ((SwtAccessible) accessible.getImpl()).internal_accessibilityHitTest(point, childID);
+        if (accessible.getImpl() instanceof SwtAccessible) {
+            return ((SwtAccessible) accessible.getImpl()).internal_accessibilityHitTest(point, childID);
+        } else
+            return null;
     }
 
     // Returns the UI Element that has the focus. You can assume that the search for the focus has already been narrowed down to the reciever. Override this method to do a deeper search with a UIElement - e.g. a NSMatrix would determine if one of its cells has the focus.
     id accessibilityFocusedUIElement() {
-        return ((SwtAccessible) accessible.getImpl()).internal_accessibilityFocusedUIElement(childID);
+        if (accessible.getImpl() instanceof SwtAccessible) {
+            return ((SwtAccessible) accessible.getImpl()).internal_accessibilityFocusedUIElement(childID);
+        } else
+            return null;
     }
 
     void accessibilityPerformAction(NSString action) {
-        ((SwtAccessible) accessible.getImpl()).internal_accessibilityPerformAction(action, childID);
+        if (accessible.getImpl() instanceof SwtAccessible) {
+            ((SwtAccessible) accessible.getImpl()).internal_accessibilityPerformAction(action, childID);
+        }
     }
 
     id accessibilityActionDescription(NSString action) {
-        return ((SwtAccessible) accessible.getImpl()).internal_accessibilityActionDescription(action, childID);
+        if (accessible.getImpl() instanceof SwtAccessible) {
+            return ((SwtAccessible) accessible.getImpl()).internal_accessibilityActionDescription(action, childID);
+        } else
+            return null;
     }
 
     void accessibilitySetValue_forAttribute(id value, NSString attribute) {
-        ((SwtAccessible) accessible.getImpl()).internal_accessibilitySetValue_forAttribute(value, attribute, childID);
+        if (accessible.getImpl() instanceof SwtAccessible) {
+            ((SwtAccessible) accessible.getImpl()).internal_accessibilitySetValue_forAttribute(value, attribute, childID);
+        }
     }
 
     static NSArray retainedAutoreleased(NSArray inObject) {

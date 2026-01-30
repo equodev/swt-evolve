@@ -6,7 +6,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.widgets.*;
 
-public interface IIAccessible {
+public interface IIAccessible extends ImplAccessible {
 
     /**
      * Adds the listener to the collection of listeners who will
@@ -291,20 +291,6 @@ public interface IIAccessible {
      * @noreference This method is not intended to be referenced by clients.
      */
     void internal_dispose_Accessible();
-
-    /**
-     * Invokes platform specific functionality to handle a window message.
-     * <p>
-     * <b>IMPORTANT:</b> This method is <em>not</em> part of the public
-     * API for <code>Accessible</code>. It is marked public only so that it
-     * can be shared within the packages provided by SWT. It is not
-     * available on all platforms, and should never be called from
-     * application code.
-     * </p>
-     *
-     * @noreference This method is not intended to be referenced by clients.
-     */
-    long internal_WM_GETOBJECT(long wParam, long lParam);
 
     /**
      * Removes the listener from the collection of listeners who will

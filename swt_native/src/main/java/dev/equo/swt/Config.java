@@ -1,5 +1,7 @@
 package dev.equo.swt;
 
+import org.eclipse.swt.accessibility.Accessible;
+import org.eclipse.swt.accessibility.DartAccessible;
 import org.eclipse.swt.custom.*;
 import org.eclipse.swt.widgets.*;
 import org.eclipse.swt.graphics.*;
@@ -20,7 +22,7 @@ public class Config {
 
     private static final String os = System.getProperty("os.name").toLowerCase();
     static final Map<Class<?>, Impl> equoEnabled;
-    private static boolean forceEclipse = false;
+    private static boolean forceEclipse = Boolean.getBoolean("dev.equo.swt.forceEclipse");
 
     static boolean idTracker = Boolean.getBoolean("dev.equo.swt.tracker");
     static IdWidgetTracker widgetTracker;
@@ -307,6 +309,10 @@ public class Config {
         if (parent != null && parent.getImpl().getClass().getSimpleName().startsWith(DART) && !isCTabFolderBody(clazz, parent))
             return true;
         return isEquo(clazz);
+    }
+
+    public static boolean isEquo(Class<Accessible> accessibleClass, Accessible parent) {
+        return parent != null && parent.getImpl() instanceof DartAccessible;
     }
 
     private static final String E4_MAIN_TOOLBAR_CLASS = "org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout";

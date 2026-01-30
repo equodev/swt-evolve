@@ -262,6 +262,15 @@ public class SerializeTestBase {
         inst.fill();
     }
 
+    protected void setAll(Accessible a) {
+        InstancioObjectApi<Accessible> inst = Instancio.ofObject(a)
+                .withSettings(settings)
+                .ignore(Select.setter(Accessible.class, "setImpl"))
+                .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
+                .generate(Select.all(int.class), gen -> gen.ints().range(1, 1000));
+        inst.fill();
+    }
+
     protected void setAll(org.eclipse.swt.widgets.ToolTip tt) {
         InstancioObjectApi<org.eclipse.swt.widgets.ToolTip> inst = Instancio.ofObject(tt)
                 .withSettings(settings)

@@ -6,7 +6,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
-public interface IAccessible {
+public interface IAccessible extends ImplAccessible {
 
     /**
      * Adds the listener to the collection of listeners who will

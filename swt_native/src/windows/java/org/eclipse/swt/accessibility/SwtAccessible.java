@@ -148,7 +148,7 @@ public class SwtAccessible implements IIAccessible {
     public SwtAccessible(Accessible parent, Accessible api) {
         setApi(api);
         this.parent = checkNull(parent);
-        this.control = ((SwtAccessible) parent.getImpl()).control;
+        this.control = parent.getImpl()._control();
         ((SwtAccessible) parent.getImpl()).children.add(this.getApi());
         AddRef();
     }
@@ -2759,24 +2759,34 @@ public class SwtAccessible implements IIAccessible {
                     OS.MoveMemory(addr, ppdispChild, C.PTR_SIZEOF);
                     boolean found = false;
                     for (Accessible accChild : children) {
-                        if (((SwtAccessible) accChild.getImpl()).item == item) {
+                        if (accChild.getImpl()._item() == item) {
                             /*
 							 * MSAA uses a new accessible for the child
 							 * so we dispose the old and use the new.
 							 */
                             accChild.dispose();
-                            ((SwtAccessible) accChild.getImpl()).item = null;
+                            if (accChild.getImpl() instanceof DartAccessible) {
+                                ((DartAccessible) accChild.getImpl()).item = null;
+                            }
+                            if (accChild.getImpl() instanceof SwtAccessible) {
+                                ((SwtAccessible) accChild.getImpl()).item = null;
+                            }
                             found = true;
                             break;
                         }
                     }
                     osAccessible = new Accessible(this.getApi(), addr[0]);
-                    ((SwtAccessible) osAccessible.getImpl()).item = item;
+                    if (osAccessible.getImpl() instanceof DartAccessible) {
+                        ((DartAccessible) osAccessible.getImpl()).item = item;
+                    }
+                    if (osAccessible.getImpl() instanceof SwtAccessible) {
+                        ((SwtAccessible) osAccessible.getImpl()).item = item;
+                    }
                     if (!found) {
                         item.addListener(SWT.Dispose, e -> {
                             List<Accessible> list = new ArrayList<>(children);
                             for (Accessible accChild : list) {
-                                if (((SwtAccessible) accChild.getImpl()).item == item) {
+                                if (accChild.getImpl()._item() == item) {
                                     accChild.dispose();
                                 }
                             }
@@ -5943,8 +5953,13 @@ public class SwtAccessible implements IIAccessible {
             listener.getChild(event);
         }
         Accessible accessible = event.accessible;
-        if (accessible != null && ((SwtAccessible) accessible.getImpl()).uniqueID == -1) {
-            ((SwtAccessible) accessible.getImpl()).uniqueID = childID;
+        if (accessible != null && accessible.getImpl()._uniqueID() == -1) {
+            if (accessible.getImpl() instanceof DartAccessible) {
+                ((DartAccessible) accessible.getImpl()).uniqueID = childID;
+            }
+            if (accessible.getImpl() instanceof SwtAccessible) {
+                ((SwtAccessible) accessible.getImpl()).uniqueID = childID;
+            }
         }
     }
 
@@ -7177,6 +7192,102 @@ public class SwtAccessible implements IIAccessible {
     }
 
     // END DEBUG CODE
+    public int _refCount() {
+        return refCount;
+    }
+
+    public int _enumIndex() {
+        return enumIndex;
+    }
+
+    public Runnable _timer() {
+        return timer;
+    }
+
+    public List<AccessibleListener> _accessibleListeners() {
+        return accessibleListeners;
+    }
+
+    public List<AccessibleControlListener> _accessibleControlListeners() {
+        return accessibleControlListeners;
+    }
+
+    public List<AccessibleTextListener> _accessibleTextListeners() {
+        return accessibleTextListeners;
+    }
+
+    public List<AccessibleActionListener> _accessibleActionListeners() {
+        return accessibleActionListeners;
+    }
+
+    public List<AccessibleEditableTextListener> _accessibleEditableTextListeners() {
+        return accessibleEditableTextListeners;
+    }
+
+    public List<AccessibleHyperlinkListener> _accessibleHyperlinkListeners() {
+        return accessibleHyperlinkListeners;
+    }
+
+    public List<AccessibleTableListener> _accessibleTableListeners() {
+        return accessibleTableListeners;
+    }
+
+    public List<AccessibleTableCellListener> _accessibleTableCellListeners() {
+        return accessibleTableCellListeners;
+    }
+
+    public List<AccessibleTextExtendedListener> _accessibleTextExtendedListeners() {
+        return accessibleTextExtendedListeners;
+    }
+
+    public List<AccessibleValueListener> _accessibleValueListeners() {
+        return accessibleValueListeners;
+    }
+
+    public List<AccessibleAttributeListener> _accessibleAttributeListeners() {
+        return accessibleAttributeListeners;
+    }
+
+    public Relation[] _relations() {
+        return relations;
+    }
+
+    public Object[] _variants() {
+        return variants;
+    }
+
+    public Accessible _parent() {
+        return parent;
+    }
+
+    public List<Accessible> _children() {
+        return children;
+    }
+
+    public Control _control() {
+        return control;
+    }
+
+    public int _uniqueID() {
+        return uniqueID;
+    }
+
+    public int[] _tableChange() {
+        return tableChange;
+    }
+
+    public Object[] _textDeleted() {
+        return textDeleted;
+    }
+
+    public Object[] _textInserted() {
+        return textInserted;
+    }
+
+    public ToolItem _item() {
+        return item;
+    }
+
     public Accessible getApi() {
         if (api == null)
             api = Accessible.createApi(this);

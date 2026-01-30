@@ -117,7 +117,7 @@ public class SwtAccessible implements IAccessible {
         if (parent == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         this.parent = parent;
-        this.control = ((SwtAccessible) parent.getImpl()).control;
+        this.control = parent.getImpl()._control();
         delegate = new SWTAccessibleDelegate(this.getApi(), ACC.CHILDID_SELF);
     }
 
@@ -155,11 +155,11 @@ public class SwtAccessible implements IAccessible {
     }
 
     id accessibleHandle(Accessible accessible) {
-        if (((SwtAccessible) accessible.getImpl()).delegate != null)
-            return ((SwtAccessible) accessible.getImpl()).delegate;
-        if (((SwtAccessible) accessible.getImpl()).control != null) {
-            if (((SwtAccessible) accessible.getImpl()).control == null || ((SwtAccessible) accessible.getImpl()).control.getImpl() instanceof SwtControl) {
-                NSView view = ((SwtAccessible) accessible.getImpl()).control.view;
+        if (accessible.getImpl()._delegate() != null)
+            return accessible.getImpl()._delegate();
+        if (accessible.getImpl()._control() != null) {
+            if (accessible.getImpl()._control() == null || accessible.getImpl()._control().getImpl() instanceof SwtControl) {
+                NSView view = accessible.getImpl()._control().view;
                 long handle = OS.objc_msgSend(view.id, OS.sel_accessibleHandle);
                 return new id(handle);
             }
@@ -628,7 +628,7 @@ public class SwtAccessible implements IAccessible {
             listener.getColumnHeader(tableEvent);
         }
         if (tableEvent.accessible != null)
-            returnValue = ((SwtAccessible) tableEvent.accessible.getImpl()).delegate;
+            returnValue = tableEvent.accessible.getImpl()._delegate();
         return returnValue;
     }
 
@@ -646,7 +646,7 @@ public class SwtAccessible implements IAccessible {
             Accessible[] accessibles = event.accessibles;
             for (int i = 0; i < accessibles.length; i++) {
                 Accessible acc = accessibles[i];
-                array.addObject(((SwtAccessible) acc.getImpl()).delegate);
+                array.addObject(acc.getImpl()._delegate());
             }
             returnValue = array;
         }
@@ -667,7 +667,7 @@ public class SwtAccessible implements IAccessible {
             Accessible[] accessibles = event.accessibles;
             for (int i = 0; i < accessibles.length; i++) {
                 Accessible acc = accessibles[i];
-                array.addObject(((SwtAccessible) acc.getImpl()).delegate);
+                array.addObject(acc.getImpl()._delegate());
             }
             returnValue = array;
         }
@@ -693,7 +693,7 @@ public class SwtAccessible implements IAccessible {
                     listener.getRow(event);
                 }
                 if (event.accessible != null)
-                    array.addObject(((SwtAccessible) event.accessible.getImpl()).delegate);
+                    array.addObject(event.accessible.getImpl()._delegate());
             }
             returnValue = array;
         }
@@ -733,8 +733,13 @@ public class SwtAccessible implements IAccessible {
         Object[] rows = event.accessibles;
         for (int i = 0; i < rows.length; i++) {
             Accessible acc = (Accessible) rows[i];
-            ((SwtAccessible) acc.getImpl()).index = i;
-            array.addObject(((SwtAccessible) acc.getImpl()).delegate);
+            if (acc.getImpl() instanceof DartAccessible) {
+                ((DartAccessible) acc.getImpl()).index = i;
+            }
+            if (acc.getImpl() instanceof SwtAccessible) {
+                ((SwtAccessible) acc.getImpl()).index = i;
+            }
+            array.addObject(acc.getImpl()._delegate());
         }
         return array;
     }
@@ -758,7 +763,7 @@ public class SwtAccessible implements IAccessible {
                     listener.getColumn(event);
                 }
                 if (event.accessible != null)
-                    array.addObject(((SwtAccessible) event.accessible.getImpl()).delegate);
+                    array.addObject(event.accessible.getImpl()._delegate());
             }
             returnValue = array;
         }
@@ -798,8 +803,13 @@ public class SwtAccessible implements IAccessible {
         Accessible[] accessibles = event.accessibles;
         for (int i = 0; i < accessibles.length; i++) {
             Accessible acc = accessibles[i];
-            ((SwtAccessible) acc.getImpl()).index = i;
-            array.addObject(((SwtAccessible) acc.getImpl()).delegate);
+            if (acc.getImpl() instanceof DartAccessible) {
+                ((DartAccessible) acc.getImpl()).index = i;
+            }
+            if (acc.getImpl() instanceof SwtAccessible) {
+                ((SwtAccessible) acc.getImpl()).index = i;
+            }
+            array.addObject(acc.getImpl()._delegate());
         }
         return array;
     }
@@ -1396,8 +1406,8 @@ public class SwtAccessible implements IAccessible {
             return null;
         /* The application can optionally answer an accessible. */
         if (event.accessible != null) {
-            if (((SwtAccessible) event.accessible.getImpl()).control == null || ((SwtAccessible) event.accessible.getImpl()).control.getImpl() instanceof SwtControl) {
-                return new id(OS.NSAccessibilityUnignoredAncestor(((SwtAccessible) event.accessible.getImpl()).control.view.id));
+            if (event.accessible.getImpl()._control() == null || event.accessible.getImpl()._control().getImpl() instanceof SwtControl) {
+                return new id(OS.NSAccessibilityUnignoredAncestor(event.accessible.getImpl()._control().view.id));
             } else
                 return null;
         }
@@ -1438,7 +1448,7 @@ public class SwtAccessible implements IAccessible {
         if (event.childID == ACC.CHILDID_MULTIPLE && event.accessible == null)
             return null;
         if (event.accessible != null) {
-            return new id(OS.NSAccessibilityUnignoredAncestor(((SwtAccessible) event.accessible.getImpl()).delegate.id));
+            return new id(OS.NSAccessibilityUnignoredAncestor(event.accessible.getImpl()._delegate().id));
         }
         if (event.childID == ACC.CHILDID_SELF || event.childID == ACC.CHILDID_NONE) {
             return new id(OS.NSAccessibilityUnignoredAncestor(control.view.id));
@@ -2092,7 +2102,7 @@ public class SwtAccessible implements IAccessible {
         }
         /* The application can optionally answer an accessible. */
         if (event.accessible != null) {
-            boolean hasFocus = (((SwtAccessible) event.accessible.getImpl()).index == childID) && (((SwtAccessible) event.accessible.getImpl()).control == this.control);
+            boolean hasFocus = (event.accessible.getImpl()._index() == childID) && (event.accessible.getImpl()._control() == this.control);
             return NSNumber.numberWithBool(hasFocus);
         }
         /* Or the application can answer a valid child ID, including CHILDID_SELF and CHILDID_NONE. */
@@ -2115,8 +2125,8 @@ public class SwtAccessible implements IAccessible {
         id returnValue = null;
         if (childID == ACC.CHILDID_SELF) {
             if (parent != null) {
-                if (((SwtAccessible) parent.getImpl()).delegate != null) {
-                    returnValue = ((SwtAccessible) parent.getImpl()).delegate;
+                if (parent.getImpl()._delegate() != null) {
+                    returnValue = parent.getImpl()._delegate();
                 } else {
                     returnValue = new id(OS.NSAccessibilityUnignoredAncestor(accessibleHandle(parent).id));
                 }
@@ -2162,8 +2172,8 @@ public class SwtAccessible implements IAccessible {
                 for (int i = 0; i < childCount; i++) {
                     Object child = children[i];
                     if (child instanceof Accessible accessible) {
-                        if (((SwtAccessible) accessible.getImpl()).delegate != null) {
-                            childArray.addObject(((SwtAccessible) accessible.getImpl()).delegate);
+                        if (accessible.getImpl()._delegate() != null) {
+                            childArray.addObject(accessible.getImpl()._delegate());
                         } else {
                             childArray.addObject(accessibleHandle(accessible));
                         }
@@ -2221,7 +2231,7 @@ public class SwtAccessible implements IAccessible {
                                 childArray.addObject(accChild);
                             }
                         } else {
-                            childArray.addObject(((SwtAccessible) ((Accessible) child).getImpl()).control.view);
+                            childArray.addObject(((Accessible) child).getImpl()._control().view);
                         }
                     }
                     returnValue = new id(OS.NSAccessibilityUnignoredChildren(childArray.id));
@@ -2310,7 +2320,7 @@ public class SwtAccessible implements IAccessible {
             for (int i = 0; i < accessibleTableListenersSize(); i++) {
                 AccessibleTableListener listener = accessibleTableListeners.get(i);
                 listener.getCell(event);
-                returnValue = ((SwtAccessible) event.accessible.getImpl()).delegate;
+                returnValue = event.accessible.getImpl()._delegate();
             }
         }
         return returnValue;
@@ -3719,6 +3729,82 @@ public class SwtAccessible implements IAccessible {
             returnArray.removeObject(OS.NSAccessibilityTitleUIElementAttribute);
         }
         return returnArray.id;
+    }
+
+    public List<AccessibleListener> _accessibleListeners() {
+        return accessibleListeners;
+    }
+
+    public List<AccessibleControlListener> _accessibleControlListeners() {
+        return accessibleControlListeners;
+    }
+
+    public List<AccessibleTextListener> _accessibleTextListeners() {
+        return accessibleTextListeners;
+    }
+
+    public List<AccessibleActionListener> _accessibleActionListeners() {
+        return accessibleActionListeners;
+    }
+
+    public List<AccessibleEditableTextListener> _accessibleEditableTextListeners() {
+        return accessibleEditableTextListeners;
+    }
+
+    public List<AccessibleHyperlinkListener> _accessibleHyperlinkListeners() {
+        return accessibleHyperlinkListeners;
+    }
+
+    public List<AccessibleTableListener> _accessibleTableListeners() {
+        return accessibleTableListeners;
+    }
+
+    public List<AccessibleTableCellListener> _accessibleTableCellListeners() {
+        return accessibleTableCellListeners;
+    }
+
+    public List<AccessibleTextExtendedListener> _accessibleTextExtendedListeners() {
+        return accessibleTextExtendedListeners;
+    }
+
+    public List<AccessibleValueListener> _accessibleValueListeners() {
+        return accessibleValueListeners;
+    }
+
+    public List<AccessibleAttributeListener> _accessibleAttributeListeners() {
+        return accessibleAttributeListeners;
+    }
+
+    public Relation[] _relations() {
+        return relations;
+    }
+
+    public Accessible _parent() {
+        return parent;
+    }
+
+    public Control _control() {
+        return control;
+    }
+
+    public int _currentRole() {
+        return currentRole;
+    }
+
+    public Map<Integer, SWTAccessibleDelegate> _childToIdMap() {
+        return childToIdMap;
+    }
+
+    public SWTAccessibleDelegate _delegate() {
+        return delegate;
+    }
+
+    public int _index() {
+        return index;
+    }
+
+    public TableAccessibleDelegate _tableDelegate() {
+        return tableDelegate;
     }
 
     public Accessible getApi() {
