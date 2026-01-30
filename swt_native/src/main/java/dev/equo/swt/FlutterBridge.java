@@ -98,7 +98,7 @@ public abstract class FlutterBridge {
         Set<Object> filteredDirty = filterWidgetsWithDirtyAncestors(new HashSet<>(dirty));
 
         for (Object widget : filteredDirty) {
-            if (isDisposed(widget)) break;
+            if (isDisposed(widget)) continue;
             CompletableFuture<Void> future = getBridge(widget).clientReady.thenRun(() -> {
                 try {
                     if (!isNew(widget) || widget instanceof DartToolTip) { // send with the parent
