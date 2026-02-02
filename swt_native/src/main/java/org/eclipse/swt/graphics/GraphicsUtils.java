@@ -136,6 +136,17 @@ public class GraphicsUtils {
     }
 
     /**
+     * Returns a default background color for Dart controls.
+     * This is used when a DartControl has no explicitly set background color.
+     *
+     * @param display the display to create the color on
+     * @return a default background color (white with full opacity)
+     */
+    public static Color getDefaultBackground(Display display) {
+        return new Color(display, 255, 255, 255);
+    }
+
+    /**
      * Extracts the filename (without extension) from a given file path.
      *
      * @param path the full file path
