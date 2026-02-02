@@ -295,9 +295,6 @@ public class TextHelper {
 
         text.updateAutoTextDirectionIfNeeded();
         text.applySegments();
-
-        if ((text.getApi().style & SWT.MULTI) != 0) {
-            text.sendEvent(SWT.Modify);
-        }
+        text.sendEvent(SWT.Modify);
     }
 }
