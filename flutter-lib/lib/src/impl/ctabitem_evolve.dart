@@ -18,7 +18,6 @@ import 'ctabfolder_evolve.dart';
 
 class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     extends ItemImpl<T, V> {
-  final shouldShowImage = false;
 
   Widget? _buildImageWidget(
       BuildContext context,
@@ -29,7 +28,7 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
       image,
       size: folderTheme.tabIconSize,
       enabled: true,
-      useBinaryImage: false,
+      useBinaryImage: true,
       renderAsIcon: true,
     );
   }
@@ -68,7 +67,7 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (imageWidget != null && shouldShowImage)
+          if (imageWidget != null)
             Padding(
               padding: EdgeInsets.only(
                 bottom: itemTheme.tabItemVerticalPadding,
