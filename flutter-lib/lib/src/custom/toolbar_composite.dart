@@ -26,7 +26,8 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
     final widgetTheme = Theme.of(context).extension<ToolBarThemeExtension>();
     final backgroundColor = widgetTheme?.toolbarBackgroundColor ?? Colors.white;
 
-    final widgets = children.map((child) => buildMapWidgetFromValue(child)).toList();
+    final visibleChildren = children.where((child) => child.visible == true).toList();
+    final widgets = visibleChildren.map((child) => buildMapWidgetFromValue(child)).toList();
 
     return Container(
       decoration: BoxDecoration(
@@ -79,7 +80,8 @@ class SideBarCompositeImpl extends CompositeImpl<SideBarComposite, VComposite> {
       return wrap(const SizedBox.shrink());
     }
 
-    final widgets = children.map((child) => buildMapWidgetFromValue(child)).toList();
+    final visibleChildren = children.where((child) => child.visible == true).toList();
+    final widgets = visibleChildren.map((child) => buildMapWidgetFromValue(child)).toList();
 
     return Container(
       color: backgroundColor,
