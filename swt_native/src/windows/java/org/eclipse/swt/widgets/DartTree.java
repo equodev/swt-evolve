@@ -582,6 +582,9 @@ public class DartTree extends DartComposite implements ITree {
         columns[index] = column;
         // conservative
         cachedItemOrder = null;
+        int[] newOrder = new int[columnCount];
+        for (int i = 0; i < columnCount; i++) newOrder[i] = i;
+        columnOrder = newOrder;
         /* When the first column is created, hide the horizontal scroll bar */
         if (columnCount == 1) {
             scrollWidth = 0;

@@ -204,7 +204,13 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     TableItem _getItem(int index, boolean create, int count) {
-        return null;
+        if (items == null || index < 0 || index >= items.length)
+            return null;
+        if ((getApi().style & SWT.VIRTUAL) == 0 || !create)
+            return items[index];
+        if (items[index] != null)
+            return items[index];
+        return items[index] = new TableItem(this.getApi(), SWT.NONE, -1, false);
     }
 
     void _getItems(TableItem[] result, int count) {
