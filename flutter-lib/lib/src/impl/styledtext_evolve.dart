@@ -85,7 +85,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       null,
       caretInfo,
       _wordWrap,
-      _getCanvasSize(),
+      getBounds(),
       _editable,
       styledTextId,
       (newText, caretPos) {},
@@ -910,23 +910,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   }
 
   int _calculateVerticalNavigation(TextShape textShape, int direction) {
-    final canvasSize = _getCanvasSize();
-    if (canvasSize == null) return textShape.caretInfo?.offset ?? 0;
-
-    return textShape.calculateVerticalNavigation(direction, canvasSize);
+    return textShape.calculateVerticalNavigation(direction, getBounds());
   }
 
   int _calculateLineNavigation(TextShape textShape, {required bool isHome}) {
-    final canvasSize = _getCanvasSize();
-    if (canvasSize == null) return textShape.caretInfo?.offset ?? 0;
-
     return textShape.calculateLineNavigation(
-        isHome: isHome, canvasSize: canvasSize);
-  }
-
-  Size? _getCanvasSize() {
-    final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
-    return renderBox?.size;
+        isHome: isHome, canvasSize: getBounds());
   }
 }
 
