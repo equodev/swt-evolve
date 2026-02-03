@@ -146,8 +146,6 @@ class _StyledLinkState extends State<StyledLink> {
       return Text(
         widget.text,
         style: baseTextStyle,
-        overflow: TextOverflow.ellipsis,
-        maxLines: 1,
       );
     }
 
@@ -157,7 +155,6 @@ class _StyledLinkState extends State<StyledLink> {
         children: spans,
         style: baseTextStyle,
       ),
-      overflow: TextOverflow.ellipsis,
     );
   }
 
