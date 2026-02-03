@@ -357,11 +357,14 @@ public class DartTree extends DartComposite implements ITree {
      * @see #getColumnOrder()
      */
     private int getColumnIndex(int order) {
-        if (order < 0 || order >= columnCount || columnCount == 1) {
+        if (order < 0 || order >= columnCount || columnCount <= 1) {
             return 0;
         }
-        /*	returns getColumnIndexFromOS(order)*/
-        return getColumnOrder()[order];
+        int[] columnOrderArray = getColumnOrder();
+        if (columnOrderArray == null || order >= columnOrderArray.length) {
+            return 0;
+        }
+        return columnOrderArray[order];
     }
 
     /**
