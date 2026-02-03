@@ -329,6 +329,11 @@ public class DartGroup extends DartComposite implements IGroup {
         return text;
     }
 
+    @Override
+    public Rectangle computeTrim(int x, int y, int width, int height) {
+        return Sizes.computeTrim(this, x, y, width, height);
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
     }

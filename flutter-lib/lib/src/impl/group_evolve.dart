@@ -105,28 +105,29 @@ class _StyledGroup extends StatelessWidget {
 
     return Container(
       constraints: constraints,
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        border: Border.all(color: borderColor, width: widgetTheme.borderWidth),
-        borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
-      ),
-      padding: widgetTheme.padding,
       margin: widgetTheme.margin,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Title
-          if (text.isNotEmpty)
-            Padding(
-              padding: widgetTheme.padding,
-              child: Text(
-                text,
-                style: textStyle,
-              ),  
-            ),
-          if (children != null)
-            NoLayout(children: children!, composite: composite)
-        ],
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          border: Border.all(color: borderColor, width: widgetTheme.borderWidth),
+          borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Title
+            if (text.isNotEmpty)
+              Padding(
+                padding: widgetTheme.padding,
+                child: Text(
+                  text,
+                  style: textStyle,
+                ),
+              ),
+            if (children != null)
+              NoLayout(children: children!, composite: composite)
+          ],
+        ),
       ),
     );
   }

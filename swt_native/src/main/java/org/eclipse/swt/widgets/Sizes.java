@@ -396,8 +396,30 @@ public class Sizes {
         return TextSizes.computeSize(c, wHint, hHint, changed);
     }
 
+    private static final int GROUP_BORDER_WIDTH = 3;
+    private static final int GROUP_MARGIN = 3;
+    private static final int GROUP_TITLE_PADDING = 8;
+    private static final int GROUP_BORDER = GROUP_BORDER_WIDTH + GROUP_MARGIN;
+
+    private static int getGroupTitleHeight(DartGroup widget) {
+        String text = widget._text();
+        if (text != null && !text.isEmpty()) {
+            Point textSize = GCHelper.textExtent(text, SWT.DRAW_MNEMONIC, widget.getFont());
+            return textSize.y + GROUP_TITLE_PADDING * 2;
+        }
+        return 0;
+    }
+
     public static Rectangle computeTrim(DartGroup widget, int x, int y, int width, int height) {
-        return new Rectangle(x, y, width+5+5, height+5+5);
+        int titleHeight = getGroupTitleHeight(widget);
+        int topMargin = Math.max(GROUP_BORDER, titleHeight);
+
+        return new Rectangle(
+            x - GROUP_BORDER,
+            y - topMargin,
+            width + GROUP_BORDER * 2,
+            height + topMargin + GROUP_BORDER
+        );
     }
 
     public static Rectangle computeTrim(DartScrollable widget, int x, int y, int width, int height) {
@@ -487,7 +509,14 @@ public class Sizes {
 
     public static Rectangle getClientArea(DartGroup widget) {
         Rectangle b = widget.getBounds();
-        return new Rectangle(5, 5, Math.max(0, b.width-5-5), Math.max(0, b.height-5-5));
+        int topMargin = Math.max(GROUP_BORDER, getGroupTitleHeight(widget));
+
+        return new Rectangle(
+            GROUP_BORDER,
+            topMargin,
+            Math.max(0, b.width - GROUP_BORDER * 2),
+            Math.max(0, b.height - topMargin - GROUP_BORDER)
+        );
     }
 
     public static Rectangle getClientArea(DartScrollable widget) {
