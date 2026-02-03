@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import '../comm/comm.dart';
@@ -13,6 +14,7 @@ import '../impl/canvas_evolve.dart';
 import 'widget_config.dart';
 import 'utils/font_utils.dart';
 import 'color_utils.dart';
+import '../theme/theme_extensions/styledtext_theme_extension.dart';
 
 class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     extends CanvasImpl<T, V> {
@@ -30,10 +32,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   bool _editable = true;
   bool _wordWrap = true;
 
-  final bool useDarkTheme = getCurrentTheme();
+  StyledTextThemeExtension get _styledTextTheme =>
+      Theme.of(context).extension<StyledTextThemeExtension>()!;
 
   @override
-  Color get bg => colorFromVColor(state.background, defaultColor: const Color(0x00000000));
+  Color get bg =>
+      colorFromVColor(state.background, defaultColor: _styledTextTheme.backgroundColor);
 
   @override
   void initState() {
@@ -64,7 +68,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final defaultStyle = _getDefaultTextStyle();
 
     // Build caret info
-    final caretColor = useDarkTheme ? const Color(0xFFFFFFFF) : applyAlpha(fg);
+    final caretColor = applyAlpha(_styledTextTheme.foregroundColor);
     final caretHeight = (defaultStyle.fontSize ?? 12.0) * 1.2;
     final caretInfo = CaretInfo(
       offset: caretOffset,
@@ -205,7 +209,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   /// Convert VStyleRange to Flutter TextStyle
   TextStyle _convertVStyleRangeToTextStyle(VStyleRange vRange) {
-    final defaultTextColor = useDarkTheme ? const Color(0xFFFFFFFF) : applyAlpha(fg);
+    final defaultTextColor = applyAlpha(_styledTextTheme.foregroundColor);
     final baseStyle = _getDefaultTextStyle();
 
     Color? foreground;
@@ -256,7 +260,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   /// Get default text style from state.font or fallback
   TextStyle _getDefaultTextStyle() {
-    final defaultTextColor = useDarkTheme ? const Color(0xFFFFFFFF) : applyAlpha(fg);
+    final defaultTextColor = applyAlpha(_styledTextTheme.foregroundColor);
 
     if (state.font != null) {
       return FontUtils.textStyleFromVFont(
@@ -669,8 +673,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       _extractCharacterRangesFromTextSpan(
           textShape.textSpan!, characterRanges, 0);
     } else {
-      final defaultTextColor =
-          useDarkTheme ? const Color(0xFFFFFFFF) : textShape.style.color;
+      final defaultTextColor = _styledTextTheme.foregroundColor;
 
       characterRanges.add(StyleRange(
         start: 0,
