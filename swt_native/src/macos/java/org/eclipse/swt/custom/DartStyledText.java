@@ -10559,9 +10559,12 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setSelectionRange(int start, int length) {
         dirty();
-        Point newValue = new Point(selectionRange.x, selectionRange.y);
-        dirty();
-        this.selectionRange = newValue;
+        if (selectionRange == null) {
+            selectionRange = new Point(start, start + length);
+        } else {
+            selectionRange.x = start;
+            selectionRange.y = start + length;
+        }
         setSelectionRanges(new int[] { start, length });
     }
 
