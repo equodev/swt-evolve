@@ -813,7 +813,11 @@ public class DartComposite extends DartScrollable implements IComposite {
         if (!super.redrawChildren())
             return false;
         for (Control element : _getChildren()) {
-            ((DartControl) element.getImpl()).redrawChildren();
+            if (element.getImpl() instanceof DartControl dartControl) {
+                dartControl.redrawChildren();
+            } else if (element.getImpl() instanceof SwtControl swtControl) {
+                swtControl.redrawChildren();
+            }
         }
         return true;
     }
