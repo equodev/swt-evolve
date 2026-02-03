@@ -33,6 +33,7 @@ import 'theme_settings/coolitem_theme_settings.dart';
 import 'theme_settings/tooltip_theme_settings.dart';
 import 'theme_settings/sash_theme_settings.dart';
 import 'theme_settings/canvas_theme_settings.dart';
+import 'theme_settings/styledtext_theme_settings.dart';
 
 Color calculateBackgroundColor(int? backgroundColor, bool useDarkTheme) {
   return backgroundColor != null
@@ -486,6 +487,11 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final styledTextTheme = getStyledTextLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -523,6 +529,7 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
       tooltipTheme,
       sashTheme,
       canvasTheme,
+      styledTextTheme,
     ],
   );
 }
@@ -691,6 +698,11 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final styledTextTheme = getStyledTextLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -729,6 +741,7 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
       tooltipTheme,
       sashTheme,
       canvasTheme,
+      styledTextTheme,
     ],
   );
 }
@@ -900,6 +913,11 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final styledTextTheme = getStyledTextDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -937,6 +955,7 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
       tooltipTheme,
       sashTheme,
       canvasTheme,
+      styledTextTheme,
     ],
   );
 }
@@ -1105,6 +1124,11 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final styledTextTheme = getStyledTextDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -1143,6 +1167,7 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
       tooltipTheme,
       sashTheme,
       canvasTheme,
+      styledTextTheme,
     ],
   );
 }
