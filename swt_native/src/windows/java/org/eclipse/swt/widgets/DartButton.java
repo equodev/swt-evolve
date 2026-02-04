@@ -505,8 +505,9 @@ public class DartButton extends DartControl implements IButton {
 
     void selectRadio() {
         for (Control child : parent.getImpl()._getChildren()) {
-            if (this.getApi() != child)
+            if (this.getApi() != child && child.getImpl() instanceof DartControl) {
                 ((DartControl) child.getImpl()).setRadioSelection(false);
+            }
         }
         setSelection(true);
     }
@@ -922,7 +923,13 @@ public class DartButton extends DartControl implements IButton {
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {
             getDisplay().asyncExec(() -> {
-                if ((getApi().style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) != 0) {
+                if ((getApi().style & SWT.RADIO) != 0) {
+                    if ((parent.getStyle() & SWT.NO_RADIO_GROUP) == 0) {
+                        selectRadio();
+                    } else {
+                        this.selection = !this.selection;
+                    }
+                } else if ((getApi().style & (SWT.CHECK | SWT.TOGGLE)) != 0) {
                     this.selection = !this.selection;
                 }
                 sendEvent(SWT.Selection, e);
