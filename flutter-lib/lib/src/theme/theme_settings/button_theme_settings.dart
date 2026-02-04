@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import '../theme_extensions/button_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
@@ -210,7 +212,7 @@ double getCheckboxSize(
     final minDimension = state.bounds!.width < state.bounds!.height
         ? state.bounds!.width.toDouble()
         : state.bounds!.height.toDouble();
-    return minDimension;
+    return min(minDimension, widgetTheme.checkboxSize);
   }
   
   return widgetTheme.checkboxSize;
@@ -227,7 +229,7 @@ double getRadioButtonSize(
     final minDimension = state.bounds!.width < state.bounds!.height
         ? state.bounds!.width.toDouble()
         : state.bounds!.height.toDouble();
-    return minDimension;
+    return min(minDimension, widgetTheme.radioButtonSize);
   }
 
   return widgetTheme.radioButtonSize;

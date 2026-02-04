@@ -89,14 +89,13 @@ TextStyle getTextStyle({
       TextStyle(color: textColor);
 }
 
-/// Determines if text should wrap based on style and bounds
+/// Determines if text should wrap based on style
 bool shouldWrapText({
   required int style,
   required bool hasValidBounds,
   required String text,
 }) {
-  final hasWrap = hasStyle(style, SWT.WRAP);
-  return hasWrap || (hasValidBounds && text.isNotEmpty);
+  return hasStyle(style, SWT.WRAP);
 }
 
 /// Converts TextAlign to MainAxisAlignment

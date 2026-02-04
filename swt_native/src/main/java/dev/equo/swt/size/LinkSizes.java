@@ -37,17 +37,8 @@ public class LinkSizes {
         double width, height;
 
         m.text = computeText(widget, m, NONE.EMPTY_TEXT_AFFECTS_SIZING);
-        double textWidth = m.text.x() + (m.text.x() > 0 ? NONE.HORIZONTAL_PADDING : 0);
-        double lineHeight = m.text.y();
-
-        if (wHint != SWT.DEFAULT && wHint > 0 && textWidth > wHint) {
-            double numLines = Math.ceil(textWidth / wHint) * 1.1;
-            width = wHint;
-            height = Math.max((lineHeight * numLines) + NONE.VERTICAL_PADDING, NONE.MIN_HEIGHT);
-        } else {
-            width = Math.max(textWidth, NONE.MIN_WIDTH);
-            height = Math.max(lineHeight + NONE.VERTICAL_PADDING, NONE.MIN_HEIGHT);
-        }
+        width = Math.max(m.text.x() + (m.text.x() > 0 ? NONE.HORIZONTAL_PADDING : 0), NONE.MIN_WIDTH);
+        height = Math.max(m.text.y() + NONE.VERTICAL_PADDING, NONE.MIN_HEIGHT);
 
         m.widget = new Point((int) Math.ceil(width), (int) Math.ceil(height));
         return m;
