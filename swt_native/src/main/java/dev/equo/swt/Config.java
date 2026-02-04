@@ -210,6 +210,9 @@ public class Config {
         if (parent instanceof Canvas && clazz == GC.class && ((Canvas) parent).getImpl() instanceof DartCanvas)
             return true;
 
+        if (parent instanceof Widget && clazz == GC.class && ((Control) parent).getImpl() instanceof DartWidget)
+            return true;
+
         if (defaultImpl == Impl.eclipse)
             return false;
 

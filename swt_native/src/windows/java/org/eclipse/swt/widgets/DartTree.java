@@ -583,11 +583,14 @@ public class DartTree extends DartComposite implements ITree {
         }
         System.arraycopy(columns, index, columns, index + 1, columnCount++ - index);
         columns[index] = column;
+        int[] newOrder = new int[columnCount];
+        for (int i = 0; i < columnOrder.length; i++) {
+            newOrder[i] = columnOrder[i] >= index ? columnOrder[i] + 1 : columnOrder[i];
+        }
+        newOrder[columnCount - 1] = index;
+        columnOrder = newOrder;
         // conservative
         cachedItemOrder = null;
-        int[] newOrder = new int[columnCount];
-        for (int i = 0; i < columnCount; i++) newOrder[i] = i;
-        columnOrder = newOrder;
         /* When the first column is created, hide the horizontal scroll bar */
         if (columnCount == 1) {
             scrollWidth = 0;
@@ -623,6 +626,7 @@ public class DartTree extends DartComposite implements ITree {
         items[index] = item;
         lastID = Math.max(lastID, index + 1);
         itemCount++;
+        dirty();
         if (wasEmpty) {
             Event event = new Event();
             event.detail = 0;
