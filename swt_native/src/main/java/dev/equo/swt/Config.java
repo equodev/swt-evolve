@@ -460,19 +460,16 @@ public class Config {
     static String getSwtBaseClassName(Class<?> clazz) {
         Class<?> target = clazz;
 
-        if (clazz.isAnonymousClass()) {
+        if (clazz.isAnonymousClass())
             target = clazz.getSuperclass();
-        } else {
-            while (target.getSuperclass() != null) {
-                String pkg = target.getPackageName();
-                if (pkg.startsWith("org.eclipse.swt.widgets") ||
-                        pkg.startsWith("org.eclipse.swt.custom")) {
-                    break;
-                }
-                target = target.getSuperclass();
+        while (target.getSuperclass() != null) {
+            String pkg = target.getPackageName();
+            if (pkg.startsWith("org.eclipse.swt.widgets") ||
+                    pkg.startsWith("org.eclipse.swt.custom")) {
+                break;
             }
+            target = target.getSuperclass();
         }
-
         return target.getSimpleName();
     }
 
