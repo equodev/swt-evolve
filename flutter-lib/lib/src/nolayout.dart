@@ -14,10 +14,13 @@ class NoLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final visibleChildren =
+        children.where((child) => child.visible == true).toList();
+
     return CustomMultiChildLayout(
-        delegate: _AbsoluteLayoutDelegate(children, composite),
+        delegate: _AbsoluteLayoutDelegate(visibleChildren, composite),
         children: [
-          for (var child in children)
+          for (var child in visibleChildren)
             LayoutId(id: child.id, child: mapWidgetFromValue(child))
         ]);
   }
