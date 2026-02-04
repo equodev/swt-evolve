@@ -1110,6 +1110,17 @@ public class DartToolItem extends DartItem implements IToolItem {
         sendEvent(SWT.Selection, e);
     }
 
+    void sendSelection() {
+        if ((getApi().style & SWT.RADIO) != 0) {
+            if ((parent.getStyle() & SWT.NO_RADIO_GROUP) == 0) {
+                selectRadio();
+            }
+        }
+        if ((getApi().style & SWT.CHECK) != 0)
+            setSelection(!getSelection());
+        sendSelectionEvent(SWT.Selection);
+    }
+
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;
@@ -1132,7 +1143,7 @@ public class DartToolItem extends DartItem implements IToolItem {
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {
             getDisplay().asyncExec(() -> {
-                sendEvent(SWT.Selection, e);
+                sendSelection();
             });
         });
     }
