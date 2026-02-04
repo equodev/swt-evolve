@@ -109,6 +109,7 @@ class TreeThemeExtension extends ThemeExtension<TreeThemeExtension> with _$TreeT
   // Column properties
   final EdgeInsets columnPadding;
   final double columnBorderWidth;
+  final double columnDividerGap;
   final double columnResizeHandleWidth;
   final EdgeInsets columnResizeHandleMargin;
   final double columnDefaultWidth;
@@ -196,6 +197,7 @@ class TreeThemeExtension extends ThemeExtension<TreeThemeExtension> with _$TreeT
     required this.columnResizeHandleColor,
     required this.columnPadding,
     required this.columnBorderWidth,
+    required this.columnDividerGap,
     required this.columnResizeHandleWidth,
     required this.columnResizeHandleMargin,
     required this.columnDefaultWidth,

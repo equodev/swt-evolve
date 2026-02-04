@@ -78,6 +78,7 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
   Color get columnResizeHandleColor;
   EdgeInsets get columnPadding;
   double get columnBorderWidth;
+  double get columnDividerGap;
   double get columnResizeHandleWidth;
   EdgeInsets get columnResizeHandleMargin;
   double get columnDefaultWidth;
@@ -162,6 +163,7 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
     Color? columnResizeHandleColor,
     EdgeInsets? columnPadding,
     double? columnBorderWidth,
+    double? columnDividerGap,
     double? columnResizeHandleWidth,
     EdgeInsets? columnResizeHandleMargin,
     double? columnDefaultWidth,
@@ -272,6 +274,7 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
           columnResizeHandleColor ?? this.columnResizeHandleColor,
       columnPadding: columnPadding ?? this.columnPadding,
       columnBorderWidth: columnBorderWidth ?? this.columnBorderWidth,
+      columnDividerGap: columnDividerGap ?? this.columnDividerGap,
       columnResizeHandleWidth:
           columnResizeHandleWidth ?? this.columnResizeHandleWidth,
       columnResizeHandleMargin:
@@ -492,6 +495,7 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
       )!,
       columnPadding: t < 0.5 ? columnPadding : other.columnPadding,
       columnBorderWidth: t < 0.5 ? columnBorderWidth : other.columnBorderWidth,
+      columnDividerGap: t < 0.5 ? columnDividerGap : other.columnDividerGap,
       columnResizeHandleWidth: t < 0.5
           ? columnResizeHandleWidth
           : other.columnResizeHandleWidth,
@@ -797,6 +801,10 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
               other.columnBorderWidth,
             ) &&
             const DeepCollectionEquality().equals(
+              columnDividerGap,
+              other.columnDividerGap,
+            ) &&
+            const DeepCollectionEquality().equals(
               columnResizeHandleWidth,
               other.columnResizeHandleWidth,
             ) &&
@@ -922,6 +930,7 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
       const DeepCollectionEquality().hash(columnResizeHandleColor),
       const DeepCollectionEquality().hash(columnPadding),
       const DeepCollectionEquality().hash(columnBorderWidth),
+      const DeepCollectionEquality().hash(columnDividerGap),
       const DeepCollectionEquality().hash(columnResizeHandleWidth),
       const DeepCollectionEquality().hash(columnResizeHandleMargin),
       const DeepCollectionEquality().hash(columnDefaultWidth),
@@ -1025,6 +1034,7 @@ extension TreeThemeExtensionBuildContextProps on BuildContext {
       treeThemeExtension.columnResizeHandleColor;
   EdgeInsets get columnPadding => treeThemeExtension.columnPadding;
   double get columnBorderWidth => treeThemeExtension.columnBorderWidth;
+  double get columnDividerGap => treeThemeExtension.columnDividerGap;
   double get columnResizeHandleWidth =>
       treeThemeExtension.columnResizeHandleWidth;
   EdgeInsets get columnResizeHandleMargin =>
