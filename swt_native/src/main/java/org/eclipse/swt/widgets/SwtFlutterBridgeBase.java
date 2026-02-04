@@ -170,14 +170,19 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
 
     protected abstract void destroyHandle(DartControl dartControl);
 
+
     @Override
     public void setBounds(DartControl dartControl, Rectangle bounds) {
         if (dartControl.bridge != null && forWidget == dartControl) {
             System.out.println("SET BOUNDS: " + dartControl + " Rectangle {" + bounds.x + ", " + bounds.y + ", " + bounds.width + ", " + bounds.height + "}");
 
-            if (dartControl instanceof DartCTabFolder) {
-                SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height,
-                        0, 0, bounds.width, 28);
+            if (dartControl instanceof DartCTabFolder folder) {
+                if (folder._onBottom()) {
+                    SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height, 0, bounds.height - 28, bounds.width, 28);
+                } else {
+                    SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height, 0, 0, bounds.width, 28);
+                }
+
             } else {
                 SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height,
                         bounds.x, bounds.y, bounds.width, bounds.height);
