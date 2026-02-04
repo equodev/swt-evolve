@@ -144,6 +144,7 @@ TreeThemeExtension _getTreeTheme({
     // Column properties
     columnPadding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 6.0),
     columnBorderWidth: 1.0,
+    columnDividerGap: 8.0,
     columnResizeHandleWidth: 4.0,
     columnResizeHandleMargin: const EdgeInsets.symmetric(horizontal: 1.5),
     columnDefaultWidth: 100.0,

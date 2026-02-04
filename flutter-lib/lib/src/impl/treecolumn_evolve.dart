@@ -138,12 +138,15 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     final textAlignment = getMainAxisAlignmentFromTextAlign(textAlign, MainAxisAlignment.start);
     
     const double extraPadding = 4.0;
-    final adjustedPadding = adjustPaddingForAlignment(
+    EdgeInsets adjustedPadding = adjustPaddingForAlignment(
       basePadding: widgetTheme.columnPadding,
       alignment: alignment,
       leftPadding: leftPadding,
       extraPadding: extraPadding,
     );
+    if (!isLastColumn) {
+      adjustedPadding = adjustedPadding.copyWith(right: adjustedPadding.right + widgetTheme.columnDividerGap);
+    }
 
     return MouseRegion(
       cursor: moveable ? SystemMouseCursors.grab : SystemMouseCursors.click,

@@ -93,14 +93,20 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     final bgColor = getTreeItemBackgroundColor(state, widgetTheme, selected, _isHovered && !selected, enabled);
 
     double? totalTreeWidth = _context?.treeWidth;
+    final effectiveWidths = TreeEffectiveColumnWidthsProvider.of(context);
     if (totalTreeWidth == null) {
-      final columns = _context?.treeImpl?.getTreeColumns() ?? [];
-      if (columns.isNotEmpty) {
-        double calculatedWidth = 0.0;
-        for (final column in columns) {
-          calculatedWidth += (column.width ?? widgetTheme.columnDefaultWidth.round()).toDouble();
+      if (effectiveWidths != null && effectiveWidths.isNotEmpty) {
+        final prefix = widgetTheme.expandIconSize + widgetTheme.expandIconSpacing;
+        totalTreeWidth = prefix + effectiveWidths.reduce((a, b) => a + b);
+      } else {
+        final columns = _context?.treeImpl?.getTreeColumns() ?? [];
+        if (columns.isNotEmpty) {
+          double calculatedWidth = 0.0;
+          for (final column in columns) {
+            calculatedWidth += (column.width ?? widgetTheme.columnDefaultWidth.round()).toDouble();
+          }
+          totalTreeWidth = widgetTheme.expandIconSize + widgetTheme.expandIconSpacing + calculatedWidth;
         }
-        totalTreeWidth = calculatedWidth;
       }
     }
 
@@ -194,10 +200,68 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     }
     
     final firstColumn = columns[0];
-    final double firstColumnWidth = (firstColumn.width ?? widgetTheme.columnDefaultWidth.round()).toDouble();
-    
+    final effectiveWidths = TreeEffectiveColumnWidthsProvider.of(context);
+    final double firstColumnWidth = effectiveWidths != null && effectiveWidths.isNotEmpty
+        ? effectiveWidths[0]
+        : (firstColumn.width ?? widgetTheme.columnDefaultWidth.round()).toDouble();
+
     final String firstColumnText = text.isNotEmpty ? text : (texts?.isNotEmpty == true ? texts![0] : '');
-    
+
+    if (effectiveWidths != null && effectiveWidths.length == columns.length) {
+      return Row(
+        children: [
+          SizedBox(
+            width: firstColumnWidth,
+            child: Row(
+              children: [
+                _buildItemPrefix(
+                  theme: widgetTheme,
+                  level: level,
+                  hasChildren: hasChildren,
+                  expanded: expanded,
+                  isCheckMode: isCheckMode,
+                  checked: checked,
+                  grayed: grayed,
+                  enabled: enabled,
+                  selected: selected,
+                  image: image,
+                ),
+                Expanded(
+                  child: _buildCellText(
+                    context: context,
+                    text: firstColumnText,
+                    textColor: textColor,
+                    theme: widgetTheme,
+                    columnAlignment: firstColumn.alignment,
+                    cellPadding: widgetTheme.cellMultiColumnPadding,
+                    columnIndex: 0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ...columns.skip(1).toList().asMap().entries.map<Widget>((entry) {
+            final int columnIndex = entry.key + 1;
+            final column = entry.value;
+            final String columnText = _getColumnText(texts, columnIndex);
+            final double w = effectiveWidths[columnIndex];
+            return SizedBox(
+              width: w,
+              child: _buildCellText(
+                context: context,
+                text: columnText,
+                textColor: textColor,
+                theme: widgetTheme,
+                columnAlignment: column.alignment,
+                cellPadding: widgetTheme.cellMultiColumnPadding,
+                columnIndex: columnIndex,
+              ),
+            );
+          }),
+        ],
+      );
+    }
+
     return Row(
       children: [
         SizedBox(
@@ -314,7 +378,10 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     required VTreeColumn column,
     required int columnIndex,
   }) {
-    final double columnWidth = (column.width ?? theme.columnDefaultWidth.round()).toDouble();
+    final effectiveWidths = TreeEffectiveColumnWidthsProvider.of(context);
+    final double columnWidth = effectiveWidths != null && columnIndex < effectiveWidths.length
+        ? effectiveWidths[columnIndex]
+        : (column.width ?? theme.columnDefaultWidth.round()).toDouble();
     return SizedBox(
       width: columnWidth,
       child: _buildCellText(
@@ -511,14 +578,20 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         widgetTheme.expandIconSpacing;
     
     double? totalTreeWidth = _context?.treeWidth;
+    final effectiveWidths = TreeEffectiveColumnWidthsProvider.of(context);
     if (totalTreeWidth == null) {
-      final columns = _context?.treeImpl?.getTreeColumns() ?? [];
-      if (columns.isNotEmpty) {
-        double calculatedWidth = 0.0;
-        for (final column in columns) {
-          calculatedWidth += (column.width ?? widgetTheme.columnDefaultWidth.round()).toDouble();
+      if (effectiveWidths != null && effectiveWidths.isNotEmpty) {
+        final prefix = widgetTheme.expandIconSize + widgetTheme.expandIconSpacing;
+        totalTreeWidth = prefix + effectiveWidths.reduce((a, b) => a + b);
+      } else {
+        final columns = _context?.treeImpl?.getTreeColumns() ?? [];
+        if (columns.isNotEmpty) {
+          double calculatedWidth = 0.0;
+          for (final column in columns) {
+            calculatedWidth += (column.width ?? widgetTheme.columnDefaultWidth.round()).toDouble();
+          }
+          totalTreeWidth = widgetTheme.expandIconSize + widgetTheme.expandIconSpacing + calculatedWidth;
         }
-        totalTreeWidth = calculatedWidth;
       }
     }
 
@@ -725,11 +798,15 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       );
     }
 
-    final adjustedPadding = adjustPaddingForAlignment(
+    EdgeInsets adjustedPadding = adjustPaddingForAlignment(
       basePadding: cellPadding,
       alignment: columnAlignment,
       extraPadding: 4.0,
     );
+    final columns = _context?.treeImpl?.getTreeColumns() ?? [];
+    if (columns.isNotEmpty && columnIndex < columns.length - 1) {
+      adjustedPadding = adjustedPadding.copyWith(right: adjustedPadding.right + theme.columnDividerGap);
+    }
 
     // Wrap textWidget to prevent it from expanding beyond its content
     // This ensures the GestureDetector only captures clicks on the actual text

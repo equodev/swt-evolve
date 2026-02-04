@@ -167,6 +167,7 @@ TreeThemeExtension _$TreeThemeExtensionFromJson(
     json['columnPadding'] as Map<String, dynamic>,
   ),
   columnBorderWidth: (json['columnBorderWidth'] as num).toDouble(),
+  columnDividerGap: (json['columnDividerGap'] as num).toDouble(),
   columnResizeHandleWidth: (json['columnResizeHandleWidth'] as num).toDouble(),
   columnResizeHandleMargin: const EdgeInsetsConverter().fromJson(
     json['columnResizeHandleMargin'] as Map<String, dynamic>,
@@ -314,6 +315,7 @@ Map<String, dynamic> _$TreeThemeExtensionToJson(
   ),
   'columnPadding': const EdgeInsetsConverter().toJson(instance.columnPadding),
   'columnBorderWidth': instance.columnBorderWidth,
+  'columnDividerGap': instance.columnDividerGap,
   'columnResizeHandleWidth': instance.columnResizeHandleWidth,
   'columnResizeHandleMargin': const EdgeInsetsConverter().toJson(
     instance.columnResizeHandleMargin,
