@@ -1216,7 +1216,7 @@ public class DartTable extends DartComposite implements ITable {
         {
             TableItem[] result = new TableItem[selection.length];
             for (int i = 0; i < selection.length; ++i) {
-                result[i] = items[selection[i]];
+                result[i] = _getItem(selection[i]);
             }
             return result;
         }
@@ -1410,6 +1410,26 @@ public class DartTable extends DartComposite implements ITable {
         checkWidget();
         if (item == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        int count = items.length;
+        if (1 <= lastIndexOf && lastIndexOf < count - 1) {
+            if (items[lastIndexOf] == item)
+                return lastIndexOf;
+            if (items[lastIndexOf + 1] == item)
+                return ++lastIndexOf;
+            if (items[lastIndexOf - 1] == item)
+                return --lastIndexOf;
+        }
+        if (lastIndexOf < count / 2) {
+            for (int i = 0; i < count; i++) {
+                if (items[i] == item)
+                    return lastIndexOf = i;
+            }
+        } else {
+            for (int i = count - 1; i >= 0; --i) {
+                if (items[i] == item)
+                    return lastIndexOf = i;
+            }
+        }
         return -1;
     }
 
