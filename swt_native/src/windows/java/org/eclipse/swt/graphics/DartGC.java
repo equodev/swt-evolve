@@ -4345,9 +4345,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public Point stringExtent(String string) {
-        if (string == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return null;
+        return textExtent(string, 0);
     }
 
     Point stringExtentInPixels(String string) {
@@ -4385,7 +4383,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public Point textExtent(String string) {
-        return null;
+        return textExtent(string, SWT.DRAW_DELIMITER | SWT.DRAW_TAB);
     }
 
     /**
@@ -4420,7 +4418,9 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public Point textExtent(String string, int flags) {
-        return null;
+        if (string == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        return GCHelper.textExtent(string, flags, data.font);
     }
 
     Point textExtentInPixels(String string, int flags) {
