@@ -21,9 +21,10 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     extends ItemImpl<T, V> {
 
   TreeItemContext? _context;
-  
+
   bool _isHovered = false;
   bool _hasCheckedForChildren = false;
+  Offset? _lastTapPosition;
 
   VEvent _createEvent({int? detail, int? stateMask}) {
     final widgetTheme = Theme.of(context).extension<TreeThemeExtension>();
@@ -613,14 +614,17 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           _context?.parentTree
               .sendMouseTrackMouseExit(_context!.parentTreeValue, null);
         },
-        child: Listener(
+        child: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onPointerDown: (PointerDownEvent event) {
+          onTapDown: (TapDownDetails details) {
+            _lastTapPosition = details.localPosition;
+          },
+          onTap: () {
             if (!enabled) return;
-            if (event.buttons != 1) return;
 
-            final localPosition = event.localPosition;
-            if (localPosition.dx < expanderAreaWidth && hasChildren) {
+            if (_lastTapPosition != null &&
+                _lastTapPosition!.dx < expanderAreaWidth &&
+                hasChildren) {
               return;
             }
 
@@ -650,16 +654,13 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             _context?.parentTree
                 .sendSelectionSelection(_context!.parentTreeValue, e);
           },
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onDoubleTap: () {
-              if (!enabled) return;
-              // Send default selection event for double click on non-text areas
-              final e = _createEvent();
-              _context?.parentTree
-                  .sendSelectionDefaultSelection(_context!.parentTreeValue, e);
-            },
-            child: Container(
+          onDoubleTap: () {
+            if (!enabled) return;
+            final e = _createEvent();
+            _context?.parentTree
+                .sendSelectionDefaultSelection(_context!.parentTreeValue, e);
+          },
+          child: Container(
               width: double.infinity,
               constraints: BoxConstraints(
                 minHeight: widgetTheme.itemHeight,
@@ -719,8 +720,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildCellText({
