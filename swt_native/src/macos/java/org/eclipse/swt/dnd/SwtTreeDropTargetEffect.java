@@ -136,7 +136,12 @@ public class SwtTreeDropTargetEffect extends SwtDropTargetEffect implements ITre
     @Override
     public void dragOver(DropTargetEvent event) {
         int effect = checkEffect(event.feedback);
-        ((SwtDropTarget) ((DropTarget) event.widget).getImpl()).feedback = effect;
+        if (((DropTarget) event.widget).getImpl() instanceof DartDropTarget) {
+            ((DartDropTarget) ((DropTarget) event.widget).getImpl()).feedback = effect;
+        }
+        if (((DropTarget) event.widget).getImpl() instanceof SwtDropTarget) {
+            ((SwtDropTarget) ((DropTarget) event.widget).getImpl()).feedback = effect;
+        }
         OS.objc_msgSend(control.view.id, OS.sel_setShouldExpandItem_, (effect & DND.FEEDBACK_EXPAND) == 0 ? 0 : 1);
         if ((effect & DND.FEEDBACK_SCROLL) == 0) {
             shouldEnableScrolling = true;
@@ -144,6 +149,10 @@ public class SwtTreeDropTargetEffect extends SwtDropTargetEffect implements ITre
         } else {
             OS.objc_msgSend(control.view.id, OS.sel_setShouldScrollClipView_, 1);
         }
+    }
+
+    public boolean _shouldEnableScrolling() {
+        return shouldEnableScrolling;
     }
 
     public TreeDropTargetEffect getApi() {

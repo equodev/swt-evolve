@@ -22,6 +22,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  *  Class <code>DropTarget</code> defines the target object for a drag and drop transfer.
@@ -154,7 +155,7 @@ public class DropTarget extends Widget {
      */
     public DropTarget(Control control, int style) {
         this((IDropTarget) null);
-        setImpl(new SwtDropTarget(control, style, this));
+        setImpl(Config.isEquo(DropTarget.class, control) ? new DartDropTarget(control, style, this) : new SwtDropTarget(control, style, this));
     }
 
     /**

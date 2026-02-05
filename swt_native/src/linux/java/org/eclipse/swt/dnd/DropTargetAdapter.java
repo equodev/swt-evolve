@@ -15,6 +15,8 @@
  */
 package org.eclipse.swt.dnd;
 
+import dev.equo.swt.Config;
+
 /**
  *  This adapter class provides default implementations for the
  *  methods described by the <code>DropTargetListener</code> interface.
@@ -110,7 +112,7 @@ public class DropTargetAdapter implements DropTargetListener {
 
     public DropTargetAdapter() {
         this((IDropTargetAdapter) null);
-        setImpl(new SwtDropTargetAdapter(this));
+        setImpl(Config.isEquo(DropTargetAdapter.class) ? new DartDropTargetAdapter(this) : new SwtDropTargetAdapter(this));
     }
 
     protected IDropTargetAdapter impl;

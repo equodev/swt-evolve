@@ -236,6 +236,22 @@ public class SwtTreeDropTargetEffect extends SwtDropTargetEffect implements ITre
             GTK.gtk_tree_path_free(path[0]);
     }
 
+    public int _scrollIndex() {
+        return scrollIndex;
+    }
+
+    public long _scrollBeginTime() {
+        return scrollBeginTime;
+    }
+
+    public int _expandIndex() {
+        return expandIndex;
+    }
+
+    public long _expandBeginTime() {
+        return expandBeginTime;
+    }
+
     public TreeDropTargetEffect getApi() {
         if (api == null)
             api = TreeDropTargetEffect.createApi(this);

@@ -200,7 +200,7 @@ public class Config {
         return false;
     }
 
-    public static boolean isEquo(Class<?> clazz, Drawable parent) {
+    public static boolean isEquoGC(Class<?> clazz, Drawable parent) {
         if (forceEclipse) return false;
         // Per-widget override
         if (isEquoForced(clazz)) {
@@ -220,12 +220,6 @@ public class Config {
             return true;
 
         return false;
-    }
-
-    public static boolean isEquo(Class<?> clazz, org.eclipse.swt.widgets.Menu parent) {
-        if (forceEclipse) return false;
-        // MenuItem should use the same implementation as its parent Menu
-        return parent != null && parent.getImpl() instanceof org.eclipse.swt.widgets.DartMenu;
     }
 
     static boolean isEquoForced(Class<?> clazz) {
@@ -257,7 +251,7 @@ public class Config {
         return false;
     }
 
-    public static boolean isEquo(Class<?> clazz, Scrollable parent) {
+    public static boolean isEquo(Class<?> clazz, Widget parent) {
         if (idTracker && widgetTracker == null) {
             widgetTracker = new IdWidgetTracker();
             widgetTracker.startTracking();
@@ -331,26 +325,28 @@ public class Config {
         return (id.equals("/Shell/-1/Composite/4") || id.equals("/Shell/-1/Composite/5")) && isInStackTrace(E4_MAIN_TOOLBAR_CLASS, E4_MAIN_TOOLBAR_METHOD);
     }
 
-    private static boolean isCTabFolderBody(Class<?> clazz, Scrollable parent) {
-        return clazz == Composite.class && parent.getClass() == CTabFolder.class;
+    private static boolean isCTabFolderBody(Class<?> clazz, Widget parent) {
+        return Composite.class.isAssignableFrom(clazz) && parent.getClass() == CTabFolder.class;
     }
 
-    static boolean isCustomAncestor(Scrollable parent) {
+    static boolean isCustomAncestor(Widget parent) {
         Class<DartMainToolbar> dartMainToolbarClass = DartMainToolbar.class;
         return isAncestorOf(parent, dartMainToolbarClass);
     }
 
-    private static boolean isAncestorOf(Scrollable parent, Class<?> classType) {
-        while (parent != null) {
-            if (classType.isInstance(parent.getImpl()))
-                return true;
-            parent = parent.getImpl()._parent();
+    private static boolean isAncestorOf(Widget parentWidget, Class<?> classType) {
+        if (parentWidget instanceof Scrollable parent) {
+            while (parent != null) {
+                if (classType.isInstance(parent.getImpl()))
+                    return true;
+                parent = parent.getImpl()._parent();
+            }
         }
         return false;
     }
 
     public static IWidget getCompositeImpl(Composite parent, int style, Composite composite) {
-        if (Config.isEquo(Composite.class, parent))
+        if (Config.isEquo(composite.getClass(), parent))
             return new DartComposite(parent, style, composite);
         // In eclipse mode, always use SWT implementation without any special handling
         if (defaultImpl == Impl.eclipse || forceEclipse)

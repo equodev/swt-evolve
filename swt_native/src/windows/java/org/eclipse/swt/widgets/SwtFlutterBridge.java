@@ -148,6 +148,13 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
     }
 
     @Override
+    public void setVisible(DartControl control, boolean visible) {
+        long topHandle = control.getApi().handle;
+        if (topHandle != 0)
+            OS.ShowWindow(topHandle, visible ? OS.SW_SHOW : OS.SW_HIDE);
+    }
+
+    @Override
     public void reparent(DartControl control, Composite newParent) {
         long controlHandle = control.getApi().handle;
 

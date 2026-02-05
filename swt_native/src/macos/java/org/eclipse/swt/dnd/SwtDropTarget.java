@@ -444,7 +444,10 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
         if (dt == null)
             return 0;
         if (sel == OS.sel_wantsPeriodicDraggingUpdates) {
-            return ((SwtDropTarget) dt.getImpl()).wantsPeriodicDraggingUpdates(id, sel) ? 1 : 0;
+            if (dt.getImpl() instanceof SwtDropTarget) {
+                return ((SwtDropTarget) dt.getImpl()).wantsPeriodicDraggingUpdates(id, sel) ? 1 : 0;
+            } else
+                return 0;
         }
         return 0;
     }
@@ -477,13 +480,24 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
         // Looks like an NSObject for our purposes, though.
         NSObject sender = new NSObject(arg0);
         if (sel == OS.sel_draggingEntered_) {
-            return ((SwtDropTarget) dt.getImpl()).draggingEntered(id, sel, sender);
+            if (dt.getImpl() instanceof SwtDropTarget) {
+                return ((SwtDropTarget) dt.getImpl()).draggingEntered(id, sel, sender);
+            } else
+                return 0;
         } else if (sel == OS.sel_draggingUpdated_) {
-            return ((SwtDropTarget) dt.getImpl()).draggingUpdated(id, sel, sender);
+            if (dt.getImpl() instanceof SwtDropTarget) {
+                return ((SwtDropTarget) dt.getImpl()).draggingUpdated(id, sel, sender);
+            } else
+                return 0;
         } else if (sel == OS.sel_draggingExited_) {
-            ((SwtDropTarget) dt.getImpl()).draggingExited(id, sel, sender);
+            if (dt.getImpl() instanceof SwtDropTarget) {
+                ((SwtDropTarget) dt.getImpl()).draggingExited(id, sel, sender);
+            }
         } else if (sel == OS.sel_performDragOperation_) {
-            return ((SwtDropTarget) dt.getImpl()).performDragOperation(id, sel, sender) ? 1 : 0;
+            if (dt.getImpl() instanceof SwtDropTarget) {
+                return ((SwtDropTarget) dt.getImpl()).performDragOperation(id, sel, sender) ? 1 : 0;
+            } else
+                return 0;
         }
         return 0;
     }
@@ -499,13 +513,25 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
         if (dt == null)
             return 0;
         if (sel == OS.sel_outlineView_acceptDrop_item_childIndex_) {
-            return ((SwtDropTarget) dt.getImpl()).outlineView_acceptDrop_item_childIndex(id, sel, arg0, arg1, arg2, arg3) ? 1 : 0;
+            if (dt.getImpl() instanceof SwtDropTarget) {
+                return ((SwtDropTarget) dt.getImpl()).outlineView_acceptDrop_item_childIndex(id, sel, arg0, arg1, arg2, arg3) ? 1 : 0;
+            } else
+                return 0;
         } else if (sel == OS.sel_outlineView_validateDrop_proposedItem_proposedChildIndex_) {
-            return ((SwtDropTarget) dt.getImpl()).outlineView_validateDrop_proposedItem_proposedChildIndex(id, sel, arg0, arg1, arg2, arg3);
+            if (dt.getImpl() instanceof SwtDropTarget) {
+                return ((SwtDropTarget) dt.getImpl()).outlineView_validateDrop_proposedItem_proposedChildIndex(id, sel, arg0, arg1, arg2, arg3);
+            } else
+                return 0;
         } else if (sel == OS.sel_tableView_acceptDrop_row_dropOperation_) {
-            return ((SwtDropTarget) dt.getImpl()).tableView_acceptDrop_row_dropOperation(id, sel, arg0, arg1, arg2, arg3) ? 1 : 0;
+            if (dt.getImpl() instanceof SwtDropTarget) {
+                return ((SwtDropTarget) dt.getImpl()).tableView_acceptDrop_row_dropOperation(id, sel, arg0, arg1, arg2, arg3) ? 1 : 0;
+            } else
+                return 0;
         } else if (sel == OS.sel_tableView_validateDrop_proposedRow_proposedDropOperation_) {
-            return ((SwtDropTarget) dt.getImpl()).tableView_validateDrop_proposedRow_proposedDropOperation(id, sel, arg0, arg1, arg2, arg3);
+            if (dt.getImpl() instanceof SwtDropTarget) {
+                return ((SwtDropTarget) dt.getImpl()).tableView_validateDrop_proposedRow_proposedDropOperation(id, sel, arg0, arg1, arg2, arg3);
+            } else
+                return 0;
         }
         return 0;
     }
@@ -982,6 +1008,42 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
     // By returning true we get draggingUpdated messages even when the mouse isn't moving.
     boolean wantsPeriodicDraggingUpdates(long id, long sel) {
         return true;
+    }
+
+    public Control _control() {
+        return control;
+    }
+
+    public Listener _controlListener() {
+        return controlListener;
+    }
+
+    public Transfer[] _transferAgents() {
+        return transferAgents;
+    }
+
+    public DropTargetEffect _dropEffect() {
+        return dropEffect;
+    }
+
+    public int _feedback() {
+        return feedback;
+    }
+
+    public boolean _labelDragHandlersAdded() {
+        return labelDragHandlersAdded;
+    }
+
+    public TransferData _selectedDataType() {
+        return selectedDataType;
+    }
+
+    public int _selectedOperation() {
+        return selectedOperation;
+    }
+
+    public int _keyOperation() {
+        return keyOperation;
     }
 
     public DropTarget getApi() {

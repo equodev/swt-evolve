@@ -838,6 +838,66 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
         dragOverEvent.time = event.time;
     }
 
+    public Control _control() {
+        return control;
+    }
+
+    public Listener _controlListener() {
+        return controlListener;
+    }
+
+    public Transfer[] _transferAgents() {
+        return transferAgents;
+    }
+
+    public DropTargetEffect _dropEffect() {
+        return dropEffect;
+    }
+
+    public TransferData _selectedDataType() {
+        return selectedDataType;
+    }
+
+    public int _selectedOperation() {
+        return selectedOperation;
+    }
+
+    public int _keyOperation() {
+        return keyOperation;
+    }
+
+    public long _dragOverStart() {
+        return dragOverStart;
+    }
+
+    public Runnable _dragOverHeartbeat() {
+        return dragOverHeartbeat;
+    }
+
+    public DNDEvent _dragOverEvent() {
+        return dragOverEvent;
+    }
+
+    public int _drag_motion_handler() {
+        return drag_motion_handler;
+    }
+
+    public int _drag_leave_handler() {
+        return drag_leave_handler;
+    }
+
+    public int _drag_data_received_handler() {
+        return drag_data_received_handler;
+    }
+
+    public int _drag_drop_handler() {
+        return drag_drop_handler;
+    }
+
+    public long _dropController() {
+        return dropController;
+    }
+
     public DropTarget getApi() {
         if (api == null)
             api = DropTarget.createApi(this);

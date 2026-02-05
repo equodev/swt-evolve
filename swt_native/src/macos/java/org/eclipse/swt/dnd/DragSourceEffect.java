@@ -17,6 +17,7 @@ package org.eclipse.swt.dnd;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  * This class provides default implementations to display a drag source
@@ -54,7 +55,7 @@ public class DragSourceEffect extends DragSourceAdapter {
      */
     public DragSourceEffect(Control control) {
         this((IDragSourceEffect) null);
-        setImpl(new SwtDragSourceEffect(control, this));
+        setImpl(Config.isEquo(DragSourceEffect.class, control) ? new DartDragSourceEffect(control, this) : new SwtDragSourceEffect(control, this));
     }
 
     /**

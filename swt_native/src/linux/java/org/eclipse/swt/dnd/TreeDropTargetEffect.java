@@ -19,6 +19,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  * This class provides a default drag under effect (eg. select, insert, scroll and expand)
@@ -62,7 +63,7 @@ public class TreeDropTargetEffect extends DropTargetEffect {
      */
     public TreeDropTargetEffect(Tree tree) {
         this((ITreeDropTargetEffect) null);
-        setImpl(new SwtTreeDropTargetEffect(tree, this));
+        setImpl(Config.isEquo(TreeDropTargetEffect.class) ? new DartTreeDropTargetEffect(tree, this) : new SwtTreeDropTargetEffect(tree, this));
     }
 
     /**

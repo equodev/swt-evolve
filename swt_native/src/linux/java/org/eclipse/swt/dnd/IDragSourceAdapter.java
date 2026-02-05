@@ -1,6 +1,6 @@
 package org.eclipse.swt.dnd;
 
-public interface IDragSourceAdapter {
+public interface IDragSourceAdapter extends ImplDragSourceAdapter {
 
     /**
      * This implementation of <code>dragStart</code> permits the drag operation to start.

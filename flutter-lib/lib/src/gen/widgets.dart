@@ -10,6 +10,8 @@ import '../gen/coolbar.dart';
 import '../gen/coolitem.dart';
 import '../gen/ctabfolder.dart';
 import '../gen/ctabitem.dart';
+import '../gen/dragsource.dart';
+import '../gen/droptarget.dart';
 import '../gen/expandbar.dart';
 import '../gen/expanditem.dart';
 import '../gen/gc.dart';
@@ -83,6 +85,8 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "TreeColumn" => VTreeColumn.fromJson(child),
     "TreeItem" => VTreeItem.fromJson(child),
     "Caret" => VCaret.fromJson(child),
+    "DragSource" => VDragSource.fromJson(child),
+    "DropTarget" => VDropTarget.fromJson(child),
     "GC" => VGC.fromJson(child),
     "Menu" => VMenu.fromJson(child),
     "ScrollBar" => VScrollBar.fromJson(child),
@@ -135,6 +139,8 @@ Widget mapWidgetFromValue(VWidget child) {
     VTreeColumn() => TreeColumnSwt(key: ValueKey(id), value: child),
     VTreeItem() => TreeItemSwt(key: ValueKey(id), value: child),
     VCaret() => CaretSwt(key: ValueKey(id), value: child),
+    VDragSource() => DragSourceSwt(key: ValueKey(id), value: child),
+    VDropTarget() => DropTargetSwt(key: ValueKey(id), value: child),
     VGC() => GCSwt(key: ValueKey(id), value: child),
     VMenu() => MenuSwt(key: ValueKey(id), value: child),
     VScrollBar() => ScrollBarSwt(key: ValueKey(id), value: child),

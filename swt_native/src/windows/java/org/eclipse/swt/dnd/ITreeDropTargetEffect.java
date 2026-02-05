@@ -5,7 +5,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.widgets.*;
 
-public interface ITreeDropTargetEffect extends IDropTargetEffect {
+public interface ITreeDropTargetEffect extends IDropTargetEffect, ImplTreeDropTargetEffect {
 
     /**
      * This implementation of <code>dragEnter</code> provides a default drag under effect

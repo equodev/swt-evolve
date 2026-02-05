@@ -30,7 +30,8 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     }
 
     public static SwtFlutterBridge of(DartWidget widget) {
-        if (widget instanceof DartControl dartControl && dartControl.parent.getImpl() instanceof SwtComposite) {
+        if (widget instanceof DartControl dartControl && (dartControl.parent.getImpl() instanceof SwtComposite
+                || (dartControl.getApi().getClass().getName().endsWith("ContributedPartRenderer$1") && dartControl.parent.getImpl() instanceof DartCTabFolder))) {
 //            SwtComposite parentComposite = new SwtComposite(dartControl.parent, SWT.NONE, null);
             SwtFlutterBridge bridge = new SwtFlutterBridge(widget);
             widget.bridge = bridge;

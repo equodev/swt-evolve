@@ -19,6 +19,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  * This class provides a default drag under effect (eg. select, insert and scroll)
@@ -58,7 +59,7 @@ public class TableDropTargetEffect extends DropTargetEffect {
      */
     public TableDropTargetEffect(Table table) {
         this((ITableDropTargetEffect) null);
-        setImpl(new SwtTableDropTargetEffect(table, this));
+        setImpl(Config.isEquo(TableDropTargetEffect.class) ? new DartTableDropTargetEffect(table, this) : new SwtTableDropTargetEffect(table, this));
     }
 
     /**

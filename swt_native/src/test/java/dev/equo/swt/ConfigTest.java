@@ -1,5 +1,6 @@
 package dev.equo.swt;
 
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabFolderRenderer;
 import org.eclipse.swt.custom.CTabItem;
@@ -9,6 +10,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -331,6 +333,46 @@ public class ConfigTest {
         void should_return_correct_dependency_group_for_taskbar() {
             var group = Config.getDependencyGroup(TaskBar.class);
             assertThat(group).containsExactlyInAnyOrder("TaskBar", "TaskItem");
+        }
+    }
+
+    @Nested
+    @ExtendWith(Mocks.class)
+    class ClassName {
+        @Test
+        void widget_name_for_swt() {
+            String type = Config.getSwtBaseClassName(Composite.class);
+            assertThat(type).isEqualTo("Composite");
+        }
+
+        @Test
+        void widget_name_for_subclass() {
+            String type = Config.getSwtBaseClassName(MyComp.class);
+            assertThat(type).isEqualTo("Composite");
+        }
+
+        @Test
+        void widget_name_for_anonymous() {
+            Config.forceEquo();
+
+            Composite anonym = new Composite(null) {};
+            String type = Config.getSwtBaseClassName(anonym.getClass());
+            assertThat(type).isEqualTo("Composite");
+        }
+
+        @Test
+        void widget_name_for_anonymous_subclass() {
+            Config.forceEquo();
+
+            Composite anonym = new MyComp() {};
+            String type = Config.getSwtBaseClassName(anonym.getClass());
+            assertThat(type).isEqualTo("Composite");
+        }
+
+        class MyComp extends Composite {
+            public MyComp() {
+                super(null);
+            }
         }
     }
 

@@ -469,7 +469,10 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
         if (ds == null)
             return 0;
         if (sel == OS.sel_ignoreModifierKeysWhileDragging) {
-            return (((SwtDragSource) ds.getImpl()).ignoreModifierKeysWhileDragging(id, sel) ? 1 : 0);
+            if (ds.getImpl() instanceof SwtDragSource) {
+                return (((SwtDragSource) ds.getImpl()).ignoreModifierKeysWhileDragging(id, sel) ? 1 : 0);
+            } else
+                return 0;
         }
         return 0;
     }
@@ -490,7 +493,10 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
         if (ds == null)
             return 0;
         if (sel == OS.sel_draggingSourceOperationMaskForLocal_) {
-            return ((SwtDragSource) ds.getImpl()).draggingSourceOperationMaskForLocal(id, sel, arg0);
+            if (ds.getImpl() instanceof SwtDragSource) {
+                return ((SwtDragSource) ds.getImpl()).draggingSourceOperationMaskForLocal(id, sel, arg0);
+            } else
+                return 0;
         }
         return 0;
     }
@@ -511,9 +517,13 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
         if (ds == null)
             return 0;
         if (sel == OS.sel_draggedImage_beganAt_) {
-            ((SwtDragSource) ds.getImpl()).draggedImage_beganAt(id, sel, arg0, arg1);
+            if (ds.getImpl() instanceof SwtDragSource) {
+                ((SwtDragSource) ds.getImpl()).draggedImage_beganAt(id, sel, arg0, arg1);
+            }
         } else if (sel == OS.sel_pasteboard_provideDataForType_) {
-            ((SwtDragSource) ds.getImpl()).pasteboard_provideDataForType(id, sel, arg0, arg1);
+            if (ds.getImpl() instanceof SwtDragSource) {
+                ((SwtDragSource) ds.getImpl()).pasteboard_provideDataForType(id, sel, arg0, arg1);
+            }
         }
         return 0;
     }
@@ -536,7 +546,9 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
         if (sel == OS.sel_draggedImage_endedAt_operation_) {
             NSPoint point = new NSPoint();
             OS.memmove(point, arg1, NSPoint.sizeof);
-            ((SwtDragSource) ds.getImpl()).draggedImage_endedAt_operation(id, sel, arg0, point, arg2);
+            if (ds.getImpl() instanceof SwtDragSource) {
+                ((SwtDragSource) ds.getImpl()).draggedImage_endedAt_operation(id, sel, arg0, point, arg2);
+            }
         }
         return 0;
     }
@@ -557,7 +569,10 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
         if (ds == null)
             return 0;
         if (sel == OS.sel_dragImageForRowsWithIndexes_tableColumns_event_offset_) {
-            return ((SwtDragSource) ds.getImpl()).dragImageForRowsWithIndexes_tableColumns_event_offset(id, sel, arg0, arg1, arg2, arg3);
+            if (ds.getImpl() instanceof SwtDragSource) {
+                return ((SwtDragSource) ds.getImpl()).dragImageForRowsWithIndexes_tableColumns_event_offset(id, sel, arg0, arg1, arg2, arg3);
+            } else
+                return 0;
         }
         return 0;
     }
@@ -812,6 +827,34 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
         // Save off the drag operations -- AppKit will call back to us to request them during the drag.
         dragOperations = opToOsOp(getStyle());
         return event;
+    }
+
+    public String[] _paths() {
+        return paths;
+    }
+
+    public boolean[] _exist() {
+        return exist;
+    }
+
+    public Control _control() {
+        return control;
+    }
+
+    public Listener _controlListener() {
+        return controlListener;
+    }
+
+    public Transfer[] _transferAgents() {
+        return transferAgents;
+    }
+
+    public DragSourceEffect _dragEffect() {
+        return dragEffect;
+    }
+
+    public Image _dragImageFromListener() {
+        return dragImageFromListener;
     }
 
     public DragSource getApi() {

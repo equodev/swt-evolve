@@ -71,6 +71,10 @@ public class SwtDragSourceEffect extends SwtDragSourceAdapter implements IDragSo
         return control;
     }
 
+    public Control _control() {
+        return control;
+    }
+
     public DragSourceEffect getApi() {
         if (api == null)
             api = DragSourceEffect.createApi(this);

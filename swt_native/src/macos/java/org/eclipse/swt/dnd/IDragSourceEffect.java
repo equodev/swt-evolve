@@ -3,7 +3,7 @@ package org.eclipse.swt.dnd;
 import org.eclipse.swt.*;
 import org.eclipse.swt.widgets.*;
 
-public interface IDragSourceEffect extends IDragSourceAdapter {
+public interface IDragSourceEffect extends IDragSourceAdapter, ImplDragSourceEffect {
 
     /**
      * Returns the Control which is registered for this DragSourceEffect.  This is the control that the

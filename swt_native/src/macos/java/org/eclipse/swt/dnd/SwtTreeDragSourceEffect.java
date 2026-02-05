@@ -105,6 +105,10 @@ public class SwtTreeDragSourceEffect extends SwtDragSourceEffect implements ITre
         return image;
     }
 
+    public Image _dragSourceImage() {
+        return dragSourceImage;
+    }
+
     public TreeDragSourceEffect getApi() {
         if (api == null)
             api = TreeDragSourceEffect.createApi(this);

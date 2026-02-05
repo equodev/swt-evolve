@@ -248,7 +248,9 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
         DragSource dragSource = FindDragSource(widgetHandle);
         if (dragSource == null)
             return;
-        ((SwtDragSource) dragSource.getImpl()).dragBeginGtk4(source);
+        if (dragSource.getImpl() instanceof SwtDragSource) {
+            ((SwtDragSource) dragSource.getImpl()).dragBeginGtk4(source);
+        }
     }
 
     void dragBeginGtk4(long source) {
@@ -732,6 +734,30 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
                 OS.g_free(targets[i].target);
             }
         }
+    }
+
+    public Control _control() {
+        return control;
+    }
+
+    public Listener _controlListener() {
+        return controlListener;
+    }
+
+    public Transfer[] _transferAgents() {
+        return transferAgents;
+    }
+
+    public DragSourceEffect _dragEffect() {
+        return dragEffect;
+    }
+
+    public long _targetList() {
+        return targetList;
+    }
+
+    public boolean _moveData() {
+        return moveData;
     }
 
     public DragSource getApi() {

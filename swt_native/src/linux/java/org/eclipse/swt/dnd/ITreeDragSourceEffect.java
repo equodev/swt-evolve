@@ -3,7 +3,7 @@ package org.eclipse.swt.dnd;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
-public interface ITreeDragSourceEffect extends IDragSourceEffect {
+public interface ITreeDragSourceEffect extends IDragSourceEffect, ImplTreeDragSourceEffect {
 
     /**
      * This implementation of <code>dragFinished</code> disposes the image

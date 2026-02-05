@@ -2429,6 +2429,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void showWidget(boolean visible) {
+        getBridge().setVisible(this, visible);
     }
 
     @Override
