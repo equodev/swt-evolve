@@ -813,6 +813,38 @@ public class SwtDropTarget extends SwtWidget implements IDropTarget {
         this.transferAgents = transferAgents;
     }
 
+    public Control _control() {
+        return control;
+    }
+
+    public Listener _controlListener() {
+        return controlListener;
+    }
+
+    public Transfer[] _transferAgents() {
+        return transferAgents;
+    }
+
+    public DropTargetEffect _dropEffect() {
+        return dropEffect;
+    }
+
+    public TransferData _selectedDataType() {
+        return selectedDataType;
+    }
+
+    public int _selectedOperation() {
+        return selectedOperation;
+    }
+
+    public int _keyOperation() {
+        return keyOperation;
+    }
+
+    public int _refCount() {
+        return refCount;
+    }
+
     public DropTarget getApi() {
         if (api == null)
             api = DropTarget.createApi(this);

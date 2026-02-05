@@ -139,7 +139,7 @@ public class TreeItem extends Item {
      */
     public TreeItem(TreeItem parentItem, int style) {
         this((ITreeItem) null);
-        setImpl(Config.isEquo(TreeItem.class) ? new DartTreeItem(parentItem, style, this) : new SwtTreeItem(parentItem, style, this));
+        setImpl(Config.isEquo(TreeItem.class, parentItem) ? new DartTreeItem(parentItem, style, this) : new SwtTreeItem(parentItem, style, this));
     }
 
     /**
@@ -169,7 +169,7 @@ public class TreeItem extends Item {
      */
     public TreeItem(TreeItem parentItem, int style, int index) {
         this((ITreeItem) null);
-        setImpl(Config.isEquo(TreeItem.class) ? new DartTreeItem(parentItem, style, index, this) : new SwtTreeItem(parentItem, style, index, this));
+        setImpl(Config.isEquo(TreeItem.class, parentItem) ? new DartTreeItem(parentItem, style, index, this) : new SwtTreeItem(parentItem, style, index, this));
     }
 
     TreeItem(Tree parent, TreeItem parentItem, int style, int index, boolean create) {

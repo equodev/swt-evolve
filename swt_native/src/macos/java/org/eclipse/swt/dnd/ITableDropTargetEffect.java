@@ -2,7 +2,7 @@ package org.eclipse.swt.dnd;
 
 import org.eclipse.swt.widgets.*;
 
-public interface ITableDropTargetEffect extends IDropTargetEffect {
+public interface ITableDropTargetEffect extends IDropTargetEffect, ImplTableDropTargetEffect {
 
     /**
      * This implementation of <code>dragEnter</code> provides a default drag under effect

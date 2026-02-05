@@ -184,6 +184,10 @@ public class SwtDropTargetEffect extends SwtDropTargetAdapter implements IDropTa
         return nextItem;
     }
 
+    public Control _control() {
+        return control;
+    }
+
     public DropTargetEffect getApi() {
         if (api == null)
             api = DropTargetEffect.createApi(this);

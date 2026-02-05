@@ -20,6 +20,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  * This class provides default implementations to display a source image
@@ -49,7 +50,7 @@ public class TableDragSourceEffect extends DragSourceEffect {
      */
     public TableDragSourceEffect(Table table) {
         this((ITableDragSourceEffect) null);
-        setImpl(new SwtTableDragSourceEffect(table, this));
+        setImpl(Config.isEquo(TableDragSourceEffect.class) ? new DartTableDragSourceEffect(table, this) : new SwtTableDragSourceEffect(table, this));
     }
 
     /**

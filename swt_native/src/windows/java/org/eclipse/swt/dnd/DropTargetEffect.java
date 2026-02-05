@@ -18,6 +18,7 @@ package org.eclipse.swt.dnd;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  * This class provides a default drag under effect during a drag and drop.
@@ -64,7 +65,7 @@ public class DropTargetEffect extends DropTargetAdapter {
      */
     public DropTargetEffect(Control control) {
         this((IDropTargetEffect) null);
-        setImpl(new SwtDropTargetEffect(control, this));
+        setImpl(Config.isEquo(DropTargetEffect.class, control) ? new DartDropTargetEffect(control, this) : new SwtDropTargetEffect(control, this));
     }
 
     /**

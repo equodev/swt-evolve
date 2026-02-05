@@ -4,7 +4,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.widgets.*;
 
-public interface ITableDropTargetEffect extends IDropTargetEffect {
+public interface ITableDropTargetEffect extends IDropTargetEffect, ImplTableDropTargetEffect {
 
     /**
      * This implementation of <code>dragEnter</code> provides a default drag under effect

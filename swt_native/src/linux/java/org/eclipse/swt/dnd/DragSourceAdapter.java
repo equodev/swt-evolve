@@ -15,6 +15,8 @@
  */
 package org.eclipse.swt.dnd;
 
+import dev.equo.swt.Config;
+
 /**
  * This adapter class provides default implementations for the
  * methods described by the <code>DragSourceListener</code> interface.
@@ -61,7 +63,7 @@ public class DragSourceAdapter implements DragSourceListener {
 
     public DragSourceAdapter() {
         this((IDragSourceAdapter) null);
-        setImpl(new SwtDragSourceAdapter(this));
+        setImpl(Config.isEquo(DragSourceAdapter.class) ? new DartDragSourceAdapter(this) : new SwtDragSourceAdapter(this));
     }
 
     protected IDragSourceAdapter impl;

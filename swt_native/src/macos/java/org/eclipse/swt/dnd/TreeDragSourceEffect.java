@@ -20,6 +20,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  * This class provides default implementations to display a source image
@@ -48,7 +49,7 @@ public class TreeDragSourceEffect extends DragSourceEffect {
      */
     public TreeDragSourceEffect(Tree tree) {
         this((ITreeDragSourceEffect) null);
-        setImpl(new SwtTreeDragSourceEffect(tree, this));
+        setImpl(Config.isEquo(TreeDragSourceEffect.class) ? new DartTreeDragSourceEffect(tree, this) : new SwtTreeDragSourceEffect(tree, this));
     }
 
     /**

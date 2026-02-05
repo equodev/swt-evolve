@@ -4087,6 +4087,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 return;
             sendEvent(SWT.Hide);
         }
+        getBridge().setVisible(this, visible);
     }
 
     void setZOrder(Control sibling, boolean above, boolean fixRelations) {

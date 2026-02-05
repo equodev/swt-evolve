@@ -163,6 +163,10 @@ public class SwtTableDragSourceEffect extends SwtDragSourceEffect implements ITa
         return null;
     }
 
+    public Image _dragSourceImage() {
+        return dragSourceImage;
+    }
+
     public TableDragSourceEffect getApi() {
         if (api == null)
             api = TableDragSourceEffect.createApi(this);

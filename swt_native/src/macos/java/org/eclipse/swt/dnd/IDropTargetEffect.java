@@ -4,7 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
-public interface IDropTargetEffect extends IDropTargetAdapter {
+public interface IDropTargetEffect extends IDropTargetAdapter, ImplDropTargetEffect {
 
     /**
      * Returns the Control which is registered for this DropTargetEffect.  This is the control over which the

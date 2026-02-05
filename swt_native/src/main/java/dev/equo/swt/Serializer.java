@@ -52,7 +52,8 @@ public class Serializer {
         writer.writeByte((byte)',');
         writer.writeByte((byte)'"'); writer.writeAscii(name_swt); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
         Class<? extends Widget> aClass = api.getClass();
-        StringConverter.serialize(aClass.isAnonymousClass() || !aClass.getPackage().getName().startsWith("org.eclipse.swt") ? Config.getSwtBaseClassName(aClass) : aClass.getSimpleName(), writer);
+        String widgetName = aClass.isAnonymousClass() || !aClass.getPackage().getName().startsWith("org.eclipse.swt") ? Config.getSwtBaseClassName(aClass) : aClass.getSimpleName();
+        StringConverter.serialize(widgetName, writer);
         writer.writeByte((byte)',');
 //        writer.writeByte((byte)'"'); writer.writeAscii(name_style); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
 //        NumberConverter.serialize(api.getStyle(), writer);

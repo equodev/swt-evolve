@@ -18,4 +18,11 @@ public class GTKWrapper {
     public static void gtk_widget_show(long widget) {
         GTK3.gtk_widget_show(widget);
     }
+
+    /**
+     * Hides a GTK widget.
+     */
+    public static void gtk_widget_hide(long widget) {
+        GTK3.gtk_widget_hide(widget);
+    }
 }

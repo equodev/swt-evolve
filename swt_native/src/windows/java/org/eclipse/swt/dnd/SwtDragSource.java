@@ -864,6 +864,34 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
         this.transferAgents = transferAgents;
     }
 
+    public Control _control() {
+        return control;
+    }
+
+    public Listener _controlListener() {
+        return controlListener;
+    }
+
+    public Transfer[] _transferAgents() {
+        return transferAgents;
+    }
+
+    public DragSourceEffect _dragEffect() {
+        return dragEffect;
+    }
+
+    public Composite _topControl() {
+        return topControl;
+    }
+
+    public long _hwndDrag() {
+        return hwndDrag;
+    }
+
+    public int _dataEffect() {
+        return dataEffect;
+    }
+
     public DragSource getApi() {
         if (api == null)
             api = DragSource.createApi(this);

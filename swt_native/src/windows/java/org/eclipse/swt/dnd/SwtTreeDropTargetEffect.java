@@ -298,6 +298,34 @@ public class SwtTreeDropTargetEffect extends SwtDropTargetEffect implements ITre
         }
     }
 
+    public long _dropIndex() {
+        return dropIndex;
+    }
+
+    public long _scrollIndex() {
+        return scrollIndex;
+    }
+
+    public long _scrollBeginTime() {
+        return scrollBeginTime;
+    }
+
+    public long _expandIndex() {
+        return expandIndex;
+    }
+
+    public long _expandBeginTime() {
+        return expandBeginTime;
+    }
+
+    public TreeItem _insertItem() {
+        return insertItem;
+    }
+
+    public boolean _insertBefore() {
+        return insertBefore;
+    }
+
     public TreeDropTargetEffect getApi() {
         if (api == null)
             api = TreeDropTargetEffect.createApi(this);

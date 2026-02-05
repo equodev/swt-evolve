@@ -243,6 +243,22 @@ public class SwtTableDropTargetEffect extends SwtDropTargetEffect implements ITa
         }
     }
 
+    public int _scrollIndex() {
+        return scrollIndex;
+    }
+
+    public long _scrollBeginTime() {
+        return scrollBeginTime;
+    }
+
+    public TableItem _dropHighlight() {
+        return dropHighlight;
+    }
+
+    public int _iItemInsert() {
+        return iItemInsert;
+    }
+
     public TableDropTargetEffect getApi() {
         if (api == null)
             api = TableDropTargetEffect.createApi(this);

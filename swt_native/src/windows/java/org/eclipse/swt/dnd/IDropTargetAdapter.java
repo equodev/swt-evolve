@@ -1,6 +1,6 @@
 package org.eclipse.swt.dnd;
 
-public interface IDropTargetAdapter {
+public interface IDropTargetAdapter extends ImplDropTargetAdapter {
 
     /**
      * This implementation of <code>dragEnter</code> permits the default

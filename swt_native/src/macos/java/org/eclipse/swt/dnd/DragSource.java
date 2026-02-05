@@ -21,6 +21,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  *  <code>DragSource</code> defines the source object for a drag and drop transfer.
@@ -134,7 +135,7 @@ public class DragSource extends Widget {
      */
     public DragSource(Control control, int style) {
         this((IDragSource) null);
-        setImpl(new SwtDragSource(control, style, this));
+        setImpl(Config.isEquo(DragSource.class, control) ? new DartDragSource(control, style, this) : new SwtDragSource(control, style, this));
     }
 
     /**

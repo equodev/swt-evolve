@@ -103,7 +103,7 @@ public class IdWidgetTracker implements WidgetSpy.WidgetTracker {
         inspectorShell = new Shell(display, SWT.SHELL_TRIM | SWT.ON_TOP);
         inspectorShell.setText("Widget Inspector");
         inspectorShell.setLayout(new FillLayout());
-        inspectorShell.setSize(800, 600);
+        inspectorShell.setSize(850, 600);
 
         inspectorText = new Text(inspectorShell, SWT.MULTI | SWT.READ_ONLY | SWT.V_SCROLL | SWT.H_SCROLL);
         inspectorText.setFont(display.getSystemFont());

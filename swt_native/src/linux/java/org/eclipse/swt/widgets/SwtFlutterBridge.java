@@ -84,6 +84,17 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
     }
 
     @Override
+    public void setVisible(DartControl control, boolean visible) {
+        long handle = control.getApi().handle;
+        if (handle != 0) {
+            if (visible)
+                GTKWrapper.gtk_widget_show(handle);
+            else
+                GTKWrapper.gtk_widget_hide(handle);
+        }
+    }
+
+    @Override
     protected void destroyHandle(DartControl control) {
         if (control.getApi().handle != 0) {
             // Remove from SWT display first

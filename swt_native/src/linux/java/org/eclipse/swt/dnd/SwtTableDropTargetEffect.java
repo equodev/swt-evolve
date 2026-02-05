@@ -199,6 +199,14 @@ public class SwtTableDropTargetEffect extends SwtDropTargetEffect implements ITa
             GTK.gtk_tree_path_free(path[0]);
     }
 
+    public int _scrollIndex() {
+        return scrollIndex;
+    }
+
+    public long _scrollBeginTime() {
+        return scrollBeginTime;
+    }
+
     public TableDropTargetEffect getApi() {
         if (api == null)
             api = TableDropTargetEffect.createApi(this);

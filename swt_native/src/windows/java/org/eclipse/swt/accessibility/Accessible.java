@@ -82,7 +82,7 @@ public class Accessible {
 
     Accessible(Control control) {
         this((IIAccessible) null);
-        setImpl(Config.isEquo(Accessible.class) ? new DartAccessible(control, this) : new SwtAccessible(control, this));
+        setImpl(Config.isEquo(Accessible.class, control) ? new DartAccessible(control, this) : new SwtAccessible(control, this));
     }
 
     Accessible(Accessible parent, long iaccessible_address) {

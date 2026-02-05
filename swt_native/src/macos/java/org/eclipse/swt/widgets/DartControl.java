@@ -3351,6 +3351,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 fixFocus = isFocusAncestor(control);
             }
         }
+        getBridge().setVisible(this, visible);
         if (isDisposed())
             return;
         invalidateVisibleRegion();

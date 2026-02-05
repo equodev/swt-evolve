@@ -108,7 +108,7 @@ public final class GC extends Resource {
      */
     public GC(Drawable drawable) {
         this((IGC) null);
-        setImpl(Config.isEquo(GC.class, drawable) ? new DartGC(drawable, this) : new SwtGC(drawable, this));
+        setImpl(Config.isEquoGC(GC.class, drawable) ? new DartGC(drawable, this) : new SwtGC(drawable, this));
     }
 
     /**
@@ -142,7 +142,7 @@ public final class GC extends Resource {
      */
     public GC(Drawable drawable, int style) {
         this((IGC) null);
-        setImpl(Config.isEquo(GC.class, drawable) ? new DartGC(drawable, this) : new SwtGC(drawable, this));
+        setImpl(Config.isEquoGC(GC.class, drawable) ? new DartGC(drawable, this) : new SwtGC(drawable, this));
     }
 
     /**

@@ -3,7 +3,7 @@ package org.eclipse.swt.dnd;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
-public interface ITableDragSourceEffect extends IDragSourceEffect {
+public interface ITableDragSourceEffect extends IDragSourceEffect, ImplTableDragSourceEffect {
 
     /**
      * This implementation of <code>dragFinished</code> disposes the image

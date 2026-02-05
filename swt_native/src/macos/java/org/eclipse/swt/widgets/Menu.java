@@ -142,7 +142,7 @@ public class Menu extends Widget {
      */
     public Menu(Menu parentMenu) {
         this((IMenu) null);
-        setImpl(Config.isEquo(Menu.class) ? new DartMenu(parentMenu, this) : new SwtMenu(parentMenu, this));
+        setImpl(Config.isEquo(Menu.class, parentMenu) ? new DartMenu(parentMenu, this) : new SwtMenu(parentMenu, this));
     }
 
     /**
@@ -171,7 +171,7 @@ public class Menu extends Widget {
      */
     public Menu(MenuItem parentItem) {
         this((IMenu) null);
-        setImpl(Config.isEquo(Menu.class) ? new DartMenu(parentItem, this) : new SwtMenu(parentItem, this));
+        setImpl(Config.isEquo(Menu.class, parentItem) ? new DartMenu(parentItem, this) : new SwtMenu(parentItem, this));
     }
 
     Menu(Display display) {

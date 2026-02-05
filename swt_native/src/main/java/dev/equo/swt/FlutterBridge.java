@@ -18,7 +18,7 @@ import java.util.function.Consumer;
 import static dev.equo.swt.Config.getConfigFlags;
 
 public abstract class FlutterBridge {
-    private static final String DEV_EQU_SWT_NEW = "dev.equ.swt.new";
+    private static final String DEV_EQU_SWT_NEW = "dev.equo.swt.new";
     protected static final FlutterClient client;
     protected static final Serializer serializer = new Serializer();
     private static final Set<Object> dirty = new HashSet<>();
@@ -43,12 +43,12 @@ public abstract class FlutterBridge {
         display.dispose();
     }
 
-    public static FlutterBridge of(DartWidget dartControl) {
+    public static FlutterBridge of(DartWidget control) {
         if (bridge != null)
             return bridge;
         //if (isWeb) {}
 //        if (isSwt)
-        return SwtFlutterBridge.of(dartControl);
+        return SwtFlutterBridge.of(control);
     }
 
     protected FlutterBridge() {
@@ -128,7 +128,7 @@ public abstract class FlutterBridge {
 
     private static boolean isNew(Object widget) {
         if (widget instanceof DartWidget)
-            return ((DartWidget) widget).getData("dev.equ.swt.new") == null;
+            return ((DartWidget) widget).getData(DEV_EQU_SWT_NEW) == null;
         return false;
     }
 
@@ -209,12 +209,19 @@ public abstract class FlutterBridge {
 
     public static void send(DartResource resource, String event, Object args) {
         if (dirty.contains(resource)) {
-            update().join();
-        }
-        try {
-            serializeAndSend(eventName(resource, event), args);
-        } catch (IOException e) {
-            e.printStackTrace();
+            update().whenComplete((r, a) -> {
+                try {
+                    serializeAndSend(eventName(resource, event), args);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        } else {
+            try {
+                serializeAndSend(eventName(resource, event), args);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -299,14 +306,20 @@ public abstract class FlutterBridge {
         client.getComm().remove(event(control,"ClientReady"));
     }
 
-    public void setBounds(DartControl dartControl, Rectangle bounds) {
+    public void setBounds(DartControl control, Rectangle bounds) {
     }
 
-    public boolean setFocus(DartControl dartControl) {
+    public void setVisible(DartControl control, boolean visible) {
+    }
+
+    public void setZOrder(DartControl control, Control sibling, boolean above) {
+    }
+
+    public boolean setFocus(DartControl control) {
         return false;
     }
 
-    public boolean hasFocus(DartControl dartControl) {
+    public boolean hasFocus(DartControl control) {
         return false;
     }
 
@@ -321,7 +334,7 @@ public abstract class FlutterBridge {
     public void setCursor(DartControl control, long cursor) {
     }
 
-    public void reparent(DartControl dartControl, Composite parent) {
+    public void reparent(DartControl control, Composite parent) {
     }
 
     public static long id(Object w) {
@@ -347,8 +360,5 @@ public abstract class FlutterBridge {
         }
     }
 
-    public void setZOrder(DartControl dartControl, Control sibling, boolean above) {
-
-    }
 }
 

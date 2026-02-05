@@ -1,7 +1,6 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.internal.cocoa.NSResponder;
 import org.eclipse.swt.internal.cocoa.NSView;
 import org.eclipse.swt.internal.cocoa.NSWindow;
 import org.eclipse.swt.internal.cocoa.OS;
@@ -65,6 +64,14 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
     }
 
     @Override
+    public void setVisible(DartControl control, boolean visible) {
+        NSView topView = control.getApi().view;
+        if (topView != null) {
+            topView.setHidden(!visible);
+        }
+    }
+
+    @Override
     protected void destroyHandle(DartControl control) {
         ((SwtDisplay) control.display.getImpl()).removeWidget(control.getApi().view);
         if (control.jniRef != 0)
@@ -74,8 +81,8 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
     }
 
     @Override
-    public void reparent(DartControl dartControl, Composite parent) {
-        NSView topView = dartControl.getApi().view;
+    public void reparent(DartControl control, Composite parent) {
+        NSView topView = control.getApi().view;
         if (topView != null) {
             topView.retain();
             topView.removeFromSuperview();
@@ -87,14 +94,14 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
     }
 
     @Override
-    public void setZOrder(DartControl dartControl, Control sibling, boolean above) {
-        Control api = dartControl.getApi();
+    public void setZOrder(DartControl control, Control sibling, boolean above) {
+        Control api = control.getApi();
         if (api.view != null && (sibling == null || sibling.getImpl() instanceof SwtControl)) {
             org.eclipse.swt.internal.cocoa.NSView otherView = sibling == null ? null : ((SwtControl) sibling.getImpl()).topView();
             org.eclipse.swt.internal.cocoa.NSView topView = api.view;
             topView.retain();
             topView.removeFromSuperview();
-            Composite parent = dartControl.getParent();
+            Composite parent = control.getParent();
             if (parent.getImpl() instanceof SwtComposite) {
                 ((SwtComposite) parent.getImpl()).contentView().addSubview(topView, above ? org.eclipse.swt.internal.cocoa.OS.NSWindowAbove : org.eclipse.swt.internal.cocoa.OS.NSWindowBelow, otherView);
             } else if (parent.getImpl() instanceof DartComposite) {
