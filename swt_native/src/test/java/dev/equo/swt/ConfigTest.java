@@ -387,6 +387,7 @@ public class ConfigTest {
         }
 
         private final String C = mock(Composite.class).getClass().getSimpleName();
+        private final String S = mock(Shell.class).getClass().getSimpleName();
 
         @Test
         void leaf_widget_position_is_parent_children_count() {
@@ -417,6 +418,39 @@ public class ConfigTest {
             String id = Config.getId(Button.class, parent);
 
             assertThat(id).isEqualTo("/" + C + "/-1/" + C + "/1/Button/2");
+        }
+
+        @Test
+        void shell_with_composite_child() {
+            Display display = mock(Display.class);
+            Shell shell = mock(Shell.class);
+            when(shell.getDisplay()).thenReturn(display);
+            when(shell.getParent()).thenReturn(null);
+            when(shell.getChildren()).thenReturn(new Control[]{});
+            when(display.getShells()).thenReturn(new Shell[]{shell});
+
+            String id = Config.getId(Composite.class, shell);
+
+            assertThat(id).isEqualTo("/" + S + "/-1/Composite/1");
+        }
+
+        @Test
+        void shell_with_shell_child_with_composite() {
+            Display display = mock(Display.class);
+            Shell parentShell = mock(Shell.class);
+            Shell childShell = mock(Shell.class);
+            when(parentShell.getDisplay()).thenReturn(display);
+            when(parentShell.getParent()).thenReturn(null);
+            when(parentShell.getShells()).thenReturn(new Shell[]{childShell});
+            when(parentShell.getChildren()).thenReturn(new Control[]{childShell});
+            when(childShell.getDisplay()).thenReturn(display);
+            when(childShell.getParent()).thenReturn(parentShell);
+            when(childShell.getChildren()).thenReturn(new Control[]{});
+            when(display.getShells()).thenReturn(new Shell[]{parentShell, childShell});
+
+            String id = Config.getId(Composite.class, childShell);
+
+            assertThat(id).isEqualTo("/" + S + "/-1/" + S + "/1/Composite/1");
         }
 
         @Test
