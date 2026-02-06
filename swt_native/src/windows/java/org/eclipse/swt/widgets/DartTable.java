@@ -503,11 +503,6 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     void createHeaderToolTips() {
-        if (headerToolTipHandle != 0)
-            return;
-        if (headerToolTipHandle == 0)
-            error(SWT.ERROR_NO_HANDLES);
-        maybeEnableDarkSystemTheme(headerToolTipHandle);
     }
 
     void createItem(TableColumn column, int index) {
