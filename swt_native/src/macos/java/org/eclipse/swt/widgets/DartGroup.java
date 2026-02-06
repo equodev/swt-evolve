@@ -121,11 +121,6 @@ public class DartGroup extends DartComposite implements IGroup {
     }
 
     @Override
-    public Rectangle getClientArea() {
-        return Sizes.getClientArea(this);
-    }
-
-    @Override
     String getNameText() {
         return getText();
     }
