@@ -408,11 +408,23 @@ public class Config {
             }
             int position;
             if (idParent == null || idParent.getChildren() == null) {
-                position = -1;
+                if (child instanceof Shell shell) {
+                    if (shell.getLayout() != null && shell.getLayout().toString().contains("org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout")) {
+                        position = 0; // Main Shell
+                    } else {
+                        position = -1;
+                    }
+                } else {
+                    position = -1;
+                }
             } else if (child == null) {
                 position = idParent.getChildren().length + 1;
             } else {
-                position = indexOfChild(idParent.getChildren(), child);
+                if (idParent instanceof Shell shell) {
+                    position = indexOfChild(shell.getShells(), child);
+                } else {
+                    position = indexOfChild(idParent.getChildren(), child);
+                }
             }
             id = "/" + simpleName + "/" + position + id;
             child = idParent;
