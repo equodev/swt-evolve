@@ -1745,6 +1745,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 return;
         }
         setZOrder(control, true);
+        ControlUtils.updateChildrenOrderOnMove(this.getApi(), control, true);
     }
 
     /**
@@ -1776,6 +1777,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 return;
         }
         setZOrder(control, false);
+        ControlUtils.updateChildrenOrderOnMove(this.getApi(), control, false);
     }
 
     Accessible new_Accessible(Control control) {
