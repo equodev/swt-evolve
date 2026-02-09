@@ -29,6 +29,7 @@ ToolBarThemeExtension _$ToolBarThemeExtensionFromJson(
   toolbarBackgroundColor: const ColorConverter().fromJson(
     json['toolbarBackgroundColor'] as String,
   ),
+  keywordLeftOffset: (json['keywordLeftOffset'] as num?)?.toDouble() ?? 8.0,
 );
 
 Map<String, dynamic> _$ToolBarThemeExtensionToJson(
@@ -48,4 +49,5 @@ Map<String, dynamic> _$ToolBarThemeExtensionToJson(
   'toolbarBackgroundColor': const ColorConverter().toJson(
     instance.toolbarBackgroundColor,
   ),
+  'keywordLeftOffset': instance.keywordLeftOffset,
 };

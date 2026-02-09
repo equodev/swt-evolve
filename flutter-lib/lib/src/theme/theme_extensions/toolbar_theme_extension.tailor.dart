@@ -21,6 +21,7 @@ mixin _$ToolBarThemeExtensionTailorMixin
   EdgeInsets get itemPadding;
   Color get compositeBackgroundColor;
   Color get toolbarBackgroundColor;
+  double get keywordLeftOffset;
 
   @override
   ToolBarThemeExtension copyWith({
@@ -34,6 +35,7 @@ mixin _$ToolBarThemeExtensionTailorMixin
     EdgeInsets? itemPadding,
     Color? compositeBackgroundColor,
     Color? toolbarBackgroundColor,
+    double? keywordLeftOffset,
   }) {
     return ToolBarThemeExtension(
       backgroundColor: backgroundColor ?? this.backgroundColor,
@@ -48,6 +50,7 @@ mixin _$ToolBarThemeExtensionTailorMixin
           compositeBackgroundColor ?? this.compositeBackgroundColor,
       toolbarBackgroundColor:
           toolbarBackgroundColor ?? this.toolbarBackgroundColor,
+      keywordLeftOffset: keywordLeftOffset ?? this.keywordLeftOffset,
     );
   }
 
@@ -76,6 +79,7 @@ mixin _$ToolBarThemeExtensionTailorMixin
         other.toolbarBackgroundColor,
         t,
       )!,
+      keywordLeftOffset: t < 0.5 ? keywordLeftOffset : other.keywordLeftOffset,
     );
   }
 
@@ -123,6 +127,10 @@ mixin _$ToolBarThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               toolbarBackgroundColor,
               other.toolbarBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              keywordLeftOffset,
+              other.keywordLeftOffset,
             ));
   }
 
@@ -140,6 +148,7 @@ mixin _$ToolBarThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(itemPadding),
       const DeepCollectionEquality().hash(compositeBackgroundColor),
       const DeepCollectionEquality().hash(toolbarBackgroundColor),
+      const DeepCollectionEquality().hash(keywordLeftOffset),
     );
   }
 }
@@ -159,4 +168,7 @@ extension ToolBarThemeExtensionBuildContextProps on BuildContext {
       toolBarThemeExtension.compositeBackgroundColor;
   Color get toolbarBackgroundColor =>
       toolBarThemeExtension.toolbarBackgroundColor;
+
+  /// Ajuste de posición horizontal para el botón Keyword en MainToolbar (bounds layout).
+  double get keywordLeftOffset => toolBarThemeExtension.keywordLeftOffset;
 }

@@ -1756,6 +1756,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             if (hwnd == 0 || hwnd == topHandle)
                 return;
         }
+        ControlUtils.updateChildrenOrderOnMove(this.getApi(), control, true);
     }
 
     /**
@@ -1798,6 +1799,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             if (this.getApi() == shell && parent != null) {
             }
         }
+        ControlUtils.updateChildrenOrderOnMove(this.getApi(), control, false);
     }
 
     Accessible new_Accessible(Control control) {

@@ -22,7 +22,8 @@ class ToolBarThemeExtension extends ThemeExtension<ToolBarThemeExtension> with _
   final EdgeInsets itemPadding;
   final Color compositeBackgroundColor;
   final Color toolbarBackgroundColor;
-  
+  final double keywordLeftOffset;
+
   const ToolBarThemeExtension({
     required this.backgroundColor,
     required this.borderColor,
@@ -34,6 +35,7 @@ class ToolBarThemeExtension extends ThemeExtension<ToolBarThemeExtension> with _
     required this.itemPadding,
     required this.compositeBackgroundColor,
     required this.toolbarBackgroundColor,
+    this.keywordLeftOffset = 8.0,
   });
 
 

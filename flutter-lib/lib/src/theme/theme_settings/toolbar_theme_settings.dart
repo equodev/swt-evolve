@@ -45,6 +45,7 @@ ToolBarThemeExtension _getToolBarTheme({
     itemPadding: EdgeInsets.zero,
     compositeBackgroundColor: Colors.white,
     toolbarBackgroundColor: Colors.white,
+    keywordLeftOffset: 50.0,
   );
 }
 
