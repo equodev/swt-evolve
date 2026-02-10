@@ -480,8 +480,9 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public MenuItem getItem(int index) {
         checkWidget();
-        int id = 0;
-        return ((SwtDisplay) display.getImpl()).getMenuItem(id);
+        if (items == null || index < 0 || index >= items.length)
+            error(SWT.ERROR_INVALID_RANGE);
+        return items[index];
     }
 
     /**
@@ -695,6 +696,12 @@ public class DartMenu extends DartWidget implements IMenu {
             error(SWT.ERROR_INVALID_ARGUMENT);
         if (((DartMenuItem) item.getImpl()).parent != this.getApi())
             return -1;
+        if (items == null)
+            return -1;
+        for (int i = 0; i < items.length; i++) {
+            if (items[i] == item)
+                return i;
+        }
         return -1;
     }
 
