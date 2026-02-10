@@ -160,9 +160,9 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         treeImpl: _context?.treeImpl,
         treeFont: _context?.treeFont,
         treeWidth: _context?.treeWidth,
-        editingItemId: _context?.editingItemId,
-        editingController: _context?.editingController,
-        editingFocusNode: _context?.editingFocusNode,
+        //editingItemId: _context?.editingItemId,
+        //editingController: _context?.editingController,
+        //editingFocusNode: _context?.editingFocusNode,
         child: TreeItemSwt(
           value: childItem,
           key: ValueKey('tree_child_item_${childItem.id}_${childItem.checked}_${childItem.grayed}'),
@@ -741,62 +741,71 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     );
 
     // Only allow editing on the first column (columnIndex 0)
-    final isEditing = columnIndex == 0 &&
-                     _context?.editingItemId == state.id &&
-                     _context?.editingController != null &&
-                     _context?.editingFocusNode != null;
-
-    Widget textWidget = isEditing
-        ? TextField(
-              controller: _context!.editingController!,
-              focusNode: _context!.editingFocusNode!,
-              style: cellTextStyle,
-              textAlign: getTextAlignFromStyle(columnAlignment ?? 0, TextAlign.left),
-              decoration: InputDecoration(
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-                border: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                enabledBorder: InputBorder.none,
-              ),
-              onSubmitted: (value) {
-                if (_context?.treeImpl != null) {
-                  _context!.treeImpl!.finishEditing();
-                }
-              },
-              onEditingComplete: () {
-                if (_context?.treeImpl != null) {
-                  _context!.treeImpl!.finishEditing();
-                }
-              },
-            )
-          : Text(
-              text,
-              style: cellTextStyle,
-              textAlign: getTextAlignFromStyle(columnAlignment ?? 0, TextAlign.left),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            );
+    // final isEditing = columnIndex == 0 &&
+    //                  _context?.editingItemId == state.id &&
+    //                  _context?.editingController != null &&
+    //                  _context?.editingFocusNode != null;
+    //
+    // Widget textWidget = isEditing
+    //     ? TextField(
+    //           controller: _context!.editingController!,
+    //           focusNode: _context!.editingFocusNode!,
+    //           style: cellTextStyle,
+    //           textAlign: getTextAlignFromStyle(columnAlignment ?? 0, TextAlign.left),
+    //           decoration: InputDecoration(
+    //             isDense: true,
+    //             contentPadding: EdgeInsets.zero,
+    //             border: InputBorder.none,
+    //             focusedBorder: InputBorder.none,
+    //             enabledBorder: InputBorder.none,
+    //           ),
+    //           onSubmitted: (value) {
+    //             if (_context?.treeImpl != null) {
+    //               _context!.treeImpl!.finishEditing();
+    //             }
+    //           },
+    //           onEditingComplete: () {
+    //             if (_context?.treeImpl != null) {
+    //               _context!.treeImpl!.finishEditing();
+    //             }
+    //           },
+    //         )
+    //       : Text(
+    //           text,
+    //           style: cellTextStyle,
+    //           textAlign: getTextAlignFromStyle(columnAlignment ?? 0, TextAlign.left),
+    //           maxLines: 1,
+    //           overflow: TextOverflow.ellipsis,
+    //         );
+    Widget textWidget = Text(
+      text,
+      style: cellTextStyle,
+      textAlign: getTextAlignFromStyle(columnAlignment ?? 0, TextAlign.left),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
 
     // Wrap text in GestureDetector for double-click editing (only first column)
     // Use deferToChild so only the text area triggers editing, not the padding
-    final bool parentEnabled = _context?.parentTreeValue.enabled ?? false;
-    if (columnIndex == 0 &&
-        parentEnabled &&
-        _context?.parentTreeValue.editable == true &&
-        !isEditing &&
-        _context?.treeImpl != null) {
-      textWidget = GestureDetector(
-        behavior: HitTestBehavior.deferToChild,
-        onDoubleTap: () {
-          // Start editing on double tap over the text
-          if (_context?.editingItemId != state.id && _context?.treeImpl != null) {
-            _context!.treeImpl!.startEditing(state.id);
-          }
-        },
-        child: textWidget,
-      );
-    }
+    // final bool parentEnabled = _context?.parentTreeValue.enabled ?? false;
+    // if (columnIndex == 0 &&
+    //     parentEnabled &&
+    //     _context?.parentTreeValue.editable == true &&
+    //     !isEditing &&
+    //     _context?.treeImpl != null) {
+    //   textWidget = GestureDetector(
+    //     behavior: HitTestBehavior.deferToChild,
+    //     onDoubleTap: () {
+    //       final e = _createEvent();
+    //       _context?.parentTree
+    //           .sendSelectionDefaultSelection(_context!.parentTreeValue, e);
+    //       if (_context?.editingItemId != state.id && _context?.treeImpl != null) {
+    //         _context!.treeImpl!.startEditing(state.id);
+    //       }
+    //     },
+    //     child: textWidget,
+    //   );
+    // }
 
     EdgeInsets adjustedPadding = adjustPaddingForAlignment(
       basePadding: cellPadding,
@@ -810,34 +819,34 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
     // Wrap textWidget to prevent it from expanding beyond its content
     // This ensures the GestureDetector only captures clicks on the actual text
-    Widget contentWidget = textWidget;
-    if (columnIndex == 0 &&
-        _context?.parentTreeValue.editable == true &&
-        !isEditing) {
-      // Use IntrinsicWidth to limit the clickable area to the actual text width
-      // Then align it according to the column alignment
-      final alignment = _getAlignmentFromStyle(columnAlignment ?? 0);
-      contentWidget = Align(
-        alignment: alignment,
-        child: IntrinsicWidth(
-          child: textWidget,
-        ),
-      );
-    }
+    // Widget contentWidget = textWidget;
+    // if (columnIndex == 0 &&
+    //     _context?.parentTreeValue.editable == true &&
+    //     !isEditing) {
+    //   // Use IntrinsicWidth to limit the clickable area to the actual text width
+    //   // Then align it according to the column alignment
+    //   final alignment = _getAlignmentFromStyle(columnAlignment ?? 0);
+    //   contentWidget = Align(
+    //     alignment: alignment,
+    //     child: IntrinsicWidth(
+    //       child: textWidget,
+    //     ),
+    //   );
+    // }
 
     return Container(
       padding: adjustedPadding,
-      child: contentWidget,
+      child: textWidget,
     );
   }
 
-  Alignment _getAlignmentFromStyle(int alignment) {
-    if (alignment == SWT.CENTER) return Alignment.center;
-    if (alignment == SWT.RIGHT || alignment == SWT.TRAIL) {
-      return Alignment.centerRight;
-    }
-    return Alignment.centerLeft;
-  }
+  // Alignment _getAlignmentFromStyle(int alignment) {
+  //   if (alignment == SWT.CENTER) return Alignment.center;
+  //   if (alignment == SWT.RIGHT || alignment == SWT.TRAIL) {
+  //     return Alignment.centerRight;
+  //   }
+  //   return Alignment.centerLeft;
+  // }
 }
 
 class _CheckboxButtonWrapper extends StatefulWidget {
