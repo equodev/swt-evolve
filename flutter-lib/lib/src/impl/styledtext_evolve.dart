@@ -35,6 +35,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   StyledTextThemeExtension get _styledTextTheme =>
       Theme.of(context).extension<StyledTextThemeExtension>()!;
 
+  final FocusNode _focusNode = FocusNode();
+
   @override
   Color get bg =>
       colorFromVColor(state.background, defaultColor: _styledTextTheme.backgroundColor);
@@ -42,6 +44,13 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    _caretBlinkTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -56,7 +65,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   void _buildTextShapeFromState() {
     final originalText = state.text ?? '';
     final text = originalText.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
-    if (text.isEmpty && state.renderer == null) return;
 
     final styledTextId = state.id;
     final caretOffset = _adjustOffsetForNormalizedText(originalText, state.caretOffset ?? 0);
@@ -92,7 +100,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       getBounds(),
       _editable,
       styledTextId,
-      (newText, caretPos) {},
+      _notifyTextChanged,
       editingState,
       null,
     );
@@ -292,38 +300,42 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   Widget build(BuildContext context) {
     final bounds = getBounds();
 
-    return SizedBox(
-      width: bounds.width,
-      height: bounds.height,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: CustomPaint(
-              painter: ScenePainter(
-                  bg,
-                  List.unmodifiable([
-                    ...shapes,
-                    if (_editableTextShape != null) _editableTextShape!
-                  ])),
-            ),
-          ),
-          Positioned.fill(
-            child: RawKeyboardListener(
-              focusNode: FocusNode(),
-              autofocus: _isEditingText,
-              onKey: _handleKeyEvent,
-              child: GestureDetector(
-                onTapDown: (details) => _handleTapDown(details.localPosition),
-                onTapUp: (details) => _handleTapUp(details.localPosition),
-                onPanStart: (details) => _handlePanStart(details.localPosition),
-                onPanUpdate: (details) => _handlePanUpdate(details.localPosition),
-                onPanEnd: (details) => _handlePanEnd(),
-                behavior: HitTestBehavior.translucent,
-                child: Container(),
+    return wrap(
+      SizedBox(
+        width: bounds.width,
+        height: bounds.height,
+        child: Stack(
+          children: [
+            // Layer 1: StyledText content (text shapes, caret, selection)
+            Positioned.fill(
+              child: CustomPaint(
+                painter: ScenePainter(
+                    bg,
+                    List.unmodifiable([
+                      ...shapes,
+                      if (_editableTextShape != null) _editableTextShape!
+                    ])),
               ),
             ),
-          ),
-        ],
+            // Layer 2: Interaction layer (keyboard and gesture handling)
+            Positioned.fill(
+              child: RawKeyboardListener(
+                focusNode: _focusNode,
+                autofocus: _isEditingText,
+                onKey: _handleKeyEvent,
+                child: GestureDetector(
+                  onTapDown: (details) => _handleTapDown(details.localPosition),
+                  onTapUp: (details) => _handleTapUp(details.localPosition),
+                  onPanStart: (details) => _handlePanStart(details.localPosition),
+                  onPanUpdate: (details) => _handlePanUpdate(details.localPosition),
+                  onPanEnd: (details) => _handlePanEnd(),
+                  behavior: HitTestBehavior.translucent,
+                  child: Container(),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -340,6 +352,16 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         ..text = _editableTextShape!.getSelectedText();
       widget.sendSelectionSelection(state, event);
     }
+  }
+
+  void _notifyTextChanged(String newText, int caretPos) {
+    // Clear the GC overlay to remove placeholder
+    clearGCShapes();
+
+    final event = VEvent()
+      ..text = newText
+      ..start = caretPos;
+    widget.sendModifyModify(state, event);
   }
 
   //-----------Edition----------------
@@ -381,6 +403,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       });
 
       _startCaretBlinking();
+      _focusNode.requestFocus();
     } else {
       bool clickedInEditableText = false;
 
@@ -733,7 +756,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       _originalServerTextShape!.canvasSize,
       _originalServerTextShape!.editable,
       _originalServerTextShape!.styledTextId,
-      (newText, caretOffset) {},
+      _notifyTextChanged,
       _localEditingState,
       null,
     );
@@ -1684,6 +1707,12 @@ class TextShape extends Shape {
   }
 
   bool containsPoint(Offset point, Size canvasSize) {
+    // When text is empty, the entire canvas should be clickable to allow editing
+    if (text.isEmpty && editable) {
+      final fullRect = Rect.fromLTWH(0, 0, canvasSize.width, canvasSize.height);
+      return fullRect.contains(point);
+    }
+
     final tp = TextPainter(
       text: textSpan ?? TextSpan(text: text.isEmpty ? " " : text, style: style),
       textDirection: TextDirection.ltr,

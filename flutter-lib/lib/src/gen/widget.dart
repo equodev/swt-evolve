@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../impl/gc_evolve.dart';
 import 'event.dart';
+import 'gc.dart';
 import 'widgets.dart';
 
 part 'widget.g.dart';
@@ -29,12 +31,51 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
     extends State<T> {
   late V state;
 
+  // GC support - any widget can have a GC overlay
+  // Using @protected annotation - these are accessible from subclasses
+  VGC? gcOverlay;
+  final GlobalKey<GCImpl> gcOverlayKey = GlobalKey<GCImpl>();
+
   @override
   void initState() {
     super.initState();
     state = widget.value as V;
-    // print("${state.swt} ${state.id} initState");
     EquoCommService.on("${state.swt}/${state.id}", _onChange);
+  }
+
+  /// Called by GCSwt when it receives state from Java.
+  /// Switches the GC overlay from Offstage to visible.
+  void notifyGCReady(VGC gcValue) {
+    if (gcOverlay == null) {
+      setState(() {
+        gcOverlay = gcValue;
+      });
+    }
+  }
+
+  /// Clear shapes from the GC overlay
+  void clearGCShapes() {
+    gcOverlayKey.currentState?.clearShapes();
+  }
+
+  /// Wrap child widget with GC overlay.
+  /// GC is always created so it can listen for events from Java immediately.
+  /// Uses Offstage when GC has no state yet (listening but not rendering).
+  Widget wrapWithGCOverlay(Widget child) {
+    final gc = gcOverlay ?? (VGC()..id = state.id);
+    final gcWidget = GCSwt<VGC>(key: gcOverlayKey, value: gc);
+
+    return Stack(
+      children: [
+        child,
+        if (gcOverlay != null)
+          Positioned.fill(
+            child: IgnorePointer(child: gcWidget),
+          )
+        else
+          Offstage(child: gcWidget),
+      ],
+    );
   }
 
   @override
@@ -54,7 +95,6 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   }
 
   void _onChange(V payload) {
-    // print('On Widget Change, payload: $payload');
     setValue(payload);
   }
 

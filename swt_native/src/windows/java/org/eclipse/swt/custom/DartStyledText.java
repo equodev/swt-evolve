@@ -11527,7 +11527,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
 
     int[] ranges = new int[0];
 
-    Point selectionRange;
+    Point selectionRange = new Point(0, 0);
 
     int[] selectionRanges = new int[0];
 
@@ -11941,6 +11941,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                     setText(e.text);
                 if (e.start >= 0)
                     setCaretOffset(e.start);
+                redraw();
             });
         });
         FlutterBridge.on(this, "PaintObject", "paintObject", e -> {

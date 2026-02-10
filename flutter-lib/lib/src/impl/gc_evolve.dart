@@ -28,6 +28,10 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     super.initState();
   }
 
+  void clearShapes() {
+    setState(() => shapes = []);
+  }
+
   Color get bg =>
       colorFromVColor(state.background, defaultColor: Color(0xFFFFFFFF));
   Color get fg =>
@@ -58,12 +62,17 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   Color get canvasBg {
+    // If GC is inside a Canvas with same ID, it's the Canvas's main content
     final canvas = context.findAncestorWidgetOfExactType<CanvasSwt>();
     if (canvas != null && canvas.value.id == state.id) {
-      final canvasState = context.findAncestorStateOfType<CanvasImpl>();
-      return canvasState?.bg ?? _canvasTheme.backgroundColor;
+      // Use GC's own background color if set, otherwise theme default
+      if (state.background != null) {
+        return bg;
+      }
+      return _canvasTheme.backgroundColor;
     }
-    return _canvasTheme.backgroundColor;
+    // GC is an overlay on any other widget (StyledText, etc.) - use transparent
+    return Colors.transparent;
   }
 
   //todo sendPaintPaint should be called everytime gc redraws and also make shapes list empty
@@ -79,6 +88,21 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   void setValue(V value) {
     state = value!;
     extraSetState();
+    // Notify parent widget to switch from Offstage to visible
+    _notifyParentGCReady();
+  }
+
+  void _notifyParentGCReady() {
+    context.visitAncestorElements((element) {
+      if (element is StatefulElement && element.state is WidgetSwtState) {
+        final parentState = element.state as WidgetSwtState;
+        if (parentState.gcOverlayKey == widget.key) {
+          parentState.notifyGCReady(state as VGC);
+          return false; // stop visiting
+        }
+      }
+      return true; // continue visiting
+    });
   }
 
   Map<String, dynamic> _convertSwtFontStyle(int swtFontStyle) {
