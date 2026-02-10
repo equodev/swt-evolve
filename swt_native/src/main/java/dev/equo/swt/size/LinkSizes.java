@@ -57,7 +57,7 @@ public class LinkSizes {
         String text = widget.getText();
         if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
             if (!Config.getConfigFlags().use_swt_fonts) {
-                m.textStyle = LinkTheme.get().textStyle();
+                m.textStyle = LinkTheme.get().textStyle().withStyleFrom(widget.getFont());
             } else {
                 m.textStyle = TextStyle.from(widget.getFont());
             }

@@ -44,6 +44,26 @@ class TextSizeTest extends SizeTestBase {
     }
 
     @ParameterizedTest
+    @MethodSource("boldCases")
+    void java_size_should_equals_flutter_with_bold(int style, String text, int size, int fontStyle) {
+        DartText w = createText(style, text, size, fontStyle);
+        ConfigFlags config = ConfigFlags.use_swt_fonts(size != FromTheme);
+        //
+        Measure javaSize = TextSizes.computeSizes(w, SWT.DEFAULT, SWT.DEFAULT, true);;
+        //
+        CompletableFuture<Measure> result = flutter.measure(w, config);;
+        Measure measure = assertCompletes(result);
+        assertSoftly(soft -> {
+            soft.assertThat(javaSize)
+                .as("widget size (bold affects width)")
+                .satisfies(similarSize(measure));
+            soft.assertThat(javaSize.textStyle)
+                .as("text style includes bold from font")
+                .isEqualTo(measure.textStyle);
+        });
+    }
+
+    @ParameterizedTest
     @MethodSource("basicCases")
     void flutter_size_should_be_minimal(int style, String text, int size) {
         DartText w = createText(style, text, size);
@@ -70,11 +90,15 @@ class TextSizeTest extends SizeTestBase {
     }
 
     static DartText createText(int style, String text, int size) {
+        return createText(style, text, size, SWT.NORMAL);
+    }
+
+    static DartText createText(int style, String text, int size, int fontStyle) {
         DartText w = new DartText(shell(), style, null);
         if (!NoTxt.equals(text))
             w.setText(text);
         if (size != FromTheme)
-            w.setFont(createFont(size));
+            w.setFont(createFont(size, fontStyle));
         return w;
     }
 
@@ -143,5 +167,9 @@ class TextSizeTest extends SizeTestBase {
 
     static Stream<Arguments> allCases() {
         return buildCases(getStyles(), All, All);
+    }
+
+    static Stream<Arguments> boldCases() {
+        return buildBoldCases(getStyles());
     }
 }

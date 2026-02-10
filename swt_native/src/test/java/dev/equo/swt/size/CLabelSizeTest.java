@@ -47,6 +47,26 @@ class CLabelSizeTest extends SizeTestBase {
     }
 
     @ParameterizedTest
+    @MethodSource("boldCases")
+    void java_size_should_equals_flutter_with_bold(int style, String text, int size, int fontStyle) {
+        DartCLabel w = createCLabel(style, NoImg, text, size, fontStyle);
+        ConfigFlags config = ConfigFlags.use_swt_fonts(size != FromTheme);
+        //
+        Measure javaSize = CLabelSizes.computeSizes(w, SWT.DEFAULT, SWT.DEFAULT, true);;
+        //
+        CompletableFuture<Measure> result = flutter.measure(w, config);;
+        Measure measure = assertCompletes(result);
+        assertSoftly(soft -> {
+            soft.assertThat(javaSize)
+                .as("widget size (bold affects width)")
+                .satisfies(similarSize(measure));
+            soft.assertThat(javaSize.textStyle)
+                .as("text style includes bold from font")
+                .isEqualTo(measure.textStyle);
+        });
+    }
+
+    @ParameterizedTest
     @MethodSource("basicCases")
     void flutter_size_should_be_minimal(int style, String image, String text, int size) {
         DartCLabel w = createCLabel(style, image, text, size);
@@ -73,13 +93,17 @@ class CLabelSizeTest extends SizeTestBase {
     }
 
     static DartCLabel createCLabel(int style, String image, String text, int size) {
+        return createCLabel(style, image, text, size, SWT.NORMAL);
+    }
+
+    static DartCLabel createCLabel(int style, String image, String text, int size, int fontStyle) {
         DartCLabel w = new DartCLabel(shell(), style, null);
         if (!NoImg.equals(image))
             w.setImage(createImage(image));
         if (!NoTxt.equals(text))
             w.setText(text);
         if (size != FromTheme)
-            w.setFont(createFont(size));
+            w.setFont(createFont(size, fontStyle));
         return w;
     }
 
@@ -99,5 +123,9 @@ class CLabelSizeTest extends SizeTestBase {
 
     static Stream<Arguments> allCases() {
         return buildCases(getStyles(), All, All, All);
+    }
+
+    static Stream<Arguments> boldCases() {
+        return buildBoldCases(getStyles());
     }
 }
