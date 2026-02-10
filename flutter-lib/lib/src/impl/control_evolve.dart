@@ -90,6 +90,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       );
     }
 
+    // Wrap with GC overlay if needed
+    widget = wrapWithGCOverlay(widget);
+
     return widget;
   }
 

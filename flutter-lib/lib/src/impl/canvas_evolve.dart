@@ -54,8 +54,9 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = getConstraintsFromBounds(state.bounds);
 
-    VGC gc = VGC.empty()..id = state.id;
-    Widget child = GCSwt<VGC>(value: gc);
+    // GC is the main content for Canvas - always create to receive draw operations
+    final gc = gcOverlay ?? (VGC()..id = state.id);
+    Widget child = GCSwt<VGC>(key: gcOverlayKey, value: gc);
 
     Widget content;
     if (hasValidBounds && constraints != null) {
