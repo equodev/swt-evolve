@@ -44,6 +44,7 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
   Color get passwordToggleColor;
   Color get passwordToggleHoverColor;
   double get passwordToggleSize;
+  double get searchIconSize;
 
   @override
   TextThemeExtension copyWith({
@@ -81,6 +82,7 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
     Color? passwordToggleColor,
     Color? passwordToggleHoverColor,
     double? passwordToggleSize,
+    double? searchIconSize,
   }) {
     return TextThemeExtension(
       textColor: textColor ?? this.textColor,
@@ -122,6 +124,7 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
       passwordToggleHoverColor:
           passwordToggleHoverColor ?? this.passwordToggleHoverColor,
       passwordToggleSize: passwordToggleSize ?? this.passwordToggleSize,
+      searchIconSize: searchIconSize ?? this.searchIconSize,
     );
   }
 
@@ -224,6 +227,7 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
       passwordToggleSize: t < 0.5
           ? passwordToggleSize
           : other.passwordToggleSize,
+      searchIconSize: t < 0.5 ? searchIconSize : other.searchIconSize,
     );
   }
 
@@ -361,6 +365,10 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
             const DeepCollectionEquality().equals(
               passwordToggleSize,
               other.passwordToggleSize,
+            ) &&
+            const DeepCollectionEquality().equals(
+              searchIconSize,
+              other.searchIconSize,
             ));
   }
 
@@ -402,6 +410,7 @@ mixin _$TextThemeExtensionTailorMixin on ThemeExtension<TextThemeExtension> {
       const DeepCollectionEquality().hash(passwordToggleColor),
       const DeepCollectionEquality().hash(passwordToggleHoverColor),
       const DeepCollectionEquality().hash(passwordToggleSize),
+      const DeepCollectionEquality().hash(searchIconSize),
     ]);
   }
 }
@@ -447,4 +456,5 @@ extension TextThemeExtensionBuildContextProps on BuildContext {
   Color get passwordToggleHoverColor =>
       textThemeExtension.passwordToggleHoverColor;
   double get passwordToggleSize => textThemeExtension.passwordToggleSize;
+  double get searchIconSize => textThemeExtension.searchIconSize;
 }

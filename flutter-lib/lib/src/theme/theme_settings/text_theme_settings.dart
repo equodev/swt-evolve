@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import '../theme_extensions/text_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
@@ -93,6 +95,9 @@ TextThemeExtension _getTextTheme({
     passwordToggleColor: colorScheme.onSurfaceVariant,
     passwordToggleHoverColor: colorScheme.onSurface,
     passwordToggleSize: 20.0,
+
+    // Search field
+    searchIconSize: 20.0,
   );
 }
 
@@ -153,11 +158,32 @@ InputDecoration getInputDecoration(
   final focusedBorderWidth = widgetTheme.focusedBorderWidth;
   final borderRadius = widgetTheme.borderRadius;
 
+  final isSearch = hasStyle(state.style, SWT.SEARCH);
+  final hasSearchIcon = isSearch && hasStyle(state.style, SWT.ICON_SEARCH);
+  final hasCancelIcon = isSearch && hasStyle(state.style, SWT.ICON_CANCEL);
+
+  final iconColor = enabled ? widgetTheme.textColor : widgetTheme.disabledTextColor;
+
+  final textHeight = widgetTheme.fontSize * widgetTheme.lineHeight;
+  final iconSize = min(widgetTheme.searchIconSize, textHeight);
+
   return InputDecoration(
     hintText: state.message,
     hintStyle: TextStyle(color: hintColor),
     isDense: true,
     contentPadding: widgetTheme.contentPadding,
+    prefixIcon: hasSearchIcon
+        ? Icon(Icons.search, color: iconColor, size: iconSize)
+        : null,
+    suffixIcon: hasCancelIcon
+        ? IconButton(
+            icon: Icon(Icons.close, color: iconColor, size: iconSize),
+            onPressed: enabled ? onClear : null,
+            splashRadius: 16.0,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          )
+        : null,
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(borderRadius),
       borderSide: BorderSide(color: normalBorderColor, width: borderWidth),

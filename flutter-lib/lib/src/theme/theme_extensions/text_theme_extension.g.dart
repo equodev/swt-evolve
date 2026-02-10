@@ -84,6 +84,7 @@ TextThemeExtension _$TextThemeExtensionFromJson(Map<String, dynamic> json) =>
         json['passwordToggleHoverColor'] as String,
       ),
       passwordToggleSize: (json['passwordToggleSize'] as num).toDouble(),
+      searchIconSize: (json['searchIconSize'] as num).toDouble(),
     );
 
 Map<String, dynamic> _$TextThemeExtensionToJson(
@@ -143,4 +144,5 @@ Map<String, dynamic> _$TextThemeExtensionToJson(
     instance.passwordToggleHoverColor,
   ),
   'passwordToggleSize': instance.passwordToggleSize,
+  'searchIconSize': instance.searchIconSize,
 };
