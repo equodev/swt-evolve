@@ -22,17 +22,20 @@ public class ControlUtils {
         if (movedControl == null) {
             return;
         }
-        
+
         Composite parent = movedControl.getParent();
         if (parent == null) {
             return;
         }
-        
-        DartComposite parentImpl = (DartComposite) parent.getImpl();
-        if (parentImpl == null || parentImpl.children == null) {
+
+        if (!(parent.getImpl() instanceof DartComposite parentImpl)) {
             return;
         }
-        
+
+        if (parentImpl.children == null) {
+            return;
+        }
+
         if (!(parentImpl instanceof DartMainToolbar)) {
             return;
         }
