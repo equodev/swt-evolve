@@ -32,7 +32,6 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   late V state;
 
   // GC support - any widget can have a GC overlay
-  // Using @protected annotation - these are accessible from subclasses
   VGC? gcOverlay;
   final GlobalKey<GCImpl> gcOverlayKey = GlobalKey<GCImpl>();
 
@@ -40,6 +39,7 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   void initState() {
     super.initState();
     state = widget.value as V;
+    // print("${state.swt} ${state.id} initState");
     EquoCommService.on("${state.swt}/${state.id}", _onChange);
   }
 
@@ -69,9 +69,7 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
       children: [
         child,
         if (gcOverlay != null)
-          Positioned.fill(
-            child: IgnorePointer(child: gcWidget),
-          )
+          Positioned.fill(child: IgnorePointer(child: gcWidget))
         else
           Offstage(child: gcWidget),
       ],
@@ -95,6 +93,7 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   }
 
   void _onChange(V payload) {
+    // print('On Widget Change, payload: $payload');
     setValue(payload);
   }
 
