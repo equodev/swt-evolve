@@ -62,7 +62,7 @@ public class ComboSizes {
         String text = widget.getText();
         if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
             if (!Config.getConfigFlags().use_swt_fonts) {
-                m.textStyle = ComboTheme.get().textStyle();
+                m.textStyle = ComboTheme.get().textStyle().withStyleFrom(widget.getFont());
             } else {
                 m.textStyle = TextStyle.from(widget.getFont());
             }

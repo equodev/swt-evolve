@@ -85,8 +85,18 @@ TextStyle getTextStyle({
         TextStyle(color: textColor);
   }
 
-  return baseTextStyle?.copyWith(color: textColor) ??
+  TextStyle result = baseTextStyle?.copyWith(color: textColor) ??
       TextStyle(color: textColor);
+  if (font != null &&
+      font.fontData != null &&
+      font.fontData!.isNotEmpty &&
+      (font.fontData!.first.style ?? 0) != 0) {
+    final (fontWeight, fontStyle) =
+        FontUtils.convertSwtFontStyle(font.fontData!.first.style ?? 0);
+    result = result.copyWith(fontWeight: fontWeight, fontStyle: fontStyle);
+  }
+
+  return result;
 }
 
 /// Determines if text should wrap based on style

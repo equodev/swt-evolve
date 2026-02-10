@@ -60,7 +60,7 @@ public class CComboSizes {
         String text = widget.getText();
         if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
             if (!Config.getConfigFlags().use_swt_fonts) {
-                m.textStyle = CComboTheme.get().textStyle();
+                m.textStyle = CComboTheme.get().textStyle().withStyleFrom(widget.getFont());
             } else {
                 m.textStyle = TextStyle.from(widget.getFont());
             }

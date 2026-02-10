@@ -60,7 +60,7 @@ public class CLabelSizes {
         String text = widget.getText();
         if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
             if (!Config.getConfigFlags().use_swt_fonts) {
-                m.textStyle = CLabelTheme.get().textStyle();
+                m.textStyle = CLabelTheme.get().textStyle().withStyleFrom(widget.getFont());
             } else {
                 m.textStyle = TextStyle.from(widget.getFont());
             }

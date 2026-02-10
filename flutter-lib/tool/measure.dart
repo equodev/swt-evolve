@@ -1588,7 +1588,7 @@ class WidgetMeasurer {
         '            if (!Config.getConfigFlags().use_swt_fonts) {',
       );
       buffer.writeln(
-        '                m.textStyle = ${widgetType}Theme.get().textStyle();',
+        '                m.textStyle = ${widgetType}Theme.get().textStyle().withStyleFrom(widget.getFont());',
       );
       buffer.writeln('            } else {');
       buffer.writeln(

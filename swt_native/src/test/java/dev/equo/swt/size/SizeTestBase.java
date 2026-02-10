@@ -33,6 +33,7 @@ public abstract class SizeTestBase extends SizeAssert {
 
     protected static final String NoImg = "noimg";
     protected static final String NoTxt = "''";
+    protected static final String BoldCaseText = "This is a long widget text";
     protected static final int FromTheme = -1;
 
     @BeforeAll
@@ -88,6 +89,16 @@ public abstract class SizeTestBase extends SizeAssert {
         );
     }
 
+    protected static Stream<Arguments> buildBoldCases(Stream<Style> styles) {
+        return styles.map(style ->
+                Arguments.of(
+                        Named.of(style.name, style.value),
+                        BoldCaseText,
+                        Named.of("theme", FromTheme),
+                        Named.of("boldItalic", SWT.BOLD | SWT.ITALIC))
+        );
+    }
+
     protected static Stream<Arguments> buildCases(Stream<Style> styles, int texts, int sizes) {
         return styles.flatMap(style ->
                 getTexts(texts).flatMap(text ->
@@ -104,8 +115,8 @@ public abstract class SizeTestBase extends SizeAssert {
         );
     }
 
-    protected static Font createFont(int fontSize) {
-        FontData fontData = new FontData("System", fontSize, SWT.NORMAL);
+    protected static Font createFont(int fontSize, int fontStyle) {
+        FontData fontData = new FontData("System", fontSize, fontStyle);
         return new Font(Display.getCurrent(), fontData);
     }
 
