@@ -1375,7 +1375,12 @@ public class DartTree extends DartComposite implements ITree {
     }
 
     int getItemHeightInPixels() {
-        return 0;
+        Font font = getFont();
+        FontData fd = font.getFontData()[0];
+        String fontId = FontMetricsUtil.getId(fd);
+        dev.equo.swt.size.PointD size = FontMetricsUtil.getFontSize(" ", fontId, fd.getHeight());
+        int lineHeight = (int) Math.ceil(size.y());
+        return Math.max(lineHeight, 1);
     }
 
     /**
