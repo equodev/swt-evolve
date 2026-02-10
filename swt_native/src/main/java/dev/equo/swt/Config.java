@@ -317,12 +317,12 @@ public class Config {
 
     private static boolean isMainToolbarComposite(Class<?> clazz, Composite parent) {
         String id = getId(clazz, parent);
-        return id.equals("/Shell/-1/Composite/2") && isInStackTrace(E4_MAIN_TOOLBAR_CLASS, E4_MAIN_TOOLBAR_METHOD);
+        return id.equals("/Shell/0/Composite/2") && isInStackTrace(E4_MAIN_TOOLBAR_CLASS, E4_MAIN_TOOLBAR_METHOD);
     }
 
     private static boolean isSideToolbarComposite(Class<?> clazz, Composite parent) {
         String id = getId(clazz, parent);
-        return (id.equals("/Shell/-1/Composite/4") || id.equals("/Shell/-1/Composite/5")) && isInStackTrace(E4_MAIN_TOOLBAR_CLASS, E4_MAIN_TOOLBAR_METHOD);
+        return (id.equals("/Shell/0/Composite/4") || id.equals("/Shell/0/Composite/5")) && isInStackTrace(E4_MAIN_TOOLBAR_CLASS, E4_MAIN_TOOLBAR_METHOD);
     }
 
     private static boolean isCTabFolderBody(Class<?> clazz, Widget parent) {
@@ -420,8 +420,8 @@ public class Config {
             } else if (child == null) {
                 position = idParent.getChildren().length + 1;
             } else {
-                if (idParent instanceof Shell shell) {
-                    position = indexOfChild(shell.getShells(), child);
+                if (child instanceof Shell) {
+                    position = indexOfChild(((Shell) idParent).getShells(), child);
                 } else {
                     position = indexOfChild(idParent.getChildren(), child);
                 }
