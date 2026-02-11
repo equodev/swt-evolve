@@ -852,7 +852,7 @@ public class DartText extends DartScrollable implements IText {
     public Point getSelection() {
         checkWidget();
         if (selection == null) {
-            return new Point(0, 0);
+            return new Point(caretPosition, caretPosition);
         }
         return this.selection;
     }
@@ -2015,6 +2015,8 @@ public class DartText extends DartScrollable implements IText {
             getDisplay().asyncExec(() -> {
                 if (!isDisposed()) {
                     setText(e.text);
+                    if (e.start >= 0)
+                        setSelection(e.start);
                 }
             });
         });
