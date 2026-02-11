@@ -14,6 +14,8 @@ import '../impl/canvas_evolve.dart';
 import 'widget_config.dart';
 import 'utils/font_utils.dart';
 import 'color_utils.dart';
+import '../gen/swt.dart';
+import 'key_mapping.dart';
 import '../theme/theme_extensions/styledtext_theme_extension.dart';
 
 class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
@@ -364,6 +366,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     widget.sendModifyModify(state, event);
   }
 
+  void _sendKeyDownEvent(RawKeyEvent event) {
+    final vEvent = mapKeyEventToSwt(event);
+    widget.sendKeyKeyDown(state, vEvent);
+  }
+
   //-----------Edition----------------
   void _handleTap(Offset position) {
     final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
@@ -435,6 +442,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   void _handleKeyEvent(RawKeyEvent event) {
     if (!_isEditingText || _editableTextShape == null) return;
     if (event is! RawKeyDownEvent) return;
+
+    // Send KeyDown event to Java
+    _sendKeyDownEvent(event);
 
     final isShiftPressed = event.data.isShiftPressed;
 
@@ -535,8 +545,10 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         newShape = currentShape.clearSelection();
       } else if (event.logicalKey == LogicalKeyboardKey.enter) {
         if (!_editable) return;
-        newShape = currentShape.insertText(
-            '\n', currentShape.caretInfo?.offset ?? 0);
+        if ((state.style & SWT.SINGLE) == 0) {
+          newShape = currentShape.insertText(
+              '\n', currentShape.caretInfo?.offset ?? 0);
+        }
       } else if (event.character != null && event.character!.isNotEmpty) {
         if (!_editable) return;
         final char = event.character!;
