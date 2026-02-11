@@ -1258,12 +1258,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Point toControl(int x, int y) {
         checkWidget();
-        int[] origin_x = new int[1], origin_y = new int[1];
-        x -= origin_x[0];
-        y -= origin_y[0];
-        if ((getApi().style & SWT.MIRRORED) != 0)
-            x = getClientWidth() - x;
-        return new Point(x, y);
+        return ControlHelper.toControl(this, x, y);
     }
 
     /**
@@ -1315,12 +1310,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Point toDisplay(int x, int y) {
         checkWidget();
-        int[] origin_x = new int[1], origin_y = new int[1];
-        if ((getApi().style & SWT.MIRRORED) != 0)
-            x = getClientWidth() - x;
-        x += origin_x[0];
-        y += origin_y[0];
-        return new Point(x, y);
+        return ControlHelper.toDisplay(this, x, y);
     }
 
     Point toDisplayInPixels(int x, int y) {
