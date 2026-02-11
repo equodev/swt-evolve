@@ -6,6 +6,8 @@ import org.eclipse.swt.custom.DartCCombo;
 import org.eclipse.swt.custom.DartCLabel;
 import org.eclipse.swt.custom.DartCTabFolder;
 import org.eclipse.swt.custom.DartStyledText;
+import org.eclipse.swt.custom.StyledTextContent;
+import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GCHelper;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
@@ -92,6 +94,32 @@ public class Sizes {
             size.y = hHint;
         Rectangle trim = composite.computeTrim(0, 0, size.x, size.y);
         return new Point(trim.width, trim.height);
+    }
+
+    public static Point computeSize(DartStyledText c, int wHint, int hHint, boolean changed) {
+        StyledTextContent content = c._content();
+        int lc = (c.getApi().getStyle() & SWT.SINGLE) != 0 ? 1 : content.getLineCount();
+        int width = 0;
+        int height = 0;
+        if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
+            Font font = c.getFont();
+            for (int lineIndex = 0; lineIndex < lc; lineIndex++) {
+                String line = content.getLine(lineIndex);
+                Point extent = GCHelper.textExtent(line != null ? line : "", SWT.DRAW_TAB, font);
+                width = Math.max(width, extent.x);
+                height += extent.y;
+            }
+        }
+        if (width == 0) width = DartWidget.DEFAULT_WIDTH;
+        if (height == 0) height = DartWidget.DEFAULT_HEIGHT;
+        if (wHint != SWT.DEFAULT) width = wHint;
+        if (hHint != SWT.DEFAULT) height = hHint;
+        int wTrim = c._leftMargin() + c._rightMargin();
+        Caret caret = c.getCaret();
+        if (caret != null) wTrim += caret.getSize().x;
+        int hTrim = c._topMargin() + c._bottomMargin();
+        Rectangle rect = c.computeTrim(0, 0, width + wTrim, height + hTrim);
+        return new Point(rect.width, rect.height);
     }
 
     public static Point computeSize(DartControl dartControl, int wHint, int hHint, boolean changed) {
@@ -219,10 +247,6 @@ public class Sizes {
 
     public static Point computeSize(DartSpinner c, int wHint, int hHint, boolean changed) {
         return new Point(120, 32);
-    }
-
-    public static Point computeSize(DartStyledText c, int wHint, int hHint, boolean changed) {
-        return new Point(c.getText().length()*15+20, 25);
     }
 
     public static Point computeSize(DartTable c, int wHint, int hHint, boolean changed) {

@@ -3442,7 +3442,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Point toControl(int x, int y) {
         checkWidget();
-        return new Point(x, y);
+        return ControlHelper.toControl(this, x, y);
     }
 
     Point toControlInPixels(int x, int y) {
@@ -3497,7 +3497,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @since 2.1
      */
     public Point toDisplay(int x, int y) {
-        return new Point(x, y);
+        checkWidget();
+        return ControlHelper.toDisplay(this, x, y);
     }
 
     Point toDisplayInPixels(int x, int y) {

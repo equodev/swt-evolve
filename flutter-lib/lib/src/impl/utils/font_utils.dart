@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/widgets.dart';
 import '../../gen/font.dart';
 import '../../gen/fontdata.dart';
@@ -59,9 +60,10 @@ class FontUtils {
         ? fontData.name!
         : defaultFontName;
     final fontHeightPoints = fontData.height?.toDouble() ?? defaultFontSize;
-    // Only apply DPI conversion for StyledText widgets
-    // Convert points to pixels: pixels = points × (96 DPI / 72 points per inch)
-    final fontSize = applyDpiScaling ? fontHeightPoints * (96 / 72) : fontHeightPoints;
+    // Apply DPI conversion only on Windows where SWT uses 72-DPI points but screens are 96 DPI.
+    // On macOS, SWT points map 1:1 to Flutter logical pixels, so no conversion is needed.
+    final needsDpiScaling = applyDpiScaling && !Platform.isMacOS;
+    final fontSize = needsDpiScaling ? fontHeightPoints * (96 / 72) : fontHeightPoints;
     final swtStyle = fontData.style ?? 0;
 
     final (fontWeight, fontStyle) = convertSwtFontStyle(swtStyle);

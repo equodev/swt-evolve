@@ -3484,7 +3484,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Point toControl(int x, int y) {
         checkWidget();
-        return display.map(null, this.getApi(), x, y);
+        return ControlHelper.toControl(this, x, y);
     }
 
     /**
@@ -3536,7 +3536,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Point toDisplay(int x, int y) {
         checkWidget();
-        return display.map(this.getApi(), null, x, y);
+        return ControlHelper.toDisplay(this, x, y);
     }
 
     /**
