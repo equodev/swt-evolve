@@ -31,6 +31,9 @@ class TextImpl<T extends TextSwt, V extends VText>
     bool textChanged = _controller.text != newText;
 
     if (textChanged) {
+      if (_focusNode != null && _focusNode!.hasFocus) {
+        return;
+      }
       _controller.value = _controller.value.copyWith(
         text: newText,
         selection: TextSelection.collapsed(offset: newText.length),
@@ -136,9 +139,10 @@ class TextImpl<T extends TextSwt, V extends VText>
   void _handleTextChanged(String value) {
     print("Text ${state.id} text changed to: '$value'");
     state.text = value;
-    var e = VEvent()..text = value;
+    var e = VEvent()
+      ..text = value
+      ..start = _controller.selection.baseOffset;
     widget.sendModifyModify(state, e);
-    widget.sendVerifyVerify(state, e);
   }
 
   void _handleSubmitted(String value) {
