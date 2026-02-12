@@ -161,11 +161,30 @@ InputDecoration getInputDecoration(
   final isSearch = hasStyle(state.style, SWT.SEARCH);
   final hasSearchIcon = isSearch && hasStyle(state.style, SWT.ICON_SEARCH);
   final hasCancelIcon = isSearch && hasStyle(state.style, SWT.ICON_CANCEL);
+  final isReadOnly = hasStyle(state.style, SWT.READ_ONLY);
 
   final iconColor = enabled ? widgetTheme.textColor : widgetTheme.disabledTextColor;
 
   final textHeight = widgetTheme.fontSize * widgetTheme.lineHeight;
   final iconSize = min(widgetTheme.searchIconSize, textHeight);
+
+  final noBorder = InputBorder.none;
+  final outlineBorder = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(borderRadius),
+    borderSide: BorderSide(color: normalBorderColor, width: borderWidth),
+  );
+  final outlineEnabled = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(borderRadius),
+    borderSide: BorderSide(color: normalBorderColor, width: borderWidth),
+  );
+  final outlineFocused = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(borderRadius),
+    borderSide: BorderSide(color: focusedBorderColor, width: focusedBorderWidth),
+  );
+  final outlineDisabled = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(borderRadius),
+    borderSide: BorderSide(color: disabledBorderColor, width: borderWidth),
+  );
 
   return InputDecoration(
     hintText: state.message,
@@ -184,22 +203,10 @@ InputDecoration getInputDecoration(
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
           )
         : null,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(borderRadius),
-      borderSide: BorderSide(color: normalBorderColor, width: borderWidth),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(borderRadius),
-      borderSide: BorderSide(color: normalBorderColor, width: borderWidth),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(borderRadius),
-      borderSide: BorderSide(color: focusedBorderColor, width: focusedBorderWidth),
-    ),
-    disabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(borderRadius),
-      borderSide: BorderSide(color: disabledBorderColor, width: borderWidth),
-    ),
+    border: isReadOnly ? noBorder : outlineBorder,
+    enabledBorder: isReadOnly ? noBorder : outlineEnabled,
+    focusedBorder: isReadOnly ? noBorder : outlineFocused,
+    disabledBorder: isReadOnly ? noBorder : outlineDisabled,
     fillColor: bgColor,
     filled: true,
     counterText: ''

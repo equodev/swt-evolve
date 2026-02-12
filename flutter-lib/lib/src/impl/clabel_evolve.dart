@@ -29,10 +29,7 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
     final image = state.image;
 
     final textAlign = _getTextAlignFromAlignment(state.alignment, widgetTheme.textAlign);
-    final backgroundColor = getBackgroundColor(
-      background: state.background,
-      defaultColor: widgetTheme.backgroundColor,
-    );
+    final backgroundColor = getSwtBackgroundColor(context, defaultColor: widgetTheme.backgroundColor);
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = getConstraintsFromBounds(state.bounds);
 

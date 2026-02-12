@@ -169,9 +169,8 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     
     final toolbarTheme = Theme.of(context).extension<ToolBarThemeExtension>();
     final defaultBackgroundColor = toolbarTheme?.toolbarBackgroundColor ?? Colors.white;
-    
     final bgColor = getBackgroundColor(
-      background: state.background,
+      background: null,
       defaultColor: backgroundColor ?? defaultBackgroundColor,
     );
     

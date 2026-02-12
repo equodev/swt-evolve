@@ -40,10 +40,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   final FocusNode _focusNode = FocusNode();
 
   @override
-  Color get bg =>
-      colorFromVColor(state.background, defaultColor: _styledTextTheme.backgroundColor);
-
-  @override
   void initState() {
     super.initState();
   }
@@ -301,6 +297,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   @override
   Widget build(BuildContext context) {
     final bounds = getBounds();
+    final backgroundColor = getSwtBackgroundColor(context, defaultColor: _styledTextTheme.backgroundColor) ?? _styledTextTheme.backgroundColor;
 
     return wrap(
       SizedBox(
@@ -312,7 +309,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
             Positioned.fill(
               child: CustomPaint(
                 painter: ScenePainter(
-                    bg,
+                    backgroundColor,
                     List.unmodifiable([
                       ...shapes,
                       if (_editableTextShape != null) _editableTextShape!

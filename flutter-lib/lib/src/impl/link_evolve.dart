@@ -22,10 +22,7 @@ class LinkImpl<T extends LinkSwt, V extends VLink> extends ControlImpl<T, V> {
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = getConstraintsFromBounds(state.bounds);
 
-    final backgroundColor = getBackgroundColor(
-      background: state.background,
-      defaultColor: widgetTheme.backgroundColor,
-    );
+    final backgroundColor = getSwtBackgroundColor(context, defaultColor: widgetTheme.backgroundColor);
 
     final child = StyledLink(
       text: text,
