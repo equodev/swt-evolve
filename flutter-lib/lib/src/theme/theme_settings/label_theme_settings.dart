@@ -46,12 +46,12 @@ LabelThemeExtension _getLabelTheme({
     linkTextColor: colorScheme.primary,
     linkHoverTextColor: colorSchemeExtension.primaryHovered,
     
-    backgroundColor: null,
+    backgroundColor: Colors.white,
     hoverBackgroundColor: colorSchemeExtension.stateDefaultHovered,
     selectedBackgroundColor: colorSchemeExtension.stateDefaultPressed,
     
-    borderColor: colorSchemeExtension.surfaceBorderEnabled,
-    focusBorderColor: colorSchemeExtension.surfaceBorderFocused,
+    borderColor: null,
+    focusBorderColor: null,
     
     // Font styles
     primaryTextStyle: baseTextStyle.copyWith(color: colorScheme.onSurface),
@@ -71,9 +71,9 @@ LabelThemeExtension _getLabelTheme({
     iconTextSpacing: 8.0,
     
     // Border properties
-    borderRadius: 4.0,
-    borderWidth: 1.0,
-    focusBorderWidth: 2.0,
+    borderRadius: 0.0,
+    borderWidth: 0.0,
+    focusBorderWidth: 0.0,
     
     // Icon properties
     iconSize: 16.0,

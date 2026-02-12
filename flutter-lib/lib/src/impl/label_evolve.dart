@@ -79,10 +79,7 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
   Widget _buildLabel(BuildContext context, LabelThemeExtension widgetTheme, bool enabled) {
     final text = stripAccelerators(state.text);
     final textAlign = getTextAlignFromStyle(state.style, widgetTheme.textAlign);
-    final backgroundColor = getBackgroundColor(
-      background: state.background,
-      defaultColor: widgetTheme.backgroundColor,
-    );
+    final backgroundColor = getSwtBackgroundColor(context, defaultColor: widgetTheme.backgroundColor);
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = getConstraintsFromBounds(state.bounds);
     
