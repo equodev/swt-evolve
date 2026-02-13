@@ -183,7 +183,6 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
                 } else {
                     SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height, 0, 0, bounds.width, 28);
                 }
-
             } else {
                 SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height,
                         bounds.x, bounds.y, bounds.width, bounds.height);

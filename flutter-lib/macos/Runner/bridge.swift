@@ -34,7 +34,7 @@ class FlutterBridgeController {
         // If parent view is provided, add Flutter view as a subview
         if let parent = parentView {
 //             print("FlutterBridgeController.initialize 3")
-            let frame = parent.frame
+            let frame = parent.bounds
 
             let container = FlippedView()
             container.frame = frame
@@ -50,11 +50,11 @@ class FlutterBridgeController {
             self.view = container
 
             if let flutterView = flutterViewController?.view {
-// //                let flutterViewFrame = NSRect(x: 0, y: 0, width: 400, height: 500)
-                flutterView.frame = container.frame
+//                 let flutterViewFrame = NSRect(x: 0, y: 0, width: 400, height: 500)
+//                 flutterView.frame = container.frame
 //                 flutterView.frame = NSRect(x: frame.origin.x, y: frame.origin.y, width: frame.width, height: frame.height)
 //                 flutterView.autoresizingMask = [.width]
-//                flutterView.frame = parent.bounds
+                flutterView.frame = parent.bounds
                 flutterView.autoresizingMask = [.width, .height]
 //                 print("FlutterBridgeController.initialize 4 ", parent, flutterView, flutterView.frame)
                 container.addSubview(flutterView)
