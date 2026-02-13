@@ -45,6 +45,10 @@ public class IdWidgetTracker implements WidgetSpy.WidgetTracker {
         }
     }
 
+    public String getWidgetId(Widget w) {
+        return nonDisposedWidgets.get(w);
+    }
+
     @Override
     public void widgetCreated(Widget widget) {
         if (widget instanceof Control c && c.getImpl()._parent() != null) {
@@ -72,16 +76,17 @@ public class IdWidgetTracker implements WidgetSpy.WidgetTracker {
         WidgetSpy.getInstance().setWidgetTracker(this);
 
         Display display = Display.getCurrent();
-        display.addFilter(SWT.KeyDown, e -> {
-            if ((e.stateMask & SWT.CTRL) != 0 && (e.stateMask & SWT.SHIFT) != 0 && e.keyCode == '`') {
-                activated = !activated;
-                if (activated) {
-                    activate(display);
-                } else {
-                    deactivate(display);
+        if (display != null)
+            display.addFilter(SWT.KeyDown, e -> {
+                if ((e.stateMask & SWT.CTRL) != 0 && (e.stateMask & SWT.SHIFT) != 0 && e.keyCode == '`') {
+                    activated = !activated;
+                    if (activated) {
+                        activate(display);
+                    } else {
+                        deactivate(display);
+                    }
                 }
-            }
-        });
+            });
     }
 
     private void activate(Display display) {

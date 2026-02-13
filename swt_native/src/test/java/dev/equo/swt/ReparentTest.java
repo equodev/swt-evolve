@@ -3,10 +3,12 @@ package dev.equo.swt;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.*;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.eclipse.swt.widgets.Mocks.shell;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@ExtendWith(Mocks.class)
 public class ReparentTest extends SerializeTestBase {
 
     @Test

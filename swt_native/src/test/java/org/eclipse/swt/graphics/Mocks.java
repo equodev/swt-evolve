@@ -11,7 +11,7 @@ import static org.mockito.Mockito.when;
 
 public class Mocks {
     public static void device(Display display, SwtDevice swtDisplay) {
-        Font defaultFont = new Font(display, "System", 14, SWT.NORMAL);
+        Font defaultFont = new DartFont(display, "System", 14, SWT.NORMAL, null).getApi();
         Assertions.assertThat(defaultFont.getImpl()).isInstanceOf(DartFont.class);
         when(display.getSystemFont()).thenReturn(defaultFont);
         swtDisplay.systemFont = defaultFont;

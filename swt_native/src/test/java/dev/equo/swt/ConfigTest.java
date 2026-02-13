@@ -10,7 +10,11 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.*;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -152,6 +156,14 @@ public class ConfigTest {
             Config.defaultToEclipse();
             Config.useEquo(CTabItem.class);
             assertThat(Config.isEquo(CTabItem.class)).isTrue();
+        }
+    }
+
+    @Nested
+    class WithParent {
+        @Test
+        void should_default_to_swt_for_widget() {
+            assertThat(Config.isEquo(CTabFolder.class, Mocks.composite())).isFalse();
         }
 
     }
@@ -337,7 +349,6 @@ public class ConfigTest {
     }
 
     @Nested
-    @ExtendWith(Mocks.class)
     class ClassName {
         @Test
         void widget_name_for_swt() {
@@ -468,6 +479,58 @@ public class ConfigTest {
 
             assertThat(id).isEqualTo("/" + C + "/-1/" + C + "/2/" + C + "/2/Button/3");
         }
+
+        @Nested
+        @DisabledIfEnvironmentVariable(named = "CI", matches = "true")
+        class SwtAndDartMatchesWithTracker {
+
+            private IdWidgetTracker tracker;
+            private Display display;
+
+            @BeforeEach
+            void tracker() {
+                display = new Display();
+                tracker = new IdWidgetTracker();
+                tracker.startTracking();
+            }
+
+            @AfterEach
+            void stop() {
+                tracker.stopTracking();
+                FlutterBridge.disposeDisplayAndContinue(display);
+            }
+
+            @ParameterizedTest
+            @ValueSource(classes = {Optional.class, Composite.class})
+            void composite_should_match_ids(Class<?> useEquo) {
+                Config.useEquo(useEquo);
+                Shell s = new Shell(display);
+
+                assertThat(Config.getId(Composite.class, s)).isEqualTo("/Shell/-1/Composite/1");
+
+                Composite c1 = new Composite(s, SWT.NONE);
+                assertThat(tracker.getWidgetId(c1)).as("tracker id !=").isEqualTo("/Shell/-1/Composite/1");
+                assertThat(Config.getId(Composite.class, s)).isEqualTo("/Shell/-1/Composite/2");
+                assertThat(Config.getId(Composite.class, c1)).isEqualTo("/Shell/-1/Composite/1/Composite/1");
+            }
+
+            @ParameterizedTest
+            @ValueSource(classes = {Optional.class, Composite.class, CTabFolder.class})
+            void composite_in_ctabfolder_should_match_ids(Class<?> useEquo) {
+                Config.useEquo(useEquo);
+                Shell s = new Shell(display);
+                assertThat(Config.getId(CTabFolder.class, s)).isEqualTo("/Shell/-1/CTabFolder/1");
+                CTabFolder c1 = new CTabFolder(s, SWT.NONE);
+                assertThat(tracker.getWidgetId(c1)).as("tracker id !=").isEqualTo("/Shell/-1/CTabFolder/1");
+                assertThat(Config.getId(CTabFolder.class, s)).isEqualTo("/Shell/-1/CTabFolder/2");
+                assertThat(Config.getId(Composite.class, c1)).isEqualTo("/Shell/-1/CTabFolder/1/Composite/1");
+
+                Composite c2 = new Composite(c1, SWT.NONE);
+                assertThat(tracker.getWidgetId(c2)).as("tracker id !=").isEqualTo("/Shell/-1/CTabFolder/1/Composite/1");
+                assertThat(Config.getId(Composite.class, c1)).isEqualTo("/Shell/-1/CTabFolder/1/Composite/2");
+            }
+        }
+
     }
 
 }
