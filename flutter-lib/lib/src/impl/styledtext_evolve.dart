@@ -1716,8 +1716,8 @@ class TextShape extends Shape {
   }
 
   bool containsPoint(Offset point, Size canvasSize) {
-    // When text is empty, the entire canvas should be clickable to allow editing
-    if (text.isEmpty && editable) {
+    // When editable, the entire canvas should be clickable to allow editing
+    if (editable) {
       final fullRect = Rect.fromLTWH(0, 0, canvasSize.width, canvasSize.height);
       return fullRect.contains(point);
     }
