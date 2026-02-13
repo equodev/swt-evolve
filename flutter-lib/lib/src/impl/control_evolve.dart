@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import '../gen/control.dart';
@@ -100,26 +101,26 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     }
 
     final menuKey = GlobalKey<State<MenuSwt>>();
-    final stackKey = GlobalKey();
 
-    return Stack(
-      key: stackKey,
-      children: [
-        GestureDetector(
-          onSecondaryTapUp: (details) {
-            final RenderBox? stackBox = stackKey.currentContext?.findRenderObject() as RenderBox?;
-            if (stackBox != null) {
-              final localPosition = stackBox.globalToLocal(details.globalPosition);
-              final menuState = menuKey.currentState;
-              if (menuState != null && menuState is MenuImpl) {
-                menuState.openContextMenuAt(context, localPosition);
-              }
+    return Listener(
+      onPointerDown: (event) {
+        if (event.buttons == kSecondaryMouseButton) {
+          final RenderBox? box = context.findRenderObject() as RenderBox?;
+          if (box != null) {
+            final localPosition = box.globalToLocal(event.position);
+            final menuState = menuKey.currentState;
+            if (menuState != null && menuState is MenuImpl) {
+              menuState.openContextMenuAt(context, localPosition);
             }
-          },
-          child: child,
-        ),
-        MenuSwt(key: menuKey, value: menu),
-      ],
+          }
+        }
+      },
+      child: Stack(
+        children: [
+          child,
+          MenuSwt(key: menuKey, value: menu),
+        ],
+      ),
     );
   }
 }
