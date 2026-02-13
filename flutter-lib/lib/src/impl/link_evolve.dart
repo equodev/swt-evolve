@@ -138,7 +138,7 @@ class _StyledLinkState extends State<StyledLink> {
           : widget.widgetTheme.disabledTextStyle,
     );
 
-    final hasLinks = widget.text.contains('<a');
+    final hasLinks = widget.text.toLowerCase().contains('<a');
     if (!hasLinks) {
       return Text(
         widget.text,
