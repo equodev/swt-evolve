@@ -331,6 +331,10 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (srcImage.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        SwtImage srcSwt = (SwtImage) srcImage.getImpl();
+        if (srcSwt.filename != null) {
+            this.filename = srcSwt.filename;
+        }
         switch(flag) {
             case SWT.IMAGE_COPY:
             case SWT.IMAGE_DISABLE:

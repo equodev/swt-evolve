@@ -220,6 +220,10 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (srcImage.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        SwtImage srcSwt = (SwtImage) srcImage.getImpl();
+        if (srcSwt.filename != null) {
+            this.filename = srcSwt.filename;
+        }
         if (srcImage.getImpl() instanceof DartImage dartSrc) {
             this.imageProvider = new PlainImageDataProviderWrapper(dartSrc.getImageData());
             init(dartSrc.getImageData(), 100);
