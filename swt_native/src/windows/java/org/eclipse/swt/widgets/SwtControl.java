@@ -120,6 +120,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         this.parent = parent;
         notifyCreationTracker();
         createWidget();
+        ControlUtils.addToParentChildren(this);
     }
 
     /**

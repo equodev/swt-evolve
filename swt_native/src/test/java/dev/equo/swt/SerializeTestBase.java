@@ -69,6 +69,7 @@ public class SerializeTestBase {
 
     @AfterEach
     void resetStatic() {
+        SwtFlutterBridge.set(null);
         mockedStatic.close();
         mockedCursor.close();
     }

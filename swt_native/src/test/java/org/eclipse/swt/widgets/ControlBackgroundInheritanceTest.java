@@ -6,8 +6,8 @@ import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.graphics.Color;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests that Label, Link, and CLabel (and any control without own background)
@@ -22,8 +22,8 @@ class ControlBackgroundInheritanceTest extends SerializeTestBase {
         Composite parent = composite();
         Color parentBg = parent.getBackground();
         Label label = new Label(parent, SWT.NONE);
-        assertEquals(parentBg, label.getBackground(),
-                "Label without own background should return parent background (e.g. dialog gray)");
+        assertThat(label.getBackground()).as("Label without own background should return parent background (e.g. dialog gray)")
+                .isEqualTo(parentBg);
     }
 
     @Test
@@ -31,8 +31,8 @@ class ControlBackgroundInheritanceTest extends SerializeTestBase {
         Composite parent = composite();
         Color parentBg = parent.getBackground();
         Link link = new Link(parent, SWT.NONE);
-        assertEquals(parentBg, link.getBackground(),
-                "Link without own background should return parent background");
+        assertThat(link.getBackground()).as("Link without own background should return parent background")
+                .isEqualTo(parentBg);
     }
 
     @Test
@@ -40,8 +40,8 @@ class ControlBackgroundInheritanceTest extends SerializeTestBase {
         Composite parent = composite();
         Color parentBg = parent.getBackground();
         CLabel clabel = new CLabel(parent, SWT.NONE);
-        assertEquals(parentBg, clabel.getBackground(),
-                "CLabel without own background should return parent background");
+        assertThat(clabel.getBackground()).as("CLabel without own background should return parent background")
+                .isEqualTo(parentBg);
     }
 
     @Test
@@ -50,8 +50,8 @@ class ControlBackgroundInheritanceTest extends SerializeTestBase {
         Color ownColor = new Color(parent.getDisplay(), 100, 150, 200);
         Label label = new Label(parent, SWT.NONE);
         label.setBackground(ownColor);
-        assertEquals(ownColor, label.getBackground(),
-                "Label with set background should return its own color");
+        assertThat(label.getBackground()).as("Label with set background should return its own color")
+                .isEqualTo(ownColor);
         ownColor.dispose();
     }
 }

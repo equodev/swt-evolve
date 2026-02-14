@@ -191,6 +191,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         this.parent = parent;
         notifyCreationTracker();
         createWidget(0);
+        ControlUtils.addToParentChildren(this);
     }
 
     Font defaultFont() {

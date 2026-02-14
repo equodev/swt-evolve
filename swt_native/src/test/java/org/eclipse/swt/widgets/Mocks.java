@@ -43,19 +43,22 @@ public class Mocks implements AfterEachCallback {
         when(shell.getImpl()).thenReturn(swtShell);
         swtShell.display = display;
         when(shell.getShell()).thenReturn(shell);
-        when(shell.getBackground()).thenReturn(new Color(red(), green(), blue()));
+        Color bg = new Color(red(), green(), blue());
+        when(shell.getBackground()).thenReturn(bg);
+        whenInvokedReturn(SwtControl.class, "getBackgroundColor", shell.getImpl(), bg); // Windows and macOS
         when(swtShell._display()).thenCallRealMethod();
         when(swtShell._getChildren()).thenReturn(new Control[0]);
         when(swtShell.menuShell()).thenReturn((Decorations) shell);
-        try { // Windows and macOS
-            Method getShell = SwtShell.class.getDeclaredMethod("getShell");
-            when(getShell.invoke(swtShell)).thenReturn(shell);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
-        try { // Linux
-            Method getShell = SwtShell.class.getDeclaredMethod("_getShell");
-            when(getShell.invoke(swtShell)).thenReturn(shell);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
+        whenInvokedReturn(SwtShell.class, "getShell", swtShell, shell); // Windows and macOS
+        whenInvokedReturn(SwtShell.class, "_getShell", swtShell, shell);  // Linux
         return shell;
+    }
+
+    private static void whenInvokedReturn(Class<?> swtShellClass, String method, Object thisObj, Object returnObj) {
+        try {
+            Method getShell = swtShellClass.getDeclaredMethod(method);
+            when(getShell.invoke(thisObj)).thenReturn(returnObj);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
     }
 
     public static Display display() {

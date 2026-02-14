@@ -44,6 +44,7 @@ abstract class GenericSizeBridge<REQUEST, SERIALIZED, RESULT> extends SwtFlutter
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
         Dispose(ctx);
+        SwtFlutterBridge.set(null);
     }
 
     /**
