@@ -30,7 +30,7 @@ public class VComposite extends VScrollable {
         if (values == null)
             return null;
         ArrayList<Control> result = new ArrayList<>(values.length);
-        for (Control v : values) if (v != null)
+        for (Control v : values) if (v != null && v.getImpl() instanceof DartControl)
             result.add(v);
         return result.toArray(Control[]::new);
     }
@@ -52,7 +52,7 @@ public class VComposite extends VScrollable {
         if (values == null)
             return null;
         ArrayList<Control> result = new ArrayList<>(values.length);
-        for (Control v : values) if (v != null)
+        for (Control v : values) if (v != null && v.getImpl() instanceof DartControl)
             result.add(v);
         return result.toArray(Control[]::new);
     }

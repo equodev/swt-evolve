@@ -1,9 +1,7 @@
 package dev.equo.swt;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.CTabFolder;
-import org.eclipse.swt.custom.CTabFolderRenderer;
-import org.eclipse.swt.custom.CTabItem;
+import org.eclipse.swt.custom.*;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -29,6 +27,7 @@ public class ConfigTest {
     @AfterEach
     void reset() {
         Config.defaultImpl = Config.Impl.eclipse;
+        System.clearProperty("dev.equo.swt.Composite");
         System.clearProperty("dev.equo.swt.Point");
         System.clearProperty("dev.equo.swt.CTabItem");
         System.clearProperty("dev.equo.swt.CTabFolder");
@@ -509,6 +508,7 @@ public class ConfigTest {
                 assertThat(Config.getId(Composite.class, s)).isEqualTo("/Shell/-1/Composite/1");
 
                 Composite c1 = new Composite(s, SWT.NONE);
+                assertThat(c1.getImpl()).isInstanceOf((useEquo == Composite.class) ? DartComposite.class : SwtComposite.class);
                 assertThat(tracker.getWidgetId(c1)).as("tracker id !=").isEqualTo("/Shell/-1/Composite/1");
                 assertThat(Config.getId(Composite.class, s)).isEqualTo("/Shell/-1/Composite/2");
                 assertThat(Config.getId(Composite.class, c1)).isEqualTo("/Shell/-1/Composite/1/Composite/1");
@@ -521,11 +521,15 @@ public class ConfigTest {
                 Shell s = new Shell(display);
                 assertThat(Config.getId(CTabFolder.class, s)).isEqualTo("/Shell/-1/CTabFolder/1");
                 CTabFolder c1 = new CTabFolder(s, SWT.NONE);
+                assertThat(c1.getImpl()).isInstanceOf((useEquo == CTabFolder.class) ? DartCTabFolder.class : SwtCTabFolder.class);
+
                 assertThat(tracker.getWidgetId(c1)).as("tracker id !=").isEqualTo("/Shell/-1/CTabFolder/1");
                 assertThat(Config.getId(CTabFolder.class, s)).isEqualTo("/Shell/-1/CTabFolder/2");
                 assertThat(Config.getId(Composite.class, c1)).isEqualTo("/Shell/-1/CTabFolder/1/Composite/1");
 
                 Composite c2 = new Composite(c1, SWT.NONE);
+                assertThat(c2.getImpl()).isInstanceOf((useEquo == Composite.class) ? DartComposite.class : SwtComposite.class);
+
                 assertThat(tracker.getWidgetId(c2)).as("tracker id !=").isEqualTo("/Shell/-1/CTabFolder/1/Composite/1");
                 assertThat(Config.getId(Composite.class, c1)).isEqualTo("/Shell/-1/CTabFolder/1/Composite/2");
             }
