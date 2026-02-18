@@ -554,15 +554,17 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     void createItem(TableItem item, int index) {
-        if (index < 0 || index > items.length) {
+        int count = items != null ? items.length : 0;
+        if (index < 0 || index > count) {
             error(SWT.ERROR_INVALID_RANGE);
         }
-        if (index == items.length) {
-            TableItem[] newItems = new TableItem[items.length + 1];
-            System.arraycopy(items, 0, newItems, 0, items.length);
-            items = newItems;
-        }
+        TableItem[] newItems = new TableItem[count + 1];
+        System.arraycopy(items, 0, newItems, 0, index);
+        System.arraycopy(items, index, newItems, index + 1, count - index);
+        items = newItems;
         items[index] = item;
+        if (index != count)
+            TableHelper.fixSelection(this, index, true);
     }
 
     @Override
@@ -610,18 +612,10 @@ public class DartTable extends DartComposite implements ITable {
         checkWidget();
         if (indices == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if (indices.length == 0)
-            return;
-        for (int index : indices) {
-            /*
-		* An index of -1 will apply the change to all
-		* items.  Ensure that indices are greater than -1.
-		*/
-            if (index >= 0) {
-                ignoreSelect = true;
-                ignoreSelect = false;
-            }
-        }
+        int count = items != null ? items.length : 0;
+        TableHelper.deselectIndices(this, indices, count);
+        //for (int index : indices) {    /*		* An index of -1 will apply the change to all		* items.  Ensure that indices are greater than -1.		*/    if (index >= 0) {        ignoreSelect = true;        OS.SendMessage(handle, OS.LVM_SETITEMSTATE, index, lvItem);        ignoreSelect = false;    }}
+        ;
     }
 
     /**
@@ -638,14 +632,16 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void deselect(int index) {
         checkWidget();
-        /*
-	* An index of -1 will apply the change to all
-	* items.  Ensure that index is greater than -1.
-	*/
-        if (index < 0)
+        int count = items != null ? items.length : 0;
+        if (!(0 <= index && index < count))
             return;
-        ignoreSelect = true;
-        ignoreSelect = false;
+        TableHelper.deselectIndex(this, index);
+        ///*	* An index of -1 will apply the change to all	* items.  Ensure that index is greater than -1.	*/if (index < 0)    return;
+        ;
+        //ignoreSelect = true;
+        ;
+        //ignoreSelect = false;
+        ;
     }
 
     /**
@@ -665,6 +661,18 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void deselect(int start, int end) {
         checkWidget();
+        if (start > end)
+            return;
+        int count = items != null ? items.length : 0;
+        if (end < 0 || start >= count)
+            return;
+        start = Math.max(0, start);
+        end = Math.min(count - 1, end);
+        if (start == 0 && end == count - 1) {
+            deselectAll();
+        } else {
+            TableHelper.deselectRange(this, start, end);
+        }
     }
 
     /**
@@ -690,7 +698,7 @@ public class DartTable extends DartComposite implements ITable {
             index++;
         }
         int orderIndex = 0;
-        int[] oldOrder = new int[columnCount];
+        int[] oldOrder = TableHelper.getColumnOrder(this);
         while (orderIndex < columnCount) {
             if (oldOrder[orderIndex] == index)
                 break;
@@ -733,6 +741,7 @@ public class DartTable extends DartComposite implements ITable {
             index = 0;
         System.arraycopy(columns, index + 1, columns, index, --columnCount - index);
         columns[columnCount] = null;
+        TableHelper.updateColumnOrderOnDestroy(this, index);
         if (columnCount == 0)
             setScrollWidth(null, true);
         updateMoveable();
@@ -783,10 +792,28 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     void destroyItem(TableItem item) {
+        int count = items != null ? items.length : 0;
+        int index = 0;
+        while (index < count) {
+            if (items[index] == item)
+                break;
+            index++;
+        }
+        if (index == count)
+            return;
+        if (index != count - 1)
+            TableHelper.fixSelection(this, index, false);
         setDeferResize(true);
         ignoreSelect = ignoreShrink = true;
+        TableItem[] newItems = new TableItem[count - 1];
+        System.arraycopy(items, 0, newItems, 0, index);
+        System.arraycopy(items, index + 1, newItems, index, count - 1 - index);
+        items = newItems;
         ignoreSelect = ignoreShrink = false;
         setDeferResize(false);
+        dirty();
+        if (items.length == 0)
+            setTableEmpty();
     }
 
     void fixCheckboxImageList(boolean fixScroll) {
@@ -895,10 +922,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public int[] getColumnOrder() {
         checkWidget();
-        if (columnCount == 0)
-            return new int[0];
-        int[] order = new int[columnCount];
-        return order;
+        return TableHelper.getColumnOrder(this);
     }
 
     /**
@@ -1060,6 +1084,9 @@ public class DartTable extends DartComposite implements ITable {
      */
     public TableItem getItem(int index) {
         checkWidget();
+        int count = items != null ? items.length : 0;
+        if (!(0 <= index && index < count))
+            error(SWT.ERROR_INVALID_RANGE);
         return _getItem(index);
     }
 
@@ -1187,7 +1214,7 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     private boolean _getLinesVisible() {
-        return false;
+        return this.linesVisible;
     }
 
     /**
@@ -1453,7 +1480,10 @@ public class DartTable extends DartComposite implements ITable {
      */
     public boolean isSelected(int index) {
         checkWidget();
-        return false;
+        int count = items != null ? items.length : 0;
+        if (!(0 <= index && index < count))
+            return false;
+        return TableHelper.isIndexSelected(this, index);
     }
 
     @Override
@@ -1516,19 +1546,34 @@ public class DartTable extends DartComposite implements ITable {
         int[] newIndices = new int[indices.length];
         System.arraycopy(indices, 0, newIndices, 0, indices.length);
         sort(newIndices);
+        int count = items != null ? items.length : 0;
+        int start = newIndices[newIndices.length - 1], end = newIndices[0];
+        if (!(0 <= start && start <= end && end < count))
+            error(SWT.ERROR_INVALID_RANGE);
         setDeferResize(true);
+        int currentCount = count;
         int last = -1;
         for (int index : newIndices) {
             if (index != last) {
-                TableItem item = _getItem(index, false);
+                TableItem item = items[index];
                 if (item != null && !item.isDisposed())
                     item.getImpl().release(false);
+                if (index != currentCount - 1)
+                    TableHelper.fixSelection(this, index, false);
                 ignoreSelect = ignoreShrink = true;
+                System.arraycopy(items, index + 1, items, index, currentCount - 1 - index);
+                items[--currentCount] = null;
                 ignoreSelect = ignoreShrink = false;
                 last = index;
             }
         }
+        TableItem[] newItems = new TableItem[currentCount];
+        System.arraycopy(items, 0, newItems, 0, currentCount);
+        items = newItems;
         setDeferResize(false);
+        dirty();
+        if (items.length == 0)
+            setTableEmpty();
     }
 
     /**
@@ -1547,13 +1592,25 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void remove(int index) {
         checkWidget();
-        TableItem item = _getItem(index, false);
+        int count = items != null ? items.length : 0;
+        if (!(0 <= index && index < count))
+            error(SWT.ERROR_INVALID_RANGE);
+        TableItem item = items[index];
         if (item != null && !item.isDisposed())
             item.getImpl().release(false);
+        if (index != count - 1)
+            TableHelper.fixSelection(this, index, false);
         setDeferResize(true);
         ignoreSelect = ignoreShrink = true;
+        TableItem[] newItems = new TableItem[count - 1];
+        System.arraycopy(items, 0, newItems, 0, index);
+        System.arraycopy(items, index + 1, newItems, index, count - 1 - index);
+        items = newItems;
         ignoreSelect = ignoreShrink = false;
         setDeferResize(false);
+        dirty();
+        if (items.length == 0)
+            setTableEmpty();
     }
 
     /**
@@ -1576,6 +1633,31 @@ public class DartTable extends DartComposite implements ITable {
         checkWidget();
         if (start > end)
             return;
+        int count = items != null ? items.length : 0;
+        if (!(0 <= start && start <= end && end < count))
+            error(SWT.ERROR_INVALID_RANGE);
+        if (start == 0 && end == count - 1) {
+            removeAll();
+        } else {
+            int numRemoved = end - start + 1;
+            for (int i = start; i <= end; i++) {
+                TableItem item = items[i];
+                if (item != null && !item.isDisposed())
+                    item.getImpl().release(false);
+            }
+            TableHelper.fixSelectionRange(this, start, end);
+            setDeferResize(true);
+            ignoreSelect = ignoreShrink = true;
+            TableItem[] newItems = new TableItem[count - numRemoved];
+            System.arraycopy(items, 0, newItems, 0, start);
+            System.arraycopy(items, end + 1, newItems, start, count - end - 1);
+            items = newItems;
+            ignoreSelect = ignoreShrink = false;
+            setDeferResize(false);
+            dirty();
+        }
+        if (items.length == 0)
+            setTableEmpty();
     }
 
     /**
@@ -1590,6 +1672,12 @@ public class DartTable extends DartComposite implements ITable {
         checkWidget();
         setDeferResize(true);
         ignoreSelect = ignoreShrink = true;
+        int count = items != null ? items.length : 0;
+        for (int i = 0; i < count; i++) {
+            TableItem item = items[i];
+            if (item != null && !item.isDisposed())
+                item.getImpl().release(false);
+        }
         ignoreSelect = ignoreShrink = false;
         setTableEmpty();
         setDeferResize(false);
@@ -1646,27 +1734,21 @@ public class DartTable extends DartComposite implements ITable {
      * @see Table#setSelection(int[])
      */
     public void select(int[] indices) {
-        int[] newValue = indices;
-        if (!java.util.Objects.equals(this.selection, newValue)) {
-            dirty();
-        }
+        //int[] newValue = indices;
+        ;
+        //if (!java.util.Objects.equals(this.selection, newValue)) {    dirty();}
+        ;
         checkWidget();
         if (indices == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         int length = indices.length;
         if (length == 0 || ((getApi().style & SWT.SINGLE) != 0 && length > 1))
             return;
-        this.selection = newValue;
-        for (int i = length - 1; i >= 0; --i) {
-            /*
-		* An index of -1 will apply the change to all
-		* items.  Ensure that indices are greater than -1.
-		*/
-            if (indices[i] >= 0) {
-                ignoreSelect = true;
-                ignoreSelect = false;
-            }
-        }
+        //this.selection = newValue;
+        ;
+        ignoreSelect = true;
+        TableHelper.selectIndices(this, indices, items != null ? items.length : 0, getApi().style);
+        ignoreSelect = false;
     }
 
     @Override
@@ -1697,7 +1779,8 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void select(int index) {
         dirty();
-        int[] newValue = new int[] { index };
+        //int[] newValue = new int[] { index };
+        ;
         checkWidget();
         /*
 	* An index of -1 will apply the change to all
@@ -1706,7 +1789,7 @@ public class DartTable extends DartComposite implements ITable {
         if (index < 0)
             return;
         ignoreSelect = true;
-        this.selection = newValue;
+        TableHelper.selectIndex(this, index, items != null ? items.length : 0, getApi().style);
         ignoreSelect = false;
     }
 
@@ -1735,12 +1818,13 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void select(int start, int end) {
         dirty();
-        int[] newValue = new int[] { start };
+        //int[] newValue = new int[] { start };
+        ;
         checkWidget();
         if (end < 0 || start > end || ((getApi().style & SWT.SINGLE) != 0 && start != end))
             return;
         start = Math.max(0, start);
-        this.selection = newValue;
+        TableHelper.selectRange(this, start, end, items != null ? items.length : 0, getApi().style);
     }
 
     /**
@@ -1758,7 +1842,9 @@ public class DartTable extends DartComposite implements ITable {
         checkWidget();
         if ((getApi().style & SWT.SINGLE) != 0)
             return;
+        int count = items != null ? items.length : 0;
         ignoreSelect = true;
+        TableHelper.selectAll(this, count);
         ignoreSelect = false;
     }
 
@@ -1867,7 +1953,7 @@ public class DartTable extends DartComposite implements ITable {
         }
         if (order.length != columnCount)
             error(SWT.ERROR_INVALID_ARGUMENT);
-        int[] oldOrder = new int[columnCount];
+        int[] oldOrder = TableHelper.getColumnOrder(this);
         boolean reorder = false;
         boolean[] seen = new boolean[columnCount];
         for (int i = 0; i < order.length; i++) {
@@ -2151,15 +2237,39 @@ public class DartTable extends DartComposite implements ITable {
     public void setItemCount(int count) {
         checkWidget();
         count = Math.max(0, count);
+        int currentCount = items != null ? items.length : 0;
+        if (count == currentCount)
+            return;
         setDeferResize(true);
         boolean isVirtual = (getApi().style & SWT.VIRTUAL) != 0;
         if (!isVirtual)
             setRedraw(false);
-        if (isVirtual) {
+        if (count < currentCount) {
+            for (int index = count; index < currentCount; index++) {
+                TableItem item = items[index];
+                if (item != null && !item.isDisposed())
+                    item.getImpl().release(false);
+            }
+            TableItem[] newItems = new TableItem[count];
+            System.arraycopy(items, 0, newItems, 0, count);
+            items = newItems;
+            selection = new int[0];
         } else {
+            if (!isVirtual) {
+                for (int i = currentCount; i < count; i++) {
+                    new TableItem(this.getApi(), SWT.NONE, i, true);
+                }
+            } else {
+                TableItem[] newItems = new TableItem[count];
+                System.arraycopy(items, 0, newItems, 0, currentCount);
+                items = newItems;
+            }
         }
+        //if (isVirtual) {    int flags = OS.LVSICF_NOINVALIDATEALL | OS.LVSICF_NOSCROLL;    OS.SendMessage(handle, OS.LVM_SETITEMCOUNT, count, flags);    /*		* Bug in Windows.  When a virtual table contains items and		* LVM_SETITEMCOUNT is used to set the new item count to zero,		* Windows does not redraw the table.  Note that simply not		* specifying LVSICF_NOINVALIDATEALL or LVSICF_NOSCROLL does		* correct the problem.  The fix is to force a redraw.		*/    if (count == 0 && itemCount != 0) {        OS.InvalidateRect(handle, null, true);    }} else {    for (int i = itemCount; i < count; i++) {        new TableItem(this, SWT.NONE, i, true);    }}
+        ;
         if (!isVirtual)
             setRedraw(true);
+        dirty();
         setDeferResize(false);
     }
 
@@ -2383,10 +2493,11 @@ public class DartTable extends DartComposite implements ITable {
      * @see Table#select(int[])
      */
     public void setSelection(int[] indices) {
-        int[] newValue = indices;
-        if (!java.util.Objects.equals(this.selection, newValue)) {
-            dirty();
-        }
+        dirty();
+        //int[] newValue = indices;
+        ;
+        //if (!java.util.Objects.equals(this.selection, newValue)) {    dirty();}
+        ;
         checkWidget();
         if (indices == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -2398,7 +2509,8 @@ public class DartTable extends DartComposite implements ITable {
         int focusIndex = indices[0];
         if (focusIndex != -1)
             setFocusIndex(focusIndex);
-        this.selection = newValue;
+        //this.selection = newValue;
+        ;
         showSelection();
     }
 

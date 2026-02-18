@@ -16,7 +16,7 @@ public class ComboHelper {
         if (selection.x == selection.y)
             return;
 
-        boolean processSegments = combo.segments != null;
+        boolean processSegments = combo._segments() != null;
         if (processSegments) {
             combo.clearSegments(true);
         }

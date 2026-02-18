@@ -1796,6 +1796,23 @@ public class DartCombo extends DartComposite implements ICombo {
         return textLimit;
     }
 
+    int selectedIndex = -1;
+
+    boolean noSelection;
+
+    public int[] _segments() {
+        return null;
+    }
+
+    void clearSegments(boolean applyText) {
+    }
+
+    void applyEditSegments() {
+    }
+
+    void setScrollWidth(int newWidth, boolean grow) {
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
         FlutterBridge.on(this, "Modify", "Modify", e -> {

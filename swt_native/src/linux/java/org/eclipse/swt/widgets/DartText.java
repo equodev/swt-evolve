@@ -1922,6 +1922,17 @@ public class DartText extends DartScrollable implements IText {
         return topIndex;
     }
 
+    void updateAutoTextDirectionIfNeeded() {
+    }
+
+    int clearSegmentsCount;
+
+    boolean ignoreCharacter;
+
+    boolean ignoreModify;
+
+    boolean ignoreVerify;
+
     void insertEditText(String string) {
         _insertEditText(string, false);
     }
