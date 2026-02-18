@@ -15,6 +15,12 @@ import '../theme/theme_extensions/tree_theme_extension.dart';
 import '../theme/theme_settings/tree_theme_settings.dart';
 import 'utils/widget_utils.dart';
 
+class _FlatTreeItem {
+  final VTreeItem item;
+  final int level;
+  const _FlatTreeItem(this.item, this.level);
+}
+
 class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   final Map<dynamic, String> treeItemExpanders = {};
   final   List<String> eventNames = [];
@@ -97,15 +103,17 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
           final widgetTheme = Theme.of(context).extension<TreeThemeExtension>();
           _cachedWidgetTheme = widgetTheme;
         
+        final double screenWidth = MediaQuery.of(context).size.width;
+        final double screenHeight = MediaQuery.of(context).size.height;
         final double maxWidth = constraints.maxWidth.isFinite
-            ? constraints.maxWidth
-            : MediaQuery.of(context).size.width;
+            ? constraints.maxWidth.clamp(0.0, screenWidth)
+            : screenWidth;
         final double maxHeight = constraints.maxHeight.isFinite
-            ? constraints.maxHeight
-            : MediaQuery.of(context).size.height;
+            ? constraints.maxHeight.clamp(0.0, screenHeight)
+            : screenHeight;
 
         final columns = getTreeColumns();
-        final treeItems = getTreeItems();
+        final flatItems = _flattenVisibleItems(state.items, 0);
         final allItems = _collectAllTreeItems(state.items);
         final preferredWidths = columns.isEmpty
             ? <double>[]
@@ -148,7 +156,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                       child: Material(
                         color: Colors.transparent,
                         child: _buildScrollableContent(
-                          treeItems,
+                          flatItems,
                           columns,
                           widgetTheme!,
                           context,
@@ -199,6 +207,20 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       if (item is VTreeItem) {
         result.add(item);
         result.addAll(_collectAllTreeItems(item.items));
+      }
+    }
+    return result;
+  }
+
+  List<_FlatTreeItem> _flattenVisibleItems(List<VWidget>? items, int level) {
+    if (items == null) return [];
+    final List<_FlatTreeItem> result = [];
+    for (final item in items) {
+      if (item is VTreeItem) {
+        result.add(_FlatTreeItem(item, level));
+        if (item.expanded == true && item.items != null) {
+          result.addAll(_flattenVisibleItems(item.items!, level + 1));
+        }
       }
     }
     return result;
@@ -312,7 +334,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   }
 
   Widget _buildScrollableContent(
-    List<Widget> treeItems,
+    List<_FlatTreeItem> flatItems,
     List<VTreeColumn> columns,
     TreeThemeExtension widgetTheme,
     BuildContext context,
@@ -320,24 +342,22 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     bool hasHScroll,
     List<double>? effectiveWidths,
   ) {
-    Widget content = _buildTreeContentWithLines(
-      treeItems,
+    double? totalWidth = _calculateTotalWidth(hasHScroll, columns, widgetTheme, effectiveWidths);
+    Widget listViewWithLines = _buildListViewWithColumnLines(
+      flatItems,
       columns,
       widgetTheme,
       effectiveWidths,
     );
-    
-    double? totalWidth = _calculateTotalWidth(hasHScroll, columns, widgetTheme, effectiveWidths);
-    Widget horizontalContent = _buildHorizontalContent(content, totalWidth);
-    
+
     if (hasVScroll && hasHScroll) {
-      return _buildBothScrollbars(context, horizontalContent);
+      return _buildBothScrollbars(context, listViewWithLines, totalWidth);
     } else if (hasVScroll) {
-      return _buildVerticalScrollbar(context, content);
+      return _buildVerticalScrollbar(context, listViewWithLines);
     } else if (hasHScroll) {
-      return _buildHorizontalScrollbar(context, horizontalContent);
+      return _buildHorizontalScrollbar(context, listViewWithLines, totalWidth);
     } else {
-      return _buildNoScrollbars(context, content);
+      return _buildNoScrollbars(context, listViewWithLines);
     }
   }
 
@@ -356,56 +376,103 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     return widgetTheme.expandIconSize + widgetTheme.expandIconSpacing + calculatedWidth;
   }
 
-  Widget _buildHorizontalContent(Widget content, double? totalWidth) {
-    if (totalWidth != null) {
-      return SizedBox(width: totalWidth, child: content);
+  Widget _buildListViewWithColumnLines(
+    List<_FlatTreeItem> flatItems,
+    List<VTreeColumn> columns,
+    TreeThemeExtension widgetTheme,
+    List<double>? effectiveWidths,
+  ) {
+    final bool linesVisible = state.linesVisible ?? false;
+
+    Widget listView = ListView.builder(
+      controller: _verticalController,
+      itemCount: flatItems.length,
+      itemBuilder: (context, index) {
+        return _buildFlatTreeItemWidget(flatItems[index]);
+      },
+    );
+
+    if (!linesVisible || columns.isEmpty) {
+      return listView;
     }
-    return content;
+
+    final List<double> linePositions = [];
+    double cumulativeWidth = 0.0;
+    final borderWidth = widgetTheme.columnBorderWidth;
+
+    for (int i = 0; i < columns.length; i++) {
+      final double width = effectiveWidths != null && i < effectiveWidths.length
+          ? effectiveWidths[i]
+          : (columns[i].width ?? widgetTheme.columnDefaultWidth.round()).toDouble();
+
+      cumulativeWidth += width;
+
+      if (i < columns.length - 1) {
+        linePositions.add(cumulativeWidth - borderWidth);
+      }
+    }
+
+    return Stack(
+      children: [
+        listView,
+        ...linePositions.map((position) => Positioned(
+          left: position,
+          top: 0,
+          bottom: 0,
+          child: IgnorePointer(
+            child: Container(
+              width: widgetTheme.columnBorderWidth,
+              color: widgetTheme.columnRightBorderColor,
+            ),
+          ),
+        )),
+      ],
+    );
   }
 
-  Widget _buildBothScrollbars(BuildContext context, Widget horizontalContent) {
-    Widget horizontalScrollView = SingleChildScrollView(
-      controller: _horizontalController,
-      scrollDirection: Axis.horizontal,
-      child: horizontalContent,
-    );
-    
+  Widget _buildBothScrollbars(BuildContext context, Widget listViewWithLines, double? totalWidth) {
+    Widget content = listViewWithLines;
+    if (totalWidth != null) {
+      content = SizedBox(width: totalWidth, child: content);
+    }
+
     return Scrollbar(
       controller: _verticalController,
       thumbVisibility: true,
-      notificationPredicate: (notification) => notification.depth == 0,
+      notificationPredicate: (notification) => notification.depth == 1,
       child: Scrollbar(
         controller: _horizontalController,
         thumbVisibility: true,
-        notificationPredicate: (notification) => notification.depth == 1,
+        notificationPredicate: (notification) => notification.depth == 0,
         child: ScrollConfiguration(
           behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
           child: SingleChildScrollView(
-            controller: _verticalController,
-            scrollDirection: Axis.vertical,
-            child: horizontalScrollView,
+            controller: _horizontalController,
+            scrollDirection: Axis.horizontal,
+            child: content,
           ),
         ),
       ),
     );
   }
 
-  Widget _buildVerticalScrollbar(BuildContext context, Widget content) {
+  Widget _buildVerticalScrollbar(BuildContext context, Widget listViewWithLines) {
     return Scrollbar(
       controller: _verticalController,
       thumbVisibility: true,
       child: ScrollConfiguration(
         behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-        child: SingleChildScrollView(
-          controller: _verticalController,
-          scrollDirection: Axis.vertical,
-          child: content,
-        ),
+        child: listViewWithLines,
       ),
     );
   }
 
-  Widget _buildHorizontalScrollbar(BuildContext context, Widget horizontalContent) {
+  Widget _buildHorizontalScrollbar(BuildContext context, Widget listViewWithLines, double? totalWidth) {
+    Widget content = listViewWithLines;
+    if (totalWidth != null) {
+      content = SizedBox(width: totalWidth, child: content);
+    }
+
     return Scrollbar(
       controller: _horizontalController,
       thumbVisibility: true,
@@ -414,22 +481,16 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         child: SingleChildScrollView(
           controller: _horizontalController,
           scrollDirection: Axis.horizontal,
-          child: horizontalContent,
+          child: content,
         ),
       ),
     );
   }
 
-  Widget _buildNoScrollbars(BuildContext context, Widget content) {
+  Widget _buildNoScrollbars(BuildContext context, Widget listViewWithLines) {
     return ScrollConfiguration(
       behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.vertical,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: content,
-        ),
-      ),
+      child: listViewWithLines,
     );
   }
 
@@ -509,59 +570,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     );
   }
 
-  Widget _buildTreeContentWithLines(
-    List<Widget> treeItems,
-    List<VTreeColumn> columns,
-    TreeThemeExtension widgetTheme,
-    List<double>? effectiveWidths,
-  ) {
-    final bool linesVisible = state.linesVisible ?? false;
-    
-    Widget itemsColumn = SizedBox(
-      width: double.infinity,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: treeItems,
-      ),
-    );
-    
-    if (!linesVisible || columns.isEmpty) {
-      return itemsColumn;
-    }
-    
-    final List<double> linePositions = [];
-    double cumulativeWidth = 0.0;
-    final borderWidth = widgetTheme.columnBorderWidth;
-
-    for (int i = 0; i < columns.length; i++) {
-      final double width = effectiveWidths != null && i < effectiveWidths.length
-          ? effectiveWidths[i]
-          : (columns[i].width ?? widgetTheme.columnDefaultWidth.round()).toDouble();
-
-      cumulativeWidth += width;
-
-      if (i < columns.length - 1) {
-        linePositions.add(cumulativeWidth - borderWidth);
-      }
-    }
-    
-    return Stack(
-      children: [
-        itemsColumn,
-        ...linePositions.map((position) => Positioned(
-          left: position,
-          top: 0,
-          bottom: 0,
-          child: Container(
-            width: widgetTheme.columnBorderWidth,
-            color: widgetTheme.columnRightBorderColor,
-          ),
-        )),
-      ],
-    );
-  }
-
   Widget getWidgetForTreeColumn(VTreeColumn column, int columnIndex) {
     final columns = getTreeColumns();
     final bool isLastColumn = columnIndex == columns.length - 1;
@@ -589,6 +597,25 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       treeImpl: this,
       treeFont: state.font,
       treeWidth: treeWidth,
+    );
+  }
+
+  Widget _buildFlatTreeItemWidget(_FlatTreeItem flatItem) {
+    setupTreeItemExpandListener(flatItem.item);
+
+    final treeWidth = state.bounds?.width?.toDouble();
+
+    return TreeItemSwtWrapper(
+      key: ValueKey('tree_item_${flatItem.item.id}_${flatItem.item.checked}_${flatItem.item.grayed}'),
+      treeItem: flatItem.item,
+      level: flatItem.level,
+      isCheckMode: getTreeViewSelectionMode(),
+      parentTree: widget,
+      parentTreeValue: state,
+      treeImpl: this,
+      treeFont: state.font,
+      treeWidth: treeWidth,
+      renderChildItems: false,
     );
   }
 
@@ -1330,6 +1357,7 @@ class TreeItemSwtWrapper extends StatelessWidget {
   final TreeImpl? treeImpl;
   final VFont? treeFont;
   final double? treeWidth;
+  final bool renderChildItems;
   //final Object? editingItemId;
   //final TextEditingController? editingController;
   //final FocusNode? editingFocusNode;
@@ -1344,6 +1372,7 @@ class TreeItemSwtWrapper extends StatelessWidget {
     this.treeImpl,
     this.treeFont,
     this.treeWidth,
+    this.renderChildItems = true,
     //this.editingItemId,
     //this.editingController,
     //this.editingFocusNode,
@@ -1359,6 +1388,7 @@ class TreeItemSwtWrapper extends StatelessWidget {
       treeImpl: treeImpl,
       treeFont: treeFont,
       treeWidth: treeWidth,
+      renderChildItems: renderChildItems,
       //editingItemId: treeImpl?._editingItemId,
       //editingController: treeImpl?._editingController,
       //editingFocusNode: treeImpl?._editingFocusNode,
@@ -1376,10 +1406,11 @@ class TreeItemContext {
   final TreeSwt parentTree;
   final VTree parentTreeValue;
   final TreeImpl? treeImpl;
-  final VFont? treeFont; 
+  final VFont? treeFont;
   final List<VTreeItem>? selection;
   final int checkboxUpdateCounter;
   final double? treeWidth;
+  final bool renderChildItems;
   //final Object? editingItemId;
   //final TextEditingController? editingController;
   //final FocusNode? editingFocusNode;
@@ -1394,6 +1425,7 @@ class TreeItemContext {
     this.selection,
     this.checkboxUpdateCounter = 0,
     this.treeWidth,
+    this.renderChildItems = true,
     //this.editingItemId,
     //this.editingController,
     //this.editingFocusNode,
@@ -1418,6 +1450,7 @@ class TreeItemContextProvider extends InheritedWidget {
     TreeImpl? treeImpl,
     VFont? treeFont,
     double? treeWidth,
+    bool renderChildItems = true,
     //Object? editingItemId,
     //TextEditingController? editingController,
     //FocusNode? editingFocusNode,
@@ -1432,6 +1465,7 @@ class TreeItemContextProvider extends InheritedWidget {
           selection: treeImpl?.state.selection,
           checkboxUpdateCounter: treeImpl?.checkboxUpdateCounter ?? 0,
           treeWidth: treeWidth,
+          renderChildItems: renderChildItems,
           //editingItemId: editingItemId,
           //editingController: editingController,
           //editingFocusNode: editingFocusNode,
