@@ -11915,6 +11915,9 @@ public class DartStyledText extends DartCanvas implements IStyledText {
 
     protected void _hookEvents() {
         super._hookEvents();
+        getApi().addListener(SWT.FocusOut, event -> {
+            FlutterBridge.sendEvent(this, "focusLost");
+        });
         FlutterBridge.on(this, "BidiSegment", "lineGetSegments", e -> {
             getDisplay().asyncExec(() -> {
             });

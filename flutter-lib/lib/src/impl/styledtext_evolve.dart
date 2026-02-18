@@ -42,6 +42,14 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   @override
   void initState() {
     super.initState();
+    EquoCommService.onRaw(
+      "${state.swt}/${state.id}/focusLost",
+      (_) {
+        if (_isEditingText) {
+          _stopEditing();
+        }
+      },
+    );
   }
 
   @override
@@ -81,8 +89,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       width: 1.0,
       height: caretHeight,
       color: caretColor,
-      visible: true,
-      blinking: true,
+      visible: _isEditingText,
+      blinking: _isEditingText,
       styledTextId: styledTextId,
       blinkRate: 500,
     );
@@ -676,6 +684,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   void _startEditing(TextShape textShape, int shapeIndex) {
     _enterLocalEditMode(textShape);
+    widget.sendFocusFocusIn(state, null);
     setState(() {
       _isEditingText = true;
       if (shapeIndex >= 0 && shapeIndex < shapes.length) {
@@ -869,7 +878,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       _isEditingText = false;
 
       if (_editableTextShape != null) {
-        shapes.add(_editableTextShape!);
+        final hiddenCaret = _editableTextShape!.caretInfo != null
+            ? _editableTextShape!.copyWithCaret(
+                _editableTextShape!.caretInfo!.copyWith(visible: false))
+            : _editableTextShape!;
+        shapes.add(hiddenCaret);
         _editableTextShape = null;
       }
     });

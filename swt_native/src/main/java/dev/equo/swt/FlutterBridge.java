@@ -207,6 +207,11 @@ public abstract class FlutterBridge {
         client.getComm().remove(eventName);
     }
 
+    public static void sendEvent(Object widget, String event) {
+        String name = eventName(widget, event);
+        client.getComm().send(name);
+    }
+
     public static void send(DartResource resource, String event, Object args) {
         if (dirty.contains(resource)) {
             update().whenComplete((r, a) -> {
