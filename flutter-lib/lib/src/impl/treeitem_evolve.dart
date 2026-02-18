@@ -134,7 +134,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             bgColor: bgColor,
             nextItemSelected: nextItemSelected,
           ),
-          if (expanded && hasChildren) ...buildChildItems(),
+          if (expanded && hasChildren && (_context?.renderChildItems ?? true)) ...buildChildItems(),
         ],
       ),
     );

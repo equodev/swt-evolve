@@ -406,12 +406,15 @@ public class Sizes {
         return new Point(width, height);
     }
 
+    private static final int DEFAULT_VISIBLE_ITEM_COUNT = 15;
+    private static final int DEFAULT_ITEM_HEIGHT = 20;
+
     public static Point computeSize(DartTree t, int wHint, int hHint, boolean changed) {
         int columnCount = t.getColumnCount();
         int itemCount = t.getItemCount();
 
-        int width = columnCount > 0 ? columnCount * 30 : 200;
-        int height = itemCount * 20;
+        int width = wHint != SWT.DEFAULT ? wHint : (columnCount > 0 ? columnCount * 30 : 200);
+        int height = hHint != SWT.DEFAULT ? hHint : Math.min(itemCount, DEFAULT_VISIBLE_ITEM_COUNT) * DEFAULT_ITEM_HEIGHT;
 
         return new Point(width, height);
     }
