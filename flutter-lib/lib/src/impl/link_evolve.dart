@@ -27,6 +27,7 @@ class LinkImpl<T extends LinkSwt, V extends VLink> extends ControlImpl<T, V> {
     final child = StyledLink(
       text: text,
       enabled: enabled,
+      foreground: state.foreground,
       linkForeground: state.linkForeground,
       backgroundColor: null,
       vFont: state.font,
@@ -63,6 +64,9 @@ class LinkImpl<T extends LinkSwt, V extends VLink> extends ControlImpl<T, V> {
 class StyledLink extends StatefulWidget {
   final String text;
   final bool enabled;
+  /// Color del texto normal (Control.setForeground / fg). Null = usar theme.
+  final dynamic foreground;
+  /// Color de los enlaces (Link.setLinkForeground). Null = usar theme.
   final dynamic linkForeground;
   final dynamic backgroundColor;
   final dynamic vFont;
@@ -77,6 +81,7 @@ class StyledLink extends StatefulWidget {
     Key? key,
     required this.text,
     required this.enabled,
+    this.foreground,
     this.linkForeground,
     this.backgroundColor,
     this.vFont,
@@ -122,9 +127,10 @@ class _StyledLinkState extends State<StyledLink> {
   }
 
   Widget _buildRichText() {
+    // Color del texto normal: state.foreground (fg de Java) o theme
     final textColor = widget.enabled
         ? getForegroundColor(
-            foreground: widget.linkForeground,
+            foreground: widget.foreground,
             defaultColor: widget.widgetTheme.textColor,
           )
         : widget.widgetTheme.disabledTextColor;
@@ -160,6 +166,7 @@ class _StyledLinkState extends State<StyledLink> {
         caseSensitive: false);
     final matches = regex.allMatches(text);
 
+    // Color de los enlaces: state.linkForeground (setLinkForeground en Java) o theme
     final linkColor = widget.enabled
         ? getForegroundColor(
             foreground: widget.linkForeground,
