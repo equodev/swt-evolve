@@ -385,6 +385,9 @@ public class DartButton extends DartControl implements IButton {
             }
         }
         setSelection(true);
+        if (parent.getImpl() instanceof DartWidget dw) {
+            getBridge().dirty(dw);
+        }
     }
 
     @Override
