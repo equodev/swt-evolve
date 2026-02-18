@@ -318,6 +318,8 @@ public final class SwtFont extends SwtResource implements IFont {
      * @noreference This method is not intended to be referenced by clients.
      */
     public static long win32_getHandle(Font font) {
+        if (!(font.getImpl() instanceof SwtFont))
+            return 0;
         if (((SwtFont) font.getImpl()).handle == 0 && ((SwtFont) font.getImpl()).fontData != null && !((SwtFont) font.getImpl()).isDestroyed) {
             if (font.getImpl() instanceof SwtFont) {
                 ((SwtFont) font.getImpl()).init(((SwtFont) font.getImpl()).fontData);
