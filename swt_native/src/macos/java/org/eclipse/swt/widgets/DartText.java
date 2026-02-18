@@ -1865,6 +1865,33 @@ public class DartText extends DartScrollable implements IText {
         return topIndex;
     }
 
+    void updateAutoTextDirectionIfNeeded() {
+    }
+
+    int clearSegmentsCount;
+
+    boolean ignoreCharacter;
+
+    boolean ignoreModify;
+
+    boolean ignoreVerify;
+
+    int[] segments;
+
+    int translateOffset(int offset) {
+        return offset;
+    }
+
+    int untranslateOffset(int offset) {
+        return offset;
+    }
+
+    void clearSegments(boolean applyText) {
+    }
+
+    void applySegments() {
+    }
+
     String verifyText(String string, int start, int end) {
         Event event = new Event();
         event.text = string;

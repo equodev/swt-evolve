@@ -5,6 +5,14 @@ import java.util.Arrays;
 
 public class TableHelper {
 
+    public static void selectAll(DartTable table, int itemCount) {
+        table.selection = new int[itemCount];
+        for (int i = 0; i < itemCount; i++) {
+            table.selection[i] = i;
+        }
+        table.dirty();
+    }
+
     public static void sendSelection(DartTable table, Event event, int selectionType) {
         table.setSelection(event.segments);
         table.sendSelectionEvent(selectionType, event, true);
@@ -239,6 +247,57 @@ public class TableHelper {
             return order;
         }
         return table.columnOrder;
+    }
+
+    public static void fixSelection(DartTable table, int index, boolean add) {
+        int[] selection = table.selection != null ? table.selection : new int[0];
+        if (selection.length == 0) return;
+        int newCount = 0;
+        boolean fix = false;
+        for (int i = 0; i < selection.length; i++) {
+            if (!add && selection[i] == index) {
+                fix = true;
+            } else {
+                selection[newCount] = selection[i];
+                if (selection[newCount] >= index) {
+                    selection[newCount] += add ? 1 : -1;
+                    fix = true;
+                }
+                newCount++;
+            }
+        }
+        if (fix) {
+            int[] newSelection = new int[newCount];
+            System.arraycopy(selection, 0, newSelection, 0, newCount);
+            table.dirty();
+            table.selection = newSelection;
+        }
+    }
+
+    public static void fixSelectionRange(DartTable table, int start, int end) {
+        int[] selection = table.selection != null ? table.selection : new int[0];
+        if (selection.length == 0) return;
+        int numRemoved = end - start + 1;
+        int newCount = 0;
+        boolean fix = false;
+        for (int i = 0; i < selection.length; i++) {
+            if (selection[i] >= start && selection[i] <= end) {
+                fix = true;
+            } else {
+                selection[newCount] = selection[i];
+                if (selection[newCount] > end) {
+                    selection[newCount] -= numRemoved;
+                    fix = true;
+                }
+                newCount++;
+            }
+        }
+        if (fix) {
+            int[] newSelection = new int[newCount];
+            System.arraycopy(selection, 0, newSelection, 0, newCount);
+            table.dirty();
+            table.selection = newSelection;
+        }
     }
 
     public static void updateColumnOrderOnDestroy(DartTable table, int removedIndex) {

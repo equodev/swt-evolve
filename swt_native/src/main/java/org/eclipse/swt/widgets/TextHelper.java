@@ -80,7 +80,7 @@ public class TextHelper {
         for (int i = 1; i < nSegments; i++) {
         }
         char[] segmentsChars = event.segmentsChars;
-        char[] segmentsCharsCrLf = segmentsChars == null ? null : SwtDisplay.withCrLf(segmentsChars);
+        char[] segmentsCharsCrLf = segmentsChars == null ? null : withCrLf(segmentsChars);
         if (segmentsChars != segmentsCharsCrLf) {
             int[] segmentsCrLf = new int[nSegments + Math.min(nSegments, segmentsCharsCrLf.length - segmentsChars.length)];
             for (int i = 0, c = 0; i < segmentsChars.length && i < nSegments; i++) {
@@ -278,7 +278,7 @@ public class TextHelper {
     public static void setText(DartText text, String string) {
         if (text.hooks(SWT.Verify) || text.filters(SWT.Verify)) {
             int length = text.getCharCount();
-            string = text.verifyText(string, 0, length, null);
+            string = text.verifyText(string, 0, length);
             if (string == null)
                 return;
         }
@@ -296,5 +296,30 @@ public class TextHelper {
         text.updateAutoTextDirectionIfNeeded();
         text.applySegments();
         text.sendEvent(SWT.Modify);
+    }
+
+    private static char[] withCrLf(char[] string) {
+        int length = string.length;
+        if (length == 0)
+            return string;
+        int count = 0;
+        for (int i = 0; i < string.length; i++) {
+            if (string[i] == '\n') {
+                count++;
+                if (count == 1 && i > 0 && string[i - 1] == '\r')
+                    return string;
+            }
+        }
+        if (count == 0)
+            return string;
+        count += length;
+        char[] result = new char[count];
+        for (int i = 0, j = 0; i < length && j < count; i++) {
+            if (string[i] == '\n') {
+                result[j++] = '\r';
+            }
+            result[j++] = string[i];
+        }
+        return result;
     }
 }

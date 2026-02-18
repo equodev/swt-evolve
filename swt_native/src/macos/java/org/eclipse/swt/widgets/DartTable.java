@@ -1662,14 +1662,7 @@ public class DartTable extends DartComposite implements ITable {
         checkWidget();
         if ((getApi().style & SWT.SINGLE) != 0)
             return;
-        ;
-        ;
-        {
-            selection = new int[itemCount];
-            for (int i = 0; i < itemCount; ++i) {
-                selection[i] = i;
-            }
-        }
+        TableHelper.selectAll(this, itemCount);
     }
 
     /**
