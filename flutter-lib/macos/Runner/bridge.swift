@@ -181,15 +181,50 @@ public func PumpMessages(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, maxMes
 }
 
 class FlippedView: NSView {
+    private static var mouseMonitor: Any?
+    private static var activeViews = NSHashTable<FlippedView>.weakObjects()
+
     override var isFlipped: Bool {
         return true
     }
 
-//     override var acceptsFirstResponder: Bool {
-//         return true
-//     }
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if self.window != nil {
+            FlippedView.activeViews.add(self)
+            FlippedView.setupMonitorIfNeeded()
+        } else {
+            FlippedView.activeViews.remove(self)
+            FlippedView.teardownMonitorIfEmpty()
+        }
+    }
 
-//     override var canBecomeKeyView: Bool {
-//         return true
-//     }
+    private static func setupMonitorIfNeeded() {
+        guard mouseMonitor == nil else { return }
+        mouseMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { event in
+            guard let window = event.window else { return event }
+            for flippedView in FlippedView.activeViews.allObjects {
+                guard flippedView.window === window,
+                      !flippedView.isHiddenOrHasHiddenAncestor,
+                      let flutterView = flippedView.subviews.first else { continue }
+                let locationInView = flippedView.convert(event.locationInWindow, from: nil)
+                if flippedView.bounds.contains(locationInView) {
+                    window.makeFirstResponder(flutterView)
+                    break
+                }
+            }
+            return event
+        }
+    }
+
+    private static func teardownMonitorIfEmpty() {
+        guard activeViews.allObjects.isEmpty, let monitor = mouseMonitor else { return }
+        NSEvent.removeMonitor(monitor)
+        mouseMonitor = nil
+    }
+
+    deinit {
+        FlippedView.activeViews.remove(self)
+        FlippedView.teardownMonitorIfEmpty()
+    }
 }
