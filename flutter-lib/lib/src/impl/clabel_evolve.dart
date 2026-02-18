@@ -45,17 +45,26 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
           )
         : EdgeInsets.zero;
 
-    return wrap(
-      Opacity(
-        opacity: enabled ? 1.0 : widgetTheme.disabledOpacity,
-        child: Container(
-          constraints: constraints,
-          padding: padding,
-          decoration: backgroundColor != null
-              ? BoxDecoration(color: backgroundColor)
-              : null,
-          alignment: hasValidBounds ? getAlignmentFromTextAlign(textAlign) : null,
-          child: child,
+    return Listener(
+      onPointerDown: (_) => widget.sendMouseMouseDown(state, null),
+      onPointerUp: (_) => widget.sendMouseMouseUp(state, null),
+      child: MouseRegion(
+        onEnter: (_) => widget.sendMouseTrackMouseEnter(state, null),
+        onExit: (_) => widget.sendMouseTrackMouseExit(state, null),
+        onHover: (_) => widget.sendMouseTrackMouseHover(state, null),
+        child: wrap(
+          Opacity(
+            opacity: enabled ? 1.0 : widgetTheme.disabledOpacity,
+            child: Container(
+              constraints: constraints,
+              padding: padding,
+              decoration: backgroundColor != null
+                  ? BoxDecoration(color: backgroundColor)
+                  : null,
+              alignment: hasValidBounds ? getAlignmentFromTextAlign(textAlign) : null,
+              child: child,
+            ),
+          ),
         ),
       ),
     );
