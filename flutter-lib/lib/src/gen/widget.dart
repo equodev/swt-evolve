@@ -84,12 +84,20 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
     extraSetState();
   }
 
+  @override
+  void dispose() {
+    EquoCommService.remove("${state.swt}/${state.id}");
+    super.dispose();
+  }
+
   @protected
   void setValue(V value) {
-    setState(() {
-      state = value!;
-      extraSetState();
-    });
+    if (mounted) {
+      setState(() {
+        state = value!;
+        extraSetState();
+      });
+    }
   }
 
   void _onChange(V payload) {
