@@ -1,6 +1,8 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import '../gen/color.dart';
 import '../gen/event.dart';
+import '../gen/font.dart';
 import '../gen/link.dart';
 import '../impl/control_evolve.dart';
 import './utils/widget_utils.dart';
@@ -64,12 +66,10 @@ class LinkImpl<T extends LinkSwt, V extends VLink> extends ControlImpl<T, V> {
 class StyledLink extends StatefulWidget {
   final String text;
   final bool enabled;
-  /// Color del texto normal (Control.setForeground / fg). Null = usar theme.
-  final dynamic foreground;
-  /// Color de los enlaces (Link.setLinkForeground). Null = usar theme.
-  final dynamic linkForeground;
-  final dynamic backgroundColor;
-  final dynamic vFont;
+  final VColor? foreground;
+  final VColor? linkForeground;
+  final VColor? backgroundColor;
+  final VFont? vFont;
   final LinkThemeExtension widgetTheme;
   final Function(String) onTap;
   final VoidCallback? onMouseEnter;
@@ -127,7 +127,6 @@ class _StyledLinkState extends State<StyledLink> {
   }
 
   Widget _buildRichText() {
-    // Color del texto normal: state.foreground (fg de Java) o theme
     final textColor = widget.enabled
         ? getForegroundColor(
             foreground: widget.foreground,
@@ -166,7 +165,6 @@ class _StyledLinkState extends State<StyledLink> {
         caseSensitive: false);
     final matches = regex.allMatches(text);
 
-    // Color de los enlaces: state.linkForeground (setLinkForeground en Java) o theme
     final linkColor = widget.enabled
         ? getForegroundColor(
             foreground: widget.linkForeground,
