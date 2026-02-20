@@ -216,6 +216,14 @@ public class SwtControlEditor implements IControlEditor {
         editor.setVisible(true);
     }
 
+    public Composite _parent() {
+        return parent;
+    }
+
+    public Control _editor() {
+        return editor;
+    }
+
     public ControlEditor getApi() {
         if (api == null)
             api = ControlEditor.createApi(this);

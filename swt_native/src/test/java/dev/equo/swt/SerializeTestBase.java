@@ -4,6 +4,9 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.accessibility.Accessible;
 import org.eclipse.swt.accessibility.SwtAccessible;
 import org.eclipse.swt.custom.CCombo;
+import org.eclipse.swt.custom.ControlEditor;
+import org.eclipse.swt.custom.TableEditor;
+import org.eclipse.swt.custom.TreeEditor;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 import org.eclipse.swt.widgets.Mocks;
@@ -125,6 +128,25 @@ public class SerializeTestBase {
                 .generate(Select.all(int.class), gen -> gen.ints().range(1, 1000))
                 .generate(Select.all(Image.class), gen -> gen.oneOf(createTestImage()));
         inst.fill();
+    }
+
+    protected void setAll(ControlEditor w) {
+        w.horizontalAlignment = SWT.LEFT;
+        w.grabHorizontal = true;
+        w.minimumWidth = 100;
+        w.verticalAlignment = SWT.TOP;
+        w.grabVertical = true;
+        w.minimumHeight = 30;
+    }
+
+    protected void setAll(TableEditor w) {
+        setAll((ControlEditor) w);
+        w.setColumn(1);
+    }
+
+    protected void setAll(TreeEditor w) {
+        setAll((ControlEditor) w);
+        w.setColumn(1);
     }
 
     protected void setAll(TabItem w) {

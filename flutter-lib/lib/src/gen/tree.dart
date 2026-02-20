@@ -9,6 +9,7 @@ import '../gen/image.dart';
 import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/treecolumn.dart';
+import '../gen/treeeditor.dart';
 import '../gen/treeitem.dart';
 import '../impl/tree_evolve.dart';
 import 'event.dart';
@@ -52,7 +53,7 @@ class VTree extends VComposite {
 
   List<int>? columnOrder;
   List<VTreeColumn>? columns;
-  bool? editable;
+  List<VTreeEditor>? editors;
   VColor? headerBackground;
   VColor? headerForeground;
   bool? headerVisible;

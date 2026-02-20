@@ -51,7 +51,8 @@ dependencies {
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.21")
     // JFace dependencies
-    implementation("org.eclipse.platform:org.eclipse.jface:3.33.0") {
+//    implementation("org.eclipse.platform:org.eclipse.jface:3.33.0") {
+    implementation("org.eclipse.platform:org.eclipse.jface:3.38.0") {
         exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
     }
     implementation("org.eclipse.platform:org.eclipse.core.commands:3.12.0")

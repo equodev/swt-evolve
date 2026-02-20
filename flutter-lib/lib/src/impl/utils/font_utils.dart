@@ -43,7 +43,11 @@ class FontUtils {
     }
 
     final fontData = vFont.fontData!.first;
-    return _createTextStyleFromFontData(fontData, color: color, applyDpiScaling: applyDpiScaling);
+    return _createTextStyleFromFontData(
+      fontData,
+      color: color,
+      applyDpiScaling: applyDpiScaling,
+    );
   }
 
   /// Create a TextStyle from VFontData and optional color.
@@ -63,7 +67,9 @@ class FontUtils {
     // Apply DPI conversion only on Windows where SWT uses 72-DPI points but screens are 96 DPI.
     // On macOS, SWT points map 1:1 to Flutter logical pixels, so no conversion is needed.
     final needsDpiScaling = applyDpiScaling && !Platform.isMacOS;
-    final fontSize = needsDpiScaling ? fontHeightPoints * (96 / 72) : fontHeightPoints;
+    final fontSize = needsDpiScaling
+        ? fontHeightPoints * (96 / 72)
+        : fontHeightPoints;
     final swtStyle = fontData.style ?? 0;
 
     final (fontWeight, fontStyle) = convertSwtFontStyle(swtStyle);

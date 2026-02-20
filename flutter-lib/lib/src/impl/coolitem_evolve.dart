@@ -36,10 +36,7 @@ class CoolItemImpl<T extends CoolItemSwt, V extends VCoolItem>
     if (text != null && text.isNotEmpty) {
       return Padding(
         padding: theme.contentPadding,
-        child: Text(
-          text,
-          style: theme.textStyle,
-        ),
+        child: Text(text, style: theme.textStyle),
       );
     }
 
@@ -55,10 +52,7 @@ class CoolItemImpl<T extends CoolItemSwt, V extends VCoolItem>
 
   BoxConstraints? _getConstraints(double? width) {
     if (width != null && width > 0) {
-      return BoxConstraints(
-        minWidth: width,
-        maxWidth: width,
-      );
+      return BoxConstraints(minWidth: width, maxWidth: width);
     }
     return null;
   }
@@ -90,10 +84,7 @@ class _CoolItemContainer extends StatelessWidget {
     Widget content = child;
 
     if (constraints != null) {
-      content = ConstrainedBox(
-        constraints: constraints!,
-        child: content,
-      );
+      content = ConstrainedBox(constraints: constraints!, child: content);
     }
 
     return GestureDetector(

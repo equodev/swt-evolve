@@ -262,8 +262,8 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public Rectangle getBounds() {
         checkWidget();
-        if (!((DartTable) parent.getImpl()).checkData(this.getApi()))
-            error(SWT.ERROR_WIDGET_DISPOSED);
+        // if (!((DartTable) parent.getImpl()).checkData(this.getApi()))
+        //     error(SWT.ERROR_WIDGET_DISPOSED);
         return Sizes.getBounds(this);
     }
 
@@ -281,9 +281,11 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public Rectangle getBounds(int index) {
         checkWidget();
-        if (!((DartTable) parent.getImpl()).checkData(this.getApi()))
-            error(SWT.ERROR_WIDGET_DISPOSED);
-        return Sizes.getBounds(this, index);
+        // if (!((DartTable) parent.getImpl()).checkData(this.getApi()))
+        //     error(SWT.ERROR_WIDGET_DISPOSED);
+        if (!(0 <= index && index < Math.max(1, ((DartTable) parent.getImpl()).columnCount)))
+            return new Rectangle(0, 0, 0, 0);
+        return ControlEditorHelper.getItemBounds((DartTable) parent.getImpl(), this.getApi().hashCode(), index);
     }
 
     /**
@@ -576,8 +578,8 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public Rectangle getTextBounds(int index) {
         checkWidget();
-        if (!((DartTable) parent.getImpl()).checkData(this.getApi()))
-            error(SWT.ERROR_WIDGET_DISPOSED);
+        // if (!((DartTable) parent.getImpl()).checkData(this.getApi()))
+        //     error(SWT.ERROR_WIDGET_DISPOSED);
         return Sizes.getTextBounds(this, index);
     }
 

@@ -52,7 +52,9 @@ VTable _$VTableFromJson(Map<String, dynamic> json) => VTable()
   ..columns = (json['columns'] as List<dynamic>?)
       ?.map((e) => VTableColumn.fromJson(e as Map<String, dynamic>))
       .toList()
-  ..editable = json['editable'] as bool?
+  ..editors = (json['editors'] as List<dynamic>?)
+      ?.map((e) => VTableEditor.fromJson(e as Map<String, dynamic>))
+      .toList()
   ..headerBackground = json['headerBackground'] == null
       ? null
       : VColor.fromJson(json['headerBackground'] as Map<String, dynamic>)
@@ -99,7 +101,7 @@ Map<String, dynamic> _$VTableToJson(VTable instance) => <String, dynamic>{
   'tabList': instance.tabList,
   'columnOrder': instance.columnOrder,
   'columns': instance.columns,
-  'editable': instance.editable,
+  'editors': instance.editors,
   'headerBackground': instance.headerBackground,
   'headerForeground': instance.headerForeground,
   'headerVisible': instance.headerVisible,

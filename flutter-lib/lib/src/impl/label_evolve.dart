@@ -12,31 +12,36 @@ import '../theme/theme_extensions/label_theme_extension.dart';
 
 class LabelImpl<T extends LabelSwt, V extends VLabel>
     extends ControlImpl<T, V> {
-
   @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<LabelThemeExtension>()!;
-    
+
     final enabled = state.enabled ?? true;
-    
+
     // Handle separator style
     if (hasStyle(state.style, SWT.SEPARATOR)) {
       return _buildSeparator(context, widgetTheme);
     }
-    
+
     // Handle regular label
     return _buildLabel(context, widgetTheme, enabled);
   }
 
-  Widget _buildSeparator(BuildContext context, LabelThemeExtension widgetTheme) {
-    
+  Widget _buildSeparator(
+    BuildContext context,
+    LabelThemeExtension widgetTheme,
+  ) {
     final isVertical = hasStyle(state.style, SWT.VERTICAL);
     final separatorColor = widgetTheme.borderColor;
     final thickness = widgetTheme.borderWidth;
-    
+
     final hasValidBounds = hasBounds(state.bounds);
-    final constraints = hasValidBounds ? getConstraintsFromBounds(state.bounds) : isVertical ? BoxConstraints(maxHeight: 7, maxWidth: thickness) : BoxConstraints(maxWidth: 7, maxHeight: thickness);
-    
+    final constraints = hasValidBounds
+        ? getConstraintsFromBounds(state.bounds)
+        : isVertical
+        ? BoxConstraints(maxHeight: 7, maxWidth: thickness)
+        : BoxConstraints(maxWidth: 7, maxHeight: thickness);
+
     Widget separator;
     if (isVertical) {
       separator = VerticalDivider(
@@ -45,11 +50,7 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
         endIndent: 0,
       );
     } else {
-      separator = Divider(
-        color: separatorColor,
-        indent: 0,
-        endIndent: 0,
-      );
+      separator = Divider(color: separatorColor, indent: 0, endIndent: 0);
     }
 
     return MouseRegion(
@@ -67,7 +68,7 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
           constraints != null
               ? SizedBox(
                   width: constraints.maxWidth,
-                  height:  constraints.maxHeight,
+                  height: constraints.maxHeight,
                   child: separator,
                 )
               : separator,
@@ -76,14 +77,28 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     );
   }
 
-  Widget _buildLabel(BuildContext context, LabelThemeExtension widgetTheme, bool enabled) {
+  Widget _buildLabel(
+    BuildContext context,
+    LabelThemeExtension widgetTheme,
+    bool enabled,
+  ) {
     final text = stripAccelerators(state.text);
     final textAlign = getTextAlignFromStyle(state.style, widgetTheme.textAlign);
-    final backgroundColor = getSwtBackgroundColor(context, defaultColor: widgetTheme.backgroundColor);
+    final backgroundColor = getBackgroundColor(
+      background: state.background,
+      defaultColor: widgetTheme.backgroundColor,
+    );
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = getConstraintsFromBounds(state.bounds);
-    
-    final child = _buildLabelContent(context, widgetTheme, enabled, text, textAlign, hasValidBounds);
+
+    final child = _buildLabelContent(
+      context,
+      widgetTheme,
+      enabled,
+      text,
+      textAlign,
+      hasValidBounds,
+    );
 
     return Listener(
       onPointerDown: (_) => widget.sendMouseMouseDown(state, null),
@@ -107,21 +122,25 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
                 constraints: constraints,
                 padding: widgetTheme.padding,
                 margin: widgetTheme.margin,
-                decoration: backgroundColor != null ? BoxDecoration(
-                  color: backgroundColor,
-                  borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
-                  border: widgetTheme.borderColor != null
-                      ? Border.all(
-                    color: widgetTheme.borderColor!,
-                    width: widgetTheme.borderWidth,
-                  )
-                      : null,
-                ) : null,
+                decoration: backgroundColor != null
+                    ? BoxDecoration(
+                        color: backgroundColor,
+                        borderRadius: BorderRadius.circular(
+                          widgetTheme.borderRadius,
+                        ),
+                        border: widgetTheme.borderColor != null
+                            ? Border.all(
+                                color: widgetTheme.borderColor!,
+                                width: widgetTheme.borderWidth,
+                              )
+                            : null,
+                      )
+                    : null,
                 child: hasValidBounds
                     ? Align(
-                  alignment: getAlignmentFromTextAlign(textAlign),
-                  child: child,
-                )
+                        alignment: getAlignmentFromTextAlign(textAlign),
+                        child: child,
+                      )
                     : child,
               ),
             ),
@@ -140,18 +159,18 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     bool hasValidBounds,
   ) {
     final isVertical = hasStyle(state.style, SWT.VERTICAL);
-    
-    final textColor = enabled 
+
+    final textColor = enabled
         ? getForegroundColor(
             foreground: state.foreground,
             defaultColor: widgetTheme.primaryTextColor,
           )
         : widgetTheme.disabledTextColor;
-    
+
     final baseTextStyle = enabled
         ? widgetTheme.primaryTextStyle
         : widgetTheme.disabledTextStyle;
-    
+
     final textStyle = getTextStyle(
       context: context,
       font: state.font,
@@ -164,7 +183,7 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
       hasValidBounds: hasValidBounds,
       text: text,
     );
-    
+
     Widget textWidget = Text(
       text,
       textAlign: textAlign,
@@ -175,10 +194,7 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     );
 
     if (isVertical) {
-      textWidget = RotatedBox(
-        quarterTurns: 3,
-        child: textWidget,
-      );
+      textWidget = RotatedBox(quarterTurns: 3, child: textWidget);
     }
 
     // Handle image
@@ -186,8 +202,10 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     if (state.image != null) {
       imageWidget = ImageUtils.buildVImage(
         state.image,
-        width: state.image?.imageData?.width?.toDouble() ?? widgetTheme.iconSize,
-        height: state.image?.imageData?.height?.toDouble() ?? widgetTheme.iconSize,
+        width:
+            state.image?.imageData?.width?.toDouble() ?? widgetTheme.iconSize,
+        height:
+            state.image?.imageData?.height?.toDouble() ?? widgetTheme.iconSize,
         enabled: enabled,
         constraints: null,
         useBinaryImage: true,
@@ -198,7 +216,10 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     // Build content row
     return Row(
       mainAxisSize: hasValidBounds ? MainAxisSize.max : MainAxisSize.min,
-      mainAxisAlignment: getMainAxisAlignmentFromTextAlign(textAlign, widgetTheme.mainAxisAlignment),
+      mainAxisAlignment: getMainAxisAlignmentFromTextAlign(
+        textAlign,
+        widgetTheme.mainAxisAlignment,
+      ),
       crossAxisAlignment: widgetTheme.crossAxisAlignment,
       children: [
         if (imageWidget != null) ...[
@@ -220,5 +241,4 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
       ],
     );
   }
-
 }

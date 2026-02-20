@@ -18,12 +18,12 @@ import 'ctabfolder_evolve.dart';
 
 class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     extends ItemImpl<T, V> {
-
   Widget? _buildImageWidget(
-      BuildContext context,
-      CTabItemThemeExtension itemTheme,
-      CTabFolderThemeExtension folderTheme,
-      VImage? image) {
+    BuildContext context,
+    CTabItemThemeExtension itemTheme,
+    CTabFolderThemeExtension folderTheme,
+    VImage? image,
+  ) {
     return ImageUtils.buildVImage(
       image,
       size: folderTheme.tabIconSize,
@@ -36,15 +36,23 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
   @override
   Widget build(BuildContext context) {
     final itemTheme = Theme.of(context).extension<CTabItemThemeExtension>()!;
-    final folderTheme = Theme.of(context).extension<CTabFolderThemeExtension>()!;
+    final folderTheme = Theme.of(
+      context,
+    ).extension<CTabFolderThemeExtension>()!;
     return buildTabItemContent(context, itemTheme, folderTheme);
   }
 
   Widget buildTabItemContent(
-      BuildContext context,
-      CTabItemThemeExtension itemTheme,
-      CTabFolderThemeExtension folderTheme) {
-    final imageWidget = _buildImageWidget(context, itemTheme, folderTheme, state.image);
+    BuildContext context,
+    CTabItemThemeExtension itemTheme,
+    CTabFolderThemeExtension folderTheme,
+  ) {
+    final imageWidget = _buildImageWidget(
+      context,
+      itemTheme,
+      folderTheme,
+      state.image,
+    );
 
     final text = stripAccelerators(state.text) ?? "";
     final tabItemContext = TabItemContext.of(context);
@@ -53,15 +61,14 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     final textColor = !isEnabled
         ? itemTheme.tabItemDisabledTextColor
         : (isSelected
-            ? itemTheme.tabItemSelectedTextColor
-            : itemTheme.tabItemTextColor);
-    final textStyle = itemTheme.tabItemTextStyle?.copyWith(color: textColor)
-        ?? TextStyle(color: textColor);
+              ? itemTheme.tabItemSelectedTextColor
+              : itemTheme.tabItemTextColor);
+    final textStyle =
+        itemTheme.tabItemTextStyle?.copyWith(color: textColor) ??
+        TextStyle(color: textColor);
 
     return Padding(
-      padding: EdgeInsets.only(
-        right: itemTheme.tabItemHorizontalPadding,
-      ),
+      padding: EdgeInsets.only(right: itemTheme.tabItemHorizontalPadding),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -76,13 +83,8 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
               child: imageWidget,
             ),
           Padding(
-            padding: EdgeInsets.only(
-              bottom: itemTheme.tabItemVerticalPadding,
-            ),
-            child: Text(
-              text,
-              style: textStyle,
-            ),
+            padding: EdgeInsets.only(bottom: itemTheme.tabItemVerticalPadding),
+            child: Text(text, style: textStyle),
           ),
         ],
       ),

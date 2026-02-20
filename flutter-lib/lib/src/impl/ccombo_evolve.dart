@@ -45,10 +45,16 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
 
     // Custom colors support
     final customBg = state.background != null
-        ? colorFromVColor(state.background!, defaultColor: widgetTheme.backgroundColor)
+        ? colorFromVColor(
+            state.background!,
+            defaultColor: widgetTheme.backgroundColor,
+          )
         : null;
     final customFg = state.foreground != null
-        ? colorFromVColor(state.foreground!, defaultColor: widgetTheme.textColor)
+        ? colorFromVColor(
+            state.foreground!,
+            defaultColor: widgetTheme.textColor,
+          )
         : null;
 
     final bool isActive = _isFocused || _isHovered;
@@ -71,11 +77,17 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
       baseTextStyle: widgetTheme.textStyle,
     );
 
-    final borderWidth = styleBits.has(SWT.BORDER) ? 3.0 : widgetTheme.borderWidth;
+    final borderWidth = styleBits.has(SWT.BORDER)
+        ? 3.0
+        : widgetTheme.borderWidth;
 
     final hasConstraints = hasBounds(state.bounds);
-    final double? width = hasConstraints ? state.bounds!.width.toDouble() : null;
-    final double? height = hasConstraints ? state.bounds!.height.toDouble() : null;
+    final double? width = hasConstraints
+        ? state.bounds!.width.toDouble()
+        : null;
+    final double? height = hasConstraints
+        ? state.bounds!.height.toDouble()
+        : null;
 
     Widget result;
 
@@ -102,8 +114,14 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     } else {
       // Dropdown mode
       result = MouseRegion(
-        onEnter: (_) => setState(() { _isHovered = true; handleMouseEnter(); }),
-        onExit: (_) => setState(() { _isHovered = false; handleMouseExit(); }),
+        onEnter: (_) => setState(() {
+          _isHovered = true;
+          handleMouseEnter();
+        }),
+        onExit: (_) => setState(() {
+          _isHovered = false;
+          handleMouseExit();
+        }),
         child: AnimatedContainer(
           duration: widgetTheme.animationDuration,
           decoration: BoxDecoration(
@@ -127,11 +145,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     }
 
     if (hasConstraints) {
-      return SizedBox(
-        width: width,
-        height: height,
-        child: result,
-      );
+      return SizedBox(width: width, height: height, child: result);
     }
 
     return result;
@@ -176,7 +190,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     super.dispose();
   }
 }
-  
+
 class _StyledDropdownCCombo extends StatelessWidget {
   final VCCombo state;
   final CComboThemeExtension widgetTheme;

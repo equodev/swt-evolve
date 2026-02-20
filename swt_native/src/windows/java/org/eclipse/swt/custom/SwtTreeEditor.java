@@ -339,6 +339,30 @@ public class SwtTreeEditor extends SwtControlEditor implements ITreeEditor {
         super.layout();
     }
 
+    public Tree _tree() {
+        return tree;
+    }
+
+    public TreeItem _item() {
+        return item;
+    }
+
+    public int _column() {
+        return column;
+    }
+
+    public ControlListener _columnListener() {
+        return columnListener;
+    }
+
+    public TreeListener _treeListener() {
+        return treeListener;
+    }
+
+    public Runnable _timer() {
+        return timer;
+    }
+
     public TreeEditor getApi() {
         if (api == null)
             api = TreeEditor.createApi(this);

@@ -143,7 +143,7 @@ public class Mocks implements AfterEachCallback {
         when(w.getImpl()).thenReturn(impl);
         when(impl.getBridge()).thenReturn(new MockFlutterBridge());
         Display display = display();
-        //when(w.getDisplay()).thenReturn(display);
+        when(w.getDisplay()).thenReturn(display);
         when(impl._display()).thenReturn(display);
         when(impl._getChildren()).thenReturn(new Control[0]);
         doNothing().when(impl).createItem(any(CoolItem.class), anyInt());
@@ -173,7 +173,7 @@ public class Mocks implements AfterEachCallback {
         when(w.getImpl()).thenReturn(impl);
         when(impl.getBridge()).thenReturn(new MockFlutterBridge());
         Display display = display();
-        //when(w.getDisplay()).thenReturn(display);
+        when(w.getDisplay()).thenReturn(display);
         when(impl._display()).thenReturn(display);
         return w;
     }
@@ -192,7 +192,7 @@ public class Mocks implements AfterEachCallback {
         when(w.getImpl()).thenReturn(impl);
         when(impl.getBridge()).thenReturn(new MockFlutterBridge());
         Display display = display();
-        //when(w.getDisplay()).thenReturn(display);
+        when(w.getDisplay()).thenReturn(display);
         when(impl._display()).thenReturn(display);
         return w;
     }
@@ -215,7 +215,7 @@ public class Mocks implements AfterEachCallback {
         when(w.getImpl()).thenReturn(impl);
         when(impl.getBridge()).thenReturn(new MockFlutterBridge());
         Display display = display();
-        //when(w.getDisplay()).thenReturn(display);
+        when(w.getDisplay()).thenReturn(display);
         when(impl._display()).thenReturn(display);
         doNothing().when(impl).createItem(any(ExpandItem.class), anyInt(), anyInt());
         return w;

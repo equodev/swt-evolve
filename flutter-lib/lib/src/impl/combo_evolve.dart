@@ -12,7 +12,8 @@ import '../theme/theme_settings/combo_theme_settings.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 
-class ComboImpl<T extends ComboSwt, V extends VCombo> extends CompositeImpl<T, V> {
+class ComboImpl<T extends ComboSwt, V extends VCombo>
+    extends CompositeImpl<T, V> {
   late TextEditingController _controller;
   final FocusNode _focusNode = FocusNode();
   final OverlayPortalController _overlayController = OverlayPortalController();
@@ -27,11 +28,12 @@ class ComboImpl<T extends ComboSwt, V extends VCombo> extends CompositeImpl<T, V
     _focusNode.addListener(_handleFocusChange);
   }
 
-  Size _calculatePreferredSize(TextStyle style, ComboThemeExtension theme, bool isSimple) {
-    final List<String> allStrings = [
-      state.text ?? "",
-      ...(state.items ?? []),
-    ];
+  Size _calculatePreferredSize(
+    TextStyle style,
+    ComboThemeExtension theme,
+    bool isSimple,
+  ) {
+    final List<String> allStrings = [state.text ?? "", ...(state.items ?? [])];
 
     double maxTextWidth = 0;
     double maxTextHeight = 0;
@@ -47,7 +49,10 @@ class ComboImpl<T extends ComboSwt, V extends VCombo> extends CompositeImpl<T, V
       if (painter.height > maxTextHeight) maxTextHeight = painter.height + 2;
     }
 
-    final double width = maxTextWidth + theme.textFieldPadding.horizontal + (isSimple ? 0 : theme.iconSpacing + theme.iconSize);
+    final double width =
+        maxTextWidth +
+        theme.textFieldPadding.horizontal +
+        (isSimple ? 0 : theme.iconSpacing + theme.iconSize);
     final double height = maxTextHeight + theme.textFieldPadding.vertical;
 
     return Size(width, height);
@@ -57,9 +62,13 @@ class ComboImpl<T extends ComboSwt, V extends VCombo> extends CompositeImpl<T, V
   void extraSetState() {
     if (_controller.text != state.text) {
       _controller.text = state.text ?? "";
-      _controller.selection = TextSelection.collapsed(offset: _controller.text.length);
+      _controller.selection = TextSelection.collapsed(
+        offset: _controller.text.length,
+      );
     }
-    state.listVisible == true ? _overlayController.show() : _overlayController.hide();
+    state.listVisible == true
+        ? _overlayController.show()
+        : _overlayController.hide();
   }
 
   void _handleFocusChange() {
@@ -79,7 +88,11 @@ class ComboImpl<T extends ComboSwt, V extends VCombo> extends CompositeImpl<T, V
     final bool isReadOnly = styleBits.has(SWT.READ_ONLY);
     final bool hasFixedSize = hasBounds(state.bounds);
 
-    final Color bgColor = getComboBackgroundColor(state, theme, enabled: isEnabled);
+    final Color bgColor = getComboBackgroundColor(
+      state,
+      theme,
+      enabled: isEnabled,
+    );
     final Color textColor = getComboTextColor(state, theme, enabled: isEnabled);
     final Color borderColor = isEnabled && (_isFocused || _isHovered)
         ? theme.borderColor
@@ -93,7 +106,11 @@ class ComboImpl<T extends ComboSwt, V extends VCombo> extends CompositeImpl<T, V
       baseTextStyle: theme.textStyle,
     );
 
-    final Size preferredSize = _calculatePreferredSize(textStyle, theme, isSimple);
+    final Size preferredSize = _calculatePreferredSize(
+      textStyle,
+      theme,
+      isSimple,
+    );
 
     final double width = hasFixedSize
         ? state.bounds!.width.toDouble()
@@ -105,40 +122,36 @@ class ComboImpl<T extends ComboSwt, V extends VCombo> extends CompositeImpl<T, V
 
     final Widget content = isSimple
         ? _SimpleComboLayout(
-      state: state,
-      theme: theme,
-      controller: _controller,
-      focusNode: _focusNode,
-      textStyle: textStyle,
-      isEnabled: isEnabled,
-      isReadOnly: isReadOnly,
-      bgColor: bgColor,
-      borderColor: borderColor,
-      onSelected: _onItemSelected,
-      hasFixedSize: hasFixedSize,
-    )
+            state: state,
+            theme: theme,
+            controller: _controller,
+            focusNode: _focusNode,
+            textStyle: textStyle,
+            isEnabled: isEnabled,
+            isReadOnly: isReadOnly,
+            bgColor: bgColor,
+            borderColor: borderColor,
+            onSelected: _onItemSelected,
+            hasFixedSize: hasFixedSize,
+          )
         : _DropdownComboLayout(
-      state: state,
-      theme: theme,
-      controller: _controller,
-      focusNode: _focusNode,
-      textStyle: textStyle,
-      isEnabled: isEnabled,
-      isReadOnly: isReadOnly,
-      bgColor: bgColor,
-      borderColor: borderColor,
-      iconColor: iconColor,
-      overlayController: _overlayController,
-      layerLink: _layerLink,
-      onSelected: _onItemSelected,
-      width: width,
-    );
+            state: state,
+            theme: theme,
+            controller: _controller,
+            focusNode: _focusNode,
+            textStyle: textStyle,
+            isEnabled: isEnabled,
+            isReadOnly: isReadOnly,
+            bgColor: bgColor,
+            borderColor: borderColor,
+            iconColor: iconColor,
+            overlayController: _overlayController,
+            layerLink: _layerLink,
+            onSelected: _onItemSelected,
+            width: width,
+          );
 
-    return SizedBox(
-      width: width,
-      height: height,
-      child: content,
-    );
+    return SizedBox(width: width, height: height, child: content);
   }
 
   void _onItemSelected(String? value) {
@@ -172,11 +185,20 @@ class _DropdownComboLayout extends StatelessWidget {
   final double width;
 
   const _DropdownComboLayout({
-    required this.state, required this.theme, required this.controller,
-    required this.focusNode, required this.textStyle, required this.isEnabled,
-    required this.isReadOnly, required this.bgColor, required this.borderColor,
-    required this.iconColor, required this.overlayController, required this.layerLink,
-    required this.onSelected, required this.width,
+    required this.state,
+    required this.theme,
+    required this.controller,
+    required this.focusNode,
+    required this.textStyle,
+    required this.isEnabled,
+    required this.isReadOnly,
+    required this.bgColor,
+    required this.borderColor,
+    required this.iconColor,
+    required this.overlayController,
+    required this.layerLink,
+    required this.onSelected,
+    required this.width,
   });
 
   @override
@@ -214,7 +236,11 @@ class _DropdownComboLayout extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: theme.iconSpacing),
-                Icon(Icons.arrow_drop_down, color: iconColor, size: theme.iconSize),
+                Icon(
+                  Icons.arrow_drop_down,
+                  color: iconColor,
+                  size: theme.iconSize,
+                ),
               ],
             ),
           ),
@@ -237,19 +263,26 @@ class _DropdownComboLayout extends StatelessWidget {
             decoration: BoxDecoration(
               color: theme.backgroundColor,
               borderRadius: BorderRadius.circular(theme.borderRadius),
-              border: Border.all(color: theme.dividerColor, width: theme.borderWidth),
+              border: Border.all(
+                color: theme.dividerColor,
+                width: theme.borderWidth,
+              ),
             ),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: (state.items ?? []).map((item) => _ComboItem(
-                  text: item,
-                  isSelected: item == state.text,
-                  theme: theme,
-                  textStyle: textStyle,
-                  onTap: () => onSelected(item),
-                )).toList(),
+                children: (state.items ?? [])
+                    .map(
+                      (item) => _ComboItem(
+                        text: item,
+                        isSelected: item == state.text,
+                        theme: theme,
+                        textStyle: textStyle,
+                        onTap: () => onSelected(item),
+                      ),
+                    )
+                    .toList(),
               ),
             ),
           ),
@@ -270,10 +303,17 @@ class _SimpleComboLayout extends StatelessWidget {
   final ValueChanged<String?> onSelected;
 
   const _SimpleComboLayout({
-    required this.state, required this.theme, required this.controller,
-    required this.focusNode, required this.textStyle, required this.isEnabled,
-    required this.isReadOnly, required this.hasFixedSize, required this.bgColor,
-    required this.borderColor, required this.onSelected,
+    required this.state,
+    required this.theme,
+    required this.controller,
+    required this.focusNode,
+    required this.textStyle,
+    required this.isEnabled,
+    required this.isReadOnly,
+    required this.hasFixedSize,
+    required this.bgColor,
+    required this.borderColor,
+    required this.onSelected,
   });
 
   @override
@@ -299,7 +339,11 @@ class _SimpleComboLayout extends StatelessWidget {
               backgroundCursorColor: bgColor,
             ),
           ),
-          Divider(height: theme.dividerHeight, thickness: theme.dividerThickness, color: theme.dividerColor),
+          Divider(
+            height: theme.dividerHeight,
+            thickness: theme.dividerThickness,
+            color: theme.dividerColor,
+          ),
           _buildList(),
         ],
       ),
@@ -309,13 +353,17 @@ class _SimpleComboLayout extends StatelessWidget {
   Widget _buildList() {
     final list = SingleChildScrollView(
       child: Column(
-        children: (state.items ?? []).map((item) => _ComboItem(
-          text: item,
-          isSelected: item == state.text,
-          theme: theme,
-          textStyle: textStyle,
-          onTap: isEnabled ? () => onSelected(item) : () {},
-        )).toList(),
+        children: (state.items ?? [])
+            .map(
+              (item) => _ComboItem(
+                text: item,
+                isSelected: item == state.text,
+                theme: theme,
+                textStyle: textStyle,
+                onTap: isEnabled ? () => onSelected(item) : () {},
+              ),
+            )
+            .toList(),
       ),
     );
     return hasFixedSize ? Expanded(child: list) : list;
@@ -330,8 +378,11 @@ class _ComboItem extends StatefulWidget {
   final VoidCallback onTap;
 
   const _ComboItem({
-    required this.text, required this.isSelected, required this.theme,
-    required this.textStyle, required this.onTap,
+    required this.text,
+    required this.isSelected,
+    required this.theme,
+    required this.textStyle,
+    required this.onTap,
   });
 
   @override
@@ -345,7 +396,9 @@ class _ComboItemState extends State<_ComboItem> {
   Widget build(BuildContext context) {
     final Color bgColor = widget.isSelected
         ? widget.theme.selectedItemBackgroundColor
-        : (_itemHovered ? widget.theme.hoverBackgroundColor : const Color(0x00000000));
+        : (_itemHovered
+              ? widget.theme.hoverBackgroundColor
+              : const Color(0x00000000));
 
     return MouseRegion(
       onEnter: (_) => setState(() => _itemHovered = true),

@@ -17,7 +17,7 @@ import 'utils/image_utils.dart';
 class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     extends ItemImpl<T, V> {
   TableItemContext? _context;
-  
+
   void setContext(TableItemContext context) {
     _context = context;
   }
@@ -47,33 +47,39 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     final rowIndex = _context?.rowIndex ?? 0;
     final enabled = _context?.parentTableValue.enabled ?? false;
     final isSelected = _context?.tableImpl?.isItemSelected(state) ?? false;
-    final hasCheckStyle = _context?.parentTableValue.style != null &&
+    final hasCheckStyle =
+        _context?.parentTableValue.style != null &&
         (_context!.parentTableValue.style! & SWT.CHECK) != 0;
-    final columnCount = _context?.parentTableValue.columns?.length ?? cellTexts.length;
+    final columnCount =
+        _context?.parentTableValue.columns?.length ?? cellTexts.length;
     final effectiveColumnCount = columnCount > 0 ? columnCount : 1;
 
-    return List.generate(
-      effectiveColumnCount,
-      (columnIndex) {
-        final cellText = columnIndex < cellTexts.length ? (cellTexts[columnIndex] ?? "") : "";
-        final cellTextColor = getCellTextColor(columnIndex, theme, isSelected, enabled);
-        final cellTextStyle = getTextStyle(
-          context: context,
-          font: state.font ?? _context?.tableFont,
-          textColor: cellTextColor,
-          baseTextStyle: theme.rowTextStyle,
-        );
-        return buildCell(
-          context,
-          columnIndex,
-          cellText,
-          cellTextStyle,
-          theme,
-          rowIndex,
-          hasCheckStyle && columnIndex == 0,
-        );
-      },
-    );
+    return List.generate(effectiveColumnCount, (columnIndex) {
+      final cellText = columnIndex < cellTexts.length
+          ? (cellTexts[columnIndex] ?? "")
+          : "";
+      final cellTextColor = getCellTextColor(
+        columnIndex,
+        theme,
+        isSelected,
+        enabled,
+      );
+      final cellTextStyle = getTextStyle(
+        context: context,
+        font: state.font ?? _context?.tableFont,
+        textColor: cellTextColor,
+        baseTextStyle: theme.rowTextStyle,
+      );
+      return buildCell(
+        context,
+        columnIndex,
+        cellText,
+        cellTextStyle,
+        theme,
+        rowIndex,
+        hasCheckStyle && columnIndex == 0,
+      );
+    });
   }
 
   Widget buildCell(
@@ -88,20 +94,47 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     final enabled = _context?.parentTableValue.enabled ?? true;
     final cellBackgroundColor = getCellBackgroundColor(columnIndex, theme);
     final rowHeight = calculateRowHeight(textStyle, theme);
-    final isEditing = _context?.editingRowIndex == rowIndex && 
-                     _context?.editingColumnIndex == columnIndex;
+    final isEditing =
+        _context?.editingRowIndex == rowIndex &&
+        _context?.editingColumnIndex == columnIndex;
+
+    void sendMouseDown(int button) {
+      if (enabled && _context != null) {
+        final e = VEvent();
+        e.x = _computeCellCenterX(columnIndex, theme);
+        e.y = _computeCellCenterY(rowIndex, textStyle, theme);
+        e.count = 1;
+        e.button = button;
+        _context!.parentTable.sendMouseMouseDown(_context!.parentTableValue, e);
+      }
+    }
+
+    void sendMouseDoubleClick(int button) {
+      if (!isEditing && enabled && _context?.tableImpl != null) {
+        _context!.tableImpl!.handleRowTap(rowIndex, state);
+        final e = VEvent();
+        e.x = _computeCellCenterX(columnIndex, theme);
+        e.y = _computeCellCenterY(rowIndex, textStyle, theme);
+        e.count = 2;
+        e.button = button;
+        _context!.parentTable.sendEvent(
+          _context!.parentTableValue,
+          "Mouse/MouseDoubleClick",
+          e,
+        );
+      }
+    }
 
     return GestureDetector(
+      onTapDown: (_) => sendMouseDown(1),
+      onSecondaryTapDown: (_) => sendMouseDown(3),
+      onTertiaryTapDown: (_) => sendMouseDown(2),
       onTap: () {
         if (!isEditing && enabled && _context?.tableImpl != null) {
           _context!.tableImpl!.handleRowTap(rowIndex, state);
         }
       },
-      onDoubleTap: () {
-        if (!isEditing && enabled && _context?.tableImpl != null) {
-          _context!.tableImpl!.startEditing(rowIndex, columnIndex, cellText);
-        }
-      },
+      onDoubleTap: () => sendMouseDoubleClick(1),
       child: SizedBox(
         height: rowHeight,
         child: Container(
@@ -111,10 +144,13 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
           child: Row(
             children: [
               if (showCheckbox) buildCheckbox(theme, enabled),
-              if (columnIndex == 0 && state.image != null) 
+              if (columnIndex == 0 && state.image != null)
                 buildImageIcon(state.image!, enabled, textStyle, theme),
               Expanded(
-                child: isEditing && _context?.editingController != null && _context?.editingFocusNode != null
+                child:
+                    isEditing &&
+                        _context?.editingController != null &&
+                        _context?.editingFocusNode != null
                     ? TextField(
                         controller: _context!.editingController!,
                         focusNode: _context!.editingFocusNode!,
@@ -150,6 +186,34 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     );
   }
 
+  int _computeCellCenterX(int columnIndex, TableThemeExtension theme) {
+    final columns = _context?.parentTableValue.columns ?? [];
+    // Match Java's Sizes.getBounds(): x = sum of column widths before columnIndex,
+    // no border offset (getItemHeight/getHeaderHeight return 0 on macOS, no border).
+    double x = 0.0;
+    for (int i = 0; i < columnIndex && i < columns.length; i++) {
+      x += columns[i].width?.toDouble() ?? 100.0;
+    }
+    final colWidth = columnIndex < columns.length
+        ? (columns[columnIndex].width?.toDouble() ?? 100.0)
+        : 100.0;
+    x += colWidth / 2;
+    return x.round();
+  }
+
+  int _computeCellCenterY(
+    int rowIndex,
+    TextStyle textStyle,
+    TableThemeExtension theme,
+  ) {
+    // Match Java's Sizes.getBounds() on macOS:
+    //   getHeaderHeight() returns 0
+    //   getItemHeight() returns 0, fallback hardcoded to 20px
+    // So: y = rowIndex * 20, height = 20
+    const int javaItemHeight = 20;
+    return rowIndex * javaItemHeight + javaItemHeight ~/ 2;
+  }
+
   Widget buildCheckbox(TableThemeExtension theme, bool enabled) {
     final checked = state.checked ?? false;
     final grayed = state.grayed ?? false;
@@ -168,13 +232,21 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
             _context!.tableImpl!.setState(() {});
           }
           final e = VEvent()..detail = SWT.CHECK;
-          _context?.parentTable.sendSelectionSelection(_context!.parentTableValue, e);
+          _context?.parentTable.sendSelectionSelection(
+            _context!.parentTableValue,
+            e,
+          );
         },
       ),
     );
   }
 
-  Widget buildImageIcon(VImage image, bool enabled, TextStyle textStyle, TableThemeExtension theme) {
+  Widget buildImageIcon(
+    VImage image,
+    bool enabled,
+    TextStyle textStyle,
+    TableThemeExtension theme,
+  ) {
     final iconSize = textStyle.fontSize ?? 16.0;
     return FutureBuilder<Widget?>(
       future: ImageUtils.buildVImageAsync(
@@ -190,7 +262,8 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         renderAsIcon: true,
       ),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done && snapshot.data != null) {
+        if (snapshot.connectionState == ConnectionState.done &&
+            snapshot.data != null) {
           return Padding(
             padding: EdgeInsets.only(right: theme.cellPadding.left),
             child: snapshot.data!,
@@ -208,9 +281,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     bool enabled,
   ) {
     final defaultColor = enabled
-        ? (isSelected
-            ? theme.rowSelectedTextColor
-            : theme.rowTextColor)
+        ? (isSelected ? theme.rowSelectedTextColor : theme.rowTextColor)
         : theme.rowDisabledTextColor;
 
     final cellForeground = getCellForeground(columnIndex);
@@ -220,15 +291,13 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     );
   }
 
-  Color getCellBackgroundColor(
-    int columnIndex,
-    TableThemeExtension theme,
-  ) {
+  Color getCellBackgroundColor(int columnIndex, TableThemeExtension theme) {
     final cellBackground = getCellBackground(columnIndex);
     return getBackgroundColor(
-      background: cellBackground ?? state.background,
-      defaultColor: Colors.transparent,
-    ) ?? Colors.transparent;
+          background: cellBackground ?? state.background,
+          defaultColor: Colors.transparent,
+        ) ??
+        Colors.transparent;
   }
 
   double calculateRowHeight(TextStyle textStyle, TableThemeExtension theme) {
@@ -265,10 +334,12 @@ class _TableCheckboxButtonWrapper extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<_TableCheckboxButtonWrapper> createState() => _TableCheckboxButtonWrapperState();
+  State<_TableCheckboxButtonWrapper> createState() =>
+      _TableCheckboxButtonWrapperState();
 }
 
-class _TableCheckboxButtonWrapperState extends State<_TableCheckboxButtonWrapper> {
+class _TableCheckboxButtonWrapperState
+    extends State<_TableCheckboxButtonWrapper> {
   late VButton buttonValue;
 
   @override
@@ -308,10 +379,7 @@ class _TableCheckboxButtonWrapperState extends State<_TableCheckboxButtonWrapper
 class _TableCheckboxButton extends ButtonSwt<VButton> {
   final VoidCallback onChanged;
 
-  const _TableCheckboxButton({
-    required super.value,
-    required this.onChanged,
-  });
+  const _TableCheckboxButton({required super.value, required this.onChanged});
 
   @override
   void sendSelectionSelection(VButton val, VEvent? payload) {

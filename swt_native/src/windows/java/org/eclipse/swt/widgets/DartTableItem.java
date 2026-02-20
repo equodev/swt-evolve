@@ -233,16 +233,15 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return null;
+        // if (!((DartTable) parent.getImpl()).checkData(this.getApi()))
+        //     error(SWT.ERROR_WIDGET_DISPOSED);
+        return Sizes.getBounds(this);
     }
 
     Rectangle getBoundsInPixels() {
         if (!((DartTable) parent.getImpl()).checkData(this.getApi(), true))
             error(SWT.ERROR_WIDGET_DISPOSED);
-        int itemIndex = parent.indexOf(this.getApi());
-        if (itemIndex == -1)
-            return new Rectangle(0, 0, 0, 0);
-        return null;
+        return Sizes.getBounds(this);
     }
 
     /**
@@ -259,16 +258,19 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public Rectangle getBounds(int index) {
         checkWidget();
-        return null;
+        // if (!((DartTable) parent.getImpl()).checkData(this.getApi()))
+        //     error(SWT.ERROR_WIDGET_DISPOSED);
+        if (!(0 <= index && index < Math.max(1, ((DartTable) parent.getImpl()).columnCount)))
+            return new Rectangle(0, 0, 0, 0);
+        return ControlEditorHelper.getItemBounds((DartTable) parent.getImpl(), this.getApi().hashCode(), index);
     }
 
     Rectangle getBoundsInPixels(int index) {
         if (!((DartTable) parent.getImpl()).checkData(this.getApi(), true))
             error(SWT.ERROR_WIDGET_DISPOSED);
-        int itemIndex = parent.indexOf(this.getApi());
-        if (itemIndex == -1)
+        if (!(0 <= index && index < Math.max(1, ((DartTable) parent.getImpl()).columnCount)))
             return new Rectangle(0, 0, 0, 0);
-        return null;
+        return ControlEditorHelper.getItemBounds((DartTable) parent.getImpl(), this.getApi().hashCode(), index);
     }
 
     /**
@@ -452,16 +454,24 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public Rectangle getImageBounds(int index) {
         checkWidget();
-        return null;
+        return getImageBoundsInPixels(index);
     }
 
     Rectangle getImageBoundsInPixels(int index) {
-        if (!((DartTable) parent.getImpl()).checkData(this.getApi(), true))
-            error(SWT.ERROR_WIDGET_DISPOSED);
-        int itemIndex = parent.indexOf(this.getApi());
-        if (itemIndex == -1)
+        checkWidget();
+        // if (!((DartTable) parent.getImpl()).checkData(this.getApi()))
+        //     error(SWT.ERROR_WIDGET_DISPOSED);
+        if (!(0 <= index && index < Math.max(1, ((DartTable) parent.getImpl()).columnCount)))
             return new Rectangle(0, 0, 0, 0);
-        return null;
+        Image image = index == 0 ? this.image : (images != null) ? images[index] : null;
+        int width = 0;
+        int height = 0;
+        if (image != null) {
+            Rectangle imgBounds = image.getBounds();
+            width = imgBounds.width;
+            height = imgBounds.height;
+        }
+        return new Rectangle(0, 0, width, height);
     }
 
     /**
@@ -559,16 +569,15 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public Rectangle getTextBounds(int index) {
         checkWidget();
-        return null;
+        // if (!((DartTable) parent.getImpl()).checkData(this.getApi()))
+        //     error(SWT.ERROR_WIDGET_DISPOSED);
+        return Sizes.getTextBounds(this, index);
     }
 
     Rectangle getTextBoundsInPixels(int index) {
         if (!((DartTable) parent.getImpl()).checkData(this.getApi(), true))
             error(SWT.ERROR_WIDGET_DISPOSED);
-        int itemIndex = parent.indexOf(this.getApi());
-        if (itemIndex == -1)
-            return new Rectangle(0, 0, 0, 0);
-        return null;
+        return Sizes.getTextBounds(this, index);
     }
 
     void redraw() {

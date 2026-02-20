@@ -5,7 +5,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
-public interface ITableEditor extends IControlEditor {
+public interface ITableEditor extends IControlEditor, ImplTableEditor {
 
     /**
      * Removes all associations between the TableEditor and the cell in the table.  The

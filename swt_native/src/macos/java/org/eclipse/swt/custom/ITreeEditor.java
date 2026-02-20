@@ -5,7 +5,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
-public interface ITreeEditor extends IControlEditor {
+public interface ITreeEditor extends IControlEditor, ImplTreeEditor {
 
     /**
      * Removes all associations between the TreeEditor and the row in the tree.  The

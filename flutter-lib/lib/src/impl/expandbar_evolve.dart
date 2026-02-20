@@ -53,7 +53,9 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
         itemBuilder: (context, index) {
           return Padding(
             padding: EdgeInsets.only(
-              bottom: index < expandItems.length - 1 ? widgetTheme.itemSpacing : 0,
+              bottom: index < expandItems.length - 1
+                  ? widgetTheme.itemSpacing
+                  : 0,
             ),
             child: expandItems[index],
           );
@@ -80,10 +82,7 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
       constraints: constraints,
       decoration: BoxDecoration(
         color: backgroundColor,
-        border: Border.all(
-          color: borderColor,
-          width: widgetTheme.borderWidth,
-        ),
+        border: Border.all(color: borderColor, width: widgetTheme.borderWidth),
         borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
       ),
       child: ClipRRect(
@@ -117,7 +116,9 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
     List<Widget> result = [];
     for (int i = 0; i < state.items!.length; i++) {
       var expandItem = state.items![i];
-      result.add(getWidgetForExpandItem(context, expandItem, widgetTheme, itemTheme));
+      result.add(
+        getWidgetForExpandItem(context, expandItem, widgetTheme, itemTheme),
+      );
 
       if (i < state.items!.length - 1 && spacing > 0) {
         result.add(SizedBox(height: spacing.toDouble()));
@@ -261,8 +262,8 @@ class _ExpandItemWidgetState extends State<_ExpandItemWidget>
     final headerBackgroundColor = _isExpanded
         ? itemTheme.headerBackgroundExpandedColor
         : (_isHovering
-            ? itemTheme.headerBackgroundHoveredColor
-            : itemTheme.headerBackgroundColor);
+              ? itemTheme.headerBackgroundHoveredColor
+              : itemTheme.headerBackgroundColor);
 
     final contentBackgroundColor = itemTheme.contentBackgroundColor;
     final borderColor = itemTheme.borderColor;
@@ -304,7 +305,8 @@ class _ExpandItemWidgetState extends State<_ExpandItemWidget>
     Widget headerContent = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (expandItem.image != null && expandItem.image?.imageData != null) ...[
+        if (expandItem.image != null &&
+            expandItem.image?.imageData != null) ...[
           _buildImage(expandItem, itemTheme),
           SizedBox(width: itemTheme.imageTextSpacing),
         ],
@@ -328,10 +330,7 @@ class _ExpandItemWidgetState extends State<_ExpandItemWidget>
 
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(
-          color: borderColor,
-          width: itemTheme.borderWidth,
-        ),
+        border: Border.all(color: borderColor, width: itemTheme.borderWidth),
         borderRadius: BorderRadius.circular(itemTheme.borderRadius),
       ),
       clipBehavior: Clip.antiAlias,
@@ -362,7 +361,8 @@ class _ExpandItemWidgetState extends State<_ExpandItemWidget>
                 ? Container(
                     color: contentBackgroundColor,
                     padding: itemTheme.contentPadding,
-                    constraints: (expandItem.height != null && expandItem.height! > 0)
+                    constraints:
+                        (expandItem.height != null && expandItem.height! > 0)
                         ? BoxConstraints(
                             minHeight: expandItem.height!.toDouble(),
                             maxHeight: expandItem.height!.toDouble(),
@@ -377,12 +377,16 @@ class _ExpandItemWidgetState extends State<_ExpandItemWidget>
     );
   }
 
-  Widget _buildImage(VExpandItem expandItem, ExpandItemThemeExtension itemTheme) {
+  Widget _buildImage(
+    VExpandItem expandItem,
+    ExpandItemThemeExtension itemTheme,
+  ) {
     final imageData = expandItem.image?.imageData;
     if (imageData == null) return const SizedBox.shrink();
 
     final double imageWidth = imageData.width?.toDouble() ?? itemTheme.iconSize;
-    final double imageHeight = imageData.height?.toDouble() ?? itemTheme.iconSize;
+    final double imageHeight =
+        imageData.height?.toDouble() ?? itemTheme.iconSize;
 
     final builtImage = ImageUtils.buildVImage(
       expandItem.image,

@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  *  A TableEditor is a manager for a Control that appears above a cell in a Table and tracks with the
@@ -85,9 +86,9 @@ public class TableEditor extends ControlEditor {
      */
     public TableEditor(Table table) {
         this((ITableEditor) null);
-        setImpl(new SwtTableEditor(table, this));
+        setImpl(Config.isEquo(TableEditor.class, table) ? new DartTableEditor(table, this) : new SwtTableEditor(table, this));
         if (table.getImpl() instanceof DartTable) {
-            ((DartTable) table.getImpl())._setEditable(true);
+            ((DartTable) table.getImpl())._addEditor(this);
         }
     }
 

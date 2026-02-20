@@ -35,11 +35,17 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
         widgetTheme: widgetTheme,
         onChanged: (value) {
           state.selection = value.round();
-          widget.sendSelectionSelection(state, VEvent()..index = state.selection);
+          widget.sendSelectionSelection(
+            state,
+            VEvent()..index = state.selection,
+          );
         },
         onChangeEnd: (value) {
           state.selection = value.round();
-          widget.sendSelectionDefaultSelection(state, VEvent()..index = state.selection);
+          widget.sendSelectionDefaultSelection(
+            state,
+            VEvent()..index = state.selection,
+          );
         },
         onHover: (isHovering) {
           if (isHovering) {
@@ -243,7 +249,8 @@ class _TickMarkPainter extends CustomPainter {
 
     for (final tickValue in ticks) {
       final position = (tickValue - min) / (max - min);
-      final x = horizontalPadding + (position * (size.width - 2 * horizontalPadding));
+      final x =
+          horizontalPadding + (position * (size.width - 2 * horizontalPadding));
 
       canvas.drawLine(
         Offset(x, verticalCenter - halfTickHeight),

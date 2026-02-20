@@ -19,12 +19,19 @@ class LinkImpl<T extends LinkSwt, V extends VLink> extends ControlImpl<T, V> {
     return _buildLink(context, widgetTheme, enabled);
   }
 
-  Widget _buildLink(BuildContext context, LinkThemeExtension widgetTheme, bool enabled) {
+  Widget _buildLink(
+    BuildContext context,
+    LinkThemeExtension widgetTheme,
+    bool enabled,
+  ) {
     final text = state.text ?? '';
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = getConstraintsFromBounds(state.bounds);
 
-    final backgroundColor = getSwtBackgroundColor(context, defaultColor: widgetTheme.backgroundColor);
+    final backgroundColor = getBackgroundColor(
+      background: state.background,
+      defaultColor: widgetTheme.backgroundColor,
+    );
 
     final child = StyledLink(
       text: text,
@@ -52,7 +59,9 @@ class LinkImpl<T extends LinkSwt, V extends VLink> extends ControlImpl<T, V> {
         Container(
           constraints: constraints,
           padding: widgetTheme.padding,
-          alignment: hasValidBounds ? getAlignmentFromTextAlign(widgetTheme.textAlign) : null,
+          alignment: hasValidBounds
+              ? getAlignmentFromTextAlign(widgetTheme.textAlign)
+              : null,
           decoration: backgroundColor != null
               ? BoxDecoration(color: backgroundColor)
               : null,
@@ -145,24 +154,20 @@ class _StyledLinkState extends State<StyledLink> {
 
     final hasLinks = widget.text.toLowerCase().contains('<a');
     if (!hasLinks) {
-      return Text(
-        widget.text,
-        style: baseTextStyle,
-      );
+      return Text(widget.text, style: baseTextStyle);
     }
 
     final List<TextSpan> spans = _parseText(widget.text);
     return RichText(
-      text: TextSpan(
-        children: spans,
-        style: baseTextStyle,
-      ),
+      text: TextSpan(children: spans, style: baseTextStyle),
     );
   }
 
   List<TextSpan> _parseText(String text) {
-    final regex = RegExp(r'<a(?:\s+href="([^"]*)")?>(.+?)<\/a>|([^<]+)',
-        caseSensitive: false);
+    final regex = RegExp(
+      r'<a(?:\s+href="([^"]*)")?>(.+?)<\/a>|([^<]+)',
+      caseSensitive: false,
+    );
     final matches = regex.allMatches(text);
 
     final linkColor = widget.enabled
@@ -184,10 +189,7 @@ class _StyledLinkState extends State<StyledLink> {
         final linkText = match.group(2)!;
         return TextSpan(
           text: linkText,
-          style: TextStyle(
-            color: linkColor,
-            decoration: linkDecoration
-          ),
+          style: TextStyle(color: linkColor, decoration: linkDecoration),
           recognizer: widget.enabled
               ? (TapGestureRecognizer()..onTap = () => widget.onTap(url))
               : null,

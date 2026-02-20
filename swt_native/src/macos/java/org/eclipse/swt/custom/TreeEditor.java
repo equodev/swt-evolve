@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  *  A TreeEditor is a manager for a Control that appears above a cell in a Tree and tracks with the
@@ -83,9 +84,9 @@ public class TreeEditor extends ControlEditor {
      */
     public TreeEditor(Tree tree) {
         this((ITreeEditor) null);
-        setImpl(new SwtTreeEditor(tree, this));
+        setImpl(Config.isEquo(TreeEditor.class, tree) ? new DartTreeEditor(tree, this) : new SwtTreeEditor(tree, this));
         if (tree.getImpl() instanceof DartTree) {
-            ((DartTree) tree.getImpl())._setEditable(true);
+            ((DartTree) tree.getImpl())._addEditor(this);
         }
     }
 

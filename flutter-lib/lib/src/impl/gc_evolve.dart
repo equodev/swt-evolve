@@ -44,8 +44,12 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     final width = state.clipping!.width?.toDouble() ?? 0;
     final height = state.clipping!.height?.toDouble() ?? 0;
     if (width <= 0 || height <= 0) return null;
-    return Rect.fromLTWH(state.clipping!.x?.toDouble() ?? 0,
-        state.clipping!.y?.toDouble() ?? 0, width, height);
+    return Rect.fromLTWH(
+      state.clipping!.x?.toDouble() ?? 0,
+      state.clipping!.y?.toDouble() ?? 0,
+      width,
+      height,
+    );
   }
 
   CanvasThemeExtension get _canvasTheme =>
@@ -122,10 +126,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
         break;
     }
 
-    return {
-      'weight': weight,
-      'style': style,
-    };
+    return {'weight': weight, 'style': style};
   }
 
   Color applyAlpha(Color color) {
@@ -151,96 +152,159 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
     final strokeWidth = isFilled ? 0.0 : lineWidth;
 
-    setState(() => shapes = [
-          ...shapes,
-          RoundRectShape(
-              rect, radiusX, radiusY, color, strokeWidth, lineCap, lineJoin,
-              isFilled: isFilled, clipRect: clipping)
-        ]);
-  }
-
-  void _addOvalShape(
-      {required int x,
-      required int y,
-      required int width,
-      required int height,
-      required bool isFilled}) {
-    final rect = _getRectFromArgs(x, y, width, height);
-    final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
-    final strokeWidth = isFilled ? 0.0 : lineWidth;
-
-    setState(() => shapes = [
-          ...shapes,
-          OvalShape(rect, color, strokeWidth,
-              isFilled: isFilled, clipRect: clipping)
-        ]);
-  }
-
-  void _addRectShape(
-      {required int x,
-      required int y,
-      required int width,
-      required int height,
-      required bool isFilled}) {
-    final rect = _getRectFromArgs(x, y, width, height);
-    final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
-    final strokeWidth = isFilled ? 0.0 : lineWidth;
-
-    setState(() => shapes = [
-          ...shapes,
-          RectShape(rect, color, strokeWidth, lineCap, lineJoin,
-              isFilled: isFilled, clipRect: clipping)
-        ]);
-  }
-
-  void _addPolygonShape(
-      {required List<int> points, required bool isFilled, int minPoints = 6}) {
-    if (points.length >= minPoints && points.length % 2 == 0) {
-      final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
-      final strokeWidth = isFilled ? 0.0 : lineWidth;
-
-      setState(() => shapes = [
-            ...shapes,
-            PolygonShape(points, color, strokeWidth, lineCap, lineJoin,
-                isFilled: isFilled, clipRect: clipping)
-          ]);
-    }
-  }
-
-  void _addPolylineShape(
-      {required List<int> points, required bool isFilled, int minPoints = 2}) {
-    if (points.length >= minPoints && points.length % 2 == 0) {
-      final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
-      final strokeWidth = isFilled ? 0.0 : lineWidth;
-
-      setState(() => shapes = [
+    setState(
+      () => shapes = [
         ...shapes,
-        PolylineShape(points, color, strokeWidth, lineCap, lineJoin,
-            isFilled: isFilled, clipRect: clipping)
-      ]);
+        RoundRectShape(
+          rect,
+          radiusX,
+          radiusY,
+          color,
+          strokeWidth,
+          lineCap,
+          lineJoin,
+          isFilled: isFilled,
+          clipRect: clipping,
+        ),
+      ],
+    );
+  }
+
+  void _addOvalShape({
+    required int x,
+    required int y,
+    required int width,
+    required int height,
+    required bool isFilled,
+  }) {
+    final rect = _getRectFromArgs(x, y, width, height);
+    final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
+    final strokeWidth = isFilled ? 0.0 : lineWidth;
+
+    setState(
+      () => shapes = [
+        ...shapes,
+        OvalShape(
+          rect,
+          color,
+          strokeWidth,
+          isFilled: isFilled,
+          clipRect: clipping,
+        ),
+      ],
+    );
+  }
+
+  void _addRectShape({
+    required int x,
+    required int y,
+    required int width,
+    required int height,
+    required bool isFilled,
+  }) {
+    final rect = _getRectFromArgs(x, y, width, height);
+    final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
+    final strokeWidth = isFilled ? 0.0 : lineWidth;
+
+    setState(
+      () => shapes = [
+        ...shapes,
+        RectShape(
+          rect,
+          color,
+          strokeWidth,
+          lineCap,
+          lineJoin,
+          isFilled: isFilled,
+          clipRect: clipping,
+        ),
+      ],
+    );
+  }
+
+  void _addPolygonShape({
+    required List<int> points,
+    required bool isFilled,
+    int minPoints = 6,
+  }) {
+    if (points.length >= minPoints && points.length % 2 == 0) {
+      final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
+      final strokeWidth = isFilled ? 0.0 : lineWidth;
+
+      setState(
+        () => shapes = [
+          ...shapes,
+          PolygonShape(
+            points,
+            color,
+            strokeWidth,
+            lineCap,
+            lineJoin,
+            isFilled: isFilled,
+            clipRect: clipping,
+          ),
+        ],
+      );
     }
   }
 
-  void _addArcShape(
-      {required int x,
-      required int y,
-      required int width,
-      required int height,
-      required int startAngle,
-      required int arcAngle,
-      required bool isFilled}) {
+  void _addPolylineShape({
+    required List<int> points,
+    required bool isFilled,
+    int minPoints = 2,
+  }) {
+    if (points.length >= minPoints && points.length % 2 == 0) {
+      final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
+      final strokeWidth = isFilled ? 0.0 : lineWidth;
+
+      setState(
+        () => shapes = [
+          ...shapes,
+          PolylineShape(
+            points,
+            color,
+            strokeWidth,
+            lineCap,
+            lineJoin,
+            isFilled: isFilled,
+            clipRect: clipping,
+          ),
+        ],
+      );
+    }
+  }
+
+  void _addArcShape({
+    required int x,
+    required int y,
+    required int width,
+    required int height,
+    required int startAngle,
+    required int arcAngle,
+    required bool isFilled,
+  }) {
     final rect = _getRectFromArgs(x, y, width, height);
     final startAngleRadians = _degToRad(-startAngle.toDouble());
     final sweepAngleRadians = _degToRad(-arcAngle.toDouble());
     final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
     final strokeWidth = isFilled ? 0.0 : lineWidth;
 
-    setState(() => shapes = [
-          ...shapes,
-          ArcShape(rect, startAngleRadians, sweepAngleRadians, color,
-              strokeWidth, lineCap, lineJoin,
-              isFilled: isFilled, clipRect: clipping)
-        ]);
+    setState(
+      () => shapes = [
+        ...shapes,
+        ArcShape(
+          rect,
+          startAngleRadians,
+          sweepAngleRadians,
+          color,
+          strokeWidth,
+          lineCap,
+          lineJoin,
+          isFilled: isFilled,
+          clipRect: clipping,
+        ),
+      ],
+    );
   }
 
   @override
@@ -258,11 +322,17 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
 
   @override
   void onDrawFocusintintintint(VGCDrawFocusintintintint opArgs) {
-    final rect =
-        _getRectFromArgs(opArgs.x, opArgs.y, opArgs.width, opArgs.height);
+    final rect = _getRectFromArgs(
+      opArgs.x,
+      opArgs.y,
+      opArgs.width,
+      opArgs.height,
+    );
 
-    setState(() =>
-        shapes = [...shapes, FocusRectShape(rect, applyAlpha(fg), clipping)]);
+    setState(
+      () =>
+          shapes = [...shapes, FocusRectShape(rect, applyAlpha(fg), clipping)],
+    );
   }
 
   @override
@@ -271,11 +341,20 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     final y1 = opArgs.y1?.toDouble() ?? 0.0;
     final x2 = opArgs.x2?.toDouble() ?? 0.0;
     final y2 = opArgs.y2?.toDouble() ?? 0.0;
-    setState(() => shapes = [
-          ...shapes,
-          LineShape(Offset(x1, y1), Offset(x2, y2), applyAlpha(fg), lineWidth,
-              lineCap, lineJoin, clipping)
-        ]);
+    setState(
+      () => shapes = [
+        ...shapes,
+        LineShape(
+          Offset(x1, y1),
+          Offset(x2, y2),
+          applyAlpha(fg),
+          lineWidth,
+          lineCap,
+          lineJoin,
+          clipping,
+        ),
+      ],
+    );
   }
 
   @override
@@ -296,8 +375,9 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
       (opArgs.y ?? 0).toDouble(),
     );
 
-    setState(() =>
-        shapes = [...shapes, PointShape(point, applyAlpha(fg), clipping)]);
+    setState(
+      () => shapes = [...shapes, PointShape(point, applyAlpha(fg), clipping)],
+    );
   }
 
   @override
@@ -331,7 +411,8 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
 
   @override
   void onDrawRoundRectangleintintintintintint(
-      VGCDrawRoundRectangleintintintintintint opArgs) {
+    VGCDrawRoundRectangleintintintintintint opArgs,
+  ) {
     _addRoundRectShape(
       x: opArgs.x ?? 0,
       y: opArgs.y ?? 0,
@@ -371,8 +452,17 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
       )..layout();
 
       final rect = Rect.fromLTWH(x, y, textPainter.width, textPainter.height);
-      newShapes.add(RectShape(rect, applyAlpha(bg), 0, lineCap, lineJoin,
-          isFilled: true, clipRect: clipping));
+      newShapes.add(
+        RectShape(
+          rect,
+          applyAlpha(bg),
+          0,
+          lineCap,
+          lineJoin,
+          isFilled: true,
+          clipRect: clipping,
+        ),
+      );
     }
 
     newShapes.add(TextShape(processedText, Offset(x, y), textStyle, clipping));
@@ -391,7 +481,8 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
 
   @override
   void onDrawStringStringintintboolean(
-      VGCDrawStringStringintintboolean opArgs) {
+    VGCDrawStringStringintintboolean opArgs,
+  ) {
     _drawText(
       text: opArgs.string ?? '',
       x: (opArgs.x ?? 0).toDouble(),
@@ -423,18 +514,25 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
 
   @override
   void onFillGradientRectangleintintintintboolean(
-      VGCFillGradientRectangleintintintintboolean opArgs) {
-    final rect =
-        _getRectFromArgs(opArgs.x, opArgs.y, opArgs.width, opArgs.height);
+    VGCFillGradientRectangleintintintintboolean opArgs,
+  ) {
+    final rect = _getRectFromArgs(
+      opArgs.x,
+      opArgs.y,
+      opArgs.width,
+      opArgs.height,
+    );
 
     final vertical = opArgs.vertical ?? false;
     final fromColor = applyAlpha(fg);
     final toColor = applyAlpha(bg);
 
-    setState(() => shapes = [
-          ...shapes,
-          GradientRectShape(rect, fromColor, toColor, vertical, clipping)
-        ]);
+    setState(
+      () => shapes = [
+        ...shapes,
+        GradientRectShape(rect, fromColor, toColor, vertical, clipping),
+      ],
+    );
   }
 
   @override
@@ -470,7 +568,8 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
 
   @override
   void onFillRoundRectangleintintintintintint(
-      VGCFillRoundRectangleintintintintintint opArgs) {
+    VGCFillRoundRectangleintintintintintint opArgs,
+  ) {
     _addRoundRectShape(
       x: opArgs.x ?? 0,
       y: opArgs.y ?? 0,
@@ -484,9 +583,14 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
 
   @override
   void onCopyAreaintintintintintintboolean(
-      VGCCopyAreaintintintintintintboolean opArgs) {
-    final srcRect =
-        _getRectFromArgs(opArgs.srcX, opArgs.srcY, opArgs.width, opArgs.height);
+    VGCCopyAreaintintintintintintboolean opArgs,
+  ) {
+    final srcRect = _getRectFromArgs(
+      opArgs.srcX,
+      opArgs.srcY,
+      opArgs.width,
+      opArgs.height,
+    );
     final destOffset = Offset(
       (opArgs.destX ?? 0) - (opArgs.srcX ?? 0).toDouble(),
       (opArgs.destY ?? 0) - (opArgs.srcY ?? 0).toDouble(),
@@ -501,16 +605,18 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   Rect _getRectFromArgs(int? x, int? y, int? w, int? h) => Rect.fromLTWH(
-      (x ?? 0).toDouble(),
-      (y ?? 0).toDouble(),
-      (w ?? 0).toDouble(),
-      (h ?? 0).toDouble());
+    (x ?? 0).toDouble(),
+    (y ?? 0).toDouble(),
+    (w ?? 0).toDouble(),
+    (h ?? 0).toDouble(),
+  );
 
   bool _shapeIntersects(Shape shape, Rect area) {
     return switch (shape) {
-      LineShape s => area.contains(s.p1) ||
-          area.contains(s.p2) ||
-          area.overlaps(Rect.fromPoints(s.p1, s.p2)),
+      LineShape s =>
+        area.contains(s.p1) ||
+            area.contains(s.p2) ||
+            area.overlaps(Rect.fromPoints(s.p1, s.p2)),
       RectShape s => s.rect.overlaps(area),
       OvalShape s => s.rect.overlaps(area),
       ArcShape s => s.rect.overlaps(area),
@@ -520,8 +626,16 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
       TextShape s => area.contains(s.off),
       PointShape s => area.contains(s.point),
       PolygonShape s =>
-        s.points.indexed.where((e) => e.$1 % 2 == 0).any((e) => area.contains(
-            Offset(s.points[e.$1].toDouble(), s.points[e.$1 + 1].toDouble()))),
+        s.points.indexed
+            .where((e) => e.$1 % 2 == 0)
+            .any(
+              (e) => area.contains(
+                Offset(
+                  s.points[e.$1].toDouble(),
+                  s.points[e.$1 + 1].toDouble(),
+                ),
+              ),
+            ),
       ImageShape s => s.destRect.overlaps(area),
       _ => true,
     };
@@ -531,46 +645,87 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     final clipArea = srcArea.translate(offset.dx, offset.dy);
 
     return switch (shape) {
-      LineShape s => LineShape(s.p1 + offset, s.p2 + offset, s.color,
-          s.strokeWidth, s.lineCap, s.lineJoin, clipArea),
-      RectShape s => RectShape(s.rect.translate(offset.dx, offset.dy), s.color,
-          s.strokeWidth, s.lineCap, s.lineJoin,
-          isFilled: s.isFilled, clipRect: clipArea),
+      LineShape s => LineShape(
+        s.p1 + offset,
+        s.p2 + offset,
+        s.color,
+        s.strokeWidth,
+        s.lineCap,
+        s.lineJoin,
+        clipArea,
+      ),
+      RectShape s => RectShape(
+        s.rect.translate(offset.dx, offset.dy),
+        s.color,
+        s.strokeWidth,
+        s.lineCap,
+        s.lineJoin,
+        isFilled: s.isFilled,
+        clipRect: clipArea,
+      ),
       OvalShape s => OvalShape(
-          s.rect.translate(offset.dx, offset.dy), s.color, s.strokeWidth,
-          isFilled: s.isFilled, clipRect: clipArea),
+        s.rect.translate(offset.dx, offset.dy),
+        s.color,
+        s.strokeWidth,
+        isFilled: s.isFilled,
+        clipRect: clipArea,
+      ),
       TextShape s => TextShape(s.text, s.off + offset, s.style, clipArea),
       PointShape s => PointShape(s.point + offset, s.color, clipArea),
-      PolygonShape s => PolygonShape(_translatePoints(s.points, offset),
-          s.color, s.strokeWidth, s.lineCap, s.lineJoin,
-          isFilled: s.isFilled, clipRect: clipArea),
+      PolygonShape s => PolygonShape(
+        _translatePoints(s.points, offset),
+        s.color,
+        s.strokeWidth,
+        s.lineCap,
+        s.lineJoin,
+        isFilled: s.isFilled,
+        clipRect: clipArea,
+      ),
       ArcShape s => ArcShape(
-          s.rect.translate(offset.dx, offset.dy),
-          s.startAngle,
-          s.sweepAngle,
-          s.color,
-          s.strokeWidth,
-          s.lineCap,
-          s.lineJoin,
-          isFilled: s.isFilled,
-          clipRect: clipArea),
-      RoundRectShape s => RoundRectShape(s.rect.translate(offset.dx, offset.dy),
-          s.radiusX, s.radiusY, s.color, s.strokeWidth, s.lineCap, s.lineJoin,
-          isFilled: s.isFilled, clipRect: clipArea),
+        s.rect.translate(offset.dx, offset.dy),
+        s.startAngle,
+        s.sweepAngle,
+        s.color,
+        s.strokeWidth,
+        s.lineCap,
+        s.lineJoin,
+        isFilled: s.isFilled,
+        clipRect: clipArea,
+      ),
+      RoundRectShape s => RoundRectShape(
+        s.rect.translate(offset.dx, offset.dy),
+        s.radiusX,
+        s.radiusY,
+        s.color,
+        s.strokeWidth,
+        s.lineCap,
+        s.lineJoin,
+        isFilled: s.isFilled,
+        clipRect: clipArea,
+      ),
       GradientRectShape s => GradientRectShape(
-          s.rect.translate(offset.dx, offset.dy),
-          s.fromColor,
-          s.toColor,
-          s.vertical,
-          clipArea),
+        s.rect.translate(offset.dx, offset.dy),
+        s.fromColor,
+        s.toColor,
+        s.vertical,
+        clipArea,
+      ),
       FocusRectShape s => FocusRectShape(
-          s.rect.translate(offset.dx, offset.dy), s.color, clipArea),
+        s.rect.translate(offset.dx, offset.dy),
+        s.color,
+        clipArea,
+      ),
       ImageShape s when s.type == ImageType.raster => ImageShape.raster(
-          s.image!, s.srcRect!, s.destRect.translate(offset.dx, offset.dy),
-          clipRect: clipArea),
+        s.image!,
+        s.srcRect!,
+        s.destRect.translate(offset.dx, offset.dy),
+        clipRect: clipArea,
+      ),
       ImageShape s when s.type == ImageType.svg => ImageShape.svg(
-          s.pictureInfo!, s.destRect.translate(offset.dx, offset.dy),
-          clipRect: clipArea),
+        s.pictureInfo!,
+        s.destRect.translate(offset.dx, offset.dy),
+        clipRect: clipArea,
+      ),
       _ => shape,
     };
   }
@@ -588,14 +743,18 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   void onCopyAreaImageintint(VGCCopyAreaImageintint opArgs) async {
     if (opArgs.image == null) return;
     final ui.Image gcImage = await _renderShapesToUiImage(shapes, bounds);
-    final ui.Image? destImage =
-        await ImageUtils.decodeVImageToUIImage(opArgs.image!);
+    final ui.Image? destImage = await ImageUtils.decodeVImageToUIImage(
+      opArgs.image!,
+    );
     if (destImage == null || !mounted) return;
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
     canvas.drawImage(destImage, Offset.zero, Paint());
     canvas.drawImage(
-        gcImage, Offset(opArgs.x.toDouble(), opArgs.y.toDouble()), Paint());
+      gcImage,
+      Offset(opArgs.x.toDouble(), opArgs.y.toDouble()),
+      Paint(),
+    );
     final picture = recorder.endRecording();
     final ui.Image c = await picture.toImage(destImage.width, destImage.height);
     //todo image must be returned to java or replace the original java image with c
@@ -632,7 +791,8 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
 
   @override
   void onDrawImageImageintintintintintintintint(
-      VGCDrawImageImageintintintintintintintint opArgs) {
+    VGCDrawImageImageintintintintintintintint opArgs,
+  ) {
     _drawImage(
       image: opArgs.image,
       srcX: opArgs.srcX,
@@ -647,11 +807,15 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   void _processImageImageAsync(
-      VImage vImage,
-      VGCDrawImageImageintintintintintintintint opArgs,
-      Rect? capturedClipping) async {
-    final imageShape =
-        await ImageShape.fromVImageDetailed(vImage, opArgs, capturedClipping);
+    VImage vImage,
+    VGCDrawImageImageintintintintintintintint opArgs,
+    Rect? capturedClipping,
+  ) async {
+    final imageShape = await ImageShape.fromVImageDetailed(
+      vImage,
+      opArgs,
+      capturedClipping,
+    );
     if (mounted) {
       setState(() => shapes = [...shapes, imageShape]);
     }
@@ -661,10 +825,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
 
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = Color(0xFFFFFFFF),
-    );
+    canvas.drawRect(Offset.zero & size, Paint()..color = Color(0xFFFFFFFF));
 
     for (final shape in shapes) {
       shape.draw(canvas);
@@ -676,11 +837,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
 
   @override
   void onDrawImageImageintint(VGCDrawImageImageintint opArgs) {
-    _drawImage(
-      image: opArgs.image,
-      destX: opArgs.x,
-      destY: opArgs.y,
-    );
+    _drawImage(image: opArgs.image, destX: opArgs.x, destY: opArgs.y);
   }
 
   @override
@@ -755,7 +912,7 @@ abstract class Shape {
   @override
   String toString();
 
-// Each shape can have an associated clip
+  // Each shape can have an associated clip
   Rect? get clipRect => null;
 }
 
@@ -792,9 +949,15 @@ class TextShape extends Shape {
 }
 
 class LineShape extends Shape {
-  LineShape(this.p1, this.p2, this.color, this.strokeWidth, this.lineCap,
-      this.lineJoin,
-      [this.clipRect]);
+  LineShape(
+    this.p1,
+    this.p2,
+    this.color,
+    this.strokeWidth,
+    this.lineCap,
+    this.lineJoin, [
+    this.clipRect,
+  ]);
 
   final Offset p1, p2;
   final Color color;
@@ -812,13 +975,14 @@ class LineShape extends Shape {
     }
 
     c.drawLine(
-        p1,
-        p2,
-        Paint()
-          ..color = color
-          ..strokeWidth = strokeWidth
-          ..strokeCap = getStrokeCap(lineCap)
-          ..strokeJoin = getStrokeJoin(lineJoin));
+      p1,
+      p2,
+      Paint()
+        ..color = color
+        ..strokeWidth = strokeWidth
+        ..strokeCap = getStrokeCap(lineCap)
+        ..strokeJoin = getStrokeJoin(lineJoin),
+    );
 
     if (clipRect != null) {
       c.restore();
@@ -831,8 +995,13 @@ class LineShape extends Shape {
 }
 
 class OvalShape extends Shape {
-  OvalShape(this.rect, this.color, this.strokeWidth,
-      {this.isFilled = false, this.clipRect});
+  OvalShape(
+    this.rect,
+    this.color,
+    this.strokeWidth, {
+    this.isFilled = false,
+    this.clipRect,
+  });
 
   final Rect rect;
   final Color color;
@@ -849,11 +1018,12 @@ class OvalShape extends Shape {
     }
 
     c.drawOval(
-        rect,
-        Paint()
-          ..color = color
-          ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
-          ..strokeWidth = strokeWidth);
+      rect,
+      Paint()
+        ..color = color
+        ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
+        ..strokeWidth = strokeWidth,
+    );
 
     if (clipRect != null) {
       c.restore();
@@ -867,8 +1037,14 @@ class OvalShape extends Shape {
 
 class RectShape extends Shape {
   RectShape(
-      this.rect, this.color, this.strokeWidth, this.lineCap, this.lineJoin,
-      {this.isFilled = false, this.clipRect});
+    this.rect,
+    this.color,
+    this.strokeWidth,
+    this.lineCap,
+    this.lineJoin, {
+    this.isFilled = false,
+    this.clipRect,
+  });
 
   final Rect rect;
   final Color color;
@@ -911,8 +1087,13 @@ class RectShape extends Shape {
 }
 
 class GradientRectShape extends Shape {
-  GradientRectShape(this.rect, this.fromColor, this.toColor, this.vertical,
-      [this.clipRect]);
+  GradientRectShape(
+    this.rect,
+    this.fromColor,
+    this.toColor,
+    this.vertical, [
+    this.clipRect,
+  ]);
 
   final Rect rect;
   final Color fromColor;
@@ -955,8 +1136,14 @@ class GradientRectShape extends Shape {
 
 class PolygonShape extends Shape {
   PolygonShape(
-      this.points, this.color, this.strokeWidth, this.lineCap, this.lineJoin,
-      {this.isFilled = false, this.clipRect});
+    this.points,
+    this.color,
+    this.strokeWidth,
+    this.lineCap,
+    this.lineJoin, {
+    this.isFilled = false,
+    this.clipRect,
+  });
 
   final List<int> points;
   final Color color;
@@ -1005,8 +1192,14 @@ class PolygonShape extends Shape {
 
 class PolylineShape extends Shape {
   PolylineShape(
-      this.points, this.color, this.strokeWidth, this.lineCap, this.lineJoin,
-      {this.isFilled = false, this.clipRect});
+    this.points,
+    this.color,
+    this.strokeWidth,
+    this.lineCap,
+    this.lineJoin, {
+    this.isFilled = false,
+    this.clipRect,
+  });
 
   final List<int> points;
   final Color color;
@@ -1053,9 +1246,17 @@ class PolylineShape extends Shape {
 }
 
 class ArcShape extends Shape {
-  ArcShape(this.rect, this.startAngle, this.sweepAngle, this.color,
-      this.strokeWidth, this.lineCap, this.lineJoin,
-      {this.isFilled = false, this.clipRect});
+  ArcShape(
+    this.rect,
+    this.startAngle,
+    this.sweepAngle,
+    this.color,
+    this.strokeWidth,
+    this.lineCap,
+    this.lineJoin, {
+    this.isFilled = false,
+    this.clipRect,
+  });
 
   final Rect rect;
   final double startAngle;
@@ -1110,9 +1311,17 @@ class ArcShape extends Shape {
 }
 
 class RoundRectShape extends Shape {
-  RoundRectShape(this.rect, this.radiusX, this.radiusY, this.color,
-      this.strokeWidth, this.lineCap, this.lineJoin,
-      {this.isFilled = false, this.clipRect});
+  RoundRectShape(
+    this.rect,
+    this.radiusX,
+    this.radiusY,
+    this.color,
+    this.strokeWidth,
+    this.lineCap,
+    this.lineJoin, {
+    this.isFilled = false,
+    this.clipRect,
+  });
 
   final Rect rect;
   final double radiusX;
@@ -1141,13 +1350,14 @@ class RoundRectShape extends Shape {
     );
 
     c.drawRRect(
-        rrect,
-        Paint()
-          ..color = color
-          ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
-          ..strokeWidth = strokeWidth
-          ..strokeCap = getStrokeCap(lineCap)
-          ..strokeJoin = getStrokeJoin(lineJoin));
+      rrect,
+      Paint()
+        ..color = color
+        ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = getStrokeCap(lineCap)
+        ..strokeJoin = getStrokeJoin(lineJoin),
+    );
 
     if (clipRect != null) {
       c.restore();
@@ -1175,10 +1385,11 @@ class PointShape extends Shape {
     }
 
     c.drawRect(
-        Rect.fromLTWH(point.dx, point.dy, 1, 1),
-        Paint()
-          ..color = color
-          ..style = PaintingStyle.fill);
+      Rect.fromLTWH(point.dx, point.dy, 1, 1),
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.fill,
+    );
 
     if (clipRect != null) {
       c.restore();
@@ -1211,13 +1422,25 @@ class FocusRectShape extends Shape {
 
     final Path path = Path();
     _addDottedLine(
-        path, Offset(rect.left, rect.top), Offset(rect.right, rect.top));
+      path,
+      Offset(rect.left, rect.top),
+      Offset(rect.right, rect.top),
+    );
     _addDottedLine(
-        path, Offset(rect.right, rect.top), Offset(rect.right, rect.bottom));
+      path,
+      Offset(rect.right, rect.top),
+      Offset(rect.right, rect.bottom),
+    );
     _addDottedLine(
-        path, Offset(rect.right, rect.bottom), Offset(rect.left, rect.bottom));
+      path,
+      Offset(rect.right, rect.bottom),
+      Offset(rect.left, rect.bottom),
+    );
     _addDottedLine(
-        path, Offset(rect.left, rect.bottom), Offset(rect.left, rect.top));
+      path,
+      Offset(rect.left, rect.bottom),
+      Offset(rect.left, rect.top),
+    );
 
     c.drawPath(path, paint);
 
@@ -1272,8 +1495,12 @@ class ImageShape extends Shape {
     this.clipRect,
   });
 
-  factory ImageShape.raster(ui.Image image, Rect srcRect, Rect destRect,
-      {Rect? clipRect}) {
+  factory ImageShape.raster(
+    ui.Image image,
+    Rect srcRect,
+    Rect destRect, {
+    Rect? clipRect,
+  }) {
     return ImageShape._(
       type: ImageType.raster,
       image: image,
@@ -1283,8 +1510,11 @@ class ImageShape extends Shape {
     );
   }
 
-  factory ImageShape.svg(PictureInfo pictureInfo, Rect destRect,
-      {Rect? clipRect}) {
+  factory ImageShape.svg(
+    PictureInfo pictureInfo,
+    Rect destRect, {
+    Rect? clipRect,
+  }) {
     return ImageShape._(
       type: ImageType.svg,
       pictureInfo: pictureInfo,
@@ -1293,16 +1523,21 @@ class ImageShape extends Shape {
     );
   }
 
-  static Future<ImageShape> fromVImageDetailed(VImage vImage,
-      VGCDrawImageImageintintintintintintintint opArgs, Rect? clipRect) async {
+  static Future<ImageShape> fromVImageDetailed(
+    VImage vImage,
+    VGCDrawImageImageintintintintintintintint opArgs,
+    Rect? clipRect,
+  ) async {
     Object? replacement;
     if (vImage.filename != null && vImage.filename!.isNotEmpty) {
       replacement = await AssetsManager.loadReplacement(vImage.filename!);
     }
 
     if (replacement is String) {
-      final pictureInfo =
-          await vg.loadPicture(SvgStringLoader(replacement), null);
+      final pictureInfo = await vg.loadPicture(
+        SvgStringLoader(replacement),
+        null,
+      );
       final destRect = Rect.fromLTWH(
         (opArgs.destX ?? 0).toDouble(),
         (opArgs.destY ?? 0).toDouble(),
@@ -1316,7 +1551,8 @@ class ImageShape extends Shape {
       return ImageShape.svg(pictureInfo, destRect, clipRect: clipRect);
     }
 
-    ui.Image? uiImage = replacement as ui.Image? ??
+    ui.Image? uiImage =
+        replacement as ui.Image? ??
         await ImageUtils.decodeVImageToUIImage(vImage);
     if (uiImage == null) throw Exception('Failed to load image');
 
@@ -1333,7 +1569,11 @@ class ImageShape extends Shape {
 
     final srcRect = replacement != null
         ? Rect.fromLTWH(
-            0, 0, uiImage.width.toDouble(), uiImage.height.toDouble())
+            0,
+            0,
+            uiImage.width.toDouble(),
+            uiImage.height.toDouble(),
+          )
         : Rect.fromLTWH(
             (opArgs.srcX ?? 0).toDouble(),
             (opArgs.srcY ?? 0).toDouble(),
@@ -1349,24 +1589,36 @@ class ImageShape extends Shape {
   }
 
   static Future<ui.Image> _scaleImage(
-      ui.Image image, int targetWidth, int targetHeight) async {
+    ui.Image image,
+    int targetWidth,
+    int targetHeight,
+  ) async {
     if (image.width == targetWidth && image.height == targetHeight) {
       return image;
     }
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
-    final srcRect =
-        Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble());
-    final destRect =
-        Rect.fromLTWH(0, 0, targetWidth.toDouble(), targetHeight.toDouble());
+    final srcRect = Rect.fromLTWH(
+      0,
+      0,
+      image.width.toDouble(),
+      image.height.toDouble(),
+    );
+    final destRect = Rect.fromLTWH(
+      0,
+      0,
+      targetWidth.toDouble(),
+      targetHeight.toDouble(),
+    );
 
     canvas.drawImageRect(
-        image,
-        srcRect,
-        destRect,
-        Paint()
-          ..filterQuality = FilterQuality.high
-          ..isAntiAlias = true);
+      image,
+      srcRect,
+      destRect,
+      Paint()
+        ..filterQuality = FilterQuality.high
+        ..isAntiAlias = true,
+    );
 
     final picture = recorder.endRecording();
     return picture.toImage(targetWidth, targetHeight);

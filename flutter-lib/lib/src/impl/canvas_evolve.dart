@@ -25,7 +25,8 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   CanvasThemeExtension get _theme =>
       Theme.of(context).extension<CanvasThemeExtension>()!;
 
-  Color get bg => colorFromVColor(state.background, defaultColor: _theme.backgroundColor);
+  Color get bg =>
+      colorFromVColor(state.background, defaultColor: _theme.backgroundColor);
   Color get fg => _theme.foregroundColor;
   Color gcBg = Colors.transparent;
 
@@ -63,10 +64,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
 
     Widget content;
     if (hasValidBounds && constraints != null) {
-      content = ConstrainedBox(
-        constraints: constraints,
-        child: child,
-      );
+      content = ConstrainedBox(constraints: constraints, child: child);
     } else {
       content = SizedBox(
         width: widgetTheme.defaultWidth,
@@ -90,17 +88,19 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   Size getBounds() {
     if (hasBounds(state.bounds)) {
       return Size(
-          state.bounds!.width.toDouble(), state.bounds!.height.toDouble());
+        state.bounds!.width.toDouble(),
+        state.bounds!.height.toDouble(),
+      );
     }
     return Size(_theme.defaultWidth, _theme.defaultHeight);
   }
 
   Color rgbMapToColor(Map<String, dynamic> m) => Color.fromARGB(
-        (m['alpha'] ?? 255) as int,
-        (m['red'] ?? 0) as int,
-        (m['green'] ?? 0) as int,
-        (m['blue'] ?? 0) as int,
-      );
+    (m['alpha'] ?? 255) as int,
+    (m['red'] ?? 0) as int,
+    (m['green'] ?? 0) as int,
+    (m['blue'] ?? 0) as int,
+  );
 }
 
 /* ─────────────── ScenePainter ─────────────── */

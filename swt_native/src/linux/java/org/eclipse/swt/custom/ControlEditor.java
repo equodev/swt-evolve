@@ -18,6 +18,7 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  * A ControlEditor is a manager for a Control that appears above a composite and tracks with the
@@ -114,7 +115,7 @@ public class ControlEditor {
      */
     public ControlEditor(Composite parent) {
         this((IControlEditor) null);
-        setImpl(new SwtControlEditor(parent, this));
+        setImpl(Config.isEquo(ControlEditor.class, parent) ? new DartControlEditor(parent, this) : new SwtControlEditor(parent, this));
     }
 
     /**

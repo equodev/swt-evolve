@@ -85,7 +85,9 @@ class _StyledGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasValidBounds = hasBounds;
-    final constraints = hasValidBounds ? getConstraintsFromBounds(composite.bounds) : null;
+    final constraints = hasValidBounds
+        ? getConstraintsFromBounds(composite.bounds)
+        : null;
 
     final backgroundColor = getBackgroundColor(
       background: composite.background,
@@ -97,11 +99,11 @@ class _StyledGroup extends StatelessWidget {
       defaultColor: widgetTheme.foregroundColor,
     );
     final textStyle = getTextStyle(
-    context: context,
-    font: vFont,
-    textColor: foregroundColor,
-    baseTextStyle: widgetTheme.textStyle,
-  );
+      context: context,
+      font: vFont,
+      textColor: foregroundColor,
+      baseTextStyle: widgetTheme.textStyle,
+    );
 
     return Container(
       constraints: constraints,
@@ -109,7 +111,10 @@ class _StyledGroup extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: backgroundColor,
-          border: Border.all(color: borderColor, width: widgetTheme.borderWidth),
+          border: Border.all(
+            color: borderColor,
+            width: widgetTheme.borderWidth,
+          ),
           borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
         ),
         child: Column(
@@ -119,13 +124,10 @@ class _StyledGroup extends StatelessWidget {
             if (text.isNotEmpty)
               Padding(
                 padding: widgetTheme.padding,
-                child: Text(
-                  text,
-                  style: textStyle,
-                ),
+                child: Text(text, style: textStyle),
               ),
             if (children != null)
-              NoLayout(children: children!, composite: composite)
+              NoLayout(children: children!, composite: composite),
           ],
         ),
       ),

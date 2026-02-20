@@ -13,7 +13,6 @@ import 'color_utils.dart';
 
 class SashFormImpl<T extends SashFormSwt, V extends VSashForm>
     extends CompositeImpl<T, V> {
-
   @override
   Widget build(BuildContext context) {
     final children = state.children;
@@ -112,7 +111,10 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
       _initializePanelSizes();
     } else if (oldWidget.weights != widget.weights && !_isInLocalEditMode) {
       final currentWeightsRounded = _panelSizes.map((f) => f.round()).toList();
-      final weightsChanged = !_listsEqual(currentWeightsRounded, widget.weights);
+      final weightsChanged = !_listsEqual(
+        currentWeightsRounded,
+        widget.weights,
+      );
       if (weightsChanged) {
         _initializePanelSizes();
       }
@@ -175,7 +177,8 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
   Widget _buildHorizontalLayout(BoxConstraints constraints) {
     final totalWidth = constraints.maxWidth;
     final totalHeight = constraints.maxHeight;
-    final availableWidth = totalWidth - (widget.sashWidth * (widget.children.length - 1));
+    final availableWidth =
+        totalWidth - (widget.sashWidth * (widget.children.length - 1));
 
     final panelWidths = _calculatePanelSizes(availableWidth);
 
@@ -196,21 +199,21 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
       currentX += panelWidths[i];
 
       if (i < widget.children.length - 1) {
-        stackChildren.add(_buildSash(i, false, currentX, totalHeight, constraints));
+        stackChildren.add(
+          _buildSash(i, false, currentX, totalHeight, constraints),
+        );
         currentX += widget.sashWidth;
       }
     }
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: stackChildren,
-    );
+    return Stack(clipBehavior: Clip.none, children: stackChildren);
   }
 
   Widget _buildVerticalLayout(BoxConstraints constraints) {
     final totalWidth = constraints.maxWidth;
     final totalHeight = constraints.maxHeight;
-    final availableHeight = totalHeight - (widget.sashWidth * (widget.children.length - 1));
+    final availableHeight =
+        totalHeight - (widget.sashWidth * (widget.children.length - 1));
 
     final panelHeights = _calculatePanelSizes(availableHeight);
 
@@ -231,15 +234,14 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
       currentY += panelHeights[i];
 
       if (i < widget.children.length - 1) {
-        stackChildren.add(_buildSash(i, true, currentY, totalWidth, constraints));
+        stackChildren.add(
+          _buildSash(i, true, currentY, totalWidth, constraints),
+        );
         currentY += widget.sashWidth;
       }
     }
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: stackChildren,
-    );
+    return Stack(clipBehavior: Clip.none, children: stackChildren);
   }
 
   List<double> _calculatePanelSizes(double availableSpace) {
@@ -254,7 +256,13 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
     }).toList();
   }
 
-  Widget _buildSash(int index, bool isVertical, double position, double crossAxisSize, BoxConstraints constraints) {
+  Widget _buildSash(
+    int index,
+    bool isVertical,
+    double position,
+    double crossAxisSize,
+    BoxConstraints constraints,
+  ) {
     final theme = widget.sashTheme;
     final sashColor = theme.sashColor;
     final sashColorHover = theme.sashHoverColor;
@@ -281,7 +289,8 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
       },
       child: GestureDetector(
         onPanStart: (details) => _onSashDragStart(index, details, isVertical),
-        onPanUpdate: (details) => _onSashDragUpdate(details, isVertical, constraints),
+        onPanUpdate: (details) =>
+            _onSashDragUpdate(details, isVertical, constraints),
         onPanEnd: (_) => _onSashDragEnd(),
         child: Container(
           width: isVertical ? crossAxisSize : hitAreaSize,
@@ -319,7 +328,11 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
     }
   }
 
-  void _onSashDragStart(int sashIndex, DragStartDetails details, bool isVertical) {
+  void _onSashDragStart(
+    int sashIndex,
+    DragStartDetails details,
+    bool isVertical,
+  ) {
     print('SashForm: Drag start on sash $sashIndex');
 
     final totalSize = isVertical
@@ -331,14 +344,17 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
     if (availableSpace <= 0) return;
 
     final totalWeight = _panelSizes.reduce((a, b) => a + b);
-    final currentGlobalPosition = isVertical ? details.globalPosition.dy : details.globalPosition.dx;
+    final currentGlobalPosition = isVertical
+        ? details.globalPosition.dy
+        : details.globalPosition.dx;
 
     double currentPixelPosition = 0;
     for (int i = 0; i < sashIndex; i++) {
       currentPixelPosition += (_panelSizes[i] / totalWeight) * availableSpace;
       currentPixelPosition += widget.sashWidth;
     }
-    currentPixelPosition += (_panelSizes[sashIndex] / totalWeight) * availableSpace;
+    currentPixelPosition +=
+        (_panelSizes[sashIndex] / totalWeight) * availableSpace;
 
     setState(() {
       _draggingSashIndex = sashIndex;
@@ -347,7 +363,11 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
     });
   }
 
-  void _onSashDragUpdate(DragUpdateDetails details, bool isVertical, BoxConstraints constraints) {
+  void _onSashDragUpdate(
+    DragUpdateDetails details,
+    bool isVertical,
+    BoxConstraints constraints,
+  ) {
     if (_draggingSashIndex == null || !_isInLocalEditMode) return;
 
     if (_isDragPaused) return;
@@ -360,8 +380,11 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
 
     final totalWeight = _panelSizes.reduce((a, b) => a + b);
 
-    final currentGlobalPosition = isVertical ? details.globalPosition.dy : details.globalPosition.dx;
-    final targetPixelPosition = currentGlobalPosition - _dragStartGlobalPosition;
+    final currentGlobalPosition = isVertical
+        ? details.globalPosition.dy
+        : details.globalPosition.dx;
+    final targetPixelPosition =
+        currentGlobalPosition - _dragStartGlobalPosition;
 
     double leftPixelPosition = 0;
     for (int i = 0; i < _draggingSashIndex!; i++) {
@@ -370,8 +393,11 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
     }
 
     final newLeftPixelSize = targetPixelPosition - leftPixelPosition;
-    final newRightPixelSize = availableSpace - leftPixelPosition - newLeftPixelSize -
-                              (widget.sashWidth * (widget.children.length - _draggingSashIndex! - 1));
+    final newRightPixelSize =
+        availableSpace -
+        leftPixelPosition -
+        newLeftPixelSize -
+        (widget.sashWidth * (widget.children.length - _draggingSashIndex! - 1));
 
     double otherPanelsSize = 0;
     for (int i = 0; i < widget.children.length; i++) {
@@ -381,8 +407,14 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
     }
 
     final weightPerPixel = totalWeight / availableSpace;
-    final newLeftSize = (newLeftPixelSize * weightPerPixel).clamp(0.1, totalWeight - otherPanelsSize - 0.1);
-    final newRightSize = (totalWeight - otherPanelsSize - newLeftSize).clamp(0.1, totalWeight - otherPanelsSize - 0.1);
+    final newLeftSize = (newLeftPixelSize * weightPerPixel).clamp(
+      0.1,
+      totalWeight - otherPanelsSize - 0.1,
+    );
+    final newRightSize = (totalWeight - otherPanelsSize - newLeftSize).clamp(
+      0.1,
+      totalWeight - otherPanelsSize - 0.1,
+    );
 
     setState(() {
       if (newLeftSize > 0.1 && newRightSize > 0.1) {

@@ -12,20 +12,28 @@ class ProgressBarImpl<T extends ProgressBarSwt, V extends VProgressBar>
     extends ControlImpl<T, V> {
   @override
   Widget build(BuildContext context) {
-    final widgetTheme = Theme.of(context).extension<ProgressBarThemeExtension>()!;
-    
+    final widgetTheme = Theme.of(
+      context,
+    ).extension<ProgressBarThemeExtension>()!;
+
     state.minimum ??= 0;
     state.maximum ??= 100;
     state.selection ??= 0;
 
-    final currentValue = state.selection!.clamp(state.minimum!, state.maximum!).toDouble();
+    final currentValue = state.selection!
+        .clamp(state.minimum!, state.maximum!)
+        .toDouble();
 
     final range = (state.maximum! - state.minimum!).toDouble();
     final progress = range > 0 ? (currentValue - state.minimum!) / range : 0.0;
 
     final hasConstraints = hasBounds(state.bounds);
-    final width = hasConstraints ? state.bounds!.width.toDouble() : widgetTheme.defaultWidth;
-    final height = hasConstraints ? state.bounds!.height.toDouble() : widgetTheme.defaultHeight;
+    final width = hasConstraints
+        ? state.bounds!.width.toDouble()
+        : widgetTheme.defaultWidth;
+    final height = hasConstraints
+        ? state.bounds!.height.toDouble()
+        : widgetTheme.defaultHeight;
 
     final styleBits = StyleBits(state.style);
     final isVertical = styleBits.has(SWT.VERTICAL);
@@ -72,7 +80,7 @@ class _StyledProgressBar extends StatefulWidget {
 class _StyledProgressBarState extends State<_StyledProgressBar>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  int _currentCycle = 0; 
+  int _currentCycle = 0;
 
   @override
   void initState() {
@@ -90,7 +98,7 @@ class _StyledProgressBarState extends State<_StyledProgressBar>
 
   void _onAnimationStatus(AnimationStatus status) {
     if (status == AnimationStatus.completed) {
-      _currentCycle = (_currentCycle + 1) % 2; 
+      _currentCycle = (_currentCycle + 1) % 2;
       _animationController.forward(from: 0.0);
     }
   }
@@ -99,7 +107,8 @@ class _StyledProgressBarState extends State<_StyledProgressBar>
   void didUpdateWidget(_StyledProgressBar oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (oldWidget.widgetTheme.indeterminateDuration != widget.widgetTheme.indeterminateDuration) {
+    if (oldWidget.widgetTheme.indeterminateDuration !=
+        widget.widgetTheme.indeterminateDuration) {
       _animationController.duration = widget.widgetTheme.indeterminateDuration;
     }
 
@@ -123,7 +132,7 @@ class _StyledProgressBarState extends State<_StyledProgressBar>
   @override
   Widget build(BuildContext context) {
     final theme = widget.widgetTheme;
-    
+
     final progressBar = Container(
       width: widget.isVertical ? widget.width : widget.width,
       height: widget.isVertical ? widget.height : widget.height,
@@ -133,7 +142,9 @@ class _StyledProgressBarState extends State<_StyledProgressBar>
         borderRadius: BorderRadius.circular(theme.borderRadius),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(theme.borderRadius - theme.borderWidth),
+        borderRadius: BorderRadius.circular(
+          theme.borderRadius - theme.borderWidth,
+        ),
         child: widget.isIndeterminate
             ? _buildIndeterminateProgress()
             : _buildDeterminateProgress(),
@@ -156,8 +167,8 @@ class _StyledProgressBarState extends State<_StyledProgressBar>
 
   Widget _buildDeterminateProgress() {
     final theme = widget.widgetTheme;
-    final progressColor = widget.enabled 
-        ? theme.progressColor 
+    final progressColor = widget.enabled
+        ? theme.progressColor
         : theme.disabledProgressColor;
 
     return Align(
@@ -168,7 +179,9 @@ class _StyledProgressBarState extends State<_StyledProgressBar>
         child: Container(
           decoration: BoxDecoration(
             color: progressColor,
-            borderRadius: BorderRadius.circular(theme.borderRadius - theme.borderWidth),
+            borderRadius: BorderRadius.circular(
+              theme.borderRadius - theme.borderWidth,
+            ),
           ),
         ),
       ),
@@ -177,7 +190,7 @@ class _StyledProgressBarState extends State<_StyledProgressBar>
 
   Widget _buildIndeterminateProgress() {
     final theme = widget.widgetTheme;
-    
+
     return AnimatedBuilder(
       animation: _animationController,
       builder: (context, child) {
@@ -210,14 +223,14 @@ class _IndeterminateProgressPainter extends CustomPainter {
   final Color color;
   final double borderRadius;
   final bool enableSizeAnimation;
-  final int cycleType; 
-  
+  final int cycleType;
+
   final double sizeStartA;
   final double sizeMidA;
   final double sizeEndA;
   final double speedFirstA;
   final double speedSecondA;
-  
+
   final double sizeStartB;
   final double sizeMidB;
   final double sizeEndB;
@@ -245,13 +258,13 @@ class _IndeterminateProgressPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final position = _calculatePosition(animationValue);
-    
+
     final sizeMultiplier = enableSizeAnimation
         ? _calculateSize(animationValue)
         : 1.0;
 
     final opacity = _calculateOpacity(animationValue);
-    
+
     if (opacity <= 0.0) return;
 
     final paint = Paint()
@@ -264,7 +277,10 @@ class _IndeterminateProgressPainter extends CustomPainter {
     final rect = Rect.fromLTWH(
       offset.clamp(0.0, size.width),
       0,
-      barWidth.clamp(0.0, (size.width - offset.clamp(0.0, size.width)).clamp(0.0, size.width)),
+      barWidth.clamp(
+        0.0,
+        (size.width - offset.clamp(0.0, size.width)).clamp(0.0, size.width),
+      ),
       size.height,
     );
 
@@ -278,12 +294,13 @@ class _IndeterminateProgressPainter extends CustomPainter {
     final params = cycleType == 0
         ? (speedFirst: speedFirstA, speedSecond: speedSecondA)
         : (speedFirst: speedFirstB, speedSecond: speedSecondB);
-    
+
     if (progress < 0.5) {
       return (progress * 2.0) * 0.5 * params.speedFirst;
     } else {
       final secondProgress = (progress - 0.5) * 2.0;
-      return (0.5 * params.speedFirst) + (secondProgress * 0.5 * params.speedSecond);
+      return (0.5 * params.speedFirst) +
+          (secondProgress * 0.5 * params.speedSecond);
     }
   }
 
@@ -291,7 +308,7 @@ class _IndeterminateProgressPainter extends CustomPainter {
     final params = cycleType == 0
         ? (start: sizeStartA, mid: sizeMidA, end: sizeEndA)
         : (start: sizeStartB, mid: sizeMidB, end: sizeEndB);
-    
+
     if (progress < 0.5) {
       final t = progress * 2.0;
       return params.start + (params.mid - params.start) * t;
