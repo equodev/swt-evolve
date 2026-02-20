@@ -938,22 +938,26 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public Color getBackground() {
-        checkWidget();
-        if (background != -1) {
+        if (background != -1 && _background != null)
             return _background;
-        }
         if (backgroundAlpha != 0) {
-            Control control = findBackgroundControl();
-            if (control == null)
-                control = this.getApi();
-            if (control != null && control != this.getApi()) {
-                return control.getBackground();
+            Control ctrl = findBackgroundControl();
+            if (ctrl == null)
+                ctrl = getApi();
+            if (ctrl != null && ctrl != getApi()) {
+                if (Display.getCurrent() != null)
+                    return ctrl.getBackground();
+                return SwtColor.win32_new(display, ctrl.getImpl().getBackgroundPixel(), backgroundAlpha);
             }
         }
-        if (parent != null && parent.getImpl() instanceof DartControl dartParent) {
-            return dartParent.getBackground();
+        if (parent != null) {
+            if (Display.getCurrent() != null)
+                return parent.getBackground();
+            return SwtColor.win32_new(display, parent.getImpl().getBackgroundPixel(), backgroundAlpha);
         }
-        return _background != null ? _background : GraphicsUtils.getDefaultBackground(display);
+        if (_background != null)
+            return _background;
+        return GraphicsUtils.getDefaultBackground(display);
     }
 
     /**

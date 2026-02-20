@@ -1,6 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
+
 import java.util.Arrays;
 
 public class TableHelper {

@@ -183,12 +183,15 @@ public class DartTableItem extends DartItem implements ITableItem {
      * @since 2.0
      */
     public Color getBackground() {
-        checkWidget();
         if (!((DartTable) parent.getImpl()).checkData(this.getApi(), true))
             error(SWT.ERROR_WIDGET_DISPOSED);
-        if (background == -1)
+        if (background != -1)
+            return SwtColor.win32_new(display, background);
+        if (parent == null)
+            return GraphicsUtils.getDefaultBackground(display);
+        if (Display.getCurrent() != null)
             return parent.getBackground();
-        return SwtColor.win32_new(display, background);
+        return SwtColor.win32_new(display, parent.getImpl().getBackgroundPixel(), 255);
     }
 
     /**
