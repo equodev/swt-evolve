@@ -177,10 +177,7 @@ class _TooltipContent extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: backgroundColor,
-            border: Border.all(
-              color: borderColor,
-              width: 1,
-            ),
+            border: Border.all(color: borderColor, width: 1),
             borderRadius: isBalloon
                 ? BorderRadius.circular(12)
                 : BorderRadius.circular(4),
@@ -197,11 +194,7 @@ class _TooltipContent extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (icon != null) ...[
-                Icon(
-                  icon,
-                  color: iconColor,
-                  size: 24,
-                ),
+                Icon(icon, color: iconColor, size: 24),
                 const SizedBox(width: 12),
               ],
               Flexible(
@@ -223,10 +216,7 @@ class _TooltipContent extends StatelessWidget {
                     if (displayMessage.isNotEmpty)
                       Text(
                         displayMessage,
-                        style: TextStyle(
-                          color: foregroundColor,
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: foregroundColor, fontSize: 12),
                         maxLines: 10,
                         overflow: TextOverflow.ellipsis,
                       ),

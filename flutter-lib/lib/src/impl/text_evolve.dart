@@ -63,9 +63,21 @@ class TextImpl<T extends TextSwt, V extends VText>
     final editable = state.editable ?? true;
     final hasValidBounds = hasBounds(state.bounds);
 
-    final textField = _buildTextField(context, widgetTheme, enabled, textAlign, isMultiLine, hasValidBounds);
+    final textField = _buildTextField(
+      context,
+      widgetTheme,
+      enabled,
+      textAlign,
+      isMultiLine,
+      hasValidBounds,
+    );
 
-    return _buildTextFieldWrapper(textField, widgetTheme, isMultiLine, hasValidBounds);
+    return _buildTextFieldWrapper(
+      textField,
+      widgetTheme,
+      isMultiLine,
+      hasValidBounds,
+    );
   }
 
   Widget _buildTextField(
@@ -101,8 +113,11 @@ class TextImpl<T extends TextSwt, V extends VText>
       focusNode: _focusNode,
       enabled: enabled,
       obscureText: hasStyle(state.style, SWT.PASSWORD),
-      readOnly: !(state.editable ?? true) || hasStyle(state.style, SWT.READ_ONLY),
-      maxLines: isMultiLine && !hasStyle(state.style, SWT.PASSWORD)? (shouldExpand ? null : null) : 1,
+      readOnly:
+          !(state.editable ?? true) || hasStyle(state.style, SWT.READ_ONLY),
+      maxLines: isMultiLine && !hasStyle(state.style, SWT.PASSWORD)
+          ? (shouldExpand ? null : null)
+          : 1,
       expands: shouldExpand,
       textAlign: textAlign,
       style: textStyle,
@@ -120,20 +135,14 @@ class TextImpl<T extends TextSwt, V extends VText>
     TextThemeExtension widgetTheme,
     bool isMultiLine,
     bool hasValidBounds,
-
   ) {
     final constraints = getConstraintsFromBounds(state.bounds);
 
     if (hasValidBounds && constraints != null) {
-      return ConstrainedBox(
-        constraints: constraints,
-        child: textField,
-      );
+      return ConstrainedBox(constraints: constraints, child: textField);
     }
 
-    return IntrinsicWidth(
-        child: textField,
-    );
+    return IntrinsicWidth(child: textField);
   }
 
   void _handleTextChanged(String value) {
@@ -185,4 +194,3 @@ class TextImpl<T extends TextSwt, V extends VText>
     super.dispose();
   }
 }
-

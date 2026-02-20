@@ -4,7 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
-public interface IControlEditor {
+public interface IControlEditor extends ImplControlEditor {
 
     /**
      * Removes all associations between the Editor and the underlying composite.  The

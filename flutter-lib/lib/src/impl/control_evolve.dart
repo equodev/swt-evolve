@@ -7,7 +7,6 @@ import '../gen/widget.dart';
 import '../styles.dart';
 import '../impl/menu_evolve.dart';
 import '../theme/theme_extensions/tooltip_theme_extension.dart';
-import 'utils/widget_utils.dart';
 import 'widget_config.dart';
 
 abstract class ControlImpl<T extends ControlSwt, V extends VControl>
@@ -20,14 +19,18 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     return const Text("Control");
   }
 
-  Color? getSwtBackgroundColor(BuildContext context, {Color? defaultColor}) {
-    if (state.background != null) {
-      return getBackgroundColor(
-        background: state.background,
-        defaultColor: defaultColor,
+  Color? getSwtBackgroundColor(BuildContext context) {
+    var swtBackground = state.background;
+    if (swtBackground != null) {
+      return Color.fromARGB(
+        swtBackground.alpha,
+        swtBackground.red,
+        swtBackground.green,
+        swtBackground.blue,
       );
     }
 
+    // If it has no color of its own, use the parent color
     int? parentColor = getCurrentParentBackgroundColor();
     if (parentColor != null) {
       return Color(0xFF000000 | parentColor);
@@ -53,16 +56,15 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   Widget wrap(Widget widget) {
     if (state.style.has(SWT.BORDER)) {
       widget = Container(
-          decoration:
-              BoxDecoration(border: Border.all(width: 0.5, color: Colors.grey)),
-          child: widget);
+        decoration: BoxDecoration(
+          border: Border.all(width: 0.5, color: Colors.grey),
+        ),
+        child: widget,
+      );
     }
 
     if (state.visible != null && !state.visible!) {
-      return Visibility(
-        visible: false,
-        child: widget,
-      );
+      return Visibility(visible: false, child: widget);
     }
     if (state.enabled != null && !state.enabled!) {
       return Opacity(opacity: 0.35, child: widget);

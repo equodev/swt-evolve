@@ -6,6 +6,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import org.eclipse.swt.custom.*;
 
 @CompiledJson()
 public class VTree extends VComposite {
@@ -39,12 +40,12 @@ public class VTree extends VComposite {
         ((DartTree) impl).columns = value;
     }
 
-    public boolean getEditable() {
-        return ((DartTree) impl).editable;
+    public TreeEditor[] getEditors() {
+        return ((DartTree) impl).editors;
     }
 
-    public void setEditable(boolean value) {
-        ((DartTree) impl).editable = value;
+    public void setEditors(TreeEditor[] value) {
+        ((DartTree) impl).editors = value;
     }
 
     public Color getHeaderBackground() {

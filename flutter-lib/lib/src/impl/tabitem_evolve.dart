@@ -32,8 +32,12 @@ class TabItemImpl<T extends TabItemSwt, V extends VTabItem>
 
     final tabItemContext = TabItemContext.of(context);
     final isEnabled = tabItemContext?.isEnabled ?? true;
-    final textColor = isEnabled ? widgetTheme.textColor : widgetTheme.disabledTextColor;
-    final textStyle = (widgetTheme.textStyle ?? const TextStyle()).copyWith(color: textColor);
+    final textColor = isEnabled
+        ? widgetTheme.textColor
+        : widgetTheme.disabledTextColor;
+    final textStyle = (widgetTheme.textStyle ?? const TextStyle()).copyWith(
+      color: textColor,
+    );
 
     final alignment = getMainAxisAlignmentFromTextAlign(
       getTextAlignFromStyle(state.style, TextAlign.start),
@@ -48,16 +52,10 @@ class TabItemImpl<T extends TabItemSwt, V extends VTabItem>
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (imageWidget != null)
-            Padding(
-              padding: widgetTheme.imagePadding,
-              child: imageWidget,
-            ),
+            Padding(padding: widgetTheme.imagePadding, child: imageWidget),
           Padding(
             padding: widgetTheme.textPadding,
-            child: Text(
-              stripAccelerators(state.text) ?? "",
-              style: textStyle,
-            ),
+            child: Text(stripAccelerators(state.text) ?? "", style: textStyle),
           ),
         ],
       ),

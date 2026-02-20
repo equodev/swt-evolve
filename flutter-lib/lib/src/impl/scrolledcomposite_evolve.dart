@@ -8,8 +8,11 @@ import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
 import '../theme/theme_settings/scrolledcomposite_theme_settings.dart';
 import 'utils/widget_utils.dart';
 
-class ScrolledCompositeImpl<T extends ScrolledCompositeSwt,
-    V extends VScrolledComposite> extends CompositeImpl<T, V> {
+class ScrolledCompositeImpl<
+  T extends ScrolledCompositeSwt,
+  V extends VScrolledComposite
+>
+    extends CompositeImpl<T, V> {
   ScrollController? _horizontalController;
   ScrollController? _verticalController;
 
@@ -29,7 +32,9 @@ class ScrolledCompositeImpl<T extends ScrolledCompositeSwt,
 
   @override
   Widget build(BuildContext context) {
-    final widgetTheme = Theme.of(context).extension<ScrolledCompositeThemeExtension>()!;
+    final widgetTheme = Theme.of(
+      context,
+    ).extension<ScrolledCompositeThemeExtension>()!;
     final enabled = state.enabled ?? true;
 
     final hasHScroll = hasStyle(state.style, SWT.H_SCROLL);
@@ -41,7 +46,10 @@ class ScrolledCompositeImpl<T extends ScrolledCompositeSwt,
       isEnabled: enabled,
     );
 
-    final minContentSize = getScrolledCompositeMinContentSize(state, widgetTheme);
+    final minContentSize = getScrolledCompositeMinContentSize(
+      state,
+      widgetTheme,
+    );
     final alwaysShowScrollBars = shouldAlwaysShowScrollBars(state);
     final expandHorizontal = shouldExpandHorizontal(state);
     final expandVertical = shouldExpandVertical(state);

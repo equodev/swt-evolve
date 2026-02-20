@@ -12,7 +12,6 @@ import '../theme/theme_extensions/clabel_theme_extension.dart';
 
 class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
     extends CanvasImpl<T, V> {
-
   @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<CLabelThemeExtension>()!;
@@ -22,18 +21,36 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
     return _buildCLabel(context, widgetTheme, enabled);
   }
 
-  Widget _buildCLabel(BuildContext context, CLabelThemeExtension widgetTheme, bool enabled) {
+  Widget _buildCLabel(
+    BuildContext context,
+    CLabelThemeExtension widgetTheme,
+    bool enabled,
+  ) {
     // Treat "<none>" as empty text
     final rawText = state.text ?? '';
     final text = rawText == '<none>' ? '' : rawText;
     final image = state.image;
 
-    final textAlign = _getTextAlignFromAlignment(state.alignment, widgetTheme.textAlign);
-    final backgroundColor = getSwtBackgroundColor(context, defaultColor: widgetTheme.backgroundColor);
+    final textAlign = _getTextAlignFromAlignment(
+      state.alignment,
+      widgetTheme.textAlign,
+    );
+    final backgroundColor = getBackgroundColor(
+      background: state.background,
+      defaultColor: widgetTheme.backgroundColor,
+    );
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = getConstraintsFromBounds(state.bounds);
 
-    final child = _buildCLabelContent(context, widgetTheme, enabled, text, image, textAlign, hasValidBounds);
+    final child = _buildCLabelContent(
+      context,
+      widgetTheme,
+      enabled,
+      text,
+      image,
+      textAlign,
+      hasValidBounds,
+    );
 
     // Only apply margins when there's valid bounds
     final padding = (hasValidBounds)
@@ -61,7 +78,9 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
               decoration: backgroundColor != null
                   ? BoxDecoration(color: backgroundColor)
                   : null,
-              alignment: hasValidBounds ? getAlignmentFromTextAlign(textAlign) : null,
+              alignment: hasValidBounds
+                  ? getAlignmentFromTextAlign(textAlign)
+                  : null,
               child: child,
             ),
           ),
@@ -104,7 +123,10 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
       // Image + Text
       return Row(
         mainAxisSize: hasValidBounds ? MainAxisSize.max : MainAxisSize.min,
-        mainAxisAlignment: getMainAxisAlignmentFromTextAlign(textAlign, widgetTheme.mainAxisAlignment),
+        mainAxisAlignment: getMainAxisAlignmentFromTextAlign(
+          textAlign,
+          widgetTheme.mainAxisAlignment,
+        ),
         crossAxisAlignment: widgetTheme.crossAxisAlignment,
         children: [
           imageWidget!,

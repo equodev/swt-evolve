@@ -21,6 +21,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
+import org.eclipse.swt.custom.*;
 import dev.equo.swt.*;
 
 /**
@@ -2416,7 +2417,7 @@ public class DartTree extends DartComposite implements ITree {
 
     int[] columnOrder = new int[0];
 
-    boolean editable = false;
+    TreeEditor[] editors = new TreeEditor[0];
 
     boolean linesVisible;
 
@@ -2562,8 +2563,8 @@ public class DartTree extends DartComposite implements ITree {
         return columnOrder;
     }
 
-    public boolean _editable() {
-        return editable;
+    public TreeEditor[] _editors() {
+        return editors;
     }
 
     public boolean _linesVisible() {
@@ -2580,9 +2581,18 @@ public class DartTree extends DartComposite implements ITree {
         items = java.util.Arrays.stream(items).filter(child -> child != null && !child.isDisposed()).toArray(TreeItem[]::new);
     }
 
-    public void _setEditable(boolean value) {
-        if (this.editable != value) {
-            this.editable = value;
+    public void _addEditor(TreeEditor value) {
+        TreeEditor[] result = ControlEditorHelper.addEditor(editors, value, TreeEditor.class);
+        if (result != editors) {
+            editors = result;
+            dirty();
+        }
+    }
+
+    public void _removeEditor(TreeEditor value) {
+        TreeEditor[] result = ControlEditorHelper.removeEditor(editors, value, TreeEditor.class);
+        if (result != editors) {
+            editors = result;
             dirty();
         }
     }

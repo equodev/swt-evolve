@@ -14,14 +14,14 @@ class ListImpl<T extends ListSwt, V extends VList>
   @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<ListThemeExtension>()!;
-    
+
     state.selection ??= <int>[];
     state.items ??= <String>[];
 
     final styleBits = StyleBits(state.style);
     final isMultiSelect = styleBits.has(SWT.MULTI);
     final isEnabled = state.enabled ?? false;
-    
+
     final hasConstraints = hasBounds(state.bounds);
     final width = hasConstraints ? state.bounds!.width.toDouble() : null;
     final height = hasConstraints ? state.bounds!.height.toDouble() : null;
@@ -61,7 +61,9 @@ class ListImpl<T extends ListSwt, V extends VList>
   }
 
   List<int> _convertItemsToIndices(
-      List<String> items, List<String> selectedItems) {
+    List<String> items,
+    List<String> selectedItems,
+  ) {
     return selectedItems
         .map((item) => items.indexOf(item))
         .where((index) => index != -1)
@@ -115,7 +117,7 @@ class _StyledListState extends State<_StyledList> {
     final backgroundColor = widget.enabled
         ? theme.backgroundColor
         : theme.disabledBackgroundColor;
-    
+
     final borderColor = _isFocused
         ? theme.focusedBorderColor
         : theme.borderColor;
@@ -138,10 +140,7 @@ class _StyledListState extends State<_StyledList> {
           child: Container(
             decoration: BoxDecoration(
               color: backgroundColor,
-              border: Border.all(
-                color: borderColor,
-                width: theme.borderWidth,
-              ),
+              border: Border.all(color: borderColor, width: theme.borderWidth),
               borderRadius: BorderRadius.circular(theme.borderRadius),
             ),
             child: widget.items.isEmpty
@@ -216,19 +215,19 @@ class _ListItemState extends State<_ListItem> {
   @override
   Widget build(BuildContext context) {
     final theme = widget.widgetTheme;
-    
+
     final baseBackgroundColor = !widget.enabled
         ? theme.disabledBackgroundColor
         : theme.backgroundColor;
-    
+
     final selectedOverlayColor = theme.selectedItemBackgroundColor;
     final hoverOverlayColor = theme.hoverItemBackgroundColor;
-    
+
     final textColor = !widget.enabled
         ? theme.disabledTextColor
         : widget.isSelected
-            ? theme.selectedItemTextColor
-            : theme.textColor;
+        ? theme.selectedItemTextColor
+        : theme.textColor;
 
     final textStyle = getTextStyle(
       context: context,

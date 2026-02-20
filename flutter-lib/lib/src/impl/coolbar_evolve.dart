@@ -20,24 +20,30 @@ class CoolBarImpl<T extends CoolBarSwt, V extends VCoolBar>
       onExit: (_) => widget.sendMouseTrackMouseExit(state, null),
       child: Focus(
         onFocusChange: _onFocusChange,
-        child: Builder(builder: (context) {
-          return super.wrap(
-            _CoolBarContainer(
-              theme: theme,
-              isVertical: isVertical,
-              hasValidBounds: hasValidBounds,
-              crossAxisSize: _getCrossAxisSize(theme, isVertical),
-              backgroundColor: _getBackgroundColor(context, theme),
-              borderColor: _getBorderColor(theme),
-              child: _buildContent(theme, isVertical, hasValidBounds),
-            ),
-          );
-        }),
+        child: Builder(
+          builder: (context) {
+            return super.wrap(
+              _CoolBarContainer(
+                theme: theme,
+                isVertical: isVertical,
+                hasValidBounds: hasValidBounds,
+                crossAxisSize: _getCrossAxisSize(theme, isVertical),
+                backgroundColor: _getBackgroundColor(context, theme),
+                borderColor: _getBorderColor(theme),
+                child: _buildContent(theme, isVertical, hasValidBounds),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
 
-  Widget _buildContent(CoolBarThemeExtension theme, bool isVertical, bool hasValidBounds) {
+  Widget _buildContent(
+    CoolBarThemeExtension theme,
+    bool isVertical,
+    bool hasValidBounds,
+  ) {
     final coolItems = _getCoolItems(theme);
     final wrapIndices = state.wrapIndices ?? [];
 
@@ -65,9 +71,9 @@ class CoolBarImpl<T extends CoolBarSwt, V extends VCoolBar>
 
     final orderedItems = (itemOrder != null && itemOrder.isNotEmpty)
         ? itemOrder
-            .where((i) => i >= 0 && i < items.length)
-            .map((i) => items[i])
-            .toList()
+              .where((i) => i >= 0 && i < items.length)
+              .map((i) => items[i])
+              .toList()
         : items;
 
     return orderedItems.asMap().entries.map((entry) {
@@ -85,18 +91,17 @@ class CoolBarImpl<T extends CoolBarSwt, V extends VCoolBar>
   double? _getCrossAxisSize(CoolBarThemeExtension theme, bool isVertical) {
     final bounds = state.bounds;
     if (hasBounds(bounds)) {
-      return isVertical
-          ? bounds!.width.toDouble()
-          : bounds!.height.toDouble();
+      return isVertical ? bounds!.width.toDouble() : bounds!.height.toDouble();
     }
     return null;
   }
 
   Color _getBackgroundColor(BuildContext context, CoolBarThemeExtension theme) {
     return getBackgroundColor(
-      background: state.background,
-      defaultColor: theme.backgroundColor,
-    ) ?? theme.backgroundColor;
+          background: state.background,
+          defaultColor: theme.backgroundColor,
+        ) ??
+        theme.backgroundColor;
   }
 
   Color _getBorderColor(CoolBarThemeExtension theme) {
@@ -135,15 +140,16 @@ class _CoolBarContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: theme.animationDuration,
-      width: isVertical ? crossAxisSize : (hasValidBounds ? double.infinity : null),
-      height: isVertical ? (hasValidBounds ? double.infinity : null) : crossAxisSize,
+      width: isVertical
+          ? crossAxisSize
+          : (hasValidBounds ? double.infinity : null),
+      height: isVertical
+          ? (hasValidBounds ? double.infinity : null)
+          : crossAxisSize,
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(theme.borderRadius),
-        border: Border.all(
-          color: borderColor,
-          width: theme.borderWidth,
-        ),
+        border: Border.all(color: borderColor, width: theme.borderWidth),
       ),
       padding: theme.padding,
       child: child,
@@ -206,22 +212,26 @@ class _WrappedCoolBarContent extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: wrappedItems
-                  .map((group) => Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: group,
-                      ))
+                  .map(
+                    (group) => Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: group,
+                    ),
+                  )
                   .toList(),
             )
           : Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: wrappedItems
-                  .map((group) => Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: group,
-                      ))
+                  .map(
+                    (group) => Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: group,
+                    ),
+                  )
                   .toList(),
             ),
     );

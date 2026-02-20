@@ -314,7 +314,9 @@ final List<MapEntry<RegExp, IconData>> _fallbackPatterns = [
   MapEntry(RegExp(r'^(search|find|usearch|search_src)$'), Icons.search),
   MapEntry(RegExp(r'^(next|.*_next|next_nav)$'), Icons.navigate_next),
   MapEntry(
-      RegExp(r'^(prev|previous|.*_prev|prev_nav)$'), Icons.navigate_before),
+    RegExp(r'^(prev|previous|.*_prev|prev_nav)$'),
+    Icons.navigate_before,
+  ),
   MapEntry(RegExp(r'^(close|close_view)$'), Icons.close),
   MapEntry(RegExp(r'^(pin|pin_view)$'), Icons.push_pin),
   MapEntry(RegExp(r'^(min|min_view|minimize)$'), Icons.minimize),
@@ -345,8 +347,10 @@ final List<MapEntry<RegExp, IconData>> _fallbackPatterns = [
   MapEntry(RegExp(r'^(stepover.*)$'), Icons.skip_next),
   MapEntry(RegExp(r'^(stepreturn.*)$'), Icons.subdirectory_arrow_left),
   MapEntry(RegExp(r'^(stepfilters.*)$'), Icons.filter_alt),
-  MapEntry(RegExp(r'^(toggle.*brk.*|.*brkp.*|.*breakpoint.*)$'),
-      Icons.fiber_manual_record),
+  MapEntry(
+    RegExp(r'^(toggle.*brk.*|.*brkp.*|.*breakpoint.*)$'),
+    Icons.fiber_manual_record,
+  ),
   MapEntry(RegExp(r'^(disabled|disable.*)$'), Icons.block),
   MapEntry(RegExp(r'^(remove_all|rem_all.*)$'), Icons.clear_all),
   MapEntry(RegExp(r'^(remove|rem.*)$'), Icons.clear),

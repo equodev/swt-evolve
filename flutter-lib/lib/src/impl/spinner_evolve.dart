@@ -22,7 +22,8 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
     final maximum = state.maximum ?? widgetTheme.defaultMaximum;
     final selection = state.selection ?? widgetTheme.defaultSelection;
     final increment = state.increment ?? widgetTheme.defaultIncrement;
-    final pageIncrement = state.pageIncrement ?? widgetTheme.defaultPageIncrement;
+    final pageIncrement =
+        state.pageIncrement ?? widgetTheme.defaultPageIncrement;
     final digits = state.digits ?? widgetTheme.defaultDigits;
     final textLimit = state.textLimit ?? widgetTheme.defaultTextLimit;
 
@@ -77,11 +78,17 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
         textStyle: textStyle,
         onChanged: (value) {
           state.selection = value;
-          widget.sendSelectionSelection(state, VEvent()..index = state.selection);
+          widget.sendSelectionSelection(
+            state,
+            VEvent()..index = state.selection,
+          );
         },
         onSubmitted: (value) {
           state.selection = value;
-          widget.sendSelectionDefaultSelection(state, VEvent()..index = state.selection);
+          widget.sendSelectionDefaultSelection(
+            state,
+            VEvent()..index = state.selection,
+          );
         },
         onFocusChanged: (hasFocus) {
           setState(() => _isFocused = hasFocus);
@@ -237,9 +244,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
       ),
       inputFormatters: [
         FilteringTextInputFormatter.allow(
-          widget.digits > 0
-              ? RegExp(r'^-?\d*\.?\d*$')
-              : RegExp(r'^-?\d*$'),
+          widget.digits > 0 ? RegExp(r'^-?\d*\.?\d*$') : RegExp(r'^-?\d*$'),
         ),
       ],
       onChanged: _handleTextChanged,
@@ -282,8 +287,8 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
       backgroundColor: _isUpPressed
           ? widget.widgetTheme.buttonPressedColor
           : (_isUpHovered
-              ? widget.widgetTheme.buttonHoverColor
-              : widget.widgetTheme.buttonBackgroundColor),
+                ? widget.widgetTheme.buttonHoverColor
+                : widget.widgetTheme.buttonBackgroundColor),
       borderColor: widget.borderColor,
       borderWidth: widget.widgetTheme.borderWidth,
       animationDuration: widget.widgetTheme.animationDuration,
@@ -309,8 +314,8 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
       backgroundColor: _isDownPressed
           ? widget.widgetTheme.buttonPressedColor
           : (_isDownHovered
-              ? widget.widgetTheme.buttonHoverColor
-              : widget.widgetTheme.buttonBackgroundColor),
+                ? widget.widgetTheme.buttonHoverColor
+                : widget.widgetTheme.buttonBackgroundColor),
       borderColor: widget.borderColor,
       borderWidth: widget.widgetTheme.borderWidth,
       animationDuration: widget.widgetTheme.animationDuration,
@@ -318,7 +323,8 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
       showBottomBorder: false,
       onTap: isInteractive ? _decrementValue : null,
       onHoverChanged: (isHovered) => setState(() => _isDownHovered = isHovered),
-      onPressedChanged: (isPressed) => setState(() => _isDownPressed = isPressed),
+      onPressedChanged: (isPressed) =>
+          setState(() => _isDownPressed = isPressed),
     );
   }
 
@@ -341,13 +347,19 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
 
   // Value manipulation
   void _incrementValue() {
-    final newValue = (widget.value + widget.increment).clamp(widget.min, widget.max);
+    final newValue = (widget.value + widget.increment).clamp(
+      widget.min,
+      widget.max,
+    );
     _controller.text = _formatValue(newValue);
     widget.onChanged(newValue);
   }
 
   void _decrementValue() {
-    final newValue = (widget.value - widget.increment).clamp(widget.min, widget.max);
+    final newValue = (widget.value - widget.increment).clamp(
+      widget.min,
+      widget.max,
+    );
     _controller.text = _formatValue(newValue);
     widget.onChanged(newValue);
   }
@@ -428,15 +440,16 @@ class _SpinnerButton extends StatelessWidget {
           decoration: BoxDecoration(
             color: backgroundColor,
             border: showBottomBorder
-                ? Border(bottom: BorderSide(color: borderColor, width: borderWidth * 0.5))
+                ? Border(
+                    bottom: BorderSide(
+                      color: borderColor,
+                      width: borderWidth * 0.5,
+                    ),
+                  )
                 : null,
           ),
           child: Center(
-            child: Icon(
-              icon,
-              size: iconSize,
-              color: iconColor,
-            ),
+            child: Icon(icon, size: iconSize, color: iconColor),
           ),
         ),
       ),

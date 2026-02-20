@@ -23,6 +23,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import java.util.Objects;
+import org.eclipse.swt.custom.*;
 import java.util.Arrays;
 import dev.equo.swt.*;
 
@@ -1117,6 +1118,14 @@ public class DartTable extends DartComposite implements ITable {
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        int itemId = ControlEditorHelper.getItemIdFromPosition(this, point);
+        if (itemId == -1)
+            return null;
+        for (int i = 0; i < getItemCount(); i++) {
+            if (items[i] != null && items[i].hashCode() == itemId) {
+                return items[i];
+            }
+        }
         return null;
     }
 
@@ -3001,7 +3010,7 @@ public class DartTable extends DartComposite implements ITable {
 
     int[] columnOrder = new int[0];
 
-    boolean editable = false;
+    TableEditor[] editors = new TableEditor[0];
 
     Color _headerBackground;
 
@@ -3187,8 +3196,8 @@ public class DartTable extends DartComposite implements ITable {
         return columnOrder;
     }
 
-    public boolean _editable() {
-        return editable;
+    public TableEditor[] _editors() {
+        return editors;
     }
 
     public Color __headerBackground() {
@@ -3215,9 +3224,18 @@ public class DartTable extends DartComposite implements ITable {
         return topIndex;
     }
 
-    public void _setEditable(boolean value) {
-        if (this.editable != value) {
-            this.editable = value;
+    public void _addEditor(TableEditor value) {
+        TableEditor[] result = ControlEditorHelper.addEditor(editors, value, TableEditor.class);
+        if (result != editors) {
+            editors = result;
+            dirty();
+        }
+    }
+
+    public void _removeEditor(TableEditor value) {
+        TableEditor[] result = ControlEditorHelper.removeEditor(editors, value, TableEditor.class);
+        if (result != editors) {
+            editors = result;
             dirty();
         }
     }

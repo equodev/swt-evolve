@@ -45,7 +45,7 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     final selectedItem = state.selection!.first;
     final items = state.items ?? [];
     final index = items.indexWhere((item) => item.id == selectedItem.id);
-    
+
     return index >= 0 ? index : 0;
   }
 
@@ -63,7 +63,7 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     final constraints = getConstraintsFromBounds(state.bounds);
 
     final tabContent = _buildTabContent(tabBodies);
-    
+
     Widget content = Column(
       mainAxisSize: hasValidBounds ? MainAxisSize.max : MainAxisSize.min,
       children: [
@@ -73,10 +73,7 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     );
 
     if (hasValidBounds) {
-      return ConstrainedBox(
-        constraints: constraints!,
-        child: content,
-      );
+      return ConstrainedBox(constraints: constraints!, child: content);
     }
 
     return content;
@@ -89,15 +86,22 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     );
   }
 
-  Widget buildTabBar(BuildContext context, TabFolderThemeExtension widgetTheme, List<TabItem> tabItems) {
+  Widget buildTabBar(
+    BuildContext context,
+    TabFolderThemeExtension widgetTheme,
+    List<TabItem> tabItems,
+  ) {
     final hasValidBounds = hasBounds(state.bounds);
-    
+
     return Container(
       width: hasValidBounds ? double.infinity : null,
       decoration: BoxDecoration(
         color: widgetTheme.tabBarBackgroundColor,
         border: Border(
-          bottom: BorderSide(color: widgetTheme.tabBarBorderColor, width: widgetTheme.tabBorderWidth),
+          bottom: BorderSide(
+            color: widgetTheme.tabBarBorderColor,
+            width: widgetTheme.tabBorderWidth,
+          ),
         ),
       ),
       child: Row(
@@ -135,54 +139,74 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     // Determine colors based on enabled state
     final backgroundColor = !enabled
         ? widgetTheme.tabDisabledBackgroundColor
-        : (isSelected ? widgetTheme.tabSelectedBackgroundColor : widgetTheme.tabBackgroundColor);
+        : (isSelected
+              ? widgetTheme.tabSelectedBackgroundColor
+              : widgetTheme.tabBackgroundColor);
     final borderColor = !enabled
         ? widgetTheme.tabDisabledBorderColor
         : widgetTheme.tabBorderColor;
     final bottomBorderColor = !enabled
         ? widgetTheme.tabDisabledBorderColor
-        : (isSelected ? widgetTheme.tabSelectedBorderColor : widgetTheme.tabBorderColor);
+        : (isSelected
+              ? widgetTheme.tabSelectedBorderColor
+              : widgetTheme.tabBorderColor);
     final textColor = !enabled
         ? widgetTheme.tabDisabledTextColor
-        : (isSelected ? widgetTheme.tabSelectedTextColor : widgetTheme.tabTextColor);
+        : (isSelected
+              ? widgetTheme.tabSelectedTextColor
+              : widgetTheme.tabTextColor);
 
     return MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        onDoubleTap: enabled ? () => _handleDefaultSelection(index) : null,
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: widgetTheme.tabPadding),
-          margin: isSelected && enabled ? EdgeInsets.only(bottom: -widgetTheme.tabSelectedBorderWidth) : EdgeInsets.zero,
-          constraints: const BoxConstraints(minHeight: 0),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            border: Border(
-              right: BorderSide(color: borderColor, width: widgetTheme.tabBorderWidth),
-              bottom: isSelected && enabled
-                  ? BorderSide(color: bottomBorderColor, width: widgetTheme.tabSelectedBorderWidth)
-                  : BorderSide(color: borderColor, width: widgetTheme.tabBorderWidth),
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          onDoubleTap: enabled ? () => _handleDefaultSelection(index) : null,
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: widgetTheme.tabPadding),
+            margin: isSelected && enabled
+                ? EdgeInsets.only(bottom: -widgetTheme.tabSelectedBorderWidth)
+                : EdgeInsets.zero,
+            constraints: const BoxConstraints(minHeight: 0),
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              border: Border(
+                right: BorderSide(
+                  color: borderColor,
+                  width: widgetTheme.tabBorderWidth,
+                ),
+                bottom: isSelected && enabled
+                    ? BorderSide(
+                        color: bottomBorderColor,
+                        width: widgetTheme.tabSelectedBorderWidth,
+                      )
+                    : BorderSide(
+                        color: borderColor,
+                        width: widgetTheme.tabBorderWidth,
+                      ),
+              ),
             ),
-          ),
-          child: Center(
-            child: tab.customContent != null
-                ? TabItemContextProvider(
-                    isSelected: isSelected,
-                    isEnabled: enabled,
-                    child: tab.customContent!,
-                  )
-                : Text(
-                    tab.label,
-                    style: isSelected && enabled
-                        ? (widgetTheme.tabSelectedTextStyle ?? const TextStyle()).copyWith(color: textColor)
-                        : (widgetTheme.tabTextStyle ?? const TextStyle()).copyWith(color: textColor),
-                  ),
+            child: Center(
+              child: tab.customContent != null
+                  ? TabItemContextProvider(
+                      isSelected: isSelected,
+                      isEnabled: enabled,
+                      child: tab.customContent!,
+                    )
+                  : Text(
+                      tab.label,
+                      style: isSelected && enabled
+                          ? (widgetTheme.tabSelectedTextStyle ??
+                                    const TextStyle())
+                                .copyWith(color: textColor)
+                          : (widgetTheme.tabTextStyle ?? const TextStyle())
+                                .copyWith(color: textColor),
+                    ),
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 
@@ -210,7 +234,10 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
   }
 
   List<TabItem> getTabItems() {
-    return state.items?.map((tabItem) => getWidgetForTabItem(tabItem)).toList() ?? [];
+    return state.items
+            ?.map((tabItem) => getWidgetForTabItem(tabItem))
+            .toList() ??
+        [];
   }
 
   TabItem getWidgetForTabItem(VTabItem tabItem) {
@@ -240,9 +267,5 @@ class TabItem {
   final Widget? customContent;
   final String? toolTipText;
 
-  TabItem({
-    required this.label,
-    this.customContent,
-    this.toolTipText,
-  });
+  TabItem({required this.label, this.customContent, this.toolTipText});
 }

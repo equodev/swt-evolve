@@ -9,6 +9,7 @@ import '../gen/image.dart';
 import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/tablecolumn.dart';
+import '../gen/tableeditor.dart';
 import '../gen/tableitem.dart';
 import '../impl/table_evolve.dart';
 import 'event.dart';
@@ -44,7 +45,7 @@ class VTable extends VComposite {
 
   List<int>? columnOrder;
   List<VTableColumn>? columns;
-  bool? editable;
+  List<VTableEditor>? editors;
   VColor? headerBackground;
   VColor? headerForeground;
   bool? headerVisible;

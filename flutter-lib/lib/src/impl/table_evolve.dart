@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import '../impl/composite_evolve.dart';
+import '../comm/comm.dart';
 import '../styles.dart';
 import '../gen/event.dart';
 import '../gen/swt.dart';
@@ -14,6 +16,8 @@ import 'utils/widget_utils.dart';
 import 'utils/font_utils.dart';
 import '../theme/theme_extensions/table_theme_extension.dart';
 import '../theme/theme_settings/table_theme_settings.dart';
+import '../gen/widgets.dart';
+import '../gen/rectangle.dart';
 
 class TableImpl<T extends TableSwt, V extends VTable>
     extends CompositeImpl<T, V> {
@@ -23,6 +27,126 @@ class TableImpl<T extends TableSwt, V extends VTable>
   TextEditingController? _editingController;
   FocusNode? _editingFocusNode;
   VoidCallback? _editingFocusListener;
+
+  // Cached layout values updated each build, used by Flutter→Java listeners
+  double? _cachedRowHeight;
+  double? _cachedHeaderOffset;
+  Map<int, TableColumnWidth>? _cachedColumnWidths;
+  final List<String> _eventNames = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _registerGetIdFromPointListener();
+    _registerGetItemBoundsListener();
+  }
+
+  void _registerGetIdFromPointListener() {
+    final eventName = "${state.swt}/${state.id}/GetIdFromPoint";
+    _eventNames.add(eventName);
+    EquoCommService.onRaw(eventName, (payload) {
+      if (payload != null) {
+        try {
+          final Map<String, dynamic> point = payload is String
+              ? (jsonDecode(payload) as Map<String, dynamic>)
+              : Map<String, dynamic>.from(payload as Map);
+          final x = (point['x'] as num?)?.toDouble() ?? 0.0;
+          final y = (point['y'] as num?)?.toDouble() ?? 0.0;
+          final itemId = findItemIdAtPosition(x, y);
+          final responseEvent =
+              "${state.swt}/${state.id}/GetIdFromPointResponse";
+          EquoCommService.sendPayload(
+            responseEvent,
+            itemId?.toString() ?? "-1",
+          );
+        } catch (e) {
+          print('Error processing GetIdFromPoint: $e');
+          final responseEvent =
+              "${state.swt}/${state.id}/GetIdFromPointResponse";
+          EquoCommService.sendPayload(responseEvent, "-1");
+        }
+      }
+    });
+  }
+
+  void _registerGetItemBoundsListener() {
+    final eventName = "${state.swt}/${state.id}/GetItemBounds";
+    _eventNames.add(eventName);
+    EquoCommService.onRaw(eventName, (payload) {
+      final responseEvent = "${state.swt}/${state.id}/GetItemBoundsResponse";
+      if (payload == null) {
+        EquoCommService.sendPayload(responseEvent, VRectangle().toJson());
+        return;
+      }
+      try {
+        String raw = payload.toString();
+        if (raw.startsWith('"') && raw.endsWith('"')) {
+          raw = raw.substring(1, raw.length - 1);
+        }
+        final parts = raw.split(",");
+        final itemId = int.parse(parts[0]);
+        final columnIndex = int.parse(parts[1]);
+        final bounds = _calculateItemBounds(itemId, columnIndex);
+        final rect = VRectangle()
+          ..x = bounds.left.round()
+          ..y = bounds.top.round()
+          ..width = bounds.width.round()
+          ..height = bounds.height.round();
+        EquoCommService.sendPayload(responseEvent, rect.toJson());
+      } catch (e) {
+        print('Error processing GetItemBounds: $e');
+        EquoCommService.sendPayload(responseEvent, VRectangle().toJson());
+      }
+    });
+  }
+
+  /// Returns the VTableItem id at the given Flutter coordinates, or null.
+  Object? findItemIdAtPosition(double x, double y) {
+    final rowHeight = _cachedRowHeight;
+    if (rowHeight == null || rowHeight <= 0) return null;
+    final headerOffset = _cachedHeaderOffset ?? 0.0;
+    final adjustedY = y - headerOffset;
+    if (adjustedY < 0) return null;
+    final itemIndex = (adjustedY / rowHeight).floor();
+    final items = getItems();
+    if (itemIndex < 0 || itemIndex >= items.length) return null;
+    return items[itemIndex].id;
+  }
+
+  /// Calculates the Flutter-coordinate bounds of a cell identified by its
+  /// Java hashCode [itemId] and [columnIndex].
+  Rect _calculateItemBounds(int itemId, int columnIndex) {
+    final rowHeight = _cachedRowHeight ?? 20.0;
+    final headerOffset = _cachedHeaderOffset ?? 0.0;
+    final columnWidths = _cachedColumnWidths;
+
+    final items = getItems();
+    int itemIndex = -1;
+    for (int i = 0; i < items.length; i++) {
+      if (items[i].id == itemId) {
+        itemIndex = i;
+        break;
+      }
+    }
+    if (itemIndex < 0) return Rect.zero;
+
+    final y = headerOffset + (itemIndex * rowHeight);
+
+    final columns = getColumns();
+    double x = 0.0;
+    double width = state.bounds?.width?.toDouble() ?? 200.0;
+
+    if (columns.isNotEmpty && columnWidths != null) {
+      for (int i = 0; i < columnIndex && i < columns.length; i++) {
+        final w = columnWidths[i];
+        if (w is FixedColumnWidth) x += w.value;
+      }
+      final colW = columnWidths[columnIndex];
+      if (colW is FixedColumnWidth) width = colW.value;
+    }
+
+    return Rect.fromLTWH(x, y, width, rowHeight);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +165,10 @@ class TableImpl<T extends TableSwt, V extends VTable>
     _editingController?.dispose();
     _editingController = null;
     _editingFocusListener = null;
+    // Remove Flutter event listeners
+    for (final eventName in _eventNames) {
+      EquoCommService.remove(eventName);
+    }
     super.dispose();
   }
 
@@ -51,18 +179,54 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final showLines = state.linesVisible ?? false;
     final columnWidths = calculateColumnWidths(context, columns, theme);
 
-    return Container(
-      decoration: buildBorder(theme),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          if (showHeader && columns.isNotEmpty)
-            buildHeader(context, columns, showLines, theme, columnWidths),
-          Expanded(
-            child: buildBody(context, items, columns, showLines, theme, columnWidths),
+    // Cache layout values for use by Flutter→Java event listeners
+    _cachedColumnWidths = columnWidths;
+    final rowTextStyle = getTextStyle(
+      context: context,
+      font: state.font,
+      textColor: theme.rowTextColor,
+      baseTextStyle: theme.rowTextStyle,
+    );
+    _cachedRowHeight = calculateRowHeight(rowTextStyle, theme);
+    double headerOff = theme.borderWidth;
+    if (showHeader && columns.isNotEmpty) {
+      final headerTextStyle = getTextStyle(
+        context: context,
+        font: state.font,
+        textColor: getTableHeaderTextColor(state, theme),
+        baseTextStyle: theme.headerTextStyle,
+      );
+      headerOff +=
+          calculateHeaderHeight(headerTextStyle, theme) + theme.headerBorderWidth;
+    }
+    _cachedHeaderOffset = headerOff;
+
+    final editorOverlays = _buildEditorOverlays(context, columns, theme, columnWidths);
+
+    return Stack(
+      children: [
+        Container(
+          decoration: buildBorder(theme),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              if (showHeader && columns.isNotEmpty)
+                buildHeader(context, columns, showLines, theme, columnWidths),
+              Expanded(
+                child: buildBody(
+                  context,
+                  items,
+                  columns,
+                  showLines,
+                  theme,
+                  columnWidths,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        ...editorOverlays,
+      ],
     );
   }
 
@@ -90,10 +254,22 @@ class TableImpl<T extends TableSwt, V extends VTable>
         child: totalWidth != null
             ? SizedBox(
                 width: totalWidth,
-                child: _buildHeaderTable(columns, columnWidths, showLines, textStyle, theme),
+                child: _buildHeaderTable(
+                  columns,
+                  columnWidths,
+                  showLines,
+                  textStyle,
+                  theme,
+                ),
               )
             : IntrinsicWidth(
-                child: _buildHeaderTable(columns, columnWidths, showLines, textStyle, theme),
+                child: _buildHeaderTable(
+                  columns,
+                  columnWidths,
+                  showLines,
+                  textStyle,
+                  theme,
+                ),
               ),
       ),
     );
@@ -111,9 +287,14 @@ class TableImpl<T extends TableSwt, V extends VTable>
       border: buildHeaderBorder(showLines, theme),
       children: <TableRow>[
         TableRow(
-          children: columns.asMap().entries.map((entry) => 
-            buildHeaderCell(entry.value, textStyle, theme, entry.key)
-          ).toList(),
+          children: columns
+              .asMap()
+              .entries
+              .map(
+                (entry) =>
+                    buildHeaderCell(entry.value, textStyle, theme, entry.key),
+              )
+              .toList(),
         ),
       ],
     );
@@ -182,13 +363,15 @@ class TableImpl<T extends TableSwt, V extends VTable>
                   children: items
                       .asMap()
                       .entries
-                      .map((entry) => buildRow(
-                            context,
-                            entry.key,
-                            entry.value,
-                            columns.length,
-                            theme,
-                          ))
+                      .map(
+                        (entry) => buildRow(
+                          context,
+                          entry.key,
+                          entry.value,
+                          columns.length,
+                          theme,
+                        ),
+                      )
                       .toList(),
                 ),
               ),
@@ -236,15 +419,10 @@ class TableImpl<T extends TableSwt, V extends VTable>
   void handleRowTap(int index, VTableItem item) {
     if (state.enabled != true) return;
     setState(() {
-      if (_selectedRowIndex == index) {
-        _selectedRowIndex = -1;
-        state.selection?.clear();
-      } else {
-        _selectedRowIndex = index;
-        state.selection ??= [];
-        state.selection!.clear();
-        state.selection!.add(_selectedRowIndex);
-      }
+      _selectedRowIndex = index;
+      state.selection ??= [];
+      state.selection!.clear();
+      state.selection!.add(index);
 
       final event = VEvent()..segments = state.selection;
       widget.sendSelectionSelection(state, event);
@@ -265,11 +443,11 @@ class TableImpl<T extends TableSwt, V extends VTable>
   }
 
   void startEditing(int rowIndex, int columnIndex, String initialText) {
-    // Only allow editing if the table is editable
-    if (state.editable != true) {
+    // Only allow editing if the table has editors
+    if (state.editors == null || state.editors!.isEmpty) {
       return;
     }
-    
+
     // Clean up any existing editing state first
     if (_editingFocusNode != null) {
       _editingFocusNode!.removeListener(_editingFocusListener!);
@@ -278,11 +456,11 @@ class TableImpl<T extends TableSwt, V extends VTable>
     if (_editingController != null) {
       _editingController!.dispose();
     }
-    
+
     // Create new editing state
     _editingController = TextEditingController(text: initialText);
     _editingFocusNode = FocusNode();
-    
+
     // Create and add listener (outside setState to avoid concurrent modification)
     _editingFocusListener = () {
       if (_editingFocusNode != null && !_editingFocusNode!.hasFocus) {
@@ -295,12 +473,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
       }
     };
     _editingFocusNode!.addListener(_editingFocusListener!);
-    
+
     setState(() {
       _editingRowIndex = rowIndex;
       _editingColumnIndex = columnIndex;
     });
-    
+
     // Request focus after the frame is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _editingFocusNode?.requestFocus();
@@ -313,23 +491,23 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final controller = _editingController;
     final focusNode = _editingFocusNode;
     final listener = _editingFocusListener;
-    
+
     // Remove listener before disposing
     if (focusNode != null && listener != null) {
       focusNode.removeListener(listener);
     }
-    
+
     if (rowIndex != null && columnIndex != null && controller != null) {
       final newText = controller.text;
-      
+
       final event = VEvent()
         ..text = newText
         ..index = rowIndex
         ..start = columnIndex;
-      
+
       widget.sendModifyModify(widget.value, event);
     }
-    
+
     setState(() {
       controller?.dispose();
       focusNode?.dispose();
@@ -341,9 +519,96 @@ class TableImpl<T extends TableSwt, V extends VTable>
     });
   }
 
-  double? calculateTotalWidth(List<VTableColumn> columns, Map<int, TableColumnWidth>? columnWidths) {
+  /// Builds editor overlay widgets for all active editors.
+  List<Widget> _buildEditorOverlays(
+    BuildContext context,
+    List<VTableColumn> columns,
+    TableThemeExtension theme,
+    Map<int, TableColumnWidth>? columnWidths,
+  ) {
+    final editors = state.editors;
+    if (editors == null || editors.isEmpty) return [];
+
+    final rowTextStyle = getTextStyle(
+      context: context,
+      font: state.font,
+      textColor: theme.rowTextColor,
+      baseTextStyle: theme.rowTextStyle,
+    );
+    final rowHeight = calculateRowHeight(rowTextStyle, theme);
+    final showLines = state.linesVisible ?? false;
+    final lineWidth = showLines ? theme.linesWidth : 0.0;
+    final borderWidth = theme.borderWidth;
+
+    double headerOffset = borderWidth;
+    if (state.headerVisible == true && columns.isNotEmpty) {
+      final headerTextStyle = getTextStyle(
+        context: context,
+        font: state.font,
+        textColor: getTableHeaderTextColor(state, theme),
+        baseTextStyle: theme.headerTextStyle,
+      );
+      headerOffset += calculateHeaderHeight(headerTextStyle, theme) +
+          theme.headerBorderWidth;
+    }
+
+    final List<Widget> overlays = [];
+    for (final editable in editors) {
+      if (editable.editor == null || editable.item == null) continue;
+
+      final editingItemId = editable.item!.id;
+      final columnIndex = editable.column ?? 0;
+
+      final itemIndex = findItemIndex(editingItemId);
+      if (itemIndex < 0) continue;
+
+      final editorY = headerOffset + (itemIndex * rowHeight);
+
+      double editorX = borderWidth;
+      double editorWidth = state.bounds?.width?.toDouble() ?? 200.0;
+
+      if (columns.isNotEmpty && columnWidths != null) {
+        for (int i = 0; i < columnIndex && i < columns.length; i++) {
+          final w = columnWidths[i];
+          if (w is FixedColumnWidth) {
+            editorX += w.value;
+          }
+          editorX += lineWidth;
+        }
+
+        final colW = columnWidths[columnIndex];
+        if (colW is FixedColumnWidth) {
+          editorWidth = colW.value;
+        }
+      }
+
+      final editorWidget = mapWidgetFromValue(editable.editor!);
+
+      overlays.add(
+        Positioned(
+          left: editorX,
+          top: editorY,
+          width: editorWidth,
+          height: rowHeight,
+          child: Container(
+            color: Colors.white,
+            foregroundDecoration: BoxDecoration(
+              border: Border.all(color: Colors.blue, width: 1),
+            ),
+            child: editorWidget,
+          ),
+        ),
+      );
+    }
+    return overlays;
+  }
+
+  double? calculateTotalWidth(
+    List<VTableColumn> columns,
+    Map<int, TableColumnWidth>? columnWidths,
+  ) {
     if (columnWidths == null) return null;
-    
+
     double totalWidth = 0.0;
     for (int i = 0; i < columns.length; i++) {
       final width = columnWidths[i];
@@ -372,10 +637,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
             color: theme.rowSelectedBorderColor,
             width: theme.rowSelectedBorderWidth,
           )
-        : BorderSide(
-            color: theme.rowSeparatorColor,
-            width: theme.linesWidth,
-          );
+        : BorderSide(color: theme.rowSeparatorColor, width: theme.linesWidth);
 
     final selectedBorder = isSelected
         ? BorderSide(
@@ -394,10 +656,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
   BoxDecoration buildBorder(TableThemeExtension theme) {
     return BoxDecoration(
-      border: Border.all(
-        color: theme.borderColor,
-        width: theme.borderWidth,
-      ),
+      border: Border.all(color: theme.borderColor, width: theme.borderWidth),
     );
   }
 
@@ -408,10 +667,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
         width: theme.headerBorderWidth,
       ),
       verticalInside: showLines
-          ? BorderSide(
-              color: theme.linesColor,
-              width: theme.linesWidth,
-            )
+          ? BorderSide(color: theme.linesColor, width: theme.linesWidth)
           : BorderSide.none,
       top: BorderSide.none,
       left: BorderSide.none,
@@ -423,10 +679,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     return TableBorder(
       horizontalInside: BorderSide.none,
       verticalInside: showLines
-          ? BorderSide(
-              color: theme.linesColor,
-              width: theme.linesWidth,
-            )
+          ? BorderSide(color: theme.linesColor, width: theme.linesWidth)
           : BorderSide.none,
       top: BorderSide.none,
       bottom: BorderSide.none,
@@ -435,7 +688,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
     );
   }
 
-  double? calculateHeight(int rowCount, TableThemeExtension theme, BuildContext? context, TextStyle? rowTextStyle) {
+  double? calculateHeight(
+    int rowCount,
+    TableThemeExtension theme,
+    BuildContext? context,
+    TextStyle? rowTextStyle,
+  ) {
     if (state.bounds?.height != null) {
       return state.bounds!.height.toDouble();
     }
@@ -471,7 +729,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
     if (hasExplicitWidths) {
       return _calculateExplicitColumnWidths(columns, theme, hasCheckStyle);
     } else {
-      return _calculateIntrinsicColumnWidths(context, columns, theme, hasCheckStyle);
+      return _calculateIntrinsicColumnWidths(
+        context,
+        columns,
+        theme,
+        hasCheckStyle,
+      );
     }
   }
 
@@ -539,7 +802,9 @@ class TableImpl<T extends TableSwt, V extends VTable>
         }
       }
 
-      if (hasCheckStyle && i == 0 && maxWidth < checkboxWidth + theme.cellPadding.left) {
+      if (hasCheckStyle &&
+          i == 0 &&
+          maxWidth < checkboxWidth + theme.cellPadding.left) {
         maxWidth = checkboxWidth + theme.cellPadding.left;
       }
 
@@ -548,7 +813,11 @@ class TableImpl<T extends TableSwt, V extends VTable>
     return widths;
   }
 
-  double _calculateHeaderWidth(VTableColumn column, TextStyle headerTextStyle, TableThemeExtension theme) {
+  double _calculateHeaderWidth(
+    VTableColumn column,
+    TextStyle headerTextStyle,
+    TableThemeExtension theme,
+  ) {
     final headerText = column.text ?? "";
     if (headerText.isEmpty) return 0.0;
 
@@ -587,7 +856,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
       textDirection: TextDirection.ltr,
     );
     cellPainter.layout();
-    
+
     double cellWidth = cellPainter.width + theme.cellPadding.horizontal;
     if (hasCheckStyle && columnIndex == 0) {
       cellWidth += checkboxWidth + theme.cellPadding.left;
@@ -650,17 +919,19 @@ class TableItemSwtWrapper {
   List<Widget> buildCells(BuildContext context, TableThemeExtension theme) {
     final tableItemImpl = TableItemImpl<TableItemSwt, VTableItem>();
     tableItemImpl.state = item;
-    tableItemImpl.setContext(TableItemContext(
-      rowIndex: rowIndex,
-      parentTable: parentTable,
-      parentTableValue: parentTableValue,
-      tableImpl: tableImpl,
-      tableFont: tableFont,
-      editingRowIndex: editingRowIndex,
-      editingColumnIndex: editingColumnIndex,
-      editingController: editingController,
-      editingFocusNode: editingFocusNode,
-    ));
+    tableItemImpl.setContext(
+      TableItemContext(
+        rowIndex: rowIndex,
+        parentTable: parentTable,
+        parentTableValue: parentTableValue,
+        tableImpl: tableImpl,
+        tableFont: tableFont,
+        editingRowIndex: editingRowIndex,
+        editingColumnIndex: editingColumnIndex,
+        editingController: editingController,
+        editingFocusNode: editingFocusNode,
+      ),
+    );
     return tableItemImpl.buildCells(context, theme);
   }
 }
@@ -689,8 +960,8 @@ class TableItemContext {
   });
 
   static TableItemContext? of(BuildContext context) {
-    final provider =
-        context.dependOnInheritedWidgetOfExactType<TableItemContextProvider>();
+    final provider = context
+        .dependOnInheritedWidgetOfExactType<TableItemContextProvider>();
     return provider?.context;
   }
 }
@@ -706,18 +977,19 @@ class TableItemContextProvider extends InheritedWidget {
     TableImpl? tableImpl,
     VFont? tableFont,
     required Widget child,
-  })  : context = TableItemContext(
-          rowIndex: rowIndex,
-          parentTable: parentTable,
-          parentTableValue: parentTableValue,
-          tableImpl: tableImpl,
-          tableFont: tableFont,
-        ),
-        super(key: key, child: child);
+  }) : context = TableItemContext(
+         rowIndex: rowIndex,
+         parentTable: parentTable,
+         parentTableValue: parentTableValue,
+         tableImpl: tableImpl,
+         tableFont: tableFont,
+       ),
+       super(key: key, child: child);
 
   @override
   bool updateShouldNotify(TableItemContextProvider oldWidget) {
     return context.rowIndex != oldWidget.context.rowIndex ||
-        context.parentTableValue.selection != oldWidget.context.parentTableValue.selection;
+        context.parentTableValue.selection !=
+            oldWidget.context.parentTableValue.selection;
   }
 }

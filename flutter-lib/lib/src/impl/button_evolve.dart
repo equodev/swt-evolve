@@ -11,7 +11,6 @@ import 'widget_config.dart';
 
 class ButtonImpl<T extends ButtonSwt, V extends VButton>
     extends ControlImpl<T, V> {
-
   static IconData _getArrowIcon(int alignment) {
     switch (alignment) {
       case SWT.UP:
@@ -29,19 +28,16 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
 
   Widget _wrapWithSwtBackground(BuildContext context, Widget button) {
     final useSwtColors = getConfigFlags().use_swt_colors ?? false;
-    
+
     if (!useSwtColors) {
       return button;
     }
-    
+
     final swtBackgroundColor = getSwtBackgroundColor(context);
     if (swtBackgroundColor != null) {
-      return Container(
-        color: swtBackgroundColor,
-        child: button,
-      );
+      return Container(color: swtBackgroundColor, child: button);
     }
-    
+
     return button;
   }
 
@@ -65,13 +61,18 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     }
   }
 
-  Widget _buildPushButton(BuildContext context, ButtonThemeExtension widgetTheme, bool enabled, String? text) {
+  Widget _buildPushButton(
+    BuildContext context,
+    ButtonThemeExtension widgetTheme,
+    bool enabled,
+    String? text,
+  ) {
     final isPressed = state.selection ?? false;
     final hasFlat = hasStyle(state.style, SWT.FLAT);
     final isPrimary = state.primary ?? false;
     final constraints = getConstraintsFromBounds(state.bounds);
     final hasValidBounds = hasBounds(state.bounds);
-    
+
     final baseBackgroundColor = getButtonBackgroundColor(
       state,
       widgetTheme,
@@ -79,24 +80,24 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       enabled: enabled,
       isPrimary: isPrimary,
     );
-    
+
     final hoverBackgroundColor = getPushButtonHoverBackgroundColor(
       state,
       widgetTheme,
       enabled: enabled,
       isPrimary: isPrimary,
     );
-    
+
     final pressedBackgroundColor = isPrimary
         ? widgetTheme.pushButtonPressedColor
         : widgetTheme.secondaryButtonPressedColor;
-    
+
     final borderColor = getPushButtonBorderColor(
       state,
       widgetTheme,
       isPrimary: isPrimary,
     );
-    
+
     Widget button = _HoverableButton(
       baseBackgroundColor: baseBackgroundColor,
       hoverBackgroundColor: hoverBackgroundColor,
@@ -117,17 +118,24 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         widgetTheme,
         enabled,
         enabled
-            ? (isPrimary ? widgetTheme.pushButtonTextColor : widgetTheme.secondaryButtonTextColor)
+            ? (isPrimary
+                  ? widgetTheme.pushButtonTextColor
+                  : widgetTheme.secondaryButtonTextColor)
             : widgetTheme.disabledForegroundColor,
         widgetTheme.pushButtonFontStyle,
         hasBounds: hasValidBounds,
       ),
     );
-    
+
     return wrap(_wrapWithSwtBackground(context, button));
   }
 
-  Widget _buildToggleButton(BuildContext context, ButtonThemeExtension widgetTheme, bool enabled, String? text) {
+  Widget _buildToggleButton(
+    BuildContext context,
+    ButtonThemeExtension widgetTheme,
+    bool enabled,
+    String? text,
+  ) {
     final isSelected = state.selection ?? false;
 
     final backgroundColor = getButtonBackgroundColor(
@@ -155,7 +163,9 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         child: Container(
           constraints: constraints,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
+            borderRadius: BorderRadius.circular(
+              widgetTheme.pushButtonBorderRadius,
+            ),
             border: Border.all(
               color: widgetTheme.toggleButtonBorderColor,
               width: widgetTheme.pushButtonBorderWidth,
@@ -175,20 +185,38 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         ),
       ),
     );
-    
+
     return wrap(_wrapWithSwtBackground(context, button));
   }
 
-  Widget _buildCheckBox(BuildContext context, ButtonThemeExtension widgetTheme, bool enabled, String? text) {
+  Widget _buildCheckBox(
+    BuildContext context,
+    ButtonThemeExtension widgetTheme,
+    bool enabled,
+    String? text,
+  ) {
     final isChecked = state.selection ?? false;
     final isGrayed = state.grayed ?? false;
-    
+
     final constraints = getConstraintsFromBounds(state.bounds);
     final hasValidBounds = hasBounds(state.bounds);
-    final textStyle = getTextStyle(context: context, font: state.font, textColor: enabled ? widgetTheme.checkboxTextColor : widgetTheme.disabledForegroundColor, baseTextStyle: widgetTheme.checkboxFontStyle);
+    final textStyle = getTextStyle(
+      context: context,
+      font: state.font,
+      textColor: enabled
+          ? widgetTheme.checkboxTextColor
+          : widgetTheme.disabledForegroundColor,
+      baseTextStyle: widgetTheme.checkboxFontStyle,
+    );
 
-    final checkboxSize = getCheckboxSize(state, widgetTheme, textLineHeight: textStyle.height ?? 14.0, hasText: state.text?.isNotEmpty == true, hasImage: state.image != null && state.image?.imageData != null);
-    
+    final checkboxSize = getCheckboxSize(
+      state,
+      widgetTheme,
+      textLineHeight: textStyle.height ?? 14.0,
+      hasText: state.text?.isNotEmpty == true,
+      hasImage: state.image != null && state.image?.imageData != null,
+    );
+
     final checkboxWidget = _HoverableCheckboxRadio(
       size: checkboxSize,
       enabled: enabled,
@@ -196,14 +224,14 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       isGrayed: isGrayed,
       baseColor: enabled
           ? (isChecked || isGrayed
-              ? widgetTheme.checkboxSelectedColor
-              : widgetTheme.checkboxColor)
+                ? widgetTheme.checkboxSelectedColor
+                : widgetTheme.checkboxColor)
           : widgetTheme.disabledBackgroundColor,
       hoverColor: widgetTheme.checkboxHoverColor,
       borderColor: enabled
           ? (isChecked || isGrayed
-              ? widgetTheme.checkboxSelectedColor
-              : widgetTheme.checkboxBorderColor)
+                ? widgetTheme.checkboxSelectedColor
+                : widgetTheme.checkboxBorderColor)
           : widgetTheme.disabledForegroundColor,
       borderRadius: widgetTheme.checkboxBorderRadius,
       borderWidth: widgetTheme.checkboxBorderWidth,
@@ -216,7 +244,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       onHover: _onHover,
       onFocusChange: _onFocusChange,
     );
-    
+
     Widget button = GestureDetector(
       onTap: enabled ? _onPressed : null,
       child: Focus(
@@ -239,20 +267,38 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         ),
       ),
     );
-    
+
     return wrap(_wrapWithSwtBackground(context, button));
   }
 
-  Widget _buildRadioButton(BuildContext context, ButtonThemeExtension widgetTheme, bool enabled, String? text) {
+  Widget _buildRadioButton(
+    BuildContext context,
+    ButtonThemeExtension widgetTheme,
+    bool enabled,
+    String? text,
+  ) {
     final isSelected = state.selection ?? false;
-    
+
     final constraints = getConstraintsFromBounds(state.bounds);
     final hasValidBounds = hasBounds(state.bounds);
-    final textStyle = getTextStyle(context: context, font: state.font, textColor: enabled ? widgetTheme.radioButtonTextColor : widgetTheme.disabledForegroundColor, baseTextStyle: widgetTheme.radioButtonFontStyle);
-    final radioButtonSize = getRadioButtonSize(state, widgetTheme, textLineHeight: textStyle.height ?? 14.0, hasText: state.text?.isNotEmpty == true, hasImage: state.image != null && state.image?.imageData != null);
+    final textStyle = getTextStyle(
+      context: context,
+      font: state.font,
+      textColor: enabled
+          ? widgetTheme.radioButtonTextColor
+          : widgetTheme.disabledForegroundColor,
+      baseTextStyle: widgetTheme.radioButtonFontStyle,
+    );
+    final radioButtonSize = getRadioButtonSize(
+      state,
+      widgetTheme,
+      textLineHeight: textStyle.height ?? 14.0,
+      hasText: state.text?.isNotEmpty == true,
+      hasImage: state.image != null && state.image?.imageData != null,
+    );
     final radioButtonInnerSize = widgetTheme.radioButtonInnerSize;
     final radioButtonBorderRadius = widgetTheme.radioButtonBorderRadius;
-    
+
     final radioWidget = _HoverableCheckboxRadio(
       size: radioButtonSize,
       enabled: enabled,
@@ -260,15 +306,15 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       isGrayed: false,
       baseColor: enabled
           ? (isSelected
-              ? widgetTheme.radioButtonSelectedColor
-              : widgetTheme.dropdownButtonColor)
+                ? widgetTheme.radioButtonSelectedColor
+                : widgetTheme.dropdownButtonColor)
           : widgetTheme.disabledBackgroundColor,
       hoverColor: widgetTheme.radioButtonHoverColor,
       selectedHoverColor: widgetTheme.radioButtonSelectedHoverColor,
       borderColor: enabled
           ? (isSelected
-              ? widgetTheme.radioButtonSelectedColor
-              : widgetTheme.radioButtonBorderColor)
+                ? widgetTheme.radioButtonSelectedColor
+                : widgetTheme.radioButtonBorderColor)
           : widgetTheme.disabledForegroundColor,
       borderRadius: radioButtonBorderRadius,
       borderWidth: isSelected
@@ -276,7 +322,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
           : widgetTheme.radioButtonBorderWidth,
       isCircle: true,
       innerSize: isSelected ? radioButtonInnerSize : null,
-      innerColor: enabled 
+      innerColor: enabled
           ? widgetTheme.dropdownButtonColor
           : widgetTheme.disabledForegroundColor,
       duration: widgetTheme.buttonPressDelay,
@@ -284,7 +330,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       onHover: _onHover,
       onFocusChange: _onFocusChange,
     );
-    
+
     Widget button = GestureDetector(
       onTap: enabled ? _onPressed : null,
       child: Focus(
@@ -307,17 +353,22 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         ),
       ),
     );
-    
+
     return wrap(_wrapWithSwtBackground(context, button));
   }
 
-  Widget _buildArrowButton(BuildContext context, ButtonThemeExtension widgetTheme, bool enabled, String? text) {
+  Widget _buildArrowButton(
+    BuildContext context,
+    ButtonThemeExtension widgetTheme,
+    bool enabled,
+    String? text,
+  ) {
     final alignment = state.alignment ?? SWT.CENTER;
     final arrowIcon = _getArrowIcon(alignment);
-    
+
     final constraints = getConstraintsFromBounds(state.bounds);
     final hasValidBounds = hasBounds(state.bounds);
-    
+
     Widget button = Material(
       borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
       child: InkWell(
@@ -329,10 +380,12 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
           duration: widgetTheme.buttonPressDelay,
           constraints: constraints,
           decoration: BoxDecoration(
-            color: enabled 
+            color: enabled
                 ? widgetTheme.pushButtonColor
                 : widgetTheme.pushButtonDisabledColor,
-            borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
+            borderRadius: BorderRadius.circular(
+              widgetTheme.pushButtonBorderRadius,
+            ),
             border: Border.all(
               color: widgetTheme.pushButtonBorderColor,
               width: widgetTheme.pushButtonBorderWidth,
@@ -341,7 +394,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
           child: Icon(
             arrowIcon,
             size: widgetTheme.dropdownButtonIconSize,
-            color: enabled 
+            color: enabled
                 ? getForegroundColor(
                     foreground: state.foreground,
                     defaultColor: widgetTheme.pushButtonTextColor,
@@ -351,127 +404,128 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         ),
       ),
     );
-    
+
     return wrap(_wrapWithSwtBackground(context, button));
   }
 
-  
- Widget _buildButtonContent(
-  BuildContext context,
-  String? text,
-  ButtonThemeExtension widgetTheme,
-  bool enabled,
-  Color defaultTextColor,
-  TextStyle? baseTextStyle, {
-  bool hasBounds = false,
-  Widget? leadingWidget,
-  double? leadingSpacing,
-  Widget? trailingWidget,
-  bool includeImage = true,
-}) {
-  final bool hasText = text?.isNotEmpty == true;
-  final swtAlignment = state.alignment ?? SWT.CENTER;
+  Widget _buildButtonContent(
+    BuildContext context,
+    String? text,
+    ButtonThemeExtension widgetTheme,
+    bool enabled,
+    Color defaultTextColor,
+    TextStyle? baseTextStyle, {
+    bool hasBounds = false,
+    Widget? leadingWidget,
+    double? leadingSpacing,
+    Widget? trailingWidget,
+    bool includeImage = true,
+  }) {
+    final bool hasText = text?.isNotEmpty == true;
+    final swtAlignment = state.alignment ?? SWT.CENTER;
 
-  Widget? imageWidget;
-  if (includeImage && state.image != null && state.image?.imageData != null) {
-    final double imageWidth = state.image!.imageData!.width?.toDouble() ?? 0;
-    final double imageHeight = state.image!.imageData!.height?.toDouble() ?? 0;
+    Widget? imageWidget;
+    if (includeImage && state.image != null && state.image?.imageData != null) {
+      final double imageWidth = state.image!.imageData!.width?.toDouble() ?? 0;
+      final double imageHeight =
+          state.image!.imageData!.height?.toDouble() ?? 0;
 
-    if (imageWidth > 0 && imageHeight > 0) {
-      final builtImage = ImageUtils.buildVImage(
-        state.image,
-        width: imageWidth,
-        height: imageHeight,
-        enabled: enabled,
-        constraints: null,
-        useBinaryImage: true,
-        renderAsIcon: false,
-      );
-
-      if (builtImage != null) {
-        imageWidget = SizedBox(
+      if (imageWidth > 0 && imageHeight > 0) {
+        final builtImage = ImageUtils.buildVImage(
+          state.image,
           width: imageWidth,
           height: imageHeight,
-          child: builtImage,
+          enabled: enabled,
+          constraints: null,
+          useBinaryImage: true,
+          renderAsIcon: false,
         );
+
+        if (builtImage != null) {
+          imageWidget = SizedBox(
+            width: imageWidth,
+            height: imageHeight,
+            child: builtImage,
+          );
+        }
       }
     }
-  }
 
-  final alignment = (imageWidget != null)
-      ? MainAxisAlignment.start
-      : swtAlignment == SWT.LEFT
-          ? MainAxisAlignment.start
-          : swtAlignment == SWT.RIGHT
-              ? MainAxisAlignment.end
-              : MainAxisAlignment.center;
+    final alignment = (imageWidget != null)
+        ? MainAxisAlignment.start
+        : swtAlignment == SWT.LEFT
+        ? MainAxisAlignment.start
+        : swtAlignment == SWT.RIGHT
+        ? MainAxisAlignment.end
+        : MainAxisAlignment.center;
 
-  final textColor = getForegroundColor(
-    foreground: state.foreground,
-    defaultColor: defaultTextColor,
-  );
-
-  final textStyle = getTextStyle(
-    context: context,
-    font: state.font,
-    textColor: textColor,
-    baseTextStyle: baseTextStyle,
-  );
-
-  final shouldWrap = shouldWrapText(
-    style: state.style,
-    hasValidBounds: hasBounds,
-    text: text ?? '',
-  );
-
-  Widget rowContent = Row(
-    mainAxisSize: hasBounds ? MainAxisSize.max : MainAxisSize.min,
-    mainAxisAlignment: alignment,
-    crossAxisAlignment: CrossAxisAlignment.center,
-    children: [
-      if (leadingWidget != null) ...[
-        leadingWidget,
-        if (hasText || imageWidget != null)
-          SizedBox(width: leadingSpacing),
-      ],
-
-      if (imageWidget != null)
-        hasBounds ? Flexible(child: imageWidget) : imageWidget,
-
-      if (hasText)
-        Flexible(
-          child: Text(
-            text!,
-            style: textStyle,
-            overflow: shouldWrap ? TextOverflow.visible : TextOverflow.ellipsis,
-            maxLines: shouldWrap ? null : 1,
-          ),
-        ),
-
-      if (trailingWidget != null) ...[
-        if (hasText || imageWidget != null)
-          SizedBox(width: widgetTheme.imageTextSpacing),
-        trailingWidget,
-      ],
-    ],
-  );
-
-  if (leadingWidget != null) {
-    return IntrinsicHeight(
-      child: rowContent,
+    final textColor = getForegroundColor(
+      foreground: state.foreground,
+      defaultColor: defaultTextColor,
     );
-  }
 
-  return rowContent;
-}
+    final textStyle = getTextStyle(
+      context: context,
+      font: state.font,
+      textColor: textColor,
+      baseTextStyle: baseTextStyle,
+    );
+
+    final shouldWrap = shouldWrapText(
+      style: state.style,
+      hasValidBounds: hasBounds,
+      text: text ?? '',
+    );
+
+    Widget rowContent = Row(
+      mainAxisSize: hasBounds ? MainAxisSize.max : MainAxisSize.min,
+      mainAxisAlignment: alignment,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        if (leadingWidget != null) ...[
+          leadingWidget,
+          if (hasText || imageWidget != null) SizedBox(width: leadingSpacing),
+        ],
+
+        if (imageWidget != null)
+          hasBounds ? Flexible(child: imageWidget) : imageWidget,
+
+        if (hasText)
+          Flexible(
+            child: Text(
+              text!,
+              style: textStyle,
+              overflow: shouldWrap
+                  ? TextOverflow.visible
+                  : TextOverflow.ellipsis,
+              maxLines: shouldWrap ? null : 1,
+            ),
+          ),
+
+        if (trailingWidget != null) ...[
+          if (hasText || imageWidget != null)
+            SizedBox(width: widgetTheme.imageTextSpacing),
+          trailingWidget,
+        ],
+      ],
+    );
+
+    if (leadingWidget != null) {
+      return IntrinsicHeight(child: rowContent);
+    }
+
+    return rowContent;
+  }
 
   void _onPressed() {
-    if (hasStyle(state.style, SWT.CHECK) || hasStyle(state.style, SWT.RADIO) || hasStyle(state.style, SWT.TOGGLE)) {
+    if (hasStyle(state.style, SWT.CHECK) ||
+        hasStyle(state.style, SWT.RADIO) ||
+        hasStyle(state.style, SWT.TOGGLE)) {
       setState(() {
         state.selection = !(state.selection ?? false);
       });
     }
-    
+
     widget.sendSelectionSelection(state, null);
   }
 
@@ -534,12 +588,12 @@ class _HoverableButtonState extends State<_HoverableButton> {
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColor = widget.enabled 
-        ? (widget.isPressed 
-            ? widget.pressedBackgroundColor
-            : (_isHovering 
-                ? widget.hoverBackgroundColor
-                : widget.baseBackgroundColor))
+    final backgroundColor = widget.enabled
+        ? (widget.isPressed
+              ? widget.pressedBackgroundColor
+              : (_isHovering
+                    ? widget.hoverBackgroundColor
+                    : widget.baseBackgroundColor))
         : widget.widgetTheme.pushButtonDisabledColor;
 
     return MouseRegion(
@@ -553,18 +607,24 @@ class _HoverableButtonState extends State<_HoverableButton> {
       },
       child: Material(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(widget.widgetTheme.pushButtonBorderRadius),
+        borderRadius: BorderRadius.circular(
+          widget.widgetTheme.pushButtonBorderRadius,
+        ),
         child: InkWell(
           onTap: widget.onPressed,
           onFocusChange: widget.onFocusChange,
-          borderRadius: BorderRadius.circular(widget.widgetTheme.pushButtonBorderRadius),
+          borderRadius: BorderRadius.circular(
+            widget.widgetTheme.pushButtonBorderRadius,
+          ),
           splashColor: widget.widgetTheme.splashColor,
           highlightColor: widget.widgetTheme.highlightColor,
           child: AnimatedContainer(
             duration: widget.widgetTheme.buttonPressDelay,
             constraints: widget.constraints,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(widget.widgetTheme.pushButtonBorderRadius),
+              borderRadius: BorderRadius.circular(
+                widget.widgetTheme.pushButtonBorderRadius,
+              ),
               border: Border.all(
                 color: widget.borderColor,
                 width: widget.widgetTheme.pushButtonBorderWidth,
@@ -627,7 +687,8 @@ class _HoverableCheckboxRadio extends StatefulWidget {
   });
 
   @override
-  State<_HoverableCheckboxRadio> createState() => _HoverableCheckboxRadioState();
+  State<_HoverableCheckboxRadio> createState() =>
+      _HoverableCheckboxRadioState();
 }
 
 class _HoverableCheckboxRadioState extends State<_HoverableCheckboxRadio> {
@@ -649,7 +710,7 @@ class _HoverableCheckboxRadioState extends State<_HoverableCheckboxRadio> {
     }
 
     Widget content;
-    
+
     if (widget.isCircle) {
       // Radio button
       content = AnimatedContainer(
@@ -698,14 +759,16 @@ class _HoverableCheckboxRadioState extends State<_HoverableCheckboxRadio> {
                 color: widget.checkmarkColor,
               )
             : (widget.isGrayed
-                ? Container(
-                    margin: EdgeInsets.all(widget.grayedMargin ?? 0),
-                    decoration: BoxDecoration(
-                      color: widget.checkmarkColor,
-                      borderRadius: BorderRadius.circular(widget.grayedBorderRadius ?? 0),
-                    ),
-                  )
-                : null),
+                  ? Container(
+                      margin: EdgeInsets.all(widget.grayedMargin ?? 0),
+                      decoration: BoxDecoration(
+                        color: widget.checkmarkColor,
+                        borderRadius: BorderRadius.circular(
+                          widget.grayedBorderRadius ?? 0,
+                        ),
+                      ),
+                    )
+                  : null),
       );
     }
 
@@ -720,10 +783,7 @@ class _HoverableCheckboxRadioState extends State<_HoverableCheckboxRadio> {
       },
       child: GestureDetector(
         onTap: widget.onTap,
-        child: Focus(
-          onFocusChange: widget.onFocusChange,
-          child: content,
-        ),
+        child: Focus(onFocusChange: widget.onFocusChange, child: content),
       ),
     );
   }

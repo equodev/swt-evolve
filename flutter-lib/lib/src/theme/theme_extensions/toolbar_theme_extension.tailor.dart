@@ -168,7 +168,5 @@ extension ToolBarThemeExtensionBuildContextProps on BuildContext {
       toolBarThemeExtension.compositeBackgroundColor;
   Color get toolbarBackgroundColor =>
       toolBarThemeExtension.toolbarBackgroundColor;
-
-  /// Ajuste de posición horizontal para el botón Keyword en MainToolbar (bounds layout).
   double get keywordLeftOffset => toolBarThemeExtension.keywordLeftOffset;
 }

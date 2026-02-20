@@ -18,11 +18,7 @@ class MaterialSeparator extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: height,
-      child: VerticalDivider(
-        color: color,
-        thickness: thickness,
-        width: width,
-      ),
+      child: VerticalDivider(color: color, thickness: thickness, width: width),
     );
   }
 }

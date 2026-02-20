@@ -215,6 +215,23 @@ public abstract class FlutterBridge {
         });
     }
 
+    public static <T> void onPayload(Object widget, String event, Class<T> cls, Consumer<T> cb) {
+        String eventName = eventName(widget, event);
+        client.getComm().on(eventName, p -> {
+            System.out.println(eventName + ", payload:"+p);
+            if (p != null) {
+                ByteArrayInputStream in = new ByteArrayInputStream(p.getBytes(StandardCharsets.UTF_8));
+                try {
+                    cb.accept(serializer.from(cls, in));
+                    return;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            cb.accept(null);
+        });
+    }
+
     public static void removeEvent(Object widget, String event) {
         String eventName = eventName(widget, event);
         client.getComm().remove(eventName);
@@ -226,6 +243,24 @@ public abstract class FlutterBridge {
     }
 
     public static void send(DartResource resource, String event, Object args) {
+        if (dirty.contains(resource)) {
+            update().whenComplete((r, a) -> {
+                try {
+                    serializeAndSend(eventName(resource, event), args);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        } else {
+            try {
+                serializeAndSend(eventName(resource, event), args);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static void send(DartWidget resource, String event, Object args) {
         if (dirty.contains(resource)) {
             update().whenComplete((r, a) -> {
                 try {

@@ -100,13 +100,26 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
     return const SizedBox.shrink();
   }
 
-  Widget _buildMenuBar(BuildContext context, MenuThemeExtension widgetTheme, bool enabled, bool visible) {
+  Widget _buildMenuBar(
+    BuildContext context,
+    MenuThemeExtension widgetTheme,
+    bool enabled,
+    bool visible,
+  ) {
     final menuItems = _getMenuItems();
-    final backgroundColor = enabled ? widgetTheme.menuBarBackgroundColor : widgetTheme.disabledBackgroundColor;
-    final textColor = enabled ? widgetTheme.textColor : widgetTheme.disabledTextColor;
-    final borderColor = enabled ? widgetTheme.menuBarBorderColor : widgetTheme.disabledBorderColor;
+    final backgroundColor = enabled
+        ? widgetTheme.menuBarBackgroundColor
+        : widgetTheme.disabledBackgroundColor;
+    final textColor = enabled
+        ? widgetTheme.textColor
+        : widgetTheme.disabledTextColor;
+    final borderColor = enabled
+        ? widgetTheme.menuBarBorderColor
+        : widgetTheme.disabledBorderColor;
 
-    final textStyle = widgetTheme.textStyle?.copyWith(color: textColor) ?? TextStyle(color: textColor);
+    final textStyle =
+        widgetTheme.textStyle?.copyWith(color: textColor) ??
+        TextStyle(color: textColor);
 
     Widget menuBar = AnimatedContainer(
       duration: widgetTheme.animationDuration,
@@ -114,30 +127,44 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       decoration: BoxDecoration(
         color: backgroundColor,
         border: Border(
-          bottom: BorderSide(color: borderColor, width: enabled ? widgetTheme.borderWidth : 0.0),
+          bottom: BorderSide(
+            color: borderColor,
+            width: enabled ? widgetTheme.borderWidth : 0.0,
+          ),
         ),
       ),
       child: Row(
-        children: menuItems.map((item) => _MenuBarItem(
-          item: item,
-          widgetTheme: widgetTheme,
-          textStyle: textStyle,
-          textColor: textColor,
-          borderColor: borderColor,
-          onMenuShow: () => widget.sendMenuShow(state, null),
-          onMenuHide: () => _sendPendingChanges(),
-          registerPendingChange: _registerPendingChange,
-          menuState: _menuState,
-        )).toList(),
+        children: menuItems
+            .map(
+              (item) => _MenuBarItem(
+                item: item,
+                widgetTheme: widgetTheme,
+                textStyle: textStyle,
+                textColor: textColor,
+                borderColor: borderColor,
+                onMenuShow: () => widget.sendMenuShow(state, null),
+                onMenuHide: () => _sendPendingChanges(),
+                registerPendingChange: _registerPendingChange,
+                menuState: _menuState,
+              ),
+            )
+            .toList(),
       ),
     );
 
     return menuBar;
   }
 
-  Widget _buildPopupMenu(BuildContext context, MenuThemeExtension widgetTheme, bool enabled, bool visible) {
+  Widget _buildPopupMenu(
+    BuildContext context,
+    MenuThemeExtension widgetTheme,
+    bool enabled,
+    bool visible,
+  ) {
     final menuItems = _getMenuItems();
-    final backgroundColor = enabled ? widgetTheme.popupBackgroundColor : widgetTheme.disabledBackgroundColor;
+    final backgroundColor = enabled
+        ? widgetTheme.popupBackgroundColor
+        : widgetTheme.disabledBackgroundColor;
     final location = state.location;
 
     if (visible && !_menuController.isOpen) {
@@ -179,7 +206,9 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
           menuState: _menuState,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: menuItems.map((item) => MenuItemSwt(value: item)).toList(),
+            children: menuItems
+                .map((item) => MenuItemSwt(value: item))
+                .toList(),
           ),
         ),
       ],
@@ -249,12 +278,16 @@ class _MenuBarItemState extends State<_MenuBarItem> {
     if (widget.item.menu != null) {
       return MenuAnchor(
         style: MenuStyle(
-          backgroundColor: WidgetStateProperty.all(widget.widgetTheme.popupBackgroundColor),
+          backgroundColor: WidgetStateProperty.all(
+            widget.widgetTheme.popupBackgroundColor,
+          ),
           elevation: WidgetStateProperty.all(widget.widgetTheme.popupElevation),
           padding: WidgetStateProperty.all(widget.widgetTheme.popupPadding),
           shape: WidgetStateProperty.all(
             RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(widget.widgetTheme.borderRadius),
+              borderRadius: BorderRadius.circular(
+                widget.widgetTheme.borderRadius,
+              ),
             ),
           ),
         ),

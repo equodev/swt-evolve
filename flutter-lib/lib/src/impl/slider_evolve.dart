@@ -20,8 +20,7 @@ class SliderImpl<T extends SliderSwt, V extends VSlider>
     final pageIncrement = state.pageIncrement ?? widgetTheme.pageIncrement;
     final thumb = state.thumb ?? widgetTheme.thumb;
 
-    final currentValue =
-        selection!.clamp(minimum, maximum).toDouble();
+    final currentValue = selection!.clamp(minimum, maximum).toDouble();
 
     final enabled = state.enabled ?? true;
     final isVertical = hasStyle(state.style, SWT.VERTICAL);
@@ -43,9 +42,21 @@ class SliderImpl<T extends SliderSwt, V extends VSlider>
       }
     }
 
-    final activeTrackColor = getSliderActiveTrackColor(state, widgetTheme, enabled: enabled);
-    final inactiveTrackColor = getSliderInactiveTrackColor(state, widgetTheme, enabled: enabled);
-    final thumbColor = getSliderThumbColor(state, widgetTheme, enabled: enabled);
+    final activeTrackColor = getSliderActiveTrackColor(
+      state,
+      widgetTheme,
+      enabled: enabled,
+    );
+    final inactiveTrackColor = getSliderInactiveTrackColor(
+      state,
+      widgetTheme,
+      enabled: enabled,
+    );
+    final thumbColor = getSliderThumbColor(
+      state,
+      widgetTheme,
+      enabled: enabled,
+    );
 
     return wrap(
       _StyledSlider(
@@ -102,9 +113,10 @@ Color getSliderInactiveTrackColor(
     return widgetTheme.disabledInactiveTrackColor;
   }
   return getBackgroundColor(
-    background: state.background,
-    defaultColor: widgetTheme.inactiveTrackColor,
-  ) ?? widgetTheme.inactiveTrackColor;
+        background: state.background,
+        defaultColor: widgetTheme.inactiveTrackColor,
+      ) ??
+      widgetTheme.inactiveTrackColor;
 }
 
 Color getSliderThumbColor(
@@ -220,10 +232,6 @@ class _StyledSliderState extends State<_StyledSlider> {
       result = slider;
     }
 
-    return SizedBox(
-      width: widget.width,
-      height: widget.height,
-      child: result,
-    );
+    return SizedBox(width: widget.width, height: widget.height, child: result);
   }
 }

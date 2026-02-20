@@ -56,8 +56,10 @@ class StyledDropdownButton extends StatelessWidget {
                   value: item,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text(item,
-                        style: TextStyle(color: textColor, fontSize: 12)),
+                    child: Text(
+                      item,
+                      style: TextStyle(color: textColor, fontSize: 12),
+                    ),
                   ),
                 );
               }).toList(),
@@ -142,8 +144,10 @@ class StyledSimpleCombo extends StatelessWidget {
                   style: TextStyle(color: textColor, fontSize: 12),
                   decoration: InputDecoration(
                     border: InputBorder.none,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     isDense: true,
                   ),
                   maxLength: textLimit,
@@ -157,8 +161,10 @@ class StyledSimpleCombo extends StatelessWidget {
                   return items.map((String item) {
                     return PopupMenuItem<String>(
                       value: item,
-                      child: Text(item,
-                          style: TextStyle(color: textColor, fontSize: 12)),
+                      child: Text(
+                        item,
+                        style: TextStyle(color: textColor, fontSize: 12),
+                      ),
                     );
                   }).toList();
                 },
@@ -239,8 +245,10 @@ class StyledEditableCombo extends StatelessWidget {
                   style: TextStyle(color: textColor, fontSize: 12),
                   decoration: InputDecoration(
                     border: InputBorder.none,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     isDense: true,
                     counterText: '',
                   ),
@@ -257,8 +265,10 @@ class StyledEditableCombo extends StatelessWidget {
                       value: item,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(item,
-                            style: TextStyle(color: textColor, fontSize: 12)),
+                        child: Text(
+                          item,
+                          style: TextStyle(color: textColor, fontSize: 12),
+                        ),
                       ),
                     );
                   }).toList(),
@@ -267,8 +277,11 @@ class StyledEditableCombo extends StatelessWidget {
                   dropdownColor: backgroundColor,
                   icon: Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child:
-                        Icon(Icons.arrow_drop_down, color: iconColor, size: 20),
+                    child: Icon(
+                      Icons.arrow_drop_down,
+                      color: iconColor,
+                      size: 20,
+                    ),
                   ),
                 ),
               ),

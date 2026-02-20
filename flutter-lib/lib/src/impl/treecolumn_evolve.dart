@@ -10,16 +10,15 @@ import 'utils/widget_utils.dart';
 
 class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     extends ItemImpl<T, V> {
-
   bool _isDragging = false;
   double _startDragOffset = 0.0;
 
   double _calculateLeftPadding(bool isFirstColumn, TreeThemeExtension theme) {
     if (!isFirstColumn) return 0.0;
-    return theme.expandIconSize + 
-           theme.expandIconSpacing + 
-           theme.itemIconSize + 
-           theme.itemIconSpacing;
+    return theme.expandIconSize +
+        theme.expandIconSpacing +
+        theme.itemIconSize +
+        theme.itemIconSpacing;
   }
 
   VEvent _createEvent({
@@ -49,7 +48,7 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     int width,
   ) {
     if (!_isDragging) return;
-    
+
     final dragDistance = details.localPosition.dx - _startDragOffset;
     if (dragDistance.abs() > theme.columnDragThreshold) {
       final e = _createEvent(
@@ -100,9 +99,7 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     );
   }
 
-  Widget _buildColumnBorder({
-    required TreeThemeExtension theme,
-  }) {
+  Widget _buildColumnBorder({required TreeThemeExtension theme}) {
     return Positioned(
       right: 0,
       top: theme.headerColumnBorderVerticalMargin,
@@ -117,12 +114,12 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
   @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<TreeThemeExtension>()!;
-    
+
     final int? columnIndex = TreeColumnIndexProvider.of(context);
     final bool isFirstColumn = columnIndex == 0;
     final bool linesVisible = TreeLinesVisibleProvider.of(context);
     final bool isLastColumn = TreeColumnIsLastProvider.of(context);
-    
+
     final String text = state.text ?? "";
     final int? alignment = state.alignment;
     final bool moveable = state.moveable ?? false;
@@ -132,11 +129,17 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     final Color bgColor = _isDragging
         ? widgetTheme.columnDraggingBackgroundColor
         : Colors.transparent;
-        
-    final double leftPadding = _calculateLeftPadding(isFirstColumn, widgetTheme);
+
+    final double leftPadding = _calculateLeftPadding(
+      isFirstColumn,
+      widgetTheme,
+    );
     final textAlign = getTextAlignFromStyle(alignment ?? 0, TextAlign.left);
-    final textAlignment = getMainAxisAlignmentFromTextAlign(textAlign, MainAxisAlignment.start);
-    
+    final textAlignment = getMainAxisAlignmentFromTextAlign(
+      textAlign,
+      MainAxisAlignment.start,
+    );
+
     const double extraPadding = 4.0;
     EdgeInsets adjustedPadding = adjustPaddingForAlignment(
       basePadding: widgetTheme.columnPadding,
@@ -145,7 +148,9 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
       extraPadding: extraPadding,
     );
     if (!isLastColumn) {
-      adjustedPadding = adjustedPadding.copyWith(right: adjustedPadding.right + widgetTheme.columnDividerGap);
+      adjustedPadding = adjustedPadding.copyWith(
+        right: adjustedPadding.right + widgetTheme.columnDividerGap,
+      );
     }
 
     return MouseRegion(
@@ -178,5 +183,4 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
       ),
     );
   }
-
 }

@@ -5,6 +5,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import org.eclipse.swt.custom.*;
 import java.util.ArrayList;
 
 @CompiledJson()
@@ -39,12 +40,12 @@ public class VTable extends VComposite {
         ((DartTable) impl).columns = value;
     }
 
-    public boolean getEditable() {
-        return ((DartTable) impl)._editable();
+    public TableEditor[] getEditors() {
+        return ((DartTable) impl)._editors();
     }
 
-    public void setEditable(boolean value) {
-        ((DartTable) impl)._setEditable(value);
+    public void setEditors(TableEditor[] value) {
+        ((DartTable) impl).editors = value;
     }
 
     public Color getHeaderBackground() {

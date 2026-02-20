@@ -284,6 +284,26 @@ public class SwtTableEditor extends SwtControlEditor implements ITableEditor {
         super.layout();
     }
 
+    public Table _table() {
+        return table;
+    }
+
+    public TableItem _item() {
+        return item;
+    }
+
+    public int _column() {
+        return column;
+    }
+
+    public ControlListener _columnListener() {
+        return columnListener;
+    }
+
+    public Runnable _timer() {
+        return timer;
+    }
+
     public TableEditor getApi() {
         if (api == null)
             api = TableEditor.createApi(this);

@@ -10,7 +10,9 @@ class ExpandItemImpl<T extends ExpandItemSwt, V extends VExpandItem>
     extends ItemImpl<T, V> {
   @override
   Widget build(BuildContext context) {
-    final widgetTheme = Theme.of(context).extension<ExpandItemThemeExtension>()!;
+    final widgetTheme = Theme.of(
+      context,
+    ).extension<ExpandItemThemeExtension>()!;
 
     final textColor = widgetTheme.foregroundColor;
     final backgroundColor = widgetTheme.backgroundColor;
@@ -31,10 +33,7 @@ class ExpandItemImpl<T extends ExpandItemSwt, V extends VExpandItem>
     return Container(
       decoration: BoxDecoration(
         color: backgroundColor,
-        border: Border.all(
-          color: borderColor,
-          width: widgetTheme.borderWidth,
-        ),
+        border: Border.all(color: borderColor, width: widgetTheme.borderWidth),
         borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
       ),
       clipBehavior: Clip.antiAlias,
@@ -44,14 +43,16 @@ class ExpandItemImpl<T extends ExpandItemSwt, V extends VExpandItem>
           mainAxisSize: MainAxisSize.min,
           children: [
             // Header
-            if (state.text != null || (state.image != null && state.image?.imageData != null))
+            if (state.text != null ||
+                (state.image != null && state.image?.imageData != null))
               Container(
                 color: widgetTheme.headerBackgroundColor,
                 padding: widgetTheme.headerPadding,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (state.image != null && state.image?.imageData != null) ...[
+                    if (state.image != null &&
+                        state.image?.imageData != null) ...[
                       _buildImage(widgetTheme),
                       SizedBox(width: widgetTheme.imageTextSpacing),
                     ],
@@ -92,8 +93,10 @@ class ExpandItemImpl<T extends ExpandItemSwt, V extends VExpandItem>
     final imageData = state.image?.imageData;
     if (imageData == null) return const SizedBox.shrink();
 
-    final double imageWidth = imageData.width?.toDouble() ?? widgetTheme.iconSize;
-    final double imageHeight = imageData.height?.toDouble() ?? widgetTheme.iconSize;
+    final double imageWidth =
+        imageData.width?.toDouble() ?? widgetTheme.iconSize;
+    final double imageHeight =
+        imageData.height?.toDouble() ?? widgetTheme.iconSize;
 
     final builtImage = ImageUtils.buildVImage(
       state.image,

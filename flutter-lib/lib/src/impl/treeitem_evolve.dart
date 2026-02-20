@@ -19,12 +19,53 @@ import 'utils/widget_utils.dart';
 
 class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     extends ItemImpl<T, V> {
-
   TreeItemContext? _context;
 
   bool _isHovered = false;
   bool _hasCheckedForChildren = false;
   Offset? _lastTapPosition;
+
+  void _sendStartEditing() {
+    if (_context?.parentTree != null && _context?.parentTreeValue != null) {
+      final e = _createEvent();
+      e.x = _lastTapPosition?.dx.round();
+
+      // Calculate the absolute Y position within the Tree
+      final widgetTheme = Theme.of(context).extension<TreeThemeExtension>();
+      if (widgetTheme != null && _context?.treeImpl != null) {
+        final itemIndex = _context!.treeImpl!.findItemIndex(state.id);
+        final itemHeight =
+            widgetTheme.itemHeight + widgetTheme.itemPadding.vertical;
+
+        // Calculate header offset
+        double headerOffset = 0.0;
+        final columns = _context!.treeImpl!.getTreeColumns();
+        final headerVisible = _context!.parentTreeValue.headerVisible;
+        if ((headerVisible == true || columns.isNotEmpty) &&
+            columns.isNotEmpty) {
+          headerOffset = widgetTheme.headerHeight;
+        }
+
+        // Calculate absolute Y: header + (itemIndex * itemHeight) + localY
+        final absoluteY =
+            headerOffset +
+            (itemIndex * itemHeight) +
+            (_lastTapPosition?.dy ?? 0);
+        e.y = absoluteY.round();
+      } else {
+        e.y = _lastTapPosition?.dy.round();
+      }
+
+      e.index = state.id;
+      e.count = 2;
+      e.button = 1;
+      _context!.parentTree.sendEvent(
+        _context!.parentTreeValue,
+        "Mouse/MouseDoubleClick",
+        e,
+      );
+    }
+  }
 
   VEvent _createEvent({int? detail, int? stateMask}) {
     final widgetTheme = Theme.of(context).extension<TreeThemeExtension>();
@@ -59,7 +100,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     if (widgetTheme == null) {
       return Text(state.text ?? "");
     }
-    
+
     final String text = state.text ?? "";
     final List<String>? texts = state.texts;
     final bool expanded = state.expanded ?? false;
@@ -72,41 +113,64 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
     final bool selected = _context?.treeImpl?.isItemSelected(state.id) ?? false;
     final bool enabled = _context?.parentTreeValue.enabled ?? false;
-    final bool nextItemSelected = _context?.treeImpl?.isNextItemSelected(state.id) ?? false;
+    final bool nextItemSelected =
+        _context?.treeImpl?.isNextItemSelected(state.id) ?? false;
 
     if (expanded || hasChildren || _hasCheckedForChildren) {
       _hasCheckedForChildren = true;
     }
-    
-    final bool mightHaveChildren = !hasChildren && !expanded && !_hasCheckedForChildren;
-    
-    if (mightHaveChildren && _context?.treeImpl != null && _context?.parentTree != null) {
+
+    final bool mightHaveChildren =
+        !hasChildren && !expanded && !_hasCheckedForChildren;
+
+    if (mightHaveChildren &&
+        _context?.treeImpl != null &&
+        _context?.parentTree != null) {
       _hasCheckedForChildren = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _context?.treeImpl != null && _context?.parentTree != null) {
+        if (mounted &&
+            _context?.treeImpl != null &&
+            _context?.parentTree != null) {
           final e = _createEvent();
           _context!.parentTree.sendTreeExpand(_context!.parentTreeValue, e);
         }
       });
     }
 
-    final textColor = getTreeItemTextColor(state, widgetTheme, selected, enabled);
-    final bgColor = getTreeItemBackgroundColor(state, widgetTheme, selected, _isHovered && !selected, enabled);
+    final textColor = getTreeItemTextColor(
+      state,
+      widgetTheme,
+      selected,
+      enabled,
+    );
+    final bgColor = getTreeItemBackgroundColor(
+      state,
+      widgetTheme,
+      selected,
+      _isHovered && !selected,
+      enabled,
+    );
 
     double? totalTreeWidth = _context?.treeWidth;
     final effectiveWidths = TreeEffectiveColumnWidthsProvider.of(context);
     if (totalTreeWidth == null) {
       if (effectiveWidths != null && effectiveWidths.isNotEmpty) {
-        final prefix = widgetTheme.expandIconSize + widgetTheme.expandIconSpacing;
+        final prefix =
+            widgetTheme.expandIconSize + widgetTheme.expandIconSpacing;
         totalTreeWidth = prefix + effectiveWidths.reduce((a, b) => a + b);
       } else {
         final columns = _context?.treeImpl?.getTreeColumns() ?? [];
         if (columns.isNotEmpty) {
           double calculatedWidth = 0.0;
           for (final column in columns) {
-            calculatedWidth += (column.width ?? widgetTheme.columnDefaultWidth.round()).toDouble();
+            calculatedWidth +=
+                (column.width ?? widgetTheme.columnDefaultWidth.round())
+                    .toDouble();
           }
-          totalTreeWidth = widgetTheme.expandIconSize + widgetTheme.expandIconSpacing + calculatedWidth;
+          totalTreeWidth =
+              widgetTheme.expandIconSize +
+              widgetTheme.expandIconSpacing +
+              calculatedWidth;
         }
       }
     }
@@ -134,20 +198,24 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             bgColor: bgColor,
             nextItemSelected: nextItemSelected,
           ),
-          if (expanded && hasChildren && (_context?.renderChildItems ?? true)) ...buildChildItems(),
+          if (expanded && hasChildren && (_context?.renderChildItems ?? true))
+            ...buildChildItems(),
         ],
       ),
     );
   }
 
   List<Widget> buildChildItems() {
-    final List<VTreeItem> childItems = state.items
+    final List<VTreeItem> childItems =
+        state.items
             ?.whereType<VTreeItem>()
-            .where((childItem) =>
-                (childItem.text != null && childItem.text!.isNotEmpty) ||
-                (childItem.texts != null &&
-                    childItem.texts!.any((text) => text.isNotEmpty)) ||
-                (childItem.items != null && childItem.items!.isNotEmpty))
+            .where(
+              (childItem) =>
+                  (childItem.text != null && childItem.text!.isNotEmpty) ||
+                  (childItem.texts != null &&
+                      childItem.texts!.any((text) => text.isNotEmpty)) ||
+                  (childItem.items != null && childItem.items!.isNotEmpty),
+            )
             .toList() ??
         [];
 
@@ -160,24 +228,35 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         treeImpl: _context?.treeImpl,
         treeFont: _context?.treeFont,
         treeWidth: _context?.treeWidth,
-        //editingItemId: _context?.editingItemId,
-        //editingController: _context?.editingController,
-        //editingFocusNode: _context?.editingFocusNode,
         child: TreeItemSwt(
           value: childItem,
-          key: ValueKey('tree_child_item_${childItem.id}_${childItem.checked}_${childItem.grayed}'),
+          key: ValueKey(
+            'tree_child_item_${childItem.id}_${childItem.checked}_${childItem.grayed}',
+          ),
         ),
       );
     }).toList();
   }
 
-  Widget _buildRowWithColumns(BuildContext context, List<String>? texts, String text, Color textColor, 
-      TreeThemeExtension widgetTheme, int level, 
-      bool hasChildren, bool expanded, bool isCheckMode, bool checked, bool grayed, bool enabled, 
-      bool selected, VImage? image) {
+  Widget _buildRowWithColumns(
+    BuildContext context,
+    List<String>? texts,
+    String text,
+    Color textColor,
+    TreeThemeExtension widgetTheme,
+    int level,
+    bool hasChildren,
+    bool expanded,
+    bool isCheckMode,
+    bool checked,
+    bool grayed,
+    bool enabled,
+    bool selected,
+    VImage? image,
+  ) {
     final columns = _context?.treeImpl?.getTreeColumns() ?? [];
     final bool hasMultipleColumns = columns.isNotEmpty;
-    
+
     if (!hasMultipleColumns) {
       return Row(
         children: [
@@ -194,19 +273,29 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             image: image,
           ),
           Expanded(
-            child: _buildTextContent(context, texts, text, textColor, widgetTheme),
+            child: _buildTextContent(
+              context,
+              texts,
+              text,
+              textColor,
+              widgetTheme,
+            ),
           ),
         ],
       );
     }
-    
+
     final firstColumn = columns[0];
     final effectiveWidths = TreeEffectiveColumnWidthsProvider.of(context);
-    final double firstColumnWidth = effectiveWidths != null && effectiveWidths.isNotEmpty
+    final double firstColumnWidth =
+        effectiveWidths != null && effectiveWidths.isNotEmpty
         ? effectiveWidths[0]
-        : (firstColumn.width ?? widgetTheme.columnDefaultWidth.round()).toDouble();
+        : (firstColumn.width ?? widgetTheme.columnDefaultWidth.round())
+              .toDouble();
 
-    final String firstColumnText = text.isNotEmpty ? text : (texts?.isNotEmpty == true ? texts![0] : '');
+    final String firstColumnText = text.isNotEmpty
+        ? text
+        : (texts?.isNotEmpty == true ? texts![0] : '');
 
     if (effectiveWidths != null && effectiveWidths.length == columns.length) {
       return Row(
@@ -296,14 +385,26 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           ),
         ),
         Expanded(
-          child: _buildOtherColumns(context, texts, textColor, widgetTheme, columns),
+          child: _buildOtherColumns(
+            context,
+            texts,
+            textColor,
+            widgetTheme,
+            columns,
+          ),
         ),
       ],
     );
   }
 
-  Widget? _buildItemIcon(TreeThemeExtension? widgetTheme, bool enabled, bool selected,
-      bool hasChildren, bool expanded, VImage? image) {
+  Widget? _buildItemIcon(
+    TreeThemeExtension? widgetTheme,
+    bool enabled,
+    bool selected,
+    bool hasChildren,
+    bool expanded,
+    VImage? image,
+  ) {
     // Only show an icon if explicitly provided
     if (image == null) {
       return null;
@@ -325,7 +426,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         renderAsIcon: true,
       ),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done && snapshot.data != null) {
+        if (snapshot.connectionState == ConnectionState.done &&
+            snapshot.data != null) {
           return snapshot.data!;
         }
         // Return null if image fails to load
@@ -337,21 +439,28 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     );
   }
 
-
-  Color _getItemIconColor(TreeThemeExtension theme, bool enabled, bool selected) {
+  Color _getItemIconColor(
+    TreeThemeExtension theme,
+    bool enabled,
+    bool selected,
+  ) {
     if (!enabled) return theme.itemIconDisabledColor;
     return selected ? theme.itemIconSelectedColor : theme.itemIconColor;
   }
 
-  Widget _buildOtherColumns(BuildContext context, List<String>? texts, Color textColor, 
-      TreeThemeExtension widgetTheme, 
-      List<VTreeColumn> columns) {
+  Widget _buildOtherColumns(
+    BuildContext context,
+    List<String>? texts,
+    Color textColor,
+    TreeThemeExtension widgetTheme,
+    List<VTreeColumn> columns,
+  ) {
     return Row(
       children: columns.skip(1).toList().asMap().entries.map<Widget>((entry) {
         final int columnIndex = entry.key + 1;
         final column = entry.value;
         final String columnText = _getColumnText(texts, columnIndex);
-        
+
         return _buildColumnCell(
           context: context,
           text: columnText,
@@ -380,7 +489,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     required int columnIndex,
   }) {
     final effectiveWidths = TreeEffectiveColumnWidthsProvider.of(context);
-    final double columnWidth = effectiveWidths != null && columnIndex < effectiveWidths.length
+    final double columnWidth =
+        effectiveWidths != null && columnIndex < effectiveWidths.length
         ? effectiveWidths[columnIndex]
         : (column.width ?? theme.columnDefaultWidth.round()).toDouble();
     return SizedBox(
@@ -397,13 +507,19 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     );
   }
 
-  Widget _buildTextContent(BuildContext context, List<String>? texts, String text, Color textColor, 
-      TreeThemeExtension widgetTheme) {
+  Widget _buildTextContent(
+    BuildContext context,
+    List<String>? texts,
+    String text,
+    Color textColor,
+    TreeThemeExtension widgetTheme,
+  ) {
     final columns = _context?.treeImpl?.getTreeColumns() ?? [];
 
     if (columns.isEmpty) {
-      final displayText =
-          text.isNotEmpty ? text : (texts?.isNotEmpty == true ? texts![0] : '');
+      final displayText = text.isNotEmpty
+          ? text
+          : (texts?.isNotEmpty == true ? texts![0] : '');
       return _buildCellText(
         context: context,
         text: displayText,
@@ -415,21 +531,34 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       );
     }
 
-    return _buildTextContentWithLines(context, texts, text, textColor, widgetTheme);
+    return _buildTextContentWithLines(
+      context,
+      texts,
+      text,
+      textColor,
+      widgetTheme,
+    );
   }
 
-  Widget _buildTextContentWithLines(BuildContext context, List<String>? texts, String text, Color textColor, 
-      TreeThemeExtension widgetTheme) {
+  Widget _buildTextContentWithLines(
+    BuildContext context,
+    List<String>? texts,
+    String text,
+    Color textColor,
+    TreeThemeExtension widgetTheme,
+  ) {
     final columns = _context?.treeImpl?.getTreeColumns() ?? [];
-    
+
     return Row(
       children: columns.asMap().entries.map<Widget>((entry) {
         final int columnIndex = entry.key;
         final column = entry.value;
-        final String columnText = columnIndex == 0 
-            ? (text.isNotEmpty ? text : (texts?.isNotEmpty == true ? texts![0] : ''))
+        final String columnText = columnIndex == 0
+            ? (text.isNotEmpty
+                  ? text
+                  : (texts?.isNotEmpty == true ? texts![0] : ''))
             : _getColumnText(texts, columnIndex);
-        
+
         return _buildColumnCell(
           context: context,
           text: columnText,
@@ -441,7 +570,6 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       }).toList(),
     );
   }
-
 
   Widget _buildExpander({
     required TreeThemeExtension theme,
@@ -455,9 +583,11 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         height: theme.expandIconSize,
       );
     }
-    
-    final Color arrowColor = enabled ? theme.expandIconColor : theme.expandIconDisabledColor;
-    
+
+    final Color arrowColor = enabled
+        ? theme.expandIconColor
+        : theme.expandIconDisabledColor;
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
@@ -492,8 +622,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () {
-      },
+      onTap: () {},
       child: Container(
         margin: EdgeInsets.only(right: theme.checkboxSpacing),
         child: _CheckboxButtonWrapper(
@@ -503,11 +632,19 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           enabled: enabled,
           onChanged: () {
             if (!enabled) return;
-            final bool newCheckedState = grayed ? false : (checked ? false : true);
-            _context?.treeImpl?.handleCheckboxCascade(state.id, newCheckedState);
+            final bool newCheckedState = grayed
+                ? false
+                : (checked ? false : true);
+            _context?.treeImpl?.handleCheckboxCascade(
+              state.id,
+              newCheckedState,
+            );
             _context?.treeImpl?.handleTreeItemSelection(state.id);
             final e = _createEvent(detail: SWT.CHECK);
-            _context?.parentTree.sendSelectionSelection(_context!.parentTreeValue, e);
+            _context?.parentTree.sendSelectionSelection(
+              _context!.parentTreeValue,
+              e,
+            );
           },
         ),
       ),
@@ -534,7 +671,14 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       enabled: enabled,
     );
 
-    final icon = _buildItemIcon(theme, enabled, selected, hasChildren, expanded, image);
+    final icon = _buildItemIcon(
+      theme,
+      enabled,
+      selected,
+      hasChildren,
+      expanded,
+      image,
+    );
 
     return Row(
       children: [
@@ -547,7 +691,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         ),
         SizedBox(width: theme.expandIconSpacing),
         if (checkbox != null) checkbox,
-         if (icon != null)
+        if (icon != null)
           Container(
             margin: EdgeInsets.only(right: theme.itemIconSpacing),
             child: icon,
@@ -574,24 +718,31 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     required Color bgColor,
     required bool nextItemSelected,
   }) {
-    final double expanderAreaWidth = widgetTheme.itemIndent * level + 
-        widgetTheme.expandIconSize + 
+    final double expanderAreaWidth =
+        widgetTheme.itemIndent * level +
+        widgetTheme.expandIconSize +
         widgetTheme.expandIconSpacing;
-    
+
     double? totalTreeWidth = _context?.treeWidth;
     final effectiveWidths = TreeEffectiveColumnWidthsProvider.of(context);
     if (totalTreeWidth == null) {
       if (effectiveWidths != null && effectiveWidths.isNotEmpty) {
-        final prefix = widgetTheme.expandIconSize + widgetTheme.expandIconSpacing;
+        final prefix =
+            widgetTheme.expandIconSize + widgetTheme.expandIconSpacing;
         totalTreeWidth = prefix + effectiveWidths.reduce((a, b) => a + b);
       } else {
         final columns = _context?.treeImpl?.getTreeColumns() ?? [];
         if (columns.isNotEmpty) {
           double calculatedWidth = 0.0;
           for (final column in columns) {
-            calculatedWidth += (column.width ?? widgetTheme.columnDefaultWidth.round()).toDouble();
+            calculatedWidth +=
+                (column.width ?? widgetTheme.columnDefaultWidth.round())
+                    .toDouble();
           }
-          totalTreeWidth = widgetTheme.expandIconSize + widgetTheme.expandIconSpacing + calculatedWidth;
+          totalTreeWidth =
+              widgetTheme.expandIconSize +
+              widgetTheme.expandIconSpacing +
+              calculatedWidth;
         }
       }
     }
@@ -604,15 +755,19 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           setState(() {
             _isHovered = true;
           });
-          _context?.parentTree
-              .sendMouseTrackMouseEnter(_context!.parentTreeValue, null);
+          _context?.parentTree.sendMouseTrackMouseEnter(
+            _context!.parentTreeValue,
+            null,
+          );
         },
         onExit: (_) {
           setState(() {
             _isHovered = false;
           });
-          _context?.parentTree
-              .sendMouseTrackMouseExit(_context!.parentTreeValue, null);
+          _context?.parentTree.sendMouseTrackMouseExit(
+            _context!.parentTreeValue,
+            null,
+          );
         },
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -629,11 +784,13 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             }
 
             final pressedKeys = RawKeyboard.instance.keysPressed;
-            final isCtrlPressed = pressedKeys.contains(LogicalKeyboardKey.controlLeft) ||
+            final isCtrlPressed =
+                pressedKeys.contains(LogicalKeyboardKey.controlLeft) ||
                 pressedKeys.contains(LogicalKeyboardKey.controlRight) ||
                 pressedKeys.contains(LogicalKeyboardKey.metaLeft) ||
                 pressedKeys.contains(LogicalKeyboardKey.metaRight);
-            final isShiftPressed = pressedKeys.contains(LogicalKeyboardKey.shiftLeft) ||
+            final isShiftPressed =
+                pressedKeys.contains(LogicalKeyboardKey.shiftLeft) ||
                 pressedKeys.contains(LogicalKeyboardKey.shiftRight);
 
             _context?.treeImpl?.handleTreeItemSelection(
@@ -650,77 +807,87 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               stateMask |= SWT.SHIFT;
             }
             final e = _createEvent(stateMask: stateMask);
+            e.count = 1;
+            e.button = 1;
 
-            _context?.parentTree
-                .sendSelectionSelection(_context!.parentTreeValue, e);
+            _context?.parentTree.sendSelectionSelection(
+              _context!.parentTreeValue,
+              e,
+            );
+          },
+          onDoubleTapDown: (TapDownDetails details) {
+            _lastTapPosition = details.localPosition;
           },
           onDoubleTap: () {
             if (!enabled) return;
+            _sendStartEditing();
             final e = _createEvent();
-            _context?.parentTree
-                .sendSelectionDefaultSelection(_context!.parentTreeValue, e);
+            e.count = 2;
+            e.button = 1;
+            _context?.parentTree.sendSelectionDefaultSelection(
+              _context!.parentTreeValue,
+              e,
+            );
           },
           child: Container(
-              width: double.infinity,
-              constraints: BoxConstraints(
-                minHeight: widgetTheme.itemHeight,
-              ),
-              margin: selected
-                  ? EdgeInsets.only(
-                      left: -widgetTheme.itemSelectedBorderWidth,
-                      right: -widgetTheme.itemSelectedBorderWidth,
-                      top: -widgetTheme.itemSelectedBorderWidth,
+            width: double.infinity,
+            constraints: BoxConstraints(minHeight: widgetTheme.itemHeight),
+            margin: selected
+                ? EdgeInsets.only(
+                    left: -widgetTheme.itemSelectedBorderWidth,
+                    right: -widgetTheme.itemSelectedBorderWidth,
+                    top: -widgetTheme.itemSelectedBorderWidth,
+                    bottom: nextItemSelected
+                        ? 0.0
+                        : -widgetTheme.itemSelectedBorderWidth,
+                  )
+                : null,
+            decoration: BoxDecoration(
+              color: bgColor,
+              border: selected
+                  ? Border(
+                      left: BorderSide(
+                        color: widgetTheme.itemSelectedBorderColor,
+                        width: widgetTheme.itemSelectedBorderWidth,
+                      ),
+                      right: BorderSide(
+                        color: widgetTheme.itemSelectedBorderColor,
+                        width: widgetTheme.itemSelectedBorderWidth,
+                      ),
+                      top: BorderSide(
+                        color: widgetTheme.itemSelectedBorderColor,
+                        width: widgetTheme.itemSelectedBorderWidth,
+                      ),
                       bottom: nextItemSelected
-                          ? 0.0
-                          : -widgetTheme.itemSelectedBorderWidth,
+                          ? BorderSide.none
+                          : BorderSide(
+                              color: widgetTheme.itemSelectedBorderColor,
+                              width: widgetTheme.itemSelectedBorderWidth,
+                            ),
                     )
                   : null,
-              decoration: BoxDecoration(
-                color: bgColor,
-                border: selected
-                    ? Border(
-                        left: BorderSide(
-                          color: widgetTheme.itemSelectedBorderColor,
-                          width: widgetTheme.itemSelectedBorderWidth,
-                        ),
-                        right: BorderSide(
-                          color: widgetTheme.itemSelectedBorderColor,
-                          width: widgetTheme.itemSelectedBorderWidth,
-                        ),
-                        top: BorderSide(
-                          color: widgetTheme.itemSelectedBorderColor,
-                          width: widgetTheme.itemSelectedBorderWidth,
-                        ),
-                        bottom: nextItemSelected
-                            ? BorderSide.none
-                            : BorderSide(
-                                color: widgetTheme.itemSelectedBorderColor,
-                                width: widgetTheme.itemSelectedBorderWidth,
-                              ),
-                      )
-                    : null,
-              ),
-              padding: widgetTheme.itemPadding,
-              child: _buildRowWithColumns(
-                context,
-                texts,
-                text,
-                textColor,
-                widgetTheme,
-                level,
-                hasChildren,
-                expanded,
-                isCheckMode,
-                checked,
-                grayed,
-                enabled,
-                selected,
-                image,
-              ),
+            ),
+            padding: widgetTheme.itemPadding,
+            child: _buildRowWithColumns(
+              context,
+              texts,
+              text,
+              textColor,
+              widgetTheme,
+              level,
+              hasChildren,
+              expanded,
+              isCheckMode,
+              checked,
+              grayed,
+              enabled,
+              selected,
+              image,
             ),
           ),
         ),
-      );
+      ),
+    );
   }
 
   Widget _buildCellText({
@@ -732,7 +899,10 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     required EdgeInsets cellPadding,
     required int columnIndex,
   }) {
-    final cellTextColor = getForegroundColor(foreground: state.foreground, defaultColor: textColor);
+    final cellTextColor = getForegroundColor(
+      foreground: state.foreground,
+      defaultColor: textColor,
+    );
     final cellTextStyle = getTextStyle(
       context: context,
       font: state.font ?? _context?.treeFont,
@@ -740,43 +910,6 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       baseTextStyle: theme.itemTextStyle,
     );
 
-    // Only allow editing on the first column (columnIndex 0)
-    // final isEditing = columnIndex == 0 &&
-    //                  _context?.editingItemId == state.id &&
-    //                  _context?.editingController != null &&
-    //                  _context?.editingFocusNode != null;
-    //
-    // Widget textWidget = isEditing
-    //     ? TextField(
-    //           controller: _context!.editingController!,
-    //           focusNode: _context!.editingFocusNode!,
-    //           style: cellTextStyle,
-    //           textAlign: getTextAlignFromStyle(columnAlignment ?? 0, TextAlign.left),
-    //           decoration: InputDecoration(
-    //             isDense: true,
-    //             contentPadding: EdgeInsets.zero,
-    //             border: InputBorder.none,
-    //             focusedBorder: InputBorder.none,
-    //             enabledBorder: InputBorder.none,
-    //           ),
-    //           onSubmitted: (value) {
-    //             if (_context?.treeImpl != null) {
-    //               _context!.treeImpl!.finishEditing();
-    //             }
-    //           },
-    //           onEditingComplete: () {
-    //             if (_context?.treeImpl != null) {
-    //               _context!.treeImpl!.finishEditing();
-    //             }
-    //           },
-    //         )
-    //       : Text(
-    //           text,
-    //           style: cellTextStyle,
-    //           textAlign: getTextAlignFromStyle(columnAlignment ?? 0, TextAlign.left),
-    //           maxLines: 1,
-    //           overflow: TextOverflow.ellipsis,
-    //         );
     Widget textWidget = Text(
       text,
       style: cellTextStyle,
@@ -785,28 +918,6 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       overflow: TextOverflow.ellipsis,
     );
 
-    // Wrap text in GestureDetector for double-click editing (only first column)
-    // Use deferToChild so only the text area triggers editing, not the padding
-    // final bool parentEnabled = _context?.parentTreeValue.enabled ?? false;
-    // if (columnIndex == 0 &&
-    //     parentEnabled &&
-    //     _context?.parentTreeValue.editable == true &&
-    //     !isEditing &&
-    //     _context?.treeImpl != null) {
-    //   textWidget = GestureDetector(
-    //     behavior: HitTestBehavior.deferToChild,
-    //     onDoubleTap: () {
-    //       final e = _createEvent();
-    //       _context?.parentTree
-    //           .sendSelectionDefaultSelection(_context!.parentTreeValue, e);
-    //       if (_context?.editingItemId != state.id && _context?.treeImpl != null) {
-    //         _context!.treeImpl!.startEditing(state.id);
-    //       }
-    //     },
-    //     child: textWidget,
-    //   );
-    // }
-
     EdgeInsets adjustedPadding = adjustPaddingForAlignment(
       basePadding: cellPadding,
       alignment: columnAlignment,
@@ -814,39 +925,13 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     );
     final columns = _context?.treeImpl?.getTreeColumns() ?? [];
     if (columns.isNotEmpty && columnIndex < columns.length - 1) {
-      adjustedPadding = adjustedPadding.copyWith(right: adjustedPadding.right + theme.columnDividerGap);
+      adjustedPadding = adjustedPadding.copyWith(
+        right: adjustedPadding.right + theme.columnDividerGap,
+      );
     }
 
-    // Wrap textWidget to prevent it from expanding beyond its content
-    // This ensures the GestureDetector only captures clicks on the actual text
-    // Widget contentWidget = textWidget;
-    // if (columnIndex == 0 &&
-    //     _context?.parentTreeValue.editable == true &&
-    //     !isEditing) {
-    //   // Use IntrinsicWidth to limit the clickable area to the actual text width
-    //   // Then align it according to the column alignment
-    //   final alignment = _getAlignmentFromStyle(columnAlignment ?? 0);
-    //   contentWidget = Align(
-    //     alignment: alignment,
-    //     child: IntrinsicWidth(
-    //       child: textWidget,
-    //     ),
-    //   );
-    // }
-
-    return Container(
-      padding: adjustedPadding,
-      child: textWidget,
-    );
+    return Container(padding: adjustedPadding, child: textWidget);
   }
-
-  // Alignment _getAlignmentFromStyle(int alignment) {
-  //   if (alignment == SWT.CENTER) return Alignment.center;
-  //   if (alignment == SWT.RIGHT || alignment == SWT.TRAIL) {
-  //     return Alignment.centerRight;
-  //   }
-  //   return Alignment.centerLeft;
-  // }
 }
 
 class _CheckboxButtonWrapper extends StatefulWidget {
@@ -897,20 +982,14 @@ class _CheckboxButtonWrapperState extends State<_CheckboxButtonWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    return _TreeCheckboxButton(
-      value: buttonValue,
-      onChanged: widget.onChanged,
-    );
+    return _TreeCheckboxButton(value: buttonValue, onChanged: widget.onChanged);
   }
 }
 
 class _TreeCheckboxButton extends ButtonSwt<VButton> {
   final VoidCallback onChanged;
 
-  const _TreeCheckboxButton({
-    required super.value,
-    required this.onChanged,
-  });
+  const _TreeCheckboxButton({required super.value, required this.onChanged});
 
   @override
   void sendSelectionSelection(VButton val, VEvent? payload) {

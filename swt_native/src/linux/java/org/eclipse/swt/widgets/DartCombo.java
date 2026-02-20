@@ -1831,6 +1831,11 @@ public class DartCombo extends DartComposite implements ICombo {
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                if (e.text != null) {
+                    text = e.text;
+                }
                 sendEvent(SWT.Selection, e);
             });
         });

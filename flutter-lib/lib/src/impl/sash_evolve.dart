@@ -33,7 +33,8 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
 
     if (state.bounds != null) {
       if (_localX != null && _localY != null) {
-        final bool positionConfirmed = state.bounds!.x == _localX && state.bounds!.y == _localY;
+        final bool positionConfirmed =
+            state.bounds!.x == _localX && state.bounds!.y == _localY;
 
         if (positionConfirmed && !_isInLocalEditMode) {
           setState(() {
@@ -59,8 +60,8 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
 
   Size _getParentDimensions() {
     Size defaultSize = Size(
-        (initialX != null) ? initialX! * 2.0 : 400.0,
-        (initialY != null) ? initialY! * 2.0 : 300.0
+      (initialX != null) ? initialX! * 2.0 : 400.0,
+      (initialY != null) ? initialY! * 2.0 : 300.0,
     );
 
     try {
@@ -69,8 +70,10 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
       if (parentState != null) {
         final parentBounds = parentState.state.bounds;
         if (parentBounds != null) {
-          final parentWidth = parentBounds.width?.toDouble() ?? defaultSize.width;
-          final parentHeight = parentBounds.height?.toDouble() ?? defaultSize.height;
+          final parentWidth =
+              parentBounds.width?.toDouble() ?? defaultSize.width;
+          final parentHeight =
+              parentBounds.height?.toDouble() ?? defaultSize.height;
           return Size(parentWidth, parentHeight);
         }
       }
@@ -96,10 +99,12 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
     final enabled = state.enabled ?? true;
 
     final widgetTheme = Theme.of(context).extension<SashThemeExtension>()!;
-    Color sashColor = getBackgroundColor(
-      background: state.background,
-      defaultColor: widgetTheme.backgroundColor,
-    ) ?? widgetTheme.backgroundColor;
+    Color sashColor =
+        getBackgroundColor(
+          background: state.background,
+          defaultColor: widgetTheme.backgroundColor,
+        ) ??
+        widgetTheme.backgroundColor;
 
     final boundsWidth = bounds?.width?.toDouble() ?? 0;
     final boundsHeight = bounds?.height?.toDouble() ?? 0;
@@ -109,7 +114,9 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
     Widget sashContent = MouseRegion(
       onEnter: (_) => handleMouseEnter(),
       onExit: (_) => handleMouseExit(),
-      cursor: isHorizontal ? SystemMouseCursors.resizeRow : SystemMouseCursors.resizeColumn,
+      cursor: isHorizontal
+          ? SystemMouseCursors.resizeRow
+          : SystemMouseCursors.resizeColumn,
       child: Focus(
         onFocusChange: (hasFocus) {
           if (hasFocus) {
@@ -119,26 +126,29 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
           }
         },
         child: GestureDetector(
-          onPanStart: enabled ? (details) {
-            _isDragging = true;
-            handleSelectionStart(details);
-          } : null,
-          onPanUpdate: enabled ? (details) {
-            if (_isDragging) {
-              handleSelectionDrag(details);
-            }
-          } : null,
-          onPanEnd: enabled ? (details) {
-            _isDragging = false;
-            handleSelectionEnd(details);
-          } : null,
+          onPanStart: enabled
+              ? (details) {
+                  _isDragging = true;
+                  handleSelectionStart(details);
+                }
+              : null,
+          onPanUpdate: enabled
+              ? (details) {
+                  if (_isDragging) {
+                    handleSelectionDrag(details);
+                  }
+                }
+              : null,
+          onPanEnd: enabled
+              ? (details) {
+                  _isDragging = false;
+                  handleSelectionEnd(details);
+                }
+              : null,
           child: Container(
             width: width,
             height: height,
-            constraints: BoxConstraints(
-              maxHeight: height,
-              maxWidth: width,
-            ),
+            constraints: BoxConstraints(maxHeight: height, maxWidth: width),
             color: sashColor,
           ),
         ),
@@ -218,14 +228,14 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
         newY = 0;
       }
 
-      final parentHeight = _parentDimensions?.height.round() ??
+      final parentHeight =
+          _parentDimensions?.height.round() ??
           ((initialY != null) ? initialY! * 2 : 0);
 
       final maxY = parentHeight - height;
       if (newY > maxY) {
         newY = maxY;
       }
-
     } else {
       newX = details.globalPosition.dx.round() - _startX;
 
@@ -233,7 +243,8 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
         newX = 0;
       }
 
-      final parentWidth = _parentDimensions?.width.round() ??
+      final parentWidth =
+          _parentDimensions?.width.round() ??
           ((initialX != null) ? initialX! * 2 : 0);
 
       final maxX = parentWidth - width;

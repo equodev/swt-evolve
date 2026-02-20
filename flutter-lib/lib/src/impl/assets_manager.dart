@@ -52,7 +52,9 @@ class AssetsManager {
   }
 
   static Future<Object?> _loadFromExternalPath(
-      String filename, String assetsPath) async {
+    String filename,
+    String assetsPath,
+  ) async {
     // Extract just the filename without path (e.g., "toolbar/new_24.png" -> "new_24")
     String filenameOnly = filename;
     if (filename.contains('/')) {

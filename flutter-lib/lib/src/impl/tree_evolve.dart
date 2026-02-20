@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:swtflutter/src/styles.dart';
 import 'package:swtflutter/src/gen/treecolumn.dart';
 import 'package:swtflutter/src/gen/widget.dart';
+import 'package:swtflutter/src/gen/widgets.dart';
 import '../gen/font.dart';
 import '../impl/composite_evolve.dart';
 import '../impl/widget_config.dart';
@@ -14,6 +16,7 @@ import '../comm/comm.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
 import '../theme/theme_settings/tree_theme_settings.dart';
 import 'utils/widget_utils.dart';
+import '../gen/rectangle.dart';
 
 class _FlatTreeItem {
   final VTreeItem item;
@@ -23,26 +26,125 @@ class _FlatTreeItem {
 
 class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   final Map<dynamic, String> treeItemExpanders = {};
-  final   List<String> eventNames = [];
+  final List<String> eventNames = [];
   TreeThemeExtension? _cachedWidgetTheme;
+  List<double>? _cachedEffectiveWidths;
   List<VTreeItem>? _pendingSelection;
-  int checkboxUpdateCounter = 0; 
+  int checkboxUpdateCounter = 0;
   final Map<Object, Map<String, bool>> _pendingCheckboxStates = {};
   Object? _lastSelectedItemId;
   ScrollController? _horizontalController;
   ScrollController? _verticalController;
-  //Object? _editingItemId;
-  //TextEditingController? _editingController;
-  //FocusNode? _editingFocusNode;
-  //VoidCallback? _editingFocusListener;
 
   @override
   void initState() {
     super.initState();
     _horizontalController = ScrollController();
     _verticalController = ScrollController();
+    _registerGetIdFromPointListener();
+    _registerGetItemBoundsListener();
   }
 
+  void _registerGetIdFromPointListener() {
+    final eventName = "${state.swt}/${state.id}/GetIdFromPoint";
+    EquoCommService.onRaw(eventName, (payload) {
+      if (payload != null) {
+        try {
+          final Map<String, dynamic> point = payload is String
+              ? (jsonDecode(payload) as Map<String, dynamic>)
+              : Map<String, dynamic>.from(payload as Map);
+          final x = (point['x'] as num?)?.toDouble() ?? 0.0;
+          final y = (point['y'] as num?)?.toDouble() ?? 0.0;
+
+          final itemId = findItemIdAtPosition(x, y);
+
+          // Send response back to Java
+          final responseEvent =
+              "${state.swt}/${state.id}/GetIdFromPointResponse";
+          EquoCommService.sendPayload(
+            responseEvent,
+            itemId?.toString() ?? "-1",
+          );
+        } catch (e) {
+          print('Error processing GetIdFromPoint: $e');
+          final responseEvent =
+              "${state.swt}/${state.id}/GetIdFromPointResponse";
+          EquoCommService.sendPayload(responseEvent, "-1");
+        }
+      }
+    });
+  }
+
+  void _registerGetItemBoundsListener() {
+    final eventName = "${state.swt}/${state.id}/GetItemBounds";
+    EquoCommService.onRaw(eventName, (payload) {
+      final responseEvent = "${state.swt}/${state.id}/GetItemBoundsResponse";
+      if (payload == null) {
+        EquoCommService.sendPayload(responseEvent, VRectangle().toJson());
+        return;
+      }
+      try {
+        String raw = payload.toString();
+        if (raw.startsWith('"') && raw.endsWith('"')) {
+          raw = raw.substring(1, raw.length - 1);
+        }
+        final parts = raw.split(",");
+        final itemId = int.parse(parts[0]);
+        final columnIndex = int.parse(parts[1]);
+
+        final bounds = _calculateItemBounds(itemId, columnIndex);
+        final rect = VRectangle()
+          ..x = bounds.left.round()
+          ..y = bounds.top.round()
+          ..width = bounds.width.round()
+          ..height = bounds.height.round();
+        EquoCommService.sendPayload(responseEvent, rect.toJson());
+      } catch (e) {
+        print('Error processing GetItemBounds: $e');
+        EquoCommService.sendPayload(responseEvent, VRectangle().toJson());
+      }
+    });
+  }
+
+  Rect _calculateItemBounds(int itemId, int columnIndex) {
+    if (_cachedWidgetTheme == null) return Rect.zero;
+
+    final theme = _cachedWidgetTheme!;
+    final itemHeight = theme.itemHeight + theme.itemPadding.vertical;
+    final columns = getTreeColumns();
+
+    // Find item flat index
+    final itemIndex = findItemIndex(itemId);
+    if (itemIndex < 0) return Rect.zero;
+
+    // Y position
+    double headerOffset = 0.0;
+    if ((state.headerVisible == true || columns.isNotEmpty) &&
+        columns.isNotEmpty) {
+      headerOffset = theme.headerHeight;
+    }
+    final y = headerOffset + (itemIndex * itemHeight);
+
+    // X position and width
+    double x = 0.0;
+    double width = state.bounds?.width?.toDouble() ?? 200.0;
+
+    if (columns.isNotEmpty && _cachedEffectiveWidths != null) {
+      final effectiveWidths = _cachedEffectiveWidths!;
+      final prefix = theme.expandIconSize + theme.expandIconSpacing;
+      x = prefix;
+
+      for (int i = 0; i < columnIndex && i < effectiveWidths.length; i++) {
+        x += effectiveWidths[i];
+      }
+
+      if (columnIndex < effectiveWidths.length) {
+        width = effectiveWidths[columnIndex];
+      }
+    }
+
+    return Rect.fromLTWH(x, y, width, itemHeight);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,29 +155,31 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   @override
   void setValue(V value) {
     final incomingSelection = value.selection ?? [];
-    final hasLocalSelection = _pendingSelection != null && _pendingSelection!.isNotEmpty;
-    
+    final hasLocalSelection =
+        _pendingSelection != null && _pendingSelection!.isNotEmpty;
+
     bool selectionsDiffer = false;
     if (hasLocalSelection && incomingSelection.isNotEmpty) {
       final pendingIds = Set.from(_pendingSelection!.map((item) => item.id));
       final incomingIds = Set.from(incomingSelection.map((item) => item.id));
-      selectionsDiffer = pendingIds.length != incomingIds.length ||
+      selectionsDiffer =
+          pendingIds.length != incomingIds.length ||
           pendingIds.any((id) => !incomingIds.contains(id)) ||
           incomingIds.any((id) => !pendingIds.contains(id));
     }
-    
+
     if ((incomingSelection.isEmpty || selectionsDiffer) && hasLocalSelection) {
       value.selection = List<VTreeItem>.from(_pendingSelection!);
       _pendingSelection = null;
       super.setValue(value);
-      setState(() {}); 
+      setState(() {});
     } else {
       if (incomingSelection.isNotEmpty) {
         _pendingSelection = null;
       }
       super.setValue(value);
     }
-    
+
     if (_pendingCheckboxStates.isNotEmpty && value.items != null) {
       _preserveCheckboxStates(value.items!);
     }
@@ -89,7 +193,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
           item.checked = pendingState['checked'];
           item.grayed = pendingState['grayed'];
         }
-        
+
         if (item.items != null) {
           _preserveCheckboxStates(item.items!);
         }
@@ -99,10 +203,10 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   Widget createTreeView() {
     return LayoutBuilder(
-        builder: (context, constraints) {
-          final widgetTheme = Theme.of(context).extension<TreeThemeExtension>();
-          _cachedWidgetTheme = widgetTheme;
-        
+      builder: (context, constraints) {
+        final widgetTheme = Theme.of(context).extension<TreeThemeExtension>();
+        _cachedWidgetTheme = widgetTheme;
+
         final double screenWidth = MediaQuery.of(context).size.width;
         final double screenHeight = MediaQuery.of(context).size.height;
         final double maxWidth = constraints.maxWidth.isFinite
@@ -117,7 +221,12 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         final allItems = _collectAllTreeItems(state.items);
         final preferredWidths = columns.isEmpty
             ? <double>[]
-            : _computePreferredColumnWidths(context, columns, allItems, widgetTheme!);
+            : _computePreferredColumnWidths(
+                context,
+                columns,
+                allItems,
+                widgetTheme!,
+              );
         final effectiveWidths = columns.isEmpty
             ? null
             : _computeEffectiveColumnWidths(
@@ -126,49 +235,62 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                 state.bounds?.width?.toDouble(),
                 widgetTheme!,
               );
+        _cachedEffectiveWidths = effectiveWidths;
 
         final backgroundColor = getTreeBackgroundColor(state, widgetTheme!);
 
         final bool hasVScroll = StyleBits(state.style).has(SWT.V_SCROLL);
         final bool hasHScroll = StyleBits(state.style).has(SWT.H_SCROLL);
 
+        // Build editor overlays if editing is active
+        final editorOverlays = _buildEditorOverlays(
+          widgetTheme!,
+          effectiveWidths,
+        );
+
         return ScrollConfiguration(
           behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
           child: Focus(
             onKeyEvent: _handleKeyEvent,
-            child: Container(
-              width: maxWidth,
-              height: maxHeight,
-              color: backgroundColor,
-              child: TreeEffectiveColumnWidthsProvider(
-                effectiveWidths: effectiveWidths,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if ((state.headerVisible == true || columns.isNotEmpty) &&
-                        columns.isNotEmpty)
-                      _buildHeaderWithLines(
-                        columns,
-                        effectiveWidths,
-                        widgetTheme!,
-                      ),
-                    Expanded(
-                      child: Material(
-                        color: Colors.transparent,
-                        child: _buildScrollableContent(
-                          flatItems,
-                          columns,
-                          widgetTheme!,
-                          context,
-                          hasVScroll,
-                          hasHScroll,
-                          effectiveWidths,
+            child: Stack(
+              children: [
+                Container(
+                  width: maxWidth,
+                  height: maxHeight,
+                  color: backgroundColor,
+                  child: TreeEffectiveColumnWidthsProvider(
+                    effectiveWidths: effectiveWidths,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if ((state.headerVisible == true ||
+                                columns.isNotEmpty) &&
+                            columns.isNotEmpty)
+                          _buildHeaderWithLines(
+                            columns,
+                            effectiveWidths,
+                            widgetTheme!,
+                          ),
+                        Expanded(
+                          child: Material(
+                            color: Colors.transparent,
+                            child: _buildScrollableContent(
+                              flatItems,
+                              columns,
+                              widgetTheme!,
+                              context,
+                              hasVScroll,
+                              hasHScroll,
+                              effectiveWidths,
+                            ),
+                          ),
                         ),
-                      ),
-                    )
-                  ],
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+                ...editorOverlays,
+              ],
             ),
           ),
         );
@@ -234,7 +356,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   ) {
     if (columns.isEmpty) return [];
     final isCheckMode = StyleBits(state.style).has(SWT.CHECK);
-    final checkboxWidth = isCheckMode ? (theme.checkboxSize + theme.checkboxSpacing) : 0.0;
+    final checkboxWidth = isCheckMode
+        ? (theme.checkboxSize + theme.checkboxSpacing)
+        : 0.0;
     final paddingH = theme.cellMultiColumnPadding.horizontal;
     final prefixBase = theme.expandIconSize + theme.expandIconSpacing;
     final iconSpace = theme.itemIconSize + theme.itemIconSpacing;
@@ -257,7 +381,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         );
 
         for (int col = 0; col < columns.length; col++) {
-          final String cellText = col == 0 ? firstText : (col < texts.length ? texts[col] : '');
+          final String cellText = col == 0
+              ? firstText
+              : (col < texts.length ? texts[col] : '');
           final painter = TextPainter(
             text: TextSpan(text: cellText, style: textStyle),
             textDirection: TextDirection.ltr,
@@ -342,7 +468,12 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     bool hasHScroll,
     List<double>? effectiveWidths,
   ) {
-    double? totalWidth = _calculateTotalWidth(hasHScroll, columns, widgetTheme, effectiveWidths);
+    double? totalWidth = _calculateTotalWidth(
+      hasHScroll,
+      columns,
+      widgetTheme,
+      effectiveWidths,
+    );
     Widget listViewWithLines = _buildListViewWithColumnLines(
       flatItems,
       columns,
@@ -361,7 +492,12 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     }
   }
 
-  double? _calculateTotalWidth(bool hasHScroll, List<VTreeColumn> columns, TreeThemeExtension widgetTheme, List<double>? effectiveWidths) {
+  double? _calculateTotalWidth(
+    bool hasHScroll,
+    List<VTreeColumn> columns,
+    TreeThemeExtension widgetTheme,
+    List<double>? effectiveWidths,
+  ) {
     if (!hasHScroll || columns.isEmpty) return null;
     final boundsW = state.bounds?.width?.toDouble();
     if (boundsW != null && boundsW > 0) return boundsW;
@@ -371,9 +507,12 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     }
     double calculatedWidth = 0.0;
     for (final column in columns) {
-      calculatedWidth += (column.width ?? widgetTheme.columnDefaultWidth.round()).toDouble();
+      calculatedWidth +=
+          (column.width ?? widgetTheme.columnDefaultWidth.round()).toDouble();
     }
-    return widgetTheme.expandIconSize + widgetTheme.expandIconSpacing + calculatedWidth;
+    return widgetTheme.expandIconSize +
+        widgetTheme.expandIconSpacing +
+        calculatedWidth;
   }
 
   Widget _buildListViewWithColumnLines(
@@ -403,7 +542,8 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     for (int i = 0; i < columns.length; i++) {
       final double width = effectiveWidths != null && i < effectiveWidths.length
           ? effectiveWidths[i]
-          : (columns[i].width ?? widgetTheme.columnDefaultWidth.round()).toDouble();
+          : (columns[i].width ?? widgetTheme.columnDefaultWidth.round())
+                .toDouble();
 
       cumulativeWidth += width;
 
@@ -415,22 +555,28 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     return Stack(
       children: [
         listView,
-        ...linePositions.map((position) => Positioned(
-          left: position,
-          top: 0,
-          bottom: 0,
-          child: IgnorePointer(
-            child: Container(
-              width: widgetTheme.columnBorderWidth,
-              color: widgetTheme.columnRightBorderColor,
+        ...linePositions.map(
+          (position) => Positioned(
+            left: position,
+            top: 0,
+            bottom: 0,
+            child: IgnorePointer(
+              child: Container(
+                width: widgetTheme.columnBorderWidth,
+                color: widgetTheme.columnRightBorderColor,
+              ),
             ),
           ),
-        )),
+        ),
       ],
     );
   }
 
-  Widget _buildBothScrollbars(BuildContext context, Widget listViewWithLines, double? totalWidth) {
+  Widget _buildBothScrollbars(
+    BuildContext context,
+    Widget listViewWithLines,
+    double? totalWidth,
+  ) {
     Widget content = listViewWithLines;
     if (totalWidth != null) {
       content = SizedBox(width: totalWidth, child: content);
@@ -456,7 +602,10 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     );
   }
 
-  Widget _buildVerticalScrollbar(BuildContext context, Widget listViewWithLines) {
+  Widget _buildVerticalScrollbar(
+    BuildContext context,
+    Widget listViewWithLines,
+  ) {
     return Scrollbar(
       controller: _verticalController,
       thumbVisibility: true,
@@ -467,7 +616,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     );
   }
 
-  Widget _buildHorizontalScrollbar(BuildContext context, Widget listViewWithLines, double? totalWidth) {
+  Widget _buildHorizontalScrollbar(
+    BuildContext context,
+    Widget listViewWithLines,
+    double? totalWidth,
+  ) {
     Widget content = listViewWithLines;
     if (totalWidth != null) {
       content = SizedBox(width: totalWidth, child: content);
@@ -487,10 +640,16 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     );
   }
 
-  Widget _buildNoScrollbars(BuildContext context, Widget listViewWithLines) {
+  Widget _buildNoScrollbars(BuildContext context, Widget content) {
     return ScrollConfiguration(
       behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-      child: listViewWithLines,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.vertical,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: content,
+        ),
+      ),
     );
   }
 
@@ -518,7 +677,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                 ...columns.asMap().entries.map((entry) {
                   final int columnIndex = entry.key;
                   final column = entry.value;
-                  final double width = effectiveWidths != null && columnIndex < effectiveWidths.length
+                  final double width =
+                      effectiveWidths != null &&
+                          columnIndex < effectiveWidths.length
                       ? effectiveWidths[columnIndex]
                       : (column.width ?? defaultWidth).toDouble();
                   cumulativeWidth += width;
@@ -551,21 +712,76 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
           left: 0,
           right: 0,
           bottom: 0,
-          child: Container(
-            height: 1.0,
-            color: widgetTheme.headerBorderColor,
-          ),
+          child: Container(height: 1.0, color: widgetTheme.headerBorderColor),
         ),
         if (state.linesVisible == true && linePositions.isNotEmpty)
-          ...linePositions.map((position) => Positioned(
-                left: position,
-                top: 0,
-                bottom: 0,
-                child: Container(
-                  width: borderWidth,
-                  color: widgetTheme.columnRightBorderColor,
-                ),
-              )),
+          ...linePositions.map(
+            (position) => Positioned(
+              left: position,
+              top: 0,
+              bottom: 0,
+              child: Container(
+                width: borderWidth,
+                color: widgetTheme.columnRightBorderColor,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildTreeContentWithLines(
+    List<Widget> treeItems,
+    List<VTreeColumn> columns,
+    TreeThemeExtension widgetTheme,
+    List<double>? effectiveWidths,
+  ) {
+    final bool linesVisible = state.linesVisible ?? false;
+
+    Widget itemsColumn = SizedBox(
+      width: double.infinity,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: treeItems,
+      ),
+    );
+
+    if (!linesVisible || columns.isEmpty) {
+      return itemsColumn;
+    }
+
+    final List<double> linePositions = [];
+    double cumulativeWidth = 0.0;
+    final borderWidth = widgetTheme.columnBorderWidth;
+
+    for (int i = 0; i < columns.length; i++) {
+      final double width = effectiveWidths != null && i < effectiveWidths.length
+          ? effectiveWidths[i]
+          : (columns[i].width ?? widgetTheme.columnDefaultWidth.round())
+                .toDouble();
+
+      cumulativeWidth += width;
+
+      if (i < columns.length - 1) {
+        linePositions.add(cumulativeWidth - borderWidth);
+      }
+    }
+
+    return Stack(
+      children: [
+        itemsColumn,
+        ...linePositions.map(
+          (position) => Positioned(
+            left: position,
+            top: 0,
+            bottom: 0,
+            child: Container(
+              width: widgetTheme.columnBorderWidth,
+              color: widgetTheme.columnRightBorderColor,
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -588,7 +804,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     final treeWidth = state.bounds?.width?.toDouble();
 
     return TreeItemSwtWrapper(
-      key: ValueKey('tree_item_${treeItem.id}_${treeItem.checked}_${treeItem.grayed}'),
+      key: ValueKey(
+        'tree_item_${treeItem.id}_${treeItem.checked}_${treeItem.grayed}',
+      ),
       treeItem: treeItem,
       level: level,
       isCheckMode: getTreeViewSelectionMode(),
@@ -606,7 +824,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     final treeWidth = state.bounds?.width?.toDouble();
 
     return TreeItemSwtWrapper(
-      key: ValueKey('tree_item_${flatItem.item.id}_${flatItem.item.checked}_${flatItem.item.grayed}'),
+      key: ValueKey(
+        'tree_item_${flatItem.item.id}_${flatItem.item.checked}_${flatItem.item.grayed}',
+      ),
       treeItem: flatItem.item,
       level: flatItem.level,
       isCheckMode: getTreeViewSelectionMode(),
@@ -646,15 +866,19 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
     List<VTreeItem> newItems = items
         .whereType<VTreeItem>()
-        .where((treeItem) =>
-            (treeItem.texts != null &&
-                treeItem.texts!.any((text) => text.isNotEmpty)) ||
-            (treeItem.text != null && treeItem.text!.isNotEmpty) ||
-            (treeItem.items != null &&
-                treeItem.items!.whereType<VTreeItem>().any((child) =>
-                    (child.text != null && child.text!.isNotEmpty) ||
-                    (child.texts != null &&
-                        child.texts!.any((t) => t.isNotEmpty)))))
+        .where(
+          (treeItem) =>
+              (treeItem.texts != null &&
+                  treeItem.texts!.any((text) => text.isNotEmpty)) ||
+              (treeItem.text != null && treeItem.text!.isNotEmpty) ||
+              (treeItem.items != null &&
+                  treeItem.items!.whereType<VTreeItem>().any(
+                    (child) =>
+                        (child.text != null && child.text!.isNotEmpty) ||
+                        (child.texts != null &&
+                            child.texts!.any((t) => t.isNotEmpty)),
+                  )),
+        )
         .toList();
 
     for (VWidget item in newItems) {
@@ -669,8 +893,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     return StyleBits(state.style).has(SWT.VIRTUAL);
   }
 
-  void handleTreeItemSelection(Object itemId,
-      {bool isCtrlPressed = false, bool isShiftPressed = false}) {
+  void handleTreeItemSelection(
+    Object itemId, {
+    bool isCtrlPressed = false,
+    bool isShiftPressed = false,
+  }) {
     if (state.enabled != true) return;
     final item = _findTreeItemById(itemId);
     if (item == null) return;
@@ -689,11 +916,15 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   void _handleSingleSelection(VTreeItem item, int flatIndex) {
     state.selection = [item];
     _pendingSelection = [item];
-    _lastSelectedItemId = item.id; 
+    _lastSelectedItemId = item.id;
   }
 
   void _handleMultiSelection(
-      VTreeItem item, int flatIndex, bool isCtrlPressed, bool isShiftPressed) {
+    VTreeItem item,
+    int flatIndex,
+    bool isCtrlPressed,
+    bool isShiftPressed,
+  ) {
     final currentSelection = List<VTreeItem>.from(state.selection ?? []);
 
     if (isCtrlPressed) {
@@ -710,7 +941,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     } else {
       currentSelection.clear();
       currentSelection.add(item);
-      _lastSelectedItemId = item.id; 
+      _lastSelectedItemId = item.id;
     }
 
     state.selection = currentSelection;
@@ -725,8 +956,13 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     return result;
   }
 
-  int _collectItemsInRange(List<VWidget> items, int currentIndex,
-      int startIndex, int endIndex, List<VTreeItem> result) {
+  int _collectItemsInRange(
+    List<VWidget> items,
+    int currentIndex,
+    int startIndex,
+    int endIndex,
+    List<VTreeItem> result,
+  ) {
     for (final item in items) {
       if (item is VTreeItem) {
         if (currentIndex >= startIndex && currentIndex <= endIndex) {
@@ -736,7 +972,12 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
         if (item.expanded == true && item.items != null) {
           currentIndex = _collectItemsInRange(
-              item.items!, currentIndex, startIndex, endIndex, result);
+            item.items!,
+            currentIndex,
+            startIndex,
+            endIndex,
+            result,
+          );
         }
       }
     }
@@ -750,10 +991,10 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   bool isNextItemSelected(Object itemId) {
     final currentIndex = findItemIndex(itemId);
     if (currentIndex < 0) return false;
-    
+
     final nextItem = _getItemAtFlatIndex(currentIndex + 1);
     if (nextItem == null) return false;
-    
+
     return isItemSelected(nextItem.id);
   }
 
@@ -763,7 +1004,10 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   }
 
   VTreeItem? _getItemAtFlatIndexRecursive(
-      List<VWidget> items, int currentIndex, int targetIndex) {
+    List<VWidget> items,
+    int currentIndex,
+    int targetIndex,
+  ) {
     for (final item in items) {
       if (item is VTreeItem) {
         if (currentIndex == targetIndex) {
@@ -773,7 +1017,10 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
         if (item.expanded == true && item.items != null) {
           final result = _getItemAtFlatIndexRecursive(
-              item.items!, currentIndex, targetIndex);
+            item.items!,
+            currentIndex,
+            targetIndex,
+          );
           if (result != null) {
             return result;
           }
@@ -833,30 +1080,51 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   }
 
   TreeItemSearchResult _findFlatIndexForItem(
-      Object itemId, int currentIndex, int currentLevel) {
+    Object itemId,
+    int currentIndex,
+    int currentLevel,
+  ) {
     if (state.items == null) {
       return TreeItemSearchResult(
-          found: false, index: currentIndex, level: currentLevel);
+        found: false,
+        index: currentIndex,
+        level: currentLevel,
+      );
     }
 
     return _findFlatIndexRecursive(
-        state.items!, itemId, currentIndex, currentLevel);
+      state.items!,
+      itemId,
+      currentIndex,
+      currentLevel,
+    );
   }
 
   TreeItemSearchResult _findFlatIndexRecursive(
-      List<VWidget> items, Object itemId, int currentIndex, int currentLevel) {
+    List<VWidget> items,
+    Object itemId,
+    int currentIndex,
+    int currentLevel,
+  ) {
     for (final item in items) {
       if (item is VTreeItem) {
         if (item.id == itemId) {
           return TreeItemSearchResult(
-              found: true, index: currentIndex, level: currentLevel);
+            found: true,
+            index: currentIndex,
+            level: currentLevel,
+          );
         }
 
         currentIndex++;
 
         if (item.expanded == true && item.items != null) {
           final result = _findFlatIndexRecursive(
-              item.items!, itemId, currentIndex, currentLevel + 1);
+            item.items!,
+            itemId,
+            currentIndex,
+            currentLevel + 1,
+          );
           if (result.found) {
             return result;
           }
@@ -866,7 +1134,10 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     }
 
     return TreeItemSearchResult(
-        found: false, index: currentIndex, level: currentLevel);
+      found: false,
+      index: currentIndex,
+      level: currentLevel,
+    );
   }
 
   Object? get selectedItemId =>
@@ -875,6 +1146,102 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   int findItemIndex(Object itemId) {
     final result = _findFlatIndexForItem(itemId, 0, 0);
     return result.found ? result.index : -1;
+  }
+
+  /// Finds the TreeItem ID at the given x, y coordinates.
+  /// Returns null if no item is found at that position.
+  Object? findItemIdAtPosition(double x, double y) {
+    if (_cachedWidgetTheme == null) {
+      return null;
+    }
+
+    final itemHeight =
+        _cachedWidgetTheme!.itemHeight +
+        _cachedWidgetTheme!.itemPadding.vertical;
+
+    // Account for header if visible
+    double headerOffset = 0.0;
+    final columns = getTreeColumns();
+    if ((state.headerVisible == true || columns.isNotEmpty) &&
+        columns.isNotEmpty) {
+      headerOffset = _cachedWidgetTheme!.headerHeight;
+    }
+
+    // Adjust y for header
+    final adjustedY = y - headerOffset;
+    if (adjustedY < 0) {
+      return null;
+    }
+
+    // Calculate which item index this y position corresponds to
+    final itemIndex = (adjustedY / itemHeight).floor();
+
+    // Get the item at that flat index
+    final item = _getItemAtFlatIndex(itemIndex);
+    return item?.id;
+  }
+
+  /// Builds editor overlay widgets for all active editors.
+  List<Widget> _buildEditorOverlays(
+    TreeThemeExtension widgetTheme,
+    List<double>? effectiveWidths,
+  ) {
+    final editors = state.editors;
+    if (editors == null || editors.isEmpty) return [];
+
+    final columns = getTreeColumns();
+    final itemHeight =
+        widgetTheme.itemHeight + widgetTheme.itemPadding.vertical;
+    double headerOffset = 0.0;
+    if ((state.headerVisible == true || columns.isNotEmpty) &&
+        columns.isNotEmpty) {
+      headerOffset = widgetTheme.headerHeight;
+    }
+
+    final List<Widget> overlays = [];
+    for (final editable in editors) {
+      if (editable.editor == null || editable.item == null) continue;
+
+      final editingItemId = editable.item!.id;
+      final columnIndex = editable.column ?? 0;
+
+      final itemIndex = findItemIndex(editingItemId);
+      if (itemIndex < 0) continue;
+
+      final editorY = headerOffset + (itemIndex * itemHeight);
+
+      double editorX = 0.0;
+      double editorWidth = state.bounds?.width?.toDouble() ?? 200.0;
+
+      if (columns.isNotEmpty && effectiveWidths != null) {
+        for (int i = 0; i < columnIndex && i < effectiveWidths.length; i++) {
+          editorX += effectiveWidths[i];
+        }
+
+        if (columnIndex < effectiveWidths.length) {
+          editorWidth = effectiveWidths[columnIndex];
+        }
+      }
+
+      final editorWidget = mapWidgetFromValue(editable.editor!);
+
+      overlays.add(
+        Positioned(
+          left: editorX,
+          top: editorY,
+          width: editorWidth,
+          height: itemHeight,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.blue, width: 1),
+            ),
+            child: editorWidget,
+          ),
+        ),
+      );
+    }
+    return overlays;
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
@@ -886,14 +1253,20 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       return KeyEventResult.ignored;
     }
 
-    final bool isCtrlPressed = HardwareKeyboard.instance.logicalKeysPressed
-            .contains(LogicalKeyboardKey.controlLeft) ||
-        HardwareKeyboard.instance.logicalKeysPressed
-            .contains(LogicalKeyboardKey.controlRight);
-    final bool isShiftPressed = HardwareKeyboard.instance.logicalKeysPressed
-            .contains(LogicalKeyboardKey.shiftLeft) ||
-        HardwareKeyboard.instance.logicalKeysPressed
-            .contains(LogicalKeyboardKey.shiftRight);
+    final bool isCtrlPressed =
+        HardwareKeyboard.instance.logicalKeysPressed.contains(
+          LogicalKeyboardKey.controlLeft,
+        ) ||
+        HardwareKeyboard.instance.logicalKeysPressed.contains(
+          LogicalKeyboardKey.controlRight,
+        );
+    final bool isShiftPressed =
+        HardwareKeyboard.instance.logicalKeysPressed.contains(
+          LogicalKeyboardKey.shiftLeft,
+        ) ||
+        HardwareKeyboard.instance.logicalKeysPressed.contains(
+          LogicalKeyboardKey.shiftRight,
+        );
 
     switch (event.logicalKey) {
       case LogicalKeyboardKey.arrowUp:
@@ -911,10 +1284,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       case LogicalKeyboardKey.arrowRight:
         _navigateRight();
         return KeyEventResult.handled;
-
-      //case LogicalKeyboardKey.enter:
-      //  _handleEnterKey();
-      //  return KeyEventResult.handled;
 
       case LogicalKeyboardKey.space:
         _handleSpaceKey();
@@ -1011,106 +1380,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       handleTreeItemSelection(firstChildId);
     }
   }
-
-  // void _handleEnterKey() {
-  //   final selectedItems = state.selection ?? [];
-  //   if (selectedItems.isEmpty) return;
-  //
-  //   final selectedItem = selectedItems.last;
-  //
-  //   // If already editing, finish editing
-  //   if (_editingItemId != null && _editingItemId == selectedItem.id) {
-  //     finishEditing();
-  //     return;
-  //   }
-  //
-  //   // Only allow editing if the tree is editable
-  //   if (state.editable != true) {
-  //     return;
-  //   }
-  //
-  //   // Otherwise, start editing
-  //   startEditing(selectedItem.id);
-  // }
-  //
-  // void startEditing(Object itemId) {
-  //   // Only allow editing if the tree is editable
-  //   if (state.editable != true) {
-  //     return;
-  //   }
-  //
-  //   final item = _findTreeItemById(itemId);
-  //   if (item == null) return;
-  //
-  //   // Clean up any existing editing state first
-  //   if (_editingFocusNode != null) {
-  //     _editingFocusNode!.removeListener(_editingFocusListener!);
-  //     _editingFocusNode!.dispose();
-  //   }
-  //   if (_editingController != null) {
-  //     _editingController!.dispose();
-  //   }
-  //
-  //   // Create new editing state
-  //   final initialText = item.text ?? "";
-  //   _editingController = TextEditingController(text: initialText);
-  //   _editingFocusNode = FocusNode();
-  //
-  //   // Create and add listener
-  //   _editingFocusListener = () {
-  //     if (_editingFocusNode != null && !_editingFocusNode!.hasFocus) {
-  //       WidgetsBinding.instance.addPostFrameCallback((_) {
-  //         if (mounted) {
-  //           finishEditing();
-  //         }
-  //       });
-  //     }
-  //   };
-  //   _editingFocusNode!.addListener(_editingFocusListener!);
-  //
-  //   setState(() {
-  //     _editingItemId = itemId;
-  //   });
-  //
-  //   // Request focus after the frame is built
-  //   WidgetsBinding.instance.addPostFrameCallback((_) {
-  //     _editingFocusNode?.requestFocus();
-  //   });
-  // }
-  //
-  // void finishEditing() {
-  //   final itemId = _editingItemId;
-  //   final controller = _editingController;
-  //   final focusNode = _editingFocusNode;
-  //   final listener = _editingFocusListener;
-  //
-  //   // Remove listener before disposing
-  //   if (focusNode != null && listener != null) {
-  //     focusNode.removeListener(listener);
-  //   }
-  //
-  //   if (itemId != null && controller != null) {
-  //     final newText = controller.text;
-  //     final item = _findTreeItemById(itemId);
-  //
-  //     if (item != null) {
-  //       final event = VEvent()
-  //         ..text = newText
-  //         ..index = findItemIndex(itemId);
-  //
-  //       widget.sendModifyModify(state, event);
-  //     }
-  //   }
-  //
-  //   setState(() {
-  //     controller?.dispose();
-  //     focusNode?.dispose();
-  //     _editingItemId = null;
-  //     _editingController = null;
-  //     _editingFocusNode = null;
-  //     _editingFocusListener = null;
-  //   });
-  // }
 
   VEvent _createDefaultEvent(Object itemId) {
     var e = VEvent();
@@ -1209,15 +1478,21 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   }
 
   Object? _findParentItemIdRecursive(
-      List<VWidget> items, Object childId, Object? parentId) {
+    List<VWidget> items,
+    Object childId,
+    Object? parentId,
+  ) {
     for (final item in items) {
       if (item is VTreeItem) {
         if (item.id == childId) {
           return parentId;
         }
         if (item.items != null) {
-          final found =
-              _findParentItemIdRecursive(item.items!, childId, item.id);
+          final found = _findParentItemIdRecursive(
+            item.items!,
+            childId,
+            item.id,
+          );
           if (found != null) return found;
         }
       }
@@ -1240,7 +1515,8 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     var currentParentId = _findParentItemId(item.id);
     while (currentParentId != null) {
       final parent = _findTreeItemById(currentParentId);
-      if (parent != null && !selection.any((selected) => selected.id == parent.id)) {
+      if (parent != null &&
+          !selection.any((selected) => selected.id == parent.id)) {
         selection.insert(0, parent);
         currentParentId = _findParentItemId(parent.id);
       } else {
@@ -1256,17 +1532,23 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
     setState(() {
       checkboxUpdateCounter++;
-      
+
       item.checked = newCheckedState;
       item.grayed = false;
-      _pendingCheckboxStates[itemId] = {'checked': newCheckedState, 'grayed': false};
+      _pendingCheckboxStates[itemId] = {
+        'checked': newCheckedState,
+        'grayed': false,
+      };
 
       if (item.items != null && item.items!.isNotEmpty) {
         final allDescendants = _getAllDescendants(item);
         for (final descendant in allDescendants) {
           descendant.checked = newCheckedState;
           descendant.grayed = false;
-          _pendingCheckboxStates[descendant.id] = {'checked': newCheckedState, 'grayed': false};
+          _pendingCheckboxStates[descendant.id] = {
+            'checked': newCheckedState,
+            'grayed': false,
+          };
         }
       }
 
@@ -1284,11 +1566,16 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     final children = parent.items!.whereType<VTreeItem>().toList();
     if (children.isEmpty) return;
 
-    final checkedCount = children.where((child) => child.checked == true).length;
+    final checkedCount = children
+        .where((child) => child.checked == true)
+        .length;
 
     parent.checked = checkedCount > 0;
     parent.grayed = false;
-    _pendingCheckboxStates[parentId] = {'checked': checkedCount > 0, 'grayed': false};
+    _pendingCheckboxStates[parentId] = {
+      'checked': checkedCount > 0,
+      'grayed': false,
+    };
 
     final grandParentId = _findParentItemId(parentId);
     if (grandParentId != null) {
@@ -1301,15 +1588,21 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   }
 
   int _getItemLevelRecursive(
-      List<VWidget> items, Object itemId, int currentLevel) {
+    List<VWidget> items,
+    Object itemId,
+    int currentLevel,
+  ) {
     for (final item in items) {
       if (item is VTreeItem) {
         if (item.id == itemId) {
           return currentLevel;
         }
         if (item.items != null) {
-          final level =
-              _getItemLevelRecursive(item.items!, itemId, currentLevel + 1);
+          final level = _getItemLevelRecursive(
+            item.items!,
+            itemId,
+            currentLevel + 1,
+          );
           if (level >= 0) return level;
         }
       }
@@ -1332,15 +1625,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   void dispose() {
     _horizontalController?.dispose();
     _verticalController?.dispose();
-    // Clean up editing resources
-    // if (_editingFocusNode != null) {
-    //   _editingFocusNode!.removeListener(_editingFocusListener ?? () {});
-    //   _editingFocusNode!.dispose();
-    //   _editingFocusNode = null;
-    // }
-    // _editingController?.dispose();
-    // _editingController = null;
-    // _editingFocusListener = null;
     for (String eventName in eventNames) {
       EquoCommService.remove(eventName);
     }
@@ -1358,9 +1642,6 @@ class TreeItemSwtWrapper extends StatelessWidget {
   final VFont? treeFont;
   final double? treeWidth;
   final bool renderChildItems;
-  //final Object? editingItemId;
-  //final TextEditingController? editingController;
-  //final FocusNode? editingFocusNode;
 
   const TreeItemSwtWrapper({
     Key? key,
@@ -1373,9 +1654,6 @@ class TreeItemSwtWrapper extends StatelessWidget {
     this.treeFont,
     this.treeWidth,
     this.renderChildItems = true,
-    //this.editingItemId,
-    //this.editingController,
-    //this.editingFocusNode,
   }) : super(key: key);
 
   @override
@@ -1389,9 +1667,6 @@ class TreeItemSwtWrapper extends StatelessWidget {
       treeFont: treeFont,
       treeWidth: treeWidth,
       renderChildItems: renderChildItems,
-      //editingItemId: treeImpl?._editingItemId,
-      //editingController: treeImpl?._editingController,
-      //editingFocusNode: treeImpl?._editingFocusNode,
       child: TreeItemSwt(
         value: treeItem,
         key: ValueKey('tree_item_${treeItem.id}'),
@@ -1411,9 +1686,6 @@ class TreeItemContext {
   final int checkboxUpdateCounter;
   final double? treeWidth;
   final bool renderChildItems;
-  //final Object? editingItemId;
-  //final TextEditingController? editingController;
-  //final FocusNode? editingFocusNode;
 
   TreeItemContext({
     required this.level,
@@ -1426,14 +1698,11 @@ class TreeItemContext {
     this.checkboxUpdateCounter = 0,
     this.treeWidth,
     this.renderChildItems = true,
-    //this.editingItemId,
-    //this.editingController,
-    //this.editingFocusNode,
   });
 
   static TreeItemContext? of(BuildContext context) {
-    final provider =
-        context.dependOnInheritedWidgetOfExactType<TreeItemContextProvider>();
+    final provider = context
+        .dependOnInheritedWidgetOfExactType<TreeItemContextProvider>();
     return provider?.context;
   }
 }
@@ -1451,43 +1720,42 @@ class TreeItemContextProvider extends InheritedWidget {
     VFont? treeFont,
     double? treeWidth,
     bool renderChildItems = true,
-    //Object? editingItemId,
-    //TextEditingController? editingController,
-    //FocusNode? editingFocusNode,
     required Widget child,
-  })  : context = TreeItemContext(
-          level: level,
-          isCheckMode: isCheckMode,
-          parentTree: parentTree,
-          parentTreeValue: parentTreeValue,
-          treeImpl: treeImpl,
-          treeFont: treeFont,
-          selection: treeImpl?.state.selection,
-          checkboxUpdateCounter: treeImpl?.checkboxUpdateCounter ?? 0,
-          treeWidth: treeWidth,
-          renderChildItems: renderChildItems,
-          //editingItemId: editingItemId,
-          //editingController: editingController,
-          //editingFocusNode: editingFocusNode,
-        ),
-        super(key: key, child: child);
+  }) : context = TreeItemContext(
+         level: level,
+         isCheckMode: isCheckMode,
+         parentTree: parentTree,
+         parentTreeValue: parentTreeValue,
+         treeImpl: treeImpl,
+         treeFont: treeFont,
+         selection: treeImpl?.state.selection,
+         checkboxUpdateCounter: treeImpl?.checkboxUpdateCounter ?? 0,
+         treeWidth: treeWidth,
+         renderChildItems: renderChildItems,
+       ),
+       super(key: key, child: child);
 
   @override
   bool updateShouldNotify(TreeItemContextProvider oldWidget) {
     final oldSelection = oldWidget.context.selection ?? [];
     final newSelection = context.selection ?? [];
-    final selectionChanged = oldSelection.length != newSelection.length ||
-        oldSelection.any((item) => !newSelection.any((newItem) => newItem.id == item.id)) ||
-        newSelection.any((item) => !oldSelection.any((oldItem) => oldItem.id == item.id));
-    
-    final checkboxChanged = oldWidget.context.checkboxUpdateCounter != context.checkboxUpdateCounter;
-    //final editingChanged = oldWidget.context.editingItemId != context.editingItemId;
+    final selectionChanged =
+        oldSelection.length != newSelection.length ||
+        oldSelection.any(
+          (item) => !newSelection.any((newItem) => newItem.id == item.id),
+        ) ||
+        newSelection.any(
+          (item) => !oldSelection.any((oldItem) => oldItem.id == item.id),
+        );
+
+    final checkboxChanged =
+        oldWidget.context.checkboxUpdateCounter !=
+        context.checkboxUpdateCounter;
 
     return context.level != oldWidget.context.level ||
         context.isCheckMode != oldWidget.context.isCheckMode ||
         selectionChanged ||
-        checkboxChanged; //||
-        //editingChanged;
+        checkboxChanged;
   }
 }
 
@@ -1513,15 +1781,24 @@ class TreeEffectiveColumnWidthsProvider extends InheritedWidget {
   });
 
   static List<double>? of(BuildContext context) {
-    final provider = context.dependOnInheritedWidgetOfExactType<TreeEffectiveColumnWidthsProvider>();
+    final provider = context
+        .dependOnInheritedWidgetOfExactType<
+          TreeEffectiveColumnWidthsProvider
+        >();
     return provider?.effectiveWidths;
   }
 
   @override
   bool updateShouldNotify(TreeEffectiveColumnWidthsProvider oldWidget) {
-    if (effectiveWidths == null && oldWidget.effectiveWidths == null) return false;
-    if (effectiveWidths == null || oldWidget.effectiveWidths == null) return true;
-    if (effectiveWidths!.length != oldWidget.effectiveWidths!.length) return true;
+    if (effectiveWidths == null && oldWidget.effectiveWidths == null) {
+      return false;
+    }
+    if (effectiveWidths == null || oldWidget.effectiveWidths == null) {
+      return true;
+    }
+    if (effectiveWidths!.length != oldWidget.effectiveWidths!.length) {
+      return true;
+    }
     for (int i = 0; i < effectiveWidths!.length; i++) {
       if (effectiveWidths![i] != oldWidget.effectiveWidths![i]) return true;
     }
@@ -1539,7 +1816,8 @@ class TreeColumnIndexProvider extends InheritedWidget {
   });
 
   static int? of(BuildContext context) {
-    final provider = context.dependOnInheritedWidgetOfExactType<TreeColumnIndexProvider>();
+    final provider = context
+        .dependOnInheritedWidgetOfExactType<TreeColumnIndexProvider>();
     return provider?.columnIndex;
   }
 
@@ -1559,7 +1837,8 @@ class TreeLinesVisibleProvider extends InheritedWidget {
   });
 
   static bool of(BuildContext context) {
-    final provider = context.dependOnInheritedWidgetOfExactType<TreeLinesVisibleProvider>();
+    final provider = context
+        .dependOnInheritedWidgetOfExactType<TreeLinesVisibleProvider>();
     return provider?.linesVisible ?? false;
   }
 
@@ -1579,7 +1858,8 @@ class TreeColumnIsLastProvider extends InheritedWidget {
   });
 
   static bool of(BuildContext context) {
-    final provider = context.dependOnInheritedWidgetOfExactType<TreeColumnIsLastProvider>();
+    final provider = context
+        .dependOnInheritedWidgetOfExactType<TreeColumnIsLastProvider>();
     return provider?.isLastColumn ?? false;
   }
 

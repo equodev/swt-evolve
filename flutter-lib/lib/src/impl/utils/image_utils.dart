@@ -216,22 +216,18 @@ class ImageUtils {
             replacement,
             width: svgSize,
             height: svgSize,
-            colorFilter: color != null ? ColorFilter.mode(color!, BlendMode.srcIn) : null,
+            colorFilter: color != null
+                ? ColorFilter.mode(color!, BlendMode.srcIn)
+                : null,
           ),
         );
 
         if (color == null) {
-          svgContent = Opacity(
-            opacity: enabled ? 1.0 : 0.5,
-            child: svgContent,
-          );
+          svgContent = Opacity(opacity: enabled ? 1.0 : 0.5, child: svgContent);
         }
 
         if (constraints != null) {
-          widget = ConstrainedBox(
-            constraints: constraints,
-            child: svgContent,
-          );
+          widget = ConstrainedBox(constraints: constraints, child: svgContent);
         } else if (size == null && width == null && height == null) {
           widget = ConstrainedBox(
             constraints: BoxConstraints(
@@ -249,16 +245,15 @@ class ImageUtils {
           width: width,
           height: height,
           fit: BoxFit.contain,
-          colorFilter: color != null ? ColorFilter.mode(color!, BlendMode.srcIn) : null,
+          colorFilter: color != null
+              ? ColorFilter.mode(color!, BlendMode.srcIn)
+              : null,
         );
-        
+
         if (color == null) {
-          svgWidget = Opacity(
-            opacity: enabled ? 1.0 : 0.5,
-            child: svgWidget,
-          );
+          svgWidget = Opacity(opacity: enabled ? 1.0 : 0.5, child: svgWidget);
         }
-        
+
         widget = ConstrainedBox(
           constraints:
               constraints ??
@@ -332,14 +327,14 @@ class ImageUtils {
                 height: height,
                 fit: BoxFit.contain,
               );
-        
+
         if (color == null) {
           imageWidget = Opacity(
             opacity: enabled ? 1.0 : 0.5,
             child: imageWidget,
           );
         }
-        
+
         widget = ConstrainedBox(
           constraints:
               constraints ??

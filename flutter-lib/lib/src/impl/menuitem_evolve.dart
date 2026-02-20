@@ -96,18 +96,26 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
             return widgetTheme.backgroundColor;
           }),
           padding: WidgetStateProperty.all(widgetTheme.itemPadding),
-          minimumSize: WidgetStateProperty.all(Size(widgetTheme.minItemWidth, widgetTheme.itemHeight)),
+          minimumSize: WidgetStateProperty.all(
+            Size(widgetTheme.minItemWidth, widgetTheme.itemHeight),
+          ),
           shape: WidgetStateProperty.all(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(widgetTheme.borderRadius)),
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
+            ),
           ),
           animationDuration: widgetTheme.animationDuration,
         ),
         menuStyle: MenuStyle(
-          backgroundColor: WidgetStateProperty.all(menuTheme.popupBackgroundColor),
+          backgroundColor: WidgetStateProperty.all(
+            menuTheme.popupBackgroundColor,
+          ),
           elevation: WidgetStateProperty.all(menuTheme.popupElevation),
           padding: WidgetStateProperty.all(menuTheme.popupPadding),
           shape: WidgetStateProperty.all(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(menuTheme.borderRadius)),
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(menuTheme.borderRadius),
+            ),
           ),
         ),
         menuChildren: _buildSubMenuChildren(),
@@ -168,8 +176,13 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
     bool isEnabled,
   ) {
     final textStyle = getMenuItemTextStyle(widgetTheme, isEnabled: isEnabled);
-    final acceleratorText = state.accelerator != null ? formatAccelerator(state.accelerator!) : '';
-    final acceleratorStyle = getMenuItemAcceleratorTextStyle(widgetTheme, isEnabled: isEnabled);
+    final acceleratorText = state.accelerator != null
+        ? formatAccelerator(state.accelerator!)
+        : '';
+    final acceleratorStyle = getMenuItemAcceleratorTextStyle(
+      widgetTheme,
+      isEnabled: isEnabled,
+    );
 
     return _MenuItemRow(
       widgetTheme: widgetTheme,
@@ -183,7 +196,9 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
   }
 
   List<Widget> _buildSubMenuChildren() {
-    return (state.menu?.items ?? []).map((item) => MenuItemSwt(value: item)).toList();
+    return (state.menu?.items ?? [])
+        .map((item) => MenuItemSwt(value: item))
+        .toList();
   }
 
   void _registerRadioCallback(BuildContext context) {
@@ -272,7 +287,9 @@ class _MenuItemRowState extends State<_MenuItemRow> {
               color: widget.isEnabled && _isHovered
                   ? widget.widgetTheme.hoverBackgroundColor
                   : widget.widgetTheme.backgroundColor,
-              borderRadius: BorderRadius.circular(widget.widgetTheme.borderRadius),
+              borderRadius: BorderRadius.circular(
+                widget.widgetTheme.borderRadius,
+              ),
             ),
             child: Row(
               children: [
@@ -339,7 +356,9 @@ class _MenuCheckboxState extends State<_MenuCheckbox> {
         height: size,
         decoration: BoxDecoration(
           color: backgroundColor,
-          borderRadius: BorderRadius.circular(widget.widgetTheme.checkboxBorderRadius),
+          borderRadius: BorderRadius.circular(
+            widget.widgetTheme.checkboxBorderRadius,
+          ),
           border: Border.all(
             color: borderColor,
             width: widget.widgetTheme.checkboxBorderWidth,

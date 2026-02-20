@@ -6,6 +6,7 @@ import '../gen/ccombo.dart';
 import '../gen/clabel.dart';
 import '../gen/combo.dart';
 import '../gen/composite.dart';
+import '../gen/controleditor.dart';
 import '../gen/coolbar.dart';
 import '../gen/coolitem.dart';
 import '../gen/ctabfolder.dart';
@@ -34,6 +35,7 @@ import '../gen/tabfolder.dart';
 import '../gen/tabitem.dart';
 import '../gen/table.dart';
 import '../gen/tablecolumn.dart';
+import '../gen/tableeditor.dart';
 import '../gen/tableitem.dart';
 import '../gen/text.dart';
 import '../gen/toolbar.dart';
@@ -41,6 +43,7 @@ import '../gen/toolitem.dart';
 import '../gen/tooltip.dart';
 import '../gen/tree.dart';
 import '../gen/treecolumn.dart';
+import '../gen/treeeditor.dart';
 import '../gen/treeitem.dart';
 import '../gen/widget.dart';
 
@@ -90,7 +93,10 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "GC" => VGC.fromJson(child),
     "Menu" => VMenu.fromJson(child),
     "ScrollBar" => VScrollBar.fromJson(child),
+    "TableEditor" => VTableEditor.fromJson(child),
     "ToolTip" => VToolTip.fromJson(child),
+    "TreeEditor" => VTreeEditor.fromJson(child),
+    "ControlEditor" => VControlEditor.fromJson(child),
     _ => throw "Unknown Widget Value $type",
   };
 }
@@ -144,7 +150,10 @@ Widget mapWidgetFromValue(VWidget child) {
     VGC() => GCSwt(key: ValueKey(id), value: child),
     VMenu() => MenuSwt(key: ValueKey(id), value: child),
     VScrollBar() => ScrollBarSwt(key: ValueKey(id), value: child),
+    VTableEditor() => TableEditorSwt(key: ValueKey(id), value: child),
     VToolTip() => ToolTipSwt(key: ValueKey(id), value: child),
+    VTreeEditor() => TreeEditorSwt(key: ValueKey(id), value: child),
+    VControlEditor() => ControlEditorSwt(key: ValueKey(id), value: child),
     _ => throw "No widget for Value $type",
   };
 }

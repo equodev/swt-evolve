@@ -12,8 +12,9 @@ class SeparatorLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        useDarkTheme ? const Color(0xFFFFFFFF) : const Color(0xFF333232);
+    final color = useDarkTheme
+        ? const Color(0xFFFFFFFF)
+        : const Color(0xFF333232);
     return Container(
       width: direction == Axis.vertical ? 1 : double.infinity,
       height: direction == Axis.horizontal ? 1 : double.infinity,
@@ -40,8 +41,9 @@ class TextLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor =
-        useDarkTheme ? const Color(0xFFFFFFFF) : const Color(0xFF333232);
+    final textColor = useDarkTheme
+        ? const Color(0xFFFFFFFF)
+        : const Color(0xFF333232);
     final textWidget = Text(
       text,
       textAlign: alignment,
@@ -55,10 +57,7 @@ class TextLabel extends StatelessWidget {
     );
 
     if (vertical) {
-      return RotatedBox(
-        quarterTurns: 3,
-        child: textWidget,
-      );
+      return RotatedBox(quarterTurns: 3, child: textWidget);
     }
 
     return textWidget;
