@@ -4,10 +4,33 @@ import dev.equo.swt.size.TextStyle;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
+import org.eclipse.swt.widgets.Display;
 
 public final class FontMetricsUtil {
 
     private FontMetricsUtil() {}
+
+    /**
+     * Computes scaled font metric values for the given font.
+     * Returns int[] {ascent, descent, height, avgCharWidth}, or null if the
+     * font has no entry in {@link GenFontMetrics#DATA}.
+     */
+    public static int[] computeFontMetrics(Font font) {
+        if (font == null) return null;
+        FontData fd = font.getFontData()[0];
+        Metrics m = GenFontMetrics.DATA.get(getId(fd));
+        if (m == null) return null;
+        int h = fd.getHeight();
+        double scale = (double) h / GenFontMetrics.BASE;
+        Display display = Display.getCurrent();
+        double dpiScale = display != null ? display.getDPI().x / 72.0 : 1.0;
+        return new int[]{
+            (int) Math.round(m.ascent() * h * dpiScale),
+            (int) Math.round(m.descent() * h * dpiScale),
+            (int) Math.round(m.height() * h * dpiScale),
+            (int) Math.round(m.avgCharWidth() * scale * dpiScale)
+        };
+    }
 
     public static String getId(String name, boolean italic, boolean bold) {
         if (name == null || name.isBlank())
@@ -59,6 +82,9 @@ public final class FontMetricsUtil {
 
         double scale = (double) height / GenFontMetrics.BASE;
 
+        Display display = Display.getCurrent();
+        double dpiScale = display != null ? display.getDPI().x / 72.0 : 1.0;
+
         double w = 0.0;
         for (int i = 0; i < text.length(); ) {
             int cp = text.codePointAt(i);
@@ -80,11 +106,7 @@ public final class FontMetricsUtil {
         }
 
         double h = (metrics.height() * height) + ((metrics.ascent() + metrics.descent()) * scale);
-//        System.out.println("java size for "+fontId+" @ "+height+": "+w+"x"+h);
-//        int roundedH = (int) (h - Math.floor(h) < 0.52 ? Math.floor(h) : Math.ceil(h));
-//        return new Point((int) Math.round(w), roundedH);
-//        return new Point((int) Math.round(w), (int) Math.round(h));
-        return new PointD(w, h);
+        return new PointD(w * dpiScale, h * dpiScale);
     }
 
     /**
