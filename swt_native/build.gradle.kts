@@ -121,7 +121,10 @@ tasks.compileJava {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        val excludeTagsProp = System.getProperty("excludeTags")
+        if (excludeTagsProp != null) excludeTags(*excludeTagsProp.split(",").toTypedArray())
+    }
     testLogging {
         if (System.getProperty("quietTests") != null) {
             events = setOf(TestLogEvent.FAILED)

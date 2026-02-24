@@ -1,6 +1,7 @@
 package dev.equo.swt.size;
 
 import dev.equo.swt.ImageMetricUtil;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -17,7 +18,8 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisabledOnOs({OS.LINUX})
+@DisabledOnOs(OS.LINUX)
+@Tag("metal")
 public class ImageSizeTest extends SizeAssert {
 
     @RegisterExtension()

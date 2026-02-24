@@ -13,7 +13,7 @@ public class SizeAssert {
 
     private static final double TEXT_TOLERANCE_PERCENT = 12/100.0; // 12%
     private static final double TOLERANCE_PERCENT = 5/100.0; // 5%
-    public static final int WAIT = 5;
+    public static final int WAIT = 1;
     protected TestInfo info;
 
     @BeforeEach

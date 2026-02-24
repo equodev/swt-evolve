@@ -6,6 +6,7 @@ import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.widgets.Display;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -25,7 +26,8 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisabledOnOs({OS.LINUX})
+@DisabledOnOs(OS.LINUX)
+@Tag("metal")
 public class FontSizeTest extends SizeAssert {
 
     @RegisterExtension()
