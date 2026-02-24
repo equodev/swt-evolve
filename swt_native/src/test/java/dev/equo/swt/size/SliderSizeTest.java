@@ -6,6 +6,7 @@ import org.eclipse.swt.widgets.DartSlider;
 import org.eclipse.swt.graphics.Point;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.condition.*;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 import java.util.concurrent.CompletableFuture;
@@ -15,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.*;
 
 @DisabledOnOs(OS.LINUX)
+@Tag("metal")
 class SliderSizeTest extends SizeTestBase {
 
     @RegisterExtension

@@ -481,6 +481,7 @@ public class ConfigTest {
 
         @Nested
         @DisabledIfEnvironmentVariable(named = "CI", matches = "true")
+        @Tag("metal")
         class SwtAndDartMatchesWithTracker {
 
             private IdWidgetTracker tracker;

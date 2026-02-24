@@ -7,21 +7,6 @@ import org.eclipse.swt.widgets.Display;
 
 public class GCHelper {
 
-    public static FontMetrics createFontMetrics(Font font) {
-        Font resolved = font != null ? font : systemFont();
-        int[] metrics = resolved != null ? FontMetricsUtil.computeFontMetrics(resolved) : null;
-        DartFontMetrics impl = new DartFontMetrics(null);
-        if (metrics != null) {
-            impl.setMetrics(metrics[0], metrics[1], metrics[2], metrics[3]);
-        }
-        return impl.getApi();
-    }
-
-    private static Font systemFont() {
-        Display display = Display.getCurrent();
-        return display != null ? display.getSystemFont() : null;
-    }
-
     /**
      * Computes the extent of a single line of text (no line breaks).
      */

@@ -54,8 +54,8 @@ public class Config {
                     entry(ToolBar.class, Impl.equo),
                     entry(Tree.class, Impl.equo),
                     entry(TreeItem.class, Impl.equo),
-                    entry(TreeColumn.class, Impl.equo),
-                    entry(Canvas.class, Impl.equo)
+                    entry(TreeColumn.class, Impl.equo)
+                    //entry(Canvas.class, Impl.equo),
                     //entry(ScrolledComposite.class, Impl.equo)
                     //entry(Menu.class, Impl.equo)
                     //entry(MenuItem.class, Impl.equo),

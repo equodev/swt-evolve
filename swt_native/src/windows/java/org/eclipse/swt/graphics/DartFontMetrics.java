@@ -67,7 +67,7 @@ public final class DartFontMetrics implements IFontMetrics {
      * @return the ascent of the font
      */
     public int getAscent() {
-        return ascent;
+        return 0;
     }
 
     /**
@@ -90,7 +90,7 @@ public final class DartFontMetrics implements IFontMetrics {
      */
     @Deprecated
     public int getAverageCharWidth() {
-        return averageCharWidth;
+        return 0;
     }
 
     /**
@@ -102,7 +102,7 @@ public final class DartFontMetrics implements IFontMetrics {
      * @return the descent of the font
      */
     public int getDescent() {
-        return descent;
+        return 4;
     }
 
     /**
@@ -117,7 +117,7 @@ public final class DartFontMetrics implements IFontMetrics {
      * @see #getLeading
      */
     public int getHeight() {
-        return height;
+        return 12;
     }
 
     /**
@@ -161,21 +161,6 @@ public final class DartFontMetrics implements IFontMetrics {
     @Override
     public int hashCode() {
         return 0;
-    }
-
-    int ascent;
-
-    int descent;
-
-    int height;
-
-    int averageCharWidth;
-
-    void setMetrics(int ascent, int descent, int height, int averageCharWidth) {
-        this.ascent = ascent;
-        this.descent = descent;
-        this.height = height;
-        this.averageCharWidth = averageCharWidth;
     }
 
     public FontMetrics getApi() {

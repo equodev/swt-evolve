@@ -359,7 +359,6 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
       vFont,
       context,
       color: applyAlpha(fg),
-      applyDpiScaling: true,
     );
 
     List<Shape> newShapes = [];
