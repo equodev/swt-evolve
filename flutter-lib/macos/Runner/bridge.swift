@@ -206,7 +206,8 @@ class FlippedView: NSView {
             for flippedView in FlippedView.activeViews.allObjects {
                 guard flippedView.window === window,
                       !flippedView.isHiddenOrHasHiddenAncestor,
-                      let flutterView = flippedView.subviews.first else { continue }
+                      let flutterView = flippedView.subviews.first,
+                      !flutterView.isHidden else { continue }
                 let locationInView = flippedView.convert(event.locationInWindow, from: nil)
                 if flippedView.bounds.contains(locationInView) {
                     window.makeFirstResponder(flutterView)
