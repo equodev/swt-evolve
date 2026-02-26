@@ -531,7 +531,12 @@ public class Sizes {
 
     public static Rectangle getClientArea(DartCTabFolder widget) {
         Rectangle b = widget.getBounds();
-        return new Rectangle(0, 28, b.width, b.height-28);
+        boolean onBottom = widget.getTabPosition() == SWT.BOTTOM;
+        if (onBottom) {
+            return new Rectangle(0, 0, b.width, b.height - 28);
+        } else {
+            return new Rectangle(0, 28, b.width, b.height - 28);
+        }
     }
 
     public static Rectangle getClientArea(DartGroup widget) {
