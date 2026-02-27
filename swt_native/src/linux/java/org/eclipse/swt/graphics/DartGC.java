@@ -1947,7 +1947,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public FontMetrics getFontMetrics() {
-        return new FontMetrics();
+        return GCHelper.createFontMetrics(data.font);
     }
 
     /**
@@ -2326,8 +2326,13 @@ public final class DartGC extends DartResource implements IGC {
             this.foreground = new Color(0, 0, 0);
         if (data.font != null)
             data.state &= ~FONT;
-        if (data.font == null)
-            this.font = data.font = Display.getCurrent().getSystemFont();
+        if (data.font == null) {
+            if (drawable instanceof Control control && control.getFont() != null) {
+                this.font = data.font = control.getFont();
+            } else {
+                this.font = data.font = Display.getCurrent().getSystemFont();
+            }
+        }
         Image image = data.image;
         if (image != null) {
             if (image.getImpl() instanceof DartImage) {

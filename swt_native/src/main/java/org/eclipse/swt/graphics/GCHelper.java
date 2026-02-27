@@ -7,11 +7,36 @@ import org.eclipse.swt.widgets.Display;
 
 public class GCHelper {
 
+    public static FontMetrics createFontMetrics(Font font) {
+        Font resolved = font != null ? font : systemFont();
+        int[] metrics = resolved != null ? FontMetricsUtil.computeFontMetrics(resolved) : null;
+        DartFontMetrics impl = new DartFontMetrics(null);
+        if (metrics != null) {
+            impl.setMetrics(metrics[0], metrics[1], metrics[2], metrics[3]);
+        }
+        return impl.getApi();
+    }
+
+    private static Font systemFont() {
+        Display display = Display.getCurrent();
+        return display != null ? display.getSystemFont() : null;
+    }
+
     /**
      * Computes the extent of a single line of text (no line breaks).
+     * Applies DPI scaling so the result matches what the GC actually draws.
      */
     public static PointD computeLineExtent(String line, Font font) {
-        return FontMetricsUtil.getFontSize(line, font);
+        PointD size = FontMetricsUtil.getFontSize(line, font);
+        Display display = Display.getCurrent();
+        if (display != null) {
+            Point dpi = display.getDPI();
+            if (dpi != null && dpi.x > 0) {
+                double dpiScale = dpi.x / 72.0;
+                return new PointD(size.x() * dpiScale, size.y() * dpiScale);
+            }
+        }
+        return size;
     }
 
     /**
