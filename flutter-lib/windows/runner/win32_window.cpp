@@ -136,6 +136,7 @@ bool Win32Window::Create(const std::wstring& title,
   HMONITOR monitor = MonitorFromPoint(target_point, MONITOR_DEFAULTTONEAREST);
   UINT dpi = FlutterDesktopGetDpiForMonitor(monitor);
   double scale_factor = dpi / 96.0;
+  scale_factor_ = scale_factor;
 
   // Store headless flag
   headless_ = headless;
@@ -243,7 +244,9 @@ Win32Window::MessageHandler(HWND hwnd,
         case WM_SYSKEYDOWN:
         case WM_SYSKEYUP:
         case WM_DPICHANGED: {
-            std::cout << "Win32Window: WM_DPICHANGED" << std::endl;
+            UINT new_dpi = HIWORD(wparam);
+            scale_factor_ = new_dpi / 96.0;
+            std::cout << "Win32Window: WM_DPICHANGED dpi=" << new_dpi << " scale=" << scale_factor_ << std::endl;
             auto newRectSize = reinterpret_cast<RECT*>(lparam);
             LONG newWidth = newRectSize->right - newRectSize->left;
             LONG newHeight = newRectSize->bottom - newRectSize->top;
@@ -329,13 +332,25 @@ void Win32Window::SetChildContent(HWND content) {
 }
 
 void Win32Window::Move(const Point& origin, const Size& size, const Point& vorigin, const Size& vsize) {
+  // Values from Java are in SWT points (logical pixels). Convert to physical
+  // pixels for MoveWindow, which expects physical pixels in a DPI-aware process.
+  // scale_factor_ is set in Create() and updated on WM_DPICHANGED.
+  int px = Scale(origin.x, scale_factor_);
+  int py = Scale(origin.y, scale_factor_);
+  int pw = Scale(size.width, scale_factor_);
+  int ph = Scale(size.height, scale_factor_);
   std::cout << "Win32Window::Move - origin=(" << origin.x << "," << origin.y
-            << ") size=(" << size.width << "x" << size.height << ")" << std::endl;
-  MoveWindow(window_handle_, origin.x, origin.y, size.width, size.height, true);
+            << ") size=(" << size.width << "x" << size.height << ")"
+            << " scale=" << scale_factor_ << " scaled=(" << px << "," << py << " " << pw << "x" << ph << ")" << std::endl;
+  MoveWindow(window_handle_, px, py, pw, ph, true);
   if (origin.x == vorigin.x && origin.y == vorigin.y && size.width == vsize.width && size.height == vsize.height) {
     return;
   }
-  MoveWindow(child_content_, vorigin.x, vorigin.y, vsize.width, vsize.height, true);
+  int vpx = Scale(vorigin.x, scale_factor_);
+  int vpy = Scale(vorigin.y, scale_factor_);
+  int vpw = Scale(vsize.width, scale_factor_);
+  int vph = Scale(vsize.height, scale_factor_);
+  MoveWindow(child_content_, vpx, vpy, vpw, vph, true);
 }
 
 RECT Win32Window::GetClientArea() {

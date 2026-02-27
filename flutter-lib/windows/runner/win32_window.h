@@ -98,6 +98,10 @@ class Win32Window {
 
   bool headless_ = false;
 
+  // DPI of the monitor this window is on. Set in Create(), updated on
+  // WM_DPICHANGED. Used in Move() to scale logical pixels to physical pixels.
+  double scale_factor_ = 1.0;
+
   // window handle for top level window.
   HWND window_handle_ = nullptr;
 
