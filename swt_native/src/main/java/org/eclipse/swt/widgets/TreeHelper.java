@@ -4,6 +4,9 @@ import org.eclipse.swt.SWT;
 
 public class TreeHelper {
 
+    /** SWT.EmptinessChanged value (56), defined here for compatibility with SWT versions before 3.118 */
+    public static final int EMPTINESS_CHANGED = 56;
+
     public static TreeItem[] collectAllItems(DartTree dartTree) {
         java.util.List<TreeItem> result = new java.util.ArrayList<>();
         TreeItem[] rootItems = dartTree.getApi().getItems();
@@ -122,7 +125,7 @@ public class TreeHelper {
         if (currentSize == 0) {
             Event event = new Event();
             event.detail = 0;
-            item.getImpl().sendEvent(SWT.EmptinessChanged, event);
+            item.getImpl().sendEvent(TreeHelper.EMPTINESS_CHANGED, event);
         }
     }
 
@@ -169,7 +172,7 @@ public class TreeHelper {
             if (treeCount == 1) {
                 Event event = new Event();
                 event.detail = 0;
-                parent.getImpl().sendEvent(SWT.EmptinessChanged, event);
+                parent.getImpl().sendEvent(TreeHelper.EMPTINESS_CHANGED, event);
             }
         }
     }

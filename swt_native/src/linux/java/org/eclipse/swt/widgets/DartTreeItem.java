@@ -1610,7 +1610,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         if (parentItem == null && ((DartTree) parent.getImpl()).getItemCount() == 1) {
             Event event = new Event();
             event.detail = 0;
-            parent.getImpl().sendEvent(SWT.EmptinessChanged, event);
+            parent.getImpl().sendEvent(TreeHelper.EMPTINESS_CHANGED, event);
         }
     }
 

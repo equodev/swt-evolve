@@ -569,6 +569,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
             list.setForeground(foreground);
         if (background != null)
             list.setBackground(background);
+        ;
         int[] listEvents = { SWT.MouseUp, SWT.Selection, SWT.Traverse, SWT.KeyDown, SWT.KeyUp, SWT.FocusIn, SWT.FocusOut, SWT.Dispose };
         for (int listEvent : listEvents) list.addListener(listEvent, listener);
         if (items != null)

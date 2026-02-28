@@ -1319,7 +1319,6 @@ public class DartCombo extends DartComposite implements ICombo {
         checkWidget();
         if (index < 0 || index >= items.length)
             return;
-        unselected = false;
         this.text = items[index];
         this.selection = new Point(0, 0);
     }

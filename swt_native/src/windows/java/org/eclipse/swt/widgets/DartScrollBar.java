@@ -323,11 +323,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     }
 
     public Point getSizeInPixels() {
-        ((DartControl) parent.getImpl()).forceResize();
-        if ((getApi().style & SWT.HORIZONTAL) != 0) {
-        } else {
-        }
-        return null;
+        return new Point(20, 20);
     }
 
     /**
