@@ -618,7 +618,11 @@ public class DartTree extends DartComposite implements ITree {
         }
         int requiredSize = Math.max(index + 1, itemCount + 1);
         if (items == null || requiredSize > items.length) {
-            itemsGrowArray(Math.max(4, requiredSize + 4));
+            int newSize = Math.max(4, requiredSize + 4);
+            TreeItem[] newItems = new TreeItem[newSize];
+            if (items != null)
+                System.arraycopy(items, 0, newItems, 0, items.length);
+            items = newItems;
         }
         if (index < itemCount) {
             System.arraycopy(items, index, items, index + 1, itemCount - index);
@@ -630,7 +634,7 @@ public class DartTree extends DartComposite implements ITree {
         if (wasEmpty) {
             Event event = new Event();
             event.detail = 0;
-            sendEvent(SWT.EmptinessChanged, event);
+            sendEvent(TreeHelper.EMPTINESS_CHANGED, event);
         }
     }
 
@@ -878,7 +882,7 @@ public class DartTree extends DartComposite implements ITree {
             if (wasNotEmpty && itemCount == 0) {
                 Event event = new Event();
                 event.detail = 1;
-                sendEvent(SWT.EmptinessChanged, event);
+                sendEvent(TreeHelper.EMPTINESS_CHANGED, event);
             }
         }
     }
@@ -3107,14 +3111,14 @@ public class DartTree extends DartComposite implements ITree {
         return topItem;
     }
 
+    int itemCount;
+
     public void updateChildItems() {
         if (items == null)
             return;
         items = java.util.Arrays.stream(items).filter(child -> child != null && !child.isDisposed()).toArray(TreeItem[]::new);
         lastID = items.length;
     }
-
-    int itemCount;
 
     public void _setEditable(boolean value) {
         if (this.editable != value) {
