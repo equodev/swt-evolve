@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import '../gen/control.dart';
@@ -13,6 +12,8 @@ import 'widget_config.dart';
 
 abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     extends WidgetSwtState<T, V> {
+
+  final GlobalKey<State<MenuSwt>> _menuKey = GlobalKey<State<MenuSwt>>();
 
   @override
   Widget build(BuildContext context) {
@@ -100,25 +101,17 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       return child;
     }
 
-    final menuKey = GlobalKey<State<MenuSwt>>();
-
-    return Listener(
-      onPointerDown: (event) {
-        if (event.buttons == kSecondaryMouseButton) {
-          final RenderBox? box = context.findRenderObject() as RenderBox?;
-          if (box != null) {
-            final localPosition = box.globalToLocal(event.position);
-            final menuState = menuKey.currentState;
-            if (menuState != null && menuState is MenuImpl) {
-              menuState.openContextMenuAt(context, localPosition);
-            }
-          }
+    return GestureDetector(
+      onSecondaryTapUp: (details) {
+        final menuState = _menuKey.currentState;
+        if (menuState != null && menuState is MenuImpl) {
+          menuState.openContextMenuAt(context, details.localPosition);
         }
       },
       child: Stack(
         children: [
           child,
-          MenuSwt(key: menuKey, value: menu),
+          MenuSwt(key: _menuKey, value: menu),
         ],
       ),
     );
