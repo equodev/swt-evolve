@@ -108,7 +108,7 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
 
     private String detectTheme() {
         if (cachedTheme != null) {
-            System.out.println("Cached theme " + cachedTheme);
+//            System.out.println("Cached theme " + cachedTheme);
             return cachedTheme;
         }
 
@@ -129,10 +129,10 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
         super.onReady(control, Void.class);
 
         String theme = detectTheme();
-        System.out.println("Final detected theme: " + theme);
+//        System.out.println("Final detected theme: " + theme);
 
         Color backgroundColor = parent.getShell().getBackground();
-        System.out.println("Color from Shell: " + backgroundColor);
+//        System.out.println("Color from Shell: " + backgroundColor);
 
         if (backgroundColor == null) {
             backgroundColor = parent.getDisplay().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
@@ -141,7 +141,7 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
 
         // Get parent background color for the Button
         Color parentBackgroundColor = parent.getBackground();
-        System.out.println("Color from parent: " + parentBackgroundColor);
+//        System.out.println("Color from parent: " + parentBackgroundColor);
 
         if (parentBackgroundColor == null) {
             parentBackgroundColor = backgroundColor; // use shell color as fallback

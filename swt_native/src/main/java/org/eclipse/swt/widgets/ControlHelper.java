@@ -53,6 +53,12 @@ public class ControlHelper {
 
     private static void firePaint(DartControl c) {
         if (c.isDisposed()) return;
+        Composite parent = c.getParent();
+        while (parent != null) {
+            if (parent.isDisposed())
+                return;
+            parent = parent.getParent();
+        }
         try {
             if (!Class.forName("org.eclipse.draw2d.FigureCanvas").isInstance(c.getApi())) {
                 Event event = new Event();
