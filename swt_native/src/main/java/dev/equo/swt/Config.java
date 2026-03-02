@@ -306,7 +306,20 @@ public class Config {
             return true;
         if (parent != null && parent.getImpl().getClass().getSimpleName().startsWith(DART) && !isCTabFolderBody(clazz, parent))
             return true;
+        if (isSplash(parent))
+            return false;
         return isEquo(clazz);
+    }
+
+    private static boolean isSplash(Widget parentWidget) {
+        if (parentWidget instanceof Scrollable parent) {
+            while (parent != null) {
+                if (parent.getClass().getName().equals("org.eclipse.ui.splash.BasicSplashHandler$AbsolutePositionProgressMonitorPart"))
+                    return true;
+                parent = parent.getParent();
+            }
+        }
+        return false;
     }
 
     public static boolean isEquo(Class<Accessible> accessibleClass, Accessible parent) {
