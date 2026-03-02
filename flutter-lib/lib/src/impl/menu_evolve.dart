@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import '../comm/comm.dart';
 import '../gen/menu.dart';
 import '../gen/menuitem.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/menu_theme_extension.dart';
+import 'utils/text_utils.dart';
 
 class MenuState {
   final Map<VMenuItem, void Function(bool)> radioItemCallbacks = {};
@@ -46,6 +48,19 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   final MenuController _menuController = MenuController();
   final List<void Function()> _pendingChanges = [];
   final MenuState _menuState = MenuState();
+
+  @override
+  void initState() {
+    super.initState();
+    EquoCommService.onRaw(
+      "${state.swt}/${state.id}/closeMenu",
+      (_) {
+        if (_menuController.isOpen) {
+          _menuController.close();
+        }
+      },
+    );
+  }
 
   void openContextMenuAt(BuildContext context, Offset position) {
     if (_menuController.isOpen) {
@@ -125,7 +140,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
     final backgroundColor = enabled ? widgetTheme.popupBackgroundColor : widgetTheme.disabledBackgroundColor;
     final location = state.location;
 
-    if (visible && !_menuController.isOpen) { 
+    if (visible && !_menuController.isOpen) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && !_menuController.isOpen && visible) {
           final menuPosition = location != null
@@ -279,7 +294,7 @@ class _MenuBarItemState extends State<_MenuBarItem> {
                 child: Padding(
                   padding: widget.widgetTheme.menuBarItemPadding,
                   child: Text(
-                    widget.item.text ?? '',
+                    stripAccelerators(widget.item.text),
                     style: widget.textStyle.copyWith(
                       color: enabled
                           ? widget.textColor
@@ -307,7 +322,7 @@ class _MenuBarItemState extends State<_MenuBarItem> {
           child: Padding(
             padding: widget.widgetTheme.menuBarItemPadding,
             child: Text(
-              widget.item.text ?? '',
+              stripAccelerators(widget.item.text),
               style: widget.textStyle.copyWith(
                 color: enabled
                     ? widget.textColor

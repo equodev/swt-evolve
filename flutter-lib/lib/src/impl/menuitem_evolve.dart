@@ -8,6 +8,7 @@ import '../theme/theme_extensions/menu_theme_extension.dart';
 import '../theme/theme_extensions/menuitem_theme_extension.dart';
 import '../theme/theme_settings/menuitem_theme_settings.dart';
 import 'menu_evolve.dart';
+import 'utils/text_utils.dart';
 
 class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
     extends ItemImpl<T, V> {
@@ -112,7 +113,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
         menuChildren: _buildSubMenuChildren(),
         child: Row(
           children: [
-            Expanded(child: Text(state.text ?? '', style: textStyle)),
+            Expanded(child: Text(stripAccelerators(state.text), style: textStyle)),
           ],
         ),
       ),
@@ -136,7 +137,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
         isEnabled: isEnabled,
         isSelected: isChecked,
       ),
-      child: Text(state.text ?? '', style: textStyle),
+      child: Text(stripAccelerators(state.text), style: textStyle),
     );
   }
 
@@ -157,7 +158,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
         isEnabled: isEnabled,
         isSelected: isSelected,
       ),
-      child: Text(state.text ?? '', style: textStyle),
+      child: Text(stripAccelerators(state.text), style: textStyle),
     );
   }
 
@@ -177,7 +178,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
       trailing: acceleratorText.isNotEmpty
           ? Text(acceleratorText, style: acceleratorStyle)
           : null,
-      child: Text(state.text ?? '', style: textStyle),
+      child: Text(stripAccelerators(state.text), style: textStyle),
     );
   }
 

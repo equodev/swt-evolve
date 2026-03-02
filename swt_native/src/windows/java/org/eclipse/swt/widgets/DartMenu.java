@@ -1329,21 +1329,7 @@ public class DartMenu extends DartWidget implements IMenu {
 
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "Help", "Help", e -> {
-            getDisplay().asyncExec(() -> {
-                sendEvent(SWT.Help, e);
-            });
-        });
-        FlutterBridge.on(this, "Menu", "Hide", e -> {
-            getDisplay().asyncExec(() -> {
-                sendEvent(SWT.Hide, e);
-            });
-        });
-        FlutterBridge.on(this, "Menu", "Show", e -> {
-            getDisplay().asyncExec(() -> {
-                sendEvent(SWT.Show, e);
-            });
-        });
+        MenuHelper.hookEvents(this);
     }
 
     public Menu getApi() {
