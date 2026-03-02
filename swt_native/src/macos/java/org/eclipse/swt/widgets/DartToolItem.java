@@ -1043,7 +1043,8 @@ public class DartToolItem extends DartItem implements IToolItem {
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {
             getDisplay().asyncExec(() -> {
-                sendSelection();
+                if (!isDisposed())
+                    sendSelection();
             });
         });
     }

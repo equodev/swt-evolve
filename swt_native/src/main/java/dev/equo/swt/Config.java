@@ -24,6 +24,7 @@ public class Config {
     static final Map<Class<?>, Impl> equoEnabled;
     private static boolean forceEclipse = Boolean.getBoolean("dev.equo.swt.forceEclipse");
 
+    static boolean debug = Boolean.getBoolean("dev.equo.swt.debug");
     static boolean idTracker = Boolean.getBoolean("dev.equo.swt.tracker");
     static IdWidgetTracker widgetTracker;
 
@@ -492,6 +493,10 @@ public class Config {
                 buffer.append(k).append("=").append(v).append("\n");
         });
         return buffer.toString();
+    }
+
+    public static boolean isDebug() {
+        return debug;
     }
 
 }
