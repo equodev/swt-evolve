@@ -3147,26 +3147,36 @@ public class DartTree extends DartComposite implements ITree {
         super._hookEvents();
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 TreeHelper.handleModify(this, e);
             });
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 TreeHelper.sendSelection(this, e, SWT.DefaultSelection);
             });
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 TreeHelper.sendSelection(this, e, SWT.Selection);
             });
         });
         FlutterBridge.on(this, "Tree", "Collapse", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 TreeHelper.sendExpand(this, e, false);
             });
         });
         FlutterBridge.on(this, "Tree", "Expand", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 TreeHelper.sendExpand(this, e, true);
             });
         });

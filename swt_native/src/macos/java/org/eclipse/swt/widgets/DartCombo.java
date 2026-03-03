@@ -1561,16 +1561,22 @@ public class DartCombo extends DartComposite implements ICombo {
         super._hookEvents();
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 setText(e.text);
             });
         });
         FlutterBridge.on(this, "Segment", "Segments", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.Segments, e);
             });
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.DefaultSelection, e);
             });
         });
@@ -1586,6 +1592,8 @@ public class DartCombo extends DartComposite implements ICombo {
         });
         FlutterBridge.on(this, "Verify", "Verify", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.Verify, e);
             });
         });

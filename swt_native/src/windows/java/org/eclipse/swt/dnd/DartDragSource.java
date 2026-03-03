@@ -510,16 +510,22 @@ public class DartDragSource extends DartWidget implements IDragSource {
         super._hookEvents();
         FlutterBridge.on(this, "Drag", "dragFinished", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(DND.DragEnd, e);
             });
         });
         FlutterBridge.on(this, "Drag", "dragSetData", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(DND.DragSetData, e);
             });
         });
         FlutterBridge.on(this, "Drag", "dragStart", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(DND.DragStart, e);
             });
         });

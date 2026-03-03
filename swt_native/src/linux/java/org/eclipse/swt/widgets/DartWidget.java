@@ -1897,6 +1897,8 @@ public abstract class DartWidget implements IWidget {
     protected void _hookEvents() {
         FlutterBridge.on(this, "Dispose", "Dispose", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.Dispose, e);
             });
         });

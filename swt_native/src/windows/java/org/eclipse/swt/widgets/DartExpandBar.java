@@ -542,11 +542,15 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
         super._hookEvents();
         FlutterBridge.on(this, "Expand", "Collapse", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.Collapse, e);
             });
         });
         FlutterBridge.on(this, "Expand", "Expand", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.Expand, e);
             });
         });
