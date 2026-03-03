@@ -84,13 +84,7 @@ public class VTreeItem extends VItem {
     }
 
     public String[] getTexts() {
-        String[] values = ((DartTreeItem) impl).strings;
-        if (values == null)
-            return null;
-        ArrayList<String> result = new ArrayList<>(values.length);
-        for (String v : values) if (v != null)
-            result.add(v);
-        return result.toArray(String[]::new);
+        return ((DartTreeItem) impl).strings;
     }
 
     public void setTexts(String[] value) {

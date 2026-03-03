@@ -100,6 +100,11 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
 
     void sendMouseDown(int button) {
       if (enabled && _context != null) {
+        // Update selection before sending MouseDown to match native SWT behavior
+        // where the OS sets the selection before SWT.MouseDown fires.
+        if (button == 1 && !isEditing && _context!.tableImpl != null) {
+          _context!.tableImpl!.handleRowTap(rowIndex, state);
+        }
         final e = VEvent();
         e.x = _computeCellCenterX(columnIndex, theme);
         e.y = _computeCellCenterY(rowIndex, textStyle, theme);
@@ -187,17 +192,25 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
   }
 
   int _computeCellCenterX(int columnIndex, TableThemeExtension theme) {
-    final columns = _context?.parentTableValue.columns ?? [];
-    // Match Java's Sizes.getBounds(): x = sum of column widths before columnIndex,
-    // no border offset (getItemHeight/getHeaderHeight return 0 on macOS, no border).
+    final columnWidths = _context?.tableImpl?.cachedColumnWidths;
     double x = 0.0;
-    for (int i = 0; i < columnIndex && i < columns.length; i++) {
-      x += columns[i].width?.toDouble() ?? 100.0;
+    if (columnWidths != null) {
+      for (int i = 0; i < columnIndex; i++) {
+        final w = columnWidths[i];
+        if (w is FixedColumnWidth) x += w.value;
+      }
+      final colW = columnWidths[columnIndex];
+      if (colW is FixedColumnWidth) x += colW.value / 2;
+    } else {
+      final columns = _context?.parentTableValue.columns ?? [];
+      for (int i = 0; i < columnIndex && i < columns.length; i++) {
+        x += columns[i].width?.toDouble() ?? 100.0;
+      }
+      final colWidth = columnIndex < columns.length
+          ? (columns[columnIndex].width?.toDouble() ?? 100.0)
+          : 100.0;
+      x += colWidth / 2;
     }
-    final colWidth = columnIndex < columns.length
-        ? (columns[columnIndex].width?.toDouble() ?? 100.0)
-        : 100.0;
-    x += colWidth / 2;
     return x.round();
   }
 
@@ -206,12 +219,9 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     TextStyle textStyle,
     TableThemeExtension theme,
   ) {
-    // Match Java's Sizes.getBounds() on macOS:
-    //   getHeaderHeight() returns 0
-    //   getItemHeight() returns 0, fallback hardcoded to 20px
-    // So: y = rowIndex * 20, height = 20
-    const int javaItemHeight = 20;
-    return rowIndex * javaItemHeight + javaItemHeight ~/ 2;
+    final rowHeight = _context?.tableImpl?.cachedRowHeight ?? 20.0;
+    final headerOffset = _context?.tableImpl?.cachedHeaderOffset ?? 0.0;
+    return (headerOffset + rowIndex * rowHeight + rowHeight / 2).round();
   }
 
   Widget buildCheckbox(TableThemeExtension theme, bool enabled) {

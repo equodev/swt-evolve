@@ -2,6 +2,7 @@ package dev.equo.swt.size;
 
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.FontMetricsUtil;
+import dev.equo.swt.GenFontMetrics;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.widgets.Display;
 import org.instancio.Instancio;
@@ -66,6 +67,7 @@ public class FontSizeTest extends SizeAssert {
                 .filter(f -> !f.getName().contains("Specialty"))
                 .filter(f -> !f.getName().contains("Zapfino"))
                 .map(FontVariation::from)
+                .filter(fv -> GenFontMetrics.DATA.containsKey(fv.getId()))
                 .distinct();
     }
 

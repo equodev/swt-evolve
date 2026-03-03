@@ -371,7 +371,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         if (w is! VTreeItem) continue;
         final item = w;
         final texts = item.texts ?? [];
-        final firstText = item.text ?? (texts.isNotEmpty ? texts[0] : '') ?? '';
+        final firstText = item.text ?? (texts.isNotEmpty ? texts[0] ?? '' : '');
         final itemFont = item.font ?? state.font;
         final textStyle = getTextStyle(
           context: context,
@@ -383,7 +383,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         for (int col = 0; col < columns.length; col++) {
           final String cellText = col == 0
               ? firstText
-              : (col < texts.length ? texts[col] : '');
+              : (col < texts.length ? texts[col] ?? '' : '');
           final painter = TextPainter(
             text: TextSpan(text: cellText, style: textStyle),
             textDirection: TextDirection.ltr,
@@ -869,14 +869,14 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         .where(
           (treeItem) =>
               (treeItem.texts != null &&
-                  treeItem.texts!.any((text) => text.isNotEmpty)) ||
+                  treeItem.texts!.any((text) => text?.isNotEmpty == true)) ||
               (treeItem.text != null && treeItem.text!.isNotEmpty) ||
               (treeItem.items != null &&
                   treeItem.items!.whereType<VTreeItem>().any(
                     (child) =>
                         (child.text != null && child.text!.isNotEmpty) ||
                         (child.texts != null &&
-                            child.texts!.any((t) => t.isNotEmpty)),
+                            child.texts!.any((t) => t?.isNotEmpty == true)),
                   )),
         )
         .toList();

@@ -29,7 +29,7 @@ class VTableItem extends VItem {
   VColor? foreground;
   bool? grayed;
   int? imageIndent;
-  List<String>? texts;
+  List<String?>? texts;
 
   factory VTableItem.fromJson(Map<String, dynamic> json) =>
       _$VTableItemFromJson(json);

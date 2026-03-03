@@ -872,6 +872,10 @@ class TableImpl<T extends TableSwt, V extends VTable>
     return state.items ?? [];
   }
 
+  double get cachedRowHeight => _cachedRowHeight ?? 20.0;
+  double get cachedHeaderOffset => _cachedHeaderOffset ?? 0.0;
+  Map<int, TableColumnWidth>? get cachedColumnWidths => _cachedColumnWidths;
+
   bool hasStyle(int style) {
     return StyleBits(state.style).has(style);
   }
