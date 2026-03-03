@@ -2449,7 +2449,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     }
 
     @Override
-    public void setCursor(long cursor) {
+    void setCursor(long cursor) {
         if (!GTK.GTK4) {
             if (enableWindow != 0) {
                 GDK.gdk_window_set_cursor(enableWindow, cursor);

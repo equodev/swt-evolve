@@ -195,6 +195,8 @@ public abstract class SwtWidget implements IWidget {
         this.getApi().nativeZoom = parent != null ? parent.nativeZoom : DPIUtil.getNativeDeviceZoom();
         this.autoScaleDisabled = parent.getImpl()._autoScaleDisabled();
         display = parent.getImpl()._display();
+        if (parent.getImpl() instanceof DynWidget dyn)
+            dyn.convert();
         reskinWidget();
         notifyCreationTracker();
         this.setData(DATA_NATIVE_ZOOM, this.getApi().nativeZoom);
@@ -2826,6 +2828,10 @@ public abstract class SwtWidget implements IWidget {
 
     public EventTable _eventTable() {
         return eventTable;
+    }
+
+    public void _eventTable(EventTable eventTable) {
+        this.eventTable = eventTable;
     }
 
     public Object _data() {

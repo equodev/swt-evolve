@@ -49,93 +49,10 @@ import dev.equo.swt.*;
  * @see #checkSubclass
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public abstract class DartWidget implements IWidget {
+public abstract class DynWidget implements IWidget {
 
-    Display display;
-
-    EventTable eventTable;
-
-    Object data;
-
-    long jniRef;
-
-    /* Global state flags */
-    static final int DISPOSED = 1 << 0;
-
-    static final int CANVAS = 1 << 1;
-
-    static final int KEYED_DATA = 1 << 2;
-
-    static final int DISABLED = 1 << 3;
-
-    static final int HIDDEN = 1 << 4;
-
-    static final int HOT = 1 << 5;
-
-    static final int MOVED = 1 << 6;
-
-    static final int RESIZED = 1 << 7;
-
-    static final int EXPANDING = 1 << 8;
-
-    static final int IGNORE_WHEEL = 1 << 9;
-
-    static final int PARENT_BACKGROUND = 1 << 10;
-
-    static final int THEME_BACKGROUND = 1 << 11;
-
-    /* A layout was requested on this widget */
-    static final int LAYOUT_NEEDED = 1 << 12;
-
-    /* The preferred size of a child has changed */
-    static final int LAYOUT_CHANGED = 1 << 13;
-
-    /* A layout was requested in this widget hierarchy */
-    static final int LAYOUT_CHILD = 1 << 14;
-
-    /* More global state flags */
-    static final int RELEASED = 1 << 15;
-
-    static final int DISPOSE_SENT = 1 << 16;
-
-    static final int FOREIGN_HANDLE = 1 << 17;
-
-    static final int DRAG_DETECT = 1 << 18;
-
-    static final int RESIZING = 1 << 19;
-
-    /* WebKit fixes */
-    static final int WEBKIT_EVENTS_FIX = 1 << 20;
-
-    //$NON-NLS-1$
-    static final String WEBKIT_EVENTS_FIX_KEY = "org.eclipse.swt.internal.webKitEventsFix";
-
-    //$NON-NLS-1$
-    static final String GLCONTEXT_KEY = "org.eclipse.swt.internal.cocoa.glcontext";
-
-    //$NON-NLS-1$
-    static final String STYLEDTEXT_KEY = "org.eclipse.swt.internal.cocoa.styledtext";
-
-    //$NON-NLS-1$
-    static final String IS_ACTIVE = "org.eclipse.swt.internal.isActive";
-
-    /* Notify of the opportunity to skin this widget */
-    static final int SKIN_NEEDED = 1 << 21;
-
-    /* Bidi "auto" text direction */
-    static final int HAS_AUTO_DIRECTION = 0;
-
-    /* Bidi flag and for auto text direction */
-    static final int AUTO_TEXT_DIRECTION = SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
-
-    /* Default size for widgets */
-    static final int DEFAULT_WIDTH = 64;
-
-    static final int DEFAULT_HEIGHT = 64;
-
-    DartWidget(Widget api) {
+    DynWidget(Widget api) {
         setApi(api);
-        notifyCreationTracker();
     }
 
     /**
@@ -167,24 +84,15 @@ public abstract class DartWidget implements IWidget {
      * @see #checkSubclass
      * @see #getStyle
      */
-    public DartWidget(Widget parent, int style, Widget api) {
+    public DynWidget(Widget parent, int style, Widget api) {
         setApi(api);
-        checkSubclass();
-        checkParent(parent);
-        this.getApi().style = style;
+        api.style = style;
         display = parent.getImpl()._display();
-        if (parent.getImpl() instanceof DynWidget dyn)
+        if (parent.getImpl() instanceof DynWidget dyn) {
+            if (Config.isDebug())
+                System.out.println("+++ CONVERTING DynComposite from Dyn child #" + parent.hashCode());
             dyn.convert();
-        reskinWidget();
-        notifyCreationTracker();
-    }
-
-    long accessibleHandle() {
-        return 0;
-    }
-
-    String getClipboardText() {
-        return null;
+        }
     }
 
     /**
@@ -216,20 +124,9 @@ public abstract class DartWidget implements IWidget {
      * @since 3.6
      */
     public void reskin(int flags) {
-        checkWidget();
-        reskinWidget();
-        if ((flags & SWT.ALL) != 0)
-            reskinChildren(flags);
-    }
-
-    void reskinChildren(int flags) {
-    }
-
-    void reskinWidget() {
-        if ((getApi().state & SKIN_NEEDED) != SKIN_NEEDED) {
-            this.getApi().state |= SKIN_NEEDED;
-            ((SwtDisplay) display.getImpl()).addSkinnableWidget(this.getApi());
-        }
+        System.out.println("+++ CONVERTING DynComposite from Widget#reskin(int) #" + getApi().hashCode());
+        IWidget newImpl = (IWidget) convert();
+        newImpl.reskin(flags);
     }
 
     /**
@@ -328,49 +225,8 @@ public abstract class DartWidget implements IWidget {
         addTypedListener(listener, SWT.Dispose);
     }
 
-    static int checkBits(int style, int int0, int int1, int int2, int int3, int int4, int int5) {
-        int mask = int0 | int1 | int2 | int3 | int4 | int5;
-        if ((style & mask) == 0)
-            style |= int0;
-        if ((style & int0) != 0)
-            style = (style & ~mask) | int0;
-        if ((style & int1) != 0)
-            style = (style & ~mask) | int1;
-        if ((style & int2) != 0)
-            style = (style & ~mask) | int2;
-        if ((style & int3) != 0)
-            style = (style & ~mask) | int3;
-        if ((style & int4) != 0)
-            style = (style & ~mask) | int4;
-        if ((style & int5) != 0)
-            style = (style & ~mask) | int5;
-        return style;
-    }
-
     public void checkOpen() {
         /* Do nothing */
-    }
-
-    void checkOrientation(Widget parent) {
-        getApi().style &= ~SWT.MIRRORED;
-        if ((getApi().style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT)) == 0) {
-            if (parent != null) {
-                if ((parent.style & SWT.LEFT_TO_RIGHT) != 0)
-                    getApi().style |= SWT.LEFT_TO_RIGHT;
-                if ((parent.style & SWT.RIGHT_TO_LEFT) != 0)
-                    getApi().style |= SWT.RIGHT_TO_LEFT;
-            }
-        }
-        getApi().style = checkBits(getApi().style, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, 0, 0, 0, 0);
-    }
-
-    void checkParent(Widget parent) {
-        if (parent == null)
-            error(SWT.ERROR_NULL_ARGUMENT);
-        if (parent.isDisposed())
-            error(SWT.ERROR_INVALID_ARGUMENT);
-        parent.checkWidget();
-        parent.getImpl().checkOpen();
     }
 
     /**
@@ -403,8 +259,6 @@ public abstract class DartWidget implements IWidget {
      * </ul>
      */
     public void checkSubclass() {
-        if (!isValidSubclass())
-            error(SWT.ERROR_INVALID_SUBCLASS);
     }
 
     /**
@@ -430,44 +284,6 @@ public abstract class DartWidget implements IWidget {
      * </ul>
      */
     public void checkWidget() {
-        Display display = this.display;
-        if (display == null)
-            error(SWT.ERROR_WIDGET_DISPOSED);
-        //if (((SwtDisplay) display.getImpl()).thread != Thread.currentThread())
-        //    error(SWT.ERROR_THREAD_INVALID_ACCESS);
-        if ((getApi().state & DISPOSED) != 0)
-            error(SWT.ERROR_WIDGET_DISPOSED);
-    }
-
-    void copyToClipboard(char[] buffer) {
-        if (buffer.length == 0)
-            return;
-    }
-
-    void createHandle() {
-    }
-
-    void createJNIRef() {
-    }
-
-    void createWidget() {
-        createJNIRef();
-        createHandle();
-        setOrientation();
-        register();
-    }
-
-    void deregister() {
-        if (bridge != null)
-            bridge.destroy(this);
-    }
-
-    void destroyJNIRef() {
-        jniRef = 0;
-    }
-
-    void destroyWidget() {
-        releaseHandle();
     }
 
     /**
@@ -495,44 +311,11 @@ public abstract class DartWidget implements IWidget {
      * @see #checkWidget
      */
     public void dispose() {
-        /*
-	* Note:  It is valid to attempt to dispose a widget
-	* more than once.  If this happens, fail silently.
-	*/
-        if (isDisposed())
-            return;
-        if (!isValidThread())
-            error(SWT.ERROR_THREAD_INVALID_ACCESS);
-        release(true);
-    }
-
-    long imageView() {
-        return 0;
+        disposed = true;
     }
 
     void error(int code) {
         SWT.error(code);
-    }
-
-    boolean filters(int eventType) {
-        return ((SwtDisplay) display.getImpl()).filters(eventType);
-    }
-
-    int fixMnemonic(char[] buffer) {
-        int i = 0, j = 0;
-        while (i < buffer.length) {
-            if ((buffer[j++] = buffer[i++]) == '&') {
-                if (i == buffer.length) {
-                    continue;
-                }
-                if (buffer[i] == '&') {
-                    i++;
-                    continue;
-                }
-                j--;
-            }
-        }
-        return j;
     }
 
     /**
@@ -558,7 +341,9 @@ public abstract class DartWidget implements IWidget {
      * @see #setData(Object)
      */
     public Object getData() {
-        return (getApi().state & KEYED_DATA) != 0 ? ((Object[]) data)[0] : data;
+        if (Config.isDebug())
+            System.out.println("++ Called Widget#getData() on DynWidget" + " #" + getApi().hashCode());
+        return this.data;
     }
 
     /**
@@ -586,18 +371,7 @@ public abstract class DartWidget implements IWidget {
      * @see #setData(String, Object)
      */
     public Object getData(String key) {
-        if (key == null)
-            error(SWT.ERROR_NULL_ARGUMENT);
-        if (key.equals(IS_ACTIVE))
-            return Boolean.valueOf(isActive());
-        if ((getApi().state & KEYED_DATA) != 0) {
-            Object[] table = (Object[]) data;
-            for (int i = 1; i < table.length; i += 2) {
-                if (key.equals(table[i]))
-                    return table[i + 1];
-            }
-        }
-        return null;
+        return keyedData.get(key);
     }
 
     /**
@@ -620,10 +394,6 @@ public abstract class DartWidget implements IWidget {
         if (display == null)
             error(SWT.ERROR_WIDGET_DISPOSED);
         return display;
-    }
-
-    boolean getDrawing() {
-        return true;
     }
 
     /**
@@ -712,17 +482,13 @@ public abstract class DartWidget implements IWidget {
      * </ul>
      */
     public int getStyle() {
-        return getApi().style;
+        return api.style;
     }
 
     boolean hooks(int eventType) {
         if (eventTable == null)
             return false;
         return eventTable.hooks(eventType);
-    }
-
-    boolean isActive() {
-        return true;
     }
 
     /**
@@ -751,11 +517,13 @@ public abstract class DartWidget implements IWidget {
      * @return <code>true</code> when the widget is disposed and <code>false</code> otherwise
      */
     public boolean isDisposed() {
-        return (getApi().state & DISPOSED) != 0;
+        return disposed;
     }
 
     public boolean isDrawing() {
-        return true;
+        System.out.println("+++ CONVERTING DynComposite from Widget#isDrawing() #" + getApi().hashCode());
+        IWidget newImpl = (IWidget) convert();
+        return newImpl.isDrawing();
     }
 
     /**
@@ -777,14 +545,6 @@ public abstract class DartWidget implements IWidget {
     public boolean isListening(int eventType) {
         checkWidget();
         return hooks(eventType);
-    }
-
-    boolean isValidSubclass() {
-        return SwtDisplay.isValidClass(getClass());
-    }
-
-    boolean isValidThread() {
-        return ((SwtDisplay) getDisplay().getImpl()).isValidThread();
     }
 
     /**
@@ -814,71 +574,10 @@ public abstract class DartWidget implements IWidget {
         sendEvent(eventType, event);
     }
 
-    void postEvent(int eventType) {
-        sendEvent(eventType, null, false);
-    }
-
-    void postEvent(int eventType, Event event) {
-        sendEvent(eventType, event, false);
-    }
-
-    void register() {
-        _hookEvents();
-        bridge = FlutterBridge.of(this);
-    }
-
     public void release(boolean destroy) {
-        try (ExceptionStash exceptions = new ExceptionStash()) {
-            if ((getApi().state & DISPOSE_SENT) == 0) {
-                getApi().state |= DISPOSE_SENT;
-                try {
-                    sendEvent(SWT.Dispose);
-                } catch (Error | RuntimeException ex) {
-                    exceptions.stash(ex);
-                }
-            }
-            if ((getApi().state & DISPOSED) == 0) {
-                try {
-                    releaseChildren(destroy);
-                } catch (Error | RuntimeException ex) {
-                    exceptions.stash(ex);
-                }
-            }
-            if ((getApi().state & RELEASED) == 0) {
-                getApi().state |= RELEASED;
-                if (destroy) {
-                    releaseParent();
-                    releaseWidget();
-                    destroyWidget();
-                } else {
-                    releaseWidget();
-                    releaseHandle();
-                }
-            }
-        }
-        notifyDisposalTracker();
-    }
-
-    void releaseChildren(boolean destroy) {
-    }
-
-    void releaseHandle() {
-        getApi().state |= DISPOSED;
-        display = null;
-        destroyJNIRef();
-    }
-
-    void releaseParent() {
-        /* Do nothing */
-    }
-
-    void releaseWidget() {
-        deregister();
-        if (((SwtDisplay) display.getImpl()).tooltipTarget == this.getApi())
-            ((SwtDisplay) display.getImpl()).tooltipTarget = null;
-        eventTable = null;
-        data = null;
-        getApi().state &= ~KEYED_DATA;
+        System.out.println("+++ CONVERTING DynComposite from Widget#release(boolean) #" + getApi().hashCode());
+        IWidget newImpl = (IWidget) convert();
+        newImpl.release(destroy);
     }
 
     /**
@@ -1038,80 +737,28 @@ public abstract class DartWidget implements IWidget {
         eventTable.unhook(SWT.Dispose, listener);
     }
 
-    void sendDoubleSelection() {
-    }
-
     public void sendEvent(Event event) {
-        ((SwtDisplay) display.getImpl()).sendEvent(eventTable, event);
+        System.out.println("+++ CONVERTING DynComposite from Widget#sendEvent(Event) #" + getApi().hashCode());
+        IWidget newImpl = (IWidget) convert();
+        newImpl.sendEvent(event);
     }
 
     public void sendEvent(int eventType) {
-        sendEvent(eventType, null, true);
+        System.out.println("+++ CONVERTING DynComposite from Widget#sendEvent(int) #" + getApi().hashCode());
+        IWidget newImpl = (IWidget) convert();
+        newImpl.sendEvent(eventType);
     }
 
     public void sendEvent(int eventType, Event event) {
-        sendEvent(eventType, event, true);
+        System.out.println("+++ CONVERTING DynComposite from Widget#sendEvent(int, Event) #" + getApi().hashCode());
+        IWidget newImpl = (IWidget) convert();
+        newImpl.sendEvent(eventType, event);
     }
 
     public void sendEvent(int eventType, Event event, boolean send) {
-        if (eventTable == null && !((SwtDisplay) display.getImpl()).filters(eventType)) {
-            return;
-        }
-        if (event == null)
-            event = new Event();
-        event.type = eventType;
-        event.display = display;
-        event.widget = this.getApi();
-        if (event.time == 0) {
-            event.time = ((SwtDisplay) display.getImpl()).getLastEventTime();
-        }
-        if (send) {
-            sendEvent(event);
-        } else {
-            ((SwtDisplay) display.getImpl()).postEvent(event);
-        }
-    }
-
-    boolean sendKeyEvent(int type, Event event) {
-        sendEvent(type, event);
-        // widget could be disposed at this point
-        /*
-	* It is possible (but unlikely), that application
-	* code could have disposed the widget in the key
-	* events.  If this happens, end the processing of
-	* the key by returning false.
-	*/
-        if (isDisposed())
-            return false;
-        return event.doit;
-    }
-
-    void sendHorizontalSelection() {
-    }
-
-    void sendCancelSelection() {
-    }
-
-    void sendSearchSelection() {
-    }
-
-    void sendSelection() {
-    }
-
-    void sendSelectionEvent(int eventType) {
-        sendSelectionEvent(eventType, null, false);
-    }
-
-    void sendSelectionEvent(int eventType, Event event, boolean send) {
-        if (eventTable == null && !((SwtDisplay) display.getImpl()).filters(eventType)) {
-            return;
-        }
-        if (event == null)
-            event = new Event();
-        sendEvent(eventType, event, send);
-    }
-
-    void sendVerticalSelection() {
+        System.out.println("+++ CONVERTING DynComposite from Widget#sendEvent(int, Event, boolean) #" + getApi().hashCode());
+        IWidget newImpl = (IWidget) convert();
+        newImpl.sendEvent(eventType, event, send);
     }
 
     /**
@@ -1137,22 +784,10 @@ public abstract class DartWidget implements IWidget {
      * @see #getData()
      */
     public void setData(Object data) {
-        if (WEBKIT_EVENTS_FIX_KEY.equals(data)) {
-            getApi().state |= WEBKIT_EVENTS_FIX;
-            return;
-        }
-        if (STYLEDTEXT_KEY.equals(data)) {
-            setIsStyledText();
-            return;
-        }
-        if ((getApi().state & KEYED_DATA) != 0) {
-            ((Object[]) this.data)[0] = data;
-        } else {
-            this.data = data;
-        }
-    }
-
-    void setIsStyledText() {
+        if (Config.isDebug())
+            System.out.println("++ Called Widget#setData(Object) on DynWidget" + " #" + getApi().hashCode());
+        dataSet = true;
+        this.data = data;
     }
 
     /**
@@ -1180,73 +815,27 @@ public abstract class DartWidget implements IWidget {
      * @see #getData(String)
      */
     public void setData(String key, Object value) {
-        if (key == null)
-            error(SWT.ERROR_NULL_ARGUMENT);
-        if (GLCONTEXT_KEY.equals(key)) {
-            setOpenGLContext(value);
-            return;
+        if (Config.isDebug())
+            System.out.println("++ Called Widget#setData(String, Object) on DynWidget" + " #" + getApi().hashCode());
+        keyedDataSet = true;
+        keyedData.put(key, value);
+        if ("modelElement".equals(key)) {
+            if (Config.isDebug())
+                System.out.println("+++ CONVERTING DynComposite from setData due key=modelElement #" + getApi().hashCode());
+            convert();
         }
-        int index = 1;
-        Object[] table = null;
-        if ((getApi().state & KEYED_DATA) != 0) {
-            table = (Object[]) data;
-            while (index < table.length) {
-                if (key.equals(table[index]))
-                    break;
-                index += 2;
-            }
-        }
-        if (value != null) {
-            if ((getApi().state & KEYED_DATA) != 0) {
-                if (index == table.length) {
-                    Object[] newTable = new Object[table.length + 2];
-                    System.arraycopy(table, 0, newTable, 0, table.length);
-                    data = table = newTable;
-                }
-            } else {
-                table = new Object[3];
-                table[0] = data;
-                data = table;
-                getApi().state |= KEYED_DATA;
-            }
-            table[index] = key;
-            table[index + 1] = value;
-        } else {
-            if ((getApi().state & KEYED_DATA) != 0) {
-                if (index != table.length) {
-                    int length = table.length - 2;
-                    if (length == 1) {
-                        data = table[0];
-                        getApi().state &= ~KEYED_DATA;
-                    } else {
-                        Object[] newTable = new Object[length];
-                        System.arraycopy(table, 0, newTable, 0, index);
-                        System.arraycopy(table, index + 2, newTable, index, length - index);
-                        data = newTable;
-                    }
-                }
-            }
-        }
-        if (key.equals(SWT.SKIN_CLASS) || key.equals(SWT.SKIN_ID))
-            this.reskin(SWT.ALL);
-    }
-
-    void setOpenGLContext(Object value) {
-    }
-
-    void setOrientation() {
     }
 
     public boolean setTabGroupFocus() {
-        return setTabItemFocus();
+        System.out.println("+++ CONVERTING DynComposite from Widget#setTabGroupFocus() #" + getApi().hashCode());
+        IWidget newImpl = (IWidget) convert();
+        return newImpl.setTabGroupFocus();
     }
 
     public boolean setTabItemFocus() {
-        return false;
-    }
-
-    String tooltipText() {
-        return null;
+        System.out.println("+++ CONVERTING DynComposite from Widget#setTabItemFocus() #" + getApi().hashCode());
+        IWidget newImpl = (IWidget) convert();
+        return newImpl.setTabItemFocus();
     }
 
     /**
@@ -1257,25 +846,7 @@ public abstract class DartWidget implements IWidget {
      */
     @Override
     public String toString() {
-        String string = "*Disposed*";
-        if (!isDisposed()) {
-            string = "*Wrong Thread*";
-            if (isValidThread())
-                string = getNameText();
-        }
-        return getName() + " {" + string + "}";
-    }
-
-    void notifyCreationTracker() {
-        if (WidgetSpy.isEnabled) {
-            WidgetSpy.getInstance().widgetCreated(this.getApi());
-        }
-    }
-
-    void notifyDisposalTracker() {
-        if (WidgetSpy.isEnabled) {
-            WidgetSpy.getInstance().widgetDisposed(this.getApi());
-        }
+        return getName() + " {" + (!isDisposed() ? getNameText() : "*Disposed*") + "}";
     }
 
     public Display _display() {
@@ -1298,25 +869,21 @@ public abstract class DartWidget implements IWidget {
         return jniRef;
     }
 
-    protected FlutterBridge bridge;
+    Object data;
 
-    public FlutterBridge getBridge() {
-        return bridge;
-    }
+    boolean dataSet;
 
-    protected void dirty() {
-        FlutterBridge bridge = getBridge();
-        if (bridge != null)
-            bridge.dirty(this);
-    }
+    Display display;
 
-    protected void _hookEvents() {
-        FlutterBridge.on(this, "Dispose", "Dispose", e -> {
-            getDisplay().asyncExec(() -> {
-                sendEvent(SWT.Dispose, e);
-            });
-        });
-    }
+    EventTable eventTable;
+
+    long jniRef;
+
+    boolean disposed;
+
+    boolean keyedDataSet;
+
+    Map<String, Object> keyedData = new HashMap<>();
 
     public Widget getApi() {
         return (Widget) api;
@@ -1330,11 +897,14 @@ public abstract class DartWidget implements IWidget {
             api.impl = this;
     }
 
-    protected VWidget value;
+    protected abstract IWidget convert();
 
-    public VWidget getValue() {
-        if (value == null)
-            value = new VWidget(this);
-        return (VWidget) value;
+    protected IWidget convert(IWidget newImpl) {
+        newImpl._eventTable(eventTable);
+        if (keyedDataSet)
+            for (Map.Entry<String, Object> entry : keyedData.entrySet()) newImpl.setData(entry.getKey(), entry.getValue());
+        if (dataSet)
+            newImpl.setData(getData());
+        return newImpl;
     }
 }

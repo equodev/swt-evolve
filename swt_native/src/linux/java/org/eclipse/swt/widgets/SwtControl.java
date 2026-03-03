@@ -5487,7 +5487,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         setCursor(cursor != null ? cursor.handle : 0);
     }
 
-    public void setCursor(long cursor) {
+    void setCursor(long cursor) {
         if (GTK.GTK4) {
             long eventHandle = eventHandle();
             GTK4.gtk_widget_set_cursor(eventHandle, cursor);

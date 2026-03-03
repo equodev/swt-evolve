@@ -115,8 +115,6 @@ public interface ImplControl extends ImplWidget {
 
     void sendFocusEvent(int type);
 
-    void setCursor(long cursor);
-
     boolean setTabItemFocus(boolean next);
 
     boolean traverse(int traversal, char character, int keyCode, int keyLocation, int stateMask, boolean doit);

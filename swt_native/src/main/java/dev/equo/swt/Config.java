@@ -9,6 +9,7 @@ import org.eclipse.swt.graphics.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static java.util.Map.entry;
 
@@ -24,6 +25,7 @@ public class Config {
     static final Map<Class<?>, Impl> equoEnabled;
     private static boolean forceEclipse = Boolean.getBoolean("dev.equo.swt.forceEclipse");
 
+    static boolean dynEnabled = Boolean.getBoolean("dev.equo.swt.dyn.Composite");
     static boolean debug = Boolean.getBoolean("dev.equo.swt.debug");
     static boolean idTracker = Boolean.getBoolean("dev.equo.swt.tracker");
     static IdWidgetTracker widgetTracker;
@@ -81,6 +83,8 @@ public class Config {
 
     static final String PROPERTY_PREFIX = "dev.equo.swt.";
     static final String DART = "Dart";
+
+    static final Pattern IDREGEX = Pattern.compile("\\([^)]*\\)");
 
     /**
      * Widget dependency groups. All widgets in the same group should be activated together.
@@ -269,9 +273,8 @@ public class Config {
             }
         }
         // Per-widget override
-        if (isEquoForced(clazz)) {
+        if (isEquoForced(clazz))
             return true;
-        }
 
         // Check parent data for per-widget override
         Object data = parent != null ? parent.getData(getKey(clazz)) : null;
@@ -285,15 +288,13 @@ public class Config {
             return true;
 
         /// This is used because Eclipse creates "hidden" toolbars as children of the shell
-        if (clazz == ToolBar.class && parent instanceof Shell && (isEquoForced(CTabFolder.class) || defaultImpl == Impl.equo)) {
+        if (clazz == ToolBar.class && parent instanceof Shell && (isEquoForced(CTabFolder.class) || defaultImpl == Impl.equo))
             return true;
-        }
-
-        if (isAncestorOf(parent, DartCTabFolder.class) && isToolBar()) {
-            return true;
-        }
 
         if (isCustomAncestor(parent))
+            return true;
+
+        if (isAncestorOf(parent, DartCTabFolder.class) && isToolBar())
             return true;
         // Special handling for Canvas: use Equo implementation when created from FigureCanvas
         if (clazz == Canvas.class) {
@@ -360,6 +361,9 @@ public class Config {
     }
 
     public static IWidget getCompositeImpl(Composite parent, int style, Composite composite) {
+        if (defaultImpl == Impl.equo && dynEnabled && ("dyn".equals(parent != null ? parent.getData(getKey(Composite.class)) : null) || mustBeDynComposite(composite))) {
+            return new DynComposite(parent, style, composite);
+        }
         if (Config.isEquo(composite.getClass(), parent))
             return new DartComposite(parent, style, composite);
         // In eclipse mode, always use SWT implementation without any special handling
@@ -369,6 +373,59 @@ public class Config {
             return new DartMainToolbar(parent, style, composite);
         if (sideBarImpl == Impl.equo && isSideToolbarComposite(Composite.class, parent))
             return new DartSideBar(parent, style, composite);
+        return new SwtComposite(parent, style, composite);
+    }
+
+    private static boolean mustBeDynComposite(Composite composite) {
+        if (composite.getClass().getName().equals("org.eclipse.e4.ui.workbench.renderers.swt.ContributedPartRenderer$1"))
+            return true;
+//        return isInStackTrace("org.eclipse.e4.ui.workbench.renderers.swt.ElementReferenceRenderer", "createWidget");
+        return false;
+    }
+
+    public static IComposite getDynImpl(DynComposite dynComposite) {
+        Composite parent = dynComposite.getParent();
+        int style = dynComposite.getStyle();
+        Composite composite = dynComposite.getApi();
+        Object modelElementId = dynComposite.getData("modelElement");
+
+        if (modelElementId != null) {
+            String modelStr = modelElementId.toString();
+            String forcedImpl;
+
+            int contribIdx = modelStr.indexOf("contributionURI:");
+            if (contribIdx >= 0) {
+                String afterColon = modelStr.substring(contribIdx + "contributionURI:".length()).trim();
+                int end = afterColon.length();
+                for (int i = 0; i < afterColon.length(); i++) {
+                    char c = afterColon.charAt(i);
+                    if (c == ' ' || c == ',' || c == '\n' || c == ')') { end = i; break; }
+                }
+                String uri = afterColon.substring(0, end);
+                int lastSlash = uri.lastIndexOf('/');
+                if (lastSlash >= 0) {
+                    String className = uri.substring(lastSlash + 1);
+                    System.out.print("-- View: " +className);
+                    forcedImpl = System.getProperty(PROPERTY_PREFIX + className);
+                    if (forcedImpl != null) {
+                        return Impl.equo.name().equals(forcedImpl) ? new DartComposite(parent, style, composite) : new SwtComposite(parent, style, composite);
+                    }
+                }
+            }
+
+            String[] parts = modelStr.split("=");
+            if (parts.length > 0) {
+                String id = IDREGEX.matcher(parts[0]).replaceFirst("");
+                System.out.println(" -- id: " +id);
+                forcedImpl = System.getProperty(PROPERTY_PREFIX+id);
+                if (forcedImpl != null) {
+                    return Impl.equo.name().equals(forcedImpl) ? new DartComposite(parent, style, composite) : new SwtComposite(parent, style, composite);
+                }
+            }
+        }
+
+        if (Config.isEquo(composite.getClass(), parent))
+            return new DartComposite(parent, style, composite);
         return new SwtComposite(parent, style, composite);
     }
 

@@ -1,6 +1,5 @@
 package dev.equo.swt;
 
-import org.eclipse.swt.custom.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
@@ -54,16 +53,28 @@ public abstract class FlutterBridge {
     protected FlutterBridge() {
     }
 
+    protected DartWidget forWidget() {
+        return null;
+    }
+
     static Set<Object> filterWidgetsWithDirtyAncestors(Set<Object> dirtySet) {
         Set<Object> filtered = new HashSet<>();
 
         for (Object widget : dirtySet) {
-            if (!hasAncestorInSet(widget, dirtySet)) {
+            if (isFlutterRoot(widget) || !hasAncestorInSet(widget, dirtySet)) {
                 filtered.add(widget);
             }
         }
 
         return filtered;
+    }
+
+    private static boolean isFlutterRoot(Object widget) {
+        if (widget instanceof DartControl d) {
+            FlutterBridge bridge = d.getBridge();
+            return bridge != null && bridge.forWidget() == widget;
+        }
+        return false;
     }
 
     static boolean hasAncestorInSet(Object widget, Set<Object> dirtySet) {

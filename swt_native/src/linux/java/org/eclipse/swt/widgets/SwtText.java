@@ -2339,7 +2339,7 @@ public class SwtText extends SwtScrollable implements IText {
     }
 
     @Override
-    public void setCursor(long cursor) {
+    void setCursor(long cursor) {
         long defaultCursor = 0;
         if (cursor == 0) {
             if (GTK.GTK4) {
