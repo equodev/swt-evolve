@@ -1276,11 +1276,15 @@ public class DartList extends DartScrollable implements IList {
         super._hookEvents();
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 ListHelper.sendSelection(this, e, SWT.DefaultSelection);
             });
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 ListHelper.sendSelection(this, e, SWT.Selection);
             });
         });

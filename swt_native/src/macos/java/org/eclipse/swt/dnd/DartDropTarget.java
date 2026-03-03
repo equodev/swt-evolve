@@ -484,31 +484,43 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         super._hookEvents();
         FlutterBridge.on(this, "Drop", "dragEnter", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(DND.DragEnter, e);
             });
         });
         FlutterBridge.on(this, "Drop", "dragLeave", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(DND.DragLeave, e);
             });
         });
         FlutterBridge.on(this, "Drop", "dragOperationChanged", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(DND.DragOperationChanged, e);
             });
         });
         FlutterBridge.on(this, "Drop", "dragOver", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(DND.DragOver, e);
             });
         });
         FlutterBridge.on(this, "Drop", "drop", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(DND.Drop, e);
             });
         });
         FlutterBridge.on(this, "Drop", "dropAccept", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(DND.DropAccept, e);
             });
         });

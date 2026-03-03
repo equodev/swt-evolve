@@ -664,11 +664,15 @@ public class DartButton extends DartControl implements IButton {
         super._hookEvents();
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.DefaultSelection, e);
             });
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 if ((getApi().style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) != 0) {
                     this.selection = !this.selection;
                 }

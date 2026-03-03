@@ -2387,17 +2387,23 @@ public class DartCCombo extends DartComposite implements ICCombo {
         super._hookEvents();
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 setText(e.text);
             });
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.DefaultSelection, e);
             });
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {
             getDisplay().asyncExec(() -> {
                 // Update internal state before notifying listeners
+                if (isDisposed())
+                    return;
                 if (e.text != null) {
                     _text = e.text;
                     text.setText(e.text);
@@ -2412,6 +2418,8 @@ public class DartCCombo extends DartComposite implements ICCombo {
         });
         FlutterBridge.on(this, "Verify", "Verify", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.Verify, e);
             });
         });

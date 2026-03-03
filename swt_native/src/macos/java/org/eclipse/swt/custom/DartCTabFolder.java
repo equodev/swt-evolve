@@ -4753,21 +4753,29 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         });
         FlutterBridge.on(this, "CTabFolder2", "close", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 CTabFolderHelper.handleClose(this, e);
             });
         });
         FlutterBridge.on(this, "CTabFolder2", "maximize", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 CTabFolderHelper.handleMaximize(this, e);
             });
         });
         FlutterBridge.on(this, "CTabFolder2", "minimize", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 CTabFolderHelper.handleMinimize(this, e);
             });
         });
         FlutterBridge.on(this, "CTabFolder2", "restore", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 CTabFolderHelper.handleRestore(this, e);
             });
         });

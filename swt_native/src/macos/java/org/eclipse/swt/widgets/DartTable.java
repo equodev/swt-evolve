@@ -2567,16 +2567,22 @@ public class DartTable extends DartComposite implements ITable {
         super._hookEvents();
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 TableHelper.handleModify(this, e);
             });
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 TableHelper.sendSelection(this, e, SWT.DefaultSelection);
             });
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 TableHelper.sendSelection(this, e, SWT.Selection);
             });
         });

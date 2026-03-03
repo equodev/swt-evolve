@@ -725,21 +725,29 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
         super._hookEvents();
         FlutterBridge.on(this, "Control", "Move", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.Move, e);
             });
         });
         FlutterBridge.on(this, "Control", "Resize", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.Resize, e);
             });
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.DefaultSelection, e);
             });
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.Selection, e);
             });
         });

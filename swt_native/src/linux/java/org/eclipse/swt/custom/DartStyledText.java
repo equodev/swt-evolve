@@ -11940,6 +11940,8 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         });
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 if (e.text != null)
                     setText(e.text);
                 if (e.start >= 0)
@@ -11952,11 +11954,15 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 setSelection(e.start, e.end);
             });
         });
         FlutterBridge.on(this, "Verify", "Verify", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.Verify, e);
             });
         });

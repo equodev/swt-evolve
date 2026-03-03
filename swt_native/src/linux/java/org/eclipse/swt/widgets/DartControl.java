@@ -4895,106 +4895,148 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         super._hookEvents();
         FlutterBridge.on(this, "Control", "Move", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.Move, e);
             });
         });
         FlutterBridge.on(this, "Control", "Resize", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.Resize, e);
             });
         });
         FlutterBridge.on(this, "DragDetect", "DragDetect", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.DragDetect, e);
             });
         });
         FlutterBridge.on(this, "Focus", "FocusIn", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.FocusIn, e);
             });
         });
         FlutterBridge.on(this, "Focus", "FocusOut", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.FocusOut, e);
             });
         });
         FlutterBridge.on(this, "Gesture", "Gesture", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.Gesture, e);
             });
         });
         FlutterBridge.on(this, "Help", "Help", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.Help, e);
             });
         });
         FlutterBridge.on(this, "Key", "KeyDown", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.KeyDown, e);
             });
         });
         FlutterBridge.on(this, "Key", "KeyUp", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.KeyUp, e);
             });
         });
         FlutterBridge.on(this, "MenuDetect", "MenuDetect", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.MenuDetect, e);
             });
         });
         FlutterBridge.on(this, "Mouse", "MouseDoubleClick", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.MouseDoubleClick, e);
             });
         });
         FlutterBridge.on(this, "Mouse", "MouseDown", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.MouseDown, e);
             });
         });
         FlutterBridge.on(this, "Mouse", "MouseUp", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.MouseUp, e);
             });
         });
         FlutterBridge.on(this, "MouseMove", "MouseMove", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.MouseMove, e);
             });
         });
         FlutterBridge.on(this, "MouseTrack", "MouseEnter", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.MouseEnter, e);
             });
         });
         FlutterBridge.on(this, "MouseTrack", "MouseExit", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.MouseExit, e);
             });
         });
         FlutterBridge.on(this, "MouseTrack", "MouseHover", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.MouseHover, e);
             });
         });
         FlutterBridge.on(this, "MouseWheel", "MouseWheel", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.MouseWheel, e);
             });
         });
         FlutterBridge.on(this, "Paint", "Paint", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 ControlHelper.paint(this, e);
             });
         });
         FlutterBridge.on(this, "Touch", "Touch", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.Touch, e);
             });
         });
         FlutterBridge.on(this, "Traverse", "Traverse", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.Traverse, e);
             });
         });

@@ -1092,21 +1092,29 @@ public class DartMenuItem extends DartItem implements IMenuItem {
         super._hookEvents();
         FlutterBridge.on(this, "Arm", "Arm", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.Arm, e);
             });
         });
         FlutterBridge.on(this, "Help", "Help", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.Help, e);
             });
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.DefaultSelection, e);
             });
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
                 if ((getApi().style & SWT.CHECK) != 0) {
                     setSelection(!getSelection());
                 } else if ((getApi().style & SWT.RADIO) != 0) {
