@@ -31,7 +31,7 @@ class VTreeItem extends VItem {
   VColor? foreground;
   bool? grayed;
   List<VTreeItem>? items;
-  List<String>? texts;
+  List<String?>? texts;
 
   factory VTreeItem.fromJson(Map<String, dynamic> json) =>
       _$VTreeItemFromJson(json);

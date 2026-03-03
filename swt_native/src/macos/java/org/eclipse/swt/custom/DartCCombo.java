@@ -321,6 +321,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
         newItems[index] = string;
         System.arraycopy(items, index, newItems, index + 1, items.length - index);
         items = newItems;
+        list.add(string);
         dirty();
     }
 

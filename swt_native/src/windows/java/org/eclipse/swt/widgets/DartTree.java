@@ -3125,8 +3125,6 @@ public class DartTree extends DartComposite implements ITree {
         lastID = items.length;
     }
 
-    int itemCount;
-
     public void _addEditor(TreeEditor value) {
         TreeEditor[] result = ControlEditorHelper.addEditor(editors, value, TreeEditor.class);
         if (result != editors) {

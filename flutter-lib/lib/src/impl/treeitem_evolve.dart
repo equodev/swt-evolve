@@ -102,7 +102,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     }
 
     final String text = state.text ?? "";
-    final List<String>? texts = state.texts;
+    final List<String?>? texts = state.texts;
     final bool expanded = state.expanded ?? false;
     final bool hasChildren = state.items != null && state.items!.isNotEmpty;
     final bool isCheckMode = _context?.isCheckMode ?? false;
@@ -213,7 +213,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               (childItem) =>
                   (childItem.text != null && childItem.text!.isNotEmpty) ||
                   (childItem.texts != null &&
-                      childItem.texts!.any((text) => text.isNotEmpty)) ||
+                      childItem.texts!.any((text) => text?.isNotEmpty == true)) ||
                   (childItem.items != null && childItem.items!.isNotEmpty),
             )
             .toList() ??
@@ -240,7 +240,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
   Widget _buildRowWithColumns(
     BuildContext context,
-    List<String>? texts,
+    List<String?>? texts,
     String text,
     Color textColor,
     TreeThemeExtension widgetTheme,
@@ -295,7 +295,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
     final String firstColumnText = text.isNotEmpty
         ? text
-        : (texts?.isNotEmpty == true ? texts![0] : '');
+        : (texts?.isNotEmpty == true ? texts![0] ?? "" : '');
 
     if (effectiveWidths != null && effectiveWidths.length == columns.length) {
       return Row(
@@ -450,7 +450,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
   Widget _buildOtherColumns(
     BuildContext context,
-    List<String>? texts,
+    List<String?>? texts,
     Color textColor,
     TreeThemeExtension widgetTheme,
     List<VTreeColumn> columns,
@@ -473,9 +473,9 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     );
   }
 
-  String _getColumnText(List<String>? texts, int columnIndex) {
+  String _getColumnText(List<String?>? texts, int columnIndex) {
     if (texts != null && columnIndex < texts.length) {
-      return texts[columnIndex];
+      return texts[columnIndex] ?? '';
     }
     return '';
   }
@@ -509,7 +509,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
   Widget _buildTextContent(
     BuildContext context,
-    List<String>? texts,
+    List<String?>? texts,
     String text,
     Color textColor,
     TreeThemeExtension widgetTheme,
@@ -519,7 +519,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     if (columns.isEmpty) {
       final displayText = text.isNotEmpty
           ? text
-          : (texts?.isNotEmpty == true ? texts![0] : '');
+          : (texts?.isNotEmpty == true ? texts![0] ?? "" : '');
       return _buildCellText(
         context: context,
         text: displayText,
@@ -542,7 +542,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
   Widget _buildTextContentWithLines(
     BuildContext context,
-    List<String>? texts,
+    List<String?>? texts,
     String text,
     Color textColor,
     TreeThemeExtension widgetTheme,
@@ -556,7 +556,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         final String columnText = columnIndex == 0
             ? (text.isNotEmpty
                   ? text
-                  : (texts?.isNotEmpty == true ? texts![0] : ''))
+                  : (texts?.isNotEmpty == true ? texts![0] ?? "" : ''))
             : _getColumnText(texts, columnIndex);
 
         return _buildColumnCell(
@@ -703,7 +703,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   Widget _buildItemRow({
     required BuildContext context,
     required TreeThemeExtension widgetTheme,
-    required List<String>? texts,
+    required List<String?>? texts,
     required String text,
     required Color textColor,
     required int level,

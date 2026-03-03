@@ -4,7 +4,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
-import java.util.ArrayList;
 
 @CompiledJson()
 public class VTableItem extends VItem {
@@ -70,13 +69,7 @@ public class VTableItem extends VItem {
     }
 
     public String[] getTexts() {
-        String[] values = ((DartTableItem) impl).strings;
-        if (values == null)
-            return null;
-        ArrayList<String> result = new ArrayList<>(values.length);
-        for (String v : values) if (v != null)
-            result.add(v);
-        return result.toArray(String[]::new);
+        return ((DartTableItem) impl).strings;
     }
 
     public void setTexts(String[] value) {
