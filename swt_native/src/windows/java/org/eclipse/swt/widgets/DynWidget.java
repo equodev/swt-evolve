@@ -51,102 +51,13 @@ import dev.equo.swt.*;
  * @see #checkSubclass
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
-public abstract class DartWidget implements IWidget {
-
-    boolean autoScaleDisabled = false;
-
-    Display display;
-
-    EventTable eventTable;
-
-    Object data;
-
-    /* Global state flags */
-    static final int DISPOSED = 1 << 0;
-
-    static final int CANVAS = 1 << 1;
-
-    static final int KEYED_DATA = 1 << 2;
-
-    static final int DISABLED = 1 << 3;
-
-    static final int HIDDEN = 1 << 4;
-
-    /* A layout was requested on this widget */
-    static final int LAYOUT_NEEDED = 1 << 5;
-
-    /* The preferred size of a child has changed */
-    static final int LAYOUT_CHANGED = 1 << 6;
-
-    /* A layout was requested in this widget hierarchy */
-    static final int LAYOUT_CHILD = 1 << 7;
-
-    /* Background flags */
-    static final int THEME_BACKGROUND = 1 << 8;
-
-    static final int DRAW_BACKGROUND = 1 << 9;
-
-    static final int PARENT_BACKGROUND = 1 << 10;
-
-    /* Dispose and release flags */
-    static final int RELEASED = 1 << 11;
-
-    static final int DISPOSE_SENT = 1 << 12;
-
-    /* More global widget state flags */
-    static final int TRACK_MOUSE = 1 << 13;
-
-    static final int FOREIGN_HANDLE = 1 << 14;
-
-    static final int DRAG_DETECT = 1 << 15;
-
-    /* Move and resize state flags */
-    static final int MOVE_OCCURRED = 1 << 16;
-
-    static final int MOVE_DEFERRED = 1 << 17;
-
-    static final int RESIZE_OCCURRED = 1 << 18;
-
-    static final int RESIZE_DEFERRED = 1 << 19;
-
-    /* Ignore WM_CHANGEUISTATE */
-    static final int IGNORE_WM_CHANGEUISTATE = 1 << 20;
-
-    /* Notify of the opportunity to skin this widget */
-    static final int SKIN_NEEDED = 1 << 21;
-
-    /* Bidi "auto" text direction */
-    static final int HAS_AUTO_DIRECTION = 1 << 22;
-
-    /* Mouse cursor is over the widget flag */
-    static final int MOUSE_OVER = 1 << 23;
-
-    /* Child item requires custom draw */
-    static final int CUSTOM_DRAW_ITEM = 1 << 24;
-
-    /* Default size for widgets */
-    static final int DEFAULT_WIDTH = 64;
-
-    static final int DEFAULT_HEIGHT = 64;
-
-    /* Bidi UCC to enforce text direction */
-    static final char LRE = '\u202a';
-
-    static final char RLE = '\u202b';
-
-    /* Bidi flag and for auto text direction */
-    static final int AUTO_TEXT_DIRECTION = SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
-
-    private static final String DATA_AUTOSCALE_DISABLED = "AUTOSCALE_DISABLED";
-
-    private static final String DATA_NATIVE_ZOOM = "NATIVE_ZOOM";
+public abstract class DynWidget implements IWidget {
 
     /**
      * Prevents uninitialized instances from being created outside the package.
      */
-    DartWidget(Widget api) {
+    DynWidget(Widget api) {
         setApi(api);
-        notifyCreationTracker();
     }
 
     /**
@@ -178,19 +89,15 @@ public abstract class DartWidget implements IWidget {
      * @see #checkSubclass
      * @see #getStyle
      */
-    public DartWidget(Widget parent, int style, Widget api) {
+    public DynWidget(Widget parent, int style, Widget api) {
         setApi(api);
-        checkSubclass();
-        checkParent(parent);
-        this.getApi().style = style;
-        this.getApi().nativeZoom = parent != null ? parent.nativeZoom : DPIUtil.getNativeDeviceZoom();
-        this.autoScaleDisabled = parent.getImpl()._autoScaleDisabled();
+        api.style = style;
         display = parent.getImpl()._display();
-        if (parent.getImpl() instanceof DynWidget dyn)
+        if (parent.getImpl() instanceof DynWidget dyn) {
+            if (Config.isDebug())
+                System.out.println("+++ CONVERTING DynComposite from Dyn child #" + parent.hashCode());
             dyn.convert();
-        reskinWidget();
-        notifyCreationTracker();
-        this.setData(DATA_NATIVE_ZOOM, this.getApi().nativeZoom);
+        }
     }
 
     void _addListener(int eventType, Listener listener) {
@@ -295,83 +202,11 @@ public abstract class DartWidget implements IWidget {
         addTypedListener(listener, SWT.Dispose);
     }
 
-    /**
-     * Returns a style with exactly one style bit set out of
-     * the specified set of exclusive style bits. All other
-     * possible bits are cleared when the first matching bit
-     * is found. Bits that are not part of the possible set
-     * are untouched.
-     *
-     * @param style the original style bits
-     * @param int0 the 0th possible style bit
-     * @param int1 the 1st possible style bit
-     * @param int2 the 2nd possible style bit
-     * @param int3 the 3rd possible style bit
-     * @param int4 the 4th possible style bit
-     * @param int5 the 5th possible style bit
-     *
-     * @return the new style bits
-     */
-    static int checkBits(int style, int int0, int int1, int int2, int int3, int int4, int int5) {
-        int mask = int0 | int1 | int2 | int3 | int4 | int5;
-        if ((style & mask) == 0)
-            style |= int0;
-        if ((style & int0) != 0)
-            style = (style & ~mask) | int0;
-        if ((style & int1) != 0)
-            style = (style & ~mask) | int1;
-        if ((style & int2) != 0)
-            style = (style & ~mask) | int2;
-        if ((style & int3) != 0)
-            style = (style & ~mask) | int3;
-        if ((style & int4) != 0)
-            style = (style & ~mask) | int4;
-        if ((style & int5) != 0)
-            style = (style & ~mask) | int5;
-        return style;
-    }
-
-    void checkOrientation(Widget parent) {
-        getApi().style &= ~SWT.MIRRORED;
-        if ((getApi().style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT)) == 0) {
-            if (parent != null) {
-                if ((parent.style & SWT.LEFT_TO_RIGHT) != 0)
-                    getApi().style |= SWT.LEFT_TO_RIGHT;
-                if ((parent.style & SWT.RIGHT_TO_LEFT) != 0)
-                    getApi().style |= SWT.RIGHT_TO_LEFT;
-            }
-        }
-        getApi().style = checkBits(getApi().style, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, 0, 0, 0, 0);
-    }
-
     public void checkOpened() {
+        System.out.println("+++ CONVERTING DynComposite from Widget#checkOpened() #" + getApi().hashCode());
+        IWidget newImpl = (IWidget) convert();
+        newImpl.checkOpened();
         /* Do nothing */
-    }
-
-    /**
-     * Throws an exception if the specified widget can not be
-     * used as a parent for the receiver.
-     *
-     * @exception IllegalArgumentException <ul>
-     *    <li>ERROR_NULL_ARGUMENT - if the parent is null</li>
-     *    <li>ERROR_INVALID_ARGUMENT - if the parent is disposed</li>
-     * </ul>
-     * @exception SWTException <ul>
-     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the parent</li>
-     * </ul>
-     */
-    void checkParent(Widget parent) {
-        if (parent == null)
-            error(SWT.ERROR_NULL_ARGUMENT);
-        if (parent.isDisposed())
-            error(SWT.ERROR_INVALID_ARGUMENT);
-        parent.checkWidget();
-        parent.getImpl().checkOpened();
-    }
-
-    void maybeEnableDarkSystemTheme(long handle) {
-        if (((SwtDisplay) display.getImpl()).useDarkModeExplorerTheme) {
-        }
     }
 
     /**
@@ -404,8 +239,6 @@ public abstract class DartWidget implements IWidget {
      * </ul>
      */
     public void checkSubclass() {
-        if (!isValidSubclass())
-            error(SWT.ERROR_INVALID_SUBCLASS);
     }
 
     /**
@@ -431,36 +264,6 @@ public abstract class DartWidget implements IWidget {
      * </ul>
      */
     public void checkWidget() {
-        Display display = this.display;
-        if (display == null)
-            error(SWT.ERROR_WIDGET_DISPOSED);
-        //if (((SwtDisplay) display.getImpl()).thread != Thread.currentThread())
-        //    error(SWT.ERROR_THREAD_INVALID_ACCESS);
-        if ((getApi().state & DISPOSED) != 0)
-            error(SWT.ERROR_WIDGET_DISPOSED);
-    }
-
-    /**
-     * Destroys the widget in the operating system and releases
-     * the widget's handle.  If the widget does not have a handle,
-     * this method may hide the widget, mark the widget as destroyed
-     * or do nothing, depending on the widget.
-     * <p>
-     * When a widget is destroyed in the operating system, its
-     * descendants are also destroyed by the operating system.
-     * This means that it is only necessary to call <code>destroyWidget</code>
-     * on the root of the widget tree.
-     * </p><p>
-     * This method is called after <code>releaseWidget()</code>.
-     * </p><p>
-     * See also <code>releaseChild()</code>, <code>releaseWidget()</code>
-     * and <code>releaseHandle()</code>.
-     * </p>
-     *
-     * @see #dispose
-     */
-    void destroyWidget() {
-        releaseHandle();
     }
 
     /**
@@ -488,15 +291,7 @@ public abstract class DartWidget implements IWidget {
      * @see #checkWidget
      */
     public void dispose() {
-        /*
-	* Note:  It is valid to attempt to dispose a widget
-	* more than once.  If this happens, fail silently.
-	*/
-        if (isDisposed())
-            return;
-        if (!isValidThread())
-            error(SWT.ERROR_THREAD_INVALID_ACCESS);
-        release(true);
+        disposed = true;
     }
 
     /**
@@ -509,46 +304,6 @@ public abstract class DartWidget implements IWidget {
      */
     void error(int code) {
         SWT.error(code);
-    }
-
-    boolean filters(int eventType) {
-        return ((SwtDisplay) display.getImpl()).filters(eventType);
-    }
-
-    Widget findItem(long id) {
-        return null;
-    }
-
-    char[] fixMnemonic(String string) {
-        return fixMnemonic(string, false, false);
-    }
-
-    char[] fixMnemonic(String string, boolean spaces) {
-        return fixMnemonic(string, spaces, false);
-    }
-
-    char[] fixMnemonic(String string, boolean spaces, boolean removeAppended) {
-        // fixMnemonic must return a null-terminated array
-        char[] buffer = new char[string.length() + 1];
-        string.getChars(0, string.length(), buffer, 0);
-        int i = 0, j = 0;
-        while (i < buffer.length) {
-            if (buffer[i] == '&') {
-                if (i + 1 < buffer.length && buffer[i + 1] == '&') {
-                    buffer[j++] = spaces ? ' ' : buffer[i];
-                    i++;
-                }
-                i++;
-            } else if (buffer[i] == '(' && removeAppended && i + 4 == string.length() && buffer[i + 1] == '&' && buffer[i + 3] == ')') {
-                if (spaces)
-                    buffer[j++] = ' ';
-                i += 4;
-            } else {
-                buffer[j++] = buffer[i++];
-            }
-        }
-        while (j < buffer.length) buffer[j++] = 0;
-        return buffer;
     }
 
     /**
@@ -574,7 +329,9 @@ public abstract class DartWidget implements IWidget {
      * @see #setData(Object)
      */
     public Object getData() {
-        return (getApi().state & KEYED_DATA) != 0 ? ((Object[]) data)[0] : data;
+        if (Config.isDebug())
+            System.out.println("++ Called Widget#getData() on DynWidget" + " #" + getApi().hashCode());
+        return this.data;
     }
 
     /**
@@ -602,15 +359,7 @@ public abstract class DartWidget implements IWidget {
      * @see #setData(String, Object)
      */
     public Object getData(String key) {
-        if (key == null)
-            error(SWT.ERROR_NULL_ARGUMENT);
-        if ((getApi().state & KEYED_DATA) != 0 && data instanceof Object[] table) {
-            for (int i = 1; i < table.length; i += 2) {
-                if (key.equals(table[i]))
-                    return table[i + 1];
-            }
-        }
-        return null;
+        return keyedData.get(key);
     }
 
     /**
@@ -688,10 +437,6 @@ public abstract class DartWidget implements IWidget {
         Arrays.stream(getListeners(eventType)).filter(TypedListener.class::isInstance).map(l -> ((TypedListener) l).eventListener).filter(listenerType::isInstance).map(listenerType::cast);
     }
 
-    Menu getMenu() {
-        return null;
-    }
-
     /**
      * Returns the name of the widget. This is the name of
      * the class without the package name.
@@ -742,7 +487,7 @@ public abstract class DartWidget implements IWidget {
      * </ul>
      */
     public int getStyle() {
-        return getApi().style;
+        return api.style;
     }
 
     /*
@@ -775,7 +520,7 @@ public abstract class DartWidget implements IWidget {
      * @since 3.105
      */
     public boolean isAutoDirection() {
-        return (getApi().state & HAS_AUTO_DIRECTION) != 0;
+        return false;
     }
 
     /**
@@ -790,7 +535,7 @@ public abstract class DartWidget implements IWidget {
      * @return <code>true</code> when the widget is disposed and <code>false</code> otherwise
      */
     public boolean isDisposed() {
-        return (getApi().state & DISPOSED) != 0;
+        return disposed;
     }
 
     /**
@@ -812,31 +557,6 @@ public abstract class DartWidget implements IWidget {
     public boolean isListening(int eventType) {
         checkWidget();
         return hooks(eventType);
-    }
-
-    /*
- * Returns <code>true</code> when subclassing is
- * allowed and <code>false</code> otherwise
- *
- * @return <code>true</code> when subclassing is allowed and <code>false</code> otherwise
- */
-    boolean isValidSubclass() {
-        return SwtDisplay.isValidClass(getClass());
-    }
-
-    /*
- * Returns <code>true</code> when the current thread is
- * the thread that created the widget and <code>false</code>
- * otherwise.
- *
- * @return <code>true</code> when the current thread is the thread that created the widget and <code>false</code> otherwise
- */
-    boolean isValidThread() {
-        return ((SwtDisplay) getDisplay().getImpl()).isValidThread();
-    }
-
-    GC new_GC(GCData data) {
-        return null;
     }
 
     /**
@@ -866,14 +586,6 @@ public abstract class DartWidget implements IWidget {
         sendEvent(eventType, event);
     }
 
-    void postEvent(int eventType) {
-        sendEvent(eventType, null, false);
-    }
-
-    void postEvent(int eventType, Event event) {
-        sendEvent(eventType, event, false);
-    }
-
     /*
  * Releases the widget hierarchy and optionally destroys
  * the receiver.
@@ -895,107 +607,9 @@ public abstract class DartWidget implements IWidget {
  * @see #releaseWidget
 */
     public void release(boolean destroy) {
-        try (ExceptionStash exceptions = new ExceptionStash()) {
-            if ((getApi().state & DISPOSE_SENT) == 0) {
-                getApi().state |= DISPOSE_SENT;
-                try {
-                    sendEvent(SWT.Dispose);
-                } catch (Error | RuntimeException ex) {
-                    exceptions.stash(ex);
-                }
-            }
-            if ((getApi().state & DISPOSED) == 0) {
-                try {
-                    releaseChildren(destroy);
-                } catch (Error | RuntimeException ex) {
-                    exceptions.stash(ex);
-                }
-            }
-            if ((getApi().state & RELEASED) == 0) {
-                getApi().state |= RELEASED;
-                if (destroy) {
-                    releaseParent();
-                    releaseWidget();
-                    destroyWidget();
-                } else {
-                    releaseWidget();
-                    releaseHandle();
-                }
-            }
-            notifyDisposalTracker();
-        }
-    }
-
-    void releaseChildren(boolean destroy) {
-    }
-
-    /*
- * Releases the widget's handle by zero'ing it out.
- * Does not destroy or release any operating system
- * resources.
- * <p>
- * This method is called after <code>releaseWidget</code>
- * or from <code>destroyWidget</code> when a widget is being
- * destroyed to ensure that the widget is marked as destroyed
- * in case the act of destroying the widget in the operating
- * system causes application code to run in callback that
- * could access the widget.
- * </p>
- *
- * @see #dispose
- * @see #releaseChildren
- * @see #releaseParent
- * @see #releaseWidget
- */
-    void releaseHandle() {
-        getApi().state |= DISPOSED;
-        display = null;
-    }
-
-    /*
- * Releases the receiver, a child in a widget hierarchy,
- * from its parent.
- * <p>
- * When a widget is destroyed, it may be necessary to remove
- * it from an internal data structure of the parent. When
- * a widget has no handle, it may also be necessary for the
- * parent to hide the widget or otherwise indicate that the
- * widget has been disposed. For example, disposing a menu
- * bar requires that the menu bar first be released from the
- * shell when the menu bar is active.
- * </p>
- *
- * @see #dispose
- * @see #releaseChildren
- * @see #releaseWidget
- * @see #releaseHandle
- */
-    void releaseParent() {
-    }
-
-    /*
- * Releases any internal resources back to the operating
- * system and clears all fields except the widget handle.
- * <p>
- * When a widget is destroyed, resources that were acquired
- * on behalf of the programmer need to be returned to the
- * operating system.  For example, if the widget made a
- * copy of an icon, supplied by the programmer, this copy
- * would be freed in <code>releaseWidget</code>.  Also,
- * to assist the garbage collector and minimize the amount
- * of memory that is not reclaimed when the programmer keeps
- * a reference to a disposed widget, all fields except the
- * handle are zero'd.  The handle is needed by <code>destroyWidget</code>.
- * </p>
- *
- * @see #dispose
- * @see #releaseChildren
- * @see #releaseHandle
- * @see #releaseParent
- */
-    void releaseWidget() {
-        eventTable = null;
-        data = null;
+        System.out.println("+++ CONVERTING DynComposite from Widget#release(boolean) #" + getApi().hashCode());
+        IWidget newImpl = (IWidget) convert();
+        newImpl.release(destroy);
     }
 
     /**
@@ -1182,131 +796,33 @@ public abstract class DartWidget implements IWidget {
      * @since 3.6
      */
     public void reskin(int flags) {
-        checkWidget();
-        reskinWidget();
-        if ((flags & SWT.ALL) != 0)
-            reskinChildren(flags);
-    }
-
-    void reskinChildren(int flags) {
-    }
-
-    void reskinWidget() {
-        if ((getApi().state & SKIN_NEEDED) != SKIN_NEEDED) {
-            this.getApi().state |= SKIN_NEEDED;
-            ((SwtDisplay) display.getImpl()).addSkinnableWidget(this.getApi());
-        }
-    }
-
-    boolean sendDragEvent(int button, int x, int y) {
-        Event event = new Event();
-        event.button = button;
-        int zoom = getZoom();
-        event.setLocation(DPIUtil.pixelToPoint(x, zoom), DPIUtil.pixelToPoint(y, zoom));
-        setInputState(event, SWT.DragDetect);
-        postEvent(SWT.DragDetect, event);
-        if (isDisposed())
-            return false;
-        return event.doit;
-    }
-
-    boolean sendDragEvent(int button, int stateMask, int x, int y) {
-        Event event = new Event();
-        event.button = button;
-        int zoom = getZoom();
-        event.setLocation(DPIUtil.pixelToPoint(x, zoom), DPIUtil.pixelToPoint(y, zoom));
-        event.stateMask = stateMask;
-        postEvent(SWT.DragDetect, event);
-        if (isDisposed())
-            return false;
-        return event.doit;
+        System.out.println("+++ CONVERTING DynComposite from Widget#reskin(int) #" + getApi().hashCode());
+        IWidget newImpl = (IWidget) convert();
+        newImpl.reskin(flags);
     }
 
     public void sendEvent(Event event) {
-        Display display = event.display;
-        if (!((SwtDisplay) display.getImpl()).filterEvent(event)) {
-            if (eventTable != null)
-                ((SwtDisplay) display.getImpl()).sendEvent(eventTable, event);
-        }
+        System.out.println("+++ CONVERTING DynComposite from Widget#sendEvent(Event) #" + getApi().hashCode());
+        IWidget newImpl = (IWidget) convert();
+        newImpl.sendEvent(event);
     }
 
     public void sendEvent(int eventType) {
-        sendEvent(eventType, null, true);
+        System.out.println("+++ CONVERTING DynComposite from Widget#sendEvent(int) #" + getApi().hashCode());
+        IWidget newImpl = (IWidget) convert();
+        newImpl.sendEvent(eventType);
     }
 
     public void sendEvent(int eventType, Event event) {
-        sendEvent(eventType, event, true);
+        System.out.println("+++ CONVERTING DynComposite from Widget#sendEvent(int, Event) #" + getApi().hashCode());
+        IWidget newImpl = (IWidget) convert();
+        newImpl.sendEvent(eventType, event);
     }
 
     public void sendEvent(int eventType, Event event, boolean send) {
-        if (eventTable == null && !((SwtDisplay) display.getImpl()).filters(eventType)) {
-            return;
-        }
-        if (event == null)
-            event = new Event();
-        event.type = eventType;
-        event.display = display;
-        event.widget = this.getApi();
-        if (event.time == 0) {
-            event.time = ((SwtDisplay) display.getImpl()).getLastEventTime();
-        }
-        if (send) {
-            sendEvent(event);
-        } else {
-            ((SwtDisplay) display.getImpl()).postEvent(event);
-        }
-    }
-
-    void sendSelectionEvent(int type) {
-        sendSelectionEvent(type, null, false);
-    }
-
-    void sendSelectionEvent(int type, Event event, boolean send) {
-        if (eventTable == null && !((SwtDisplay) display.getImpl()).filters(type)) {
-            return;
-        }
-        if (event == null)
-            event = new Event();
-        setInputState(event, type);
-        sendEvent(type, event, send);
-    }
-
-    class MouseWheelData {
-
-        MouseWheelData(boolean isVertical, ScrollBar scrollBar, long wParam, Point remainder) {
-            /* Wheel speed can be configured in Windows mouse settings */
-            if (isVertical) {
-                int[] wheelSpeed = new int[1];
-                {
-                    detail = SWT.SCROLL_LINE;
-                }
-            } else {
-                int[] wheelSpeed = new int[1];
-                /* For legacy compatibility reasons, detail is set to 0 here */
-                detail = 0;
-            }
-            /* Take scrollbar scrolling speed into account */
-            if (scrollBar != null) {
-                if (detail == SWT.SCROLL_PAGE) {
-                } else {
-                }
-            }
-            /*
-		 * Accumulate remainder to deal with fractional scrolls. This is only seen
-		 * on some devices which support "smooth scrolling". MSDN also says:
-		 *     The remainder must be zeroed when the wheel rotation switches
-		 *     directions or when window focus changes.
-		 */
-            if (isVertical) {
-            } else {
-            }
-        }
-
-        // lines or pages scrolled
-        int count;
-
-        // {0, SWT.SCROLL_PAGE, SWT.SCROLL_LINE}
-        int detail;
+        System.out.println("+++ CONVERTING DynComposite from Widget#sendEvent(int, Event, boolean) #" + getApi().hashCode());
+        IWidget newImpl = (IWidget) convert();
+        newImpl.sendEvent(eventType, event, send);
     }
 
     /**
@@ -1332,11 +848,10 @@ public abstract class DartWidget implements IWidget {
      * @see #getData()
      */
     public void setData(Object data) {
-        if ((getApi().state & KEYED_DATA) != 0) {
-            ((Object[]) this.data)[0] = data;
-        } else {
-            this.data = data;
-        }
+        if (Config.isDebug())
+            System.out.println("++ Called Widget#setData(Object) on DynWidget" + " #" + getApi().hashCode());
+        dataSet = true;
+        this.data = data;
     }
 
     /**
@@ -1364,150 +879,33 @@ public abstract class DartWidget implements IWidget {
      * @see #getData(String)
      */
     public void setData(String key, Object value) {
-        if (key == null)
-            error(SWT.ERROR_NULL_ARGUMENT);
-        int index = 1;
-        Object[] table = null;
-        if ((getApi().state & KEYED_DATA) != 0) {
-            table = (Object[]) data;
-            while (index < table.length) {
-                if (key.equals(table[index]))
-                    break;
-                index += 2;
-            }
-        }
-        if (value != null) {
-            if ((getApi().state & KEYED_DATA) != 0) {
-                if (index == table.length) {
-                    Object[] newTable = new Object[table.length + 2];
-                    System.arraycopy(table, 0, newTable, 0, table.length);
-                    data = table = newTable;
-                }
-            } else {
-                table = new Object[3];
-                table[0] = data;
-                data = table;
-                getApi().state |= KEYED_DATA;
-            }
-            table[index] = key;
-            table[index + 1] = value;
-        } else {
-            if ((getApi().state & KEYED_DATA) != 0) {
-                if (index != table.length) {
-                    int length = table.length - 2;
-                    if (length == 1) {
-                        data = table[0];
-                        getApi().state &= ~KEYED_DATA;
-                    } else {
-                        Object[] newTable = new Object[length];
-                        System.arraycopy(table, 0, newTable, 0, index);
-                        System.arraycopy(table, index + 2, newTable, index, length - index);
-                        data = newTable;
-                    }
-                }
-            }
-        }
-        if (key.equals(SWT.SKIN_CLASS) || key.equals(SWT.SKIN_ID))
-            this.reskin(SWT.ALL);
-        if (DATA_AUTOSCALE_DISABLED.equals(key)) {
-            autoScaleDisabled = Boolean.parseBoolean(value.toString());
+        if (Config.isDebug())
+            System.out.println("++ Called Widget#setData(String, Object) on DynWidget" + " #" + getApi().hashCode());
+        keyedDataSet = true;
+        keyedData.put(key, value);
+        if ("modelElement".equals(key)) {
+            if (Config.isDebug())
+                System.out.println("+++ CONVERTING DynComposite from setData due key=modelElement #" + getApi().hashCode());
+            convert();
         }
     }
 
     public boolean sendFocusEvent(int type) {
-        sendEvent(type);
-        // widget could be disposed at this point
-        return true;
-    }
-
-    boolean setInputState(Event event, int type) {
-        /*
-	* Bug in Windows.  On some machines that do not have XBUTTONs,
-	* the MK_XBUTTON1 and OS.MK_XBUTTON2 bits are sometimes set,
-	* causing mouse capture to become stuck.  The fix is to test
-	* for the extra buttons only when they exist.
-	*/
-        if (((SwtDisplay) display.getImpl()).xMouse) {
-        }
-        switch(type) {
-            case SWT.MouseDown:
-            case SWT.MouseDoubleClick:
-                if (event.button == 1)
-                    event.stateMask &= ~SWT.BUTTON1;
-                if (event.button == 2)
-                    event.stateMask &= ~SWT.BUTTON2;
-                if (event.button == 3)
-                    event.stateMask &= ~SWT.BUTTON3;
-                if (event.button == 4)
-                    event.stateMask &= ~SWT.BUTTON4;
-                if (event.button == 5)
-                    event.stateMask &= ~SWT.BUTTON5;
-                break;
-            case SWT.MouseUp:
-                if (event.button == 1)
-                    event.stateMask |= SWT.BUTTON1;
-                if (event.button == 2)
-                    event.stateMask |= SWT.BUTTON2;
-                if (event.button == 3)
-                    event.stateMask |= SWT.BUTTON3;
-                if (event.button == 4)
-                    event.stateMask |= SWT.BUTTON4;
-                if (event.button == 5)
-                    event.stateMask |= SWT.BUTTON5;
-                break;
-            case SWT.KeyDown:
-            case SWT.Traverse:
-                if (event.keyCode == SWT.ALT)
-                    event.stateMask &= ~SWT.ALT;
-                if (event.keyCode == SWT.SHIFT)
-                    event.stateMask &= ~SWT.SHIFT;
-                if (event.keyCode == SWT.CONTROL)
-                    event.stateMask &= ~SWT.CONTROL;
-                break;
-            case SWT.KeyUp:
-                if (event.keyCode == SWT.ALT)
-                    event.stateMask |= SWT.ALT;
-                if (event.keyCode == SWT.SHIFT)
-                    event.stateMask |= SWT.SHIFT;
-                if (event.keyCode == SWT.CONTROL)
-                    event.stateMask |= SWT.CONTROL;
-                break;
-        }
-        return true;
+        System.out.println("+++ CONVERTING DynComposite from Widget#sendFocusEvent(int) #" + getApi().hashCode());
+        IWidget newImpl = (IWidget) convert();
+        return newImpl.sendFocusEvent(type);
     }
 
     public boolean setTabGroupFocus() {
-        return setTabItemFocus();
+        System.out.println("+++ CONVERTING DynComposite from Widget#setTabGroupFocus() #" + getApi().hashCode());
+        IWidget newImpl = (IWidget) convert();
+        return newImpl.setTabGroupFocus();
     }
 
     public boolean setTabItemFocus() {
-        return false;
-    }
-
-    boolean showMenu(int x, int y) {
-        return showMenu(x, y, SWT.MENU_MOUSE);
-    }
-
-    boolean showMenu(int x, int y, int detail) {
-        Event event = new Event();
-        Point mappedLocation = ((SwtDisplay) getDisplay().getImpl()).translateFromDisplayCoordinates(new Point(x, y), getZoom());
-        event.setLocation(mappedLocation.x, mappedLocation.y);
-        event.detail = detail;
-        if (event.detail == SWT.MENU_KEYBOARD) {
-            updateMenuLocation(event);
-        }
-        sendEvent(SWT.MenuDetect, event);
-        // widget could be disposed at this point
-        if (isDisposed())
-            return false;
-        if (!event.doit)
-            return true;
-        Menu menu = getMenu();
-        if (menu != null && !menu.isDisposed()) {
-            menu.setVisible(true);
-            return true;
-        }
-        return false;
+        System.out.println("+++ CONVERTING DynComposite from Widget#setTabItemFocus() #" + getApi().hashCode());
+        IWidget newImpl = (IWidget) convert();
+        return newImpl.setTabItemFocus();
     }
 
     /**
@@ -1518,84 +916,13 @@ public abstract class DartWidget implements IWidget {
      */
     @Override
     public String toString() {
-        //$NON-NLS-1$
-        String string = "*Disposed*";
-        if (!isDisposed()) {
-            //$NON-NLS-1$
-            string = "*Wrong Thread*";
-            if (isValidThread())
-                string = getNameText();
-        }
-        //$NON-NLS-1$ //$NON-NLS-2$
-        return getName() + " {" + string + "}";
-    }
-
-    void updateMenuLocation(Event event) {
-        /* Do nothing */
-    }
-
-    int mapVirtualKey(int virtualKey) {
-        if (('0' <= virtualKey) && (virtualKey <= '9')) {
-            // Some keyboard layouts have non-latin digits. For example,
-            // Devanagari and Bengali. Some keyboard layouts repurpose
-            // digit keys for something else. For example, French and
-            // Lithuanian. Yet still, applications expect to see digits
-            // in 'Event.keyCode' to be able to match these to hot keys.
-            // Note that on Windows, most native applications bind hot
-            // keys to virtual code of the key and not the character
-            // produced by it. For them, this problem doesn't even exist.
-            // Note that virtual key codes for 0...9 match corresponding
-            // chars.
-            return virtualKey;
-        } else if (('A' <= virtualKey) && (virtualKey <= 'Z')) {
-            // See above about digits. Also note that on Windows,
-            // 'MapVirtualKey()' is hardcoded to always return 'A'...'Z'
-            // for corresponding virtual key codes (undocumented but has
-            // been this way for ages). Note that virtual key codes for
-            // A...Z match corresponding chars.
-            return virtualKey;
-        } else {
-        }
-        return 0;
-    }
-
-    void notifyCreationTracker() {
-        if (WidgetSpy.isEnabled) {
-            WidgetSpy.getInstance().widgetCreated(this.getApi());
-        }
-    }
-
-    void notifyDisposalTracker() {
-        if (WidgetSpy.isEnabled) {
-            WidgetSpy.getInstance().widgetDisposed(this.getApi());
-        }
-    }
-
-    GC createNewGC(long hDC, GCData data) {
-        return null;
-    }
-
-    int getNativeZoom() {
-        if (autoScaleDisabled) {
-            return 100;
-        }
-        return getApi().nativeZoom;
+        return getName() + " {" + (!isDisposed() ? getNameText() : "*Disposed*") + "}";
     }
 
     public int getZoom() {
-        if (autoScaleDisabled) {
-            return 100;
-        }
-        return DPIUtil.getZoomForAutoscaleProperty(getApi().nativeZoom);
-    }
-
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        widget.nativeZoom = newZoom;
-        widget.setData(DATA_NATIVE_ZOOM, newZoom);
-    }
-
-    int getSystemMetrics(int nIndex) {
-        return 0;
+        System.out.println("+++ CONVERTING DynComposite from Widget#getZoom() #" + getApi().hashCode());
+        IWidget newImpl = (IWidget) convert();
+        return newImpl.getZoom();
     }
 
     public boolean _autoScaleDisabled() {
@@ -1618,30 +945,21 @@ public abstract class DartWidget implements IWidget {
         return data;
     }
 
-    void register() {
-        _hookEvents();
-        bridge = FlutterBridge.of(this);
-    }
+    Object data;
 
-    protected FlutterBridge bridge;
+    boolean dataSet;
 
-    public FlutterBridge getBridge() {
-        return bridge;
-    }
+    boolean autoScaleDisabled;
 
-    protected void dirty() {
-        FlutterBridge bridge = getBridge();
-        if (bridge != null)
-            bridge.dirty(this);
-    }
+    Display display;
 
-    protected void _hookEvents() {
-        FlutterBridge.on(this, "Dispose", "Dispose", e -> {
-            getDisplay().asyncExec(() -> {
-                sendEvent(SWT.Dispose, e);
-            });
-        });
-    }
+    EventTable eventTable;
+
+    boolean disposed;
+
+    boolean keyedDataSet;
+
+    Map<String, Object> keyedData = new HashMap<>();
 
     public Widget getApi() {
         return (Widget) api;
@@ -1655,11 +973,14 @@ public abstract class DartWidget implements IWidget {
             api.impl = this;
     }
 
-    protected VWidget value;
+    protected abstract IWidget convert();
 
-    public VWidget getValue() {
-        if (value == null)
-            value = new VWidget(this);
-        return (VWidget) value;
+    protected IWidget convert(IWidget newImpl) {
+        newImpl._eventTable(eventTable);
+        if (keyedDataSet)
+            for (Map.Entry<String, Object> entry : keyedData.entrySet()) newImpl.setData(entry.getKey(), entry.getValue());
+        if (dataSet)
+            newImpl.setData(getData());
+        return newImpl;
     }
 }

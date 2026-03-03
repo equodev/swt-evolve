@@ -69,7 +69,7 @@ public class SerializeTestBase {
 
     @AfterEach
     void resetStatic() {
-        SwtFlutterBridge.set(null);
+        FlutterBridge.set(null);
         mockedStatic.close();
         mockedCursor.close();
     }

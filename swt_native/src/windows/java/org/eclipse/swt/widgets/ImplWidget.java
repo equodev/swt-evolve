@@ -14,6 +14,8 @@ public interface ImplWidget {
 
     EventTable _eventTable();
 
+    void _eventTable(EventTable eventTable);
+
     Object _data();
 
     void checkOpened();

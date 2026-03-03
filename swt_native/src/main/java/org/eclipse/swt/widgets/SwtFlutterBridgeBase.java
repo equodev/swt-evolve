@@ -29,22 +29,19 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
         this.forWidget = widget;
     }
 
+    @Override
+    protected DartWidget forWidget() {
+        return forWidget;
+    }
+
     public static SwtFlutterBridge of(DartWidget widget) {
         if (widget instanceof DartControl dartControl && (dartControl.parent.getImpl() instanceof SwtComposite
-                || (dartControl.getApi().getClass().getName().endsWith("ContributedPartRenderer$1") && dartControl.parent.getImpl() instanceof DartCTabFolder))) {
+                || (dartControl.getApi().getClass().getName().equals("org.eclipse.e4.ui.workbench.renderers.swt.ContributedPartRenderer$1") && dartControl.parent.getImpl() instanceof DartCTabFolder)
+               /* || (dartControl.getClass() == DartComposite.class && dartControl.parent.getImpl() instanceof DartCTabFolder)*/)) {
 //            SwtComposite parentComposite = new SwtComposite(dartControl.parent, SWT.NONE, null);
             SwtFlutterBridge bridge = new SwtFlutterBridge(widget);
             widget.bridge = bridge;
             bridge.initFlutterView(dartControl.parent, dartControl);
-            if (widget instanceof DartCTabFolder t) { // workaround
-                if (!Platform.PLATFORM.equals("win32")) {
-                    t.addSelectionListener(SelectionListener.widgetSelectedAdapter(e -> {
-                        Rectangle bounds = t.getBounds();
-                        bounds.height = bounds.height + 1;
-                        bridge.setBounds(t, bounds);
-                    }));
-                }
-            }
             return bridge;
         }
         if (widget instanceof DartControl dartControl && dartControl.parent.getImpl() instanceof DartComposite c) {

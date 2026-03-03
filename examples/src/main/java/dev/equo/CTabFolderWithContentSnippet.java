@@ -4,6 +4,7 @@ import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
+import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.*;
@@ -15,7 +16,9 @@ public class CTabFolderWithContentSnippet {
     }
 
     public static void main(String[] args) {
+        System.setProperty("dev.equo.swt.debug", "true");
         Config.forceEquo();
+//        Config.defaultToEquo();
         Display display = new Display();
 
         Shell shell = new Shell(display);
@@ -31,13 +34,16 @@ public class CTabFolderWithContentSnippet {
         CTabItem item = new CTabItem(folder, SWT.NONE);
         item.setText("Tab 1");
 
-        Text text = new Text(folder, SWT.MULTI | SWT.V_SCROLL);
+        Composite body = new Composite(folder, SWT.BORDER);
+        body.setLayout(new FillLayout());
+
+        Text text = new Text(body, SWT.MULTI | SWT.V_SCROLL);
         text.setText("Tab 1 content\n\nLine 2\nLine 3");
 
         log("Before setControl - text bounds: " + text.getBounds());
         log("Before setControl - clientArea: " + folder.getClientArea());
 
-        item.setControl(text);
+        item.setControl(body);
 
         log("After setControl - text bounds: " + text.getBounds());
         log("After setControl - text visible: " + text.getVisible());

@@ -1300,7 +1300,7 @@ public class DartText extends DartScrollable implements IText {
     }
 
     @Override
-    public void setCursor(long cursor) {
+    void setCursor(long cursor) {
         long defaultCursor = 0;
         if (cursor == 0) {
         }

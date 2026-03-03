@@ -32,6 +32,4 @@ public interface ImplText extends ImplScrollable {
     double _cachedAdjustment();
 
     double _currentAdjustment();
-
-    void setCursor(long cursor);
 }

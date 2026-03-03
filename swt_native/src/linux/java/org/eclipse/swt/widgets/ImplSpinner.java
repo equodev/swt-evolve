@@ -17,6 +17,4 @@ public interface ImplSpinner extends ImplComposite {
     int _fixEnd();
 
     double _climbRate();
-
-    void setCursor(long cursor);
 }

@@ -173,6 +173,8 @@ public abstract class SwtWidget implements IWidget {
         checkParent(parent);
         this.getApi().style = style;
         display = parent.getImpl()._display();
+        if (parent.getImpl() instanceof DynWidget dyn)
+            dyn.convert();
         reskinWidget();
         notifyCreationTracker();
     }
@@ -2596,6 +2598,10 @@ public abstract class SwtWidget implements IWidget {
 
     public EventTable _eventTable() {
         return eventTable;
+    }
+
+    public void _eventTable(EventTable eventTable) {
+        this.eventTable = eventTable;
     }
 
     public Object _data() {

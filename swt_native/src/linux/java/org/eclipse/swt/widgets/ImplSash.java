@@ -17,6 +17,4 @@ public interface ImplSash extends ImplControl {
     int _lastY();
 
     long _defaultCursor();
-
-    void setCursor(long cursor);
 }

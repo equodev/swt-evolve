@@ -659,7 +659,7 @@ public class SwtSash extends SwtControl implements ISash {
     }
 
     @Override
-    public void setCursor(long cursor) {
+    void setCursor(long cursor) {
         super.setCursor(cursor != 0 ? cursor : defaultCursor);
     }
 

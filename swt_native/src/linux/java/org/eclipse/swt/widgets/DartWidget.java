@@ -1871,6 +1871,10 @@ public abstract class DartWidget implements IWidget {
         return eventTable;
     }
 
+    public void _eventTable(EventTable eventTable) {
+        this.eventTable = eventTable;
+    }
+
     public Object _data() {
         return data;
     }
