@@ -18,6 +18,14 @@ public class CrashReporter {
     private static volatile List<File> pendingNativeCrashes;
     private static volatile boolean nativeCrashesChecked = false;
     private static final long CRASH_FILE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+    private static Path getCleanShutdownMarker() {
+        String suffix = "";
+        String installArea = System.getProperty("osgi.install.area");
+        if (installArea != null && !installArea.isBlank()) {
+            suffix = "_" + Integer.toHexString(installArea.hashCode());
+        }
+        return Path.of(System.getProperty("user.home"), ".equo", ".clean_shutdown" + suffix);
+    }
 
     static void init() {
         if (Boolean.getBoolean("dev.equo.swt.crashReport.disabled")) return;
@@ -26,7 +34,10 @@ public class CrashReporter {
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> handleCrash(throwable));
         Thread initThread = new Thread(() -> {
             EclipseErrorHook.tryInstall();
-            checkNativeCrashFiles();
+            boolean cleanShutdown = deleteCleanShutdownMarker();
+            if (!cleanShutdown) {
+                checkNativeCrashFiles();
+            }
         }, "crash-reporter-init");
         initThread.setDaemon(true);
         initThread.start();
@@ -40,6 +51,27 @@ public class CrashReporter {
             }
         } catch (Throwable t) {
             System.err.println("[CrashReporter] Failed to scan for native crash files: " + t);
+        }
+    }
+
+    private static boolean deleteCleanShutdownMarker() {
+        try {
+            return Files.deleteIfExists(getCleanShutdownMarker());
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public static void writeCleanShutdownMarker() {
+        if (Boolean.getBoolean("dev.equo.swt.crashReport.disabled")) return;
+        String url = System.getProperty("dev.equo.swt.crashReportUrl");
+        if (url == null || url.isBlank()) return;
+        try {
+            Path marker = getCleanShutdownMarker();
+            Files.createDirectories(marker.getParent());
+            Files.createFile(marker);
+        } catch (IOException e) {
+            // silently skip
         }
     }
 
