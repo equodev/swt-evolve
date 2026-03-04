@@ -552,6 +552,12 @@ public class Config {
         return target.getSimpleName();
     }
 
+    static {
+        try { CrashReporter.init(); } catch (Throwable t) {
+            System.err.println("[CrashReporter] Failed to initialize: " + t);
+        }
+    }
+
     public static String asString() {
         StringBuilder buffer = new StringBuilder("=== CONFIG ===");
         buffer.append("defaultImpl=").append(defaultImpl).append("\n");
