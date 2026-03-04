@@ -3977,6 +3977,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      */
     public boolean readAndDispatch() {
         checkDevice();
+        dev.equo.swt.CrashReporter.checkPendingNativeCrashesIfNeeded();
         dev.equo.swt.FlutterBridge.update();
         lpStartupInfo = null;
         drawMenuBars();
@@ -5030,7 +5031,11 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      */
     public final void setRuntimeExceptionHandler(Consumer<RuntimeException> runtimeExceptionHandler) {
         checkDevice();
-        this.runtimeExceptionHandler = Objects.requireNonNull(runtimeExceptionHandler);
+        Consumer<RuntimeException> original = Objects.requireNonNull(runtimeExceptionHandler);
+        this.runtimeExceptionHandler = exception -> {
+            dev.equo.swt.CrashReporter.handleError(exception);
+            original.accept(exception);
+        };
     }
 
     /**
@@ -5059,7 +5064,11 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      */
     public final void setErrorHandler(Consumer<Error> errorHandler) {
         checkDevice();
-        this.errorHandler = Objects.requireNonNull(errorHandler);
+        Consumer<Error> original = Objects.requireNonNull(errorHandler);
+        this.errorHandler = error -> {
+            dev.equo.swt.CrashReporter.handleError(error);
+            original.accept(error);
+        };
     }
 
     /**
