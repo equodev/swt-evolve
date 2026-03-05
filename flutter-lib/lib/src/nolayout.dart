@@ -21,7 +21,7 @@ class NoLayout extends StatelessWidget {
         delegate: _AbsoluteLayoutDelegate(visibleChildren, composite),
         children: [
           for (var child in visibleChildren)
-            LayoutId(id: child.id, child: mapWidgetFromValue(child))
+            LayoutId(id: child.id, child: ClipRect(child: mapWidgetFromValue(child)))
         ]);
   }
 }
@@ -35,7 +35,7 @@ class _AbsoluteLayoutDelegate extends MultiChildLayoutDelegate {
   @override
   Size getSize(BoxConstraints constraints) {
     final bounds = composite.bounds;
-    if (bounds != null && bounds.width != 0 && bounds.height != 0) {
+    if (bounds != null && bounds.width >= 0 && bounds.height >= 0) {
       return Size(bounds.width.toDouble(), bounds.height.toDouble());
     }
     return super.getSize(constraints);

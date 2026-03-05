@@ -368,7 +368,7 @@ public class Config {
     }
 
     public static IWidget getCompositeImpl(Composite parent, int style, Composite composite) {
-        if (defaultImpl == Impl.equo && dynEnabled && ("dyn".equals(parent != null ? parent.getData(getKey(Composite.class)) : null) || mustBeDynComposite(composite))) {
+        if (dynEnabled && ("dyn".equals(parent != null ? parent.getData(getKey(Composite.class)) : null) || mustBeDynComposite(composite))) {
             return new DynComposite(parent, style, composite);
         }
         if (Config.isEquo(composite.getClass(), parent))
