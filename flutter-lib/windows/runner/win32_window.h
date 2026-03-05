@@ -43,6 +43,9 @@ class Win32Window {
   // Release OS resources associated with window.
   void Destroy();
 
+  // Hides and unparents the window, effectively leaking it until the process ends.
+  void Leak();
+
   // Inserts |content| into the window tree.
   void SetChildContent(HWND content);
 

@@ -224,6 +224,7 @@ Win32Window::MessageHandler(HWND hwnd,
                             LPARAM const lparam) noexcept {
     switch (message) {
         case WM_DESTROY: {
+            OnDestroy();
             std::cout << "Win32Window: WM_DESTROY" << std::endl;
             if (quit_on_close_) {
                 PostQuitMessage(0);
@@ -232,10 +233,11 @@ Win32Window::MessageHandler(HWND hwnd,
         }
         case WM_NCDESTROY: {
             std::cout << "Win32Window: WM_NCDESTROY" << std::endl;
-            OnDestroy();
             auto self = GetThisFromHandle(hwnd);
-            SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
-            delete self;
+            if (self) {
+                SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
+                delete self;
+            }
             return 0;
         }
         case WM_KEYDOWN:
@@ -248,11 +250,13 @@ Win32Window::MessageHandler(HWND hwnd,
             scale_factor_ = new_dpi / 96.0;
             std::cout << "Win32Window: WM_DPICHANGED dpi=" << new_dpi << " scale=" << scale_factor_ << std::endl;
             auto newRectSize = reinterpret_cast<RECT*>(lparam);
-            LONG newWidth = newRectSize->right - newRectSize->left;
-            LONG newHeight = newRectSize->bottom - newRectSize->top;
+            if (newRectSize) {
+                LONG newWidth = newRectSize->right - newRectSize->left;
+                LONG newHeight = newRectSize->bottom - newRectSize->top;
 
-            SetWindowPos(hwnd, nullptr, newRectSize->left, newRectSize->top, newWidth,
-                       newHeight, SWP_NOZORDER | SWP_NOACTIVATE);
+                SetWindowPos(hwnd, nullptr, newRectSize->left, newRectSize->top, newWidth,
+                           newHeight, SWP_NOZORDER | SWP_NOACTIVATE);
+            }
             return 0;
         }
 
@@ -301,6 +305,11 @@ Win32Window::MessageHandler(HWND hwnd,
             std::cout << "Win32Window: WM_DWMCOLORIZATIONCOLORCHANGED" << std::endl;
             UpdateTheme(hwnd);
             return 0;
+        case WM_CLOSE: {
+            std::cout << "Win32Window: WM_CLOSE" << std::endl;
+            Destroy();
+            return 0;
+        }
     }
 
     return DefWindowProc(hwnd, message, wparam, lparam);
@@ -308,9 +317,20 @@ Win32Window::MessageHandler(HWND hwnd,
 
 void Win32Window::Destroy() {
   if (window_handle_) {
-    DestroyWindow(window_handle_);
+    HWND hwnd = window_handle_;
     window_handle_ = nullptr;
+
+    ShowWindow(hwnd, SW_HIDE);
+    SetParent(hwnd, HWND_MESSAGE);
+    DestroyWindow(hwnd);
   }
+}
+
+void Win32Window::Leak() {
+    if (window_handle_) {
+        ShowWindow(window_handle_, SW_HIDE);
+        SetParent(window_handle_, HWND_MESSAGE);
+    }
 }
 
 Win32Window* Win32Window::GetThisFromHandle(HWND const window) noexcept {
