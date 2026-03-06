@@ -1318,6 +1318,18 @@ public class SwtBrowser extends SwtComposite implements IBrowser {
         webBrowser.stop();
     }
 
+    public WebBrowser _webBrowser() {
+        return webBrowser;
+    }
+
+    public int _userStyle() {
+        return userStyle;
+    }
+
+    public boolean _isClosing() {
+        return isClosing;
+    }
+
     public Browser getApi() {
         if (api == null)
             api = Browser.createApi(this);

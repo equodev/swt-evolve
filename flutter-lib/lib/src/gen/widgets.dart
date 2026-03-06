@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import '../gen/browser.dart';
 import '../gen/button.dart';
 import '../gen/canvas.dart';
 import '../gen/caret.dart';
@@ -53,6 +54,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
   return switch (type) {
     "CLabel" => VCLabel.fromJson(child),
     "StyledText" => VStyledText.fromJson(child),
+    "Browser" => VBrowser.fromJson(child),
     "CCombo" => VCCombo.fromJson(child),
     "CTabFolder" => VCTabFolder.fromJson(child),
     "Canvas" => VCanvas.fromJson(child),
@@ -107,6 +109,7 @@ Widget mapWidgetFromValue(VWidget child) {
   return switch (child) {
     VCLabel() => CLabelSwt(key: ValueKey(id), value: child),
     VStyledText() => StyledTextSwt(key: ValueKey(id), value: child),
+    VBrowser() => BrowserSwt(key: ValueKey(id), value: child),
     VCCombo() => CComboSwt(key: ValueKey(id), value: child),
     VCTabFolder() => CTabFolderSwt(key: ValueKey(id), value: child),
     VCanvas() => CanvasSwt(key: ValueKey(id), value: child),

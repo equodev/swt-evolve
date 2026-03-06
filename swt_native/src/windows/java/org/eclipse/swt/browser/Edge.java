@@ -1424,7 +1424,7 @@ class Edge extends WebBrowser {
                         return;
                 }
                 if (openEvent.browser != null && !openEvent.browser.isDisposed()) {
-                    WebBrowser other = ((SwtBrowser) openEvent.browser.getImpl()).webBrowser;
+                    WebBrowser other = openEvent.browser.getImpl()._webBrowser();
                     args.put_Handled(true);
                     if (other instanceof Edge otherEdge) {
                         args.put_NewWindow(otherEdge.webViewProvider.getWebView(true).getAddress());

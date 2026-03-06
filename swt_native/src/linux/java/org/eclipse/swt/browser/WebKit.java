@@ -495,7 +495,7 @@ class WebKit extends WebBrowser {
                                                 // to avoid deadlocks, evaluate() should not block during listener. See Bug 512001
                                                 // I.e, evaluate() can be called and script will be executed, but no return value will be provided.
                                                 nonBlockingEvaluate++;
-                                                ((SwtBrowser) browser.getImpl()).webBrowser.sendKeyEvent(keyEvent);
+                                                browser.getImpl()._webBrowser().sendKeyEvent(keyEvent);
                                             } catch (Exception e) {
                                                 throw e;
                                             } finally {
@@ -533,7 +533,7 @@ class WebKit extends WebBrowser {
                 String[] parts = uri.getPath().split("/");
                 int index = Integer.parseInt(parts[1]);
                 String token = parts[2];
-                WebKit webkit = (WebKit) ((SwtBrowser) browser.getImpl()).webBrowser;
+                WebKit webkit = (WebKit) browser.getImpl()._webBrowser();
                 function = webkit.functions.get(index);
                 if (function != null && !((SwtBrowserFunction) function.getImpl()).token.equals(token)) {
                     function = null;
@@ -569,7 +569,7 @@ class WebKit extends WebBrowser {
         Browser browser = FindBrowser(webView);
         if (browser == null)
             return 0;
-        WebKit webkit = (WebKit) ((SwtBrowser) browser.getImpl()).webBrowser;
+        WebKit webkit = (WebKit) browser.getImpl()._webBrowser();
         return webkit.webViewProc(handle, user_data);
     }
 
@@ -607,7 +607,7 @@ class WebKit extends WebBrowser {
             Browser browser = FindBrowser(webView);
             if (browser == null)
                 return 0;
-            WebKit webkit = (WebKit) ((SwtBrowser) browser.getImpl()).webBrowser;
+            WebKit webkit = (WebKit) browser.getImpl()._webBrowser();
             return webkit.webViewProc(webView, arg0, user_data);
         }
     }
@@ -616,7 +616,7 @@ class WebKit extends WebBrowser {
         Browser browser = FindBrowser(handle);
         if (browser == null)
             return 0;
-        WebKit webkit = (WebKit) ((SwtBrowser) browser.getImpl()).webBrowser;
+        WebKit webkit = (WebKit) browser.getImpl()._webBrowser();
         return webkit.webViewProc(handle, arg0, arg1, user_data);
     }
 
@@ -625,7 +625,7 @@ class WebKit extends WebBrowser {
         Browser browser = FindBrowser(webView);
         if (browser == null)
             return 0;
-        WebKit webkit = (WebKit) ((SwtBrowser) browser.getImpl()).webBrowser;
+        WebKit webkit = (WebKit) browser.getImpl()._webBrowser();
         return webkit.webViewProc(handle, arg0, arg1, arg2, user_data);
     }
 
@@ -758,7 +758,7 @@ class WebKit extends WebBrowser {
         if (parentBrowser == null) {
             webView = WebKitGTK.webkit_web_view_new();
         } else {
-            webView = WebKitGTK.webkit_web_view_new_with_related_view(((WebKit) ((SwtBrowser) parentBrowser.getImpl()).webBrowser).webView);
+            webView = WebKitGTK.webkit_web_view_new_with_related_view(((WebKit) parentBrowser.getImpl()._webBrowser()).webView);
         }
         // Bug 522733 Webkit2 workaround for crash
         //   As of Webkitgtk 2.18, webkitgtk2 crashes if the first instance of webview is not referenced when JVM shuts down.
@@ -1926,7 +1926,7 @@ class WebKit extends WebBrowser {
         /* Browser could have been disposed by one of the Dispose listeners */
         if (!browser.isDisposed()) {
             /* invoke onbeforeunload handlers */
-            if (!((SwtBrowser) browser.getImpl()).isClosing) {
+            if (!browser.getImpl()._isClosing()) {
                 close(false);
             }
         }
@@ -2303,11 +2303,11 @@ class WebKit extends WebBrowser {
             nonBlockingEvaluate--;
         }
         Browser browser = null;
-        if (newEvent.browser != null && ((SwtBrowser) newEvent.browser.getImpl()).webBrowser instanceof WebKit) {
+        if (newEvent.browser != null && newEvent.browser.getImpl()._webBrowser() instanceof WebKit) {
             browser = newEvent.browser;
         }
         if (browser != null && !browser.isDisposed()) {
-            return ((WebKit) ((SwtBrowser) browser.getImpl()).webBrowser).webView;
+            return ((WebKit) browser.getImpl()._webBrowser()).webView;
         }
         return 0;
     }
@@ -2324,7 +2324,7 @@ class WebKit extends WebBrowser {
         long webView = WebKitGTK.webkit_download_get_web_view(webKitDownload);
         if (webView != 0) {
             Browser browser = FindBrowser(webView);
-            if (browser == null || browser.isDisposed() || ((SwtBrowser) browser.getImpl()).isClosing)
+            if (browser == null || browser.isDisposed() || browser.getImpl()._isClosing())
                 return 0;
             FileDialog dialog = new FileDialog(browser.getShell(), SWT.SAVE);
             dialog.setFileName(fileName);
@@ -2339,7 +2339,7 @@ class WebKit extends WebBrowser {
                     WebKitGTK.webkit_download_set_allow_overwrite(webKitDownload, true);
                 }
                 WebKitGTK.webkit_download_set_destination(webKitDownload, uriBytes);
-                ((WebKit) ((SwtBrowser) browser.getImpl()).webBrowser).openDownloadWindow(webKitDownload, fileName);
+                ((WebKit) browser.getImpl()._webBrowser()).openDownloadWindow(webKitDownload, fileName);
             }
         }
         return 0;
