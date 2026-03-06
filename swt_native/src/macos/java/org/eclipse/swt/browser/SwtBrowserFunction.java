@@ -159,7 +159,7 @@ public class SwtBrowserFunction implements IBrowserFunction {
         }
         token = buffer.toString();
         if (create)
-            ((SwtBrowser) browser.getImpl()).webBrowser.createFunction(this.getApi());
+            browser.getImpl()._webBrowser().createFunction(this.getApi());
     }
 
     /**
@@ -178,7 +178,7 @@ public class SwtBrowserFunction implements IBrowserFunction {
         if (index < 0)
             return;
         if (remove)
-            ((SwtBrowser) browser.getImpl()).webBrowser.destroyFunction(this.getApi());
+            browser.getImpl()._webBrowser().destroyFunction(this.getApi());
         browser = null;
         name = functionString = null;
         index = -1;

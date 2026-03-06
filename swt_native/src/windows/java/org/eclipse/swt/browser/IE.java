@@ -509,7 +509,7 @@ class IE extends WebBrowser {
                         browser.notifyListeners(e.type, e);
                         e.type = SWT.NONE;
                         /* invoke onbeforeunload handlers */
-                        if (!((SwtBrowser) browser.getImpl()).isClosing) {
+                        if (!browser.getImpl()._isClosing()) {
                             LocationListener[] oldLocationListeners = locationListeners;
                             locationListeners = new LocationListener[0];
                             site.ignoreAllMessages = true;
@@ -781,7 +781,7 @@ class IE extends WebBrowser {
                                     /* final document complete */
                                     globalDispatch = 0;
                                     /* re-install registered functions iff needed */
-                                    IE ie = (IE) ((SwtBrowser) browser.getImpl()).webBrowser;
+                                    IE ie = (IE) browser.getImpl()._webBrowser();
                                     if (ie.installFunctionsOnDocumentComplete) {
                                         ie.installFunctionsOnDocumentComplete = false;
                                         Iterator<BrowserFunction> elements1 = functions.values().iterator();
@@ -976,8 +976,8 @@ class IE extends WebBrowser {
                                 openWindowListener.open(newEvent2);
                             }
                             IE browser = null;
-                            if (newEvent2.browser != null && ((SwtBrowser) newEvent2.browser.getImpl()).webBrowser instanceof IE) {
-                                browser = (IE) ((SwtBrowser) newEvent2.browser.getImpl()).webBrowser;
+                            if (newEvent2.browser != null && newEvent2.browser.getImpl()._webBrowser() instanceof IE) {
+                                browser = (IE) newEvent2.browser.getImpl()._webBrowser();
                             }
                             boolean doit2 = browser != null && !browser.browser.isDisposed();
                             if (doit2) {

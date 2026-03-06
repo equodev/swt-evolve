@@ -292,7 +292,9 @@ class WebKit extends WebBrowser {
         WebView webView = (WebView) new WebView().alloc();
         if (webView == null)
             SWT.error(SWT.ERROR_NO_HANDLES);
-        webView.initWithFrame(browser.view.frame(), null, null);
+        if (browser == null || browser.getImpl() instanceof SwtBrowser) {
+            webView.initWithFrame(browser.view.frame(), null, null);
+        }
         webView.setAutoresizingMask(OS.NSViewWidthSizable | OS.NSViewHeightSizable);
         if (webView.respondsToSelector(OS.sel__setDashboardBehavior)) {
             OS.objc_msgSend(webView.id, OS.sel__setDashboardBehavior, 2, 1);
@@ -302,7 +304,9 @@ class WebKit extends WebBrowser {
         display.setData(ADD_WIDGET_KEY, new Object[] { delegate, browser });
         this.delegate = delegate;
         this.webView = webView;
-        browser.view.addSubview(webView);
+        if (browser == null || browser.getImpl() instanceof SwtBrowser) {
+            browser.view.addSubview(webView);
+        }
         Listener listener = e -> {
             switch(e.type) {
                 case SWT.FocusIn:
@@ -321,7 +325,7 @@ class WebKit extends WebBrowser {
                         /* Browser could have been disposed by one of the Dispose listeners */
                         if (!browser.isDisposed()) {
                             /* invoke onbeforeunload handlers */
-                            if (!((SwtBrowser) browser.getImpl()).isClosing) {
+                            if (!browser.getImpl()._isClosing()) {
                                 close(false);
                             }
                             e.display.setData(ADD_WIDGET_KEY, new Object[] { delegate, null });
@@ -386,7 +390,7 @@ class WebKit extends WebBrowser {
         Widget widget = d.findWidget(id);
         if (widget == null)
             return 0;
-        WebKit webKit = (WebKit) ((SwtBrowser) ((Browser) widget).getImpl()).webBrowser;
+        WebKit webKit = (WebKit) ((Browser) widget).getImpl()._webBrowser();
         if (sel == OS.sel_webViewShow_) {
             webKit.webViewShow(arg0);
         } else if (sel == OS.sel_webViewClose_) {
@@ -408,7 +412,7 @@ class WebKit extends WebBrowser {
         Widget widget = d.findWidget(id);
         if (widget == null)
             return 0;
-        WebKit webKit = (WebKit) ((SwtBrowser) ((Browser) widget).getImpl()).webBrowser;
+        WebKit webKit = (WebKit) ((Browser) widget).getImpl()._webBrowser();
         if (sel == OS.sel_webView_didChangeLocationWithinPageForFrame_) {
             webKit.webView_didChangeLocationWithinPageForFrame(arg0, arg1);
         } else if (sel == OS.sel_webView_didFinishLoadForFrame_) {
@@ -454,7 +458,7 @@ class WebKit extends WebBrowser {
         Widget widget = d.findWidget(id);
         if (widget == null)
             return 0;
-        WebKit webKit = (WebKit) ((SwtBrowser) ((Browser) widget).getImpl()).webBrowser;
+        WebKit webKit = (WebKit) ((Browser) widget).getImpl()._webBrowser();
         if (sel == OS.sel_webView_didFailProvisionalLoadWithError_forFrame_) {
             webKit.webView_didFailProvisionalLoadWithError_forFrame(arg0, arg1, arg2);
         } else if (sel == OS.sel_webView_didReceiveTitle_forFrame_) {
@@ -488,7 +492,7 @@ class WebKit extends WebBrowser {
         Widget widget = d.findWidget(id);
         if (widget == null)
             return 0;
-        WebKit webKit = (WebKit) ((SwtBrowser) ((Browser) widget).getImpl()).webBrowser;
+        WebKit webKit = (WebKit) ((Browser) widget).getImpl()._webBrowser();
         if (sel == OS.sel_webView_resource_didFailLoadingWithError_fromDataSource_) {
             webKit.webView_resource_didFailLoadingWithError_fromDataSource(arg0, arg1, arg2, arg3);
         } else if (sel == OS.sel_webView_resource_didReceiveAuthenticationChallenge_fromDataSource_) {
@@ -509,7 +513,7 @@ class WebKit extends WebBrowser {
         Widget widget = d.findWidget(id);
         if (widget == null)
             return 0;
-        WebKit webKit = (WebKit) ((SwtBrowser) ((Browser) widget).getImpl()).webBrowser;
+        WebKit webKit = (WebKit) ((Browser) widget).getImpl()._webBrowser();
         if (sel == OS.sel_webView_resource_willSendRequest_redirectResponse_fromDataSource_) {
             return webKit.webView_resource_willSendRequest_redirectResponse_fromDataSource(arg0, arg1, arg2, arg3, arg4);
         } else if (sel == OS.sel_webView_decidePolicyForMIMEType_request_frame_decisionListener_) {
@@ -1314,11 +1318,11 @@ class WebKit extends WebBrowser {
         }
         WebView result = null;
         Browser browser = null;
-        if (newEvent.browser != null && ((SwtBrowser) newEvent.browser.getImpl()).webBrowser instanceof WebKit) {
+        if (newEvent.browser != null && newEvent.browser.getImpl()._webBrowser() instanceof WebKit) {
             browser = newEvent.browser;
         }
         if (browser != null && !browser.isDisposed()) {
-            result = ((WebKit) ((SwtBrowser) browser.getImpl()).webBrowser).webView;
+            result = ((WebKit) browser.getImpl()._webBrowser()).webView;
             if (request != 0) {
                 WebFrame mainFrame = result.mainFrame();
                 mainFrame.loadRequest(new NSURLRequest(request));

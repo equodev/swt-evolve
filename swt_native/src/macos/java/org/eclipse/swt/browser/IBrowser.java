@@ -5,7 +5,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.program.*;
 import org.eclipse.swt.widgets.*;
 
-public interface IBrowser extends IComposite {
+public interface IBrowser extends IComposite, ImplBrowser {
 
     void checkWidget();
 

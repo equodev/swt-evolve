@@ -19,6 +19,7 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.program.*;
 import org.eclipse.swt.widgets.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class implement the browser user interface
@@ -79,7 +80,7 @@ public class Browser extends Composite {
      */
     public Browser(Composite parent, int style) {
         this((IBrowser) null);
-        setImpl(new SwtBrowser(parent, style, this));
+        setImpl(Config.isEquo(Browser.class, parent) ? new DartBrowser(parent, style, this) : new SwtBrowser(parent, style, this));
     }
 
     protected void checkWidget() {

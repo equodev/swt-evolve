@@ -455,7 +455,7 @@ class WebSite extends OleControlSite {
 
     int GetHostInfo(long pInfo) {
         int info = IE.DOCHOSTUIFLAG_THEME | IE.DOCHOSTUIFLAG_ENABLE_REDIRECT_NOTIFICATION | IE.DOCHOSTUIFLAG_DPI_AWARE;
-        IE browser = (IE) ((SwtBrowser) ((Browser) getParent().getParent()).getImpl()).webBrowser;
+        IE browser = (IE) ((Browser) getParent().getParent()).getImpl()._webBrowser();
         if ((browser.style & SWT.BORDER) == 0)
             info |= IE.DOCHOSTUIFLAG_NO3DOUTERBORDER;
         DOCHOSTUIINFO uiInfo = new DOCHOSTUIINFO();
@@ -746,7 +746,7 @@ class WebSite extends OleControlSite {
 	* override default zone elevation settings to allow the action.
 	*/
         if (dwAction == IE.URLACTION_FEATURE_ZONE_ELEVATION) {
-            IE ie = (IE) ((SwtBrowser) ((Browser) getParent().getParent()).getImpl()).webBrowser;
+            IE ie = (IE) ((Browser) getParent().getParent()).getImpl()._webBrowser();
             if (ie.auto != null && ie._getUrl().startsWith(IE.ABOUT_BLANK) && !ie.untrustedText) {
                 if (cbPolicy >= 4)
                     OS.MoveMemory(pPolicy, new int[] { IE.URLPOLICY_ALLOW }, 4);
@@ -775,7 +775,7 @@ class WebSite extends OleControlSite {
             }
         }
         if (dwAction == IE.URLACTION_SCRIPT_RUN) {
-            IE browser = (IE) ((SwtBrowser) ((Browser) getParent().getParent()).getImpl()).webBrowser;
+            IE browser = (IE) ((Browser) getParent().getParent()).getImpl()._webBrowser();
             policy = browser.jsEnabled ? IE.URLPOLICY_ALLOW : IE.URLPOLICY_DISALLOW;
         }
         if (policy == IE.INET_E_DEFAULT_ACTION)
@@ -804,7 +804,7 @@ class WebSite extends OleControlSite {
         if (IE.IEVersion < 7)
             return false;
         if (canExecuteApplets == null) {
-            WebBrowser webBrowser = ((SwtBrowser) ((Browser) getParent().getParent()).getImpl()).webBrowser;
+            WebBrowser webBrowser = ((Browser) getParent().getParent()).getImpl()._webBrowser();
             //$NON-NLS-1$
             String script = "try {var element = document.createElement('object');element.classid='clsid:CAFEEFAC-DEC7-0000-0000-ABCDEFFEDCBA';return element.object.isPlugin2();} catch (err) {};return false;";
             canExecuteApplets = ((Boolean) webBrowser.evaluate(script));
@@ -864,7 +864,7 @@ class WebSite extends OleControlSite {
 		* to test the argument of an undocumented command.
 		*/
             if (nCmdID == 1 && COM.IsEqualGUID(guid, COM.CGID_Explorer) && ((nCmdExecOpt & 0xFFFF) == 0xA)) {
-                IE browser = (IE) ((SwtBrowser) ((Browser) getParent().getParent()).getImpl()).webBrowser;
+                IE browser = (IE) ((Browser) getParent().getParent()).getImpl()._webBrowser();
                 browser.toolBar = (nCmdExecOpt & 0xFFFF0000) != 0;
             }
         }
@@ -873,7 +873,7 @@ class WebSite extends OleControlSite {
 
     /* IAuthenticate */
     int Authenticate(long hwnd, long szUsername, long szPassword) {
-        IE browser = (IE) ((SwtBrowser) ((Browser) getParent().getParent()).getImpl()).webBrowser;
+        IE browser = (IE) ((Browser) getParent().getParent()).getImpl()._webBrowser();
         for (AuthenticationListener authenticationListener : browser.authenticationListeners) {
             AuthenticationEvent event = new AuthenticationEvent(browser.browser);
             event.location = browser.lastNavigateURL;
@@ -936,7 +936,7 @@ class WebSite extends OleControlSite {
     }
 
     int Invoke(int dispIdMember, long riid, int lcid, int dwFlags, long pDispParams, long pVarResult, long pExcepInfo, long pArgErr) {
-        IE ie = (IE) ((SwtBrowser) ((Browser) getParent().getParent()).getImpl()).webBrowser;
+        IE ie = (IE) ((Browser) getParent().getParent()).getImpl()._webBrowser();
         Map<Integer, BrowserFunction> functions = ie.functions;
         if (functions == null) {
             if (pVarResult != 0) {
@@ -1097,7 +1097,7 @@ class WebSite extends OleControlSite {
         }
         if (value instanceof Object[]) {
             /* get IHTMLDocument2 */
-            IE browser = (IE) ((SwtBrowser) ((Browser) getParent().getParent()).getImpl()).webBrowser;
+            IE browser = (IE) ((Browser) getParent().getParent()).getImpl()._webBrowser();
             OleAutomation auto = browser.auto;
             //$NON-NLS-1$
             int[] rgdispid = auto.getIDsOfNames(new String[] { "Document" });
