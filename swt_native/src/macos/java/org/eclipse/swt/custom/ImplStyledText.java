@@ -180,4 +180,12 @@ public interface ImplStyledText extends ImplCanvas {
     int _blockXLocation();
 
     int _blockYLocation();
+
+    StyledTextEvent getLineBackgroundData(int lineOffset, String line);
+
+    StyledTextEvent getLineStyleData(int lineOffset, String line);
+
+    String getPlatformDelimitedText(TextWriter writer);
+
+    void setClipboardContent(int start, int length, int clipboardType);
 }

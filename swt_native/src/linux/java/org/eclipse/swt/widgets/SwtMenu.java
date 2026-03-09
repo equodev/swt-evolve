@@ -531,7 +531,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
         ((SwtDecorations) parent.getImpl()).addMenu(this.getApi());
     }
 
-    void fixMenus(Decorations newParent) {
+    public void fixMenus(Decorations newParent) {
         if (isDisposed()) {
             return;
         }

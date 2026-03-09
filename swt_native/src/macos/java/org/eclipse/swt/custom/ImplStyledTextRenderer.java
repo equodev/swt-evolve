@@ -70,4 +70,18 @@ public interface ImplStyledTextRenderer {
     boolean _hasLinks();
 
     boolean _fixedPitch();
+
+    int getLineAlignment(int index, int defaultAlignment);
+
+    Color getLineBackground(int index, Color defaultBackground);
+
+    int getLineIndent(int index, int defaultIndent);
+
+    int getLineVerticalIndent(int index);
+
+    boolean getLineJustify(int index, boolean defaultJustify);
+
+    int[] getRanges(int start, int length);
+
+    StyleRange[] getStyleRanges(int start, int length, boolean includeRanges);
 }

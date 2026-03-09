@@ -452,26 +452,26 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                 for (int i = 0; i < lineCount; i++) {
                     String line = content.getLine(i);
                     int lineOffset = content.getOffsetAtLine(i);
+                    StyledTextEvent event = styledText.getImpl().getLineBackgroundData(lineOffset, line);
+                    if (event != null && event.lineBackground != null) {
+                        ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineBackground(i, 1, event.lineBackground);
+                    }
                     if (styledText.getImpl() instanceof SwtStyledText) {
-                        StyledTextEvent event = ((SwtStyledText) styledText.getImpl()).getLineBackgroundData(lineOffset, line);
-                        if (event != null && event.lineBackground != null) {
-                            ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineBackground(i, 1, event.lineBackground);
-                        }
                         event = ((SwtStyledText) styledText.getImpl()).getBidiSegments(lineOffset, line);
-                        if (event != null) {
-                            ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineSegments(i, 1, event.segments);
-                            ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineSegmentChars(i, 1, event.segmentsChars);
-                        }
-                        event = ((SwtStyledText) styledText.getImpl()).getLineStyleData(lineOffset, line);
-                        if (event != null) {
-                            ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineIndent(i, 1, event.indent);
-                            ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineAlignment(i, 1, event.alignment);
-                            ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineJustify(i, 1, event.justify);
-                            ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineBullet(i, 1, event.bullet);
-                            StyleRange[] styles = event.styles;
-                            if (styles != null && styles.length > 0) {
-                                ((SwtStyledTextRenderer) printerRenderer.getImpl()).setStyleRanges(event.ranges, styles);
-                            }
+                    }
+                    if (event != null) {
+                        ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineSegments(i, 1, event.segments);
+                        ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineSegmentChars(i, 1, event.segmentsChars);
+                    }
+                    event = styledText.getImpl().getLineStyleData(lineOffset, line);
+                    if (event != null) {
+                        ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineIndent(i, 1, event.indent);
+                        ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineAlignment(i, 1, event.alignment);
+                        ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineJustify(i, 1, event.justify);
+                        ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineBullet(i, 1, event.bullet);
+                        StyleRange[] styles = event.styles;
+                        if (styles != null && styles.length > 0) {
+                            ((SwtStyledTextRenderer) printerRenderer.getImpl()).setStyleRanges(event.ranges, styles);
                         }
                     }
                 }
@@ -481,7 +481,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             int scaleFactorX = printerDPI.x / 100;
             int scaleFactorY = printerDPI.y / 100;
             for (int i = 0; i < lineCount; i++) {
-                Color color = ((SwtStyledTextRenderer) printerRenderer.getImpl()).getLineBackground(i, null);
+                Color color = printerRenderer.getImpl().getLineBackground(i, null);
                 if (color != null) {
                     if (printOptions.printLineBackground) {
                         Color printerColor = (Color) resources.get(color);
@@ -494,7 +494,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                         ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineBackground(i, 1, null);
                     }
                 }
-                int indent = ((SwtStyledTextRenderer) printerRenderer.getImpl()).getLineIndent(i, 0);
+                int indent = printerRenderer.getImpl().getLineIndent(i, 0);
                 if (indent != 0) {
                     ((SwtStyledTextRenderer) printerRenderer.getImpl()).setLineIndent(i, 1, indent * scaleFactorX);
                 }
@@ -687,7 +687,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
                     printDecoration(page, true, printLayout);
                 }
                 TextLayout layout = ((SwtStyledTextRenderer) printerRenderer.getImpl()).getTextLayout(i, orientation, width, lineSpacing);
-                Color lineBackground = ((SwtStyledTextRenderer) printerRenderer.getImpl()).getLineBackground(i, background);
+                Color lineBackground = printerRenderer.getImpl().getLineBackground(i, background);
                 int paragraphBottom = paintY + layout.getBounds().height;
                 if (paragraphBottom <= pageBottom) {
                     //normal case, the whole paragraph fits in the current page
@@ -3916,7 +3916,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (index < 0 || index > content.getLineCount()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        return ((SwtStyledTextRenderer) renderer.getImpl()).getLineAlignment(index, alignment);
+        return renderer.getImpl().getLineAlignment(index, alignment);
     }
 
     /**
@@ -3966,7 +3966,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (index < 0 || index > content.getLineCount()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        return isListening(ST.LineGetBackground) ? null : ((SwtStyledTextRenderer) renderer.getImpl()).getLineBackground(index, null);
+        return isListening(ST.LineGetBackground) ? null : renderer.getImpl().getLineBackground(index, null);
     }
 
     /**
@@ -4003,7 +4003,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      * @param line line to get line background data for
      * @return line background data for the given line.
      */
-    StyledTextEvent getLineBackgroundData(int lineOffset, String line) {
+    public StyledTextEvent getLineBackgroundData(int lineOffset, String line) {
         return sendLineEvent(ST.LineGetBackground, lineOffset, line);
     }
 
@@ -4129,7 +4129,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (index < 0 || index > content.getLineCount()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        return isListening(ST.LineGetStyle) ? 0 : ((SwtStyledTextRenderer) renderer.getImpl()).getLineIndent(index, indent);
+        return isListening(ST.LineGetStyle) ? 0 : renderer.getImpl().getLineIndent(index, indent);
     }
 
     /**
@@ -4154,7 +4154,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (index < 0 || index >= content.getLineCount()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        return isListening(ST.LineGetStyle) ? 0 : ((SwtStyledTextRenderer) renderer.getImpl()).getLineVerticalIndent(index);
+        return isListening(ST.LineGetStyle) ? 0 : renderer.getImpl().getLineVerticalIndent(index);
     }
 
     /**
@@ -4181,7 +4181,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (index < 0 || index > content.getLineCount()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        return isListening(ST.LineGetStyle) ? false : ((SwtStyledTextRenderer) renderer.getImpl()).getLineJustify(index, justify);
+        return isListening(ST.LineGetStyle) ? false : renderer.getImpl().getLineJustify(index, justify);
     }
 
     /**
@@ -4216,7 +4216,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      * @return line style data for the given line. Styles may start before
      * 	line start and end after line end
      */
-    StyledTextEvent getLineStyleData(int lineOffset, String line) {
+    public StyledTextEvent getLineStyleData(int lineOffset, String line) {
         return sendLineEvent(ST.LineGetStyle, lineOffset, line);
     }
 
@@ -4652,7 +4652,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      * @return the content in the specified range using the platform line
      * 	delimiter to separate lines as written by the specified TextWriter.
      */
-    String getPlatformDelimitedText(TextWriter writer) {
+    public String getPlatformDelimitedText(TextWriter writer) {
         int end = writer.getStart() + writer.getCharCount();
         int startLine = content.getLineAtOffset(writer.getStart());
         int endLine = content.getLineAtOffset(end);
@@ -4697,7 +4697,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     public int[] getRanges() {
         checkWidget();
         if (!isListening(ST.LineGetStyle)) {
-            int[] ranges = ((SwtStyledTextRenderer) renderer.getImpl()).getRanges(0, content.getCharCount());
+            int[] ranges = renderer.getImpl().getRanges(0, content.getCharCount());
             if (ranges != null)
                 return ranges;
         }
@@ -4741,7 +4741,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             SWT.error(SWT.ERROR_INVALID_RANGE);
         }
         if (!isListening(ST.LineGetStyle)) {
-            int[] ranges = ((SwtStyledTextRenderer) renderer.getImpl()).getRanges(start, length);
+            int[] ranges = renderer.getImpl().getRanges(start, length);
             if (ranges != null)
                 return ranges;
         }
@@ -4987,7 +4987,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (event != null) {
             styles = event.styles;
         } else {
-            styles = ((SwtStyledTextRenderer) renderer.getImpl()).getStyleRanges(lineOffset, lineLength, true);
+            styles = renderer.getImpl().getStyleRanges(lineOffset, lineLength, true);
         }
         if (styles == null || styles.length == 0) {
             return new int[] { 0, lineLength };
@@ -5055,7 +5055,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         if (!isListening(ST.LineGetStyle)) {
-            StyleRange[] ranges = ((SwtStyledTextRenderer) renderer.getImpl()).getStyleRanges(offset, 1, true);
+            StyleRange[] ranges = renderer.getImpl().getStyleRanges(offset, 1, true);
             if (ranges != null)
                 return ranges[0];
         }
@@ -5207,7 +5207,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
             SWT.error(SWT.ERROR_INVALID_RANGE);
         }
         if (!isListening(ST.LineGetStyle)) {
-            StyleRange[] ranges = ((SwtStyledTextRenderer) renderer.getImpl()).getStyleRanges(start, length, includeRanges);
+            StyleRange[] ranges = renderer.getImpl().getStyleRanges(start, length, includeRanges);
             if (ranges != null)
                 return ranges;
         }
@@ -8756,7 +8756,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
     void setAlignment() {
         if ((getStyle() & SWT.SINGLE) == 0)
             return;
-        int alignment = ((SwtStyledTextRenderer) renderer.getImpl()).getLineAlignment(0, this.alignment);
+        int alignment = renderer.getImpl().getLineAlignment(0, this.alignment);
         int newAlignmentMargin = 0;
         if (alignment != SWT.LEFT) {
             ((SwtStyledTextRenderer) renderer.getImpl()).calculate(0, 1);
@@ -9245,7 +9245,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      * @exception SWTError
      * @see org.eclipse.swt.dnd.Clipboard#setContents
      */
-    void setClipboardContent(int start, int length, int clipboardType) throws SWTError {
+    public void setClipboardContent(int start, int length, int clipboardType) throws SWTError {
         if (clipboardType == DND.SELECTION_CLIPBOARD && !IS_GTK)
             return;
         TextTransfer plainTextTransfer = SwtTextTransfer.getInstance();
@@ -9932,7 +9932,7 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         if (lineIndex < 0 || lineIndex >= content.getLineCount()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        int previousVerticalIndent = ((SwtStyledTextRenderer) renderer.getImpl()).getLineVerticalIndent(lineIndex);
+        int previousVerticalIndent = renderer.getImpl().getLineVerticalIndent(lineIndex);
         if (verticalLineIndent == previousVerticalIndent) {
             return;
         }

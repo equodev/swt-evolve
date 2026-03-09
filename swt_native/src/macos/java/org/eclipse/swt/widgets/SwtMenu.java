@@ -490,7 +490,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
         }
     }
 
-    void fixMenus(Decorations newParent) {
+    public void fixMenus(Decorations newParent) {
         this.parent = newParent;
     }
 

@@ -310,7 +310,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
     void fixMenus(Decorations newParent) {
         this.getApi().nativeZoom = newParent.nativeZoom;
         if (menu != null && !menu.isDisposed() && !newParent.isDisposed())
-            ((SwtMenu) menu.getImpl()).fixMenus(newParent);
+            menu.getImpl().fixMenus(newParent);
     }
 
     /**

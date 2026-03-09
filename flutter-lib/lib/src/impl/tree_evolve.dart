@@ -35,6 +35,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   Object? _lastSelectedItemId;
   ScrollController? _horizontalController;
   ScrollController? _verticalController;
+  final FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
@@ -251,6 +252,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         return ScrollConfiguration(
           behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
           child: Focus(
+            focusNode: _focusNode,
             onKeyEvent: _handleKeyEvent,
             child: Stack(
               children: [
@@ -901,6 +903,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     if (state.enabled != true) return;
     final item = _findTreeItemById(itemId);
     if (item == null) return;
+    _focusNode.requestFocus();
 
     final bool isMultiMode = StyleBits(state.style).has(SWT.MULTI);
     setState(() {
@@ -1625,6 +1628,16 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   void dispose() {
     _horizontalController?.dispose();
     _verticalController?.dispose();
+    _focusNode.dispose();
+    // Clean up editing resources
+    // if (_editingFocusNode != null) {
+    //   _editingFocusNode!.removeListener(_editingFocusListener ?? () {});
+    //   _editingFocusNode!.dispose();
+    //   _editingFocusNode = null;
+    // }
+    // _editingController?.dispose();
+    // _editingController = null;
+    // _editingFocusListener = null;
     for (String eventName in eventNames) {
       EquoCommService.remove(eventName);
     }

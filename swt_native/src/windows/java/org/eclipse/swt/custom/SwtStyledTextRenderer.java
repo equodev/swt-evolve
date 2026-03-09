@@ -610,7 +610,7 @@ class SwtStyledTextRenderer implements IStyledTextRenderer {
     private void drawLineBackground(LineDrawInfo lineInfo, int paintY, GC gc, Color widgetBackground) {
         Rectangle client = styledText.getClientArea();
         Color lineBackground = getLineBackground(lineInfo.index, null);
-        StyledTextEvent event = ((SwtStyledText) styledText.getImpl()).getLineBackgroundData(lineInfo.offset, lineInfo.text);
+        StyledTextEvent event = styledText.getImpl().getLineBackgroundData(lineInfo.offset, lineInfo.text);
         if (event != null && event.lineBackground != null)
             lineBackground = event.lineBackground;
         int verticalIndent = lineInfo.layout.getVerticalIndent();
@@ -774,7 +774,7 @@ class SwtStyledTextRenderer implements IStyledTextRenderer {
         int lineIndex = content.getLineAtOffset(offset);
         int lineOffset = content.getOffsetAtLine(lineIndex);
         String line = content.getLine(lineIndex);
-        StyledTextEvent event = ((SwtStyledText) styledText.getImpl()).getLineStyleData(lineOffset, line);
+        StyledTextEvent event = styledText.getImpl().getLineStyleData(lineOffset, line);
         if (event != null) {
             StyleRange[] styles = event.styles;
             if (styles != null) {
@@ -810,7 +810,7 @@ class SwtStyledTextRenderer implements IStyledTextRenderer {
         return false;
     }
 
-    int getLineAlignment(int index, int defaultAlignment) {
+    public int getLineAlignment(int index, int defaultAlignment) {
         if (lines == null)
             return defaultAlignment;
         LineInfo info = lines[index];
@@ -820,7 +820,7 @@ class SwtStyledTextRenderer implements IStyledTextRenderer {
         return defaultAlignment;
     }
 
-    Color getLineBackground(int index, Color defaultBackground) {
+    public Color getLineBackground(int index, Color defaultBackground) {
         if (lines == null)
             return defaultBackground;
         LineInfo info = lines[index];
@@ -928,7 +928,7 @@ class SwtStyledTextRenderer implements IStyledTextRenderer {
         return getStyleRanges(start, length, false);
     }
 
-    int getLineIndent(int index, int defaultIndent) {
+    public int getLineIndent(int index, int defaultIndent) {
         if (lines == null)
             return defaultIndent;
         LineInfo info = lines[index];
@@ -938,7 +938,7 @@ class SwtStyledTextRenderer implements IStyledTextRenderer {
         return defaultIndent;
     }
 
-    int getLineVerticalIndent(int index) {
+    public int getLineVerticalIndent(int index) {
         if (lines == null)
             return 0;
         LineInfo info = lines[index];
@@ -958,7 +958,7 @@ class SwtStyledTextRenderer implements IStyledTextRenderer {
         return defaultWrapIndent;
     }
 
-    boolean getLineJustify(int index, boolean defaultJustify) {
+    public boolean getLineJustify(int index, boolean defaultJustify) {
         if (lines == null)
             return defaultJustify;
         LineInfo info = lines[index];
@@ -1009,7 +1009,7 @@ class SwtStyledTextRenderer implements IStyledTextRenderer {
         return high;
     }
 
-    int[] getRanges(int start, int length) {
+    public int[] getRanges(int start, int length) {
         if (length == 0)
             return null;
         int[] newRanges;
@@ -1052,7 +1052,7 @@ class SwtStyledTextRenderer implements IStyledTextRenderer {
         return newRanges;
     }
 
-    StyleRange[] getStyleRanges(int start, int length, boolean includeRanges) {
+    public StyleRange[] getStyleRanges(int start, int length, boolean includeRanges) {
         if (length == 0)
             return null;
         StyleRange[] newStyles;
@@ -1260,7 +1260,7 @@ class SwtStyledTextRenderer implements IStyledTextRenderer {
                 segments = event.segments;
                 segmentChars = event.segmentsChars;
             }
-            event = ((SwtStyledText) styledText.getImpl()).getLineStyleData(lineOffset, line);
+            event = styledText.getImpl().getLineStyleData(lineOffset, line);
             indent = ((SwtStyledText) styledText.getImpl()).indent;
             wrapIndent = ((SwtStyledText) styledText.getImpl()).wrapIndent;
             alignment = ((SwtStyledText) styledText.getImpl()).alignment;
