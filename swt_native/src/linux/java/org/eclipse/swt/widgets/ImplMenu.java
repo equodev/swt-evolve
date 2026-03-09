@@ -30,4 +30,6 @@ public interface ImplMenu extends ImplWidget {
     long _shortcutController();
 
     void _setVisible(boolean visible);
+
+    void fixMenus(Decorations newParent);
 }

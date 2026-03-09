@@ -436,7 +436,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
                 }
                 index++;
             }
-            ((SwtMenu) menu.getImpl()).fixMenus(newDecorations);
+            menu.getImpl().fixMenus(newDecorations);
             destroyAccelerators();
             ((SwtDecorations) newDecorations.getImpl()).destroyAccelerators();
         }

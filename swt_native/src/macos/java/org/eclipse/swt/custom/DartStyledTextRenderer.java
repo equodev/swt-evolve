@@ -596,7 +596,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
     private void drawLineBackground(LineDrawInfo lineInfo, int paintY, GC gc, Color widgetBackground) {
         Rectangle client = styledText.getClientArea();
         Color lineBackground = getLineBackground(lineInfo.index, null);
-        StyledTextEvent event = ((DartStyledText) styledText.getImpl()).getLineBackgroundData(lineInfo.offset, lineInfo.text);
+        StyledTextEvent event = styledText.getImpl().getLineBackgroundData(lineInfo.offset, lineInfo.text);
         if (event != null && event.lineBackground != null)
             lineBackground = event.lineBackground;
         int verticalIndent = lineInfo.layout.getVerticalIndent();
@@ -750,7 +750,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         int lineIndex = content.getLineAtOffset(offset);
         int lineOffset = content.getOffsetAtLine(lineIndex);
         String line = content.getLine(lineIndex);
-        StyledTextEvent event = ((DartStyledText) styledText.getImpl()).getLineStyleData(lineOffset, line);
+        StyledTextEvent event = styledText.getImpl().getLineStyleData(lineOffset, line);
         if (event != null) {
             StyleRange[] styles = event.styles;
             if (styles != null) {
@@ -786,7 +786,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         return false;
     }
 
-    int getLineAlignment(int index, int defaultAlignment) {
+    public int getLineAlignment(int index, int defaultAlignment) {
         if (lines == null)
             return defaultAlignment;
         LineInfo info = lines[index];
@@ -796,7 +796,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         return defaultAlignment;
     }
 
-    Color getLineBackground(int index, Color defaultBackground) {
+    public Color getLineBackground(int index, Color defaultBackground) {
         if (lines == null)
             return defaultBackground;
         LineInfo info = lines[index];
@@ -903,7 +903,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         return getStyleRanges(start, length, false);
     }
 
-    int getLineIndent(int index, int defaultIndent) {
+    public int getLineIndent(int index, int defaultIndent) {
         if (lines == null)
             return defaultIndent;
         LineInfo info = lines[index];
@@ -913,7 +913,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         return defaultIndent;
     }
 
-    int getLineVerticalIndent(int index) {
+    public int getLineVerticalIndent(int index) {
         if (lines == null)
             return 0;
         LineInfo info = lines[index];
@@ -933,7 +933,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         return defaultWrapIndent;
     }
 
-    boolean getLineJustify(int index, boolean defaultJustify) {
+    public boolean getLineJustify(int index, boolean defaultJustify) {
         if (lines == null)
             return defaultJustify;
         LineInfo info = lines[index];
@@ -984,7 +984,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         return high;
     }
 
-    int[] getRanges(int start, int length) {
+    public int[] getRanges(int start, int length) {
         if (length == 0)
             return null;
         int[] newRanges;
@@ -1027,7 +1027,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         return newRanges;
     }
 
-    StyleRange[] getStyleRanges(int start, int length, boolean includeRanges) {
+    public StyleRange[] getStyleRanges(int start, int length, boolean includeRanges) {
         if (length == 0)
             return null;
         StyleRange[] newStyles;
@@ -1236,7 +1236,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
                 segments = event.segments;
                 segmentChars = event.segmentsChars;
             }
-            event = ((DartStyledText) styledText.getImpl()).getLineStyleData(lineOffset, line);
+            event = styledText.getImpl().getLineStyleData(lineOffset, line);
             indent = ((DartStyledText) styledText.getImpl()).indent;
             wrapIndent = ((DartStyledText) styledText.getImpl()).wrapIndent;
             alignment = ((DartStyledText) styledText.getImpl()).alignment;

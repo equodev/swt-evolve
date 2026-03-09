@@ -426,7 +426,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
         }
     }
 
-    void fixMenus(Decorations newParent) {
+    public void fixMenus(Decorations newParent) {
         if (isDisposed()) {
             return;
         }

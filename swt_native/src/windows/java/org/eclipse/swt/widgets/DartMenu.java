@@ -330,7 +330,7 @@ public class DartMenu extends DartWidget implements IMenu {
         }
     }
 
-    void fixMenus(Decorations newParent) {
+    public void fixMenus(Decorations newParent) {
         if (isDisposed()) {
             return;
         }

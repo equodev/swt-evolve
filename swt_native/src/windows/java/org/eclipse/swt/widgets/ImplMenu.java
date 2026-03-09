@@ -27,4 +27,6 @@ public interface ImplMenu extends ImplWidget {
     MenuItem _selectedMenuItem();
 
     void _setVisible(boolean visible);
+
+    void fixMenus(Decorations newParent);
 }

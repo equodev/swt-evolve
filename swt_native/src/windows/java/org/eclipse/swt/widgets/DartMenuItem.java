@@ -251,7 +251,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     void fixMenus(Decorations newParent) {
         this.getApi().nativeZoom = newParent.nativeZoom;
         if (menu != null && !menu.isDisposed() && !newParent.isDisposed())
-            ((DartMenu) menu.getImpl()).fixMenus(newParent);
+            menu.getImpl().fixMenus(newParent);
     }
 
     /**

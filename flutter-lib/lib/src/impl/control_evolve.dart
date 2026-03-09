@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import '../gen/control.dart';
 import '../gen/menu.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../styles.dart';
+import '../impl/key_mapping.dart';
 import '../impl/menu_evolve.dart';
 import '../theme/theme_extensions/tooltip_theme_extension.dart';
 import 'widget_config.dart';
@@ -93,6 +95,19 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
     // Wrap with GC overlay if needed
     widget = wrapWithGCOverlay(widget);
+
+    widget = Focus(
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
+          final vEvent = mapNewKeyEventToSwt(event);
+          if (vEvent.keyCode != 0 || vEvent.character != 0) {
+            this.widget.sendKeyKeyDown(state, vEvent);
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: widget,
+    );
 
     return widget;
   }

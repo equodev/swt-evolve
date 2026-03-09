@@ -124,6 +124,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     if (_isEditingText && _editableTextShape?.styledTextId == styledTextId) {
       if (!_isInLocalEditMode) {
         _editableTextShape = textShape;
+      } else if (_editableTextShape!.text != text) {
+        _enterLocalEditMode(textShape);
       }
     } else {
       shapes = [...shapes, textShape];
@@ -457,6 +459,10 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       if (!clickedInEditableText && _isEditingText) {
         _stopEditing();
       }
+      if (!clickedInEditableText) {
+        widget.sendFocusFocusIn(state, null);
+        _focusNode.requestFocus();
+      }
     }
   }
 
@@ -541,17 +547,17 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         }
         newShape = (newShape ?? currentShape).moveCaret(newOffset);
       } else if (event.logicalKey == LogicalKeyboardKey.keyA &&
-          event.data.isControlPressed) {
+          (event.data.isControlPressed || event.data.isMetaPressed)) {
         newShape = currentShape.selectAll();
       } else if (event.logicalKey == LogicalKeyboardKey.keyC &&
-          event.data.isControlPressed) {
+          (event.data.isControlPressed || event.data.isMetaPressed)) {
         final selectedText = currentShape.getSelectedText();
         if (selectedText.isNotEmpty) {
           Clipboard.setData(ClipboardData(text: selectedText));
         }
         return;
       } else if (event.logicalKey == LogicalKeyboardKey.keyX &&
-          event.data.isControlPressed) {
+          (event.data.isControlPressed || event.data.isMetaPressed)) {
         final selectedText = currentShape.getSelectedText();
         if (selectedText.isNotEmpty) {
           Clipboard.setData(ClipboardData(text: selectedText));
@@ -560,7 +566,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
           }
         }
       } else if (event.logicalKey == LogicalKeyboardKey.keyV &&
-          event.data.isControlPressed) {
+          (event.data.isControlPressed || event.data.isMetaPressed)) {
         if (_editable) {
           _handlePaste();
         }
@@ -575,6 +581,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         );
       } else if (event.character != null && event.character!.isNotEmpty) {
         if (!_editable) return;
+        if (event.data.isMetaPressed || event.data.isControlPressed) return;
         final char = event.character!;
         if (char.codeUnitAt(0) >= 32) {
           newShape = currentShape.insertText(
