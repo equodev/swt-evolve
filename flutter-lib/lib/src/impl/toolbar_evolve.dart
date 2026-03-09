@@ -26,8 +26,7 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     final hasShadowOut = style.has(SWT.SHADOW_OUT);
     final isRightToLeft = style.has(SWT.RIGHT_TO_LEFT);
 
-    final backgroundColor =
-        getSwtBackgroundColor(context) ?? widgetTheme.toolbarBackgroundColor;
+    const backgroundColor = Colors.transparent;
 
     return Builder(
       builder: (context) {
@@ -57,9 +56,8 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
             children: limitedToolItems,
           );
         } else {
-          bar = SingleChildScrollView(
-            scrollDirection: isVertical ? Axis.vertical : Axis.horizontal,
-            reverse: isRightToLeft && !isVertical,
+          bar = FittedBox(
+            alignment: isRightToLeft ? Alignment.centerRight : Alignment.centerLeft,
             child: isVertical
                 ? Column(
                     mainAxisSize: MainAxisSize.min,

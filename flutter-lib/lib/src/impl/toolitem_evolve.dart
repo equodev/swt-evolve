@@ -223,7 +223,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
         toolbarTheme?.toolbarBackgroundColor ?? Colors.white;
     final bgColor = getBackgroundColor(
       background: null,
-      defaultColor: backgroundColor ?? defaultBackgroundColor,
+      defaultColor: backgroundColor ?? Colors.transparent,
     );
 
     Widget hoverableContent;
