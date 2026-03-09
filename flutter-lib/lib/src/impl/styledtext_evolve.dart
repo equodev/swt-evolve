@@ -1267,7 +1267,7 @@ class TextShape extends Shape {
   }
 
   void _drawCaret(Canvas c) {
-    if (caretInfo == null || !caretInfo!.visible || text.isEmpty) return;
+    if (caretInfo == null || !caretInfo!.visible) return;
 
     final caretOffset = caretInfo!.offset.clamp(0, text.length);
     final lines = text.split('\n');
