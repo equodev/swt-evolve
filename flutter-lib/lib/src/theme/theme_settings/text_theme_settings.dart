@@ -161,7 +161,8 @@ InputDecoration getInputDecoration(
   final isSearch = hasStyle(state.style, SWT.SEARCH);
   final hasSearchIcon = isSearch && hasStyle(state.style, SWT.ICON_SEARCH);
   final hasCancelIcon = isSearch && hasStyle(state.style, SWT.ICON_CANCEL);
-  final isReadOnly = hasStyle(state.style, SWT.READ_ONLY);
+  final isReadOnly =
+      !(state.editable ?? true) || hasStyle(state.style, SWT.READ_ONLY);
 
   final iconColor = enabled ? widgetTheme.textColor : widgetTheme.disabledTextColor;
 
@@ -209,7 +210,8 @@ InputDecoration getInputDecoration(
     disabledBorder: isReadOnly ? noBorder : outlineDisabled,
     fillColor: bgColor,
     filled: true,
-    counterText: ''
+    counterText: '',
+    hoverColor: isReadOnly ? Colors.transparent : null,
   );
 }
 
