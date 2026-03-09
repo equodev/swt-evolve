@@ -37,7 +37,7 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     public static SwtFlutterBridge of(DartWidget widget) {
         if (widget instanceof DartControl dartControl && (dartControl.parent.getImpl() instanceof SwtComposite
                 || (dartControl.getApi().getClass().getName().equals("org.eclipse.e4.ui.workbench.renderers.swt.ContributedPartRenderer$1") && dartControl.parent.getImpl() instanceof DartCTabFolder)
-               /* || (dartControl.getClass() == DartComposite.class && dartControl.parent.getImpl() instanceof DartCTabFolder)*/)) {
+                /*|| (dartControl.getClass() == DartComposite.class && dartControl.parent.getImpl() instanceof DartCTabFolder)*/)) {
 //            SwtComposite parentComposite = new SwtComposite(dartControl.parent, SWT.NONE, null);
             SwtFlutterBridge bridge = new SwtFlutterBridge(widget);
             widget.bridge = bridge;
@@ -145,10 +145,21 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
         }
         int parentBackgroundColorInt = (parentBackgroundColor.getRed() << 16) | (parentBackgroundColor.getGreen() << 8) | parentBackgroundColor.getBlue();
 
-        context = InitializeFlutterWindow(client.getPort(), getHandle(parent), id(control), widgetName(control), theme, backgroundColorInt, parentBackgroundColorInt);
+        long parentHandle = getParentHandleForInit(parent, control);
+        context = InitializeFlutterWindow(client.getPort(), parentHandle, id(control), widgetName(control), theme, backgroundColorInt, parentBackgroundColorInt);
 
         long view = GetView(context);
         setHandle(control, view);
+        if (parentHandle == 0) {
+            postCreateLimboReparent(parent, control);
+        }
+    }
+
+    protected long getParentHandleForInit(Composite parent, DartControl control) {
+        return getHandle(parent);
+    }
+
+    protected void postCreateLimboReparent(Composite parent, DartControl control) {
     }
 
     protected abstract long getHandle(Control control);

@@ -13,6 +13,12 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
     }
 
     @Override
+    protected long getParentHandleForInit(Composite parent, DartControl control) {
+        boolean isLimboToolBar = parent.getShell().getText().contains("limbo") && control.getClass() == DartToolBar.class;
+        return isLimboToolBar ? 0 : getHandle(parent);
+    }
+
+    @Override
     protected void setHandle(DartControl control, long view) {
         control.getApi().handle = view;
         ((SwtDisplay) control.display.getImpl()).addControl(control.getApi().handle, control.getApi());
@@ -130,6 +136,15 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
             hwndFocus = OS.GetParent(hwndFocus);
         }
         return false;
+    }
+
+    @Override
+    protected void postCreateLimboReparent(Composite parent, DartControl control) {
+        long viewHandle = control.getApi().handle;
+        if (viewHandle == 0) return;
+        OS.SetParent(viewHandle, parent.handle);
+        int flags = OS.SWP_NOSIZE | OS.SWP_NOMOVE | OS.SWP_NOACTIVATE;
+        OS.SetWindowPos(viewHandle, OS.HWND_BOTTOM, 0, 0, 0, 0, flags);
     }
 
     @Override
