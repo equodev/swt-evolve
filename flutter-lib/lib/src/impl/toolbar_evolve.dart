@@ -17,9 +17,9 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
   @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<ToolBarThemeExtension>()!;
-    final toolItems = getToolItems(context);
     final style = StyleBits(state.style);
     final isVertical = style.has(SWT.VERTICAL);
+    final toolItems = getToolItems(context);
     final shouldWrap = style.has(SWT.WRAP);
     final hasBorder = style.has(SWT.BORDER);
     final isFlat = style.has(SWT.FLAT);

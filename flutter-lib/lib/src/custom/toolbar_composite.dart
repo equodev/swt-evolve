@@ -116,9 +116,14 @@ class SideBarCompositeImpl extends CompositeImpl<SideBarComposite, VComposite> {
     final visibleChildren = children.where((child) => child.visible == true).toList();
     final widgets = visibleChildren.map((child) => buildMapWidgetFromValue(child)).toList();
 
+    final boundsHeight = state.bounds?.height;
+    final containerHeight = (boundsHeight != null && boundsHeight > 0)
+        ? boundsHeight.toDouble()
+        : double.infinity;
+
     return Container(
       color: backgroundColor,
-      height: double.infinity,
+      height: containerHeight,
       child: Column(
         mainAxisSize: MainAxisSize.max,
         children: widgets,
