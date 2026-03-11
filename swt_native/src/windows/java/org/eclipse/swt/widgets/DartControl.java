@@ -1753,14 +1753,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void moveAbove(Control control) {
         checkWidget();
-        long topHandle = topHandle();
         if (control != null) {
             if (control.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
             if (parent != control.getImpl()._parent())
-                return;
-            long hwnd = control.getImpl().topHandle();
-            if (hwnd == 0 || hwnd == topHandle)
                 return;
         }
         ControlUtils.updateChildrenOrderOnMove(this.getApi(), control, true);

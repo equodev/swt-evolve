@@ -44,10 +44,6 @@ public class ControlUtils {
             return;
         }
 
-        if (!(parentImpl instanceof DartMainToolbar)) {
-            return;
-        }
-        
         Control[] children = parentImpl.children;
         int movedIndex = -1;
         int referenceIndex = -1;

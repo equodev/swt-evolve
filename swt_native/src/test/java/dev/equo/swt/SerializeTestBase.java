@@ -91,6 +91,7 @@ public class SerializeTestBase {
     protected void setAll(Widget w) {
         InstancioObjectApi<Widget> inst = Instancio.ofObject(w)
                 .withSettings(settings)
+                .lenient()
                 .ignore(Select.setter(Widget.class, "setImpl"))
                 .ignore(Select.field(Widget.class, "state"))
                 .ignore(Select.field(Widget.class, "style"));
@@ -119,6 +120,7 @@ public class SerializeTestBase {
     protected void setAll(ExpandItem w) {
         InstancioObjectApi<ExpandItem> inst = Instancio.ofObject(w)
                 .withSettings(settings)
+                .lenient()
                 .ignore(Select.setter(Widget.class, "setImpl"))
                 .ignore(Select.field(Widget.class, "state"))
                 .ignore(Select.setter(ExpandItem.class, "setControl"));
@@ -152,6 +154,7 @@ public class SerializeTestBase {
     protected void setAll(TabItem w) {
         InstancioObjectApi<TabItem> inst = Instancio.ofObject(w)
                 .withSettings(settings)
+                .lenient()
                 .ignore(Select.setter(Widget.class, "setImpl"))
                 .ignore(Select.field(Widget.class, "state"));
         inst = inst
@@ -174,7 +177,8 @@ public class SerializeTestBase {
 
     protected void setAll(GC w) {
         InstancioObjectApi<GC> inst = Instancio.ofObject(w)
-                .withSettings(settings);
+                .withSettings(settings)
+                .lenient();
         try {
             inst
                     .ignore(Select.types().of(Class.forName("org.eclipse.swt.internal.cocoa.NSObject")));
@@ -191,6 +195,7 @@ public class SerializeTestBase {
     protected void setAll(CCombo w) {
         InstancioObjectApi<CCombo> inst = Instancio.ofObject(w)
                 .withSettings(settings)
+                .lenient()
                 .ignore(Select.setter(Widget.class, "setImpl"))
                 .ignore(Select.field(Widget.class, "state"))
                 .ignore(Select.field(Widget.class, "style"))
@@ -243,6 +248,7 @@ public class SerializeTestBase {
         // Menu doesn't have Font/Color setters like other widgets
         InstancioObjectApi<org.eclipse.swt.widgets.Menu> inst = Instancio.ofObject(m)
                 .withSettings(settings)
+                .lenient()
                 .ignore(Select.setter(org.eclipse.swt.widgets.Widget.class, "setImpl"))
                 .ignore(Select.field(org.eclipse.swt.widgets.Widget.class, "state"))
                 .ignore(Select.field(org.eclipse.swt.widgets.Widget.class, "style"));
@@ -260,6 +266,7 @@ public class SerializeTestBase {
         // MenuItem has Image but not Font/Color setters
         InstancioObjectApi<org.eclipse.swt.widgets.MenuItem> inst = Instancio.ofObject(mi)
                 .withSettings(settings)
+                .lenient()
                 .ignore(Select.setter(org.eclipse.swt.widgets.Widget.class, "setImpl"))
                 .ignore(Select.field(org.eclipse.swt.widgets.Widget.class, "state"))
                 .ignore(Select.field(org.eclipse.swt.widgets.Widget.class, "style"));
@@ -279,6 +286,7 @@ public class SerializeTestBase {
     protected void setAll(FontData fd) {
         InstancioObjectApi<FontData> inst = Instancio.ofObject(fd)
                 .withSettings(settings)
+                .lenient()
                 .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
                 .generate(Select.all(int.class), gen -> gen.ints().range(1, 20))
                 .generate(Select.all(String.class), gen -> gen.oneOf("Arial", "Helvetica", "Courier"));
@@ -288,6 +296,7 @@ public class SerializeTestBase {
     protected void setAll(Accessible a) {
         InstancioObjectApi<Accessible> inst = Instancio.ofObject(a)
                 .withSettings(settings)
+                .lenient()
                 .ignore(Select.setter(Accessible.class, "setImpl"))
                 .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
                 .generate(Select.all(int.class), gen -> gen.ints().range(1, 1000));
@@ -297,6 +306,7 @@ public class SerializeTestBase {
     protected void setAll(org.eclipse.swt.widgets.ToolTip tt) {
         InstancioObjectApi<org.eclipse.swt.widgets.ToolTip> inst = Instancio.ofObject(tt)
                 .withSettings(settings)
+                .lenient()
                 .ignore(Select.setter(org.eclipse.swt.widgets.Widget.class, "setImpl"))
                 .ignore(Select.field(org.eclipse.swt.widgets.Widget.class, "state"))
                 .ignore(Select.field(org.eclipse.swt.widgets.Widget.class, "style"));
@@ -304,7 +314,6 @@ public class SerializeTestBase {
             inst.ignore(Select.types().of(Class.forName("org.eclipse.swt.internal.cocoa.NSObject")));
         } catch (ClassNotFoundException e) {}
         inst = inst
-                .lenient()
                 .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
                 .generate(Select.all(boolean.class), gen -> gen.booleans().probability(1.0))
                 .generate(Select.all(int.class), gen -> gen.ints().range(1, 1000));
