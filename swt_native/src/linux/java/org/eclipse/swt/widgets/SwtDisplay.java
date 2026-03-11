@@ -5670,11 +5670,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      */
     public final void setRuntimeExceptionHandler(Consumer<RuntimeException> runtimeExceptionHandler) {
         checkDevice();
-        Consumer<RuntimeException> original = Objects.requireNonNull(runtimeExceptionHandler);
-        this.runtimeExceptionHandler = exception -> {
-            dev.equo.swt.CrashReporter.handleError(exception);
-            original.accept(exception);
-        };
+        this.runtimeExceptionHandler = Objects.requireNonNull(runtimeExceptionHandler);
     }
 
     /**
@@ -5703,11 +5699,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      */
     public final void setErrorHandler(Consumer<Error> errorHandler) {
         checkDevice();
-        Consumer<Error> original = Objects.requireNonNull(errorHandler);
-        this.errorHandler = error -> {
-            dev.equo.swt.CrashReporter.handleError(error);
-            original.accept(error);
-        };
+        this.errorHandler = Objects.requireNonNull(errorHandler);
     }
 
     /**
