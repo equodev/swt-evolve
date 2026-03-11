@@ -152,6 +152,10 @@ public class Config {
         forceEclipse = true;
     }
 
+    static void resetForceEclipse() {
+        forceEclipse = false;
+    }
+
     public static void defaultToEclipse() {
         defaultImpl = Impl.eclipse;
     }

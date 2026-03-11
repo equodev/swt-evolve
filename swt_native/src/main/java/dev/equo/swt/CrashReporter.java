@@ -16,6 +16,7 @@ public class CrashReporter {
 
     private static volatile boolean handling = false;
     private static volatile List<File> pendingNativeCrashes;
+    private static volatile boolean pendingAbnormalExit;
     private static volatile boolean nativeCrashesChecked = false;
     private static final long CRASH_FILE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
     private static Path getCleanShutdownMarker() {
@@ -33,10 +34,12 @@ public class CrashReporter {
         if (url == null || url.isBlank()) return;
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> handleCrash(throwable));
         Thread initThread = new Thread(() -> {
-            EclipseErrorHook.tryInstall();
-            boolean cleanShutdown = deleteCleanShutdownMarker();
+            boolean cleanShutdown = checkAndWriteSessionMarker();
             if (!cleanShutdown) {
                 checkNativeCrashFiles();
+                if (pendingNativeCrashes == null) {
+                    pendingAbnormalExit = true;
+                }
             }
         }, "crash-reporter-init");
         initThread.setDaemon(true);
@@ -54,11 +57,21 @@ public class CrashReporter {
         }
     }
 
-    private static boolean deleteCleanShutdownMarker() {
+    private static boolean checkAndWriteSessionMarker() {
+        Path marker = getCleanShutdownMarker();
         try {
-            return Files.deleteIfExists(getCleanShutdownMarker());
+            boolean wasClean;
+            if (Files.exists(marker)) {
+                String content = Files.readString(marker).trim();
+                wasClean = content.isEmpty() || "clean".equals(content);
+            } else {
+                wasClean = true; // first launch
+            }
+            Files.createDirectories(marker.getParent());
+            Files.writeString(marker, "started");
+            return wasClean;
         } catch (IOException e) {
-            return false;
+            return true;
         }
     }
 
@@ -69,7 +82,7 @@ public class CrashReporter {
         try {
             Path marker = getCleanShutdownMarker();
             Files.createDirectories(marker.getParent());
-            Files.createFile(marker);
+            Files.writeString(marker, "clean");
         } catch (IOException e) {
             // silently skip
         }
@@ -77,10 +90,6 @@ public class CrashReporter {
 
     public static void handleCrash(Throwable throwable) {
         doHandle(throwable, true);
-    }
-
-    public static void handleError(Throwable throwable) {
-        doHandle(throwable, false);
     }
 
     private static void doHandle(Throwable throwable, boolean fatal) {
@@ -117,7 +126,10 @@ public class CrashReporter {
         } finally {
             if (!fatal) handling = false;
         }
-        if (fatal) System.exit(1);
+        if (fatal) {
+            writeCleanShutdownMarker();
+            System.exit(1);
+        }
     }
 
     private static void showDialog(Display display, File crashLog, File eclipseLog) {
@@ -186,15 +198,34 @@ public class CrashReporter {
 
     static File findEclipseLog() {
         try {
-            String workspaceLocation = System.getProperty("osgi.instance.area");
-            if (workspaceLocation == null) return null;
-
-            if (workspaceLocation.startsWith("file:")) {
-                workspaceLocation = workspaceLocation.substring(5);
+            // 1. osgi.logfile — direct path to the log file, most reliable
+            String logfile = System.getProperty("osgi.logfile");
+            if (logfile != null && !logfile.isBlank()) {
+                File f = new File(logfile);
+                if (f.exists()) return f;
             }
 
-            File logFile = new File(workspaceLocation, ".metadata/.log");
-            return logFile.exists() ? logFile : null;
+            // 2. osgi.instance.area + .metadata/.log — workspace-based lookup
+            String workspaceLocation = System.getProperty("osgi.instance.area");
+            if (workspaceLocation != null) {
+                if (workspaceLocation.startsWith("file:")) {
+                    workspaceLocation = workspaceLocation.substring(5);
+                }
+                File logFile = new File(workspaceLocation, ".metadata/.log");
+                if (logFile.exists()) return logFile;
+            }
+
+            // 3. osgi.configuration.area + .metadata/.log — configuration-based (e.g., Katalon)
+            String configArea = System.getProperty("osgi.configuration.area");
+            if (configArea != null) {
+                if (configArea.startsWith("file:")) {
+                    configArea = configArea.substring(5);
+                }
+                File logFile = new File(configArea, ".metadata/.log");
+                if (logFile.exists()) return logFile;
+            }
+
+            return null;
         } catch (Exception e) {
             return null;
         }
@@ -391,16 +422,22 @@ public class CrashReporter {
 
     public static void checkPendingNativeCrashesIfNeeded() {
         if (nativeCrashesChecked) return;
-        if (pendingNativeCrashes == null) return;
+        if (pendingNativeCrashes == null && !pendingAbnormalExit) return;
         nativeCrashesChecked = true;
 
         List<File> crashes = pendingNativeCrashes;
         pendingNativeCrashes = null;
+        boolean abnormalExit = pendingAbnormalExit;
+        pendingAbnormalExit = false;
 
         Display display = Display.getCurrent();
         if (display == null || display.isDisposed()) return;
 
-        display.asyncExec(() -> showNativeCrashDialog(display, crashes));
+        if (crashes != null) {
+            display.asyncExec(() -> showNativeCrashDialog(display, crashes));
+        } else if (abnormalExit) {
+            display.asyncExec(() -> showAbnormalExitDialog(display, findEclipseLog()));
+        }
     }
 
     private static void showNativeCrashDialog(Display display, List<File> crashFiles) {
@@ -412,14 +449,26 @@ public class CrashReporter {
         try {
             Config.forceEclipse();
             File eclipseLog = findEclipseLog();
-            new CrashDialog(display, mostRecent, eclipseLog, true).open();
+            new CrashDialog(display, mostRecent, eclipseLog, CrashDialog.CrashType.NATIVE).open();
         } catch (Throwable t) {
             System.err.println("[CrashReporter] Failed to show native crash dialog: " + t);
         } finally {
+            Config.resetForceEclipse();
             // Move all found crash files to ~/.equo/
             for (File file : crashFiles) {
                 moveToEquoDir(file);
             }
+        }
+    }
+
+    private static void showAbnormalExitDialog(Display display, File eclipseLog) {
+        try {
+            Config.forceEclipse();
+            new CrashDialog(display, null, eclipseLog, CrashDialog.CrashType.ABNORMAL_EXIT).open();
+        } catch (Throwable t) {
+            System.err.println("[CrashReporter] Failed to show abnormal exit dialog: " + t);
+        } finally {
+            Config.resetForceEclipse();
         }
     }
 

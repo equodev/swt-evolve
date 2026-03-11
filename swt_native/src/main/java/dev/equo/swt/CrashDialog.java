@@ -13,20 +13,22 @@ import java.io.File;
 
 class CrashDialog {
 
+    enum CrashType { RUNTIME, NATIVE, ABNORMAL_EXIT }
+
     private final Display display;
     private final File crashLog;
     private final File eclipseLog;
-    private final boolean nativeCrash;
+    private final CrashType crashType;
 
     CrashDialog(Display display, File crashLog, File eclipseLog) {
-        this(display, crashLog, eclipseLog, false);
+        this(display, crashLog, eclipseLog, CrashType.RUNTIME);
     }
 
-    CrashDialog(Display display, File crashLog, File eclipseLog, boolean nativeCrash) {
+    CrashDialog(Display display, File crashLog, File eclipseLog, CrashType crashType) {
         this.display = display;
         this.crashLog = crashLog;
         this.eclipseLog = eclipseLog;
-        this.nativeCrash = nativeCrash;
+        this.crashType = crashType;
     }
 
     void open() {
@@ -40,9 +42,17 @@ class CrashDialog {
 
         // Title label (bold, +2pt)
         Label titleLabel = new Label(shell, SWT.NONE);
-        titleLabel.setText(nativeCrash
-                ? "The application crashed during the last session"
-                : "Oops, something went wrong!");
+        switch (crashType) {
+            case NATIVE:
+                titleLabel.setText("The application crashed during the last session");
+                break;
+            case ABNORMAL_EXIT:
+                titleLabel.setText("The application didn't shut down cleanly during the last session");
+                break;
+            default:
+                titleLabel.setText("Oops, something went wrong!");
+                break;
+        }
         FontData[] fd = titleLabel.getFont().getFontData();
         for (FontData f : fd) {
             f.setHeight(f.getHeight() + 2);
@@ -53,9 +63,17 @@ class CrashDialog {
 
         // Description label
         Label descLabel = new Label(shell, SWT.WRAP);
-        descLabel.setText(nativeCrash
-                ? "It looks like the application suffered a native crash. Could you describe what you were doing before it happened? Even a short hint helps us investigate."
-                : "Could you briefly describe what you were doing? Even a short hint helps us track down and fix the problem faster.");
+        switch (crashType) {
+            case NATIVE:
+                descLabel.setText("It looks like the application suffered a native crash. Could you describe what you were doing before it happened? Even a short hint helps us investigate.");
+                break;
+            case ABNORMAL_EXIT:
+                descLabel.setText("This could mean it crashed or was terminated unexpectedly. Could you describe what you were doing before it happened? Even a short hint helps us investigate.");
+                break;
+            default:
+                descLabel.setText("Could you briefly describe what you were doing? Even a short hint helps us track down and fix the problem faster.");
+                break;
+        }
         descLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
         // Text area for user description
@@ -79,11 +97,17 @@ class CrashDialog {
 
         // Link to log file
         Link logLink = new Link(shell, SWT.WRAP);
-        logLink.setText("A <a>crash log</a> will be attached to the report. You can also send it directly to support@equo.dev.");
+        File logToOpen = crashLog != null ? crashLog : eclipseLog;
+        if (logToOpen != null) {
+            String logLabel = crashLog != null ? "crash log" : "application log";
+            logLink.setText("An <a>" + logLabel + "</a> will be attached to the report. You can also send it directly to support@equo.dev.");
+        } else {
+            logLink.setText("You can send details directly to support@equo.dev.");
+        }
         logLink.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
         logLink.addListener(SWT.Selection, e -> {
-            if (crashLog != null) {
-                Program.launch(crashLog.getAbsolutePath());
+            if (logToOpen != null) {
+                Program.launch(logToOpen.getAbsolutePath());
             }
         });
 
@@ -126,8 +150,8 @@ class CrashDialog {
                 MessageBox mb = new MessageBox(shell, SWT.ICON_WARNING | SWT.OK);
                 mb.setText("Send Failed");
                 String msg = "We couldn't send the report right now.";
-                if (crashLog != null) {
-                    msg += "\n\nYou can send the crash log manually:\n" + crashLog.getAbsolutePath();
+                if (logToOpen != null) {
+                    msg += "\n\nYou can send the log manually:\n" + logToOpen.getAbsolutePath();
                 }
                 msg += "\n\nContact us at support@equo.dev";
                 mb.setMessage(msg);
