@@ -45,11 +45,11 @@ public class ComboSizes {
         double width, height;
 
         if (hasFlags(style, SWT.SIMPLE) || hasFlags(style, (SWT.SIMPLE | SWT.READ_ONLY))) {
-            m.text = computeText(widget, m, SIMPLE.EMPTY_TEXT_AFFECTS_SIZING);
+            m.text = computeText(widget, m, SIMPLE.EMPTY_TEXT_AFFECTS_SIZING, wHint);
             width = Math.max(m.text.x() + (m.text.x() > 0 ? SIMPLE.HORIZONTAL_PADDING : 0), SIMPLE.MIN_WIDTH);
             height = Math.max(m.text.y() + SIMPLE.VERTICAL_PADDING, SIMPLE.MIN_HEIGHT);
         } else { // DROP_DOWN, DROP_DOWN|READ_ONLY
-            m.text = computeText(widget, m, DROP_DOWN.EMPTY_TEXT_AFFECTS_SIZING);
+            m.text = computeText(widget, m, DROP_DOWN.EMPTY_TEXT_AFFECTS_SIZING, wHint);
             width = Math.max(m.text.x() + (m.text.x() > 0 ? DROP_DOWN.HORIZONTAL_PADDING : 0), DROP_DOWN.MIN_WIDTH);
             height = Math.max(m.text.y() + DROP_DOWN.VERTICAL_PADDING, DROP_DOWN.MIN_HEIGHT);
         }
@@ -57,17 +57,35 @@ public class ComboSizes {
         m.widget = new Point((int) Math.ceil(width), (int) Math.ceil(height));
         return m;
     }
-
-    private static PointD computeText(DartCombo widget, Measure m, boolean emptyTextAffectsSizing) {
+    private static PointD computeText(DartCombo widget, Measure m, boolean emptyTextAffectsSizing, int wHint) {
+        if (widget.isDisposed()) return PointD.zero;
         String text = widget.getText();
-        if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
-            if (!Config.getConfigFlags().use_swt_fonts) {
-                m.textStyle = ComboTheme.get().textStyle().withStyleFrom(widget.getFont());
-            } else {
-                m.textStyle = TextStyle.from(widget.getFont());
+        try {
+            if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
+                m.textStyle = ComboTheme.get().textStyle();
+                if (!Config.getConfigFlags().use_swt_fonts) {
+                    m.textStyle = m.textStyle.withStyleFrom(widget.getFont());
+                    return FontMetricsUtil.getFontSize(text, m.textStyle);
+                } else {
+                    org.eclipse.swt.graphics.Font font = widget.getFont();
+                    if (font != null && !font.isDisposed()) {
+                        m.textStyle = TextStyle.from(font);
+                        org.eclipse.swt.graphics.TextLayout layout = new org.eclipse.swt.graphics.TextLayout(org.eclipse.swt.widgets.Display.getDefault());
+                        layout.setFont(font);
+                        layout.setText(text);
+                        if (hasFlags(widget.getStyle(), org.eclipse.swt.SWT.WRAP) && wHint > 0 && wHint != org.eclipse.swt.SWT.DEFAULT) {
+                            layout.setWidth(wHint);
+                        }
+                        org.eclipse.swt.graphics.Rectangle bounds = layout.getBounds();
+                        layout.dispose();
+                        return new PointD(bounds.width, bounds.height);
+                    }
+                }
             }
+            return PointD.zero;
+        } catch (Exception e) {
+            m.textStyle = m.textStyle.withStyleFrom(widget.getFont());
             return FontMetricsUtil.getFontSize(text, m.textStyle);
         }
-        return PointD.zero;
     }
 }

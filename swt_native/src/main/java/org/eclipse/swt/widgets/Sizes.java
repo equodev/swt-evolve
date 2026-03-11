@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.Config;
 import dev.equo.swt.size.*;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.DartCCombo;
@@ -56,6 +57,9 @@ public class Sizes {
     }
 
     public static Point computeSize(DartButton c, int wHint, int hHint, boolean changed) {
+        // Eliminamos el bloque manual hardcoded que forzaba "extent.x + 24"
+        // Dejamos que el sistema delegue el cálculo a la clase autogenerada,
+        // la cual ya maneja la lógica de use_swt_fonts con sus respectivos paddings dinámicos.
         return ButtonSizes.computeSize(c, wHint, hHint, changed);
     }
 
@@ -209,6 +213,25 @@ public class Sizes {
     }
 
     public static Point computeSize(DartLink c, int wHint, int hHint, boolean changed) {
+        if (Config.getConfigFlags() != null && Config.getConfigFlags().use_swt_fonts) {
+            String text = c._text();
+
+            // AÑADIMOS ESTA LÍNEA PARA DEPURAR:
+            System.out.println("👉 SIZES.JAVA (LINK) SE ESTÁ EJECUTANDO. Texto recibido: [" + text + "]");
+            if (text != null && !text.isEmpty()) {
+                Point extent = GCHelper.textExtent(text, SWT.DRAW_MNEMONIC, c.getFont());
+
+                int width = extent.x + 4;
+                int height = extent.y + 4;
+
+                if (wHint != SWT.DEFAULT) width = wHint;
+                if (hHint != SWT.DEFAULT) height = hHint;
+
+                return new Point(width, height);
+            }
+        }
+
+        // Comportamiento original si la flag es falsa
         return LinkSizes.computeSize(c, wHint, hHint, changed);
     }
 

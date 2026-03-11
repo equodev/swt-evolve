@@ -60,17 +60,17 @@ public class ButtonSizes {
         double width, height;
 
         if (hasFlags(style, SWT.CHECK) || hasFlags(style, (SWT.CHECK | SWT.FLAT)) || hasFlags(style, (SWT.CHECK | SWT.WRAP)) || hasFlags(style, SWT.RADIO) || hasFlags(style, (SWT.RADIO | SWT.FLAT)) || hasFlags(style, (SWT.RADIO | SWT.WRAP))) {
-            m.text = computeText(widget, m, CHECK.EMPTY_TEXT_AFFECTS_SIZING);
+            m.text = computeText(widget, m, CHECK.EMPTY_TEXT_AFFECTS_SIZING, wHint);
             m.image = computeImage(widget);
             width = Math.max((m.text.x() + m.image.x()) + ((m.text.x() > 0 || m.image.x() > 0) ? CHECK.HORIZONTAL_PADDING : 0), CHECK.MIN_WIDTH);
             height = Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? CHECK.VERTICAL_PADDING : 0), CHECK.MIN_HEIGHT);
         } else if (hasFlags(style, SWT.PUSH) || hasFlags(style, (SWT.PUSH | SWT.FLAT)) || hasFlags(style, (SWT.PUSH | SWT.WRAP))) {
-            m.text = computeText(widget, m, PUSH.EMPTY_TEXT_AFFECTS_SIZING);
+            m.text = computeText(widget, m, PUSH.EMPTY_TEXT_AFFECTS_SIZING, wHint);
             m.image = computeImage(widget);
             width = Math.max((m.text.x() + m.image.x()) + ((m.text.x() > 0 || m.image.x() > 0) ? PUSH.HORIZONTAL_PADDING : 0), PUSH.MIN_WIDTH);
             height = Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? PUSH.VERTICAL_PADDING : 0), PUSH.MIN_HEIGHT);
         } else if (hasFlags(style, SWT.TOGGLE) || hasFlags(style, (SWT.TOGGLE | SWT.FLAT)) || hasFlags(style, (SWT.TOGGLE | SWT.WRAP))) {
-            m.text = computeText(widget, m, TOGGLE.EMPTY_TEXT_AFFECTS_SIZING);
+            m.text = computeText(widget, m, TOGGLE.EMPTY_TEXT_AFFECTS_SIZING, wHint);
             m.image = computeImage(widget);
             width = Math.max((m.text.x() + m.image.x()) + ((m.text.x() > 0 || m.image.x() > 0) ? TOGGLE.HORIZONTAL_PADDING : 0), TOGGLE.MIN_WIDTH);
             height = Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? TOGGLE.VERTICAL_PADDING : 0), TOGGLE.MIN_HEIGHT);
@@ -82,7 +82,6 @@ public class ButtonSizes {
         m.widget = new Point((int) Math.ceil(width), (int) Math.ceil(height));
         return m;
     }
-
     private static PointD computeImage(DartButton widget) {
         Image image = widget.getImage();
         if (image != null) {
@@ -91,16 +90,35 @@ public class ButtonSizes {
         return PointD.zero;
     }
 
-    private static PointD computeText(DartButton widget, Measure m, boolean emptyTextAffectsSizing) {
+    private static PointD computeText(DartButton widget, Measure m, boolean emptyTextAffectsSizing, int wHint) {
+        if (widget.isDisposed()) return PointD.zero;
         String text = widget.getText();
-        if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
-            if (!Config.getConfigFlags().use_swt_fonts) {
-                m.textStyle = ButtonTheme.get().textStyle().withStyleFrom(widget.getFont());
-            } else {
-                m.textStyle = TextStyle.from(widget.getFont());
+        try {
+            if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
+                m.textStyle = ButtonTheme.get().textStyle();
+                if (!Config.getConfigFlags().use_swt_fonts) {
+                    m.textStyle = m.textStyle.withStyleFrom(widget.getFont());
+                    return FontMetricsUtil.getFontSize(text, m.textStyle);
+                } else {
+                    org.eclipse.swt.graphics.Font font = widget.getFont();
+                    if (font != null && !font.isDisposed()) {
+                        m.textStyle = TextStyle.from(font);
+                        org.eclipse.swt.graphics.TextLayout layout = new org.eclipse.swt.graphics.TextLayout(org.eclipse.swt.widgets.Display.getDefault());
+                        layout.setFont(font);
+                        layout.setText(text.replace("&", ""));
+                        if (hasFlags(widget.getStyle(), org.eclipse.swt.SWT.WRAP) && wHint > 0 && wHint != org.eclipse.swt.SWT.DEFAULT) {
+                            layout.setWidth(wHint);
+                        }
+                        org.eclipse.swt.graphics.Rectangle bounds = layout.getBounds();
+                        layout.dispose();
+                        return new PointD(bounds.width, bounds.height);
+                    }
+                }
             }
+            return PointD.zero;
+        } catch (Exception e) {
+            m.textStyle = m.textStyle.withStyleFrom(widget.getFont());
             return FontMetricsUtil.getFontSize(text, m.textStyle);
         }
-        return PointD.zero;
     }
 }

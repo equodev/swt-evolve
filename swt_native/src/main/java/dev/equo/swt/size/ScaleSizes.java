@@ -49,5 +49,4 @@ public class ScaleSizes {
         m.widget = new Point((int) Math.ceil(width), (int) Math.ceil(height));
         return m;
     }
-
 }

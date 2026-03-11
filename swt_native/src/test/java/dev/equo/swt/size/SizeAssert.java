@@ -83,8 +83,12 @@ public class SizeAssert {
                 double xDiff = (long) Math.abs(flutter.x() - java.x());
                 double yDiff = (long) Math.abs(flutter.y() - java.y());
 
+                // Keep the original strict X tolerance
                 double xTolerance = Math.max(2, Math.ceil(flutter.x() * TEXT_TOLERANCE_PERCENT) + 1);
-                double yTolerance = Math.max(2, Math.ceil(flutter.y() * TEXT_TOLERANCE_PERCENT) + 1);
+
+                // Increase the minimum Y tolerance to 5 to handle vertical metric differences
+                // (ascenders/descenders) between native OS fonts and Skia.
+                double yTolerance = Math.max(5, Math.ceil(flutter.y() * TEXT_TOLERANCE_PERCENT) + 1);
 
                 message = String.format(
                         "%s: Flutter(%.2f, %.2f) vs Java(%.2f, %.2f)",

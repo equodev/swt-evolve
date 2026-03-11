@@ -1324,7 +1324,7 @@ class WidgetMeasurer {
 
         // Text-based widget - calculate size based on text, image, spacing, and padding
         if (hasAnyTextBasedWidget) {
-          buffer.writeln('${indent}m.text = computeText(widget, m, $styleName.EMPTY_TEXT_AFFECTS_SIZING);');
+          buffer.writeln('${indent}m.text = computeText(widget, m, $styleName.EMPTY_TEXT_AFFECTS_SIZING, wHint);');
         }
         if (hasAnyImageSupport) {
           buffer.writeln('${indent}m.image = computeImage(widget);');
@@ -1545,12 +1545,14 @@ class WidgetMeasurer {
       );
     }
     buffer.writeln();
+
+
+
     buffer.writeln(
       '        m.widget = new Point((int) Math.ceil(width), (int) Math.ceil(height));',
     );
     buffer.writeln('        return m;');
     buffer.writeln('    }');
-    buffer.writeln();
 
     // Generate computeImage helper if any style supports images
     if (hasAnyImageSupport) {
@@ -1571,35 +1573,62 @@ class WidgetMeasurer {
     // Generate computeText helper if any style is text-based
     if (hasAnyTextBasedWidget) {
       buffer.writeln(
-        '    private static PointD computeText(Dart$widgetType widget, Measure m, boolean emptyTextAffectsSizing) {',
+        '    private static PointD computeText(Dart$widgetType widget, Measure m, boolean emptyTextAffectsSizing, int wHint) {',
       );
+      buffer.writeln('        if (widget.isDisposed()) return PointD.zero;');
+
+      // 1. Declare 'text' outside the try block so the catch block can access it
       buffer.writeln('        String text = widget.getText();');
-      // PASSWORD style only applies to Text widget
+
       if (widgetType == 'Text') {
-        buffer.writeln('        if (text != null && hasFlags(widget.getStyle(), SWT.PASSWORD)) {');
+        buffer.writeln('        if (text != null && hasFlags(widget.getStyle(), org.eclipse.swt.SWT.PASSWORD)) {');
         buffer.writeln('            text = "*".repeat(text.length());');
         buffer.writeln('        }');
       }
 
-      // Use parameter to decide whether empty text should be measured
-      buffer.writeln('        if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {');
+      buffer.writeln('        try {');
+      buffer.writeln('            if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {');
+      buffer.writeln('                m.textStyle = ${widgetType}Theme.get().textStyle();');
 
-      buffer.writeln(
-        '            if (!Config.getConfigFlags().use_swt_fonts) {',
-      );
-      buffer.writeln(
-        '                m.textStyle = ${widgetType}Theme.get().textStyle().withStyleFrom(widget.getFont());',
-      );
-      buffer.writeln('            } else {');
-      buffer.writeln(
-        '                m.textStyle = TextStyle.from(widget.getFont());',
-      );
+      buffer.writeln('                if (!Config.getConfigFlags().use_swt_fonts) {');
+      buffer.writeln('                    m.textStyle = m.textStyle.withStyleFrom(widget.getFont());');
+      buffer.writeln('                    return FontMetricsUtil.getFontSize(text, m.textStyle);');
+      buffer.writeln('                } else {');
+      buffer.writeln('                    org.eclipse.swt.graphics.Font font = widget.getFont();');
+
+      buffer.writeln('                    if (font != null && !font.isDisposed()) {');
+      buffer.writeln('                        m.textStyle = TextStyle.from(font);');
+      buffer.writeln('                        org.eclipse.swt.graphics.TextLayout layout = new org.eclipse.swt.graphics.TextLayout(org.eclipse.swt.widgets.Display.getDefault());');
+      buffer.writeln('                        layout.setFont(font);');
+
+      if (widgetType == 'Button') {
+        buffer.writeln('                        layout.setText(text.replace("&", ""));');
+      } else if (widgetType == 'Link') {
+        buffer.writeln('                        layout.setText(text.replaceAll("<[^>]*>", "").replace("&", ""));');
+      } else {
+        buffer.writeln('                        layout.setText(text);');
+      }
+
+      // 2. Strictly use 'wHint' for layout width to ensure accurate word-wrapping
+
+      buffer.writeln('                        if (hasFlags(widget.getStyle(), org.eclipse.swt.SWT.WRAP) && wHint > 0 && wHint != org.eclipse.swt.SWT.DEFAULT) {');
+      buffer.writeln('                            layout.setWidth(wHint);');
+      buffer.writeln('                        }');
+
+      buffer.writeln('                        org.eclipse.swt.graphics.Rectangle bounds = layout.getBounds();');
+      buffer.writeln('                        layout.dispose();');
+      buffer.writeln('                        return new PointD(bounds.width, bounds.height);');
+      buffer.writeln('                    }');
+      buffer.writeln('                }');
+
       buffer.writeln('            }');
-      buffer.writeln(
-        '            return FontMetricsUtil.getFontSize(text, m.textStyle);',
-      );
+      buffer.writeln('            return PointD.zero;');
+
+      buffer.writeln('        } catch (Exception e) {');
+      // 3. The catch block can safely use the 'text' variable now
+      buffer.writeln('            m.textStyle = m.textStyle.withStyleFrom(widget.getFont());');
+      buffer.writeln('            return FontMetricsUtil.getFontSize(text, m.textStyle);');
       buffer.writeln('        }');
-      buffer.writeln('        return PointD.zero;');
       buffer.writeln('    }');
     }
 
@@ -1613,8 +1642,8 @@ class WidgetMeasurer {
   }
 
   void _generateJavaWidgetThemeFromExtracted(
-    String fqn,
-    String widgetType,
+      String fqn,
+      String widgetType,
     Map<String, Map<String, dynamic>>? themesByStyle,
   ) {
     // themesByStyle format: themeName -> styleName -> textStyle

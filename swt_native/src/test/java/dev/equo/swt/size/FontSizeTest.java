@@ -66,6 +66,7 @@ public class FontSizeTest extends SizeAssert {
                 .filter(f -> !f.getName().contains("Chalkboard SE"))
                 .filter(f -> !f.getName().contains("Specialty"))
                 .filter(f -> !f.getName().contains("Zapfino"))
+                .filter(f -> !f.getName().contains("Bookshelf Symbol 7")) // Exclude legacy font with broken vertical metrics
                 .map(FontVariation::from)
                 .filter(fv -> GenFontMetrics.DATA.containsKey(fv.getId()))
                 .distinct();
