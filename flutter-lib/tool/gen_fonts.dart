@@ -32,6 +32,11 @@ Future<void> main(List<String> args) async {
   print("Using sample: $sampleText");
 
   final Map<String, dynamic> out = {};
+  final Map<String, List<String>> fontKeysByFont = {};
+  for (final (font, style, weight) in fonts) {
+    final k = "$font-${styleKey(style)}-${weightKey(weight)}";
+    fontKeysByFont.putIfAbsent(font, () => []).add(k);
+  }
   for (final (font, style, weight) in fonts) {
     final xs = <double>[];
     final asc = <double>[];
@@ -95,13 +100,8 @@ Future<void> main(List<String> args) async {
       "avgWidth": avgWidth,
     };
 
-    var fontVariations = [
-      "$font-${styleKey(FontStyle.normal)}-${weightKey(FontWeight.normal)}",
-      "$font-${styleKey(FontStyle.normal)}-${weightKey(FontWeight.bold)}",
-      "$font-${styleKey(FontStyle.italic)}-${weightKey(FontWeight.normal)}",
-      "$font-${styleKey(FontStyle.italic)}-${weightKey(FontWeight.bold)}",
-    ];
-    fontVariations.remove(fontKey);
+    var fontVariations =
+        fontKeysByFont[font]!.where((k) => k != fontKey).toList();
 
     for (var variation in fontVariations) {
       if (out.containsKey(variation) &&

@@ -6,11 +6,11 @@ public record CComboTheme (TextStyle textStyle) {
     }
 
     public static CComboTheme getNonDefaultTheme() {
-        return new CComboTheme(new TextStyle("Inter", 12, false, false));
+        return new CComboTheme(new TextStyle("Inter", 12, false, 500, 1.1428571428571428));
     }
 
     public static CComboTheme getDefaultTheme() {
-        return new CComboTheme(new TextStyle("System", 12, false, false));
+        return new CComboTheme(new TextStyle("System", 12, false, 400));
     }
 
 }

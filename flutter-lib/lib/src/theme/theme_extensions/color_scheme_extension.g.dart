@@ -36,6 +36,24 @@ ColorSchemeExtension _$ColorSchemeExtensionFromJson(
   onSecondaryVariantDisabled: const ColorConverter().fromJson(
     json['onSecondaryVariantDisabled'] as String,
   ),
+  primaryVariant: const ColorConverter().fromJson(
+    json['primaryVariant'] as String,
+  ),
+  onPrimaryVariant: const ColorConverter().fromJson(
+    json['onPrimaryVariant'] as String,
+  ),
+  primaryVariantDisabled: const ColorConverter().fromJson(
+    json['primaryVariantDisabled'] as String,
+  ),
+  secondaryVariant: const ColorConverter().fromJson(
+    json['secondaryVariant'] as String,
+  ),
+  onSecondaryVariant: const ColorConverter().fromJson(
+    json['onSecondaryVariant'] as String,
+  ),
+  secondaryVariantBorder: const ColorConverter().fromJson(
+    json['secondaryVariantBorder'] as String,
+  ),
   tertiaryPressed: const ColorConverter().fromJson(
     json['tertiaryPressed'] as String,
   ),
@@ -335,6 +353,18 @@ Map<String, dynamic> _$ColorSchemeExtensionToJson(
   ),
   'onSecondaryVariantDisabled': const ColorConverter().toJson(
     instance.onSecondaryVariantDisabled,
+  ),
+  'primaryVariant': const ColorConverter().toJson(instance.primaryVariant),
+  'onPrimaryVariant': const ColorConverter().toJson(instance.onPrimaryVariant),
+  'primaryVariantDisabled': const ColorConverter().toJson(
+    instance.primaryVariantDisabled,
+  ),
+  'secondaryVariant': const ColorConverter().toJson(instance.secondaryVariant),
+  'onSecondaryVariant': const ColorConverter().toJson(
+    instance.onSecondaryVariant,
+  ),
+  'secondaryVariantBorder': const ColorConverter().toJson(
+    instance.secondaryVariantBorder,
   ),
   'tertiaryPressed': const ColorConverter().toJson(instance.tertiaryPressed),
   'tertiaryHovered': const ColorConverter().toJson(instance.tertiaryHovered),

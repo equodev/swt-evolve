@@ -138,7 +138,7 @@ void measureRequest(String bridge, int id) {
         final response = {
           'widget': {'x': result.widget.width.round(), 'y': result.widget.height.round()},
           'text': result.text != null ? {'x': result.text!.width, 'y': result.text!.height} : null,
-          'textStyle': result.textStyle != null ? {'name': result.textStyle!.fontFamily, 'size': result.textStyle!.fontSize, 'bold': result.textStyle!.fontWeight == FontWeight.bold, 'italic': result.textStyle!.fontStyle == FontStyle.italic} : null,
+          'textStyle': result.textStyle != null ? {'name': result.textStyle!.fontFamily, 'size': result.textStyle!.fontSize, 'italic': result.textStyle!.fontStyle == FontStyle.italic, 'weight': result.textStyle!.fontWeight?.value ?? 400, 'height': result.textStyle!.height ?? 0.0} : null,
           'image': result.image != null ? {'x': result.image!.width, 'y': result.image!.height} : null,
         };
 

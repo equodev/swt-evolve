@@ -6,11 +6,11 @@ public record TextTheme (TextStyle textStyle) {
     }
 
     public static TextTheme getNonDefaultTheme() {
-        return new TextTheme(new TextStyle("Inter", 14, false, false));
+        return new TextTheme(new TextStyle("Inter", 14, false, 500, 1.1428571428571428));
     }
 
     public static TextTheme getDefaultTheme() {
-        return new TextTheme(new TextStyle("System", 14, false, false));
+        return new TextTheme(new TextStyle("System", 14, false, 400));
     }
 
 }

@@ -30,7 +30,7 @@ public class LabelSizes {
 
     static class HORIZONTAL_SEPARATOR {
         static final double MIN_WIDTH = 7.0;
-        static final double MIN_HEIGHT = 1.0;
+        static final double MIN_HEIGHT = 0.0;
     }
 
     static class VERTICAL {
@@ -43,7 +43,7 @@ public class LabelSizes {
     }
 
     static class VERTICAL_SEPARATOR {
-        static final double MIN_WIDTH = 1.0;
+        static final double MIN_WIDTH = 0.0;
         static final double MIN_HEIGHT = 7.0;
     }
 

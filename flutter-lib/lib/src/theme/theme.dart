@@ -126,6 +126,13 @@ ColorSchemeExtension createColorSchemeExtension() {
     secondaryBorderDisabled: const Color(0x33171819), // #33171819
     onSecondaryVariantDisabled: const Color(0x80171819), // #80171819
     
+    primaryVariant: const Color(0xFF5959EB), // #5959EB
+    onPrimaryVariant: const Color(0xFFFCFCFC), // #FCFCFC
+    primaryVariantDisabled: const Color(0xFFF4F4F8), // #F4F4F8
+    secondaryVariant: const Color(0xFFF2F2FE), // #F2F2FE
+    onSecondaryVariant: const Color(0xFF4545BF), // #4545BF
+    secondaryVariantBorder: const Color(0xFFDEDEFD), // #DEDEFD
+    
     tertiaryPressed: const Color(0x33171819), // #33171819
     tertiaryHovered: const Color(0x1A171819), // #1A171819
     tertiaryBorder: const Color(0x00FFFFFF), // #00FFFFFF
@@ -287,10 +294,10 @@ TextTheme createMaterialTextTheme(ColorScheme colorScheme) {
     ),
     labelSmall: TextStyle(
       fontFamily: 'Inter',
-      fontSize: 12.0,
-      fontWeight: FontWeight.w500,
-      letterSpacing: 0.24,
-      height: 16.0 / 12.0, 
+      fontSize: 11.0,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.0,
+      height: 16.0 / 11.0,
       color: colorScheme.onSurface,
     ),
     bodyLarge: TextStyle(
@@ -304,9 +311,9 @@ TextTheme createMaterialTextTheme(ColorScheme colorScheme) {
     bodyMedium: TextStyle(
       fontFamily: 'Inter',
       fontSize: 14.0,
-      fontWeight: FontWeight.w400,
+      fontWeight: FontWeight.w500,
       letterSpacing: 0.0,
-      height: 20.0 / 14.0, 
+      height: 16.0 / 14.0,
       color: colorScheme.onSurface,
     ),
     bodySmall: TextStyle(
@@ -314,7 +321,7 @@ TextTheme createMaterialTextTheme(ColorScheme colorScheme) {
       fontSize: 12.0,
       fontWeight: FontWeight.w400,
       letterSpacing: 0.24,
-      height: 16.0 / 12.0, 
+      height: 16.0 / 12.0,
       color: colorScheme.onSurfaceVariant,
     ),
   );

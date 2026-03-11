@@ -20,6 +20,12 @@ mixin _$ColorSchemeExtensionTailorMixin
   Color get secondaryBorder;
   Color get secondaryBorderDisabled;
   Color get onSecondaryVariantDisabled;
+  Color get primaryVariant;
+  Color get onPrimaryVariant;
+  Color get primaryVariantDisabled;
+  Color get secondaryVariant;
+  Color get onSecondaryVariant;
+  Color get secondaryVariantBorder;
   Color get tertiaryPressed;
   Color get tertiaryHovered;
   Color get tertiaryBorder;
@@ -130,6 +136,12 @@ mixin _$ColorSchemeExtensionTailorMixin
     Color? secondaryBorder,
     Color? secondaryBorderDisabled,
     Color? onSecondaryVariantDisabled,
+    Color? primaryVariant,
+    Color? onPrimaryVariant,
+    Color? primaryVariantDisabled,
+    Color? secondaryVariant,
+    Color? onSecondaryVariant,
+    Color? secondaryVariantBorder,
     Color? tertiaryPressed,
     Color? tertiaryHovered,
     Color? tertiaryBorder,
@@ -243,6 +255,14 @@ mixin _$ColorSchemeExtensionTailorMixin
           secondaryBorderDisabled ?? this.secondaryBorderDisabled,
       onSecondaryVariantDisabled:
           onSecondaryVariantDisabled ?? this.onSecondaryVariantDisabled,
+      primaryVariant: primaryVariant ?? this.primaryVariant,
+      onPrimaryVariant: onPrimaryVariant ?? this.onPrimaryVariant,
+      primaryVariantDisabled:
+          primaryVariantDisabled ?? this.primaryVariantDisabled,
+      secondaryVariant: secondaryVariant ?? this.secondaryVariant,
+      onSecondaryVariant: onSecondaryVariant ?? this.onSecondaryVariant,
+      secondaryVariantBorder:
+          secondaryVariantBorder ?? this.secondaryVariantBorder,
       tertiaryPressed: tertiaryPressed ?? this.tertiaryPressed,
       tertiaryHovered: tertiaryHovered ?? this.tertiaryHovered,
       tertiaryBorder: tertiaryBorder ?? this.tertiaryBorder,
@@ -434,6 +454,32 @@ mixin _$ColorSchemeExtensionTailorMixin
       onSecondaryVariantDisabled: Color.lerp(
         onSecondaryVariantDisabled,
         other.onSecondaryVariantDisabled,
+        t,
+      )!,
+      primaryVariant: Color.lerp(primaryVariant, other.primaryVariant, t)!,
+      onPrimaryVariant: Color.lerp(
+        onPrimaryVariant,
+        other.onPrimaryVariant,
+        t,
+      )!,
+      primaryVariantDisabled: Color.lerp(
+        primaryVariantDisabled,
+        other.primaryVariantDisabled,
+        t,
+      )!,
+      secondaryVariant: Color.lerp(
+        secondaryVariant,
+        other.secondaryVariant,
+        t,
+      )!,
+      onSecondaryVariant: Color.lerp(
+        onSecondaryVariant,
+        other.onSecondaryVariant,
+        t,
+      )!,
+      secondaryVariantBorder: Color.lerp(
+        secondaryVariantBorder,
+        other.secondaryVariantBorder,
         t,
       )!,
       tertiaryPressed: Color.lerp(tertiaryPressed, other.tertiaryPressed, t)!,
@@ -867,6 +913,30 @@ mixin _$ColorSchemeExtensionTailorMixin
               other.onSecondaryVariantDisabled,
             ) &&
             const DeepCollectionEquality().equals(
+              primaryVariant,
+              other.primaryVariant,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onPrimaryVariant,
+              other.onPrimaryVariant,
+            ) &&
+            const DeepCollectionEquality().equals(
+              primaryVariantDisabled,
+              other.primaryVariantDisabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              secondaryVariant,
+              other.secondaryVariant,
+            ) &&
+            const DeepCollectionEquality().equals(
+              onSecondaryVariant,
+              other.onSecondaryVariant,
+            ) &&
+            const DeepCollectionEquality().equals(
+              secondaryVariantBorder,
+              other.secondaryVariantBorder,
+            ) &&
+            const DeepCollectionEquality().equals(
               tertiaryPressed,
               other.tertiaryPressed,
             ) &&
@@ -1258,6 +1328,12 @@ mixin _$ColorSchemeExtensionTailorMixin
       const DeepCollectionEquality().hash(secondaryBorder),
       const DeepCollectionEquality().hash(secondaryBorderDisabled),
       const DeepCollectionEquality().hash(onSecondaryVariantDisabled),
+      const DeepCollectionEquality().hash(primaryVariant),
+      const DeepCollectionEquality().hash(onPrimaryVariant),
+      const DeepCollectionEquality().hash(primaryVariantDisabled),
+      const DeepCollectionEquality().hash(secondaryVariant),
+      const DeepCollectionEquality().hash(onSecondaryVariant),
+      const DeepCollectionEquality().hash(secondaryVariantBorder),
       const DeepCollectionEquality().hash(tertiaryPressed),
       const DeepCollectionEquality().hash(tertiaryHovered),
       const DeepCollectionEquality().hash(tertiaryBorder),
@@ -1375,6 +1451,14 @@ extension ColorSchemeExtensionBuildContextProps on BuildContext {
       colorSchemeExtension.secondaryBorderDisabled;
   Color get onSecondaryVariantDisabled =>
       colorSchemeExtension.onSecondaryVariantDisabled;
+  Color get primaryVariant => colorSchemeExtension.primaryVariant;
+  Color get onPrimaryVariant => colorSchemeExtension.onPrimaryVariant;
+  Color get primaryVariantDisabled =>
+      colorSchemeExtension.primaryVariantDisabled;
+  Color get secondaryVariant => colorSchemeExtension.secondaryVariant;
+  Color get onSecondaryVariant => colorSchemeExtension.onSecondaryVariant;
+  Color get secondaryVariantBorder =>
+      colorSchemeExtension.secondaryVariantBorder;
   Color get tertiaryPressed => colorSchemeExtension.tertiaryPressed;
   Color get tertiaryHovered => colorSchemeExtension.tertiaryHovered;
   Color get tertiaryBorder => colorSchemeExtension.tertiaryBorder;

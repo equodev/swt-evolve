@@ -35,6 +35,7 @@ class FontUtils {
     BuildContext context, {
     Color? color,
     bool applyDpiScaling = false,
+    bool inherit = false,
   }) {
     final defaultStyle = DefaultTextStyle.of(context).style;
 
@@ -47,6 +48,7 @@ class FontUtils {
       fontData,
       color: color,
       applyDpiScaling: applyDpiScaling,
+      inherit: inherit,
     );
   }
 
@@ -56,6 +58,7 @@ class FontUtils {
     VFontData fontData, {
     Color? color,
     bool applyDpiScaling = false,
+    bool inherit = false,
   }) {
     const defaultFontSize = 12.0;
     const defaultFontName = 'System';
@@ -74,11 +77,13 @@ class FontUtils {
 
     final (fontWeight, fontStyle) = convertSwtFontStyle(swtStyle);
     return TextStyle(
+      inherit: inherit,
       fontFamily: fontName,
       fontSize: fontSize,
       fontWeight: fontWeight,
       fontStyle: fontStyle,
       color: color,
+      textBaseline: inherit ? null : TextBaseline.alphabetic,
     );
   }
 
