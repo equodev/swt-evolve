@@ -52,7 +52,7 @@ public class Serializer {
         writer.writeByte((byte)',');
         writer.writeByte((byte)'"'); writer.writeAscii(name_swt); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
         Class<? extends Widget> aClass = api.getClass();
-        String widgetName = aClass.isAnonymousClass() || !aClass.getPackage().getName().startsWith("org.eclipse.swt") ? Config.getSwtBaseClassName(aClass) : aClass.getSimpleName();
+        String widgetName = aClass.isAnonymousClass() || !isOwnPackage(aClass) ? Config.getSwtBaseClassName(aClass) : aClass.getSimpleName();
         StringConverter.serialize(widgetName, writer);
         writer.writeByte((byte)',');
 //        writer.writeByte((byte)'"'); writer.writeAscii(name_style); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
@@ -62,6 +62,10 @@ public class Serializer {
         else if (converter.writeContentMinimal(writer, value)) writer.getByteBuffer()[writer.size() - 1] = '}';
         else writer.getByteBuffer()[writer.size() - 1] = '}';
 //        else writer.writeByte((byte)'}');
+    }
+
+    private static boolean isOwnPackage(Class<? extends Widget> aClass) {
+        return aClass.getPackage().getName().startsWith("org.eclipse.swt") || aClass.getPackage().getName().startsWith("com.equo.chromium");
     }
 
     public static <T extends DartResource> void writeResourceWithId(DslJson json, JsonWriter writer, T impl) {
