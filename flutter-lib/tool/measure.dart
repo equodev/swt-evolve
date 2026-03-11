@@ -16,6 +16,29 @@ const bool ENABLE_SCREENSHOTS = true;
 const bool ENABLE_INTERACTIVITY = true; // When true, starts paused with controls
 const FromTheme = -1;
 
+/// Supported font weights for theme extraction and font metrics IDs (align with FontList.kt / FontMetricsUtil).
+const List<int> supportedFontWeights = [300, 400, 500, 600, 700];
+
+int snapToSupportedWeight(int? weight) {
+  if (weight == null) return 400;
+  if (supportedFontWeights.contains(weight)) return weight;
+  int nearest = supportedFontWeights.first;
+  for (final w in supportedFontWeights) {
+    if ((w - weight).abs() < (nearest - weight).abs()) nearest = w;
+  }
+  return nearest;
+}
+
+int fontWeightFromStyle(TextStyle? style) {
+  final fw = style?.fontWeight;
+  final w = fw != null ? (fw.index + 1) * 100 : null;
+  return snapToSupportedWeight(w);
+}
+
+bool fontItalicFromStyle(TextStyle? style) {
+  return style?.fontStyle == FontStyle.italic;
+}
+
 // Theme configuration for multi-theme measurement
 class ThemeConfig {
   final String name; // e.g., "Default", "NonDefault"
@@ -120,6 +143,7 @@ class RenderBoxInfo {
           'fontSize': textStyle!.fontSize,
           'fontWeight': textStyle!.fontWeight?.index,
           'fontStyle': textStyle!.fontStyle?.index,
+          'height': textStyle!.height ?? 0.0,
         },
       if (padding != null)
         'padding': {
@@ -311,15 +335,18 @@ class WidgetMeasurer {
 
           final themeName = getCurrentThemeName();
           extractedThemes.putIfAbsent(themeName, () => {});
+          final rawWeight = textStyleMap['fontWeight'] != null
+              ? ((textStyleMap['fontWeight'] as int).clamp(0, 8) + 1) * 100
+              : 400;
+          final fontWeight = snapToSupportedWeight(rawWeight);
+          final fontItalic = textStyleMap['fontStyle'] != null &&
+              (textStyleMap['fontStyle'] as int) == FontStyle.italic.index;
           extractedThemes[themeName]![key] = {
             'fontFamily': textStyleMap['fontFamily'] ?? 'System',
             'fontSize': (textStyleMap['fontSize'] as double?)?.toInt() ?? 12,
-            'fontBold':
-                textStyleMap['fontWeight'] != null &&
-                (textStyleMap['fontWeight'] as int) >= FontWeight.w600.index,
-            'fontItalic':
-                textStyleMap['fontStyle'] != null &&
-                (textStyleMap['fontStyle'] as int) == FontStyle.italic.index,
+            'fontWeight': fontWeight,
+            'fontItalic': fontItalic,
+            'height': textStyleMap['height'] as double? ?? 0.0,
           };
 
           print(
@@ -719,6 +746,7 @@ class WidgetMeasurer {
               'fontSize': textBox.textStyle!.fontSize,
               'fontWeight': textBox.textStyle!.fontWeight?.index,
               'fontStyle': textBox.textStyle!.fontStyle?.index,
+              'height': textBox.textStyle!.height ?? 0.0,
             },
         };
       }
@@ -830,15 +858,18 @@ class WidgetMeasurer {
         }
       }
       if (textStyleMap != null) {
+        final rawWeight = textStyleMap['fontWeight'] != null
+            ? ((textStyleMap['fontWeight'] as int).clamp(0, 8) + 1) * 100
+            : 400;
+        final fontWeight = snapToSupportedWeight(rawWeight);
+        final fontItalic = textStyleMap['fontStyle'] != null &&
+            (textStyleMap['fontStyle'] as int) == FontStyle.italic.index;
         constants['textStyle'] = {
           'fontFamily': textStyleMap['fontFamily'] ?? 'System',
           'fontSize': (textStyleMap['fontSize'] as double?)?.toInt() ?? 12,
-          'fontBold':
-              textStyleMap['fontWeight'] != null &&
-              (textStyleMap['fontWeight'] as int) >= FontWeight.w600.index,
-          'fontItalic':
-              textStyleMap['fontStyle'] != null &&
-              (textStyleMap['fontStyle'] as int) == FontStyle.italic.index,
+          'fontWeight': fontWeight,
+          'fontItalic': fontItalic,
+          'height': textStyleMap['height'] as double? ?? 0.0,
         };
       }
     }
@@ -1636,7 +1667,7 @@ class WidgetMeasurer {
           } else {
             if (textStyle['fontFamily'] != firstTextStyle['fontFamily'] ||
                 textStyle['fontSize'] != firstTextStyle['fontSize'] ||
-                textStyle['fontBold'] != firstTextStyle['fontBold'] ||
+                textStyle['fontWeight'] != firstTextStyle['fontWeight'] ||
                 textStyle['fontItalic'] != firstTextStyle['fontItalic']) {
               allStylesSameForAllThemes = false;
               break;
@@ -1675,14 +1706,14 @@ class WidgetMeasurer {
               .replaceAll("Roboto", "System")
               .replaceAll("Segoe UI", "System");
           final fontSize = textStyle['fontSize'] ?? 12;
-          final fontBold = textStyle['fontBold'] ?? false;
+          final fontWeight = textStyle['fontWeight'] ?? 400;
           final fontItalic = textStyle['fontItalic'] ?? false;
 
           buffer.writeln(
             '    public static ${widgetClass}Theme get${themeName}Theme() {',
           );
           buffer.writeln(
-            '        return new ${widgetClass}Theme(new TextStyle("$fontFamily", $fontSize, $fontBold, $fontItalic));',
+            '        return new ${widgetClass}Theme(new TextStyle("$fontFamily", $fontSize, $fontItalic, $fontWeight${themeName != 'Default' && (textStyle['height'] ?? 0.0) != 0.0 ? ', ${textStyle['height']}' : ''}));',
           );
           buffer.writeln('    }');
           buffer.writeln();
@@ -1762,10 +1793,10 @@ class WidgetMeasurer {
               .replaceAll("Roboto", "System")
               .replaceAll("Segoe UI", "System");
           final fontSize = textStyle['fontSize'] ?? 12;
-          final fontBold = textStyle['fontBold'] ?? false;
+          final fontWeight = textStyle['fontWeight'] ?? 400;
           final fontItalic = textStyle['fontItalic'] ?? false;
           entries.add(
-            '            "$styleName", new TextStyle("$fontFamily", $fontSize, $fontBold, $fontItalic)',
+            '            "$styleName", new TextStyle("$fontFamily", $fontSize, $fontItalic, $fontWeight${themeName != 'Default' && (textStyle['height'] ?? 0.0) != 0.0 ? ', ${textStyle['height']}' : ''})',
           );
         }
 

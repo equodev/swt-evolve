@@ -32,14 +32,25 @@ public final class FontMetricsUtil {
         };
     }
 
+    /** Weight for normal (400) and bold (700); matches gen_fonts.dart weightKey and supported 300,400,500,600,700. */
+    public static int getWeightFromBold(boolean bold) {
+        return bold ? 700 : 400;
+    }
+
     public static String getId(String name, boolean italic, boolean bold) {
+        return getId(name, italic, getWeightFromBold(bold));
+    }
+
+    /** Key 0-8 to match gen_fonts.dart weightKey (FontWeight.index). 400->3, 700->6. */
+    public static String getId(String name, boolean italic, int weight) {
         if (name == null || name.isBlank())
             name = "System";
-        return name + "-" + (italic ? 1 : 0 ) + "-" + (bold ? 6 : 3);
+        int key = (weight >= 100 && weight <= 900) ? ((weight - 100) / 100) : (weight >= 600 ? 6 : 3);
+        return name + "-" + (italic ? 1 : 0) + "-" + key;
     }
 
     public static String getId(FontData fd) {
-        return getId(fd.getName(), isItalic(fd), isBold(fd));
+        return getId(fd.getName(), isItalic(fd), getWeightFromBold(isBold(fd)));
     }
 
     public static boolean isBold(FontData f) {
@@ -58,11 +69,15 @@ public final class FontMetricsUtil {
 
     public static PointD getFontSize(String text, Font font) {
         FontData fontDatum = font.getFontData()[0];
-        return getFontSize(text, FontMetricsUtil.getId(fontDatum), fontDatum.getHeight());
+        return getFontSize(text, FontMetricsUtil.getId(fontDatum), fontDatum.getHeight(), 0);
     }
 
     public static PointD getFontSize(String text, TextStyle textStyle) {
-        return getFontSize(text, getId(textStyle.name(), textStyle.italic(), textStyle.bold()), textStyle.size());
+        return getFontSize(text, getId(textStyle.name(), textStyle.italic(), textStyle.weight()), textStyle.size(), textStyle.height());
+    }
+
+    public static PointD getFontSize(String text, String fontId, int fontSize){
+        return getFontSize(text, fontId, fontSize, 0);
     }
 
     /**
@@ -71,16 +86,16 @@ public final class FontMetricsUtil {
      *
      * @param text font text
      * @param fontId font family name (must exist in GeneratedFontMetrics.DATA)
-     * @param height requested size (same units as those stored by generator; e.g. size)
+     * @param fontSize requested size (same units as those stored by generator; e.g. size)
      * @return Point2D.Double(width, height)
      */
-    public static PointD getFontSize(String text, String fontId, int height) {
+    public static PointD getFontSize(String text, String fontId, int fontSize, double fontHeight) {
 //        GeneratedFontMetrics.Metrics metrics = getMetrics(fontId, height);
         Metrics metrics = GenFontMetrics.DATA.get(fontId);
         if (metrics == null)
             return new PointD(0, 0);
 
-        double scale = (double) height / GenFontMetrics.BASE;
+        double scale = (double) fontSize / GenFontMetrics.BASE;
 
         double w = 0.0;
         for (int i = 0; i < text.length(); ) {
@@ -102,7 +117,13 @@ public final class FontMetricsUtil {
             w += glyphWidth * scale;
         }
 
-        double h = (metrics.height() * height) + ((metrics.ascent() + metrics.descent()) * scale);
+        double height = metrics.height() * fontSize;
+
+        if (fontHeight != 0){
+            height = fontHeight*fontSize;
+        }
+
+        double h = height;
         return new PointD(w, h);
     }
 

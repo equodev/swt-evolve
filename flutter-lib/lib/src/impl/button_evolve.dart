@@ -96,6 +96,9 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       state,
       widgetTheme,
       isPrimary: isPrimary,
+      enabled: enabled,
+      primaryBorderDisabled: widgetTheme.pushButtonDisabledColor,
+      secondaryBorderDisabled: widgetTheme.pushButtonDisabledColor,
     );
 
     Widget button = _HoverableButton(

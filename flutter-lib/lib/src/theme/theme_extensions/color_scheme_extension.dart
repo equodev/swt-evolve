@@ -23,6 +23,14 @@ class ColorSchemeExtension extends ThemeExtension<ColorSchemeExtension> with _$C
   final Color secondaryBorderDisabled; // sys.color.on_secondary.border.disabled #17181933
   final Color onSecondaryVariantDisabled; // sys.color.on_secondary.variant.disabled #17181980
   
+  // Button variant colors (push / secondary button)
+  final Color primaryVariant; // push button color & border #5959EB
+  final Color onPrimaryVariant; // push button text #FCFCFC
+  final Color primaryVariantDisabled; // push button disabled bg #F4F4F8
+  final Color secondaryVariant; // secondary button bg #F2F2FE
+  final Color onSecondaryVariant; // secondary button text #4545BF
+  final Color secondaryVariantBorder; // secondary button border #DEDEFD
+  
   // Tertiary colors adicionales
   final Color tertiaryPressed; // sys.color.tertiary.pressed #17181933
   final Color tertiaryHovered; // sys.color.tertiary.hovered #1718191A
@@ -147,6 +155,12 @@ class ColorSchemeExtension extends ThemeExtension<ColorSchemeExtension> with _$C
     required this.secondaryBorder,
     required this.secondaryBorderDisabled,
     required this.onSecondaryVariantDisabled,
+    required this.primaryVariant,
+    required this.onPrimaryVariant,
+    required this.primaryVariantDisabled,
+    required this.secondaryVariant,
+    required this.onSecondaryVariant,
+    required this.secondaryVariantBorder,
     required this.tertiaryPressed,
     required this.tertiaryHovered,
     required this.tertiaryBorder,

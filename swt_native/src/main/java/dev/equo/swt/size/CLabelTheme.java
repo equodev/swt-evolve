@@ -6,11 +6,11 @@ public record CLabelTheme (TextStyle textStyle) {
     }
 
     public static CLabelTheme getNonDefaultTheme() {
-        return new CLabelTheme(new TextStyle("Inter", 12, false, false));
+        return new CLabelTheme(new TextStyle("Inter", 12, false, 500, 1.1428571428571428));
     }
 
     public static CLabelTheme getDefaultTheme() {
-        return new CLabelTheme(new TextStyle("System", 12, false, false));
+        return new CLabelTheme(new TextStyle("System", 12, false, 400));
     }
 
 }

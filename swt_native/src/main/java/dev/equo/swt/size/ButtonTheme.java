@@ -6,11 +6,11 @@ public record ButtonTheme (TextStyle textStyle) {
     }
 
     public static ButtonTheme getNonDefaultTheme() {
-        return new ButtonTheme(new TextStyle("Inter", 14, false, false));
+        return new ButtonTheme(new TextStyle("Inter", 14, false, 500, 1.1428571428571428));
     }
 
     public static ButtonTheme getDefaultTheme() {
-        return new ButtonTheme(new TextStyle("System", 14, false, false));
+        return new ButtonTheme(new TextStyle("System", 14, false, 400));
     }
 
 }

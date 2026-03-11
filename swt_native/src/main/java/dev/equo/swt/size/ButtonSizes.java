@@ -28,7 +28,7 @@ public class ButtonSizes {
         static final double MIN_WIDTH = 16.8;
         static final double MIN_HEIGHT = 16.8;
         static final double HORIZONTAL_PADDING = 24.800000000000004;
-        static final double VERTICAL_PADDING = 1.4000000000000004;
+        static final double VERTICAL_PADDING = 1.9000000000000004;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = false;
     }
 

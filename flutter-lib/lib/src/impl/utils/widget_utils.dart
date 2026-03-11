@@ -80,7 +80,7 @@ TextStyle getTextStyle({
   final useSwtFonts = getConfigFlags().use_swt_fonts ?? false;
 
   if (useSwtFonts && font != null) {
-    return FontUtils.textStyleFromVFont(font, context, color: textColor) ??
+    return FontUtils.textStyleFromVFont(font, context, color: textColor, inherit: false) ??
         baseTextStyle?.copyWith(color: textColor) ??
         TextStyle(color: textColor);
   }

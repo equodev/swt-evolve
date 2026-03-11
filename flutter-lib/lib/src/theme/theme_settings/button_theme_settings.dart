@@ -52,18 +52,18 @@ ButtonThemeExtension _getButtonTheme({
     splashColor: Colors.transparent,
     highlightColor: Colors.transparent,
     
-    pushButtonColor: colorScheme.primary,
-    pushButtonTextColor: colorScheme.onPrimary,
+    pushButtonColor: colorSchemeExtension.primaryVariant,
+    pushButtonTextColor: colorSchemeExtension.onPrimaryVariant,
     pushButtonHoverColor: colorSchemeExtension.primaryHovered,
     pushButtonPressedColor: colorScheme.primaryContainer,
-    pushButtonDisabledColor: colorScheme.surfaceVariant,
-    pushButtonBorderColor: colorSchemeExtension.primaryBorder,
+    pushButtonDisabledColor: colorSchemeExtension.primaryVariantDisabled,
+    pushButtonBorderColor: colorSchemeExtension.primaryVariant,
     
-    secondaryButtonColor: colorScheme.secondary,
+    secondaryButtonColor: colorSchemeExtension.secondaryVariant,
     secondaryButtonHoverColor: colorScheme.secondaryContainer,
     secondaryButtonPressedColor: colorSchemeExtension.secondaryPressed,
-    secondaryButtonTextColor: colorScheme.onSecondary,
-    secondaryButtonBorderColor: colorSchemeExtension.secondaryBorder,
+    secondaryButtonTextColor: colorSchemeExtension.onSecondaryVariant,
+    secondaryButtonBorderColor: colorSchemeExtension.secondaryVariantBorder,
     
     // Selectable Button colors
     selectableButtonColor: colorScheme.primary,
@@ -133,8 +133,8 @@ ButtonThemeExtension _getButtonTheme({
     pushButtonPadding: const EdgeInsets.only(left: 8.0, right: 8.0, top: 3.0, bottom: 5.0),
 
     // Disabled colors
-    disabledBackgroundColor: colorScheme.surfaceVariant,
-    disabledForegroundColor: colorSchemeExtension.onSurfaceVariantDisabled,
+    disabledBackgroundColor: colorSchemeExtension.primaryVariantDisabled,
+    disabledForegroundColor: colorScheme.onSurfaceVariant,
   );
 }
 
@@ -193,8 +193,20 @@ Color getPushButtonBorderColor(
   VButton state,
   ButtonThemeExtension widgetTheme, {
   bool? isPrimary,
+  bool? enabled,
+  Color? primaryBorderDisabled,
+  Color? secondaryBorderDisabled,
 }) {
   final isPrimaryButton = isPrimary ?? (state.primary ?? false);
+  final isEnabled = enabled ?? (state.enabled ?? true);
+  if (!isEnabled) {
+    if (isPrimaryButton && primaryBorderDisabled != null) {
+      return primaryBorderDisabled;
+    }
+    if (!isPrimaryButton && secondaryBorderDisabled != null) {
+      return secondaryBorderDisabled;
+    }
+  }
   return isPrimaryButton
       ? widgetTheme.pushButtonBorderColor
       : widgetTheme.secondaryButtonBorderColor;
