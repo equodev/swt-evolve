@@ -42,6 +42,7 @@ public class Mocks implements AfterEachCallback {
         SwtShell swtShell = mock(SwtShell.class);
         when(shell.getImpl()).thenReturn(swtShell);
         swtShell.display = display;
+        when(shell.getDisplay()).thenReturn(display);
         when(shell.getShell()).thenReturn(shell);
         Color bg = new Color(red(), green(), blue());
         when(shell.getBackground()).thenReturn(bg);
