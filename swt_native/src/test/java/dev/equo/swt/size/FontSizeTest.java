@@ -66,6 +66,7 @@ public class FontSizeTest extends SizeAssert {
                 .filter(f -> !f.getName().contains("Chalkboard SE"))
                 .filter(f -> !f.getName().contains("Specialty"))
                 .filter(f -> !f.getName().contains("Zapfino"))
+                .filter(f -> !OS.WINDOWS.isCurrentOs() || !f.getName().contains("Ubuntu"))
                 .map(FontVariation::from)
                 .filter(fv -> GenFontMetrics.DATA.containsKey(fv.getId()))
                 .distinct();

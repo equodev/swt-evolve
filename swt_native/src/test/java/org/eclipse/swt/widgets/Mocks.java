@@ -76,6 +76,7 @@ public class Mocks implements AfterEachCallback {
             Method getSystemColor = SwtDisplay.class.getDeclaredMethod("getWidgetColor", int.class);
             when(getSystemColor.invoke(swtDisplay, anyInt())).thenReturn(new Color(10, 10, 10));
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
+        when(display.getDPI()).thenReturn(new Point(96, 96));
         when(display.getSystemColor(anyInt())).thenReturn(new Color(red(), green(), blue()));
         when(display.getSystemCursor(anyInt())).thenReturn(mock(Cursor.class));
         when(swtDisplay.getThread()).thenCallRealMethod();

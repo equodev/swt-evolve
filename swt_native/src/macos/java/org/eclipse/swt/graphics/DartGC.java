@@ -379,13 +379,19 @@ public final class DartGC extends DartResource implements IGC {
         /* Free resources */
         Image image = data.image;
         if (image != null) {
-            if (image.getImpl() instanceof DartImage) {
-                ((DartImage) image.getImpl()).memGC = null;
+            if (image.getImpl() instanceof DartImage di) {
+                di.memGC = null;
+                if (bridge instanceof GCImageDrawer drawer) {
+                    if (swtImageSource != null && swtImageSource.getImpl() instanceof SwtImage si) {
+                        si.memGC = null;
+                    }
+                    drawer.sendGcDispose();
+                    image.getImageData();
+                }
             }
             if (image.getImpl() instanceof SwtImage) {
                 ((SwtImage) image.getImpl()).memGC = null;
             }
-            image.getImpl().createAlpha();
         }
         textDataCache.release();
         drawable = null;
@@ -1318,7 +1324,7 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int getAlpha() {
-        return data.alpha;
+        return this.alpha;
     }
 
     /**
@@ -1338,7 +1344,7 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int getAntialias() {
-        return data.antialias;
+        return this.antialias;
     }
 
     /**
@@ -1559,7 +1565,7 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int getLineCap() {
-        return data.lineCap;
+        return this.lineCap;
     }
 
     /**
@@ -1598,7 +1604,7 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int getLineJoin() {
-        return data.lineJoin;
+        return this.lineJoin;
     }
 
     /**
@@ -1672,7 +1678,7 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int getTextAntialias() {
-        return data.textAntialias;
+        return this.textAntialias;
     }
 
     // Internal methos that returns the topView of the Control. It's the same view that would be returned
@@ -1720,7 +1726,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public boolean getXORMode() {
-        return data.xorMode;
+        return this.XORMode;
     }
 
     /**
@@ -1739,6 +1745,8 @@ public final class DartGC extends DartResource implements IGC {
      */
     @Override
     public int hashCode() {
+        if (gcImageId != 0)
+            return gcImageId;
         if (drawable instanceof Canvas) {
             return drawable.hashCode();
         }
@@ -1770,14 +1778,21 @@ public final class DartGC extends DartResource implements IGC {
             }
         }
         data.state &= ~DRAW_OFFSET;
-        Image image = data.image;
-        if (image != null) {
-            if (image.getImpl() instanceof DartImage) {
-                ((DartImage) image.getImpl()).memGC = this.getApi();
-            }
-            if (image.getImpl() instanceof SwtImage) {
-                ((SwtImage) image.getImpl()).memGC = this.getApi();
-            }
+        GCHelper.ImageGCContext imageCtx = GCHelper.setupImageGC(drawable, data, this.getApi());
+        if (imageCtx != null) {
+            drawable = imageCtx.resolvedDrawable();
+            swtImageSource = imageCtx.swtSource();
+            final Image capturedDart = imageCtx.dartImage();
+            final Image capturedSwt = imageCtx.swtSource();
+            final java.util.concurrent.CompletableFuture<Void> capturedFuture = imageCtx.renderFuture();
+            gcImageId = System.identityHashCode(this);
+            this.bridge = SwtFlutterBridgeBase.of(gcImageId, capturedDart, pngBase64 -> {
+                GCHelper.updateImageFromPng(capturedDart, capturedSwt, pngBase64);
+                capturedFuture.complete(null);
+                Display d = Display.getDefault();
+                if (d != null && !d.isDisposed())
+                    d.wake();
+            });
         }
         this.drawable = drawable;
         this.data = data;
@@ -1885,7 +1900,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     @Override
     public boolean isDisposed() {
-        return false;
+        return data == null;
     }
 
     boolean isIdentity(float[] transform) {
@@ -3076,6 +3091,10 @@ public final class DartGC extends DartResource implements IGC {
     public Display getDisplay() {
         return display;
     }
+
+    Image swtImageSource;
+
+    private int gcImageId;
 
     public GC getApi() {
         if (api == null)

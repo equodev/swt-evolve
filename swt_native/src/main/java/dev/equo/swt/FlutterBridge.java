@@ -112,6 +112,7 @@ public abstract class FlutterBridge {
             if (isDisposed(widget)) continue;
             CompletableFuture<Void> future = getBridge(widget).clientReady.thenRun(() -> {
                 try {
+                    if (isDisposed(widget)) return; // widget may have been disposed while waiting for clientReady
                     if (!isNew(widget) || widget instanceof DartToolTip) { // send with the parent
                         synchronized (dirty) { // undirty if it was dirtied while waiting foe clientReady
                             dirty.remove(widget);
@@ -243,6 +244,42 @@ public abstract class FlutterBridge {
     }
 
     public static void send(DartResource resource, String event, Object args) {
+        if (getBridge(resource) instanceof GCImageDrawer drawer) {
+            // Serialize eagerly (captures current GC state: colors, font, etc.) then
+            // queue the send so it is dispatched only after Flutter's GCDrawer.standalone
+            // has registered its listeners — fixing the macOS race condition where ops
+            // arrive before _registerOps() runs.
+            try {
+                String stateEventName = null;
+                String stateJson = null;
+                synchronized (dirty) {
+                    if (dirty.remove(resource)) {
+                        stateEventName = event(resource);
+                        ByteArrayOutputStream stateOut = new ByteArrayOutputStream();
+                        serializer.to(getApi(resource), stateOut);
+                        stateJson = stateOut.toString(StandardCharsets.UTF_8);
+                    }
+                }
+                ByteArrayOutputStream opOut = new ByteArrayOutputStream();
+                serializer.to(args, opOut);
+                String opJson = opOut.toString(StandardCharsets.UTF_8);
+
+                final String finalStateEvent = stateEventName;
+                final String finalStateJson = stateJson;
+                final String opEvent = eventName(resource, event);
+                final String finalOpJson = opJson;
+
+                drawer.queueOp(() -> {
+                    if (finalStateEvent != null) {
+                        client.getComm().send(finalStateEvent, finalStateJson);
+                    }
+                    client.getComm().send(opEvent, finalOpJson);
+                });
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return;
+        }
         if (dirty.contains(resource)) {
             update().whenComplete((r, a) -> {
                 try {

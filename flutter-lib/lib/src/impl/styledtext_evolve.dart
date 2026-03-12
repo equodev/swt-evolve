@@ -11,6 +11,7 @@ import '../gen/styledtext.dart';
 import '../gen/styledtextrenderer.dart';
 import '../gen/widget.dart';
 import '../impl/canvas_evolve.dart';
+import '../impl/gcdrawer_evolve.dart';
 import 'widget_config.dart';
 import 'utils/font_utils.dart';
 import 'color_utils.dart';
@@ -18,6 +19,7 @@ import '../theme/theme_extensions/styledtext_theme_extension.dart';
 
 class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     extends CanvasImpl<T, V> {
+  List<Shape> shapes = [];
   TextShape? _editableTextShape;
   bool _isEditingText = false;
   Timer? _caretBlinkTimer;

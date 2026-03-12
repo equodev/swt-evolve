@@ -16,6 +16,8 @@ import 'src/gen/widgets.dart' as gen;
 import 'fontSize.dart' as font_size;
 import 'imageSize.dart' as image_size;
 import 'widgetSize.dart' as widget_size;
+import 'src/gen/gc.dart';
+import 'src/impl/gcdrawer_evolve.dart';
 
 void main(List<String> args) async {
   if (args.isNotEmpty) {
@@ -44,6 +46,13 @@ void main(List<String> args) async {
   else if (widgetName == "WidgetSizeBridge") {
     widget_size.measureRequest(widgetName, widgetId);
     sendClientReady(widgetName, widgetId, sendWindowSize: true);
+    return;
+  }
+  else if (widgetName == "GCImageDrawer") {
+    // Java channels use "GC/{id}/..." prefix, not "GCImageDrawer/{id}/..."
+    final state = VGC()..swt = "GC"..id = widgetId!;
+    GCDrawer.standalone(state);
+    sendClientReady(widgetName, widgetId);
     return;
   }
 

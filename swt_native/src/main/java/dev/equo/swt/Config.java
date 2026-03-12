@@ -222,6 +222,9 @@ public class Config {
         if (parent instanceof Widget && clazz == GC.class && ((Control) parent).getImpl() instanceof DartWidget)
             return true;
 
+        if (parent instanceof Image && clazz == GC.class)
+            return true;
+
         if (defaultImpl == Impl.eclipse)
             return false;
 

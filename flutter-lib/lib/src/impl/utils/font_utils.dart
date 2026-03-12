@@ -32,14 +32,15 @@ class FontUtils {
   /// Set [applyDpiScaling] to true for StyledText widgets that need DPI conversion.
   static TextStyle textStyleFromVFont(
     VFont? vFont,
-    BuildContext context, {
+    BuildContext? context, {
     Color? color,
     bool applyDpiScaling = false,
     bool inherit = false,
   }) {
-    final defaultStyle = DefaultTextStyle.of(context).style;
-
     if (vFont == null || vFont.fontData == null || vFont.fontData!.isEmpty) {
+      final defaultStyle = context != null
+          ? DefaultTextStyle.of(context).style
+          : const TextStyle(fontSize: 12);
       return defaultStyle.copyWith(color: color, fontSize: 12);
     }
 

@@ -618,8 +618,15 @@ public final class DartGC extends DartResource implements IGC {
         }
         Image image = data.image;
         if (image != null) {
-            if (image.getImpl() instanceof DartImage) {
-                ((DartImage) image.getImpl()).memGC = null;
+            if (image.getImpl() instanceof DartImage di) {
+                di.memGC = null;
+                if (bridge instanceof GCImageDrawer drawer) {
+                    if (swtImageSource != null && swtImageSource.getImpl() instanceof SwtImage si) {
+                        si.memGC = null;
+                    }
+                    drawer.sendGcDispose();
+                    image.getImageData();
+                }
             }
             if (image.getImpl() instanceof SwtImage) {
                 ((SwtImage) image.getImpl()).memGC = null;
@@ -2916,14 +2923,21 @@ public final class DartGC extends DartResource implements IGC {
                 this.font = data.font = Display.getCurrent().getSystemFont();
             }
         }
-        Image image = data.image;
-        if (image != null) {
-            if (image.getImpl() instanceof DartImage) {
-                ((DartImage) image.getImpl()).memGC = this.getApi();
-            }
-            if (image.getImpl() instanceof SwtImage) {
-                ((SwtImage) image.getImpl()).memGC = this.getApi();
-            }
+        GCHelper.ImageGCContext imageCtx = GCHelper.setupImageGC(drawable, data, this.getApi());
+        if (imageCtx != null) {
+            drawable = imageCtx.resolvedDrawable();
+            swtImageSource = imageCtx.swtSource();
+            final Image capturedDart = imageCtx.dartImage();
+            final Image capturedSwt = imageCtx.swtSource();
+            final java.util.concurrent.CompletableFuture<Void> capturedFuture = imageCtx.renderFuture();
+            gcImageId = System.identityHashCode(this);
+            this.bridge = SwtFlutterBridgeBase.of(gcImageId, capturedDart, pngBase64 -> {
+                GCHelper.updateImageFromPng(capturedDart, capturedSwt, pngBase64);
+                capturedFuture.complete(null);
+                Display d = Display.getDefault();
+                if (d != null && !d.isDisposed())
+                    d.wake();
+            });
         }
         int layout = data.layout;
         if (layout != -1) {
@@ -2963,6 +2977,8 @@ public final class DartGC extends DartResource implements IGC {
      */
     @Override
     public int hashCode() {
+        if (gcImageId != 0)
+            return gcImageId;
         if (drawable instanceof Canvas) {
             return drawable.hashCode();
         }
@@ -4682,6 +4698,10 @@ public final class DartGC extends DartResource implements IGC {
     public Display getDisplay() {
         return display;
     }
+
+    Image swtImageSource;
+
+    private int gcImageId;
 
     public GC getApi() {
         if (api == null)

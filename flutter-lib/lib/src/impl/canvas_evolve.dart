@@ -10,17 +10,8 @@ import 'color_utils.dart';
 import 'utils/widget_utils.dart';
 import '../theme/theme_extensions/canvas_theme_extension.dart';
 
-abstract class Shape {
-  void draw(Canvas c);
-  @override
-  String toString();
-
-  Rect? get clipRect => null;
-}
-
 class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     extends CompositeImpl<T, V> {
-  List<Shape> shapes = [];
 
   CanvasThemeExtension get _theme =>
       Theme.of(context).extension<CanvasThemeExtension>()!;
@@ -103,21 +94,3 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   );
 }
 
-/* ─────────────── ScenePainter ─────────────── */
-
-class ScenePainter extends CustomPainter {
-  ScenePainter(this.bg, this.shapes);
-  final Color bg;
-  final List<Shape> shapes;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawRect(Offset.zero & size, Paint()..color = bg);
-    for (final s in shapes) {
-      s.draw(canvas);
-    }
-  }
-
-  @override
-  bool shouldRepaint(ScenePainter o) => o.bg != bg || o.shapes != shapes;
-}

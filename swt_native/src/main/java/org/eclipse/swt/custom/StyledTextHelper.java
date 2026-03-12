@@ -28,6 +28,11 @@ public class StyledTextHelper {
     private static final int FONT_METRICS_BASE = 10;
     private static final int GLYPH_START = 32;
 
+    private static double dpiScale() {
+        Display display = Display.getCurrent();
+        return (display != null && display.getDPI().x > 0) ? display.getDPI().x / 72.0 : 96.0 / 72.0;
+    }
+
     /**
      * Registers the StateUpdate handler for receiving unified state updates from Flutter.
      */
@@ -267,7 +272,7 @@ public class StyledTextHelper {
         FontData fd = fontDatas[0];
         String fontId = FontMetricsUtil.getId(fd);
         int fontSizePoints = fd.getHeight();
-        double fontSizePixels = fontSizePoints * (96.0 / 72.0);
+        double fontSizePixels = fontSizePoints * dpiScale();
 
         Metrics metrics = GenFontMetrics.DATA.get(fontId);
         if (metrics == null) {
@@ -340,7 +345,7 @@ public class StyledTextHelper {
         FontData fd = fontDatas[0];
         String fontId = FontMetricsUtil.getId(fd);
         int fontSizePoints = fd.getHeight();
-        double fontSizePixels = fontSizePoints * (96.0 / 72.0);
+        double fontSizePixels = fontSizePoints * dpiScale();
 
         Metrics metrics = GenFontMetrics.DATA.get(fontId);
         if (metrics == null) {
@@ -395,7 +400,7 @@ public class StyledTextHelper {
         FontData fd = fontDatas[0];
         String fontId = FontMetricsUtil.getId(fd);
         int fontSizePoints = fd.getHeight();
-        double fontSizePixels = fontSizePoints * (96.0 / 72.0);
+        double fontSizePixels = fontSizePoints * dpiScale();
 
         Metrics metrics = GenFontMetrics.DATA.get(fontId);
         if (metrics == null) {
@@ -431,7 +436,7 @@ public class StyledTextHelper {
         FontData fd = fontDatas[0];
         String fontId = FontMetricsUtil.getId(fd);
         int fontSizePoints = fd.getHeight();
-        double fontSizePixels = fontSizePoints * (96.0 / 72.0);
+        double fontSizePixels = fontSizePoints * dpiScale();
 
         Metrics metrics = GenFontMetrics.DATA.get(fontId);
         if (metrics == null) {
@@ -465,7 +470,7 @@ public class StyledTextHelper {
         FontData fd = fontDatas[0];
         String fontId = FontMetricsUtil.getId(fd);
         int fontSizePoints = fd.getHeight();
-        double fontSizePixels = fontSizePoints * (96.0 / 72.0);
+        double fontSizePixels = fontSizePoints * dpiScale();
 
         Metrics metrics = GenFontMetrics.DATA.get(fontId);
         if (metrics == null) {
@@ -499,7 +504,7 @@ public class StyledTextHelper {
         FontData fd = fontDatas[0];
         String fontId = FontMetricsUtil.getId(fd);
         int fontSizePoints = fd.getHeight();
-        double fontSizePixels = fontSizePoints * (96.0 / 72.0);
+        double fontSizePixels = fontSizePoints * dpiScale();
 
         Metrics metrics = GenFontMetrics.DATA.get(fontId);
         if (metrics == null) {

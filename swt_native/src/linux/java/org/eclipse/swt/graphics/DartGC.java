@@ -485,14 +485,19 @@ public final class DartGC extends DartResource implements IGC {
         long clipRgn = data.clipRgn;
         Image image = data.image;
         if (image != null) {
-            if (image.getImpl() instanceof DartImage) {
-                ((DartImage) image.getImpl()).memGC = null;
+            if (image.getImpl() instanceof DartImage di) {
+                di.memGC = null;
+                if (bridge instanceof GCImageDrawer drawer) {
+                    if (swtImageSource != null && swtImageSource.getImpl() instanceof SwtImage si) {
+                        si.memGC = null;
+                    }
+                    drawer.sendGcDispose();
+                    image.getImageData();
+                }
             }
             if (image.getImpl() instanceof SwtImage) {
                 ((SwtImage) image.getImpl()).memGC = null;
             }
-            if (image.getImpl()._transparentPixel() != -1)
-                ((DartImage) image.getImpl()).createMask();
         }
         disposeLayout();
         /* Dispose the GC */
@@ -2301,6 +2306,8 @@ public final class DartGC extends DartResource implements IGC {
      */
     @Override
     public int hashCode() {
+        if (gcImageId != 0)
+            return gcImageId;
         if (drawable instanceof Canvas) {
             return drawable.hashCode();
         }
@@ -2333,21 +2340,21 @@ public final class DartGC extends DartResource implements IGC {
                 this.font = data.font = Display.getCurrent().getSystemFont();
             }
         }
-        Image image = data.image;
-        if (image != null) {
-            if (image.getImpl() instanceof DartImage) {
-                ((DartImage) image.getImpl()).memGC = this.getApi();
-            }
-            if (image.getImpl() instanceof SwtImage) {
-                ((SwtImage) image.getImpl()).memGC = this.getApi();
-            }
-            /*
-		 * The transparent pixel mask might change when drawing on
-		 * the image.  Destroy it so that it is regenerated when
-		 * necessary.
-		 */
-            if (image.getImpl()._transparentPixel() != -1)
-                ((DartImage) image.getImpl()).destroyMask();
+        GCHelper.ImageGCContext imageCtx = GCHelper.setupImageGC(drawable, data, this.getApi());
+        if (imageCtx != null) {
+            drawable = imageCtx.resolvedDrawable();
+            swtImageSource = imageCtx.swtSource();
+            final Image capturedDart = imageCtx.dartImage();
+            final Image capturedSwt = imageCtx.swtSource();
+            final java.util.concurrent.CompletableFuture<Void> capturedFuture = imageCtx.renderFuture();
+            gcImageId = System.identityHashCode(this);
+            this.bridge = SwtFlutterBridgeBase.of(gcImageId, capturedDart, pngBase64 -> {
+                GCHelper.updateImageFromPng(capturedDart, capturedSwt, pngBase64);
+                capturedFuture.complete(null);
+                Display d = Display.getDefault();
+                if (d != null && !d.isDisposed())
+                    d.wake();
+            });
         }
         this.drawable = drawable;
         this.data = data;
@@ -3796,6 +3803,10 @@ public final class DartGC extends DartResource implements IGC {
     public Display getDisplay() {
         return display;
     }
+
+    Image swtImageSource;
+
+    private int gcImageId;
 
     public GC getApi() {
         if (api == null)

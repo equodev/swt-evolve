@@ -24,6 +24,7 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.graphics.*;
 import org.eclipse.swt.internal.image.*;
 import dev.equo.swt.*;
+import org.eclipse.swt.widgets.Display;
 
 /**
  * Instances of this class are graphics which have been prepared
@@ -191,6 +192,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, int width, int height, Image api) {
         super(device, api);
+        this.imageData = new ImageData(width, height, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF));
         try {
             init(width, height);
             init();
@@ -648,19 +650,11 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, ImageGcDrawer imageGcDrawer, int width, int height, Image api) {
         super(device, api);
-        if (imageGcDrawer == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        this.imageGcDrawer = imageGcDrawer;
-        this.width = width;
-        this.height = height;
-        ImageData data = drawWithImageGcDrawer(imageGcDrawer, width, height, DPIUtil.getDeviceZoom());
-        if (data == null)
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        try {
-            init(data, DPIUtil.getDeviceZoom());
-            init();
-        } finally {
-        }
+        init();
+        this.imageData = new ImageData(width, height, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF));
+        GC gc = new GC(getApi());
+        imageGcDrawer.drawOn(gc, width, height);
+        gc.dispose();
     }
 
     private ImageData drawWithImageGcDrawer(ImageGcDrawer imageGcDrawer, int width, int height, int zoom) {
@@ -881,6 +875,15 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * @since 3.106
      */
     public ImageData getImageData(int zoom) {
+        java.util.concurrent.CompletableFuture<Void> f = pendingRenderFuture;
+        if (f != null && !f.isDone()) {
+            Display display = Display.getCurrent();
+            if (display != null) {
+                while (!f.isDone()) {
+                    display.sleep();
+                }
+            }
+        }
         return this.imageData;
     }
 
@@ -1142,6 +1145,13 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     public ImageData _imageData() {
         return imageData;
+    }
+
+    java.util.concurrent.CompletableFuture<Void> pendingRenderFuture;
+
+    void updateImageData(ImageData newData) {
+        this.imageData = newData;
+        pendingRenderFuture = null;
     }
 
     public Image getApi() {
