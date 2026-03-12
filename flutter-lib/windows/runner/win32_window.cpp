@@ -272,7 +272,7 @@ Win32Window::MessageHandler(HWND hwnd,
 
         case WM_ACTIVATE: {
             std::cout << "Win32Window: WM_ACTIVATE - setting focus to Flutter" << std::endl;
-            if (child_content_ != nullptr) {
+            if (child_content_ != nullptr && !headless_) {
                 SetFocus(child_content_);
             }
             HWND shellWindow = GetAncestor(hwnd, GA_ROOT);
@@ -296,7 +296,7 @@ Win32Window::MessageHandler(HWND hwnd,
 
         case WM_SETFOCUS:
             std::cout << "Win32Window: WM_SETFOCUS - delegating to Flutter child" << std::endl;
-            if (child_content_ != nullptr) {
+            if (child_content_ != nullptr && !headless_) {
                 SetFocus(child_content_);
             }
             return 0;
@@ -347,7 +347,15 @@ void Win32Window::SetChildContent(HWND content) {
   MoveWindow(content, frame.left, frame.top, frame.right - frame.left,
              frame.bottom - frame.top, true);
 
-  SetFocus(child_content_);
+  if (headless_) {
+    HWND prevFocus = GetFocus();
+    SetFocus(child_content_);
+    if (prevFocus != nullptr && IsWindow(prevFocus)) {
+      SetFocus(prevFocus);
+    }
+  } else {
+    SetFocus(child_content_);
+  }
   std::cout << "Win32Window::SetChildContent - Complete, child focus set" << std::endl;
 }
 

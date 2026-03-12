@@ -3123,6 +3123,14 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
 
     String filename;
 
+    java.util.concurrent.CompletableFuture<Void> pendingRenderFuture;
+
+    void updateImageData(ImageData newData) {
+        zoomLevelToImageHandle.clear();
+        init(newData, 100);
+        pendingRenderFuture = null;
+    }
+
     public Image getApi() {
         if (api == null)
             api = Image.createApi(this);

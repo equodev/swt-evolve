@@ -33,7 +33,7 @@ public class VImage extends VResource {
     }
 
     public ImageData getImageData() {
-        return ((DartImage) impl).imageData;
+        return ((DartImage) impl).getImageData();
     }
 
     public void setImageData(ImageData value) {

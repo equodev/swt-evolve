@@ -11359,9 +11359,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      * Sets the caret location and scrolls the caret offset into view.
      */
     void showCaret() {
-        Rectangle bounds = getBoundsAtOffset(caretOffsets[0]);
-        if (!showLocation(bounds, true) || (carets != null && caretOffsets.length != carets.length)) {
-        }
     }
 
     /**
@@ -11928,6 +11925,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 if (e.start >= 0)
                     setCaretOffset(e.start);
                 redraw();
+                ControlHelper.paint(this);
             });
         });
         FlutterBridge.on(this, "PaintObject", "paintObject", e -> {

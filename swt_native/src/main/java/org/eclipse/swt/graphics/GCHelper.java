@@ -97,4 +97,63 @@ public class GCHelper {
         }
         return computeLineExtent(text, font).toPoint();
     }
+
+    /**
+     * Result of {@link #setupImageGC}, holding values that DartGC needs to set up
+     * the bridge callback and assign to its fields.
+     */
+    public record ImageGCContext(
+            Drawable resolvedDrawable,
+            Image swtSource,
+            Image dartImage,
+            java.util.concurrent.CompletableFuture<Void> renderFuture) {}
+
+    /**
+     * Resolves the target image, sets memGC references and pendingRenderFutures.
+     *
+     * @return an {@link ImageGCContext} with the values DartGC must capture, or {@code null}
+     *         if {@code drawable} is not image-backed.
+     */
+    public static ImageGCContext setupImageGC(Drawable drawable, GCData data, GC gcApi) {
+        Image image = drawable instanceof Image img ? img : data.image;
+        if (image == null) return null;
+
+        data.image = image;
+        Image swtSource = null;
+        if (image.getImpl() instanceof DartImage di) {
+            di.memGC = gcApi;
+        } else if (image.getImpl() instanceof SwtImage si) {
+            swtSource = image;
+            Image dartCopy = GraphicsUtils.copyImage((Display) data.device, image);
+            si.memGC = gcApi;
+            ((DartImage) dartCopy.getImpl()).memGC = gcApi;
+            data.image = dartCopy;
+            drawable = dartCopy;
+        }
+
+        var renderFuture = new java.util.concurrent.CompletableFuture<Void>();
+        if (data.image.getImpl() instanceof DartImage di) {
+            di.pendingRenderFuture = renderFuture;
+        }
+        if (swtSource != null && swtSource.getImpl() instanceof SwtImage si) {
+            si.pendingRenderFuture = renderFuture;
+        }
+
+        return new ImageGCContext(drawable, swtSource, (Image) data.image, renderFuture);
+    }
+
+    public static void updateImageFromPng(Image dartImage, Image swtSource, String pngBase64) {
+        try {
+            byte[] pngBytes = java.util.Base64.getDecoder().decode(pngBase64);
+            ImageData newData = new ImageData(new java.io.ByteArrayInputStream(pngBytes));
+            if (dartImage.getImpl() instanceof DartImage di) {
+                di.updateImageData(newData);
+            }
+            if (swtSource != null && swtSource.getImpl() instanceof SwtImage si) {
+                si.updateImageData(newData);
+            }
+        } catch (Exception e) {
+            System.err.println("[GCHelper] Failed to update image from PNG: " + e.getMessage());
+        }
+    }
 }

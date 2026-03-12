@@ -42,12 +42,13 @@ public class ControlHelper {
         firePaint(c);
     }
 
-    static void paint(DartControl c) {
+    public static void paint(DartControl c) {
         if (c.drawCount > 0) return;
         c.drawCount++;
         c.getDisplay().asyncExec(() -> {
             c.drawCount--;
             firePaint(c);
+            c.dirty();
         });
     }
 
@@ -59,14 +60,23 @@ public class ControlHelper {
                 return;
             parent = parent.getParent();
         }
+        Rectangle bounds = c.getBounds();
         try {
             if (!Class.forName("org.eclipse.draw2d.FigureCanvas").isInstance(c.getApi())) {
                 Event event = new Event();
+                event.x = 0;
+                event.y = 0;
+                event.width = bounds.width;
+                event.height = bounds.height;
                 event.gc = new GC(c.getApi());
                 c.sendEvent(SWT.Paint, event);
             }
         } catch (ClassNotFoundException ex) {
             Event event = new Event();
+            event.x = 0;
+            event.y = 0;
+            event.width = bounds.width;
+            event.height = bounds.height;
             event.gc = new GC(c.getApi());
             c.sendEvent(SWT.Paint, event);
         }

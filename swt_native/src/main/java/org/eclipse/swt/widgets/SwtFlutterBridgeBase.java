@@ -2,12 +2,17 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.FlutterLibraryLoader;
+import dev.equo.swt.GCImageDrawer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.*;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.DartGC;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.Platform;
+
+import java.util.function.Consumer;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -120,6 +125,19 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
         System.out.println("Using OS theme (fallback): " + theme);
         cachedTheme = theme;
         return theme;
+    }
+
+    /**
+     * Creates a headless Flutter view for a GC whose drawable is an Image.
+     * Analogous to how DartWidget.register() calls FlutterBridge.of(this).
+     *
+     * Usage in DartGC.init() when drawable is an Image:
+     *   this.bridge = SwtFlutterBridgeBase.of(this);
+     */
+    public static GCImageDrawer of(long gcId, Image dartImage, Consumer<String> onImageResult) {
+        GCImageDrawer drawer = new GCImageDrawer();
+        drawer.initFlutterView(gcId, dartImage, onImageResult);
+        return drawer;
     }
 
     void initFlutterView(Composite parent, DartControl control) {

@@ -26,6 +26,7 @@ import org.eclipse.swt.internal.DPIUtil.*;
 import org.eclipse.swt.internal.gdip.*;
 import org.eclipse.swt.internal.image.*;
 import dev.equo.swt.*;
+import org.eclipse.swt.widgets.Display;
 
 /**
  * Instances of this class are graphics which have been prepared
@@ -166,6 +167,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     public DartImage(Device device, int width, int height, Image api) {
         super(device, api);
         init();
+        this.imageData = new ImageData(width, height, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF));
         ((SwtDevice) this.device.getImpl()).registerResourceWithZoomSupport(this.getApi());
     }
 
@@ -598,6 +600,10 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     public DartImage(Device device, ImageGcDrawer imageGcDrawer, int width, int height, Image api) {
         super(device, api);
         init();
+        this.imageData = new ImageData(width, height, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF));
+        GC gc = new GC(getApi());
+        imageGcDrawer.drawOn(gc, width, height);
+        gc.dispose();
     }
 
     private ImageData adaptImageDataIfDisabledOrGray(ImageData data) {
@@ -983,6 +989,15 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * @since 3.106
      */
     public ImageData getImageData(int zoom) {
+        java.util.concurrent.CompletableFuture<Void> f = pendingRenderFuture;
+        if (f != null && !f.isDone()) {
+            Display display = Display.getCurrent();
+            if (display != null) {
+                while (!f.isDone()) {
+                    display.sleep();
+                }
+            }
+        }
         return this.imageData;
     }
 
@@ -2209,6 +2224,14 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     public ImageData _imageData() {
         return imageData;
+    }
+
+    java.util.concurrent.CompletableFuture<Void> pendingRenderFuture;
+
+    void updateImageData(ImageData newData) {
+        this.imageData = newData;
+        zoomLevelToImageHandle.clear();
+        pendingRenderFuture = null;
     }
 
     public Image getApi() {

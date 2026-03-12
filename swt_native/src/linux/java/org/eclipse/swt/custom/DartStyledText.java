@@ -11361,9 +11361,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      * Sets the caret location and scrolls the caret offset into view.
      */
     void showCaret() {
-        Rectangle bounds = getBoundsAtOffset(caretOffsets[0]);
-        if (!showLocation(bounds, true) || (carets != null && caretOffsets.length != carets.length)) {
-        }
     }
 
     /**
