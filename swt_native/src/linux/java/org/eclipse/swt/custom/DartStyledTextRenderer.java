@@ -728,7 +728,8 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         }
         int totalHeight = 0;
         int width = ((DartStyledText) styledText.getImpl()).getWrapWidth();
-        for (int i = 0; i < lineCount; i++) {
+        int effectiveLineCount = Math.min(lineCount, content.getLineCount());
+        for (int i = 0; i < effectiveLineCount; i++) {
             LineSizeInfo line = getLineSize(i);
             int height = line.height;
             if (line.needsRecalculateHeight()) {

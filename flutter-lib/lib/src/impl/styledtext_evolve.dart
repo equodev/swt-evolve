@@ -63,7 +63,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   @override
   void extraSetState() {
     super.extraSetState();
-    _editable = state.editable ?? true; // SWT default is editable
+    _editable = state.editable ?? false;
     _wordWrap = state.wordWrap ?? true; // SWT default with WRAP style
     _buildTextShapeFromState();
   }
@@ -409,11 +409,20 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       }
     }
 
+    if (tappedTextShape == null && _editable) {
+      if (_isEditingText && _editableTextShape != null && _editableTextShape!.editable) {
+        tappedTextShape = _editableTextShape;
+        shapeIndex = -1;
+      } else {
+        shapeIndex = shapes.lastIndexWhere((s) => s is TextShape && s.editable);
+        if (shapeIndex != -1) {
+          tappedTextShape = shapes[shapeIndex] as TextShape;
+        }
+      }
+    }
+
     if (tappedTextShape != null && shapeIndex != null) {
-      final caretOffset = tappedTextShape.getOffsetFromPosition(
-        position,
-        canvasSize,
-      );
+      final caretOffset = tappedTextShape.getOffsetFromPosition(position, canvasSize);
 
       if (!_isEditingText ||
           _editableTextShape?.styledTextId != tappedTextShape.styledTextId) {
