@@ -47,24 +47,27 @@ TreeThemeExtension _getTreeTheme({
   final headerTextStyle = textTheme.titleSmall ?? baseTextStyle;
   final badgeTextStyle = textTheme.labelSmall ?? baseTextStyle;
   final columnTextStyle = textTheme.titleSmall ?? baseTextStyle;
-  
+  final headerTextStyleWithCols =
+      (textTheme.labelSmall ?? baseTextStyle).copyWith(color: colorScheme.onSurface);
+
+  final bodySmallWithCols = textTheme.bodySmall ?? baseTextStyle;
+
   return TreeThemeExtension(
     // Background colors
     backgroundColor: colorScheme.surface,
     disabledBackgroundColor: colorScheme.surfaceVariant,
     hoverBackgroundColor: colorScheme.surfaceVariant,
-    selectedBackgroundColor: colorScheme.primaryContainer.withOpacity(0.2),
+    selectedBackgroundColor: colorSchemeExtension.secondaryVariantBorder,
     
-    // Item colors
+    // Item colors (single column)
     itemTextColor: colorScheme.onSurface,
-    itemSelectedTextColor: colorScheme.onSurface,
+    itemSelectedTextColor: colorSchemeExtension.onSecondaryVariant,
     itemDisabledTextColor: colorSchemeExtension.onSurfaceVariantDisabled,
     itemHoverBackgroundColor: colorScheme.surfaceVariant,
-    itemSelectedBorderColor: colorScheme.primary,
-    itemSelectedBorderWidth: 2.0,
+    itemSelectedBorderColor: Colors.transparent,
+    itemSelectedBorderWidth: 0.0,
     
-    // Header colors
-    headerBackgroundColor: colorScheme.surfaceVariant,
+    headerBackgroundColor: colorScheme.surfaceContainerLow,
     headerTextColor: colorScheme.onSurface,
     headerBorderColor: colorScheme.outline,
     
@@ -93,8 +96,9 @@ TreeThemeExtension _getTreeTheme({
     badgeTextColor: colorScheme.onPrimaryContainer,
     badgeBorderColor: colorScheme.primary,
     
-    // Sizes
-    itemHeight: 24.0,
+    // Sizes (single column)
+    itemEdgeGapFraction: 0.0275,
+    itemHeight: 32.0,
     itemIndent: 16.0,
     expandIconSize: 16.0,
     itemIconSize: 16.0,
@@ -103,21 +107,21 @@ TreeThemeExtension _getTreeTheme({
     badgeBorderRadius: 4.0,
     badgeBorderWidth: 1.0,
     
-    // Spacing and padding
-    itemPadding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
+    // Spacing and padding (single column)
+    itemPadding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
     expandIconSpacing: 4.0,
     itemIconSpacing: 4.0,
     checkboxSpacing: 4.0,
     badgeSpacing: 8.0,
     
-    // Header properties
+    // Header (single column)
     headerHeight: 32.0,
     headerPadding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
     headerBorderWidth: 2.0,
     headerColumnBorderVerticalMargin: 8.0,
     
-    // Font styles
-    itemTextStyle: baseTextStyle.copyWith(color: colorScheme.onSurface),
+    // Font styles (single column)
+    itemTextStyle: (textTheme.bodyLarge ?? baseTextStyle).copyWith(color: colorScheme.onSurface),
     headerTextStyle: headerTextStyle.copyWith(color: colorScheme.onSurface),
     badgeTextStyle: badgeTextStyle.copyWith(color: colorScheme.onPrimaryContainer),
     columnTextStyle: columnTextStyle.copyWith(color: colorScheme.onSurface),
@@ -128,10 +132,10 @@ TreeThemeExtension _getTreeTheme({
     selectionAnimationDuration: const Duration(milliseconds: 200),
     selectionAnimationCurve: Curves.easeInOut,
     
-    // Border properties
+    // Border properties (single column)
     borderWidth: 1.0,
     borderColor: colorScheme.outline,
-    borderRadius: 0.0,
+    borderRadius: 8.0,
     
     // Column colors
     columnTextColor: colorScheme.onSurface,
@@ -156,6 +160,19 @@ TreeThemeExtension _getTreeTheme({
     cellPadding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 4.0),
     cellMultiColumnPadding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 4.0),
     
+    // WithCols (multi-column)
+    itemEdgeGapFractionWithCols: 0.005, 
+    headerHeightWithCols: 40.0,
+    headerBackgroundColorWithCols: colorScheme.surfaceContainerLow,
+    headerBorderWidthWithCols: 0.0,
+    itemHeightWithCols: 40.0,
+    itemPaddingWithCols: const EdgeInsets.fromLTRB(12.0, 10.0, 12.0, 10.0),
+    headerTextStyleWithCols: headerTextStyleWithCols,
+    itemTextStyleWithCols: bodySmallWithCols.copyWith(color: colorScheme.onSurface),
+    columnTextColorWithCols: colorScheme.onSurface,
+    rowSeparatorColorWithCols: colorScheme.outline,
+    rowSeparatorWidthWithCols: 1.0,
+
     // Event defaults
     eventDefaultWidth: 100.0,
     eventDefaultHeight: 20.0,
@@ -163,6 +180,16 @@ TreeThemeExtension _getTreeTheme({
     eventDefaultY: 0,
     eventDefaultDetail: 0,
   );
+}
+
+String toTitleCase(String s) {
+  if (s.isEmpty) return s;
+  return s.split(' ').map((w) {
+    if (w.isEmpty) return w;
+    return w.length > 1
+        ? w[0].toUpperCase() + w.substring(1).toLowerCase()
+        : w.toUpperCase();
+  }).join(' ');
 }
 
 Color getTreeBackgroundColor(

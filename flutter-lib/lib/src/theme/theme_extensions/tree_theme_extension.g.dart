@@ -96,6 +96,7 @@ TreeThemeExtension _$TreeThemeExtensionFromJson(
   badgeBorderColor: const ColorConverter().fromJson(
     json['badgeBorderColor'] as String,
   ),
+  itemEdgeGapFraction: (json['itemEdgeGapFraction'] as num).toDouble(),
   itemHeight: (json['itemHeight'] as num).toDouble(),
   itemIndent: (json['itemIndent'] as num).toDouble(),
   expandIconSize: (json['expandIconSize'] as num).toDouble(),
@@ -182,6 +183,32 @@ TreeThemeExtension _$TreeThemeExtensionFromJson(
   cellMultiColumnPadding: const EdgeInsetsConverter().fromJson(
     json['cellMultiColumnPadding'] as Map<String, dynamic>,
   ),
+  itemEdgeGapFractionWithCols: (json['itemEdgeGapFractionWithCols'] as num)
+      .toDouble(),
+  headerHeightWithCols: (json['headerHeightWithCols'] as num).toDouble(),
+  headerBackgroundColorWithCols: const ColorConverter().fromJson(
+    json['headerBackgroundColorWithCols'] as String,
+  ),
+  headerBorderWidthWithCols: (json['headerBorderWidthWithCols'] as num)
+      .toDouble(),
+  itemHeightWithCols: (json['itemHeightWithCols'] as num).toDouble(),
+  itemPaddingWithCols: const EdgeInsetsConverter().fromJson(
+    json['itemPaddingWithCols'] as Map<String, dynamic>,
+  ),
+  headerTextStyleWithCols: const TextStyleConverter().fromJson(
+    json['headerTextStyleWithCols'] as Map<String, dynamic>?,
+  ),
+  itemTextStyleWithCols: const TextStyleConverter().fromJson(
+    json['itemTextStyleWithCols'] as Map<String, dynamic>?,
+  ),
+  columnTextColorWithCols: const ColorConverter().fromJson(
+    json['columnTextColorWithCols'] as String,
+  ),
+  rowSeparatorColorWithCols: const ColorConverter().fromJson(
+    json['rowSeparatorColorWithCols'] as String,
+  ),
+  rowSeparatorWidthWithCols: (json['rowSeparatorWidthWithCols'] as num)
+      .toDouble(),
   eventDefaultWidth: (json['eventDefaultWidth'] as num).toDouble(),
   eventDefaultHeight: (json['eventDefaultHeight'] as num).toDouble(),
   eventDefaultX: (json['eventDefaultX'] as num).toInt(),
@@ -260,6 +287,7 @@ Map<String, dynamic> _$TreeThemeExtensionToJson(
   ),
   'badgeTextColor': const ColorConverter().toJson(instance.badgeTextColor),
   'badgeBorderColor': const ColorConverter().toJson(instance.badgeBorderColor),
+  'itemEdgeGapFraction': instance.itemEdgeGapFraction,
   'itemHeight': instance.itemHeight,
   'itemIndent': instance.itemIndent,
   'expandIconSize': instance.expandIconSize,
@@ -328,6 +356,29 @@ Map<String, dynamic> _$TreeThemeExtensionToJson(
   'cellMultiColumnPadding': const EdgeInsetsConverter().toJson(
     instance.cellMultiColumnPadding,
   ),
+  'itemEdgeGapFractionWithCols': instance.itemEdgeGapFractionWithCols,
+  'headerHeightWithCols': instance.headerHeightWithCols,
+  'headerBackgroundColorWithCols': const ColorConverter().toJson(
+    instance.headerBackgroundColorWithCols,
+  ),
+  'headerBorderWidthWithCols': instance.headerBorderWidthWithCols,
+  'itemHeightWithCols': instance.itemHeightWithCols,
+  'itemPaddingWithCols': const EdgeInsetsConverter().toJson(
+    instance.itemPaddingWithCols,
+  ),
+  'headerTextStyleWithCols': const TextStyleConverter().toJson(
+    instance.headerTextStyleWithCols,
+  ),
+  'itemTextStyleWithCols': const TextStyleConverter().toJson(
+    instance.itemTextStyleWithCols,
+  ),
+  'columnTextColorWithCols': const ColorConverter().toJson(
+    instance.columnTextColorWithCols,
+  ),
+  'rowSeparatorColorWithCols': const ColorConverter().toJson(
+    instance.rowSeparatorColorWithCols,
+  ),
+  'rowSeparatorWidthWithCols': instance.rowSeparatorWidthWithCols,
   'eventDefaultWidth': instance.eventDefaultWidth,
   'eventDefaultHeight': instance.eventDefaultHeight,
   'eventDefaultX': instance.eventDefaultX,

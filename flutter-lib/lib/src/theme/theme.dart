@@ -63,7 +63,7 @@ ColorScheme createLightColorScheme() {
     onSurfaceVariant: const Color(0xFF797B80), // #797B80
     surfaceContainerHighest: const Color(0xFFFAFBFC), // #FAFBFC
     surfaceContainerHigh: const Color(0xFFF7F8FA), // #F7F8FA
-    surfaceContainerLow: const Color(0xFFF0F2F5), // #F0F2F5
+    surfaceContainerLow: const Color(0xFFF5F5F5), // #F5F5F5  
     
     outline: const Color(0x1A171819), // #1A171819
     outlineVariant: const Color(0x4D171819), // #4D171819
@@ -302,10 +302,10 @@ TextTheme createMaterialTextTheme(ColorScheme colorScheme) {
     ),
     bodyLarge: TextStyle(
       fontFamily: 'Inter',
-      fontSize: 16.0,
-      fontWeight: FontWeight.w400,
+      fontSize: 14.0,
+      fontWeight: FontWeight.w500,
+      height: 20.0 / 14.0,
       letterSpacing: 0.0,
-      height: 24.0 / 16.0, 
       color: colorScheme.onSurface,
     ),
     bodyMedium: TextStyle(

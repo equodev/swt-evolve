@@ -34,8 +34,11 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       final widgetTheme = Theme.of(context).extension<TreeThemeExtension>();
       if (widgetTheme != null && _context?.treeImpl != null) {
         final itemIndex = _context!.treeImpl!.findItemIndex(state.id);
-        final itemHeight =
-            widgetTheme.itemHeight + widgetTheme.itemPadding.vertical;
+        final hasMultiColumn =
+            (_context!.treeImpl!.getTreeColumns().length) > 1;
+        final itemHeight = hasMultiColumn
+            ? widgetTheme.itemHeightWithCols
+            : (widgetTheme.itemHeight + widgetTheme.itemPadding.vertical);
 
         // Calculate header offset
         double headerOffset = 0.0;
@@ -43,7 +46,9 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         final headerVisible = _context!.parentTreeValue.headerVisible;
         if ((headerVisible == true || columns.isNotEmpty) &&
             columns.isNotEmpty) {
-          headerOffset = widgetTheme.headerHeight;
+          headerOffset = hasMultiColumn
+              ? widgetTheme.headerHeightWithCols
+              : widgetTheme.headerHeight;
         }
 
         // Calculate absolute Y: header + (itemIndex * itemHeight) + localY
@@ -175,6 +180,12 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       }
     }
 
+    final bool hasMultiColumn =
+        (_context?.treeImpl?.getTreeColumns().length ?? 0) > 1;
+    final double effectiveItemHeight = hasMultiColumn
+        ? widgetTheme.itemHeightWithCols
+        : (widgetTheme.itemHeight + widgetTheme.itemPadding.vertical);
+
     return SizedBox(
       width: totalTreeWidth ?? double.infinity,
       child: Column(
@@ -182,7 +193,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         children: [
           _buildItemRow(
             context: context,
-            widgetTheme: widgetTheme!,
+            widgetTheme: widgetTheme,
             texts: texts,
             text: text,
             textColor: textColor,
@@ -197,6 +208,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             image: image,
             bgColor: bgColor,
             nextItemSelected: nextItemSelected,
+            hasMultiColumn: hasMultiColumn,
+            effectiveItemHeight: effectiveItemHeight,
           ),
           if (expanded && hasChildren && (_context?.renderChildItems ?? true))
             ...buildChildItems(),
@@ -253,6 +266,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     bool enabled,
     bool selected,
     VImage? image,
+    bool hasMultiColumn,
   ) {
     final columns = _context?.treeImpl?.getTreeColumns() ?? [];
     final bool hasMultipleColumns = columns.isNotEmpty;
@@ -315,6 +329,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                   enabled: enabled,
                   selected: selected,
                   image: image,
+                  hasMultiColumn: hasMultiColumn,
                 ),
                 Expanded(
                   child: _buildCellText(
@@ -325,6 +340,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                     columnAlignment: firstColumn.alignment,
                     cellPadding: widgetTheme.cellMultiColumnPadding,
                     columnIndex: 0,
+                    hasMultiColumn: hasMultiColumn,
                   ),
                 ),
               ],
@@ -345,6 +361,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                 columnAlignment: column.alignment,
                 cellPadding: widgetTheme.cellMultiColumnPadding,
                 columnIndex: columnIndex,
+                hasMultiColumn: hasMultiColumn,
               ),
             );
           }),
@@ -369,6 +386,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                 enabled: enabled,
                 selected: selected,
                 image: image,
+                hasMultiColumn: hasMultiColumn,
               ),
               Expanded(
                 child: _buildCellText(
@@ -379,6 +397,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                   columnAlignment: firstColumn.alignment,
                   cellPadding: widgetTheme.cellMultiColumnPadding,
                   columnIndex: 0,
+                  hasMultiColumn: hasMultiColumn,
                 ),
               ),
             ],
@@ -391,6 +410,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             textColor,
             widgetTheme,
             columns,
+            hasMultiColumn,
           ),
         ),
       ],
@@ -454,6 +474,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     Color textColor,
     TreeThemeExtension widgetTheme,
     List<VTreeColumn> columns,
+    bool hasMultiColumn,
   ) {
     return Row(
       children: columns.skip(1).toList().asMap().entries.map<Widget>((entry) {
@@ -468,6 +489,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           theme: widgetTheme,
           column: column,
           columnIndex: columnIndex,
+          hasMultiColumn: hasMultiColumn,
         );
       }).toList(),
     );
@@ -487,6 +509,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     required TreeThemeExtension theme,
     required VTreeColumn column,
     required int columnIndex,
+    required bool hasMultiColumn,
   }) {
     final effectiveWidths = TreeEffectiveColumnWidthsProvider.of(context);
     final double columnWidth =
@@ -503,6 +526,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         columnAlignment: column.alignment,
         cellPadding: theme.cellMultiColumnPadding,
         columnIndex: columnIndex,
+        hasMultiColumn: hasMultiColumn,
       ),
     );
   }
@@ -548,6 +572,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     TreeThemeExtension widgetTheme,
   ) {
     final columns = _context?.treeImpl?.getTreeColumns() ?? [];
+    final hasMultiColumn = (columns.length) > 1;
 
     return Row(
       children: columns.asMap().entries.map<Widget>((entry) {
@@ -566,6 +591,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           theme: widgetTheme,
           column: column,
           columnIndex: columnIndex,
+          hasMultiColumn: hasMultiColumn,
         );
       }).toList(),
     );
@@ -662,6 +688,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     required bool enabled,
     required bool selected,
     required VImage? image,
+    bool hasMultiColumn = false,
   }) {
     final checkbox = _buildCheckbox(
       theme: theme,
@@ -671,14 +698,16 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       enabled: enabled,
     );
 
-    final icon = _buildItemIcon(
-      theme,
-      enabled,
-      selected,
-      hasChildren,
-      expanded,
-      image,
-    );
+    final icon = hasMultiColumn
+        ? null
+        : _buildItemIcon(
+            theme,
+            enabled,
+            selected,
+            hasChildren,
+            expanded,
+            image,
+          );
 
     return Row(
       children: [
@@ -700,6 +729,38 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     );
   }
 
+  Border? _buildItemRowBorder({
+    required TreeThemeExtension widgetTheme,
+    required bool selected,
+    required bool nextItemSelected,
+    required bool hasMultiColumn,
+  }) {
+    final rowSeparatorBottom = hasMultiColumn
+        ? BorderSide(
+            color: widgetTheme.rowSeparatorColorWithCols,
+            width: widgetTheme.rowSeparatorWidthWithCols,
+          )
+        : BorderSide.none;
+    final selectedSide = BorderSide(
+      color: widgetTheme.itemSelectedBorderColor,
+      width: widgetTheme.itemSelectedBorderWidth,
+    );
+    if (selected) {
+      return Border(
+        left: selectedSide,
+        right: selectedSide,
+        top: selectedSide,
+        bottom: nextItemSelected
+            ? (hasMultiColumn ? rowSeparatorBottom : BorderSide.none)
+            : selectedSide,
+      );
+    }
+    if (hasMultiColumn) {
+      return Border(bottom: rowSeparatorBottom);
+    }
+    return null;
+  }
+
   Widget _buildItemRow({
     required BuildContext context,
     required TreeThemeExtension widgetTheme,
@@ -717,6 +778,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     required VImage? image,
     required Color bgColor,
     required bool nextItemSelected,
+    required bool hasMultiColumn,
+    required double effectiveItemHeight,
   }) {
     final double expanderAreaWidth =
         widgetTheme.itemIndent * level +
@@ -831,7 +894,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           },
           child: Container(
             width: double.infinity,
-            constraints: BoxConstraints(minHeight: widgetTheme.itemHeight),
+            constraints: BoxConstraints(minHeight: effectiveItemHeight),
             margin: selected
                 ? EdgeInsets.only(
                     left: -widgetTheme.itemSelectedBorderWidth,
@@ -844,30 +907,19 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                 : null,
             decoration: BoxDecoration(
               color: bgColor,
-              border: selected
-                  ? Border(
-                      left: BorderSide(
-                        color: widgetTheme.itemSelectedBorderColor,
-                        width: widgetTheme.itemSelectedBorderWidth,
-                      ),
-                      right: BorderSide(
-                        color: widgetTheme.itemSelectedBorderColor,
-                        width: widgetTheme.itemSelectedBorderWidth,
-                      ),
-                      top: BorderSide(
-                        color: widgetTheme.itemSelectedBorderColor,
-                        width: widgetTheme.itemSelectedBorderWidth,
-                      ),
-                      bottom: nextItemSelected
-                          ? BorderSide.none
-                          : BorderSide(
-                              color: widgetTheme.itemSelectedBorderColor,
-                              width: widgetTheme.itemSelectedBorderWidth,
-                            ),
-                    )
-                  : null,
+              borderRadius: hasMultiColumn
+                  ? null
+                  : BorderRadius.circular(widgetTheme.borderRadius),
+              border: _buildItemRowBorder(
+                widgetTheme: widgetTheme,
+                selected: selected,
+                nextItemSelected: nextItemSelected,
+                hasMultiColumn: hasMultiColumn,
+              ),
             ),
-            padding: widgetTheme.itemPadding,
+            padding: hasMultiColumn
+                ? widgetTheme.itemPaddingWithCols
+                : widgetTheme.itemPadding,
             child: _buildRowWithColumns(
               context,
               texts,
@@ -883,6 +935,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               enabled,
               selected,
               image,
+              hasMultiColumn,
             ),
           ),
         ),
@@ -898,20 +951,26 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     required int? columnAlignment,
     required EdgeInsets cellPadding,
     required int columnIndex,
+    bool hasMultiColumn = false,
   }) {
     final cellTextColor = getForegroundColor(
       foreground: state.foreground,
       defaultColor: textColor,
     );
+    final TextStyle baseStyle = hasMultiColumn
+        ? (theme.itemTextStyleWithCols ?? theme.itemTextStyle ?? const TextStyle())
+        : theme.itemTextStyle ?? const TextStyle();
     final cellTextStyle = getTextStyle(
       context: context,
       font: state.font ?? _context?.treeFont,
       textColor: cellTextColor,
-      baseTextStyle: theme.itemTextStyle,
+      baseTextStyle: baseStyle,
     );
 
+    final displayText = hasMultiColumn ? text : toTitleCase(text);
+
     Widget textWidget = Text(
-      text,
+      displayText,
       style: cellTextStyle,
       textAlign: getTextAlignFromStyle(columnAlignment ?? 0, TextAlign.left),
       maxLines: 1,
