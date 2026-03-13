@@ -160,12 +160,12 @@ public class VControl extends VWidget {
         ((DartControl) impl).touchEnabled = value;
     }
 
-    public boolean getVisible() {
+    public Boolean getVisible() {
         return ((DartControl) impl).getVisible();
     }
 
-    public void setVisible(boolean value) {
-        ((DartControl) impl).visible = value;
+    public void setVisible(Boolean value) {
+        ((DartControl) impl).visible = Boolean.TRUE.equals(value);
     }
 
     @JsonConverter(target = Control.class)

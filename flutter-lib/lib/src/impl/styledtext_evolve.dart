@@ -27,6 +27,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   TextEditingState? _localEditingState;
   TextShape? _originalServerTextShape;
   bool _isInLocalEditMode = false;
+  bool _hasProgrammaticSelection = false;
 
   bool _isSelecting = false;
   int? _selectionStartOffset;
@@ -101,6 +102,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       blinkRate: 500,
     );
 
+    SelectionInfo? selectionFromState;
+    final sr = state.selectionRange;
+    if (sr != null && sr.x != sr.y) {
+      selectionFromState = SelectionInfo.fromRange(sr.x, sr.y);
+    }
+
     final textShape = TextShape(
       text,
       const Offset(0, 0),
@@ -114,7 +121,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       styledTextId,
       _notifyTextChanged,
       editingState,
-      null,
+      selectionFromState,
     );
 
     // Update shapes list - remove old shape with same id and add new one
@@ -126,8 +133,17 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     if (_isEditingText && _editableTextShape?.styledTextId == styledTextId) {
       if (!_isInLocalEditMode) {
         _editableTextShape = textShape;
+        _hasProgrammaticSelection = false;
       } else if (_editableTextShape!.text != text) {
         _enterLocalEditMode(textShape);
+        _hasProgrammaticSelection = false;
+      } else if (selectionFromState != null) {
+        _editableTextShape = _editableTextShape!.copyWithSelection(selectionFromState);
+        _hasProgrammaticSelection = true;
+      } else if (_hasProgrammaticSelection) {
+        // Java cleared the Find/Replace highlight (selectionFromState == null but we had one).
+        _editableTextShape = _editableTextShape!.clearSelection();
+        _hasProgrammaticSelection = false;
       }
     } else {
       shapes = [...shapes, textShape];
@@ -297,7 +313,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final defaultTextColor = applyAlpha(_styledTextTheme.foregroundColor);
 
     if (state.font != null) {
-      return FontUtils.textStyleFromVFont(
+       return FontUtils.textStyleFromVFont(
         state.font,
         context,
         color: defaultTextColor,
@@ -841,6 +857,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     _isInLocalEditMode = false;
     _originalServerTextShape = null;
     _localEditingState = null;
+    _hasProgrammaticSelection = false;
   }
 
   /// Build a VStyledText with updated text, caret, and style ranges

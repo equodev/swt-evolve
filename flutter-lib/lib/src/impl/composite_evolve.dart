@@ -25,6 +25,10 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
       // return wrap(const Spacer());
     }
 
-    return NoLayout(children: children, composite: state);
+    final layout = NoLayout(children: children, composite: state);
+    if (state.visible != null && !state.visible!) {
+      return Visibility(visible: false, child: layout);
+    }
+    return layout;
   }
 }
