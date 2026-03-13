@@ -442,7 +442,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           maxWidth: widgetTheme.itemIconSize,
           maxHeight: widgetTheme.itemIconSize,
         ),
-        useBinaryImage: false,
+        useBinaryImage: true,
         renderAsIcon: true,
       ),
       builder: (context, snapshot) {
