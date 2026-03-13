@@ -1952,6 +1952,12 @@ public class DartText extends DartScrollable implements IText {
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
                 if (!isDisposed()) {
+                    if (!traverse(SWT.TRAVERSE_RETURN)) {
+                        Event crEvent = new Event();
+                        crEvent.keyCode = SWT.CR;
+                        crEvent.character = '\r';
+                        sendEvent(SWT.KeyDown, crEvent);
+                    }
                     sendEvent(SWT.DefaultSelection, e);
                 }
             });
