@@ -59,6 +59,7 @@ class TreeThemeExtension extends ThemeExtension<TreeThemeExtension> with _$TreeT
   final Color badgeBorderColor;
   
   // Sizes
+  final double itemEdgeGapFraction;
   final double itemHeight;
   final double itemIndent;
   final double expandIconSize;
@@ -121,6 +122,19 @@ class TreeThemeExtension extends ThemeExtension<TreeThemeExtension> with _$TreeT
   final EdgeInsets cellPadding;
   final EdgeInsets cellMultiColumnPadding;
   
+  // WithCols 
+  final double itemEdgeGapFractionWithCols;
+  final double headerHeightWithCols;
+  final Color headerBackgroundColorWithCols;
+  final double headerBorderWidthWithCols;
+  final double itemHeightWithCols;
+  final EdgeInsets itemPaddingWithCols;
+  final TextStyle? headerTextStyleWithCols;
+  final TextStyle? itemTextStyleWithCols;
+  final Color columnTextColorWithCols;
+  final Color rowSeparatorColorWithCols;
+  final double rowSeparatorWidthWithCols;
+
   // Event defaults
   final double eventDefaultWidth;
   final double eventDefaultHeight;
@@ -161,6 +175,7 @@ class TreeThemeExtension extends ThemeExtension<TreeThemeExtension> with _$TreeT
     required this.badgeBackgroundColor,
     required this.badgeTextColor,
     required this.badgeBorderColor,
+    required this.itemEdgeGapFraction,
     required this.itemHeight,
     required this.itemIndent,
     required this.expandIconSize,
@@ -206,6 +221,17 @@ class TreeThemeExtension extends ThemeExtension<TreeThemeExtension> with _$TreeT
     required this.columnDragThreshold,
     required this.cellPadding,
     required this.cellMultiColumnPadding,
+    required this.itemEdgeGapFractionWithCols,
+    required this.headerHeightWithCols,
+    required this.headerBackgroundColorWithCols,
+    required this.headerBorderWidthWithCols,
+    required this.itemHeightWithCols,
+    required this.itemPaddingWithCols,
+    this.headerTextStyleWithCols,
+    this.itemTextStyleWithCols,
+    required this.columnTextColorWithCols,
+    required this.rowSeparatorColorWithCols,
+    required this.rowSeparatorWidthWithCols,
     required this.eventDefaultWidth,
     required this.eventDefaultHeight,
     required this.eventDefaultX,

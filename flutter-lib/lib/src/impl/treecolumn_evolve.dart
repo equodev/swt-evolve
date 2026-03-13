@@ -15,10 +15,7 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
 
   double _calculateLeftPadding(bool isFirstColumn, TreeThemeExtension theme) {
     if (!isFirstColumn) return 0.0;
-    return theme.expandIconSize +
-        theme.expandIconSpacing +
-        theme.itemIconSize +
-        theme.itemIconSpacing;
+    return theme.expandIconSize + theme.expandIconSpacing;
   }
 
   VEvent _createEvent({
@@ -69,14 +66,21 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
   }
 
   Widget _buildColumnContent({
+    required BuildContext context,
     required TreeThemeExtension theme,
     required String text,
     required Color textColor,
+    required bool uppercase,
     required EdgeInsets adjustedPadding,
     required MainAxisAlignment textAlignment,
     required TextAlign textAlign,
     required Color bgColor,
+    required bool hasMultiColumn,
   }) {
+    final TextStyle effectiveStyle = hasMultiColumn
+        ? (theme.headerTextStyleWithCols ?? theme.columnTextStyle ?? const TextStyle())
+        : (theme.columnTextStyle ?? theme.headerTextStyle ?? const TextStyle())
+            .copyWith(color: textColor);
     return Container(
       padding: adjustedPadding,
       decoration: BoxDecoration(color: bgColor),
@@ -85,10 +89,8 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
         children: [
           Expanded(
             child: Text(
-              text,
-              style: (theme.columnTextStyle ?? const TextStyle()).copyWith(
-                color: textColor,
-              ),
+              uppercase ? text.toUpperCase() : text,
+              style: effectiveStyle,
               textAlign: textAlign,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -115,6 +117,7 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<TreeThemeExtension>()!;
 
+    final bool hasMultiColumn = TreeHasMultiColumnProvider.of(context);
     final int? columnIndex = TreeColumnIndexProvider.of(context);
     final bool isFirstColumn = columnIndex == 0;
     final bool linesVisible = TreeLinesVisibleProvider.of(context);
@@ -125,7 +128,9 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     final bool moveable = state.moveable ?? false;
     final int width = state.width ?? widgetTheme.columnDefaultWidth.round();
 
-    final Color textColor = widgetTheme.columnTextColor;
+    final Color textColor = hasMultiColumn
+        ? widgetTheme.columnTextColorWithCols
+        : widgetTheme.columnTextColor;
     final Color bgColor = _isDragging
         ? widgetTheme.columnDraggingBackgroundColor
         : Colors.transparent;
@@ -168,15 +173,18 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
         child: Stack(
           children: [
             _buildColumnContent(
+              context: context,
               theme: widgetTheme,
               text: text,
               textColor: textColor,
+              uppercase: hasMultiColumn,
               adjustedPadding: adjustedPadding,
               textAlignment: textAlignment,
               textAlign: textAlign,
               bgColor: bgColor,
+              hasMultiColumn: hasMultiColumn,
             ),
-            if (linesVisible && !isLastColumn)
+            if (linesVisible && !isLastColumn && !hasMultiColumn)
               _buildColumnBorder(theme: widgetTheme),
           ],
         ),

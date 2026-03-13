@@ -42,6 +42,7 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
   Color get badgeBackgroundColor;
   Color get badgeTextColor;
   Color get badgeBorderColor;
+  double get itemEdgeGapFraction;
   double get itemHeight;
   double get itemIndent;
   double get expandIconSize;
@@ -87,6 +88,17 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
   double get columnDragThreshold;
   EdgeInsets get cellPadding;
   EdgeInsets get cellMultiColumnPadding;
+  double get itemEdgeGapFractionWithCols;
+  double get headerHeightWithCols;
+  Color get headerBackgroundColorWithCols;
+  double get headerBorderWidthWithCols;
+  double get itemHeightWithCols;
+  EdgeInsets get itemPaddingWithCols;
+  TextStyle? get headerTextStyleWithCols;
+  TextStyle? get itemTextStyleWithCols;
+  Color get columnTextColorWithCols;
+  Color get rowSeparatorColorWithCols;
+  double get rowSeparatorWidthWithCols;
   double get eventDefaultWidth;
   double get eventDefaultHeight;
   int get eventDefaultX;
@@ -127,6 +139,7 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
     Color? badgeBackgroundColor,
     Color? badgeTextColor,
     Color? badgeBorderColor,
+    double? itemEdgeGapFraction,
     double? itemHeight,
     double? itemIndent,
     double? expandIconSize,
@@ -172,6 +185,17 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
     double? columnDragThreshold,
     EdgeInsets? cellPadding,
     EdgeInsets? cellMultiColumnPadding,
+    double? itemEdgeGapFractionWithCols,
+    double? headerHeightWithCols,
+    Color? headerBackgroundColorWithCols,
+    double? headerBorderWidthWithCols,
+    double? itemHeightWithCols,
+    EdgeInsets? itemPaddingWithCols,
+    TextStyle? headerTextStyleWithCols,
+    TextStyle? itemTextStyleWithCols,
+    Color? columnTextColorWithCols,
+    Color? rowSeparatorColorWithCols,
+    double? rowSeparatorWidthWithCols,
     double? eventDefaultWidth,
     double? eventDefaultHeight,
     int? eventDefaultX,
@@ -229,6 +253,7 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
       badgeBackgroundColor: badgeBackgroundColor ?? this.badgeBackgroundColor,
       badgeTextColor: badgeTextColor ?? this.badgeTextColor,
       badgeBorderColor: badgeBorderColor ?? this.badgeBorderColor,
+      itemEdgeGapFraction: itemEdgeGapFraction ?? this.itemEdgeGapFraction,
       itemHeight: itemHeight ?? this.itemHeight,
       itemIndent: itemIndent ?? this.itemIndent,
       expandIconSize: expandIconSize ?? this.expandIconSize,
@@ -286,6 +311,25 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
       cellPadding: cellPadding ?? this.cellPadding,
       cellMultiColumnPadding:
           cellMultiColumnPadding ?? this.cellMultiColumnPadding,
+      itemEdgeGapFractionWithCols:
+          itemEdgeGapFractionWithCols ?? this.itemEdgeGapFractionWithCols,
+      headerHeightWithCols: headerHeightWithCols ?? this.headerHeightWithCols,
+      headerBackgroundColorWithCols:
+          headerBackgroundColorWithCols ?? this.headerBackgroundColorWithCols,
+      headerBorderWidthWithCols:
+          headerBorderWidthWithCols ?? this.headerBorderWidthWithCols,
+      itemHeightWithCols: itemHeightWithCols ?? this.itemHeightWithCols,
+      itemPaddingWithCols: itemPaddingWithCols ?? this.itemPaddingWithCols,
+      headerTextStyleWithCols:
+          headerTextStyleWithCols ?? this.headerTextStyleWithCols,
+      itemTextStyleWithCols:
+          itemTextStyleWithCols ?? this.itemTextStyleWithCols,
+      columnTextColorWithCols:
+          columnTextColorWithCols ?? this.columnTextColorWithCols,
+      rowSeparatorColorWithCols:
+          rowSeparatorColorWithCols ?? this.rowSeparatorColorWithCols,
+      rowSeparatorWidthWithCols:
+          rowSeparatorWidthWithCols ?? this.rowSeparatorWidthWithCols,
       eventDefaultWidth: eventDefaultWidth ?? this.eventDefaultWidth,
       eventDefaultHeight: eventDefaultHeight ?? this.eventDefaultHeight,
       eventDefaultX: eventDefaultX ?? this.eventDefaultX,
@@ -421,6 +465,9 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
         other.badgeBorderColor,
         t,
       )!,
+      itemEdgeGapFraction: t < 0.5
+          ? itemEdgeGapFraction
+          : other.itemEdgeGapFraction,
       itemHeight: t < 0.5 ? itemHeight : other.itemHeight,
       itemIndent: t < 0.5 ? itemIndent : other.itemIndent,
       expandIconSize: t < 0.5 ? expandIconSize : other.expandIconSize,
@@ -514,6 +561,49 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
       cellMultiColumnPadding: t < 0.5
           ? cellMultiColumnPadding
           : other.cellMultiColumnPadding,
+      itemEdgeGapFractionWithCols: t < 0.5
+          ? itemEdgeGapFractionWithCols
+          : other.itemEdgeGapFractionWithCols,
+      headerHeightWithCols: t < 0.5
+          ? headerHeightWithCols
+          : other.headerHeightWithCols,
+      headerBackgroundColorWithCols: Color.lerp(
+        headerBackgroundColorWithCols,
+        other.headerBackgroundColorWithCols,
+        t,
+      )!,
+      headerBorderWidthWithCols: t < 0.5
+          ? headerBorderWidthWithCols
+          : other.headerBorderWidthWithCols,
+      itemHeightWithCols: t < 0.5
+          ? itemHeightWithCols
+          : other.itemHeightWithCols,
+      itemPaddingWithCols: t < 0.5
+          ? itemPaddingWithCols
+          : other.itemPaddingWithCols,
+      headerTextStyleWithCols: TextStyle.lerp(
+        headerTextStyleWithCols,
+        other.headerTextStyleWithCols,
+        t,
+      ),
+      itemTextStyleWithCols: TextStyle.lerp(
+        itemTextStyleWithCols,
+        other.itemTextStyleWithCols,
+        t,
+      ),
+      columnTextColorWithCols: Color.lerp(
+        columnTextColorWithCols,
+        other.columnTextColorWithCols,
+        t,
+      )!,
+      rowSeparatorColorWithCols: Color.lerp(
+        rowSeparatorColorWithCols,
+        other.rowSeparatorColorWithCols,
+        t,
+      )!,
+      rowSeparatorWidthWithCols: t < 0.5
+          ? rowSeparatorWidthWithCols
+          : other.rowSeparatorWidthWithCols,
       eventDefaultWidth: t < 0.5 ? eventDefaultWidth : other.eventDefaultWidth,
       eventDefaultHeight: t < 0.5
           ? eventDefaultHeight
@@ -658,6 +748,10 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
             const DeepCollectionEquality().equals(
               badgeBorderColor,
               other.badgeBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              itemEdgeGapFraction,
+              other.itemEdgeGapFraction,
             ) &&
             const DeepCollectionEquality().equals(
               itemHeight,
@@ -837,6 +931,50 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
               other.cellMultiColumnPadding,
             ) &&
             const DeepCollectionEquality().equals(
+              itemEdgeGapFractionWithCols,
+              other.itemEdgeGapFractionWithCols,
+            ) &&
+            const DeepCollectionEquality().equals(
+              headerHeightWithCols,
+              other.headerHeightWithCols,
+            ) &&
+            const DeepCollectionEquality().equals(
+              headerBackgroundColorWithCols,
+              other.headerBackgroundColorWithCols,
+            ) &&
+            const DeepCollectionEquality().equals(
+              headerBorderWidthWithCols,
+              other.headerBorderWidthWithCols,
+            ) &&
+            const DeepCollectionEquality().equals(
+              itemHeightWithCols,
+              other.itemHeightWithCols,
+            ) &&
+            const DeepCollectionEquality().equals(
+              itemPaddingWithCols,
+              other.itemPaddingWithCols,
+            ) &&
+            const DeepCollectionEquality().equals(
+              headerTextStyleWithCols,
+              other.headerTextStyleWithCols,
+            ) &&
+            const DeepCollectionEquality().equals(
+              itemTextStyleWithCols,
+              other.itemTextStyleWithCols,
+            ) &&
+            const DeepCollectionEquality().equals(
+              columnTextColorWithCols,
+              other.columnTextColorWithCols,
+            ) &&
+            const DeepCollectionEquality().equals(
+              rowSeparatorColorWithCols,
+              other.rowSeparatorColorWithCols,
+            ) &&
+            const DeepCollectionEquality().equals(
+              rowSeparatorWidthWithCols,
+              other.rowSeparatorWidthWithCols,
+            ) &&
+            const DeepCollectionEquality().equals(
               eventDefaultWidth,
               other.eventDefaultWidth,
             ) &&
@@ -894,6 +1032,7 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
       const DeepCollectionEquality().hash(badgeBackgroundColor),
       const DeepCollectionEquality().hash(badgeTextColor),
       const DeepCollectionEquality().hash(badgeBorderColor),
+      const DeepCollectionEquality().hash(itemEdgeGapFraction),
       const DeepCollectionEquality().hash(itemHeight),
       const DeepCollectionEquality().hash(itemIndent),
       const DeepCollectionEquality().hash(expandIconSize),
@@ -939,6 +1078,17 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
       const DeepCollectionEquality().hash(columnDragThreshold),
       const DeepCollectionEquality().hash(cellPadding),
       const DeepCollectionEquality().hash(cellMultiColumnPadding),
+      const DeepCollectionEquality().hash(itemEdgeGapFractionWithCols),
+      const DeepCollectionEquality().hash(headerHeightWithCols),
+      const DeepCollectionEquality().hash(headerBackgroundColorWithCols),
+      const DeepCollectionEquality().hash(headerBorderWidthWithCols),
+      const DeepCollectionEquality().hash(itemHeightWithCols),
+      const DeepCollectionEquality().hash(itemPaddingWithCols),
+      const DeepCollectionEquality().hash(headerTextStyleWithCols),
+      const DeepCollectionEquality().hash(itemTextStyleWithCols),
+      const DeepCollectionEquality().hash(columnTextColorWithCols),
+      const DeepCollectionEquality().hash(rowSeparatorColorWithCols),
+      const DeepCollectionEquality().hash(rowSeparatorWidthWithCols),
       const DeepCollectionEquality().hash(eventDefaultWidth),
       const DeepCollectionEquality().hash(eventDefaultHeight),
       const DeepCollectionEquality().hash(eventDefaultX),
@@ -992,6 +1142,7 @@ extension TreeThemeExtensionBuildContextProps on BuildContext {
   Color get badgeBackgroundColor => treeThemeExtension.badgeBackgroundColor;
   Color get badgeTextColor => treeThemeExtension.badgeTextColor;
   Color get badgeBorderColor => treeThemeExtension.badgeBorderColor;
+  double get itemEdgeGapFraction => treeThemeExtension.itemEdgeGapFraction;
   double get itemHeight => treeThemeExtension.itemHeight;
   double get itemIndent => treeThemeExtension.itemIndent;
   double get expandIconSize => treeThemeExtension.expandIconSize;
@@ -1046,6 +1197,25 @@ extension TreeThemeExtensionBuildContextProps on BuildContext {
   EdgeInsets get cellPadding => treeThemeExtension.cellPadding;
   EdgeInsets get cellMultiColumnPadding =>
       treeThemeExtension.cellMultiColumnPadding;
+  double get itemEdgeGapFractionWithCols =>
+      treeThemeExtension.itemEdgeGapFractionWithCols;
+  double get headerHeightWithCols => treeThemeExtension.headerHeightWithCols;
+  Color get headerBackgroundColorWithCols =>
+      treeThemeExtension.headerBackgroundColorWithCols;
+  double get headerBorderWidthWithCols =>
+      treeThemeExtension.headerBorderWidthWithCols;
+  double get itemHeightWithCols => treeThemeExtension.itemHeightWithCols;
+  EdgeInsets get itemPaddingWithCols => treeThemeExtension.itemPaddingWithCols;
+  TextStyle? get headerTextStyleWithCols =>
+      treeThemeExtension.headerTextStyleWithCols;
+  TextStyle? get itemTextStyleWithCols =>
+      treeThemeExtension.itemTextStyleWithCols;
+  Color get columnTextColorWithCols =>
+      treeThemeExtension.columnTextColorWithCols;
+  Color get rowSeparatorColorWithCols =>
+      treeThemeExtension.rowSeparatorColorWithCols;
+  double get rowSeparatorWidthWithCols =>
+      treeThemeExtension.rowSeparatorWidthWithCols;
   double get eventDefaultWidth => treeThemeExtension.eventDefaultWidth;
   double get eventDefaultHeight => treeThemeExtension.eventDefaultHeight;
   int get eventDefaultX => treeThemeExtension.eventDefaultX;
