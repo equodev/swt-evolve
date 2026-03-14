@@ -39,7 +39,8 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
   // Tab text opacity (for unselected tabs)
   final double tabUnselectedTextOpacity;
   
-  // Tab close button opacity
+  // Tab close button
+  final Color tabCloseButtonColor;
   final double tabCloseButtonSelectedOpacity;
   final double tabCloseButtonUnselectedOpacity;
   
@@ -120,6 +121,7 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
     required this.tabHoverTextColor,
     required this.tabDisabledTextColor,
     required this.tabUnselectedTextOpacity,
+    required this.tabCloseButtonColor,
     required this.tabCloseButtonSelectedOpacity,
     required this.tabCloseButtonUnselectedOpacity,
     required this.tabHighlightColor,

@@ -51,6 +51,9 @@ CTabFolderThemeExtension _$CTabFolderThemeExtensionFromJson(
   ),
   tabUnselectedTextOpacity: (json['tabUnselectedTextOpacity'] as num)
       .toDouble(),
+  tabCloseButtonColor: const ColorConverter().fromJson(
+    json['tabCloseButtonColor'] as String,
+  ),
   tabCloseButtonSelectedOpacity: (json['tabCloseButtonSelectedOpacity'] as num)
       .toDouble(),
   tabCloseButtonUnselectedOpacity:
@@ -162,6 +165,9 @@ Map<String, dynamic> _$CTabFolderThemeExtensionToJson(
     instance.tabDisabledTextColor,
   ),
   'tabUnselectedTextOpacity': instance.tabUnselectedTextOpacity,
+  'tabCloseButtonColor': const ColorConverter().toJson(
+    instance.tabCloseButtonColor,
+  ),
   'tabCloseButtonSelectedOpacity': instance.tabCloseButtonSelectedOpacity,
   'tabCloseButtonUnselectedOpacity': instance.tabCloseButtonUnselectedOpacity,
   'tabHighlightColor': const ColorConverter().toJson(

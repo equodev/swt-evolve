@@ -12,11 +12,13 @@ import '../theme/theme_extensions/toolitem_theme_extension.dart';
 
 class ToolbarComposite extends CompositeSwt<VComposite> {
   final bool useBoundsLayout;
+  final Color? backgroundColor;
 
   const ToolbarComposite({
     super.key,
     required super.value,
     this.useBoundsLayout = false,
+    this.backgroundColor,
   });
 
   @override
@@ -33,11 +35,14 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
     }
 
     final widgetTheme = Theme.of(context).extension<ToolBarThemeExtension>();
-    final backgroundColor = widgetTheme?.toolbarBackgroundColor ?? Colors.white;
+    final backgroundColor = widget.backgroundColor ?? widgetTheme?.toolbarBackgroundColor ?? Colors.white;
     final visibleChildren = children.where((child) => child.visible == true).toList();
 
     if (widget.useBoundsLayout) {
-      final toolbarHeight = state.bounds?.height.toDouble() ?? 28.0;
+      final boundsHeight = state.bounds?.height;
+      final toolbarHeight = (boundsHeight != null && boundsHeight > 0)
+          ? boundsHeight.toDouble()
+          : double.infinity;
       final toolItemTheme = Theme.of(context).extension<ToolItemThemeExtension>();
       final keywordTextLower = toolItemTheme?.segmentKeywordText.toLowerCase() ?? 'keyword';
       final keywordLeftOffset = widgetTheme?.keywordLeftOffset ?? 8.0;
@@ -56,6 +61,7 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
                 return Positioned(
                   left: left,
                   top: 0,
+                  bottom: 0,
                   child: buildMapWidgetFromValue(child),
                 );
               }(),
@@ -86,9 +92,9 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
 
   Widget buildMapWidgetFromValue(VControl child) {
     if (child is VComposite && (child.swt == "Composite")) {
-      return ToolbarComposite(value: child, useBoundsLayout: widget.useBoundsLayout);
+      return ToolbarComposite(value: child, useBoundsLayout: widget.useBoundsLayout, backgroundColor: widget.backgroundColor);
     } else if (child is VCanvas) {
-      return ToolbarComposite(value: child, useBoundsLayout: widget.useBoundsLayout);
+      return ToolbarComposite(value: child, useBoundsLayout: widget.useBoundsLayout, backgroundColor: widget.backgroundColor);
     }
     return mapWidgetFromValue(child);
   }

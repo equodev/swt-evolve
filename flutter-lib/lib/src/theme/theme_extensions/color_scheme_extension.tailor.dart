@@ -124,6 +124,10 @@ mixin _$ColorSchemeExtensionTailorMixin
   Color get stateOnContainerPressed;
   Color get labelInputDefault;
   Color get labelInputDisabled;
+  Color get ctabFolderSelectedTextColor;
+  Color get ctabFolderHighlightColor;
+  Color get ctabFolderUnselectedColor;
+  Color get surfaceToolbar;
 
   @override
   ColorSchemeExtension copyWith({
@@ -240,6 +244,10 @@ mixin _$ColorSchemeExtensionTailorMixin
     Color? stateOnContainerPressed,
     Color? labelInputDefault,
     Color? labelInputDisabled,
+    Color? ctabFolderSelectedTextColor,
+    Color? ctabFolderHighlightColor,
+    Color? ctabFolderUnselectedColor,
+    Color? surfaceToolbar,
   }) {
     return ColorSchemeExtension(
       primaryHovered: primaryHovered ?? this.primaryHovered,
@@ -417,6 +425,13 @@ mixin _$ColorSchemeExtensionTailorMixin
           stateOnContainerPressed ?? this.stateOnContainerPressed,
       labelInputDefault: labelInputDefault ?? this.labelInputDefault,
       labelInputDisabled: labelInputDisabled ?? this.labelInputDisabled,
+      ctabFolderSelectedTextColor:
+          ctabFolderSelectedTextColor ?? this.ctabFolderSelectedTextColor,
+      ctabFolderHighlightColor:
+          ctabFolderHighlightColor ?? this.ctabFolderHighlightColor,
+      ctabFolderUnselectedColor:
+          ctabFolderUnselectedColor ?? this.ctabFolderUnselectedColor,
+      surfaceToolbar: surfaceToolbar ?? this.surfaceToolbar,
     );
   }
 
@@ -868,6 +883,22 @@ mixin _$ColorSchemeExtensionTailorMixin
         other.labelInputDisabled,
         t,
       )!,
+      ctabFolderSelectedTextColor: Color.lerp(
+        ctabFolderSelectedTextColor,
+        other.ctabFolderSelectedTextColor,
+        t,
+      )!,
+      ctabFolderHighlightColor: Color.lerp(
+        ctabFolderHighlightColor,
+        other.ctabFolderHighlightColor,
+        t,
+      )!,
+      ctabFolderUnselectedColor: Color.lerp(
+        ctabFolderUnselectedColor,
+        other.ctabFolderUnselectedColor,
+        t,
+      )!,
+      surfaceToolbar: Color.lerp(surfaceToolbar, other.surfaceToolbar, t)!,
     );
   }
 
@@ -1312,6 +1343,22 @@ mixin _$ColorSchemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               labelInputDisabled,
               other.labelInputDisabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              ctabFolderSelectedTextColor,
+              other.ctabFolderSelectedTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              ctabFolderHighlightColor,
+              other.ctabFolderHighlightColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              ctabFolderUnselectedColor,
+              other.ctabFolderUnselectedColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              surfaceToolbar,
+              other.surfaceToolbar,
             ));
   }
 
@@ -1432,6 +1479,10 @@ mixin _$ColorSchemeExtensionTailorMixin
       const DeepCollectionEquality().hash(stateOnContainerPressed),
       const DeepCollectionEquality().hash(labelInputDefault),
       const DeepCollectionEquality().hash(labelInputDisabled),
+      const DeepCollectionEquality().hash(ctabFolderSelectedTextColor),
+      const DeepCollectionEquality().hash(ctabFolderHighlightColor),
+      const DeepCollectionEquality().hash(ctabFolderUnselectedColor),
+      const DeepCollectionEquality().hash(surfaceToolbar),
     ]);
   }
 }
@@ -1601,4 +1652,15 @@ extension ColorSchemeExtensionBuildContextProps on BuildContext {
       colorSchemeExtension.stateOnContainerPressed;
   Color get labelInputDefault => colorSchemeExtension.labelInputDefault;
   Color get labelInputDisabled => colorSchemeExtension.labelInputDisabled;
+
+  /// CTabFolder tab bar
+  Color get ctabFolderSelectedTextColor =>
+      colorSchemeExtension.ctabFolderSelectedTextColor;
+  Color get ctabFolderHighlightColor =>
+      colorSchemeExtension.ctabFolderHighlightColor;
+  Color get ctabFolderUnselectedColor =>
+      colorSchemeExtension.ctabFolderUnselectedColor;
+
+  /// MainToolbar, SideBar.Light: #F4F4F4, dark: #2C2C2C.
+  Color get surfaceToolbar => colorSchemeExtension.surfaceToolbar;
 }

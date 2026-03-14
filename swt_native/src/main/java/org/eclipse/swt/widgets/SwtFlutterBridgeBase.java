@@ -205,9 +205,9 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
 
             if (dartControl instanceof DartCTabFolder folder) {
                 if (folder._onBottom()) {
-                    SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height, 0, bounds.height - 28, bounds.width, 28);
+                    SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height, 0, bounds.height - 32, bounds.width,32);
                 } else {
-                    SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height, 0, 0, bounds.width, 28);
+                    SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height, 0, 0, bounds.width, 32);
                 }
             } else {
                 SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height,

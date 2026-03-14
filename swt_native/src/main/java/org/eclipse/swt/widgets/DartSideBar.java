@@ -10,6 +10,6 @@ public class DartSideBar extends DartComposite {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return new Point(25, 1000);
+        return new Point(30, 1000);
     }
 }
