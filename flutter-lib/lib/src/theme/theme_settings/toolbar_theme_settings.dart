@@ -8,7 +8,6 @@ ToolBarThemeExtension getToolBarLightTheme({
   required ColorSchemeExtension colorSchemeExtension,
 }) {
   return _getToolBarTheme(
-    isDark: false,
     colorScheme: colorScheme,
     textTheme: textTheme,
     colorSchemeExtension: colorSchemeExtension,
@@ -21,7 +20,6 @@ ToolBarThemeExtension getToolBarDarkTheme({
   required ColorSchemeExtension colorSchemeExtension,
 }) {
   return _getToolBarTheme(
-    isDark: true,
     colorScheme: colorScheme,
     textTheme: textTheme,
     colorSchemeExtension: colorSchemeExtension,
@@ -29,11 +27,11 @@ ToolBarThemeExtension getToolBarDarkTheme({
 }
 
 ToolBarThemeExtension _getToolBarTheme({
-  required bool isDark,
   required ColorScheme colorScheme,
   required TextTheme textTheme,
   required ColorSchemeExtension colorSchemeExtension,
 }) {
+  final surfaceToolbar = colorSchemeExtension.surfaceToolbar;
   return ToolBarThemeExtension(
     backgroundColor: Colors.transparent,
     borderColor: colorScheme.outline,
@@ -43,8 +41,8 @@ ToolBarThemeExtension _getToolBarTheme({
     shadowBlurRadius: 4.0,
     shadowOffset: const Offset(2, 2),
     itemPadding: EdgeInsets.zero,
-    compositeBackgroundColor: Colors.white,
-    toolbarBackgroundColor: Colors.white,
+    compositeBackgroundColor: surfaceToolbar,
+    toolbarBackgroundColor: surfaceToolbar,
     keywordLeftOffset: 50.0,
   );
 }

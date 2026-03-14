@@ -34,59 +34,57 @@ CTabFolderThemeExtension _getCTabFolderTheme({
   required TextTheme textTheme,
   required ColorSchemeExtension colorSchemeExtension,
 }) {
-  final baseTextStyle = textTheme.bodyMedium ?? const TextStyle();
-  
+  final baseTextStyle = textTheme.bodyLarge ?? const TextStyle();
+  final selectedTextColor = colorSchemeExtension.ctabFolderSelectedTextColor;
+  final highlightColor = colorSchemeExtension.ctabFolderHighlightColor;
+  final unselectedColor = colorSchemeExtension.ctabFolderUnselectedColor;
+
   return CTabFolderThemeExtension(
     // Tab bar colors
-    tabBarBackgroundColor: colorScheme.surface,
+    tabBarBackgroundColor: unselectedColor,
     tabBarBorderColor: colorSchemeExtension.surfaceBorderEnabled,
     
     // Tab colors
-    tabBackgroundColor: colorScheme.surface,
-    tabSelectedBackgroundColor: colorScheme.surface,
+    tabBackgroundColor: unselectedColor,
+    tabSelectedBackgroundColor: unselectedColor,
     tabHoverBackgroundColor: colorSchemeExtension.stateDefaultHovered,
     tabDisabledBackgroundColor: colorScheme.surfaceVariant,
     
     // Tab border colors
-    tabBorderColor: colorSchemeExtension.surfaceBorderEnabled,
+    tabBorderColor: Colors.transparent,
     tabSelectedBorderColor: colorScheme.primary,
     tabHoverBorderColor: colorSchemeExtension.surfaceBorderHovered,
     tabDisabledBorderColor: colorSchemeExtension.surfaceBorderDisabled,
     
     // Tab text colors
-    tabTextColor: colorScheme.onSurfaceVariant,
-    tabSelectedTextColor: isDark ? Colors.white : const Color(0xFF000000),
+    tabTextColor: unselectedColor,
+    tabSelectedTextColor: selectedTextColor,
     tabHoverTextColor: colorScheme.onSurface,
     tabDisabledTextColor: colorSchemeExtension.onSurfaceVariantDisabled,
     
-    tabUnselectedTextOpacity: 0.4,
+    tabUnselectedTextOpacity: 1.0,
     
-    // Tab close button opacity
+    // Tab close button
+    tabCloseButtonColor: colorScheme.onSurface,
     tabCloseButtonSelectedOpacity: 0.9,
     tabCloseButtonUnselectedOpacity: 0.7,
     
     // Highlight color (for selected tab top border)
-    tabHighlightColor: colorScheme.primary,
+    tabHighlightColor: highlightColor,
     
     // Tab border properties
-    tabBorderWidth: 1.0,
+    tabBorderWidth: 0.0,
     tabSelectedBorderWidth: 1.0,
     tabHighlightBorderWidth: 2.0,
-    tabBorderRadius: 0.0,
+    tabBorderRadius: 3.0,
     
     // Tab padding
     tabHorizontalPadding: 6.0,
     tabVerticalPadding: 0.0,
     
     // Tab typography
-    tabTextStyle: baseTextStyle.copyWith(
-      fontSize: 12.0,
-      fontWeight: FontWeight.normal,
-    ),
-    tabSelectedTextStyle: baseTextStyle.copyWith(
-      fontSize: 12.0,
-      fontWeight: FontWeight.w600,
-    ),
+    tabTextStyle: baseTextStyle,
+    tabSelectedTextStyle: baseTextStyle,
     
     // Tab content area
     tabContentBackgroundColor: colorScheme.surface,

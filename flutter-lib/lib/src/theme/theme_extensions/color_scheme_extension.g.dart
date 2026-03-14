@@ -332,6 +332,18 @@ ColorSchemeExtension _$ColorSchemeExtensionFromJson(
   labelInputDisabled: const ColorConverter().fromJson(
     json['labelInputDisabled'] as String,
   ),
+  ctabFolderSelectedTextColor: const ColorConverter().fromJson(
+    json['ctabFolderSelectedTextColor'] as String,
+  ),
+  ctabFolderHighlightColor: const ColorConverter().fromJson(
+    json['ctabFolderHighlightColor'] as String,
+  ),
+  ctabFolderUnselectedColor: const ColorConverter().fromJson(
+    json['ctabFolderUnselectedColor'] as String,
+  ),
+  surfaceToolbar: const ColorConverter().fromJson(
+    json['surfaceToolbar'] as String,
+  ),
 );
 
 Map<String, dynamic> _$ColorSchemeExtensionToJson(
@@ -596,4 +608,14 @@ Map<String, dynamic> _$ColorSchemeExtensionToJson(
   'labelInputDisabled': const ColorConverter().toJson(
     instance.labelInputDisabled,
   ),
+  'ctabFolderSelectedTextColor': const ColorConverter().toJson(
+    instance.ctabFolderSelectedTextColor,
+  ),
+  'ctabFolderHighlightColor': const ColorConverter().toJson(
+    instance.ctabFolderHighlightColor,
+  ),
+  'ctabFolderUnselectedColor': const ColorConverter().toJson(
+    instance.ctabFolderUnselectedColor,
+  ),
+  'surfaceToolbar': const ColorConverter().toJson(instance.surfaceToolbar),
 };

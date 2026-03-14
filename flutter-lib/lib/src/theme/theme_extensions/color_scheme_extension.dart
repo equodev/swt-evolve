@@ -145,6 +145,14 @@ class ColorSchemeExtension extends ThemeExtension<ColorSchemeExtension> with _$C
   final Color labelInputDefault; // sys.color.label.input.default #47494D
   final Color labelInputDisabled; // sys.color.label.input.disabled #47494D
 
+  /// CTabFolder tab bar
+  final Color ctabFolderSelectedTextColor;
+  final Color ctabFolderHighlightColor;
+  final Color ctabFolderUnselectedColor;
+
+  /// MainToolbar, SideBar.Light: #F4F4F4, dark: #2C2C2C.
+  final Color surfaceToolbar;
+
   const ColorSchemeExtension({
     required this.primaryHovered,
     required this.primaryBorder,
@@ -259,6 +267,10 @@ class ColorSchemeExtension extends ThemeExtension<ColorSchemeExtension> with _$C
     required this.stateOnContainerPressed,
     required this.labelInputDefault,
     required this.labelInputDisabled,
+    required this.ctabFolderSelectedTextColor,
+    required this.ctabFolderHighlightColor,
+    required this.ctabFolderUnselectedColor,
+    required this.surfaceToolbar,
   });
 
   factory ColorSchemeExtension.fromJson(Map<String, dynamic> json) =>

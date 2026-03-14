@@ -63,7 +63,7 @@ ColorScheme createLightColorScheme() {
     onSurfaceVariant: const Color(0xFF797B80), // #797B80
     surfaceContainerHighest: const Color(0xFFFAFBFC), // #FAFBFC
     surfaceContainerHigh: const Color(0xFFF7F8FA), // #F7F8FA
-    surfaceContainerLow: const Color(0xFFF5F5F5), // #F5F5F5  
+    surfaceContainerLow: const Color(0xFFF5F5F5), // #F5F5F5
     
     outline: const Color(0x1A171819), // #1A171819
     outlineVariant: const Color(0x4D171819), // #4D171819
@@ -239,6 +239,11 @@ ColorSchemeExtension createColorSchemeExtension() {
     
     labelInputDefault: const Color(0xFF47494D), // #47494D
     labelInputDisabled: const Color(0xFF47494D), // #47494D
+
+    ctabFolderSelectedTextColor: const Color(0xFFFFFFFF), // #FFFFFFFF
+    ctabFolderHighlightColor: const Color(0xFF5959EB), // #5959EB
+    ctabFolderUnselectedColor: const Color(0xFFE7E8E8), // #E7E8E8
+    surfaceToolbar: const Color(0xFFF4F4F4), // #F4F4F4 light
   );
 }
 

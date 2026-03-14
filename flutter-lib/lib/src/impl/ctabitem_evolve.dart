@@ -63,7 +63,10 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
         : (isSelected
               ? itemTheme.tabItemSelectedTextColor
               : itemTheme.tabItemTextColor);
-    final textStyle =
+    final baseStyle = isSelected
+        ? folderTheme.tabSelectedTextStyle
+        : folderTheme.tabTextStyle;
+    final textStyle = baseStyle?.copyWith(color: textColor) ??
         itemTheme.tabItemTextStyle?.copyWith(color: textColor) ??
         TextStyle(color: textColor);
 

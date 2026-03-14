@@ -10,6 +10,6 @@ public class DartMainToolbar extends DartComposite {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return new Point(1650, 28);
+        return new Point(1650, 36);
     }
 }

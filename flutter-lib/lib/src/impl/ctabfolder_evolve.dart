@@ -20,8 +20,8 @@ import 'composite_evolve.dart';
 import 'icons_map.dart';
 import 'widget_config.dart';
 import '../theme/theme_extensions/ctabfolder_theme_extension.dart';
-import 'utils/widget_utils.dart';
 import 'utils/image_utils.dart';
+import 'utils/widget_utils.dart';
 import 'color_utils.dart';
 
 class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
@@ -93,10 +93,10 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     final isMinimized = state.minimized ?? false;
     final isMaximized = state.maximized ?? false;
 
-    final double? tabHeight =
-        (state.tabHeight != null && state.tabHeight != SWT.DEFAULT)
-        ? state.tabHeight!.toDouble()
-        : null;
+    final double? tabHeight = 32;
+        //(state.tabHeight != null && state.tabHeight != SWT.DEFAULT)
+        //? state.tabHeight!.toDouble()
+        //: null;
 
     final constraints = getConstraintsFromBounds(state.bounds);
 
@@ -331,6 +331,15 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
           ),
           decoration: BoxDecoration(
             color: backgroundColor,
+            borderRadius: isTabBottom
+                ? BorderRadius.only(
+                    bottomLeft: Radius.circular(widgetTheme.tabBorderRadius),
+                    bottomRight: Radius.circular(widgetTheme.tabBorderRadius),
+                  )
+                : BorderRadius.only(
+                    topLeft: Radius.circular(widgetTheme.tabBorderRadius),
+                    topRight: Radius.circular(widgetTheme.tabBorderRadius),
+                  ),
             border: Border(
               right: BorderSide(
                 color: borderColor,
@@ -385,7 +394,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
                   child: Icon(
                     Icons.close,
                     size: widgetTheme.tabCloseIconSize,
-                    color: textColor,
+                    color: widgetTheme.tabCloseButtonColor,
                   ),
                 ),
               ],
@@ -457,6 +466,15 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
           ),
           decoration: BoxDecoration(
             color: backgroundColor,
+            borderRadius: isTabBottom
+                ? BorderRadius.only(
+                    bottomLeft: Radius.circular(widgetTheme.tabBorderRadius),
+                    bottomRight: Radius.circular(widgetTheme.tabBorderRadius),
+                  )
+                : BorderRadius.only(
+                    topLeft: Radius.circular(widgetTheme.tabBorderRadius),
+                    topRight: Radius.circular(widgetTheme.tabBorderRadius),
+                  ),
             image: isSelected && enabled ? _buildSelectionBgImage() : null,
             border: Border(
               top: !isTabBottom && isSelected && enabled && showHighlight
@@ -570,10 +588,10 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
                         Icons.close,
                         size: widgetTheme.tabCloseIconSize,
                         color: isSelected
-                            ? textColor.withOpacity(
+                            ? widgetTheme.tabCloseButtonColor.withOpacity(
                                 widgetTheme.tabCloseButtonSelectedOpacity,
                               )
-                            : textColor.withOpacity(
+                            : widgetTheme.tabCloseButtonColor.withOpacity(
                                 widgetTheme.tabCloseButtonUnselectedOpacity,
                               ),
                       ),
@@ -588,8 +606,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     );
   }
 
-  Widget _buildTopRightComposite(VComposite composite) {
-    return ToolbarComposite(value: composite);
+  Widget _buildTopRightComposite(VComposite composite, {Color? backgroundColor}) {
+    return ToolbarComposite(value: composite, backgroundColor: backgroundColor);
   }
 
   VComposite? getTopRightComposite() {
@@ -867,7 +885,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (topRightComposite != null)
-          _buildTopRightComposite(topRightComposite),
+          _buildTopRightComposite(topRightComposite, backgroundColor: widgetTheme.tabBarBackgroundColor),
         if (showMinimizeButton)
           Builder(
             builder: (context) {

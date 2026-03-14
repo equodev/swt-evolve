@@ -26,6 +26,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
   Color get tabHoverTextColor;
   Color get tabDisabledTextColor;
   double get tabUnselectedTextOpacity;
+  Color get tabCloseButtonColor;
   double get tabCloseButtonSelectedOpacity;
   double get tabCloseButtonUnselectedOpacity;
   Color get tabHighlightColor;
@@ -79,6 +80,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
     Color? tabHoverTextColor,
     Color? tabDisabledTextColor,
     double? tabUnselectedTextOpacity,
+    Color? tabCloseButtonColor,
     double? tabCloseButtonSelectedOpacity,
     double? tabCloseButtonUnselectedOpacity,
     Color? tabHighlightColor,
@@ -138,6 +140,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
       tabDisabledTextColor: tabDisabledTextColor ?? this.tabDisabledTextColor,
       tabUnselectedTextOpacity:
           tabUnselectedTextOpacity ?? this.tabUnselectedTextOpacity,
+      tabCloseButtonColor: tabCloseButtonColor ?? this.tabCloseButtonColor,
       tabCloseButtonSelectedOpacity:
           tabCloseButtonSelectedOpacity ?? this.tabCloseButtonSelectedOpacity,
       tabCloseButtonUnselectedOpacity:
@@ -267,6 +270,11 @@ mixin _$CTabFolderThemeExtensionTailorMixin
       tabUnselectedTextOpacity: t < 0.5
           ? tabUnselectedTextOpacity
           : other.tabUnselectedTextOpacity,
+      tabCloseButtonColor: Color.lerp(
+        tabCloseButtonColor,
+        other.tabCloseButtonColor,
+        t,
+      )!,
       tabCloseButtonSelectedOpacity: t < 0.5
           ? tabCloseButtonSelectedOpacity
           : other.tabCloseButtonSelectedOpacity,
@@ -441,6 +449,10 @@ mixin _$CTabFolderThemeExtensionTailorMixin
               other.tabUnselectedTextOpacity,
             ) &&
             const DeepCollectionEquality().equals(
+              tabCloseButtonColor,
+              other.tabCloseButtonColor,
+            ) &&
+            const DeepCollectionEquality().equals(
               tabCloseButtonSelectedOpacity,
               other.tabCloseButtonSelectedOpacity,
             ) &&
@@ -601,6 +613,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(tabHoverTextColor),
       const DeepCollectionEquality().hash(tabDisabledTextColor),
       const DeepCollectionEquality().hash(tabUnselectedTextOpacity),
+      const DeepCollectionEquality().hash(tabCloseButtonColor),
       const DeepCollectionEquality().hash(tabCloseButtonSelectedOpacity),
       const DeepCollectionEquality().hash(tabCloseButtonUnselectedOpacity),
       const DeepCollectionEquality().hash(tabHighlightColor),
@@ -667,6 +680,7 @@ extension CTabFolderThemeExtensionBuildContextProps on BuildContext {
       cTabFolderThemeExtension.tabDisabledTextColor;
   double get tabUnselectedTextOpacity =>
       cTabFolderThemeExtension.tabUnselectedTextOpacity;
+  Color get tabCloseButtonColor => cTabFolderThemeExtension.tabCloseButtonColor;
   double get tabCloseButtonSelectedOpacity =>
       cTabFolderThemeExtension.tabCloseButtonSelectedOpacity;
   double get tabCloseButtonUnselectedOpacity =>

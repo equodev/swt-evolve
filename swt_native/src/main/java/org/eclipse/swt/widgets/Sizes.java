@@ -18,7 +18,7 @@ public class Sizes {
     private static final double HORIZONTAL_PADDING = 12.0;
 
     public static Point compute(DartCTabFolder impl) {
-        return new Point(impl.getItems().length * 80, 28);
+        return new Point(impl.getItems().length * 80, 32);
     }
 
     public static Point compute(DartMenu c) {
@@ -533,9 +533,9 @@ public class Sizes {
         Rectangle b = widget.getBounds();
         boolean onBottom = widget.getTabPosition() == SWT.BOTTOM;
         if (onBottom) {
-            return new Rectangle(0, 0, b.width, b.height - 28);
+            return new Rectangle(0, 0, b.width, b.height - 32);
         } else {
-            return new Rectangle(0, 28, b.width, b.height - 28);
+            return new Rectangle(0, 32, b.width, b.height - 32);
         }
     }
 
