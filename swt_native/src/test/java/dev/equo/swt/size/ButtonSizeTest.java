@@ -99,7 +99,7 @@ class ButtonSizeTest extends SizeTestBase {
     }
 
     static DartButton createButton(int style, String image, String text, int size, int fontStyle) {
-        DartButton w = new DartButton(shell(), style, null);
+        DartButton w = new DartButton(swtShell(), style, null);
         if (!NoImg.equals(image))
             w.setImage(createImage(image));
         if (!NoTxt.equals(text))

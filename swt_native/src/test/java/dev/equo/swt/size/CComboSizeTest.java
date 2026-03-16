@@ -96,7 +96,7 @@ class CComboSizeTest extends SizeTestBase {
     }
 
     static DartCCombo createCCombo(int style, String text, int size, int fontStyle) {
-        DartCCombo w = new DartCCombo(shell(), style, null);
+        DartCCombo w = new DartCCombo(swtShell(), style, null);
         if (!NoTxt.equals(text))
             w.setText(text);
         if (size != FromTheme)

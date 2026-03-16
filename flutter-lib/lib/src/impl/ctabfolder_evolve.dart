@@ -216,8 +216,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     VComposite? topRightComposite,
   ) {
     final isTabBottom = state.tabPosition == SWT.BOTTOM ?? false;
-    final showMinimizeButton = state.minimizeVisible ?? true;
-    final showMaximizeButton = state.maximizeVisible ?? true;
+    final showMinimizeButton = state.minimizeVisible ?? false;
+    final showMaximizeButton = state.maximizeVisible ?? false;
     final isMinimized = state.minimized ?? false;
     final isMaximized = state.maximized ?? false;
     final topRightAlignment = state.topRightAlignment ?? SWT.RIGHT;

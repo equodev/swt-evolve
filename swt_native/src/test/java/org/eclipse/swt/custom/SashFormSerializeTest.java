@@ -11,7 +11,7 @@ class SashFormSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_SashForm() {
-        SashForm w = new SashForm(composite(), SWT.NONE);
+        SashForm w = new SashForm(swtShell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class SashFormSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_SashForm() {
-        SashForm w = new SashForm(composite(), SWT.NONE);
+        SashForm w = new SashForm(swtShell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();

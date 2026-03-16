@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.FlutterLibraryLoader;
 import dev.equo.swt.GCImageDrawer;
@@ -7,16 +8,13 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.*;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.DartGC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.internal.Platform;
 
 import java.util.function.Consumer;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.*;
 
 public abstract class SwtFlutterBridgeBase extends FlutterBridge {
@@ -27,7 +25,8 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     private static String cachedTheme = null;
 
     static {
-        FlutterLibraryLoader.initialize();
+        if (!"false".equals(System.getProperty("dev.equo.swt.loadLibrary")))
+            FlutterLibraryLoader.initialize();
     }
 
     public SwtFlutterBridgeBase(DartWidget widget) {
@@ -40,13 +39,16 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     }
 
     public static SwtFlutterBridge of(DartWidget widget) {
-        if (widget instanceof DartControl dartControl && (dartControl.parent.getImpl() instanceof SwtComposite
-                || (dartControl.getApi().getClass().getName().equals("org.eclipse.e4.ui.workbench.renderers.swt.ContributedPartRenderer$1") && dartControl.parent.getImpl() instanceof DartCTabFolder)
-                /*|| (dartControl.getClass() == DartComposite.class && dartControl.parent.getImpl() instanceof DartCTabFolder)*/)) {
-//            SwtComposite parentComposite = new SwtComposite(dartControl.parent, SWT.NONE, null);
+        if (widget instanceof DartControl dartControl && dartControl.parent.getImpl() instanceof SwtComposite) {
             SwtFlutterBridge bridge = new SwtFlutterBridge(widget);
             widget.bridge = bridge;
             bridge.initFlutterView(dartControl.parent, dartControl);
+            if (widget instanceof DartCTabFolder t) { // workaround
+                t.addSelectionListener(SelectionListener.widgetSelectedAdapter(e -> {
+                    Rectangle bounds = t.getBounds();
+                    bridge.setBoundsCTabFolder(t, bounds, true);
+                }));
+            }
             return bridge;
         }
         if (widget instanceof DartControl dartControl && dartControl.parent.getImpl() instanceof DartComposite c) {
@@ -164,9 +166,9 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
         int parentBackgroundColorInt = (parentBackgroundColor.getRed() << 16) | (parentBackgroundColor.getGreen() << 8) | parentBackgroundColor.getBlue();
 
         long parentHandle = getParentHandleForInit(parent, control);
-        context = InitializeFlutterWindow(client.getPort(), parentHandle, id(control), widgetName(control), theme, backgroundColorInt, parentBackgroundColorInt);
+        context = initializeFlutterWindow(client.getPort(), parentHandle, id(control), widgetName(control), theme, backgroundColorInt, parentBackgroundColorInt);
 
-        long view = GetView(context);
+        long view = getView(context);
         setHandle(control, view);
         if (parentHandle == 0) {
             postCreateLimboReparent(parent, control);
@@ -189,7 +191,7 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
         if (control instanceof DartControl dartControl && control == forWidget) {
             super.destroy(control);
             // Dispose Flutter context FIRST to handle view disconnection
-            Dispose(context);
+            dispose(context);
             context = 0;
             destroyHandle(dartControl);
         }
@@ -202,16 +204,11 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     public void setBounds(DartControl dartControl, Rectangle bounds) {
         if (dartControl.bridge != null && forWidget == dartControl) {
             System.out.println("SET BOUNDS: " + dartControl + " Rectangle {" + bounds.x + ", " + bounds.y + ", " + bounds.width + ", " + bounds.height + "}");
-
             if (dartControl instanceof DartCTabFolder folder) {
-                if (folder._onBottom()) {
-                    SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height, 0, bounds.height - 32, bounds.width,32);
-                } else {
-                    SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height, 0, 0, bounds.width, 32);
-                }
+                setBoundsCTabFolder(folder, bounds, false);
             } else {
-                SetBounds(context, bounds.x, bounds.y, bounds.width, bounds.height,
-                        bounds.x, bounds.y, bounds.width, bounds.height);
+                setBounds(context, bounds.x, bounds.y, bounds.width, bounds.height,
+                        0, 0, bounds.width, bounds.height);
             }
 
             //dartControl.resized();
@@ -228,19 +225,46 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
         }
     }
 
+    public void setBoundsCTabFolder(DartCTabFolder folder, Rectangle bounds, boolean viewOnly) {
+        if (folder.getSelection() != null && folder.getSelection().getControl() != null && folder.getSelection().getControl().getImpl() instanceof SwtControl) {
+            if (folder._onBottom()) {
+                setBounds(context, bounds.x, bounds.y, bounds.width, bounds.height, 0, bounds.height - 32, bounds.width, 32);
+            } else {
+                setBounds(context, bounds.x, bounds.y, bounds.width, bounds.height, 0, 0, bounds.width, 32);
+            }
+        } else {
+            setBounds(context, bounds.x, bounds.y, bounds.width, bounds.height, 0, 0, bounds.width, bounds.height);
+        }
+    }
+
     @Override
     public abstract Object container(DartComposite parent);
 
     public abstract void reparent(DartControl control, Composite newParent);
 
-    protected static native long InitializeFlutterWindow(int port, long parentHandle, long widgetId, String widgetName, String theme, int backgroundColor, int parentBackgroundColor);
+    protected static long initializeFlutterWindow(int port, long parentHandle, long widgetId, String widgetName, String theme, int backgroundColor, int parentBackgroundColor) {
+        return InitializeFlutterWindow(port, parentHandle, widgetId, widgetName, theme, backgroundColor, parentBackgroundColor);
+    }
+    private static native long InitializeFlutterWindow(int port, long parentHandle, long widgetId, String widgetName, String theme, int backgroundColor, int parentBackgroundColor);
 
-    protected static native long Dispose(long context);
+    protected static long dispose(long context) {
+        return Dispose(context);
+    }
+    private static native long Dispose(long context);
 
-    static native long SetBounds(long context, int x, int y, int w, int h, int vx, int vy, int vw, int vh);
+    static long setBounds(long context, int x, int y, int w, int h, int vx, int vy, int vw, int vh) {
+        return SetBounds(context, x, y, w, h, vx, vy, vw, vh);
+    }
+    private static native long SetBounds(long context, int x, int y, int w, int h, int vx, int vy, int vw, int vh);
 
-    static native long GetView(long context);
+    static long getView(long context) {
+        return GetView(context);
+    }
+    private static native long GetView(long context);
 
-    protected static native int PumpMessages(int maxMessages);
+    protected static int pumpMessages(int maxMessages) {
+        return PumpMessages(maxMessages);
+    }
+    private static native int PumpMessages(int maxMessages);
 }
 

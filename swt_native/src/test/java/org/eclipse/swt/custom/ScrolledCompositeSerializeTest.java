@@ -11,7 +11,7 @@ class ScrolledCompositeSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_ScrolledComposite() {
-        ScrolledComposite w = new ScrolledComposite(composite(), SWT.NONE);
+        ScrolledComposite w = new ScrolledComposite(swtShell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class ScrolledCompositeSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_ScrolledComposite() {
-        ScrolledComposite w = new ScrolledComposite(composite(), SWT.NONE);
+        ScrolledComposite w = new ScrolledComposite(swtShell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();

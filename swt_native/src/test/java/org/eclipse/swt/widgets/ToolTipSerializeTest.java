@@ -11,7 +11,7 @@ class ToolTipSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_ToolTip() {
-        ToolTip w = new ToolTip(shell(), SWT.NONE);
+        ToolTip w = new ToolTip(swtShell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class ToolTipSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_ToolTip() {
-        ToolTip w = new ToolTip(shell(), SWT.NONE);
+        ToolTip w = new ToolTip(swtShell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();

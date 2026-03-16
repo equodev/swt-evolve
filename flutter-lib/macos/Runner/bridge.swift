@@ -101,11 +101,11 @@ class FlutterBridgeController {
             v.autoresizingMask = []
         }
         if (x == vx && y == vy && w == vw && h == vh) {
-            return
+//             return
         }
         if let flutterView = flutterViewController?.view {
             flutterView.frame = NSRect(x: CGFloat(vx), y: CGFloat(vy), width: CGFloat(vw), height: CGFloat(vh))
-            flutterView.autoresizingMask = []
+//             flutterView.autoresizingMask = []
         }
     }
 

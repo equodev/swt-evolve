@@ -66,7 +66,7 @@ class SliderSizeTest extends SizeTestBase {
     }
 
     static DartSlider createSlider(int style) {
-        DartSlider w = new DartSlider(shell(), style, null);
+        DartSlider w = new DartSlider(swtShell(), style, null);
         return w;
     }
 

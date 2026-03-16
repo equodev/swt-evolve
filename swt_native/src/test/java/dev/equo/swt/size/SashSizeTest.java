@@ -66,7 +66,7 @@ class SashSizeTest extends SizeTestBase {
     }
 
     static DartSash createSash(int style) {
-        DartSash w = new DartSash(shell(), style, null);
+        DartSash w = new DartSash(swtShell(), style, null);
         return w;
     }
 

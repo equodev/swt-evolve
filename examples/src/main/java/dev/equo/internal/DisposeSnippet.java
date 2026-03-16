@@ -27,12 +27,12 @@ public class DisposeSnippet {
         }
 
         private void initFlutterView(Shell parent) {
-            context = InitializeFlutterWindow(client.getPort(), getHandle(parent), 0, "", "", 0, 0);
+            context = initializeFlutterWindow(client.getPort(), getHandle(parent), 0, "", "", 0, 0);
         }
 
         @Override
         public void destroy(DartWidget wid) {
-            Dispose(context);
+            dispose(context);
         }
     }
 

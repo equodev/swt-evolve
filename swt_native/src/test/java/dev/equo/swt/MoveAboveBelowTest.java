@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.swt.widgets.Mocks.shell;
+import static org.eclipse.swt.widgets.Mocks.swtShell;
 
 @ExtendWith(Mocks.class)
 @ExtendWith(MockFlutterBridge.Extension.class)
@@ -27,7 +27,7 @@ public class MoveAboveBelowTest {
 
     @Test
     public void moveAbove_movesControlBeforeTarget() {
-        Composite composite = new Composite(shell(), SWT.NONE);
+        Composite composite = new Composite(swtShell(), SWT.NONE);
         Label label = new Label(composite, SWT.NONE);
         Button button = new Button(composite, SWT.NONE);
         Composite child = new Composite(composite, SWT.NONE);
@@ -40,7 +40,7 @@ public class MoveAboveBelowTest {
 
     @Test
     public void moveAbove_null_movesToTop() {
-        Composite composite = new Composite(shell(), SWT.NONE);
+        Composite composite = new Composite(swtShell(), SWT.NONE);
         Label label = new Label(composite, SWT.NONE);
         Button button = new Button(composite, SWT.NONE);
         Composite child = new Composite(composite, SWT.NONE);
@@ -51,7 +51,7 @@ public class MoveAboveBelowTest {
 
     @Test
     public void moveBelow_movesControlAfterTarget() {
-        Composite composite = new Composite(shell(), SWT.NONE);
+        Composite composite = new Composite(swtShell(), SWT.NONE);
         Label label = new Label(composite, SWT.NONE);
         Button button = new Button(composite, SWT.NONE);
         Composite child = new Composite(composite, SWT.NONE);
@@ -62,7 +62,7 @@ public class MoveAboveBelowTest {
 
     @Test
     public void moveBelow_null_movesToBottom() {
-        Composite composite = new Composite(shell(), SWT.NONE);
+        Composite composite = new Composite(swtShell(), SWT.NONE);
         Label label = new Label(composite, SWT.NONE);
         Button button = new Button(composite, SWT.NONE);
         Composite child = new Composite(composite, SWT.NONE);

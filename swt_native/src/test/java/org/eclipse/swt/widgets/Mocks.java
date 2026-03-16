@@ -1,17 +1,20 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.MockFlutterBridge;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.accessibility.Accessible;
 import org.eclipse.swt.accessibility.DartAccessible;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.DartCTabFolder;
+import org.eclipse.swt.custom.SwtCTabFolder;
 import org.eclipse.swt.graphics.*;
 import org.instancio.Instancio;
 import org.instancio.InstancioObjectApi;
 import org.instancio.Select;
 import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -20,24 +23,63 @@ import java.lang.reflect.Method;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
-public class Mocks implements AfterEachCallback {
+public class Mocks implements BeforeEachCallback, AfterEachCallback {
 
     private static Display display;
+    private final boolean nativeBridge;
+    public MockedStatic<SwtFlutterBridgeBase> bridge;
+
+    private Mocks() {
+        this(false);
+    }
+
+    private Mocks(boolean nativeBridge) {
+        this.nativeBridge = nativeBridge;
+    }
+
+    public static Mocks withNativeBridge() {
+        return new Mocks(true);
+    }
+
+    public static Mocks noNativeBridge() {
+        return new Mocks(false);
+    }
+
+    @Override
+    public void beforeEach(ExtensionContext context) throws Exception {
+        if (!nativeBridge) {
+            System.setProperty("dev.equo.swt.loadLibrary", "false");
+            bridge = Mockito.mockStatic(SwtFlutterBridgeBase.class);
+            bridge.when(() -> SwtFlutterBridgeBase.of(any())).thenCallRealMethod();
+        }
+    }
 
     @Override
     public void afterEach(ExtensionContext context) throws Exception {
+        if (bridge != null) {
+            bridge.close();
+            System.clearProperty("dev.equo.swt.loadLibrary");
+        }
         if (display != null) {
             Mocks.dispose(display);
             display = null;
         }
     }
 
-    public static Shell shell() {
-        Display display = display();
-        return shell(display);
+    public static void verifySetBounds(MockedStatic<SwtFlutterBridgeBase> bridge, int x, int y, int w, int h, int vx, int vy, int vw, int vh) {
+        bridge.verify(() -> SwtFlutterBridgeBase.setBounds(anyLong(), eq(y), eq(y), eq(w), eq(h), eq(vx), eq(vy), eq(vw), eq(vh)));
     }
 
-    public static Shell shell(Display display) {
+    public static void verifyNoSetBounds(MockedStatic<SwtFlutterBridgeBase> bridge) {
+        bridge.verify(() -> SwtFlutterBridgeBase.setBounds(anyLong(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt()), never());
+    }
+
+    public static Shell swtShell() {
+        Display display = swtDisplay();
+        return swtShell(display);
+    }
+
+    public static Shell swtShell(Display display) {
         Shell shell = mock(Shell.class);
         SwtShell swtShell = mock(SwtShell.class);
         when(shell.getImpl()).thenReturn(swtShell);
@@ -62,7 +104,7 @@ public class Mocks implements AfterEachCallback {
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
     }
 
-    public static Display display() {
+    public static Display swtDisplay() {
         if (display != null)
             return display;
         Display display = mock(Display.class);
@@ -99,20 +141,50 @@ public class Mocks implements AfterEachCallback {
         return display;
     }
 
+    public static Composite swtComposite(Composite parent) {
+        Composite w = mock(Composite.class);
+        when(w.getParent()).thenReturn(parent);
+        SwtComposite impl = mock(SwtComposite.class);
+        when(w.getImpl()).thenReturn(impl);
+        Display display = swtDisplay();
+        when(impl._display()).thenReturn(display);
+        when(impl._getChildren()).thenReturn(new Control[0]);
+        return w;
+    }
+
     public static Composite composite() {
-        return shell();
+        Composite w = mock(Composite.class);
+        DartComposite impl = mock(DartComposite.class);
+        when(w.getImpl()).thenReturn(impl);
+        Display display = swtDisplay();
+        when(impl._display()).thenReturn(display);
+        when(impl._getChildren()).thenReturn(new Control[0]);
+        return w;
     }
 
     public static Device device() {
-        return display();
+        return swtDisplay();
+    }
+
+    public static CTabFolder swtCTabFolder(Composite parent) {
+        CTabFolder w = mock(CTabFolder.class);
+        when(w.getParent()).thenReturn(parent);
+        SwtCTabFolder impl = mock(SwtCTabFolder.class);
+        when(impl.getApi()).thenReturn(w);
+        when(w.getImpl()).thenReturn(impl);
+        Display display = swtDisplay();
+        when(impl._display()).thenReturn(display);
+        when(impl._getChildren()).thenReturn(new Control[0]);
+        return w;
     }
 
     public static CTabFolder cTabFolder() {
         CTabFolder w = mock(CTabFolder.class);
         DartCTabFolder impl = mock(DartCTabFolder.class);
         when(w.getImpl()).thenReturn(impl);
-        Display display = display();
+        Display display = swtDisplay();
         when(impl._display()).thenReturn(display);
+        when(impl._getChildren()).thenReturn(new Control[0]);
         return w;
     }
 
@@ -121,7 +193,7 @@ public class Mocks implements AfterEachCallback {
         DartToolBar impl = mock(DartToolBar.class);
         when(w.getImpl()).thenReturn(impl);
         when(impl.getBridge()).thenReturn(new MockFlutterBridge());
-        Display display = display();
+        Display display = swtDisplay();
         //when(w.getDisplay()).thenReturn(display);
         when(impl._display()).thenReturn(display);
         return w;
@@ -132,7 +204,7 @@ public class Mocks implements AfterEachCallback {
         DartTabFolder impl = mock(DartTabFolder.class);
         when(w.getImpl()).thenReturn(impl);
         when(impl.getBridge()).thenReturn(new MockFlutterBridge());
-        Display display = display();
+        Display display = swtDisplay();
         when(impl._display()).thenReturn(display);
         when(impl._getChildren()).thenReturn(new Control[0]);
         doNothing().when(impl).createItem(any(TabItem.class), anyInt());
@@ -144,7 +216,7 @@ public class Mocks implements AfterEachCallback {
         DartCoolBar impl = mock(DartCoolBar.class);
         when(w.getImpl()).thenReturn(impl);
         when(impl.getBridge()).thenReturn(new MockFlutterBridge());
-        Display display = display();
+        Display display = swtDisplay();
         when(w.getDisplay()).thenReturn(display);
         when(impl._display()).thenReturn(display);
         when(impl._getChildren()).thenReturn(new Control[0]);
@@ -174,7 +246,7 @@ public class Mocks implements AfterEachCallback {
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
         when(w.getImpl()).thenReturn(impl);
         when(impl.getBridge()).thenReturn(new MockFlutterBridge());
-        Display display = display();
+        Display display = swtDisplay();
         when(w.getDisplay()).thenReturn(display);
         when(impl._display()).thenReturn(display);
         return w;
@@ -193,7 +265,7 @@ public class Mocks implements AfterEachCallback {
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
         when(w.getImpl()).thenReturn(impl);
         when(impl.getBridge()).thenReturn(new MockFlutterBridge());
-        Display display = display();
+        Display display = swtDisplay();
         when(w.getDisplay()).thenReturn(display);
         when(impl._display()).thenReturn(display);
         return w;
@@ -204,7 +276,7 @@ public class Mocks implements AfterEachCallback {
         DartControl impl = mock(DartControl.class);
 
         when(w.getImpl()).thenReturn((IText) impl);
-        when(impl._display()).thenReturn(display());
+        when(impl._display()).thenReturn(swtDisplay());
         when(impl.getBridge()).thenReturn(new MockFlutterBridge());
         when(impl.getTouchEnabled()).thenReturn(false);
 
@@ -216,7 +288,7 @@ public class Mocks implements AfterEachCallback {
         DartExpandBar impl = mock(DartExpandBar.class);
         when(w.getImpl()).thenReturn(impl);
         when(impl.getBridge()).thenReturn(new MockFlutterBridge());
-        Display display = display();
+        Display display = swtDisplay();
         when(w.getDisplay()).thenReturn(display);
         when(impl._display()).thenReturn(display);
         doNothing().when(impl).createItem(any(ExpandItem.class), anyInt(), anyInt());
@@ -224,7 +296,7 @@ public class Mocks implements AfterEachCallback {
     }
 
     public static Control control() {
-        return shell();
+        return swtShell();
     }
 
     public static Accessible accessible() { // TODO: Enabled AccessibleSerializeTest
@@ -237,7 +309,7 @@ public class Mocks implements AfterEachCallback {
     }
 
     public static Menu menu() {
-        return new Menu(shell());
+        return new Menu(swtShell());
     }
 
     public static int index() {
@@ -255,7 +327,7 @@ public class Mocks implements AfterEachCallback {
         inst.fill();
         DartCanvas impl = mock(DartCanvas.class);
         when(w.getImpl()).thenReturn(impl);
-        Display display = display();
+        Display display = swtDisplay();
         when(impl._display()).thenReturn(display);
         return w;
     }

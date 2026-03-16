@@ -11,7 +11,7 @@ class CompositeSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Composite() {
-        Composite w = new Composite(composite(), SWT.NONE);
+        Composite w = new Composite(swtShell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class CompositeSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_Composite() {
-        Composite w = new Composite(composite(), SWT.NONE);
+        Composite w = new Composite(swtShell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();

@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.swt.widgets.Mocks.shell;
+import static org.eclipse.swt.widgets.Mocks.swtShell;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(Mocks.class)
@@ -34,7 +34,7 @@ class DynCompositeTest {
     void it_should_not_be_dynComposite_if_not_forced() {
         Config.useEquo(Composite.class);
 
-        Composite comp = new Composite(shell(), SWT.NONE);
+        Composite comp = new Composite(swtShell(), SWT.NONE);
 
         assertThat(comp.getImpl())
                 .isNotInstanceOf(DynComposite.class)
@@ -43,7 +43,7 @@ class DynCompositeTest {
 
     @Test
     void it_should_be_dynComposite_when_forced_on_parent() {
-        Shell shell = shell();
+        Shell shell = swtShell();
         when(shell.getData(Config.PROPERTY_PREFIX+"Composite")).thenReturn("dyn");
 
         Composite comp = new Composite(shell, SWT.NONE);
@@ -53,7 +53,7 @@ class DynCompositeTest {
     @Test
     void dynComposite_should_convert_on_setData() {
         Config.useEquo(Composite.class);
-        Shell shell = shell();
+        Shell shell = swtShell();
         when(shell.getData(Config.PROPERTY_PREFIX+"Composite")).thenReturn("dyn");
 
         Composite comp = new Composite(shell, SWT.NONE);
@@ -67,7 +67,7 @@ class DynCompositeTest {
     @Test
     void dynComposite_should_convert_on_setData_to_dart_and_keep_state() {
         System.setProperty(Config.PROPERTY_PREFIX+"ProblemsView", Config.Impl.equo.name());
-        Shell shell = shell();
+        Shell shell = swtShell();
         when(shell.getData(Config.PROPERTY_PREFIX+"Composite")).thenReturn("dyn");
 
         Composite comp = new Composite(shell, SWT.NONE);

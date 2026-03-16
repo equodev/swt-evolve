@@ -11,7 +11,7 @@ class StyledTextSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_StyledText() {
-        StyledText w = new StyledText(composite(), SWT.NONE);
+        StyledText w = new StyledText(swtShell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -21,7 +21,7 @@ class StyledTextSerializeTest extends SerializeTestBase {
     @Test
     @Disabled
     void should_serialize_filled_StyledText() {
-        StyledText w = new StyledText(composite(), SWT.NONE);
+        StyledText w = new StyledText(swtShell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();

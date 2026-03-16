@@ -21,7 +21,7 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     final children = state.children;
 
     if (children == null || children.isEmpty) {
-      return wrap(const SizedBox.shrink());
+      return wrap(const SizedBox.expand());
       // return wrap(const Spacer());
     }
 

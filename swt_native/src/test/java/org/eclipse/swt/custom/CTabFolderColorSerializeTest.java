@@ -5,11 +5,11 @@ import dev.equo.swt.SerializeTestBase;
 import net.javacrumbs.jsonunit.assertj.JsonMapAssert;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.widgets.Mocks;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.json;
 import static org.eclipse.swt.widgets.Mocks.*;
 
 class CTabFolderColorSerializeTest extends SerializeTestBase {
@@ -22,7 +22,7 @@ class CTabFolderColorSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_CTabFolder_with_swtColor() {
-        CTabFolder w = new CTabFolder(composite(), SWT.NONE);
+        CTabFolder w = new CTabFolder(swtShell(), SWT.NONE);
         Config.useEclipse(Color.class);
         Color color = new Color(red(), green(), blue());
         w.setSelectionBackground(color);

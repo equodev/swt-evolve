@@ -66,7 +66,7 @@ class ProgressBarSizeTest extends SizeTestBase {
     }
 
     static DartProgressBar createProgressBar(int style) {
-        DartProgressBar w = new DartProgressBar(shell(), style, null);
+        DartProgressBar w = new DartProgressBar(swtShell(), style, null);
         return w;
     }
 

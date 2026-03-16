@@ -14,7 +14,9 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
 
     protected long getHandle(Control control) {
         if (control.getImpl() instanceof SwtComposite composite) {
-            return composite.contentView().id;
+            if (composite.contentView() != null)
+                return composite.contentView().id;
+            return 0;
         }
         return control.view.id;
     }

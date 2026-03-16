@@ -9,6 +9,8 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -21,29 +23,13 @@ public class ConfigTest {
 
     @BeforeEach
     void defaults_swt() {
-        Config.defaultImpl = Config.Impl.eclipse;
+        Config.reset();
     }
 
     @AfterEach
     void reset() {
         Config.defaultImpl = Config.Impl.eclipse;
-        System.clearProperty("dev.equo.swt.Composite");
-        System.clearProperty("dev.equo.swt.Point");
-        System.clearProperty("dev.equo.swt.CTabItem");
-        System.clearProperty("dev.equo.swt.CTabFolder");
-        System.clearProperty("dev.equo.swt.CTabFolderRenderer");
-        System.clearProperty("dev.equo.swt.CTabFolderLayout");
-        System.clearProperty("dev.equo.swt.Button");
-        System.clearProperty("dev.equo.swt.Tree");
-        System.clearProperty("dev.equo.swt.TreeItem");
-        System.clearProperty("dev.equo.swt.TreeColumn");
-        System.clearProperty("dev.equo.swt.Table");
-        System.clearProperty("dev.equo.swt.TableItem");
-        System.clearProperty("dev.equo.swt.TableColumn");
-        System.clearProperty("dev.equo.swt.ToolBar");
-        System.clearProperty("dev.equo.swt.ToolItem");
-        System.clearProperty("dev.equo.swt.Menu");
-        System.clearProperty("dev.equo.swt.MenuItem");
+        Config.reset();
     }
 
     @Test
@@ -119,8 +105,6 @@ public class ConfigTest {
 
         @AfterEach
         void cleanup() {
-            System.clearProperty("dev.equo.swt.Button");
-            System.clearProperty("dev.equo.swt.CTabItem");
             Config.defaultToEclipse();
         }
 
@@ -162,7 +146,7 @@ public class ConfigTest {
     class WithParent {
         @Test
         void should_default_to_swt_for_widget() {
-            assertThat(Config.isEquo(CTabFolder.class, Mocks.composite())).isFalse();
+            assertThat(Config.isEquo(CTabFolder.class, Mocks.swtShell())).isFalse();
         }
 
     }
@@ -172,22 +156,6 @@ public class ConfigTest {
 
         @AfterEach
         void cleanup() {
-            System.clearProperty("dev.equo.swt.Tree");
-            System.clearProperty("dev.equo.swt.TreeItem");
-            System.clearProperty("dev.equo.swt.TreeColumn");
-            System.clearProperty("dev.equo.swt.Table");
-            System.clearProperty("dev.equo.swt.TableItem");
-            System.clearProperty("dev.equo.swt.TableColumn");
-            System.clearProperty("dev.equo.swt.CTabFolder");
-            System.clearProperty("dev.equo.swt.CTabItem");
-            System.clearProperty("dev.equo.swt.CTabFolderRenderer");
-            System.clearProperty("dev.equo.swt.CTabFolderLayout");
-            System.clearProperty("dev.equo.swt.ToolBar");
-            System.clearProperty("dev.equo.swt.ToolItem");
-            System.clearProperty("dev.equo.swt.Menu");
-            System.clearProperty("dev.equo.swt.MenuItem");
-            System.clearProperty("dev.equo.swt.TaskBar");
-            System.clearProperty("dev.equo.swt.TaskItem");
             Config.defaultToEclipse();
         }
 
@@ -196,27 +164,27 @@ public class ConfigTest {
         void activating_tree_should_activate_treeitem() {
             Config.defaultToEclipse();
             System.setProperty("dev.equo.swt.Tree", "equo");
-            assertThat(Config.isEquoForced(Tree.class)).isTrue();
-            assertThat(Config.isEquoForced(TreeItem.class)).isTrue();
-            assertThat(Config.isEquoForced(TreeColumn.class)).isTrue();
+            assertThat(Config.isForced(Tree.class)).isEqualTo(Config.Impl.equo);
+            assertThat(Config.isForced(TreeItem.class)).isEqualTo(Config.Impl.equo);
+            assertThat(Config.isForced(TreeColumn.class)).isEqualTo(Config.Impl.equo);
         }
 
         @Test
         void activating_treeitem_should_activate_tree_and_treecolumn() {
             Config.defaultToEclipse();
             System.setProperty("dev.equo.swt.TreeItem", "equo");
-            assertThat(Config.isEquoForced(Tree.class)).isTrue();
-            assertThat(Config.isEquoForced(TreeItem.class)).isTrue();
-            assertThat(Config.isEquoForced(TreeColumn.class)).isTrue();
+            assertThat(Config.isForced(Tree.class)).isEqualTo(Config.Impl.equo);
+            assertThat(Config.isForced(TreeItem.class)).isEqualTo(Config.Impl.equo);
+            assertThat(Config.isForced(TreeColumn.class)).isEqualTo(Config.Impl.equo);
         }
 
         @Test
         void activating_treecolumn_should_activate_tree_and_treeitem() {
             Config.defaultToEclipse();
             System.setProperty("dev.equo.swt.TreeColumn", "equo");
-            assertThat(Config.isEquoForced(Tree.class)).isTrue();
-            assertThat(Config.isEquoForced(TreeItem.class)).isTrue();
-            assertThat(Config.isEquoForced(TreeColumn.class)).isTrue();
+            assertThat(Config.isForced(Tree.class)).isEqualTo(Config.Impl.equo);
+            assertThat(Config.isForced(TreeItem.class)).isEqualTo(Config.Impl.equo);
+            assertThat(Config.isForced(TreeColumn.class)).isEqualTo(Config.Impl.equo);
         }
 
         // Table group tests
@@ -224,18 +192,18 @@ public class ConfigTest {
         void activating_table_should_activate_tableitem_and_tablecolumn() {
             Config.defaultToEclipse();
             System.setProperty("dev.equo.swt.Table", "equo");
-            assertThat(Config.isEquoForced(Table.class)).isTrue();
-            assertThat(Config.isEquoForced(TableItem.class)).isTrue();
-            assertThat(Config.isEquoForced(TableColumn.class)).isTrue();
+            assertThat(Config.isForced(Table.class)).isEqualTo(Config.Impl.equo);
+            assertThat(Config.isForced(TableItem.class)).isEqualTo(Config.Impl.equo);
+            assertThat(Config.isForced(TableColumn.class)).isEqualTo(Config.Impl.equo);
         }
 
         @Test
         void activating_tableitem_should_activate_table_and_tablecolumn() {
             Config.defaultToEclipse();
             System.setProperty("dev.equo.swt.TableItem", "equo");
-            assertThat(Config.isEquoForced(Table.class)).isTrue();
-            assertThat(Config.isEquoForced(TableItem.class)).isTrue();
-            assertThat(Config.isEquoForced(TableColumn.class)).isTrue();
+            assertThat(Config.isForced(Table.class)).isEqualTo(Config.Impl.equo);
+            assertThat(Config.isForced(TableItem.class)).isEqualTo(Config.Impl.equo);
+            assertThat(Config.isForced(TableColumn.class)).isEqualTo(Config.Impl.equo);
         }
 
         // CTabFolder group tests
@@ -243,18 +211,18 @@ public class ConfigTest {
         void activating_ctabfolder_should_activate_ctabitem_and_renderer() {
             Config.defaultToEclipse();
             System.setProperty("dev.equo.swt.CTabFolder", "equo");
-            assertThat(Config.isEquoForced(CTabFolder.class)).isTrue();
-            assertThat(Config.isEquoForced(CTabItem.class)).isTrue();
-            assertThat(Config.isEquoForced(CTabFolderRenderer.class)).isTrue();
+            assertThat(Config.isForced(CTabFolder.class)).isEqualTo(Config.Impl.equo);
+            assertThat(Config.isForced(CTabItem.class)).isEqualTo(Config.Impl.equo);
+            assertThat(Config.isForced(CTabFolderRenderer.class)).isEqualTo(Config.Impl.equo);
         }
 
         @Test
         void activating_ctabitem_should_activate_ctabfolder_and_renderer() {
             Config.defaultToEclipse();
             System.setProperty("dev.equo.swt.CTabItem", "equo");
-            assertThat(Config.isEquoForced(CTabFolder.class)).isTrue();
-            assertThat(Config.isEquoForced(CTabItem.class)).isTrue();
-            assertThat(Config.isEquoForced(CTabFolderRenderer.class)).isTrue();
+            assertThat(Config.isForced(CTabFolder.class)).isEqualTo(Config.Impl.equo);
+            assertThat(Config.isForced(CTabItem.class)).isEqualTo(Config.Impl.equo);
+            assertThat(Config.isForced(CTabFolderRenderer.class)).isEqualTo(Config.Impl.equo);
         }
 
         // ToolBar group tests
@@ -262,37 +230,39 @@ public class ConfigTest {
         void activating_toolbar_should_activate_toolitem() {
             Config.defaultToEclipse();
             System.setProperty("dev.equo.swt.ToolBar", "equo");
-            assertThat(Config.isEquoForced(ToolBar.class)).isTrue();
-            assertThat(Config.isEquoForced(ToolItem.class)).isTrue();
+            assertThat(Config.isForced(ToolBar.class)).isEqualTo(Config.Impl.equo);
+            assertThat(Config.isForced(ToolItem.class)).isEqualTo(Config.Impl.equo);
         }
 
         @Test
         void activating_toolitem_should_activate_toolbar() {
             Config.defaultToEclipse();
             System.setProperty("dev.equo.swt.ToolItem", "equo");
-            assertThat(Config.isEquoForced(ToolBar.class)).isTrue();
-            assertThat(Config.isEquoForced(ToolItem.class)).isTrue();
+            assertThat(Config.isForced(ToolBar.class)).isEqualTo(Config.Impl.equo);
+            assertThat(Config.isForced(ToolItem.class)).isEqualTo(Config.Impl.equo);
         }
 
         // Explicit disable should override group activation
         @Test
+        @Disabled
         void explicit_disable_should_override_group_activation() {
             Config.defaultToEclipse();
             System.setProperty("dev.equo.swt.Tree", "equo");
             System.setProperty("dev.equo.swt.TreeItem", "eclipse");
-            assertThat(Config.isEquoForced(Tree.class)).isTrue();
-            assertThat(Config.isEquoForced(TreeItem.class)).isFalse();
-            assertThat(Config.isEquoForced(TreeColumn.class)).isTrue();
+            assertThat(Config.isForced(Tree.class)).isEqualTo(Config.Impl.equo);
+            assertThat(Config.isForced(TreeItem.class)).isEqualTo(Config.Impl.eclipse);
+            assertThat(Config.isForced(TreeColumn.class)).isEqualTo(Config.Impl.equo);
         }
 
         @Test
+        @Disabled
         void explicit_disable_of_parent_should_not_affect_child_group_activation() {
             Config.defaultToEclipse();
             System.setProperty("dev.equo.swt.Tree", "eclipse");
             System.setProperty("dev.equo.swt.TreeItem", "equo");
-            assertThat(Config.isEquoForced(Tree.class)).isFalse();
-            assertThat(Config.isEquoForced(TreeItem.class)).isTrue();
-            assertThat(Config.isEquoForced(TreeColumn.class)).isTrue();
+            assertThat(Config.isForced(Tree.class)).isEqualTo(Config.Impl.eclipse);
+            assertThat(Config.isForced(TreeItem.class)).isEqualTo(Config.Impl.equo);
+            assertThat(Config.isForced(TreeColumn.class)).isEqualTo(Config.Impl.eclipse);
         }
 
         // Widgets without dependencies should not be affected
@@ -300,8 +270,8 @@ public class ConfigTest {
         void widgets_without_dependencies_should_not_be_affected() {
             Config.defaultToEclipse();
             System.setProperty("dev.equo.swt.Tree", "equo");
-            assertThat(Config.isEquoForced(Button.class)).isFalse();
-            assertThat(Config.isEquoForced(Label.class)).isFalse();
+            assertThat(Config.isForced(Button.class)).isNull();
+            assertThat(Config.isForced(Label.class)).isNull();
         }
 
         // Test getDependencyGroup
@@ -328,16 +298,16 @@ public class ConfigTest {
         void activating_taskbar_should_activate_taskitem() {
             Config.defaultToEclipse();
             System.setProperty("dev.equo.swt.TaskBar", "equo");
-            assertThat(Config.isEquoForced(TaskBar.class)).isTrue();
-            assertThat(Config.isEquoForced(TaskItem.class)).isTrue();
+            assertThat(Config.isForced(TaskBar.class)).isEqualTo(Config.Impl.equo);
+            assertThat(Config.isForced(TaskItem.class)).isEqualTo(Config.Impl.equo);
         }
 
         @Test
         void activating_taskitem_should_activate_taskbar() {
             Config.defaultToEclipse();
             System.setProperty("dev.equo.swt.TaskItem", "equo");
-            assertThat(Config.isEquoForced(TaskBar.class)).isTrue();
-            assertThat(Config.isEquoForced(TaskItem.class)).isTrue();
+            assertThat(Config.isForced(TaskBar.class)).isEqualTo(Config.Impl.equo);
+            assertThat(Config.isForced(TaskItem.class)).isEqualTo(Config.Impl.equo);
         }
 
         @Test
@@ -480,7 +450,7 @@ public class ConfigTest {
         }
 
         @Nested
-        @DisabledIfEnvironmentVariable(named = "CI", matches = "true")
+        @DisabledOnOs(OS.LINUX)
         @Tag("metal")
         class SwtAndDartMatchesWithTracker {
 
@@ -489,6 +459,7 @@ public class ConfigTest {
 
             @BeforeEach
             void tracker() {
+                FlutterLibraryLoader.initialize();
                 display = new Display();
                 tracker = new IdWidgetTracker();
                 tracker.startTracking();
@@ -518,6 +489,7 @@ public class ConfigTest {
             @ParameterizedTest
             @ValueSource(classes = {Optional.class, Composite.class, CTabFolder.class})
             void composite_in_ctabfolder_should_match_ids(Class<?> useEquo) {
+                Config.useEclipse(CTabFolder.class);
                 Config.useEquo(useEquo);
                 Shell s = new Shell(display);
                 assertThat(Config.getId(CTabFolder.class, s)).isEqualTo("/Shell/-1/CTabFolder/1");

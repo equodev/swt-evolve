@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.swt.widgets.Mocks.composite;
+import static org.eclipse.swt.widgets.Mocks.swtShell;
 
 @ExtendWith(Mocks.class)
 public class FlutterBridgeFilterTest extends SerializeTestBase {
@@ -17,7 +17,7 @@ public class FlutterBridgeFilterTest extends SerializeTestBase {
     @Test
     void shouldFilterChildWhenParentIsAlsoDirty() {
         // Setup: create parent -> child hierarchy
-        Composite parent = new Composite(composite(), SWT.NONE);
+        Composite parent = new Composite(swtShell(), SWT.NONE);
         Button child = new Button(parent, SWT.PUSH);
 
         Set<Object> dirty = new HashSet<>();
@@ -35,7 +35,7 @@ public class FlutterBridgeFilterTest extends SerializeTestBase {
     @Test
     void shouldKeepChildWhenParentIsNotDirty() {
         // Setup: create parent -> child hierarchy, but only child is dirty
-        Composite parent = new Composite(composite(), SWT.NONE);
+        Composite parent = new Composite(swtShell(), SWT.NONE);
         Button child = new Button(parent, SWT.PUSH);
 
         Set<Object> dirty = new HashSet<>();
@@ -51,7 +51,7 @@ public class FlutterBridgeFilterTest extends SerializeTestBase {
     @Test
     void shouldKeepParentWhenOnlyParentIsDirty() {
         // Setup: create parent -> child hierarchy, but only parent is dirty
-        Composite parent = new Composite(composite(), SWT.NONE);
+        Composite parent = new Composite(swtShell(), SWT.NONE);
         Button child = new Button(parent, SWT.PUSH);
 
         Set<Object> dirty = new HashSet<>();
@@ -67,7 +67,7 @@ public class FlutterBridgeFilterTest extends SerializeTestBase {
     @Test
     void shouldFilterMultipleLevels() {
         // Setup: create grandparent -> parent -> child hierarchy
-        Composite grandparent = new Composite(composite(), SWT.NONE);
+        Composite grandparent = new Composite(swtShell(), SWT.NONE);
         Composite parent = new Composite(grandparent, SWT.NONE);
         Button child = new Button(parent, SWT.PUSH);
 
@@ -87,10 +87,10 @@ public class FlutterBridgeFilterTest extends SerializeTestBase {
     @Test
     void shouldKeepMultipleIndependentWidgets() {
         // Setup: create two independent hierarchies
-        Composite parent1 = new Composite(composite(), SWT.NONE);
+        Composite parent1 = new Composite(swtShell(), SWT.NONE);
         Button child1 = new Button(parent1, SWT.PUSH);
 
-        Composite parent2 = new Composite(composite(), SWT.NONE);
+        Composite parent2 = new Composite(swtShell(), SWT.NONE);
         Button child2 = new Button(parent2, SWT.PUSH);
 
         Set<Object> dirty = new HashSet<>();
@@ -108,16 +108,16 @@ public class FlutterBridgeFilterTest extends SerializeTestBase {
     void shouldFilterMixedScenario() {
         // Setup: complex scenario
         // Tree 1: grandparent1 -> parent1 -> child1 (all dirty)
-        Composite grandparent1 = new Composite(composite(), SWT.NONE);
+        Composite grandparent1 = new Composite(swtShell(), SWT.NONE);
         Composite parent1 = new Composite(grandparent1, SWT.NONE);
         Button child1 = new Button(parent1, SWT.PUSH);
 
         // Tree 2: parent2 -> child2 (only child2 dirty)
-        Composite parent2 = new Composite(composite(), SWT.NONE);
+        Composite parent2 = new Composite(swtShell(), SWT.NONE);
         Button child2 = new Button(parent2, SWT.PUSH);
 
         // Tree 3: parent3 (only parent3 dirty)
-        Composite parent3 = new Composite(composite(), SWT.NONE);
+        Composite parent3 = new Composite(swtShell(), SWT.NONE);
 
         Set<Object> dirty = new HashSet<>();
         dirty.add(grandparent1.getImpl());
@@ -149,7 +149,7 @@ public class FlutterBridgeFilterTest extends SerializeTestBase {
     @Test
     void shouldHandleWidgetWithoutParent() {
         // Setup: widget without parent (top-level composite)
-        Composite widget = new Composite(composite(), SWT.NONE);
+        Composite widget = new Composite(swtShell(), SWT.NONE);
 
         Set<Object> dirty = new HashSet<>();
         dirty.add(widget.getImpl());
@@ -164,7 +164,7 @@ public class FlutterBridgeFilterTest extends SerializeTestBase {
     @Test
     void shouldFilterWithDifferentWidgetTypes() {
         // Setup: hierarchy with different widget types
-        Composite parent = new Composite(composite(), SWT.NONE);
+        Composite parent = new Composite(swtShell(), SWT.NONE);
         Label label = new Label(parent, SWT.NONE);
         Text text = new Text(parent, SWT.SINGLE);
         Button button = new Button(parent, SWT.PUSH);
@@ -186,7 +186,7 @@ public class FlutterBridgeFilterTest extends SerializeTestBase {
     @Test
     void shouldMarkAsDirtyWhenSettingDifferentText() {
         // Setup: create a button and set initial text
-        Button button = new Button(composite(), SWT.PUSH);
+        Button button = new Button(swtShell(), SWT.PUSH);
         button.setText("Hello");
 
         // Clear the dirty list

@@ -2633,7 +2633,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         Rectangle newValue = new Rectangle(x, y, width, height);
         this.bounds = newValue;
         setBounds(new Rectangle(x, y, width, height));
-        getBridge().setBounds(this, bounds);
+        ;
     }
 
     void setBoundsInPixels(int x, int y, int width, int height) {

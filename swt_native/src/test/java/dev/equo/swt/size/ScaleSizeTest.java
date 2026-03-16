@@ -66,7 +66,7 @@ class ScaleSizeTest extends SizeTestBase {
     }
 
     static DartScale createScale(int style) {
-        DartScale w = new DartScale(shell(), style, null);
+        DartScale w = new DartScale(swtShell(), style, null);
         return w;
     }
 

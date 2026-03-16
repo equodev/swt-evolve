@@ -96,7 +96,7 @@ class LinkSizeTest extends SizeTestBase {
     }
 
     static DartLink createLink(int style, String text, int size, int fontStyle) {
-        DartLink w = new DartLink(shell(), style, null);
+        DartLink w = new DartLink(swtShell(), style, null);
         if (!NoTxt.equals(text))
             w.setText(text);
         if (size != FromTheme)

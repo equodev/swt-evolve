@@ -11,7 +11,7 @@ class ExpandBarSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_ExpandBar() {
-        ExpandBar w = new ExpandBar(composite(), SWT.NONE);
+        ExpandBar w = new ExpandBar(swtShell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class ExpandBarSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_ExpandBar() {
-        ExpandBar w = new ExpandBar(composite(), SWT.NONE);
+        ExpandBar w = new ExpandBar(swtShell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
