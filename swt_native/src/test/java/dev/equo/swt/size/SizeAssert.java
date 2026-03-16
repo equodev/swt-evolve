@@ -25,7 +25,7 @@ public class SizeAssert {
         long timeout = System.currentTimeMillis() + (WAIT * 1000);
         while (!result.isDone() && System.currentTimeMillis() < timeout) {
             // Pump messages on main thread while waiting for result
-            GenericSizeBridge.pumpMessages(1);
+            GenericSizeBridge.pump(1);
         }
         assertThat(result).as("future did not compete in %s", WAIT).isDone();
         try {

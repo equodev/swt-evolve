@@ -11,7 +11,7 @@ class TabFolderSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_TabFolder() {
-        TabFolder w = new TabFolder(composite(), SWT.NONE);
+        TabFolder w = new TabFolder(swtShell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class TabFolderSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_TabFolder() {
-        TabFolder w = new TabFolder(composite(), SWT.NONE);
+        TabFolder w = new TabFolder(swtShell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();

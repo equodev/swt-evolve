@@ -1,8 +1,11 @@
 import 'package:flutter/widgets.dart';
+import '../main.dart';
 import 'gen/composite.dart';
 import 'gen/control.dart';
 import 'gen/widget.dart';
 import 'gen/widgets.dart';
+import 'gen/widgets.dart' as gen;
+
 
 class NoLayout extends StatelessWidget {
   final VComposite composite;
@@ -14,14 +17,11 @@ class NoLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visibleChildren =
-        children.where((child) => child.visible == true).toList();
-
     return CustomMultiChildLayout(
-        delegate: _AbsoluteLayoutDelegate(visibleChildren, composite),
+        delegate: _AbsoluteLayoutDelegate(children, composite),
         children: [
-          for (var child in visibleChildren)
-            LayoutId(id: child.id, child: ClipRect(child: mapWidgetFromValue(child)))
+          for (var child in children)
+            LayoutId(id: child.id, child: ClipRect(child: customWidgetFromValue(child) ?? gen.mapWidgetFromValue(child)))
         ]);
   }
 }

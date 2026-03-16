@@ -76,7 +76,7 @@ public class GCImageDrawer extends SwtFlutterBridgeBase {
             // GCDrawer.standalone has registered its listeners.
             flushOps();
         });
-        ctx = InitializeFlutterWindow(client.getPort(), 0, gcId, widgetName(this), "", 0, 0);
+        ctx = initializeFlutterWindow(client.getPort(), 0, gcId, widgetName(this), "", 0, 0);
     }
 
     /**
@@ -88,7 +88,7 @@ public class GCImageDrawer extends SwtFlutterBridgeBase {
     }
 
     public void disposeView() {
-        Dispose(ctx);
+        dispose(ctx);
         ctx = 0;
     }
 

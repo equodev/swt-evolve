@@ -11,7 +11,7 @@ class GroupSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Group() {
-        Group w = new Group(composite(), SWT.NONE);
+        Group w = new Group(swtShell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class GroupSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_Group() {
-        Group w = new Group(composite(), SWT.NONE);
+        Group w = new Group(swtShell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();

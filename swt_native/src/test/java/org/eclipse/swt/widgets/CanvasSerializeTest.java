@@ -11,7 +11,7 @@ class CanvasSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Canvas() {
-        Canvas w = new Canvas(composite(), SWT.NONE);
+        Canvas w = new Canvas(swtShell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class CanvasSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_Canvas() {
-        Canvas w = new Canvas(composite(), SWT.NONE);
+        Canvas w = new Canvas(swtShell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();

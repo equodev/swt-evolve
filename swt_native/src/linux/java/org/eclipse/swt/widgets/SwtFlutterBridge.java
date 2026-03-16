@@ -21,6 +21,7 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
 
     @Override
     protected void setHandle(DartControl control, long view) {
+        if (view == 0) return;
         // Create a proper SWT fixed container like other SWT widgets
         long fixedHandle = OS.g_object_new(((SwtDisplay) control.display.getImpl()).gtk_fixed_get_type(), 0);
         if (fixedHandle == 0)
@@ -68,7 +69,7 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
 
     @Override
     public boolean setFocus(DartControl dartControl) {
-        long focusHandle = GetView(context);
+        long focusHandle = getView(context);
 //        long focusHandle = dartControl.getApi().handle;
         if (GTK.gtk_widget_has_focus(focusHandle))
             return true;

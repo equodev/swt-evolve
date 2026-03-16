@@ -1,5 +1,6 @@
 package dev.equo.swt.size;
 
+import dev.equo.swt.FlutterLibraryLoader;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.*;
 import org.junit.jupiter.api.extension.AfterAllCallback;
@@ -37,13 +38,14 @@ abstract class GenericSizeBridge<REQUEST, SERIALIZED, RESULT> extends SwtFlutter
 
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
+        FlutterLibraryLoader.initialize();
         SwtFlutterBridge.set(this);
         initFlutterView();
     }
 
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
-        Dispose(ctx);
+        dispose(ctx);
         SwtFlutterBridge.set(null);
     }
 
@@ -51,8 +53,8 @@ abstract class GenericSizeBridge<REQUEST, SERIALIZED, RESULT> extends SwtFlutter
      * Pump messages to allow Flutter/Dart async operations to progress.
      * Must be called from the same thread that created the Flutter window.
      */
-    static void pumpMessages(int maxMessages) {
-        PumpMessages(maxMessages);
+    static void pump(int maxMessages) {
+        pumpMessages(maxMessages);
     }
 
     /**
@@ -84,7 +86,7 @@ abstract class GenericSizeBridge<REQUEST, SERIALIZED, RESULT> extends SwtFlutter
             System.out.println("Received windowSize "+p);
             this.windowSize = p;
         });
-        ctx = InitializeFlutterWindow(client.getPort(), 0, id(this), widgetName(this), "", 0, 0);
+        ctx = initializeFlutterWindow(client.getPort(), 0, id(this), widgetName(this), "", 0, 0);
         onPayload(this, responseChannel, p -> {
             ByteArrayInputStream in = new ByteArrayInputStream(((String) p).getBytes(StandardCharsets.UTF_8));
             try {

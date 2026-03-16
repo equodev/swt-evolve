@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:swtflutter/src/gen/point.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/gen/composite.dart';
+import 'package:swtflutter/src/gen/widget.dart';
 import 'package:swtflutter/src/custom/toolbar_composite.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 import 'src/styles.dart';
@@ -86,8 +87,8 @@ void sendClientReady(String widgetName, int widgetId, {bool sendWindowSize = fal
         ..x = 1280
         ..y = 720;
       if (size.width > 0 && size.height > 0) {
-          point.x = size.width.round();
-          point.y = size.height.round();
+        point.x = size.width.round();
+        point.y = size.height.round();
       }
       // print("Sent ${widgetName}/${widgetId}/ClientReady with windowSize ${point.x}x${point.y}");
       EquoCommService.sendPayload("${widgetName}/${widgetId}/ClientReady", point);
@@ -124,8 +125,18 @@ Widget? customWidget(Map<String, dynamic> child) {
   var type = child['swt'];
   var id = child['id'];
   return switch (type) {
-    "MainToolbar" => ToolbarComposite(key: ValueKey(id), value: VComposite.fromJson(child), useBoundsLayout: true),
+    "MainToolbar" => ToolbarComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
     "SideBar" => SideBarComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
+    _ => null
+  };
+}
+
+Widget? customWidgetFromValue(VWidget child) {
+  var type = child.swt;
+  var id = child.id;
+  return switch (type) {
+    "MainToolbar" => ToolbarComposite(key: ValueKey(id), value: child as VComposite),
+    "SideBar" => SideBarComposite(key: ValueKey(id), value: child as VComposite),
     _ => null
   };
 }
@@ -152,7 +163,7 @@ class EvolveApp extends StatelessWidget {
     final darkTheme = useDefaultTheme
         ? createDarkDefaultTheme(backgroundColor)
         : createDarkNonDefaultTheme(backgroundColor);
-    
+
     return MaterialApp(
       title: 'Evolve',
       theme: lightTheme,
@@ -160,7 +171,7 @@ class EvolveApp extends StatelessWidget {
       themeMode: theme,
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor: theme == ThemeMode.dark 
+        backgroundColor: theme == ThemeMode.dark
             ? darkTheme.scaffoldBackgroundColor
             : lightTheme.scaffoldBackgroundColor,
         body: contentWidget,

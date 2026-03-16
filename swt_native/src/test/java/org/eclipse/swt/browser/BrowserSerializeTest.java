@@ -11,7 +11,7 @@ class BrowserSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Browser() {
-        Browser w = new Browser(composite(), SWT.NONE);
+        Browser w = new Browser(swtShell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class BrowserSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_Browser() {
-        Browser w = new Browser(composite(), SWT.NONE);
+        Browser w = new Browser(swtShell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();

@@ -99,7 +99,7 @@ class CLabelSizeTest extends SizeTestBase {
     }
 
     static DartCLabel createCLabel(int style, String image, String text, int size, int fontStyle) {
-        DartCLabel w = new DartCLabel(shell(), style, null);
+        DartCLabel w = new DartCLabel(swtShell(), style, null);
         if (!NoImg.equals(image))
             w.setImage(createImage(image));
         if (!NoTxt.equals(text))

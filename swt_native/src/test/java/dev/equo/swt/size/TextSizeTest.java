@@ -96,7 +96,7 @@ class TextSizeTest extends SizeTestBase {
     }
 
     static DartText createText(int style, String text, int size, int fontStyle) {
-        DartText w = new DartText(shell(), style, null);
+        DartText w = new DartText(swtShell(), style, null);
         if (!NoTxt.equals(text))
             w.setText(text);
         if (size != FromTheme)

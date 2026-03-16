@@ -14,10 +14,9 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
 
     @Override
     protected long getParentHandleForInit(Composite parent, DartControl control) {
-        boolean isLimboToolBar = parent.getShell().getText().contains("limbo") && control.getClass() == DartToolBar.class;
+        boolean isLimboToolBar = parent.getShell().getText() != null && parent.getShell().getText().contains("limbo") && control.getClass() == DartToolBar.class;
         return isLimboToolBar ? 0 : getHandle(parent);
     }
-
     @Override
     protected void setHandle(DartControl control, long view) {
         control.getApi().handle = view;

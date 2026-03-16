@@ -11,7 +11,7 @@ class ButtonSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Button() {
-        Button w = new Button(composite(), SWT.NONE);
+        Button w = new Button(swtShell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class ButtonSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_Button() {
-        Button w = new Button(composite(), SWT.NONE);
+        Button w = new Button(swtShell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();

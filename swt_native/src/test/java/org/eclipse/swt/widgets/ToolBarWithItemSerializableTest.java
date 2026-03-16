@@ -2,17 +2,18 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.SerializeTestBase;
 import org.eclipse.swt.SWT;
-import static org.eclipse.swt.widgets.Mocks.*;
 import org.junit.jupiter.api.*;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.*;
 import net.javacrumbs.jsonunit.assertj.JsonMapAssert;
+
+import static org.eclipse.swt.widgets.Mocks.swtShell;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ToolBarWithItemSerializableTest extends SerializeTestBase {
 
     @Test
     void should_serialize_ToolBar_with_two_items() {
-        ToolBar toolBar = new ToolBar(composite(), SWT.NONE);
+        ToolBar toolBar = new ToolBar(swtShell(), SWT.NONE);
         
         // Create first ToolItem
         ToolItem item1 = new ToolItem(toolBar, SWT.NONE);
@@ -52,7 +53,7 @@ class ToolBarWithItemSerializableTest extends SerializeTestBase {
     @Test
     void should_remove_toolitem_using_dispose() {
         //Display display = new Display();
-        Shell shell = shell();
+        Shell shell = swtShell();
         
         ToolBar toolBar = new ToolBar(shell, SWT.NONE);
         

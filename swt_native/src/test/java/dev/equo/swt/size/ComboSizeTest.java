@@ -96,7 +96,7 @@ class ComboSizeTest extends SizeTestBase {
     }
 
     static DartCombo createCombo(int style, String text, int size, int fontStyle) {
-        DartCombo w = new DartCombo(shell(), style, null);
+        DartCombo w = new DartCombo(swtShell(), style, null);
         if (!NoTxt.equals(text))
             w.setText(text);
         if (size != FromTheme)

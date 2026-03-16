@@ -13,8 +13,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.provider.Arguments;
 
 import java.util.Arrays;
@@ -26,8 +26,10 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@ExtendWith(Mocks.class)
 public abstract class SizeTestBase extends SizeAssert {
+
+    @RegisterExtension
+    Mocks mocks = Mocks.withNativeBridge();
 
     protected static final int All = Integer.MAX_VALUE;
 

@@ -44,6 +44,7 @@ public class FlutterLibraryLoader {
 
     private static final String EQUO_LIB_PATH_SUFFIX =
             EQUO_BASE_DIR_NAME + SEP + SWT_DIR_NAME + SEP + LIB_SUB_DIR_NAME + SEP + getOS() + SEP + getArch();
+    private static boolean loaded;
 
     /**
      * Initializes the Flutter library loader. This is the main public entry point.
@@ -54,6 +55,8 @@ public class FlutterLibraryLoader {
      */
     public static void initialize() {
         try {
+            if (loaded) return;
+            loaded = true;
             extractAndLoadFlutterLibraries();
         } catch (Exception e) {
             throw new LibraryLoaderException("Failed to initialize Flutter libraries", e);

@@ -11,7 +11,7 @@ class LinkSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Link() {
-        Link w = new Link(composite(), SWT.NONE);
+        Link w = new Link(swtShell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class LinkSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_Link() {
-        Link w = new Link(composite(), SWT.NONE);
+        Link w = new Link(swtShell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();

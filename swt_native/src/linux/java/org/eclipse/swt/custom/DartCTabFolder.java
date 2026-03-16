@@ -3441,6 +3441,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         }
         showItem(selection);
         redraw();
+        if (getBridge() instanceof SwtFlutterBridgeBase b)
+            b.setBoundsCTabFolder(this, getBounds(), true);
     }
 
     void setSelection(int index, boolean notify) {

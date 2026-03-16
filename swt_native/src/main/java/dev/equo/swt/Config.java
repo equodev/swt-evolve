@@ -3,8 +3,10 @@ package dev.equo.swt;
 import org.eclipse.swt.accessibility.Accessible;
 import org.eclipse.swt.accessibility.DartAccessible;
 import org.eclipse.swt.custom.*;
+import org.eclipse.swt.graphics.Drawable;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.*;
-import org.eclipse.swt.graphics.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -172,12 +174,19 @@ public class Config {
         System.clearProperty(getKey(clazz));
     }
 
+    public static void reset() {
+        System.getProperties().forEach((k, v) -> {
+            if (k.toString().startsWith(PROPERTY_PREFIX))
+                System.clearProperty((String) k);
+        });
+    }
+
     public static boolean isEquo(Class<?> clazz) {
         if (forceEclipse) return false;
         // Per-widget override
-        if (isEquoForced(clazz)) {
-            return true;
-        }
+        Impl forced = isForced(clazz);
+        if (forced != null)
+            return Impl.equo == forced;
 
         if (defaultImpl == Impl.force_equo)
             return true;
@@ -212,9 +221,9 @@ public class Config {
     public static boolean isEquoGC(Class<?> clazz, Drawable parent) {
         if (forceEclipse) return false;
         // Per-widget override
-        if (isEquoForced(clazz)) {
-            return true;
-        }
+        Impl forced = isForced(clazz);
+        if (forced != null)
+            return Impl.equo == forced;
 
         if (parent instanceof Canvas && clazz == GC.class && ((Canvas) parent).getImpl() instanceof DartCanvas)
             return true;
@@ -234,33 +243,32 @@ public class Config {
         return false;
     }
 
-    static boolean isEquoForced(Class<?> clazz) {
+    static Impl isForced(Class<?> clazz) {
         // First check if this specific widget is explicitly set
         String forcedImpl = System.getProperty(getKey(clazz));
         if (forcedImpl != null) {
-            // If explicitly set to eclipse, respect that
-            if (Impl.eclipse.name().equals(forcedImpl)) {
-                return false;
-            }
-            // If explicitly set to equo, return true
-            if (Impl.equo.name().equals(forcedImpl)) {
-                return true;
-            }
+            if (Impl.eclipse.name().equals(forcedImpl))
+                return Impl.eclipse;
+            if (Impl.equo.name().equals(forcedImpl))
+                return Impl.equo;
         }
 
-        // Check if any widget in the same dependency group is forced to equo
+        // Check if any widget in the same dependency group is forced to equo/eclipse
         // (only if this widget is not explicitly disabled)
         Set<String> dependencyGroup = getDependencyGroup(clazz);
         if (dependencyGroup != null) {
             for (String dependentWidget : dependencyGroup) {
                 String dependentImpl = System.getProperty(PROPERTY_PREFIX + dependentWidget);
-                if (dependentImpl != null && Impl.equo.name().equals(dependentImpl)) {
-                    return true;
+                if (dependentImpl != null) {
+                    if (Impl.eclipse.name().equals(dependentImpl))
+                        return Impl.eclipse;
+                    if (Impl.equo.name().equals(dependentImpl))
+                        return Impl.equo;
                 }
             }
         }
 
-        return false;
+        return null;
     }
 
     public static boolean isEquo(Class<?> clazz, Widget parent) {
@@ -280,8 +288,9 @@ public class Config {
             }
         }
         // Per-widget override
-        if (isEquoForced(clazz))
-            return true;
+        Impl forced = isForced(clazz);
+        if (forced != null)
+            return Impl.equo == forced;
 
         // Check parent data for per-widget override
         Object data = parent != null ? parent.getData(getKey(clazz)) : null;
@@ -295,7 +304,7 @@ public class Config {
             return true;
 
         /// This is used because Eclipse creates "hidden" toolbars as children of the shell
-        if (clazz == ToolBar.class && parent instanceof Shell && (isEquoForced(CTabFolder.class) || defaultImpl == Impl.equo))
+        if (clazz == ToolBar.class && parent instanceof Shell && isEquo(CTabFolder.class))
             return true;
 
         if (isCustomAncestor(parent))
@@ -312,7 +321,7 @@ public class Config {
         }
         if (parent != null && clazz == Caret.class && parent.getImpl().getClass().getSimpleName().startsWith(DART))
             return true;
-        if (parent != null && parent.getImpl().getClass().getSimpleName().startsWith(DART) && !isCTabFolderBody(clazz, parent))
+        if (parent != null && parent.getImpl().getClass().getSimpleName().startsWith(DART) && !isSwtCTabFolderBody(clazz, parent))
             return true;
         if (isSplash(parent))
             return false;
@@ -347,8 +356,8 @@ public class Config {
         return (id.equals("/Shell/0/Composite/4") || id.equals("/Shell/0/Composite/5")) && isInStackTrace(E4_MAIN_TOOLBAR_CLASS, E4_MAIN_TOOLBAR_METHOD);
     }
 
-    private static boolean isCTabFolderBody(Class<?> clazz, Widget parent) {
-        return Composite.class.isAssignableFrom(clazz) && parent.getClass() == CTabFolder.class;
+    public static boolean isSwtCTabFolderBody(Class<?> clazz, Widget parent) {
+        return Composite.class.isAssignableFrom(clazz) && parent instanceof CTabFolder ct && !(ct.getParent().getImpl() instanceof DartWidget);
     }
 
     static boolean isCustomAncestor(Widget parent) {

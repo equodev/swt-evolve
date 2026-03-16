@@ -99,7 +99,7 @@ class LabelSizeTest extends SizeTestBase {
     }
 
     static DartLabel createLabel(int style, String image, String text, int size, int fontStyle) {
-        DartLabel w = new DartLabel(shell(), style, null);
+        DartLabel w = new DartLabel(swtShell(), style, null);
         if (!NoImg.equals(image))
             w.setImage(createImage(image));
         if (!NoTxt.equals(text))

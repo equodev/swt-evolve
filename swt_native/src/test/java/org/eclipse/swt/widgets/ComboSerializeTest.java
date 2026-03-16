@@ -11,7 +11,7 @@ class ComboSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Combo() {
-        Combo w = new Combo(composite(), SWT.NONE);
+        Combo w = new Combo(swtShell(), SWT.NONE);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
@@ -20,7 +20,7 @@ class ComboSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_Combo() {
-        Combo w = new Combo(composite(), SWT.NONE);
+        Combo w = new Combo(swtShell(), SWT.NONE);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();

@@ -5,7 +5,7 @@ import org.eclipse.swt.widgets.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import static org.eclipse.swt.widgets.Mocks.shell;
+import static org.eclipse.swt.widgets.Mocks.swtShell;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(Mocks.class)
@@ -14,7 +14,7 @@ public class ReparentTest extends SerializeTestBase {
     @Test
     public void reparentTest() {
         // Create parent composite
-        Composite root = new Composite(shell(), SWT.NONE);
+        Composite root = new Composite(swtShell(), SWT.NONE);
 
         // Create child composites
         Composite parent = new Composite(root, SWT.NONE);
