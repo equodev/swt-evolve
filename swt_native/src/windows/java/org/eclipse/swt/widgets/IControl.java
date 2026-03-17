@@ -1,6 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import java.util.*;
+import java.util.concurrent.atomic.*;
 import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
@@ -600,6 +601,10 @@ public interface IControl extends IWidget, ImplControl {
      * @since 3.3
      */
     Cursor getCursor();
+
+    Object getData(String key);
+
+    void setData(String key, Object value);
 
     /**
      * Returns <code>true</code> if the receiver is detecting

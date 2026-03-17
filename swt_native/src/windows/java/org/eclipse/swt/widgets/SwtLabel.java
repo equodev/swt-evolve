@@ -72,7 +72,6 @@ public class SwtLabel extends SwtControl implements ILabel {
         WNDCLASS lpWndClass = new WNDCLASS();
         OS.GetClassInfo(0, LabelClass, lpWndClass);
         LabelProc = lpWndClass.lpfnWndProc;
-        DPIZoomChangeRegistry.registerHandler(SwtLabel::handleDPIChange, Label.class);
     }
 
     /**
@@ -143,8 +142,9 @@ public class SwtLabel extends SwtControl implements ILabel {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
         checkWidget();
+        Point hintInPixels = Win32DPIUtils.pointToPixelAsSufficientlyLargeSize(hintInPoints, zoom);
         int width = 0, height = 0, border = getBorderWidthInPixels();
         if ((getApi().style & SWT.SEPARATOR) != 0) {
             int lineWidth = getSystemMetrics(OS.SM_CXBORDER);
@@ -155,10 +155,10 @@ public class SwtLabel extends SwtControl implements ILabel {
                 width = lineWidth * 2;
                 height = DEFAULT_HEIGHT;
             }
-            if (wHint != SWT.DEFAULT)
-                width = wHint;
-            if (hHint != SWT.DEFAULT)
-                height = hHint;
+            if (hintInPoints.x != SWT.DEFAULT)
+                width = hintInPixels.x;
+            if (hintInPoints.y != SWT.DEFAULT)
+                height = hintInPixels.y;
             width += border * 2;
             height += border * 2;
             return new Point(width, height);
@@ -179,9 +179,9 @@ public class SwtLabel extends SwtControl implements ILabel {
             } else {
                 RECT rect = new RECT();
                 int flags = OS.DT_CALCRECT | OS.DT_EDITCONTROL | OS.DT_EXPANDTABS;
-                if ((getApi().style & SWT.WRAP) != 0 && wHint != SWT.DEFAULT) {
+                if ((getApi().style & SWT.WRAP) != 0 && hintInPoints.x != SWT.DEFAULT) {
                     flags |= OS.DT_WORDBREAK;
-                    rect.right = Math.max(0, wHint - width);
+                    rect.right = Math.max(0, hintInPixels.x - width);
                 }
                 char[] buffer = new char[length + 1];
                 OS.GetWindowText(getApi().handle, buffer, length + 1);
@@ -193,10 +193,10 @@ public class SwtLabel extends SwtControl implements ILabel {
                 OS.SelectObject(hDC, oldFont);
             OS.ReleaseDC(getApi().handle, hDC);
         }
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
+        if (hintInPoints.x != SWT.DEFAULT)
+            width = hintInPixels.x;
+        if (hintInPoints.y != SWT.DEFAULT)
+            height = hintInPixels.y;
         width += border * 2;
         height += border * 2;
         return new Point(width, height);
@@ -660,13 +660,12 @@ public class SwtLabel extends SwtControl implements ILabel {
         return null;
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof Label label)) {
-            return;
-        }
-        Image image = label.getImage();
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        Image image = getImage();
         if (image != null) {
-            label.setImage(image);
+            setImage(image);
         }
     }
 

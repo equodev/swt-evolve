@@ -131,8 +131,8 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.computeSize(this, wHint, hHint, changed);
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
+        return Sizes.computeSize(this, hintInPoints.x, hintInPoints.y, changed);
     }
 
     @Override
@@ -447,6 +447,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
      */
     public void setSpacing(int spacing) {
         checkWidget();
+        setSpacingInPixels(DPIUtil.pointToPixel(spacing, getZoom()));
     }
 
     void setSpacingInPixels(int spacing) {
@@ -506,12 +507,14 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
         }
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof ExpandBar expandBar)) {
-            return;
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        for (ExpandItem item : getItems()) {
+            item.notifyListeners(SWT.ZoomChanged, event);
         }
-        ((DartExpandBar) expandBar.getImpl()).layoutItems(0, true);
-        expandBar.redraw();
+        layoutItems(0, true);
+        redraw();
     }
 
     public ExpandItem[] _items() {

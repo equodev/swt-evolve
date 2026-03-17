@@ -79,7 +79,6 @@ public class SwtButton extends SwtControl implements IButton {
         WNDCLASS lpWndClass = new WNDCLASS();
         OS.GetClassInfo(0, ButtonClass, lpWndClass);
         ButtonProc = lpWndClass.lpfnWndProc;
-        DPIZoomChangeRegistry.registerHandler(SwtButton::handleDPIChange, Button.class);
     }
 
     /**
@@ -355,8 +354,9 @@ public class SwtButton extends SwtControl implements IButton {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
         checkWidget();
+        Point hintInPixels = Win32DPIUtils.pointToPixelAsSufficientlyLargeSize(hintInPoints, zoom);
         int width = 0, height = 0, border = getBorderWidthInPixels();
         if ((getApi().style & SWT.ARROW) != 0) {
             if ((getApi().style & (SWT.UP | SWT.DOWN)) != 0) {
@@ -369,8 +369,8 @@ public class SwtButton extends SwtControl implements IButton {
         } else {
             if ((getApi().style & SWT.COMMAND) != 0) {
                 SIZE size = new SIZE();
-                if (wHint != SWT.DEFAULT) {
-                    size.cx = wHint;
+                if (hintInPoints.x != SWT.DEFAULT) {
+                    size.cx = hintInPixels.x;
                     OS.SendMessage(getApi().handle, OS.BCM_GETIDEALSIZE, 0, size);
                     width = size.cx;
                     height = size.cy;
@@ -393,11 +393,11 @@ public class SwtButton extends SwtControl implements IButton {
                         Rectangle rect = Win32DPIUtils.scaleBounds(image.getBounds(), this.getZoom(), 100);
                         width = rect.width;
                         if (hasText && text.length() != 0) {
-                            width += Win32DPIUtils.pointToPixel(MARGIN * 2, getZoom());
+                            width += DPIUtil.pointToPixel(MARGIN * 2, getZoom());
                             ;
                         }
                         height = rect.height;
-                        extra = Win32DPIUtils.pointToPixel(MARGIN * 2, getZoom());
+                        extra = DPIUtil.pointToPixel(MARGIN * 2, getZoom());
                         ;
                     }
                 }
@@ -413,13 +413,13 @@ public class SwtButton extends SwtControl implements IButton {
                     if (length == 0) {
                         height = Math.max(height, lptm.tmHeight);
                     } else {
-                        extra = Math.max(Win32DPIUtils.pointToPixel(MARGIN * 2, getZoom()), lptm.tmAveCharWidth);
+                        extra = Math.max(DPIUtil.pointToPixel(MARGIN * 2, getZoom()), lptm.tmAveCharWidth);
                         char[] buffer = text.toCharArray();
                         RECT rect = new RECT();
                         int flags = OS.DT_CALCRECT | OS.DT_SINGLELINE;
-                        if ((getApi().style & SWT.WRAP) != 0 && wHint != SWT.DEFAULT) {
+                        if ((getApi().style & SWT.WRAP) != 0 && hintInPoints.x != SWT.DEFAULT) {
                             flags = OS.DT_CALCRECT | OS.DT_WORDBREAK;
-                            rect.right = wHint - width - 2 * border;
+                            rect.right = hintInPixels.x - width - 2 * border;
                             if (isRadioOrCheck()) {
                                 rect.right -= checkWidth + 3;
                             } else {
@@ -450,10 +450,10 @@ public class SwtButton extends SwtControl implements IButton {
                 }
             }
         }
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
+        if (hintInPoints.x != SWT.DEFAULT)
+            width = hintInPixels.x;
+        if (hintInPoints.y != SWT.DEFAULT)
+            height = hintInPixels.y;
         width += border * 2;
         height += border * 2;
         return new Point(width, height);
@@ -1414,7 +1414,7 @@ public class SwtButton extends SwtControl implements IButton {
             OS.GetThemePartSize(((SwtDisplay) display.getImpl()).hButtonTheme(getApi().nativeZoom), hdc, OS.BP_CHECKBOX, OS.CBS_UNCHECKEDNORMAL, null, OS.TS_TRUE, size);
             result += size.cx;
         } else {
-            result += Win32DPIUtils.pointToPixel(13, getApi().nativeZoom);
+            result += DPIUtil.pointToPixel(13, getApi().nativeZoom);
         }
         // Windows uses half width of '0' as checkbox-to-text distance.
         OS.GetTextExtentPoint32(hdc, STRING_WITH_ZERO_CHAR, 1, size);
@@ -1669,16 +1669,16 @@ public class SwtButton extends SwtControl implements IButton {
         return null;
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof Button button)) {
-            return;
-        }
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
         //Refresh the CheckSize
-        ((SwtButton) button.getImpl()).refreshCheckSize(newZoom);
+        int newZoom = event.detail;
+        refreshCheckSize(newZoom);
         // Refresh the image
-        if (((SwtButton) button.getImpl()).image != null) {
-            ((SwtButton) button.getImpl())._setImage(((SwtButton) button.getImpl()).image);
-            ((SwtButton) button.getImpl()).updateImageList();
+        if (image != null) {
+            _setImage(image);
+            updateImageList();
         }
     }
 

@@ -57,7 +57,6 @@ public class SwtList extends SwtScrollable implements IList {
         WNDCLASS lpWndClass = new WNDCLASS();
         OS.GetClassInfo(0, ListClass, lpWndClass);
         ListProc = lpWndClass.lpfnWndProc;
-        DPIZoomChangeRegistry.registerHandler(SwtList::handleDPIChange, List.class);
     }
 
     /**
@@ -236,10 +235,11 @@ public class SwtList extends SwtScrollable implements IList {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
         checkWidget();
+        Point hintInPixels = Win32DPIUtils.pointToPixelAsSufficientlyLargeSize(hintInPoints, zoom);
         int width = 0, height = 0;
-        if (wHint == SWT.DEFAULT) {
+        if (hintInPoints.x == SWT.DEFAULT) {
             if ((getApi().style & SWT.H_SCROLL) != 0) {
                 width = (int) OS.SendMessage(getApi().handle, OS.LB_GETHORIZONTALEXTENT, 0, 0);
                 width -= INSET;
@@ -271,7 +271,7 @@ public class SwtList extends SwtScrollable implements IList {
                 OS.ReleaseDC(getApi().handle, hDC);
             }
         }
-        if (hHint == SWT.DEFAULT) {
+        if (hintInPoints.y == SWT.DEFAULT) {
             int count = (int) OS.SendMessage(getApi().handle, OS.LB_GETCOUNT, 0, 0);
             int itemHeight = (int) OS.SendMessage(getApi().handle, OS.LB_GETITEMHEIGHT, 0, 0);
             height = count * itemHeight;
@@ -280,10 +280,10 @@ public class SwtList extends SwtScrollable implements IList {
             width = DEFAULT_WIDTH;
         if (height == 0)
             height = DEFAULT_HEIGHT;
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
+        if (hintInPoints.x != SWT.DEFAULT)
+            width = hintInPixels.x;
+        if (hintInPoints.y != SWT.DEFAULT)
+            height = hintInPixels.y;
         int border = getBorderWidthInPixels();
         width += border * 2 + INSET;
         height += border * 2;
@@ -1998,13 +1998,12 @@ public class SwtList extends SwtScrollable implements IList {
         return super.wmCommandChild(wParam, lParam);
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof List list)) {
-            return;
-        }
-        if ((list.style & SWT.H_SCROLL) != 0) {
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        if ((getApi().style & SWT.H_SCROLL) != 0) {
             // Recalculate the Scroll width, as length of items has changed
-            ((SwtList) list.getImpl()).setScrollWidth();
+            setScrollWidth();
         }
     }
 

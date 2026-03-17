@@ -359,6 +359,7 @@ public final class OleAutomation {
      * the member descriptions and attributes of the type.
      *
      * @return the type info of the receiver
+     * @noreference This method is not intended to be referenced by clients.
      */
     public TYPEATTR getTypeInfoAttributes() {
         if (objITypeInfo == null)

@@ -73,10 +73,6 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
     // 0= off/system behavior; 1= no image if selected; 2= with overlay marker (default)
     private final static int CUSTOM_SELECTION_IMAGE = (OsVersion.IS_WIN11_21H2) ? Integer.getInteger("org.eclipse.swt.internal.win32.menu.customSelectionImage", 2) : 0;
 
-    static {
-        DPIZoomChangeRegistry.registerHandler(SwtMenuItem::handleDPIChange, MenuItem.class);
-    }
-
     /**
      * Constructs a new instance of this class given its parent
      * (which must be a <code>Menu</code>) and a style value
@@ -856,6 +852,8 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
             info.hbmpItem = OS.HBMMENU_CALLBACK;
         } else {
             if (OS.IsAppThemed()) {
+                if (hBitmap != 0)
+                    OS.DeleteObject(hBitmap);
                 hBitmap = getMenuItemIconBitmapHandle(image);
                 if ((getApi().style & (SWT.CHECK | SWT.RADIO)) != 0 && CUSTOM_SELECTION_IMAGE > 0) {
                     info.fMask |= OS.MIIM_CHECKMARKS;
@@ -942,8 +940,6 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
         if (image == null) {
             return 0;
         }
-        if (hBitmap != 0)
-            OS.DeleteObject(hBitmap);
         int zoom = adaptZoomForMenuItem(getApi().nativeZoom, image);
         return SwtDisplay.create32bitDIB(image, zoom);
     }
@@ -960,7 +956,10 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
     }
 
     private int adaptZoomForMenuItem(int currentZoom, Image image) {
-        int primaryMonitorZoomAtAppStartUp = getPrimaryMonitorZoomAtStartup();
+        if (!display.isRescalingAtRuntime()) {
+            return DPIUtil.getZoomForAutoscaleProperty(currentZoom);
+        }
+        int primaryMonitorZoomAtAppStartUp = Win32DPIUtils.getPrimaryMonitorZoomAtStartup();
         /*
 	 * Windows has inconsistent behavior when setting the size of MenuItem image and
 	 * hence we need to adjust the size of the images as per different kind of zoom
@@ -987,13 +986,6 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
 
     private static boolean isQuarterZoom(int zoom) {
         return zoom % 10 != 0 && zoom % 25 == 0;
-    }
-
-    private static int getPrimaryMonitorZoomAtStartup() {
-        long hDC = OS.GetDC(0);
-        int dpi = OS.GetDeviceCaps(hDC, OS.LOGPIXELSX);
-        OS.ReleaseDC(0, hDC);
-        return DPIUtil.mapDPIToZoom(dpi);
     }
 
     /**
@@ -1428,7 +1420,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
             if (((SwtMenu) parent.getImpl()).needsMenuCallback()) {
                 Point point = calculateRenderedTextSize();
                 int menuZoom = getDisplay().isRescalingAtRuntime() ? super.getZoom() : getMonitorZoom();
-                struct.itemHeight = Win32DPIUtils.pointToPixel(point.y, menuZoom);
+                struct.itemHeight = DPIUtil.pointToPixel(point.y, menuZoom);
                 /*
 			 * Weirdness in Windows. Setting `HBMMENU_CALLBACK` causes
 			 * item sizes to mean something else. It seems that it is
@@ -1438,7 +1430,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
 			 * that value of 5 works well in matching text to mnemonic.
 			 */
                 int horizontalSpaceImage = this.image != null ? this.image.getBounds().width + IMAGE_TEXT_GAP : 0;
-                struct.itemWidth = Win32DPIUtils.pointToPixel(LEFT_TEXT_MARGIN + point.x - WINDOWS_OVERHEAD + horizontalSpaceImage, menuZoom);
+                struct.itemWidth = DPIUtil.pointToPixel(LEFT_TEXT_MARGIN + point.x - WINDOWS_OVERHEAD + horizontalSpaceImage, menuZoom);
                 OS.MoveMemory(lParam, struct, MEASUREITEMSTRUCT.sizeof);
                 return null;
             }
@@ -1500,7 +1492,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
                 // GC calculated height of 15px, scales down with adjusted zoom of 100% and returns 15pt -> should be 10pt
                 // this calculation is corrected by the following line
                 // This is the only place, where the GC needs to use the native zoom to do that, therefore it is fixed only here
-                points = Win32DPIUtils.pixelToPoint(Win32DPIUtils.pointToPixel(points, adjustedPrimaryMonitorZoom), primaryMonitorZoom);
+                points = Win32DPIUtils.pixelToPointAsSize(Win32DPIUtils.pointToPixelAsSize(points, adjustedPrimaryMonitorZoom), primaryMonitorZoom);
             }
         }
         return points;
@@ -1519,18 +1511,17 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
         }
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof MenuItem menuItem)) {
-            return;
-        }
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
         // Refresh the image(s)
-        if (menuItem.getImage() != null) {
-            ((SwtMenuItem) ((MenuItem) menuItem).getImpl()).updateImage();
+        if (getImage() != null) {
+            updateImage();
         }
         // Refresh the sub menu
-        Menu subMenu = menuItem.getMenu();
+        Menu subMenu = getMenu();
         if (subMenu != null) {
-            DPIZoomChangeRegistry.applyChange(subMenu, newZoom, scalingFactor);
+            subMenu.notifyListeners(SWT.ZoomChanged, event);
         }
     }
 

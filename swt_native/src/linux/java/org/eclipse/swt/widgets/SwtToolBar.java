@@ -452,10 +452,10 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
     }
 
     @Override
-    long gtk_key_press_event(long widget, long eventPtr) {
+    long gtk3_key_press_event(long widget, long eventPtr) {
         if (!hasFocus())
             return 0;
-        long result = super.gtk_key_press_event(widget, eventPtr);
+        long result = super.gtk3_key_press_event(widget, eventPtr);
         return result;
     }
 

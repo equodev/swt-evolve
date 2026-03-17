@@ -977,14 +977,14 @@ public class SWT {
      * @deprecated The same as PreExternalEventDispatch (value is 52).
      * @since 3.103
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2025-12")
     public static final int Sleep = PreExternalEventDispatch;
 
     /**
      * @deprecated The same as PostExternalEventDispatch (value is 53).
      * @since 3.103
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2025-12")
     public static final int Wakeup = PostExternalEventDispatch;
 
     /**
@@ -1013,6 +1013,10 @@ public class SWT {
      * Note that this is a <em>HINT</em> and is not sent on platforms that do not
      * support dynamic DPI changes. This event is currently sent on Windows 10 and GTK
      * only.
+     * </p>
+     * <p>
+     * Note: Event.detail: The new zoom value, e.g. 100, 125, 250, 175, etc. The
+     * Event.detail must not be modified by consumers.
      * </p>
      *
      * @see org.eclipse.swt.widgets.Widget#addListener
@@ -2542,7 +2546,7 @@ public class SWT {
      *             XULRunner as a browser renderer is no longer supported. Use
      *             <code>SWT.WEBKIT</code> or <code>SWT.NONE</code> instead.
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2025-12")
     public static final int MOZILLA = 1 << 15;
 
     /**

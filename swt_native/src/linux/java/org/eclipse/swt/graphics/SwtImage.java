@@ -18,6 +18,7 @@ package org.eclipse.swt.graphics;
 import static org.eclipse.swt.internal.image.ImageColorTransformer.DEFAULT_DISABLED_IMAGE_TRANSFORMER;
 import java.io.*;
 import java.util.*;
+import java.util.function.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.DPIUtil.*;
@@ -245,17 +246,19 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         if (flag != SWT.IMAGE_DISABLE)
             transparentPixel = srcImage.getImpl()._transparentPixel();
         long imageSurface = srcImage.surface;
-        int width = this.width = srcImage.getImpl()._width();
-        int height = this.height = srcImage.getImpl()._height();
+        this.width = srcImage.getImpl()._width();
+        this.height = srcImage.getImpl()._height();
         int format = Cairo.cairo_surface_get_content(imageSurface) == Cairo.CAIRO_CONTENT_COLOR ? Cairo.CAIRO_FORMAT_RGB24 : Cairo.CAIRO_FORMAT_ARGB32;
         boolean hasAlpha = format == Cairo.CAIRO_FORMAT_ARGB32;
-        getApi().surface = Cairo.cairo_image_surface_create(format, width, height);
+        int dataWidth = DPIUtil.pointToPixel(this.width, DPIUtil.getDeviceZoom());
+        int dataHeight = DPIUtil.pointToPixel(this.height, DPIUtil.getDeviceZoom());
+        getApi().surface = Cairo.cairo_image_surface_create(format, dataWidth, dataHeight);
         if (getApi().surface == 0)
             SWT.error(SWT.ERROR_NO_HANDLES);
-        if (DPIUtil.getDeviceZoom() != currentDeviceZoom) {
-            double scaleFactor = DPIUtil.getDeviceZoom() / 100f;
-            Cairo.cairo_surface_set_device_scale(getApi().surface, scaleFactor, scaleFactor);
-        }
+        double[] scaleX = new double[1];
+        double[] scaleY = new double[1];
+        Cairo.cairo_surface_get_device_scale(imageSurface, scaleX, scaleY);
+        Cairo.cairo_surface_set_device_scale(getApi().surface, scaleX[0], scaleY[0]);
         long cairo = Cairo.cairo_create(getApi().surface);
         if (cairo == 0)
             SWT.error(SWT.ERROR_NO_HANDLES);
@@ -282,9 +285,9 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
                 case SWT.IMAGE_DISABLE:
                     {
                         byte[] line = new byte[stride];
-                        for (int y = 0; y < height; y++) {
+                        for (int y = 0; y < dataHeight; y++) {
                             C.memmove(line, data + (y * stride), stride);
-                            for (int x = 0, offset = 0; x < width; x++, offset += 4) {
+                            for (int x = 0, offset = 0; x < dataWidth; x++, offset += 4) {
                                 int a = line[offset + oa] & 0xFF;
                                 int r = line[offset + or] & 0xFF;
                                 int g = line[offset + og] & 0xFF;
@@ -316,9 +319,9 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
                 case SWT.IMAGE_GRAY:
                     {
                         byte[] line = new byte[stride];
-                        for (int y = 0; y < height; y++) {
+                        for (int y = 0; y < dataHeight; y++) {
                             C.memmove(line, data + (y * stride), stride);
-                            for (int x = 0, offset = 0; x < width; x++, offset += 4) {
+                            for (int x = 0, offset = 0; x < dataWidth; x++, offset += 4) {
                                 int a = line[offset + oa] & 0xFF;
                                 int r = line[offset + or] & 0xFF;
                                 int g = line[offset + og] & 0xFF;
@@ -533,7 +536,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
     public SwtImage(Device device, InputStream stream, Image api) {
         super(device, api);
         currentDeviceZoom = DPIUtil.getDeviceZoom();
-        ElementAtZoom<ImageData> image = ImageDataLoader.load(stream, FileFormat.DEFAULT_ZOOM, currentDeviceZoom);
+        ElementAtZoom<ImageData> image = ImageDataLoader.loadByZoom(stream, FileFormat.DEFAULT_ZOOM, currentDeviceZoom);
         ImageData data = DPIUtil.scaleImageData(device, image, currentDeviceZoom);
         init(data);
         init();
@@ -577,7 +580,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         if (filename == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         currentDeviceZoom = DPIUtil.getDeviceZoom();
-        ElementAtZoom<ImageData> image = ImageDataLoader.load(filename, FileFormat.DEFAULT_ZOOM, currentDeviceZoom);
+        ElementAtZoom<ImageData> image = ImageDataLoader.loadByZoom(filename, FileFormat.DEFAULT_ZOOM, currentDeviceZoom);
         ImageData data = DPIUtil.scaleImageData(device, image, currentDeviceZoom);
         init(data);
         init();
@@ -771,7 +774,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             initNative(fileForZoom.element());
         }
         if (this.getApi().surface == 0) {
-            ElementAtZoom<ImageData> imageDataAtZoom = ImageDataLoader.load(fileForZoom.element(), fileForZoom.zoom(), zoom);
+            ElementAtZoom<ImageData> imageDataAtZoom = ImageDataLoader.loadByZoom(fileForZoom.element(), fileForZoom.zoom(), zoom);
             ImageData imageData = imageDataAtZoom.element();
             if (imageDataAtZoom.zoom() != zoom) {
                 imageData = DPIUtil.scaleImageData(device, imageDataAtZoom, zoom);
@@ -903,11 +906,6 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         C.memmove(surfaceData, srcData, srcData.length);
     }
 
-    void createSurface() {
-        if (getApi().surface != 0)
-            return;
-    }
-
     /**
      * Destroy the receiver's mask if it exists.
      */
@@ -928,6 +926,75 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             Cairo.cairo_surface_destroy(getApi().surface);
         getApi().surface = getApi().mask = 0;
         memGC = null;
+        cachedImageAtSize.destroy();
+    }
+
+    private CachedImageAtSize cachedImageAtSize = new CachedImageAtSize();
+
+    private class CachedImageAtSize {
+
+        private Image image;
+
+        public void destroy() {
+            if (image != null) {
+                image.dispose();
+                image = null;
+            }
+        }
+
+        private Optional<Image> refresh(int destWidth, int destHeight) {
+            int scaledWidth = DPIUtil.pointToPixel(destWidth, DPIUtil.getDeviceZoom());
+            int scaledHeight = DPIUtil.pointToPixel(destHeight, DPIUtil.getDeviceZoom());
+            if (isReusable(scaledWidth, scaledHeight)) {
+                return Optional.of(image);
+            } else {
+                destroy();
+                Optional<Image> imageAtSize = loadImageAtSize(scaledWidth, scaledHeight);
+                image = imageAtSize.orElse(null);
+                return imageAtSize;
+            }
+        }
+
+        private boolean isReusable(int width, int height) {
+            return image != null && image.getImpl()._height() == height && image.getImpl()._width() == width;
+        }
+
+        private Optional<Image> loadImageAtSize(int destWidth, int destHeight) {
+            Optional<ImageData> imageData = loadImageDataAtExactSize(destWidth, destHeight);
+            if (imageData.isEmpty()) {
+                return Optional.empty();
+            }
+            Image image = new Image(device, imageData.get(), DPIUtil.getDeviceZoom());
+            if (styleFlag != SWT.IMAGE_COPY) {
+                Image styledImage = new Image(device, image, styleFlag);
+                image.dispose();
+                image = styledImage;
+            }
+            return Optional.of(image);
+        }
+
+        private Optional<ImageData> loadImageDataAtExactSize(int targetWidth, int targetHeight) {
+            if (imageDataProvider instanceof ImageDataAtSizeProvider imageDataAtSizeProvider) {
+                ImageData imageData = imageDataAtSizeProvider.getImageData(targetWidth, targetHeight);
+                if (imageData == null) {
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT, null, " ImageDataAtSizeProvider returned null for width=" + targetWidth + ", height=" + targetHeight);
+                }
+                return Optional.of(imageData);
+            }
+            if (imageFileNameProvider != null) {
+                String fileName = DPIUtil.validateAndGetImagePathAtZoom(imageFileNameProvider, 100).element();
+                if (ImageDataLoader.isDynamicallySizable(fileName)) {
+                    ImageData imageDataAtSize = ImageDataLoader.loadBySize(fileName, targetWidth, targetHeight);
+                    return Optional.of(imageDataAtSize);
+                }
+            }
+            return Optional.empty();
+        }
+    }
+
+    void executeOnImageAtSize(Consumer<Image> imageAtBestFittingSizeConsumer, int destWidth, int destHeight) {
+        Optional<Image> imageAtSize = cachedImageAtSize.refresh(destWidth, destHeight);
+        imageAtBestFittingSizeConsumer.accept(imageAtSize.orElse(this.getApi()));
     }
 
     /**
@@ -1594,21 +1661,20 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      *
      * @param gc the GC to draw on the resulting image
      * @param imageData the imageData which is used to draw the scaled Image
-     * @param width the width of the original image
-     * @param height the height of the original image
-     * @param scaleFactor the factor with which the image is supposed to be scaled
+     * @param width the width to which the image is supposed to be scaled
+     * @param height the height to which the image is supposed to be scaled
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    public static void drawScaled(GC gc, ImageData imageData, int width, int height, float scaleFactor) {
+    public static void drawAtSize(GC gc, ImageData imageData, int width, int height) {
         StrictChecks.runWithStrictChecksDisabled(() -> {
             Image imageToDraw = new Image(gc.getImpl()._device(), (ImageDataProvider) zoom -> imageData);
-            gc.drawImage(imageToDraw, 0, 0, width, height, /*
+            gc.drawImage(imageToDraw, 0, 0, imageData.width, imageData.height, /*
 				 * E.g. destWidth here is effectively DPIUtil.autoScaleDown (scaledWidth), but
 				 * avoiding rounding errors. Nevertheless, we still have some rounding errors
 				 * due to the point-based API GC#drawImage(..).
 				 */
-            0, 0, Math.round(width * scaleFactor), Math.round(height * scaleFactor));
+            0, 0, width, height);
             imageToDraw.dispose();
         });
     }

@@ -196,6 +196,12 @@ public class ImageList {
             }
         }
         Cairo.cairo_surface_destroy(surface);
+        if (GTK.GTK4) {
+            //Scaling needed as the image surface will be different from the image size depending on the display scale
+            long scaledPixbuf = GDK.gdk_pixbuf_scale_simple(pixbuf, image.getBounds().width, image.getBounds().height, GDK.GDK_INTERP_BILINEAR);
+            OS.g_object_unref(pixbuf);
+            pixbuf = scaledPixbuf;
+        }
         return pixbuf;
     }
 

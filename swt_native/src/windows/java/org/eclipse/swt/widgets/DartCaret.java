@@ -15,10 +15,10 @@
  */
 package org.eclipse.swt.widgets;
 
+import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -128,8 +128,16 @@ public class DartCaret extends DartWidget implements ICaret {
         if (image != null) {
         }
         if (width == 0) {
+            OptionalInt widthInPixels = getSystemCaretWidthInPixelsForCurrentMonitor();
+            if (widthInPixels.isPresent()) {
+                return new Rectangle(getXInPixels(), getYInPixels(), widthInPixels.getAsInt(), getHeightInPixels());
+            }
         }
         return new Rectangle(getXInPixels(), getYInPixels(), getWidthInPixels(), getHeightInPixels());
+    }
+
+    private OptionalInt getSystemCaretWidthInPixelsForCurrentMonitor() {
+        return OptionalInt.empty();
     }
 
     /**
@@ -214,24 +222,28 @@ public class DartCaret extends DartWidget implements ICaret {
         if (image != null) {
         }
         if (width == 0) {
+            OptionalInt widthInPixels = getSystemCaretWidthInPixelsForCurrentMonitor();
+            if (widthInPixels.isPresent()) {
+                return new Point(widthInPixels.getAsInt(), getHeightInPixels());
+            }
         }
         return new Point(getWidthInPixels(), getHeightInPixels());
     }
 
     private int getWidthInPixels() {
-        return 0;
+        return DPIUtil.pointToPixel(width, getZoom());
     }
 
     private int getHeightInPixels() {
-        return 0;
+        return DPIUtil.pointToPixel(height, getZoom());
     }
 
     private int getXInPixels() {
-        return 0;
+        return DPIUtil.pointToPixel(x, getZoom());
     }
 
     private int getYInPixels() {
-        return 0;
+        return DPIUtil.pointToPixel(y, getZoom());
     }
 
     /**
@@ -332,6 +344,10 @@ public class DartCaret extends DartWidget implements ICaret {
         resized = false;
         int widthInPixels = this.getWidthInPixels();
         if (image == null && widthInPixels == 0) {
+            OptionalInt systemCaretWidthInPixelsForCurrentMonitor = getSystemCaretWidthInPixelsForCurrentMonitor();
+            if (systemCaretWidthInPixelsForCurrentMonitor.isPresent()) {
+                widthInPixels = systemCaretWidthInPixelsForCurrentMonitor.getAsInt();
+            }
         }
         move();
     }
@@ -399,6 +415,10 @@ public class DartCaret extends DartWidget implements ICaret {
     void setFocus() {
         int widthInPixels = this.getWidthInPixels();
         if (image == null && widthInPixels == 0) {
+            OptionalInt systemCaretWidthInPixelsForCurrentMonitor = getSystemCaretWidthInPixelsForCurrentMonitor();
+            if (systemCaretWidthInPixelsForCurrentMonitor.isPresent()) {
+                widthInPixels = systemCaretWidthInPixelsForCurrentMonitor.getAsInt();
+            }
         }
         move();
         setIMEFont();
@@ -598,17 +618,18 @@ public class DartCaret extends DartWidget implements ICaret {
         }
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof Caret caret)) {
-            return;
-        }
-        Image image = caret.getImage();
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        Image image = getImage();
         if (image != null) {
-            caret.setImage(image);
+            setImage(image);
         }
-        if (((DartCaret) caret.getImpl()).font != null) {
-            caret.setFont(((DartCaret) caret.getImpl()).font);
+        if (font != null) {
+            setFont(font);
         }
+        if (isVisible && hasFocus())
+            resize();
     }
 
     public Canvas _parent() {

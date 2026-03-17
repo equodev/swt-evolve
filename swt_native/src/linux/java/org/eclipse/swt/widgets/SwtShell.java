@@ -657,7 +657,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                 }
                 long seat = GDK.gdk_display_get_default_seat(gdkDisplay);
                 if (GTK.GTK4) {
-                    /* TODO: GTK does not provide a gdk_surface_show, probably will require use of the present api */
+                    GTK4.gtk_window_present(shellHandle);
                 } else {
                     GDK.gdk_window_show(gdkResource);
                 }
@@ -1200,7 +1200,6 @@ public class SwtShell extends SwtDecorations implements IShell {
                 if (validTranslation && !isMappedToPopup()) {
                     allocation.x += window_offset_x[0];
                     allocation.y += window_offset_y[0];
-                    allocation.height -= window_offset_y[0];
                 }
             } else {
                 int[] dest_x = new int[1];
@@ -1339,6 +1338,14 @@ public class SwtShell extends SwtDecorations implements IShell {
      */
     public Point getMinimumSize() {
         checkWidget();
+        if (GTK.GTK4) {
+            int[] widthP = new int[1];
+            int[] heightP = new int[1];
+            GTK4.gtk_widget_get_size_request(shellHandle, widthP, heightP);
+            int width = Math.max(1, widthP[0] + trimWidth());
+            int height = Math.max(1, heightP[0] + trimHeight());
+            return new Point(width, height);
+        }
         int width = Math.max(1, geometry.getMinWidth() + trimWidth());
         int height = Math.max(1, geometry.getMinHeight() + trimHeight());
         return new Point(width, height);
@@ -1361,6 +1368,11 @@ public class SwtShell extends SwtDecorations implements IShell {
      */
     public Point getMaximumSize() {
         checkWidget();
+        if (GTK.GTK4) {
+            // GTK 4 doesn't have the concept of Window maximum size
+            // A possibility might be size_allocate
+            return new Point(Integer.MAX_VALUE, Integer.MAX_VALUE);
+        }
         int width = Math.min(Integer.MAX_VALUE, geometry.getMaxWidth() + trimWidth());
         int height = Math.min(Integer.MAX_VALUE, geometry.getMaxHeight() + trimHeight());
         return new Point(width, height);
@@ -1822,7 +1834,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     }
 
     @Override
-    long gtk_key_press_event(long widget, long event) {
+    long gtk3_key_press_event(long widget, long event) {
         if (widget == shellHandle) {
             /* Stop menu mnemonics when the shell is disabled */
             if ((getApi().state & DISABLED) != 0)
@@ -1851,7 +1863,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                             int mask = GTK.gtk_accelerator_get_default_mod_mask();
                             if (key[0] == keyval[0] && (state[0] & mask) == (mods[0] & mask)) {
                                 if (focusControl.getImpl() instanceof SwtControl) {
-                                    return ((SwtControl) focusControl.getImpl()).gtk_key_press_event(((SwtControl) focusControl.getImpl()).focusHandle(), event);
+                                    return ((SwtControl) focusControl.getImpl()).gtk3_key_press_event(((SwtControl) focusControl.getImpl()).focusHandle(), event);
                                 } else
                                     return 0;
                             }
@@ -1861,7 +1873,7 @@ public class SwtShell extends SwtDecorations implements IShell {
             }
             return 0;
         }
-        return super.gtk_key_press_event(widget, event);
+        return super.gtk3_key_press_event(widget, event);
     }
 
     @Override
@@ -2716,6 +2728,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         geometry.setMinHeight(Math.max(height, trimHeight()) - trimHeight());
         if (GTK.GTK4) {
             geometry.setMinSizeRequested(true);
+            GTK4.gtk_widget_set_size_request(shellHandle, width, height);
             return;
         }
         int hint = GDK.GDK_HINT_MIN_SIZE;
@@ -2771,6 +2784,11 @@ public class SwtShell extends SwtDecorations implements IShell {
      */
     public void setMaximumSize(int width, int height) {
         checkWidget();
+        if (GTK.GTK4) {
+            // Gtk 4 doesn't have the concept of maximum window size
+            // A possibility might be size_allocate
+            return;
+        }
         geometry.setMaxWidth(Math.max(width, trimWidth()) - trimWidth());
         geometry.setMaxHeight(Math.max(height, trimHeight()) - trimHeight());
         int hint = GDK.GDK_HINT_MAX_SIZE;

@@ -169,8 +169,9 @@ public class SwtLink extends SwtControl implements ILink {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
         checkWidget();
+        Point hintInPixels = Win32DPIUtils.pointToPixelAsSufficientlyLargeSize(hintInPoints, zoom);
         int width, height;
         /*
 	 * When the text is empty, LM_GETIDEALSIZE returns zero width and height,
@@ -189,15 +190,15 @@ public class SwtLink extends SwtControl implements ILink {
             OS.ReleaseDC(getApi().handle, hDC);
         } else {
             SIZE size = new SIZE();
-            int maxWidth = (wHint == SWT.DEFAULT) ? 0x7fffffff : wHint;
+            int maxWidth = (hintInPoints.x == SWT.DEFAULT) ? 0x7fffffff : hintInPixels.x;
             OS.SendMessage(getApi().handle, OS.LM_GETIDEALSIZE, maxWidth, size);
             width = size.cx;
             height = size.cy;
         }
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
+        if (hintInPoints.x != SWT.DEFAULT)
+            width = hintInPixels.x;
+        if (hintInPoints.y != SWT.DEFAULT)
+            height = hintInPixels.y;
         int border = getBorderWidthInPixels();
         width += border * 2;
         height += border * 2;

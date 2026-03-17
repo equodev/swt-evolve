@@ -192,19 +192,19 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
     public Point computeSize(int wHint, int hHint) {
         checkWidget();
         int zoom = getZoom();
-        wHint = (wHint != SWT.DEFAULT ? Win32DPIUtils.pointToPixel(wHint, zoom) : wHint);
-        hHint = (hHint != SWT.DEFAULT ? Win32DPIUtils.pointToPixel(hHint, zoom) : hHint);
-        return Win32DPIUtils.pixelToPoint(computeSizeInPixels(wHint, hHint), zoom);
+        return Win32DPIUtils.pixelToPointAsSufficientlyLargeSize(computeSizeInPixels(new Point(wHint, hHint)), zoom);
     }
 
-    Point computeSizeInPixels(int wHint, int hHint) {
+    Point computeSizeInPixels(Point sizeHintInPoints) {
+        int zoom = getZoom();
+        Point sizeHintInPixels = Win32DPIUtils.pointToPixelAsSufficientlyLargeSize(sizeHintInPoints, zoom);
         int index = parent.indexOf(this.getApi());
         if (index == -1)
             return new Point(0, 0);
-        int width = wHint, height = hHint;
-        if (wHint == SWT.DEFAULT)
+        int width = sizeHintInPixels.x, height = sizeHintInPixels.y;
+        if (sizeHintInPoints.x == SWT.DEFAULT)
             width = 32;
-        if (hHint == SWT.DEFAULT)
+        if (sizeHintInPoints.y == SWT.DEFAULT)
             height = 32;
         if ((parent.style & SWT.VERTICAL) != 0) {
             height += ((SwtCoolBar) parent.getImpl()).getMargin(index);
@@ -399,7 +399,7 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
      */
     public Point getPreferredSize() {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getPreferredSizeInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPointAsSize(getPreferredSizeInPixels(), getZoom());
     }
 
     Point getPreferredSizeInPixels() {
@@ -432,7 +432,7 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
     public void setPreferredSize(int width, int height) {
         checkWidget();
         int zoom = getZoom();
-        setPreferredSizeInPixels(Win32DPIUtils.pointToPixel(width, zoom), Win32DPIUtils.pointToPixel(height, zoom));
+        setPreferredSizeInPixels(DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom));
     }
 
     void setPreferredSizeInPixels(int width, int height) {
@@ -482,7 +482,7 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        size = Win32DPIUtils.pointToPixel(size, getZoom());
+        size = Win32DPIUtils.pointToPixelAsSize(size, getZoom());
         setPreferredSizeInPixels(size.x, size.y);
     }
 
@@ -501,7 +501,7 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
      */
     public Point getSize() {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getSizeInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPointAsSize(getSizeInPixels(), getZoom());
     }
 
     public Point getSizeInPixels() {
@@ -545,7 +545,7 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
     public void setSize(int width, int height) {
         checkWidget();
         int zoom = getZoom();
-        setSizeInPixels(Win32DPIUtils.pointToPixel(width, zoom), Win32DPIUtils.pointToPixel(height, zoom));
+        setSizeInPixels(DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom));
     }
 
     void setSizeInPixels(int width, int height) {
@@ -612,7 +612,7 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        size = Win32DPIUtils.pointToPixel(size, getZoom());
+        size = Win32DPIUtils.pointToPixelAsSize(size, getZoom());
         setSizeInPixels(size.x, size.y);
     }
 
@@ -631,7 +631,7 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
      */
     public Point getMinimumSize() {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getMinimumSizeInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPointAsSize(getMinimumSizeInPixels(), getZoom());
     }
 
     Point getMinimumSizeInPixels() {
@@ -666,7 +666,7 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
     public void setMinimumSize(int width, int height) {
         checkWidget();
         int zoom = getZoom();
-        setMinimumSizeInPixels(Win32DPIUtils.pointToPixel(width, zoom), Win32DPIUtils.pointToPixel(height, zoom));
+        setMinimumSizeInPixels(DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom));
     }
 
     void setMinimumSizeInPixels(int width, int height) {
@@ -716,7 +716,7 @@ public class SwtCoolItem extends SwtItem implements ICoolItem {
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        size = Win32DPIUtils.pointToPixel(size, getZoom());
+        size = Win32DPIUtils.pointToPixelAsSize(size, getZoom());
         setMinimumSizeInPixels(size.x, size.y);
     }
 

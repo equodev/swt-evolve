@@ -62,10 +62,6 @@ public class SwtComposite extends SwtScrollable implements IComposite {
 
     static final int TOOLTIP_LIMIT = 4096;
 
-    static {
-        DPIZoomChangeRegistry.registerHandler(SwtComposite::handleDPIChange, Composite.class);
-    }
-
     /**
      * Prevents uninitialized instances from being created outside the package.
      */
@@ -223,35 +219,33 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
         ((SwtDisplay) display.getImpl()).runSkin();
-        Point size;
+        Point sizeInPoints;
         if (layout != null) {
-            if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
+            if (hintInPoints.x == SWT.DEFAULT || hintInPoints.y == SWT.DEFAULT) {
                 changed |= (getApi().state & LAYOUT_CHANGED) != 0;
                 getApi().state &= ~LAYOUT_CHANGED;
-                int zoom = getZoom();
-                size = Win32DPIUtils.pointToPixel(layout.computeSize(this.getApi(), DPIUtil.pixelToPoint(wHint, zoom), DPIUtil.pixelToPoint(hHint, zoom), changed), zoom);
+                sizeInPoints = layout.computeSize(this.getApi(), hintInPoints.x, hintInPoints.y, changed);
             } else {
-                size = new Point(wHint, hHint);
+                sizeInPoints = hintInPoints;
             }
         } else {
-            size = minimumSize(wHint, hHint, changed);
-            if (size.x == 0)
-                size.x = DEFAULT_WIDTH;
-            if (size.y == 0)
-                size.y = DEFAULT_HEIGHT;
+            sizeInPoints = minimumSize(hintInPoints, changed);
+            if (sizeInPoints.x == 0)
+                sizeInPoints.x = DEFAULT_WIDTH;
+            if (sizeInPoints.y == 0)
+                sizeInPoints.y = DEFAULT_HEIGHT;
         }
-        if (wHint != SWT.DEFAULT)
-            size.x = wHint;
-        if (hHint != SWT.DEFAULT)
-            size.y = hHint;
+        if (hintInPoints.x != SWT.DEFAULT)
+            sizeInPoints.x = hintInPoints.x;
+        if (hintInPoints.y != SWT.DEFAULT)
+            sizeInPoints.y = hintInPoints.y;
         /*
 	 * Since computeTrim can be overridden by subclasses, we cannot
 	 * call computeTrimInPixels directly.
 	 */
-        int zoom = getZoom();
-        Rectangle trim = Win32DPIUtils.pointToPixel(computeTrim(0, 0, DPIUtil.pixelToPoint(size.x, zoom), DPIUtil.pixelToPoint(size.y, zoom)), zoom);
+        Rectangle trim = Win32DPIUtils.pointToPixelWithSufficientlyLargeSize(computeTrim(0, 0, sizeInPoints.x, sizeInPoints.y), getZoom());
         return new Point(trim.width, trim.height);
     }
 
@@ -375,8 +369,8 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         checkWidget();
         int zoom = getZoom();
         Rectangle rectangle = Win32DPIUtils.pointToPixel(new Rectangle(x, y, width, height), zoom);
-        offsetX = Win32DPIUtils.pointToPixel(offsetX, zoom);
-        offsetY = Win32DPIUtils.pointToPixel(offsetY, zoom);
+        offsetX = DPIUtil.pointToPixel(offsetX, zoom);
+        offsetY = DPIUtil.pointToPixel(offsetY, zoom);
         drawBackgroundInPixels(gc, rectangle.x, rectangle.y, rectangle.width, rectangle.height, offsetX, offsetY);
     }
 
@@ -907,16 +901,15 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         }
     }
 
-    Point minimumSize(int wHint, int hHint, boolean changed) {
+    Point minimumSize(Point hintInPoints, boolean changed) {
         /*
 	 * Since getClientArea can be overridden by subclasses, we cannot
 	 * call getClientAreaInPixels directly.
 	 */
-        int zoom = getZoom();
-        Rectangle clientArea = Win32DPIUtils.pointToPixel(getClientArea(), zoom);
+        Rectangle clientArea = getClientArea();
         int width = 0, height = 0;
         for (Control element : _getChildren()) {
-            Rectangle rect = Win32DPIUtils.pointToPixel(element.getBounds(), zoom);
+            Rectangle rect = element.getBounds();
             width = Math.max(width, rect.x - clientArea.x + rect.width);
             height = Math.max(height, rect.y - clientArea.y + rect.height);
         }
@@ -2057,15 +2050,11 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         return super.toString() + " [layout=" + layout + "]";
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof Composite composite)) {
-            return;
-        }
-        for (Control child : composite.getChildren()) {
-            DPIZoomChangeRegistry.applyChange(child, newZoom, scalingFactor);
-        }
-        if (composite.getImpl() instanceof SwtControl) {
-            ((SwtControl) composite.getImpl()).redrawInPixels(null, true);
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        for (Control child : getChildren()) {
+            ((SwtControl) child.getImpl()).sendZoomChangedEvent(event, getShell());
         }
     }
 

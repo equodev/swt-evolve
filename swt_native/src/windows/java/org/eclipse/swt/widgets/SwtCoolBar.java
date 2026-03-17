@@ -66,7 +66,6 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         WNDCLASS lpWndClass = new WNDCLASS();
         OS.GetClassInfo(0, ReBarClass, lpWndClass);
         ReBarProc = lpWndClass.lpfnWndProc;
-        DPIZoomChangeRegistry.registerHandler(SwtCoolBar::handleDPIChange, CoolBar.class);
     }
 
     static final int SEPARATOR_WIDTH = 2;
@@ -156,11 +155,12 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
+        Point hintInPixels = Win32DPIUtils.pointToPixelAsSufficientlyLargeSize(hintInPoints, zoom);
         int width = 0, height = 0;
         int border = getBorderWidthInPixels();
-        int newWidth = wHint == SWT.DEFAULT ? 0x3FFF : wHint + (border * 2);
-        int newHeight = hHint == SWT.DEFAULT ? 0x3FFF : hHint + (border * 2);
+        int newWidth = hintInPoints.x == SWT.DEFAULT ? 0x3FFF : hintInPixels.x + (border * 2);
+        int newHeight = hintInPoints.y == SWT.DEFAULT ? 0x3FFF : hintInPixels.y + (border * 2);
         int count = (int) OS.SendMessage(getApi().handle, OS.RB_GETBANDCOUNT, 0, 0);
         if (count != 0) {
             ignoreResize = true;
@@ -207,10 +207,10 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
             width = height;
             height = tmp;
         }
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
+        if (hintInPoints.x != SWT.DEFAULT)
+            width = hintInPixels.x;
+        if (hintInPoints.y != SWT.DEFAULT)
+            height = hintInPixels.y;
         height += border * 2;
         width += border * 2;
         return new Point(width, height);
@@ -427,7 +427,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         }
         if ((getApi().style & SWT.FLAT) == 0) {
             if (!isLastItemOfRow(index)) {
-                margin += Win32DPIUtils.pointToPixel(SEPARATOR_WIDTH, getZoom());
+                margin += DPIUtil.pointToPixel(SEPARATOR_WIDTH, getZoom());
             }
         }
         return margin;
@@ -567,7 +567,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         Point[] sizes = getItemSizesInPixels();
         if (sizes != null) {
             for (int i = 0; i < sizes.length; i++) {
-                sizes[i] = Win32DPIUtils.pixelToPoint(sizes[i], getZoom());
+                sizes[i] = Win32DPIUtils.pixelToPointAsSize(sizes[i], getZoom());
             }
         }
         return sizes;
@@ -839,7 +839,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
             error(SWT.ERROR_NULL_ARGUMENT);
         Point[] sizesInPoints = new Point[sizes.length];
         for (int i = 0; i < sizes.length; i++) {
-            sizesInPoints[i] = Win32DPIUtils.pointToPixel(sizes[i], getZoom());
+            sizesInPoints[i] = Win32DPIUtils.pointToPixelAsSize(sizes[i], getZoom());
         }
         setItemLayoutInPixels(itemOrder, wrapIndices, sizesInPoints);
     }
@@ -1245,17 +1245,16 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         return super.wmNotifyChild(hdr, wParam, lParam);
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof CoolBar coolBar)) {
-            return;
-        }
-        Point[] sizes = ((SwtCoolBar) coolBar.getImpl()).getItemSizesInPixels();
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        Point[] sizes = getItemSizesInPixels();
         Point[] scaledSizes = new Point[sizes.length];
         Point[] prefSizes = new Point[sizes.length];
         Point[] minSizes = new Point[sizes.length];
-        int[] indices = coolBar.getWrapIndices();
-        int[] itemOrder = coolBar.getItemOrder();
-        CoolItem[] items = coolBar.getItems();
+        int[] indices = getWrapIndices();
+        int[] itemOrder = getItemOrder();
+        CoolItem[] items = getItems();
         for (int index = 0; index < sizes.length; index++) {
             minSizes[index] = ((SwtCoolItem) items[index].getImpl()).getMinimumSizeInPixels();
             prefSizes[index] = ((SwtCoolItem) items[index].getImpl()).getPreferredSizeInPixels();
@@ -1264,13 +1263,13 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
             CoolItem item = items[index];
             Control control = ((SwtCoolItem) item.getImpl()).control;
             if (control != null) {
-                DPIZoomChangeRegistry.applyChange(control, newZoom, scalingFactor);
+                control.notifyListeners(SWT.ZoomChanged, event);
                 item.setControl(control);
             }
-            Point preferredControlSize = ((SwtControl) item.getControl().getImpl()).computeSizeInPixels(SWT.DEFAULT, SWT.DEFAULT, true);
+            Point preferredControlSize = ((SwtControl) item.getControl().getImpl()).computeSizeInPixels(new Point(SWT.DEFAULT, SWT.DEFAULT), getZoom(), true);
             int controlWidth = preferredControlSize.x;
             int controlHeight = preferredControlSize.y;
-            if (((coolBar.style & SWT.VERTICAL) != 0)) {
+            if (((getApi().style & SWT.VERTICAL) != 0)) {
                 scaledSizes[index] = new Point(Math.round((sizes[index].x) * scalingFactor), Math.max(Math.round((sizes[index].y) * scalingFactor), 0));
                 ((SwtCoolItem) item.getImpl()).setMinimumSizeInPixels(Math.round(minSizes[index].x * scalingFactor), Math.max(Math.round((minSizes[index].y) * scalingFactor), controlWidth));
                 ((SwtCoolItem) item.getImpl()).setPreferredSizeInPixels(Math.round(prefSizes[index].x * scalingFactor), Math.max(Math.round((prefSizes[index].y) * scalingFactor), controlWidth));
@@ -1280,8 +1279,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
                 ((SwtCoolItem) item.getImpl()).setPreferredSizeInPixels(Math.round(prefSizes[index].x * scalingFactor), controlHeight);
             }
         }
-        ((SwtCoolBar) coolBar.getImpl()).setItemLayoutInPixels(itemOrder, indices, scaledSizes);
-        coolBar.getImpl().updateLayout(true);
+        setItemLayoutInPixels(itemOrder, indices, scaledSizes);
     }
 
     public CoolItem[] _items() {

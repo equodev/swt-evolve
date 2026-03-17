@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
 
 /**
@@ -251,10 +252,11 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
         checkWidget();
+        Point hintInPixels = Win32DPIUtils.pointToPixelAsSufficientlyLargeSize(hintInPoints, zoom);
         int width = 0, height = 0;
-        if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
+        if (hintInPoints.x == SWT.DEFAULT || hintInPoints.y == SWT.DEFAULT) {
             if ((getApi().style & SWT.CALENDAR) != 0) {
                 RECT rect = new RECT();
                 OS.SendMessage(getApi().handle, OS.MCM_GETMINREQRECT, 0, rect);
@@ -280,10 +282,10 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
             width = DEFAULT_WIDTH;
         if (height == 0)
             height = DEFAULT_HEIGHT;
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
+        if (hintInPoints.x != SWT.DEFAULT)
+            width = hintInPixels.x;
+        if (hintInPoints.y != SWT.DEFAULT)
+            height = hintInPixels.y;
         int border = getBorderWidthInPixels();
         width += border * 2;
         height += border * 2;

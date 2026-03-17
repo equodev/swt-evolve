@@ -17,6 +17,7 @@
 package org.eclipse.swt.widgets;
 
 import java.util.*;
+import java.util.concurrent.atomic.*;
 import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
@@ -25,7 +26,6 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gdip.*;
-import org.eclipse.swt.internal.ole.win32.*;
 import org.eclipse.swt.internal.win32.*;
 import org.eclipse.swt.ole.win32.*;
 
@@ -745,6 +745,14 @@ public abstract class Control extends Widget implements Drawable {
      */
     public Cursor getCursor() {
         return getImpl().getCursor();
+    }
+
+    public Object getData(String key) {
+        return getImpl().getData(key);
+    }
+
+    public void setData(String key, Object value) {
+        getImpl().setData(key, value);
     }
 
     /**

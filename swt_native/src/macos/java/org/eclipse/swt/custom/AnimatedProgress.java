@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2017 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -62,6 +62,7 @@ public class AnimatedProgress extends Canvas {
      * @see SWT#BORDER
      * @see #getStyle()
      */
+    @Deprecated
     public AnimatedProgress(Composite parent, int style) {
         this((IAnimatedProgress) null);
         setImpl(new SwtAnimatedProgress(parent, style, this));
@@ -76,10 +77,12 @@ public class AnimatedProgress extends Canvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
+    @Deprecated
     public synchronized void clear() {
         getImpl().clear();
     }
 
+    @Deprecated
     public Point computeSize(int wHint, int hHint, boolean changed) {
         return getImpl().computeSize(wHint, hHint, changed);
     }
@@ -92,6 +95,7 @@ public class AnimatedProgress extends Canvas {
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
+    @Deprecated
     public synchronized void start() {
         getImpl().start();
     }
@@ -99,6 +103,7 @@ public class AnimatedProgress extends Canvas {
     /**
      * Stop the animation.   Freeze the presentation at its current appearance.
      */
+    @Deprecated
     public synchronized void stop() {
         getImpl().stop();
     }

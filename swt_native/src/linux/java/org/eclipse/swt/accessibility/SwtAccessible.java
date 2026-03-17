@@ -120,9 +120,15 @@ public class SwtAccessible implements IAccessible {
         setApi(api);
         this.parent = checkNull(parent);
         this.control = parent.getImpl()._control();
-        if (((SwtAccessible) parent.getImpl()).children == null)
-            ((SwtAccessible) parent.getImpl()).children = new ArrayList<>();
-        ((SwtAccessible) parent.getImpl()).children.add(this.getApi());
+        if (parent.getImpl()._children() == null) {
+            if (parent.getImpl() instanceof DartAccessible) {
+                ((DartAccessible) parent.getImpl()).children = new ArrayList<>();
+            }
+            if (parent.getImpl() instanceof SwtAccessible) {
+                ((SwtAccessible) parent.getImpl()).children = new ArrayList<>();
+            }
+        }
+        parent.getImpl()._children().add(this.getApi());
     }
 
     /**
@@ -512,7 +518,7 @@ public class SwtAccessible implements IAccessible {
         if (parent == null)
             return;
         release();
-        ((SwtAccessible) parent.getImpl()).children.remove(this.getApi());
+        parent.getImpl()._children().remove(this.getApi());
         parent = null;
     }
 

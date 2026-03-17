@@ -2035,7 +2035,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
     }
 
     @Override
-    long gtk_key_press_event(long widget, long event) {
+    long gtk3_key_press_event(long widget, long event) {
         if (!isReadOnly() && (isTime() || isDate())) {
             int[] key = new int[1];
             GDK.gdk_event_get_keyval(event, key);

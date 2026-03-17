@@ -104,7 +104,6 @@ public class SwtCombo extends SwtComposite implements ICombo {
         WNDCLASS lpWndClass = new WNDCLASS();
         OS.GetClassInfo(0, ComboClass, lpWndClass);
         ComboProc = lpWndClass.lpfnWndProc;
-        DPIZoomChangeRegistry.registerHandler(SwtCombo::handleDPIChange, Combo.class);
     }
 
     /* Undocumented values. Remained the same at least between Win7 and Win10 */
@@ -622,10 +621,11 @@ public class SwtCombo extends SwtComposite implements ICombo {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
         checkWidget();
+        Point hintInPixels = Win32DPIUtils.pointToPixelAsSufficientlyLargeSize(hintInPoints, zoom);
         int width = 0, height = 0;
-        if (wHint == SWT.DEFAULT) {
+        if (hintInPoints.x == SWT.DEFAULT) {
             long newFont, oldFont = 0;
             long hDC = OS.GetDC(getApi().handle);
             newFont = OS.SendMessage(getApi().handle, OS.WM_GETFONT, 0, 0);
@@ -661,7 +661,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
                 OS.SelectObject(hDC, oldFont);
             OS.ReleaseDC(getApi().handle, hDC);
         }
-        if (hHint == SWT.DEFAULT) {
+        if (hintInPoints.y == SWT.DEFAULT) {
             if ((getApi().style & SWT.SIMPLE) != 0) {
                 int count = (int) OS.SendMessage(getApi().handle, OS.CB_GETCOUNT, 0, 0);
                 int itemHeight = (int) OS.SendMessage(getApi().handle, OS.CB_GETITEMHEIGHT, 0, 0);
@@ -672,10 +672,10 @@ public class SwtCombo extends SwtComposite implements ICombo {
             width = DEFAULT_WIDTH;
         if (height == 0)
             height = DEFAULT_HEIGHT;
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
+        if (hintInPoints.x != SWT.DEFAULT)
+            width = hintInPixels.x;
+        if (hintInPoints.y != SWT.DEFAULT)
+            height = hintInPixels.y;
         if ((getApi().style & SWT.READ_ONLY) != 0) {
             width += 8;
         } else {
@@ -712,7 +712,6 @@ public class SwtCombo extends SwtComposite implements ICombo {
      * <p>
      * The current selection is copied to the clipboard.
      * </p>
-     *
      * @exception SWTException <ul>
      *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
@@ -957,7 +956,7 @@ public class SwtCombo extends SwtComposite implements ICombo {
      */
     public Point getCaretLocation() {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getCaretLocationInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPointAsLocation(getCaretLocationInPixels(), getZoom());
     }
 
     Point getCaretLocationInPixels() {
@@ -1560,7 +1559,12 @@ public class SwtCombo extends SwtComposite implements ICombo {
      * The selected text is deleted from the widget
      * and new text inserted from the clipboard.
      * </p>
-     *
+     * <p>
+     * <strong>Note:</strong> Pasting data to controls may occurs asynchronously. The widget
+     * text may not reflect the updated value immediately after calling this method.
+     * The new text will appear once pending events are processed in the event loop.
+     * Use {@link Display#asyncExec(Runnable)} before accessing <code>getText()</code>.
+     * </p>
      * @exception SWTException <ul>
      *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
@@ -3574,13 +3578,12 @@ public class SwtCombo extends SwtComposite implements ICombo {
         return result;
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof Combo combo)) {
-            return;
-        }
-        if ((combo.style & SWT.H_SCROLL) != 0) {
-            ((SwtCombo) combo.getImpl()).scrollWidth = 0;
-            ((SwtCombo) combo.getImpl()).setScrollWidth();
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        if ((getApi().style & SWT.H_SCROLL) != 0) {
+            scrollWidth = 0;
+            setScrollWidth();
         }
     }
 

@@ -629,10 +629,6 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         };
     }
 
-    static {
-        CommonWidgetsDPIChangeHandlers.registerCommonHandlers();
-    }
-
     /*
 * TEMPORARY CODE.
 */
@@ -1057,7 +1053,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     public void create(DeviceData data) {
         checkSubclass();
         checkDisplay(thread = Thread.currentThread(), true);
-        if (Win32DPIUtils.isMonitorSpecificScalingActive()) {
+        if (DPIUtil.isMonitorSpecificScalingActive()) {
             setMonitorSpecificScaling(true);
             Win32DPIUtils.setAutoScaleForMonitorSpecificScaling();
         }
@@ -1296,31 +1292,36 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     static Image createIcon(Image image, int zoom) {
         Device device = image.getDevice();
         ImageData data = image.getImageData(zoom);
-        if (data.alpha == -1 && data.alphaData == null) {
-            ImageData mask = data.getTransparencyMask();
-            return new Image(device, data, mask);
+        switch(data.getTransparencyType()) {
+            case SWT.TRANSPARENCY_MASK:
+            case SWT.TRANSPARENCY_PIXEL:
+                ImageData mask = data.getTransparencyMask();
+                return new Image(device, data, mask);
+            case SWT.TRANSPARENCY_ALPHA:
+            case SWT.NONE:
+            default:
+                int width = data.width, height = data.height;
+                long hMask, hBitmap;
+                long hDC = device.internal_new_GC(null);
+                long dstHdc = OS.CreateCompatibleDC(hDC), oldDstBitmap;
+                hBitmap = SwtDisplay.create32bitDIB(SwtImage.win32_getHandle(image, zoom), data.alpha, data.alphaData, data.transparentPixel);
+                hMask = OS.CreateBitmap(width, height, 1, 1, null);
+                oldDstBitmap = OS.SelectObject(dstHdc, hMask);
+                OS.PatBlt(dstHdc, 0, 0, width, height, OS.BLACKNESS);
+                OS.SelectObject(dstHdc, oldDstBitmap);
+                OS.DeleteDC(dstHdc);
+                device.internal_dispose_GC(hDC, null);
+                ICONINFO info = new ICONINFO();
+                info.fIcon = true;
+                info.hbmColor = hBitmap;
+                info.hbmMask = hMask;
+                long hIcon = OS.CreateIconIndirect(info);
+                if (hIcon == 0)
+                    SWT.error(SWT.ERROR_NO_HANDLES);
+                OS.DeleteObject(hBitmap);
+                OS.DeleteObject(hMask);
+                return SwtImage.win32_new(device, SWT.ICON, hIcon, zoom);
         }
-        int width = data.width, height = data.height;
-        long hMask, hBitmap;
-        long hDC = device.internal_new_GC(null);
-        long dstHdc = OS.CreateCompatibleDC(hDC), oldDstBitmap;
-        hBitmap = SwtDisplay.create32bitDIB(SwtImage.win32_getHandle(image, zoom), data.alpha, data.alphaData, data.transparentPixel);
-        hMask = OS.CreateBitmap(width, height, 1, 1, null);
-        oldDstBitmap = OS.SelectObject(dstHdc, hMask);
-        OS.PatBlt(dstHdc, 0, 0, width, height, OS.BLACKNESS);
-        OS.SelectObject(dstHdc, oldDstBitmap);
-        OS.DeleteDC(dstHdc);
-        device.internal_dispose_GC(hDC, null);
-        ICONINFO info = new ICONINFO();
-        info.fIcon = true;
-        info.hbmColor = hBitmap;
-        info.hbmMask = hMask;
-        long hIcon = OS.CreateIconIndirect(info);
-        if (hIcon == 0)
-            SWT.error(SWT.ERROR_NO_HANDLES);
-        OS.DeleteObject(hBitmap);
-        OS.DeleteObject(hMask);
-        return SwtImage.win32_new(device, SWT.ICON, hIcon, zoom);
     }
 
     long getTextSearchIcon(int size) {
@@ -2193,7 +2194,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             System.arraycopy(imageList, 0, newList, 0, length);
             imageList = newList;
         }
-        ImageList list = new ImageList(style, Win32DPIUtils.pointToPixel(width, zoom), Win32DPIUtils.pointToPixel(height, zoom), zoom);
+        ImageList list = new ImageList(style, DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom), zoom);
         imageList[i] = list;
         list.addRef();
         return list;
@@ -2222,7 +2223,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             System.arraycopy(toolImageList, 0, newList, 0, length);
             toolImageList = newList;
         }
-        ImageList list = new ImageList(style, Win32DPIUtils.pointToPixel(width, zoom), Win32DPIUtils.pointToPixel(height, zoom), zoom);
+        ImageList list = new ImageList(style, DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom), zoom);
         toolImageList[i] = list;
         list.addRef();
         return list;
@@ -2251,7 +2252,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             System.arraycopy(toolDisabledImageList, 0, newList, 0, length);
             toolDisabledImageList = newList;
         }
-        ImageList list = new ImageList(style, Win32DPIUtils.pointToPixel(width, zoom), Win32DPIUtils.pointToPixel(height, zoom), zoom);
+        ImageList list = new ImageList(style, DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom), zoom);
         toolDisabledImageList[i] = list;
         list.addRef();
         return list;
@@ -2280,7 +2281,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             System.arraycopy(toolHotImageList, 0, newList, 0, length);
             toolHotImageList = newList;
         }
-        ImageList list = new ImageList(style, Win32DPIUtils.pointToPixel(width, zoom), Win32DPIUtils.pointToPixel(height, zoom), zoom);
+        ImageList list = new ImageList(style, DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom), zoom);
         toolHotImageList[i] = list;
         list.addRef();
         return list;
@@ -2354,15 +2355,10 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         OS.GetMonitorInfo(hmonitor, lpmi);
         Monitor monitor = new Monitor();
         ((SwtMonitor) monitor.getImpl()).handle = hmonitor;
-        Rectangle boundsInPixels = new Rectangle(lpmi.rcMonitor_left, lpmi.rcMonitor_top, lpmi.rcMonitor_right - lpmi.rcMonitor_left, lpmi.rcMonitor_bottom - lpmi.rcMonitor_top);
-        Rectangle clientAreaInPixels = new Rectangle(lpmi.rcWork_left, lpmi.rcWork_top, lpmi.rcWork_right - lpmi.rcWork_left, lpmi.rcWork_bottom - lpmi.rcWork_top);
         int[] dpiX = new int[1];
         int[] dpiY = new int[1];
         int result = OS.GetDpiForMonitor(((SwtMonitor) monitor.getImpl()).handle, OS.MDT_EFFECTIVE_DPI, dpiX, dpiY);
         result = (result == OS.S_OK) ? DPIUtil.mapDPIToZoom(dpiX[0]) : 100;
-        int autoscaleZoom = DPIUtil.getZoomForAutoscaleProperty(result);
-        ((SwtMonitor) monitor.getImpl()).setBounds(coordinateSystemMapper.mapMonitorBounds(boundsInPixels, autoscaleZoom));
-        ((SwtMonitor) monitor.getImpl()).setClientArea(coordinateSystemMapper.mapMonitorBounds(clientAreaInPixels, autoscaleZoom));
         if (result == 0) {
             System.err.println("***WARNING: GetDpiForMonitor: SWT could not get valid monitor scaling factor.");
             result = 100;
@@ -2372,6 +2368,10 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 	 * to scaling issue on OS Win8.1 and above, for more details refer bug 537614.
 	 */
         ((SwtMonitor) monitor.getImpl()).zoom = result;
+        Rectangle.WithMonitor boundsInPixels = new Rectangle.WithMonitor(lpmi.rcMonitor_left, lpmi.rcMonitor_top, lpmi.rcMonitor_right - lpmi.rcMonitor_left, lpmi.rcMonitor_bottom - lpmi.rcMonitor_top, monitor);
+        Rectangle.WithMonitor clientAreaInPixels = new Rectangle.WithMonitor(lpmi.rcWork_left, lpmi.rcWork_top, lpmi.rcWork_right - lpmi.rcWork_left, lpmi.rcWork_bottom - lpmi.rcWork_top, monitor);
+        ((SwtMonitor) monitor.getImpl()).setBounds(coordinateSystemMapper.mapMonitorBounds(boundsInPixels));
+        ((SwtMonitor) monitor.getImpl()).setClientArea(coordinateSystemMapper.mapMonitorBounds(clientAreaInPixels));
         return monitor;
     }
 
@@ -2784,7 +2784,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 
     private ImageDataProvider getImageDataProviderForIcon(int iconName) {
         return zoom -> {
-            int scaledIconSize = Win32DPIUtils.pointToPixel(ICON_SIZE_AT_100, zoom);
+            int scaledIconSize = DPIUtil.pointToPixel(ICON_SIZE_AT_100, zoom);
             long[] hIcon = new long[1];
             OS.LoadIconWithScaleDown(0, iconName, scaledIconSize, scaledIconSize, hIcon);
             Image image = SwtImage.win32_new(this.getApi(), SWT.ICON, hIcon[0], zoom);
@@ -3341,20 +3341,20 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         return new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
     }
 
-    Point translateFromDisplayCoordinates(Point point, int zoom) {
-        return coordinateSystemMapper.translateFromDisplayCoordinates(point, zoom);
+    Point translateFromDisplayCoordinates(Point point) {
+        return coordinateSystemMapper.translateFromDisplayCoordinates(point);
     }
 
-    Point translateToDisplayCoordinates(Point point, int zoom) {
-        return coordinateSystemMapper.translateToDisplayCoordinates(point, zoom);
+    Point translateToDisplayCoordinates(Point point) {
+        return coordinateSystemMapper.translateToDisplayCoordinates(point);
     }
 
-    Rectangle translateFromDisplayCoordinates(Rectangle rect, int zoom) {
-        return coordinateSystemMapper.translateFromDisplayCoordinates(rect, zoom);
+    Rectangle translateFromDisplayCoordinates(Rectangle rect) {
+        return coordinateSystemMapper.translateFromDisplayCoordinates(rect);
     }
 
-    Rectangle translateToDisplayCoordinates(Rectangle rect, int zoom) {
-        return coordinateSystemMapper.translateToDisplayCoordinates(rect, zoom);
+    Rectangle translateToDisplayCoordinates(Rectangle rect) {
+        return coordinateSystemMapper.translateToDisplayCoordinates(rect);
     }
 
     long messageProc(long hwnd, long msg, long wParam, long lParam) {
@@ -3871,7 +3871,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                             int y = OS.GetSystemMetrics(OS.SM_YVIRTUALSCREEN);
                             int width = OS.GetSystemMetrics(OS.SM_CXVIRTUALSCREEN);
                             int height = OS.GetSystemMetrics(OS.SM_CYVIRTUALSCREEN);
-                            Point loc = Win32DPIUtils.pointToPixel(event.getLocation(), getDeviceZoom());
+                            Point loc = Win32DPIUtils.pointToPixelAsLocation(event.getLocation(), getDeviceZoom());
                             inputs.dx = ((loc.x - x) * 65535 + width - 2) / (width - 1);
                             inputs.dy = ((loc.y - y) * 65535 + height - 2) / (height - 1);
                         } else {

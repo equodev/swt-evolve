@@ -49,13 +49,13 @@ class MultiZoomCoordinateSystemMapper implements CoordinateSystemMapper {
         Point mappedPointInPoints;
         if (from == null) {
             Point mappedPointInpixels = ((SwtDisplay) display.getImpl()).mapInPixels(from, to, getPixelsFromPoint(to.getShell().getMonitor(), x, y));
-            mappedPointInPoints = Win32DPIUtils.pixelToPoint(mappedPointInpixels, to.getImpl().getZoom());
+            mappedPointInPoints = Win32DPIUtils.pixelToPointAsLocation(mappedPointInpixels, to.getImpl().getZoom());
         } else if (to == null) {
-            Point mappedPointInpixels = ((SwtDisplay) display.getImpl()).mapInPixels(from, to, Win32DPIUtils.pointToPixel(new Point(x, y), from.getImpl().getZoom()));
+            Point mappedPointInpixels = ((SwtDisplay) display.getImpl()).mapInPixels(from, to, Win32DPIUtils.pointToPixelAsLocation(new Point(x, y), from.getImpl().getZoom()));
             mappedPointInPoints = getPointFromPixels(from.getShell().getMonitor(), mappedPointInpixels.x, mappedPointInpixels.y);
         } else {
-            Point mappedPointInpixels = ((SwtDisplay) display.getImpl()).mapInPixels(from, to, Win32DPIUtils.pointToPixel(new Point(x, y), from.getImpl().getZoom()));
-            mappedPointInPoints = Win32DPIUtils.pixelToPoint(mappedPointInpixels, to.getImpl().getZoom());
+            Point mappedPointInpixels = ((SwtDisplay) display.getImpl()).mapInPixels(from, to, Win32DPIUtils.pointToPixelAsLocation(new Point(x, y), from.getImpl().getZoom()));
+            mappedPointInPoints = Win32DPIUtils.pixelToPointAsLocation(mappedPointInpixels, to.getImpl().getZoom());
         }
         return mappedPointInPoints;
     }
@@ -77,7 +77,9 @@ class MultiZoomCoordinateSystemMapper implements CoordinateSystemMapper {
     }
 
     @Override
-    public Rectangle mapMonitorBounds(Rectangle rect, int zoom) {
+    public Rectangle mapMonitorBounds(Rectangle.WithMonitor rect) {
+        Monitor monitor = rect.getMonitor();
+        int zoom = getApplicableMonitorZoom(monitor);
         Rectangle bounds = Win32DPIUtils.pixelToPoint(rect, zoom);
         bounds.x = rect.x;
         bounds.y = rect.y;
@@ -85,24 +87,25 @@ class MultiZoomCoordinateSystemMapper implements CoordinateSystemMapper {
     }
 
     @Override
-    public Point translateFromDisplayCoordinates(Point point, int zoom) {
-        return translateLocationInPixelsToPoints(point.x, point.y);
+    public Point translateFromDisplayCoordinates(Point point) {
+        Monitor monitor = point instanceof Point.WithMonitor pointWithMonitor ? pointWithMonitor.getMonitor() : null;
+        return translateLocationInPixelsToPoints(point.x, point.y, monitor);
     }
 
     @Override
-    public Point translateToDisplayCoordinates(Point point, int zoom) {
+    public Point translateToDisplayCoordinates(Point point) {
         Monitor monitor = point instanceof Point.WithMonitor pointWithMonitor ? pointWithMonitor.getMonitor() : null;
         return translateLocationInPointsToPixels(point.x, point.y, monitor);
     }
 
     @Override
-    public Rectangle translateFromDisplayCoordinates(Rectangle rect, int zoom) {
+    public Rectangle translateFromDisplayCoordinates(Rectangle rect) {
         Monitor monitor = rect instanceof Rectangle.WithMonitor rectWithMonitor ? rectWithMonitor.getMonitor() : null;
         return translateRectangleInPixelsToPoints(rect.x, rect.y, rect.width, rect.height, monitor);
     }
 
     @Override
-    public Rectangle translateToDisplayCoordinates(Rectangle rect, int zoom) {
+    public Rectangle translateToDisplayCoordinates(Rectangle rect) {
         Monitor monitor = rect instanceof Rectangle.WithMonitor rectWithMonitor ? rectWithMonitor.getMonitor() : null;
         return translateRectangleInPointsToPixels(rect.x, rect.y, rect.width, rect.height, monitor);
     }
@@ -110,7 +113,7 @@ class MultiZoomCoordinateSystemMapper implements CoordinateSystemMapper {
     @Override
     public Point getCursorLocation() {
         Point cursorLocationInPixels = ((SwtDisplay) display.getImpl()).getCursorLocationInPixels();
-        return translateLocationInPixelsToPoints(cursorLocationInPixels.x, cursorLocationInPixels.y);
+        return translateLocationInPixelsToPoints(cursorLocationInPixels.x, cursorLocationInPixels.y, null);
     }
 
     @Override
@@ -124,8 +127,10 @@ class MultiZoomCoordinateSystemMapper implements CoordinateSystemMapper {
         return getPixelsFromPoint(monitor, x, y);
     }
 
-    private Point translateLocationInPixelsToPoints(int x, int y) {
-        Monitor monitor = getContainingMonitorForPixels(x, y);
+    private Point translateLocationInPixelsToPoints(int x, int y, Monitor monitor) {
+        if (monitor == null) {
+            monitor = getContainingMonitorForPixels(x, y);
+        }
         return getPointFromPixels(monitor, x, y);
     }
 
@@ -133,8 +138,8 @@ class MultiZoomCoordinateSystemMapper implements CoordinateSystemMapper {
         monitor = getValidMonitorIfApplicable(x, y, width, height, monitor);
         Point topLeft = getPixelsFromPoint(monitor, x, y);
         int zoom = getApplicableMonitorZoom(monitor);
-        int widthInPixels = Win32DPIUtils.pointToPixel(width, zoom);
-        int heightInPixels = Win32DPIUtils.pointToPixel(height, zoom);
+        int widthInPixels = DPIUtil.pointToPixel(width, zoom);
+        int heightInPixels = DPIUtil.pointToPixel(height, zoom);
         return new Rectangle(topLeft.x, topLeft.y, widthInPixels, heightInPixels);
     }
 
@@ -194,8 +199,8 @@ class MultiZoomCoordinateSystemMapper implements CoordinateSystemMapper {
         for (Monitor currentMonitor : monitors) {
             // Obtain the rectangle in pixels per monitor for absolute comparison
             Point topLeftOfRectangle = getPixelsFromPoint(currentMonitor, x, y);
-            int widthInPixels = Win32DPIUtils.pointToPixel(width, getApplicableMonitorZoom(currentMonitor));
-            int heightInPixels = Win32DPIUtils.pointToPixel(height, getApplicableMonitorZoom(currentMonitor));
+            int widthInPixels = DPIUtil.pointToPixel(width, getApplicableMonitorZoom(currentMonitor));
+            int heightInPixels = DPIUtil.pointToPixel(height, getApplicableMonitorZoom(currentMonitor));
             Rectangle boundsInPixel = new Rectangle(topLeftOfRectangle.x, topLeftOfRectangle.y, widthInPixels, heightInPixels);
             Rectangle clientArea = getMonitorClientAreaInPixels(currentMonitor);
             Rectangle intersection = clientArea.intersection(boundsInPixel);
@@ -240,15 +245,15 @@ class MultiZoomCoordinateSystemMapper implements CoordinateSystemMapper {
 
     private Rectangle getMonitorClientAreaInPixels(Monitor monitor) {
         int zoom = getApplicableMonitorZoom(monitor);
-        int widthInPixels = Win32DPIUtils.pointToPixel(((SwtMonitor) monitor.getImpl()).clientWidth, zoom);
-        int heightInPixels = Win32DPIUtils.pointToPixel(((SwtMonitor) monitor.getImpl()).clientHeight, zoom);
+        int widthInPixels = DPIUtil.pointToPixel(((SwtMonitor) monitor.getImpl()).clientWidth, zoom);
+        int heightInPixels = DPIUtil.pointToPixel(((SwtMonitor) monitor.getImpl()).clientHeight, zoom);
         return new Rectangle(((SwtMonitor) monitor.getImpl()).clientX, ((SwtMonitor) monitor.getImpl()).clientY, widthInPixels, heightInPixels);
     }
 
     private Point getPixelsFromPoint(Monitor monitor, int x, int y) {
         int zoom = getApplicableMonitorZoom(monitor);
-        int mappedX = Win32DPIUtils.pointToPixel(x - ((SwtMonitor) monitor.getImpl()).clientX, zoom) + ((SwtMonitor) monitor.getImpl()).clientX;
-        int mappedY = Win32DPIUtils.pointToPixel(y - ((SwtMonitor) monitor.getImpl()).clientY, zoom) + ((SwtMonitor) monitor.getImpl()).clientY;
+        int mappedX = DPIUtil.pointToPixel(x - ((SwtMonitor) monitor.getImpl()).clientX, zoom) + ((SwtMonitor) monitor.getImpl()).clientX;
+        int mappedY = DPIUtil.pointToPixel(y - ((SwtMonitor) monitor.getImpl()).clientY, zoom) + ((SwtMonitor) monitor.getImpl()).clientY;
         return new Point(mappedX, mappedY);
     }
 

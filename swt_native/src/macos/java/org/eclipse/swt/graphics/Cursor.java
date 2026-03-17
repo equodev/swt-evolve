@@ -154,7 +154,10 @@ public final class Cursor extends Resource {
      * </ul>
      *
      * @see #dispose()
+     *
+     * @deprecated Use {@link #Cursor(Device, ImageDataProvider, int, int)} instead.
      */
+    @Deprecated
     public Cursor(Device device, ImageData source, ImageData mask, int hotspotX, int hotspotY) {
         this((ICursor) null);
         setImpl(new SwtCursor(device, source, mask, hotspotX, hotspotY, this));

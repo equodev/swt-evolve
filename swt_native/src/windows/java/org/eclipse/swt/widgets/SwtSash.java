@@ -133,8 +133,9 @@ public class SwtSash extends SwtControl implements ISash {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
         checkWidget();
+        Point hintInPixels = Win32DPIUtils.pointToPixelAsSufficientlyLargeSize(hintInPoints, zoom);
         int border = getBorderWidthInPixels();
         int width = border * 2, height = border * 2;
         if ((getApi().style & SWT.HORIZONTAL) != 0) {
@@ -144,10 +145,10 @@ public class SwtSash extends SwtControl implements ISash {
             width += 3;
             height += DEFAULT_HEIGHT;
         }
-        if (wHint != SWT.DEFAULT)
-            width = wHint + (border * 2);
-        if (hHint != SWT.DEFAULT)
-            height = hHint + (border * 2);
+        if (hintInPoints.x != SWT.DEFAULT)
+            width = hintInPixels.x + (border * 2);
+        if (hintInPoints.y != SWT.DEFAULT)
+            height = hintInPixels.y + (border * 2);
         return new Point(width, height);
     }
 
@@ -353,8 +354,8 @@ public class SwtSash extends SwtControl implements ISash {
         Rectangle bounds = event.getBounds();
         if (event.doit) {
             if ((getApi().style & SWT.SMOOTH) != 0) {
-                int xInPixels = Win32DPIUtils.pointToPixel(bounds.x, getZoom());
-                int yInPixels = Win32DPIUtils.pointToPixel(bounds.y, getZoom());
+                int xInPixels = DPIUtil.pointToPixel(bounds.x, getZoom());
+                int yInPixels = DPIUtil.pointToPixel(bounds.y, getZoom());
                 setBoundsInPixels(xInPixels, yInPixels, widthInPixels, heightInPixels);
                 // widget could be disposed at this point
             }
@@ -402,8 +403,8 @@ public class SwtSash extends SwtControl implements ISash {
             return LRESULT.ZERO;
         if (event.doit) {
             Rectangle bounds = event.getBounds();
-            lastX = Win32DPIUtils.pointToPixel(bounds.x, zoom);
-            lastY = Win32DPIUtils.pointToPixel(bounds.y, zoom);
+            lastX = DPIUtil.pointToPixel(bounds.x, zoom);
+            lastY = DPIUtil.pointToPixel(bounds.y, zoom);
         }
         int flags = OS.RDW_UPDATENOW | OS.RDW_ALLCHILDREN;
         OS.RedrawWindow(hwndTrack, null, 0, flags);

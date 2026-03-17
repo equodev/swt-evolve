@@ -96,7 +96,6 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
         lpWndClass.hInstance = OS.GetModuleHandle(null);
         lpWndClass.style &= ~(OS.CS_HREDRAW | OS.CS_VREDRAW | OS.CS_GLOBALCLASS);
         OS.RegisterClass(TabFolderClass, lpWndClass);
-        DPIZoomChangeRegistry.registerHandler(SwtTabFolder::handleDPIChange, TabFolder.class);
     }
 
     /**
@@ -187,9 +186,9 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
         checkWidget();
-        Point size = super.computeSizeInPixels(wHint, hHint, changed);
+        Point size = super.computeSizeInPixels(hintInPoints, zoom, changed);
         RECT insetRect = new RECT(), itemRect = new RECT();
         OS.SendMessage(getApi().handle, OS.TCM_ADJUSTRECT, 0, insetRect);
         int width = insetRect.left - insetRect.right;
@@ -519,7 +518,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
     }
 
     @Override
-    Point minimumSize(int wHint, int hHint, boolean flushCache) {
+    Point minimumSize(Point hintInPoints, boolean flushCache) {
         int width = 0, height = 0;
         for (Control child : _getChildren()) {
             int index = 0;
@@ -529,9 +528,8 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
                     break;
                 index++;
             }
-            int zoom = getZoom();
             if (index == count) {
-                Rectangle rect = Win32DPIUtils.pointToPixel(child.getBounds(), zoom);
+                Rectangle rect = child.getBounds();
                 width = Math.max(width, rect.x + rect.width);
                 height = Math.max(height, rect.y + rect.height);
             } else {
@@ -539,7 +537,7 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
 			 * Since computeSize can be overridden by subclasses, we cannot
 			 * call computeSizeInPixels directly.
 			 */
-                Point size = Win32DPIUtils.pointToPixel(child.computeSize(DPIUtil.pixelToPoint(wHint, zoom), DPIUtil.pixelToPoint(hHint, zoom), flushCache), zoom);
+                Point size = child.computeSize(hintInPoints.x, hintInPoints.y, flushCache);
                 width = Math.max(width, size.x);
                 height = Math.max(height, size.y);
             }
@@ -1180,19 +1178,17 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
         return super.wmNotifyChild(hdr, wParam, lParam);
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof TabFolder tabFolder)) {
-            return;
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        Display display = getDisplay();
+        if (imageList != null) {
+            ((SwtDisplay) display.getImpl()).releaseImageList(imageList);
+            imageList = null;
         }
-        Display display = tabFolder.getDisplay();
-        if (((SwtTabFolder) tabFolder.getImpl()).imageList != null) {
-            ((SwtDisplay) display.getImpl()).releaseImageList(((SwtTabFolder) tabFolder.getImpl()).imageList);
-            ((SwtTabFolder) tabFolder.getImpl()).imageList = null;
+        for (int i = 0; i < getItemCount(); i++) {
+            items[i].notifyListeners(SWT.ZoomChanged, event);
         }
-        for (int i = 0; i < tabFolder.getItemCount(); i++) {
-            DPIZoomChangeRegistry.applyChange(((SwtTabFolder) tabFolder.getImpl()).items[i], newZoom, scalingFactor);
-        }
-        tabFolder.layout(true, true);
     }
 
     public TabItem[] _items() {

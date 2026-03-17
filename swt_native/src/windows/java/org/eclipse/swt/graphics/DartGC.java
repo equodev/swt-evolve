@@ -17,8 +17,10 @@ package org.eclipse.swt.graphics;
 
 import java.util.*;
 import java.util.List;
+import java.util.function.*;
 import java.util.stream.*;
 import org.eclipse.swt.*;
+import org.eclipse.swt.graphics.Image.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gdip.*;
 import org.eclipse.swt.widgets.*;
@@ -441,9 +443,11 @@ public final class DartGC extends DartResource implements IGC {
 
         private Image image;
 
+        private final Consumer<Image> disposeCallback = this::setCopyOfImage;
+
         ImageOperation(Image image) {
             setImage(image);
-            ((DartImage) image.getImpl()).addOnDisposeListener(this::setCopyOfImage);
+            ((DartImage) image.getImpl()).addOnDisposeListener(disposeCallback);
         }
 
         private void setImage(Image image) {
@@ -460,6 +464,12 @@ public final class DartGC extends DartResource implements IGC {
 
         protected Image getImage() {
             return image;
+        }
+
+        @Override
+        void disposeAll() {
+            ((DartImage) image.getImpl()).removeOnDisposeListener(disposeCallback);
+            super.disposeAll();
         }
     }
 
@@ -846,7 +856,8 @@ public final class DartGC extends DartResource implements IGC {
         private void drawImageInPixels(Image image, Point location) {
             if (image.isDisposed())
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-            drawImage(image, 0, 0, -1, -1, location.x, location.y, -1, -1, true, getZoom());
+            DartImage.ImageHandle handle = ((DartImage) image.getImpl()).getHandle(getZoom(), data.nativeZoom);
+            drawImage(image, 0, 0, -1, -1, location.x, location.y, -1, -1, true, handle);
         }
     }
 
@@ -896,6 +907,49 @@ public final class DartGC extends DartResource implements IGC {
         FlutterBridge.send(this, "drawImageImageintintintintintintintint", drawOp);
     }
 
+    /**
+     * Draws the full source image into a specified rectangular area in the
+     * receiver. The image will be stretched or shrunk as needed to exactly fit the
+     * destination rectangle.
+     *
+     * @param image      the source image
+     * @param destX      the x coordinate in the destination
+     * @param destY      the y coordinate in the destination
+     * @param destWidth  the width in points of the destination rectangle
+     * @param destHeight the height in points of the destination rectangle
+     *
+     * @exception IllegalArgumentException
+     *                                     <ul>
+     *                                     <li>ERROR_NULL_ARGUMENT - if the image is
+     *                                     null</li>
+     *                                     <li>ERROR_INVALID_ARGUMENT - if the image
+     *                                     has been disposed</li>
+     *                                     <li>ERROR_INVALID_ARGUMENT - if any of
+     *                                     the width or height arguments are
+     *                                     negative.
+     *                                     </ul>
+     * @exception SWTException
+     *                                     <ul>
+     *                                     <li>ERROR_GRAPHIC_DISPOSED - if the
+     *                                     receiver has been disposed</li>
+     *                                     </ul>
+     * @exception SWTError
+     *                                     <ul>
+     *                                     <li>ERROR_NO_HANDLES - if no handles are
+     *                                     available to perform the operation</li>
+     *                                     </ul>
+     * @since 3.132
+     */
+    public void drawImage(Image image, int destX, int destY, int destWidth, int destHeight) {
+        VGCDrawImageImageintintintint drawOp = new VGCDrawImageImageintintintint();
+        drawOp.image = GraphicsUtils.copyImage(display, image);
+        drawOp.destX = destX;
+        drawOp.destY = destY;
+        drawOp.destWidth = destWidth;
+        drawOp.destHeight = destHeight;
+        FlutterBridge.send(this, "drawImageImageintintintint", drawOp);
+    }
+
     void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
         storeAndApplyOperationForExistingHandle(new DrawImageToImageOperation(srcImage, new Rectangle(srcX, srcY, srcWidth, srcHeight), new Rectangle(destX, destY, destWidth, destHeight), simple));
     }
@@ -935,6 +989,9 @@ public final class DartGC extends DartResource implements IGC {
                 // unscaled images can use the GC zoom
                 return gcZoom;
             }
+            if (drawable != null && !drawable.isAutoScalable()) {
+                return gcZoom;
+            }
             float imageScaleFactor = 1f * destWidth / srcWidth;
             int imageZoom = Math.round(gcZoom * imageScaleFactor);
             if (getAllCurrentMonitorZooms().contains(imageZoom)) {
@@ -945,6 +1002,25 @@ public final class DartGC extends DartResource implements IGC {
             }
             return 100;
         }
+    }
+
+    private class DrawScaledImageOperation extends ImageOperation {
+
+        private final Rectangle destination;
+
+        DrawScaledImageOperation(Image image, Rectangle destination) {
+            super(image);
+            this.destination = destination;
+        }
+
+        @Override
+        void apply() {
+            int gcZoom = getZoom();
+            drawImage(getImage(), destination.x, destination.y, destination.width, destination.height, gcZoom);
+        }
+    }
+
+    private void drawImage(Image image, int destX, int destY, int destWidth, int destHeight, int imageZoom) {
     }
 
     private void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, int imageZoom, int scaledImageZoom) {
@@ -969,12 +1045,15 @@ public final class DartGC extends DartResource implements IGC {
 
         @Override
         void apply() {
-            drawImage(getImage(), source.x, source.y, source.width, source.height, destination.x, destination.y, destination.width, destination.height, simple, getZoom());
+            DartImage.ImageHandle handle = ((DartImage) getImage().getImpl()).getHandle(getZoom(), data.nativeZoom);
+            drawImage(getImage(), source.x, source.y, source.width, source.height, destination.x, destination.y, destination.width, destination.height, simple, handle);
         }
     }
 
-    private void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, int imageZoom) {
+    private void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, DartImage.ImageHandle tempImageHandle) {
         if (data.gdipGraphics != 0) {
+            if (srcWidth == 0 && srcHeight == 0) {
+            }
             if (simple) {
             } else {
             }
@@ -986,23 +1065,26 @@ public final class DartGC extends DartResource implements IGC {
             }
             return;
         }
-        long imageHandle = ((DartImage) srcImage.getImpl()).getHandle(imageZoom, data.nativeZoom);
         switch(srcImage.type) {
             case SWT.BITMAP:
-                drawBitmap(srcImage, imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+                drawBitmap(srcImage, tempImageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
                 break;
             case SWT.ICON:
-                drawIcon(imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+                drawIcon(tempImageHandle.getHandle(), srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
                 break;
         }
     }
 
     private void drawIcon(long imageHandle, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+        if (srcWidth == 0 && srcHeight == 0) {
+        }
         if (simple) {
         }
     }
 
-    private void drawBitmap(Image srcImage, long imageHandle, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+    private void drawBitmap(Image srcImage, DartImage.ImageHandle imageHandle, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+        if (srcWidth == 0 && srcHeight == 0) {
+        }
         if (simple) {
         } else {
         }
@@ -3253,7 +3335,7 @@ public final class DartGC extends DartResource implements IGC {
         storeAndApplyOperationForExistingHandle(new SetBackgroundOperation(color));
     }
 
-    private class SetBackgroundOperation extends Operation {
+    private class SetBackgroundOperation extends ReplaceableOperation {
 
         private final Color color;
 
@@ -3586,7 +3668,7 @@ public final class DartGC extends DartResource implements IGC {
         storeAndApplyOperationForExistingHandle(new SetFontOperation(font));
     }
 
-    private class SetFontOperation extends Operation {
+    private class SetFontOperation extends ReplaceableOperation {
 
         SetFontOperation(Font font) {
         }
@@ -3625,7 +3707,7 @@ public final class DartGC extends DartResource implements IGC {
         storeAndApplyOperationForExistingHandle(new SetForegroundOperation(color));
     }
 
-    private class SetForegroundOperation extends Operation {
+    private class SetForegroundOperation extends ReplaceableOperation {
 
         private final Color color;
 
@@ -3802,7 +3884,7 @@ public final class DartGC extends DartResource implements IGC {
         storeAndApplyOperationForExistingHandle(new SetLineAttributesOperation(attributes));
     }
 
-    private class SetLineAttributesOperation extends Operation {
+    private class SetLineAttributesOperation extends ReplaceableOperation {
 
         private final LineAttributes attributes;
 
@@ -3938,7 +4020,7 @@ public final class DartGC extends DartResource implements IGC {
         storeAndApplyOperationForExistingHandle(new SetLineCapOperation(cap));
     }
 
-    private class SetLineCapOperation extends Operation {
+    private class SetLineCapOperation extends ReplaceableOperation {
 
         private final int cap;
 
@@ -3991,7 +4073,7 @@ public final class DartGC extends DartResource implements IGC {
         this.lineDash = dashes;
     }
 
-    private class SetLineDashOperation extends Operation {
+    private class SetLineDashOperation extends ReplaceableOperation {
 
         private final int[] dashes;
 
@@ -4051,7 +4133,7 @@ public final class DartGC extends DartResource implements IGC {
         storeAndApplyOperationForExistingHandle(new SetLineJoinOperation(join));
     }
 
-    private class SetLineJoinOperation extends Operation {
+    private class SetLineJoinOperation extends ReplaceableOperation {
 
         private final int join;
 
@@ -4101,7 +4183,7 @@ public final class DartGC extends DartResource implements IGC {
         storeAndApplyOperationForExistingHandle(new SetLineStyleOperation(lineStyle));
     }
 
-    private class SetLineStyleOperation extends Operation {
+    private class SetLineStyleOperation extends ReplaceableOperation {
 
         private final int lineStyle;
 
@@ -4163,7 +4245,7 @@ public final class DartGC extends DartResource implements IGC {
         storeAndApplyOperationForExistingHandle(new SetLineWidthOperation(lineWidth));
     }
 
-    private class SetLineWidthOperation extends Operation {
+    private class SetLineWidthOperation extends ReplaceableOperation {
 
         private final int width;
 
@@ -4512,8 +4594,21 @@ public final class DartGC extends DartResource implements IGC {
     }
 
     private void storeAndApplyOperationForExistingHandle(Operation operation) {
+        removePreviousOperationIfSupercededBy(operation);
         operations.add(operation);
         operation.apply();
+    }
+
+    private void removePreviousOperationIfSupercededBy(Operation operation) {
+        if (operations.isEmpty()) {
+            return;
+        }
+        int lastIndex = operations.size() - 1;
+        Operation lastOperation = operations.get(lastIndex);
+        if (lastOperation.canBeReplacedBy(operation)) {
+            lastOperation.disposeAll();
+            operations.remove(lastIndex);
+        }
     }
 
     private void createGcHandle(Drawable drawable, GCData newData) {
@@ -4556,6 +4651,18 @@ public final class DartGC extends DartResource implements IGC {
                 r.dispose();
             }
             disposables.clear();
+        }
+
+        boolean canBeReplacedBy(Operation operation) {
+            return false;
+        }
+    }
+
+    private abstract class ReplaceableOperation extends Operation {
+
+        @Override
+        boolean canBeReplacedBy(Operation operation) {
+            return operation.getClass().equals(this.getClass());
         }
     }
 

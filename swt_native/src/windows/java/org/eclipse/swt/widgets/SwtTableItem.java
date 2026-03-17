@@ -55,10 +55,6 @@ public class SwtTableItem extends SwtItem implements ITableItem {
 
     int[] cellBackground, cellForeground;
 
-    static {
-        DPIZoomChangeRegistry.registerHandler(SwtTableItem::handleDPIChange, TableItem.class);
-    }
-
     /**
      * Constructs a new instance of this class given its parent
      * (which must be a <code>Table</code>) and a style value
@@ -454,7 +450,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
 	* the grid width when the grid is visible.  The fix is to
 	* move the top of the rectangle up by the grid width.
 	*/
-        int gridWidth = parent.getLinesVisible() ? SwtTable.GRID_WIDTH : 0;
+        int gridWidth = parent.getLinesVisible() ? ((SwtTable) parent.getImpl()).getGridLineWidthInPixels() : 0;
         rect.top -= gridWidth;
         if (column != 0)
             rect.left += gridWidth;
@@ -1382,19 +1378,17 @@ public class SwtTableItem extends SwtItem implements ITableItem {
         setText(0, string);
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof TableItem tableItem)) {
-            return;
-        }
-        Font font = ((SwtTableItem) tableItem.getImpl()).font;
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
         if (font != null) {
-            tableItem.setFont(((SwtTableItem) tableItem.getImpl()).font);
+            setFont(font);
         }
-        Font[] cellFonts = ((SwtTableItem) tableItem.getImpl()).cellFont;
+        Font[] cellFonts = cellFont;
         if (cellFonts != null) {
             for (int index = 0; index < cellFonts.length; index++) {
                 Font cellFont = cellFonts[index];
-                cellFonts[index] = cellFont == null ? null : SwtFont.win32_new(cellFont, ((SwtWidget) tableItem.getImpl()).getNativeZoom());
+                cellFonts[index] = cellFont == null ? null : SwtFont.win32_new(cellFont, getNativeZoom());
             }
         }
     }

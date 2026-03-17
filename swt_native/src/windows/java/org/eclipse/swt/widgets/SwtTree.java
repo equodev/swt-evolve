@@ -151,8 +151,6 @@ public class SwtTree extends SwtComposite implements ITree {
 
     static final int GRID_WIDTH = 1;
 
-    static final int SORT_WIDTH = 10;
-
     static final int HEADER_MARGIN = 12;
 
     static final int HEADER_EXTRA = 3;
@@ -180,7 +178,6 @@ public class SwtTree extends SwtComposite implements ITree {
         TreeProc = lpWndClass.lpfnWndProc;
         OS.GetClassInfo(0, HeaderClass, lpWndClass);
         HeaderProc = lpWndClass.lpfnWndProc;
-        DPIZoomChangeRegistry.registerHandler(SwtTree::handleDPIChange, Tree.class);
     }
 
     /**
@@ -522,8 +519,9 @@ public class SwtTree extends SwtComposite implements ITree {
                             if (hooks(SWT.EraseItem)) {
                                 if (item.getImpl() instanceof SwtTreeItem) {
                                     RECT itemRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, false, false, true, hDC);
-                                    itemRect.left -= EXPLORER_EXTRA;
-                                    itemRect.right += EXPLORER_EXTRA + 1;
+                                    int explorerExtraInPixels = DPIUtil.pointToPixel(EXPLORER_EXTRA, zoom);
+                                    itemRect.left -= explorerExtraInPixels;
+                                    itemRect.right += explorerExtraInPixels + 1;
                                     pClipRect.left = itemRect.left;
                                     pClipRect.right = itemRect.right;
                                 }
@@ -586,7 +584,7 @@ public class SwtTree extends SwtComposite implements ITree {
                                     Rectangle bounds = image.getBounds();
                                     // To Points
                                     if (size == null)
-                                        size = Win32DPIUtils.pixelToPoint(getImageSize(), zoom);
+                                        size = Win32DPIUtils.pixelToPointAsSize(getImageSize(), zoom);
                                     if (!ignoreDrawForeground) {
                                         GCData data = new GCData();
                                         data.device = display;
@@ -861,10 +859,10 @@ public class SwtTree extends SwtComposite implements ITree {
                             Rectangle bounds = image.getBounds();
                             // To Points
                             if (size == null)
-                                size = Win32DPIUtils.pixelToPoint(getImageSize(), zoom);
+                                size = Win32DPIUtils.pixelToPointAsSize(getImageSize(), zoom);
                             if (!ignoreDrawForeground) {
                                 //int y1 = rect.top + (index == 0 ? (getItemHeight () - size.y) / 2 : 0);
-                                int y1 = rect.top + Win32DPIUtils.pointToPixel((getItemHeight() - size.y) / 2, zoom);
+                                int y1 = rect.top + DPIUtil.pointToPixel((getItemHeight() - size.y) / 2, zoom);
                                 int x1 = Math.max(rect.left, rect.left - inset + 1);
                                 GCData data = new GCData();
                                 data.device = display;
@@ -874,7 +872,7 @@ public class SwtTree extends SwtComposite implements ITree {
                                 OS.SelectClipRgn(hDC, 0);
                                 gc.dispose();
                             }
-                            OS.SetRect(rect, rect.left + Win32DPIUtils.pointToPixel(size.x, zoom) + offset, rect.top, rect.right - inset, rect.bottom);
+                            OS.SetRect(rect, rect.left + DPIUtil.pointToPixel(size.x, zoom) + offset, rect.top, rect.right - inset, rect.bottom);
                         } else {
                             if (i == 0) {
                                 if (OS.SendMessage(getApi().handle, OS.TVM_GETIMAGELIST, OS.TVSIL_NORMAL, 0) != 0) {
@@ -1277,17 +1275,19 @@ public class SwtTree extends SwtComposite implements ITree {
                             selectionForeground = clrText = OS.GetSysColor(OS.COLOR_HIGHLIGHTTEXT);
                         }
                         if (explorerTheme) {
+                            int zoom = getZoom();
                             if ((getApi().style & SWT.FULL_SELECTION) == 0) {
                                 RECT pRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, false, false, false, hDC);
                                 RECT pClipRect = ((SwtTreeItem) item.getImpl()).getBounds(index, true, true, true, false, true, hDC);
+                                int explorerExtraInPixels = DPIUtil.pointToPixel(EXPLORER_EXTRA, zoom);
                                 if (measureEvent != null) {
                                     pRect.right = Math.min(pClipRect.right, boundsInPixels.x + boundsInPixels.width);
                                 } else {
-                                    pRect.right += EXPLORER_EXTRA;
-                                    pClipRect.right += EXPLORER_EXTRA;
+                                    pRect.right += explorerExtraInPixels;
+                                    pClipRect.right += explorerExtraInPixels;
                                 }
-                                pRect.left -= EXPLORER_EXTRA;
-                                pClipRect.left -= EXPLORER_EXTRA;
+                                pRect.left -= explorerExtraInPixels;
+                                pClipRect.left -= explorerExtraInPixels;
                                 long hTheme = OS.OpenThemeData(getApi().handle, SwtDisplay.TREEVIEW, getZoom());
                                 int iStateId = selected ? OS.TREIS_SELECTED : OS.TREIS_HOT;
                                 if (OS.GetFocus() != getApi().handle && selected && !hot)
@@ -1361,8 +1361,9 @@ public class SwtTree extends SwtComposite implements ITree {
                     OS.SaveDC(hDC);
                     OS.SelectClipRgn(hDC, 0);
                     if (explorerTheme) {
-                        itemRect.left -= EXPLORER_EXTRA;
-                        itemRect.right += EXPLORER_EXTRA;
+                        int explorerExtraInPixels = DPIUtil.pointToPixel(EXPLORER_EXTRA, getZoom());
+                        itemRect.left -= explorerExtraInPixels;
+                        itemRect.right += explorerExtraInPixels;
                     }
                     /*if (selected)*/
                     itemRect.right++;
@@ -1997,7 +1998,8 @@ public class SwtTree extends SwtComposite implements ITree {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
+        Point hintInPixels = Win32DPIUtils.pointToPixelAsSufficientlyLargeSize(hintInPoints, zoom);
         int width = 0, height = 0;
         if (hwndHeader != 0) {
             HDITEM hdItem = new HDITEM();
@@ -2032,10 +2034,10 @@ public class SwtTree extends SwtComposite implements ITree {
             width = DEFAULT_WIDTH;
         if (height == 0)
             height = DEFAULT_HEIGHT;
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
+        if (hintInPoints.x != SWT.DEFAULT)
+            width = hintInPixels.x;
+        if (hintInPoints.y != SWT.DEFAULT)
+            height = hintInPixels.y;
         int border = getBorderWidthInPixels();
         width += border * 2;
         height += border * 2;
@@ -3122,11 +3124,11 @@ public class SwtTree extends SwtComposite implements ITree {
      */
     public int getGridLineWidth() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getGridLineWidthInPixels(), getZoom());
+        return GRID_WIDTH;
     }
 
     int getGridLineWidthInPixels() {
-        return GRID_WIDTH;
+        return DPIUtil.pointToPixel(GRID_WIDTH, getZoom());
     }
 
     /**
@@ -3223,7 +3225,7 @@ public class SwtTree extends SwtComposite implements ITree {
 
     Point getImageSize() {
         if (imageList != null)
-            return Win32DPIUtils.pointToPixel(imageList.getImageSize(), getZoom());
+            return Win32DPIUtils.pointToPixelAsSize(imageList.getImageSize(), getZoom());
         return new Point(0, getItemHeightInPixels());
     }
 
@@ -3460,7 +3462,7 @@ public class SwtTree extends SwtComposite implements ITree {
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        return getItemInPixels(Win32DPIUtils.pointToPixel(point, getZoom()));
+        return getItemInPixels(Win32DPIUtils.pointToPixelAsLocation(point, getZoom()));
     }
 
     TreeItem getItemInPixels(Point point) {
@@ -4890,7 +4892,7 @@ public class SwtTree extends SwtComposite implements ITree {
 	* is IDC_ARROW.
 	*/
         Cursor cursor = findCursor();
-        long hCursor = cursor == null ? OS.LoadCursor(0, OS.IDC_ARROW) : SwtCursor.win32_getHandle(cursor, DPIUtil.getZoomForAutoscaleProperty(getNativeZoom()));
+        long hCursor = cursor == null ? OS.LoadCursor(0, OS.IDC_ARROW) : SwtCursor.win32_getHandle(cursor, DPIUtil.getZoomForAutoscaleProperty(getShellZoom()));
         OS.SetCursor(hCursor);
     }
 
@@ -5288,7 +5290,7 @@ public class SwtTree extends SwtComposite implements ITree {
             }
         }
         if (horizontalBar != null) {
-            horizontalBar.setIncrement(INCREMENT);
+            horizontalBar.setIncrement(DPIUtil.pointToPixel(INCREMENT, getZoom()));
             horizontalBar.setPageIncrement(info.nPage);
         }
         OS.GetClientRect(hwndParent, rect);
@@ -5635,7 +5637,7 @@ public class SwtTree extends SwtComposite implements ITree {
      * In a Tree without imageList, the indent also controls the chevron (glyph) size.
      */
     private void calculateAndApplyIndentSize() {
-        int indent = Win32DPIUtils.pointToPixel(DEFAULT_INDENT, getApi().nativeZoom);
+        int indent = DPIUtil.pointToPixel(DEFAULT_INDENT, getApi().nativeZoom);
         OS.SendMessage(getApi().handle, OS.TVM_SETINDENT, indent, 0);
     }
 
@@ -6379,8 +6381,9 @@ public class SwtTree extends SwtComposite implements ITree {
                 RECT clientRect = new RECT();
                 OS.GetClientRect(getApi().handle, clientRect);
                 RECT rect = ((SwtTreeItem) items[0].getImpl()).getBounds(0, true, true, false);
+                int dragImageSizeInPixels = DPIUtil.pointToPixel(DRAG_IMAGE_SIZE, getZoom());
                 if ((getApi().style & SWT.FULL_SELECTION) != 0) {
-                    int width = DRAG_IMAGE_SIZE;
+                    int width = dragImageSizeInPixels;
                     rect.left = Math.max(clientRect.left, mousePos.x - width / 2);
                     if (clientRect.right > rect.left + width) {
                         rect.right = rect.left + width;
@@ -6394,7 +6397,7 @@ public class SwtTree extends SwtComposite implements ITree {
                 }
                 long hRgn = OS.CreateRectRgn(rect.left, rect.top, rect.right, rect.bottom);
                 for (int i = 1; i < count; i++) {
-                    if (rect.bottom - rect.top > DRAG_IMAGE_SIZE)
+                    if (rect.bottom - rect.top > dragImageSizeInPixels)
                         break;
                     if (rect.bottom > clientRect.bottom)
                         break;
@@ -8284,7 +8287,7 @@ public class SwtTree extends SwtComposite implements ITree {
 							 * Sort indicator size needs to scale as per the Native Windows OS DPI level
 							 * when header is custom drawn. For more details refer bug 537097.
 							 */
-                                        int leg = Win32DPIUtils.pointToPixel(3, getApi().nativeZoom);
+                                        int leg = DPIUtil.pointToPixel(3, getApi().nativeZoom);
                                         if (sortDirection == SWT.UP) {
                                             OS.Polyline(nmcd.hdc, new int[] { center - leg, 1 + leg, center + 1, 0 }, 2);
                                             OS.Polyline(nmcd.hdc, new int[] { center + leg, 1 + leg, center - 1, 0 }, 2);
@@ -8457,7 +8460,7 @@ public class SwtTree extends SwtComposite implements ITree {
                             int deltaX = newItem.cxy - oldItem.cxy;
                             RECT headerRect = new RECT();
                             OS.SendMessage(hwndHeader, OS.HDM_GETITEMRECT, phdn.iItem, headerRect);
-                            int gridWidth = linesVisible ? GRID_WIDTH : 0;
+                            int gridWidth = linesVisible ? getGridLineWidthInPixels() : 0;
                             rect.left = headerRect.right - gridWidth;
                             int newX = rect.left + deltaX;
                             rect.right = Math.max(rect.right, rect.left + Math.abs(deltaX));
@@ -8648,7 +8651,7 @@ public class SwtTree extends SwtComposite implements ITree {
                                 }
                                 if (drawForeground) {
                                     int nSavedDC = OS.SaveDC(nmcd.hdc);
-                                    int gridWidth = getLinesVisible() ? SwtTable.GRID_WIDTH : 0;
+                                    int gridWidth = getLinesVisible() ? getGridLineWidthInPixels() : 0;
                                     RECT insetRect = toolTipInset(cellRect[0]);
                                     OS.SetWindowOrgEx(nmcd.hdc, insetRect.left, insetRect.top, null);
                                     GCData data = new GCData();
@@ -8711,38 +8714,37 @@ public class SwtTree extends SwtComposite implements ITree {
         return null;
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof Tree tree)) {
-            return;
-        }
-        Display display = tree.getDisplay();
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        Display display = getDisplay();
         // Reset ImageList
-        if (((SwtTree) tree.getImpl()).headerImageList != null) {
-            ((SwtDisplay) display.getImpl()).releaseImageList(((SwtTree) tree.getImpl()).headerImageList);
-            ((SwtTree) tree.getImpl()).headerImageList = null;
+        if (headerImageList != null) {
+            ((SwtDisplay) display.getImpl()).releaseImageList(headerImageList);
+            headerImageList = null;
         }
-        if (((SwtTree) tree.getImpl()).imageList != null) {
-            ((SwtDisplay) display.getImpl()).releaseImageList(((SwtTree) tree.getImpl()).imageList);
+        if (imageList != null) {
+            ((SwtDisplay) display.getImpl()).releaseImageList(imageList);
             // Reset the Imagelist of the OS as well; Will be recalculated when updating items
-            OS.SendMessage(tree.handle, OS.TVM_SETIMAGELIST, 0, 0);
-            ((SwtTree) tree.getImpl()).imageList = null;
+            OS.SendMessage(getApi().handle, OS.TVM_SETIMAGELIST, 0, 0);
+            imageList = null;
         }
         // if the item height was set at least once programmatically with TVM_SETITEMHEIGHT,
         // the item height of the tree is not managed by the OS anymore e.g. when the zoom
         // on the monitor is changed, the height of the item will stay at the fixed size.
         // Resetting it will re-enable the default behavior again
-        ((SwtTree) tree.getImpl()).setItemHeight(-1);
-        for (TreeColumn treeColumn : tree.getColumns()) {
-            DPIZoomChangeRegistry.applyChange(treeColumn, newZoom, scalingFactor);
+        setItemHeight(-1);
+        for (TreeColumn treeColumn : getColumns()) {
+            treeColumn.notifyListeners(SWT.ZoomChanged, event);
         }
-        for (TreeItem item : tree.getItems()) {
-            DPIZoomChangeRegistry.applyChange(item, newZoom, scalingFactor);
+        for (TreeItem item : getItems()) {
+            item.notifyListeners(SWT.ZoomChanged, event);
         }
-        ((SwtTree) tree.getImpl()).calculateAndApplyIndentSize();
-        ((SwtTree) tree.getImpl()).updateOrientation();
-        ((SwtTree) tree.getImpl()).setScrollWidth();
+        calculateAndApplyIndentSize();
+        updateOrientation();
+        setScrollWidth();
         // Reset of CheckBox Size required (if SWT.Check is not set, this is a no-op)
-        ((SwtTree) tree.getImpl()).setCheckboxImageList();
+        setCheckboxImageList();
     }
 
     public TreeItem[] _items() {

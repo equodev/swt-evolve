@@ -106,6 +106,11 @@ public abstract class FileFormat {
         List<ElementAtZoom<ImageData>> loadFromByteStream(int fileZoom, int targetZoom) {
             return Arrays.stream(loadFromByteStream()).map(d -> new ElementAtZoom<>(d, fileZoom)).toList();
         }
+
+        @Override
+        ImageData loadFromByteStreamBySize(int width, int height) {
+            return loadFromByteStream()[0];
+        }
     }
 
     LEDataInputStream inputStream;
@@ -128,6 +133,8 @@ public abstract class FileFormat {
      */
     abstract List<ElementAtZoom<ImageData>> loadFromByteStream(int fileZoom, int targetZoom);
 
+    abstract ImageData loadFromByteStreamBySize(int width, int height);
+
     /**
      * Read the specified input stream, and return the
      * device independent image array represented by the stream.
@@ -136,6 +143,20 @@ public abstract class FileFormat {
         try {
             inputStream = stream;
             return loadFromByteStream(fileZoom, targetZoom);
+        } catch (Exception e) {
+            if (e instanceof IOException) {
+                SWT.error(SWT.ERROR_IO, e);
+            } else {
+                SWT.error(SWT.ERROR_INVALID_IMAGE, e);
+            }
+            return null;
+        }
+    }
+
+    public ImageData loadFromStreamBySize(LEDataInputStream stream, int width, int height) {
+        try {
+            inputStream = stream;
+            return loadFromByteStreamBySize(width, height);
         } catch (Exception e) {
             if (e instanceof IOException) {
                 SWT.error(SWT.ERROR_IO, e);
@@ -158,6 +179,16 @@ public abstract class FileFormat {
         });
         fileFormat.loader = loader;
         return fileFormat.loadFromStream(stream, is.zoom(), targetZoom);
+    }
+
+    public static ImageData load(InputStream is, ImageLoader loader, int width, int height) {
+        LEDataInputStream stream = new LEDataInputStream(is);
+        FileFormat fileFormat = determineFileFormat(stream).orElseGet(() -> {
+            SWT.error(SWT.ERROR_UNSUPPORTED_FORMAT);
+            return null;
+        });
+        fileFormat.loader = loader;
+        return fileFormat.loadFromStreamBySize(stream, width, height);
     }
 
     public static boolean canLoadAtZoom(ElementAtZoom<InputStream> is, int targetZoom) {

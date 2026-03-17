@@ -234,6 +234,9 @@ public class DartTable extends DartComposite implements ITable {
             return 0;
         int[] index = new int[1];
         TableItem item = _getItem(index[0]);
+        if (item == null || item.isDisposed()) {
+            return 0;
+        }
         int modelIndex = -1;
         boolean customDraw = false;
         if (columnCount == 0) {

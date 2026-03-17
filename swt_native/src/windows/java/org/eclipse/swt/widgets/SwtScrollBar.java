@@ -358,7 +358,7 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
      */
     public Point getSize() {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getSizeInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPointAsSize(getSizeInPixels(), getZoom());
     }
 
     public Point getSizeInPixels() {

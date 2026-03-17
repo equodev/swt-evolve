@@ -255,7 +255,7 @@ public class FileDialog extends Dialog {
      * @see #setFilterNames to specify the user-friendly
      * names corresponding to the extensions
      */
-    public void setFilterExtensions(String[] extensions) {
+    public void setFilterExtensions(String... extensions) {
         getImpl().setFilterExtensions(extensions);
     }
 
@@ -293,7 +293,7 @@ public class FileDialog extends Dialog {
      *
      * @see #setFilterExtensions
      */
-    public void setFilterNames(String[] names) {
+    public void setFilterNames(String... names) {
         getImpl().setFilterNames(names);
     }
 

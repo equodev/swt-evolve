@@ -347,8 +347,8 @@ public class DartText extends DartScrollable implements IText {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.computeSize(this, wHint, hHint, changed);
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
+        return Sizes.computeSize(this, hintInPoints.x, hintInPoints.y, changed);
     }
 
     @Override
@@ -361,7 +361,6 @@ public class DartText extends DartScrollable implements IText {
      * <p>
      * The current selection is copied to the clipboard.
      * </p>
-     *
      * @exception SWTException <ul>
      *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
@@ -998,7 +997,12 @@ public class DartText extends DartScrollable implements IText {
      * The selected text is deleted from the widget
      * and new text inserted from the clipboard.
      * </p>
-     *
+     * <p>
+     * <strong>Note:</strong> Pasting data to controls may occurs asynchronously. The widget
+     * text may not reflect the updated value immediately after calling this method.
+     * The new text will appear once pending events are processed in the event loop.
+     * Use {@link Display#asyncExec(Runnable)} before accessing <code>getText()</code>.
+     * </p>
      * @exception SWTException <ul>
      *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
@@ -1736,11 +1740,10 @@ public class DartText extends DartScrollable implements IText {
         return 0;
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof Text text)) {
-            return;
-        }
-        ((DartText) text.getImpl()).setMargins();
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        setMargins();
     }
 
     int caretPosition;

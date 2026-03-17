@@ -117,8 +117,8 @@ public class DartLink extends DartControl implements ILink {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.computeSize(this, wHint, hHint, changed);
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
+        return Sizes.computeSize(this, hintInPoints.x, hintInPoints.y, changed);
     }
 
     @Override

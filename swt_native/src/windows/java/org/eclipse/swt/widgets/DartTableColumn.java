@@ -365,11 +365,8 @@ public class DartTableColumn extends DartItem implements ITableColumn {
         if (index == -1)
             return;
         boolean hasHeaderImage = false;
-        if (image != null || ((DartTable) parent.getImpl()).sortColumn == this.getApi()) {
+        if (image != null) {
             hasHeaderImage = true;
-            if (((DartTable) parent.getImpl()).sortColumn == this.getApi() && ((DartTable) parent.getImpl()).sortDirection != SWT.NONE) {
-            } else if (image != null) {
-            }
         }
         ((DartTable) parent.getImpl()).ignoreColumnResize = true;
         int columnWidth = 0;
@@ -664,6 +661,7 @@ public class DartTableColumn extends DartItem implements ITableColumn {
      */
     public void setWidth(int width) {
         checkWidget();
+        setWidthInPixels(DPIUtil.pointToPixel(width, getZoom()));
     }
 
     void setWidthInPixels(int width) {
@@ -685,19 +683,18 @@ public class DartTableColumn extends DartItem implements ITableColumn {
         }
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof TableColumn tableColumn)) {
-            return;
-        }
-        Table table = tableColumn.getParent();
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        Table table = getParent();
         boolean ignoreColumnResize = ((DartTable) table.getImpl()).ignoreColumnResize;
         ((DartTable) table.getImpl()).ignoreColumnResize = true;
-        final int newColumnWidth = Math.round(((DartTableColumn) tableColumn.getImpl()).getWidthInPixels() * scalingFactor);
-        ((DartTableColumn) tableColumn.getImpl()).setWidthInPixels(newColumnWidth);
+        final int newColumnWidth = Math.round(getWidthInPixels() * scalingFactor);
+        setWidthInPixels(newColumnWidth);
         ((DartTable) table.getImpl()).ignoreColumnResize = ignoreColumnResize;
-        Image image = tableColumn.getImage();
+        Image image = getImage();
         if (image != null) {
-            tableColumn.setImage(image);
+            setImage(image);
         }
     }
 

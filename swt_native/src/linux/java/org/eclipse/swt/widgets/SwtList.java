@@ -935,15 +935,11 @@ public class SwtList extends SwtScrollable implements IList {
     }
 
     @Override
-    long gtk_key_press_event(long widget, long event) {
+    long gtk3_key_press_event(long widget, long event) {
         int[] key = new int[1];
-        if (GTK.GTK4) {
-            key[0] = GDK.gdk_key_event_get_keyval(event);
-        } else {
-            GDK.gdk_event_get_keyval(event, key);
-        }
+        GDK.gdk_event_get_keyval(event, key);
         keyPressDefaultSelectionHandler(event, key[0]);
-        return super.gtk_key_press_event(widget, event);
+        return super.gtk3_key_press_event(widget, event);
     }
 
     @Override

@@ -18,6 +18,7 @@ package org.eclipse.swt.graphics;
 import static org.eclipse.swt.internal.image.ImageColorTransformer.DEFAULT_DISABLED_IMAGE_TRANSFORMER;
 import java.io.*;
 import java.util.*;
+import java.util.function.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.DPIUtil.*;
@@ -238,12 +239,12 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         this.currentDeviceZoom = ((DartImage) srcImage.getImpl()).currentDeviceZoom;
         if (flag != SWT.IMAGE_DISABLE)
             transparentPixel = srcImage.getImpl()._transparentPixel();
-        int width = this.width = srcImage.getImpl()._width();
-        int height = this.height = srcImage.getImpl()._height();
+        this.width = srcImage.getImpl()._width();
+        this.height = srcImage.getImpl()._height();
+        int dataWidth = DPIUtil.pointToPixel(this.width, DPIUtil.getDeviceZoom());
+        int dataHeight = DPIUtil.pointToPixel(this.height, DPIUtil.getDeviceZoom());
         if (getApi().surface == 0)
             SWT.error(SWT.ERROR_NO_HANDLES);
-        if (DPIUtil.getDeviceZoom() != currentDeviceZoom) {
-        }
         if (flag != SWT.IMAGE_COPY) {
             int oa, or, og, ob;
             {
@@ -255,8 +256,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             switch(flag) {
                 case SWT.IMAGE_DISABLE:
                     {
-                        for (int y = 0; y < height; y++) {
-                            for (int x = 0, offset = 0; x < width; x++, offset += 4) {
+                        for (int y = 0; y < dataHeight; y++) {
+                            for (int x = 0, offset = 0; x < dataWidth; x++, offset += 4) {
                                 // The alpha value is embedded into the RGB values as well, so extract it out
                                 // of those values for transformation and reapply it afterwards
                                 // Note: don't change execution order, e.g., using *= assignment, as this is
@@ -266,8 +267,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                     }
                 case SWT.IMAGE_GRAY:
                     {
-                        for (int y = 0; y < height; y++) {
-                            for (int x = 0, offset = 0; x < width; x++, offset += 4) {
+                        for (int y = 0; y < dataHeight; y++) {
+                            for (int x = 0, offset = 0; x < dataWidth; x++, offset += 4) {
                             }
                         }
                         break;
@@ -672,7 +673,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             initNative(fileForZoom.element());
         }
         if (this.getApi().surface == 0) {
-            ElementAtZoom<ImageData> imageDataAtZoom = ImageDataLoader.load(fileForZoom.element(), fileForZoom.zoom(), zoom);
+            ElementAtZoom<ImageData> imageDataAtZoom = ImageDataLoader.loadByZoom(fileForZoom.element(), fileForZoom.zoom(), zoom);
             ImageData imageData = imageDataAtZoom.element();
             if (imageDataAtZoom.zoom() != zoom) {
                 imageData = DPIUtil.scaleImageData(device, imageDataAtZoom, zoom);
@@ -725,11 +726,6 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         }
     }
 
-    void createSurface() {
-        if (getApi().surface != 0)
-            return;
-    }
-
     /**
      * Destroy the receiver's mask if it exists.
      */
@@ -745,6 +741,75 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             memGC.dispose();
         getApi().surface = getApi().mask = 0;
         memGC = null;
+        cachedImageAtSize.destroy();
+    }
+
+    private CachedImageAtSize cachedImageAtSize = new CachedImageAtSize();
+
+    private class CachedImageAtSize {
+
+        private Image image;
+
+        public void destroy() {
+            if (image != null) {
+                image.dispose();
+                image = null;
+            }
+        }
+
+        private Optional<Image> refresh(int destWidth, int destHeight) {
+            int scaledWidth = DPIUtil.pointToPixel(destWidth, DPIUtil.getDeviceZoom());
+            int scaledHeight = DPIUtil.pointToPixel(destHeight, DPIUtil.getDeviceZoom());
+            if (isReusable(scaledWidth, scaledHeight)) {
+                return Optional.of(image);
+            } else {
+                destroy();
+                Optional<Image> imageAtSize = loadImageAtSize(scaledWidth, scaledHeight);
+                image = imageAtSize.orElse(null);
+                return imageAtSize;
+            }
+        }
+
+        private boolean isReusable(int width, int height) {
+            return image != null && image.getImpl()._height() == height && image.getImpl()._width() == width;
+        }
+
+        private Optional<Image> loadImageAtSize(int destWidth, int destHeight) {
+            Optional<ImageData> imageData = loadImageDataAtExactSize(destWidth, destHeight);
+            if (imageData.isEmpty()) {
+                return Optional.empty();
+            }
+            Image image = new Image(device, imageData.get(), DPIUtil.getDeviceZoom());
+            if (styleFlag != SWT.IMAGE_COPY) {
+                Image styledImage = new Image(device, image, styleFlag);
+                image.dispose();
+                image = styledImage;
+            }
+            return Optional.of(image);
+        }
+
+        private Optional<ImageData> loadImageDataAtExactSize(int targetWidth, int targetHeight) {
+            if (imageDataProvider instanceof ImageDataAtSizeProvider imageDataAtSizeProvider) {
+                ImageData imageData = imageDataAtSizeProvider.getImageData(targetWidth, targetHeight);
+                if (imageData == null) {
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT, null, " ImageDataAtSizeProvider returned null for width=" + targetWidth + ", height=" + targetHeight);
+                }
+                return Optional.of(imageData);
+            }
+            if (imageFileNameProvider != null) {
+                String fileName = DPIUtil.validateAndGetImagePathAtZoom(imageFileNameProvider, 100).element();
+                if (ImageDataLoader.isDynamicallySizable(fileName)) {
+                    ImageData imageDataAtSize = ImageDataLoader.loadBySize(fileName, targetWidth, targetHeight);
+                    return Optional.of(imageDataAtSize);
+                }
+            }
+            return Optional.empty();
+        }
+    }
+
+    void executeOnImageAtSize(Consumer<Image> imageAtBestFittingSizeConsumer, int destWidth, int destHeight) {
+        Optional<Image> imageAtSize = cachedImageAtSize.refresh(destWidth, destHeight);
+        imageAtBestFittingSizeConsumer.accept(imageAtSize.orElse(this.getApi()));
     }
 
     /**
@@ -1263,13 +1328,12 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      *
      * @param gc the GC to draw on the resulting image
      * @param imageData the imageData which is used to draw the scaled Image
-     * @param width the width of the original image
-     * @param height the height of the original image
-     * @param scaleFactor the factor with which the image is supposed to be scaled
+     * @param width the width to which the image is supposed to be scaled
+     * @param height the height to which the image is supposed to be scaled
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    public static void drawScaled(GC gc, ImageData imageData, int width, int height, float scaleFactor) {
+    public static void drawAtSize(GC gc, ImageData imageData, int width, int height) {
     }
 
     Color background;

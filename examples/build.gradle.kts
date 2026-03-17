@@ -4,10 +4,11 @@ plugins {
 }
 
 val eclipseUrl: String by project
+val draw2dUrl: String = project.findProperty("draw2dUrl")?.toString() ?: eclipseUrl
 
 repositories {
     ivy {
-        url = uri(eclipseUrl)
+        url = uri("$draw2dUrl/plugins")
         name = "Eclipse Plugins"
         patternLayout {
             artifact("[organisation].[artifact]_[revision].[ext]")
@@ -42,6 +43,11 @@ tasks.compileJava {
 }
 
 val draw2dVersion: String by project
+val jfaceVersion: String by project
+val coreCommandsVersion: String by project
+val equinoxCommonVersion: String by project
+val jfaceTextVersion: String by project
+val eclipseTextVersion: String by project
 
 dependencies {
     if (gradle.parent != null)
@@ -49,18 +55,17 @@ dependencies {
     else
         implementation("dev.equo:swt-evolve:+:$currentPlatform")
 
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.21")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:${libs.versions.kotlin.get()}")
     // JFace dependencies
-//    implementation("org.eclipse.platform:org.eclipse.jface:3.33.0") {
-    implementation("org.eclipse.platform:org.eclipse.jface:3.38.0") {
+    implementation("org.eclipse.platform:org.eclipse.jface:$jfaceVersion") {
         exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
     }
-    implementation("org.eclipse.platform:org.eclipse.core.commands:3.12.0")
-    implementation("org.eclipse.platform:org.eclipse.equinox.common:3.19.0")
-    implementation("org.eclipse.platform:org.eclipse.jface.text:3.25.0") {
+    implementation("org.eclipse.platform:org.eclipse.core.commands:$coreCommandsVersion")
+    implementation("org.eclipse.platform:org.eclipse.equinox.common:$equinoxCommonVersion")
+    implementation("org.eclipse.platform:org.eclipse.jface.text:$jfaceTextVersion") {
         exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
     }
-    implementation("org.eclipse.platform:org.eclipse.text:3.14.0")
+    implementation("org.eclipse.platform:org.eclipse.text:$eclipseTextVersion")
     implementation("org.eclipse:draw2d:$draw2dVersion")
 }
 

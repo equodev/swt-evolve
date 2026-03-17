@@ -75,7 +75,6 @@ public class SwtPattern extends SwtResource implements IPattern {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (image.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        ((SwtImage) image.getImpl()).createSurface();
         getApi().handle = Cairo.cairo_pattern_create_for_surface(image.surface);
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_NO_HANDLES);

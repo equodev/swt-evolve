@@ -56,10 +56,6 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
 
     int[] cellBackground, cellForeground;
 
-    static {
-        DPIZoomChangeRegistry.registerHandler(SwtTreeItem::handleDPIChange, TreeItem.class);
-    }
-
     /**
      * Constructs <code>TreeItem</code> and <em>inserts</em> it into <code>Tree</code>.
      * Item is inserted as last direct child of the tree.
@@ -557,7 +553,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
                 }
             }
         }
-        int gridWidth = ((SwtTree) parent.getImpl()).linesVisible && columnCount != 0 ? SwtTree.GRID_WIDTH : 0;
+        int gridWidth = ((SwtTree) parent.getImpl()).linesVisible && columnCount != 0 ? ((SwtTree) parent.getImpl()).getGridLineWidthInPixels() : 0;
         if (getText || !getImage) {
             rect.right = Math.max(rect.left, rect.right - gridWidth);
         }
@@ -1917,23 +1913,21 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         return super.getNameText();
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof TreeItem treeItem)) {
-            return;
-        }
-        Font font = ((SwtTreeItem) treeItem.getImpl()).font;
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
         if (font != null) {
-            treeItem.setFont(font);
+            setFont(font);
         }
-        Font[] cellFonts = ((SwtTreeItem) treeItem.getImpl()).cellFont;
+        Font[] cellFonts = cellFont;
         if (cellFonts != null) {
             for (int index = 0; index < cellFonts.length; index++) {
                 Font cellFont = cellFonts[index];
-                cellFonts[index] = cellFont == null ? null : SwtFont.win32_new(cellFont, ((SwtWidget) treeItem.getImpl()).getNativeZoom());
+                cellFonts[index] = cellFont == null ? null : SwtFont.win32_new(cellFont, getNativeZoom());
             }
         }
-        for (TreeItem item : treeItem.getItems()) {
-            DPIZoomChangeRegistry.applyChange(item, newZoom, scalingFactor);
+        for (TreeItem item : getItems()) {
+            item.notifyListeners(SWT.ZoomChanged, event);
         }
     }
 

@@ -194,6 +194,7 @@ public final class Variant {
      * @since 2.0
      *
      * @param idispatch the IDispatch object that this Variant represents
+     * @noreference This constructor is not intended to be referenced by clients.
      */
     public Variant(IDispatch idispatch) {
         type = COM.VT_DISPATCH;
@@ -207,6 +208,7 @@ public final class Variant {
      * this Variant.
      *
      * @param unknown the IUnknown object that this Variant represents
+     * @noreference This constructor is not intended to be referenced by clients.
      */
     public Variant(IUnknown unknown) {
         type = COM.VT_UNKNOWN;
@@ -334,6 +336,7 @@ public final class Variant {
      * @exception SWTException <ul>
      *     <li>ERROR_CANNOT_CHANGE_VARIANT_TYPE when type of Variant can not be coerced into an IDispatch object</li>
      * </ul>
+     * @noreference This method is not intended to be referenced by clients.
      */
     public IDispatch getDispatch() {
         if (type == COM.VT_EMPTY) {
@@ -826,6 +829,7 @@ public final class Variant {
      *      <li>ERROR_CANNOT_CHANGE_VARIANT_TYPE when type of Variant can not be coerced into
      * 			an IUnknown object</li>
      *  </ul>
+     *  @noreference This method is not intended to be referenced by clients.
      */
     public IUnknown getUnknown() {
         if (type == COM.VT_EMPTY) {

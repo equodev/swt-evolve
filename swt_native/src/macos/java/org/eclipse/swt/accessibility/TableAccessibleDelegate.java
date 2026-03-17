@@ -102,8 +102,8 @@ class TableAccessibleDelegate {
             public void getState(AccessibleControlEvent e) {
                 int state = ACC.STATE_NORMAL | ACC.STATE_FOCUSABLE | ACC.STATE_SELECTABLE;
                 AccessibleTableEvent event = new AccessibleTableEvent(this);
-                for (int i = 0; i < ((SwtAccessible) tableAccessible.getImpl()).accessibleTableListeners.size(); i++) {
-                    AccessibleTableListener listener = ((SwtAccessible) tableAccessible.getImpl()).accessibleTableListeners.get(i);
+                for (int i = 0; i < tableAccessible.getImpl()._accessibleTableListeners().size(); i++) {
+                    AccessibleTableListener listener = tableAccessible.getImpl()._accessibleTableListeners().get(i);
                     listener.getSelectedRows(event);
                 }
                 if (event.selected != null) {
@@ -129,8 +129,8 @@ class TableAccessibleDelegate {
             @Override
             public void getColumnCount(AccessibleTableEvent e) {
                 AccessibleTableEvent event = new AccessibleTableEvent(this);
-                for (int i = 0; i < ((SwtAccessible) tableAccessible.getImpl()).accessibleTableListeners.size(); i++) {
-                    AccessibleTableListener listener = ((SwtAccessible) tableAccessible.getImpl()).accessibleTableListeners.get(i);
+                for (int i = 0; i < tableAccessible.getImpl()._accessibleTableListeners().size(); i++) {
+                    AccessibleTableListener listener = tableAccessible.getImpl()._accessibleTableListeners().get(i);
                     if (listener != this)
                         listener.getColumnCount(event);
                 }
@@ -174,8 +174,8 @@ class TableAccessibleDelegate {
             @Override
             public void getRowCount(AccessibleTableEvent e) {
                 AccessibleTableEvent event = new AccessibleTableEvent(this);
-                for (int i = 0; i < ((SwtAccessible) tableAccessible.getImpl()).accessibleTableListeners.size(); i++) {
-                    AccessibleTableListener listener = ((SwtAccessible) tableAccessible.getImpl()).accessibleTableListeners.get(i);
+                for (int i = 0; i < tableAccessible.getImpl()._accessibleTableListeners().size(); i++) {
+                    AccessibleTableListener listener = tableAccessible.getImpl()._accessibleTableListeners().get(i);
                     if (listener != this)
                         listener.getRowCount(event);
                 }

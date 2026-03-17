@@ -18,7 +18,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.*;
 import java.util.Objects;
 import dev.equo.swt.*;
 
@@ -1114,7 +1113,7 @@ public class DartMenu extends DartWidget implements IMenu {
         checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        Point locationInPixels = ((SwtDisplay) getDisplay().getImpl()).translateToDisplayCoordinates(location, getZoom());
+        Point locationInPixels = ((SwtDisplay) getDisplay().getImpl()).translateToDisplayCoordinates(location);
         this.location = newValue;
         setLocationInPixels(locationInPixels.x, locationInPixels.y);
     }
@@ -1213,9 +1212,11 @@ public class DartMenu extends DartWidget implements IMenu {
         redraw();
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof Menu menu)) {
-            return;
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        for (MenuItem item : getItems()) {
+            item.notifyListeners(SWT.ZoomChanged, event);
         }
     }
 

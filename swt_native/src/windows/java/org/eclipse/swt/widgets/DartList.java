@@ -174,8 +174,8 @@ public class DartList extends DartScrollable implements IList {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.computeSize(this, wHint, hHint, changed);
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
+        return Sizes.computeSize(this, hintInPoints.x, hintInPoints.y, changed);
     }
 
     @Override
@@ -1240,13 +1240,12 @@ public class DartList extends DartScrollable implements IList {
         return 0;
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof List list)) {
-            return;
-        }
-        if ((list.style & SWT.H_SCROLL) != 0) {
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        if ((getApi().style & SWT.H_SCROLL) != 0) {
             // Recalculate the Scroll width, as length of items has changed
-            ((DartList) list.getImpl()).setScrollWidth();
+            setScrollWidth();
         }
     }
 

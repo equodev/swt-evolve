@@ -221,7 +221,10 @@ public final class SwtCursor extends SwtResource implements ICursor {
      * </ul>
      *
      * @see #dispose()
+     *
+     * @deprecated Use {@link #Cursor(Device, ImageDataProvider, int, int)} instead.
      */
+    @Deprecated
     public SwtCursor(Device device, ImageData source, ImageData mask, int hotspotX, int hotspotY, Cursor api) {
         super(device, api);
         if (source == null)

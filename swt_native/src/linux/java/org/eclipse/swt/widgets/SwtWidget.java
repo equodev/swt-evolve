@@ -1107,7 +1107,7 @@ public abstract class SwtWidget implements IWidget {
         return 0;
     }
 
-    long gtk_event_after(long widget, long event) {
+    long gtk3_event_after(long widget, long event) {
         return 0;
     }
 
@@ -1154,11 +1154,11 @@ public abstract class SwtWidget implements IWidget {
         return 0;
     }
 
-    long gtk_key_press_event(long widget, long event) {
+    long gtk3_key_press_event(long widget, long event) {
         return sendKeyEvent(SWT.KeyDown, event) ? 0 : 1;
     }
 
-    long gtk_key_release_event(long widget, long event) {
+    long gtk3_key_release_event(long widget, long event) {
         return sendKeyEvent(SWT.KeyUp, event) ? 0 : 1;
     }
 
@@ -2846,7 +2846,7 @@ public abstract class SwtWidget implements IWidget {
             case ENTER_NOTIFY_EVENT:
                 return gtk_enter_notify_event(handle, arg0);
             case EVENT_AFTER:
-                return gtk_event_after(handle, arg0);
+                return gtk3_event_after(handle, arg0);
             case EXPOSE_EVENT:
                 {
                     if (!GTK.GTK_IS_CONTAINER(handle)) {
@@ -2861,9 +2861,9 @@ public abstract class SwtWidget implements IWidget {
             case FOCUS_OUT_EVENT:
                 return gtk_focus_out_event(handle, arg0);
             case KEY_PRESS_EVENT:
-                return gtk_key_press_event(handle, arg0);
+                return gtk3_key_press_event(handle, arg0);
             case KEY_RELEASE_EVENT:
-                return gtk_key_release_event(handle, arg0);
+                return gtk3_key_release_event(handle, arg0);
             case INPUT:
                 return gtk_input(handle, arg0);
             case LEAVE_NOTIFY_EVENT:

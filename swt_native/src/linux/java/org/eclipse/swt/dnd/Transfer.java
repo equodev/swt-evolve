@@ -36,6 +36,14 @@ import org.eclipse.swt.internal.gtk.*;
 public abstract class Transfer {
 
     /**
+     * Unique id of the transfer type. Used by GTK4 implementation to map data in
+     * the C/GTK side back to Java. See {@link ContentProviders} for more
+     * information.
+     */
+    public Transfer() {
+    }
+
+    /**
      * Returns a list of the platform specific data types that can be converted using
      * this transfer agent.
      *
@@ -150,9 +158,6 @@ public abstract class Transfer {
         return getImpl().validate(object);
     }
 
-    public Transfer() {
-    }
-
     protected ITransfer impl;
 
     protected Transfer(ITransfer impl) {
@@ -161,33 +166,6 @@ public abstract class Transfer {
     }
 
     public ITransfer getImpl() {
-        if (impl == null)
-            impl = new SwtTransfer(this) {
-
-                public TransferData[] getSupportedTypes() {
-                    return Transfer.this.getSupportedTypes();
-                }
-
-                public int[] getTypeIds() {
-                    return Transfer.this.getTypeIds();
-                }
-
-                public String[] getTypeNames() {
-                    return Transfer.this.getTypeNames();
-                }
-
-                public boolean isSupportedType(TransferData transferData) {
-                    return Transfer.this.isSupportedType(transferData);
-                }
-
-                public void javaToNative(Object object, TransferData transferData) {
-                    Transfer.this.javaToNative(object, transferData);
-                }
-
-                public Object nativeToJava(TransferData transferData) {
-                    return Transfer.this.nativeToJava(transferData);
-                }
-            };
         return impl;
     }
 

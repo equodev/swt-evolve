@@ -52,15 +52,20 @@ public class SwtTextTransfer extends SwtByteArrayTransfer implements ITextTransf
     private static final String STRING = "STRING";
 
     //RFC-1341
+    private static final String TEXT_PLAIN = "text/plain";
+
+    //RFC-1341
     private static final String TEXT_PLAIN_UTF8 = "text/plain;charset=utf-8";
 
-    private static final int COMPOUND_TEXT_ID = GTK.GTK4 ? 0 : registerType(COMPOUND_TEXT);
+    private static final int COMPOUND_TEXT_ID = registerType(COMPOUND_TEXT);
 
-    private static final int UTF8_STRING_ID = GTK.GTK4 ? 0 : registerType(UTF8_STRING);
+    private static final int UTF8_STRING_ID = registerType(UTF8_STRING);
 
-    private static final int STRING_ID = GTK.GTK4 ? 0 : registerType(STRING);
+    private static final int STRING_ID = registerType(STRING);
 
-    private static final int TEXT_PLAIN_UTF8_ID = GTK.GTK4 ? 0 : registerType(TEXT_PLAIN_UTF8);
+    private static final int TEXT_PLAIN_ID = registerType(TEXT_PLAIN);
+
+    private static final int TEXT_PLAIN_UTF8_ID = registerType(TEXT_PLAIN_UTF8);
 
     SwtTextTransfer(TextTransfer api) {
         super(api);
@@ -87,6 +92,10 @@ public class SwtTextTransfer extends SwtByteArrayTransfer implements ITextTransf
      */
     @Override
     public void javaToNative(Object object, TransferData transferData) {
+        if (GTK.GTK4) {
+            javaToNativeGTK4(object, transferData);
+            return;
+        }
         transferData.result = 0;
         if (!checkText(object) || !isSupportedType(transferData)) {
             DND.error(DND.ERROR_INVALID_DATA);
@@ -129,6 +138,13 @@ public class SwtTextTransfer extends SwtByteArrayTransfer implements ITextTransf
         }
     }
 
+    private void javaToNativeGTK4(Object object, TransferData transferData) {
+        if (!checkText(object) || !isSupportedType(transferData)) {
+            DND.error(DND.ERROR_INVALID_DATA);
+        }
+        super.javaToNative(Converter.wcsToMbcs((String) object, false), transferData);
+    }
+
     /**
      * This implementation of <code>nativeToJava</code> converts a platform specific
      * representation of plain text to a java <code>String</code>.
@@ -140,6 +156,8 @@ public class SwtTextTransfer extends SwtByteArrayTransfer implements ITextTransf
      */
     @Override
     public Object nativeToJava(TransferData transferData) {
+        if (GTK.GTK4)
+            return nativeToJavaGTK4(transferData);
         if (!isSupportedType(transferData) || transferData.pValue == 0)
             return null;
         long[] list = new long[1];
@@ -159,10 +177,18 @@ public class SwtTextTransfer extends SwtByteArrayTransfer implements ITextTransf
         return (end == -1) ? string : string.substring(0, end);
     }
 
+    private Object nativeToJavaGTK4(TransferData transferData) {
+        Object buffer = super.nativeToJava(transferData);
+        if (buffer instanceof byte[] bytes) {
+            return new String(Converter.mbcsToWcs(bytes));
+        }
+        return null;
+    }
+
     @Override
     public int[] getTypeIds() {
         if (GTK.GTK4) {
-            return new int[] { (int) OS.G_TYPE_STRING() };
+            return new int[] { TEXT_PLAIN_UTF8_ID, TEXT_PLAIN_ID, STRING_ID };
         }
         if (OS.isX11()) {
             return new int[] { UTF8_STRING_ID, COMPOUND_TEXT_ID, STRING_ID };
@@ -173,7 +199,7 @@ public class SwtTextTransfer extends SwtByteArrayTransfer implements ITextTransf
     @Override
     public String[] getTypeNames() {
         if (GTK.GTK4) {
-            return new String[] { "text/plain", STRING };
+            return new String[] { TEXT_PLAIN_UTF8, TEXT_PLAIN, STRING };
         }
         if (OS.isX11()) {
             return new String[] { UTF8_STRING, COMPOUND_TEXT, STRING };

@@ -310,7 +310,19 @@ public final class SwtProgram implements IProgram {
             if (length > 0) {
                 buffer = new byte[length];
                 C.memmove(buffer, applicationCommand, length);
-                ((SwtProgram) program.getImpl()).command = new String(Converter.mbcsToWcs(buffer));
+                String command = new String(Converter.mbcsToWcs(buffer));
+                if (command.equals("/usr/bin/flatpak") || command.equals("env")) {
+                    long applicationCommandLine = OS.g_app_info_get_commandline(application);
+                    if (applicationCommandLine != 0) {
+                        length = C.strlen(applicationCommandLine);
+                        if (length > 0) {
+                            buffer = new byte[length];
+                            C.memmove(buffer, applicationCommandLine, length);
+                            command = new String(Converter.mbcsToWcs(buffer));
+                        }
+                    }
+                }
+                ((SwtProgram) program.getImpl()).command = command;
             }
         }
         ((SwtProgram) program.getImpl()).gioExpectUri = OS.g_app_info_supports_uris(application);

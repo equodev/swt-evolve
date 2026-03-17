@@ -453,7 +453,7 @@ public class SwtFileDialog extends SwtDialog implements IIFileDialog {
      * @see #setFilterNames to specify the user-friendly
      * names corresponding to the extensions
      */
-    public void setFilterExtensions(String[] extensions) {
+    public void setFilterExtensions(String... extensions) {
         filterExtensions = extensions;
     }
 
@@ -491,7 +491,7 @@ public class SwtFileDialog extends SwtDialog implements IIFileDialog {
      *
      * @see #setFilterExtensions
      */
-    public void setFilterNames(String[] names) {
+    public void setFilterNames(String... names) {
         filterNames = names;
     }
 

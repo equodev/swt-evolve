@@ -19,6 +19,7 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
+import org.eclipse.swt.internal.win32.version.*;
 
 /**
  * Instances of this class manage operating system resources that
@@ -132,7 +133,10 @@ public final class Cursor extends Resource {
      * </ul>
      *
      * @see #dispose()
+     *
+     * @deprecated Use {@link #Cursor(Device, ImageDataProvider, int, int)} instead.
      */
+    @Deprecated
     public Cursor(Device device, ImageData source, ImageData mask, int hotspotX, int hotspotY) {
         this((ICursor) null);
         setImpl(new SwtCursor(device, source, mask, hotspotX, hotspotY, this));
@@ -206,6 +210,24 @@ public final class Cursor extends Resource {
         setImpl(new SwtCursor(device, imageDataProvider, hotspotX, hotspotY, this));
     }
 
+    /**
+     * Retrieves the scaling factor of the mouse pointer size as set in Windows
+     * 10/11 "Settings &gt; Accessibility &gt; Mouse pointer and touch &gt; Size".
+     * <p>
+     * This method reads the "CursorBaseSize" registry value under
+     * {@code HKEY_CURRENT_USER\Control Panel\Cursors}. If this registry value
+     * exists (introduced in Windows 10 version 1809 for accessibility cursor
+     * scaling), the method computes the scale factor by dividing the base size by
+     * the default system cursor size (32px). If the registry value is not present
+     * or cannot be read, the method returns {@code 1} indicating default size.
+     * <p>
+     * <strong>Note:</strong> This approach is only valid for Windows 10 1809+ with
+     * the modern accessibility pointer setting. For classic themes or older Windows
+     * versions, this value may not be present or honored.
+     *
+     * @return the cursor scaling factor (e.g., 1 for default size, 2 for double
+     *         size, etc.)
+     */
     /**
      * Compares the argument to the receiver, and returns true
      * if they represent the <em>same</em> object using a class

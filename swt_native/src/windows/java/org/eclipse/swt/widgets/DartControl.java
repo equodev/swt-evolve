@@ -17,6 +17,7 @@
 package org.eclipse.swt.widgets;
 
 import java.util.*;
+import java.util.concurrent.atomic.*;
 import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
@@ -72,6 +73,14 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     int drawCount, foreground, background, backgroundAlpha = 255;
 
+    boolean autoScaleDisabled = false;
+
+    private static final String DATA_SHELL_ZOOM = "SHELL_ZOOM";
+
+    private static final String DATA_AUTOSCALE_DISABLED = "AUTOSCALE_DISABLED";
+
+    private static final String PROPOGATE_AUTOSCALE_DISABLED = "PROPOGATE_AUTOSCALE_DISABLED";
+
     /**
      * Prevents uninitialized instances from being created outside the package.
      */
@@ -112,6 +121,13 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public DartControl(Composite parent, int style, Control api) {
         super(parent, style, api);
         this.parent = parent;
+        Boolean parentPropagateAutoscaleDisabled = (Boolean) parent.getData(PROPOGATE_AUTOSCALE_DISABLED);
+        if (parentPropagateAutoscaleDisabled == null || parentPropagateAutoscaleDisabled) {
+            this.autoScaleDisabled = parent.getImpl()._autoScaleDisabled();
+        }
+        if (!autoScaleDisabled) {
+            this.getApi().nativeZoom = getShellZoom();
+        }
         notifyCreationTracker();
         createWidget();
         ControlUtils.addToParentChildren(this);
@@ -587,11 +603,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @see "computeTrim, getClientArea for controls that implement them"
      */
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return computeSizeInPixels(wHint, hHint, changed);
+        return computeSizeInPixels(new Point(wHint, hHint), computeBoundsZoom(), changed);
     }
 
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.computeSize(this, wHint, hHint, changed);
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
+        return Sizes.computeSize(this, hintInPoints.x, hintInPoints.y, changed);
     }
 
     Widget computeTabGroup() {
@@ -630,6 +646,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void createHandle() {
+    }
+
+    Point getInitialLocation() {
+        return null;
     }
 
     void checkGesture() {
@@ -720,7 +740,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (event == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        return false;
+        Point loc = event.getLocation();
+        int zoom = getZoom();
+        return dragDetect(event.button, event.count, event.stateMask, DPIUtil.pointToPixel(loc.x, zoom), DPIUtil.pointToPixel(loc.y, zoom));
     }
 
     /**
@@ -763,7 +785,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (event == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        return false;
+        int zoom = getZoom();
+        // To Pixels
+        return dragDetect(event.button, event.count, event.stateMask, DPIUtil.pointToPixel(event.x, zoom), DPIUtil.pointToPixel(event.y, zoom));
     }
 
     boolean dragDetect(int button, int count, int stateMask, int x, int y) {
@@ -1054,6 +1078,26 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public Cursor getCursor() {
         checkWidget();
         return cursor;
+    }
+
+    @Override
+    public Object getData(String key) {
+        if (DATA_SHELL_ZOOM.equals(key)) {
+        }
+        return super.getData(key);
+    }
+
+    @Override
+    public void setData(String key, Object value) {
+        super.setData(key, value);
+        if (DATA_AUTOSCALE_DISABLED.equals(key)) {
+            autoScaleDisabled = Boolean.parseBoolean(value.toString());
+            if (autoScaleDisabled) {
+                this.getApi().nativeZoom = 100;
+            } else {
+                this.getApi().nativeZoom = getShellZoom();
+            }
+        }
     }
 
     /**
@@ -2958,6 +3002,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setLocation(int x, int y) {
         checkWidget();
+        int zoom = computeBoundsZoom();
+        x = DPIUtil.pointToPixel(x, zoom);
+        y = DPIUtil.pointToPixel(y, zoom);
         setLocationInPixels(x, y);
     }
 
@@ -3178,6 +3225,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setSize(int width, int height) {
         checkWidget();
+        int zoom = computeBoundsZoom();
+        width = DPIUtil.pointToPixel(width, zoom);
+        height = DPIUtil.pointToPixel(height, zoom);
         setSizeInPixels(width, height);
     }
 
@@ -4007,32 +4057,134 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         getBridge().reparent(this, parent);
         ControlUtils.reparent(this, parent);
         // If parent changed, zoom level might need to be adjusted
-        if (parent.nativeZoom != getApi().nativeZoom) {
+        int newZoom = parent.nativeZoom;
+        if (newZoom != getApi().nativeZoom) {
+            Event zoomChangedEvent = createZoomChangedEvent(newZoom, false);
+            sendZoomChangedEvent(zoomChangedEvent, getShell());
         }
         reskin(SWT.ALL);
         return true;
     }
 
-    void handleMonitorSpecificDpiChange(int newNativeZoom, Rectangle newBoundsInPixels) {
-        DPIUtil.setDeviceZoom(newNativeZoom);
-        this.setBoundsInPixels(newBoundsInPixels.x, newBoundsInPixels.y, newBoundsInPixels.width, newBoundsInPixels.height);
+    @Override
+    GC createNewGC(long hDC, GCData data) {
+        data.nativeZoom = getNativeZoom();
+        return null;
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof Control control)) {
-            return;
+    @Override
+    public int getZoom() {
+        if (autoScaleDisabled) {
+            return 100;
         }
-        resizeFont(control, ((DartWidget) control.getImpl()).getNativeZoom());
-        Image image = ((DartControl) control.getImpl()).backgroundImage;
+        return super.getZoom();
+    }
+
+    int getShellZoom() {
+        if (getData(DATA_SHELL_ZOOM) instanceof Integer shellZoom) {
+            return shellZoom;
+        }
+        return getApi().nativeZoom;
+    }
+
+    private int computeGetBoundsZoom() {
+        if (parent != null && !autoScaleDisabled) {
+            return parent.getImpl().getZoom();
+        }
+        return getZoom();
+    }
+
+    int computeBoundsZoom() {
+        if (parent != null) {
+            return parent.getImpl().getZoom();
+        }
+        return getZoom();
+    }
+
+    Event createZoomChangedEvent(int zoom, boolean asyncExec) {
+        Event event = new Event();
+        event.type = SWT.ZoomChanged;
+        event.widget = this.getApi();
+        event.detail = zoom;
+        event.doit = true;
+        DPIChangeExecution dpiChangeExecution = new DPIChangeExecution();
+        dpiChangeExecution.asyncExec = asyncExec;
+        event.data = dpiChangeExecution;
+        return event;
+    }
+
+    static class DPIChangeExecution {
+
+        AtomicInteger taskCount = new AtomicInteger();
+
+        private boolean asyncExec = true;
+
+        private void process(Control control, Runnable operation) {
+            boolean currentAsyncExec = asyncExec;
+            if (control instanceof Composite comp) {
+                // do not execute the DPI change asynchronously, if there is no
+                // layout manager available otherwise size calculations could lead
+                // to wrong results, because no final layout will be triggered
+                asyncExec &= (comp.getImpl()._layout() != null);
+            }
+            if (asyncExec) {
+                control.getDisplay().asyncExec(operation::run);
+            } else {
+                operation.run();
+            }
+            // resetting it prevents to break asynchronous execution when the synchronous
+            // DPI change handling is finished
+            asyncExec = currentAsyncExec;
+        }
+
+        private void increment() {
+            taskCount.incrementAndGet();
+        }
+
+        private boolean decrement() {
+            return taskCount.decrementAndGet() <= 0;
+        }
+    }
+
+    void sendZoomChangedEvent(Event event, Shell shell) {
+        if (event.data instanceof DPIChangeExecution dpiExecData) {
+            dpiExecData.increment();
+            dpiExecData.process(this.getApi(), () -> {
+                try {
+                    if (!this.isDisposed() && event.doit) {
+                        notifyListeners(SWT.ZoomChanged, event);
+                    }
+                } finally {
+                    if (shell.isDisposed()) {
+                        return;
+                    }
+                    if (dpiExecData.decrement()) {
+                        if (event.doit) {
+                            shell.layout(true, true);
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        if (this.autoScaleDisabled) {
+            this.getApi().nativeZoom = 100;
+        }
+        resizeFont(this.getApi(), getNativeZoom());
+        Image image = backgroundImage;
         if (image != null) {
             if (image.isDisposed()) {
-                control.setBackgroundImage(null);
+                setBackgroundImage(null);
             } else {
-                control.setBackgroundImage(image);
+                setBackgroundImage(image);
             }
         }
-        if (control.getRegion() != null) {
-            control.setRegion(control.getRegion());
+        if (getRegion() != null) {
+            setRegion(getRegion());
         }
     }
 
@@ -4118,6 +4270,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public int _backgroundAlpha() {
         return backgroundAlpha;
+    }
+
+    public boolean _autoScaleDisabled() {
+        return autoScaleDisabled;
     }
 
     public Color __background() {

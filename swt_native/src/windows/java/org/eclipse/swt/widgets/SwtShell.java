@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import org.eclipse.swt.internal.ole.win32.*;
 import org.eclipse.swt.internal.win32.*;
 import org.eclipse.swt.internal.win32.version.*;
 
@@ -159,8 +160,12 @@ public class SwtShell extends SwtDecorations implements IShell {
         WNDCLASS lpWndClass = new WNDCLASS();
         OS.GetClassInfo(0, DialogClass, lpWndClass);
         DialogProc = lpWndClass.lpfnWndProc;
-        DPIZoomChangeRegistry.registerHandler(SwtShell::handleDPIChange, Shell.class);
     }
+
+    /**
+     * Cache for currently processed DPI change event to be able to cancel it if a new one is triggered
+     */
+    Event lastDpiChangeEvent;
 
     /**
      * Constructs a new instance of this class. This is equivalent
@@ -316,6 +321,8 @@ public class SwtShell extends SwtDecorations implements IShell {
         reskinWidget();
         createWidget();
         this.getApi().nativeZoom = DPIUtil.mapDPIToZoom(OS.GetDpiForWindow(this.getApi().handle));
+        registerDPIChangeListener();
+        /* Register the DPI change handler here since it does not call Widget constructor which registers the DPI change listener. */
     }
 
     /**
@@ -654,6 +661,18 @@ public class SwtShell extends SwtDecorations implements IShell {
         }
     }
 
+    @Override
+    Point getInitialLocation() {
+        long hwndParent = widgetParent();
+        // Set it to be near the top-left corner of the parent shell by default
+        if (hwndParent != 0) {
+            RECT rect = new RECT();
+            OS.GetWindowRect(hwndParent, rect);
+            return new Point(rect.left + 100, rect.top + 100);
+        }
+        return super.getInitialLocation();
+    }
+
     void createMenuItemToolTipHandle() {
         menuItemToolTipHandle = createToolTipHandle(0);
     }
@@ -959,7 +978,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         OS.GetWindowRect(getApi().handle, rect);
         int width = rect.right - rect.left;
         int height = rect.bottom - rect.top;
-        return new Rectangle(rect.left, rect.top, width, height);
+        return new Rectangle.WithMonitor(rect.left, rect.top, width, height, getMonitor());
     }
 
     ToolTip getCurrentToolTip() {
@@ -1066,7 +1085,7 @@ public class SwtShell extends SwtDecorations implements IShell {
             return super.getLocationInPixels();
         RECT rect = new RECT();
         OS.GetWindowRect(getApi().handle, rect);
-        return new Point(rect.left, rect.top);
+        return new Point.WithMonitor(rect.left, rect.top, getMonitor());
     }
 
     @Override
@@ -1092,7 +1111,7 @@ public class SwtShell extends SwtDecorations implements IShell {
      */
     public Point getMaximumSize() {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getMaximumSizeInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPointAsSize(getMaximumSizeInPixels(), getZoom());
     }
 
     Point getMaximumSizeInPixels() {
@@ -1133,7 +1152,7 @@ public class SwtShell extends SwtDecorations implements IShell {
      */
     public Point getMinimumSize() {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getMinimumSizeInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPointAsSize(getMinimumSizeInPixels(), getZoom());
     }
 
     Point getMinimumSizeInPixels() {
@@ -1622,13 +1641,13 @@ public class SwtShell extends SwtDecorations implements IShell {
     @Override
     public Rectangle getBounds() {
         checkWidget();
-        return ((SwtDisplay) getDisplay().getImpl()).translateFromDisplayCoordinates(getBoundsInPixels(), getZoom());
+        return ((SwtDisplay) getDisplay().getImpl()).translateFromDisplayCoordinates(getBoundsInPixels());
     }
 
     @Override
     public Point getLocation() {
         checkWidget();
-        return ((SwtDisplay) getDisplay().getImpl()).translateFromDisplayCoordinates(getLocationInPixels(), getZoom());
+        return ((SwtDisplay) getDisplay().getImpl()).translateFromDisplayCoordinates(getLocationInPixels());
     }
 
     @Override
@@ -1636,7 +1655,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         checkWidget();
-        Point locationInPixels = ((SwtDisplay) getDisplay().getImpl()).translateToDisplayCoordinates(location, getZoom());
+        Point locationInPixels = ((SwtDisplay) getDisplay().getImpl()).translateToDisplayCoordinates(location);
         setLocationInPixels(locationInPixels.x, locationInPixels.y);
     }
 
@@ -1650,12 +1669,12 @@ public class SwtShell extends SwtDecorations implements IShell {
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         checkWidget();
-        Rectangle boundsInPixels = ((SwtDisplay) getDisplay().getImpl()).translateToDisplayCoordinates(rect, getZoom());
+        Rectangle boundsInPixels = ((SwtDisplay) getDisplay().getImpl()).translateToDisplayCoordinates(rect);
         // The scaling of the width and height in case of a monitor change is handled by
         // the WM_DPICHANGED event processing. So to avoid duplicate scaling, we always
         // have to scale width and height with the zoom of the original monitor (still
         // returned by getZoom()) here.
-        setBoundsInPixels(boundsInPixels.x, boundsInPixels.y, Win32DPIUtils.pointToPixel(rect.width, getZoom()), Win32DPIUtils.pointToPixel(rect.height, getZoom()));
+        setBoundsInPixels(boundsInPixels.x, boundsInPixels.y, DPIUtil.pointToPixel(rect.width, getZoom()), DPIUtil.pointToPixel(rect.height, getZoom()));
     }
 
     @Override
@@ -1841,7 +1860,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     public void setMaximumSize(int width, int height) {
         checkWidget();
         int zoom = getZoom();
-        setMaximumSizeInPixels(Win32DPIUtils.pointToPixel(width, zoom), Win32DPIUtils.pointToPixel(height, zoom));
+        setMaximumSizeInPixels(DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom));
     }
 
     /**
@@ -1870,7 +1889,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        size = Win32DPIUtils.pointToPixel(size, getZoom());
+        size = Win32DPIUtils.pointToPixelAsSize(size, getZoom());
         setMaximumSizeInPixels(size.x, size.y);
     }
 
@@ -1920,7 +1939,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     public void setMinimumSize(int width, int height) {
         checkWidget();
         int zoom = getZoom();
-        setMinimumSizeInPixels(Win32DPIUtils.pointToPixel(width, zoom), Win32DPIUtils.pointToPixel(height, zoom));
+        setMinimumSizeInPixels(DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom));
     }
 
     void setMinimumSizeInPixels(int width, int height) {
@@ -1972,7 +1991,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        size = Win32DPIUtils.pointToPixel(size, getZoom());
+        size = Win32DPIUtils.pointToPixelAsSize(size, getZoom());
         setMinimumSizeInPixels(size.x, size.y);
     }
 
@@ -2527,6 +2546,57 @@ public class SwtShell extends SwtDecorations implements IShell {
     }
 
     @Override
+    LRESULT WM_DISPLAYCHANGE(long wParam, long lParam) {
+        if (getDisplay().isRescalingAtRuntime()) {
+            SwtDevice.win32_destroyUnusedHandles(getDisplay());
+            return LRESULT.ZERO;
+        }
+        return LRESULT.ONE;
+    }
+
+    @Override
+    LRESULT WM_DPICHANGED(long wParam, long lParam) {
+        // Map DPI to Zoom and compare
+        int newNativeZoom = DPIUtil.mapDPIToZoom(OS.HIWORD(wParam));
+        if (getDisplay().isRescalingAtRuntime()) {
+            SwtDevice.win32_destroyUnusedHandles(getDisplay());
+            RECT rect = new RECT();
+            COM.MoveMemory(rect, lParam, RECT.sizeof);
+            Rectangle newBoundsInPixels = new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
+            handleMonitorSpecificDpiChange(newNativeZoom, newBoundsInPixels);
+            return LRESULT.ZERO;
+        } else {
+            int newZoom = DPIUtil.getZoomForAutoscaleProperty(newNativeZoom);
+            int oldZoom = DPIUtil.getZoomForAutoscaleProperty(getApi().nativeZoom);
+            if (newZoom != oldZoom) {
+                // Throw the DPI change event if zoom value changes
+                Event event = new Event();
+                event.type = SWT.ZoomChanged;
+                event.widget = this.getApi();
+                event.detail = DPIUtil.getZoomForAutoscaleProperty(newNativeZoom);
+                event.doit = true;
+                notifyListeners(SWT.ZoomChanged, event);
+                return LRESULT.ZERO;
+            }
+        }
+        return LRESULT.ONE;
+    }
+
+    private void handleMonitorSpecificDpiChange(int newNativeZoom, Rectangle newBoundsInPixels) {
+        DPIUtil.setDeviceZoom(newNativeZoom);
+        // Do not process DPI change for child shells asynchronous to avoid relayouting when
+        // repositioning the child shell to a different monitor upon opening
+        boolean processDpiChangeAsynchronous = getParent() == null;
+        Event zoomChangedEvent = createZoomChangedEvent(newNativeZoom, processDpiChangeAsynchronous);
+        if (lastDpiChangeEvent != null) {
+            lastDpiChangeEvent.doit = false;
+        }
+        lastDpiChangeEvent = zoomChangedEvent;
+        notifyListeners(SWT.ZoomChanged, zoomChangedEvent);
+        this.setBoundsInPixels(newBoundsInPixels.x, newBoundsInPixels.y, newBoundsInPixels.width, newBoundsInPixels.height);
+    }
+
+    @Override
     LRESULT WM_ENTERIDLE(long wParam, long lParam) {
         LRESULT result = super.WM_ENTERIDLE(wParam, lParam);
         if (result != null)
@@ -2761,7 +2831,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                     RECT rect = new RECT();
                     OS.GetClientRect(getApi().handle, rect);
                     if (OS.PtInRect(rect, pt)) {
-                        OS.SetCursor(SwtCursor.win32_getHandle(cursor, DPIUtil.getZoomForAutoscaleProperty(getNativeZoom())));
+                        OS.SetCursor(SwtCursor.win32_getHandle(cursor, DPIUtil.getZoomForAutoscaleProperty(getShellZoom())));
                         switch(msg) {
                             case OS.WM_LBUTTONDOWN:
                             case OS.WM_RBUTTONDOWN:
@@ -2830,13 +2900,6 @@ public class SwtShell extends SwtDecorations implements IShell {
             OS.MoveMemory(lParam, lpwp, WINDOWPOS.sizeof);
         }
         return result;
-    }
-
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof Shell shell)) {
-            return;
-        }
-        shell.layout(null, SWT.DEFER | SWT.ALL | SWT.CHANGED);
     }
 
     public Shell getApi() {

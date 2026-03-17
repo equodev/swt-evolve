@@ -837,7 +837,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
         clientCursor = newCursor;
         if (newCursor != null) {
             if (inEvent)
-                OS.SetCursor(SwtCursor.win32_getHandle(clientCursor, DPIUtil.getZoomForAutoscaleProperty(getNativeZoom())));
+                OS.SetCursor(SwtCursor.win32_getHandle(clientCursor, DPIUtil.getZoomForAutoscaleProperty(parent != null ? ((SwtControl) parent.getImpl()).getShellZoom() : getNativeZoom())));
         }
     }
 
@@ -909,7 +909,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
                 break;
             case OS.WM_SETCURSOR:
                 if (clientCursor != null) {
-                    OS.SetCursor(SwtCursor.win32_getHandle(clientCursor, DPIUtil.getZoomForAutoscaleProperty(getNativeZoom())));
+                    OS.SetCursor(SwtCursor.win32_getHandle(clientCursor, DPIUtil.getZoomForAutoscaleProperty(parent != null ? ((SwtControl) parent.getImpl()).getShellZoom() : getNativeZoom())));
                     return 1;
                 }
                 if (resizeCursor != 0) {

@@ -1,4 +1,5 @@
 [versions]
+kotlin = "1.9.21"
 junit = "5.11.4"
 assertj = "3.25.3"
 equo-comm = "3.1.0.202405302201"

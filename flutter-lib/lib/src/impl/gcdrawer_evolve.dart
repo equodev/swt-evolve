@@ -408,6 +408,17 @@ class GCDrawer extends GCDrawerBase {
   }
 
   @override
+  void onDrawImageImageintintintint(VGCDrawImageImageintintintint o) {
+    if (o.image == null) return;
+    final opArgs = VGCDrawImageImageintintintintintintintint(
+      destX: o.destX, destY: o.destY, destWidth: o.destWidth, destHeight: o.destHeight,
+      srcX: 0, srcY: 0, srcWidth: -1, srcHeight: -1,
+    );
+    opArgs.image = o.image;
+    _processImageAsync(o.image!, opArgs, clipping);
+  }
+
+  @override
   void onDrawImageImageintintintintintintintint(
       VGCDrawImageImageintintintintintintintint o) {
     if (o.image == null) return;

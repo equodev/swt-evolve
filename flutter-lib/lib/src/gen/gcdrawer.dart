@@ -61,6 +61,12 @@ abstract class GCDrawerBase {
       (p) => onDrawImageImageintint(VGCDrawImageImageintint.fromJson(p)),
     );
     _op(
+      "drawImageImageintintintint",
+      (p) => onDrawImageImageintintintint(
+        VGCDrawImageImageintintintint.fromJson(p),
+      ),
+    );
+    _op(
       "drawImageImageintintintintintintintint",
       (p) => onDrawImageImageintintintintintintintint(
         VGCDrawImageImageintintintintintintintint.fromJson(p),
@@ -168,6 +174,7 @@ abstract class GCDrawerBase {
     "drawArcintintintintintint",
     "drawFocusintintintint",
     "drawImageImageintint",
+    "drawImageImageintintintint",
     "drawImageImageintintintintintintintint",
     "drawLineintintintint",
     "drawOvalintintintint",
@@ -206,6 +213,7 @@ abstract class GCDrawerBase {
   void onDrawArcintintintintintint(VGCDrawArcintintintintintint opArgs);
   void onDrawFocusintintintint(VGCDrawFocusintintintint opArgs);
   void onDrawImageImageintint(VGCDrawImageImageintint opArgs);
+  void onDrawImageImageintintintint(VGCDrawImageImageintintintint opArgs);
   void onDrawImageImageintintintintintintintint(
     VGCDrawImageImageintintintintintintintint opArgs,
   );

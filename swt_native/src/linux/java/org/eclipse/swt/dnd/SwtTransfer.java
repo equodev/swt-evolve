@@ -35,6 +35,21 @@ import org.eclipse.swt.internal.gtk.*;
  */
 public abstract class SwtTransfer implements ITransfer {
 
+    private static int nextId = 1;
+
+    /**
+     * Unique id of the transfer type. Used by GTK4 implementation to map data in
+     * the C/GTK side back to Java. See {@link ContentProviders} for more
+     * information.
+     */
+    /* package */
+    final int id;
+
+    public SwtTransfer(Transfer api) {
+        setApi(api);
+        id = nextId++;
+    }
+
     /**
      * Returns a list of the platform specific data types that can be converted using
      * this transfer agent.
@@ -134,6 +149,9 @@ public abstract class SwtTransfer implements ITransfer {
      * @return the unique identifier associated with this data type
      */
     public static int registerType(String formatName) {
+        if (GTK.GTK4) {
+            return ContentProviders.getInstance().registerType(formatName);
+        }
         if (formatName == null)
             return GDK.GDK_NONE;
         byte[] buffer = Converter.wcsToMbcs(formatName, true);
@@ -163,9 +181,5 @@ public abstract class SwtTransfer implements ITransfer {
         this.api = api;
         if (api != null)
             api.impl = this;
-    }
-
-    public SwtTransfer(Transfer api) {
-        setApi(api);
     }
 }

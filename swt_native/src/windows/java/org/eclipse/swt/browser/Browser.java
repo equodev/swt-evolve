@@ -17,6 +17,7 @@ package org.eclipse.swt.browser;
 
 import java.util.*;
 import org.eclipse.swt.*;
+import org.eclipse.swt.events.*;
 import org.eclipse.swt.program.*;
 import org.eclipse.swt.widgets.*;
 import dev.equo.swt.Config;
@@ -845,6 +846,11 @@ public class Browser extends Composite {
      * Sets whether javascript will be allowed to run in pages subsequently
      * viewed in the receiver.  Note that setting this value does not affect
      * the running of javascript in the current page.
+     * <p>
+     * Note: When using the {@link SWT#EDGE} browser on Windows disabling javascript
+     * has certain side effects, e.g. proper support for {@link MouseEvent} depends
+     * on it and, when disabled, a limited timer-based fallback implementation is
+     * used.
      *
      * @param enabled the receiver's new javascript enabled state
      *

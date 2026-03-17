@@ -114,8 +114,6 @@ public class DartTable extends DartComposite implements ITable {
 
     static final int GRID_WIDTH = 1;
 
-    static final int SORT_WIDTH = 10;
-
     static final int HEADER_MARGIN = 12;
 
     static final int HEADER_EXTRA = 3;
@@ -485,8 +483,8 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.computeSize(this, wHint, hHint, changed);
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
+        return Sizes.computeSize(this, hintInPoints.x, hintInPoints.y, changed);
     }
 
     @Override
@@ -976,11 +974,11 @@ public class DartTable extends DartComposite implements ITable {
      */
     public int getGridLineWidth() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getGridLineWidthInPixels(), getZoom());
+        return GRID_WIDTH;
     }
 
     int getGridLineWidthInPixels() {
-        return GRID_WIDTH;
+        return DPIUtil.pointToPixel(GRID_WIDTH, getZoom());
     }
 
     /**
@@ -2473,7 +2471,7 @@ public class DartTable extends DartComposite implements ITable {
 			*/
                 newWidth++;
             }
-            newWidth += INSET * 2 + VISTA_EXTRA;
+            newWidth += INSET * 2 + DPIUtil.pointToPixel(VISTA_EXTRA, getZoom());
         }
         return false;
     }
@@ -2986,26 +2984,31 @@ public class DartTable extends DartComposite implements ITable {
         return 0;
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof Table table)) {
-            return;
-        }
-        ((DartTable) table.getImpl()).settingItemHeight = true;
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        settingItemHeight = true;
         var scrollWidth = 0;
         // Request ScrollWidth
-        if (table.getColumns().length == 0) {
+        if (getColumns().length == 0) {
         }
         // if the item height was set at least once programmatically with CDDS_SUBITEMPREPAINT,
         // the item height of the table is not managed by the OS anymore e.g. when the zoom
         // on the monitor is changed, the height of the item will stay at the fixed size.
         // Resetting it will re-enable the default behavior again
-        ((DartTable) table.getImpl()).setItemHeight(-1);
-        if (table.getColumns().length == 0 && scrollWidth != 0) {
-            // Update scrollbar width if no columns are available
-            ((DartTable) table.getImpl()).setScrollWidth(scrollWidth);
+        setItemHeight(-1);
+        for (TableItem item : getItems()) {
+            item.notifyListeners(SWT.ZoomChanged, event);
         }
-        ((DartTable) table.getImpl()).fixCheckboxImageListColor(true);
-        ((DartTable) table.getImpl()).settingItemHeight = false;
+        for (TableColumn tableColumn : getColumns()) {
+            tableColumn.notifyListeners(SWT.ZoomChanged, event);
+        }
+        if (getColumns().length == 0 && scrollWidth != 0) {
+            // Update scrollbar width if no columns are available
+            setScrollWidth(scrollWidth);
+        }
+        fixCheckboxImageListColor(true);
+        settingItemHeight = false;
     }
 
     int[] columnOrder = new int[0];

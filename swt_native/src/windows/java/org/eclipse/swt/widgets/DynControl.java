@@ -17,6 +17,7 @@
 package org.eclipse.swt.widgets;
 
 import java.util.*;
+import java.util.concurrent.atomic.*;
 import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
@@ -529,6 +530,7 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
         System.out.println("+++ CONVERTING DynComposite from Control#computeSize(int, int, boolean) #" + getApi().hashCode());
         IControl newImpl = (IControl) convert();
         return newImpl.computeSize(wHint, hHint, changed);
+        //We should never return a size that is to small, RoundingMode.UP ensures we at worst case report
     }
 
     public Control computeTabRoot() {
@@ -818,6 +820,26 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
         if (Config.isDebug())
             System.out.println("++ Called Control#getCursor() on DynControl" + " #" + getApi().hashCode());
         return this.cursor;
+    }
+
+    @Override
+    public Object getData(String key) {
+        if (Config.isDebug())
+            System.out.println("++ Called Control#getData(String) on DynControl" + " #" + getApi().hashCode());
+        return keyedData.get(key);
+    }
+
+    @Override
+    public void setData(String key, Object value) {
+        if (Config.isDebug())
+            System.out.println("++ Called Control#setData(String, Object) on DynControl" + " #" + getApi().hashCode());
+        keyedDataSet = true;
+        keyedData.put(key, value);
+        if ("modelElement".equals(key)) {
+            if (Config.isDebug())
+                System.out.println("+++ CONVERTING DynComposite from setData due key=modelElement #" + getApi().hashCode());
+            convert();
+        }
     }
 
     /**
@@ -2846,6 +2868,13 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
         return true;
     }
 
+    @Override
+    public int getZoom() {
+        System.out.println("+++ CONVERTING DynComposite from Control#getZoom() #" + getApi().hashCode());
+        IControl newImpl = (IControl) convert();
+        return newImpl.getZoom();
+    }
+
     public Composite _parent() {
         return parent;
     }
@@ -2902,6 +2931,10 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
         return backgroundAlpha;
     }
 
+    public boolean _autoScaleDisabled() {
+        return autoScaleDisabled;
+    }
+
     Color _background;
 
     boolean backgroundSet;
@@ -2921,6 +2954,8 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
     Cursor cursor;
 
     boolean cursorSet;
+
+    boolean dataSet;
 
     boolean dragDetect;
 
@@ -2998,6 +3033,8 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
 
     int backgroundAlpha;
 
+    boolean autoScaleDisabled;
+
     public Control getApi() {
         return (Control) api;
     }
@@ -3014,6 +3051,8 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
             newImpl.setCapture(capture);
         if (cursorSet)
             newImpl.setCursor(getCursor());
+        if (dataSet)
+            newImpl.setData(getData());
         if (dragDetectSet)
             newImpl.setDragDetect(getDragDetect());
         if (enabledSet)

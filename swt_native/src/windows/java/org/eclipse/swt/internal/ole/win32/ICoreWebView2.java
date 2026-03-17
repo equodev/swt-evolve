@@ -81,8 +81,8 @@ public class ICoreWebView2 extends IUnknown {
         return COM.VtblCall(32, address, webMessageAsJson);
     }
 
-    public int add_WebMessageReceived(long handler, long[] token) {
-        return COM.VtblCall(34, address, handler, token);
+    public int add_WebMessageReceived(IUnknown eventHandler, long[] token) {
+        return COM.VtblCall(34, address, eventHandler.address, token);
     }
 
     public int get_CanGoBack(int[] canGoBack) {

@@ -2058,7 +2058,7 @@ class IE extends WebBrowser {
         int screenY = pVarResult.getInt();
         pVarResult.dispose();
         // To Points
-        Point position = Win32DPIUtils.pixelToPoint(new Point(screenX, screenY), DPIUtil.getDeviceZoom());
+        Point position = Win32DPIUtils.pixelToPointAsLocation(new Point(screenX, screenY), DPIUtil.getDeviceZoom());
         position = browser.getDisplay().map(null, browser, position);
         newEvent.x = position.x;
         newEvent.y = position.y;

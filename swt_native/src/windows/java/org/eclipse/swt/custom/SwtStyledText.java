@@ -20,7 +20,6 @@
 package org.eclipse.swt.custom;
 
 import java.util.*;
-import java.util.function.*;
 import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
@@ -942,6 +941,17 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         setData("DEFAULT_DROP_TARGET_EFFECT", new StyledTextDropTargetEffect(this.getApi()));
         if (IS_MAC)
             setData(STYLEDTEXT_KEY);
+        // Add listener asynchronously in order to delay execution. This works because
+        // other DPI changes are also executed asynchronously but if we choose to revert
+        // back to synchronous execution of the listeners then this async call may be
+        // executed too late and zoom change events may happen too early and not get
+        // propagated.
+        // See https://github.com/eclipse-platform/eclipse.platform.swt/issues/2733
+        getDisplay().asyncExec(() -> {
+            if (!isDisposed()) {
+                addListener(SWT.ZoomChanged, this::handleDPIChange);
+            }
+        });
     }
 
     /**
@@ -4624,11 +4634,20 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
      */
     int getPartialBottomIndex() {
         if (isFixedLineHeight()) {
-            int lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight();
-            int partialLineCount = Compatibility.ceil(clientAreaHeight, lineHeight);
-            return Math.max(0, Math.min(content.getLineCount(), topIndex + partialLineCount) - 1);
+            return getPartialBottomIndexFixedLineHeight();
         }
         return getLineIndex(clientAreaHeight - bottomMargin);
+    }
+
+    /**
+     * Returns the index of the last partially visible line assuming a fixed line height.
+     *
+     * @return index of the last partially visible line.
+     */
+    private int getPartialBottomIndexFixedLineHeight() {
+        int lineHeight = ((SwtStyledTextRenderer) renderer.getImpl()).getLineHeight();
+        int partialLineCount = Compatibility.ceil(clientAreaHeight, lineHeight);
+        return Math.max(0, Math.min(content.getLineCount(), topIndex + partialLineCount) - 1);
     }
 
     /**
@@ -9938,7 +9957,8 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         }
         int initialTopPixel = getTopPixel();
         int initialTopIndex = getPartialTopIndex();
-        int initialBottomIndex = getPartialBottomIndex();
+        // use getPartialBottomIndexFixedLineHeight to include more additional lines to fix scrolling issue eclipse-platform/eclipse.platform.swt#2512
+        int initialBottomIndex = getPartialBottomIndexFixedLineHeight();
         int verticalIndentDiff = verticalLineIndent - previousVerticalIndent;
         ((SwtStyledTextRenderer) renderer.getImpl()).setLineVerticalIndent(lineIndex, verticalLineIndent);
         this.hasVerticalIndent = verticalLineIndent != 0 || renderer.hasVerticalIndent();
@@ -11574,32 +11594,29 @@ public class SwtStyledText extends SwtCanvas implements IStyledText {
         setCaretLocations();
     }
 
-    /**
-     * The method accepts a StyledText and a callback which takes
-     * all the carets of the StyledText as the argument and executes it.
-     * The caret is refreshed after the execution of the callback.
-     *
-     * @param styledText the StyledText to get the carets from
-     * @param caretUpdater the callback which works with the carets
-     *
-     * @noreference This method is not intended to be referenced by clients.
-     */
-    public static void updateAndRefreshCarets(StyledText styledText, Consumer<Caret> caretUpdater) {
-        Set<Caret> caretSet = new HashSet<>();
-        caretSet.add(styledText.getCaret());
-        caretSet.add(styledText.getImpl()._defaultCaret());
-        if (styledText.getImpl()._carets() != null) {
-            for (Caret caret : styledText.getImpl()._carets()) {
+    private void handleDPIChange(Event event) {
+        updateCaretVisibility();
+        setCaretLocations();
+        Set<Caret> caretSet = new LinkedHashSet<>();
+        caretSet.add(defaultCaret);
+        caretSet.add(getCaret());
+        if (carets != null) {
+            for (Caret caret : carets) {
                 caretSet.add(caret);
             }
         }
-        caretSet.stream().filter(Objects::nonNull).forEach(caretUpdater);
-        if (styledText.getImpl() instanceof SwtStyledText) {
-            ((SwtStyledText) styledText.getImpl()).updateCaretVisibility();
+        caretSet.stream().filter(Objects::nonNull).forEach(caretToRefresh -> {
+            caretToRefresh.notifyListeners(SWT.ZoomChanged, event);
+        });
+    }
+
+    @Override
+    public Object getData(String key) {
+        if ("StyledText.htmlText".equals(key)) {
+            HTMLWriter htmlWriter = new HTMLWriter(this.getApi(), 0, content.getCharCount(), content);
+            return getPlatformDelimitedText(htmlWriter);
         }
-        if (styledText.getImpl() instanceof SwtStyledText) {
-            ((SwtStyledText) styledText.getImpl()).setCaretLocations();
-        }
+        return super.getData(key);
     }
 
     public Color _selectionBackground() {

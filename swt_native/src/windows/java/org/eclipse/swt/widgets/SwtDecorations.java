@@ -17,7 +17,6 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
 
 /**
@@ -124,10 +123,6 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
     int oldWidth = OS.CW_USEDEFAULT, oldHeight = OS.CW_USEDEFAULT;
 
     RECT maxRect = new RECT();
-
-    static {
-        DPIZoomChangeRegistry.registerHandler(SwtDecorations::handleDPIChange, Decorations.class);
-    }
 
     /**
      * Prevents uninitialized instances from being created outside the package.
@@ -957,11 +952,11 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
         if (smallIcon != null) {
             switch(smallIcon.type) {
                 case SWT.BITMAP:
-                    smallImage = SwtDisplay.createIcon(smallIcon, getZoom());
-                    hSmallIcon = SwtImage.win32_getHandle(smallImage, getZoom());
+                    smallImage = SwtDisplay.createIcon(smallIcon, 100);
+                    hSmallIcon = SwtImage.win32_getHandle(smallImage, 100);
                     break;
                 case SWT.ICON:
-                    hSmallIcon = SwtImage.win32_getHandle(smallIcon, getZoom());
+                    hSmallIcon = SwtImage.win32_getHandle(smallIcon, 100);
                     break;
             }
         }
@@ -969,11 +964,11 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
         if (largeIcon != null) {
             switch(largeIcon.type) {
                 case SWT.BITMAP:
-                    largeImage = SwtDisplay.createIcon(largeIcon, getZoom());
-                    hLargeIcon = SwtImage.win32_getHandle(largeImage, getZoom());
+                    largeImage = SwtDisplay.createIcon(largeIcon, 100);
+                    hLargeIcon = SwtImage.win32_getHandle(largeImage, 100);
                     break;
                 case SWT.ICON:
-                    hLargeIcon = SwtImage.win32_getHandle(largeIcon, getZoom());
+                    hLargeIcon = SwtImage.win32_getHandle(largeIcon, 100);
                     break;
             }
         }
@@ -1012,11 +1007,22 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
     }
 
     private static boolean isCloserThan(ImageData dataToTest, ImageData referenceData, int targetWidth, int targetDepth) {
-        int diffWidthToTest = Math.abs(dataToTest.width - targetWidth);
-        int diffReferenceWidth = Math.abs(referenceData.width - targetWidth);
-        // The closer the width the better
-        if (diffWidthToTest != diffReferenceWidth)
-            return diffWidthToTest < diffReferenceWidth;
+        // image is considered best-sized if width is nearest to target
+        // but scale down is better than scale up, thus count difference to target width
+        // of scaled-up image as 1.5 times
+        int widthDifferenceOfTestData = dataToTest.width - targetWidth;
+        if (widthDifferenceOfTestData < 0) {
+            widthDifferenceOfTestData *= -1.5;
+        }
+        int widthDifferenceOfReferenceData = referenceData.width - targetWidth;
+        if (widthDifferenceOfReferenceData < 0) {
+            widthDifferenceOfReferenceData *= -1.5;
+        }
+        if (widthDifferenceOfTestData < widthDifferenceOfReferenceData) {
+            return true;
+        } else if (widthDifferenceOfTestData > widthDifferenceOfReferenceData) {
+            return false;
+        }
         int transparencyToTest = dataToTest.getTransparencyType();
         int referenceTransparency = referenceData.getTransparencyType();
         // If they have the same transparency then the bigger the pixel depth (without
@@ -1813,22 +1819,26 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
         return result;
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof Decorations decorations)) {
-            return;
-        }
-        Image image = decorations.getImage();
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        Image image = getImage();
         if (image != null) {
-            decorations.setImage(image);
+            setImage(image);
         }
-        Image[] images = decorations.getImages();
+        Image[] images = getImages();
         if (images != null && images.length > 0) {
-            decorations.setImages(images);
+            setImages(images);
         }
-        DPIZoomChangeRegistry.applyChange(decorations.getMenuBar(), newZoom, scalingFactor);
-        if (((SwtDecorations) decorations.getImpl()).menus != null) {
-            for (Menu menu : ((SwtDecorations) decorations.getImpl()).menus) {
-                DPIZoomChangeRegistry.applyChange(menu, newZoom, scalingFactor);
+        Menu menuBar = getMenuBar();
+        if (menuBar != null) {
+            menuBar.notifyListeners(SWT.ZoomChanged, event);
+        }
+        if (menus != null) {
+            for (Menu menu : menus) {
+                if (menu != null) {
+                    menu.notifyListeners(SWT.ZoomChanged, event);
+                }
             }
         }
     }

@@ -60,6 +60,9 @@ public class OleClientSite extends Composite {
 
     private COMObject iOleDocumentSite;
 
+    /**
+     * @noreference This field is not intended to be referenced by clients.
+     */
     protected GUID appClsid;
 
     private GUID objClsid;
@@ -70,19 +73,40 @@ public class OleClientSite extends Composite {
     protected OleFrame frame;
 
     // Access to the embedded/linked Ole Object
+    /**
+     * @noreference This field is not intended to be referenced by clients.
+     */
     protected IUnknown objIUnknown;
 
+    /**
+     * @noreference This field is not intended to be referenced by clients.
+     */
     protected IOleObject objIOleObject;
 
+    /**
+     * @noreference This field is not intended to be referenced by clients.
+     */
     protected IViewObject2 objIViewObject2;
 
+    /**
+     * @noreference This field is not intended to be referenced by clients.
+     */
     protected IOleInPlaceObject objIOleInPlaceObject;
 
+    /**
+     * @noreference This field is not intended to be referenced by clients.
+     */
     protected IOleCommandTarget objIOleCommandTarget;
 
+    /**
+     * @noreference This field is not intended to be referenced by clients.
+     */
     protected IOleDocumentView objDocumentView;
 
     // Related storage information
+    /**
+     * @noreference This field is not intended to be referenced by clients.
+     */
     // IStorage interface of the receiver
     protected IStorage tempStorage;
 
@@ -719,6 +743,10 @@ public class OleClientSite extends Composite {
         };
     }
 
+    /**
+     * @noreference This method is not intended to be referenced by clients.
+     * @nooverride This method is not intended to be re-implemented or extended by clients.
+     */
     protected IStorage createTempStorage() {
         long[] tempStorage = new long[1];
         int grfMode = COM.STGM_READWRITE | COM.STGM_SHARE_EXCLUSIVE | COM.STGM_DELETEONRELEASE;
@@ -841,6 +869,10 @@ public class OleClientSite extends Composite {
         return new IDispatch(ppvObject[0]);
     }
 
+    /**
+     * @noreference This method is not intended to be referenced by clients.
+     * @nooverride This method is not intended to be re-implemented or extended by clients.
+     */
     protected GUID getClassID(String clientName) {
         // create a GUID struct to hold the result
         GUID guid = new GUID();
@@ -1163,7 +1195,7 @@ public class OleClientSite extends Composite {
 
     private int OnPosRectChange(long lprcPosRect) {
         // To Pixels
-        Point size = Win32DPIUtils.pointToPixel(getSize(), DPIUtil.getZoomForAutoscaleProperty(nativeZoom));
+        Point size = Win32DPIUtils.pointToPixelAsSize(getSize(), DPIUtil.getZoomForAutoscaleProperty(nativeZoom));
         setExtent(size.x, size.y);
         return COM.S_OK;
     }

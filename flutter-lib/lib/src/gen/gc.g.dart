@@ -183,6 +183,29 @@ Map<String, dynamic> _$VGCDrawImageImageintintToJson(
   'y': instance.y,
 };
 
+VGCDrawImageImageintintintint _$VGCDrawImageImageintintintintFromJson(
+  Map<String, dynamic> json,
+) =>
+    VGCDrawImageImageintintintint(
+        destX: (json['destX'] as num?)?.toInt() ?? 0,
+        destY: (json['destY'] as num?)?.toInt() ?? 0,
+        destWidth: (json['destWidth'] as num?)?.toInt() ?? 0,
+        destHeight: (json['destHeight'] as num?)?.toInt() ?? 0,
+      )
+      ..image = json['image'] == null
+          ? null
+          : VImage.fromJson(json['image'] as Map<String, dynamic>);
+
+Map<String, dynamic> _$VGCDrawImageImageintintintintToJson(
+  VGCDrawImageImageintintintint instance,
+) => <String, dynamic>{
+  'image': instance.image,
+  'destX': instance.destX,
+  'destY': instance.destY,
+  'destWidth': instance.destWidth,
+  'destHeight': instance.destHeight,
+};
+
 VGCDrawImageImageintintintintintintintint
 _$VGCDrawImageImageintintintintintintintintFromJson(
   Map<String, dynamic> json,

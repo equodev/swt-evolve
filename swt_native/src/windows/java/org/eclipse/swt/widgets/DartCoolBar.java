@@ -137,8 +137,8 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.computeSize(this, wHint, hHint, changed);
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
+        return Sizes.computeSize(this, hintInPoints.x, hintInPoints.y, changed);
     }
 
     @Override
@@ -244,6 +244,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
         }
         if ((getApi().style & SWT.FLAT) == 0) {
             if (!isLastItemOfRow(index)) {
+                margin += DPIUtil.pointToPixel(SEPARATOR_WIDTH, getZoom());
             }
         }
         return margin;
@@ -676,17 +677,16 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
         return 0;
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof CoolBar coolBar)) {
-            return;
-        }
-        Point[] sizes = ((DartCoolBar) coolBar.getImpl()).getItemSizesInPixels();
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        Point[] sizes = getItemSizesInPixels();
         Point[] scaledSizes = new Point[sizes.length];
         Point[] prefSizes = new Point[sizes.length];
         Point[] minSizes = new Point[sizes.length];
-        int[] indices = coolBar.getWrapIndices();
-        int[] itemOrder = coolBar.getItemOrder();
-        CoolItem[] items = coolBar.getItems();
+        int[] indices = getWrapIndices();
+        int[] itemOrder = getItemOrder();
+        CoolItem[] items = getItems();
         for (int index = 0; index < sizes.length; index++) {
             minSizes[index] = ((DartCoolItem) items[index].getImpl()).getMinimumSizeInPixels();
             prefSizes[index] = ((DartCoolItem) items[index].getImpl()).getPreferredSizeInPixels();
@@ -695,12 +695,13 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
             CoolItem item = items[index];
             Control control = ((DartCoolItem) item.getImpl()).control;
             if (control != null) {
+                control.notifyListeners(SWT.ZoomChanged, event);
                 item.setControl(control);
             }
-            Point preferredControlSize = ((DartControl) item.getControl().getImpl()).computeSizeInPixels(SWT.DEFAULT, SWT.DEFAULT, true);
+            Point preferredControlSize = ((DartControl) item.getControl().getImpl()).computeSizeInPixels(new Point(SWT.DEFAULT, SWT.DEFAULT), getZoom(), true);
             int controlWidth = preferredControlSize.x;
             int controlHeight = preferredControlSize.y;
-            if (((coolBar.style & SWT.VERTICAL) != 0)) {
+            if (((getApi().style & SWT.VERTICAL) != 0)) {
                 scaledSizes[index] = new Point(Math.round((sizes[index].x) * scalingFactor), Math.max(Math.round((sizes[index].y) * scalingFactor), 0));
                 ((DartCoolItem) item.getImpl()).setMinimumSizeInPixels(Math.round(minSizes[index].x * scalingFactor), Math.max(Math.round((minSizes[index].y) * scalingFactor), controlWidth));
                 ((DartCoolItem) item.getImpl()).setPreferredSizeInPixels(Math.round(prefSizes[index].x * scalingFactor), Math.max(Math.round((prefSizes[index].y) * scalingFactor), controlWidth));
@@ -710,8 +711,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
                 ((DartCoolItem) item.getImpl()).setPreferredSizeInPixels(Math.round(prefSizes[index].x * scalingFactor), controlHeight);
             }
         }
-        ((DartCoolBar) coolBar.getImpl()).setItemLayoutInPixels(itemOrder, indices, scaledSizes);
-        coolBar.getImpl().updateLayout(true);
+        setItemLayoutInPixels(itemOrder, indices, scaledSizes);
     }
 
     int[] itemOrder = new int[0];

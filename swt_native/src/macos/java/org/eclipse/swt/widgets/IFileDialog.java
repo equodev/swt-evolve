@@ -145,7 +145,7 @@ public interface IFileDialog extends IDialog {
      * @see #setFilterNames to specify the user-friendly
      * names corresponding to the extensions
      */
-    void setFilterExtensions(String[] extensions);
+    void setFilterExtensions(String... extensions);
 
     /**
      * Set the 0-based index of the file extension filter
@@ -179,7 +179,7 @@ public interface IFileDialog extends IDialog {
      *
      * @see #setFilterExtensions
      */
-    void setFilterNames(String[] names);
+    void setFilterNames(String... names);
 
     /**
      * Sets the directory path that the dialog will use

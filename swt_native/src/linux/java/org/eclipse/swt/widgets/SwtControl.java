@@ -3531,6 +3531,10 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                     if (showMenu((int) x, (int) y)) {
                         result = GTK4.GTK_EVENT_SEQUENCE_CLAIMED;
                     }
+                } else if ((getApi().state & MENU) == 0) {
+                    if (showMenu((int) x, (int) y)) {
+                        result = GTK4.GTK_EVENT_SEQUENCE_CLAIMED;
+                    }
                 }
             }
         } else if (n_press >= 2) {
@@ -3806,7 +3810,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     @Override
-    long gtk_event_after(long widget, long gdkEvent) {
+    long gtk3_event_after(long widget, long gdkEvent) {
         int eventType = GDK.gdk_event_get_event_type(gdkEvent);
         eventType = fixGdkEventTypeValues(eventType);
         switch(eventType) {
@@ -4092,7 +4096,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     @Override
-    long gtk_key_press_event(long widget, long event) {
+    long gtk3_key_press_event(long widget, long event) {
         int[] eventKeyval = new int[1];
         GDK.gdk_event_get_keyval(event, eventKeyval);
         if (!hasFocus()) {
@@ -4123,7 +4127,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         // widget could be disposed at this point
         if (isDisposed())
             return 0;
-        return super.gtk_key_press_event(widget, event);
+        return super.gtk3_key_press_event(widget, event);
     }
 
     @Override
@@ -4138,7 +4142,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     @Override
-    long gtk_key_release_event(long widget, long event) {
+    long gtk3_key_release_event(long widget, long event) {
         if (!hasFocus())
             return 0;
         long imHandle = imHandle();
@@ -4146,7 +4150,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             if (GTK3.gtk_im_context_filter_keypress(imHandle, event))
                 return 1;
         }
-        return super.gtk_key_release_event(widget, event);
+        return super.gtk3_key_release_event(widget, event);
     }
 
     @Override
@@ -4244,7 +4248,6 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 
     @Override
     long gtk_motion_notify_event(long widget, long event) {
-        int result;
         double[] eventX = new double[1];
         double[] eventY = new double[1];
         GDK.gdk_event_get_coords(event, eventX, eventY);
@@ -4259,11 +4262,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 boolean[] consume = new boolean[1];
                 if (dragDetect((int) eventX[0], (int) eventY[0], true, true, consume)) {
                     dragging = true;
-                    if (consume[0])
-                        result = 1;
                     if (isDisposed())
                         return 1;
-                } else {
                 }
             }
             if (dragging) {
@@ -4327,8 +4327,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 sendMouseEvent(SWT.MouseEnter, 0, time, x, y, isHint, state[0]);
             }
         }
-        result = sendMouseEvent(SWT.MouseMove, 0, time, x, y, isHint, state[0]) ? 0 : 1;
-        return result;
+        return sendMouseEvent(SWT.MouseMove, 0, time, x, y, isHint, state[0]) ? 0 : 1;
     }
 
     @Override
@@ -4801,24 +4800,11 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     void redrawWidget(int x, int y, int width, int height, boolean redrawAll, boolean all, boolean trim) {
         if (!GTK.gtk_widget_get_realized(getApi().handle))
             return;
-        GdkRectangle rect = new GdkRectangle();
         if (GTK.GTK4) {
-            long surface = paintSurface();
-            if (redrawAll) {
-                int[] w = new int[1], h = new int[1];
-                gdk_surface_get_size(surface, w, h);
-                rect.width = w[0];
-                rect.height = h[0];
-            } else {
-                rect.x = x;
-                rect.y = y;
-                rect.width = Math.max(0, width);
-                rect.height = Math.max(0, height);
-            }
-            /* TODO: GTK4 no ability to invalidate surfaces, may need to keep track of
-		 * invalid regions ourselves and do gdk_surface_queue_expose. Will need a different way to force redraws
-		 * New "render" signal? */
+            // GTK4 has no ability to invalidate surfaces or regions/rectangle, mark the whole widget for redraw
+            GTK.gtk_widget_queue_draw(getApi().handle);
         } else {
+            GdkRectangle rect = new GdkRectangle();
             long window = paintWindow();
             if (redrawAll) {
                 int[] w = new int[1], h = new int[1];
@@ -4926,16 +4912,17 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     @Override
     void destroyWidget() {
         if (GTK.GTK4) {
-            // Remove widget from hierarchy  by removing it from parent container
-            if (parent != null) {
-                long currHandle = topHandle();
-                if (GTK.GTK_IS_WINDOW(currHandle)) {
-                    GTK4.gtk_window_destroy(currHandle);
-                } else {
-                    if (fixedHandle != 0) {
-                        OS.swt_fixed_remove(parent.getImpl().parentingHandle(), fixedHandle);
-                    }
+            long currHandle = topHandle();
+            if (GTK.GTK_IS_WINDOW(currHandle)) {
+                // GTK windows don't have a parent, so destroy it now
+                GTK4.gtk_window_destroy(currHandle);
+            } else if (parent != null) {
+                if (fixedHandle != 0) {
+                    // Remove widget from hierarchy by removing it from parent container
+                    OS.swt_fixed_remove(parent.getImpl().parentingHandle(), fixedHandle);
                 }
+            } else {
+                assert false : "widgets must have a parent or be a GtkWindow";
             }
             releaseHandle();
         } else {
@@ -7000,9 +6987,10 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             return;
         if (!GTK.gtk_widget_get_realized(getApi().handle))
             return;
-        long window = paintWindow();
-        if (flush)
+        if (flush && OS.isX11()) {
+            long window = paintWindow();
             ((SwtDisplay) display.getImpl()).flushExposes(window, all);
+        }
     }
 
     public void updateBackgroundMode() {

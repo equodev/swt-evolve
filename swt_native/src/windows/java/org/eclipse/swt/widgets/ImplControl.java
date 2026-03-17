@@ -1,6 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import java.util.*;
+import java.util.concurrent.atomic.*;
 import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
@@ -38,6 +39,8 @@ public interface ImplControl extends ImplWidget {
     int _background();
 
     int _backgroundAlpha();
+
+    boolean _autoScaleDisabled();
 
     Control computeTabRoot();
 
@@ -90,4 +93,6 @@ public interface ImplControl extends ImplWidget {
     void updateBackgroundMode();
 
     void updateLayout(boolean resize, boolean all);
+
+    int getZoom();
 }

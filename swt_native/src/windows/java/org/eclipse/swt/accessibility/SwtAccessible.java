@@ -149,7 +149,7 @@ public class SwtAccessible implements IIAccessible {
         setApi(api);
         this.parent = checkNull(parent);
         this.control = parent.getImpl()._control();
-        ((SwtAccessible) parent.getImpl()).children.add(this.getApi());
+        parent.getImpl()._children().add(this.getApi());
         AddRef();
     }
 
@@ -1402,7 +1402,7 @@ public class SwtAccessible implements IIAccessible {
         if (parent == null)
             return;
         Release();
-        ((SwtAccessible) parent.getImpl()).children.remove(this.getApi());
+        parent.getImpl()._children().remove(this.getApi());
         parent = null;
     }
 

@@ -762,9 +762,9 @@ public class DartToolItem extends DartItem implements IToolItem {
             } else {
                 _setImage(disabledImage);
             }
-        }
-        if (enabled && image != null)
+        } else {
             _setImage(image);
+        }
     }
 
     boolean setFocus() {
@@ -1067,8 +1067,6 @@ public class DartToolItem extends DartItem implements IToolItem {
             return;
         if (provider == 0) {
             if ((getApi().style & SWT.DROP_DOWN) != 0) {
-                for (int i = 0; i < 2; i++) {
-                }
             } else {
             }
         }

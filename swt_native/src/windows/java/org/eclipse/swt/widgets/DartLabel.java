@@ -116,8 +116,8 @@ public class DartLabel extends DartControl implements ILabel {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.computeSize(this, wHint, hHint, changed);
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
+        return Sizes.computeSize(this, hintInPoints.x, hintInPoints.y, changed);
     }
 
     @Override
@@ -388,13 +388,12 @@ public class DartLabel extends DartControl implements ILabel {
         return 0;
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof Label label)) {
-            return;
-        }
-        Image image = label.getImage();
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        Image image = getImage();
         if (image != null) {
-            label.setImage(image);
+            setImage(image);
         }
     }
 
