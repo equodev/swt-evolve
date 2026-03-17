@@ -25,15 +25,6 @@ import org.eclipse.swt.graphics.*;
 /**
  * This class hold common constants and utility functions w.r.t. to SWT high DPI
  * functionality.
- * <p>
- * The {@code autoScaleUp(..)} methods convert from API coordinates (in
- * SWT points) to internal high DPI coordinates (in pixels) that interface with
- * native widgets.
- * </p>
- * <p>
- * The {@code autoScaleDown(..)} convert from high DPI pixels to API coordinates
- * (in SWT points).
- * </p>
  *
  * @since 3.105
  */
@@ -64,6 +55,20 @@ public class DPIUtil {
     private static AutoScaleMethod autoScaleMethod;
 
     private static String autoScaleValue;
+
+    private static final Set<String> ALLOWED_AUTOSCALE_VALUES_FOR_UPDATE_ON_RUNTIME = Set.of("quarter", "exact", "false");
+
+    /**
+     * System property to enable to scale the application on runtime
+     * when a DPI change is detected.
+     * <ul>
+     * <li>"true": the application is scaled on DPI changes</li>
+     * <li>"false": the application will remain in its initial scaling</li>
+     * </ul>
+     * <b>Important:</b> This flag is only parsed and used on Win32. Setting it to
+     * true on GTK or cocoa will be ignored.
+     */
+    static final String SWT_AUTOSCALE_UPDATE_ON_RUNTIME = "swt.autoScale.updateOnRuntime";
 
     /**
      * System property that controls the autoScale functionality.
@@ -116,6 +121,50 @@ public class DPIUtil {
         autoScaleValue = autoScaleValueArg;
     }
 
+    /**
+     * Returns {@code true} only if the current setup is compatible
+     * with monitor-specific scaling. Returns {@code false} if:
+     * <ul>
+     *   <li>Not running on Windows</li>
+     *   <li>The current auto-scale mode is incompatible</li>
+     * </ul>
+     *
+     * The supported auto-scale modes are "quarter" and "exact" or explicit zoom values given
+     * by the value itself or "false". Every other value will be treated as
+     * "integer"/"integer200" and is thus not supported.
+     *
+     * <p>
+     * <b>Background information:</b>
+     * Monitor-specific scaling on Windows only supports auto-scale modes in which
+     * all elements (font, images, control bounds etc.) are scaled equally or almost
+     * equally. The previously default mode "integer"/"integer200", which rounded
+     * the scale factor for everything but fonts to multiples of 100, is complex and
+     * difficult to realize with monitor-specific rescaling of UI elements. Since a
+     * uniform scale factor for everything should perspectively be used anyway,
+     * there will be no support for complex auto-scale modes for monitor-specific
+     * scaling.
+     */
+    public static boolean isSetupCompatibleToMonitorSpecificScaling() {
+        if (DPIUtil.getAutoScaleValue() == null) {
+            return false;
+        }
+        if (ALLOWED_AUTOSCALE_VALUES_FOR_UPDATE_ON_RUNTIME.contains(DPIUtil.getAutoScaleValue().toLowerCase())) {
+            return true;
+        }
+        try {
+            Integer.parseInt(DPIUtil.getAutoScaleValue());
+            return true;
+        } catch (NumberFormatException e) {
+            // unsupported value, use default
+        }
+        return false;
+    }
+
+    public static boolean isMonitorSpecificScalingActive() {
+        boolean updateOnRuntimeValue = Boolean.getBoolean(DPIUtil.SWT_AUTOSCALE_UPDATE_ON_RUNTIME);
+        return updateOnRuntimeValue;
+    }
+
     public static int pixelToPoint(int size, int zoom) {
         if (zoom == 100 || size == SWT.DEFAULT)
             return size;
@@ -150,6 +199,16 @@ public class DPIUtil {
         int height = imageData.height;
         int scaledWidth = Math.round(width * scaleFactor);
         int scaledHeight = Math.round(height * scaleFactor);
+        return scaleImage(device, imageData, Image::drawAtSize, scaledWidth, scaledHeight);
+    }
+
+    @FunctionalInterface
+    private interface ImageDrawFunction {
+
+        void draw(GC gc, ImageData imageData, int width, int height);
+    }
+
+    private static ImageData scaleImage(Device device, final ImageData imageData, ImageDrawFunction drawFunction, int scaledWidth, int scaledHeight) {
         int defaultZoomLevel = 100;
         boolean useSmoothScaling = isSmoothScalingEnabled() && imageData.getTransparencyType() != SWT.TRANSPARENCY_MASK;
         if (useSmoothScaling) {
@@ -158,7 +217,7 @@ public class DPIUtil {
                 @Override
                 public void drawOn(GC gc, int imageWidth, int imageHeight) {
                     gc.setAntialias(SWT.ON);
-                    Image.drawScaled(gc, imageData, width, height, scaleFactor);
+                    drawFunction.draw(gc, imageData, imageWidth, imageHeight);
                 }
 
                 @Override
@@ -173,6 +232,10 @@ public class DPIUtil {
         } else {
             return imageData.scaledTo(scaledWidth, scaledHeight);
         }
+    }
+
+    public static ImageData autoScaleImageData(Device device, final ImageData imageData, int targetWidth, int targetHeight) {
+        return scaleImage(device, imageData, Image::drawAtSize, targetWidth, targetHeight);
     }
 
     public static boolean isSmoothScalingEnabled() {
@@ -239,6 +302,13 @@ public class DPIUtil {
             System.err.println(String.format("***WARNING: ImageData should be linearly scaled across zooms but size is (%d, %d) at 100%% and (%d, %d) at 200%%.", baseImageData.width, baseImageData.height, scaledImageData.width, scaledImageData.height));
             new Error().printStackTrace(System.err);
         }
+    }
+
+    public static int pointToPixel(int size, int zoom) {
+        if (zoom == 100 || size == SWT.DEFAULT)
+            return size;
+        float scaleFactor = getScalingFactor(zoom);
+        return Math.round(size * scaleFactor);
     }
 
     /**

@@ -63,10 +63,6 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
 
     long hFont;
 
-    static {
-        DPIZoomChangeRegistry.registerHandler(SwtExpandBar::handleDPIChange, ExpandBar.class);
-    }
-
     /**
      * Constructs a new instance of this class given its parent
      * and a style value describing its behavior and appearance.
@@ -141,9 +137,10 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
+        Point hintInPixels = Win32DPIUtils.pointToPixelAsSufficientlyLargeSize(hintInPoints, zoom);
         int height = 0, width = 0;
-        if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
+        if (hintInPoints.x == SWT.DEFAULT || hintInPoints.y == SWT.DEFAULT) {
             if (itemCount > 0) {
                 long hDC = OS.GetDC(getApi().handle);
                 long hTheme = 0;
@@ -187,10 +184,10 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
             width = DEFAULT_WIDTH;
         if (height == 0)
             height = DEFAULT_HEIGHT;
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
+        if (hintInPoints.x != SWT.DEFAULT)
+            width = hintInPixels.x;
+        if (hintInPoints.y != SWT.DEFAULT)
+            height = hintInPixels.y;
         Rectangle trim = computeTrimInPixels(0, 0, width, height);
         return new Point(trim.width, trim.height);
     }
@@ -601,7 +598,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
      */
     public void setSpacing(int spacing) {
         checkWidget();
-        setSpacingInPixels(Win32DPIUtils.pointToPixel(spacing, getZoom()));
+        setSpacingInPixels(DPIUtil.pointToPixel(spacing, getZoom()));
     }
 
     void setSpacingInPixels(int spacing) {
@@ -929,15 +926,14 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
         return result;
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof ExpandBar expandBar)) {
-            return;
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        for (ExpandItem item : getItems()) {
+            item.notifyListeners(SWT.ZoomChanged, event);
         }
-        for (ExpandItem item : expandBar.getItems()) {
-            DPIZoomChangeRegistry.applyChange(item, newZoom, scalingFactor);
-        }
-        ((SwtExpandBar) expandBar.getImpl()).layoutItems(0, true);
-        expandBar.redraw();
+        layoutItems(0, true);
+        redraw();
     }
 
     public ExpandItem[] _items() {

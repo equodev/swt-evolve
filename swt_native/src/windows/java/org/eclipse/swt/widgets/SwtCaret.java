@@ -15,6 +15,7 @@
  */
 package org.eclipse.swt.widgets;
 
+import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
@@ -58,10 +59,6 @@ public class SwtCaret extends SwtWidget implements ICaret {
     Font font;
 
     LOGFONT oldFont;
-
-    static {
-        DPIZoomChangeRegistry.registerHandler(SwtCaret::handleDPIChange, Caret.class);
-    }
 
     /**
      * Constructs a new instance of this class given its parent
@@ -141,12 +138,22 @@ public class SwtCaret extends SwtWidget implements ICaret {
             return new Rectangle(getXInPixels(), getYInPixels(), rect.width, rect.height);
         }
         if (width == 0) {
-            int[] buffer = new int[1];
-            if (OS.SystemParametersInfo(OS.SPI_GETCARETWIDTH, 0, buffer, 0)) {
-                return new Rectangle(getXInPixels(), getYInPixels(), buffer[0], getHeightInPixels());
+            OptionalInt widthInPixels = getSystemCaretWidthInPixelsForCurrentMonitor();
+            if (widthInPixels.isPresent()) {
+                return new Rectangle(getXInPixels(), getYInPixels(), widthInPixels.getAsInt(), getHeightInPixels());
             }
         }
         return new Rectangle(getXInPixels(), getYInPixels(), getWidthInPixels(), getHeightInPixels());
+    }
+
+    private OptionalInt getSystemCaretWidthInPixelsForCurrentMonitor() {
+        int[] buffer = new int[1];
+        if (OS.SystemParametersInfo(OS.SPI_GETCARETWIDTH, 0, buffer, 0)) {
+            int width = DPIUtil.pixelToPoint(buffer[0], Win32DPIUtils.getPrimaryMonitorZoomAtStartup());
+            int widthInPixels = DPIUtil.pointToPixel(width, getNativeZoom());
+            return OptionalInt.of(widthInPixels);
+        }
+        return OptionalInt.empty();
     }
 
     /**
@@ -226,7 +233,7 @@ public class SwtCaret extends SwtWidget implements ICaret {
      */
     public Point getSize() {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getSizeInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPointAsSize(getSizeInPixels(), getZoom());
     }
 
     public Point getSizeInPixels() {
@@ -235,28 +242,28 @@ public class SwtCaret extends SwtWidget implements ICaret {
             return new Point(rect.width, rect.height);
         }
         if (width == 0) {
-            int[] buffer = new int[1];
-            if (OS.SystemParametersInfo(OS.SPI_GETCARETWIDTH, 0, buffer, 0)) {
-                return new Point(buffer[0], getHeightInPixels());
+            OptionalInt widthInPixels = getSystemCaretWidthInPixelsForCurrentMonitor();
+            if (widthInPixels.isPresent()) {
+                return new Point(widthInPixels.getAsInt(), getHeightInPixels());
             }
         }
         return new Point(getWidthInPixels(), getHeightInPixels());
     }
 
     private int getWidthInPixels() {
-        return Win32DPIUtils.pointToPixel(width, getZoom());
+        return DPIUtil.pointToPixel(width, getZoom());
     }
 
     private int getHeightInPixels() {
-        return Win32DPIUtils.pointToPixel(height, getZoom());
+        return DPIUtil.pointToPixel(height, getZoom());
     }
 
     private int getXInPixels() {
-        return Win32DPIUtils.pointToPixel(x, getZoom());
+        return DPIUtil.pointToPixel(x, getZoom());
     }
 
     private int getYInPixels() {
-        return Win32DPIUtils.pointToPixel(y, getZoom());
+        return DPIUtil.pointToPixel(y, getZoom());
     }
 
     /**
@@ -390,9 +397,9 @@ public class SwtCaret extends SwtWidget implements ICaret {
         long hBitmap = image != null ? SwtImage.win32_getHandle(image, getZoom()) : 0;
         int widthInPixels = this.getWidthInPixels();
         if (image == null && widthInPixels == 0) {
-            int[] buffer = new int[1];
-            if (OS.SystemParametersInfo(OS.SPI_GETCARETWIDTH, 0, buffer, 0)) {
-                widthInPixels = buffer[0];
+            OptionalInt systemCaretWidthInPixelsForCurrentMonitor = getSystemCaretWidthInPixelsForCurrentMonitor();
+            if (systemCaretWidthInPixelsForCurrentMonitor.isPresent()) {
+                widthInPixels = systemCaretWidthInPixelsForCurrentMonitor.getAsInt();
             }
         }
         OS.CreateCaret(hwnd, hBitmap, widthInPixels, getHeightInPixels());
@@ -476,9 +483,9 @@ public class SwtCaret extends SwtWidget implements ICaret {
             hBitmap = SwtImage.win32_getHandle(image, getZoom());
         int widthInPixels = this.getWidthInPixels();
         if (image == null && widthInPixels == 0) {
-            int[] buffer = new int[1];
-            if (OS.SystemParametersInfo(OS.SPI_GETCARETWIDTH, 0, buffer, 0)) {
-                widthInPixels = buffer[0];
+            OptionalInt systemCaretWidthInPixelsForCurrentMonitor = getSystemCaretWidthInPixelsForCurrentMonitor();
+            if (systemCaretWidthInPixelsForCurrentMonitor.isPresent()) {
+                widthInPixels = systemCaretWidthInPixelsForCurrentMonitor.getAsInt();
             }
         }
         OS.CreateCaret(hwnd, hBitmap, widthInPixels, getHeightInPixels());
@@ -692,53 +699,18 @@ public class SwtCaret extends SwtWidget implements ICaret {
         }
     }
 
-    /**
-     * <b>IMPORTANT:</b> This method is not part of the public
-     * API for Image. It is marked public only so that it
-     * can be shared within the packages provided by SWT. It is not
-     * available on all platforms, and should never be called from
-     * application code.
-     *
-     * Sets the height o the caret in points.
-     *
-     * @param caret the caret to set the height of
-     * @param height the height of caret to be set in points.
-     *
-     * @noreference This method is not intended to be referenced by clients.
-     */
-    public static void win32_setHeight(Caret caret, int height) {
-        caret.checkWidget();
-        if (caret.getImpl()._height() != height) {
-            if (caret.getImpl() instanceof DartCaret) {
-                ((DartCaret) caret.getImpl()).height = height;
-            }
-            if (caret.getImpl() instanceof SwtCaret) {
-                ((SwtCaret) caret.getImpl()).height = height;
-            }
-            if (caret.getImpl() instanceof DartCaret) {
-                ((DartCaret) caret.getImpl()).resized = true;
-            }
-            if (caret.getImpl() instanceof SwtCaret) {
-                ((SwtCaret) caret.getImpl()).resized = true;
-            }
-        }
-        if (caret.getImpl() instanceof SwtCaret) {
-            if (caret.getImpl()._isVisible() && ((SwtCaret) caret.getImpl()).hasFocus())
-                ((SwtCaret) caret.getImpl()).resize();
-        }
-    }
-
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof Caret caret)) {
-            return;
-        }
-        Image image = caret.getImage();
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        Image image = getImage();
         if (image != null) {
-            caret.setImage(image);
+            setImage(image);
         }
-        if (((SwtCaret) caret.getImpl()).font != null) {
-            caret.setFont(((SwtCaret) caret.getImpl()).font);
+        if (font != null) {
+            setFont(font);
         }
+        if (isVisible && hasFocus())
+            resize();
     }
 
     public Canvas _parent() {

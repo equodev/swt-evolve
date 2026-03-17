@@ -941,8 +941,8 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     }
 
     @Override
-    long gtk_key_press_event(long widget, long event) {
-        long result = super.gtk_key_press_event(widget, event);
+    long gtk3_key_press_event(long widget, long event) {
+        long result = super.gtk3_key_press_event(widget, event);
         if (result != 0)
             return result;
         /*

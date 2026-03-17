@@ -43,8 +43,8 @@ class SwtAccessibleTableHeader extends SwtAccessible implements IAccessibleTable
                 for (int i = 0; i < validColumnCount; i++) {
                     event.childID = i;
                     event.detail = ACC.CHILDID_CHILD_AT_INDEX;
-                    for (int j = 0; j < ((SwtAccessible) parent.getImpl()).accessibleControlListeners.size(); j++) {
-                        AccessibleControlListener listener = ((SwtAccessible) parent.getImpl()).accessibleControlListeners.get(j);
+                    for (int j = 0; j < parent.getImpl()._accessibleControlListeners().size(); j++) {
+                        AccessibleControlListener listener = parent.getImpl()._accessibleControlListeners().get(j);
                         listener.getChild(event);
                     }
                     if (event.accessible.getImpl() instanceof DartAccessible) {
@@ -71,8 +71,8 @@ class SwtAccessibleTableHeader extends SwtAccessible implements IAccessibleTable
                 for (int i = 0; i < validColumnCount; i++) {
                     event.childID = i;
                     event.detail = ACC.CHILDID_CHILD_AT_INDEX;
-                    for (int j = 0; j < ((SwtAccessible) parent.getImpl()).accessibleControlListeners.size(); j++) {
-                        AccessibleControlListener listener = ((SwtAccessible) parent.getImpl()).accessibleControlListeners.get(j);
+                    for (int j = 0; j < parent.getImpl()._accessibleControlListeners().size(); j++) {
+                        AccessibleControlListener listener = parent.getImpl()._accessibleControlListeners().get(j);
                         listener.getChild(event);
                     }
                     if (event.accessible.getImpl() instanceof DartAccessible) {

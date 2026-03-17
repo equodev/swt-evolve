@@ -34,6 +34,7 @@ import org.eclipse.swt.internal.cocoa.*;
  */
 public class URLTransfer extends ByteArrayTransfer {
 
+    // XXX: SWT uses the deprecated format name here,
     URLTransfer() {
         this((IURLTransfer) null);
         setImpl(new SwtURLTransfer(this));

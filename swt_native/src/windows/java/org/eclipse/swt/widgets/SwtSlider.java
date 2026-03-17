@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
 
 /**
@@ -184,8 +185,9 @@ public class SwtSlider extends SwtControl implements ISlider {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
         checkWidget();
+        Point hintInPixels = Win32DPIUtils.pointToPixelAsSufficientlyLargeSize(hintInPoints, zoom);
         int border = getBorderWidthInPixels();
         int width = border * 2, height = border * 2;
         if ((getApi().style & SWT.HORIZONTAL) != 0) {
@@ -195,10 +197,10 @@ public class SwtSlider extends SwtControl implements ISlider {
             width += getSystemMetrics(OS.SM_CXVSCROLL);
             height += getSystemMetrics(OS.SM_CYVSCROLL) * 10;
         }
-        if (wHint != SWT.DEFAULT)
-            width = wHint + (border * 2);
-        if (hHint != SWT.DEFAULT)
-            height = hHint + (border * 2);
+        if (hintInPoints.x != SWT.DEFAULT)
+            width = hintInPixels.x + (border * 2);
+        if (hintInPoints.y != SWT.DEFAULT)
+            height = hintInPixels.y + (border * 2);
         return new Point(width, height);
     }
 

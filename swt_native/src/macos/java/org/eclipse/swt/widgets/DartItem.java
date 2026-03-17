@@ -78,6 +78,7 @@ public abstract class DartItem extends DartWidget implements IItem {
     public DartItem(Widget parent, int style, Item api) {
         super(parent, style, api);
         text = "";
+        this._addListener(SWT.ZoomChanged, this::handleDPIChange);
     }
 
     /**
@@ -234,6 +235,14 @@ public abstract class DartItem extends DartWidget implements IItem {
             return true;
         }
         return textDirection == AUTO_TEXT_DIRECTION;
+    }
+
+    private void handleDPIChange(Event event) {
+        // Refresh the image
+        Image image = getImage();
+        if (image != null) {
+            setImage(image);
+        }
     }
 
     public String _text() {

@@ -18,7 +18,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
 
 /**
@@ -63,10 +62,6 @@ public class SwtMenu extends SwtWidget implements IMenu {
 
     /* Timer ID for MenuItem ToolTip */
     static final int ID_TOOLTIP_TIMER = 110;
-
-    static {
-        DPIZoomChangeRegistry.registerHandler(SwtMenu::handleDPIChange, Menu.class);
-    }
 
     /**
      * Constructs a new instance of this class given its parent,
@@ -1265,7 +1260,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
         checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        Point locationInPixels = ((SwtDisplay) getDisplay().getImpl()).translateToDisplayCoordinates(location, getZoom());
+        Point locationInPixels = ((SwtDisplay) getDisplay().getImpl()).translateToDisplayCoordinates(location);
         setLocationInPixels(locationInPixels.x, locationInPixels.y);
     }
 
@@ -1411,12 +1406,11 @@ public class SwtMenu extends SwtWidget implements IMenu {
         return null;
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof Menu menu)) {
-            return;
-        }
-        for (MenuItem item : menu.getItems()) {
-            DPIZoomChangeRegistry.applyChange(item, newZoom, scalingFactor);
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        for (MenuItem item : getItems()) {
+            item.notifyListeners(SWT.ZoomChanged, event);
         }
     }
 

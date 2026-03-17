@@ -805,18 +805,14 @@ public class SwtToolItem extends SwtItem implements IToolItem {
     }
 
     @Override
-    long gtk_event_after(long widget, long gdkEvent) {
+    long gtk3_event_after(long widget, long gdkEvent) {
         int eventType = GDK.gdk_event_get_event_type(gdkEvent);
         eventType = SwtControl.fixGdkEventTypeValues(eventType);
         switch(eventType) {
             case GDK.GDK_BUTTON_PRESS:
                 {
                     int[] eventButton = new int[1];
-                    if (GTK.GTK4) {
-                        eventButton[0] = GDK.gdk_button_event_get_button(gdkEvent);
-                    } else {
-                        GDK.gdk_event_get_button(gdkEvent, eventButton);
-                    }
+                    GDK.gdk_event_get_button(gdkEvent, eventButton);
                     if (eventButton[0] == 3) {
                         double[] eventRX = new double[1];
                         double[] eventRY = new double[1];
@@ -1243,9 +1239,9 @@ public class SwtToolItem extends SwtItem implements IToolItem {
             } else {
                 _setImage(disabledImage);
             }
-        }
-        if (enabled && image != null)
+        } else {
             _setImage(image);
+        }
     }
 
     boolean setFocus() {
@@ -1616,17 +1612,29 @@ public class SwtToolItem extends SwtItem implements IToolItem {
         if (provider == 0) {
             provider = GTK.gtk_css_provider_new();
             if ((getApi().style & SWT.DROP_DOWN) != 0) {
-                long box = GTK3.gtk_bin_get_child(getApi().handle);
-                long list = GTK3.gtk_container_get_children(box);
-                for (int i = 0; i < 2; i++) {
-                    long child = OS.g_list_nth_data(list, i);
-                    long context = GTK.gtk_widget_get_style_context(child);
+                if (GTK.GTK4) {
+                    long context = GTK.gtk_widget_get_style_context(boxHandle);
                     GTK.gtk_style_context_add_provider(context, provider, GTK.GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+                    context = GTK.gtk_widget_get_style_context(arrowHandle);
+                    GTK.gtk_style_context_add_provider(context, provider, GTK.GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+                } else {
+                    long box = GTK3.gtk_bin_get_child(getApi().handle);
+                    long list = GTK3.gtk_container_get_children(box);
+                    for (int i = 0; i < 2; i++) {
+                        long child = OS.g_list_nth_data(list, i);
+                        long context = GTK.gtk_widget_get_style_context(child);
+                        GTK.gtk_style_context_add_provider(context, provider, GTK.GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+                    }
+                    OS.g_list_free(list);
                 }
-                OS.g_list_free(list);
             } else {
-                long child = GTK3.gtk_bin_get_child(getApi().handle);
-                long context = GTK.gtk_widget_get_style_context(child);
+                long context;
+                if (GTK.GTK4) {
+                    context = GTK.gtk_widget_get_style_context(getApi().handle);
+                } else {
+                    long child = GTK3.gtk_bin_get_child(getApi().handle);
+                    context = GTK.gtk_widget_get_style_context(child);
+                }
                 GTK.gtk_style_context_add_provider(context, provider, GTK.GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
             }
             OS.g_object_unref(provider);

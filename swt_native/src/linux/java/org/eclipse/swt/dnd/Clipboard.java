@@ -15,8 +15,11 @@
  */
 package org.eclipse.swt.dnd;
 
+import java.time.*;
+import java.util.*;
+import java.util.List;
+import java.util.concurrent.*;
 import org.eclipse.swt.*;
-import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
@@ -182,6 +185,10 @@ public class Clipboard {
      * clipboard.  Refer to the specific subclass of <code>Transfer</code> to
      * determine the type of object returned.
      *
+     * <p>This method may iterate the event loop to be able to complete. Use
+     * {@link #getContentsAsync(Transfer)} to have control over when the event
+     * loop runs.</p>
+     *
      * <p>The following snippet shows text and RTF text being retrieved from the
      * clipboard:</p>
      *
@@ -208,6 +215,7 @@ public class Clipboard {
      * </ul>
      *
      * @see Transfer
+     * @see #getContentsAsync(Transfer)
      */
     public Object getContents(Transfer transfer) {
         return getImpl().getContents(transfer);
@@ -217,6 +225,10 @@ public class Clipboard {
      * Retrieve the data of the specified type currently available on the specified
      * clipboard.  Refer to the specific subclass of <code>Transfer</code> to
      * determine the type of object returned.
+     *
+     * <p>This method may iterate the event loop to be able to complete. Use
+     * {@link #getContentsAsync(Transfer, int)} to have control over when the event
+     * loop runs.</p>
      *
      * <p>The following snippet shows text and RTF text being retrieved from the
      * clipboard:</p>
@@ -253,11 +265,96 @@ public class Clipboard {
      * @see Transfer
      * @see DND#CLIPBOARD
      * @see DND#SELECTION_CLIPBOARD
+     * @see #getContentsAsync(Transfer, int)
      *
      * @since 3.1
      */
     public Object getContents(Transfer transfer, int clipboards) {
         return getImpl().getContents(transfer, clipboards);
+    }
+
+    /**
+     * Retrieve the data of the specified type currently available on the system
+     * clipboard.  Refer to the specific subclass of <code>Transfer</code> to
+     * determine the type of object returned.
+     *
+     * <p>This method is asynchronous and may require the SWT event loop to
+     * iterate before the future will complete.</p>
+     *
+     * <p>The following snippet shows text being retrieved from the clipboard:</p>
+     *
+     *    <pre><code>
+     *    Clipboard clipboard = new Clipboard(display);
+     *    TextTransfer textTransfer = TextTransfer.getInstance();
+     *    CompletableFuture&lt;Object&gt; future = clipboard.getContentsAsync(textTransfer);
+     *    future.thenAccept(textData -&gt; System.out.println("Text is "+textData));
+     *    clipboard.dispose();
+     *    </code></pre>
+     *
+     * @param transfer the transfer agent for the type of data being requested
+     * @return the future whose value will resolve to the data obtained from the
+     *     clipboard or will resolve to null if no data of this type is available
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if transfer is null</li>
+     * </ul>
+     *
+     * @see Transfer
+     * @since 3.132
+     */
+    public CompletableFuture<Object> getContentsAsync(Transfer transfer) {
+        return getImpl().getContentsAsync(transfer);
+    }
+
+    /**
+     * Retrieve the data of the specified type currently available on the specified
+     * clipboard.  Refer to the specific subclass of <code>Transfer</code> to
+     * determine the type of object returned.
+     *
+     * <p>This method is asynchronous and may require the SWT event loop to
+     * iterate before the future will complete.</p>
+     *
+     * <p>The following snippet shows text being retrieved from the clipboard:</p>
+     *
+     *    <pre><code>
+     *    Clipboard clipboard = new Clipboard(display);
+     *    TextTransfer textTransfer = TextTransfer.getInstance();
+     *    CompletableFuture&lt;Object&gt; future = clipboard.getContentsAsync(textTransfer, DND.CLIPBOARD);
+     *    future.thenAccept(textData -&gt; System.out.println("Text is "+textData));
+     *    clipboard.dispose();
+     *    </code></pre>
+     *
+     * <p>The clipboards value is either one of the clipboard constants defined in
+     * class <code>DND</code>, or must be built by <em>bitwise OR</em>'ing together
+     * (that is, using the <code>int</code> "|" operator) two or more
+     * of those <code>DND</code> clipboard constants.</p>
+     *
+     * @param transfer the transfer agent for the type of data being requested
+     * @param clipboards on which to look for data
+     *
+     * @return the future whose value will resolve to the data obtained from the
+     *     clipboard or will resolve to null if no data of this type is available
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     * @exception IllegalArgumentException <ul>
+     *    <li>ERROR_NULL_ARGUMENT - if transfer is null</li>
+     * </ul>
+     *
+     * @see Transfer
+     * @see DND#CLIPBOARD
+     * @see DND#SELECTION_CLIPBOARD
+     *
+     * @since 3.132
+     */
+    public CompletableFuture<Object> getContentsAsync(Transfer transfer, int clipboards) {
+        return getImpl().getContentsAsync(transfer, clipboards);
     }
 
     /**

@@ -35,20 +35,8 @@ import org.eclipse.swt.widgets.*;
  */
 public class Win32DPIUtils {
 
-    /**
-     * System property to enable to scale the application on runtime
-     * when a DPI change is detected.
-     * <ul>
-     * <li>"true": the application is scaled on DPI changes</li>
-     * <li>"false": the application will remain in its initial scaling</li>
-     * </ul>
-     * <b>Important:</b> This flag is only parsed and used on Win32. Setting it to
-     * true on GTK or cocoa will be ignored.
-     */
-    private static final String SWT_AUTOSCALE_UPDATE_ON_RUNTIME = "swt.autoScale.updateOnRuntime";
-
     static {
-        DPIUtil.setUseSmoothScalingByDefaultProvider(() -> isMonitorSpecificScalingActive());
+        DPIUtil.setUseSmoothScalingByDefaultProvider(() -> DPIUtil.isMonitorSpecificScalingActive());
     }
 
     public static boolean setDPIAwareness(int desiredDpiAwareness) {
@@ -119,39 +107,67 @@ public class Win32DPIUtils {
         return DPIUtil.pixelToPoint(size, zoom);
     }
 
-    public static Point pixelToPoint(Point point, int zoom) {
-        if (zoom == 100 || point == null)
-            return point;
-        Point.OfFloat fPoint = FloatAwareGeometryFactory.createFrom(point);
-        float scaleFactor = DPIUtil.getScalingFactor(zoom);
-        float scaledX = fPoint.getX() / scaleFactor;
-        float scaledY = fPoint.getY() / scaleFactor;
-        return new Point.OfFloat(scaledX, scaledY);
-    }
-
-    public static Point pixelToPoint(Drawable drawable, Point point, int zoom) {
+    public static Point pixelToPointAsSize(Drawable drawable, Point point, int zoom) {
         if (drawable != null && !drawable.isAutoScalable())
             return point;
-        return pixelToPoint(point, zoom);
+        return pixelToPointAsSize(point, zoom);
+    }
+
+    public static Point pixelToPointAsLocation(Drawable drawable, Point point, int zoom) {
+        if (drawable != null && !drawable.isAutoScalable())
+            return point;
+        return pixelToPointAsLocation(point, zoom);
+    }
+
+    public static Point pixelToPointAsSize(Point point, int zoom) {
+        return pixelToPoint(point, zoom, RoundingMode.ROUND);
+    }
+
+    public static Point pixelToPointAsLocation(Point point, int zoom) {
+        return pixelToPoint(point, zoom, RoundingMode.ROUND);
+    }
+
+    public static Point pixelToPointAsSufficientlyLargeSize(Point point, int zoom) {
+        return pixelToPoint(point, zoom, RoundingMode.UP);
+    }
+
+    private static Point pixelToPoint(Point point, int zoom, RoundingMode mode) {
+        if (zoom == 100 || point == null)
+            return point;
+        Point.OfFloat floatPoint = Point.OfFloat.from(point);
+        return pixelToPoint(new Point.OfFloat(floatPoint.getX(), floatPoint.getY(), mode), zoom);
+    }
+
+    private static Point.OfFloat pixelToPoint(Point.OfFloat point, int zoom) {
+        Point.OfFloat scaledPoint = point.clone();
+        float scaleFactor = DPIUtil.getScalingFactor(zoom);
+        scaledPoint.setX(point.getX() / scaleFactor);
+        scaledPoint.setY(point.getY() / scaleFactor);
+        return scaledPoint;
     }
 
     public static Rectangle pixelToPoint(Rectangle rect, int zoom) {
-        if (zoom == 100 || rect == null)
-            return rect;
-        if (rect instanceof Rectangle.OfFloat rectOfFloat)
-            return pixelToPoint(rectOfFloat, zoom);
-        Rectangle scaledRect = new Rectangle.OfFloat(0, 0, 0, 0);
-        Point scaledTopLeft = pixelToPoint(new Point(rect.x, rect.y), zoom);
-        Point scaledBottomRight = pixelToPoint(new Point(rect.x + rect.width, rect.y + rect.height), zoom);
-        scaledRect.x = scaledTopLeft.x;
-        scaledRect.y = scaledTopLeft.y;
-        scaledRect.width = scaledBottomRight.x - scaledTopLeft.x;
-        scaledRect.height = scaledBottomRight.y - scaledTopLeft.y;
-        return scaledRect;
+        return pixelToPoint(rect, zoom, RoundingMode.ROUND);
     }
 
-    private static Rectangle pixelToPoint(Rectangle.OfFloat rect, int zoom) {
-        return scaleBounds(rect, 100, zoom);
+    public static Rectangle pixelToPointWithSufficientlyLargeSize(Rectangle rect, int zoom) {
+        return pixelToPoint(rect, zoom, RoundingMode.UP);
+    }
+
+    private static Rectangle pixelToPoint(Rectangle rect, int zoom, RoundingMode sizeRounding) {
+        if (zoom == 100 || rect == null)
+            return rect;
+        if (rect instanceof Rectangle.OfFloat) {
+            return scaleBounds(rect, 100, zoom);
+        }
+        Rectangle.OfFloat floatRect = Rectangle.OfFloat.from(rect);
+        Point.OfFloat scaledTopLeft = pixelToPoint(floatRect.getTopLeft(), zoom);
+        Point.OfFloat scaledBottomRight = pixelToPoint(floatRect.getBottomRight(), zoom);
+        float scaledX = scaledTopLeft.x;
+        float scaleyY = scaledTopLeft.y;
+        float scaledWidth = scaledBottomRight.x - scaledTopLeft.x;
+        float scaledHeight = scaledBottomRight.y - scaledTopLeft.y;
+        return new Rectangle.OfFloat(scaledX, scaleyY, scaledWidth, scaledHeight, RoundingMode.ROUND, sizeRounding);
     }
 
     public static Rectangle pixelToPoint(Drawable drawable, Rectangle rect, int zoom) {
@@ -183,7 +199,7 @@ public class Win32DPIUtils {
     private static Rectangle scaleBounds(Rectangle.OfFloat rect, int targetZoom, int currentZoom) {
         if (rect == null || targetZoom == currentZoom)
             return rect;
-        Rectangle.OfFloat fRect = FloatAwareGeometryFactory.createFrom(rect);
+        Rectangle.OfFloat fRect = Rectangle.OfFloat.from(rect);
         float scaleFactor = DPIUtil.getScalingFactor(targetZoom, currentZoom);
         float scaledX = fRect.getX() * scaleFactor;
         float scaledY = fRect.getY() * scaleFactor;
@@ -209,20 +225,10 @@ public class Win32DPIUtils {
         return pointToPixel(pointArray, zoom);
     }
 
-    /**
-     * Auto-scale up int dimensions to match the given zoom level
-     */
-    public static int pointToPixel(int size, int zoom) {
-        if (zoom == 100 || size == SWT.DEFAULT)
-            return size;
-        float scaleFactor = DPIUtil.getScalingFactor(zoom);
-        return Math.round(size * scaleFactor);
-    }
-
     public static int pointToPixel(Drawable drawable, int size, int zoom) {
         if (drawable != null && !drawable.isAutoScalable())
             return size;
-        return pointToPixel(size, zoom);
+        return DPIUtil.pointToPixel(size, zoom);
     }
 
     public static float pointToPixel(float size, int zoom) {
@@ -238,39 +244,67 @@ public class Win32DPIUtils {
         return pointToPixel(size, zoom);
     }
 
-    public static Point pointToPixel(Point point, int zoom) {
+    private static Point pointToPixel(Point point, int zoom, RoundingMode mode) {
         if (zoom == 100 || point == null)
             return point;
-        Point.OfFloat fPoint = FloatAwareGeometryFactory.createFrom(point);
-        float scaleFactor = DPIUtil.getScalingFactor(zoom);
-        float scaledX = fPoint.getX() * scaleFactor;
-        float scaledY = fPoint.getY() * scaleFactor;
-        return new Point.OfFloat(scaledX, scaledY);
+        Point.OfFloat floatPoint = Point.OfFloat.from(point);
+        return pointToPixel(new Point.OfFloat(floatPoint.getX(), floatPoint.getY(), mode), zoom);
     }
 
-    public static Point pointToPixel(Drawable drawable, Point point, int zoom) {
+    private static Point.OfFloat pointToPixel(Point.OfFloat point, int zoom) {
+        Point.OfFloat scaledPoint = point.clone();
+        float scaleFactor = DPIUtil.getScalingFactor(zoom);
+        scaledPoint.setX(point.getX() * scaleFactor);
+        scaledPoint.setY(point.getY() * scaleFactor);
+        return scaledPoint;
+    }
+
+    public static Point pointToPixelAsSize(Drawable drawable, Point point, int zoom) {
         if (drawable != null && !drawable.isAutoScalable())
             return point;
-        return pointToPixel(point, zoom);
+        return pointToPixelAsSize(point, zoom);
+    }
+
+    public static Point pointToPixelAsLocation(Drawable drawable, Point point, int zoom) {
+        if (drawable != null && !drawable.isAutoScalable())
+            return point;
+        return pointToPixelAsLocation(point, zoom);
+    }
+
+    public static Point pointToPixelAsSize(Point point, int zoom) {
+        return pointToPixel(point, zoom, RoundingMode.ROUND);
+    }
+
+    public static Point pointToPixelAsSufficientlyLargeSize(Point point, int zoom) {
+        return pointToPixel(point, zoom, RoundingMode.UP);
+    }
+
+    public static Point pointToPixelAsLocation(Point point, int zoom) {
+        return pointToPixel(point, zoom, RoundingMode.ROUND);
     }
 
     public static Rectangle pointToPixel(Rectangle rect, int zoom) {
-        if (zoom == 100 || rect == null)
-            return rect;
-        if (rect instanceof Rectangle.OfFloat rectOfFloat)
-            return pointToPixel(rectOfFloat, zoom);
-        Rectangle scaledRect = new Rectangle.OfFloat(0, 0, 0, 0);
-        Point scaledTopLeft = pointToPixel(new Point(rect.x, rect.y), zoom);
-        Point scaledBottomRight = pointToPixel(new Point(rect.x + rect.width, rect.y + rect.height), zoom);
-        scaledRect.x = scaledTopLeft.x;
-        scaledRect.y = scaledTopLeft.y;
-        scaledRect.width = scaledBottomRight.x - scaledTopLeft.x;
-        scaledRect.height = scaledBottomRight.y - scaledTopLeft.y;
-        return scaledRect;
+        return pointToPixel(rect, zoom, RoundingMode.ROUND);
     }
 
-    private static Rectangle pointToPixel(Rectangle.OfFloat rect, int zoom) {
-        return scaleBounds(rect, zoom, 100);
+    public static Rectangle pointToPixelWithSufficientlyLargeSize(Rectangle rect, int zoom) {
+        return pointToPixel(rect, zoom, RoundingMode.UP);
+    }
+
+    private static Rectangle pointToPixel(Rectangle rect, int zoom, RoundingMode sizeRounding) {
+        if (zoom == 100 || rect == null)
+            return rect;
+        if (rect instanceof Rectangle.OfFloat) {
+            return scaleBounds(rect, zoom, 100);
+        }
+        Rectangle.OfFloat floatRect = Rectangle.OfFloat.from(rect);
+        Point.OfFloat scaledTopLeft = pointToPixel(floatRect.getTopLeft(), zoom);
+        Point.OfFloat scaledBottomRight = pointToPixel(floatRect.getBottomRight(), zoom);
+        float scaledX = scaledTopLeft.x;
+        float scaleyY = scaledTopLeft.y;
+        float scaledWidth = scaledBottomRight.x - scaledTopLeft.x;
+        float scaledHeight = scaledBottomRight.y - scaledTopLeft.y;
+        return new Rectangle.OfFloat(scaledX, scaleyY, scaledWidth, scaledHeight, RoundingMode.ROUND, sizeRounding);
     }
 
     public static Rectangle pointToPixel(Drawable drawable, Rectangle rect, int zoom) {
@@ -280,52 +314,23 @@ public class Win32DPIUtils {
     }
 
     public static void setMonitorSpecificScaling(boolean activate) {
-        System.setProperty(SWT_AUTOSCALE_UPDATE_ON_RUNTIME, Boolean.toString(activate));
+        System.setProperty(DPIUtil.SWT_AUTOSCALE_UPDATE_ON_RUNTIME, Boolean.toString(activate));
     }
 
     public static void setAutoScaleForMonitorSpecificScaling() {
         boolean isDefaultAutoScale = DPIUtil.getAutoScaleValue() == null;
         if (isDefaultAutoScale) {
             DPIUtil.setAutoScaleValue("quarter");
-        } else if (!isSupportedAutoScaleForMonitorSpecificScaling()) {
+        } else if (!DPIUtil.isSetupCompatibleToMonitorSpecificScaling()) {
             throw new SWTError(SWT.ERROR_NOT_IMPLEMENTED, "monitor-specific scaling is only implemented for auto-scale values \"quarter\", \"exact\", \"false\" or a concrete zoom value, but \"" + DPIUtil.getAutoScaleValue() + "\" has been specified");
         }
     }
 
-    /**
-     * Monitor-specific scaling on Windows only supports auto-scale modes in which
-     * all elements (font, images, control bounds etc.) are scaled equally or almost
-     * equally. The previously default mode "integer"/"integer200", which rounded
-     * the scale factor for everything but fonts to multiples of 100, is complex and
-     * difficult to realize with monitor-specific rescaling of UI elements. Since a
-     * uniform scale factor for everything should perspectively be used anyway,
-     * there will be support for complex auto-scale modes for monitor-specific
-     * scaling.
-     *
-     * The supported modes are "quarter" and "exact" or explicit zoom values given
-     * by the value itself or "false". Every other value will be treated as
-     * "integer"/"integer200" and is thus not supported.
-     */
-    private static boolean isSupportedAutoScaleForMonitorSpecificScaling() {
-        if (DPIUtil.getAutoScaleValue() == null) {
-            return false;
-        }
-        switch(DPIUtil.getAutoScaleValue().toLowerCase()) {
-            case "false", "quarter", "exact":
-                return true;
-        }
-        try {
-            Integer.parseInt(DPIUtil.getAutoScaleValue());
-            return true;
-        } catch (NumberFormatException e) {
-            // unsupported value, use default
-        }
-        return false;
-    }
-
-    public static boolean isMonitorSpecificScalingActive() {
-        boolean updateOnRuntimeValue = Boolean.getBoolean(SWT_AUTOSCALE_UPDATE_ON_RUNTIME);
-        return updateOnRuntimeValue;
+    public static int getPrimaryMonitorZoomAtStartup() {
+        long hDC = OS.GetDC(0);
+        int dpi = OS.GetDeviceCaps(hDC, OS.LOGPIXELSX);
+        OS.ReleaseDC(0, hDC);
+        return DPIUtil.mapDPIToZoom(dpi);
     }
 
     /**
@@ -348,23 +353,6 @@ public class Win32DPIUtils {
         @Override
         public ImageData getImageData(int zoom) {
             return DPIUtil.scaleImageData(device, imageData, zoom, currentZoom);
-        }
-    }
-
-    private class FloatAwareGeometryFactory {
-
-        static Rectangle.OfFloat createFrom(Rectangle rectangle) {
-            if (rectangle instanceof Rectangle.OfFloat) {
-                return (Rectangle.OfFloat) rectangle;
-            }
-            return new Rectangle.OfFloat(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
-        }
-
-        static Point.OfFloat createFrom(Point point) {
-            if (point instanceof Point.OfFloat) {
-                return (Point.OfFloat) point;
-            }
-            return new Point.OfFloat(point.x, point.y);
         }
     }
 }

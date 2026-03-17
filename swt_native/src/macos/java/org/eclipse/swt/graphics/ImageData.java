@@ -2568,8 +2568,13 @@ public final class ImageData implements Cloneable {
      */
     static void fillGradientRectangle(GC gc, Device device, int x, int y, int width, int height, boolean vertical, RGB fromRGB, RGB toRGB, int redBits, int greenBits, int blueBits, int zoom) {
         /* Create the bitmap and tile it */
-        ImageData band = createGradientBand(width, height, vertical, fromRGB, toRGB, redBits, greenBits, blueBits);
-        Image image = new Image(device, band);
+        ImageDataProvider imageDataProvider = imageZoom -> {
+            int scaledWidth = DPIUtil.pointToPixel(width, imageZoom);
+            int scaledHeight = DPIUtil.pointToPixel(height, imageZoom);
+            return createGradientBand(scaledWidth, scaledHeight, vertical, fromRGB, toRGB, redBits, greenBits, blueBits);
+        };
+        Image image = new Image(device, imageDataProvider);
+        ImageData band = image.getImageData(zoom);
         if ((band.width == 1) || (band.height == 1)) {
             gc.drawImage(image, 0, 0, DPIUtil.pixelToPoint(band.width, zoom), DPIUtil.pixelToPoint(band.height, zoom), DPIUtil.pixelToPoint(x, zoom), DPIUtil.pixelToPoint(y, zoom), DPIUtil.pixelToPoint(width, zoom), DPIUtil.pixelToPoint(height, zoom));
         } else {

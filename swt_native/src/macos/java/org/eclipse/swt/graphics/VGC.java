@@ -277,6 +277,20 @@ public class VGC extends VResource {
     }
 
     @CompiledJson()
+    public static class VGCDrawImageImageintintintint {
+
+        public Image image;
+
+        public int destX;
+
+        public int destY;
+
+        public int destWidth;
+
+        public int destHeight;
+    }
+
+    @CompiledJson()
     public static class VGCDrawImageImageintintintintintintintint {
 
         public Image image;

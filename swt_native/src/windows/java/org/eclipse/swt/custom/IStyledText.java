@@ -1,7 +1,6 @@
 package org.eclipse.swt.custom;
 
 import java.util.*;
-import java.util.function.*;
 import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
@@ -3126,6 +3125,8 @@ public interface IStyledText extends ICanvas, ImplStyledText {
      * </ul>
      */
     void showSelection();
+
+    Object getData(String key);
 
     StyledText getApi();
 }

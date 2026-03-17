@@ -342,14 +342,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
         int index = parent.indexOf(this.getApi());
         if (index == -1)
             return;
-        if (image != null || ((DartTree) parent.getImpl()).sortColumn == this.getApi()) {
-            Image headerImage = null;
-            if (((DartTree) parent.getImpl()).sortColumn == this.getApi() && ((DartTree) parent.getImpl()).sortDirection != SWT.NONE) {
-            } else {
-                headerImage = image;
-            }
-            if (headerImage != null) {
-            }
+        if (image != null) {
         }
     }
 
@@ -588,6 +581,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public void setWidth(int width) {
         checkWidget();
+        setWidthInPixels(DPIUtil.pointToPixel(width, getZoom()));
     }
 
     void setWidthInPixels(int width) {
@@ -608,19 +602,17 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
     void updateToolTip(int index) {
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof TreeColumn treeColumn)) {
-            return;
-        }
-        Tree tree = treeColumn.getParent();
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        Tree tree = getParent();
         boolean ignoreColumnResize = ((DartTree) tree.getImpl()).ignoreColumnResize;
         ((DartTree) tree.getImpl()).ignoreColumnResize = true;
-        final int newColumnWidth = Math.round(((DartTreeColumn) treeColumn.getImpl()).getWidthInPixels() * scalingFactor);
-        ((DartTreeColumn) treeColumn.getImpl()).setWidthInPixels(newColumnWidth);
+        final int newColumnWidth = Math.round(getWidthInPixels() * scalingFactor);
+        setWidthInPixels(newColumnWidth);
         ((DartTree) tree.getImpl()).ignoreColumnResize = ignoreColumnResize;
-        Image image = ((DartTreeColumn) treeColumn.getImpl()).image;
         if (image != null) {
-            treeColumn.setImage(image);
+            setImage(image);
         }
     }
 

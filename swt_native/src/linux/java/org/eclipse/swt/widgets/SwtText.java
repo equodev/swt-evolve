@@ -738,7 +738,6 @@ public class SwtText extends SwtScrollable implements IText {
      * <p>
      * The current selection is copied to the clipboard.
      * </p>
-     *
      * @exception SWTException <ul>
      *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
@@ -1737,7 +1736,7 @@ public class SwtText extends SwtScrollable implements IText {
     }
 
     @Override
-    long gtk_event_after(long widget, long gdkEvent) {
+    long gtk3_event_after(long widget, long gdkEvent) {
         if (cursor != null)
             setCursor(cursor.handle);
         /*
@@ -1752,13 +1751,9 @@ public class SwtText extends SwtScrollable implements IText {
             switch(eventType) {
                 case GDK.GDK_FOCUS_CHANGE:
                     boolean[] focusIn = new boolean[1];
-                    if (GTK.GTK4) {
-                        focusIn[0] = GDK.gdk_focus_event_get_in(gdkEvent);
-                    } else {
-                        GdkEventFocus gdkEventFocus = new GdkEventFocus();
-                        GTK3.memmove(gdkEventFocus, gdkEvent, GdkEventFocus.sizeof);
-                        focusIn[0] = gdkEventFocus.in != 0;
-                    }
+                    GdkEventFocus gdkEventFocus = new GdkEventFocus();
+                    GTK3.memmove(gdkEventFocus, gdkEvent, GdkEventFocus.sizeof);
+                    focusIn[0] = gdkEventFocus.in != 0;
                     if (focusIn[0]) {
                         long settings = GTK.gtk_settings_get_default();
                         OS.g_object_set(settings, GTK.gtk_entry_select_on_focus, true, 0);
@@ -1766,7 +1761,7 @@ public class SwtText extends SwtScrollable implements IText {
                     break;
             }
         }
-        return super.gtk_event_after(widget, gdkEvent);
+        return super.gtk3_event_after(widget, gdkEvent);
     }
 
     @Override
@@ -1871,20 +1866,15 @@ public class SwtText extends SwtScrollable implements IText {
     }
 
     @Override
-    long gtk_key_press_event(long widget, long event) {
+    long gtk3_key_press_event(long widget, long event) {
         boolean handleSegments = false, segmentsCleared = false;
         if (hooks(SWT.Segments) || filters(SWT.Segments)) {
             int length = 0;
             int[] state = new int[1];
-            if (GTK.GTK4) {
-                /* TODO: GTK4 no access to key event string */
-                state[0] = GDK.gdk_event_get_modifier_state(event);
-            } else {
-                GDK.gdk_event_get_state(event, state);
-                GdkEventKey gdkEvent = new GdkEventKey();
-                GTK3.memmove(gdkEvent, event, GdkEventKey.sizeof);
-                length = gdkEvent.length;
-            }
+            GDK.gdk_event_get_state(event, state);
+            GdkEventKey gdkEvent = new GdkEventKey();
+            GTK3.memmove(gdkEvent, event, GdkEventKey.sizeof);
+            length = gdkEvent.length;
             if (length > 0 && (state[0] & (GDK.GDK_MOD1_MASK | GDK.GDK_CONTROL_MASK)) == 0) {
                 handleSegments = true;
                 if (segments != null) {
@@ -1893,7 +1883,7 @@ public class SwtText extends SwtScrollable implements IText {
                 }
             }
         }
-        long result = super.gtk_key_press_event(widget, event);
+        long result = super.gtk3_key_press_event(widget, event);
         if (result != 0)
             fixIM();
         if (gdkEventKey == -1)
@@ -2118,7 +2108,12 @@ public class SwtText extends SwtScrollable implements IText {
      * The selected text is deleted from the widget
      * and new text inserted from the clipboard.
      * </p>
-     *
+     * <p>
+     * <strong>Note:</strong> Pasting data to controls may occurs asynchronously. The widget
+     * text may not reflect the updated value immediately after calling this method.
+     * The new text will appear once pending events are processed in the event loop.
+     * Use {@link Display#asyncExec(Runnable)} before accessing <code>getText()</code>.
+     * </p>
      * @exception SWTException <ul>
      *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>

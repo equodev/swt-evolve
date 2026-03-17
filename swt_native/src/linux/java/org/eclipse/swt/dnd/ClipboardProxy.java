@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2017 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -15,14 +15,15 @@
  */
 package org.eclipse.swt.dnd;
 
-import org.eclipse.swt.*;
-import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
 import org.eclipse.swt.widgets.*;
 
+/**
+ * Clipboard proxy used to copy data to the clipboard in GTK3 only
+ * @see ClipboardProxyGTK4 the GTK4 version
+ */
 class ClipboardProxy {
 
     /* Data is not flushed to the clipboard immediately.
@@ -36,8 +37,11 @@ class ClipboardProxy {
 
     Transfer[] primaryClipboardDataTypes;
 
-    long clipboardOwner = GTK.GTK4 ? GTK4.gtk_window_new() : GTK3.gtk_window_new(GTK.GTK_WINDOW_TOPLEVEL);
+    long clipboardOwner = GTK3.gtk_window_new(GTK.GTK_WINDOW_TOPLEVEL);
 
+    /**
+     * display == null means that the display has been disposed.
+     */
     Display display;
 
     Clipboard activeClipboard = null;
@@ -52,6 +56,9 @@ class ClipboardProxy {
     static String ID = "CLIPBOARD PROXY OBJECT";
 
     static ClipboardProxy _getInstance(final Display display) {
+        if (GTK.GTK4) {
+            throw new UnsupportedOperationException("Illegal attempt to use GTK3 ClipboardProxy on GTK4");
+        }
         ClipboardProxy proxy = (ClipboardProxy) display.getData(ID);
         if (proxy != null)
             return proxy;
@@ -67,7 +74,7 @@ class ClipboardProxy {
         return proxy;
     }
 
-    ClipboardProxy(Display display) {
+    private ClipboardProxy(Display display) {
         this.display = display;
         //$NON-NLS-1$
         getFunc = new Callback(this, "getFunc", 4);
@@ -85,14 +92,53 @@ class ClipboardProxy {
     }
 
     void gtk_gdk_clipboard_clear(long clipboard) {
-        if (GTK.GTK4) {
-            GDK.gdk_clipboard_set_content(clipboard, 0);
-        } else {
-            GTK3.gtk_clipboard_clear(clipboard);
+        GTK3.gtk_clipboard_clear(clipboard);
+    }
+
+    /**
+     * The calls to gtk_clipboard_set_with_owner (in
+     * {@link #setData(Clipboard, Object[], Transfer[], int)}) means the
+     * GtkClipboard (in C side) has function pointers saved to the getFunc +
+     * clearFunc callbacks.
+     *
+     * Therefore, when we dispose {@link ClipboardProxy} we cannot dispose the
+     * callbacks until we know that GtkClipboard doesn't have a pointer to these
+     * callbacks. GtkClipboard clears these pointers in clipboard_unset
+     * (https://gitlab.gnome.org/GNOME/gtk/-/blob/716458e86a222f43e64f7a4feda37749f3469ee4/gtk/gtkclipboard.c#L755)
+     * and notifies us that the pointers are no longer stored by calling clearFunc
+     * (https://gitlab.gnome.org/GNOME/gtk/-/blob/716458e86a222f43e64f7a4feda37749f3469ee4/gtk/gtkclipboard.c#L782)
+     *
+     * Therefore, after disposing ClipboardProxy we need to defer disposing the
+     * callbacks until clearFunc has been called.
+     *
+     * We know if we have been called sufficiently (for both clipboards that could
+     * have a handle stored) when both clipboards no longer have data stored.
+     *
+     * If we don't defer the disposal it causes SIGSEGV or other undefined behavior.
+     *
+     * Fix for https://github.com/eclipse-platform/eclipse.platform.swt/issues/2675
+     */
+    private void finishDispose() {
+        if (display == null) {
+            if (clipboardDataTypes == null && primaryClipboardDataTypes == null) {
+                if (getFunc != null)
+                    getFunc.dispose();
+                getFunc = null;
+                if (clearFunc != null)
+                    clearFunc.dispose();
+                clearFunc = null;
+                if (clipboardOwner != 0) {
+                    GTK3.gtk_widget_destroy(clipboardOwner);
+                }
+                clipboardOwner = 0;
+            }
         }
     }
 
     long clearFunc(long clipboard, long user_data_or_owner) {
+        if (display == null) {
+            System.err.println("***WARNING: Attempt to access SWT clipboard after disposing SWT Display.");
+        }
         if (clipboard == SwtClipboard.GTKCLIPBOARD) {
             activeClipboard = null;
             clipboardData = null;
@@ -103,6 +149,7 @@ class ClipboardProxy {
             primaryClipboardData = null;
             primaryClipboardDataTypes = null;
         }
+        finishDispose();
         return 1;
     }
 
@@ -110,32 +157,13 @@ class ClipboardProxy {
         if (display == null)
             return;
         if (activeClipboard != null) {
-            if (!GTK.GTK4)
-                GTK3.gtk_clipboard_store(SwtClipboard.GTKCLIPBOARD);
+            GTK3.gtk_clipboard_store(SwtClipboard.GTKCLIPBOARD);
         }
         if (activePrimaryClipboard != null) {
-            if (!GTK.GTK4)
-                GTK3.gtk_clipboard_store(SwtClipboard.GTKPRIMARYCLIPBOARD);
+            GTK3.gtk_clipboard_store(SwtClipboard.GTKPRIMARYCLIPBOARD);
         }
         display = null;
-        if (getFunc != null)
-            getFunc.dispose();
-        getFunc = null;
-        if (clearFunc != null)
-            clearFunc.dispose();
-        clearFunc = null;
-        clipboardData = null;
-        clipboardDataTypes = null;
-        primaryClipboardData = null;
-        primaryClipboardDataTypes = null;
-        if (clipboardOwner != 0) {
-            if (GTK.GTK4) {
-                GTK4.gtk_window_destroy(clipboardOwner);
-            } else {
-                GTK3.gtk_widget_destroy(clipboardOwner);
-            }
-        }
-        clipboardOwner = 0;
+        finishDispose();
     }
 
     /**
@@ -143,6 +171,10 @@ class ClipboardProxy {
      * When this clipboard is disposed, the data will no longer be available.
      */
     long getFunc(long clipboard, long selection_data, long info, long user_data_or_owner) {
+        if (display == null) {
+            System.err.println("***WARNING: Attempt to access SWT clipboard after disposing SWT Display.");
+            return 0;
+        }
         if (selection_data == 0)
             return 0;
         long target = GTK3.gtk_selection_data_get_target(selection_data);
@@ -169,8 +201,6 @@ class ClipboardProxy {
     }
 
     boolean setData(Clipboard owner, Object[] data, Transfer[] dataTypes, int clipboards) {
-        if (GTK.GTK4)
-            return setData_gtk4(owner, data, dataTypes, clipboards);
         GtkTargetEntry[] entries = new GtkTargetEntry[0];
         long pTargetsList = 0;
         try {
@@ -239,67 +269,5 @@ class ClipboardProxy {
             if (pTargetsList != 0)
                 OS.g_free(pTargetsList);
         }
-    }
-
-    private boolean setData_gtk4(Clipboard owner, Object[] data, Transfer[] dataTypes, int clipboards) {
-        boolean result = false;
-        long[] providers = new long[0];
-        for (int i = 0; i < dataTypes.length; i++) {
-            Transfer transfer = dataTypes[i];
-            String[] typeNames = transfer.getTypeNames();
-            //Build the GdkContentProvider for each and store in array
-            long provider = setProviderFromType(typeNames[0], data[i]);
-            if (provider != 0) {
-                long[] tmp = new long[providers.length + 1];
-                System.arraycopy(providers, 0, tmp, 0, providers.length);
-                tmp[providers.length] = provider;
-                providers = tmp;
-            }
-        }
-        //Build the GdkContentProvider Union
-        if (providers.length == 0)
-            return false;
-        long union = GTK4.gdk_content_provider_new_union(providers, providers.length);
-        if ((clipboards & DND.CLIPBOARD) != 0) {
-            clipboardData = data;
-            clipboardDataTypes = dataTypes;
-            result = GTK4.gdk_clipboard_set_content(SwtClipboard.GTKCLIPBOARD, union);
-            activeClipboard = owner;
-        }
-        return result;
-    }
-
-    private long setProviderFromType(String string, Object data) {
-        long provider = 0;
-        if (data == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        else {
-            if (string.equals("text/plain") || string.equals("text/rtf")) {
-                long value = OS.g_malloc(OS.GValue_sizeof());
-                C.memset(value, 0, OS.GValue_sizeof());
-                OS.g_value_init(value, OS.G_TYPE_STRING());
-                OS.g_value_set_string(value, Converter.javaStringToCString((String) data));
-                provider = GTK4.gdk_content_provider_new_for_value(value);
-            }
-            if (string.equals("PIXBUF")) {
-                if (!(data instanceof ImageData))
-                    DND.error(DND.ERROR_INVALID_DATA);
-                ImageData imgData = (ImageData) data;
-                Image image = new Image(SwtDisplay.getCurrent(), imgData);
-                long pixbuf = ImageList.createPixbuf(image);
-                if (pixbuf != 0) {
-                    provider = GTK4.gdk_content_provider_new_typed(GDK.GDK_TYPE_PIXBUF(), pixbuf);
-                }
-                image.dispose();
-            }
-            if (string.equals("text/html")) {
-                long value = OS.g_malloc(OS.GValue_sizeof());
-                C.memset(value, 0, OS.GValue_sizeof());
-                OS.g_value_init(value, OS.G_TYPE_STRING());
-                OS.g_value_set_string(value, Converter.javaStringToCString((String) data));
-                provider = GTK4.gdk_content_provider_new_for_value(value);
-            }
-        }
-        return provider;
     }
 }

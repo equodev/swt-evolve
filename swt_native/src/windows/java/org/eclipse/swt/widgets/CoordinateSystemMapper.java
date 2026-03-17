@@ -27,15 +27,15 @@ interface CoordinateSystemMapper {
 
     Point map(Control from, Control to, int x, int y);
 
-    Rectangle mapMonitorBounds(Rectangle rectangle, int zoom);
+    Rectangle mapMonitorBounds(Rectangle.WithMonitor rectangle);
 
-    Point translateFromDisplayCoordinates(Point point, int zoom);
+    Point translateFromDisplayCoordinates(Point point);
 
-    Point translateToDisplayCoordinates(Point point, int zoom);
+    Point translateToDisplayCoordinates(Point point);
 
-    Rectangle translateFromDisplayCoordinates(Rectangle rect, int zoom);
+    Rectangle translateFromDisplayCoordinates(Rectangle rect);
 
-    Rectangle translateToDisplayCoordinates(Rectangle rect, int zoom);
+    Rectangle translateToDisplayCoordinates(Rectangle rect);
 
     Rectangle getContainingMonitorBoundsInPixels(Point point);
 

@@ -8,7 +8,7 @@ import org.eclipse.swt.internal.gtk4.GTK4;
 
 /**
  * Version-agnostic wrapper for GTK calls.
- * Generated for SWT version 3.131.0.
+ * Generated for SWT version 3.132.0.
  *
  * This class provides static methods that delegate to the correct GTK implementation
  * based on the SWT version being used. SwtFlutterBridge uses this class exclusively

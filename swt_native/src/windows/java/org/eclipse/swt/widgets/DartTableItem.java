@@ -1186,19 +1186,17 @@ public class DartTableItem extends DartItem implements ITableItem {
         setText(0, string);
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof TableItem tableItem)) {
-            return;
-        }
-        Font font = ((DartTableItem) tableItem.getImpl()).font;
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
         if (font != null) {
-            tableItem.setFont(((DartTableItem) tableItem.getImpl()).font);
+            setFont(font);
         }
-        Font[] cellFonts = ((DartTableItem) tableItem.getImpl()).cellFont;
+        Font[] cellFonts = cellFont;
         if (cellFonts != null) {
             for (int index = 0; index < cellFonts.length; index++) {
                 Font cellFont = cellFonts[index];
-                cellFonts[index] = cellFont == null ? null : DartFont.win32_new(cellFont, ((DartWidget) tableItem.getImpl()).getNativeZoom());
+                cellFonts[index] = cellFont == null ? null : DartFont.win32_new(cellFont, getNativeZoom());
             }
         }
     }

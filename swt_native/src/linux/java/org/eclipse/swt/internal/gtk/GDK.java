@@ -453,6 +453,11 @@ public class GDK extends OS {
     /**
      * @param display cast=(GdkDisplay *)
      */
+    public static final native boolean GDK_IS_WAYLAND_DISPLAY(long display);
+
+    /**
+     * @param display cast=(GdkDisplay *)
+     */
     public static final native boolean GDK_IS_X11_DISPLAY(long display);
 
     /**
@@ -503,13 +508,6 @@ public class GDK extends OS {
      */
     /* [GTK3 only, if-def'd in os.h] */
     public static final native long gdk_x11_window_lookup_for_display(long gdkdisplay, long xid);
-
-    /**
-     * @param gdkdisplay cast=(GdkDisplay *)
-     * @param xid cast=(Window)
-     */
-    /* [GTK4 only, if-def'd in os.h] */
-    public static final native long gdk_x11_surface_lookup_for_display(long gdkdisplay, long xid);
 
     /**
      * @method flags=dynamic
@@ -585,20 +583,6 @@ public class GDK extends OS {
      */
     /* [GTK4 only, if-def'd in os.h] */
     public static final native int gdk_surface_get_height(long surface);
-
-    /**
-     * @param surface cast=(GdkSurface *)
-     * @param region cast=(cairo_region_t *)
-     */
-    /* [GTK4 only, if-def'd in os.h] */
-    public static final native void gdk_surface_set_input_region(long surface, long region);
-
-    /**
-     * @param surface cast=(GdkSurface *)
-     * @param region cast=(cairo_region_t *)
-     */
-    /* [GTK4 only, if-def'd in os.h] */
-    public static final native void gdk_surface_set_opaque_region(long surface, long region);
 
     /**
      * @param cairo cast=(cairo_t *)
@@ -945,16 +929,19 @@ public class GDK extends OS {
 
     /**
      * @param animation cast=(GdkPixbufAnimation *)
+     * @method flags=ignore_deprecations
      */
     public static final native boolean gdk_pixbuf_animation_is_static_image(long animation);
 
     /**
      * @param iter cast=(GdkPixbufAnimationIter *)
+     * @method flags=ignore_deprecations
      */
     public static final native int gdk_pixbuf_animation_iter_get_delay_time(long iter);
 
     /**
      * @param iter cast=(GdkPixbufAnimationIter *)
+     * @method flags=ignore_deprecations
      */
     public static final native long gdk_pixbuf_animation_iter_get_pixbuf(long iter);
 
@@ -974,6 +961,7 @@ public class GDK extends OS {
 
     /**
      * @param animation cast=(GdkPixbufAnimation *)
+     * @method flags=ignore_deprecations
      */
     public static final native long gdk_pixbuf_animation_get_static_image(long animation);
 
@@ -1035,6 +1023,7 @@ public class GDK extends OS {
 
     /**
      * @param loader cast=(GdkPixbufLoader *)
+     * @method flags=ignore_deprecations
      */
     public static final native long gdk_pixbuf_loader_get_animation(long loader);
 

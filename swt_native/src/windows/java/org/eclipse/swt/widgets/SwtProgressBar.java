@@ -15,9 +15,10 @@
  */
 package org.eclipse.swt.widgets;
 
-import org.eclipse.swt.internal.win32.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.*;
+import org.eclipse.swt.internal.win32.*;
 
 /**
  * Instances of the receiver represent an unselectable
@@ -127,8 +128,9 @@ public class SwtProgressBar extends SwtControl implements IProgressBar {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
         checkWidget();
+        Point hintInPixels = Win32DPIUtils.pointToPixelAsSufficientlyLargeSize(hintInPoints, zoom);
         int border = getBorderWidthInPixels();
         int width = border * 2, height = border * 2;
         if ((getApi().style & SWT.HORIZONTAL) != 0) {
@@ -138,10 +140,10 @@ public class SwtProgressBar extends SwtControl implements IProgressBar {
             width += getSystemMetrics(OS.SM_CXVSCROLL);
             height += getSystemMetrics(OS.SM_CYVSCROLL) * 10;
         }
-        if (wHint != SWT.DEFAULT)
-            width = wHint + (border * 2);
-        if (hHint != SWT.DEFAULT)
-            height = hHint + (border * 2);
+        if (hintInPoints.x != SWT.DEFAULT)
+            width = hintInPixels.x + (border * 2);
+        if (hintInPoints.y != SWT.DEFAULT)
+            height = hintInPixels.y + (border * 2);
         return new Point(width, height);
     }
 

@@ -53,8 +53,6 @@ import org.eclipse.swt.internal.win32.*;
  */
 public abstract class SwtWidget implements IWidget {
 
-    boolean autoScaleDisabled = false;
-
     Display display;
 
     EventTable eventTable;
@@ -137,17 +135,12 @@ public abstract class SwtWidget implements IWidget {
     /* Bidi flag and for auto text direction */
     static final int AUTO_TEXT_DIRECTION = SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
 
-    private static final String DATA_AUTOSCALE_DISABLED = "AUTOSCALE_DISABLED";
-
-    private static final String DATA_NATIVE_ZOOM = "NATIVE_ZOOM";
-
     /* Initialize the Common Controls DLL */
     static {
         INITCOMMONCONTROLSEX icce = new INITCOMMONCONTROLSEX();
         icce.dwSize = INITCOMMONCONTROLSEX.sizeof;
         icce.dwICC = 0xffff;
         OS.InitCommonControlsEx(icce);
-        DPIZoomChangeRegistry.registerHandler(SwtWidget::handleDPIChange, Widget.class);
     }
 
     /**
@@ -193,13 +186,21 @@ public abstract class SwtWidget implements IWidget {
         checkParent(parent);
         this.getApi().style = style;
         this.getApi().nativeZoom = parent != null ? parent.nativeZoom : DPIUtil.getNativeDeviceZoom();
-        this.autoScaleDisabled = parent.getImpl()._autoScaleDisabled();
         display = parent.getImpl()._display();
         if (parent.getImpl() instanceof DynWidget dyn)
             dyn.convert();
         reskinWidget();
         notifyCreationTracker();
-        this.setData(DATA_NATIVE_ZOOM, this.getApi().nativeZoom);
+        registerDPIChangeListener();
+    }
+
+    void registerDPIChangeListener() {
+        if (display.isRescalingAtRuntime()) {
+            this._addListener(SWT.ZoomChanged, event -> {
+                float scalingFactor = 1f * DPIUtil.getZoomForAutoscaleProperty(event.detail) / DPIUtil.getZoomForAutoscaleProperty(getApi().nativeZoom);
+                handleDPIChange(event, scalingFactor);
+            });
+        }
     }
 
     void _addListener(int eventType, Listener listener) {
@@ -1518,9 +1519,6 @@ public abstract class SwtWidget implements IWidget {
         }
         if (key.equals(SWT.SKIN_CLASS) || key.equals(SWT.SKIN_ID))
             this.reskin(SWT.ALL);
-        if (DATA_AUTOSCALE_DISABLED.equals(key)) {
-            autoScaleDisabled = Boolean.parseBoolean(value.toString());
-        }
     }
 
     public boolean sendFocusEvent(int type) {
@@ -1775,7 +1773,7 @@ public abstract class SwtWidget implements IWidget {
 
     boolean showMenu(int x, int y, int detail) {
         Event event = new Event();
-        Point mappedLocation = ((SwtDisplay) getDisplay().getImpl()).translateFromDisplayCoordinates(new Point(x, y), getZoom());
+        Point mappedLocation = ((SwtDisplay) getDisplay().getImpl()).translateFromDisplayCoordinates(new Point(x, y));
         event.setLocation(mappedLocation.x, mappedLocation.y);
         event.detail = detail;
         if (event.detail == SWT.MENU_KEYBOARD) {
@@ -1790,7 +1788,7 @@ public abstract class SwtWidget implements IWidget {
         Menu menu = getMenu();
         if (menu != null && !menu.isDisposed()) {
             // In Pixels
-            Point locInPixels = Win32DPIUtils.pointToPixel(event.getLocation(), getZoom());
+            Point locInPixels = Win32DPIUtils.pointToPixelAsLocation(event.getLocation(), getZoom());
             if (x != locInPixels.x || y != locInPixels.y) {
                 menu.setLocation(event.getLocation());
             }
@@ -2785,29 +2783,19 @@ public abstract class SwtWidget implements IWidget {
 
     GC createNewGC(long hDC, GCData data) {
         data.nativeZoom = getNativeZoom();
-        if (autoScaleDisabled && data.font != null) {
-            data.font = SWTFontProvider.getFont(display, data.font.getFontData()[0], 100);
-        }
         return SwtGC.win32_new(hDC, data);
     }
 
     int getNativeZoom() {
-        if (autoScaleDisabled) {
-            return 100;
-        }
         return getApi().nativeZoom;
     }
 
     public int getZoom() {
-        if (autoScaleDisabled) {
-            return 100;
-        }
         return DPIUtil.getZoomForAutoscaleProperty(getApi().nativeZoom);
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        widget.nativeZoom = newZoom;
-        widget.setData(DATA_NATIVE_ZOOM, newZoom);
+    void handleDPIChange(Event event, float scalingFactor) {
+        this.getApi().nativeZoom = event.detail;
     }
 
     int getSystemMetrics(int nIndex) {
@@ -2816,10 +2804,6 @@ public abstract class SwtWidget implements IWidget {
 
     boolean adjustWindowRectEx(RECT lpRect, int dwStyle, boolean bMenu, int dwExStyle) {
         return OS.AdjustWindowRectExForDpi(lpRect, dwStyle, bMenu, dwExStyle, DPIUtil.mapZoomToDPI(getApi().nativeZoom));
-    }
-
-    public boolean _autoScaleDisabled() {
-        return autoScaleDisabled;
     }
 
     public Display _display() {

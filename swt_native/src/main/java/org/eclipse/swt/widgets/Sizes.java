@@ -82,7 +82,7 @@ public class Sizes {
                 size = new Point(wHint, hHint);
             }
         } else {
-            size = composite.minimumSize(wHint, hHint, changed);
+            size = Sizes.minimumSize(composite, wHint, hHint, changed);
             if (size.x == 0)
                 size.x = DartWidget.DEFAULT_WIDTH;
             if (size.y == 0)

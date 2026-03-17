@@ -194,21 +194,14 @@ public class DartCoolItem extends DartItem implements ICoolItem {
         return Sizes.computeSize(this, wHint, hHint);
     }
 
-    Point computeSizeInPixels(int wHint, int hHint) {
+    Point computeSizeInPixels(Point sizeHintInPoints) {
         int index = parent.indexOf(this.getApi());
         if (index == -1)
             return new Point(0, 0);
-        int width = wHint, height = hHint;
-        if (wHint == SWT.DEFAULT)
-            width = 32;
-        if (hHint == SWT.DEFAULT)
-            height = 32;
         if ((parent.style & SWT.VERTICAL) != 0) {
-            height += ((DartCoolBar) parent.getImpl()).getMargin(index);
         } else {
-            width += ((DartCoolBar) parent.getImpl()).getMargin(index);
         }
-        return new Point(width, height);
+        return null;
     }
 
     @Override
@@ -384,6 +377,8 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public void setPreferredSize(int width, int height) {
         checkWidget();
+        int zoom = getZoom();
+        setPreferredSizeInPixels(DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom));
     }
 
     void setPreferredSizeInPixels(int width, int height) {
@@ -476,6 +471,8 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public void setSize(int width, int height) {
         checkWidget();
+        int zoom = getZoom();
+        setSizeInPixels(DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom));
     }
 
     void setSizeInPixels(int width, int height) {
@@ -572,6 +569,8 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public void setMinimumSize(int width, int height) {
         checkWidget();
+        int zoom = getZoom();
+        setMinimumSizeInPixels(DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom));
     }
 
     void setMinimumSizeInPixels(int width, int height) {

@@ -89,6 +89,9 @@ public sealed class Rectangle implements Serializable, Cloneable permits Rectang
         this.height = height;
     }
 
+    private Rectangle() {
+    }
+
     /**
      * Destructively replaces the x, y, width and height values
      * in the receiver with ones which represent the union of the
@@ -421,16 +424,25 @@ public sealed class Rectangle implements Serializable, Cloneable permits Rectang
 
         private float residualX, residualY, residualWidth, residualHeight;
 
+        private RoundingMode locationRounding = RoundingMode.ROUND;
+
+        private RoundingMode sizeRounding = RoundingMode.ROUND;
+
         public OfFloat(int x, int y, int width, int height) {
             super(x, y, width, height);
         }
 
         public OfFloat(float x, float y, float width, float height) {
-            super(Math.round(x), Math.round(y), Math.round(width), Math.round(height));
-            this.residualX = x - this.x;
-            this.residualY = y - this.y;
-            this.residualWidth = width - this.width;
-            this.residualHeight = height - this.height;
+            this(x, y, width, height, RoundingMode.ROUND, RoundingMode.ROUND);
+        }
+
+        public OfFloat(float x, float y, float width, float height, RoundingMode locationRounding, RoundingMode sizeRounding) {
+            this.locationRounding = locationRounding;
+            this.sizeRounding = sizeRounding;
+            setX(x);
+            setY(y);
+            setWidth(width);
+            setHeight(height);
         }
 
         public float getX() {
@@ -450,23 +462,48 @@ public sealed class Rectangle implements Serializable, Cloneable permits Rectang
         }
 
         public void setX(float x) {
-            this.x = Math.round(x);
+            this.x = locationRounding.round(x);
             this.residualX = x - this.x;
+            setWidth(getWidth());
         }
 
         public void setY(float y) {
-            this.y = Math.round(y);
+            this.y = locationRounding.round(y);
             this.residualY = y - this.y;
+            setHeight(getHeight());
         }
 
         public void setWidth(float width) {
-            this.width = Math.round(width);
+            this.width = sizeRounding.round(width);
             this.residualWidth = width - this.width;
         }
 
         public void setHeight(float height) {
-            this.height = Math.round(height);
+            this.height = sizeRounding.round(height);
             this.residualHeight = height - this.height;
+        }
+
+        public Point.OfFloat getTopLeft() {
+            return new Point.OfFloat(getX(), getY(), locationRounding);
+        }
+
+        public Point.OfFloat getBottomRight() {
+            return new Point.OfFloat(getX() + getWidth(), getY() + getHeight(), sizeRounding);
+        }
+
+        @Override
+        public Rectangle.OfFloat clone() {
+            return new Rectangle.OfFloat(getX(), getY(), getWidth(), getHeight(), locationRounding, sizeRounding);
+        }
+
+        /**
+         * Creates a shallow copy of the provided Rectangle as a Rectangle.OfFloat instance.
+         */
+        public static Rectangle.OfFloat from(Rectangle rectangle) {
+            if (rectangle instanceof Rectangle.OfFloat rectangleOfFloat) {
+                return rectangleOfFloat.clone();
+            }
+            return new Rectangle.OfFloat(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
         }
     }
 

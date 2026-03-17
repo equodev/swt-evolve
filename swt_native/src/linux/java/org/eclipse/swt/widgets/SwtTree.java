@@ -319,6 +319,9 @@ public class SwtTree extends SwtComposite implements ITree {
         if (cell == ignoreCell)
             return 0;
         TreeItem item = _getItem(iter);
+        if (item == null || item.isDisposed()) {
+            return 0;
+        }
         if (item != null)
             OS.g_object_set_qdata(cell, SwtDisplay.SWT_OBJECT_INDEX2, item.handle);
         boolean isPixbuf = GTK.GTK_IS_CELL_RENDERER_PIXBUF(cell);
@@ -2364,13 +2367,9 @@ public class SwtTree extends SwtComposite implements ITree {
     }
 
     @Override
-    long gtk_key_press_event(long widget, long event) {
+    long gtk3_key_press_event(long widget, long event) {
         int[] key = new int[1];
-        if (GTK.GTK4) {
-            key[0] = GDK.gdk_key_event_get_keyval(event);
-        } else {
-            GDK.gdk_event_get_keyval(event, key);
-        }
+        GDK.gdk_event_get_keyval(event, key);
         switch(key[0]) {
             case GDK.GDK_Return:
                 // Send DefaultSelectionEvent when:
@@ -2383,7 +2382,7 @@ public class SwtTree extends SwtComposite implements ITree {
                 }
                 break;
         }
-        return super.gtk_key_press_event(widget, event);
+        return super.gtk3_key_press_event(widget, event);
     }
 
     /**

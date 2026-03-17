@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2017 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -102,8 +102,7 @@ public class SwtHTMLTransfer extends SwtByteArrayTransfer implements IHTMLTransf
     public Object nativeToJava(TransferData transferData) {
         if (!isSupportedType(transferData) || transferData.pValue == 0)
             return null;
-        /* Ensure byteCount is a multiple of 2 bytes */
-        int size = (transferData.format * transferData.length / 8) / 2 * 2;
+        int size = (transferData.format * transferData.length / 8);
         if (size <= 0)
             return null;
         // look for a Byte Order Mark
@@ -112,7 +111,19 @@ public class SwtHTMLTransfer extends SwtByteArrayTransfer implements IHTMLTransf
             C.memmove(bom, transferData.pValue, 2);
         String string;
         if (bom[0] == '\ufeff' || bom[0] == '\ufffe') {
-            // utf16
+            // XXX Follow up to Bugs 376589 384381 this is almost
+            // certainly wrong as it leaves the BOM as the first
+            // character in the string. This probably should be
+            //
+            // byte[] bytes = new byte [size];
+            // C.memmove (bytes, transferData.pValue, size);
+            // string = new String(bytes, StandardCharset.UTF16);
+            //
+            // However I cannot find any current Linux program that
+            // copies text/html to the clipboard in UTF16 anymore
+            // so it is probably not a big issue
+            /* Ensure byteCount is a multiple of 2 bytes */
+            size = size / 2 * 2;
             char[] chars = new char[size / 2];
             C.memmove(chars, transferData.pValue, size);
             string = new String(chars);

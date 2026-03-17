@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2017 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -34,20 +34,28 @@ import org.eclipse.swt.widgets.*;
 @Deprecated
 public class SwtAnimatedProgress extends SwtCanvas implements IAnimatedProgress {
 
+    @Deprecated
     static final int SLEEP = 70;
 
+    @Deprecated
     static final int DEFAULT_WIDTH = 160;
 
+    @Deprecated
     static final int DEFAULT_HEIGHT = 18;
 
+    @Deprecated
     boolean active = false;
 
+    @Deprecated
     boolean showStripes = false;
 
+    @Deprecated
     int value;
 
+    @Deprecated
     int orientation = SWT.HORIZONTAL;
 
+    @Deprecated
     boolean showBorder = false;
 
     /**
@@ -78,6 +86,7 @@ public class SwtAnimatedProgress extends SwtCanvas implements IAnimatedProgress 
      * @see SWT#BORDER
      * @see #getStyle()
      */
+    @Deprecated
     public SwtAnimatedProgress(Composite parent, int style, AnimatedProgress api) {
         super(parent, checkStyle(style), api);
         if ((style & SWT.VERTICAL) != 0) {
@@ -103,6 +112,7 @@ public class SwtAnimatedProgress extends SwtCanvas implements IAnimatedProgress 
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
+    @Deprecated
     public synchronized void clear() {
         checkWidget();
         if (active)
@@ -111,6 +121,7 @@ public class SwtAnimatedProgress extends SwtCanvas implements IAnimatedProgress 
         redraw();
     }
 
+    @Deprecated
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
         checkWidget();
@@ -136,6 +147,7 @@ public class SwtAnimatedProgress extends SwtCanvas implements IAnimatedProgress 
         gc.drawLine(x, y + h, x + w, y + h);
     }
 
+    @Deprecated
     void paint(PaintEvent event) {
         GC gc = event.gc;
         Display disp = getDisplay();
@@ -147,6 +159,7 @@ public class SwtAnimatedProgress extends SwtCanvas implements IAnimatedProgress 
         paintStripes(gc);
     }
 
+    @Deprecated
     void paintStripes(GC gc) {
         if (!showStripes)
             return;
@@ -191,6 +204,7 @@ public class SwtAnimatedProgress extends SwtCanvas implements IAnimatedProgress 
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      * </ul>
      */
+    @Deprecated
     public synchronized void start() {
         checkWidget();
         if (active)
@@ -213,6 +227,7 @@ public class SwtAnimatedProgress extends SwtCanvas implements IAnimatedProgress 
     /**
      * Stop the animation.   Freeze the presentation at its current appearance.
      */
+    @Deprecated
     public synchronized void stop() {
         //checkWidget();
         active = false;

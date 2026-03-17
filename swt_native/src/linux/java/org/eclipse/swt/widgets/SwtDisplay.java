@@ -1308,8 +1308,13 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         themeDark = checkAndSetThemeDetails(themeName);
         if (OS.isX11()) {
             xDisplay = GTK.GTK4 ? 0 : GDK.gdk_x11_get_default_xdisplay();
-            // set GDK backend if we are on X11
             System.setProperty("org.eclipse.swt.internal.gdk.backend", "x11");
+        } else if (OS.isWayland()) {
+            System.setProperty("org.eclipse.swt.internal.gdk.backend", "wayland");
+        } else {
+            // If other items are added in the future this should be changed
+            // from unknown to real value.
+            System.setProperty("org.eclipse.swt.internal.gdk.backend", "unknown");
         }
         if (OS.SWT_DEBUG)
             Device.DEBUG = true;
@@ -4439,17 +4444,17 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * @since 3.0
      */
     public boolean post(Event event) {
-        /*
-	 * GdkEvents are now strictly read-only
-	 * https://docs.gtk.org/gtk4/migrating-3to4.html#adapt-to-gdkevent-api-changes
-	 */
-        if (GTK.GTK4)
-            return false;
         synchronized (SwtDisplay.class) {
             if (isDisposed())
                 error(SWT.ERROR_DEVICE_DISPOSED);
             if (event == null)
                 error(SWT.ERROR_NULL_ARGUMENT);
+            /*
+		 * GdkEvents are now strictly read-only
+		 * https://docs.gtk.org/gtk4/migrating-3to4.html#adapt-to-gdkevent-api-changes
+		 */
+            if (GTK.GTK4)
+                return false;
             int type = event.type;
             if (type == SWT.MouseMove) {
                 Rectangle loc = event.getBounds();
@@ -4820,6 +4825,9 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             activateCallback.dispose();
             activateCallback = null;
             activateProc = 0;
+            computeSizeCallback.dispose();
+            computeSizeCallback = null;
+            computeSizeProc = 0;
             gesturePressReleaseCallback.dispose();
             gesturePressReleaseCallback = null;
             gesturePressReleaseProc = 0;

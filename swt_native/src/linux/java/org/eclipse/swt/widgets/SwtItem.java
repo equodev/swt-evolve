@@ -76,6 +76,7 @@ public abstract class SwtItem extends SwtWidget implements IItem {
     public SwtItem(Widget parent, int style, Item api) {
         super(parent, style, api);
         text = "";
+        this._addListener(SWT.ZoomChanged, this::handleDPIChange);
     }
 
     /**
@@ -226,6 +227,14 @@ public abstract class SwtItem extends SwtWidget implements IItem {
             return true;
         }
         return textDirection == AUTO_TEXT_DIRECTION;
+    }
+
+    private void handleDPIChange(Event event) {
+        // Refresh the image
+        Image image = getImage();
+        if (image != null) {
+            setImage(image);
+        }
     }
 
     public String _text() {

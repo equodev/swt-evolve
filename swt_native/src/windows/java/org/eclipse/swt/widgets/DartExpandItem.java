@@ -188,6 +188,11 @@ public class DartExpandItem extends DartItem implements IExpandItem {
 
     int getHeaderHeightInPixels() {
         int headerHeightInPixels = ((DartExpandBar) parent.getImpl()).getBandHeight();
+        int imageHeightInPixels = DPIUtil.pointToPixel(imageHeight, getZoom());
+        int imageHeaderDiff = headerHeightInPixels - imageHeightInPixels;
+        if (imageHeaderDiff < IMAGE_MARGIN) {
+            headerHeightInPixels = imageHeightInPixels + IMAGE_MARGIN;
+        }
         return headerHeightInPixels;
     }
 
@@ -245,6 +250,10 @@ public class DartExpandItem extends DartItem implements IExpandItem {
 
     void redraw(boolean all) {
         int headerHeightInPixels = getHeaderHeightInPixels();
+        int zoom = getZoom();
+        int imageHeightInPixels = DPIUtil.pointToPixel(imageHeight, zoom);
+        if (imageHeightInPixels > headerHeightInPixels) {
+        }
         if (!((DartExpandBar) parent.getImpl()).isAppThemed()) {
         }
     }
@@ -362,6 +371,7 @@ public class DartExpandItem extends DartItem implements IExpandItem {
      */
     public void setHeight(int height) {
         checkWidget();
+        setHeightInPixels(DPIUtil.pointToPixel(height, getZoom()));
     }
 
     void setHeightInPixels(int height) {
@@ -404,14 +414,13 @@ public class DartExpandItem extends DartItem implements IExpandItem {
         redraw(true);
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof ExpandItem item)) {
-            return;
-        }
-        if (((DartExpandItem) item.getImpl()).height != 0 || ((DartExpandItem) item.getImpl()).width != 0) {
-            int newWidth = Math.round(((DartExpandItem) item.getImpl()).width * scalingFactor);
-            int newHeight = Math.round(((DartExpandItem) item.getImpl()).height * scalingFactor);
-            ((DartExpandItem) item.getImpl()).setBoundsInPixels(((DartExpandItem) item.getImpl()).x, ((DartExpandItem) item.getImpl()).y, newWidth, newHeight, true, true);
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        if (height != 0 || width != 0) {
+            int newWidth = Math.round(width * scalingFactor);
+            int newHeight = Math.round(height * scalingFactor);
+            setBoundsInPixels(x, y, newWidth, newHeight, true, true);
         }
     }
 

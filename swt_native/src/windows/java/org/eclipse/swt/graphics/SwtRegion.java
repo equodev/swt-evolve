@@ -211,8 +211,8 @@ public final class SwtRegion extends SwtResource implements IRegion {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return applyUsingAnyHandle(regionHandle -> {
             int zoom = regionHandle.zoom();
-            int xInPixels = Win32DPIUtils.pointToPixel(x, zoom);
-            int yInPixels = Win32DPIUtils.pointToPixel(y, zoom);
+            int xInPixels = DPIUtil.pointToPixel(x, zoom);
+            int yInPixels = DPIUtil.pointToPixel(y, zoom);
             return containsInPixels(regionHandle.handle(), xInPixels, yInPixels);
         });
     }
@@ -243,7 +243,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         return applyUsingAnyHandle(regionHandle -> {
             int zoom = regionHandle.zoom();
-            Point p = Win32DPIUtils.pointToPixel(pt, zoom);
+            Point p = Win32DPIUtils.pointToPixelAsLocation(pt, zoom);
             return containsInPixels(regionHandle.handle(), p.x, p.y);
         });
     }
@@ -934,7 +934,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
 
         @Override
         void translate(long handle, int zoom) {
-            Point pt = Win32DPIUtils.pointToPixel((Point) data, zoom);
+            Point pt = Win32DPIUtils.pointToPixelAsLocation((Point) data, zoom);
             OS.OffsetRgn(handle, pt.x, pt.y);
         }
     }

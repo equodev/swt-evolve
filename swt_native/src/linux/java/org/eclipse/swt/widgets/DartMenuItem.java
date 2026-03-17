@@ -672,9 +672,9 @@ public class DartMenuItem extends DartItem implements IMenuItem {
                 defaultDisableImage = new Image(getDisplay(), image, SWT.IMAGE_DISABLE);
             }
             _setImage(defaultDisableImage);
-        }
-        if (enabled && image != null)
+        } else {
             _setImage(image);
+        }
     }
 
     /**
@@ -1053,6 +1053,10 @@ public class DartMenuItem extends DartItem implements IMenuItem {
 
     public long _shortcutHandle() {
         return shortcutHandle;
+    }
+
+    public DartMenu.Section _section() {
+        return section;
     }
 
     public String _actionName() {

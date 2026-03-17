@@ -1008,19 +1008,6 @@ public class CCombo extends Composite {
         return getImpl().traverse(event);
     }
 
-    /**
-     * The method accepts a combo and a callback which takes
-     * all the child of the CCombo as the argument and executes it.
-     * All children are refreshed after the execution of the callback.
-     *
-     * @noreference This method is not intended to be referenced by clients.
-     * @param combo the Combo to get the children widget from
-     * @param childUpdater the callback which works with the child widgets
-     */
-    public static void updateAndRefreshChildren(CCombo combo, Consumer<Widget> childUpdater) {
-        SwtCCombo.updateAndRefreshChildren(combo, childUpdater);
-    }
-
     protected CCombo(ICCombo impl) {
         super(impl);
     }

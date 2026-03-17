@@ -463,8 +463,8 @@ public class SwtLink extends SwtControl implements ILink {
     }
 
     @Override
-    long gtk_event_after(long widget, long gdkEvent) {
-        long result = super.gtk_event_after(widget, gdkEvent);
+    long gtk3_event_after(long widget, long gdkEvent) {
+        long result = super.gtk3_event_after(widget, gdkEvent);
         int eventType = GDK.gdk_event_get_event_type(gdkEvent);
         switch(eventType) {
             case GDK.GDK_FOCUS_CHANGE:
@@ -504,8 +504,8 @@ public class SwtLink extends SwtControl implements ILink {
     }
 
     @Override
-    long gtk_key_press_event(long widget, long eventPtr) {
-        long result = super.gtk_key_press_event(widget, eventPtr);
+    long gtk3_key_press_event(long widget, long eventPtr) {
+        long result = super.gtk3_key_press_event(widget, eventPtr);
         if (result != 0)
             return result;
         if (focusIndex == -1)

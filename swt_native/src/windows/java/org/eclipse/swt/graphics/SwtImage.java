@@ -90,11 +90,6 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
     private boolean isDestroyed;
 
     /**
-     * specifies the transparent pixel
-     */
-    int transparentPixel = -1, transparentColor = -1;
-
-    /**
      * the GC which is drawing on the image
      */
     GC memGC;
@@ -125,6 +120,67 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
     private Map<Integer, ImageHandle> zoomLevelToImageHandle = new HashMap<>();
 
     private List<Consumer<Image>> onDisposeListeners;
+
+    private class HandleAtSize {
+
+        private ImageHandle handleContainer = null;
+
+        private int requestedWidth = -1;
+
+        private int requestedHeight = -1;
+
+        public void destroy() {
+            if (handleContainer != null && !zoomLevelToImageHandle.containsValue(handleContainer)) {
+                handleContainer.destroy();
+            }
+            handleContainer = null;
+            requestedWidth = -1;
+            requestedHeight = -1;
+        }
+
+        public ImageHandle refresh(int width, int height) {
+            if (!isReusable(width, height)) {
+                destroy();
+                requestedWidth = width;
+                requestedHeight = height;
+                handleContainer = createHandleAtExactSize(width, height).orElseGet(() -> getOrCreateImageHandleAtClosestSize(width, height));
+            }
+            return handleContainer;
+        }
+
+        private boolean isReusable(int width, int height) {
+            if (handleContainer == null || handleContainer.isDisposed()) {
+                return false;
+            }
+            return (requestedHeight == height && requestedWidth == width) || (handleContainer.height == height && handleContainer.width == width);
+        }
+
+        private Optional<ImageHandle> createHandleAtExactSize(int width, int height) {
+            Optional<ImageData> imageData = imageProvider.loadImageDataAtExactSize(width, height);
+            if (imageData.isPresent()) {
+                ImageData adaptedData = adaptImageDataIfDisabledOrGray(imageData.get());
+                ImageHandle imageHandle = init(adaptedData, -1);
+                return Optional.of(imageHandle);
+            }
+            return Optional.empty();
+        }
+
+        private ImageHandle getOrCreateImageHandleAtClosestSize(int widthHint, int heightHint) {
+            Rectangle bounds = getBounds(100);
+            int imageZoomForWidth = 100 * widthHint / bounds.width;
+            int imageZoomForHeight = 100 * heightHint / bounds.height;
+            int imageZoom = DPIUtil.getZoomForAutoscaleProperty(Math.max(imageZoomForWidth, imageZoomForHeight));
+            ImageHandle bestFittingHandle = zoomLevelToImageHandle.get(imageZoom);
+            if (bestFittingHandle == null) {
+                ImageData bestFittingImageData = imageProvider.loadImageData(imageZoom).element();
+                ImageData adaptedData = adaptImageDataIfDisabledOrGray(bestFittingImageData);
+                bestFittingHandle = init(adaptedData, -1);
+            }
+            return bestFittingHandle;
+        }
+    }
+
+    private final HandleAtSize lastRequestedHandle = new HandleAtSize();
 
     SwtImage(Device device, int type, long handle, int nativeZoom, Image api) {
         super(device, api);
@@ -249,7 +305,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
                                 long hOldSrc = OS.SelectObject(hdcSource, srcImageHandle);
                                 BITMAP bm = new BITMAP();
                                 OS.GetObject(srcImageHandle, BITMAP.sizeof, bm);
-                                imageMetadata = new ImageHandle(OS.CreateCompatibleBitmap(hdcSource, rect.width, bm.bmBits != 0 ? -rect.height : rect.height), imageHandle.zoom);
+                                imageMetadata = new ImageHandle(OS.CreateCompatibleBitmap(hdcSource, rect.width, bm.bmBits != 0 ? -rect.height : rect.height), imageHandle.zoom, imageHandle.transparentPixel);
                                 if (imageMetadata.handle == 0)
                                     SWT.error(SWT.ERROR_NO_HANDLES);
                                 long hOldDest = OS.SelectObject(hdcDest, imageMetadata.handle);
@@ -261,12 +317,11 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
                                 /* Release the HDC for the device */
                                 device.internal_dispose_GC(hDC, null);
                             }
-                            transparentPixel = srcImage.getImpl()._transparentPixel();
                             break;
                         case SWT.ICON:
                             for (ImageHandle imageHandle : ((SwtImage) srcImage.getImpl()).zoomLevelToImageHandle.values()) {
                                 Rectangle rect = imageHandle.getBounds();
-                                imageMetadata = new ImageHandle(OS.CopyImage(imageHandle.handle, OS.IMAGE_ICON, rect.width, rect.height, 0), imageHandle.zoom);
+                                imageMetadata = new ImageHandle(OS.CopyImage(imageHandle.handle, OS.IMAGE_ICON, rect.width, rect.height, 0), imageHandle.zoom, imageHandle.transparentPixel);
                                 if (imageMetadata.handle == 0)
                                     SWT.error(SWT.ERROR_NO_HANDLES);
                             }
@@ -822,17 +877,22 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      */
     public static long win32_getHandle(Image image, int zoom) {
         if (image.getImpl() instanceof SwtImage) {
-            return ((SwtImage) image.getImpl()).getHandle(zoom, zoom);
+            return ((SwtImage) image.getImpl()).getHandle(zoom, zoom).handle;
         } else
             return 0;
     }
 
-    long getHandle(int targetZoom, int nativeZoom) {
+    ImageHandle getHandle(int targetZoom, int nativeZoom) {
         if (isDisposed()) {
-            return 0L;
+            return null;
         }
         ZoomContext zoomContext = imageProvider.getFittingZoomContext(targetZoom, nativeZoom);
-        return getImageMetadata(zoomContext).handle;
+        return getImageMetadata(zoomContext);
+    }
+
+    void executeOnImageHandleAtBestFittingSize(Consumer<ImageHandle> handleAtSizeConsumer, int widthHint, int heightHint) {
+        ImageHandle imageHandle = lastRequestedHandle.refresh(widthHint, heightHint);
+        handleAtSizeConsumer.accept(imageHandle);
     }
 
     /**
@@ -844,24 +904,29 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      *
      * @param gc the GC to draw on the resulting image
      * @param imageData the imageData which is used to draw the scaled Image
-     * @param width the width of the original image
-     * @param height the height of the original image
-     * @param scaleFactor the factor with which the image is supposed to be scaled
+     * @param width the width to which the image is supposed to be scaled
+     * @param height the height to which the image is supposed to be scaled
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    public static void drawScaled(GC gc, ImageData imageData, int width, int height, float scaleFactor) {
+    public static void drawAtSize(GC gc, ImageData imageData, int width, int height) {
         StrictChecks.runWithStrictChecksDisabled(() -> {
             Image imageToDraw = new Image(gc.getImpl()._device(), (ImageDataProvider) zoom -> imageData);
             if (gc.getImpl() instanceof SwtGC) {
-                ((SwtGC) gc.getImpl()).drawImage(imageToDraw, 0, 0, width, height, 0, 0, Math.round(width * scaleFactor), Math.round(height * scaleFactor), false);
+                ((SwtGC) gc.getImpl()).drawImage(imageToDraw, 0, 0, imageData.width, imageData.height, 0, 0, width, height, false);
             }
             imageToDraw.dispose();
         });
     }
 
     long[] createGdipImage(Integer zoom) {
-        long handle = SwtImage.win32_getHandle(this.getApi(), zoom);
+        ImageHandle handle = this.getHandle(zoom, zoom);
+        return createGdipImageFromHandle(handle);
+    }
+
+    long[] createGdipImageFromHandle(ImageHandle imageHandle) {
+        long handle = imageHandle.getHandle();
+        int transparentPixel = imageHandle.transparentPixel;
         switch(getApi().type) {
             case SWT.BITMAP:
                 {
@@ -1047,10 +1112,18 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         onDisposeListeners.add(onDisposeListener);
     }
 
+    void removeOnDisposeListener(Consumer<Image> onDisposeListener) {
+        if (onDisposeListeners == null) {
+            return;
+        }
+        onDisposeListeners.remove(onDisposeListener);
+    }
+
     @Override
     public void dispose() {
         if (onDisposeListeners != null) {
             onDisposeListeners.forEach(listener -> listener.accept(this.getApi()));
+            onDisposeListeners.clear();
         }
         super.dispose();
     }
@@ -1066,6 +1139,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
     }
 
     private void destroyHandles() {
+        lastRequestedHandle.destroy();
         destroyHandles(__ -> true);
     }
 
@@ -1105,7 +1179,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         if (!(object instanceof Image))
             return false;
         Image image = (Image) object;
-        if (device != image.getImpl()._device() || transparentPixel != image.getImpl()._transparentPixel())
+        if (device != image.getImpl()._device())
             return false;
         return (styleFlag == ((SwtImage) image.getImpl()).styleFlag) && imageProvider.equals(((SwtImage) image.getImpl()).imageProvider);
     }
@@ -1131,55 +1205,58 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
     public Color getBackground() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (transparentPixel == -1)
+        if (this.getImageData().transparentPixel == -1)
             return null;
         if (backgroundColor != null) {
             // if a background color was set explicitly, we use the cached color directly
             return SwtColor.win32_new(device, (backgroundColor.blue << 16) | (backgroundColor.green << 8) | backgroundColor.red);
         }
+        ImageHandle imageHandle = this.getHandle(100, 100);
+        if (imageHandle.transparentPixel == -1) {
+            return null;
+        }
         /* Get the HDC for the device */
         long hDC = device.internal_new_GC(null);
-        return applyUsingAnyHandle(imageHandle -> {
-            long handle = imageHandle.handle;
-            /* Compute the background color */
-            BITMAP bm = new BITMAP();
-            OS.GetObject(handle, BITMAP.sizeof, bm);
-            long hdcMem = OS.CreateCompatibleDC(hDC);
-            long hOldObject = OS.SelectObject(hdcMem, handle);
-            int red = 0, green = 0, blue = 0;
-            if (bm.bmBitsPixel <= 8) {
-                byte[] color = new byte[4];
-                OS.GetDIBColorTable(hdcMem, transparentPixel, 1, color);
-                blue = color[0] & 0xFF;
-                green = color[1] & 0xFF;
-                red = color[2] & 0xFF;
-            } else {
-                switch(bm.bmBitsPixel) {
-                    case 16:
-                        blue = (transparentPixel & 0x1F) << 3;
-                        green = (transparentPixel & 0x3E0) >> 2;
-                        red = (transparentPixel & 0x7C00) >> 7;
-                        break;
-                    case 24:
-                        blue = (transparentPixel & 0xFF0000) >> 16;
-                        green = (transparentPixel & 0xFF00) >> 8;
-                        red = transparentPixel & 0xFF;
-                        break;
-                    case 32:
-                        blue = (transparentPixel & 0xFF000000) >>> 24;
-                        green = (transparentPixel & 0xFF0000) >> 16;
-                        red = (transparentPixel & 0xFF00) >> 8;
-                        break;
-                    default:
-                        return null;
-                }
+        long handle = imageHandle.handle;
+        int transparentPixel = imageHandle.transparentPixel;
+        /* Compute the background color */
+        BITMAP bm = new BITMAP();
+        OS.GetObject(handle, BITMAP.sizeof, bm);
+        long hdcMem = OS.CreateCompatibleDC(hDC);
+        long hOldObject = OS.SelectObject(hdcMem, handle);
+        int red = 0, green = 0, blue = 0;
+        if (bm.bmBitsPixel <= 8) {
+            byte[] color = new byte[4];
+            OS.GetDIBColorTable(hdcMem, transparentPixel, 1, color);
+            blue = color[0] & 0xFF;
+            green = color[1] & 0xFF;
+            red = color[2] & 0xFF;
+        } else {
+            switch(bm.bmBitsPixel) {
+                case 16:
+                    blue = (transparentPixel & 0x1F) << 3;
+                    green = (transparentPixel & 0x3E0) >> 2;
+                    red = (transparentPixel & 0x7C00) >> 7;
+                    break;
+                case 24:
+                    blue = (transparentPixel & 0xFF0000) >> 16;
+                    green = (transparentPixel & 0xFF00) >> 8;
+                    red = transparentPixel & 0xFF;
+                    break;
+                case 32:
+                    blue = (transparentPixel & 0xFF000000) >>> 24;
+                    green = (transparentPixel & 0xFF0000) >> 16;
+                    red = (transparentPixel & 0xFF00) >> 8;
+                    break;
+                default:
+                    return null;
             }
-            OS.SelectObject(hdcMem, hOldObject);
-            OS.DeleteDC(hdcMem);
-            /* Release the HDC for the device */
-            device.internal_dispose_GC(hDC, null);
-            return SwtColor.win32_new(device, (blue << 16) | (green << 8) | red);
-        });
+        }
+        OS.SelectObject(hdcMem, hOldObject);
+        OS.DeleteDC(hdcMem);
+        /* Release the HDC for the device */
+        device.internal_dispose_GC(hDC, null);
+        return SwtColor.win32_new(device, (blue << 16) | (green << 8) | red);
     }
 
     /**
@@ -1580,8 +1657,8 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         }
     }
 
-    private void setImageMetadataForHandle(ImageHandle imageMetadata, Integer zoom) {
-        if (zoom == null)
+    private void setImageMetadataForHandle(ImageHandle imageMetadata, int zoom) {
+        if (zoom == -1)
             return;
         if (zoomLevelToImageHandle.containsKey(zoom)) {
             SWT.error(SWT.ERROR_ITEM_NOT_ADDED);
@@ -1607,13 +1684,12 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         OS.DeleteObject(handles[0]);
         OS.DeleteObject(handles[1]);
         getApi().type = SWT.ICON;
-        return new ImageHandle(hIcon, zoom);
+        return new ImageHandle(hIcon, zoom, -1);
     }
 
     private ImageHandle initBitmapHandle(ImageData imageData, long handle, Integer zoom) {
         getApi().type = SWT.BITMAP;
-        transparentPixel = imageData.transparentPixel;
-        return new ImageHandle(handle, zoom);
+        return new ImageHandle(handle, zoom, imageData.transparentPixel);
     }
 
     static long[] initIcon(Device device, ImageData source, ImageData mask) {
@@ -1859,9 +1935,6 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        if (transparentPixel == -1)
-            return;
-        transparentColor = -1;
         backgroundColor = color.getRGB();
         zoomLevelToImageHandle.values().forEach(imageHandle -> imageHandle.setBackground(backgroundColor));
     }
@@ -1943,14 +2016,26 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             return Collections.emptySet();
         }
 
+        protected abstract ElementAtZoom<ImageData> loadImageData(int zoom);
+
         abstract ImageData newImageData(ZoomContext zoomContext);
 
         abstract AbstractImageProviderWrapper createCopy(Image image);
 
         ImageData getScaledImageData(int zoom) {
+            ElementAtZoom<ImageData> closestAvailableImageData = getClosestAvailableImageData(zoom);
+            return DPIUtil.scaleImageData(device, closestAvailableImageData.element(), zoom, closestAvailableImageData.zoom());
+        }
+
+        ElementAtZoom<ImageData> getClosestAvailableImageData(int zoom) {
             TreeSet<Integer> availableZooms = new TreeSet<>(zoomLevelToImageHandle.keySet());
             int closestZoom = Optional.ofNullable(availableZooms.higher(zoom)).orElse(availableZooms.lower(zoom));
-            return DPIUtil.scaleImageData(device, getImageMetadata(new ZoomContext(closestZoom)).getImageData(), zoom, closestZoom);
+            return new ElementAtZoom<>(getImageMetadata(new ZoomContext(closestZoom)).getImageData(), closestZoom);
+        }
+
+        protected Optional<ImageData> loadImageDataAtExactSize(int width, int height) {
+            // exact size not available
+            return Optional.empty();
         }
 
         protected ImageHandle newImageHandle(ZoomContext zoomContext) {
@@ -1984,7 +2069,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         public ExistingImageHandleProviderWrapper(long handle, int zoomForHandle) {
             this.handle = handle;
             this.zoomForHandle = zoomForHandle;
-            ImageHandle imageHandle = new ImageHandle(handle, zoomForHandle);
+            ImageHandle imageHandle = new ImageHandle(handle, zoomForHandle, -1);
             ImageData baseData = imageHandle.getImageData();
             this.width = DPIUtil.pixelToPoint(baseData.width, zoomForHandle);
             this.height = DPIUtil.pixelToPoint(baseData.height, zoomForHandle);
@@ -2010,13 +2095,16 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         public Collection<Integer> getPreservedZoomLevels() {
             return Collections.singleton(zoomForHandle);
         }
+
+        @Override
+        protected ElementAtZoom<ImageData> loadImageData(int zoom) {
+            return getClosestAvailableImageData(zoom);
+        }
     }
 
     private abstract class ImageFromImageDataProviderWrapper extends AbstractImageProviderWrapper {
 
         private final Map<Integer, ImageData> cachedImageData = new HashMap<>();
-
-        protected abstract ElementAtZoom<ImageData> loadImageData(int zoom);
 
         void initImage() {
             // As the init call configured some Image attributes (e.g. type)
@@ -2138,7 +2226,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
 
         @Override
         protected ElementAtZoom<ImageData> loadImageData(int zoom) {
-            return ImageDataLoader.load(new ByteArrayInputStream(inputStreamData), FileFormat.DEFAULT_ZOOM, zoom);
+            return ImageDataLoader.loadByZoom(new ByteArrayInputStream(inputStreamData), FileFormat.DEFAULT_ZOOM, zoom);
         }
 
         @Override
@@ -2150,6 +2238,15 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         @Override
         AbstractImageProviderWrapper createCopy(Image image) {
             return ((SwtImage) image.getImpl()).new ImageDataLoaderStreamProviderWrapper(inputStreamData);
+        }
+
+        @Override
+        protected Optional<ImageData> loadImageDataAtExactSize(int targetWidth, int targetHeight) {
+            if (ImageDataLoader.isDynamicallySizable(new ByteArrayInputStream(this.inputStreamData))) {
+                ImageData imageDataAtSize = ImageDataLoader.loadBySize(new ByteArrayInputStream(this.inputStreamData), targetWidth, targetHeight);
+                return Optional.of(imageDataAtSize);
+            }
+            return Optional.empty();
         }
     }
 
@@ -2209,6 +2306,11 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         }
 
         @Override
+        protected ElementAtZoom<ImageData> loadImageData(int zoom) {
+            return getClosestAvailableImageData(zoom);
+        }
+
+        @Override
         protected ImageHandle newImageHandle(ZoomContext zoomContext) {
             int targetZoom = zoomContext.targetZoom();
             if (zoomLevelToImageHandle.isEmpty()) {
@@ -2233,7 +2335,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
 
         private ImageHandle createHandle(int zoom) {
             long handle = initHandle(zoom);
-            ImageHandle imageHandle = new ImageHandle(handle, zoom);
+            ImageHandle imageHandle = new ImageHandle(handle, zoom, -1);
             zoomLevelToImageHandle.put(zoom, imageHandle);
             return imageHandle;
         }
@@ -2241,8 +2343,8 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         private long initHandle(int zoom) {
             if (isDisposed())
                 SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-            int scaledWidth = Win32DPIUtils.pointToPixel(width, zoom);
-            int scaledHeight = Win32DPIUtils.pointToPixel(height, zoom);
+            int scaledWidth = DPIUtil.pointToPixel(width, zoom);
+            int scaledHeight = DPIUtil.pointToPixel(height, zoom);
             long hDC = device.internal_new_GC(null);
             long newHandle = OS.CreateCompatibleBitmap(hDC, scaledWidth, scaledHeight);
             /*
@@ -2346,8 +2448,6 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             return init(imageData, zoom);
         }
 
-        protected abstract ElementAtZoom<ImageData> loadImageData(int zoom);
-
         @Override
         protected Rectangle getBounds(int zoom) {
             ImageData imageData = getImageData(zoom);
@@ -2369,7 +2469,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             ElementAtZoom<String> fileForZoom = DPIUtil.validateAndGetImagePathAtZoom(provider, zoom);
             // Load at appropriate zoom via loader
             if (fileForZoom.zoom() != zoom && ImageDataLoader.canLoadAtZoom(fileForZoom.element(), fileForZoom.zoom(), zoom)) {
-                ElementAtZoom<ImageData> imageDataAtZoom = ImageDataLoader.load(fileForZoom.element(), fileForZoom.zoom(), zoom);
+                ElementAtZoom<ImageData> imageDataAtZoom = ImageDataLoader.loadByZoom(fileForZoom.element(), fileForZoom.zoom(), zoom);
                 return new ElementAtZoom<>(imageDataAtZoom.element(), zoom);
             }
             // Load at file zoom (native or via loader) and rescale
@@ -2381,7 +2481,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             }
             ElementAtZoom<ImageData> imageDataAtZoom;
             if (nativeInitializedImage == null) {
-                imageDataAtZoom = ImageDataLoader.load(fileForZoom.element(), fileForZoom.zoom(), zoom);
+                imageDataAtZoom = ImageDataLoader.loadByZoom(fileForZoom.element(), fileForZoom.zoom(), zoom);
             } else {
                 imageDataAtZoom = new ElementAtZoom<>(nativeInitializedImage.getImageData(), fileForZoom.zoom());
                 nativeInitializedImage.destroy();
@@ -2391,7 +2491,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
 
         @Override
         public int hashCode() {
-            return Objects.hash(provider, styleFlag, transparentPixel);
+            return Objects.hash(provider, styleFlag);
         }
 
         @Override
@@ -2436,7 +2536,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
                     long[] hicon = new long[1];
                     status = Gdip.Bitmap_GetHICON(bitmap, hicon);
                     handle = hicon[0];
-                    imageMetadata = new ImageHandle(handle, zoom);
+                    imageMetadata = new ImageHandle(handle, zoom, -1);
                 } else {
                     getApi().type = SWT.BITMAP;
                     width = Gdip.Image_GetWidth(bitmap);
@@ -2467,7 +2567,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
                         OS.SelectObject(srcHDC, oldSrcBitmap);
                         OS.DeleteDC(srcHDC);
                         device.internal_dispose_GC(hDC, null);
-                        imageMetadata = new ImageHandle(handle, zoom);
+                        imageMetadata = new ImageHandle(handle, zoom, -1);
                     } else {
                         long lockedBitmapData = Gdip.BitmapData_new();
                         if (lockedBitmapData != 0) {
@@ -2613,6 +2713,16 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             }
             return handle;
         }
+
+        @Override
+        protected Optional<ImageData> loadImageDataAtExactSize(int targetWidth, int targetHeight) {
+            String fileName = DPIUtil.validateAndGetImagePathAtZoom(this.provider, 100).element();
+            if (ImageDataLoader.isDynamicallySizable(fileName)) {
+                ImageData imageDataAtSize = ImageDataLoader.loadBySize(fileName, targetWidth, targetHeight);
+                return Optional.of(imageDataAtSize);
+            }
+            return Optional.empty();
+        }
     }
 
     private class ImageDataProviderWrapper extends BaseImageProviderWrapper<ImageDataProvider> {
@@ -2629,6 +2739,18 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         @Override
         ImageDataProviderWrapper createCopy(Image image) {
             return ((SwtImage) image.getImpl()).new ImageDataProviderWrapper(provider);
+        }
+
+        @Override
+        protected Optional<ImageData> loadImageDataAtExactSize(int targetWidth, int targetHeight) {
+            if (provider instanceof ImageDataAtSizeProvider imageDataAtSizeProvider) {
+                ImageData imageData = imageDataAtSizeProvider.getImageData(targetWidth, targetHeight);
+                if (imageData == null) {
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT, null, " ImageDataAtSizeProvider returned null for width=" + targetWidth + ", height=" + targetHeight);
+                }
+                return Optional.of(imageData);
+            }
+            return Optional.empty();
         }
     }
 
@@ -2667,7 +2789,12 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
 
         @Override
         ImageData newImageData(ZoomContext zoomContext) {
-            return getImageMetadata(zoomContext).getImageData();
+            return loadImageData(zoomContext.targetZoom).element();
+        }
+
+        @Override
+        protected ElementAtZoom<ImageData> loadImageData(int zoom) {
+            return new ElementAtZoom<>(getImageMetadata(new ZoomContext(zoom)).getImageData(), zoom);
         }
 
         @Override
@@ -2677,8 +2804,8 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             int gcStyle = drawer.getGcStyle();
             Image image;
             if ((gcStyle & SWT.TRANSPARENT) != 0) {
-                int scaledHeight = Win32DPIUtils.pointToPixel(height, targetZoom);
-                int scaledWidth = Win32DPIUtils.pointToPixel(width, targetZoom);
+                int scaledHeight = DPIUtil.pointToPixel(height, targetZoom);
+                int scaledWidth = DPIUtil.pointToPixel(width, targetZoom);
                 /* Create a 24 bit image data with alpha channel */
                 final ImageData resultData = new ImageData(scaledWidth, scaledHeight, 24, new PaletteData(0xFF, 0xFF00, 0xFF0000));
                 resultData.alphaData = new byte[scaledWidth * scaledHeight];
@@ -2742,27 +2869,49 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         }
     }
 
-    private class ImageHandle {
+    class ImageHandle {
 
         private long handle;
 
         private final int zoom;
 
-        private int height;
+        private final int height;
 
-        private int width;
+        private final int width;
 
-        public ImageHandle(long handle, int zoom) {
+        /**
+         * specifies the transparent pixel
+         */
+        final int transparentPixel;
+
+        int transparentColor = -1;
+
+        ImageHandle(long handle, int zoom, int transparentPixel) {
             this.handle = handle;
             this.zoom = zoom;
-            updateBoundsInPixelsFromNative();
+            Point bounds = getBoundsInPixelsFromNative();
+            this.width = bounds.x;
+            this.height = bounds.y;
+            this.transparentPixel = transparentPixel;
             if (backgroundColor != null) {
                 setBackground(backgroundColor);
             }
             setImageMetadataForHandle(this, zoom);
         }
 
-        public Rectangle getBounds() {
+        long getHandle() {
+            return handle;
+        }
+
+        int getWidth() {
+            return width;
+        }
+
+        int getHeight() {
+            return height;
+        }
+
+        Rectangle getBounds() {
             return new Rectangle(0, 0, width, height);
         }
 
@@ -2789,14 +2938,12 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             device.internal_dispose_GC(hDC, null);
         }
 
-        private void updateBoundsInPixelsFromNative() {
+        private Point getBoundsInPixelsFromNative() {
             switch(getApi().type) {
                 case SWT.BITMAP:
                     BITMAP bm = new BITMAP();
                     OS.GetObject(handle, BITMAP.sizeof, bm);
-                    width = bm.bmWidth;
-                    height = bm.bmHeight;
-                    return;
+                    return new Point(bm.bmWidth, bm.bmHeight);
                 case SWT.ICON:
                     ICONINFO info = new ICONINFO();
                     OS.GetIconInfo(handle, info);
@@ -2811,11 +2958,10 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
                         OS.DeleteObject(info.hbmColor);
                     if (info.hbmMask != 0)
                         OS.DeleteObject(info.hbmMask);
-                    width = bm.bmWidth;
-                    height = bm.bmHeight;
-                    return;
+                    return new Point(bm.bmWidth, bm.bmHeight);
                 default:
                     SWT.error(SWT.ERROR_INVALID_IMAGE);
+                    return null;
             }
         }
 
@@ -3107,14 +3253,6 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             }
             handle = 0;
         }
-    }
-
-    public int _transparentPixel() {
-        return transparentPixel;
-    }
-
-    public int _transparentColor() {
-        return transparentColor;
     }
 
     public GC _memGC() {

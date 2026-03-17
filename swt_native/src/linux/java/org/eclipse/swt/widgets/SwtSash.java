@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2021 IBM Corporation and others.
+ *  Copyright (c) 2000, 2025 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -450,8 +450,8 @@ public class SwtSash extends SwtControl implements ISash {
     }
 
     @Override
-    long gtk_key_press_event(long widget, long eventPtr) {
-        long result = super.gtk_key_press_event(widget, eventPtr);
+    long gtk3_key_press_event(long widget, long eventPtr) {
+        long result = super.gtk3_key_press_event(widget, eventPtr);
         if (result != 0)
             return result;
         int[] key = new int[1], state = new int[1];

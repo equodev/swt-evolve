@@ -146,8 +146,8 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.computeSize(this, wHint, hHint, changed);
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
+        return Sizes.computeSize(this, hintInPoints.x, hintInPoints.y, changed);
     }
 
     @Override
@@ -361,8 +361,8 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
     }
 
     @Override
-    Point minimumSize(int wHint, int hHint, boolean flushCache) {
-        return Sizes.minimumSize(this, wHint, hHint, flushCache);
+    Point minimumSize(Point hintInPoints, boolean flushCache) {
+        return Sizes.minimumSize(this, hintInPoints.x, hintInPoints.y, flushCache);
     }
 
     @Override
@@ -589,13 +589,12 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
         return 0;
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof TabFolder tabFolder)) {
-            return;
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        for (int i = 0; i < getItemCount(); i++) {
+            items[i].notifyListeners(SWT.ZoomChanged, event);
         }
-        for (int i = 0; i < tabFolder.getItemCount(); i++) {
-        }
-        tabFolder.layout(true, true);
     }
 
     TabItem[] selection = new TabItem[0];

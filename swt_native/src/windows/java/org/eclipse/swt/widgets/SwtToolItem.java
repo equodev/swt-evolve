@@ -1117,7 +1117,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
      */
     public void setWidth(int width) {
         checkWidget();
-        setWidthInPixels(Win32DPIUtils.pointToPixel(width, getZoom()));
+        setWidthInPixels(DPIUtil.pointToPixel(width, getZoom()));
     }
 
     void setWidthInPixels(int width) {

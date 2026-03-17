@@ -201,6 +201,9 @@ public class DartCanvas extends DartComposite implements ICanvas {
      */
     public void scroll(int destX, int destY, int x, int y, int width, int height, boolean all) {
         checkWidget();
+        int zoom = getZoom();
+        destX = DPIUtil.pointToPixel(destX, zoom);
+        destY = DPIUtil.pointToPixel(destY, zoom);
     }
 
     void scrollInPixels(int destX, int destY, int x, int y, int width, int height, boolean all) {

@@ -925,10 +925,6 @@ public abstract class DynWidget implements IWidget {
         return newImpl.getZoom();
     }
 
-    public boolean _autoScaleDisabled() {
-        return autoScaleDisabled;
-    }
-
     public Display _display() {
         return display;
     }
@@ -948,8 +944,6 @@ public abstract class DynWidget implements IWidget {
     Object data;
 
     boolean dataSet;
-
-    boolean autoScaleDisabled;
 
     Display display;
 

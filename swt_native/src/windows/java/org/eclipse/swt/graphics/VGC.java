@@ -1,8 +1,10 @@
 package org.eclipse.swt.graphics;
 
 import java.util.*;
+import java.util.function.*;
 import java.util.stream.*;
 import org.eclipse.swt.*;
+import org.eclipse.swt.graphics.Image.*;
 import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
@@ -276,6 +278,20 @@ public class VGC extends VResource {
         public int x;
 
         public int y;
+    }
+
+    @CompiledJson()
+    public static class VGCDrawImageImageintintintint {
+
+        public Image image;
+
+        public int destX;
+
+        public int destY;
+
+        public int destWidth;
+
+        public int destHeight;
     }
 
     @CompiledJson()

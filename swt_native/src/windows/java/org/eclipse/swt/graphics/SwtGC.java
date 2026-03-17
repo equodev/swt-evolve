@@ -17,8 +17,10 @@ package org.eclipse.swt.graphics;
 
 import java.util.*;
 import java.util.List;
+import java.util.function.*;
 import java.util.stream.*;
 import org.eclipse.swt.*;
+import org.eclipse.swt.graphics.Image.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gdip.*;
 import org.eclipse.swt.internal.win32.*;
@@ -573,9 +575,11 @@ public final class SwtGC extends SwtResource implements IGC {
 
         private Image image;
 
+        private final Consumer<Image> disposeCallback = this::setCopyOfImage;
+
         ImageOperation(Image image) {
             setImage(image);
-            ((SwtImage) image.getImpl()).addOnDisposeListener(this::setCopyOfImage);
+            ((SwtImage) image.getImpl()).addOnDisposeListener(disposeCallback);
         }
 
         private void setImage(Image image) {
@@ -592,6 +596,12 @@ public final class SwtGC extends SwtResource implements IGC {
 
         protected Image getImage() {
             return image;
+        }
+
+        @Override
+        void disposeAll() {
+            ((SwtImage) image.getImpl()).removeOnDisposeListener(disposeCallback);
+            super.disposeAll();
         }
     }
 
@@ -1163,13 +1173,16 @@ public final class SwtGC extends SwtResource implements IGC {
 
         @Override
         void apply() {
-            drawImageInPixels(getImage(), Win32DPIUtils.pointToPixel(drawable, this.location, getZoom()));
+            drawImageInPixels(getImage(), Win32DPIUtils.pointToPixelAsLocation(drawable, this.location, getZoom()));
         }
 
         private void drawImageInPixels(Image image, Point location) {
             if (image.isDisposed())
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-            drawImage(image, 0, 0, -1, -1, location.x, location.y, -1, -1, true, getZoom());
+            if (image.getImpl() instanceof SwtImage) {
+                SwtImage.ImageHandle handle = ((SwtImage) image.getImpl()).getHandle(getZoom(), data.nativeZoom);
+                drawImage(image, 0, 0, -1, -1, location.x, location.y, -1, -1, true, handle);
+            }
         }
     }
 
@@ -1219,6 +1232,56 @@ public final class SwtGC extends SwtResource implements IGC {
         storeAndApplyOperationForExistingHandle(new DrawScalingImageToImageOperation(image, new Rectangle(srcX, srcY, srcWidth, srcHeight), new Rectangle(destX, destY, destWidth, destHeight)));
     }
 
+    /**
+     * Draws the full source image into a specified rectangular area in the
+     * receiver. The image will be stretched or shrunk as needed to exactly fit the
+     * destination rectangle.
+     *
+     * @param image      the source image
+     * @param destX      the x coordinate in the destination
+     * @param destY      the y coordinate in the destination
+     * @param destWidth  the width in points of the destination rectangle
+     * @param destHeight the height in points of the destination rectangle
+     *
+     * @exception IllegalArgumentException
+     *                                     <ul>
+     *                                     <li>ERROR_NULL_ARGUMENT - if the image is
+     *                                     null</li>
+     *                                     <li>ERROR_INVALID_ARGUMENT - if the image
+     *                                     has been disposed</li>
+     *                                     <li>ERROR_INVALID_ARGUMENT - if any of
+     *                                     the width or height arguments are
+     *                                     negative.
+     *                                     </ul>
+     * @exception SWTException
+     *                                     <ul>
+     *                                     <li>ERROR_GRAPHIC_DISPOSED - if the
+     *                                     receiver has been disposed</li>
+     *                                     </ul>
+     * @exception SWTError
+     *                                     <ul>
+     *                                     <li>ERROR_NO_HANDLES - if no handles are
+     *                                     available to perform the operation</li>
+     *                                     </ul>
+     * @since 3.132
+     */
+    public void drawImage(Image image, int destX, int destY, int destWidth, int destHeight) {
+        checkNonDisposed();
+        if (destWidth == 0 || destHeight == 0) {
+            return;
+        }
+        if (destWidth < 0 || destHeight < 0) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        if (image == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
+        if (image.isDisposed()) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        storeAndApplyOperationForExistingHandle(new DrawScaledImageOperation(image, new Rectangle(destX, destY, destWidth, destHeight)));
+    }
+
     void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
         storeAndApplyOperationForExistingHandle(new DrawImageToImageOperation(srcImage, new Rectangle(srcX, srcY, srcWidth, srcHeight), new Rectangle(destX, destY, destWidth, destHeight), simple));
     }
@@ -1258,6 +1321,9 @@ public final class SwtGC extends SwtResource implements IGC {
                 // unscaled images can use the GC zoom
                 return gcZoom;
             }
+            if (drawable != null && !drawable.isAutoScalable()) {
+                return gcZoom;
+            }
             float imageScaleFactor = 1f * destWidth / srcWidth;
             int imageZoom = Math.round(gcZoom * imageScaleFactor);
             if (getAllCurrentMonitorZooms().contains(imageZoom)) {
@@ -1267,6 +1333,31 @@ public final class SwtGC extends SwtResource implements IGC {
                 return 200;
             }
             return 100;
+        }
+    }
+
+    private class DrawScaledImageOperation extends ImageOperation {
+
+        private final Rectangle destination;
+
+        DrawScaledImageOperation(Image image, Rectangle destination) {
+            super(image);
+            this.destination = destination;
+        }
+
+        @Override
+        void apply() {
+            int gcZoom = getZoom();
+            drawImage(getImage(), destination.x, destination.y, destination.width, destination.height, gcZoom);
+        }
+    }
+
+    private void drawImage(Image image, int destX, int destY, int destWidth, int destHeight, int imageZoom) {
+        Rectangle destPixels = Win32DPIUtils.pointToPixel(drawable, new Rectangle(destX, destY, destWidth, destHeight), imageZoom);
+        if (image.getImpl() instanceof SwtImage) {
+            ((SwtImage) image.getImpl()).executeOnImageHandleAtBestFittingSize(tempHandle -> {
+                drawImage(image, 0, 0, tempHandle.getWidth(), tempHandle.getHeight(), destPixels.x, destPixels.y, destPixels.width, destPixels.height, false, tempHandle);
+            }, destPixels.width, destPixels.height);
         }
     }
 
@@ -1292,7 +1383,9 @@ public final class SwtGC extends SwtResource implements IGC {
                 }
             }
         }
-        drawImage(image, src.x, src.y, src.width, src.height, dest.x, dest.y, dest.width, dest.height, false, scaledImageZoom);
+        if (image.getImpl() instanceof SwtImage) {
+            drawImage(image, src.x, src.y, src.width, src.height, dest.x, dest.y, dest.width, dest.height, false, ((SwtImage) image.getImpl()).getHandle(scaledImageZoom, data.nativeZoom));
+        }
     }
 
     private class DrawImageToImageOperation extends ImageOperation {
@@ -1312,18 +1405,23 @@ public final class SwtGC extends SwtResource implements IGC {
 
         @Override
         void apply() {
-            drawImage(getImage(), source.x, source.y, source.width, source.height, destination.x, destination.y, destination.width, destination.height, simple, getZoom());
+            SwtImage.ImageHandle handle = ((SwtImage) getImage().getImpl()).getHandle(getZoom(), data.nativeZoom);
+            drawImage(getImage(), source.x, source.y, source.width, source.height, destination.x, destination.y, destination.width, destination.height, simple, handle);
         }
     }
 
-    private void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, int imageZoom) {
+    private void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, SwtImage.ImageHandle tempImageHandle) {
         if (data.gdipGraphics != 0) {
             if (srcImage.getImpl() instanceof SwtImage) {
                 //TODO - cache bitmap
-                long[] gdipImage = ((SwtImage) srcImage.getImpl()).createGdipImage(imageZoom);
+                long[] gdipImage = ((SwtImage) srcImage.getImpl()).createGdipImageFromHandle(tempImageHandle);
                 long img = gdipImage[0];
                 int imgWidth = Gdip.Image_GetWidth(img);
                 int imgHeight = Gdip.Image_GetHeight(img);
+                if (srcWidth == 0 && srcHeight == 0) {
+                    srcWidth = imgWidth;
+                    srcHeight = imgHeight;
+                }
                 if (simple) {
                     srcWidth = destWidth = imgWidth;
                     srcHeight = destHeight = imgHeight;
@@ -1367,16 +1465,13 @@ public final class SwtGC extends SwtResource implements IGC {
             }
             return;
         }
-        if (srcImage.getImpl() instanceof SwtImage) {
-            long imageHandle = ((SwtImage) srcImage.getImpl()).getHandle(imageZoom, data.nativeZoom);
-            switch(srcImage.type) {
-                case SWT.BITMAP:
-                    drawBitmap(srcImage, imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
-                    break;
-                case SWT.ICON:
-                    drawIcon(imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
-                    break;
-            }
+        switch(srcImage.type) {
+            case SWT.BITMAP:
+                drawBitmap(srcImage, tempImageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+                break;
+            case SWT.ICON:
+                drawIcon(tempImageHandle.getHandle(), srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+                break;
         }
     }
 
@@ -1419,6 +1514,10 @@ public final class SwtGC extends SwtResource implements IGC {
         int iconWidth = bm.bmWidth, iconHeight = bm.bmHeight;
         if (hBitmap == srcIconInfo.hbmMask)
             iconHeight /= 2;
+        if (srcWidth == 0 && srcHeight == 0) {
+            srcWidth = iconWidth;
+            srcHeight = iconHeight;
+        }
         if (simple) {
             srcWidth = destWidth = iconWidth;
             srcHeight = destHeight = iconHeight;
@@ -1507,11 +1606,16 @@ public final class SwtGC extends SwtResource implements IGC {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
     }
 
-    private void drawBitmap(Image srcImage, long imageHandle, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
+    private void drawBitmap(Image srcImage, SwtImage.ImageHandle imageHandle, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
         BITMAP bm = new BITMAP();
-        OS.GetObject(imageHandle, BITMAP.sizeof, bm);
+        long handle = imageHandle.getHandle();
+        OS.GetObject(handle, BITMAP.sizeof, bm);
         int imgWidth = bm.bmWidth;
         int imgHeight = bm.bmHeight;
+        if (srcWidth == 0 && srcHeight == 0) {
+            srcWidth = imgWidth;
+            srcHeight = imgHeight;
+        }
         if (simple) {
             srcWidth = destWidth = imgWidth;
             srcHeight = destHeight = imgHeight;
@@ -1535,14 +1639,14 @@ public final class SwtGC extends SwtResource implements IGC {
         boolean isDib = bm.bmBits != 0;
         int depth = bm.bmPlanes * bm.bmBitsPixel;
         if (isDib && depth == 32) {
-            drawBitmapAlpha(imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
-        } else if (srcImage.getImpl()._transparentPixel() != -1) {
-            drawBitmapTransparent(srcImage, imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple, bm, imgWidth, imgHeight);
+            drawBitmapAlpha(handle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+        } else if (imageHandle.transparentPixel != -1) {
+            drawBitmapTransparent(imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple, bm, imgWidth, imgHeight);
         } else {
-            drawBitmapColor(imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+            drawBitmapColor(handle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
         }
         if (mustRestore) {
-            long hOldBitmap = OS.SelectObject(memGC.handle, imageHandle);
+            long hOldBitmap = OS.SelectObject(memGC.handle, handle);
             memGC.getImpl()._data().hNullBitmap = hOldBitmap;
         }
     }
@@ -1792,14 +1896,14 @@ public final class SwtGC extends SwtResource implements IGC {
         OS.DeleteDC(srcHdc);
     }
 
-    private void drawBitmapTransparent(Image srcImage, long imageHandle, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, BITMAP bm, int imgWidth, int imgHeight) {
+    private void drawBitmapTransparent(SwtImage.ImageHandle imageHandle, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, BITMAP bm, int imgWidth, int imgHeight) {
         /* Find the RGB values for the transparent pixel. */
         boolean isDib = bm.bmBits != 0;
-        long hBitmap = imageHandle;
+        long hBitmap = imageHandle.getHandle();
         long srcHdc = OS.CreateCompatibleDC(getApi().handle);
         long oldSrcBitmap = OS.SelectObject(srcHdc, hBitmap);
         byte[] originalColors = null;
-        int transparentColor = srcImage.getImpl()._transparentColor();
+        int transparentColor = imageHandle.transparentColor;
         if (transparentColor == -1) {
             int transBlue = 0, transGreen = 0, transRed = 0;
             boolean fixPalette = false;
@@ -1808,7 +1912,7 @@ public final class SwtGC extends SwtResource implements IGC {
                     int maxColors = 1 << bm.bmBitsPixel;
                     byte[] oldColors = new byte[maxColors * 4];
                     OS.GetDIBColorTable(srcHdc, 0, maxColors, oldColors);
-                    int offset = srcImage.getImpl()._transparentPixel() * 4;
+                    int offset = imageHandle.transparentPixel * 4;
                     for (int i = 0; i < oldColors.length; i += 4) {
                         if (i != offset) {
                             if (oldColors[offset] == oldColors[i] && oldColors[offset + 1] == oldColors[i + 1] && oldColors[offset + 2] == oldColors[i + 2]) {
@@ -1840,15 +1944,15 @@ public final class SwtGC extends SwtResource implements IGC {
                     bmiHeader.biBitCount = bm.bmBitsPixel;
                     byte[] bmi = new byte[BITMAPINFOHEADER.sizeof + numColors * 4];
                     OS.MoveMemory(bmi, bmiHeader, BITMAPINFOHEADER.sizeof);
-                    OS.GetDIBits(srcHdc, imageHandle, 0, 0, null, bmi, OS.DIB_RGB_COLORS);
-                    int offset = BITMAPINFOHEADER.sizeof + 4 * srcImage.getImpl()._transparentPixel();
+                    OS.GetDIBits(srcHdc, imageHandle.getHandle(), 0, 0, null, bmi, OS.DIB_RGB_COLORS);
+                    int offset = BITMAPINFOHEADER.sizeof + 4 * imageHandle.transparentPixel;
                     transRed = bmi[offset + 2] & 0xFF;
                     transGreen = bmi[offset + 1] & 0xFF;
                     transBlue = bmi[offset] & 0xFF;
                 }
             } else {
                 /* Direct color image */
-                int pixel = srcImage.getImpl()._transparentPixel();
+                int pixel = imageHandle.transparentPixel;
                 switch(bm.bmBitsPixel) {
                     case 16:
                         transBlue = (pixel & 0x1F) << 3;
@@ -1868,14 +1972,8 @@ public final class SwtGC extends SwtResource implements IGC {
                 }
             }
             transparentColor = transBlue << 16 | transGreen << 8 | transRed;
-            if (!fixPalette) {
-                if (srcImage.getImpl() instanceof DartImage) {
-                    ((DartImage) srcImage.getImpl()).transparentColor = transparentColor;
-                }
-                if (srcImage.getImpl() instanceof SwtImage) {
-                    ((SwtImage) srcImage.getImpl()).transparentColor = transparentColor;
-                }
-            }
+            if (!fixPalette)
+                imageHandle.transparentColor = transparentColor;
         }
         if (originalColors == null) {
             int mode = OS.SetStretchBltMode(getApi().handle, OS.COLORONCOLOR);
@@ -1919,7 +2017,7 @@ public final class SwtGC extends SwtResource implements IGC {
             OS.DeleteObject(maskBitmap);
         }
         OS.SelectObject(srcHdc, oldSrcBitmap);
-        if (hBitmap != imageHandle)
+        if (hBitmap != imageHandle.getHandle())
             OS.DeleteObject(hBitmap);
         OS.DeleteDC(srcHdc);
     }
@@ -1971,8 +2069,8 @@ public final class SwtGC extends SwtResource implements IGC {
         @Override
         void apply() {
             int deviceZoom = getZoom();
-            Point startInPixels = Win32DPIUtils.pointToPixel(drawable, start, deviceZoom);
-            Point endInPixels = Win32DPIUtils.pointToPixel(drawable, end, deviceZoom);
+            Point startInPixels = Win32DPIUtils.pointToPixelAsLocation(drawable, start, deviceZoom);
+            Point endInPixels = Win32DPIUtils.pointToPixelAsLocation(drawable, end, deviceZoom);
             drawLineInPixels(startInPixels.x, startInPixels.y, endInPixels.x, endInPixels.y);
         }
     }
@@ -2147,7 +2245,7 @@ public final class SwtGC extends SwtResource implements IGC {
 
         @Override
         void apply() {
-            Point scaleUpLocation = Win32DPIUtils.pointToPixel(location, getZoom());
+            Point scaleUpLocation = Win32DPIUtils.pointToPixelAsLocation(location, getZoom());
             drawPointInPixels(scaleUpLocation.x, scaleUpLocation.y);
         }
     }
@@ -2580,7 +2678,7 @@ public final class SwtGC extends SwtResource implements IGC {
 
         @Override
         void apply() {
-            Point scaledLocation = Win32DPIUtils.pointToPixel(drawable, location, getZoom());
+            Point scaledLocation = Win32DPIUtils.pointToPixelAsLocation(drawable, location, getZoom());
             drawStringInPixels(string, scaledLocation.x, scaledLocation.y, isTransparent);
         }
     }
@@ -2777,7 +2875,7 @@ public final class SwtGC extends SwtResource implements IGC {
 
         @Override
         void apply() {
-            Point scaledLocation = Win32DPIUtils.pointToPixel(drawable, location, getZoom());
+            Point scaledLocation = Win32DPIUtils.pointToPixelAsLocation(drawable, location, getZoom());
             drawTextInPixels(string, scaledLocation.x, scaledLocation.y, flags);
         }
     }
@@ -4581,7 +4679,7 @@ public final class SwtGC extends SwtResource implements IGC {
         }
         Image image = data.image;
         if (image != null) {
-            data.hNullBitmap = OS.SelectObject(hDC, ((SwtImage) image.getImpl()).getHandle(((SwtGCData) data.getImpl()).imageZoom, data.nativeZoom));
+            data.hNullBitmap = OS.SelectObject(hDC, ((SwtImage) image.getImpl()).getHandle(((SwtGCData) data.getImpl()).imageZoom, data.nativeZoom).getHandle());
             if (image.getImpl() instanceof DartImage) {
                 ((DartImage) image.getImpl()).memGC = this.getApi();
             }
@@ -4907,7 +5005,7 @@ public final class SwtGC extends SwtResource implements IGC {
         storeAndApplyOperationForExistingHandle(new SetBackgroundOperation(color));
     }
 
-    private class SetBackgroundOperation extends Operation {
+    private class SetBackgroundOperation extends ReplaceableOperation {
 
         private final Color color;
 
@@ -5238,7 +5336,7 @@ public final class SwtGC extends SwtResource implements IGC {
         storeAndApplyOperationForExistingHandle(new SetFontOperation(font));
     }
 
-    private class SetFontOperation extends Operation {
+    private class SetFontOperation extends ReplaceableOperation {
 
         private final Font font;
 
@@ -5276,7 +5374,7 @@ public final class SwtGC extends SwtResource implements IGC {
         storeAndApplyOperationForExistingHandle(new SetForegroundOperation(color));
     }
 
-    private class SetForegroundOperation extends Operation {
+    private class SetForegroundOperation extends ReplaceableOperation {
 
         private final Color color;
 
@@ -5447,7 +5545,7 @@ public final class SwtGC extends SwtResource implements IGC {
         storeAndApplyOperationForExistingHandle(new SetLineAttributesOperation(attributes));
     }
 
-    private class SetLineAttributesOperation extends Operation {
+    private class SetLineAttributesOperation extends ReplaceableOperation {
 
         private final LineAttributes attributes;
 
@@ -5582,7 +5680,7 @@ public final class SwtGC extends SwtResource implements IGC {
         storeAndApplyOperationForExistingHandle(new SetLineCapOperation(cap));
     }
 
-    private class SetLineCapOperation extends Operation {
+    private class SetLineCapOperation extends ReplaceableOperation {
 
         private final int cap;
 
@@ -5629,7 +5727,7 @@ public final class SwtGC extends SwtResource implements IGC {
         storeAndApplyOperationForExistingHandle(new SetLineDashOperation(dashes));
     }
 
-    private class SetLineDashOperation extends Operation {
+    private class SetLineDashOperation extends ReplaceableOperation {
 
         private final int[] dashes;
 
@@ -5686,7 +5784,7 @@ public final class SwtGC extends SwtResource implements IGC {
         storeAndApplyOperationForExistingHandle(new SetLineJoinOperation(join));
     }
 
-    private class SetLineJoinOperation extends Operation {
+    private class SetLineJoinOperation extends ReplaceableOperation {
 
         private final int join;
 
@@ -5731,7 +5829,7 @@ public final class SwtGC extends SwtResource implements IGC {
         storeAndApplyOperationForExistingHandle(new SetLineStyleOperation(lineStyle));
     }
 
-    private class SetLineStyleOperation extends Operation {
+    private class SetLineStyleOperation extends ReplaceableOperation {
 
         private final int lineStyle;
 
@@ -5788,7 +5886,7 @@ public final class SwtGC extends SwtResource implements IGC {
         storeAndApplyOperationForExistingHandle(new SetLineWidthOperation(lineWidth));
     }
 
-    private class SetLineWidthOperation extends Operation {
+    private class SetLineWidthOperation extends ReplaceableOperation {
 
         private final int width;
 
@@ -5998,7 +6096,7 @@ public final class SwtGC extends SwtResource implements IGC {
     public Point stringExtent(String string) {
         if (string == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return Win32DPIUtils.pixelToPoint(drawable, stringExtentInPixels(string), getZoom());
+        return Win32DPIUtils.pixelToPointAsSize(drawable, stringExtentInPixels(string), getZoom());
     }
 
     Point stringExtentInPixels(String string) {
@@ -6043,7 +6141,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public Point textExtent(String string) {
-        return Win32DPIUtils.pixelToPoint(drawable, textExtentInPixels(string, SWT.DRAW_DELIMITER | SWT.DRAW_TAB), getZoom());
+        return Win32DPIUtils.pixelToPointAsSize(drawable, textExtentInPixels(string, SWT.DRAW_DELIMITER | SWT.DRAW_TAB), getZoom());
     }
 
     /**
@@ -6078,7 +6176,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public Point textExtent(String string, int flags) {
-        return Win32DPIUtils.pixelToPoint(drawable, textExtentInPixels(string, flags), getZoom());
+        return Win32DPIUtils.pixelToPointAsSize(drawable, textExtentInPixels(string, flags), getZoom());
     }
 
     Point textExtentInPixels(String string, int flags) {
@@ -6229,8 +6327,21 @@ public final class SwtGC extends SwtResource implements IGC {
     }
 
     private void storeAndApplyOperationForExistingHandle(Operation operation) {
+        removePreviousOperationIfSupercededBy(operation);
         operations.add(operation);
         operation.apply();
+    }
+
+    private void removePreviousOperationIfSupercededBy(Operation operation) {
+        if (operations.isEmpty()) {
+            return;
+        }
+        int lastIndex = operations.size() - 1;
+        Operation lastOperation = operations.get(lastIndex);
+        if (lastOperation.canBeReplacedBy(operation)) {
+            lastOperation.disposeAll();
+            operations.remove(lastIndex);
+        }
     }
 
     private void createGcHandle(Drawable drawable, GCData newData) {
@@ -6273,6 +6384,18 @@ public final class SwtGC extends SwtResource implements IGC {
                 r.dispose();
             }
             disposables.clear();
+        }
+
+        boolean canBeReplacedBy(Operation operation) {
+            return false;
+        }
+    }
+
+    private abstract class ReplaceableOperation extends Operation {
+
+        @Override
+        boolean canBeReplacedBy(Operation operation) {
+            return operation.getClass().equals(this.getClass());
         }
     }
 

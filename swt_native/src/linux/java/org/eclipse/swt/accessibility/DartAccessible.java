@@ -118,9 +118,15 @@ public class DartAccessible implements IAccessible {
         setApi(api);
         this.parent = checkNull(parent);
         this.control = parent.getImpl()._control();
-        if (((DartAccessible) parent.getImpl()).children == null)
-            ((DartAccessible) parent.getImpl()).children = new ArrayList<>();
-        ((DartAccessible) parent.getImpl()).children.add(this.getApi());
+        if (parent.getImpl()._children() == null) {
+            if (parent.getImpl() instanceof DartAccessible) {
+                ((DartAccessible) parent.getImpl()).children = new ArrayList<>();
+            }
+            if (parent.getImpl() instanceof SwtAccessible) {
+                ((SwtAccessible) parent.getImpl()).children = new ArrayList<>();
+            }
+        }
+        parent.getImpl()._children().add(this.getApi());
     }
 
     /**
@@ -508,7 +514,7 @@ public class DartAccessible implements IAccessible {
         if (parent == null)
             return;
         release();
-        ((DartAccessible) parent.getImpl()).children.remove(this.getApi());
+        parent.getImpl()._children().remove(this.getApi());
         parent = null;
     }
 

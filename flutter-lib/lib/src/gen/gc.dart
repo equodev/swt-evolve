@@ -168,6 +168,26 @@ class VGCDrawImageImageintint {
 }
 
 @JsonSerializable()
+class VGCDrawImageImageintintintint {
+  VImage? image;
+  int destX;
+  int destY;
+  int destWidth;
+  int destHeight;
+
+  VGCDrawImageImageintintintint({
+    this.destX = 0,
+    this.destY = 0,
+    this.destWidth = 0,
+    this.destHeight = 0,
+  });
+
+  factory VGCDrawImageImageintintintint.fromJson(Map<String, dynamic> json) =>
+      _$VGCDrawImageImageintintintintFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCDrawImageImageintintintintToJson(this);
+}
+
+@JsonSerializable()
 class VGCDrawImageImageintintintintintintintint {
   VImage? image;
   int srcX;

@@ -20,7 +20,6 @@
 package org.eclipse.swt.custom;
 
 import java.util.*;
-import java.util.function.*;
 import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
@@ -3615,18 +3614,8 @@ public class StyledText extends Canvas {
         getImpl().showSelection();
     }
 
-    /**
-     * The method accepts a StyledText and a callback which takes
-     * all the carets of the StyledText as the argument and executes it.
-     * The caret is refreshed after the execution of the callback.
-     *
-     * @param styledText the StyledText to get the carets from
-     * @param caretUpdater the callback which works with the carets
-     *
-     * @noreference This method is not intended to be referenced by clients.
-     */
-    public static void updateAndRefreshCarets(StyledText styledText, Consumer<Caret> caretUpdater) {
-        SwtStyledText.updateAndRefreshCarets(styledText, caretUpdater);
+    public Object getData(String key) {
+        return getImpl().getData(key);
     }
 
     protected StyledText(IStyledText impl) {

@@ -192,6 +192,17 @@ public class DartCCombo extends DartComposite implements ICCombo {
             }
         }
         initAccessible();
+        // Add listener asynchronously in order to delay execution. This works because
+        // other DPI changes are also executed asynchronously but if we choose to revert
+        // back to synchronous execution of the listeners then this async call may be
+        // executed too late and zoom change events may happen too early and not get
+        // propagated.
+        // See https://github.com/eclipse-platform/eclipse.platform.swt/issues/2733
+        getDisplay().asyncExec(() -> {
+            if (!isDisposed()) {
+                addListener(SWT.ZoomChanged, this::handleDPIChange);
+            }
+        });
     }
 
     static int checkStyle(int style) {
@@ -2283,19 +2294,16 @@ public class DartCCombo extends DartComposite implements ICCombo {
         return super.traverse(event);
     }
 
-    /**
-     * The method accepts a combo and a callback which takes
-     * all the child of the CCombo as the argument and executes it.
-     * All children are refreshed after the execution of the callback.
-     *
-     * @noreference This method is not intended to be referenced by clients.
-     * @param combo the Combo to get the children widget from
-     * @param childUpdater the callback which works with the child widgets
-     */
-    public static void updateAndRefreshChildren(CCombo combo, Consumer<Widget> childUpdater) {
-        childUpdater.accept(combo.getImpl()._text());
-        childUpdater.accept(combo.getImpl()._list());
-        childUpdater.accept(combo.getImpl()._arrow());
+    private void handleDPIChange(Event event) {
+        if (text != null) {
+            text.notifyListeners(SWT.ZoomChanged, event);
+        }
+        if (list != null) {
+            list.notifyListeners(SWT.ZoomChanged, event);
+        }
+        if (arrow != null) {
+            arrow.notifyListeners(SWT.ZoomChanged, event);
+        }
     }
 
     int alignment;

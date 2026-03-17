@@ -58,11 +58,8 @@ public class ImageList {
         int count = OS.ImageList_GetImageCount(handle);
         int index = 0;
         while (index < count) {
-            if (images[index] != null) {
-                if (images[index].isDisposed())
-                    images[index] = null;
-            }
-            if (images[index] == null)
+            Image imageAtIndex = getOrClearIfDisposed(index);
+            if (imageAtIndex == null)
                 break;
             index++;
         }
@@ -78,6 +75,13 @@ public class ImageList {
         }
         images[index] = image;
         return index;
+    }
+
+    private Image getOrClearIfDisposed(int index) {
+        if (images[index] != null && images[index].isDisposed()) {
+            images[index] = null;
+        }
+        return images[index];
     }
 
     public int addRef() {
@@ -334,12 +338,12 @@ public class ImageList {
 
     public long getHandle(int targetZoom) {
         if (!zoomToHandle.containsKey(targetZoom)) {
-            int scaledWidth = Win32DPIUtils.pointToPixel(DPIUtil.pixelToPoint(width, this.zoom), targetZoom);
-            int scaledHeight = Win32DPIUtils.pointToPixel(DPIUtil.pixelToPoint(height, this.zoom), targetZoom);
+            int scaledWidth = DPIUtil.pointToPixel(DPIUtil.pixelToPoint(width, this.zoom), targetZoom);
+            int scaledHeight = DPIUtil.pointToPixel(DPIUtil.pixelToPoint(height, this.zoom), targetZoom);
             long newImageListHandle = OS.ImageList_Create(scaledWidth, scaledHeight, flags, 16, 16);
             int count = OS.ImageList_GetImageCount(handle);
             for (int i = 0; i < count; i++) {
-                Image image = images[i];
+                Image image = getOrClearIfDisposed(i);
                 if (image != null) {
                     set(i, image, i, newImageListHandle, targetZoom);
                 } else {
@@ -369,17 +373,15 @@ public class ImageList {
     public Point getImageSize() {
         int[] cx = new int[1], cy = new int[1];
         OS.ImageList_GetIconSize(handle, cx, cy);
-        return Win32DPIUtils.pixelToPoint(new Point(cx[0], cy[0]), zoom);
+        return Win32DPIUtils.pixelToPointAsSize(new Point(cx[0], cy[0]), zoom);
     }
 
     public int indexOf(Image image) {
         int count = OS.ImageList_GetImageCount(handle);
         for (int i = 0; i < count; i++) {
-            if (images[i] != null) {
-                if (images[i].isDisposed())
-                    images[i] = null;
-                if (images[i] != null && images[i].equals(image))
-                    return i;
+            Image potentialMatch = getOrClearIfDisposed(i);
+            if (potentialMatch != null && potentialMatch.equals(image)) {
+                return i;
             }
         }
         return -1;
@@ -494,11 +496,9 @@ public class ImageList {
         int result = 0;
         int count = OS.ImageList_GetImageCount(handle);
         for (int i = 0; i < count; i++) {
-            if (images[i] != null) {
-                if (images[i].isDisposed())
-                    images[i] = null;
-                if (images[i] != null)
-                    result++;
+            Image image = getOrClearIfDisposed(i);
+            if (image != null) {
+                result++;
             }
         }
         return result;

@@ -348,7 +348,9 @@ public class DartToolTip extends DartWidget implements IToolTip {
         dirty();
         Point newValue = new Point(x, y);
         checkWidget();
+        int zoom = getZoom();
         this.location = newValue;
+        setLocationInPixels(DPIUtil.pointToPixel(x, zoom), DPIUtil.pointToPixel(y, zoom));
     }
 
     void setLocationInPixels(int x, int y) {

@@ -298,6 +298,9 @@ public class DartTree extends DartComposite implements ITree {
         if (cell == ignoreCell)
             return 0;
         TreeItem item = _getItem(iter);
+        if (item == null || item.isDisposed()) {
+            return 0;
+        }
         int modelIndex = -1;
         boolean customDraw = false;
         if (columnCount == 0) {

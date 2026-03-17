@@ -807,20 +807,8 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     }
 
     private int adaptZoomForMenuItem(int currentZoom, Image image) {
-        int primaryMonitorZoomAtAppStartUp = getPrimaryMonitorZoomAtStartup();
-        /*
-	 * Windows has inconsistent behavior when setting the size of MenuItem image and
-	 * hence we need to adjust the size of the images as per different kind of zoom
-	 * level, i.e. full (100s), half (50s) and quarter (25s). The image size per
-	 * zoom level is also affected by the primaryMonitorZoomAtAppStartUp. The
-	 * implementation below is based on the pattern observed for all the zoom values
-	 * and what fits the best for these zoom level types.
-	 */
-        if (primaryMonitorZoomAtAppStartUp > currentZoom && isQuarterZoom(currentZoom)) {
-            return currentZoom - 25;
-        }
-        if (!isHalfZoom(primaryMonitorZoomAtAppStartUp) && isHalfZoom(currentZoom)) {
-            // Use the size recommended by System Metrics. This value only holds
+        if (!display.isRescalingAtRuntime()) {
+            return DPIUtil.getZoomForAutoscaleProperty(currentZoom);
         }
         return currentZoom;
     }
@@ -831,10 +819,6 @@ public class DartMenuItem extends DartItem implements IMenuItem {
 
     private static boolean isQuarterZoom(int zoom) {
         return zoom % 10 != 0 && zoom % 25 == 0;
-    }
-
-    private static int getPrimaryMonitorZoomAtStartup() {
-        return 0;
     }
 
     /**
@@ -1104,17 +1088,17 @@ public class DartMenuItem extends DartItem implements IMenuItem {
         return points;
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof MenuItem menuItem)) {
-            return;
-        }
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
         // Refresh the image(s)
-        if (menuItem.getImage() != null) {
-            ((DartMenuItem) ((MenuItem) menuItem).getImpl()).updateImage();
+        if (getImage() != null) {
+            updateImage();
         }
         // Refresh the sub menu
-        Menu subMenu = menuItem.getMenu();
+        Menu subMenu = getMenu();
         if (subMenu != null) {
+            subMenu.notifyListeners(SWT.ZoomChanged, event);
         }
     }
 

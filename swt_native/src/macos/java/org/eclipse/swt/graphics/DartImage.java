@@ -15,6 +15,7 @@
  */
 package org.eclipse.swt.graphics;
 
+import static org.eclipse.swt.internal.DPIUtil.pointToPixel;
 import static org.eclipse.swt.internal.image.ImageColorTransformer.DEFAULT_DISABLED_IMAGE_TRANSFORMER;
 import java.io.*;
 import java.util.*;
@@ -477,7 +478,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         }
         try {
             byte[] input = stream.readAllBytes();
-            initWithSupplier(zoom -> ImageDataLoader.canLoadAtZoom(new ByteArrayInputStream(input), FileFormat.DEFAULT_ZOOM, zoom), zoom -> ImageDataLoader.load(new ByteArrayInputStream(input), FileFormat.DEFAULT_ZOOM, zoom).element());
+            initWithSupplier(zoom -> ImageDataLoader.canLoadAtZoom(new ByteArrayInputStream(input), FileFormat.DEFAULT_ZOOM, zoom), zoom -> ImageDataLoader.loadByZoom(new ByteArrayInputStream(input), FileFormat.DEFAULT_ZOOM, zoom).element());
             init();
         } catch (IOException e) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT, e);
@@ -697,6 +698,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     @Override
     void destroy() {
+        cachedImageAtSize.destroy();
         if (memGC != null)
             memGC.dispose();
         memGC = null;
@@ -1108,13 +1110,77 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      *
      * @param gc the GC to draw on the resulting image
      * @param imageData the imageData which is used to draw the scaled Image
-     * @param width the width of the original image
-     * @param height the height of the original image
-     * @param scaleFactor the factor with which the image is supposed to be scaled
+     * @param width the width to which the image is supposed to be scaled
+     * @param height the height to which the image is supposed to be scaled
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    public static void drawScaled(GC gc, ImageData imageData, int width, int height, float scaleFactor) {
+    public static void drawAtSize(GC gc, ImageData imageData, int width, int height) {
+    }
+
+    void executeOnImageAtSizeBestFittingSize(Consumer<Image> imageAtBestFittingSizeConsumer, int destWidth, int destHeight) {
+        Optional<Image> imageAtSize = cachedImageAtSize.refresh(destWidth, destHeight);
+        imageAtBestFittingSizeConsumer.accept(imageAtSize.orElse(this.getApi()));
+    }
+
+    private CachedImageAtSize cachedImageAtSize = new CachedImageAtSize();
+
+    private class CachedImageAtSize {
+
+        private Image image;
+
+        public void destroy() {
+            if (image != null) {
+                image.dispose();
+                image = null;
+            }
+        }
+
+        private Optional<Image> refresh(int destWidth, int destHeight) {
+            int scaledWidth = pointToPixel(destWidth, DPIUtil.getDeviceZoom());
+            int scaledHeight = pointToPixel(destHeight, DPIUtil.getDeviceZoom());
+            if (isReusable(scaledWidth, scaledHeight)) {
+                return Optional.of(image);
+            } else {
+                destroy();
+                Optional<Image> imageAtSize = loadImageAtSize(scaledWidth, scaledHeight);
+                image = imageAtSize.orElse(null);
+                return imageAtSize;
+            }
+        }
+
+        private boolean isReusable(int width, int height) {
+            return image != null && image.getImpl()._height() == height && image.getImpl()._width() == width;
+        }
+
+        private Optional<Image> loadImageAtSize(int destWidth, int destHeight) {
+            Optional<ImageData> imageData = loadImageDataAtExactSize(destWidth, destHeight);
+            if (imageData.isEmpty()) {
+                return Optional.empty();
+            }
+            Image image = new Image(device, imageData.get());
+            if (styleFlag != SWT.IMAGE_COPY) {
+            }
+            return Optional.of(image);
+        }
+
+        private Optional<ImageData> loadImageDataAtExactSize(int targetWidth, int targetHeight) {
+            if (imageDataProvider instanceof ImageDataAtSizeProvider imageDataAtSizeProvider) {
+                ImageData imageData = imageDataAtSizeProvider.getImageData(targetWidth, targetHeight);
+                if (imageData == null) {
+                    SWT.error(SWT.ERROR_INVALID_ARGUMENT, null, " ImageDataAtSizeProvider returned null for width=" + targetWidth + ", height=" + targetHeight);
+                }
+                return Optional.of(imageData);
+            }
+            if (imageFileNameProvider != null) {
+                String fileName = DPIUtil.validateAndGetImagePathAtZoom(imageFileNameProvider, 100).element();
+                if (ImageDataLoader.isDynamicallySizable(fileName)) {
+                    ImageData imageDataAtSize = ImageDataLoader.loadBySize(fileName, targetWidth, targetHeight);
+                    return Optional.of(imageDataAtSize);
+                }
+            }
+            return Optional.empty();
+        }
     }
 
     Color background;

@@ -117,8 +117,6 @@ public class SwtTable extends SwtComposite implements ITable {
 
     static final int GRID_WIDTH = 1;
 
-    static final int SORT_WIDTH = 10;
-
     static final int HEADER_MARGIN = 12;
 
     static final int HEADER_EXTRA = 3;
@@ -147,7 +145,6 @@ public class SwtTable extends SwtComposite implements ITable {
         TableProc = lpWndClass.lpfnWndProc;
         OS.GetClassInfo(0, HeaderClass, lpWndClass);
         HeaderProc = lpWndClass.lpfnWndProc;
-        DPIZoomChangeRegistry.registerHandler(SwtTable::handleDPIChange, Table.class);
     }
 
     /**
@@ -1504,7 +1501,8 @@ public class SwtTable extends SwtComposite implements ITable {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
+        Point hintInPixels = Win32DPIUtils.pointToPixelAsSufficientlyLargeSize(hintInPoints, zoom);
         if (fixScrollWidth)
             setScrollWidth(null, true);
         //This code is intentionally commented
@@ -1533,8 +1531,8 @@ public class SwtTable extends SwtComposite implements ITable {
         OS.GetWindowRect(hwndHeader, rect);
         int height = rect.bottom - rect.top;
         int bits = 0;
-        if (wHint != SWT.DEFAULT) {
-            bits |= wHint & 0xFFFF;
+        if (hintInPoints.x != SWT.DEFAULT) {
+            bits |= hintInPixels.x & 0xFFFF;
         } else {
             int width = 0;
             int count = (int) OS.SendMessage(hwndHeader, OS.HDM_GETITEMCOUNT, 0, 0);
@@ -1553,10 +1551,10 @@ public class SwtTable extends SwtComposite implements ITable {
             width = DEFAULT_WIDTH;
         if (height == 0)
             height = DEFAULT_HEIGHT;
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
+        if (hintInPoints.x != SWT.DEFAULT)
+            width = hintInPixels.x;
+        if (hintInPoints.y != SWT.DEFAULT)
+            height = hintInPixels.y;
         int border = getBorderWidthInPixels();
         width += border * 2;
         height += border * 2;
@@ -2436,11 +2434,11 @@ public class SwtTable extends SwtComposite implements ITable {
      */
     public int getGridLineWidth() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getGridLineWidthInPixels(), getZoom());
+        return GRID_WIDTH;
     }
 
     int getGridLineWidthInPixels() {
-        return GRID_WIDTH;
+        return DPIUtil.pointToPixel(GRID_WIDTH, getZoom());
     }
 
     /**
@@ -2581,7 +2579,7 @@ public class SwtTable extends SwtComposite implements ITable {
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        return getItemInPixels(Win32DPIUtils.pointToPixel(point, getZoom()));
+        return getItemInPixels(Win32DPIUtils.pointToPixelAsLocation(point, getZoom()));
     }
 
     TableItem getItemInPixels(Point point) {
@@ -3720,6 +3718,7 @@ public class SwtTable extends SwtComposite implements ITable {
                 if (explorerTheme) {
                     boolean backgroundWanted = !ignoreDrawHot || drawDrophilited || (!ignoreDrawSelection && clrSelectionBk != -1);
                     if (backgroundWanted) {
+                        int explorerExtraInPixels = DPIUtil.pointToPixel(EXPLORER_EXTRA, getZoom());
                         RECT pClipRect = new RECT();
                         OS.SetRect(pClipRect, nmcd.left, nmcd.top, nmcd.right, nmcd.bottom);
                         RECT rect = new RECT();
@@ -3736,10 +3735,10 @@ public class SwtTable extends SwtComposite implements ITable {
                             OS.MapWindowPoints(hwndHeader, getApi().handle, headerRect, 2);
                             rect.left = headerRect.left;
                             pClipRect.left = cellRect.left;
-                            pClipRect.right += EXPLORER_EXTRA;
+                            pClipRect.right += explorerExtraInPixels;
                         } else {
-                            rect.right += EXPLORER_EXTRA;
-                            pClipRect.right += EXPLORER_EXTRA;
+                            rect.right += explorerExtraInPixels;
+                            pClipRect.right += explorerExtraInPixels;
                         }
                         long hTheme = OS.OpenThemeData(getApi().handle, SwtDisplay.TREEVIEW, getZoom());
                         int iStateId = selected ? OS.LISS_SELECTED : OS.LISS_HOT;
@@ -5123,7 +5122,7 @@ public class SwtTable extends SwtComposite implements ITable {
 			*/
                 newWidth++;
             }
-            newWidth += INSET * 2 + VISTA_EXTRA;
+            newWidth += INSET * 2 + DPIUtil.pointToPixel(VISTA_EXTRA, getZoom());
             int oldWidth = (int) OS.SendMessage(getApi().handle, OS.LVM_GETCOLUMNWIDTH, 0, 0);
             if (newWidth > oldWidth) {
                 setScrollWidth(newWidth);
@@ -5569,7 +5568,7 @@ public class SwtTable extends SwtComposite implements ITable {
             OS.GetScrollInfo(getApi().handle, OS.SB_HORZ, info);
             int newPos = info.nPos;
             if (newPos < oldPos) {
-                rect.right = oldPos - newPos + GRID_WIDTH;
+                rect.right = oldPos - newPos + getGridLineWidthInPixels();
                 OS.InvalidateRect(getApi().handle, rect, true);
             }
         }
@@ -6029,8 +6028,9 @@ public class SwtTable extends SwtComposite implements ITable {
             TableItem item = _getItem(selection);
             if (item.getImpl() instanceof SwtTableItem) {
                 RECT rect = ((SwtTableItem) item.getImpl()).getBounds(selection, 0, true, true, true);
+                int dragImageSizeInPixel = DPIUtil.pointToPixel(DRAG_IMAGE_SIZE, getZoom());
                 if ((getApi().style & SWT.FULL_SELECTION) != 0) {
-                    int width = DRAG_IMAGE_SIZE;
+                    int width = dragImageSizeInPixel;
                     rect.left = Math.max(clientRect.left, mousePos.x - width / 2);
                     if (clientRect.right > rect.left + width) {
                         rect.right = rect.left + width;
@@ -6041,7 +6041,7 @@ public class SwtTable extends SwtComposite implements ITable {
                 }
                 long hRgn = OS.CreateRectRgn(rect.left, rect.top, rect.right, rect.bottom);
                 while ((selection = (int) OS.SendMessage(getApi().handle, OS.LVM_GETNEXTITEM, selection, OS.LVNI_SELECTED)) != -1) {
-                    if (rect.bottom - rect.top > DRAG_IMAGE_SIZE)
+                    if (rect.bottom - rect.top > dragImageSizeInPixel)
                         break;
                     if (rect.bottom > clientRect.bottom)
                         break;
@@ -6650,7 +6650,7 @@ public class SwtTable extends SwtComposite implements ITable {
             if (newPos < oldPos) {
                 RECT rect = new RECT();
                 OS.GetClientRect(getApi().handle, rect);
-                rect.right = oldPos - newPos + GRID_WIDTH;
+                rect.right = oldPos - newPos + getGridLineWidthInPixels();
                 OS.InvalidateRect(getApi().handle, rect, true);
             }
         }
@@ -6758,9 +6758,9 @@ public class SwtTable extends SwtComposite implements ITable {
                     long oneItem = OS.SendMessage(getApi().handle, OS.LVM_APPROXIMATEVIEWRECT, 1, 0);
                     int itemHeight = OS.HIWORD(oneItem) - OS.HIWORD(empty);
                     if (code == OS.SB_LINEDOWN) {
-                        clientRect.top = clientRect.bottom - itemHeight - GRID_WIDTH;
+                        clientRect.top = clientRect.bottom - itemHeight - getGridLineWidthInPixels();
                     } else {
-                        clientRect.bottom = clientRect.top + itemHeight + GRID_WIDTH;
+                        clientRect.bottom = clientRect.top + itemHeight + getGridLineWidthInPixels();
                     }
                     OS.InvalidateRect(getApi().handle, clientRect, true);
                     break;
@@ -7249,7 +7249,7 @@ public class SwtTable extends SwtComposite implements ITable {
 							 * Sort indicator size needs to scale as per the Native Windows OS DPI level
 							 * when header is custom drawn. For more details refer bug 537097.
 							 */
-                                        int leg = Win32DPIUtils.pointToPixel(3, getApi().nativeZoom);
+                                        int leg = DPIUtil.pointToPixel(3, getApi().nativeZoom);
                                         if (sortDirection == SWT.UP) {
                                             OS.Polyline(nmcd.hdc, new int[] { center - leg, 1 + leg, center + 1, 0 }, 2);
                                             OS.Polyline(nmcd.hdc, new int[] { center + leg, 1 + leg, center - 1, 0 }, 2);
@@ -7638,7 +7638,7 @@ public class SwtTable extends SwtComposite implements ITable {
                             }
                             if (drawForeground) {
                                 int nSavedDC = OS.SaveDC(nmcd.hdc);
-                                int gridWidth = getLinesVisible() ? SwtTable.GRID_WIDTH : 0;
+                                int gridWidth = getLinesVisible() ? getGridLineWidthInPixels() : 0;
                                 RECT insetRect = toolTipInset(cellRect);
                                 OS.SetWindowOrgEx(nmcd.hdc, insetRect.left, insetRect.top, null);
                                 GCData data = new GCData();
@@ -7654,7 +7654,7 @@ public class SwtTable extends SwtComposite implements ITable {
                                 if (image != null) {
                                     Rectangle rect = Win32DPIUtils.pointToPixel(image.getBounds(), getZoom());
                                     RECT imageRect = ((SwtTableItem) item.getImpl()).getBounds(pinfo.iItem, pinfo.iSubItem, false, true, false, false, hDC);
-                                    Point size = imageList == null ? new Point(rect.width, rect.height) : Win32DPIUtils.pointToPixel(imageList.getImageSize(), getZoom());
+                                    Point size = imageList == null ? new Point(rect.width, rect.height) : Win32DPIUtils.pointToPixelAsSize(imageList.getImageSize(), getZoom());
                                     int y = imageRect.top + Math.max(0, (imageRect.bottom - imageRect.top - size.y) / 2);
                                     int zoom = getZoom();
                                     rect = Win32DPIUtils.pixelToPoint(rect, zoom);
@@ -7696,45 +7696,42 @@ public class SwtTable extends SwtComposite implements ITable {
         return null;
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof Table table)) {
-            return;
-        }
-        ((SwtTable) table.getImpl()).settingItemHeight = true;
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        settingItemHeight = true;
         var scrollWidth = 0;
         // Request ScrollWidth
-        if (table.getColumns().length == 0) {
-            scrollWidth = Math.round(OS.SendMessage(table.handle, OS.LVM_GETCOLUMNWIDTH, 0, 0) * scalingFactor);
+        if (getColumns().length == 0) {
+            scrollWidth = Math.round(OS.SendMessage(getApi().handle, OS.LVM_GETCOLUMNWIDTH, 0, 0) * scalingFactor);
         }
-        Display display = table.getDisplay();
-        ImageList headerImageList = ((SwtTable) table.getImpl()).headerImageList;
+        Display display = getDisplay();
         // Reset ImageList
         if (headerImageList != null) {
             ((SwtDisplay) display.getImpl()).releaseImageList(headerImageList);
-            ((SwtTable) table.getImpl()).headerImageList = null;
+            headerImageList = null;
         }
-        ImageList imageList = ((SwtTable) table.getImpl()).imageList;
         if (imageList != null) {
             ((SwtDisplay) display.getImpl()).releaseImageList(imageList);
-            ((SwtTable) table.getImpl()).imageList = null;
+            imageList = null;
         }
         // if the item height was set at least once programmatically with CDDS_SUBITEMPREPAINT,
         // the item height of the table is not managed by the OS anymore e.g. when the zoom
         // on the monitor is changed, the height of the item will stay at the fixed size.
         // Resetting it will re-enable the default behavior again
-        ((SwtTable) table.getImpl()).setItemHeight(-1);
-        for (TableItem item : table.getItems()) {
-            DPIZoomChangeRegistry.applyChange(item, newZoom, scalingFactor);
+        setItemHeight(-1);
+        for (TableItem item : getItems()) {
+            item.notifyListeners(SWT.ZoomChanged, event);
         }
-        for (TableColumn tableColumn : table.getColumns()) {
-            DPIZoomChangeRegistry.applyChange(tableColumn, newZoom, scalingFactor);
+        for (TableColumn tableColumn : getColumns()) {
+            tableColumn.notifyListeners(SWT.ZoomChanged, event);
         }
-        if (table.getColumns().length == 0 && scrollWidth != 0) {
+        if (getColumns().length == 0 && scrollWidth != 0) {
             // Update scrollbar width if no columns are available
-            ((SwtTable) table.getImpl()).setScrollWidth(scrollWidth);
+            setScrollWidth(scrollWidth);
         }
-        ((SwtTable) table.getImpl()).fixCheckboxImageListColor(true);
-        ((SwtTable) table.getImpl()).settingItemHeight = false;
+        fixCheckboxImageListColor(true);
+        settingItemHeight = false;
     }
 
     public TableItem[] _items() {

@@ -571,9 +571,9 @@ public class SwtDragSource extends SwtWidget implements IDragSource {
             OS.RedrawWindow(topControl.handle, null, 0, flags);
             POINT pt = new POINT();
             // To Pixels
-            pt.x = Win32DPIUtils.pointToPixel(dragEvent.x, zoom);
+            pt.x = DPIUtil.pointToPixel(dragEvent.x, zoom);
             // To Pixels
-            pt.y = Win32DPIUtils.pointToPixel(dragEvent.y, zoom);
+            pt.y = DPIUtil.pointToPixel(dragEvent.y, zoom);
             OS.MapWindowPoints(control.handle, 0, pt, 1);
             RECT rect = new RECT();
             OS.GetWindowRect(hwndDrag, rect);

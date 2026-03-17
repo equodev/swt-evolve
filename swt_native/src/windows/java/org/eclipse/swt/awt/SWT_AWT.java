@@ -311,7 +311,7 @@ public class SWT_AWT {
                         return;
                     Dimension dim = parent.getSize();
                     // To Points
-                    shell.setSize(Win32DPIUtils.pixelToPoint(new Point(dim.width, dim.height), DPIUtil.getDeviceZoom()));
+                    shell.setSize(Win32DPIUtils.pixelToPointAsSize(new Point(dim.width, dim.height), DPIUtil.getDeviceZoom()));
                 });
             }
         };

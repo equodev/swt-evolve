@@ -174,8 +174,8 @@ public class DartToolBar extends DartComposite implements IToolBar {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.computeSize(this, wHint, hHint, changed);
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
+        return Sizes.computeSize(this, hintInPoints.x, hintInPoints.y, changed);
     }
 
     @Override
@@ -789,11 +789,10 @@ public class DartToolBar extends DartComposite implements IToolBar {
         return getBackgroundPixel();
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof ToolBar toolBar)) {
-            return;
-        }
-        ToolItem[] toolItems = ((DartToolBar) toolBar.getImpl())._getItems();
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        ToolItem[] toolItems = _getItems();
         var seperatorWidth = new int[toolItems.length];
         int itemCount = toolItems.length;
         if (itemCount == 0) {
@@ -806,6 +805,7 @@ public class DartToolBar extends DartComposite implements IToolBar {
                 // at the end
                 seperatorWidth[i] = item.getWidth();
             }
+            item.notifyListeners(SWT.ZoomChanged, event);
         }
         for (int i = 0; i < itemCount; i++) {
             ToolItem item = toolItems[i];
@@ -815,7 +815,7 @@ public class DartToolBar extends DartComposite implements IToolBar {
                 item.setWidth(seperatorWidth[i]);
             }
         }
-        toolBar.layout(true);
+        clearSizeCache(true);
     }
 
     public int _lastFocusId() {

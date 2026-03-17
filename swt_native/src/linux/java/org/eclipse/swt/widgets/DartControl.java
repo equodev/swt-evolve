@@ -4638,9 +4638,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void update(boolean all, boolean flush) {
-        long window = paintWindow();
-        if (flush)
-            ((SwtDisplay) display.getImpl()).flushExposes(window, all);
     }
 
     public void updateBackgroundMode() {

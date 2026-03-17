@@ -109,7 +109,7 @@ public class WebKitGTK extends C {
 
     public static final int G_TLS_CERTIFICATE_VALIDATE_ALL = 7;
 
-    public static final int WEBKIT_WEBSITE_DATA_COOKIES = 1 << 8;
+    public static final int WEBKIT_WEBSITE_DATA_COOKIES = GTK.GTK4 ? 64 : 1 << 8;
 
     public static final int WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START = 0;
 
@@ -521,6 +521,16 @@ public class WebKitGTK extends C {
     /**
      * @method flags=dynamic
      */
+    public static final native long webkit_navigation_policy_decision_get_navigation_action(long decision);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native long webkit_navigation_action_get_request(long navigation);
+
+    /**
+     * @method flags=dynamic
+     */
     public static final native void webkit_policy_decision_download(long decision);
 
     /**
@@ -537,6 +547,16 @@ public class WebKitGTK extends C {
      * @method flags=dynamic
      */
     public static final native long webkit_network_session_get_default();
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native long webkit_network_session_get_cookie_manager(long session);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native long webkit_network_session_get_website_data_manager(long session);
 
     /**
      * @method flags=dynamic
@@ -711,6 +731,91 @@ public class WebKitGTK extends C {
      */
     /*WebKitJavascriptResult * webkit_web_view_run_javascript_finish (WebKitWebView *web_view, GAsyncResult *result, GError **error);*/
     public static final native long webkit_web_view_run_javascript_finish(long web_view, long GAsyncResult, long[] gerror);
+
+    /*
+ * void webkit_web_view_evaluate_javascript ( WebKitWebView* web_view, const
+ * char* script, gssize length, const char* world_name, const char* source_uri,
+ * GCancellable* cancellable, GAsyncReadyCallback callback, gpointer user_data )
+ */
+    /**
+     * @method flags=dynamic
+     */
+    public static final native void webkit_web_view_evaluate_javascript(long web_view, byte[] script, long length, long world_name, long source_uri, long cancellable, long callback, long user_data);
+
+    /**
+     * @method flags=dynamic
+     * @param error cast=(GError **)
+     */
+    /*
+ * JSCValue* webkit_web_view_evaluate_javascript_finish ( WebKitWebView*
+ * web_view, GAsyncResult* result, GError** error )
+ */
+    public static final native long webkit_web_view_evaluate_javascript_finish(long web_view, long result, long[] error);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native boolean jsc_value_is_boolean(long value);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native boolean jsc_value_to_boolean(long value);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native boolean jsc_value_is_string(long value);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native long jsc_value_to_string(long value);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native boolean jsc_value_is_null(long value);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native boolean jsc_value_is_undefined(long value);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native boolean jsc_value_is_object(long value);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native boolean jsc_value_is_number(long value);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native double jsc_value_to_double(long value);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native int jsc_value_to_int32(long value);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native boolean jsc_value_is_typed_array(long value);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native long jsc_value_object_get_property(long value, byte[] name);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native long jsc_value_object_get_property_at_index(long value, int index);
 
     /**
      * @method flags=dynamic

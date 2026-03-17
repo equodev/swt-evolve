@@ -73,7 +73,7 @@ public class TransferData {
      * platforms and should never be accessed from application code.
      * </p>
      *
-     * This is most commonly 8 bits.
+     * This is most commonly 8 bits, and on GTK4 is always 8 bits.
      *
      * @noreference This field is not intended to be referenced by clients.
      */

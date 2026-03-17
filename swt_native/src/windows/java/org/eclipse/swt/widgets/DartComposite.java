@@ -200,8 +200,8 @@ public class DartComposite extends DartScrollable implements IComposite {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.computeSize(this, wHint, hHint, changed);
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
+        return Sizes.computeSize(this, hintInPoints.x, hintInPoints.y, changed);
     }
 
     /**
@@ -285,6 +285,9 @@ public class DartComposite extends DartScrollable implements IComposite {
      */
     public void drawBackground(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
         checkWidget();
+        int zoom = getZoom();
+        offsetX = DPIUtil.pointToPixel(offsetX, zoom);
+        offsetY = DPIUtil.pointToPixel(offsetY, zoom);
     }
 
     void drawBackgroundInPixels(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
@@ -804,8 +807,8 @@ public class DartComposite extends DartScrollable implements IComposite {
         }
     }
 
-    Point minimumSize(int wHint, int hHint, boolean changed) {
-        return Sizes.minimumSize(this, wHint, hHint, changed);
+    Point minimumSize(Point hintInPoints, boolean changed) {
+        return Sizes.minimumSize(this, hintInPoints.x, hintInPoints.y, changed);
     }
 
     @Override
@@ -1222,9 +1225,11 @@ public class DartComposite extends DartScrollable implements IComposite {
         return super.toString() + " [layout=" + layout + "]";
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof Composite composite)) {
-            return;
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        for (Control child : getChildren()) {
+            ((DartControl) child.getImpl()).sendZoomChangedEvent(event, getShell());
         }
     }
 

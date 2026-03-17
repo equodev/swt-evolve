@@ -49,10 +49,6 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
 
     int id;
 
-    static {
-        DPIZoomChangeRegistry.registerHandler(SwtTableColumn::handleDPIChange, TableColumn.class);
-    }
-
     /**
      * Constructs a new instance of this class given its parent
      * (which must be a <code>Table</code>) and a style value
@@ -408,18 +404,14 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
         long hwnd = parent.handle;
         int oldWidth = (int) OS.SendMessage(hwnd, OS.LVM_GETCOLUMNWIDTH, index, 0);
         TCHAR buffer = new TCHAR(((SwtControl) parent.getImpl()).getCodePage(), text, true);
-        int headerWidth = (int) OS.SendMessage(hwnd, OS.LVM_GETSTRINGWIDTH, 0, buffer) + SwtTable.HEADER_MARGIN;
+        int headerWidth = (int) (OS.SendMessage(hwnd, OS.LVM_GETSTRINGWIDTH, 0, buffer) + Win32DPIUtils.pointToPixel(SwtTable.HEADER_MARGIN, getZoom()));
         if (OS.IsAppThemed())
-            headerWidth += SwtTable.HEADER_EXTRA;
+            headerWidth += Win32DPIUtils.pointToPixel(SwtTable.HEADER_EXTRA, getZoom());
         boolean hasHeaderImage = false;
-        if (image != null || ((SwtTable) parent.getImpl()).sortColumn == this.getApi()) {
+        if (image != null) {
             hasHeaderImage = true;
-            if (((SwtTable) parent.getImpl()).sortColumn == this.getApi() && ((SwtTable) parent.getImpl()).sortDirection != SWT.NONE) {
-                headerWidth += SwtTable.SORT_WIDTH;
-            } else if (image != null) {
-                Rectangle bounds = Win32DPIUtils.pointToPixel(image.getBounds(), getZoom());
-                headerWidth += bounds.width;
-            }
+            Rectangle bounds = Win32DPIUtils.pointToPixel(image.getBounds(), getZoom());
+            headerWidth += bounds.width;
             long hwndHeader = OS.SendMessage(hwnd, OS.LVM_GETHEADER, 0, 0);
             int margin = (int) OS.SendMessage(hwndHeader, OS.HDM_GETBITMAPMARGIN, 0, 0);
             headerWidth += margin * 4;
@@ -448,7 +440,7 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
                     if (isDisposed() || parent.isDisposed())
                         break;
                     Rectangle bounds = event.getBounds();
-                    columnWidth = Math.max(columnWidth, Win32DPIUtils.pointToPixel(bounds.x + bounds.width, getZoom()) - headerRect.left);
+                    columnWidth = Math.max(columnWidth, DPIUtil.pointToPixel(bounds.x + bounds.width, getZoom()) - headerRect.left);
                 }
             }
             if (newFont != 0)
@@ -881,7 +873,7 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
      */
     public void setWidth(int width) {
         checkWidget();
-        setWidthInPixels(Win32DPIUtils.pointToPixel(width, getZoom()));
+        setWidthInPixels(DPIUtil.pointToPixel(width, getZoom()));
     }
 
     void setWidthInPixels(int width) {
@@ -916,19 +908,18 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
         }
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof TableColumn tableColumn)) {
-            return;
-        }
-        Table table = tableColumn.getParent();
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        Table table = getParent();
         boolean ignoreColumnResize = ((SwtTable) table.getImpl()).ignoreColumnResize;
         ((SwtTable) table.getImpl()).ignoreColumnResize = true;
-        final int newColumnWidth = Math.round(((SwtTableColumn) tableColumn.getImpl()).getWidthInPixels() * scalingFactor);
-        ((SwtTableColumn) tableColumn.getImpl()).setWidthInPixels(newColumnWidth);
+        final int newColumnWidth = Math.round(getWidthInPixels() * scalingFactor);
+        setWidthInPixels(newColumnWidth);
         ((SwtTable) table.getImpl()).ignoreColumnResize = ignoreColumnResize;
-        Image image = tableColumn.getImage();
+        Image image = getImage();
         if (image != null) {
-            tableColumn.setImage(image);
+            setImage(image);
         }
     }
 

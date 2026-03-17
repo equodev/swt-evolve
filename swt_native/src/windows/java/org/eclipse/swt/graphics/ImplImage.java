@@ -8,9 +8,5 @@ import org.eclipse.swt.*;
 
 public interface ImplImage extends ImplResource {
 
-    int _transparentPixel();
-
-    int _transparentColor();
-
     GC _memGC();
 }

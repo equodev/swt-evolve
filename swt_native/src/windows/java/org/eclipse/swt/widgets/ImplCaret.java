@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 

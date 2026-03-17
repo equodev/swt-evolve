@@ -999,6 +999,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public void setWidth(int width) {
         checkWidget();
+        setWidthInPixels(DPIUtil.pointToPixel(width, getZoom()));
     }
 
     void setWidthInPixels(int width) {

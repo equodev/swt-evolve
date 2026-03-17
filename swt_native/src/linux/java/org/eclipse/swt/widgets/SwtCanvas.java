@@ -185,6 +185,14 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
         return result;
     }
 
+    @Override
+    void gtk4_draw(long widget, long cairo, Rectangle bounds) {
+        if ((getApi().state & OBSCURED) != 0)
+            return;
+        super.gtk4_draw(widget, cairo, bounds);
+        drawCaretInFocus(widget, cairo);
+    }
+
     void drawCaretInFocus(long widget, long cairo) {
         /*
 	 *  blink is needed to be checked as gtk_draw() signals sent from other parts of the canvas
@@ -207,7 +215,9 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
         if (drawFlag) {
             Cairo.cairo_save(cairo);
             if (caret.getImpl()._image() != null && !caret.getImpl()._image().isDisposed() && caret.getImpl()._image().mask == 0) {
-                Cairo.cairo_set_source_rgb(cairo, 1, 1, 1);
+                if (!GTK.GTK4) {
+                    Cairo.cairo_set_source_rgb(cairo, 1, 1, 1);
+                }
                 Cairo.cairo_set_operator(cairo, Cairo.CAIRO_OPERATOR_DIFFERENCE);
                 long surface = Cairo.cairo_get_target(cairo);
                 int nWidth = 0;
@@ -226,7 +236,9 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
                 Cairo.cairo_set_source_surface(cairo, caret.getImpl()._image().surface, 0, 0);
                 Cairo.cairo_paint(cairo);
             } else {
-                Cairo.cairo_set_source_rgb(cairo, 1, 1, 1);
+                if (!GTK.GTK4) {
+                    Cairo.cairo_set_source_rgb(cairo, 1, 1, 1);
+                }
                 Cairo.cairo_set_operator(cairo, Cairo.CAIRO_OPERATOR_DIFFERENCE);
                 int nWidth = caret.getImpl()._width(), nHeight = caret.getImpl()._height();
                 if (nWidth <= 0)
@@ -260,6 +272,20 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
         if (caret != null)
             ((SwtCaret) caret.getImpl()).killFocus();
         return result;
+    }
+
+    @Override
+    void gtk4_focus_enter_event(long handle, long event) {
+        super.gtk4_focus_enter_event(handle, event);
+        if (caret != null)
+            ((SwtCaret) caret.getImpl()).setFocus();
+    }
+
+    @Override
+    void gtk4_focus_leave_event(long handle, long event) {
+        super.gtk4_focus_leave_event(handle, event);
+        if (caret != null)
+            ((SwtCaret) caret.getImpl()).setFocus();
     }
 
     @Override

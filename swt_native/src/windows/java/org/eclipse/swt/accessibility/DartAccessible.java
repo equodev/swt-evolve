@@ -140,7 +140,7 @@ public class DartAccessible implements IIAccessible {
         setApi(api);
         this.parent = checkNull(parent);
         this.control = parent.getImpl()._control();
-        ((DartAccessible) parent.getImpl()).children.add(this.getApi());
+        parent.getImpl()._children().add(this.getApi());
         AddRef();
     }
 
@@ -595,7 +595,7 @@ public class DartAccessible implements IIAccessible {
         if (parent == null)
             return;
         Release();
-        ((DartAccessible) parent.getImpl()).children.remove(this.getApi());
+        parent.getImpl()._children().remove(this.getApi());
         parent = null;
     }
 

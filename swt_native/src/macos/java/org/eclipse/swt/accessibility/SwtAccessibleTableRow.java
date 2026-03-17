@@ -46,8 +46,8 @@ class SwtAccessibleTableRow extends SwtAccessible implements IAccessibleTableRow
                 for (int i = 0; i < validColumnCount; i++) {
                     event.column = i;
                     event.row = index;
-                    for (int j = 0; j < ((SwtAccessible) parent.getImpl()).accessibleTableListeners.size(); j++) {
-                        AccessibleTableListener listener = ((SwtAccessible) parent.getImpl()).accessibleTableListeners.get(j);
+                    for (int j = 0; j < parent.getImpl()._accessibleTableListeners().size(); j++) {
+                        AccessibleTableListener listener = parent.getImpl()._accessibleTableListeners().get(j);
                         listener.getCell(event);
                     }
                     if (event.accessible != null) {
@@ -71,8 +71,8 @@ class SwtAccessibleTableRow extends SwtAccessible implements IAccessibleTableRow
                 for (int i = 0; i < validColumnCount; i++) {
                     event.column = i;
                     event.row = index;
-                    for (int j = 0; j < ((SwtAccessible) parent.getImpl()).accessibleTableListeners.size(); j++) {
-                        AccessibleTableListener listener = ((SwtAccessible) parent.getImpl()).accessibleTableListeners.get(j);
+                    for (int j = 0; j < parent.getImpl()._accessibleTableListeners().size(); j++) {
+                        AccessibleTableListener listener = parent.getImpl()._accessibleTableListeners().get(j);
                         listener.getCell(event);
                     }
                     children[i] = event.accessible;
@@ -117,8 +117,8 @@ class SwtAccessibleTableRow extends SwtAccessible implements IAccessibleTableRow
                 AccessibleTableEvent event = new AccessibleTableEvent(this);
                 event.column = 0;
                 event.row = index;
-                for (int j = 0; j < ((SwtAccessible) parent.getImpl()).accessibleTableListeners.size(); j++) {
-                    AccessibleTableListener listener = ((SwtAccessible) parent.getImpl()).accessibleTableListeners.get(j);
+                for (int j = 0; j < parent.getImpl()._accessibleTableListeners().size(); j++) {
+                    AccessibleTableListener listener = parent.getImpl()._accessibleTableListeners().get(j);
                     listener.getCell(event);
                 }
                 if (event.accessible != null) {
@@ -141,8 +141,8 @@ class SwtAccessibleTableRow extends SwtAccessible implements IAccessibleTableRow
                 // Delegate to the parent table.
                 AccessibleTableEvent event = new AccessibleTableEvent(this);
                 event.row = e.row;
-                for (int i = 0; i < ((SwtAccessible) parent.getImpl()).accessibleTableListeners.size(); i++) {
-                    AccessibleTableListener listener = ((SwtAccessible) parent.getImpl()).accessibleTableListeners.get(i);
+                for (int i = 0; i < parent.getImpl()._accessibleTableListeners().size(); i++) {
+                    AccessibleTableListener listener = parent.getImpl()._accessibleTableListeners().get(i);
                     listener.isRowSelected(event);
                 }
                 e.isSelected = event.isSelected;
@@ -157,8 +157,8 @@ class SwtAccessibleTableRow extends SwtAccessible implements IAccessibleTableRow
         for (int i = 0; i < validColumnCount; i++) {
             event.column = i;
             event.row = index;
-            for (int j = 0; j < ((SwtAccessible) parent.getImpl()).accessibleTableListeners.size(); j++) {
-                AccessibleTableListener listener = ((SwtAccessible) parent.getImpl()).accessibleTableListeners.get(j);
+            for (int j = 0; j < parent.getImpl()._accessibleTableListeners().size(); j++) {
+                AccessibleTableListener listener = parent.getImpl()._accessibleTableListeners().get(j);
                 listener.getCell(event);
             }
             children[i] = event.accessible;

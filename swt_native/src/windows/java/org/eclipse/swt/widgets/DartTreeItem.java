@@ -1475,20 +1475,21 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         return super.getNameText();
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof TreeItem treeItem)) {
-            return;
-        }
-        Font font = ((DartTreeItem) treeItem.getImpl()).font;
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
         if (font != null) {
-            treeItem.setFont(font);
+            setFont(font);
         }
-        Font[] cellFonts = ((DartTreeItem) treeItem.getImpl()).cellFont;
+        Font[] cellFonts = cellFont;
         if (cellFonts != null) {
             for (int index = 0; index < cellFonts.length; index++) {
                 Font cellFont = cellFonts[index];
-                cellFonts[index] = cellFont == null ? null : DartFont.win32_new(cellFont, ((DartWidget) treeItem.getImpl()).getNativeZoom());
+                cellFonts[index] = cellFont == null ? null : DartFont.win32_new(cellFont, getNativeZoom());
             }
+        }
+        for (TreeItem item : getItems()) {
+            item.notifyListeners(SWT.ZoomChanged, event);
         }
     }
 

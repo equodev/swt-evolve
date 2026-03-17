@@ -71,7 +71,6 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         WNDCLASS lpWndClass = new WNDCLASS();
         OS.GetClassInfo(0, ToolBarClass, lpWndClass);
         ToolBarProc = lpWndClass.lpfnWndProc;
-        DPIZoomChangeRegistry.registerHandler(SwtToolBar::handleDPIChange, ToolBar.class);
     }
 
     /*
@@ -223,15 +222,16 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
+        Point hintInPixels = Win32DPIUtils.pointToPixelAsSufficientlyLargeSize(hintInPoints, zoom);
         int count = (int) OS.SendMessage(getApi().handle, OS.TB_BUTTONCOUNT, 0, 0);
-        if (count == this._count && wHint == this._wHint && hHint == this._hHint) {
+        if (count == this._count && hintInPixels.x == this._wHint && hintInPixels.y == this._hHint) {
             // Return already cached values calculated previously
             return new Point(_width, _height);
         }
         this._count = count;
-        this._wHint = wHint;
-        this._hHint = hHint;
+        this._wHint = hintInPixels.x;
+        this._hHint = hintInPixels.y;
         int width = 0, height = 0;
         if ((getApi().style & SWT.VERTICAL) != 0) {
             RECT rect = new RECT();
@@ -256,8 +256,8 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
             int oldWidth = oldRect.right - oldRect.left;
             int oldHeight = oldRect.bottom - oldRect.top;
             int border = getBorderWidthInPixels();
-            int newWidth = wHint == SWT.DEFAULT ? 0x3FFF : wHint + border * 2;
-            int newHeight = hHint == SWT.DEFAULT ? 0x3FFF : hHint + border * 2;
+            int newWidth = hintInPoints.x == SWT.DEFAULT ? 0x3FFF : hintInPixels.x + border * 2;
+            int newHeight = hintInPoints.y == SWT.DEFAULT ? 0x3FFF : hintInPixels.y + border * 2;
             boolean redraw = getDrawing() && OS.IsWindowVisible(getApi().handle);
             ignoreResize = true;
             if (redraw)
@@ -286,10 +286,10 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
             width = DEFAULT_WIDTH;
         if (height == 0)
             height = DEFAULT_HEIGHT;
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
+        if (hintInPoints.x != SWT.DEFAULT)
+            width = hintInPixels.x;
+        if (hintInPoints.y != SWT.DEFAULT)
+            height = hintInPixels.y;
         Rectangle trim = computeTrimInPixels(0, 0, width, height);
         width = trim.width;
         height = trim.height;
@@ -608,7 +608,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        return getItemInPixels(Win32DPIUtils.pointToPixel(point, getZoom()));
+        return getItemInPixels(Win32DPIUtils.pointToPixelAsLocation(point, getZoom()));
     }
 
     ToolItem getItemInPixels(Point point) {
@@ -1849,11 +1849,10 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         return super.wmNotifyChild(hdr, wParam, lParam);
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof ToolBar toolBar)) {
-            return;
-        }
-        ToolItem[] toolItems = ((SwtToolBar) toolBar.getImpl())._getItems();
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        ToolItem[] toolItems = _getItems();
         var seperatorWidth = new int[toolItems.length];
         int itemCount = toolItems.length;
         if (itemCount == 0) {
@@ -1865,21 +1864,21 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         Stack<ToolItemData> buttondata = new Stack<>();
         for (int i = itemCount - 1; i >= 0; i--) {
             TBBUTTON lpButton = new TBBUTTON();
-            OS.SendMessage(toolBar.handle, OS.TB_GETBUTTON, i, lpButton);
+            OS.SendMessage(getApi().handle, OS.TB_GETBUTTON, i, lpButton);
             ToolItem item = toolItems[i];
             if ((item.style & SWT.SEPARATOR) != 0 && item.getControl() != null) {
                 // Take note of widths of separators with control, so they can be resized
                 // at the end
                 seperatorWidth[i] = item.getWidth();
             }
-            DPIZoomChangeRegistry.applyChange(item, newZoom, scalingFactor);
+            item.notifyListeners(SWT.ZoomChanged, event);
             buttondata.push(new ToolItemData(item, lpButton));
-            OS.SendMessage(toolBar.handle, OS.TB_DELETEBUTTON, i, 0);
+            OS.SendMessage(getApi().handle, OS.TB_DELETEBUTTON, i, 0);
         }
-        OS.SendMessage(toolBar.handle, OS.TB_BUTTONSTRUCTSIZE, TBBUTTON.sizeof, 0);
+        OS.SendMessage(getApi().handle, OS.TB_BUTTONSTRUCTSIZE, TBBUTTON.sizeof, 0);
         while (!buttondata.isEmpty()) {
             ToolItemData itemData = buttondata.pop();
-            OS.SendMessage(toolBar.handle, OS.TB_ADDBUTTONS, 1, itemData.button);
+            OS.SendMessage(getApi().handle, OS.TB_ADDBUTTONS, 1, itemData.button);
             ToolItem item = itemData.toolItem;
             if (item != null) {
                 // The text is not retained correctly, so we need to reset it
@@ -1898,18 +1897,12 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
                 item.setWidth(seperatorWidth[i]);
             }
         }
-        if (toolBar.getImpl() instanceof SwtToolBar) {
-            // Refresh the image lists so the image list for the correct zoom is used
-            ((SwtToolBar) toolBar.getImpl()).setImageList(((SwtToolBar) toolBar.getImpl()).getImageList());
-        }
-        if (toolBar.getImpl() instanceof SwtToolBar) {
-            ((SwtToolBar) toolBar.getImpl()).setDisabledImageList(((SwtToolBar) toolBar.getImpl()).getDisabledImageList());
-        }
-        if (toolBar.getImpl() instanceof SwtToolBar) {
-            ((SwtToolBar) toolBar.getImpl()).setHotImageList(((SwtToolBar) toolBar.getImpl()).getHotImageList());
-        }
-        OS.SendMessage(toolBar.handle, OS.TB_AUTOSIZE, 0, 0);
-        toolBar.layout(true);
+        // Refresh the image lists so the image list for the correct zoom is used
+        setImageList(getImageList());
+        setDisabledImageList(getDisabledImageList());
+        setHotImageList(getHotImageList());
+        OS.SendMessage(getApi().handle, OS.TB_AUTOSIZE, 0, 0);
+        clearSizeCache(true);
     }
 
     public int _lastFocusId() {

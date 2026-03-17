@@ -669,8 +669,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
             // draw the background image in shape
             gc.setBackground(defaultBackground);
             gc.fillRectangle(x, y, width, height);
-            Rectangle imageRect = image.getBounds();
-            gc.drawImage(image, imageRect.x, imageRect.y, imageRect.width, imageRect.height, x, y, width, height);
+            gc.drawImage(image, x, y, width, height);
         } else if (colors != null) {
             // draw gradient
             if (colors.length == 1) {
@@ -1593,7 +1592,7 @@ public class SwtCTabFolderRenderer implements ICTabFolderRenderer {
                     int imageY = y + (height - imageHeight) / 2;
                     imageY += ((SwtCTabFolder) getApi().parent.getImpl()).onBottom ? -1 : 1;
                     int imageWidth = imageBounds.width * imageHeight / imageBounds.height;
-                    gc.drawImage(image, imageBounds.x, imageBounds.y, imageBounds.width, imageBounds.height, imageX, imageY, imageWidth, imageHeight);
+                    gc.drawImage(image, imageX, imageY, imageWidth, imageHeight);
                     xDraw += imageWidth + INTERNAL_SPACING;
                 }
             }

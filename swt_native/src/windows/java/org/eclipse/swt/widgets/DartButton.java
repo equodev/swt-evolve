@@ -222,8 +222,8 @@ public class DartButton extends DartControl implements IButton {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.computeSize(this, wHint, hHint, changed);
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
+        return Sizes.computeSize(this, hintInPoints.x, hintInPoints.y, changed);
     }
 
     @Override
@@ -809,6 +809,9 @@ public class DartButton extends DartControl implements IButton {
 
     private int getCheckboxTextOffset(long hdc) {
         int result = 0;
+        {
+            result += DPIUtil.pointToPixel(13, getApi().nativeZoom);
+        }
         return result;
     }
 
@@ -864,16 +867,16 @@ public class DartButton extends DartControl implements IButton {
         return 0;
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof Button button)) {
-            return;
-        }
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
         //Refresh the CheckSize
-        ((DartButton) button.getImpl()).refreshCheckSize(newZoom);
+        int newZoom = event.detail;
+        refreshCheckSize(newZoom);
         // Refresh the image
-        if (((DartButton) button.getImpl()).image != null) {
-            ((DartButton) button.getImpl())._setImage(((DartButton) button.getImpl()).image);
-            ((DartButton) button.getImpl()).updateImageList();
+        if (image != null) {
+            _setImage(image);
+            updateImageList();
         }
     }
 

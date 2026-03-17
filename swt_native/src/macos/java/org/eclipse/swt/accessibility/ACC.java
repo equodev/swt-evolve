@@ -144,7 +144,7 @@ public class ACC {
     /**
      * @deprecated use ROLE_TABLECOLUMNHEADER
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2025-12")
     public static final int ROLE_TABLECOLUMN = ROLE_TABLECOLUMNHEADER;
 
     public static final int ROLE_TABLEROWHEADER = 0x1a;

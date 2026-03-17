@@ -147,8 +147,6 @@ public class DartTree extends DartComposite implements ITree {
 
     static final int GRID_WIDTH = 1;
 
-    static final int SORT_WIDTH = 10;
-
     static final int HEADER_MARGIN = 12;
 
     static final int HEADER_EXTRA = 3;
@@ -508,8 +506,8 @@ public class DartTree extends DartComposite implements ITree {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        return Sizes.computeSize(this, wHint, hHint, changed);
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
+        return Sizes.computeSize(this, hintInPoints.x, hintInPoints.y, changed);
     }
 
     @Override
@@ -1023,11 +1021,11 @@ public class DartTree extends DartComposite implements ITree {
      */
     public int getGridLineWidth() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getGridLineWidthInPixels(), getZoom());
+        return GRID_WIDTH;
     }
 
     int getGridLineWidthInPixels() {
-        return GRID_WIDTH;
+        return DPIUtil.pointToPixel(GRID_WIDTH, getZoom());
     }
 
     /**
@@ -2388,7 +2386,7 @@ public class DartTree extends DartComposite implements ITree {
             }
         }
         if (horizontalBar != null) {
-            horizontalBar.setIncrement(INCREMENT);
+            horizontalBar.setIncrement(DPIUtil.pointToPixel(INCREMENT, getZoom()));
         }
         boolean oldIgnore = ignoreResize;
         ignoreResize = true;
@@ -2862,20 +2860,25 @@ public class DartTree extends DartComposite implements ITree {
         return 0;
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof Tree tree)) {
-            return;
-        }
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
         // if the item height was set at least once programmatically with TVM_SETITEMHEIGHT,
         // the item height of the tree is not managed by the OS anymore e.g. when the zoom
         // on the monitor is changed, the height of the item will stay at the fixed size.
         // Resetting it will re-enable the default behavior again
-        ((DartTree) tree.getImpl()).setItemHeight(-1);
-        ((DartTree) tree.getImpl()).calculateAndApplyIndentSize();
-        ((DartTree) tree.getImpl()).updateOrientation();
-        ((DartTree) tree.getImpl()).setScrollWidth();
+        setItemHeight(-1);
+        for (TreeColumn treeColumn : getColumns()) {
+            treeColumn.notifyListeners(SWT.ZoomChanged, event);
+        }
+        for (TreeItem item : getItems()) {
+            item.notifyListeners(SWT.ZoomChanged, event);
+        }
+        calculateAndApplyIndentSize();
+        updateOrientation();
+        setScrollWidth();
         // Reset of CheckBox Size required (if SWT.Check is not set, this is a no-op)
-        ((DartTree) tree.getImpl()).setCheckboxImageList();
+        setCheckboxImageList();
     }
 
     int[] columnOrder = new int[0];

@@ -44,57 +44,57 @@ public class SwtImageTransfer extends SwtByteArrayTransfer implements IImageTran
     //$NON-NLS-1$
     private static final String JPEG = "image/jpeg";
 
-    private static final int JPEG_ID = GTK.GTK4 ? 0 : registerType(JPEG);
+    private static final int JPEG_ID = registerType(JPEG);
 
     //$NON-NLS-1$
     private static final String PNG = "image/png";
 
-    private static final int PNG_ID = GTK.GTK4 ? 0 : registerType(PNG);
+    private static final int PNG_ID = registerType(PNG);
 
     //$NON-NLS-1$
     private static final String BMP = "image/bmp";
 
-    private static final int BMP_ID = GTK.GTK4 ? 0 : registerType(BMP);
+    private static final int BMP_ID = registerType(BMP);
 
     //$NON-NLS-1$
     private static final String EPS = "image/eps";
 
-    private static final int EPS_ID = GTK.GTK4 ? 0 : registerType(EPS);
+    private static final int EPS_ID = registerType(EPS);
 
     //$NON-NLS-1$
     private static final String PCX = "image/pcx";
 
-    private static final int PCX_ID = GTK.GTK4 ? 0 : registerType(PCX);
+    private static final int PCX_ID = registerType(PCX);
 
     //$NON-NLS-1$
     private static final String PPM = "image/ppm";
 
-    private static final int PPM_ID = GTK.GTK4 ? 0 : registerType(PPM);
+    private static final int PPM_ID = registerType(PPM);
 
     //$NON-NLS-1$
     private static final String RGB = "image/ppm";
 
-    private static final int RGB_ID = GTK.GTK4 ? 0 : registerType(RGB);
+    private static final int RGB_ID = registerType(RGB);
 
     //$NON-NLS-1$
     private static final String TGA = "image/tga";
 
-    private static final int TGA_ID = GTK.GTK4 ? 0 : registerType(TGA);
+    private static final int TGA_ID = registerType(TGA);
 
     //$NON-NLS-1$
     private static final String XBM = "image/xbm";
 
-    private static final int XBM_ID = GTK.GTK4 ? 0 : registerType(XBM);
+    private static final int XBM_ID = registerType(XBM);
 
     //$NON-NLS-1$
     private static final String XPM = "image/xpm";
 
-    private static final int XPM_ID = GTK.GTK4 ? 0 : registerType(XPM);
+    private static final int XPM_ID = registerType(XPM);
 
     //$NON-NLS-1$
     private static final String XV = "image/xv";
 
-    private static final int XV_ID = GTK.GTK4 ? 0 : registerType(XV);
+    private static final int XV_ID = registerType(XV);
 
     SwtImageTransfer(ImageTransfer api) {
         super(api);
@@ -205,17 +205,11 @@ public class SwtImageTransfer extends SwtByteArrayTransfer implements IImageTran
 
     @Override
     public int[] getTypeIds() {
-        if (GTK.GTK4) {
-            return new int[] { (int) GDK.GDK_TYPE_PIXBUF() };
-        }
         return new int[] { PNG_ID, BMP_ID, EPS_ID, JPEG_ID, PCX_ID, PPM_ID, RGB_ID, TGA_ID, XBM_ID, XPM_ID, XV_ID };
     }
 
     @Override
     public String[] getTypeNames() {
-        if (GTK.GTK4) {
-            return new String[] { "PIXBUF" };
-        }
         return new String[] { PNG, BMP, EPS, JPEG, PCX, PPM, RGB, TGA, XBM, XPM, XV };
     }
 

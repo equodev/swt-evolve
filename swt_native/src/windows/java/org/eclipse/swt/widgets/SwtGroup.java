@@ -147,9 +147,9 @@ public class SwtGroup extends SwtComposite implements IGroup {
     }
 
     @Override
-    Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
         checkWidget();
-        Point size = super.computeSizeInPixels(wHint, hHint, changed);
+        Point size = super.computeSizeInPixels(hintInPoints, zoom, changed);
         int length = text.length();
         if (length != 0) {
             String string = fixText(false);

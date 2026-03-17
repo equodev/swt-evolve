@@ -43,8 +43,8 @@ class SingleZoomCoordinateSystemMapper implements CoordinateSystemMapper {
     @Override
     public Point map(Control from, Control to, Point point) {
         int zoom = getZoomLevelForMapping(from, to);
-        point = Win32DPIUtils.pointToPixel(point, zoom);
-        return Win32DPIUtils.pixelToPoint(((SwtDisplay) display.getImpl()).mapInPixels(from, to, point), zoom);
+        point = Win32DPIUtils.pointToPixelAsLocation(point, zoom);
+        return Win32DPIUtils.pixelToPointAsLocation(((SwtDisplay) display.getImpl()).mapInPixels(from, to, point), zoom);
     }
 
     @Override
@@ -57,43 +57,43 @@ class SingleZoomCoordinateSystemMapper implements CoordinateSystemMapper {
     @Override
     public Point map(Control from, Control to, int x, int y) {
         int zoom = getZoomLevelForMapping(from, to);
-        x = Win32DPIUtils.pointToPixel(x, zoom);
-        y = Win32DPIUtils.pointToPixel(y, zoom);
-        return Win32DPIUtils.pixelToPoint(((SwtDisplay) display.getImpl()).mapInPixels(from, to, x, y), zoom);
+        x = DPIUtil.pointToPixel(x, zoom);
+        y = DPIUtil.pointToPixel(y, zoom);
+        return Win32DPIUtils.pixelToPointAsLocation(((SwtDisplay) display.getImpl()).mapInPixels(from, to, x, y), zoom);
     }
 
     @Override
     public Rectangle map(Control from, Control to, int x, int y, int width, int height) {
         int zoom = getZoomLevelForMapping(from, to);
-        x = Win32DPIUtils.pointToPixel(x, zoom);
-        y = Win32DPIUtils.pointToPixel(y, zoom);
-        width = Win32DPIUtils.pointToPixel(width, zoom);
-        height = Win32DPIUtils.pointToPixel(height, zoom);
+        x = DPIUtil.pointToPixel(x, zoom);
+        y = DPIUtil.pointToPixel(y, zoom);
+        width = DPIUtil.pointToPixel(width, zoom);
+        height = DPIUtil.pointToPixel(height, zoom);
         return Win32DPIUtils.pixelToPoint(((SwtDisplay) display.getImpl()).mapInPixels(from, to, x, y, width, height), zoom);
     }
 
     @Override
-    public Rectangle mapMonitorBounds(Rectangle rect, int zoom) {
-        return Win32DPIUtils.pixelToPoint(rect, zoom);
-    }
-
-    @Override
-    public Point translateFromDisplayCoordinates(Point point, int zoom) {
-        return Win32DPIUtils.pixelToPoint(point, DPIUtil.getDeviceZoom());
-    }
-
-    @Override
-    public Point translateToDisplayCoordinates(Point point, int zoom) {
-        return Win32DPIUtils.pointToPixel(point, DPIUtil.getDeviceZoom());
-    }
-
-    @Override
-    public Rectangle translateFromDisplayCoordinates(Rectangle rect, int zoom) {
+    public Rectangle mapMonitorBounds(Rectangle.WithMonitor rect) {
         return Win32DPIUtils.pixelToPoint(rect, DPIUtil.getDeviceZoom());
     }
 
     @Override
-    public Rectangle translateToDisplayCoordinates(Rectangle rect, int zoom) {
+    public Point translateFromDisplayCoordinates(Point point) {
+        return Win32DPIUtils.pixelToPointAsLocation(point, DPIUtil.getDeviceZoom());
+    }
+
+    @Override
+    public Point translateToDisplayCoordinates(Point point) {
+        return Win32DPIUtils.pointToPixelAsLocation(point, DPIUtil.getDeviceZoom());
+    }
+
+    @Override
+    public Rectangle translateFromDisplayCoordinates(Rectangle rect) {
+        return Win32DPIUtils.pixelToPoint(rect, DPIUtil.getDeviceZoom());
+    }
+
+    @Override
+    public Rectangle translateToDisplayCoordinates(Rectangle rect) {
         return Win32DPIUtils.pointToPixel(rect, DPIUtil.getDeviceZoom());
     }
 
@@ -101,19 +101,19 @@ class SingleZoomCoordinateSystemMapper implements CoordinateSystemMapper {
     public Point getCursorLocation() {
         int zoom = DPIUtil.getDeviceZoom();
         Point cursorLocationInPixels = ((SwtDisplay) display.getImpl()).getCursorLocationInPixels();
-        return Win32DPIUtils.pixelToPoint(cursorLocationInPixels, zoom);
+        return Win32DPIUtils.pixelToPointAsLocation(cursorLocationInPixels, zoom);
     }
 
     @Override
     public void setCursorLocation(int x, int y) {
         int zoom = DPIUtil.getDeviceZoom();
-        ((SwtDisplay) display.getImpl()).setCursorLocationInPixels(Win32DPIUtils.pointToPixel(x, zoom), Win32DPIUtils.pointToPixel(y, zoom));
+        ((SwtDisplay) display.getImpl()).setCursorLocationInPixels(DPIUtil.pointToPixel(x, zoom), DPIUtil.pointToPixel(y, zoom));
     }
 
     @Override
     public Rectangle getContainingMonitorBoundsInPixels(Point point) {
         int zoom = DPIUtil.getDeviceZoom();
-        point = Win32DPIUtils.pointToPixel(point, zoom);
+        point = Win32DPIUtils.pointToPixelAsLocation(point, zoom);
         for (Monitor monitor : display.getMonitors()) {
             Rectangle monitorBounds = Win32DPIUtils.pointToPixel(monitor.getBounds(), zoom);
             if (monitorBounds.contains(point)) {

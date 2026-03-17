@@ -51,10 +51,6 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
 
     int id;
 
-    static {
-        DPIZoomChangeRegistry.registerHandler(SwtTreeColumn::handleDPIChange, TreeColumn.class);
-    }
-
     /**
      * Constructs a new instance of this class given its parent
      * (which must be a <code>Tree</code>) and a style value
@@ -373,7 +369,7 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
                     if (isDisposed() || parent.isDisposed())
                         break;
                     Rectangle bounds = event.getBounds();
-                    itemRight = Win32DPIUtils.pointToPixel(bounds.x + bounds.width, getZoom());
+                    itemRight = DPIUtil.pointToPixel(bounds.x + bounds.width, getZoom());
                 } else {
                     long hFont = ((SwtTreeItem) item.getImpl()).fontHandle(index);
                     if (hFont != -1)
@@ -393,20 +389,12 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
         int flags = OS.DT_CALCRECT | OS.DT_NOPREFIX;
         char[] buffer = text.toCharArray();
         OS.DrawText(hDC, buffer, buffer.length, rect, flags);
-        int headerWidth = rect.right - rect.left + SwtTree.HEADER_MARGIN;
+        int headerWidth = rect.right - rect.left + DPIUtil.pointToPixel(SwtTree.HEADER_MARGIN, getZoom());
         if (OS.IsAppThemed())
-            headerWidth += SwtTree.HEADER_EXTRA;
-        if (image != null || ((SwtTree) parent.getImpl()).sortColumn == this.getApi()) {
-            Image headerImage = null;
-            if (((SwtTree) parent.getImpl()).sortColumn == this.getApi() && ((SwtTree) parent.getImpl()).sortDirection != SWT.NONE) {
-                headerWidth += SwtTree.SORT_WIDTH;
-            } else {
-                headerImage = image;
-            }
-            if (headerImage != null) {
-                Rectangle bounds = Win32DPIUtils.pointToPixel(headerImage.getBounds(), getZoom());
-                headerWidth += bounds.width;
-            }
+            headerWidth += DPIUtil.pointToPixel(SwtTree.HEADER_EXTRA, getZoom());
+        if (image != null) {
+            Rectangle bounds = Win32DPIUtils.pointToPixel(image.getBounds(), getZoom());
+            headerWidth += bounds.width;
             int margin = 0;
             if (hwndHeader != 0) {
                 margin = (int) OS.SendMessage(hwndHeader, OS.HDM_GETBITMAPMARGIN, 0, 0);
@@ -418,7 +406,7 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
         if (newFont != 0)
             OS.SelectObject(hDC, oldFont);
         OS.ReleaseDC(hwnd, hDC);
-        int gridWidth = ((SwtTree) parent.getImpl()).linesVisible ? SwtTree.GRID_WIDTH : 0;
+        int gridWidth = ((SwtTree) parent.getImpl()).linesVisible ? ((SwtTree) parent.getImpl()).getGridLineWidthInPixels() : 0;
         setWidthInPixels(Math.max(headerWidth, columnWidth + gridWidth));
     }
 
@@ -759,7 +747,7 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
      */
     public void setWidth(int width) {
         checkWidget();
-        setWidthInPixels(Win32DPIUtils.pointToPixel(width, getZoom()));
+        setWidthInPixels(DPIUtil.pointToPixel(width, getZoom()));
     }
 
     void setWidthInPixels(int width) {
@@ -805,19 +793,17 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
         }
     }
 
-    private static void handleDPIChange(Widget widget, int newZoom, float scalingFactor) {
-        if (!(widget instanceof TreeColumn treeColumn)) {
-            return;
-        }
-        Tree tree = treeColumn.getParent();
+    @Override
+    void handleDPIChange(Event event, float scalingFactor) {
+        super.handleDPIChange(event, scalingFactor);
+        Tree tree = getParent();
         boolean ignoreColumnResize = ((SwtTree) tree.getImpl()).ignoreColumnResize;
         ((SwtTree) tree.getImpl()).ignoreColumnResize = true;
-        final int newColumnWidth = Math.round(((SwtTreeColumn) treeColumn.getImpl()).getWidthInPixels() * scalingFactor);
-        ((SwtTreeColumn) treeColumn.getImpl()).setWidthInPixels(newColumnWidth);
+        final int newColumnWidth = Math.round(getWidthInPixels() * scalingFactor);
+        setWidthInPixels(newColumnWidth);
         ((SwtTree) tree.getImpl()).ignoreColumnResize = ignoreColumnResize;
-        Image image = ((SwtTreeColumn) treeColumn.getImpl()).image;
         if (image != null) {
-            treeColumn.setImage(image);
+            setImage(image);
         }
     }
 
