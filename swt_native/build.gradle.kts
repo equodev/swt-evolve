@@ -43,6 +43,33 @@ fun getSwtArch(arch: String): String =
 fun flutterExe(): String = if (System.getProperty("os.name").lowercase().contains("windows")) "flutter.bat" else "flutter"
 fun dartExe(): String = if (System.getProperty("os.name").lowercase().contains("windows")) "dart.bat" else "dart"
 
+fun requiredFlutterVersion(): String {
+    val content = file("../flutter-lib/pubspec.yaml").readText()
+    val constraint = Regex("""environment:.*?flutter:\s*"([^"]+)"""", RegexOption.DOT_MATCHES_ALL)
+        .find(content)?.groupValues?.get(1)
+        ?: error("flutter version constraint not found in pubspec.yaml environment section")
+    return Regex("""\d+\.\d+\.\d+""").find(constraint)?.value
+        ?: error("No version number found in flutter constraint: $constraint")
+}
+
+val checkFlutterVersion by tasks.registering {
+    group = "build"
+    description = "Verifies installed Flutter version matches pubspec.yaml"
+    inputs.file("../flutter-lib/pubspec.yaml")
+    outputs.upToDateWhen { true }
+    doFirst {
+        val required = requiredFlutterVersion()
+        val process = ProcessBuilder(flutterExe(), "--version").redirectErrorStream(true).start()
+        val output = process.inputStream.bufferedReader().readText()
+        process.waitFor()
+        val installed = Regex("""Flutter (\d+\.\d+\.\d+)""").find(output)?.groupValues?.get(1)
+            ?: error("Could not parse Flutter version from output:\n$output")
+        if (installed != required)
+            error("Flutter version mismatch: installed=$installed, required=$required (from pubspec.yaml)")
+        logger.lifecycle("Flutter version check passed: $installed == $required")
+    }
+}
+
 val currentPlatform = "$currentOs-${getSwtArch(arch)}"
 
 // Read swtVersion from gradle.properties:
@@ -163,6 +190,7 @@ tasks.jar {
 val pub = tasks.register<Exec>("pubGet") {
     group = "build"
     description = "Get flutter dependencies"
+    dependsOn(checkFlutterVersion)
     workingDir = file("../flutter-lib")
     inputs.file("../flutter-lib/pubspec.yaml")
     outputs.file("../flutter-lib/pubspec.lock")
