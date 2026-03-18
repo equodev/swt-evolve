@@ -307,6 +307,9 @@ public class Config {
         if (clazz == ToolBar.class && parent instanceof Shell && isEquo(CTabFolder.class))
             return true;
 
+        if (clazz == Menu.class && parent instanceof ToolBar)
+            return false;
+
         if (isCustomAncestor(parent))
             return true;
 
