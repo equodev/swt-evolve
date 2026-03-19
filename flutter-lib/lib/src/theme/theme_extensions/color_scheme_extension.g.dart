@@ -344,6 +344,9 @@ ColorSchemeExtension _$ColorSchemeExtensionFromJson(
   surfaceToolbar: const ColorConverter().fromJson(
     json['surfaceToolbar'] as String,
   ),
+  toolbarDivider: const ColorConverter().fromJson(
+    json['toolbarDivider'] as String,
+  ),
 );
 
 Map<String, dynamic> _$ColorSchemeExtensionToJson(
@@ -618,4 +621,5 @@ Map<String, dynamic> _$ColorSchemeExtensionToJson(
     instance.ctabFolderUnselectedColor,
   ),
   'surfaceToolbar': const ColorConverter().toJson(instance.surfaceToolbar),
+  'toolbarDivider': const ColorConverter().toJson(instance.toolbarDivider),
 };

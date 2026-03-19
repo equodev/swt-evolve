@@ -34,7 +34,7 @@ ToolBarThemeExtension _getToolBarTheme({
   final surfaceToolbar = colorSchemeExtension.surfaceToolbar;
   return ToolBarThemeExtension(
     backgroundColor: Colors.transparent,
-    borderColor: colorScheme.outline,
+    borderColor: colorSchemeExtension.toolbarDivider,
     borderWidth: 0.5,
     shadowColor: Colors.black,
     shadowOpacity: 0.2,
@@ -44,6 +44,10 @@ ToolBarThemeExtension _getToolBarTheme({
     compositeBackgroundColor: surfaceToolbar,
     toolbarBackgroundColor: surfaceToolbar,
     keywordLeftOffset: 50.0,
+    dividerVerticalPadding: 6.0,
+    separatorThickness: 1.0,
+    separatorWidth: 16.0,
+    separatorHeight: 20.0,
   );
 }
 

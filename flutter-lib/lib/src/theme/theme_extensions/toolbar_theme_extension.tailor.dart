@@ -22,6 +22,10 @@ mixin _$ToolBarThemeExtensionTailorMixin
   Color get compositeBackgroundColor;
   Color get toolbarBackgroundColor;
   double get keywordLeftOffset;
+  double get dividerVerticalPadding;
+  double get separatorThickness;
+  double get separatorWidth;
+  double get separatorHeight;
 
   @override
   ToolBarThemeExtension copyWith({
@@ -36,6 +40,10 @@ mixin _$ToolBarThemeExtensionTailorMixin
     Color? compositeBackgroundColor,
     Color? toolbarBackgroundColor,
     double? keywordLeftOffset,
+    double? dividerVerticalPadding,
+    double? separatorThickness,
+    double? separatorWidth,
+    double? separatorHeight,
   }) {
     return ToolBarThemeExtension(
       backgroundColor: backgroundColor ?? this.backgroundColor,
@@ -51,6 +59,11 @@ mixin _$ToolBarThemeExtensionTailorMixin
       toolbarBackgroundColor:
           toolbarBackgroundColor ?? this.toolbarBackgroundColor,
       keywordLeftOffset: keywordLeftOffset ?? this.keywordLeftOffset,
+      dividerVerticalPadding:
+          dividerVerticalPadding ?? this.dividerVerticalPadding,
+      separatorThickness: separatorThickness ?? this.separatorThickness,
+      separatorWidth: separatorWidth ?? this.separatorWidth,
+      separatorHeight: separatorHeight ?? this.separatorHeight,
     );
   }
 
@@ -80,6 +93,14 @@ mixin _$ToolBarThemeExtensionTailorMixin
         t,
       )!,
       keywordLeftOffset: t < 0.5 ? keywordLeftOffset : other.keywordLeftOffset,
+      dividerVerticalPadding: t < 0.5
+          ? dividerVerticalPadding
+          : other.dividerVerticalPadding,
+      separatorThickness: t < 0.5
+          ? separatorThickness
+          : other.separatorThickness,
+      separatorWidth: t < 0.5 ? separatorWidth : other.separatorWidth,
+      separatorHeight: t < 0.5 ? separatorHeight : other.separatorHeight,
     );
   }
 
@@ -131,6 +152,22 @@ mixin _$ToolBarThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               keywordLeftOffset,
               other.keywordLeftOffset,
+            ) &&
+            const DeepCollectionEquality().equals(
+              dividerVerticalPadding,
+              other.dividerVerticalPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              separatorThickness,
+              other.separatorThickness,
+            ) &&
+            const DeepCollectionEquality().equals(
+              separatorWidth,
+              other.separatorWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              separatorHeight,
+              other.separatorHeight,
             ));
   }
 
@@ -149,6 +186,10 @@ mixin _$ToolBarThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(compositeBackgroundColor),
       const DeepCollectionEquality().hash(toolbarBackgroundColor),
       const DeepCollectionEquality().hash(keywordLeftOffset),
+      const DeepCollectionEquality().hash(dividerVerticalPadding),
+      const DeepCollectionEquality().hash(separatorThickness),
+      const DeepCollectionEquality().hash(separatorWidth),
+      const DeepCollectionEquality().hash(separatorHeight),
     );
   }
 }
@@ -169,4 +210,9 @@ extension ToolBarThemeExtensionBuildContextProps on BuildContext {
   Color get toolbarBackgroundColor =>
       toolBarThemeExtension.toolbarBackgroundColor;
   double get keywordLeftOffset => toolBarThemeExtension.keywordLeftOffset;
+  double get dividerVerticalPadding =>
+      toolBarThemeExtension.dividerVerticalPadding;
+  double get separatorThickness => toolBarThemeExtension.separatorThickness;
+  double get separatorWidth => toolBarThemeExtension.separatorWidth;
+  double get separatorHeight => toolBarThemeExtension.separatorHeight;
 }

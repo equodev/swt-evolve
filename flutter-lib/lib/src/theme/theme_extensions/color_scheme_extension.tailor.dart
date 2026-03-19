@@ -128,6 +128,7 @@ mixin _$ColorSchemeExtensionTailorMixin
   Color get ctabFolderHighlightColor;
   Color get ctabFolderUnselectedColor;
   Color get surfaceToolbar;
+  Color get toolbarDivider;
 
   @override
   ColorSchemeExtension copyWith({
@@ -248,6 +249,7 @@ mixin _$ColorSchemeExtensionTailorMixin
     Color? ctabFolderHighlightColor,
     Color? ctabFolderUnselectedColor,
     Color? surfaceToolbar,
+    Color? toolbarDivider,
   }) {
     return ColorSchemeExtension(
       primaryHovered: primaryHovered ?? this.primaryHovered,
@@ -432,6 +434,7 @@ mixin _$ColorSchemeExtensionTailorMixin
       ctabFolderUnselectedColor:
           ctabFolderUnselectedColor ?? this.ctabFolderUnselectedColor,
       surfaceToolbar: surfaceToolbar ?? this.surfaceToolbar,
+      toolbarDivider: toolbarDivider ?? this.toolbarDivider,
     );
   }
 
@@ -899,6 +902,7 @@ mixin _$ColorSchemeExtensionTailorMixin
         t,
       )!,
       surfaceToolbar: Color.lerp(surfaceToolbar, other.surfaceToolbar, t)!,
+      toolbarDivider: Color.lerp(toolbarDivider, other.toolbarDivider, t)!,
     );
   }
 
@@ -1359,6 +1363,10 @@ mixin _$ColorSchemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               surfaceToolbar,
               other.surfaceToolbar,
+            ) &&
+            const DeepCollectionEquality().equals(
+              toolbarDivider,
+              other.toolbarDivider,
             ));
   }
 
@@ -1483,6 +1491,7 @@ mixin _$ColorSchemeExtensionTailorMixin
       const DeepCollectionEquality().hash(ctabFolderHighlightColor),
       const DeepCollectionEquality().hash(ctabFolderUnselectedColor),
       const DeepCollectionEquality().hash(surfaceToolbar),
+      const DeepCollectionEquality().hash(toolbarDivider),
     ]);
   }
 }
@@ -1663,4 +1672,7 @@ extension ColorSchemeExtensionBuildContextProps on BuildContext {
 
   /// MainToolbar, SideBar.Light: #F4F4F4, dark: #2C2C2C.
   Color get surfaceToolbar => colorSchemeExtension.surfaceToolbar;
+
+  /// Divider color for toolbar and sidebar separators. Light: #DBDBDB.
+  Color get toolbarDivider => colorSchemeExtension.toolbarDivider;
 }

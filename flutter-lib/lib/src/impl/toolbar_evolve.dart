@@ -116,10 +116,13 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
       return [];
     }
 
-    final widgetTheme = Theme.of(context).extension<ToolBarThemeExtension>()!;
-    final items = state.items!
-        .whereType<VToolItem>()
-        .where((toolItem) => (toolItem.image != null || toolItem.text != null))
+    final style = StyleBits(state.style);
+    final isVertical = style.has(SWT.VERTICAL);
+    final allItems = state.items!.whereType<VToolItem>().toList();
+    final contentItems = allItems
+        .where((t) =>
+            (t.style & SWT.SEPARATOR) == 0 &&
+            (t.image != null || t.text != null))
         .toList();
 
     final toolItemTheme = Theme.of(
@@ -131,31 +134,56 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     final specialDropdownImageFilename =
         toolItemTheme.specialDropdownImageFilename;
 
-    final hasKeyword = items.any(
-      (item) => item.text?.trim().toLowerCase() == keywordTextLower,
-    );
-    final hasDebug = items.any(
-      (item) => item.text?.trim().toLowerCase() == debugTextLower,
-    );
-
-    if (hasKeyword && hasDebug) {
-      return _buildGroupedItems(
-        items,
-        context,
-        keywordTextLower,
-        debugTextLower,
-        specialDropdownTooltipText,
-        specialDropdownImageFilename,
-      );
-    }
-
-    return _buildGroupedItems(
-      items,
+    final contentWidgets = _buildGroupedItems(
+      contentItems,
       context,
       keywordTextLower,
       debugTextLower,
       specialDropdownTooltipText,
       specialDropdownImageFilename,
+    );
+
+    final toolbarTheme = Theme.of(context).extension<ToolBarThemeExtension>()!;
+    final result = <Widget>[];
+    var contentIndex = 0;
+    for (final item in allItems) {
+      if ((item.style & SWT.SEPARATOR) != 0) {
+        result.add(_buildToolBarSeparator(isVertical, toolbarTheme));
+      } else if (item.image != null || item.text != null) {
+        if (contentIndex < contentWidgets.length) {
+          result.add(contentWidgets[contentIndex++]);
+        }
+      }
+    }
+    return result;
+  }
+
+  Widget _buildToolBarSeparator(bool isVertical, ToolBarThemeExtension theme) {
+    final thickness = theme.separatorThickness;
+    final width = theme.separatorWidth;
+    final height = theme.separatorHeight;
+    final color = theme.borderColor;
+    if (isVertical) {
+      return Padding(
+        padding: theme.itemPadding,
+        child: Center(
+          child: Container(
+            width: height,
+            height: thickness,
+            color: color,
+          ),
+        ),
+      );
+    }
+    return Padding(
+      padding: theme.itemPadding,
+      child: Center(
+        child: VerticalDivider(
+          width: width,
+          thickness: thickness,
+          color: color,
+        ),
+      ),
     );
   }
 
