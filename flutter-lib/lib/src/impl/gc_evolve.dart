@@ -8,13 +8,29 @@ import 'gcdrawer_evolve.dart';
 
 class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   late GCDrawer _drawer;
+  List<Shape> _snapshot = [];
+  bool _pendingSnapshot = false;
 
   @override
   void initState() {
     super.initState();
     _drawer = GCDrawer.embedded(
       state,
-      onShapesUpdated: (_) { if (mounted) setState(() {}); },
+      onShapesUpdated: (_) {
+        if (!mounted) return;
+        setState(() {});
+        if (!_pendingSnapshot) {
+          _pendingSnapshot = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _pendingSnapshot = false;
+            if (!mounted || _drawer.shapes.isEmpty) return;
+            setState(() {
+              _snapshot = List.from(_drawer.shapes);
+              _drawer.clearShapes();
+            });
+          });
+        }
+      },
     );
   }
 
@@ -25,7 +41,10 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   void clearShapes() {
-    if (mounted) setState(() => _drawer.clearShapes());
+    if (mounted) setState(() {
+      _snapshot = [];
+      _drawer.clearShapes();
+    });
   }
 
   @override
@@ -74,9 +93,12 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   @override
   Widget build(BuildContext context) {
     _drawer.syncContext(context);
+    final List<Shape> shapes = _drawer.shapes.isNotEmpty
+        ? List.unmodifiable(_drawer.shapes)
+        : List.unmodifiable(_snapshot);
     return CustomPaint(
       size: bounds,
-      painter: ScenePainter(canvasBg, List.unmodifiable(_drawer.shapes)),
+      painter: ScenePainter(canvasBg, shapes),
     );
   }
 

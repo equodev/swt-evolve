@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.FlutterBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
