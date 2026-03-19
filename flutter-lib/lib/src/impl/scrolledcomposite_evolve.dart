@@ -165,17 +165,13 @@ class _ThemedScrolledComposite extends StatelessWidget {
   }
 
   Widget _buildBothScrollbars(BuildContext context, Widget content) {
-    return _StyledScrollbar(
+    return Scrollbar(
       controller: verticalController,
-      direction: Axis.vertical,
       thumbVisibility: alwaysShowScrollBars,
-      widgetTheme: widgetTheme,
       notificationPredicate: (notification) => notification.depth == 0,
-      child: _StyledScrollbar(
+      child: Scrollbar(
         controller: horizontalController,
-        direction: Axis.horizontal,
         thumbVisibility: alwaysShowScrollBars,
-        widgetTheme: widgetTheme,
         notificationPredicate: (notification) => notification.depth == 1,
         child: ScrollConfiguration(
           behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
@@ -194,11 +190,9 @@ class _ThemedScrolledComposite extends StatelessWidget {
   }
 
   Widget _buildVerticalScrollbar(BuildContext context, Widget content) {
-    return _StyledScrollbar(
+    return Scrollbar(
       controller: verticalController,
-      direction: Axis.vertical,
       thumbVisibility: alwaysShowScrollBars,
-      widgetTheme: widgetTheme,
       child: ScrollConfiguration(
         behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
         child: SingleChildScrollView(
@@ -211,11 +205,9 @@ class _ThemedScrolledComposite extends StatelessWidget {
   }
 
   Widget _buildHorizontalScrollbar(BuildContext context, Widget content) {
-    return _StyledScrollbar(
+    return Scrollbar(
       controller: horizontalController,
-      direction: Axis.horizontal,
       thumbVisibility: alwaysShowScrollBars,
-      widgetTheme: widgetTheme,
       child: ScrollConfiguration(
         behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
         child: SingleChildScrollView(
@@ -228,45 +220,3 @@ class _ThemedScrolledComposite extends StatelessWidget {
   }
 }
 
-class _StyledScrollbar extends StatelessWidget {
-  final ScrollController controller;
-  final Axis direction;
-  final bool thumbVisibility;
-  final ScrolledCompositeThemeExtension widgetTheme;
-  final bool Function(ScrollNotification)? notificationPredicate;
-  final Widget child;
-
-  const _StyledScrollbar({
-    required this.controller,
-    required this.direction,
-    required this.thumbVisibility,
-    required this.widgetTheme,
-    this.notificationPredicate,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ScrollbarTheme(
-      data: ScrollbarThemeData(
-        thumbColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.hovered) ||
-              states.contains(WidgetState.dragged)) {
-            return widgetTheme.scrollbarThumbHoverColor;
-          }
-          return widgetTheme.scrollbarThumbColor;
-        }),
-        trackColor: WidgetStateProperty.all(widgetTheme.scrollbarTrackColor),
-        thickness: WidgetStateProperty.all(widgetTheme.scrollbarThickness),
-        radius: Radius.circular(widgetTheme.scrollbarRadius),
-        minThumbLength: widgetTheme.scrollbarMinThumbLength,
-      ),
-      child: Scrollbar(
-        controller: controller,
-        thumbVisibility: thumbVisibility,
-        notificationPredicate: notificationPredicate,
-        child: child,
-      ),
-    );
-  }
-}

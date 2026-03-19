@@ -301,6 +301,7 @@ public class DartMenu extends DartWidget implements IMenu {
         initThemeColors();
         createHandle();
         ((SwtDecorations) parent.getImpl()).addMenu(this.getApi());
+        register();
     }
 
     int defaultBackground() {
@@ -316,6 +317,7 @@ public class DartMenu extends DartWidget implements IMenu {
     }
 
     void destroyItem(MenuItem item) {
+        items = MenuHelper.removeItem(items, item);
         redraw();
     }
 
