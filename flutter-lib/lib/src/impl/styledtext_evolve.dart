@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -9,12 +10,16 @@ import '../gen/color.dart';
 import '../gen/stylerange.dart';
 import '../gen/styledtext.dart';
 import '../gen/styledtextrenderer.dart';
+import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../impl/canvas_evolve.dart';
 import '../impl/gcdrawer_evolve.dart';
 import 'widget_config.dart';
+import 'key_mapping.dart';
 import 'utils/font_utils.dart';
+import 'utils/widget_utils.dart';
 import 'color_utils.dart';
+import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
 import '../theme/theme_extensions/styledtext_theme_extension.dart';
 
 class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
@@ -35,6 +40,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   bool _editable = true;
   bool _wordWrap = true;
 
+  ScrollController _verticalController = ScrollController();
+  ScrollController _horizontalController = ScrollController();
+  int _lastSentVerticalOffset = 0;
+  int _lastSentHorizontalOffset = 0;
+
   StyledTextThemeExtension get _styledTextTheme =>
       Theme.of(context).extension<StyledTextThemeExtension>()!;
 
@@ -49,6 +59,10 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   @override
   void initState() {
     super.initState();
+    _verticalController = ScrollController();
+    _horizontalController = ScrollController();
+    _verticalController.addListener(_onVerticalScroll);
+    _horizontalController.addListener(_onHorizontalScroll);
     EquoCommService.onRaw("${state.swt}/${state.id}/focusLost", (_) {
       if (_isEditingText) {
         _stopEditing();
@@ -58,6 +72,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   @override
   void dispose() {
+    _verticalController.dispose();
+    _horizontalController.dispose();
     _focusNode.dispose();
     _caretBlinkTimer?.cancel();
     super.dispose();
@@ -67,7 +83,30 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   void extraSetState() {
     super.extraSetState();
     _editable = state.editable ?? false;
-    _wordWrap = state.wordWrap ?? true; // SWT default with WRAP style
+    _wordWrap = state.wordWrap ?? false; // SWT default is no wrap; wrap only when explicitly set
+
+    final newTopPixel = state.topPixel ?? 0;
+    if (newTopPixel != _lastSentVerticalOffset) {
+      _lastSentVerticalOffset = newTopPixel;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_verticalController.hasClients) {
+          final maxScroll = _verticalController.position.maxScrollExtent;
+          _verticalController.jumpTo(newTopPixel.toDouble().clamp(0.0, maxScroll));
+        }
+      });
+    }
+
+    final newHorizPixel = state.horizontalPixel ?? 0;
+    if (newHorizPixel != _lastSentHorizontalOffset) {
+      _lastSentHorizontalOffset = newHorizPixel;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_horizontalController.hasClients) {
+          final maxScroll = _horizontalController.position.maxScrollExtent;
+          _horizontalController.jumpTo(newHorizPixel.toDouble().clamp(0.0, maxScroll));
+        }
+      });
+    }
+
     _buildTextShapeFromState();
   }
 
@@ -338,48 +377,180 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   @override
   Widget build(BuildContext context) {
     final bounds = getBounds();
+    final hasHScroll = hasStyle(state.style, SWT.H_SCROLL);
+    final hasVScroll = hasStyle(state.style, SWT.V_SCROLL);
+    final contentSize = _computeContentSize();
+    final alwaysShow = state.alwaysShowScrollBars ?? false;
 
-    return wrap(
-      SizedBox(
-        width: bounds.width,
-        height: bounds.height,
-        child: Stack(
-          children: [
-            // Layer 1: StyledText content (text shapes, caret, selection)
-            Positioned.fill(
-              child: CustomPaint(
-                painter: ScenePainter(
-                  bg,
-                  List.unmodifiable([
-                    ...shapes,
-                    if (_editableTextShape != null) _editableTextShape!,
-                  ]),
-                ),
-              ),
-            ),
-            // Layer 2: Interaction layer (keyboard and gesture handling)
-            Positioned.fill(
-              child: RawKeyboardListener(
-                focusNode: _focusNode,
-                autofocus: _isEditingText,
-                onKey: _handleKeyEvent,
-                child: GestureDetector(
-                  onTapDown: (details) => _handleTapDown(details.localPosition),
-                  onTapUp: (details) => _handleTapUp(details.localPosition),
-                  onPanStart: (details) =>
-                      _handlePanStart(details.localPosition),
-                  onPanUpdate: (details) =>
-                      _handlePanUpdate(details.localPosition),
-                  onPanEnd: (details) => _handlePanEnd(),
-                  behavior: HitTestBehavior.translucent,
-                  child: Container(),
-                ),
-              ),
-            ),
-          ],
+    Widget contentLayer = SizedBox(
+      width: contentSize.width,
+      height: contentSize.height,
+      child: CustomPaint(
+        painter: ScenePainter(
+          bg,
+          List.unmodifiable([
+            ...shapes,
+            if (_editableTextShape != null) _editableTextShape!,
+          ]),
         ),
       ),
     );
+
+    if (hasHScroll) {
+      contentLayer = SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        controller: _horizontalController,
+        child: contentLayer,
+      );
+    }
+    if (hasVScroll) {
+      contentLayer = SingleChildScrollView(
+        controller: _verticalController,
+        child: contentLayer,
+      );
+    }
+    if (hasVScroll || hasHScroll) {
+      contentLayer = ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(
+          dragDevices: const <PointerDeviceKind>{},
+        ),
+        child: contentLayer,
+      );
+    }
+
+    if (hasHScroll) {
+      contentLayer = Scrollbar(
+        controller: _horizontalController,
+        thumbVisibility: alwaysShow,
+        notificationPredicate: hasVScroll ? (n) => n.depth == 1 : null,
+        child: contentLayer,
+      );
+    }
+    if (hasVScroll) {
+      contentLayer = Scrollbar(
+        controller: _verticalController,
+        thumbVisibility: alwaysShow,
+        child: contentLayer,
+      );
+    }
+
+    final trackSize = Theme.of(context)
+        .extension<ScrolledCompositeThemeExtension>()!
+        .scrollbarThickness;
+    final interactionLayer = RawKeyboardListener(
+      focusNode: _focusNode,
+      autofocus: _isEditingText,
+      onKey: _handleKeyEvent,
+      child: Padding(
+        padding: EdgeInsets.only(
+          right: hasVScroll ? trackSize : 0,
+          bottom: hasHScroll ? trackSize : 0,
+        ),
+        child: GestureDetector(
+          onTapDown: (details) => _handleTapDown(details.localPosition),
+          onTapUp: (details) => _handleTapUp(details.localPosition),
+          onPanStart: (details) => _handlePanStart(details.localPosition),
+          onPanUpdate: (details) => _handlePanUpdate(details.localPosition),
+          onPanEnd: (details) => _handlePanEnd(),
+          behavior: HitTestBehavior.translucent,
+          child: Container(),
+        ),
+      ),
+    );
+
+    return wrap(
+      Listener(
+        onPointerSignal: _handlePointerSignal,
+        child: SizedBox(
+          width: bounds.width,
+          height: bounds.height,
+          child: Stack(
+            children: [
+              Positioned.fill(child: contentLayer),
+              Positioned.fill(child: interactionLayer),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _onVerticalScroll() {
+    final offset = _verticalController.offset.round();
+    if (offset == _lastSentVerticalOffset) return;
+    _lastSentVerticalOffset = offset;
+    _sendScrollUpdate();
+  }
+
+  void _onHorizontalScroll() {
+    final offset = _horizontalController.offset.round();
+    if (offset == _lastSentHorizontalOffset) return;
+    _lastSentHorizontalOffset = offset;
+    _sendScrollUpdate();
+  }
+
+  void _sendScrollUpdate() {
+    final scrollState = VStyledText()
+      ..id = state.id
+      ..swt = state.swt
+      ..topPixel = _lastSentVerticalOffset
+      ..horizontalPixel = _lastSentHorizontalOffset;
+    EquoCommService.sendPayload(
+      "${state.swt}/${state.id}/StateUpdate",
+      scrollState,
+    );
+  }
+
+  void _handlePointerSignal(PointerSignalEvent event) {
+    if (event is PointerScrollEvent) {
+      if (_verticalController.hasClients && event.scrollDelta.dy != 0) {
+        final newOffset = (_verticalController.offset + event.scrollDelta.dy)
+            .clamp(0.0, _verticalController.position.maxScrollExtent);
+        _verticalController.jumpTo(newOffset);
+      }
+      if (_horizontalController.hasClients && event.scrollDelta.dx != 0) {
+        final newOffset = (_horizontalController.offset + event.scrollDelta.dx)
+            .clamp(0.0, _horizontalController.position.maxScrollExtent);
+        _horizontalController.jumpTo(newOffset);
+      }
+    }
+  }
+
+  Size _computeContentSize() {
+    final text = state.text ?? '';
+    if (text.isEmpty) return getBounds();
+    final defaultStyle = _getDefaultTextStyle();
+    final fontSize = defaultStyle.fontSize ?? 12.0;
+    final lineHeight = fontSize * 1.4;
+    final lineCount = '\n'.allMatches(text).length + 1;
+    final totalHeight =
+        math.max(getBounds().height, lineCount * lineHeight);
+
+    double totalWidth = getBounds().width;
+    if (_wordWrap != true) {
+      int maxLen = 0;
+      int start = 0;
+      for (int i = 0; i <= text.length; i++) {
+        if (i == text.length || text[i] == '\n') {
+          final len = i - start;
+          if (len > maxLen) maxLen = len;
+          start = i + 1;
+        }
+      }
+      final charWidth = fontSize * 0.6;
+      totalWidth = math.max(getBounds().width, maxLen * charWidth + 20);
+    }
+
+    return Size(totalWidth, totalHeight);
+  }
+
+  /// Convert a viewport-space position to content-space by adding scroll offsets.
+  Offset _toContentPosition(Offset viewportPosition) {
+    final scrollX =
+        _horizontalController.hasClients ? _horizontalController.offset : 0.0;
+    final scrollY =
+        _verticalController.hasClients ? _verticalController.offset : 0.0;
+    return viewportPosition + Offset(scrollX, scrollY);
   }
 
   //-----------Events to Java-----------------
@@ -412,6 +583,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     if (renderBox == null) return;
 
     final canvasSize = renderBox.size;
+    position = _toContentPosition(position);
 
     TextShape? tappedTextShape;
     int? shapeIndex;
@@ -496,6 +668,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   void _handleKeyEvent(RawKeyEvent event) {
     if (!_isEditingText || _editableTextShape == null) return;
     if (event is! RawKeyDownEvent) return;
+
+    widget.sendVerifyKeyverifyKey(state, mapKeyEventToSwt(event));
 
     final isShiftPressed = event.data.isShiftPressed;
 
@@ -667,6 +841,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     if (renderBox == null) return;
 
     final canvasSize = renderBox.size;
+    position = _toContentPosition(position);
     TextShape? textShape;
 
     if (_isEditingText && _editableTextShape != null) {
@@ -702,7 +877,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
     final canvasSize = renderBox.size;
     final currentOffset = _editableTextShape!.getOffsetFromPosition(
-      position,
+      _toContentPosition(position),
       canvasSize,
     );
 

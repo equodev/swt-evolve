@@ -63,6 +63,20 @@ public class MenuHelper {
         }
     }
 
+    static MenuItem[] removeItem(MenuItem[] items, MenuItem item) {
+        if (items == null) return null;
+        int index = 0;
+        while (index < items.length) {
+            if (items[index] == item) break;
+            index++;
+        }
+        if (index == items.length) return items;
+        MenuItem[] newItems = new MenuItem[items.length - 1];
+        System.arraycopy(items, 0, newItems, 0, index);
+        System.arraycopy(items, index + 1, newItems, index, items.length - index - 1);
+        return newItems;
+    }
+
     static void removeOwnerFocusListener(DartMenu menu) {
         if (MenuHelper.focusOutListener == null) return;
         menu.getDisplay().removeFilter(SWT.FocusIn, MenuHelper.focusOutListener);

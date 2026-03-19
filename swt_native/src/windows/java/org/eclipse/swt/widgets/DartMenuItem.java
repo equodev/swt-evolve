@@ -495,7 +495,8 @@ public class DartMenuItem extends DartItem implements IMenuItem {
             itemToolTip.dispose();
             itemToolTip = null;
         }
-        ((SwtDisplay) display.getImpl()).removeMenuItem(this.getApi());
+        //display.removeMenuItem(this);
+        ;
     }
 
     /**

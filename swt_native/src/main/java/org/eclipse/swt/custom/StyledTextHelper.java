@@ -10,6 +10,9 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.DartFont;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.ControlHelper;
 import org.eclipse.swt.widgets.Display;
 
 import java.io.ByteArrayInputStream;
@@ -64,6 +67,30 @@ public class StyledTextHelper {
             if (stateUpdate.containsKey("caretOffset")) {
                 int caretOffset = ((Number) stateUpdate.get("caretOffset")).intValue();
                 styledText.setCaretOffset(caretOffset);
+            }
+
+            if (stateUpdate.containsKey("topPixel")) {
+                int topPixel = ((Number) stateUpdate.get("topPixel")).intValue();
+                styledText.topPixel = topPixel;
+                styledText.verticalScrollOffset = topPixel;
+                // Update topIndex so ruler reads correct line number.
+                int lineHeight = styledText.getVerticalIncrement();
+                if (lineHeight > 0) {
+                    styledText.topIndex = topPixel / lineHeight;
+                }
+                // Repaint ruler sibling controls (e.g. LineNumberRulerColumn) in Flutter.
+                Composite parent = styledText.getParent();
+                if (parent != null) {
+                    for (Control child : parent.getChildren()) {
+                        if (child.getImpl() instanceof org.eclipse.swt.widgets.DartControl dc) {
+                            ControlHelper.paint(dc);
+                        }
+                    }
+                }
+            }
+
+            if (stateUpdate.containsKey("horizontalPixel")) {
+                styledText.horizontalScrollOffset = ((Number) stateUpdate.get("horizontalPixel")).intValue();
             }
 
             if (stateUpdate.containsKey("renderer") && styledText.renderer != null) {
