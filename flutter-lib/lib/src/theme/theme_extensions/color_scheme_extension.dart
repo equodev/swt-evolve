@@ -153,6 +153,9 @@ class ColorSchemeExtension extends ThemeExtension<ColorSchemeExtension> with _$C
   /// MainToolbar, SideBar.Light: #F4F4F4, dark: #2C2C2C.
   final Color surfaceToolbar;
 
+  /// Divider color. Light: #DBDBDB.
+  final Color toolbarDivider;
+
   const ColorSchemeExtension({
     required this.primaryHovered,
     required this.primaryBorder,
@@ -271,6 +274,7 @@ class ColorSchemeExtension extends ThemeExtension<ColorSchemeExtension> with _$C
     required this.ctabFolderHighlightColor,
     required this.ctabFolderUnselectedColor,
     required this.surfaceToolbar,
+    required this.toolbarDivider,
   });
 
   factory ColorSchemeExtension.fromJson(Map<String, dynamic> json) =>

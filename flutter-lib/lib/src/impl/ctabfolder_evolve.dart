@@ -552,6 +552,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
                                     File(tab.image!),
                                     width: widgetTheme.tabIconSize,
                                     height: widgetTheme.tabIconSize,
+                                    fit: BoxFit.contain,
                                   )
                                 : Icon(
                                     getIconByName(tab.image!),

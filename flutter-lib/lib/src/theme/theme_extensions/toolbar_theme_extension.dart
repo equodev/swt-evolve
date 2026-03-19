@@ -23,6 +23,10 @@ class ToolBarThemeExtension extends ThemeExtension<ToolBarThemeExtension> with _
   final Color compositeBackgroundColor;
   final Color toolbarBackgroundColor;
   final double keywordLeftOffset;
+  final double dividerVerticalPadding;
+  final double separatorThickness;
+  final double separatorWidth;
+  final double separatorHeight;
 
   const ToolBarThemeExtension({
     required this.backgroundColor,
@@ -36,6 +40,10 @@ class ToolBarThemeExtension extends ThemeExtension<ToolBarThemeExtension> with _
     required this.compositeBackgroundColor,
     required this.toolbarBackgroundColor,
     this.keywordLeftOffset = 8.0,
+    this.dividerVerticalPadding = 6.0,
+    this.separatorThickness = 1.0,
+    this.separatorWidth = 8.0,
+    this.separatorHeight = 24.0,
   });
 
 

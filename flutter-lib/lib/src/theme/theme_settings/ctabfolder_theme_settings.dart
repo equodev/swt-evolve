@@ -91,13 +91,13 @@ CTabFolderThemeExtension _getCTabFolderTheme({
     tabContentBorderColor: colorSchemeExtension.surfaceBorderEnabled,
     
     // Tab sizes
-    tabIconSize: 14.0,
-    tabCloseIconSize: 12.0,
+    tabIconSize: 16.0,
+    tabCloseIconSize: 16.0,
     controlButtonSize: 14.0,
     
     // Tab spacing
-    tabIconTextSpacing: 3.0,
-    tabCloseButtonSpacing: 6.0,
+    tabIconTextSpacing: 14.0,
+    tabCloseButtonSpacing: 14.0,
     
     // Tab icon/text padding
     tabIconBottomPadding: 1.0,

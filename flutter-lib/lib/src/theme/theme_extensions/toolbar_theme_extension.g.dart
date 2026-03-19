@@ -30,6 +30,11 @@ ToolBarThemeExtension _$ToolBarThemeExtensionFromJson(
     json['toolbarBackgroundColor'] as String,
   ),
   keywordLeftOffset: (json['keywordLeftOffset'] as num?)?.toDouble() ?? 8.0,
+  dividerVerticalPadding:
+      (json['dividerVerticalPadding'] as num?)?.toDouble() ?? 6.0,
+  separatorThickness: (json['separatorThickness'] as num?)?.toDouble() ?? 1.0,
+  separatorWidth: (json['separatorWidth'] as num?)?.toDouble() ?? 8.0,
+  separatorHeight: (json['separatorHeight'] as num?)?.toDouble() ?? 24.0,
 );
 
 Map<String, dynamic> _$ToolBarThemeExtensionToJson(
@@ -50,4 +55,8 @@ Map<String, dynamic> _$ToolBarThemeExtensionToJson(
     instance.toolbarBackgroundColor,
   ),
   'keywordLeftOffset': instance.keywordLeftOffset,
+  'dividerVerticalPadding': instance.dividerVerticalPadding,
+  'separatorThickness': instance.separatorThickness,
+  'separatorWidth': instance.separatorWidth,
+  'separatorHeight': instance.separatorHeight,
 };

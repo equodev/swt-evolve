@@ -244,6 +244,7 @@ ColorSchemeExtension createColorSchemeExtension() {
     ctabFolderHighlightColor: const Color(0xFF5959EB), // #5959EB
     ctabFolderUnselectedColor: const Color(0xFFE7E8E8), // #E7E8E8
     surfaceToolbar: const Color(0xFFF4F4F4), // #F4F4F4 light
+    toolbarDivider: const Color(0xFFDBDBDB), // #DBDBDB light
   );
 }
 

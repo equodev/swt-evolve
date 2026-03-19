@@ -100,7 +100,7 @@ TreeThemeExtension _getTreeTheme({
     itemEdgeGapFraction: 0.0275,
     itemHeight: 32.0,
     itemIndent: 16.0,
-    expandIconSize: 16.0,
+    expandIconSize: 12.0,
     itemIconSize: 16.0,
     checkboxSize: 18.0,
     badgeSize: 18.0,
@@ -109,8 +109,8 @@ TreeThemeExtension _getTreeTheme({
     
     // Spacing and padding (single column)
     itemPadding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
-    expandIconSpacing: 4.0,
-    itemIconSpacing: 4.0,
+    expandIconSpacing: 8.0,
+    itemIconSpacing: 8.0,
     checkboxSpacing: 4.0,
     badgeSpacing: 8.0,
     
