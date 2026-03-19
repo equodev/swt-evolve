@@ -6,7 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter/rendering.dart';
 
 part 'all_fonts_macos.dart';
-//part 'all_fonts_linux.dart';
+part 'all_fonts_linux.dart';
 part 'all_fonts_windows.dart';
 
 const BASE_SIZE = 10;
@@ -18,7 +18,7 @@ final Map<String, List<(String, FontStyle, FontWeight)>> AllFonts = {};
 ///   - GenFontMetrics.java
 Future<void> main(List<String> args) async {
   _add_fonts_macos(AllFonts);
-  // _add_fonts_linux(AllFonts);
+  _add_fonts_linux(AllFonts);
   _add_fonts_windows(AllFonts);
   final os = args[0]!;
   final fonts = AllFonts[os]!;

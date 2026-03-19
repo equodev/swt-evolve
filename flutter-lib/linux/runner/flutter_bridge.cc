@@ -14,6 +14,7 @@
 
 struct FlutterWindow {
   GtkWidget *view;
+  GtkWidget *headless_window;  // Only used in headless mode
 };
 
 extern "C" void DummyExportedFunction() {
@@ -70,12 +71,51 @@ uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
 
   fl_dart_project_set_dart_entrypoint_arguments(project, args);
 
+  FlutterWindow *widget_context = new FlutterWindow;
+  widget_context->headless_window = nullptr;
+
+  // Headless mode: create a hidden window to host Flutter
+  if (!parentWnd) {
+    if (!gtk_init_check(nullptr, nullptr)) {
+      g_printerr("Failed to initialize GTK\n");
+      return 0;
+    }
+
+    GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_default_size(GTK_WINDOW(window), 1280, 720);
+    gtk_widget_realize(window);
+
+    FlView *view = fl_view_new(project);
+    GtkWidget *view_widget = GTK_WIDGET(view);
+
+    gtk_container_add(GTK_CONTAINER(window), view_widget);
+    gtk_widget_show(view_widget);
+
+    // Directly allocate size to the view (triggers size-allocate signal to Flutter engine)
+    GtkAllocation allocation = {0, 0, 1280, 720};
+    gtk_widget_size_allocate(view_widget, &allocation);
+
+    widget_context->view = view_widget;
+    widget_context->headless_window = window;
+
+    g_print("Flutter headless initialized with window: %p, view: %p\n", window, view_widget);
+
+    fl_register_plugins(FL_PLUGIN_REGISTRY(view));
+
+    // Pump events to propagate size to Flutter engine
+//    while (gtk_events_pending()) {
+//      gtk_main_iteration();
+//    }
+
+    return (uintptr_t)widget_context;
+  }
+
+  // Embedded mode: use provided parent
   GtkWidget *parent_widget = GTK_WIDGET(parentWnd);
 
   FlView *view = fl_view_new(project);
   GtkWidget *view_widget = GTK_WIDGET(view);
 
-  FlutterWindow *widget_context = new FlutterWindow;
   // Store references - we'll create the SWT container from Java side
   widget_context->view = view_widget;
 
@@ -115,9 +155,8 @@ Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_Dispose(JNIEnv *env,
                                                           jlong context) {
   FlutterWindow *window = reinterpret_cast<FlutterWindow *>(context);
   if (window) {
-    // Try to gracefully disconnect the Flutter view from its parent BEFORE
-    // the SWT container is destroyed, to avoid the "implicit view" removal error
-    if (window->view && GTK_IS_WIDGET(window->view)) {
+    if (window->headless_window && GTK_IS_WIDGET(window->headless_window)) {
+    } else if (window->view && GTK_IS_WIDGET(window->view)) {
       GtkWidget* parent = gtk_widget_get_parent(window->view);
       if (parent && GTK_IS_CONTAINER(parent)) {
         g_object_ref(window->view); // Add a reference to prevent destruction
@@ -141,9 +180,14 @@ Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_SetBounds(
   gtk_widget_set_size_request(window->view, vwidth, vheight);
 }
 
-// No-op on Linux - message pumping not needed (GLib main loop handles it automatically)
+// Process GTK events for headless mode
 JNIEXPORT jint JNICALL
 Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_PumpMessages(
     JNIEnv *env, jclass cls, jint maxMessages) {
-  return 0;
+  int count = 0;
+//  while (count < maxMessages && gtk_events_pending()) {
+//    gtk_main_iteration();
+//    count++;
+//  }
+  return count;
 }

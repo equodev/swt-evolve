@@ -31,7 +31,9 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   @override
   void extraSetState() {
     super.extraSetState();
-    _notifyParentGCReady();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _notifyParentGCReady();
+    });
   }
 
   void _notifyParentGCReady() {
