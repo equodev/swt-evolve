@@ -9,6 +9,7 @@ import '../gen/toolbar.dart';
 import '../gen/toolitem.dart';
 import '../gen/widgets.dart';
 import '../impl/composite_evolve.dart';
+import '../nolayout.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
 
@@ -182,6 +183,33 @@ class SideBarComposite extends CompositeSwt<VComposite> {
 
   @override
   State<StatefulWidget> createState() => SideBarCompositeImpl();
+}
+
+class StatusBarComposite extends CompositeSwt<VComposite> {
+  const StatusBarComposite({super.key, required super.value});
+
+  @override
+  State<StatefulWidget> createState() => StatusBarCompositeImpl();
+}
+
+class StatusBarCompositeImpl extends CompositeImpl<StatusBarComposite, VComposite> {
+  @override
+  Widget buildComposite() {
+    final children = state.children;
+
+    if (children == null || children.isEmpty) {
+      return wrap(const SizedBox.shrink());
+    }
+
+    final widgetTheme = Theme.of(context).extension<ToolBarThemeExtension>();
+    final backgroundColor = widgetTheme?.toolbarBackgroundColor ?? Colors.white;
+    final visibleChildren = children.where((child) => child.visible == true).toList();
+
+    return ColoredBox(
+      color: backgroundColor,
+      child: NoLayout(children: visibleChildren, composite: state),
+    );
+  }
 }
 
 class SideBarCompositeImpl extends CompositeImpl<SideBarComposite, VComposite> {

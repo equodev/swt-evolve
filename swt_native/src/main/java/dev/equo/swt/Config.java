@@ -22,6 +22,7 @@ public class Config {
     static Impl defaultImpl = Impl.valueOf(System.getProperty("dev.equo.swt.default", Impl.equo.name()));
     static Impl mainToolbarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.maintoolbar", defaultImpl.name()));
     static Impl sideBarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.sidebar", defaultImpl.name()));
+    static Impl statusBarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.statusbar", defaultImpl.name()));
 
     private static final String os = System.getProperty("os.name").toLowerCase();
     static final Map<Class<?>, Impl> equoEnabled;
@@ -346,17 +347,22 @@ public class Config {
         return parent != null && parent.getImpl() instanceof DartAccessible;
     }
 
-    private static final String E4_MAIN_TOOLBAR_CLASS = "org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout";
-    private static final String E4_MAIN_TOOLBAR_METHOD = "getTrimComposite";
+    private static final String E4_TOOLBAR_CLASS = "org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout";
+    private static final String E4_TOOLBAR_METHOD = "getTrimComposite";
 
     private static boolean isMainToolbarComposite(Class<?> clazz, Composite parent) {
         String id = getId(clazz, parent);
-        return id.equals("/Shell/0/Composite/2") && isInStackTrace(E4_MAIN_TOOLBAR_CLASS, E4_MAIN_TOOLBAR_METHOD);
+        return id.equals("/Shell/0/Composite/2") && isInStackTrace(E4_TOOLBAR_CLASS, E4_TOOLBAR_METHOD);
     }
 
     private static boolean isSideToolbarComposite(Class<?> clazz, Composite parent) {
         String id = getId(clazz, parent);
-        return (id.equals("/Shell/0/Composite/4") || id.equals("/Shell/0/Composite/5")) && isInStackTrace(E4_MAIN_TOOLBAR_CLASS, E4_MAIN_TOOLBAR_METHOD);
+        return (id.equals("/Shell/0/Composite/4") || id.equals("/Shell/0/Composite/5")) && isInStackTrace(E4_TOOLBAR_CLASS, E4_TOOLBAR_METHOD);
+    }
+
+    private static boolean isStatusToolbarComposite(Class<Composite> clazz, Composite parent) {
+        String id = getId(clazz, parent);
+        return id.equals("/Shell/0/Composite/3") && isInStackTrace(E4_TOOLBAR_CLASS, E4_TOOLBAR_METHOD);
     }
 
     public static boolean isSwtCTabFolderBody(Class<?> clazz, Widget parent) {
@@ -385,13 +391,15 @@ public class Config {
         }
         if (Config.isEquo(composite.getClass(), parent))
             return new DartComposite(parent, style, composite);
-        // In eclipse mode, always use SWT implementation without any special handling
-        if (defaultImpl == Impl.eclipse || forceEclipse)
-            return new SwtComposite(parent, style, composite);
         if (mainToolbarImpl == Impl.equo && isMainToolbarComposite(Composite.class, parent))
             return new DartMainToolbar(parent, style, composite);
         if (sideBarImpl == Impl.equo && isSideToolbarComposite(Composite.class, parent))
             return new DartSideBar(parent, style, composite);
+        if (statusBarImpl == Impl.equo && isStatusToolbarComposite(Composite.class, parent))
+            return new DartStatusBar(parent, style, composite);
+        // In eclipse mode, always use SWT implementation without any special handling
+        if (defaultImpl == Impl.eclipse || forceEclipse)
+            return new SwtComposite(parent, style, composite);
         return new SwtComposite(parent, style, composite);
     }
 
@@ -582,6 +590,7 @@ public class Config {
         buffer.append("defaultImpl=").append(defaultImpl).append("\n");
         buffer.append("mainToolbarImpl=").append(mainToolbarImpl).append("\n");
         buffer.append("sideBarImpl=").append(sideBarImpl).append("\n");
+        buffer.append("statusBarImpl=").append(statusBarImpl).append("\n");
         buffer.append("forceEclipse=").append(forceEclipse).append("\n");
         System.getProperties().forEach((k, v) -> {
             if (k.toString().startsWith(PROPERTY_PREFIX))

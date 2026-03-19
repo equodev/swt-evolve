@@ -36,11 +36,6 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   }
 
   @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final widgetTheme = _theme;
     final hasValidBounds = hasBounds(state.bounds);
