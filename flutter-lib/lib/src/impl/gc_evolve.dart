@@ -41,10 +41,12 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   void clearShapes() {
-    if (mounted) setState(() {
-      _snapshot = [];
-      _drawer.clearShapes();
-    });
+    if (mounted) {
+      setState(() {
+        _snapshot = [];
+        _drawer.clearShapes();
+      });
+    }
   }
 
   @override
