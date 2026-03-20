@@ -1404,6 +1404,13 @@ public class DartComposite extends DartScrollable implements IComposite {
         return layoutDeferred;
     }
 
+    @Override
+    public void redraw() {
+        super.redraw();
+        if (hooks(SWT.Paint))
+            ControlHelper.paint(this);
+    }
+
     Object contentView() {
         return getBridge().container(this);
     }

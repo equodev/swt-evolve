@@ -69,10 +69,11 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
 
     return Stack(
       children: [
-        if (gcOverlay != null)
-          RepaintBoundary(key: widgetBoundaryKey, child: child)
-        else
-          child,
+        // This causes it not to work composite widget
+        // if (gcOverlay != null)
+        //   RepaintBoundary(key: widgetBoundaryKey, child: child)
+        // else
+        child,
         if (gcOverlay != null)
           Positioned.fill(child: IgnorePointer(child: gcWidget))
         else

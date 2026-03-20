@@ -2703,7 +2703,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         this.cursor = cursor;
         if (!isEnabled())
             return;
-        ((SwtDisplay) display.getImpl()).setCursor(((SwtDisplay) display.getImpl()).currentControl);
+        //display.setCursor(display.currentControl);
+        ;
     }
 
     void setDefaultFont() {

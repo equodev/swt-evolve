@@ -19,6 +19,7 @@ package org.eclipse.swt.graphics;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class manage operating system resources that
@@ -68,7 +69,7 @@ public final class Cursor extends Resource {
      */
     Cursor(Device device) {
         this((ICursor) null);
-        setImpl(new SwtCursor(device, this));
+        setImpl(Config.isEquo(Cursor.class) ? new DartCursor(device, this) : new SwtCursor(device, this));
     }
 
     /**
@@ -119,7 +120,7 @@ public final class Cursor extends Resource {
      */
     public Cursor(Device device, int style) {
         this((ICursor) null);
-        setImpl(new SwtCursor(device, style, this));
+        setImpl(Config.isEquo(Cursor.class) ? new DartCursor(device, style, this) : new SwtCursor(device, style, this));
     }
 
     /**
@@ -160,7 +161,7 @@ public final class Cursor extends Resource {
     @Deprecated
     public Cursor(Device device, ImageData source, ImageData mask, int hotspotX, int hotspotY) {
         this((ICursor) null);
-        setImpl(new SwtCursor(device, source, mask, hotspotX, hotspotY, this));
+        setImpl(Config.isEquo(Cursor.class) ? new DartCursor(device, source, mask, hotspotX, hotspotY, this) : new SwtCursor(device, source, mask, hotspotX, hotspotY, this));
     }
 
     /**
@@ -194,7 +195,7 @@ public final class Cursor extends Resource {
      */
     public Cursor(Device device, ImageData source, int hotspotX, int hotspotY) {
         this((ICursor) null);
-        setImpl(new SwtCursor(device, source, hotspotX, hotspotY, this));
+        setImpl(Config.isEquo(Cursor.class) ? new DartCursor(device, source, hotspotX, hotspotY, this) : new SwtCursor(device, source, hotspotX, hotspotY, this));
     }
 
     /**
@@ -228,7 +229,7 @@ public final class Cursor extends Resource {
      */
     public Cursor(Device device, ImageDataProvider imageDataProvider, int hotspotX, int hotspotY) {
         this((ICursor) null);
-        setImpl(new SwtCursor(device, imageDataProvider, hotspotX, hotspotY, this));
+        setImpl(Config.isEquo(Cursor.class) ? new DartCursor(device, imageDataProvider, hotspotX, hotspotY, this) : new SwtCursor(device, imageDataProvider, hotspotX, hotspotY, this));
     }
 
     /**

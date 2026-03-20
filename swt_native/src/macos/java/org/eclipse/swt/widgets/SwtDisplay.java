@@ -1150,8 +1150,9 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         if (lockCursor) {
             if (currentControl != null) {
                 Cursor cursor = currentControl.getImpl().findCursor();
-                if (cursor != null && cursor.handle.id != id)
+                if (cursor != null && cursor.handle != null && cursor.handle.id != id)
                     return 0;
+                return 0;
             }
         }
         OS.call(oldCursorSetProc, id, sel);
@@ -4968,7 +4969,8 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             cursor = getSystemCursor(SWT.CURSOR_ARROW);
         }
         lockCursor = false;
-        cursor.handle.set();
+        if (cursor.handle != null)
+            cursor.handle.set();
         lockCursor = true;
     }
 
