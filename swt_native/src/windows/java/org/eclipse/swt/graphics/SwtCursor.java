@@ -323,7 +323,9 @@ public final class SwtCursor extends SwtResource implements ICursor {
             return ((SwtCursor) cursor.getImpl()).zoomLevelToHandle.get(zoom).getHandle();
         }
         CursorHandle handle = ((SwtCursor) cursor.getImpl()).cursorHandleProvider.createHandle(cursor.getImpl()._device(), zoom);
-        ((SwtCursor) cursor.getImpl()).setHandleForZoomLevel(handle, zoom);
+        if (cursor.getImpl() instanceof SwtCursor) {
+            ((SwtCursor) cursor.getImpl()).setHandleForZoomLevel(handle, zoom);
+        }
         return ((SwtCursor) cursor.getImpl()).zoomLevelToHandle.get(zoom).getHandle();
     }
 

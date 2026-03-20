@@ -782,13 +782,8 @@ public class DartComposite extends DartScrollable implements IComposite {
     @Override
     public void redraw(int x, int y, int width, int height, boolean all) {
         super.redraw(x, y, width, height, all);
-        if (all) {
-            Control[] children = _getChildren();
-            for (Control child : children) {
-                if (child != null && !child.isDisposed() && child.isVisible()) {
-                }
-            }
-        }
+        if (hooks(SWT.Paint))
+            ControlHelper.paint(this);
     }
 
     @Override
@@ -1125,6 +1120,13 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     public boolean _layoutDeferred() {
         return layoutDeferred;
+    }
+
+    @Override
+    public void redraw() {
+        super.redraw();
+        if (hooks(SWT.Paint))
+            ControlHelper.paint(this);
     }
 
     Object contentView() {

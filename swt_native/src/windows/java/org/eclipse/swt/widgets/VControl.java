@@ -58,9 +58,11 @@ public class VControl extends VWidget {
         ((DartControl) impl).capture = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Cursor getCursor() {
-        return ((DartControl) impl).cursor;
+        Cursor val = ((DartControl) impl).cursor;
+        if (val != null && !(val.getImpl() instanceof DartCursor))
+            return null;
+        return val;
     }
 
     public void setCursor(Cursor value) {

@@ -2539,6 +2539,13 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public Rectangle getClipping() {
+        if (this.clipping == null) {
+            if (drawable instanceof Control) {
+                Rectangle b = ((Control) drawable).getBounds();
+                return new Rectangle(0, 0, b.width, b.height);
+            }
+            return new Rectangle(0, 0, Integer.MAX_VALUE, Integer.MAX_VALUE);
+        }
         return this.clipping;
     }
 

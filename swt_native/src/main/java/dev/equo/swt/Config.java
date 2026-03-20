@@ -3,6 +3,7 @@ package dev.equo.swt;
 import org.eclipse.swt.accessibility.Accessible;
 import org.eclipse.swt.accessibility.DartAccessible;
 import org.eclipse.swt.custom.*;
+import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
@@ -391,14 +392,14 @@ public class Config {
         if (dynEnabled && ("dyn".equals(parent != null ? parent.getData(getKey(Composite.class)) : null) || mustBeDynComposite(composite))) {
             return new DynComposite(parent, style, composite);
         }
-        if (Config.isEquo(composite.getClass(), parent))
-            return new DartComposite(parent, style, composite);
         if (mainToolbarImpl == Impl.equo && isMainToolbarComposite(Composite.class, parent))
             return new DartMainToolbar(parent, style, composite);
         if (sideBarImpl == Impl.equo && isSideToolbarComposite(Composite.class, parent))
             return new DartSideBar(parent, style, composite);
         if (statusBarImpl == Impl.equo && isStatusToolbarComposite(Composite.class, parent))
             return new DartStatusBar(parent, style, composite);
+        if (Config.isEquo(composite.getClass(), parent))
+            return new DartComposite(parent, style, composite);
         // In eclipse mode, always use SWT implementation without any special handling
         if (defaultImpl == Impl.eclipse || forceEclipse)
             return new SwtComposite(parent, style, composite);

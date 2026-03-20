@@ -1,6 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
 import '../gen/color.dart';
+import '../gen/cursor.dart';
 import '../gen/font.dart';
 import '../gen/image.dart';
 import '../gen/menu.dart';
@@ -110,6 +111,7 @@ class VControl extends VWidget {
   VImage? backgroundImage;
   VRectangle? bounds;
   bool? capture;
+  VCursor? cursor;
   bool? dragDetect;
   bool? enabled;
   VFont? font;

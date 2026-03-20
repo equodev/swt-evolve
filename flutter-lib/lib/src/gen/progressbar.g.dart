@@ -20,6 +20,9 @@ VProgressBar _$VProgressBarFromJson(Map<String, dynamic> json) => VProgressBar()
       ? null
       : VRectangle.fromJson(json['bounds'] as Map<String, dynamic>)
   ..capture = json['capture'] as bool?
+  ..cursor = json['cursor'] == null
+      ? null
+      : VCursor.fromJson(json['cursor'] as Map<String, dynamic>)
   ..dragDetect = json['dragDetect'] as bool?
   ..enabled = json['enabled'] as bool?
   ..font = json['font'] == null
@@ -50,6 +53,7 @@ Map<String, dynamic> _$VProgressBarToJson(VProgressBar instance) =>
       'backgroundImage': instance.backgroundImage,
       'bounds': instance.bounds,
       'capture': instance.capture,
+      'cursor': instance.cursor,
       'dragDetect': instance.dragDetect,
       'enabled': instance.enabled,
       'font': instance.font,
