@@ -877,6 +877,10 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               _context!.parentTreeValue,
               e,
             );
+
+            if (selected) {
+              _sendStartEditing();
+            }
           },
           onDoubleTapDown: (TapDownDetails details) {
             _lastTapPosition = details.localPosition;
