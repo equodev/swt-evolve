@@ -184,14 +184,23 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
       isEnabled: isEnabled,
     );
 
+    final notifier = MenuChangeNotifier.of(context);
+    final capturedState = state;
+    final capturedWidget = widget;
+
     return _MenuItemRow(
       widgetTheme: widgetTheme,
       isEnabled: isEnabled,
-      onTap: isEnabled ? _onPushPressed : null,
+      onTap: isEnabled ? () {
+        capturedWidget.sendSelectionSelection(capturedState, null);
+        if (notifier != null) {
+          notifier.closeMenu();
+        }
+      } : null,
       trailing: acceleratorText.isNotEmpty
           ? Text(acceleratorText, style: acceleratorStyle)
           : null,
-      child: Text(stripAccelerators(state.text), style: textStyle),
+      child: Text(stripAccelerators(capturedState.text), style: textStyle),
     );
   }
 
@@ -226,10 +235,6 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
       _localSelection = true;
     });
     _sendSelectionEvent();
-  }
-
-  void _onPushPressed() {
-    widget.sendSelectionSelection(state, null);
   }
 
   void _sendSelectionEvent() {
@@ -275,8 +280,13 @@ class _MenuItemRowState extends State<_MenuItemRow> {
       child: MouseRegion(
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() => _isHovered = false),
-        child: GestureDetector(
-          onTap: widget.onTap,
+        child: Listener(
+          onPointerUp: (e) {
+            if (e.buttons == 0 && widget.onTap != null) {
+              widget.onTap!();
+            }
+          },
+          child: GestureDetector(
           child: AnimatedContainer(
             duration: widget.widgetTheme.animationDuration,
             constraints: BoxConstraints(
@@ -305,6 +315,7 @@ class _MenuItemRowState extends State<_MenuItemRow> {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

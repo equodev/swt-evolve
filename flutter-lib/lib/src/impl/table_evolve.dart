@@ -11,9 +11,12 @@ import '../gen/table.dart';
 import '../gen/tableitem.dart';
 import 'tableitem_evolve.dart';
 import '../gen/tablecolumn.dart';
+import '../gen/tableeditor.dart';
 import '../gen/font.dart';
 import 'utils/widget_utils.dart';
 import 'utils/font_utils.dart';
+import 'utils/image_utils.dart';
+import '../gen/image.dart';
 import '../theme/theme_extensions/table_theme_extension.dart';
 import '../theme/theme_settings/table_theme_settings.dart';
 import '../gen/widgets.dart';
@@ -33,10 +36,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
   double? _cachedHeaderOffset;
   Map<int, TableColumnWidth>? _cachedColumnWidths;
   final List<String> _eventNames = [];
+  final ScrollController _verticalScrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    _verticalScrollController.addListener(() => setState(() {}));
     _registerGetIdFromPointListener();
     _registerGetItemBoundsListener();
   }
@@ -149,6 +154,28 @@ class TableImpl<T extends TableSwt, V extends VTable>
   }
 
   @override
+  void didUpdateWidget(covariant T oldWidget) {
+    final items = state.items;
+    final columns = state.columns;
+    final editors = state.editors;
+    super.didUpdateWidget(oldWidget);
+    state.items = items;
+    state.columns = columns;
+    state.editors = editors;
+  }
+
+  @override
+  void extraSetState() {
+    super.extraSetState();
+    final selection = state.selection;
+    if (selection != null && selection.isNotEmpty) {
+      _selectedRowIndex = selection.first;
+    } else {
+      _selectedRowIndex = -1;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<TableThemeExtension>()!;
     return super.wrap(buildTable(context, widgetTheme));
@@ -165,6 +192,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     _editingController?.dispose();
     _editingController = null;
     _editingFocusListener = null;
+    _verticalScrollController.dispose();
     // Remove Flutter event listeners
     for (final eventName in _eventNames) {
       EquoCommService.remove(eventName);
@@ -310,7 +338,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final showCheckboxSpace = hasCheckStyle && columnIndex == 0;
     final headerHeight = calculateHeaderHeight(textStyle, theme);
 
-    return SizedBox(
+    Widget cell = SizedBox(
       height: headerHeight,
       child: Container(
         padding: theme.headerPadding,
@@ -319,6 +347,22 @@ class TableImpl<T extends TableSwt, V extends VTable>
           children: [
             if (showCheckboxSpace)
               SizedBox(width: 20.0 + theme.cellPadding.left),
+            if (column.image != null)
+              FutureBuilder<Widget?>(
+                future: ImageUtils.buildVImageAsync(
+                  column.image!,
+                  enabled: true,
+                  useBinaryImage: true,
+                  renderAsIcon: true,
+                ),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.done &&
+                      snapshot.data != null) {
+                    return snapshot.data!;
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
             Expanded(
               child: Text(
                 column.text ?? "",
@@ -330,6 +374,47 @@ class TableImpl<T extends TableSwt, V extends VTable>
         ),
       ),
     );
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: column.image != null
+          ? () {
+              TableColumnSwt<VTableColumn>(value: column).sendSelectionSelection(
+                column,
+                null,
+              );
+            }
+          : null,
+      onSecondaryTapDown: (details) {
+        openContextMenu(details.globalPosition);
+        final e = VEvent();
+        e.x = _computeHeaderCellCenterX(columnIndex);
+        e.y = ((_cachedHeaderOffset ?? 20.0) / 2).round();
+        widget.sendMenuDetectMenuDetect(state, e);
+      },
+      child: cell,
+    );
+  }
+
+  int _computeHeaderCellCenterX(int columnIndex) {
+    double x = 0.0;
+    if (_cachedColumnWidths != null) {
+      for (int i = 0; i < columnIndex; i++) {
+        final w = _cachedColumnWidths![i];
+        if (w is FixedColumnWidth) x += w.value;
+      }
+      final colW = _cachedColumnWidths![columnIndex];
+      if (colW is FixedColumnWidth) x += colW.value / 2;
+    } else {
+      final columns = state.columns ?? [];
+      for (int i = 0; i < columnIndex && i < columns.length; i++) {
+        x += columns[i].width?.toDouble() ?? 100.0;
+      }
+      final colWidth = columnIndex < columns.length
+          ? (columns[columnIndex].width?.toDouble() ?? 100.0)
+          : 100.0;
+      x += colWidth / 2;
+    }
+    return x.round();
   }
 
   Widget buildBody(
@@ -357,6 +442,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
           : SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: SingleChildScrollView(
+                controller: _verticalScrollController,
                 child: Table(
                   columnWidths: columnWidths,
                   border: buildBodyBorder(showLines, theme),
@@ -562,7 +648,10 @@ class TableImpl<T extends TableSwt, V extends VTable>
       final itemIndex = findItemIndex(editingItemId);
       if (itemIndex < 0) continue;
 
-      final editorY = headerOffset + (itemIndex * rowHeight);
+      final scrollOffset = _verticalScrollController.hasClients
+          ? _verticalScrollController.offset
+          : 0.0;
+      final editorY = headerOffset + (itemIndex * rowHeight) - scrollOffset;
 
       double editorX = borderWidth;
       double editorWidth = state.bounds?.width?.toDouble() ?? 200.0;

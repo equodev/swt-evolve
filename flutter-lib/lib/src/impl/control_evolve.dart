@@ -16,6 +16,16 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
   final GlobalKey<State<MenuSwt>> _menuKey = GlobalKey<State<MenuSwt>>();
 
+  void openContextMenu(Offset globalPosition) {
+    final menuState = _menuKey.currentState;
+    final menuContext = _menuKey.currentContext;
+    if (menuState is MenuImpl && menuContext != null) {
+      final box = menuContext.findRenderObject() as RenderBox?;
+      final localPos = box != null ? box.globalToLocal(globalPosition) : globalPosition;
+      menuState.openContextMenuAt(context, localPos);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return const Text("Control");
