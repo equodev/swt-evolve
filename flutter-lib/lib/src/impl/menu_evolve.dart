@@ -27,11 +27,13 @@ class MenuState {
 class MenuChangeNotifier extends InheritedWidget {
   final void Function(void Function()) registerPendingChange;
   final MenuState menuState;
+  final VoidCallback closeMenu;
 
   const MenuChangeNotifier({
     Key? key,
     required this.registerPendingChange,
     required this.menuState,
+    required this.closeMenu,
     required Widget child,
   }) : super(key: key, child: child);
 
@@ -63,9 +65,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   }
 
   void openContextMenuAt(BuildContext context, Offset position) {
-    if (_menuController.isOpen) {
-      _menuController.close();
-    } else {
+    if (!_menuController.isOpen) {
       _menuController.open(position: position);
     }
   }
@@ -204,6 +204,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
         MenuChangeNotifier(
           registerPendingChange: _registerPendingChange,
           menuState: _menuState,
+          closeMenu: _menuController.close,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: menuItems
@@ -261,6 +262,7 @@ class _MenuBarItem extends StatefulWidget {
 
 class _MenuBarItemState extends State<_MenuBarItem> {
   bool _isHovered = false;
+  final MenuController _subMenuController = MenuController();
 
   @override
   Widget build(BuildContext context) {
@@ -277,6 +279,7 @@ class _MenuBarItemState extends State<_MenuBarItem> {
 
     if (widget.item.menu != null) {
       return MenuAnchor(
+        controller: _subMenuController,
         style: MenuStyle(
           backgroundColor: WidgetStateProperty.all(
             widget.widgetTheme.popupBackgroundColor,
@@ -297,6 +300,7 @@ class _MenuBarItemState extends State<_MenuBarItem> {
           MenuChangeNotifier(
             registerPendingChange: widget.registerPendingChange,
             menuState: widget.menuState,
+            closeMenu: _subMenuController.close,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: (widget.item.menu!.items ?? [])

@@ -459,6 +459,7 @@ public class DartTable extends DartComposite implements ITable {
         } else {
         }
         ((DartWidget) column.getImpl()).createJNIRef();
+        ((DartWidget) column.getImpl()).register();
         System.arraycopy(columns, index, columns, index + 1, columnCount++ - index);
         columns[index] = column;
         for (int i = 0; i < itemCount; i++) {
@@ -1104,13 +1105,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public TableItem[] getSelection() {
         checkWidget();
-        {
-            TableItem[] result = new TableItem[selection.length];
-            for (int i = 0; i < selection.length; ++i) {
-                result[i] = items[selection[i]];
-            }
-            return result;
-        }
+        return TableHelper.getSelection(this);
     }
 
     /**

@@ -102,7 +102,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       if (enabled && _context != null) {
         // Update selection before sending MouseDown to match native SWT behavior
         // where the OS sets the selection before SWT.MouseDown fires.
-        if (button == 1 && !isEditing && _context!.tableImpl != null) {
+        if ((button == 1 || button == 3) && !isEditing && _context!.tableImpl != null) {
           _context!.tableImpl!.handleRowTap(rowIndex, state);
         }
         final e = VEvent();
@@ -132,7 +132,19 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
 
     return GestureDetector(
       onTapDown: (_) => sendMouseDown(1),
-      onSecondaryTapDown: (_) => sendMouseDown(3),
+      onSecondaryTapDown: (details) {
+        sendMouseDown(3);
+        if (_context?.tableImpl != null) {
+          _context!.tableImpl!.openContextMenu(details.globalPosition);
+          final e = VEvent();
+          e.x = _computeCellCenterX(columnIndex, theme);
+          e.y = _computeCellCenterY(rowIndex, textStyle, theme);
+          _context!.parentTable.sendMenuDetectMenuDetect(
+            _context!.parentTableValue,
+            e,
+          );
+        }
+      },
       onTertiaryTapDown: (_) => sendMouseDown(2),
       onTap: () {
         if (!isEditing && enabled && _context?.tableImpl != null) {

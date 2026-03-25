@@ -250,6 +250,23 @@ public class TableHelper {
         return table.columnOrder;
     }
 
+    public static TableItem[] getSelection(DartTable table) {
+        int[] selection = table.selection != null ? table.selection : new int[0];
+        int itemCount = table.items != null ? table.items.length : 0;
+        int count = 0;
+        for (int i = 0; i < selection.length; ++i) {
+            if (selection[i] >= 0 && selection[i] < itemCount) count++;
+        }
+        TableItem[] result = new TableItem[count];
+        int j = 0;
+        for (int i = 0; i < selection.length; ++i) {
+            if (selection[i] >= 0 && selection[i] < itemCount) {
+                result[j++] = table.items[selection[i]];
+            }
+        }
+        return result;
+    }
+
     public static void fixSelection(DartTable table, int index, boolean add) {
         int[] selection = table.selection != null ? table.selection : new int[0];
         if (selection.length == 0) return;

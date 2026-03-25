@@ -1242,13 +1242,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public TableItem[] getSelection() {
         checkWidget();
-        {
-            TableItem[] result = new TableItem[selection.length];
-            for (int i = 0; i < selection.length; ++i) {
-                result[i] = _getItem(selection[i]);
-            }
-            return result;
-        }
+        return TableHelper.getSelection(this);
     }
 
     /**
