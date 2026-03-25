@@ -1673,6 +1673,6 @@ extension ColorSchemeExtensionBuildContextProps on BuildContext {
   /// MainToolbar, SideBar.Light: #F4F4F4, dark: #2C2C2C.
   Color get surfaceToolbar => colorSchemeExtension.surfaceToolbar;
 
-  /// Divider color for toolbar and sidebar separators. Light: #DBDBDB.
+  /// Divider color. Light: #DBDBDB.
   Color get toolbarDivider => colorSchemeExtension.toolbarDivider;
 }

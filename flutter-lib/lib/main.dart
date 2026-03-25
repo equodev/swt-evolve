@@ -125,7 +125,11 @@ Widget? customWidget(Map<String, dynamic> child) {
   var type = child['swt'];
   var id = child['id'];
   return switch (type) {
-    "MainToolbar" => ToolbarComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
+    "MainToolbar" => ToolbarComposite(
+        key: ValueKey(id),
+        value: VComposite.fromJson(child),
+        useBoundsLayout: true,
+    ),
     "SideBar" => SideBarComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
     "StatusBar" => StatusBarComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
     _ => null
@@ -136,7 +140,11 @@ Widget? customWidgetFromValue(VWidget child) {
   var type = child.swt;
   var id = child.id;
   return switch (type) {
-    "MainToolbar" => ToolbarComposite(key: ValueKey(id), value: child as VComposite),
+    "MainToolbar" => ToolbarComposite(
+        key: ValueKey(id),
+        value: child as VComposite,
+        useBoundsLayout: true,
+    ),
     "SideBar" => SideBarComposite(key: ValueKey(id), value: child as VComposite),
     "StatusBar" => StatusBarComposite(key: ValueKey(id), value: child as VComposite),
     _ => null

@@ -108,7 +108,7 @@ TreeThemeExtension _getTreeTheme({
     badgeBorderWidth: 1.0,
     
     // Spacing and padding (single column)
-    itemPadding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+    itemPadding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 1.0),
     expandIconSpacing: 8.0,
     itemIconSpacing: 8.0,
     checkboxSpacing: 4.0,
@@ -166,7 +166,7 @@ TreeThemeExtension _getTreeTheme({
     headerBackgroundColorWithCols: colorScheme.surfaceContainerLow,
     headerBorderWidthWithCols: 0.0,
     itemHeightWithCols: 40.0,
-    itemPaddingWithCols: const EdgeInsets.fromLTRB(12.0, 10.0, 12.0, 10.0),
+    itemPaddingWithCols: const EdgeInsets.fromLTRB(12.0, 1.0, 12.0, 1.0),
     headerTextStyleWithCols: headerTextStyleWithCols,
     itemTextStyleWithCols: bodySmallWithCols.copyWith(color: colorScheme.onSurface),
     columnTextColorWithCols: colorScheme.onSurface,
