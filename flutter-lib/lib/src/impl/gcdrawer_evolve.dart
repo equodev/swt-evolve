@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../comm/comm.dart';
@@ -35,6 +36,10 @@ class GCDrawer extends GCDrawerBase {
   int _imgHeight = 0;
   final List<Future<ImageShape>> _pendingImages = [];
   Completer<void>? _baseImageCompleter;
+
+  // Set by GCImpl when the parent WidgetSwtState provides a RepaintBoundary key.
+  // Used in copyArea to capture the widget's actual rendered pixels via toImageSync().
+  GlobalKey? widgetBoundaryKey;
 
   /// Standalone mode: registers comm listeners for state + all draw ops + imageInit/gcDispose.
   /// Used for headless image rendering (new GC(image)).
@@ -482,7 +487,9 @@ class GCDrawer extends GCDrawerBase {
 
   @override
   void onDrawRectangleRectangle(VGCDrawRectangleRectangle o) {
-    // TODO: implement
+    if (o.rect == null) return;
+    _addRectShape(x: o.rect!.x, y: o.rect!.y, width: o.rect!.width,
+        height: o.rect!.height, isFilled: false);
   }
 
   @override
@@ -497,7 +504,9 @@ class GCDrawer extends GCDrawerBase {
 
   @override
   void onFillRectangleRectangle(VGCFillRectangleRectangle o) {
-    // TODO: implement
+    if (o.rect == null) return;
+    _addRectShape(x: o.rect!.x, y: o.rect!.y, width: o.rect!.width,
+        height: o.rect!.height, isFilled: true);
   }
 
   @override
@@ -566,25 +575,86 @@ class GCDrawer extends GCDrawerBase {
 
   @override
   void onCopyAreaImageintint(VGCCopyAreaImageintint o) async {
-    if (o.image == null) return;
-    final size = Size(_imgWidth > 0 ? _imgWidth.toDouble() : 100,
-        _imgHeight > 0 ? _imgHeight.toDouble() : 100);
-    final gcImage = await _renderShapesToUiImage(shapes, size);
-    final destImage = await ImageUtils.decodeVImageToUIImage(o.image!);
-    if (destImage == null) return;
-    final recorder = ui.PictureRecorder();
-    final canvas = ui.Canvas(recorder);
-    canvas.drawImage(destImage, Offset.zero, ui.Paint());
-    canvas.drawImage(gcImage,
-        Offset((o.x ?? 0).toDouble(), (o.y ?? 0).toDouble()), ui.Paint());
-    final picture = recorder.endRecording();
-    await picture.toImage(destImage.width, destImage.height);
-    // TODO: result must be returned to Java or replace the original image
+    try {
+      final imgW = o.image?.imageData?.width ?? 0;
+      final imgH = o.image?.imageData?.height ?? 0;
+      if (imgW <= 0 || imgH <= 0) return;
+      final x = (o.x ?? 0).toDouble();
+      final y = (o.y ?? 0).toDouble();
+
+      // Determine the canvas size needed to include the area being captured.
+      if (_baseImageCompleter != null) await _baseImageCompleter!.future;
+      final renderW = math.max(
+          _imgWidth > 0 ? _imgWidth : (x + imgW).toInt(), (x + imgW).toInt());
+      final renderH = math.max(
+          _imgHeight > 0 ? _imgHeight : (y + imgH).toInt(),
+          (y + imgH).toInt());
+
+      // Render: widget pixels (via RepaintBoundary) > base image > white background.
+      // Then apply any shapes drawn via this GC on top.
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
+      if (widgetBoundaryKey != null) {
+        // Capture the widget's current raster cache synchronously.
+        // toImageSync() reads the already-rasterized frame — no GPU pass needed,
+        // so it is safe to call while the SWT main thread is blocked.
+        final ro = widgetBoundaryKey!.currentContext?.findRenderObject();
+        if (ro is RenderRepaintBoundary) {
+          final widgetImage = ro.toImageSync(pixelRatio: 1.0);
+          canvas.drawImage(widgetImage, ui.Offset.zero, ui.Paint());
+          widgetImage.dispose();
+        }
+      } else if (_baseImage != null) {
+        canvas.drawImage(_baseImage!, ui.Offset.zero, ui.Paint());
+      } else {
+        canvas.drawRect(
+          Rect.fromLTWH(0, 0, renderW.toDouble(), renderH.toDouble()),
+          ui.Paint()..color = const Color(0xFFFFFFFF),
+        );
+      }
+      for (final shape in shapes) {
+        shape.draw(canvas);
+      }
+      final fullImage =
+      await recorder.endRecording().toImage(renderW, renderH);
+
+      // Crop to the requested area: (x, y, imgW, imgH) → (0, 0, imgW, imgH).
+      final cropRecorder = ui.PictureRecorder();
+      final cropCanvas = ui.Canvas(cropRecorder);
+      cropCanvas.drawImageRect(
+        fullImage,
+        Rect.fromLTWH(x, y, imgW.toDouble(), imgH.toDouble()),
+        Rect.fromLTWH(0, 0, imgW.toDouble(), imgH.toDouble()),
+        ui.Paint(),
+      );
+      final result =
+      await cropRecorder.endRecording().toImage(imgW, imgH);
+
+      final byteData = await result.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) return;
+      EquoCommService.sendPayload(
+        '${state.swt}/${state.id}/copyAreaImageintintResponse',
+        jsonEncode(base64Encode(byteData.buffer.asUint8List())),
+      );
+    } catch (e, stack) {
+      print('[GC copyArea] Error: $e\n$stack');
+    }
   }
 
   @override
   void onCopyAreaintintintintintint(VGCCopyAreaintintintintintint o) {
-    // TODO: implement
+    final srcRect = _getRectFromArgs(o.srcX, o.srcY, o.width, o.height);
+    final destOffset = Offset(
+      (o.destX).toDouble() - (o.srcX).toDouble(),
+      (o.destY).toDouble() - (o.srcY).toDouble(),
+    );
+    final copiedShapes = shapes
+        .where((shape) => _shapeIntersects(shape, srcRect))
+        .map((shape) => _translateShapeWithClip(shape, destOffset, srcRect))
+        .toList();
+    for (final s in copiedShapes) {
+      _addShape(s);
+    }
   }
 
   @override
