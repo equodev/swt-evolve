@@ -303,11 +303,13 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void copyArea(Image image, int x, int y) {
+        if (hashCode() == 0)
+            return;
         VGCCopyAreaImageintint drawOp = new VGCCopyAreaImageintint();
         drawOp.image = GraphicsUtils.copyImage(display, image);
         drawOp.x = x;
         drawOp.y = y;
-        FlutterBridge.send(this, "copyAreaImageintint", drawOp);
+        RequestResponse.callOnDisplay(this, "copyAreaImageintint", drawOp, String.class, p -> GCHelper.updateImageFromPng(image, null, p), 10_000);
     }
 
     void copyArea(Image image, int x, int y, long srcImage) {
@@ -1792,7 +1794,7 @@ public final class DartGC extends DartResource implements IGC {
     public int hashCode() {
         if (gcImageId != 0)
             return gcImageId;
-        if (drawable instanceof Canvas) {
+        if (drawable instanceof Control) {
             return drawable.hashCode();
         }
         return 0;
@@ -1841,8 +1843,8 @@ public final class DartGC extends DartResource implements IGC {
         }
         this.drawable = drawable;
         this.data = data;
-        if (drawable instanceof Canvas) {
-            DartWidget widget = (DartWidget) ((Canvas) drawable).getImpl();
+        if (drawable instanceof Control control) {
+            DartWidget widget = (DartWidget) control.getImpl();
             if (widget != null) {
                 this.bridge = widget.getBridge();
                 this.display = widget.getDisplay();

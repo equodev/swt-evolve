@@ -26,7 +26,6 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
             if (!mounted || _drawer.shapes.isEmpty) return;
             setState(() {
               _snapshot = List.from(_drawer.shapes);
-              _drawer.clearShapes();
             });
           });
         }
@@ -63,6 +62,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
         final parentState = element.state as WidgetSwtState;
         if (parentState.gcOverlayKey == widget.key) {
           parentState.notifyGCReady(state as VGC);
+          _drawer.widgetBoundaryKey = parentState.widgetBoundaryKey;
           return false;
         }
       }

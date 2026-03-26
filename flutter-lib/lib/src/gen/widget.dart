@@ -34,6 +34,7 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   // GC support - any widget can have a GC overlay
   VGC? gcOverlay;
   final GlobalKey<GCImpl> gcOverlayKey = GlobalKey<GCImpl>();
+  GlobalKey? widgetBoundaryKey;
 
   @override
   void initState() {
@@ -49,6 +50,7 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
     if (gcOverlay == null) {
       setState(() {
         gcOverlay = gcValue;
+        widgetBoundaryKey ??= GlobalKey();
       });
     }
   }
@@ -67,7 +69,10 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
 
     return Stack(
       children: [
-        child,
+        if (gcOverlay != null)
+          RepaintBoundary(key: widgetBoundaryKey, child: child)
+        else
+          child,
         if (gcOverlay != null)
           Positioned.fill(child: IgnorePointer(child: gcWidget))
         else
