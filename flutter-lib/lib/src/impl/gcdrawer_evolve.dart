@@ -43,7 +43,7 @@ class GCDrawer extends GCDrawerBase {
 
   /// Standalone mode: registers comm listeners for state + all draw ops + imageInit/gcDispose.
   /// Used for headless image rendering (new GC(image)).
-  GCDrawer.standalone(VGC state) : onShapesUpdated = null, super(state) {
+  GCDrawer.standalone(VGC state) : onShapesUpdated = null, onGCDispose = null, super(state) {
     EquoCommService.onRaw("${state.swt}/${state.id}/imageInit", (payload) {
       _baseImageCompleter = Completer<void>();
       _handleImageInit(payload).then(
@@ -58,10 +58,13 @@ class GCDrawer extends GCDrawerBase {
     });
   }
 
+  final void Function(List<Shape>)? onGCDispose;
+
   /// Embedded mode: registers comm listeners for state + all draw ops + gcDispose.
   /// onShapesUpdated triggers GCImpl.setState().
-  GCDrawer.embedded(VGC state, {this.onShapesUpdated}) : super(state) {
+  GCDrawer.embedded(VGC state, {this.onShapesUpdated, this.onGCDispose}) : super(state) {
     EquoCommService.onRaw("${state.swt}/${state.id}/gcDispose", (_) {
+      if (shapes.isNotEmpty) onGCDispose?.call(List.from(shapes));
       shapes.clear();
       onShapesUpdated?.call(shapes);
     });

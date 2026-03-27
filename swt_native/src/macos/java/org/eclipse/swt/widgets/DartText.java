@@ -1615,21 +1615,7 @@ public class DartText extends DartScrollable implements IText {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
-            if (string == null)
-                return;
-        }
-        int length = getCharCount();
-        string = verifyText(string, 0, length);
-        if ((getApi().style & SWT.SINGLE) != 0) {
-            setEditText(string);
-        } else {
-            char[] buffer = new char[Math.min(string.length(), textLimit)];
-            string.getChars(0, buffer.length, buffer, 0);
-        }
-        this.text = string;
-        selection = null;
-        sendEvent(SWT.Modify);
+        TextHelper.setText(this, string);
     }
 
     /**
@@ -1954,6 +1940,9 @@ public class DartText extends DartScrollable implements IText {
         FlutterBridge.on(this, "Verify", "Verify", e -> {
             getDisplay().asyncExec(() -> {
                 if (!isDisposed()) {
+                    int textLen = getCharCount();
+                    e.start = Math.min(e.start, textLen);
+                    e.end = Math.min(e.end, textLen);
                     sendEvent(SWT.Verify, e);
                 }
             });

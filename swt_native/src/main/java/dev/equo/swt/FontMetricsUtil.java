@@ -93,6 +93,8 @@ public final class FontMetricsUtil {
 //        GeneratedFontMetrics.Metrics metrics = getMetrics(fontId, height);
         Metrics metrics = GenFontMetrics.DATA.get(fontId);
         if (metrics == null)
+            metrics = GenFontMetrics.DATA.get("System-0-3");
+        if (metrics == null)
             return new PointD(0, 0);
 
         double scale = (double) fontSize / GenFontMetrics.BASE;

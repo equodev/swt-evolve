@@ -3434,7 +3434,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (!visible) {
             if (((SwtDisplay) display.getImpl()).focusEvent != SWT.FocusOut) {
                 control = display.getFocusControl();
-                fixFocus = isFocusAncestor(control);
+                fixFocus = isVisible() && isFocusAncestor(control);
             }
         }
         if (!getDrawing()) {

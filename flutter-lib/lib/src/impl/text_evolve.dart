@@ -172,6 +172,7 @@ class TextImpl<T extends TextSwt, V extends VText>
 
     // Get the character index position of the cursor
     final cursorOffset = _controller.selection.baseOffset;
+    if (cursorOffset < 0) return;
 
     // Only update if position actually changed
     if (state.caretPosition == null || state.caretPosition != cursorOffset) {
