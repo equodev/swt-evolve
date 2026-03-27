@@ -23,7 +23,6 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
 
   final int _alpha = 255;
   Rect? clipRect;
-
   Color applyAlpha(Color color) {
     if (_alpha == 255) return color;
     return color.withOpacity(_alpha / 255.0);
@@ -45,30 +44,17 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       return buildComposite();
     }
 
-    final gc = gcOverlay ?? (VGC()..id = state.id);
-    Widget child = GCSwt<VGC>(key: gcOverlayKey, value: gc);
-
     Widget content;
     if (hasValidBounds && constraints != null) {
-      content = ConstrainedBox(constraints: constraints, child: child);
+      content = ConstrainedBox(constraints: constraints, child: const SizedBox.expand());
     } else {
       content = SizedBox(
         width: widgetTheme.defaultWidth,
         height: widgetTheme.defaultHeight,
-        child: child,
       );
     }
 
-    return Listener(
-      onPointerDown: (_) => widget.sendMouseMouseDown(state, null),
-      onPointerUp: (_) => widget.sendMouseMouseUp(state, null),
-      child: MouseRegion(
-        onEnter: (_) => widget.sendMouseTrackMouseEnter(state, null),
-        onExit: (_) => widget.sendMouseTrackMouseExit(state, null),
-        onHover: (_) => widget.sendMouseTrackMouseHover(state, null),
-        child: content,
-      ),
-    );
+    return wrap(content);
   }
 
   Size getBounds() {
@@ -79,6 +65,21 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       );
     }
     return Size(_theme.defaultWidth, _theme.defaultHeight);
+  }
+
+  // Canvas always shows GCSwt directly (never in Offstage) to preserve
+  // coordinate system consistency. The old code rendered GCSwt as the main
+  // content, so we replicate that: GCSwt is always visible via Positioned.fill.
+  @override
+  Widget wrapWithGCOverlay(Widget child) {
+    final gc = gcOverlay ?? (VGC()..id = state.id);
+    final gcWidget = GCSwt<VGC>(key: gcOverlayKey, value: gc);
+    return Stack(
+      children: [
+        child,
+        Positioned.fill(child: IgnorePointer(child: gcWidget)),
+      ],
+    );
   }
 
   Color rgbMapToColor(Map<String, dynamic> m) => Color.fromARGB(

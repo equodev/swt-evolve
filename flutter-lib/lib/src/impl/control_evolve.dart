@@ -1,7 +1,9 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import '../gen/control.dart';
+import '../gen/event.dart';
 import '../gen/menu.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
@@ -15,6 +17,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     extends WidgetSwtState<T, V> {
 
   final GlobalKey<State<MenuSwt>> _menuKey = GlobalKey<State<MenuSwt>>();
+  int _lastButton = 1;
 
   void openContextMenu(Offset globalPosition) {
     final menuState = _menuKey.currentState;
@@ -117,6 +120,37 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         return KeyEventResult.ignored;
       },
       child: widget,
+    );
+
+    widget = Listener(
+      onPointerDown: (e) {
+        _lastButton = e.buttons == kSecondaryMouseButton ? 3 : e.buttons == kMiddleMouseButton ? 2 : 1;
+        final event = VEvent()
+          ..button = _lastButton
+          ..x = e.localPosition.dx.round()
+          ..y = e.localPosition.dy.round()
+          ..count = 1;
+        this.widget.sendMouseMouseDown(state, event);
+      },
+      onPointerUp: (e) {
+        final event = VEvent()
+          ..button = _lastButton
+          ..x = e.localPosition.dx.round()
+          ..y = e.localPosition.dy.round()
+          ..count = 1;
+        this.widget.sendMouseMouseUp(state, event);
+      },
+      child: MouseRegion(
+        onEnter: (_) => this.widget.sendMouseTrackMouseEnter(state, null),
+        onExit: (_) => this.widget.sendMouseTrackMouseExit(state, null),
+        onHover: (e) {
+          final event = VEvent()
+            ..x = e.localPosition.dx.round()
+            ..y = e.localPosition.dy.round();
+          this.widget.sendMouseMoveMouseMove(state, event);
+        },
+        child: widget,
+      ),
     );
 
     return widget;

@@ -9,7 +9,6 @@ import 'gcdrawer_evolve.dart';
 class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   late GCDrawer _drawer;
   List<Shape> _snapshot = [];
-  bool _pendingSnapshot = false;
 
   @override
   void initState() {
@@ -19,14 +18,11 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
       onShapesUpdated: (_) {
         if (!mounted) return;
         setState(() {});
-        if (!_pendingSnapshot) {
-          _pendingSnapshot = true;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _pendingSnapshot = false;
-            if (!mounted || _drawer.shapes.isEmpty) return;
-            setState(() {
-              _snapshot = List.from(_drawer.shapes);
-            });
+      },
+      onGCDispose: (finalShapes) {
+        if (mounted) {
+          setState(() {
+            _snapshot = finalShapes;
           });
         }
       },
