@@ -1028,7 +1028,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Rectangle getBounds() {
         checkWidget();
-        return this.bounds;
+        return new Rectangle(this.bounds.x, this.bounds.y, this.bounds.width, this.bounds.height);
     }
 
     /**
