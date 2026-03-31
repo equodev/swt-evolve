@@ -665,9 +665,17 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     }
   }
 
+  void _sendKeyDownEvent(RawKeyEvent event) {
+    final vEvent = mapKeyEventToSwt(event);
+    widget.sendKeyKeyDown(state, vEvent);
+  }
+
   void _handleKeyEvent(RawKeyEvent event) {
     if (!_isEditingText || _editableTextShape == null) return;
     if (event is! RawKeyDownEvent) return;
+
+    // Send KeyDown event to Java
+    _sendKeyDownEvent(event);
 
     widget.sendVerifyKeyverifyKey(state, mapKeyEventToSwt(event));
 
@@ -776,10 +784,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         newShape = currentShape.clearSelection();
       } else if (event.logicalKey == LogicalKeyboardKey.enter) {
         if (!_editable) return;
-        newShape = currentShape.insertText(
-          '\n',
-          currentShape.caretInfo?.offset ?? 0,
-        );
+        if ((state.style & SWT.SINGLE) == 0) {
+          newShape = currentShape.insertText(
+            '\n',
+            currentShape.caretInfo?.offset ?? 0,
+          );
+        }
       } else if (event.character != null && event.character!.isNotEmpty) {
         if (!_editable) return;
         if (event.data.isMetaPressed || event.data.isControlPressed) return;
