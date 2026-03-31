@@ -18,7 +18,9 @@ class ButtonThemeExtension extends ThemeExtension<ButtonThemeExtension> with _$B
   
   final Color splashColor;
   final Color highlightColor;
- 
+  
+  final Color controlBackgroundColor;
+
   final Color pushButtonColor;
   final Color selectableButtonColor;
   final Color toggleButtonColor;
@@ -111,6 +113,7 @@ class ButtonThemeExtension extends ThemeExtension<ButtonThemeExtension> with _$B
     required this.enableTapAnimation,
     required this.splashColor,
     required this.highlightColor,
+    required this.controlBackgroundColor,
     required this.pushButtonColor,
     required this.selectableButtonColor,
     required this.toggleButtonColor,

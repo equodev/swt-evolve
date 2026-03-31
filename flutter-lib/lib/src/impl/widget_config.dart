@@ -27,6 +27,21 @@ ConfigFlags getConfigFlags() {
 }
 
 void setConfigFlags(ConfigFlags newFlags) {
+  final prev = configFlags;
+  String? mergeString(String? incoming, String? previous) {
+    final inc = incoming?.trim();
+    if (inc != null && inc.isNotEmpty) return inc;
+    final prevTrim = previous?.trim();
+    if (prevTrim != null && prevTrim.isNotEmpty) return prevTrim;
+    return null;
+  }
+
+  newFlags.theme_name = mergeString(newFlags.theme_name, prev.theme_name);
+  newFlags.force_theme = mergeString(newFlags.force_theme, prev.force_theme);
+  newFlags.theme_color_widget = mergeString(
+    newFlags.theme_color_widget,
+    prev.theme_color_widget,
+  );
   configFlags = newFlags;
 }
 

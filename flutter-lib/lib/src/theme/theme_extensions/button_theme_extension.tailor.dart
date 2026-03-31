@@ -15,6 +15,7 @@ mixin _$ButtonThemeExtensionTailorMixin
   bool get enableTapAnimation;
   Color get splashColor;
   Color get highlightColor;
+  Color get controlBackgroundColor;
   Color get pushButtonColor;
   Color get selectableButtonColor;
   Color get toggleButtonColor;
@@ -77,6 +78,7 @@ mixin _$ButtonThemeExtensionTailorMixin
     bool? enableTapAnimation,
     Color? splashColor,
     Color? highlightColor,
+    Color? controlBackgroundColor,
     Color? pushButtonColor,
     Color? selectableButtonColor,
     Color? toggleButtonColor,
@@ -138,6 +140,8 @@ mixin _$ButtonThemeExtensionTailorMixin
       enableTapAnimation: enableTapAnimation ?? this.enableTapAnimation,
       splashColor: splashColor ?? this.splashColor,
       highlightColor: highlightColor ?? this.highlightColor,
+      controlBackgroundColor:
+          controlBackgroundColor ?? this.controlBackgroundColor,
       pushButtonColor: pushButtonColor ?? this.pushButtonColor,
       selectableButtonColor:
           selectableButtonColor ?? this.selectableButtonColor,
@@ -244,6 +248,11 @@ mixin _$ButtonThemeExtensionTailorMixin
           : other.enableTapAnimation,
       splashColor: Color.lerp(splashColor, other.splashColor, t)!,
       highlightColor: Color.lerp(highlightColor, other.highlightColor, t)!,
+      controlBackgroundColor: Color.lerp(
+        controlBackgroundColor,
+        other.controlBackgroundColor,
+        t,
+      )!,
       pushButtonColor: Color.lerp(pushButtonColor, other.pushButtonColor, t)!,
       selectableButtonColor: Color.lerp(
         selectableButtonColor,
@@ -490,6 +499,10 @@ mixin _$ButtonThemeExtensionTailorMixin
               other.highlightColor,
             ) &&
             const DeepCollectionEquality().equals(
+              controlBackgroundColor,
+              other.controlBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
               pushButtonColor,
               other.pushButtonColor,
             ) &&
@@ -719,6 +732,7 @@ mixin _$ButtonThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(enableTapAnimation),
       const DeepCollectionEquality().hash(splashColor),
       const DeepCollectionEquality().hash(highlightColor),
+      const DeepCollectionEquality().hash(controlBackgroundColor),
       const DeepCollectionEquality().hash(pushButtonColor),
       const DeepCollectionEquality().hash(selectableButtonColor),
       const DeepCollectionEquality().hash(toggleButtonColor),
@@ -785,6 +799,8 @@ extension ButtonThemeExtensionBuildContextProps on BuildContext {
   bool get enableTapAnimation => buttonThemeExtension.enableTapAnimation;
   Color get splashColor => buttonThemeExtension.splashColor;
   Color get highlightColor => buttonThemeExtension.highlightColor;
+  Color get controlBackgroundColor =>
+      buttonThemeExtension.controlBackgroundColor;
   Color get pushButtonColor => buttonThemeExtension.pushButtonColor;
   Color get selectableButtonColor => buttonThemeExtension.selectableButtonColor;
   Color get toggleButtonColor => buttonThemeExtension.toggleButtonColor;

@@ -35,7 +35,7 @@ CTabFolderThemeExtension _getCTabFolderTheme({
   required ColorSchemeExtension colorSchemeExtension,
 }) {
   final baseTextStyle = textTheme.bodyLarge ?? const TextStyle();
-  final selectedTextColor = colorSchemeExtension.ctabFolderSelectedTextColor;
+  final selectedTextColor = colorScheme.onSurface;
   final highlightColor = colorSchemeExtension.ctabFolderHighlightColor;
   final unselectedColor = colorSchemeExtension.ctabFolderUnselectedColor;
 
@@ -51,13 +51,13 @@ CTabFolderThemeExtension _getCTabFolderTheme({
     tabDisabledBackgroundColor: colorScheme.surfaceVariant,
     
     // Tab border colors
-    tabBorderColor: Colors.transparent,
+    tabBorderColor: colorSchemeExtension.stateDefaultEnabled,
     tabSelectedBorderColor: colorScheme.primary,
     tabHoverBorderColor: colorSchemeExtension.surfaceBorderHovered,
     tabDisabledBorderColor: colorSchemeExtension.surfaceBorderDisabled,
     
     // Tab text colors
-    tabTextColor: unselectedColor,
+    tabTextColor: colorScheme.onSurfaceVariant,
     tabSelectedTextColor: selectedTextColor,
     tabHoverTextColor: colorScheme.onSurface,
     tabDisabledTextColor: colorSchemeExtension.onSurfaceVariantDisabled,
@@ -119,7 +119,7 @@ CTabFolderThemeExtension _getCTabFolderTheme({
     tabScrollbarThickness: 2.0,
     
     // Top right controls overlay shadow
-    topRightControlsShadowColor: Colors.black,
+    topRightControlsShadowColor: colorScheme.shadow,
     topRightControlsShadowOpacity: 0.1,
     topRightControlsShadowBlurRadius: 4.0,
     topRightControlsShadowOffset: const Offset(0, 2),
@@ -132,3 +132,50 @@ CTabFolderThemeExtension _getCTabFolderTheme({
   );
 }
 
+Color getCTabTextColor(
+  CTabFolderThemeExtension widgetTheme,
+  bool isSelected,
+  bool enabled, {
+  Color? resolvedSelectionForeground,
+}) {
+  if (!enabled) return widgetTheme.tabDisabledTextColor;
+  if (isSelected) return resolvedSelectionForeground ?? widgetTheme.tabSelectedTextColor;
+  return widgetTheme.tabTextColor.withOpacity(widgetTheme.tabUnselectedTextOpacity);
+}
+
+Color getCTabBackgroundColor(
+  CTabFolderThemeExtension widgetTheme,
+  bool isSelected,
+  bool enabled, {
+  Color? resolvedSelectionBackground,
+  bool useDefaultTheme = false,
+}) {
+  if (!enabled) return widgetTheme.tabDisabledBackgroundColor;
+  if (isSelected) {
+    if (useDefaultTheme) return widgetTheme.tabSelectedBackgroundColor;
+    return resolvedSelectionBackground ?? widgetTheme.tabSelectedBackgroundColor;
+  }
+  return widgetTheme.tabBackgroundColor;
+}
+
+Color getCTabBorderColor(CTabFolderThemeExtension widgetTheme, bool enabled) {
+  return enabled ? widgetTheme.tabBorderColor : widgetTheme.tabDisabledBorderColor;
+}
+
+TextStyle? getCTabTextStyle(
+  CTabFolderThemeExtension widgetTheme,
+  bool isSelected,
+  bool enabled,
+) {
+  return (isSelected && enabled)
+      ? widgetTheme.tabSelectedTextStyle
+      : widgetTheme.tabTextStyle;
+}
+
+Color getCTabCloseButtonColor(CTabFolderThemeExtension widgetTheme, bool isSelected) {
+  return widgetTheme.tabCloseButtonColor.withOpacity(
+    isSelected
+        ? widgetTheme.tabCloseButtonSelectedOpacity
+        : widgetTheme.tabCloseButtonUnselectedOpacity,
+  );
+}

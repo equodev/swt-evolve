@@ -60,7 +60,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     final imageChanged = _cachedImage != image;
     final sizeChanged = _cachedIconSize != iconSize;
     final enabledChanged = _cachedEnabled != enabled;
-    final colorChanged = !enabled && _cachedIconColor != iconColor;
+    final colorChanged = _cachedIconColor != iconColor;
 
     if (imageChanged || sizeChanged || enabledChanged || colorChanged) {
       _cachedImage = image;
@@ -76,16 +76,14 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
 
     final imageKey =
         image?.filename ?? image?.imageData?.hashCode.toString() ?? 'no-image';
-    final futureKey = enabled
-        ? '${imageKey}_${iconSize}_$enabled'
-        : '${imageKey}_${iconSize}_${iconColor.value}_$enabled';
+    final futureKey = '${imageKey}_${iconSize}_${iconColor.value}_$enabled';
 
     return FutureBuilder<Widget?>(
       key: ValueKey(futureKey),
       future: ImageUtils.buildVImageAsync(
         image,
         size: iconSize,
-        color: enabled ? null : iconColor,
+        color: iconColor,
         enabled: enabled,
         constraints: constraints,
         useBinaryImage: true,

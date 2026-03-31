@@ -435,6 +435,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     return FutureBuilder<Widget?>(
       future: ImageUtils.buildVImageAsync(
         image,
+        color: iconColor,
         enabled: enabled,
         constraints: BoxConstraints(
           minWidth: widgetTheme.itemIconSize,

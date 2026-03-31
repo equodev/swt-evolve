@@ -39,7 +39,7 @@ LinkThemeExtension _getLinkTheme({
   return LinkThemeExtension(
     // Text colors
     textColor: colorScheme.onSurface,
-    linkTextColor: colorScheme.primary,
+    linkTextColor: colorSchemeExtension.onSecondaryVariant,
     linkHoverTextColor: colorSchemeExtension.primaryHovered,
     disabledTextColor: colorSchemeExtension.onSurfaceVariantDisabled,
 

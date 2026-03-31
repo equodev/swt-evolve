@@ -6,6 +6,7 @@ import '../gen/widget.dart';
 import '../impl/scrollable_evolve.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/list_theme_extension.dart';
+import '../theme/theme_settings/list_theme_settings.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 
@@ -223,11 +224,7 @@ class _ListItemState extends State<_ListItem> {
     final selectedOverlayColor = theme.selectedItemBackgroundColor;
     final hoverOverlayColor = theme.hoverItemBackgroundColor;
 
-    final textColor = !widget.enabled
-        ? theme.disabledTextColor
-        : widget.isSelected
-        ? theme.selectedItemTextColor
-        : theme.textColor;
+    final textColor = getListItemTextColor(theme, widget.isSelected, widget.enabled);
 
     final textStyle = getTextStyle(
       context: context,

@@ -18,6 +18,10 @@ public class ConfigFlags {
     public boolean use_special_dropdown_button;
 
     public boolean preserve_icon_colors;
+    
+    public String force_theme;
+    public String theme_name;
+    public String theme_color_widget;
 
     public static ConfigFlags use_swt_fonts(boolean v) {
         ConfigFlags configFlags = new ConfigFlags();
@@ -33,6 +37,9 @@ public class ConfigFlags {
                 ", assets_path=" + assets_path +
                 ", use_swt_colors=" + use_swt_colors +
                 ", use_swt_fonts=" + use_swt_fonts +
+                ", force_theme='" + force_theme + '\'' +
+                ", theme_name='" + theme_name + '\'' +
+                ", theme_color_widget='" + theme_color_widget + '\'' +
                 ", preserve_icon_colors=" + preserve_icon_colors +
                 '}';
     }

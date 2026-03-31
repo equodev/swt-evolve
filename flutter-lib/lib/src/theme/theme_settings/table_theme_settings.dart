@@ -148,21 +148,24 @@ Color getTableBackgroundColor(
   ) ?? defaultColor;
 }
 
+Color getTableCellDefaultTextColor(
+  TableThemeExtension widgetTheme,
+  bool selected,
+  bool enabled,
+) {
+  if (!enabled) return widgetTheme.rowDisabledTextColor;
+  return selected ? widgetTheme.rowSelectedTextColor : widgetTheme.rowTextColor;
+}
+
 Color getTableRowTextColor(
   VTableItem state,
   TableThemeExtension widgetTheme,
   bool selected,
   bool enabled,
 ) {
-  final defaultColor = enabled
-      ? (selected
-          ? widgetTheme.rowSelectedTextColor
-          : widgetTheme.rowTextColor)
-      : widgetTheme.rowDisabledTextColor;
-  
   return getForegroundColor(
     foreground: state.foreground,
-    defaultColor: defaultColor,
+    defaultColor: getTableCellDefaultTextColor(widgetTheme, selected, enabled),
   );
 }
 
@@ -181,7 +184,7 @@ Color getTableRowBackgroundColor(
               ? widgetTheme.rowHoverBackgroundColor
               : (isAlternateRow
                   ? widgetTheme.alternateRowBackgroundColor
-                  : Colors.transparent)))
+                  : widgetTheme.backgroundColor.withOpacity(0))))
       : widgetTheme.disabledBackgroundColor;
   
   return getBackgroundColor(
@@ -214,3 +217,26 @@ Color getTableHeaderBackgroundColor(
   ) ?? defaultColor;
 }
 
+
+Border getTableRowBorder(bool isSelected, TableThemeExtension theme) {
+  final bottomBorder = isSelected
+      ? BorderSide(
+          color: theme.rowSelectedBorderColor,
+          width: theme.rowSelectedBorderWidth,
+        )
+      : BorderSide(color: theme.rowSeparatorColor, width: theme.linesWidth);
+
+  final selectedBorder = isSelected
+      ? BorderSide(
+          color: theme.rowSelectedBorderColor,
+          width: theme.rowSelectedBorderWidth,
+        )
+      : BorderSide.none;
+
+  return Border(
+    bottom: bottomBorder,
+    top: selectedBorder,
+    left: selectedBorder,
+    right: selectedBorder,
+  );
+}

@@ -294,9 +294,7 @@ class _MenuItemRowState extends State<_MenuItemRow> {
             ),
             padding: widget.widgetTheme.itemPadding,
             decoration: BoxDecoration(
-              color: widget.isEnabled && _isHovered
-                  ? widget.widgetTheme.hoverBackgroundColor
-                  : widget.widgetTheme.backgroundColor,
+              color: getMenuItemRowBackgroundColor(widget.widgetTheme, widget.isEnabled, _isHovered),
               borderRadius: BorderRadius.circular(
                 widget.widgetTheme.borderRadius,
               ),
@@ -347,16 +345,8 @@ class _MenuCheckboxState extends State<_MenuCheckbox> {
     Color backgroundColor;
     Color borderColor;
 
-    if (widget.isSelected) {
-      backgroundColor = widget.widgetTheme.checkboxSelectedColor;
-      borderColor = widget.widgetTheme.checkboxSelectedColor;
-    } else if (_isHovered && widget.isEnabled) {
-      backgroundColor = widget.widgetTheme.checkboxHoverColor;
-      borderColor = widget.widgetTheme.checkboxBorderColor;
-    } else {
-      backgroundColor = widget.widgetTheme.checkboxColor;
-      borderColor = widget.widgetTheme.checkboxBorderColor;
-    }
+    backgroundColor = getMenuCheckboxBackgroundColor(widget.widgetTheme, widget.isSelected, _isHovered, widget.isEnabled);
+    borderColor = getMenuCheckboxBorderColor(widget.widgetTheme, widget.isSelected, _isHovered, widget.isEnabled);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -412,20 +402,8 @@ class _MenuRadioButtonState extends State<_MenuRadioButton> {
     Color backgroundColor;
     Color borderColor;
 
-    if (widget.isSelected) {
-      if (_isHovered && widget.isEnabled) {
-        backgroundColor = widget.widgetTheme.radioButtonSelectedHoverColor;
-      } else {
-        backgroundColor = widget.widgetTheme.radioButtonSelectedColor;
-      }
-      borderColor = backgroundColor;
-    } else if (_isHovered && widget.isEnabled) {
-      backgroundColor = widget.widgetTheme.radioButtonHoverColor;
-      borderColor = widget.widgetTheme.radioButtonBorderColor;
-    } else {
-      backgroundColor = widget.widgetTheme.radioButtonColor;
-      borderColor = widget.widgetTheme.radioButtonBorderColor;
-    }
+    backgroundColor = getMenuRadioBackgroundColor(widget.widgetTheme, widget.isSelected, _isHovered, widget.isEnabled);
+    borderColor = getMenuRadioBorderColor(widget.widgetTheme, widget.isSelected, _isHovered, widget.isEnabled);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),

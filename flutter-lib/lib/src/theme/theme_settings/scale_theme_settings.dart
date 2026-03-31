@@ -56,7 +56,7 @@ ScaleThemeExtension _getScaleTheme({
     disabledTickMarkColor: colorScheme.outlineVariant,
 
     // Overlay colors
-    overlayColor: Colors.transparent,
+    overlayColor: colorSchemeExtension.stateDefaultEnabled,
 
     // Track sizing
     trackHeight: 2.0,

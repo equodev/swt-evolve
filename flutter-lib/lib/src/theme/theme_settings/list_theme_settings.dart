@@ -65,3 +65,8 @@ ListThemeExtension _getListTheme({
     animationDuration: const Duration(milliseconds: 150),
   );
 }
+
+Color getListItemTextColor(ListThemeExtension widgetTheme, bool isSelected, bool enabled) {
+  if (!enabled) return widgetTheme.disabledTextColor;
+  return isSelected ? widgetTheme.selectedItemTextColor : widgetTheme.textColor;
+}

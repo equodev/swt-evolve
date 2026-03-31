@@ -46,7 +46,7 @@ LabelThemeExtension _getLabelTheme({
     linkTextColor: colorScheme.primary,
     linkHoverTextColor: colorSchemeExtension.primaryHovered,
     
-    backgroundColor: Colors.white,
+    backgroundColor: colorScheme.surface,
     hoverBackgroundColor: colorSchemeExtension.stateDefaultHovered,
     selectedBackgroundColor: colorSchemeExtension.stateDefaultPressed,
     
@@ -57,9 +57,9 @@ LabelThemeExtension _getLabelTheme({
     primaryTextStyle: baseTextStyle.copyWith(color: colorScheme.onSurface),
     secondaryTextStyle: baseTextStyle.copyWith(color: colorScheme.onSurfaceVariant),
     errorTextStyle: baseTextStyle.copyWith(color: colorScheme.error),
-    warningTextStyle: baseTextStyle.copyWith(color: const Color(0xFFF59E0B)),
-    successTextStyle: baseTextStyle.copyWith(color: const Color(0xFF059669)),
-    disabledTextStyle: baseTextStyle.copyWith(color: colorScheme.onSurface.withOpacity(0.38)),
+    warningTextStyle: baseTextStyle.copyWith(color: colorSchemeExtension.warning),
+    successTextStyle: baseTextStyle.copyWith(color: colorSchemeExtension.success),
+    disabledTextStyle: baseTextStyle.copyWith(color: colorSchemeExtension.onSurfaceVariantDisabled),
     linkTextStyle: baseTextStyle.copyWith(
       color: colorScheme.primary,
       decoration: TextDecoration.underline,

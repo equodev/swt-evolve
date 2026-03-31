@@ -485,7 +485,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     return TableRow(
       decoration: BoxDecoration(
         color: backgroundColor,
-        border: buildRowBorder(isSelected, theme),
+        border: getTableRowBorder(isSelected, theme),
       ),
       children: TableItemSwtWrapper(
         item: item,
@@ -720,28 +720,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     return textPainter.height + theme.headerPadding.vertical;
   }
 
-  Border buildRowBorder(bool isSelected, TableThemeExtension theme) {
-    final bottomBorder = isSelected
-        ? BorderSide(
-            color: theme.rowSelectedBorderColor,
-            width: theme.rowSelectedBorderWidth,
-          )
-        : BorderSide(color: theme.rowSeparatorColor, width: theme.linesWidth);
 
-    final selectedBorder = isSelected
-        ? BorderSide(
-            color: theme.rowSelectedBorderColor,
-            width: theme.rowSelectedBorderWidth,
-          )
-        : BorderSide.none;
-
-    return Border(
-      bottom: bottomBorder,
-      top: selectedBorder,
-      left: selectedBorder,
-      right: selectedBorder,
-    );
-  }
 
   BoxDecoration buildBorder(TableThemeExtension theme) {
     return BoxDecoration(

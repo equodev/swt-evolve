@@ -35,7 +35,7 @@ StyledTextThemeExtension _getStyledTextTheme({
   required ColorSchemeExtension colorSchemeExtension,
 }) {
   return StyledTextThemeExtension(
-    backgroundColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF2F4F7),
-    foregroundColor: isDark ? Colors.white : colorScheme.onSurface,
+    backgroundColor: isDark ? colorScheme.surface : colorSchemeExtension.neutral,
+    foregroundColor: colorScheme.onSurface,
   );
 }

@@ -20,6 +20,7 @@ import 'composite_evolve.dart';
 import 'icons_map.dart';
 import 'widget_config.dart';
 import '../theme/theme_extensions/ctabfolder_theme_extension.dart';
+import '../theme/theme_settings/ctabfolder_theme_settings.dart';
 import 'utils/image_utils.dart';
 import 'utils/widget_utils.dart';
 import 'color_utils.dart';
@@ -292,32 +293,29 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   }) {
     final enabled = state.enabled ?? false;
 
-    // Determine colors based on enabled state
-    final textColor = !enabled
-        ? widgetTheme.tabDisabledTextColor
-        : (isSelected
-              ? getForegroundColor(
-                  foreground: state.selectionForeground,
-                  defaultColor: widgetTheme.tabSelectedTextColor,
-                )
-              : widgetTheme.tabTextColor.withOpacity(
-                  widgetTheme.tabUnselectedTextOpacity,
-                ));
-    final backgroundColor = !enabled
-        ? widgetTheme.tabDisabledBackgroundColor
-        : (isSelected
-              ? getBackgroundColor(
-                      background: state.selectionBackground,
-                      defaultColor: widgetTheme.tabSelectedBackgroundColor,
-                    ) ??
-                    widgetTheme.tabSelectedBackgroundColor
-              : widgetTheme.tabBackgroundColor);
-    final borderColor = !enabled
-        ? widgetTheme.tabDisabledBorderColor
-        : widgetTheme.tabBorderColor;
-    final textStyle = isSelected && enabled
-        ? widgetTheme.tabSelectedTextStyle
-        : widgetTheme.tabTextStyle;
+    final resolvedSelectionForeground = getForegroundColor(
+      foreground: state.selectionForeground,
+      defaultColor: widgetTheme.tabSelectedTextColor,
+    );
+    final resolvedSelectionBackground = getBackgroundColor(
+      background: state.selectionBackground,
+      defaultColor: widgetTheme.tabSelectedBackgroundColor,
+    ) ?? widgetTheme.tabSelectedBackgroundColor;
+
+    final textColor = getCTabTextColor(
+      widgetTheme,
+      isSelected,
+      enabled,
+      resolvedSelectionForeground: resolvedSelectionForeground,
+    );
+    final backgroundColor = getCTabBackgroundColor(
+      widgetTheme,
+      isSelected,
+      enabled,
+      resolvedSelectionBackground: resolvedSelectionBackground,
+    );
+    final borderColor = getCTabBorderColor(widgetTheme, enabled);
+    final textStyle = getCTabTextStyle(widgetTheme, isSelected, enabled);
 
     return MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
@@ -426,33 +424,33 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
     final showHighlight = state.highlightEnabled ?? false;
     final enabled = state.enabled ?? false;
+    final useDefaultTheme = getConfigFlags().theme_name == null;
 
     // Determine colors based on enabled state
-    final textColor = !enabled
-        ? widgetTheme.tabDisabledTextColor
-        : (isSelected
-              ? getForegroundColor(
-                  foreground: state.selectionForeground,
-                  defaultColor: widgetTheme.tabSelectedTextColor,
-                )
-              : widgetTheme.tabTextColor.withOpacity(
-                  widgetTheme.tabUnselectedTextOpacity,
-                ));
-    final backgroundColor = !enabled
-        ? widgetTheme.tabDisabledBackgroundColor
-        : (isSelected
-              ? getBackgroundColor(
-                      background: state.selectionBackground,
-                      defaultColor: widgetTheme.tabSelectedBackgroundColor,
-                    ) ??
-                    widgetTheme.tabSelectedBackgroundColor
-              : widgetTheme.tabBackgroundColor);
-    final borderColor = !enabled
-        ? widgetTheme.tabDisabledBorderColor
-        : widgetTheme.tabBorderColor;
-    final textStyle = isSelected && enabled
-        ? widgetTheme.tabSelectedTextStyle
-        : widgetTheme.tabTextStyle;
+    final resolvedSelectionForeground = getForegroundColor(
+      foreground: state.selectionForeground,
+      defaultColor: widgetTheme.tabSelectedTextColor,
+    );
+    final resolvedSelectionBackground = getBackgroundColor(
+      background: state.selectionBackground,
+      defaultColor: widgetTheme.tabSelectedBackgroundColor,
+    ) ?? widgetTheme.tabSelectedBackgroundColor;
+
+    final textColor = getCTabTextColor(
+      widgetTheme,
+      isSelected,
+      enabled,
+      resolvedSelectionForeground: resolvedSelectionForeground,
+    );
+    final backgroundColor = getCTabBackgroundColor(
+      widgetTheme,
+      isSelected,
+      enabled,
+      resolvedSelectionBackground: resolvedSelectionBackground,
+      useDefaultTheme: useDefaultTheme,
+    );
+    final borderColor = getCTabBorderColor(widgetTheme, enabled);
+    final textStyle = getCTabTextStyle(widgetTheme, isSelected, enabled);
 
     return MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
@@ -588,13 +586,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
                       child: Icon(
                         Icons.close,
                         size: widgetTheme.tabCloseIconSize,
-                        color: isSelected
-                            ? widgetTheme.tabCloseButtonColor.withOpacity(
-                                widgetTheme.tabCloseButtonSelectedOpacity,
-                              )
-                            : widgetTheme.tabCloseButtonColor.withOpacity(
-                                widgetTheme.tabCloseButtonUnselectedOpacity,
-                              ),
+                        color: getCTabCloseButtonColor(widgetTheme, isSelected),
                       ),
                     ),
                   ),

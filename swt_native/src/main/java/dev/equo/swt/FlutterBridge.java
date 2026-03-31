@@ -27,6 +27,46 @@ public abstract class FlutterBridge {
     static {
         client = new FlutterClient();
         client.createComm();
+        client.getComm().on("swt.evolve.property.set", FlutterBridge::handlePropertySetFromFlutter);
+    }
+
+    private static void handlePropertySetFromFlutter(String payload) {
+        if (payload == null) {
+            return;
+        }
+        String json = payload.trim();
+        if (json.isEmpty()) {
+            return;
+        }
+        String key = extractJsonStringField(json, "key");
+        String value = extractJsonStringField(json, "value");
+        if (key == null || key.isEmpty() || value == null) {
+            return;
+        }
+        System.setProperty(key, value);
+        Config.invalidateConfigFlags();
+        broadcastSwtEvolveProperties();
+    }
+
+    private static String extractJsonStringField(String json, String field) {
+        String needle = "\"" + field + "\"";
+        int i = json.indexOf(needle);
+        if (i < 0) {
+            return null;
+        }
+        int colon = json.indexOf(':', i + needle.length());
+        if (colon < 0) {
+            return null;
+        }
+        int start = json.indexOf('"', colon + 1);
+        if (start < 0) {
+            return null;
+        }
+        int end = json.indexOf('"', start + 1);
+        if (end < 0 || end <= start) {
+            return null;
+        }
+        return json.substring(start + 1, end);
     }
 
     protected final CompletableFuture<Boolean> clientReady = new CompletableFuture<>();
@@ -442,14 +482,17 @@ public abstract class FlutterBridge {
         return w.hashCode();
     }
 
-    protected void sendSwtEvolveProperties() {
-        ConfigFlags properties = getConfigFlags();
-        System.out.println("will send: " + properties);
+    public static void broadcastSwtEvolveProperties() {
         try {
-            serializeAndSend("swt.evolve.properties", properties);
+            serializeAndSend("swt.evolve.properties", getConfigFlags());
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    protected void sendSwtEvolveProperties() {
+        System.out.println("will send: " + getConfigFlags());
+        broadcastSwtEvolveProperties();
     }
 
 }

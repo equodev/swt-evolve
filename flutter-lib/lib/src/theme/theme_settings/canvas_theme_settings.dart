@@ -39,7 +39,7 @@ CanvasThemeExtension _getCanvasTheme({
     defaultHeight: 64.0,
 
     // Colors
-    backgroundColor: isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF0F0F0),
-    foregroundColor: isDark ? Colors.white : Colors.black,
+    backgroundColor: isDark ? colorScheme.surface : colorSchemeExtension.neutral,
+    foregroundColor: colorScheme.onSurface,
   );
 }

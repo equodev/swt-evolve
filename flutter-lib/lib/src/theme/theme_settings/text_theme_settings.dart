@@ -211,7 +211,7 @@ InputDecoration getInputDecoration(
     fillColor: bgColor,
     filled: true,
     counterText: '',
-    hoverColor: isReadOnly ? Colors.transparent : null,
+    hoverColor: isReadOnly ? widgetTheme.backgroundColor.withOpacity(0) : null,
   );
 }
 

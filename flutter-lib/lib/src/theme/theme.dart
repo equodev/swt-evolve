@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../styles.dart';
+import '../impl/config_flags.dart';
 import '../impl/widget_config.dart';
 import 'theme_settings/button_theme_settings.dart';
 import 'theme_settings/label_theme_settings.dart';
@@ -34,6 +35,92 @@ import 'theme_settings/tooltip_theme_settings.dart';
 import 'theme_settings/sash_theme_settings.dart';
 import 'theme_settings/canvas_theme_settings.dart';
 import 'theme_settings/styledtext_theme_settings.dart';
+import 'theme_settings/theme_color_palette_theme_settings.dart';
+
+ColorScheme _resolveWidgetColorScheme(
+  String widgetKey,
+  ColorScheme fallbackColorScheme,
+  Brightness brightness,
+) {
+  final flags = getConfigFlags();
+  final widgetHex = _themeColorForWidget(flags, widgetKey);
+  final color = _parseThemeColor(widgetHex);
+  if (color == null) {
+    return fallbackColorScheme;
+  }
+  return ColorScheme.fromSeed(seedColor: color, brightness: brightness);
+}
+
+ColorSchemeExtension _resolveWidgetColorSchemeExtension(
+  String widgetKey,
+  ColorScheme fallbackColorScheme,
+  Brightness brightness,
+) {
+  return createColorSchemeExtension(
+    _resolveWidgetColorScheme(widgetKey, fallbackColorScheme, brightness),
+  );
+}
+
+String? _themeColorForWidget(ConfigFlags flags, String widgetKey) {
+  final colorsByWidget = _parseThemeColorWidgetMap(flags.theme_color_widget);
+  return colorsByWidget[widgetKey];
+}
+
+Map<String, String> _parseThemeColorWidgetMap(String? raw) {
+  if (raw == null || raw.trim().isEmpty) {
+    return const {};
+  }
+
+  final result = <String, String>{};
+  for (final entry in raw.split(RegExp(r'[;,]'))) {
+    final part = entry.trim();
+    if (part.isEmpty) {
+      continue;
+    }
+    final separator = part.contains('=') ? '=' : (part.contains(':') ? ':' : '');
+    if (separator.isEmpty) {
+      continue;
+    }
+    final split = part.split(separator);
+    if (split.length < 2) {
+      continue;
+    }
+    final key = split[0].trim().toLowerCase();
+    final value = split.sublist(1).join(separator).trim();
+    if (key.isEmpty || value.isEmpty) {
+      continue;
+    }
+    result[key] = value;
+  }
+  return result;
+}
+
+Color? _parseThemeColor(String? colorHex) {
+  if (colorHex == null) {
+    return null;
+  }
+  final sanitized = colorHex.trim();
+  String argbHex;
+  if (RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(sanitized)) {
+    argbHex = 'FF$sanitized';
+  } else if (RegExp(r'^[0-9a-fA-F]{8}$').hasMatch(sanitized)) {
+    argbHex = sanitized;
+  } else {
+    return null;
+  }
+  final value = int.tryParse(argbHex, radix: 16);
+  if (value == null) {
+    return null;
+  }
+  return Color(value);
+}
+
+Color? parseGlobalSeedColor(ConfigFlags flags) {
+  final colorsByWidget = _parseThemeColorWidgetMap(flags.theme_color_widget);
+  return _parseThemeColor(colorsByWidget['default']);
+}
+
+Color? parseThemeColorFromHex(String? colorHex) => _parseThemeColor(colorHex);
 
 Color calculateBackgroundColor(int? backgroundColor, bool useDarkTheme) {
   return backgroundColor != null
@@ -43,17 +130,17 @@ Color calculateBackgroundColor(int? backgroundColor, bool useDarkTheme) {
 
 ColorScheme createLightColorScheme() {
   return ColorScheme.fromSeed(
-    seedColor: const Color(0xFF2236E5),
+    seedColor: const Color(0xFF626262),
     brightness: Brightness.light,
   ).copyWith(
-    primary: const Color(0xFF2236E5), // #2236E5
-    onPrimary: const Color(0xFFFFFFFF), // #FFFFFF
-    primaryContainer: const Color(0xFF1B2AB2), // #1B2AB2
+    primary: const Color(0xFF5959EB), // #5959EB
+    onPrimary: const Color(0xFFFCFCFC), // #FCFCFC
+    primaryContainer: const Color(0xFF2F2F2F),
     
-    secondary: const Color(0xFFF2F3FA), // #F2F3FA
-    onSecondary: const Color(0xFF0F1866), // #0F1866
-    secondaryContainer: const Color(0xFFE1E3F5), // #E1E3F5
-    onSecondaryContainer: const Color(0xFFC9CDF0), // #C9CDF0
+    secondary: const Color(0xFFDEDEFD), // #DEDEFD
+    onSecondary: const Color(0xFF4545BF), // #4545BF
+    secondaryContainer: const Color(0xFFDEDEFD),// #DEDEFD
+    onSecondaryContainer: const Color(0xFF4545BF), // #4545BF
     
     tertiary: const Color(0x00FFFFFF), // #FFFFFF
     onTertiary: const Color(0xFF0F1866), // #0F1866
@@ -80,22 +167,22 @@ ColorScheme createLightColorScheme() {
     scrim: const Color(0xFF000000), // #000000
     inverseSurface: const Color(0xFF1F2937), // #1F2937
     onInverseSurface: const Color(0xFFF9FAFB), // #F9FAFB
-    inversePrimary: const Color(0xFF2236E5), // #2236E5
-    surfaceTint: const Color(0xFF2236E5), // #2236E5
+    inversePrimary: const Color(0xFF626262),
+    surfaceTint: const Color(0xFF626262),
   );
 }
 
 ColorScheme createDarkColorScheme() {
   return ColorScheme.fromSeed(
-    seedColor: const Color(0xFF1847CA),
+    seedColor: const Color(0xFF626262),
     brightness: Brightness.dark,
   ).copyWith(
-    primary: const Color(0xFF1847CA),
-    onPrimary: const Color(0xFFFFFFFF),
-    primaryContainer: const Color(0xFF002DAD),
-    secondary: const Color(0xFF5B21B6),
+    primary: const Color(0xFF9A9A9A), 
+    onPrimary: const Color(0xFF141414),
+    primaryContainer: const Color(0xFF2A2A2A),
+    secondary: const Color(0xFF626262),
     onSecondary: const Color(0xFFFFFFFF),
-    secondaryContainer: const Color(0xFF4C1D95),
+    secondaryContainer: const Color(0xFF3A3A3A),
     error: const Color(0xFFF87171),
     onError: const Color(0xFFFFFFFF),
     errorContainer: const Color(0xFF7F1D1D),
@@ -108,30 +195,34 @@ ColorScheme createDarkColorScheme() {
     scrim: const Color(0xFF000000),
     inverseSurface: const Color(0xFFF9FAFB),
     onInverseSurface: const Color(0xFF1F2937),
-    inversePrimary: const Color(0xFF3B82F6),
-    surfaceTint: const Color(0xFF1847CA),
+    inversePrimary: const Color(0xFF626262),
+    surfaceTint: const Color(0xFF626262),
   );
 }
 
-ColorSchemeExtension createColorSchemeExtension() {
+ColorSchemeExtension createColorSchemeExtension([ColorScheme? colorScheme]) {
+  if (colorScheme != null) {
+    return _createColorSchemeExtensionFromColorScheme(colorScheme);
+  }
+
   return ColorSchemeExtension(
-    primaryHovered: const Color(0xFF1E30CC), // #1E30CC
-    primaryBorder: const Color(0xFF1B2AB2), // #1B2AB2
+    primaryHovered: const Color(0xFF4A4A4A),
+    primaryBorder: const Color(0xFF3B3B3B),
     primaryBorderDisabled: const Color(0x33171819), // #33171819
     onPrimaryVariantDisabled: const Color(0x80171819), // #80171819
     
-    secondaryPressed: const Color(0xFFC9CDF0), // #C9CDF0
-    secondaryBold: const Color(0xFFE1E3F5), // #E1E3F5
-    secondaryBorder: const Color(0xFFC9CDF0), // #C9CDF0
+    secondaryPressed: const Color(0xFFDCDCDC),
+    secondaryBold: const Color(0xFFE9E9E9),
+    secondaryBorder: const Color(0xFFD0D0D0),
     secondaryBorderDisabled: const Color(0x33171819), // #33171819
     onSecondaryVariantDisabled: const Color(0x80171819), // #80171819
     
-    primaryVariant: const Color(0xFF5959EB), // #5959EB
+    primaryVariant: const Color(0xFF626262),
     onPrimaryVariant: const Color(0xFFFCFCFC), // #FCFCFC
     primaryVariantDisabled: const Color(0xFFF4F4F8), // #F4F4F8
-    secondaryVariant: const Color(0xFFF2F2FE), // #F2F2FE
-    onSecondaryVariant: const Color(0xFF4545BF), // #4545BF
-    secondaryVariantBorder: const Color(0xFFDEDEFD), // #DEDEFD
+    secondaryVariant: const Color(0xFFF0F0F0),
+    onSecondaryVariant: const Color(0xFF4A4A4A),
+    secondaryVariantBorder: const Color(0xFFDDDDDD),
     
     tertiaryPressed: const Color(0x33171819), // #33171819
     tertiaryHovered: const Color(0x1A171819), // #1A171819
@@ -142,7 +233,7 @@ ColorSchemeExtension createColorSchemeExtension() {
     surfaceFocused: const Color(0xFFF2F3FA), // #F2F3FA
     surfaceBorderEnabled: const Color(0x1A171819), // #1A171819
     surfaceBorderHovered: const Color(0x4D171819), // #4D171819
-    surfaceBorderFocused: const Color(0xFF0F1866), // #0F1866
+    surfaceBorderFocused: const Color(0xFF4A4A4A),
     surfaceBorderDisabled: const Color(0x33171819), // #33171819
     surfaceBorderBoldEnabled: const Color(0x80171819), // #80171819
     surfaceBorderDataDisplay: const Color(0xFFFFFFFF), // #FFFFFFFF
@@ -211,10 +302,10 @@ ColorSchemeExtension createColorSchemeExtension() {
     statusOnDefault: const Color(0xFFFFFFFF), // #FFFFFF
     statusDefaultContainer: const Color(0xFFE9EBF0), // #E9EBF0
     statusOnDefaultContainer: const Color(0xFF2F3033), // #2F3033
-    statusInform: const Color(0xFF2236E5), // #2236E5
+    statusInform: const Color(0xFF626262),
     statusOnInform: const Color(0xFFFFFFFF), // #FFFFFF
-    statusInformContainer: const Color(0xFFF2F3FA), // #F2F3FA
-    statusOnInformContainer: const Color(0xFF0F1866), // #0F1866
+    statusInformContainer: const Color(0xFFE9EBF0),
+    statusOnInformContainer: const Color(0xFF2F3033),
     statusOnErrorContainer: const Color(0xFF59040D), // #59040D
     statusSuccess: const Color(0xFF1BBB77), // #1BBB77
     statusOnSuccessContainer: const Color(0xFF0C3322),
@@ -241,10 +332,133 @@ ColorSchemeExtension createColorSchemeExtension() {
     labelInputDisabled: const Color(0xFF47494D), // #47494D
 
     ctabFolderSelectedTextColor: const Color(0xFFFFFFFF), // #FFFFFFFF
-    ctabFolderHighlightColor: const Color(0xFF5959EB), // #5959EB
+    ctabFolderHighlightColor: const Color(0xFF626262),
     ctabFolderUnselectedColor: const Color(0xFFE7E8E8), // #E7E8E8
     surfaceToolbar: const Color(0xFFF4F4F4), // #F4F4F4 light
     toolbarDivider: const Color(0xFFDBDBDB), // #DBDBDB light
+  );
+}
+
+ColorSchemeExtension _createColorSchemeExtensionFromColorScheme(ColorScheme colorScheme) {
+  return ColorSchemeExtension(
+    primaryHovered: colorScheme.primary,
+    primaryBorder: colorScheme.primary,
+    primaryBorderDisabled: colorScheme.outlineVariant,
+    onPrimaryVariantDisabled: colorScheme.onSurface.withOpacity(0.5),
+    secondaryPressed: colorScheme.secondaryContainer,
+    secondaryBold: colorScheme.secondaryContainer,
+    secondaryBorder: colorScheme.secondary,
+    secondaryBorderDisabled: colorScheme.outlineVariant,
+    onSecondaryVariantDisabled: colorScheme.onSurface.withOpacity(0.5),
+    primaryVariant: colorScheme.primary,
+    onPrimaryVariant: colorScheme.onPrimary,
+    primaryVariantDisabled: colorScheme.surfaceContainerHigh,
+    secondaryVariant: colorScheme.secondary,
+    onSecondaryVariant: colorScheme.onSecondaryContainer,
+    secondaryVariantBorder: colorScheme.outlineVariant,
+    tertiaryPressed: colorScheme.tertiary.withOpacity(0.2),
+    tertiaryHovered: colorScheme.tertiary.withOpacity(0.12),
+    tertiaryBorder: colorScheme.tertiary.withOpacity(0),
+    tertiaryBorderDisabled: colorScheme.tertiary.withOpacity(0),
+    onTertiaryVariantDisabled: colorScheme.onSurface.withOpacity(0.5),
+    surfaceFocused: colorScheme.surfaceContainerHighest,
+    surfaceBorderEnabled: colorScheme.outline.withOpacity(0.12),
+    surfaceBorderHovered: colorScheme.outline.withOpacity(0.3),
+    surfaceBorderFocused: colorScheme.primary,
+    surfaceBorderDisabled: colorScheme.outlineVariant,
+    surfaceBorderBoldEnabled: colorScheme.outline,
+    surfaceBorderDataDisplay: colorScheme.surface,
+    surfacePlaceholder: colorScheme.onSurfaceVariant,
+    onSurfaceVariantError: colorScheme.error,
+    onSurfaceVariantWarning: colorScheme.tertiary,
+    onSurfaceVariantDisabled: colorScheme.onSurface.withOpacity(0.5),
+    onSurfaceVariantSmallError: colorScheme.error,
+    errorHovered: colorScheme.error.withOpacity(0.85),
+    errorBorder: colorScheme.error,
+    errorBorderDisabled: colorScheme.outlineVariant,
+    onErrorVariantDisabled: colorScheme.onSurface.withOpacity(0.5),
+    errorContainerPressed: colorScheme.errorContainer.withOpacity(0.8),
+    errorContainerHovered: colorScheme.errorContainer.withOpacity(0.9),
+    onErrorContainerVariantError: colorScheme.onErrorContainer,
+    onErrorContainerVariantDisabled: colorScheme.onSurface.withOpacity(0.5),
+    onErrorContainerBorder: colorScheme.errorContainer,
+    onErrorContainerBorderDisabled: colorScheme.outlineVariant,
+    onErrorContainerBorderHovered: colorScheme.error,
+    onErrorContainerBorderEnabled: colorScheme.errorContainer,
+    onErrorContainerBorderFocused: colorScheme.onErrorContainer,
+    onErrorContainerPlaceholder: colorScheme.error,
+    errorTextEnabled: colorScheme.error.withOpacity(0),
+    errorTextHovered: colorScheme.errorContainer,
+    errorTextPressed: colorScheme.errorContainer.withOpacity(0.85),
+    onErrorTextVariant: colorScheme.onErrorContainer,
+    onErrorTextVariantDisabled: colorScheme.onSurface.withOpacity(0.5),
+    warning: colorScheme.tertiary,
+    warningPressed: colorScheme.tertiary.withOpacity(0.8),
+    warningHovered: colorScheme.tertiary.withOpacity(0.9),
+    onWarning: colorScheme.onTertiary,
+    onWarningVariantDisabled: colorScheme.onSurface.withOpacity(0.5),
+    warningBorder: colorScheme.tertiary,
+    warningBorderDisabled: colorScheme.outlineVariant,
+    warningTextEnabled: colorScheme.tertiary.withOpacity(0),
+    warningTextPressed: colorScheme.tertiaryContainer.withOpacity(0.8),
+    warningTextHovered: colorScheme.tertiaryContainer.withOpacity(0.9),
+    onWarningTextVariant: colorScheme.onTertiaryContainer,
+    onWarningTextVariantDisabled: colorScheme.onSurface.withOpacity(0.5),
+    warningContainer: colorScheme.tertiaryContainer,
+    warningContainerPressed: colorScheme.tertiaryContainer.withOpacity(0.8),
+    warningContainerHovered: colorScheme.tertiaryContainer.withOpacity(0.9),
+    onWarningContainerVariant: colorScheme.onTertiaryContainer,
+    onWarningContainerVariantDisabled: colorScheme.onSurface.withOpacity(0.5),
+    onWarningContainerBorder: colorScheme.tertiaryContainer,
+    onWarningContainerBorderDisabled: colorScheme.outlineVariant,
+    success: colorScheme.primary,
+    successPressed: colorScheme.primary.withOpacity(0.8),
+    successHovered: colorScheme.primary.withOpacity(0.9),
+    onSuccess: colorScheme.onPrimary,
+    onSuccessVariantDisabled: colorScheme.onSurface.withOpacity(0.5),
+    successBorder: colorScheme.primary,
+    successBorderDisabled: colorScheme.outlineVariant,
+    successContainer: colorScheme.primaryContainer,
+    successContainerPressed: colorScheme.primaryContainer.withOpacity(0.8),
+    successContainerHovered: colorScheme.primaryContainer.withOpacity(0.9),
+    onSuccessContainerVariant: colorScheme.onPrimaryContainer,
+    onSuccessContainerVariantDisabled: colorScheme.onSurface.withOpacity(0.5),
+    onSuccessContainerBorder: colorScheme.primaryContainer,
+    onSuccessContainerBorderDisabled: colorScheme.outlineVariant,
+    statusDefault: colorScheme.outline,
+    statusOnDefault: colorScheme.surface,
+    statusDefaultContainer: colorScheme.surfaceContainerHigh,
+    statusOnDefaultContainer: colorScheme.onSurface,
+    statusInform: colorScheme.primary,
+    statusOnInform: colorScheme.onPrimary,
+    statusInformContainer: colorScheme.primaryContainer,
+    statusOnInformContainer: colorScheme.onPrimaryContainer,
+    statusOnErrorContainer: colorScheme.onErrorContainer,
+    statusSuccess: colorScheme.primary,
+    statusOnSuccessContainer: colorScheme.onPrimaryContainer,
+    statusWarning: colorScheme.tertiary,
+    statusWarningContainer: colorScheme.tertiaryContainer,
+    statusOnWarningContainer: colorScheme.onTertiaryContainer,
+    statusCaution: colorScheme.secondary,
+    statusOnCaution: colorScheme.onSecondary,
+    statusCautionContainer: colorScheme.secondaryContainer,
+    statusOnCautionContainer: colorScheme.onSecondaryContainer,
+    neutral: colorScheme.surfaceVariant,
+    onNeutralBorder: colorScheme.surface,
+    onNeutralVariant: colorScheme.onSurface,
+    stateDefaultEnabled: colorScheme.primary.withOpacity(0),
+    stateDefaultHovered: colorScheme.onSurface.withOpacity(0.12),
+    stateDefaultPressed: colorScheme.onSurface.withOpacity(0.2),
+    stateOnContainerEnabled: colorScheme.surface.withOpacity(0),
+    stateOnContainerHovered: colorScheme.onSurface.withOpacity(0.04),
+    stateOnContainerPressed: colorScheme.onSurface.withOpacity(0.08),
+    labelInputDefault: colorScheme.onSurfaceVariant,
+    labelInputDisabled: colorScheme.onSurfaceVariant,
+    ctabFolderSelectedTextColor: colorScheme.onSurface,
+    ctabFolderHighlightColor: colorScheme.primary,
+    ctabFolderUnselectedColor: colorScheme.surfaceContainerHigh,
+    surfaceToolbar: colorScheme.surfaceContainerLow,
+    toolbarDivider: colorScheme.outlineVariant,
   );
 }
 
@@ -333,177 +547,180 @@ TextTheme createMaterialTextTheme(ColorScheme colorScheme) {
   );
 }
 
-ThemeData createLightDefaultTheme(int? backgroundColor) {
+ThemeData createLightDefaultTheme(int? backgroundColor, {Color? seedColor}) {
   final bool useDarkTheme = getCurrentTheme();
   final Color finalBackgroundColor = calculateBackgroundColor(backgroundColor, useDarkTheme);
   
   final colorScheme = ColorScheme.fromSeed(
-    seedColor: const Color(0xFF1847CA),
+    seedColor: seedColor ?? const Color(0xFF1847CA),
     brightness: Brightness.light,
   );
 
   final defaultTextTheme = ThemeData(useMaterial3: true, colorScheme: colorScheme).textTheme;
-  final colorSchemeExtension = createColorSchemeExtension();
+  final colorSchemeExtension = createColorSchemeExtension(colorScheme);
   
   final textThemeExtension = getTextLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('text', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('text', colorScheme, Brightness.light),
   );
   final buttonTheme = getButtonLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('button', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('button', colorScheme, Brightness.light),
   );
   final labelTheme = getLabelLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('label', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('label', colorScheme, Brightness.light),
   );
   final tabFolderTheme = getTabFolderLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('tabfolder', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('tabfolder', colorScheme, Brightness.light),
   );
   final tabItemTheme = getTabItemLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('tabitem', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('tabitem', colorScheme, Brightness.light),
   );
   final treeTheme = getTreeLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('tree', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('tree', colorScheme, Brightness.light),
   );
   final ctabFolderTheme = getCTabFolderLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('ctabfolder', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('ctabfolder', colorScheme, Brightness.light),
   );
   final ctabItemTheme = getCTabItemLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('ctabitem', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('ctabitem', colorScheme, Brightness.light),
   );
   final toolbarTheme = getToolBarLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('toolbar', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('toolbar', colorScheme, Brightness.light),
   );
   final toolItemTheme = getToolItemLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('toolitem', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('toolitem', colorScheme, Brightness.light),
   );
   final tableTheme = getTableLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('table', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('table', colorScheme, Brightness.light),
   );
   final comboTheme = getComboLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('combo', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('combo', colorScheme, Brightness.light),
   );
   final ccomboTheme = getCComboLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('ccombo', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('ccombo', colorScheme, Brightness.light),
   );
   final progressBarTheme = getProgressBarLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('progressbar', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('progressbar', colorScheme, Brightness.light),
   );
   final listTheme = getListLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('list', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('list', colorScheme, Brightness.light),
   );
   final clabelTheme = getCLabelLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('clabel', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('clabel', colorScheme, Brightness.light),
   );
   final linkTheme = getLinkLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('link', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('link', colorScheme, Brightness.light),
   );
   final groupTheme = getGroupLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('group', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('group', colorScheme, Brightness.light),
   );
   final expandBarTheme = getExpandBarLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('expandbar', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('expandbar', colorScheme, Brightness.light),
   );
   final expandItemTheme = getExpandItemLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('expanditem', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('expanditem', colorScheme, Brightness.light),
   );
   final sliderTheme = getSliderLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('slider', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('slider', colorScheme, Brightness.light),
   );
   final spinnerTheme = getSpinnerLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('spinner', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('spinner', colorScheme, Brightness.light),
   );
   final scrolledCompositeTheme = getScrolledCompositeLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('scrolledcomposite', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('scrolledcomposite', colorScheme, Brightness.light),
   );
   final scaleTheme = getScaleLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('scale', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('scale', colorScheme, Brightness.light),
   );
   final menuTheme = getMenuLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('menu', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('menu', colorScheme, Brightness.light),
   );
   final menuItemTheme = getMenuItemLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('menuitem', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('menuitem', colorScheme, Brightness.light),
   );
   final coolBarTheme = getCoolBarLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('coolbar', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('coolbar', colorScheme, Brightness.light),
   );
   final coolItemTheme = getCoolItemLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('coolitem', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('coolitem', colorScheme, Brightness.light),
   );
   final tooltipTheme = getTooltipLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('tooltip', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('tooltip', colorScheme, Brightness.light),
   );
   final sashTheme = getSashLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('sash', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('sash', colorScheme, Brightness.light),
   );
   final canvasTheme = getCanvasLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('canvas', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('canvas', colorScheme, Brightness.light),
   );
   final styledTextTheme = getStyledTextLightTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('styledtext', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('styledtext', colorScheme, Brightness.light),
+  );
+  final themeColorPaletteTheme = getThemeColorPaletteLightTheme(
+    colorScheme: _resolveWidgetColorScheme('toolbar', colorScheme, Brightness.light),
   );
   return ThemeData(
     useMaterial3: true,
@@ -543,16 +760,21 @@ ThemeData createLightDefaultTheme(int? backgroundColor) {
       sashTheme,
       canvasTheme,
       styledTextTheme,
+      themeColorPaletteTheme,
     ],
   );
 }
 
-ThemeData createLightNonDefaultTheme(int? backgroundColor) {
+ThemeData createLightNonDefaultTheme(
+  int? backgroundColor, {
+  ColorScheme? overrideColorScheme,
+  ColorSchemeExtension? overrideColorSchemeExtension,
+}) {
   final bool useDarkTheme = getCurrentTheme();
   final Color finalBackgroundColor = calculateBackgroundColor(backgroundColor, useDarkTheme);
-  
-  final colorScheme = createLightColorScheme();
-  final colorSchemeExtension = createColorSchemeExtension();
+
+  final colorScheme = overrideColorScheme ?? createLightColorScheme();
+  final colorSchemeExtension = overrideColorSchemeExtension ?? createColorSchemeExtension();
 
   final materialTextTheme = createMaterialTextTheme(colorScheme);
   final textThemeExtension = getTextLightTheme(
@@ -716,6 +938,9 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final themeColorPaletteTheme = getThemeColorPaletteLightTheme(
+    colorScheme: colorScheme,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -755,181 +980,185 @@ ThemeData createLightNonDefaultTheme(int? backgroundColor) {
       sashTheme,
       canvasTheme,
       styledTextTheme,
+      themeColorPaletteTheme,
     ],
   );
 }
 
-ThemeData createDarkDefaultTheme(int? backgroundColor) {
+ThemeData createDarkDefaultTheme(int? backgroundColor, {Color? seedColor}) {
   final bool useDarkTheme = getCurrentTheme();
   final Color finalBackgroundColor = calculateBackgroundColor(backgroundColor, useDarkTheme);
   
   final colorScheme = ColorScheme.fromSeed(
-    seedColor: const Color(0xFF1847CA),
+    seedColor: seedColor ?? const Color(0xFF1847CA),
     brightness: Brightness.dark,
   );
 
   final defaultTextTheme = ThemeData(useMaterial3: true, colorScheme: colorScheme).textTheme;
-  final colorSchemeExtension = createColorSchemeExtension();
+  final colorSchemeExtension = createColorSchemeExtension(colorScheme);
   
   final textThemeExtension = getTextDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('text', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('text', colorScheme, Brightness.dark),
   );
   final buttonTheme = getButtonDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('button', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('button', colorScheme, Brightness.dark),
   );
   final labelTheme = getLabelDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('label', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('label', colorScheme, Brightness.dark),
   );
   final tabFolderTheme = getTabFolderDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('tabfolder', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('tabfolder', colorScheme, Brightness.dark),
   );
   final tabItemTheme = getTabItemDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('tabitem', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('tabitem', colorScheme, Brightness.dark),
   );
   final treeTheme = getTreeDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('tree', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('tree', colorScheme, Brightness.dark),
   );
   final ctabFolderTheme = getCTabFolderDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('ctabfolder', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('ctabfolder', colorScheme, Brightness.dark),
   );
   final ctabItemTheme = getCTabItemDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('ctabitem', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('ctabitem', colorScheme, Brightness.dark),
   );
   final toolbarTheme = getToolBarDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('toolbar', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('toolbar', colorScheme, Brightness.dark),
   );
   final toolItemTheme = getToolItemDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('toolitem', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('toolitem', colorScheme, Brightness.dark),
   );
   final tableTheme = getTableDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('table', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('table', colorScheme, Brightness.dark),
   );
   final comboTheme = getComboDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('combo', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('combo', colorScheme, Brightness.dark),
   );
   final ccomboTheme = getCComboDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('ccombo', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('ccombo', colorScheme, Brightness.dark),
   );
   final progressBarTheme = getProgressBarDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('progressbar', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('progressbar', colorScheme, Brightness.dark),
   );
   final listTheme = getListDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('list', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('list', colorScheme, Brightness.dark),
   );
   final clabelTheme = getCLabelDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('clabel', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('clabel', colorScheme, Brightness.dark),
   );
   final linkTheme = getLinkDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('link', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('link', colorScheme, Brightness.dark),
   );
   final groupTheme = getGroupDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('group', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('group', colorScheme, Brightness.dark),
   );
   final expandBarTheme = getExpandBarDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('expandbar', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('expandbar', colorScheme, Brightness.dark),
   );
   final expandItemTheme = getExpandItemDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('expanditem', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('expanditem', colorScheme, Brightness.dark),
   );
   final sliderTheme = getSliderDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('slider', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('slider', colorScheme, Brightness.dark),
   );
   final spinnerTheme = getSpinnerDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('spinner', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('spinner', colorScheme, Brightness.dark),
   );
   final scrolledCompositeTheme = getScrolledCompositeDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('scrolledcomposite', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('scrolledcomposite', colorScheme, Brightness.dark),
   );
   final scaleTheme = getScaleDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('scale', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('scale', colorScheme, Brightness.dark),
   );
   final menuTheme = getMenuDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('menu', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('menu', colorScheme, Brightness.dark),
   );
   final menuItemTheme = getMenuItemDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('menuitem', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('menuitem', colorScheme, Brightness.dark),
   );
   final coolBarTheme = getCoolBarDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('coolbar', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('coolbar', colorScheme, Brightness.dark),
   );
   final coolItemTheme = getCoolItemDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('coolitem', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('coolitem', colorScheme, Brightness.dark),
   );
   final tooltipTheme = getTooltipDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('tooltip', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('tooltip', colorScheme, Brightness.dark),
   );
   final sashTheme = getSashDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('sash', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('sash', colorScheme, Brightness.dark),
   );
   final canvasTheme = getCanvasDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('canvas', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('canvas', colorScheme, Brightness.dark),
   );
   final styledTextTheme = getStyledTextDarkTheme(
-    colorScheme: colorScheme,
+    colorScheme: _resolveWidgetColorScheme('styledtext', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
-    colorSchemeExtension: colorSchemeExtension,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('styledtext', colorScheme, Brightness.dark),
+  );
+  final themeColorPaletteTheme = getThemeColorPaletteDarkTheme(
+    colorScheme: _resolveWidgetColorScheme('toolbar', colorScheme, Brightness.dark),
   );
   return ThemeData(
     useMaterial3: true,
@@ -969,16 +1198,21 @@ ThemeData createDarkDefaultTheme(int? backgroundColor) {
       sashTheme,
       canvasTheme,
       styledTextTheme,
+      themeColorPaletteTheme,
     ],
   );
 }
 
-ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
+ThemeData createDarkNonDefaultTheme(
+  int? backgroundColor, {
+  ColorScheme? overrideColorScheme,
+  ColorSchemeExtension? overrideColorSchemeExtension,
+}) {
   final bool useDarkTheme = getCurrentTheme();
   final Color finalBackgroundColor = calculateBackgroundColor(backgroundColor, useDarkTheme);
-  
-  final colorScheme = createDarkColorScheme();
-  final colorSchemeExtension = createColorSchemeExtension();
+
+  final colorScheme = overrideColorScheme ?? createDarkColorScheme();
+  final colorSchemeExtension = overrideColorSchemeExtension ?? createColorSchemeExtension();
 
   final materialTextTheme = createMaterialTextTheme(colorScheme);
   final textThemeExtension = getTextDarkTheme(
@@ -1142,6 +1376,9 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final themeColorPaletteTheme = getThemeColorPaletteDarkTheme(
+    colorScheme: colorScheme,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -1181,6 +1418,7 @@ ThemeData createDarkNonDefaultTheme(int? backgroundColor) {
       sashTheme,
       canvasTheme,
       styledTextTheme,
+      themeColorPaletteTheme,
     ],
   );
 }

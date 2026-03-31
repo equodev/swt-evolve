@@ -23,10 +23,12 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     CTabItemThemeExtension itemTheme,
     CTabFolderThemeExtension folderTheme,
     VImage? image,
+    Color? iconColor,
   ) {
     return ImageUtils.buildVImage(
       image,
       size: folderTheme.tabIconSize,
+      color: iconColor,
       enabled: true,
       useBinaryImage: true,
       renderAsIcon: true,
@@ -47,13 +49,6 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     CTabItemThemeExtension itemTheme,
     CTabFolderThemeExtension folderTheme,
   ) {
-    final imageWidget = _buildImageWidget(
-      context,
-      itemTheme,
-      folderTheme,
-      state.image,
-    );
-
     final text = stripAccelerators(state.text) ?? "";
     final tabItemContext = TabItemContext.of(context);
     final isSelected = tabItemContext?.isSelected ?? false;
@@ -69,6 +64,14 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     final textStyle = baseStyle?.copyWith(color: textColor) ??
         itemTheme.tabItemTextStyle?.copyWith(color: textColor) ??
         TextStyle(color: textColor);
+    final preserveIconColors = getConfigFlags().preserve_icon_colors ?? false;
+    final imageWidget = _buildImageWidget(
+      context,
+      itemTheme,
+      folderTheme,
+      state.image,
+      preserveIconColors ? null : textColor,
+    );
 
     return Padding(
       padding: EdgeInsets.only(right: itemTheme.tabItemHorizontalPadding),

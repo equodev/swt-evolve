@@ -42,9 +42,7 @@ MenuThemeExtension _getMenuTheme({
     backgroundColor: colorScheme.surface,
     menuBarBackgroundColor: colorScheme.surface,
     popupBackgroundColor: colorScheme.surface,
-    hoverBackgroundColor: isDark
-        ? Colors.white.withOpacity(0.08)
-        : Colors.black.withOpacity(0.04),
+    hoverBackgroundColor: colorScheme.onSurface.withOpacity(isDark ? 0.08 : 0.04),
     disabledBackgroundColor: colorScheme.surfaceVariant,
 
     // Text colors

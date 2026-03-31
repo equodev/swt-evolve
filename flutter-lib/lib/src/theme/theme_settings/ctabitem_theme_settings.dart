@@ -39,7 +39,7 @@ CTabItemThemeExtension _getCTabItemTheme({
   return CTabItemThemeExtension(
     // Tab item text colors
     tabItemTextColor: colorScheme.onSurfaceVariant,
-    tabItemSelectedTextColor: isDark ? Colors.white : Colors.black,
+    tabItemSelectedTextColor: colorScheme.onSurface,
     tabItemDisabledTextColor: colorSchemeExtension.onSurfaceVariantDisabled,
     
     // Tab item typography

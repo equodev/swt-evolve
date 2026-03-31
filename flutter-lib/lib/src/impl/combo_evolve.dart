@@ -394,11 +394,7 @@ class _ComboItemState extends State<_ComboItem> {
 
   @override
   Widget build(BuildContext context) {
-    final Color bgColor = widget.isSelected
-        ? widget.theme.selectedItemBackgroundColor
-        : (_itemHovered
-              ? widget.theme.hoverBackgroundColor
-              : const Color(0x00000000));
+    final Color bgColor = getComboItemBackgroundColor(widget.theme, widget.isSelected, _itemHovered);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _itemHovered = true),
