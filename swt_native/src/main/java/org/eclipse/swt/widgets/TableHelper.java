@@ -1,6 +1,9 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.DartImage;
+import org.eclipse.swt.graphics.GraphicsUtils;
+import org.eclipse.swt.graphics.Image;
 
 import java.util.Arrays;
 
@@ -331,6 +334,71 @@ public class TableHelper {
             }
             table.columnOrder = newOrder;
         }
+    }
+
+    public static Image[] getImages(DartTableItem item) {
+        int count = Math.max(1, item.parent.getColumnCount());
+        Image[] result = new Image[count];
+        Image[] rowImages = item.images;
+        if (rowImages != null) {
+            for (int i = 0; i < count; i++) {
+                Image img = i < rowImages.length ? rowImages[i] : null;
+                result[i] = dartImageOrNull(img);
+            }
+        } else {
+            result[0] = dartImageOrNull(item.image);
+        }
+        return result;
+    }
+
+    public static void setImages(Image[] value, DartTableItem item) {
+        item.images = value;
+        if (value != null && value.length > 0) {
+            item.image = value[0];
+        }
+    }
+
+    public static boolean setImage(DartTableItem item, int index, Image image, boolean initializeFromPrimaryImage, boolean[] drawTextOut) {
+        item.dirty();
+        item.checkWidget();
+        if (image != null && image.isDisposed()) {
+            item.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        Image oldImage = null;
+        if (index == 0) {
+            if (image != null && image.type == SWT.ICON && java.util.Objects.equals(image, item.image))
+                return false;
+            oldImage = item.image;
+            item.image = image;
+        }
+        int count = Math.max(1, item.parent.getColumnCount());
+        if (index < 0 || index > count - 1)
+            return false;
+        if (item.images == null && (index != 0 || initializeFromPrimaryImage)) {
+            item.images = new Image[count];
+            if (initializeFromPrimaryImage) {
+                item.images[0] = item.image;
+            }
+        }
+        if (item.images != null) {
+            Image toStore = index == 0 ? item.image : GraphicsUtils.copyImage(item.getDisplay(), image);
+            oldImage = item.images[index];
+            item.images[index] = toStore;
+        }
+        if ((item.parent.style & SWT.VIRTUAL) != 0)
+            item.cached = true;
+        if (drawTextOut != null && drawTextOut.length > 0) {
+            drawTextOut[0] = (image == null && oldImage != null) || (image != null && oldImage == null);
+        }
+        return true;
+    }
+
+    private static Image dartImageOrNull(Image img) {
+        if (img == null)
+            return null;
+        if (!(img.getImpl() instanceof DartImage))
+            return null;
+        return img;
     }
 
 }

@@ -947,35 +947,13 @@ public class DartTableItem extends DartItem implements ITableItem {
      * </ul>
      */
     public void setImage(int index, Image image) {
-        dirty();
-        checkWidget();
-        if (image != null && image.isDisposed()) {
-            error(SWT.ERROR_INVALID_ARGUMENT);
-        }
         int itemIndex = parent.indexOf(this.getApi());
         if (itemIndex == -1)
             return;
-        if (((DartTable) parent.getImpl()).imageBounds == null && image != null) {
-        }
-        if (index == 0) {
-            if (image != null && image.type == SWT.ICON) {
-                if (image.equals(this.image))
-                    return;
-            }
+        if (index == 0)
             width = -1;
-            super.setImage(image);
-        }
-        int count = Math.max(1, ((DartTable) parent.getImpl()).columnCount);
-        if (0 <= index && index < count) {
-            if (images == null)
-                images = new Image[count];
-            if (image != null && image.type == SWT.ICON) {
-                if (image.equals(images[index]))
-                    return;
-            }
-            images[index] = image;
-        }
-        cached = true;
+        if (!TableHelper.setImage(this, index, image, false, null))
+            return;
         if (index == 0)
             ((DartTable) parent.getImpl()).setScrollWidth(this.getApi());
         redraw(index);
@@ -1144,6 +1122,14 @@ public class DartTableItem extends DartItem implements ITableItem {
 
     public int _imageIndent() {
         return imageIndent;
+    }
+
+    public Image[] getImages() {
+        return TableHelper.getImages(this);
+    }
+
+    public void setImages(Image[] value) {
+        TableHelper.setImages(value, this);
     }
 
     public FlutterBridge getBridge() {

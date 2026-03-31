@@ -82,6 +82,17 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     });
   }
 
+  VImage? _cellImageForColumn(int columnIndex) {
+    final imgs = state.images;
+    if (imgs != null && columnIndex < imgs.length) {
+      return imgs[columnIndex];
+    }
+    if (imgs == null && columnIndex == 0) {
+      return state.image;
+    }
+    return null;
+  }
+
   Widget buildCell(
     BuildContext context,
     int columnIndex,
@@ -91,6 +102,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     int rowIndex,
     bool showCheckbox,
   ) {
+    final cellImage = _cellImageForColumn(columnIndex);
     final enabled = _context?.parentTableValue.enabled ?? true;
     final cellBackgroundColor = getCellBackgroundColor(columnIndex, theme);
     final rowHeight = calculateRowHeight(textStyle, theme);
@@ -161,8 +173,8 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
           child: Row(
             children: [
               if (showCheckbox) buildCheckbox(theme, enabled),
-              if (columnIndex == 0 && state.image != null)
-                buildImageIcon(state.image!, enabled, textStyle, theme),
+              if (cellImage != null)
+                buildImageIcon(cellImage, enabled, textStyle, theme),
               Expanded(
                 child:
                     isEditing &&
