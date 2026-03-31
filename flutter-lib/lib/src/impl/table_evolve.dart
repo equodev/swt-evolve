@@ -178,7 +178,62 @@ class TableImpl<T extends TableSwt, V extends VTable>
   @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<TableThemeExtension>()!;
-    return super.wrap(buildTable(context, widgetTheme));
+    final columns = getColumns();
+    final items = getItems();
+    final showHeader = state.headerVisible ?? false;
+    final showLines = state.linesVisible ?? false;
+    final columnWidths = calculateColumnWidths(context, columns, widgetTheme);
+
+    _cachedColumnWidths = columnWidths;
+    final rowTextStyle = getTextStyle(
+      context: context,
+      font: state.font,
+      textColor: widgetTheme.rowTextColor,
+      baseTextStyle: widgetTheme.rowTextStyle,
+    );
+    _cachedRowHeight = calculateRowHeight(rowTextStyle, widgetTheme);
+    double headerOff = widgetTheme.borderWidth;
+    if (showHeader && columns.isNotEmpty) {
+      final headerTextStyle = getTextStyle(
+        context: context,
+        font: state.font,
+        textColor: getTableHeaderTextColor(state, widgetTheme),
+        baseTextStyle: widgetTheme.headerTextStyle,
+      );
+      headerOff += calculateHeaderHeight(headerTextStyle, widgetTheme) + widgetTheme.headerBorderWidth;
+    }
+    _cachedHeaderOffset = headerOff;
+
+    final editorOverlays = _buildEditorOverlays(context, columns, widgetTheme, columnWidths);
+
+    final tableContent = Stack(
+      children: [
+        Container(
+          decoration: buildBorder(widgetTheme),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              if (showHeader && columns.isNotEmpty)
+                buildHeader(context, columns, showLines, widgetTheme, columnWidths),
+              Expanded(
+                child: buildBody(context, items, columns, showLines, widgetTheme, columnWidths),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    final wrappedTable = super.wrap(tableContent);
+
+    if (editorOverlays.isEmpty) return wrappedTable;
+
+    return Stack(
+      children: [
+        wrappedTable,
+        ...editorOverlays,
+      ],
+    );
   }
 
   @override
@@ -229,32 +284,25 @@ class TableImpl<T extends TableSwt, V extends VTable>
     }
     _cachedHeaderOffset = headerOff;
 
-    final editorOverlays = _buildEditorOverlays(context, columns, theme, columnWidths);
-
-    return Stack(
-      children: [
-        Container(
-          decoration: buildBorder(theme),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              if (showHeader && columns.isNotEmpty)
-                buildHeader(context, columns, showLines, theme, columnWidths),
-              Expanded(
-                child: buildBody(
-                  context,
-                  items,
-                  columns,
-                  showLines,
-                  theme,
-                  columnWidths,
-                ),
-              ),
-            ],
+    return Container(
+      decoration: buildBorder(theme),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          if (showHeader && columns.isNotEmpty)
+            buildHeader(context, columns, showLines, theme, columnWidths),
+          Expanded(
+            child: buildBody(
+              context,
+              items,
+              columns,
+              showLines,
+              theme,
+              columnWidths,
+            ),
           ),
-        ),
-        ...editorOverlays,
-      ],
+        ],
+      ),
     );
   }
 

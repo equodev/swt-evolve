@@ -520,6 +520,11 @@ public class DartTable extends DartComposite implements ITable {
 	*/
         System.arraycopy(columns, index, columns, index + 1, columnCount++ - index);
         columns[index] = column;
+        ((DartWidget) column.getImpl()).register();
+        for (int i = 0; i < (items != null ? items.length : 0); i++) {
+            if (items[i] != null && columnCount > 1)
+                createColumn(items[i], index);
+        }
         /*
 	* Ensure that resize listeners for the table and for columns
 	* within the table are not called.  This can happen when the
@@ -564,6 +569,7 @@ public class DartTable extends DartComposite implements ITable {
         items[index] = item;
         if (index != count)
             TableHelper.fixSelection(this, index, true);
+        dirty();
     }
 
     @Override
@@ -738,6 +744,40 @@ public class DartTable extends DartComposite implements ITable {
         }
         if (first)
             index = 0;
+        for (int i = 0; i < (items != null ? items.length : 0); i++) {
+            TableItem item = items[i];
+            if (item == null)
+                continue;
+            DartTableItem di = (DartTableItem) item.getImpl();
+            DartItem dItem = (DartItem) item.getImpl();
+            if (columnCount <= 1) {
+                di.strings = null;
+                di.images = null;
+                di.cellBackground = null;
+                di.cellForeground = null;
+                di.cellFont = null;
+            } else {
+                int newCount = columnCount - 1;
+                if (di.strings != null) {
+                    if (index == 0)
+                        dItem.text = di.strings[1] != null ? di.strings[1] : "";
+                    di.strings = TableHelper.removeAt(di.strings, index, newCount);
+                } else if (index == 0)
+                    dItem.text = "";
+                if (di.images != null) {
+                    if (index == 0)
+                        dItem.image = di.images[1];
+                    di.images = TableHelper.removeAt(di.images, index, newCount);
+                } else if (index == 0)
+                    dItem.image = null;
+                if (di.cellBackground != null)
+                    di.cellBackground = TableHelper.removeAt(di.cellBackground, index, newCount);
+                if (di.cellForeground != null)
+                    di.cellForeground = TableHelper.removeAt(di.cellForeground, index, newCount);
+                if (di.cellFont != null)
+                    di.cellFont = TableHelper.removeAt(di.cellFont, index, newCount);
+            }
+        }
         System.arraycopy(columns, index + 1, columns, index, --columnCount - index);
         columns[columnCount] = null;
         TableHelper.updateColumnOrderOnDestroy(this, index);
@@ -994,6 +1034,8 @@ public class DartTable extends DartComposite implements ITable {
      */
     public Color getHeaderBackground() {
         checkWidget();
+        if (headerBackground == -1)
+            return null;
         return SwtColor.win32_new(display, getHeaderBackgroundPixel());
     }
 
@@ -1014,6 +1056,8 @@ public class DartTable extends DartComposite implements ITable {
      */
     public Color getHeaderForeground() {
         checkWidget();
+        if (headerForeground == -1)
+            return null;
         return SwtColor.win32_new(display, getHeaderForegroundPixel());
     }
 
@@ -3219,6 +3263,25 @@ public class DartTable extends DartComposite implements ITable {
 
     public int _topIndex() {
         return topIndex;
+    }
+
+    void createColumn(TableItem item, int index) {
+        DartTableItem di = (DartTableItem) item.getImpl();
+        DartItem dItem = (DartItem) item.getImpl();
+        if (di.strings != null)
+            di.strings = TableHelper.insertAt(di.strings, index, columnCount);
+        if (index == 0)
+            dItem.text = "";
+        if (di.images != null)
+            di.images = TableHelper.insertAt(di.images, index, columnCount);
+        if (index == 0)
+            dItem.image = null;
+        if (di.cellBackground != null)
+            di.cellBackground = TableHelper.insertAt(di.cellBackground, index, columnCount);
+        if (di.cellForeground != null)
+            di.cellForeground = TableHelper.insertAt(di.cellForeground, index, columnCount);
+        if (di.cellFont != null)
+            di.cellFont = TableHelper.insertAt(di.cellFont, index, columnCount);
     }
 
     public void _addEditor(TableEditor value) {

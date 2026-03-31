@@ -998,6 +998,7 @@ public abstract class DartWidget implements IWidget {
     void releaseWidget() {
         eventTable = null;
         data = null;
+        getApi().state &= ~KEYED_DATA;
     }
 
     /**

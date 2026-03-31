@@ -6,6 +6,7 @@ import org.eclipse.swt.graphics.GraphicsUtils;
 import org.eclipse.swt.graphics.Image;
 
 import java.util.Arrays;
+import java.lang.reflect.Array;
 
 public class TableHelper {
 
@@ -319,6 +320,36 @@ public class TableHelper {
             table.dirty();
             table.selection = newSelection;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T[] insertAt(T[] arr, int index, int newSize) {
+        T[] temp = (T[]) Array.newInstance(arr.getClass().getComponentType(), newSize);
+        System.arraycopy(arr, 0, temp, 0, index);
+        System.arraycopy(arr, index, temp, index + 1, newSize - index - 1);
+        return temp;
+    }
+
+    public static int[] insertAt(int[] arr, int index, int newSize) {
+        int[] temp = new int[newSize];
+        System.arraycopy(arr, 0, temp, 0, index);
+        System.arraycopy(arr, index, temp, index + 1, newSize - index - 1);
+        return temp;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T[] removeAt(T[] arr, int index, int newSize) {
+        T[] temp = (T[]) Array.newInstance(arr.getClass().getComponentType(), newSize);
+        System.arraycopy(arr, 0, temp, 0, index);
+        System.arraycopy(arr, index + 1, temp, index, newSize - index);
+        return temp;
+    }
+
+    public static int[] removeAt(int[] arr, int index, int newSize) {
+        int[] temp = new int[newSize];
+        System.arraycopy(arr, 0, temp, 0, index);
+        System.arraycopy(arr, index + 1, temp, index, newSize - index);
+        return temp;
     }
 
     public static void updateColumnOrderOnDestroy(DartTable table, int removedIndex) {
