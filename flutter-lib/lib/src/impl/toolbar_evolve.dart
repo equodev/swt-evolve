@@ -10,6 +10,7 @@ import 'package:swtflutter/src/impl/widget_config.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
+import '../theme/theme_settings/toolitem_theme_settings.dart';
 import 'utils/widget_utils.dart';
 
 class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
@@ -26,7 +27,13 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     final hasShadowOut = style.has(SWT.SHADOW_OUT);
     final isRightToLeft = style.has(SWT.RIGHT_TO_LEFT);
 
-    const backgroundColor = Colors.transparent;
+    final useSwtColors = getConfigFlags().use_swt_colors ?? false;
+    final Color? backgroundColor = useSwtColors
+        ? Colors.transparent
+        : getBackgroundColor(
+            background: state.background,
+            defaultColor: widgetTheme.toolbarBackgroundColor,
+          );
 
     return Builder(
       builder: (context) {
@@ -449,9 +456,7 @@ class _SegmentControlWidgetState extends State<_SegmentControlWidget> {
     required bool enabled,
     required String text,
   }) {
-    final textColor = isSelected
-        ? widgetTheme.segmentSelectedTextColor
-        : widgetTheme.segmentUnselectedTextColor;
+    final textColor = getSegmentTextColor(widgetTheme, isSelected);
 
     final textStyle = getTextStyle(
       context: context,

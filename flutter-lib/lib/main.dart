@@ -7,7 +7,16 @@ import 'package:swtflutter/src/gen/widget.dart';
 import 'package:swtflutter/src/custom/toolbar_composite.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 import 'src/styles.dart';
-import 'src/theme/theme.dart' show createLightDefaultTheme, createLightNonDefaultTheme, createDarkDefaultTheme, createDarkNonDefaultTheme;
+import 'src/theme/theme.dart'
+    show
+        createLightDefaultTheme,
+        createLightNonDefaultTheme,
+        createDarkDefaultTheme,
+        createDarkNonDefaultTheme,
+        createColorSchemeExtension,
+        parseGlobalSeedColor;
+import 'src/theme/named_themes.dart';
+import 'dart:async';
 import 'dart:convert';
 
 import 'native_platform.dart' if (dart.library.html) 'web_platform.dart';
@@ -19,6 +28,11 @@ import 'imageSize.dart' as image_size;
 import 'widgetSize.dart' as widget_size;
 import 'src/gen/gc.dart';
 import 'src/impl/gcdrawer_evolve.dart';
+
+bool _themeConfigLogged = false;
+Completer<void>? _swtEvolvePropertiesCompleter;
+bool _swtEvolvePropertiesListenerRegistered = false;
+final ValueNotifier<int> _configFlagsVersion = ValueNotifier<int>(0);
 
 void main(List<String> args) async {
   if (args.isNotEmpty) {
@@ -65,7 +79,7 @@ void main(List<String> args) async {
   // Set the parent background color for buttons
   setParentBackgroundColor(parentBackgroundColor);
 
-  initSwtEvolveProperties();
+  unawaited(initSwtEvolveProperties());
 
   Widget contentWidget = createContentWidget(widgetName!, widgetId!);
 
@@ -99,17 +113,32 @@ void sendClientReady(String widgetName, int widgetId, {bool sendWindowSize = fal
   }
 }
 
-void initSwtEvolveProperties() {
-  EquoCommService.onRaw("swt.evolve.properties", (dynamic data) {
-    try {
-      // print('Flutter received raw data: $data');
-      final configFlags = ConfigFlags.fromJson(jsonDecode(data));
-      // print('Flutter parsed ConfigFlags: assets_path=${configFlags.assets_path}');
-      setConfigFlags(configFlags);
-    } catch (e) {
-      print('Error parsing properties: $e');
-    }
-  });
+Future<void> initSwtEvolveProperties() async {
+  _swtEvolvePropertiesCompleter ??= Completer<void>();
+
+  if (!_swtEvolvePropertiesListenerRegistered) {
+    _swtEvolvePropertiesListenerRegistered = true;
+    EquoCommService.onRaw("swt.evolve.properties", (dynamic data) {
+      try {
+        final configFlags = ConfigFlags.fromJson(jsonDecode(data));
+        setConfigFlags(configFlags);
+        _configFlagsVersion.value++;
+      } catch (e) {
+        print('Error parsing properties: $e');
+      } finally {
+        if (!(_swtEvolvePropertiesCompleter?.isCompleted ?? true)) {
+          _swtEvolvePropertiesCompleter!.complete();
+        }
+      }
+    });
+  }
+
+  await _swtEvolvePropertiesCompleter!.future.timeout(
+    const Duration(seconds: 2),
+    onTimeout: () {
+      print('swt.evolve.properties timeout; continuing startup');
+    },
+  );
 }
 
 Widget createContentWidget(String widgetName, int widgetId) {
@@ -163,30 +192,78 @@ class EvolveApp extends StatelessWidget {
     this.backgroundColor,
   }) : super(key: key);
 
-  static const bool useDefaultTheme = false;
-
   @override
   Widget build(BuildContext context) {
-    final lightTheme = useDefaultTheme
-        ? createLightDefaultTheme(backgroundColor)
-        : createLightNonDefaultTheme(backgroundColor);
-    final darkTheme = useDefaultTheme
-        ? createDarkDefaultTheme(backgroundColor)
-        : createDarkNonDefaultTheme(backgroundColor);
+    return AnimatedBuilder(
+      animation: _configFlagsVersion,
+      builder: (context, _) {
+        final flags = getConfigFlags();
+        final forcedThemeMode = parseForcedThemeMode(flags.force_theme);
+        final effectiveThemeMode = forcedThemeMode ?? theme;
+        final themeName = flags.theme_name?.trim();
+        final namedTheme = (themeName != null && themeName.isNotEmpty)
+            ? kNamedThemes[themeName]
+            : null;
+        final seedColor = parseGlobalSeedColor(flags);
+        if (!_themeConfigLogged) {
+          _themeConfigLogged = true;
+          print(
+            'Theme config -> theme_name=$themeName, '
+            'force_theme=${flags.force_theme}, '
+            'effective_theme_mode=${effectiveThemeMode.name}, '
+            'theme_color_widget=${flags.theme_color_widget}, parsed_seed=${seedColor?.value.toRadixString(16)}',
+          );
+        }
+        final ThemeData lightTheme;
+        final ThemeData darkTheme;
+        if (namedTheme != null) {
+          final darkScheme = namedTheme.darkColorScheme ?? namedTheme.lightColorScheme;
+          lightTheme = createLightNonDefaultTheme(
+            backgroundColor,
+            overrideColorScheme: namedTheme.lightColorScheme,
+            overrideColorSchemeExtension: namedTheme.lightColorSchemeExtension
+                ?? createColorSchemeExtension(namedTheme.lightColorScheme),
+          );
+          darkTheme = createDarkNonDefaultTheme(
+            backgroundColor,
+            overrideColorScheme: darkScheme,
+            overrideColorSchemeExtension: namedTheme.darkColorSchemeExtension
+                ?? createColorSchemeExtension(darkScheme),
+          );
+        } else {
+          lightTheme = createLightDefaultTheme(backgroundColor, seedColor: seedColor);
+          darkTheme = createDarkDefaultTheme(backgroundColor, seedColor: seedColor);
+        }
 
-    return MaterialApp(
-      title: 'Evolve',
-      theme: lightTheme,
-      darkTheme: darkTheme,
-      themeMode: theme,
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        backgroundColor: theme == ThemeMode.dark
-            ? darkTheme.scaffoldBackgroundColor
-            : lightTheme.scaffoldBackgroundColor,
-        body: contentWidget,
-      ),
+        return MaterialApp(
+          title: 'Evolve',
+          theme: lightTheme,
+          darkTheme: darkTheme,
+          themeMode: effectiveThemeMode,
+          debugShowCheckedModeBanner: false,
+          home: Scaffold(
+            backgroundColor: effectiveThemeMode == ThemeMode.dark
+                ? darkTheme.scaffoldBackgroundColor
+                : lightTheme.scaffoldBackgroundColor,
+            body: contentWidget,
+          ),
+        );
+      },
     );
   }
+}
+
+ThemeMode? parseForcedThemeMode(String? forceTheme) {
+  if (forceTheme == null) {
+    return null;
+  }
+  final normalized = forceTheme.trim().toLowerCase();
+  if (normalized == 'dark') {
+    return ThemeMode.dark;
+  }
+  if (normalized == 'light') {
+    return ThemeMode.light;
+  }
+  return null;
 }
 //  vim: set ts=2 sw=2 tw=0 et :

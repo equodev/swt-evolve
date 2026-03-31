@@ -39,12 +39,10 @@ MenuItemThemeExtension _getMenuItemTheme({
     animationDuration: const Duration(milliseconds: 150),
 
     // Background colors
-    backgroundColor: Colors.transparent,
-    hoverBackgroundColor: isDark
-        ? Colors.white.withOpacity(0.08)
-        : Colors.black.withOpacity(0.04),
+    backgroundColor: colorSchemeExtension.stateDefaultEnabled,
+    hoverBackgroundColor: colorScheme.onSurface.withOpacity(isDark ? 0.08 : 0.04),
     selectedBackgroundColor: colorScheme.primaryContainer,
-    disabledBackgroundColor: Colors.transparent,
+    disabledBackgroundColor: colorSchemeExtension.stateDefaultEnabled,
 
     // Text colors
     textColor: textTheme.bodyMedium?.color ?? colorScheme.onSurface,
@@ -59,21 +57,17 @@ MenuItemThemeExtension _getMenuItemTheme({
     separatorColor: colorScheme.outlineVariant,
 
     // Checkbox colors
-    checkboxColor: Colors.transparent,
+    checkboxColor: colorSchemeExtension.stateDefaultEnabled,
     checkboxSelectedColor: colorScheme.primary,
-    checkboxHoverColor: isDark
-        ? Colors.white.withOpacity(0.05)
-        : Colors.black.withOpacity(0.03),
+    checkboxHoverColor: colorScheme.onSurface.withOpacity(isDark ? 0.05 : 0.03),
     checkboxBorderColor: colorScheme.outline,
     checkboxCheckmarkColor: colorScheme.onPrimary,
 
     // Radio button colors
-    radioButtonColor: Colors.transparent,
+    radioButtonColor: colorSchemeExtension.stateDefaultEnabled,
     radioButtonSelectedColor: colorScheme.primary,
-    radioButtonHoverColor: isDark
-        ? Colors.white.withOpacity(0.05)
-        : Colors.black.withOpacity(0.03),
-    radioButtonSelectedHoverColor: Color.lerp(colorScheme.primary, isDark ? Colors.white : Colors.black, 0.1) ?? colorScheme.primary,
+    radioButtonHoverColor: colorScheme.onSurface.withOpacity(isDark ? 0.05 : 0.03),
+    radioButtonSelectedHoverColor: Color.lerp(colorScheme.primary, colorScheme.onSurface, 0.1) ?? colorScheme.primary,
     radioButtonBorderColor: colorScheme.outline,
     radioButtonInnerColor: colorScheme.onPrimary,
 
@@ -206,4 +200,64 @@ String formatAccelerator(int accelerator) {
   }
 
   return parts.join('+');
+}
+
+Color getMenuItemRowBackgroundColor(
+  MenuItemThemeExtension widgetTheme,
+  bool isEnabled,
+  bool isHovered,
+) {
+  return (isEnabled && isHovered)
+      ? widgetTheme.hoverBackgroundColor
+      : widgetTheme.backgroundColor;
+}
+
+Color getMenuCheckboxBackgroundColor(
+  MenuItemThemeExtension widgetTheme,
+  bool isSelected,
+  bool isHovered,
+  bool isEnabled,
+) {
+  if (isSelected) return widgetTheme.checkboxSelectedColor;
+  if (isHovered && isEnabled) return widgetTheme.checkboxHoverColor;
+  return widgetTheme.checkboxColor;
+}
+
+Color getMenuCheckboxBorderColor(
+  MenuItemThemeExtension widgetTheme,
+  bool isSelected,
+  bool isHovered,
+  bool isEnabled,
+) {
+  if (isSelected) return widgetTheme.checkboxSelectedColor;
+  return widgetTheme.checkboxBorderColor;
+}
+
+Color getMenuRadioBackgroundColor(
+  MenuItemThemeExtension widgetTheme,
+  bool isSelected,
+  bool isHovered,
+  bool isEnabled,
+) {
+  if (isSelected) {
+    return (isHovered && isEnabled)
+        ? widgetTheme.radioButtonSelectedHoverColor
+        : widgetTheme.radioButtonSelectedColor;
+  }
+  if (isHovered && isEnabled) return widgetTheme.radioButtonHoverColor;
+  return widgetTheme.radioButtonColor;
+}
+
+Color getMenuRadioBorderColor(
+  MenuItemThemeExtension widgetTheme,
+  bool isSelected,
+  bool isHovered,
+  bool isEnabled,
+) {
+  if (isSelected) {
+    return (isHovered && isEnabled)
+        ? widgetTheme.radioButtonSelectedHoverColor
+        : widgetTheme.radioButtonSelectedColor;
+  }
+  return widgetTheme.radioButtonBorderColor;
 }

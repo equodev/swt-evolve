@@ -92,10 +92,10 @@ Color getCComboBorderColor(
   
   final styleBits = StyleBits(state.style);
   if (styleBits.has(SWT.BORDER) || styleBits.has(SWT.FLAT)) {
-    return isActive ? widgetTheme.borderColor : Colors.transparent;
+    return isActive ? widgetTheme.borderColor : widgetTheme.backgroundColor.withOpacity(0);
   }
   
-  return isActive ? widgetTheme.borderColor : Colors.transparent;
+  return isActive ? widgetTheme.borderColor : widgetTheme.backgroundColor.withOpacity(0);
 }
 
 // Helper to get border width based on style
@@ -105,4 +105,8 @@ double getCComboBorderWidth(VCCombo state, CComboThemeExtension widgetTheme) {
     return 3.0; // Original BORDER style
   }
   return widgetTheme.borderWidth;
+}
+
+Color getCComboItemBackgroundColor(CComboThemeExtension widgetTheme, bool isSelected) {
+  return isSelected ? widgetTheme.selectedItemBackgroundColor : Colors.transparent;
 }

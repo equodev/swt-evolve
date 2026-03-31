@@ -21,8 +21,9 @@ class ImageUtils {
     Color? color,
     bool enabled = true,
   }) {
+    final preserveColors = getConfigFlags().preserve_icon_colors ?? false;
     final cacheKey =
-        '$filename-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled';
+        '$filename-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled-$preserveColors';
 
     if (_iconCache.containsKey(cacheKey)) {
       return _iconCache[cacheKey];
@@ -37,7 +38,9 @@ class ImageUtils {
 
     final iconSize =
         size ?? (isFontAwesome ? AppSizes.fontAwesomeIcon : AppSizes.icon);
-    final iconColor = color ?? AppColors.getColor(enabled);
+    final iconColor = preserveColors
+        ? null
+        : (color ?? AppColors.getColor(enabled));
 
     Widget iconWidget = Icon(iconData, size: iconSize, color: iconColor);
 
@@ -86,8 +89,7 @@ class ImageUtils {
 
         Widget iconContent;
 
-        if (color != null || !preserveColors) {
-          // Apply color filter if color is explicitly provided or preserve_icon_colors is false
+        if (!preserveColors) {
           final imageColor = color ?? AppColors.getColor(enabled);
           iconContent = SizedBox(
             width: imageSize,
@@ -105,7 +107,6 @@ class ImageUtils {
             );
           }
         } else {
-          // preserve_icon_colors=true and no explicit color - show image as-is
           iconContent = SizedBox(
             width: imageSize,
             height: imageSize,
@@ -195,8 +196,15 @@ class ImageUtils {
     BoxConstraints? constraints,
     bool renderAsIcon = true,
   }) {
+    final preserveColors = getConfigFlags().preserve_icon_colors ?? false;
+    final Color? effectiveTint = preserveColors
+        ? null
+        : (color ?? AppColors.getColor(enabled));
+
     final cacheKey =
-        'replacement-$filename-${size ?? width ?? height ?? 'default'}-${color?.value ?? 'default'}-$enabled-$renderAsIcon';
+        'replacement-$filename-${size ?? width ?? height ?? 'default'}-'
+        '${color?.value ?? 'default'}-${effectiveTint?.value ?? 'none'}-'
+        '$preserveColors-$enabled-$renderAsIcon';
 
     if (_imageCache.containsKey(cacheKey)) {
       return _imageCache[cacheKey];
@@ -216,13 +224,13 @@ class ImageUtils {
             replacement,
             width: svgSize,
             height: svgSize,
-            colorFilter: color != null
-                ? ColorFilter.mode(color!, BlendMode.srcIn)
+            colorFilter: effectiveTint != null
+                ? ColorFilter.mode(effectiveTint, BlendMode.srcIn)
                 : null,
           ),
         );
 
-        if (color == null) {
+        if (preserveColors || color == null) {
           svgContent = Opacity(opacity: enabled ? 1.0 : 0.5, child: svgContent);
         }
 
@@ -245,12 +253,12 @@ class ImageUtils {
           width: width,
           height: height,
           fit: BoxFit.contain,
-          colorFilter: color != null
-              ? ColorFilter.mode(color!, BlendMode.srcIn)
+          colorFilter: effectiveTint != null
+              ? ColorFilter.mode(effectiveTint, BlendMode.srcIn)
               : null,
         );
 
-        if (color == null) {
+        if (preserveColors || color == null) {
           svgWidget = Opacity(opacity: enabled ? 1.0 : 0.5, child: svgWidget);
         }
 
@@ -269,9 +277,9 @@ class ImageUtils {
         Widget imageContent = SizedBox(
           width: imageSize,
           height: imageSize,
-          child: color != null
+          child: effectiveTint != null
               ? ColorFiltered(
-                  colorFilter: ColorFilter.mode(color!, BlendMode.srcIn),
+                  colorFilter: ColorFilter.mode(effectiveTint, BlendMode.srcIn),
                   child: RawImage(
                     image: replacement,
                     width: imageSize,
@@ -287,7 +295,7 @@ class ImageUtils {
                 ),
         );
 
-        if (color == null) {
+        if (preserveColors || color == null) {
           imageContent = Opacity(
             opacity: enabled ? 1.0 : 0.5,
             child: imageContent,
@@ -311,9 +319,9 @@ class ImageUtils {
           widget = imageContent;
         }
       } else {
-        Widget imageWidget = color != null
+        Widget imageWidget = effectiveTint != null
             ? ColorFiltered(
-                colorFilter: ColorFilter.mode(color!, BlendMode.srcIn),
+                colorFilter: ColorFilter.mode(effectiveTint, BlendMode.srcIn),
                 child: RawImage(
                   image: replacement,
                   width: width,
@@ -328,7 +336,7 @@ class ImageUtils {
                 fit: BoxFit.contain,
               );
 
-        if (color == null) {
+        if (preserveColors || color == null) {
           imageWidget = Opacity(
             opacity: enabled ? 1.0 : 0.5,
             child: imageWidget,
@@ -368,9 +376,11 @@ class ImageUtils {
     }
 
     // Generate cache key based on all parameters that affect the result
+    final preserveColors = getConfigFlags().preserve_icon_colors ?? false;
     final cacheKey =
         'future-${image.filename ?? ''}-${image.imageData?.data?.length ?? 0}-'
-        '${size ?? width ?? height ?? 'default'}-${color?.value ?? 'default'}-$enabled-$renderAsIcon';
+        '${size ?? width ?? height ?? 'default'}-${color?.value ?? 'default'}-'
+        '$preserveColors-$enabled-$renderAsIcon';
 
     // Return cached Future if it exists
     if (_futureCache.containsKey(cacheKey)) {

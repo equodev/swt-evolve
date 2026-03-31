@@ -30,7 +30,16 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     final useSwtColors = getConfigFlags().use_swt_colors ?? false;
 
     if (!useSwtColors) {
-      return button;
+      final defaultBg =
+          Theme.of(context).extension<ButtonThemeExtension>()!.controlBackgroundColor;
+      final bg = getBackgroundColor(
+        background: state.background,
+        defaultColor: defaultBg,
+      );
+      return Container(
+        color: bg ?? defaultBg,
+        child: button,
+      );
     }
 
     final swtBackgroundColor = getSwtBackgroundColor(context);
@@ -88,9 +97,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       isPrimary: isPrimary,
     );
 
-    final pressedBackgroundColor = isPrimary
-        ? widgetTheme.pushButtonPressedColor
-        : widgetTheme.secondaryButtonPressedColor;
+    final pressedBackgroundColor = getPushButtonPressedColor(widgetTheme, isPrimary);
 
     final borderColor = getPushButtonBorderColor(
       state,
@@ -120,11 +127,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         text,
         widgetTheme,
         enabled,
-        enabled
-            ? (isPrimary
-                  ? widgetTheme.pushButtonTextColor
-                  : widgetTheme.secondaryButtonTextColor)
-            : widgetTheme.disabledForegroundColor,
+        getPushButtonTextColor(widgetTheme, isPrimary, enabled),
         widgetTheme.pushButtonFontStyle,
         hasBounds: hasValidBounds,
       ),
@@ -200,6 +203,12 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
   ) {
     final isChecked = state.selection ?? false;
     final isGrayed = state.grayed ?? false;
+    final checkboxBackgroundColor = getButtonBackgroundColor(
+      state,
+      widgetTheme,
+      widgetTheme.checkboxColor,
+      enabled: enabled,
+    );
 
     final constraints = getConstraintsFromBounds(state.bounds);
     final hasValidBounds = hasBounds(state.bounds);
@@ -228,7 +237,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       baseColor: enabled
           ? (isChecked || isGrayed
                 ? widgetTheme.checkboxSelectedColor
-                : widgetTheme.checkboxColor)
+                : checkboxBackgroundColor)
           : widgetTheme.disabledBackgroundColor,
       hoverColor: widgetTheme.checkboxHoverColor,
       borderColor: enabled
@@ -281,6 +290,12 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     String? text,
   ) {
     final isSelected = state.selection ?? false;
+    final radioBackgroundColor = getButtonBackgroundColor(
+      state,
+      widgetTheme,
+      widgetTheme.dropdownButtonColor,
+      enabled: enabled,
+    );
 
     final constraints = getConstraintsFromBounds(state.bounds);
     final hasValidBounds = hasBounds(state.bounds);
@@ -310,7 +325,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       baseColor: enabled
           ? (isSelected
                 ? widgetTheme.radioButtonSelectedColor
-                : widgetTheme.dropdownButtonColor)
+                : radioBackgroundColor)
           : widgetTheme.disabledBackgroundColor,
       hoverColor: widgetTheme.radioButtonHoverColor,
       selectedHoverColor: widgetTheme.radioButtonSelectedHoverColor,
@@ -326,7 +341,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       isCircle: true,
       innerSize: isSelected ? radioButtonInnerSize : null,
       innerColor: enabled
-          ? widgetTheme.dropdownButtonColor
+          ? radioBackgroundColor
           : widgetTheme.disabledForegroundColor,
       duration: widgetTheme.buttonPressDelay,
       onTap: enabled ? _onPressed : null,

@@ -46,7 +46,7 @@ SliderThemeExtension _getSliderTheme({
     disabledThumbColor: colorSchemeExtension.onSurfaceVariantDisabled,
 
     // Overlay colors
-    overlayColor: Colors.transparent,
+    overlayColor: colorSchemeExtension.stateDefaultEnabled,
 
     // Track sizing
     trackHeight: 4.0,

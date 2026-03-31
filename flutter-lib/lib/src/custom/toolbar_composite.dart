@@ -9,9 +9,11 @@ import '../gen/toolbar.dart';
 import '../gen/toolitem.dart';
 import '../gen/widgets.dart';
 import '../impl/composite_evolve.dart';
+import '../impl/widget_config.dart';
 import '../nolayout.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
+import 'theme_color_palette_control.dart';
 
 class ToolbarComposite extends CompositeSwt<VComposite> {
   final bool useBoundsLayout;
@@ -44,6 +46,10 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
     final widgetTheme = Theme.of(context).extension<ToolBarThemeExtension>();
     final backgroundColor = widget.backgroundColor ?? widgetTheme!.toolbarBackgroundColor;
       final visibleChildren = children.where((child) => child.visible != false).toList();
+
+    final themeName = getConfigFlags().theme_name?.trim();
+    final showPalette = widget.useBoundsLayout &&
+        (themeName == null || themeName.isEmpty);
 
     if (widget.useBoundsLayout) {
       final boundsHeight = state.bounds?.height;
@@ -129,10 +135,18 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
       return Container(
         height: toolbarHeight,
         decoration: BoxDecoration(color: backgroundColor),
-        child: Stack(
-          key: _stackKey,
-          clipBehavior: Clip.none,
-          children: positionedContent,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Stack(
+                key: _stackKey,
+                clipBehavior: Clip.hardEdge,
+                children: positionedContent,
+              ),
+            ),
+            if (showPalette) const ThemeColorToolbarPaletteControl(),
+          ],
         ),
       );
     }
@@ -140,18 +154,23 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
     final widgets = visibleChildren.map((child) => buildMapWidgetFromValue(child)).toList();
     return Container(
       decoration: BoxDecoration(color: backgroundColor),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Row(
-          mainAxisSize: MainAxisSize.max,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            ...widgets,
-            Expanded(
-              child: Container(color: backgroundColor),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: ClipRect(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: widgets,
+                ),
+              ),
             ),
-          ],
-        ),
+          ),
+          if (showPalette) const ThemeColorToolbarPaletteControl(),
+        ],
       ),
     );
   }

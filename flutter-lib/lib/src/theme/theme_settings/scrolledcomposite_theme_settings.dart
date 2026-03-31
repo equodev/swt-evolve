@@ -47,7 +47,7 @@ ScrolledCompositeThemeExtension _getScrolledCompositeTheme({
     // Scrollbar colors
     scrollbarThumbColor: colorScheme.outline,
     scrollbarThumbHoverColor: colorScheme.onSurfaceVariant,
-    scrollbarTrackColor: Colors.transparent,
+    scrollbarTrackColor: colorSchemeExtension.stateDefaultEnabled,
 
     // Border colors
     borderColor: colorScheme.outline,

@@ -59,11 +59,11 @@ ToolItemThemeExtension _getToolItemTheme({
     tooltipMargin: const EdgeInsets.symmetric(horizontal: 20),
     tooltipWaitDuration: const Duration(seconds: 1),
     segmentSelectedBackgroundColor: colorScheme.primary,
-    segmentInnerColor: const Color(0xFF5959EB),
+    segmentInnerColor: colorSchemeExtension.primaryVariant,
     segmentUnselectedBackgroundColor: isDark
-        ? const Color(0xFF3A3A3A)
-        : const Color(0xFFE0E0E0),
-    segmentSelectedTextColor: Colors.white,
+        ? colorScheme.surfaceContainerHigh
+        : colorSchemeExtension.secondaryBold,
+    segmentSelectedTextColor: colorSchemeExtension.onPrimaryVariant,
     segmentUnselectedTextColor: colorScheme.onSurfaceVariant,
     segmentBorderRadius: 8.0,
     segmentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 1.0),
@@ -77,13 +77,19 @@ ToolItemThemeExtension _getToolItemTheme({
     specialDropdownTooltipText: 'Create new Test Case',
     specialDropdownImageFilename: 'new_24',
     specialDropdownText: 'New Test Case',
-    specialDropdownBackgroundColor: const Color(0xFF5959EB),
-    specialDropdownTextColor: Colors.white,
-    specialDropdownSeparatorColor: Colors.white,
-    specialDropdownArrowColor: Colors.white,
+    specialDropdownBackgroundColor: colorSchemeExtension.primaryVariant,
+    specialDropdownTextColor: colorSchemeExtension.onPrimaryVariant,
+    specialDropdownSeparatorColor: colorSchemeExtension.onPrimaryVariant,
+    specialDropdownArrowColor: colorSchemeExtension.onPrimaryVariant,
     specialDropdownPadding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
     specialDropdownItemSpacing: 2.0,
     fontStyle: textTheme.bodyMedium,
   );
+}
+
+Color getSegmentTextColor(ToolItemThemeExtension widgetTheme, bool isSelected) {
+  return isSelected
+      ? widgetTheme.segmentSelectedTextColor
+      : widgetTheme.segmentUnselectedTextColor;
 }
 

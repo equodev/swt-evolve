@@ -127,3 +127,13 @@ Color getComboIconColor(
   return widgetTheme.iconColor;
 }
 
+Color getComboItemBackgroundColor(
+  ComboThemeExtension widgetTheme,
+  bool isSelected,
+  bool isHovered,
+) {
+  if (isSelected) return widgetTheme.selectedItemBackgroundColor;
+  if (isHovered) return widgetTheme.hoverBackgroundColor;
+  return const Color(0x00000000);
+}
+

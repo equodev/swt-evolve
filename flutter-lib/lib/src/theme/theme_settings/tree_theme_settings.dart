@@ -57,14 +57,14 @@ TreeThemeExtension _getTreeTheme({
     backgroundColor: colorScheme.surface,
     disabledBackgroundColor: colorScheme.surfaceVariant,
     hoverBackgroundColor: colorScheme.surfaceVariant,
-    selectedBackgroundColor: colorSchemeExtension.secondaryVariantBorder,
-    
+    selectedBackgroundColor: colorScheme.secondaryContainer,
+
     // Item colors (single column)
     itemTextColor: colorScheme.onSurface,
-    itemSelectedTextColor: colorSchemeExtension.onSecondaryVariant,
+    itemSelectedTextColor: colorScheme.onSecondaryContainer,
     itemDisabledTextColor: colorSchemeExtension.onSurfaceVariantDisabled,
     itemHoverBackgroundColor: colorScheme.surfaceVariant,
-    itemSelectedBorderColor: Colors.transparent,
+    itemSelectedBorderColor: colorSchemeExtension.stateDefaultEnabled,
     itemSelectedBorderWidth: 0.0,
     
     headerBackgroundColor: colorScheme.surfaceContainerLow,
@@ -237,7 +237,7 @@ Color getTreeItemBackgroundColor(
           ? widgetTheme.selectedBackgroundColor
           : (hovered
               ? widgetTheme.itemHoverBackgroundColor
-              : Colors.transparent))
+              : widgetTheme.itemSelectedBorderColor))
       : widgetTheme.disabledBackgroundColor;
   
   return getBackgroundColor(

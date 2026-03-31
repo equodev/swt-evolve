@@ -314,9 +314,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     bool isSelected,
     bool enabled,
   ) {
-    final defaultColor = enabled
-        ? (isSelected ? theme.rowSelectedTextColor : theme.rowTextColor)
-        : theme.rowDisabledTextColor;
+    final defaultColor = getTableCellDefaultTextColor(theme, isSelected, enabled);
 
     final cellForeground = getCellForeground(columnIndex);
     return getForegroundColor(

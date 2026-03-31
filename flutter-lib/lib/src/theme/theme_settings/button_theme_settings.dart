@@ -49,21 +49,23 @@ ButtonThemeExtension _getButtonTheme({
     enableTapAnimation: true,
     
     // InkWell colors
-    splashColor: Colors.transparent,
-    highlightColor: Colors.transparent,
-    
-    pushButtonColor: colorSchemeExtension.primaryVariant,
-    pushButtonTextColor: colorSchemeExtension.onPrimaryVariant,
+    splashColor: colorSchemeExtension.stateDefaultEnabled,
+    highlightColor: colorSchemeExtension.stateDefaultEnabled,
+
+    controlBackgroundColor: colorScheme.surface,
+
+    pushButtonColor: colorScheme.primary,
+    pushButtonTextColor: colorScheme.onPrimary,
     pushButtonHoverColor: colorSchemeExtension.primaryHovered,
     pushButtonPressedColor: colorScheme.primaryContainer,
     pushButtonDisabledColor: colorSchemeExtension.primaryVariantDisabled,
-    pushButtonBorderColor: colorSchemeExtension.primaryVariant,
-    
-    secondaryButtonColor: colorSchemeExtension.secondaryVariant,
+    pushButtonBorderColor: colorScheme.primary,
+
+    secondaryButtonColor: colorScheme.secondary,
     secondaryButtonHoverColor: colorScheme.secondaryContainer,
     secondaryButtonPressedColor: colorSchemeExtension.secondaryPressed,
-    secondaryButtonTextColor: colorSchemeExtension.onSecondaryVariant,
-    secondaryButtonBorderColor: colorSchemeExtension.secondaryVariantBorder,
+    secondaryButtonTextColor: colorScheme.onSecondary,
+    secondaryButtonBorderColor: colorScheme.secondary,
     
     // Selectable Button colors
     selectableButtonColor: colorScheme.primary,
@@ -75,7 +77,7 @@ ButtonThemeExtension _getButtonTheme({
     // Radio Button colors
     radioButtonSelectedColor: colorScheme.primary,
     radioButtonHoverColor: colorScheme.surfaceVariant,
-    radioButtonSelectedHoverColor: Color.lerp(colorScheme.primary, Colors.black, 0.2) ?? colorScheme.primaryContainer,
+    radioButtonSelectedHoverColor: Color.lerp(colorScheme.primary, colorScheme.onSurface, 0.2) ?? colorScheme.primaryContainer,
     radioButtonBorderColor: colorScheme.outline,
     radioButtonTextColor: textTheme.bodyMedium?.color ?? colorScheme.onSurface,
     
@@ -210,6 +212,23 @@ Color getPushButtonBorderColor(
   return isPrimaryButton
       ? widgetTheme.pushButtonBorderColor
       : widgetTheme.secondaryButtonBorderColor;
+}
+
+Color getPushButtonPressedColor(ButtonThemeExtension widgetTheme, bool isPrimary) {
+  return isPrimary
+      ? widgetTheme.pushButtonPressedColor
+      : widgetTheme.secondaryButtonPressedColor;
+}
+
+Color getPushButtonTextColor(
+  ButtonThemeExtension widgetTheme,
+  bool isPrimary,
+  bool enabled,
+) {
+  if (!enabled) return widgetTheme.disabledForegroundColor;
+  return isPrimary
+      ? widgetTheme.pushButtonTextColor
+      : widgetTheme.secondaryButtonTextColor;
 }
 
 double getCheckboxSize(

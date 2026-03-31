@@ -17,6 +17,9 @@ ButtonThemeExtension _$ButtonThemeExtensionFromJson(
   highlightColor: const ColorConverter().fromJson(
     json['highlightColor'] as String,
   ),
+  controlBackgroundColor: const ColorConverter().fromJson(
+    json['controlBackgroundColor'] as String,
+  ),
   pushButtonColor: const ColorConverter().fromJson(
     json['pushButtonColor'] as String,
   ),
@@ -161,6 +164,9 @@ Map<String, dynamic> _$ButtonThemeExtensionToJson(
   'enableTapAnimation': instance.enableTapAnimation,
   'splashColor': const ColorConverter().toJson(instance.splashColor),
   'highlightColor': const ColorConverter().toJson(instance.highlightColor),
+  'controlBackgroundColor': const ColorConverter().toJson(
+    instance.controlBackgroundColor,
+  ),
   'pushButtonColor': const ColorConverter().toJson(instance.pushButtonColor),
   'selectableButtonColor': const ColorConverter().toJson(
     instance.selectableButtonColor,

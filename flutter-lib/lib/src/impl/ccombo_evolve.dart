@@ -6,6 +6,7 @@ import '../gen/widget.dart';
 import '../impl/composite_evolve.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/ccombo_theme_extension.dart';
+import '../theme/theme_settings/ccombo_theme_settings.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 import 'color_utils.dart';
@@ -285,9 +286,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
             minimumSize: Size(width, widgetTheme.itemHeight),
             padding: widgetTheme.textFieldPadding,
             overlayColor: widgetTheme.hoverBackgroundColor,
-            backgroundColor: isSelected
-                ? widgetTheme.selectedItemBackgroundColor
-                : Colors.transparent,
+            backgroundColor: getCComboItemBackgroundColor(widgetTheme, isSelected),
           ),
         );
       }).toList(),
@@ -402,9 +401,7 @@ class _StyledSimpleCCombo extends StatelessWidget {
                 child: Container(
                   height: widgetTheme.itemHeight,
                   padding: widgetTheme.textFieldPadding,
-                  color: isSelected
-                      ? widgetTheme.selectedItemBackgroundColor
-                      : Colors.transparent,
+                  color: getCComboItemBackgroundColor(widgetTheme, isSelected),
                   alignment: _getAlignment(),
                   child: Text(item, style: textStyle),
                 ),

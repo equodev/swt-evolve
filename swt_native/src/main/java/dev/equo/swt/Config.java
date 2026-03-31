@@ -545,6 +545,10 @@ public class Config {
 
     private static ConfigFlags configFlags;
 
+    public static void invalidateConfigFlags() {
+        configFlags = null;
+    }
+
     public static ConfigFlags setConfigFlags(ConfigFlags flags) {
         configFlags = flags;
         return configFlags;
@@ -559,8 +563,50 @@ public class Config {
             configFlags.use_swt_colors = Boolean.getBoolean("swt.use_swt_colors");
             configFlags.use_swt_fonts = Boolean.getBoolean("swt.use_swt_fonts");
             configFlags.preserve_icon_colors = Boolean.getBoolean("swt.evolve.preserve_icon_colors");
+            configFlags.force_theme = System.getProperty("swt.evolve.force_theme");
+            configFlags.theme_name = System.getProperty("swt.evolve.theme_name");
+            configFlags.theme_color_widget = buildThemeColorWidgetOverrides();
         }
         return configFlags;
+    }
+
+    private static String buildThemeColorWidgetOverrides() {
+        final String prefix = "swt.evolve.theme_color_";
+        final String globalKey = "swt.evolve.theme_color";
+        java.util.ArrayList<String> keys = new java.util.ArrayList<>();
+
+        System.getProperties().forEach((k, v) -> {
+            String key = k.toString();
+            if (key.startsWith(prefix)) {
+                keys.add(key);
+            }
+        });
+
+        StringBuilder result = new StringBuilder();
+
+        // Include global theme_color as the "default" key
+        String globalColor = System.getProperty(globalKey);
+        if (globalColor != null && !globalColor.trim().isEmpty()) {
+            result.append("default=").append(globalColor.trim());
+        }
+
+        keys.sort(String::compareTo);
+        for (String key : keys) {
+            String value = System.getProperty(key);
+            if (value == null || value.trim().isEmpty()) {
+                continue;
+            }
+            String widgetKey = key.substring(prefix.length()).trim().toLowerCase();
+            if (widgetKey.isEmpty()) {
+                continue;
+            }
+            if (result.length() > 0) {
+                result.append(",");
+            }
+            result.append(widgetKey).append("=").append(value.trim());
+        }
+
+        return result.isEmpty() ? null : result.toString();
     }
 
     static String getSwtBaseClassName(Class<?> clazz) {

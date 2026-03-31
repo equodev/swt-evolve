@@ -29,10 +29,10 @@ TooltipThemeExtension _getTooltipTheme({
   required TextTheme textTheme,
 }) {
   return TooltipThemeExtension(
-    backgroundColor: Color(0xFF1F1F1F)  ,
+    backgroundColor: colorScheme.inverseSurface,
     borderRadius: 4.0,
     messageTextStyle: textTheme.bodyMedium?.copyWith(
-      color: Colors.white,
+      color: colorScheme.onInverseSurface,
       fontSize: 12,
     ),
     waitDuration: const Duration(milliseconds: 500),
