@@ -1005,43 +1005,13 @@ public class DartTableItem extends DartItem implements ITableItem {
      * </ul>
      */
     public void setImage(int index, Image image) {
-        dirty();
-        checkWidget();
-        if (image != null && image.isDisposed()) {
-            error(SWT.ERROR_INVALID_ARGUMENT);
-        }
-        Image oldImage = null;
-        if (index == 0) {
-            if (image != null && image.type == SWT.ICON) {
-                if (image.equals(this.image))
-                    return;
-            }
-            oldImage = this.image;
-            super.setImage(image);
-        }
-        int count = Math.max(1, parent.getColumnCount());
-        if (0 > index || index > count - 1)
+        boolean[] drawText = new boolean[1];
+        if (!TableHelper.setImage(this, index, image, true, drawText))
             return;
-        if (images == null && index != 0) {
-            images = new Image[count];
-            images[0] = image;
-        }
-        if (images != null) {
-            if (image != null && image.type == SWT.ICON) {
-                if (image.equals(images[index]))
-                    return;
-            }
-            oldImage = images[index];
-            images[index] = image;
-        }
-        if ((parent.style & SWT.VIRTUAL) != 0)
-            cached = true;
-        /* Ensure that the image list is created */
         ((DartTable) parent.getImpl()).imageIndex(image, index);
         if (index == 0)
             ((DartTable) parent.getImpl()).setScrollWidth(this.getApi(), false);
-        boolean drawText = (image == null && oldImage != null) || (image != null && oldImage == null);
-        redraw(index, drawText, true);
+        redraw(index, drawText[0], true);
     }
 
     @Override
@@ -1263,6 +1233,14 @@ public class DartTableItem extends DartItem implements ITableItem {
 
     public Color __foreground() {
         return _foreground;
+    }
+
+    public Image[] getImages() {
+        return TableHelper.getImages(this);
+    }
+
+    public void setImages(Image[] value) {
+        TableHelper.setImages(value, this);
     }
 
     public FlutterBridge getBridge() {

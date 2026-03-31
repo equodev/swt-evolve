@@ -1218,6 +1218,8 @@ public class DartTableItem extends DartItem implements ITableItem {
 
     int imageIndent;
 
+    Image[] images = new Image[0];
+
     public Table _parent() {
         return parent;
     }
@@ -1263,7 +1265,15 @@ public class DartTableItem extends DartItem implements ITableItem {
     }
 
     public Image[] _images() {
-        return null;
+        return images;
+    }
+
+    public Image[] getImages() {
+        return TableHelper.getImages(this);
+    }
+
+    public void setImages(Image[] value) {
+        TableHelper.setImages(value, this);
     }
 
     public FlutterBridge getBridge() {

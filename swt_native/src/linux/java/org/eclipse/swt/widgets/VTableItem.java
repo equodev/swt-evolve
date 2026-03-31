@@ -68,6 +68,14 @@ public class VTableItem extends VItem {
         ((DartTableItem) impl).imageIndent = value;
     }
 
+    public Image[] getImages() {
+        return ((DartTableItem) impl).getImages();
+    }
+
+    public void setImages(Image[] value) {
+        ((DartTableItem) impl).setImages(value);
+    }
+
     public String[] getTexts() {
         return ((DartTableItem) impl).strings;
     }
