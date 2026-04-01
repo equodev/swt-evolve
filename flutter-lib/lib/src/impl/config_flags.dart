@@ -13,7 +13,9 @@ class ConfigFlags {
   bool? use_swt_fonts;
   String? theme_name;
   String? force_theme;
-  String? theme_color_widget;
+  String? theme_color;
+  Map<String, String>? theme_colors_by_widget;
+  bool? show_theme_color_palette;
   bool? use_special_dropdown_button;
   bool? preserve_icon_colors;
 

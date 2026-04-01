@@ -15,7 +15,12 @@ ConfigFlags _$ConfigFlagsFromJson(Map<String, dynamic> json) => ConfigFlags()
   ..use_swt_fonts = json['use_swt_fonts'] as bool?
   ..theme_name = json['theme_name'] as String?
   ..force_theme = json['force_theme'] as String?
-  ..theme_color_widget = json['theme_color_widget'] as String?
+  ..theme_color = json['theme_color'] as String?
+  ..theme_colors_by_widget =
+      (json['theme_colors_by_widget'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(k, e as String),
+      )
+  ..show_theme_color_palette = json['show_theme_color_palette'] as bool?
   ..use_special_dropdown_button = json['use_special_dropdown_button'] as bool?
   ..preserve_icon_colors = json['preserve_icon_colors'] as bool?;
 
@@ -29,7 +34,9 @@ Map<String, dynamic> _$ConfigFlagsToJson(
   'use_swt_fonts': instance.use_swt_fonts,
   'theme_name': instance.theme_name,
   'force_theme': instance.force_theme,
-  'theme_color_widget': instance.theme_color_widget,
+  'theme_color': instance.theme_color,
+  'theme_colors_by_widget': instance.theme_colors_by_widget,
+  'show_theme_color_palette': instance.show_theme_color_palette,
   'use_special_dropdown_button': instance.use_special_dropdown_button,
   'preserve_icon_colors': instance.preserve_icon_colors,
 };

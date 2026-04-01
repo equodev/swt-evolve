@@ -2,6 +2,8 @@ package dev.equo.swt;
 
 import com.dslplatform.json.CompiledJson;
 
+import java.util.Map;
+
 @CompiledJson(objectFormatPolicy = CompiledJson.ObjectFormatPolicy.FULL)
 public class ConfigFlags {
 
@@ -21,7 +23,9 @@ public class ConfigFlags {
     
     public String force_theme;
     public String theme_name;
-    public String theme_color_widget;
+    public String theme_color;
+    public Map<String, String> theme_colors_by_widget;
+    public boolean show_theme_color_palette;
 
     public static ConfigFlags use_swt_fonts(boolean v) {
         ConfigFlags configFlags = new ConfigFlags();
@@ -39,7 +43,9 @@ public class ConfigFlags {
                 ", use_swt_fonts=" + use_swt_fonts +
                 ", force_theme='" + force_theme + '\'' +
                 ", theme_name='" + theme_name + '\'' +
-                ", theme_color_widget='" + theme_color_widget + '\'' +
+                ", theme_color='" + theme_color + '\'' +
+                ", theme_colors_by_widget=" + theme_colors_by_widget +
+                ", show_theme_color_palette=" + show_theme_color_palette +
                 ", preserve_icon_colors=" + preserve_icon_colors +
                 '}';
     }

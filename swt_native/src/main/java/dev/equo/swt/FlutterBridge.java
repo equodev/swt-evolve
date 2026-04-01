@@ -38,35 +38,23 @@ public abstract class FlutterBridge {
         if (json.isEmpty()) {
             return;
         }
-        String key = extractJsonStringField(json, "key");
-        String value = extractJsonStringField(json, "value");
-        if (key == null || key.isEmpty() || value == null) {
-            return;
+        try {
+            ConfigFlags parsed = serializer.from(
+                    ConfigFlags.class,
+                    new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+            if (parsed == null || parsed.theme_color == null) {
+                return;
+            }
+            String value = parsed.theme_color.trim();
+            if (value.isEmpty()) {
+                return;
+            }
+            System.setProperty("swt.evolve.theme_color", value);
+            getConfigFlags().theme_color = value;
+            broadcastSwtEvolveProperties();
+        } catch (IOException e) {
+            System.err.println("[FlutterBridge] swt.evolve.property.set: " + e.getMessage());
         }
-        System.setProperty(key, value);
-        Config.invalidateConfigFlags();
-        broadcastSwtEvolveProperties();
-    }
-
-    private static String extractJsonStringField(String json, String field) {
-        String needle = "\"" + field + "\"";
-        int i = json.indexOf(needle);
-        if (i < 0) {
-            return null;
-        }
-        int colon = json.indexOf(':', i + needle.length());
-        if (colon < 0) {
-            return null;
-        }
-        int start = json.indexOf('"', colon + 1);
-        if (start < 0) {
-            return null;
-        }
-        int end = json.indexOf('"', start + 1);
-        if (end < 0 || end <= start) {
-            return null;
-        }
-        return json.substring(start + 1, end);
     }
 
     protected final CompletableFuture<Boolean> clientReady = new CompletableFuture<>();

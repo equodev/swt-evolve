@@ -8,7 +8,9 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -545,10 +547,6 @@ public class Config {
 
     private static ConfigFlags configFlags;
 
-    public static void invalidateConfigFlags() {
-        configFlags = null;
-    }
-
     public static ConfigFlags setConfigFlags(ConfigFlags flags) {
         configFlags = flags;
         return configFlags;
@@ -563,18 +561,19 @@ public class Config {
             configFlags.use_swt_colors = Boolean.getBoolean("swt.use_swt_colors");
             configFlags.use_swt_fonts = Boolean.getBoolean("swt.use_swt_fonts");
             configFlags.preserve_icon_colors = Boolean.getBoolean("swt.evolve.preserve_icon_colors");
+            configFlags.show_theme_color_palette = Boolean.getBoolean("swt.evolve.show_theme_color_palette");
             configFlags.force_theme = System.getProperty("swt.evolve.force_theme");
             configFlags.theme_name = System.getProperty("swt.evolve.theme_name");
-            configFlags.theme_color_widget = buildThemeColorWidgetOverrides();
+            configFlags.theme_color = System.getProperty("swt.evolve.theme_color");
+            applyThemeColorsByWidgetFromProperties(configFlags);
         }
         return configFlags;
     }
 
-    private static String buildThemeColorWidgetOverrides() {
+    private static void applyThemeColorsByWidgetFromProperties(ConfigFlags flags) {
         final String prefix = "swt.evolve.theme_color_";
-        final String globalKey = "swt.evolve.theme_color";
-        java.util.ArrayList<String> keys = new java.util.ArrayList<>();
 
+        ArrayList<String> keys = new ArrayList<>();
         System.getProperties().forEach((k, v) -> {
             String key = k.toString();
             if (key.startsWith(prefix)) {
@@ -582,15 +581,8 @@ public class Config {
             }
         });
 
-        StringBuilder result = new StringBuilder();
-
-        // Include global theme_color as the "default" key
-        String globalColor = System.getProperty(globalKey);
-        if (globalColor != null && !globalColor.trim().isEmpty()) {
-            result.append("default=").append(globalColor.trim());
-        }
-
         keys.sort(String::compareTo);
+        LinkedHashMap<String, String> byWidget = new LinkedHashMap<>();
         for (String key : keys) {
             String value = System.getProperty(key);
             if (value == null || value.trim().isEmpty()) {
@@ -600,13 +592,11 @@ public class Config {
             if (widgetKey.isEmpty()) {
                 continue;
             }
-            if (result.length() > 0) {
-                result.append(",");
-            }
-            result.append(widgetKey).append("=").append(value.trim());
+            byWidget.put(widgetKey, value.trim());
         }
-
-        return result.isEmpty() ? null : result.toString();
+        if (!byWidget.isEmpty()) {
+            flags.theme_colors_by_widget = byWidget;
+        }
     }
 
     static String getSwtBaseClassName(Class<?> clazz) {

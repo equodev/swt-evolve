@@ -7,8 +7,6 @@ import '../theme/theme_extensions/theme_color_palette_theme_extension.dart';
 
 const String _kEvolvePropertySetChannel = 'swt.evolve.property.set';
 
-const String _kSwtEvolveThemeColorPropertyKey = 'swt.evolve.theme_color';
-
 void _syncThemeColorPropertyToJvm(String hex6or8) {
   final trimmed = hex6or8.trim();
   if (trimmed.isEmpty) {
@@ -16,10 +14,7 @@ void _syncThemeColorPropertyToJvm(String hex6or8) {
   }
   EquoCommService.sendPayload(
     _kEvolvePropertySetChannel,
-    jsonEncode(<String, String>{
-      'key': _kSwtEvolveThemeColorPropertyKey,
-      'value': trimmed,
-    }),
+    jsonEncode(<String, String>{'theme_color': trimmed}),
   );
 }
 
