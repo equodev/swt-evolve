@@ -49,7 +49,8 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
 
     final themeName = getConfigFlags().theme_name?.trim();
     final showPalette = widget.useBoundsLayout &&
-        (themeName == null || themeName.isEmpty);
+        (themeName == null || themeName.isEmpty) &&
+        (getConfigFlags().show_theme_color_palette == true);
 
     if (widget.useBoundsLayout) {
       final boundsHeight = state.bounds?.height;

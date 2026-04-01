@@ -62,37 +62,11 @@ ColorSchemeExtension _resolveWidgetColorSchemeExtension(
 }
 
 String? _themeColorForWidget(ConfigFlags flags, String widgetKey) {
-  final colorsByWidget = _parseThemeColorWidgetMap(flags.theme_color_widget);
-  return colorsByWidget[widgetKey];
-}
-
-Map<String, String> _parseThemeColorWidgetMap(String? raw) {
-  if (raw == null || raw.trim().isEmpty) {
-    return const {};
+  final map = flags.theme_colors_by_widget;
+  if (map == null || map.isEmpty) {
+    return null;
   }
-
-  final result = <String, String>{};
-  for (final entry in raw.split(RegExp(r'[;,]'))) {
-    final part = entry.trim();
-    if (part.isEmpty) {
-      continue;
-    }
-    final separator = part.contains('=') ? '=' : (part.contains(':') ? ':' : '');
-    if (separator.isEmpty) {
-      continue;
-    }
-    final split = part.split(separator);
-    if (split.length < 2) {
-      continue;
-    }
-    final key = split[0].trim().toLowerCase();
-    final value = split.sublist(1).join(separator).trim();
-    if (key.isEmpty || value.isEmpty) {
-      continue;
-    }
-    result[key] = value;
-  }
-  return result;
+  return map[widgetKey.trim().toLowerCase()];
 }
 
 Color? _parseThemeColor(String? colorHex) {
@@ -116,8 +90,7 @@ Color? _parseThemeColor(String? colorHex) {
 }
 
 Color? parseGlobalSeedColor(ConfigFlags flags) {
-  final colorsByWidget = _parseThemeColorWidgetMap(flags.theme_color_widget);
-  return _parseThemeColor(colorsByWidget['default']);
+  return _parseThemeColor(flags.theme_color);
 }
 
 Color? parseThemeColorFromHex(String? colorHex) => _parseThemeColor(colorHex);

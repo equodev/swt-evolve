@@ -38,10 +38,6 @@ void setConfigFlags(ConfigFlags newFlags) {
 
   newFlags.theme_name = mergeString(newFlags.theme_name, prev.theme_name);
   newFlags.force_theme = mergeString(newFlags.force_theme, prev.force_theme);
-  newFlags.theme_color_widget = mergeString(
-    newFlags.theme_color_widget,
-    prev.theme_color_widget,
-  );
   configFlags = newFlags;
 }
 

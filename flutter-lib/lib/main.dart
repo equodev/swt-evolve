@@ -211,7 +211,7 @@ class EvolveApp extends StatelessWidget {
             'Theme config -> theme_name=$themeName, '
             'force_theme=${flags.force_theme}, '
             'effective_theme_mode=${effectiveThemeMode.name}, '
-            'theme_color_widget=${flags.theme_color_widget}, parsed_seed=${seedColor?.value.toRadixString(16)}',
+            'theme_color=${flags.theme_color}, theme_colors_by_widget=${flags.theme_colors_by_widget}, parsed_seed=${seedColor?.value.toRadixString(16)}',
           );
         }
         final ThemeData lightTheme;
