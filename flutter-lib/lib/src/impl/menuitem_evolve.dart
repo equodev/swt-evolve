@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../comm/comm.dart';
+import '../gen/menu.dart';
 import '../gen/menuitem.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
@@ -52,7 +54,13 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
     }
 
     if (style.has(SWT.CASCADE) && state.menu != null) {
-      return _buildCascadeMenuItem(context, widgetTheme, menuTheme, isEnabled);
+      return _CascadeMenuItemRow(
+        widgetTheme: widgetTheme,
+        menuTheme: menuTheme,
+        isEnabled: isEnabled,
+        text: state.text,
+        subMenu: state.menu!,
+      );
     }
 
     if (style.has(SWT.CHECK)) {
@@ -74,57 +82,6 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
         horizontal: widgetTheme.itemPadding.horizontal / 2,
       ),
       color: widgetTheme.separatorColor,
-    );
-  }
-
-  Widget _buildCascadeMenuItem(
-    BuildContext context,
-    MenuItemThemeExtension widgetTheme,
-    MenuThemeExtension menuTheme,
-    bool isEnabled,
-  ) {
-    final textStyle = getMenuItemTextStyle(widgetTheme, isEnabled: isEnabled);
-
-    return Opacity(
-      opacity: isEnabled ? 1.0 : widgetTheme.disabledOpacity,
-      child: SubmenuButton(
-        style: ButtonStyle(
-          backgroundColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.hovered)) {
-              return widgetTheme.hoverBackgroundColor;
-            }
-            return widgetTheme.backgroundColor;
-          }),
-          padding: WidgetStateProperty.all(widgetTheme.itemPadding),
-          minimumSize: WidgetStateProperty.all(
-            Size(widgetTheme.minItemWidth, widgetTheme.itemHeight),
-          ),
-          shape: WidgetStateProperty.all(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
-            ),
-          ),
-          animationDuration: widgetTheme.animationDuration,
-        ),
-        menuStyle: MenuStyle(
-          backgroundColor: WidgetStateProperty.all(
-            menuTheme.popupBackgroundColor,
-          ),
-          elevation: WidgetStateProperty.all(menuTheme.popupElevation),
-          padding: WidgetStateProperty.all(menuTheme.popupPadding),
-          shape: WidgetStateProperty.all(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(menuTheme.borderRadius),
-            ),
-          ),
-        ),
-        menuChildren: _buildSubMenuChildren(),
-        child: Row(
-          children: [
-            Expanded(child: Text(stripAccelerators(state.text), style: textStyle)),
-          ],
-        ),
-      ),
     );
   }
 
@@ -202,12 +159,6 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
           : null,
       child: Text(stripAccelerators(capturedState.text), style: textStyle),
     );
-  }
-
-  List<Widget> _buildSubMenuChildren() {
-    return (state.menu?.items ?? [])
-        .map((item) => MenuItemSwt(value: item))
-        .toList();
   }
 
   void _registerRadioCallback(BuildContext context) {
@@ -315,6 +266,140 @@ class _MenuItemRowState extends State<_MenuItemRow> {
           ),
         ),
         ),
+      ),
+    );
+  }
+}
+
+class _CascadeMenuItemRow extends StatefulWidget {
+  final MenuItemThemeExtension widgetTheme;
+  final MenuThemeExtension menuTheme;
+  final bool isEnabled;
+  final String? text;
+  final VMenu subMenu;
+
+  const _CascadeMenuItemRow({
+    required this.widgetTheme,
+    required this.menuTheme,
+    required this.isEnabled,
+    required this.text,
+    required this.subMenu,
+  });
+
+  @override
+  State<_CascadeMenuItemRow> createState() => _CascadeMenuItemRowState();
+}
+
+class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
+  final MenuController _menuController = MenuController();
+  // SizedBox.shrink() placeholder ensures SubmenuButton is always interactive
+  List<Widget> _menuChildren = const [SizedBox.shrink()];
+  bool _itemsLoaded = false;
+  bool _isHovered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // If items are already provided (non-lazy case), use them immediately
+    final existingItems = widget.subMenu.items;
+    if (existingItems != null && existingItems.isNotEmpty) {
+      _itemsLoaded = true;
+      _menuChildren = existingItems
+          .map((item) => MenuItemSwt(value: item))
+          .toList();
+    }
+  }
+
+  @override
+  void dispose() {
+    EquoCommService.remove("Menu/${widget.subMenu.id}");
+    super.dispose();
+  }
+
+  void _onHover(bool hovering) {
+    _isHovered = hovering;
+    if (hovering && widget.isEnabled && !_itemsLoaded) {
+      _requestItems();
+    }
+  }
+
+  void _requestItems() {
+    final channelName = "Menu/${widget.subMenu.id}";
+    EquoCommService.on<VMenu>(channelName, (VMenu updatedMenu) {
+      EquoCommService.remove(channelName);
+      if (!mounted) return;
+      final items = (updatedMenu.items ?? [])
+          .map((item) => MenuItemSwt(value: item))
+          .toList();
+      setState(() {
+        _itemsLoaded = true;
+        _menuChildren = items.isEmpty ? const [SizedBox.shrink()] : items;
+      });
+      // Open the submenu with the now-populated items if still hovered
+      if (_isHovered) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _isHovered && !_menuController.isOpen) {
+            _menuController.open();
+          }
+        });
+      }
+    });
+    MenuSwt<VMenu>(value: widget.subMenu).sendMenuShow(widget.subMenu, null);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textStyle = getMenuItemTextStyle(widget.widgetTheme, isEnabled: widget.isEnabled);
+    return Opacity(
+      opacity: widget.isEnabled ? 1.0 : widget.widgetTheme.disabledOpacity,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minWidth: double.infinity,
+          minHeight: widget.widgetTheme.itemHeight,
+        ),
+        child: SubmenuButton(
+        controller: _menuController,
+        onHover: _onHover,
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (!widget.isEnabled) return widget.widgetTheme.backgroundColor;
+            if (states.contains(WidgetState.hovered)) {
+              return widget.widgetTheme.hoverBackgroundColor;
+            }
+            return widget.widgetTheme.backgroundColor;
+          }),
+          overlayColor: WidgetStateProperty.all(Colors.transparent),
+          padding: WidgetStateProperty.all(widget.widgetTheme.itemPadding),
+          minimumSize: WidgetStateProperty.all(
+            Size(widget.widgetTheme.minItemWidth, widget.widgetTheme.itemHeight),
+          ),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(widget.widgetTheme.borderRadius),
+            ),
+          ),
+          animationDuration: widget.widgetTheme.animationDuration,
+        ),
+        menuStyle: MenuStyle(
+          backgroundColor: WidgetStateProperty.all(widget.menuTheme.popupBackgroundColor),
+          elevation: WidgetStateProperty.all(widget.menuTheme.popupElevation),
+          padding: WidgetStateProperty.all(widget.menuTheme.popupPadding),
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(widget.menuTheme.borderRadius),
+            ),
+          ),
+        ),
+        menuChildren: _menuChildren,
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(stripAccelerators(widget.text), style: textStyle),
+            ),
+          ],
+        ),
+      ),
       ),
     );
   }
