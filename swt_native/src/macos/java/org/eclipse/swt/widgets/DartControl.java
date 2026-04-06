@@ -786,6 +786,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     void enableWidget(boolean enabled) {
         updateCursorRects(isEnabled());
+        FlutterBridge.update();
     }
 
     boolean equals(double[] color1, double[] color2) {
@@ -2753,30 +2754,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setEnabled(boolean enabled) {
-        boolean newValue = enabled;
-        if (!java.util.Objects.equals(this.enabled, newValue)) {
-            dirty();
-        }
-        checkWidget();
-        if (((getApi().state & DISABLED) == 0) == enabled)
-            return;
-        Control control = null;
-        boolean fixFocus = false;
-        if (!enabled) {
-            if (((SwtDisplay) display.getImpl()).focusEvent != SWT.FocusOut) {
-                control = display.getFocusControl();
-                fixFocus = isFocusAncestor(control);
-            }
-        }
-        if (enabled) {
-            getApi().state &= ~DISABLED;
-        } else {
-            getApi().state |= DISABLED;
-        }
-        enableWidget(enabled);
-        this.enabled = newValue;
-        if (fixFocus)
-            fixFocus(control);
+        ControlHelper.setEnabled(this, enabled);
     }
 
     /**

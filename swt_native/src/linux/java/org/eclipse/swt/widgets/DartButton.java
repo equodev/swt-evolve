@@ -440,6 +440,12 @@ public class DartButton extends DartControl implements IButton {
     }
 
     void selectRadio() {
+        ;
+        for (Control child : parent.getImpl()._getChildren()) {
+            if (this.getApi() != child && child.getImpl() instanceof DartControl) {
+                ((DartControl) child.getImpl()).setRadioSelection(false);
+            }
+        }
         /*
 	* This code is intentionally commented.  When two groups
 	* of radio buttons with the same parent are separated by
@@ -455,17 +461,7 @@ public class DartButton extends DartControl implements IButton {
         //	while (i >= 0 && children [i].setRadioSelection (false)) --i;
         //	int j = index + 1;
         //	while (j < children.length && children [j].setRadioSelection (false)) j++;
-        //	setSelection (true);
-        Control[] children = parent.getImpl()._getChildren();
-        for (Control child : parent.getImpl()._getChildren()) {
-            if (this.getApi() != child && child.getImpl() instanceof DartControl) {
-                ((DartControl) child.getImpl()).setRadioSelection(false);
-            }
-        }
         setSelection(true);
-        if (parent.getImpl() instanceof DartWidget dw) {
-            getBridge().dirty(dw);
-        }
     }
 
     /**

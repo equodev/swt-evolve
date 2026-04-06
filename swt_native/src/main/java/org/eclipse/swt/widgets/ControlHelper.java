@@ -83,4 +83,31 @@ public class ControlHelper {
         }
     }
 
+    public static void setEnabled(DartControl c, boolean enabled) {
+        boolean newValue = enabled;
+        if (!java.util.Objects.equals(c.enabled, newValue)) {
+            c.dirty();
+        }
+        c.checkWidget();
+        if (((c.getApi().state & DartWidget.DISABLED) == 0) == enabled)
+            return;
+        Control control = null;
+        boolean fixFocus = false;
+        if (!enabled) {
+            if (((SwtDisplay) c.display.getImpl()).focusEvent != SWT.FocusOut) {
+                control = c.display.getFocusControl();
+                fixFocus = c.isFocusAncestor(control);
+            }
+        }
+        if (enabled) {
+            c.getApi().state &= ~DartWidget.DISABLED;
+        } else {
+            c.getApi().state |= DartWidget.DISABLED;
+        }
+        c.enabled = newValue;
+        c.enableWidget(enabled);
+        if (fixFocus)
+            c.fixFocus(control);
+    }
+
 }

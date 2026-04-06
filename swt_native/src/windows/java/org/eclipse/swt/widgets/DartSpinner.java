@@ -232,11 +232,6 @@ public class DartSpinner extends DartComposite implements ISpinner {
     }
 
     @Override
-    void enableWidget(boolean enabled) {
-        super.enableWidget(enabled);
-    }
-
-    @Override
     void deregister() {
         super.deregister();
         ((SwtDisplay) display.getImpl()).removeControl(hwndText);
@@ -372,8 +367,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
      * @since 3.4
      */
     public String getText() {
-        checkWidget();
-        return null;
+        return SpinnerHelper.getText(this);
     }
 
     /**
@@ -668,39 +662,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
     }
 
     void setSelection(int value, boolean setPos, boolean setText, boolean notify) {
-        dirty();
-        if (setPos) {
-            // Position handled by Flutter widget
-        }
-        if (setText) {
-            if (digits == 0) {
-                // Integer value, Flutter handles text display
-            } else {
-                // Format decimal value for Flutter
-                String string = String.valueOf(Math.abs(value));
-                String decimalSeparator = getDecimalSeparator();
-                int index = string.length() - digits;
-                StringBuilder buffer = new StringBuilder();
-                if (value < 0)
-                    buffer.append("-");
-                if (index > 0) {
-                    buffer.append(string.substring(0, index));
-                    buffer.append(decimalSeparator);
-                    buffer.append(string.substring(index));
-                } else {
-                    buffer.append("0");
-                    buffer.append(decimalSeparator);
-                    while (index++ < 0) buffer.append("0");
-                    buffer.append(string);
-                }
-            }
-            if (hooks(SWT.Verify) || filters(SWT.Verify)) {
-                // Verify events handled by Flutter
-            }
-        }
-        if (notify)
-            sendSelectionEvent(SWT.Selection);
-        this.selection = value;
+        SpinnerHelper.setSelection(this, value, setPos, setText, notify);
     }
 
     /**

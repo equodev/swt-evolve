@@ -134,7 +134,14 @@ public abstract class FlutterBridge {
 
         List<CompletableFuture<Void>> futures = new ArrayList<>();
 
-        Set<Object> filteredDirty = filterWidgetsWithDirtyAncestors(new HashSet<>(dirty));
+        Set<Object> dirtySnapshot = new HashSet<>(dirty);
+        Set<Object> filteredDirty = filterWidgetsWithDirtyAncestors(dirtySnapshot);
+
+        for (Object widget : dirtySnapshot) {
+            if (!filteredDirty.contains(widget)) {
+                setNotNew(widget);
+            }
+        }
 
         for (Object widget : filteredDirty) {
             if (isDisposed(widget)) continue;

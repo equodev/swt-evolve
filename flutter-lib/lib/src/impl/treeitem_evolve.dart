@@ -668,6 +668,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             );
             _context?.treeImpl?.handleTreeItemSelection(state.id);
             final e = _createEvent(detail: SWT.CHECK);
+            e.doit = newCheckedState;
             _context?.parentTree.sendSelectionSelection(
               _context!.parentTreeValue,
               e,
