@@ -1132,6 +1132,13 @@ public class DartTableItem extends DartItem implements ITableItem {
         TableHelper.setImages(value, this);
     }
 
+    @Override
+    protected void dirty() {
+        if (parent != null && !parent.isDisposed()) {
+            ((DartWidget) parent.getImpl()).dirty();
+        }
+    }
+
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;

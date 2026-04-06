@@ -234,11 +234,6 @@ public class DartSpinner extends DartComposite implements ISpinner {
     }
 
     @Override
-    void enableWidget(boolean enabled) {
-        super.enableWidget(enabled);
-    }
-
-    @Override
     void deregister() {
         super.deregister();
     }
@@ -369,8 +364,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
      * @since 3.4
      */
     public String getText() {
-        checkWidget();
-        return null;
+        return SpinnerHelper.getText(this);
     }
 
     /**
@@ -684,36 +678,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
     }
 
     void setSelection(int value, boolean setPos, boolean setText, boolean notify) {
-        int newValue = value;
-        if (!java.util.Objects.equals(this.selection, newValue)) {
-            dirty();
-        }
-        if (setPos) {
-        }
-        if (setText) {
-            String string = String.valueOf(value);
-            if (digits > 0) {
-                int index = string.length() - digits;
-                StringBuilder buffer = new StringBuilder();
-                if (index > 0) {
-                    buffer.append(string.substring(0, index));
-                    buffer.append(string.substring(index));
-                } else {
-                    buffer.append("0");
-                    while (index++ < 0) buffer.append("0");
-                    buffer.append(string);
-                }
-                string = buffer.toString();
-            }
-            if (hooks(SWT.Verify) || filters(SWT.Verify)) {
-                if (string == null)
-                    return;
-            }
-            sendEvent(SWT.Modify);
-        }
-        this.selection = newValue;
-        if (notify)
-            sendSelectionEvent(SWT.Selection);
+        SpinnerHelper.setSelection(this, value, setPos, setText, notify);
     }
 
     @Override

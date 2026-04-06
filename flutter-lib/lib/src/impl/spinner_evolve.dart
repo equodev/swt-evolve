@@ -28,7 +28,7 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
     final textLimit = state.textLimit ?? widgetTheme.defaultTextLimit;
 
     final currentValue = selection!.clamp(minimum, maximum);
-    final enabled = state.enabled ?? true;
+    final enabled = state.enabled ?? false;
     final readOnly = hasStyle(state.style, SWT.READ_ONLY);
     final size = getSpinnerSize(state, widgetTheme);
 

@@ -808,6 +808,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void enableWidget(boolean enabled) {
+        FlutterBridge.update();
     }
 
     public Control findBackgroundControl() {
@@ -2844,30 +2845,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setEnabled(boolean enabled) {
-        boolean newValue = enabled;
-        if (!java.util.Objects.equals(this.enabled, newValue)) {
-            dirty();
-        }
-        checkWidget();
-        /*
-	* Feature in Windows.  If the receiver has focus, disabling
-	* the receiver causes no window to have focus.  The fix is
-	* to assign focus to the first ancestor window that takes
-	* focus.  If no window will take focus, set focus to the
-	* desktop.
-	*/
-        Control control = null;
-        boolean fixFocus = false;
-        if (!enabled) {
-            if (((SwtDisplay) display.getImpl()).focusEvent != SWT.FocusOut) {
-                control = display.getFocusControl();
-                fixFocus = isFocusAncestor(control);
-            }
-        }
-        enableWidget(enabled);
-        this.enabled = newValue;
-        if (fixFocus)
-            fixFocus(control);
+        ControlHelper.setEnabled(this, enabled);
     }
 
     /**
