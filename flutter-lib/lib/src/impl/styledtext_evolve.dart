@@ -44,6 +44,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   ScrollController _horizontalController = ScrollController();
   int _lastSentVerticalOffset = 0;
   int _lastSentHorizontalOffset = 0;
+  final Set<int> _pendingVerticalScrollValues = {};
+  final Set<int> _pendingHorizontalScrollValues = {};
 
   StyledTextThemeExtension get _styledTextTheme =>
       Theme.of(context).extension<StyledTextThemeExtension>()!;
@@ -86,7 +88,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     _wordWrap = state.wordWrap ?? false; // SWT default is no wrap; wrap only when explicitly set
 
     final newTopPixel = state.topPixel ?? 0;
-    if (newTopPixel != _lastSentVerticalOffset) {
+    if (!_pendingVerticalScrollValues.remove(newTopPixel) &&
+        newTopPixel != _lastSentVerticalOffset) {
       _lastSentVerticalOffset = newTopPixel;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_verticalController.hasClients) {
@@ -97,7 +100,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     }
 
     final newHorizPixel = state.horizontalPixel ?? 0;
-    if (newHorizPixel != _lastSentHorizontalOffset) {
+    if (!_pendingHorizontalScrollValues.remove(newHorizPixel) &&
+        newHorizPixel != _lastSentHorizontalOffset) {
       _lastSentHorizontalOffset = newHorizPixel;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_horizontalController.hasClients) {
@@ -479,6 +483,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final offset = _verticalController.offset.round();
     if (offset == _lastSentVerticalOffset) return;
     _lastSentVerticalOffset = offset;
+    _pendingVerticalScrollValues.add(offset);
     _sendScrollUpdate();
   }
 
@@ -486,6 +491,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final offset = _horizontalController.offset.round();
     if (offset == _lastSentHorizontalOffset) return;
     _lastSentHorizontalOffset = offset;
+    _pendingHorizontalScrollValues.add(offset);
     _sendScrollUpdate();
   }
 
