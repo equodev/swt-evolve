@@ -35,14 +35,14 @@ class ScrolledCompositeSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("minHeight").equalsTo(w.getMinHeight(), orAbsentIf0));
         assertJ.satisfies(node("minSize").equalsTo(value(w).getMinSize(), orAbsentIf0));
         assertJ.satisfies(node("minWidth").equalsTo(w.getMinWidth(), orAbsentIf0));
-        assertJ.satisfies(node("origin").equalsTo(w.getOrigin(), orAbsentIfNull));
+        assertJ.satisfies(node("origin").equalsTo(value(w).getOrigin(), orAbsentIfNull));
         assertJ.satisfies(node("showFocusedControl").equalsTo(w.getShowFocusedControl(), orAbsentIfFalse));
         assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
         assertJ.satisfies(node("layoutDeferred").equalsTo(w.getLayoutDeferred(), orAbsentIfFalse));
         assertJ.satisfies(node("scrollbarsMode").equalsTo(w.getScrollbarsMode(), orAbsentIf0));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));
-        assertJ.satisfies(node("bounds").equalsTo(w.getBounds(), orAbsentIfNull));
+        assertJ.satisfies(node("bounds").equalsTo(value(w).getBounds(), orAbsentIfNull));
         assertJ.satisfies(node("capture").equalsTo(value(w).getCapture(), orAbsentIfFalse));
         assertJ.satisfies(node("dragDetect").equalsTo(w.getDragDetect(), orAbsentIfFalse));
         assertJ.satisfies(node("enabled").equalsTo(w.getEnabled(), orAbsentIfFalse));

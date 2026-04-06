@@ -378,9 +378,12 @@ public class SerializeTestBase {
                     if (filename != null) {
                         assertThatJson(n).node(field).isObject().containsEntry("filename", filename);
                     } else {
+                        // Use VImage.getImageData() to avoid isDisposed() check in
+                        // DartImage.getImageData() which fails in mock tests on Linux (surface=0).
+                        ImageData imageData = ((DartImage) value.getImpl()).getValue().getImageData();
                         assertThatJson(n).node(field).isObject().node("imageData").isObject()
-                                .containsEntry("width", value.getImageData().width)
-                                .containsEntry("height", value.getImageData().height);
+                                .containsEntry("width", imageData.width)
+                                .containsEntry("height", imageData.height);
 
                     }
                 }

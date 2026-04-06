@@ -67,7 +67,7 @@ public class GraphicsUtils {
 
         if (fontData.getImpl() instanceof SwtFontData) {
             FontData copy = new FontData((IFontData) null);
-            copy.setImpl(new DartFontData(fontData, copy));
+            copy.setImpl(new DartFontData(fontData.getName(), fontData.getHeight(), fontData.getStyle(), copy));
             return copy;
         } else {
             return fontData;

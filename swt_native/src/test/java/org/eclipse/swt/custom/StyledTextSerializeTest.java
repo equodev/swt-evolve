@@ -36,7 +36,7 @@ class StyledTextSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("alwaysShowScrollBars").equalsTo(w.getAlwaysShowScrollBars(), orAbsentIfFalse));
         assertJ.satisfies(node("bidiColoring").equalsTo(w.getBidiColoring(), orAbsentIfFalse));
         assertJ.satisfies(node("blockSelection").equalsTo(w.getBlockSelection(), orAbsentIfFalse));
-        assertJ.satisfies(node("blockSelectionBounds").equalsTo(w.getBlockSelectionBounds(), orAbsentIfNull));
+        assertJ.satisfies(node("blockSelectionBounds").equalsTo(value(w).getBlockSelectionBounds(), orAbsentIfNull));
         assertJ.satisfies(node("bottomMargin").equalsTo(w.getBottomMargin(), orAbsentIf0));
         assertJ.satisfies(node("caretOffset").equalsTo(w.getCaretOffset(), orAbsentIf0));
         assertJ.satisfies(node("doubleClickEnabled").equalsTo(w.getDoubleClickEnabled(), orAbsentIfFalse));
@@ -51,10 +51,10 @@ class StyledTextSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("marginColor").equalsTo(w.getMarginColor(), orAbsentIfNull));
         assertJ.satisfies(node("mouseNavigatorEnabled").equalsTo(w.getMouseNavigatorEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("rightMargin").equalsTo(w.getRightMargin(), orAbsentIf0));
-        assertJ.satisfies(node("selection").equalsTo(w.getSelection(), orAbsentIfNull));
+        assertJ.satisfies(node("selection").equalsTo(value(w).getSelection(), orAbsentIfNull));
         assertJ.satisfies(node("selectionBackground").equalsTo(w.getSelectionBackground(), orAbsentIfNull));
         assertJ.satisfies(node("selectionForeground").equalsTo(w.getSelectionForeground(), orAbsentIfNull));
-        assertJ.satisfies(node("selectionRange").equalsTo(w.getSelectionRange(), orAbsentIfNull));
+        assertJ.satisfies(node("selectionRange").equalsTo(value(w).getSelectionRange(), orAbsentIfNull));
         assertJ.satisfies(node("selectionRanges").equalsTo(w.getSelectionRanges(), orAbsentIfNull));
         assertJ.satisfies(node("styleRange").equalsTo(value(w).getStyleRange(), orAbsentIf0));
         assertJ.satisfies(node("tabStops").equalsTo(w.getTabStops(), orAbsentIfNull));
@@ -71,7 +71,7 @@ class StyledTextSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("scrollbarsMode").equalsTo(w.getScrollbarsMode(), orAbsentIf0));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));
-        assertJ.satisfies(node("bounds").equalsTo(w.getBounds(), orAbsentIfNull));
+        assertJ.satisfies(node("bounds").equalsTo(value(w).getBounds(), orAbsentIfNull));
         assertJ.satisfies(node("capture").equalsTo(value(w).getCapture(), orAbsentIfFalse));
         assertJ.satisfies(node("dragDetect").equalsTo(w.getDragDetect(), orAbsentIfFalse));
         assertJ.satisfies(node("enabled").equalsTo(w.getEnabled(), orAbsentIfFalse));

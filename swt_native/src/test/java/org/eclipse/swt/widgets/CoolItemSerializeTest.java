@@ -28,8 +28,8 @@ class CoolItemSerializeTest extends SerializeTestBase {
                .containsEntry("swt", "CoolItem")
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("control").equalsTo(w.getControl(), orAbsentIfNull));
-        assertJ.satisfies(node("minimumSize").equalsTo(w.getMinimumSize(), orAbsentIfNull));
-        assertJ.satisfies(node("preferredSize").equalsTo(w.getPreferredSize(), orAbsentIfNull));
+        assertJ.satisfies(node("minimumSize").equalsTo(value(w).getMinimumSize(), orAbsentIfNull));
+        assertJ.satisfies(node("preferredSize").equalsTo(value(w).getPreferredSize(), orAbsentIfNull));
         assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
     }
 
