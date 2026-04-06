@@ -442,7 +442,7 @@ public class DartList extends DartScrollable implements IList {
      */
     public int getSelectionIndex() {
         checkWidget();
-        return -1;
+        return ListHelper.getMinSelectionIndex(this);
     }
 
     /**

@@ -60,7 +60,7 @@ CComboThemeExtension _getCComboTheme({
     disabledIconColor: colorSchemeExtension.onSurfaceVariantDisabled,
     
     // Selection colors
-    selectedItemBackgroundColor: colorScheme.onSecondaryContainer,
+    selectedItemBackgroundColor: colorScheme.primary,
     
     // Border styling
     borderWidth: 1.0,

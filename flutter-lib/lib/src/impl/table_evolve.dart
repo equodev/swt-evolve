@@ -226,8 +226,6 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
     final wrappedTable = super.wrap(tableContent);
 
-    if (editorOverlays.isEmpty) return wrappedTable;
-
     return Stack(
       children: [
         wrappedTable,

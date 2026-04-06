@@ -435,10 +435,7 @@ public class DartList extends DartScrollable implements IList {
      */
     public int getSelectionIndex() {
         checkWidget();
-        if ((getApi().style & SWT.SINGLE) != 0) {
-        }
-        int[] buffer = new int[1];
-        return buffer[0];
+        return ListHelper.getMinSelectionIndex(this);
     }
 
     /**
@@ -824,6 +821,7 @@ public class DartList extends DartScrollable implements IList {
         int[] newValue = new int[] { index };
         if (index < 0)
             return;
+        this.selection = newValue;
         if (scroll) {
             if ((getApi().style & SWT.SINGLE) != 0) {
             } else {
@@ -838,7 +836,7 @@ public class DartList extends DartScrollable implements IList {
             if (focusIndex != -1) {
             }
         }
-        this.selection = newValue;
+        ;
     }
 
     /**

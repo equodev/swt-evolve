@@ -111,6 +111,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
         onTextSubmitted: onTextSubmitted,
         onMouseEnter: handleMouseEnter,
         onMouseExit: handleMouseExit,
+        controlHeight: height,
       );
     } else {
       // Dropdown mode
@@ -140,6 +141,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
             isReadOnly: isReadOnly,
             textStyle: textStyle,
             onSelected: isEnabled ? onChanged : null,
+          controlHeight: height,
           ),
         ),
       );
@@ -202,6 +204,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
   final bool isReadOnly;
   final TextStyle textStyle;
   final ValueChanged<String?>? onSelected;
+  final double? controlHeight;
 
   const _StyledDropdownCCombo({
     required this.state,
@@ -213,6 +216,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
     required this.isReadOnly,
     required this.textStyle,
     this.onSelected,
+    this.controlHeight,
   });
 
   double _calculateMinWidth() {
@@ -247,6 +251,17 @@ class _StyledDropdownCCombo extends StatelessWidget {
         ? state.bounds!.width.toDouble()
         : _calculateMinWidth();
 
+    final EdgeInsetsGeometry effectivePadding = controlHeight != null
+        ? EdgeInsets.symmetric(
+            horizontal: widgetTheme.textFieldPadding.horizontal / 2,
+            vertical: 0,
+          )
+        : widgetTheme.textFieldPadding;
+
+    final BoxConstraints? inputConstraints = controlHeight != null
+        ? BoxConstraints.tightFor(height: controlHeight)
+        : null;
+
     return DropdownMenu<String>(
       enabled: enabled,
       focusNode: focusNode,
@@ -260,7 +275,8 @@ class _StyledDropdownCCombo extends StatelessWidget {
       inputDecorationTheme: InputDecorationTheme(
         border: InputBorder.none,
         isDense: true,
-        contentPadding: widgetTheme.textFieldPadding,
+        contentPadding: effectivePadding,
+        constraints: inputConstraints,
       ),
       menuStyle: MenuStyle(
         backgroundColor: WidgetStateProperty.all(widgetTheme.backgroundColor),
@@ -334,6 +350,7 @@ class _StyledSimpleCCombo extends StatelessWidget {
   final ValueChanged<String>? onTextSubmitted;
   final VoidCallback? onMouseEnter;
   final VoidCallback? onMouseExit;
+  final double? controlHeight;
 
   const _StyledSimpleCCombo({
     required this.state,
@@ -352,6 +369,7 @@ class _StyledSimpleCCombo extends StatelessWidget {
     this.onTextSubmitted,
     this.onMouseEnter,
     this.onMouseExit,
+    this.controlHeight,
   });
 
   @override
@@ -381,6 +399,8 @@ class _StyledSimpleCCombo extends StatelessWidget {
                 style: textStyle,
                 decoration: const InputDecoration.collapsed(hintText: ''),
                 maxLength: state.textLimit,
+                minLines: controlHeight != null ? 1 : null,
+                maxLines: 1,
                 onChanged: readOnly ? null : onTextChanged,
                 onSubmitted: readOnly ? null : onTextSubmitted,
               ),
