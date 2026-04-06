@@ -712,6 +712,7 @@ public class DartTree extends DartComposite implements ITree {
             if (index == 0) {
             }
         }
+        dirty();
     }
 
     void destroyItem(TreeItem item) {

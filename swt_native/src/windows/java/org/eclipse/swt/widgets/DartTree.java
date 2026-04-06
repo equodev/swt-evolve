@@ -736,6 +736,7 @@ public class DartTree extends DartComposite implements ITree {
             index++;
         }
         int[] oldOrder = getColumnOrder();
+        int[] orderSnapshot = columnOrder != null ? columnOrder.clone() : null;
         int orderIndex = 0;
         while (orderIndex < columnCount) {
             if (oldOrder[orderIndex] == index)
@@ -746,11 +747,12 @@ public class DartTree extends DartComposite implements ITree {
         // conservative
         cachedItemOrder = null;
         columns[columnCount] = null;
-        if (cachedItemOrder != null && cachedItemOrder.length > 0) {
-            int[] newOrder = new int[columnCount];
+        if (orderSnapshot != null && orderSnapshot.length != 0) {
+            int newCount = columnCount;
+            int[] newOrder = new int[newCount];
             int newOrderIndex = 0;
-            for (int i = 0; i < cachedItemOrder.length; i++) {
-                int orderValue = cachedItemOrder[i];
+            for (int i = 0; i < orderSnapshot.length; i++) {
+                int orderValue = orderSnapshot[i];
                 if (orderValue == index) {
                     continue;
                 } else if (orderValue > index) {
@@ -839,13 +841,25 @@ public class DartTree extends DartComposite implements ITree {
         updateImageList();
         updateScrollBar();
         if (columnCount != 0) {
-            TreeColumn[] newColumns = new TreeColumn[columnCount - orderIndex];
+            int[] newOrder = getColumnOrder();
+            int start = Math.min(orderIndex, columnCount);
+            TreeColumn[] newColumns = new TreeColumn[Math.max(0, columnCount - start)];
+            for (int i = start; i < newOrder.length; i++) {
+                int orderedIndex = newOrder[i];
+                TreeColumn shifted = columns[orderedIndex];
+                newColumns[i - start] = shifted;
+                if (shifted != null && !shifted.isDisposed()) {
+                    ((DartTreeColumn) shifted.getImpl()).updateToolTip(orderedIndex);
+                }
+            }
             for (TreeColumn newColumn : newColumns) {
-                if (!newColumn.isDisposed()) {
+                if (newColumn != null && !newColumn.isDisposed()) {
                     newColumn.getImpl().sendEvent(SWT.Move);
                 }
             }
+            dirty();
         }
+        ;
     }
 
     void destroyItem(TreeItem item, long hItem) {
@@ -1211,7 +1225,7 @@ public class DartTree extends DartComposite implements ITree {
         if (cachedItemOrder != null) {
             return cachedItemOrder.clone();
         }
-        return this.columnOrder;
+        return columnOrder;
     }
 
     /**
