@@ -32,7 +32,7 @@ class ComboSerializeTest extends SerializeTestBase {
                .containsEntry("toolTipText", json(w.getToolTipText()))
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("listVisible").equalsTo(w.getListVisible(), orAbsentIfFalse));
-        assertJ.satisfies(node("selection").equalsTo(w.getSelection(), orAbsentIfNull));
+        assertJ.satisfies(node("selection").equalsTo(value(w).getSelection(), orAbsentIfNull));
         assertJ.satisfies(node("textLimit").equalsTo(w.getTextLimit(), orAbsentIf0));
         assertJ.satisfies(node("visibleItemCount").equalsTo(w.getVisibleItemCount(), orAbsentIf0));
         assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
@@ -40,7 +40,7 @@ class ComboSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("scrollbarsMode").equalsTo(w.getScrollbarsMode(), orAbsentIf0));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));
-        assertJ.satisfies(node("bounds").equalsTo(w.getBounds(), orAbsentIfNull));
+        assertJ.satisfies(node("bounds").equalsTo(value(w).getBounds(), orAbsentIfNull));
         assertJ.satisfies(node("capture").equalsTo(value(w).getCapture(), orAbsentIfFalse));
         assertJ.satisfies(node("dragDetect").equalsTo(w.getDragDetect(), orAbsentIfFalse));
         assertJ.satisfies(node("enabled").equalsTo(w.getEnabled(), orAbsentIfFalse));

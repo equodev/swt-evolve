@@ -50,6 +50,9 @@ import dev.equo.swt.*;
  */
 public class DartBrowser extends DartComposite implements IBrowser {
 
+    /** Style constant for IE browser type (same as SWT.IE, added in SWT 3.129). */
+    private static final int SWT_IE = 1 << 19;
+
     WebBrowser webBrowser;
 
     int userStyle;
@@ -211,7 +214,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
                         break;
                     } else if (current.equalsIgnoreCase("ie") && "win32".equals(platform)) {
                         //$NON-NLS-1$ //$NON-NLS-2$
-                        DefaultType = SWT.IE;
+                        DefaultType = SWT_IE;
                     } else if (current.equalsIgnoreCase("edge") && "win32".equals(platform)) {
                         //$NON-NLS-1$ //$NON-NLS-2$
                         DefaultType = SWT.EDGE;
@@ -225,7 +228,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
             }
         }
         /* If particular backend isn't specified, use the value from the system property. */
-        if ((style & (SWT.WEBKIT | SWT.IE | SWT.EDGE)) == 0) {
+        if ((style & (SWT.WEBKIT | SWT_IE | SWT.EDGE)) == 0) {
             style |= DefaultType;
         }
         if ("win32".equals(platform) && (style & SWT.EDGE) != 0) {
