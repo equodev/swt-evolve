@@ -48,6 +48,7 @@ val coreCommandsVersion: String by project
 val equinoxCommonVersion: String by project
 val jfaceTextVersion: String by project
 val eclipseTextVersion: String by project
+val nattableVersion: String by project
 
 dependencies {
     if (gradle.parent != null)
@@ -67,6 +68,11 @@ dependencies {
     }
     implementation("org.eclipse.platform:org.eclipse.text:$eclipseTextVersion")
     implementation("org.eclipse:draw2d:$draw2dVersion")
+
+    implementation("org.eclipse.nebula.widgets.nattable:org.eclipse.nebula.widgets.nattable.core:$nattableVersion") {
+        exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
+    }
+    runtimeOnly("org.slf4j:slf4j-simple:2.0.13")
 }
 
 tasks.withType<JavaExec>().configureEach {
