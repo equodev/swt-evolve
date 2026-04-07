@@ -573,6 +573,14 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     }
   }
 
+  void _sendSelectionCleared(int caretOffset) {
+    final event = VEvent()
+      ..start = caretOffset
+      ..end = caretOffset
+      ..text = '';
+    widget.sendSelectionSelection(state, event);
+  }
+
   void _notifyTextChanged(String newText, int caretPos) {
     // Clear the GC overlay to remove placeholder
     clearGCShapes();
@@ -633,6 +641,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
           caretOffset,
         );
       });
+      _sendSelectionCleared(caretOffset);
 
       _startCaretBlinking();
       _focusNode.requestFocus();
@@ -656,6 +665,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
             _isSelecting = false;
             _selectionStartOffset = null;
           });
+          _sendSelectionCleared(caretOffset);
 
           _startCaretBlinking();
         }
@@ -861,12 +871,27 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     TextShape? textShape;
 
     if (_isEditingText && _editableTextShape != null) {
-      if (_editableTextShape!.containsPoint(position, canvasSize)) {
-        textShape = _editableTextShape!;
+      textShape = _editableTextShape;
+    }
+
+    if (textShape == null) {
+      for (int i = shapes.length - 1; i >= 0; i--) {
+        final shape = shapes[i];
+        if (shape is TextShape && shape.containsPoint(position, canvasSize)) {
+          textShape = shape;
+          break;
+        }
       }
     }
 
-    textShape ??= _findEditableTextShapeAtPosition(position, canvasSize);
+    if (textShape == null) {
+      for (int i = shapes.length - 1; i >= 0; i--) {
+        if (shapes[i] is TextShape) {
+          textShape = shapes[i] as TextShape;
+          break;
+        }
+      }
+    }
 
     if (textShape != null) {
       _isSelecting = true;
