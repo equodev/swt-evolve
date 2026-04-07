@@ -71,6 +71,7 @@ public class ControlHelper {
                 event.height = bounds.height;
                 event.gc = new GC(c.getApi());
                 c.sendEvent(SWT.Paint, event);
+                event.gc.dispose();
             }
         } catch (ClassNotFoundException ex) {
             Event event = new Event();
@@ -80,6 +81,7 @@ public class ControlHelper {
             event.height = bounds.height;
             event.gc = new GC(c.getApi());
             c.sendEvent(SWT.Paint, event);
+            event.gc.dispose();
         }
     }
 

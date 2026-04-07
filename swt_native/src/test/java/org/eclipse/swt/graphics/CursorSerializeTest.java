@@ -11,7 +11,7 @@ class CursorSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Cursor() {
-        Cursor w = new Cursor(device(), SWT.NONE);
+        Cursor w = new Cursor(device(), SWT.CURSOR_WAIT);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.isNotEmpty();
@@ -19,7 +19,7 @@ class CursorSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_filled_Cursor() {
-        Cursor w = new Cursor(device(), SWT.NONE);
+        Cursor w = new Cursor(device(), SWT.CURSOR_WAIT);
         setAll(w);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
