@@ -8,8 +8,8 @@ class VCursor {
   VCursor() : this.empty();
   VCursor.empty();
 
-  int? cursorStyle = null;
-  VImage? image = null;
+  int? cursorStyle;
+  VImage? image;
 
   factory VCursor.fromJson(Map<String, dynamic> json) =>
       _$VCursorFromJson(json);

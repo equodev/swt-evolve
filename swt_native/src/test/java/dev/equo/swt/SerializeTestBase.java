@@ -244,6 +244,10 @@ public class SerializeTestBase {
         // Font is immutable, no setters to populate
     }
 
+    protected void setAll(org.eclipse.swt.graphics.Cursor c) {
+        // Cursor is immutable, no setters to populate
+    }
+
     protected void setAll(org.eclipse.swt.widgets.Menu m) {
         // Menu doesn't have Font/Color setters like other widgets
         InstancioObjectApi<org.eclipse.swt.widgets.Menu> inst = Instancio.ofObject(m)

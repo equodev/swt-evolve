@@ -396,6 +396,8 @@ public final class DartGC extends DartResource implements IGC {
             }
         }
         textDataCache.release();
+        if (drawable instanceof Control)
+            FlutterBridge.sendEvent(this, "gcDispose");
         drawable = null;
         data.image = null;
         data = null;

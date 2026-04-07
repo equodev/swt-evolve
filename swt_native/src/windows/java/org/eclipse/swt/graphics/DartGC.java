@@ -649,6 +649,8 @@ public final class DartGC extends DartResource implements IGC {
 	*/
         if (drawable != null)
             drawable.internal_dispose_GC(getApi().handle, data);
+        if (drawable instanceof Control)
+            FlutterBridge.sendEvent(this, "gcDispose");
         drawable = null;
         getApi().handle = 0;
         data.image = null;
