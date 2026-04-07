@@ -3434,6 +3434,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             if (newControl != null && !newControl.isDisposed()) {
                 newControl.setBounds(getClientArea());
                 newControl.setVisible(true);
+                paintChildrenRecursively(newControl);
             }
             if (oldControl != null && !oldControl.isDisposed()) {
                 oldControl.setVisible(false);
@@ -4745,6 +4746,20 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
     public int _tabPosition() {
         return tabPosition;
+    }
+
+    private void paintChildrenRecursively(Control control) {
+        if (control instanceof Composite composite) {
+            Control[] children = composite.getChildren();
+            if (children == null)
+                return;
+            for (Control child : children) {
+                if (child.getImpl() instanceof DartControl dc && dc.getDisplay() != null) {
+                    ControlHelper.paint(dc);
+                }
+                paintChildrenRecursively(child);
+            }
+        }
     }
 
     protected void _hookEvents() {

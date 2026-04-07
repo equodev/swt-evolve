@@ -7596,7 +7596,10 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 }
             }
             event.text = delimitedText;
+            int savedScroll = verticalScrollOffset;
             sendKeyEvent(event);
+            if (verticalScrollOffset != savedScroll)
+                setTopPixel(savedScroll);
         }
     }
 
@@ -11949,6 +11952,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                     setText(e.text);
                 if (e.start >= 0)
                     setCaretOffset(e.start);
+                sendSelectionEvent();
                 redraw();
                 ControlHelper.paint(this);
             });
