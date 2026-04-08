@@ -28,6 +28,9 @@ final Map<String, NamedTheme> kNamedThemes = {
   'cursor': NamedTheme(
     lightColorScheme: _cursorLightScheme(),
     darkColorScheme: _cursorDarkScheme(),
+    darkColorSchemeExtension: createColorSchemeExtension(_cursorDarkScheme()).copyWith(
+      onSurfaceVariantDisabled: const Color(0xFF4A4A4A),
+    ),
   ),
   'yellowk': NamedTheme(
     lightColorScheme: _yellowkLightScheme(),
@@ -71,40 +74,37 @@ ColorScheme _cursorLightScheme() => ColorScheme.fromSeed(
   scrim: const Color(0xFF000000),
 );
 
-ColorScheme _cursorDarkScheme() => ColorScheme.fromSeed(
-  seedColor: const Color(0xFF626262),
+ColorScheme _cursorDarkScheme() => const ColorScheme(
   brightness: Brightness.dark,
-).copyWith(
-  primary: const Color(0xFF9A9A9A),
-  onPrimary: const Color(0xFF141414),
-  primaryContainer: const Color(0xFF2A2A2A),
-  onPrimaryContainer: const Color(0xFFF2F2F2),
-  secondary: const Color(0xFF2A2A2A),
-  onSecondary: const Color(0xFFF2F2F2),
-  secondaryContainer: const Color(0xFF3A3A3A),
-  onSecondaryContainer: const Color(0xFFF0F0F0),
-  // surface: Cursor's signature dark charcoal
-  surface: const Color(0xFF1C1C1E),
-  onSurface: const Color(0xFFF4F4F5), // zinc-100 — all text on dark
-  onSurfaceVariant: const Color(0xFFA1A1AA), // zinc-400 — secondary text/icons
-  // surfaceVariant: slightly lighter charcoal — hover/disabled
-  surfaceVariant: const Color(0xFF27272A), // zinc-800
-  surfaceContainerHighest: const Color(0xFF18181B),
-  surfaceContainerHigh: const Color(0xFF1F1F23),
-  surfaceContainerLow: const Color(0xFF1A1A1D),
-  // outline: zinc grays for dark mode borders
-  outline: const Color(0xFF52525B), // zinc-600
-  outlineVariant: const Color(0xFF3F3F46), // zinc-700
-  error: const Color(0xFFF87171), // lighter red for dark mode
-  onError: const Color(0xFFFFFFFF),
-  errorContainer: const Color(0xFF7F1D1D),
-  onErrorContainer: const Color(0xFFFCA5A5),
-  inverseSurface: const Color(0xFFF4F4F5),
-  onInverseSurface: const Color(0xFF1C1C1E),
-  inversePrimary: const Color(0xFF626262),
-  surfaceTint: const Color(0xFF626262),
-  shadow: const Color(0xFF000000),
-  scrim: const Color(0xFF000000),
+  primary: Color(0xFF767676),
+  onPrimary: Color(0xFFF0F0F0),
+  primaryContainer: Color(0xFF2A2A2A),
+  onPrimaryContainer: Color(0xFFC0C0C0),
+  secondary: Color(0xFF252525),
+  onSecondary: Color(0xFF909090),
+  secondaryContainer: Color(0xFF2E2E2E),
+  onSecondaryContainer: Color(0xFFAAAAAA),
+  tertiary: Color(0x00FFFFFF),
+  onTertiary: Color(0xFFCCCCCC),
+  error: Color(0xFFF87171),
+  onError: Color(0xFFFFFFFF),
+  errorContainer: Color(0xFF7F1D1D),
+  onErrorContainer: Color(0xFFFCA5A5),
+  surface: Color(0xFF1F1F1F),
+  onSurface: Color(0xFFADADAD),
+  onSurfaceVariant: Color(0xFF606060),
+  surfaceVariant: Color(0xFF252525),
+  surfaceContainerHighest: Color(0xFF141414),
+  surfaceContainerHigh: Color(0xFF181818),
+  surfaceContainerLow: Color(0xFF1E1E1E),
+  outline: Color(0xFF383838),
+  outlineVariant: Color(0xFF282828),
+  shadow: Color(0xFF000000),
+  scrim: Color(0xFF000000),
+  inverseSurface: Color(0xFFD4D4D4),
+  onInverseSurface: Color(0xFF181818),
+  inversePrimary: Color(0xFF767676),
+  surfaceTint: Color(0xFF767676),
 );
 
 ColorScheme _yellowkLightScheme() => ColorScheme.fromSeed(
