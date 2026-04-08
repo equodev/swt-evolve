@@ -1053,6 +1053,7 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     public void removeControl(Control control) {
         fixTabList(control);
+        dirty();
     }
 
     @Override

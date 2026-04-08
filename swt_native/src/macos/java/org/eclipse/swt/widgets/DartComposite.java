@@ -823,6 +823,7 @@ public class DartComposite extends DartScrollable implements IComposite {
                     System.arraycopy(children, 0, newChildren, 0, i);
                     System.arraycopy(children, i + 1, newChildren, i, children.length - i - 1);
                     children = newChildren;
+                    dirty();
                     break;
                 }
             }
