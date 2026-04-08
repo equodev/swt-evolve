@@ -46,7 +46,7 @@ CTabFolderThemeExtension _getCTabFolderTheme({
     
     // Tab colors
     tabBackgroundColor: unselectedColor,
-    tabSelectedBackgroundColor: unselectedColor,
+    tabSelectedBackgroundColor: colorScheme.surface,
     tabHoverBackgroundColor: colorSchemeExtension.stateDefaultHovered,
     tabDisabledBackgroundColor: colorScheme.surfaceVariant,
     
