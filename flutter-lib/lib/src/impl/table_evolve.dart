@@ -44,6 +44,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     _verticalScrollController.addListener(() => setState(() {}));
     _registerGetIdFromPointListener();
     _registerGetItemBoundsListener();
+    _registerGetItemHeightListener();
   }
 
   void _registerGetIdFromPointListener() {
@@ -102,6 +103,15 @@ class TableImpl<T extends TableSwt, V extends VTable>
         print('Error processing GetItemBounds: $e');
         EquoCommService.sendPayload(responseEvent, VRectangle().toJson());
       }
+    });
+  }
+
+  void _registerGetItemHeightListener() {
+    final eventName = "${state.swt}/${state.id}/GetItemHeight";
+    _eventNames.add(eventName);
+    EquoCommService.onRaw(eventName, (payload) {
+      final responseEvent = "${state.swt}/${state.id}/GetItemHeightResponse";
+      EquoCommService.sendPayload(responseEvent, cachedRowHeight.round().toString());
     });
   }
 

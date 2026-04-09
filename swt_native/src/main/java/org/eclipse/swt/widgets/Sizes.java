@@ -250,7 +250,7 @@ public class Sizes {
     }
 
     public static Point computeSize(DartTable c, int wHint, int hHint, boolean changed) {
-        return new Point(c.getColumnCount() * 70, c.getItemCount() * 20);
+        return new Point(c.getColumnCount() * 70, c.getItemCount() * c.getItemHeight() + 16);
     }
 
     public static Point computeSize(DartTabFolder w, int wHint, int hHint, boolean flushCache) {
