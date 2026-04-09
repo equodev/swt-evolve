@@ -156,4 +156,19 @@ public class GCHelper {
             System.err.println("[GCHelper] Failed to update image from PNG: " + e.getMessage());
         }
     }
+
+    static final ThreadLocal<Boolean> paintItemCaptureMode = new ThreadLocal<>();
+    static final ThreadLocal<Image> paintItemCapturedImage = new ThreadLocal<>();
+
+    public static void startPaintCapture() {
+        paintItemCaptureMode.set(Boolean.TRUE);
+        paintItemCapturedImage.set(null);
+    }
+
+    public static Image stopPaintCapture() {
+        paintItemCaptureMode.remove();
+        Image img = paintItemCapturedImage.get();
+        paintItemCapturedImage.remove();
+        return img;
+    }
 }

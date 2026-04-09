@@ -119,6 +119,7 @@ class TextImpl<T extends TextSwt, V extends VText>
           ? (shouldExpand ? null : null)
           : 1,
       expands: shouldExpand,
+      textAlignVertical: TextAlignVertical.top,
       textAlign: textAlign,
       style: textStyle,
       decoration: decoration,

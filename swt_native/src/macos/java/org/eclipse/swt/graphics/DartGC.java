@@ -487,6 +487,12 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawImage(Image image, int x, int y) {
+        if (Boolean.TRUE.equals(GCHelper.paintItemCaptureMode.get())) {
+            if (GCHelper.paintItemCapturedImage.get() == null) {
+                GCHelper.paintItemCapturedImage.set(GraphicsUtils.copyImage(display, image));
+            }
+            return;
+        }
         VGCDrawImageImageintint drawOp = new VGCDrawImageImageintint();
         drawOp.image = GraphicsUtils.copyImage(display, image);
         drawOp.x = x;
