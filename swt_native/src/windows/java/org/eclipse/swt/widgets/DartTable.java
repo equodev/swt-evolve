@@ -1208,7 +1208,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public int getItemHeight() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getItemHeightInPixels(), getZoom());
+        return RequestResponse.call(this, "GetItemHeight", null, Integer.class, 500, 20);
     }
 
     int getItemHeightInPixels() {

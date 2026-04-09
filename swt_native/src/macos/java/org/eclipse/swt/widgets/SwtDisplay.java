@@ -3918,6 +3918,24 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         Rectangle rectangle = new Rectangle(x, y, width, height);
         if (from == to)
             return rectangle;
+        if (from != null && !(from.getImpl() instanceof SwtControl)) {
+            Point screenPt = from.toDisplay(x, y);
+            if (to == null) {
+                rectangle.x = screenPt.x;
+                rectangle.y = screenPt.y;
+                return rectangle;
+            } else if (to.getImpl() instanceof SwtControl) {
+                Point toPt = to.toControl(screenPt.x, screenPt.y);
+                rectangle.x = toPt.x;
+                rectangle.y = toPt.y;
+                return rectangle;
+            } else {
+                Point toPt = to.toControl(screenPt.x, screenPt.y);
+                rectangle.x = toPt.x;
+                rectangle.y = toPt.y;
+                return rectangle;
+            }
+        }
         NSPoint pt = new NSPoint();
         pt.x = x;
         pt.y = y;
