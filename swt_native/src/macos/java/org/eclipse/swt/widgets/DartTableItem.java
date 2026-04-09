@@ -1135,8 +1135,16 @@ public class DartTableItem extends DartItem implements ITableItem {
     @Override
     protected void dirty() {
         if (parent != null && !parent.isDisposed()) {
+            if (((DartWidget) parent.getImpl()).hooks(SWT.PaintItem) && getApi().getData() != null) {
+                firePaintItemForAllColumns();
+            }
             ((DartWidget) parent.getImpl()).dirty();
         }
+    }
+
+    void firePaintItemForAllColumns() {
+        //workaround #496
+        TableItemHelper.firePaintItemForAllColumns(this);
     }
 
     public FlutterBridge getBridge() {

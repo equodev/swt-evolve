@@ -148,6 +148,8 @@ public class DartTable extends DartComposite implements ITable {
     void _addListener(int eventType, Listener listener) {
         super._addListener(eventType, listener);
         clearCachedWidth(items);
+        //workaround #496
+        TableHelper.onAddListener(this, eventType);
     }
 
     /**

@@ -432,4 +432,15 @@ public class TableHelper {
         return img;
     }
 
+    public static void onAddListener(DartTable table, int eventType) {
+        if (eventType == SWT.PaintItem && table.items != null) {
+            for (TableItem tableItem : table.items) {
+                if (tableItem != null) {
+                    ((DartTableItem) tableItem.getImpl()).firePaintItemForAllColumns();
+                }
+            }
+            table.dirty();
+        }
+    }
+
 }
