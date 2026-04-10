@@ -3330,6 +3330,21 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             error(SWT.ERROR_INVALID_ARGUMENT);
         if (from == to)
             return new Rectangle(x, y, width, height);
+        if (from != null && from.getImpl() instanceof DartControl && from.handle == 0) {
+            Point screenOrigin = ControlHelper.toDisplay((DartControl) from.getImpl(), x, y);
+            Point screenCorner = ControlHelper.toDisplay((DartControl) from.getImpl(), x + width, y + height);
+            if (to == null) {
+                return new Rectangle(screenOrigin.x, screenOrigin.y, screenCorner.x - screenOrigin.x, screenCorner.y - screenOrigin.y);
+            }
+            if (to.getImpl() instanceof DartControl && to.handle == 0) {
+                Point localOrigin = ControlHelper.toControl((DartControl) to.getImpl(), screenOrigin.x, screenOrigin.y);
+                Point localCorner = ControlHelper.toControl((DartControl) to.getImpl(), screenCorner.x, screenCorner.y);
+                return new Rectangle(localOrigin.x, localOrigin.y, localCorner.x - localOrigin.x, localCorner.y - localOrigin.y);
+            }
+            Point inToOrigin = to.toControl(screenOrigin.x, screenOrigin.y);
+            Point inToCorner = to.toControl(screenCorner.x, screenCorner.y);
+            return new Rectangle(inToOrigin.x, inToOrigin.y, inToCorner.x - inToOrigin.x, inToCorner.y - inToOrigin.y);
+        }
         long hwndFrom = from != null ? from.handle : 0;
         long hwndTo = to != null ? to.handle : 0;
         RECT rect = new RECT();
