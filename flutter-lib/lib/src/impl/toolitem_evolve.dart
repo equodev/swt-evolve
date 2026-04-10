@@ -12,6 +12,7 @@ import './utils/image_utils.dart';
 import './utils/widget_utils.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
+import 'toolbar_evolve.dart';
 import 'dart:ui';
 
 class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
@@ -132,16 +133,28 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     required ToolItemThemeExtension widgetTheme,
     required String? text,
     required TextStyle textStyle,
+    bool textOnRight = false,
   }) {
     final hasImage = image != null;
     final hasText = text != null && text.isNotEmpty;
     if (hasImage && hasText) {
-      return Row(
+      if (textOnRight) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildImageWidget(image, enabled, constraints, defaultIconSize, iconColor, widgetTheme),
+            const SizedBox(width: 4),
+            Text(text, textAlign: TextAlign.center, style: textStyle),
+          ],
+        );
+      }
+      return Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           _buildImageWidget(image, enabled, constraints, defaultIconSize, iconColor, widgetTheme),
-          const SizedBox(width: 4),
           Text(text, textAlign: TextAlign.center, style: textStyle),
         ],
       );
@@ -353,6 +366,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
   @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<ToolItemThemeExtension>()!;
+    final textOnRight = ToolBarConfig.of(context)?.textOnRight ?? true;
     var text = state.text;
     var enabled = state.enabled ?? false;
     var bits = SWT.PUSH | SWT.CHECK | SWT.RADIO | SWT.SEPARATOR | SWT.DROP_DOWN;
@@ -512,6 +526,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
               widgetTheme: widgetTheme,
               text: text,
               textStyle: textStyle,
+              textOnRight: textOnRight,
             ),
             isDropdown: true,
           );
@@ -533,6 +548,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
               widgetTheme: widgetTheme,
               text: text,
               textStyle: textStyle,
+              textOnRight: textOnRight,
             ),
           );
         }(),
@@ -562,6 +578,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
               widgetTheme: widgetTheme,
               text: text,
               textStyle: textStyle,
+              textOnRight: textOnRight,
             ),
           );
         }(),
