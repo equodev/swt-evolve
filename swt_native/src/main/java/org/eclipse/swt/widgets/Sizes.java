@@ -521,6 +521,19 @@ public class Sizes {
 
     public static Rectangle getBounds(DartToolItem item) {
         Point size = computeSize(item);
+        ToolBar toolbar = item.parent;
+        if (toolbar != null) {
+            Composite container = toolbar.getParent();
+            if (container != null) {
+                Rectangle toolbarBounds = toolbar.getBounds();
+                boolean isVertical = (toolbar.getStyle() & SWT.VERTICAL) != 0;
+                if (isVertical) {
+                    size.x = Math.min(size.x, Math.max(1, container.getBounds().width - toolbarBounds.x));
+                } else {
+                    size.y = Math.min(size.y, Math.max(1, container.getBounds().height - toolbarBounds.y));
+                }
+            }
+        }
         return new Rectangle(0, 0, size.x, size.y);
     }
 
