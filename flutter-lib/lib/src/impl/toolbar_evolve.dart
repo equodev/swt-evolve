@@ -13,6 +13,26 @@ import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import '../theme/theme_settings/toolitem_theme_settings.dart';
 import 'utils/widget_utils.dart';
 
+/// Carries toolbar layout config down to ToolItem children.
+/// [textOnRight]: true when the ToolBar has SWT.RIGHT style (icon left, text right).
+/// false when not (icon top, text bottom).
+class ToolBarConfig extends InheritedWidget {
+  final bool textOnRight;
+
+  const ToolBarConfig({
+    super.key,
+    required this.textOnRight,
+    required super.child,
+  });
+
+  static ToolBarConfig? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ToolBarConfig>();
+
+  @override
+  bool updateShouldNotify(ToolBarConfig oldWidget) =>
+      textOnRight != oldWidget.textOnRight;
+}
+
 class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     extends CompositeImpl<T, V> {
   @override
@@ -20,12 +40,13 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     final widgetTheme = Theme.of(context).extension<ToolBarThemeExtension>()!;
     final style = StyleBits(state.style);
     final isVertical = style.has(SWT.VERTICAL);
-    final toolItems = getToolItems(context);
     final shouldWrap = style.has(SWT.WRAP);
     final hasBorder = style.has(SWT.BORDER);
     final isFlat = style.has(SWT.FLAT);
     final hasShadowOut = style.has(SWT.SHADOW_OUT);
     final isRightToLeft = style.has(SWT.RIGHT_TO_LEFT);
+    final textOnRight = style.has(SWT.RIGHT);
+    final toolItems = getToolItems(context);
 
     final useSwtColors = getConfigFlags().use_swt_colors ?? false;
     final Color? backgroundColor = useSwtColors
@@ -43,22 +64,17 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
         final iconSize = toolItemTheme?.defaultIconSize ?? 24.0;
 
         Widget bar;
-        if (shouldWrap) {
+        if (shouldWrap && isVertical) {
           final limitedToolItems = toolItems.map((item) {
             return ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: isVertical ? iconSize : double.infinity,
-                maxHeight: isVertical ? double.infinity : iconSize,
-              ),
+              constraints: BoxConstraints(maxWidth: iconSize),
               child: item,
             );
           }).toList();
 
           bar = Wrap(
-            direction: isVertical ? Axis.vertical : Axis.horizontal,
-            textDirection: isRightToLeft
-                ? TextDirection.rtl
-                : TextDirection.ltr,
+            direction: Axis.vertical,
+            textDirection: isRightToLeft ? TextDirection.rtl : TextDirection.ltr,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: limitedToolItems,
           );
@@ -108,10 +124,13 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
           decoration = BoxDecoration(color: backgroundColor);
         }
 
-        return super.wrap(
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Container(decoration: decoration, child: bar),
+        return ToolBarConfig(
+          textOnRight: textOnRight,
+          child: super.wrap(
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Container(decoration: decoration, child: bar),
+            ),
           ),
         );
       },
