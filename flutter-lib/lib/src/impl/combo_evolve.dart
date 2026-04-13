@@ -20,12 +20,14 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
   final LayerLink _layerLink = LayerLink();
   bool _isFocused = false;
   final bool _isHovered = false;
+  bool? _lastSentListVisible;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: state.text);
     _focusNode.addListener(_handleFocusChange);
+    _lastSentListVisible = state.listVisible;
   }
 
   Size _calculatePreferredSize(
@@ -66,9 +68,11 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
         offset: _controller.text.length,
       );
     }
-    state.listVisible == true
-        ? _overlayController.show()
-        : _overlayController.hide();
+    final bool? newVisible = state.listVisible;
+    if (newVisible != _lastSentListVisible) {
+      _lastSentListVisible = newVisible;
+      newVisible == true ? _overlayController.show() : _overlayController.hide();
+    }
   }
 
   void _handleFocusChange() {
