@@ -395,12 +395,13 @@ public class TableHelper {
         if (image != null && image.isDisposed()) {
             item.error(SWT.ERROR_INVALID_ARGUMENT);
         }
+        Image dartImage = GraphicsUtils.copyImage(item.getDisplay(), image);
         Image oldImage = null;
         if (index == 0) {
             if (image != null && image.type == SWT.ICON && java.util.Objects.equals(image, item.image))
                 return false;
             oldImage = item.image;
-            item.image = image;
+            item.image = dartImage;
         }
         int count = Math.max(1, item.parent.getColumnCount());
         if (index < 0 || index > count - 1)
@@ -412,7 +413,7 @@ public class TableHelper {
             }
         }
         if (item.images != null) {
-            Image toStore = index == 0 ? item.image : GraphicsUtils.copyImage(item.getDisplay(), image);
+            Image toStore = index == 0 ? item.image : dartImage;
             oldImage = item.images[index];
             item.images[index] = toStore;
         }
@@ -427,8 +428,8 @@ public class TableHelper {
     private static Image dartImageOrNull(Image img) {
         if (img == null)
             return null;
-        if (!(img.getImpl() instanceof DartImage))
-            return null;
+        if (img.getImpl() instanceof DartImage)
+            return img;
         return img;
     }
 

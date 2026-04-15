@@ -478,8 +478,10 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         int availableWidth = Math.max(0, rect.width - (leftMargin + rightMargin));
         Point extent = getTotalSize(img, t);
         if (extent.x > availableWidth) {
-            img = null;
-            extent = getTotalSize(img, t);
+            if (t != null && !t.isEmpty()) {
+                img = null;
+                extent = getTotalSize(img, t);
+            }
             if (extent.x > availableWidth) {
                 shortenText = true;
             }
@@ -570,16 +572,12 @@ public class DartCLabel extends DartCanvas implements ICLabel {
                 }
                 gc.setBackground(oldBackground);
             } else {
-                if ((background != null || (getStyle() & SWT.DOUBLE_BUFFERED) == 0) && background.getAlpha() > 0) {
-                    gc.setBackground(getBackground());
-                    gc.fillRectangle(rect);
-                }
+                //if ((background != null || (getStyle() & SWT.DOUBLE_BUFFERED) == 0) && background.getAlpha() > 0) {    gc.setBackground(getBackground());    gc.fillRectangle(rect);}
+                ;
             }
         } catch (SWTException e) {
-            if ((getStyle() & SWT.DOUBLE_BUFFERED) == 0) {
-                gc.setBackground(getBackground());
-                gc.fillRectangle(rect);
-            }
+            //if ((getStyle() & SWT.DOUBLE_BUFFERED) == 0) {    gc.setBackground(getBackground());    gc.fillRectangle(rect);}
+            ;
         }
         // draw border
         int style = getStyle();
