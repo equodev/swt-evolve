@@ -44,6 +44,10 @@ public class CLabelSizes {
         width = Math.max((m.text.x() + m.image.x() + (m.image.x() > 0 && m.text.x() > 0 ? LEFT.IMAGE_SPACING : 0)) + ((m.text.x() > 0 || m.image.x() > 0) ? LEFT.HORIZONTAL_PADDING : 0), LEFT.MIN_WIDTH);
         height = Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? LEFT.VERTICAL_PADDING : 0), LEFT.MIN_HEIGHT);
 
+        // Include SWT margins so pack() yields bounds large enough for onPaint to draw the image
+        width += widget.getLeftMargin() + widget.getRightMargin();
+        height += widget.getTopMargin() + widget.getBottomMargin();
+
         m.widget = new Point((int) Math.ceil(width), (int) Math.ceil(height));
         return m;
     }

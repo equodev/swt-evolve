@@ -963,10 +963,9 @@ class TableImpl<T extends TableSwt, V extends VTable>
     double checkboxWidth,
   ) {
     final cellTexts = item.texts ?? [];
-    if (columnIndex >= cellTexts.length) return 0.0;
-
-    final cellText = cellTexts[columnIndex] ?? "";
-    if (cellText.isEmpty) return 0.0;
+    final cellText = columnIndex < cellTexts.length
+        ? (cellTexts[columnIndex] ?? "")
+        : "";
 
     final cellFont = item.font ?? state.font;
     final cellTextStyle = getTextStyle(
@@ -975,17 +974,36 @@ class TableImpl<T extends TableSwt, V extends VTable>
       textColor: getTableRowTextColor(item, theme, false, true),
       baseTextStyle: rowTextStyle,
     );
-    final cellPainter = TextPainter(
-      text: TextSpan(text: cellText, style: cellTextStyle),
-      textDirection: TextDirection.ltr,
-    );
-    cellPainter.layout();
 
-    double cellWidth = cellPainter.width + theme.cellPadding.horizontal;
+    double cellWidth = theme.cellPadding.horizontal;
+
+    if (cellText.isNotEmpty) {
+      final cellPainter = TextPainter(
+        text: TextSpan(text: cellText, style: cellTextStyle),
+        textDirection: TextDirection.ltr,
+      );
+      cellPainter.layout();
+      cellWidth += cellPainter.width;
+    }
+
+    // Account for the image icon width + gap if this column has an image
+    final cellImage = _cellImageForItem(item, columnIndex);
+    if (cellImage != null) {
+      final iconSize = cellTextStyle.fontSize ?? 16.0;
+      cellWidth += iconSize + theme.cellPadding.left;
+    }
+
     if (hasCheckStyle && columnIndex == 0) {
       cellWidth += checkboxWidth + theme.cellPadding.left;
     }
     return cellWidth;
+  }
+
+  VImage? _cellImageForItem(VTableItem item, int columnIndex) {
+    final imgs = item.images;
+    if (imgs != null && columnIndex < imgs.length) return imgs[columnIndex];
+    if (imgs == null && columnIndex == 0) return item.image;
+    return null;
   }
 
   List<VTableColumn> getColumns() {
