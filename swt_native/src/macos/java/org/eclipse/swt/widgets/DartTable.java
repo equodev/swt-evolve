@@ -386,6 +386,7 @@ public class DartTable extends DartComposite implements ITable {
             }
         }
         setScrollWidth(items, true);
+        TableHelper.loadVirtualItems(this);
     }
 
     void clearCachedWidth(TableItem[] items) {
@@ -2543,6 +2544,8 @@ public class DartTable extends DartComposite implements ITable {
     public int _topIndex() {
         return topIndex;
     }
+
+    boolean loadingVirtualData = false;
 
     public void _addEditor(TableEditor value) {
         TableEditor[] result = ControlEditorHelper.addEditor(editors, value, TableEditor.class);

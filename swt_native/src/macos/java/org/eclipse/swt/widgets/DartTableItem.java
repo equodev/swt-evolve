@@ -1135,6 +1135,9 @@ public class DartTableItem extends DartItem implements ITableItem {
     @Override
     protected void dirty() {
         if (parent != null && !parent.isDisposed()) {
+            if (((DartTable) parent.getImpl()).loadingVirtualData) {
+                return;
+            }
             if (((DartWidget) parent.getImpl()).hooks(SWT.PaintItem) && getApi().getData() != null) {
                 firePaintItemForAllColumns();
             }
