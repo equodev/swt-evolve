@@ -129,6 +129,7 @@ mixin _$ColorSchemeExtensionTailorMixin
   Color get ctabFolderUnselectedColor;
   Color get surfaceToolbar;
   Color get toolbarDivider;
+  Color get compositePanelBorderColor;
 
   @override
   ColorSchemeExtension copyWith({
@@ -250,6 +251,7 @@ mixin _$ColorSchemeExtensionTailorMixin
     Color? ctabFolderUnselectedColor,
     Color? surfaceToolbar,
     Color? toolbarDivider,
+    Color? compositePanelBorderColor,
   }) {
     return ColorSchemeExtension(
       primaryHovered: primaryHovered ?? this.primaryHovered,
@@ -435,6 +437,8 @@ mixin _$ColorSchemeExtensionTailorMixin
           ctabFolderUnselectedColor ?? this.ctabFolderUnselectedColor,
       surfaceToolbar: surfaceToolbar ?? this.surfaceToolbar,
       toolbarDivider: toolbarDivider ?? this.toolbarDivider,
+      compositePanelBorderColor:
+          compositePanelBorderColor ?? this.compositePanelBorderColor,
     );
   }
 
@@ -903,6 +907,11 @@ mixin _$ColorSchemeExtensionTailorMixin
       )!,
       surfaceToolbar: Color.lerp(surfaceToolbar, other.surfaceToolbar, t)!,
       toolbarDivider: Color.lerp(toolbarDivider, other.toolbarDivider, t)!,
+      compositePanelBorderColor: Color.lerp(
+        compositePanelBorderColor,
+        other.compositePanelBorderColor,
+        t,
+      )!,
     );
   }
 
@@ -1367,6 +1376,10 @@ mixin _$ColorSchemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               toolbarDivider,
               other.toolbarDivider,
+            ) &&
+            const DeepCollectionEquality().equals(
+              compositePanelBorderColor,
+              other.compositePanelBorderColor,
             ));
   }
 
@@ -1492,6 +1505,7 @@ mixin _$ColorSchemeExtensionTailorMixin
       const DeepCollectionEquality().hash(ctabFolderUnselectedColor),
       const DeepCollectionEquality().hash(surfaceToolbar),
       const DeepCollectionEquality().hash(toolbarDivider),
+      const DeepCollectionEquality().hash(compositePanelBorderColor),
     ]);
   }
 }
@@ -1675,4 +1689,8 @@ extension ColorSchemeExtensionBuildContextProps on BuildContext {
 
   /// Divider color. Light: #DBDBDB.
   Color get toolbarDivider => colorSchemeExtension.toolbarDivider;
+
+  /// Panel border color for Composite children. Light: #A7A7A7.
+  Color get compositePanelBorderColor =>
+      colorSchemeExtension.compositePanelBorderColor;
 }

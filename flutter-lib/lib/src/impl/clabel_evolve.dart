@@ -52,15 +52,12 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
       hasValidBounds,
     );
 
-    // Only apply margins when there's valid bounds
-    final padding = (hasValidBounds)
-        ? EdgeInsets.fromLTRB(
-            (state.leftMargin ?? 0).toDouble(),
-            (state.topMargin ?? 0).toDouble(),
-            (state.rightMargin ?? 0).toDouble(),
-            (state.bottomMargin ?? 0).toDouble(),
-          )
-        : EdgeInsets.zero;
+    final padding = EdgeInsets.fromLTRB(
+        (state.leftMargin ?? 0).toDouble(),
+        (state.topMargin ?? 0).toDouble(),
+        (state.rightMargin ?? 0).toDouble(),
+        (state.bottomMargin ?? 0).toDouble(),
+      );
 
     return wrap(
       Opacity(

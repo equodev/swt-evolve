@@ -156,6 +156,9 @@ class ColorSchemeExtension extends ThemeExtension<ColorSchemeExtension> with _$C
   /// Divider color. Light: #DBDBDB.
   final Color toolbarDivider;
 
+  /// Panel border color for Composite children. Light: #A7A7A7.
+  final Color compositePanelBorderColor;
+
   const ColorSchemeExtension({
     required this.primaryHovered,
     required this.primaryBorder,
@@ -275,6 +278,7 @@ class ColorSchemeExtension extends ThemeExtension<ColorSchemeExtension> with _$C
     required this.ctabFolderUnselectedColor,
     required this.surfaceToolbar,
     required this.toolbarDivider,
+    required this.compositePanelBorderColor,
   });
 
   factory ColorSchemeExtension.fromJson(Map<String, dynamic> json) =>

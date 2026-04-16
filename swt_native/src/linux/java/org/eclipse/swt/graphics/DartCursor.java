@@ -101,6 +101,7 @@ public final class DartCursor extends DartResource implements ICursor {
     public DartCursor(Device device, int style, Cursor api) {
         super(device, api);
         this.cursorStyle = style;
+        getApi().handle = style + 1;
         init();
     }
 

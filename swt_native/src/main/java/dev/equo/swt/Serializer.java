@@ -51,9 +51,7 @@ public class Serializer {
         NumberConverter.serialize(FlutterBridge.id(api), writer);
         writer.writeByte((byte)',');
         writer.writeByte((byte)'"'); writer.writeAscii(name_swt); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
-        Class<? extends Widget> aClass = api.getClass();
-        String widgetName = aClass.isAnonymousClass() || !isOwnPackage(aClass) ? Config.getSwtBaseClassName(aClass) : aClass.getSimpleName();
-        StringConverter.serialize(widgetName, writer);
+        StringConverter.serialize(swtWidgetName(impl, api), writer);
         writer.writeByte((byte)',');
 //        writer.writeByte((byte)'"'); writer.writeAscii(name_style); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
 //        NumberConverter.serialize(api.getStyle(), writer);
@@ -62,6 +60,18 @@ public class Serializer {
         else if (converter.writeContentMinimal(writer, value)) writer.getByteBuffer()[writer.size() - 1] = '}';
         else writer.getByteBuffer()[writer.size() - 1] = '}';
 //        else writer.writeByte((byte)'}');
+    }
+
+    private static String swtWidgetName(DartWidget impl, Widget api) {
+        Class<? extends Widget> aClass = api.getClass();
+        String apiName = aClass.isAnonymousClass() || !isOwnPackage(aClass)
+                ? Config.getSwtBaseClassName(aClass)
+                : aClass.getSimpleName();
+        String implName = impl.getClass().getSimpleName();
+        if (implName.startsWith("Dart") && !implName.substring(4).equals(apiName)) {
+            return implName.substring(4);
+        }
+        return apiName;
     }
 
     private static boolean isOwnPackage(Class<? extends Widget> aClass) {
