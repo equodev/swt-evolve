@@ -65,6 +65,7 @@ public class Config {
                     entry(TreeItem.class, Impl.equo),
                     entry(TreeColumn.class, Impl.equo),
                     entry(Canvas.class, Impl.equo)
+                    //entry(Cursor.class, Impl.equo),
                     //entry(ScrolledComposite.class, Impl.equo)
                     //entry(Menu.class, Impl.equo)
                     //entry(MenuItem.class, Impl.equo),

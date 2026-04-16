@@ -19,6 +19,7 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import dev.equo.swt.*;
+import org.eclipse.swt.internal.win32.*;
 
 /**
  * Instances of this class manage operating system resources that
@@ -629,6 +630,23 @@ public final class DartCursor extends DartResource implements ICursor {
 
     public Image _image() {
         return image;
+    }
+
+    public static Long win32_getHandle(Cursor cursor, int zoom) {
+        if (cursor.isDisposed()) {
+            return 0L;
+        }
+        DartCursor impl = (DartCursor) cursor.getImpl();
+        if (impl.zoomLevelToHandle.get(zoom) != null) {
+            return impl.zoomLevelToHandle.get(zoom).getHandle();
+        }
+        CursorHandle handle = impl.cursorHandleProvider.createHandle(cursor.getImpl()._device(), zoom);
+        if (handle == null) {
+            long fallback = OS.LoadCursor(0, OS.IDC_ARROW);
+            return fallback != 0 ? fallback : 0L;
+        }
+        impl.setHandleForZoomLevel(handle, zoom);
+        return impl.zoomLevelToHandle.get(zoom).getHandle();
     }
 
     public Cursor getApi() {
