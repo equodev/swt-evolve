@@ -319,6 +319,9 @@ public final class SwtCursor extends SwtResource implements ICursor {
         if (cursor.isDisposed()) {
             return 0L;
         }
+        if (cursor.getImpl() instanceof DartCursor) {
+            return DartCursor.win32_getHandle(cursor, zoom);
+        }
         if (((SwtCursor) cursor.getImpl()).zoomLevelToHandle.get(zoom) != null) {
             return ((SwtCursor) cursor.getImpl()).zoomLevelToHandle.get(zoom).getHandle();
         }
