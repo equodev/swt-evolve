@@ -136,18 +136,21 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
       return Container(
         height: toolbarHeight,
         decoration: BoxDecoration(color: backgroundColor),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: Stack(
-                key: _stackKey,
-                clipBehavior: Clip.hardEdge,
-                children: positionedContent,
+        child: ToolbarAreaMarker(
+          active: true,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: Stack(
+                  key: _stackKey,
+                  clipBehavior: Clip.hardEdge,
+                  children: positionedContent,
+                ),
               ),
-            ),
-            if (showPalette) const ThemeColorToolbarPaletteControl(),
-          ],
+              if (showPalette) const ThemeColorToolbarPaletteControl(),
+            ],
+          ),
         ),
       );
     }
@@ -155,23 +158,26 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
     final widgets = visibleChildren.map((child) => buildMapWidgetFromValue(child)).toList();
     return Container(
       decoration: BoxDecoration(color: backgroundColor),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: ClipRect(
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: widgets,
+      child: ToolbarAreaMarker(
+        active: true,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: ClipRect(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: widgets,
+                  ),
                 ),
               ),
             ),
-          ),
-          if (showPalette) const ThemeColorToolbarPaletteControl(),
-        ],
+            if (showPalette) const ThemeColorToolbarPaletteControl(),
+          ],
+        ),
       ),
     );
   }
@@ -305,11 +311,14 @@ class SideBarCompositeImpl extends CompositeImpl<SideBarComposite, VComposite> {
         color: backgroundColor,
         border: Border(top: BorderSide(color: dividerColor, width: borderWidth)),
       ),
-      child: Stack(
-        children: [
-          Column(mainAxisSize: MainAxisSize.max, children: widgets),
-          ...dividers,
-        ],
+      child: ToolbarAreaMarker(
+        active: true,
+        child: Stack(
+          children: [
+            Column(mainAxisSize: MainAxisSize.max, children: widgets),
+            ...dividers,
+          ],
+        ),
       ),
     );
   }
@@ -326,4 +335,22 @@ class SideBarCompositeImpl extends CompositeImpl<SideBarComposite, VComposite> {
     }
     return mapWidgetFromValue(child);
   }
+}
+
+class ToolbarAreaMarker extends InheritedWidget {
+  final bool active;
+
+  const ToolbarAreaMarker({
+    super.key,
+    required this.active,
+    required super.child,
+  });
+
+  static bool of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ToolbarAreaMarker>()?.active ??
+          false;
+
+  @override
+  bool updateShouldNotify(ToolbarAreaMarker oldWidget) =>
+      active != oldWidget.active;
 }

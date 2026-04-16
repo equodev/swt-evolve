@@ -99,6 +99,10 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "ToolTip" => VToolTip.fromJson(child),
     "TreeEditor" => VTreeEditor.fromJson(child),
     "ControlEditor" => VControlEditor.fromJson(child),
+    "MainComposite" => VComposite.fromJson(child),
+    "SideBar" => VComposite.fromJson(child),
+    "MainToolbar" => VComposite.fromJson(child),
+    "StatusBar" => VComposite.fromJson(child),
     _ => throw "Unknown Widget Value $type",
   };
 }

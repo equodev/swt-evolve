@@ -347,6 +347,9 @@ ColorSchemeExtension _$ColorSchemeExtensionFromJson(
   toolbarDivider: const ColorConverter().fromJson(
     json['toolbarDivider'] as String,
   ),
+  compositePanelBorderColor: const ColorConverter().fromJson(
+    json['compositePanelBorderColor'] as String,
+  ),
 );
 
 Map<String, dynamic> _$ColorSchemeExtensionToJson(
@@ -622,4 +625,7 @@ Map<String, dynamic> _$ColorSchemeExtensionToJson(
   ),
   'surfaceToolbar': const ColorConverter().toJson(instance.surfaceToolbar),
   'toolbarDivider': const ColorConverter().toJson(instance.toolbarDivider),
+  'compositePanelBorderColor': const ColorConverter().toJson(
+    instance.compositePanelBorderColor,
+  ),
 };

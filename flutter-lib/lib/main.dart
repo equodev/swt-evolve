@@ -5,6 +5,7 @@ import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/widget.dart';
 import 'package:swtflutter/src/custom/toolbar_composite.dart';
+import 'package:swtflutter/src/custom/main_composite.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 import 'src/styles.dart';
 import 'src/theme/theme.dart'
@@ -161,6 +162,7 @@ Widget? customWidget(Map<String, dynamic> child) {
     ),
     "SideBar" => SideBarComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
     "StatusBar" => StatusBarComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
+    "MainComposite" => MainComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
     _ => null
   };
 }
@@ -176,6 +178,7 @@ Widget? customWidgetFromValue(VWidget child) {
     ),
     "SideBar" => SideBarComposite(key: ValueKey(id), value: child as VComposite),
     "StatusBar" => StatusBarComposite(key: ValueKey(id), value: child as VComposite),
+    "MainComposite" => MainComposite(key: ValueKey(id), value: child as VComposite),
     _ => null
   };
 }

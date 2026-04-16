@@ -26,6 +26,7 @@ import 'theme_settings/expanditem_theme_settings.dart';
 import 'theme_settings/slider_theme_settings.dart';
 import 'theme_settings/spinner_theme_settings.dart';
 import 'theme_settings/scrolledcomposite_theme_settings.dart';
+import 'theme_settings/composite_theme_settings.dart';
 import 'theme_settings/scale_theme_settings.dart';
 import 'theme_settings/menu_theme_settings.dart';
 import 'theme_settings/menuitem_theme_settings.dart';
@@ -309,6 +310,7 @@ ColorSchemeExtension createColorSchemeExtension([ColorScheme? colorScheme]) {
     ctabFolderUnselectedColor: const Color(0xFFE7E8E8), // #E7E8E8
     surfaceToolbar: const Color(0xFFF4F4F4), // #F4F4F4 light
     toolbarDivider: const Color(0xFFDBDBDB), // #DBDBDB light
+    compositePanelBorderColor: const Color(0xFFA7A7A7), // #A7A7A7 light
   );
 }
 
@@ -432,6 +434,7 @@ ColorSchemeExtension _createColorSchemeExtensionFromColorScheme(ColorScheme colo
     ctabFolderUnselectedColor: colorScheme.surfaceContainerHigh,
     surfaceToolbar: colorScheme.surfaceContainerLow,
     toolbarDivider: colorScheme.outlineVariant,
+    compositePanelBorderColor: colorScheme.outline,
   );
 }
 
@@ -647,6 +650,11 @@ ThemeData createLightDefaultTheme(int? backgroundColor, {Color? seedColor}) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('scrolledcomposite', colorScheme, Brightness.light),
   );
+  final compositeTheme = getCompositeLightTheme(
+    colorScheme: _resolveWidgetColorScheme('composite', colorScheme, Brightness.light),
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('composite', colorScheme, Brightness.light),
+  );
   final scaleTheme = getScaleLightTheme(
     colorScheme: _resolveWidgetColorScheme('scale', colorScheme, Brightness.light),
     textTheme: defaultTextTheme,
@@ -724,6 +732,7 @@ ThemeData createLightDefaultTheme(int? backgroundColor, {Color? seedColor}) {
       sliderTheme,
       spinnerTheme,
       scrolledCompositeTheme,
+      compositeTheme,
       scaleTheme,
       menuTheme,
       menuItemTheme,
@@ -866,6 +875,11 @@ ThemeData createLightNonDefaultTheme(
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final compositeTheme = getCompositeLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   final scaleTheme = getScaleLightTheme(
     colorScheme: colorScheme,
     textTheme: materialTextTheme,
@@ -944,6 +958,7 @@ ThemeData createLightNonDefaultTheme(
       sliderTheme,
       spinnerTheme,
       scrolledCompositeTheme,
+      compositeTheme,
       scaleTheme,
       menuTheme,
       menuItemTheme,
@@ -1085,6 +1100,11 @@ ThemeData createDarkDefaultTheme(int? backgroundColor, {Color? seedColor}) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('scrolledcomposite', colorScheme, Brightness.dark),
   );
+  final compositeTheme = getCompositeDarkTheme(
+    colorScheme: _resolveWidgetColorScheme('composite', colorScheme, Brightness.dark),
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('composite', colorScheme, Brightness.dark),
+  );
   final scaleTheme = getScaleDarkTheme(
     colorScheme: _resolveWidgetColorScheme('scale', colorScheme, Brightness.dark),
     textTheme: defaultTextTheme,
@@ -1162,6 +1182,7 @@ ThemeData createDarkDefaultTheme(int? backgroundColor, {Color? seedColor}) {
       sliderTheme,
       spinnerTheme,
       scrolledCompositeTheme,
+      compositeTheme,
       scaleTheme,
       menuTheme,
       menuItemTheme,
@@ -1304,6 +1325,11 @@ ThemeData createDarkNonDefaultTheme(
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final compositeTheme = getCompositeDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   final scaleTheme = getScaleDarkTheme(
     colorScheme: colorScheme,
     textTheme: materialTextTheme,
@@ -1382,6 +1408,7 @@ ThemeData createDarkNonDefaultTheme(
       sliderTheme,
       spinnerTheme,
       scrolledCompositeTheme,
+      compositeTheme,
       scaleTheme,
       menuTheme,
       menuItemTheme,

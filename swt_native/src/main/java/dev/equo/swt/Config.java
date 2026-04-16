@@ -26,6 +26,7 @@ public class Config {
     static Impl mainToolbarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.maintoolbar", defaultImpl.name()));
     static Impl sideBarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.sidebar", defaultImpl.name()));
     static Impl statusBarImpl = Impl.valueOf(System.getProperty("dev.equo.swt.statusbar", defaultImpl.name()));
+    static Impl mainCompositeImpl = Impl.valueOf(System.getProperty("dev.equo.swt.maincomposite", defaultImpl.name()));
 
     private static final String os = System.getProperty("os.name").toLowerCase();
     static final Map<Class<?>, Impl> equoEnabled;
@@ -64,8 +65,8 @@ public class Config {
                     entry(Tree.class, Impl.equo),
                     entry(TreeItem.class, Impl.equo),
                     entry(TreeColumn.class, Impl.equo),
-                    entry(Canvas.class, Impl.equo)
-                    //entry(Cursor.class, Impl.equo),
+                    entry(Canvas.class, Impl.equo),
+                    entry(Cursor.class, Impl.equo),
                     //entry(ScrolledComposite.class, Impl.equo)
                     //entry(Menu.class, Impl.equo)
                     //entry(MenuItem.class, Impl.equo),
@@ -78,7 +79,7 @@ public class Config {
                     //entry(Spinner.class, Impl.equo),
                     //entry(ToolTip.class, Impl.equo),
                     //entry(Shell.class, Impl.equo),
-                    //entry(Composite.class, Impl.equo),
+                    entry(Composite.class, Impl.equo)
                     //entry(DateTime.class, Impl.equo),
                     //entry(Tray.class, Impl.equo),
                     //entry(TrayItem.class, Impl.equo)
@@ -331,6 +332,8 @@ public class Config {
             return true;
         if (parent != null && parent.getImpl().getClass().getSimpleName().startsWith(DART) && !isSwtCTabFolderBody(clazz, parent))
             return true;
+        if (isSwtCTabFolderBody(clazz, parent))
+            return false;
         if (isSplash(parent))
             return false;
         return isEquo(clazz);
@@ -369,6 +372,11 @@ public class Config {
         return id.equals("/Shell/0/Composite/3") && isInStackTrace(E4_TOOLBAR_CLASS, E4_TOOLBAR_METHOD);
     }
 
+    private static boolean isMainComposite(Class<?> clazz, Composite parent) {
+        String id = getId(clazz, parent);
+        return id.equals("/Shell/0/Composite/1/Composite/1/Composite/1/Composite/1");
+    }
+
     public static boolean isSwtCTabFolderBody(Class<?> clazz, Widget parent) {
         return Composite.class.isAssignableFrom(clazz) && parent instanceof CTabFolder ct && !(ct.getParent().getImpl() instanceof DartWidget);
     }
@@ -399,6 +407,9 @@ public class Config {
             return new DartSideBar(parent, style, composite);
         if (statusBarImpl == Impl.equo && isStatusToolbarComposite(Composite.class, parent))
             return new DartStatusBar(parent, style, composite);
+        if (mainCompositeImpl == Impl.equo && isMainComposite(Composite.class, parent)){
+            return new DartMainComposite(parent, style, composite);
+        }
         if (Config.isEquo(composite.getClass(), parent))
             return new DartComposite(parent, style, composite);
         // In eclipse mode, always use SWT implementation without any special handling
@@ -629,6 +640,7 @@ public class Config {
         buffer.append("mainToolbarImpl=").append(mainToolbarImpl).append("\n");
         buffer.append("sideBarImpl=").append(sideBarImpl).append("\n");
         buffer.append("statusBarImpl=").append(statusBarImpl).append("\n");
+        buffer.append("mainCompositeImpl=").append(mainCompositeImpl).append("\n");
         buffer.append("forceEclipse=").append(forceEclipse).append("\n");
         System.getProperties().forEach((k, v) -> {
             if (k.toString().startsWith(PROPERTY_PREFIX))

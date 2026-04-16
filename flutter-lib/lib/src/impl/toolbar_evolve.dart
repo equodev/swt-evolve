@@ -6,6 +6,7 @@ import '../gen/toolbar.dart';
 import '../gen/toolitem.dart';
 import '../gen/widget.dart';
 import '../impl/composite_evolve.dart';
+import '../custom/toolbar_composite.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
@@ -48,13 +49,13 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     final textOnRight = style.has(SWT.RIGHT);
     final toolItems = getToolItems(context);
 
-    final useSwtColors = getConfigFlags().use_swt_colors ?? false;
-    final Color? backgroundColor = useSwtColors
-        ? Colors.transparent
-        : getBackgroundColor(
-            background: state.background,
-            defaultColor: widgetTheme.toolbarBackgroundColor,
-          );
+    final isInToolbarArea = ToolbarAreaMarker.of(context);
+    final Color? backgroundColor = getBackgroundColor(
+      background: state.background,
+      defaultColor: isInToolbarArea
+          ? widgetTheme.toolbarBackgroundColor
+          : Theme.of(context).colorScheme.surface,
+    );
 
     return Builder(
       builder: (context) {
