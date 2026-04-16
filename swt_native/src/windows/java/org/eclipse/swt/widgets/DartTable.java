@@ -3265,6 +3265,12 @@ public class DartTable extends DartComposite implements ITable {
         return topIndex;
     }
 
+    boolean loadingVirtualData = false;
+
+    boolean checkData(TableItem item, int index) {
+        return checkData(item, index, true);
+    }
+
     void createColumn(TableItem item, int index) {
         DartTableItem di = (DartTableItem) item.getImpl();
         DartItem dItem = (DartItem) item.getImpl();

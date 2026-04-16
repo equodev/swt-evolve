@@ -2868,6 +2868,12 @@ public class DartTable extends DartComposite implements ITable {
         return selection;
     }
 
+    boolean loadingVirtualData = false;
+
+    boolean checkData(TableItem item, int index) {
+        return checkData(item);
+    }
+
     public void _addEditor(TableEditor value) {
         TableEditor[] result = ControlEditorHelper.addEditor(editors, value, TableEditor.class);
         if (result != editors) {

@@ -433,6 +433,19 @@ public class TableHelper {
         return img;
     }
 
+    public static void loadVirtualItems(DartTable table) {
+        if ((table.getApi().style & SWT.VIRTUAL) == 0) return;
+        table.loadingVirtualData = true;
+        try {
+            for (int i = 0; i < table.getItemCount(); i++) {
+                table.checkData(table._getItem(i), i);
+            }
+        } finally {
+            table.loadingVirtualData = false;
+        }
+        table.dirty();
+    }
+
     public static void onAddListener(DartTable table, int eventType) {
         if (eventType == SWT.PaintItem && table.items != null) {
             for (TableItem tableItem : table.items) {
