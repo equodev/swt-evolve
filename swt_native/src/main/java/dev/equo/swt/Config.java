@@ -579,8 +579,18 @@ public class Config {
             configFlags.theme_name = System.getProperty("swt.evolve.theme_name");
             configFlags.theme_color = System.getProperty("swt.evolve.theme_color");
             applyThemeColorsByWidgetFromProperties(configFlags);
+            applyThemePresets(configFlags);
         }
         return configFlags;
+    }
+
+    private static void applyThemePresets(ConfigFlags flags) {
+        if (!"marketplace".equals(flags.theme_name)) return;
+        flags.theme_name = "equo";
+        flags.show_theme_color_palette = true;
+        flags.use_swt_colors = false;
+        flags.use_swt_fonts = false;
+        flags.force_theme = "dark";
     }
 
     private static void applyThemeColorsByWidgetFromProperties(ConfigFlags flags) {

@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -31,30 +32,34 @@ public abstract class FlutterBridge {
     }
 
     private static void handlePropertySetFromFlutter(String payload) {
-        if (payload == null) {
-            return;
-        }
+        if (payload == null) return;
         String json = payload.trim();
-        if (json.isEmpty()) {
-            return;
-        }
+        if (json.isEmpty()) return;
         try {
             ConfigFlags parsed = serializer.from(
                     ConfigFlags.class,
                     new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
-            if (parsed == null || parsed.theme_color == null) {
-                return;
-            }
-            String value = parsed.theme_color.trim();
-            if (value.isEmpty()) {
-                return;
-            }
-            System.setProperty("swt.evolve.theme_color", value);
-            getConfigFlags().theme_color = value;
-            broadcastSwtEvolveProperties();
+            if (parsed == null) return;
+
+            boolean changed = false;
+            ConfigFlags current = getConfigFlags();
+            changed |= applyStringField("force_theme", current.force_theme, parsed.force_theme, v -> current.force_theme = v);
+            changed |= applyStringField("theme_name", current.theme_name, parsed.theme_name, v -> current.theme_name = v);
+            changed |= applyStringField("theme_color", current.theme_color, parsed.theme_color, v -> current.theme_color = v);
+            if (changed) broadcastSwtEvolveProperties();
         } catch (IOException e) {
             System.err.println("[FlutterBridge] swt.evolve.property.set: " + e.getMessage());
         }
+    }
+
+    private static boolean applyStringField(String name, String oldVal, String newRaw, Consumer<String> setter) {
+        if (newRaw == null) return false;
+        String trimmed = newRaw.trim();
+        String newVal = trimmed.isEmpty() ? null : trimmed;
+        if (Objects.equals(oldVal, newVal)) return false;
+        System.setProperty("swt.evolve." + name, trimmed);
+        setter.accept(newVal);
+        return true;
     }
 
     protected final CompletableFuture<Boolean> clientReady = new CompletableFuture<>();

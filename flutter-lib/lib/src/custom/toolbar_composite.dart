@@ -48,9 +48,12 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
       final visibleChildren = children.where((child) => child.visible != false).toList();
 
     final themeName = getConfigFlags().theme_name?.trim();
+    final paletteEnabled = getConfigFlags().show_theme_color_palette == true;
     final showPalette = widget.useBoundsLayout &&
         (themeName == null || themeName.isEmpty) &&
-        (getConfigFlags().show_theme_color_palette == true);
+        paletteEnabled;
+    final showNamedThemeSelector = paletteEnabled &&
+        (themeName != null && themeName.isNotEmpty);
 
     if (widget.useBoundsLayout) {
       final boundsHeight = state.bounds?.height;
@@ -149,6 +152,7 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
                 ),
               ),
               if (showPalette) const ThemeColorToolbarPaletteControl(),
+              if (showNamedThemeSelector) const ThemeNameSelectorControl(),
             ],
           ),
         ),
@@ -176,6 +180,7 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
               ),
             ),
             if (showPalette) const ThemeColorToolbarPaletteControl(),
+            if (showNamedThemeSelector) const ThemeNameSelectorControl(),
           ],
         ),
       ),
