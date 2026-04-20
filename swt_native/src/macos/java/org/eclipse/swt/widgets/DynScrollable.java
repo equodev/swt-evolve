@@ -18,6 +18,8 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import dev.equo.swt.*;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * This class is the abstract superclass of all classes which
