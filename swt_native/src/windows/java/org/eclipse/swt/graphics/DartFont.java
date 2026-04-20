@@ -260,6 +260,7 @@ public final class DartFont extends DartResource implements IFont {
     void init(FontData fd) {
         if (fd == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        handle = 1;
         if (handle == 0)
             SWT.error(SWT.ERROR_NO_HANDLES);
     }

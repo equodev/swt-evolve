@@ -1,7 +1,8 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.layout.TabFolderLayout;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.layout.BorderLayout;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -10,10 +11,11 @@ import static org.mockito.Mockito.*;
 public class LayoutSubclassTest {
 
     @Test
-    void tabfolder_layout_should_not_throw() {
-        MyTabFolderLayout l = spy(new MyTabFolderLayout());
+    void border_layout_should_not_throw() {
+        MyBorderLayout l = spy(new MyBorderLayout());
         Composite c = mock(Composite.class);
         when(c.getChildren()).thenReturn(new Control[0]);
+        when(c.getClientArea()).thenReturn(new Rectangle(0, 0, 100, 100));
 
         l.layout(c, false);
         l.computeSize(c, 100, 100, true);
@@ -38,7 +40,7 @@ public class LayoutSubclassTest {
         verify(l).flushCache(c);
     }
 
-    private static class MyTabFolderLayout extends TabFolderLayout {
+    private static class MyBorderLayout extends BorderLayout {
 
         @Override
         public void layout(Composite composite, boolean flushCache) {

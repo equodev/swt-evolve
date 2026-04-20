@@ -355,7 +355,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         super(device, api);
         if (data == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        this.imageData = data;
+        this.imageData = GraphicsUtils.copyImageData(data);
         currentDeviceZoom = zoom;
         init(data, zoom);
         init();
@@ -468,6 +468,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     public DartImage(Device device, InputStream stream, Image api) {
         super(device, api);
         ImageData data = new ImageData(stream);
+        this.imageData = data;
         currentDeviceZoom = DPIUtil.getDeviceZoom();
         init(data);
         init();
@@ -507,10 +508,11 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, String filename, Image api) {
         super(device, api);
-        this.filename = GraphicsUtils.getFilename(filename);
         if (filename == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        this.filename = GraphicsUtils.getFilename(filename);
         ImageData data = new ImageData(filename);
+        this.imageData = data;
         currentDeviceZoom = DPIUtil.getDeviceZoom();
         init(data);
         init();
@@ -1078,6 +1080,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     void init(ImageData image) {
         init(image, DPIUtil.getDeviceZoom());
+        this.imageData = image;
     }
 
     private void init(ImageData image, int zoom) {
