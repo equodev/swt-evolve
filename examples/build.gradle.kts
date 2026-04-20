@@ -69,13 +69,19 @@ dependencies {
     implementation("org.eclipse:draw2d:$draw2dVersion")
 }
 
+tasks.withType<JavaExec>().configureEach {
+    if (currentOs == "macos") {
+        jvmArgs("-XstartOnFirstThread")
+    }
+}
+
 tasks.register<JavaExec>("runExample") {
     group = "examples"
     description = "Run an example class. Usage: ./gradlew :examples:runExample -PmainClass=dev.equo.StyledTextSnippet1"
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set(project.findProperty("mainClass")?.toString() ?: "dev.equo.StyledTextSnippet3")
 
-    if (System.getProperty("os.name").lowercase().contains("mac")) {
+    if (currentOs == "macos") {
         jvmArgs("-XstartOnFirstThread")
     }
     if (System.getProperty("test.debug") != null)
