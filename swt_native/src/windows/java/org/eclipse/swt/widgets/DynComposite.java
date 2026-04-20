@@ -19,6 +19,8 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import dev.equo.swt.*;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Instances of this class are controls which are capable
