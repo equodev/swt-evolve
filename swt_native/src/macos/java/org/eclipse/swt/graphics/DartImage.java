@@ -358,7 +358,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, ImageData data, Image api) {
         super(device, api);
-        data = GraphicsUtils.copyImageData(data);
+        this.imageData = GraphicsUtils.copyImageData(data);
         try {
             init(data, 100);
             init();
@@ -529,6 +529,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         } finally {
         }
         ImageData data = new ImageData(filename);
+        this.imageData = data;
     }
 
     /**
