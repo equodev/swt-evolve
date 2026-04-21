@@ -9,6 +9,7 @@ void setCurrentTheme(bool isDark) {
 }
 
 ConfigFlags configFlags = ConfigFlags();
+final ValueNotifier<double> appScaleNotifier = ValueNotifier<double>(1.0);
 
 bool getCurrentTheme() {
   return _useDarkTheme;

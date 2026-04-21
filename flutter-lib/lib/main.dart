@@ -89,6 +89,7 @@ void main(List<String> args) async {
     contentWidget: contentWidget,
     theme: theme,
     backgroundColor: backgroundColor,
+    widgetName: widgetName,
   ));
 
   sendClientReady(widgetName, widgetId, sendWindowSize: (widgetName == "Display"));
@@ -196,12 +197,14 @@ class EvolveApp extends StatelessWidget {
   final Widget contentWidget;
   final ThemeMode theme;
   final int? backgroundColor;
+  final String? widgetName;
 
   const EvolveApp({
     Key? key,
     required this.contentWidget,
     required this.theme,
     this.backgroundColor,
+    this.widgetName,
   }) : super(key: key);
 
   @override
@@ -257,7 +260,16 @@ class EvolveApp extends StatelessWidget {
             backgroundColor: effectiveThemeMode == ThemeMode.dark
                 ? darkTheme.scaffoldBackgroundColor
                 : lightTheme.scaffoldBackgroundColor,
-            body: contentWidget,
+            body: ValueListenableBuilder<double>(
+              valueListenable: appScaleNotifier,
+              builder: (ctx, scale, _) {
+                return Transform.scale(
+                  scale: scale,
+                  alignment: Alignment.topLeft,
+                  child: contentWidget,
+                );
+              },
+            ),
           ),
         );
       },

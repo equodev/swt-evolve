@@ -515,6 +515,7 @@ public class Config {
             configFlags.use_swt_fonts = Boolean.getBoolean("swt.use_swt_fonts");
             configFlags.preserve_icon_colors = Boolean.getBoolean("swt.evolve.preserve_icon_colors");
             configFlags.show_theme_color_palette = Boolean.getBoolean("swt.evolve.show_theme_color_palette");
+            configFlags.show_scaling_control = Boolean.getBoolean("swt.evolve.show_scaling_control");
             configFlags.force_theme = System.getProperty("swt.evolve.force_theme");
             configFlags.theme_name = System.getProperty("swt.evolve.theme_name");
             configFlags.theme_color = System.getProperty("swt.evolve.theme_color");

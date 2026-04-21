@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../comm/comm.dart';
+import '../impl/widget_config.dart';
 import '../theme/named_themes.dart';
 import '../theme/theme_extensions/theme_color_palette_theme_extension.dart';
 
@@ -26,53 +27,27 @@ void _syncThemeName(String themeName, {String? forceTheme}) {
   );
 }
 
-typedef _ThemePick = ({String key, String label, String? forceTheme});
-
-final _kNamedPicks = <_ThemePick>[
-  (key: 'cursor', label: 'Cursor', forceTheme: 'dark'),
-  (key: 'equo', label: 'Equo Light', forceTheme: 'light'),
-  (key: 'equo', label: 'Equo Dark', forceTheme: 'dark'),
-];
-
 List<String> _parseSampleHexCsv(String csv) =>
     csv.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
 
-enum _PickerMode { colorPalette, nameSelector }
+typedef _ThemePick = ({String key, String label, String? forceTheme});
+
+const _kNamedPicks = <_ThemePick>[
+  (key: 'equo', label: 'Equo Light', forceTheme: 'light'),
+  (key: 'equo', label: 'Equo Dark', forceTheme: 'dark'),
+  (key: 'cursor', label: 'Cursor Dark', forceTheme: 'dark'),
+];
 
 class ThemeColorToolbarPaletteControl extends StatelessWidget {
   const ThemeColorToolbarPaletteControl({super.key});
-
-  @override
-  Widget build(BuildContext context) =>
-      const _ThemeToolbarPicker(mode: _PickerMode.colorPalette);
-}
-
-class ThemeNameSelectorControl extends StatelessWidget {
-  const ThemeNameSelectorControl({super.key});
-
-  @override
-  Widget build(BuildContext context) =>
-      const _ThemeToolbarPicker(mode: _PickerMode.nameSelector);
-}
-
-class _ThemeToolbarPicker extends StatefulWidget {
-  final _PickerMode mode;
-
-  const _ThemeToolbarPicker({required this.mode});
-
-  @override
-  State<_ThemeToolbarPicker> createState() => _ThemeToolbarPickerState();
-}
-
-class _ThemeToolbarPickerState extends State<_ThemeToolbarPicker> {
-  bool _expanded = false;
 
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<ThemeColorPaletteThemeExtension>();
     if (palette == null) return const SizedBox.shrink();
 
-    final brightness = Theme.of(context).brightness;
+    final themeName = getConfigFlags().theme_name?.trim();
+    final hasNamedTheme = themeName != null && themeName.isNotEmpty;
 
     return Material(
       type: MaterialType.transparency,
@@ -80,46 +55,32 @@ class _ThemeToolbarPickerState extends State<_ThemeToolbarPicker> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (_expanded) ...[
-            ..._buildSwatches(palette, brightness),
-            SizedBox(width: palette.trailingGapAfterSwatches),
-          ],
-          Tooltip(
-            message: _expanded ? palette.collapseTooltip : palette.expandTooltip,
-            child: InkWell(
-              onTap: () => setState(() => _expanded = !_expanded),
-              borderRadius: BorderRadius.circular(palette.swatchBorderRadius),
-              child: Padding(
-                padding: palette.chevronPadding,
-                child: Icon(
-                  _expanded ? Icons.chevron_right : Icons.chevron_left,
-                  size: palette.chevronIconSize,
-                  color: palette.chevronIconColor,
-                ),
-              ),
-            ),
-          ),
+          if (hasNamedTheme)
+            ..._buildNamedThemeSwatches(palette, Theme.of(context).brightness)
+          else
+            ..._buildColorSwatches(palette),
+          SizedBox(width: palette.trailingGapAfterSwatches),
         ],
       ),
     );
   }
 
-  List<Widget> _buildSwatches(
+  List<Widget> _buildColorSwatches(ThemeColorPaletteThemeExtension palette) {
+    return _parseSampleHexCsv(palette.sampleHexCsv).map((hex) {
+      final c = Color(int.parse(hex.length == 6 ? 'FF$hex' : hex, radix: 16));
+      return _swatch(
+        palette: palette,
+        color: c,
+        label: hex,
+        onTap: () => _syncThemeColor(hex),
+      );
+    }).toList();
+  }
+
+  List<Widget> _buildNamedThemeSwatches(
     ThemeColorPaletteThemeExtension palette,
     Brightness brightness,
   ) {
-    if (widget.mode == _PickerMode.colorPalette) {
-      return _parseSampleHexCsv(palette.sampleHexCsv).map((hex) {
-        final c = Color(int.parse(hex.length == 6 ? 'FF$hex' : hex, radix: 16));
-        return _swatch(
-          palette: palette,
-          color: c,
-          label: hex,
-          onTap: () => _syncThemeColor(hex),
-        );
-      }).toList();
-    }
-
     return _kNamedPicks.expand((pick) {
       final namedTheme = kNamedThemes[pick.key];
       if (namedTheme == null) return const <Widget>[];
@@ -153,10 +114,7 @@ class _ThemeToolbarPickerState extends State<_ThemeToolbarPicker> {
         child: Tooltip(
           message: label,
           child: InkWell(
-            onTap: () {
-              onTap();
-              setState(() => _expanded = false);
-            },
+            onTap: onTap,
             borderRadius: BorderRadius.circular(palette.swatchBorderRadius),
             child: Container(
               width: palette.swatchSize,

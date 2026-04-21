@@ -9,11 +9,10 @@ import '../gen/toolbar.dart';
 import '../gen/toolitem.dart';
 import '../gen/widgets.dart';
 import '../impl/composite_evolve.dart';
-import '../impl/widget_config.dart';
 import '../nolayout.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
-import 'theme_color_palette_control.dart';
+import 'controls_item.dart';
 
 class ToolbarComposite extends CompositeSwt<VComposite> {
   final bool useBoundsLayout;
@@ -45,15 +44,8 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
 
     final widgetTheme = Theme.of(context).extension<ToolBarThemeExtension>();
     final backgroundColor = widget.backgroundColor ?? widgetTheme!.toolbarBackgroundColor;
-      final visibleChildren = children.where((child) => child.visible != false).toList();
-
-    final themeName = getConfigFlags().theme_name?.trim();
-    final paletteEnabled = getConfigFlags().show_theme_color_palette == true;
-    final showPalette = widget.useBoundsLayout &&
-        (themeName == null || themeName.isEmpty) &&
-        paletteEnabled;
-    final showNamedThemeSelector = paletteEnabled &&
-        (themeName != null && themeName.isNotEmpty);
+    final visibleChildren = children.where((child) => child.visible != false).toList();
+    final isRootToolbar = widget.value.swt == "MainToolbar";
 
     if (widget.useBoundsLayout) {
       final boundsHeight = state.bounds?.height;
@@ -151,8 +143,7 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
                   children: positionedContent,
                 ),
               ),
-              if (showPalette) const ThemeColorToolbarPaletteControl(),
-              if (showNamedThemeSelector) const ThemeNameSelectorControl(),
+              if (isRootToolbar) ToolbarOptionalControlsRow(useBoundsLayout: true),
             ],
           ),
         ),
@@ -179,8 +170,7 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
                 ),
               ),
             ),
-            if (showPalette) const ThemeColorToolbarPaletteControl(),
-            if (showNamedThemeSelector) const ThemeNameSelectorControl(),
+            if (isRootToolbar) ToolbarOptionalControlsRow(useBoundsLayout: true),
           ],
         ),
       ),
