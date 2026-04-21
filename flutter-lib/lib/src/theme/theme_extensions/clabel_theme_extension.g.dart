@@ -46,14 +46,14 @@ Map<String, dynamic> _$CLabelThemeExtensionToJson(
   'disabledTextColor': const ColorConverter().toJson(
     instance.disabledTextColor,
   ),
-  'backgroundColor': _$JsonConverterToJson<String, Color>(
+  'backgroundColor': ?_$JsonConverterToJson<String, Color>(
     instance.backgroundColor,
     const ColorConverter().toJson,
   ),
-  'primaryTextStyle': const TextStyleConverter().toJson(
+  'primaryTextStyle': ?const TextStyleConverter().toJson(
     instance.primaryTextStyle,
   ),
-  'disabledTextStyle': const TextStyleConverter().toJson(
+  'disabledTextStyle': ?const TextStyleConverter().toJson(
     instance.disabledTextStyle,
   ),
   'iconSize': instance.iconSize,

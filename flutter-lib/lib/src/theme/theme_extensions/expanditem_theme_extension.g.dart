@@ -97,7 +97,7 @@ Map<String, dynamic> _$ExpandItemThemeExtensionToJson(
   'borderRadius': instance.borderRadius,
   'headerPadding': const EdgeInsetsConverter().toJson(instance.headerPadding),
   'contentPadding': const EdgeInsetsConverter().toJson(instance.contentPadding),
-  'headerTextStyle': const TextStyleConverter().toJson(
+  'headerTextStyle': ?const TextStyleConverter().toJson(
     instance.headerTextStyle,
   ),
   'animationDuration': instance.animationDuration.inMicroseconds,

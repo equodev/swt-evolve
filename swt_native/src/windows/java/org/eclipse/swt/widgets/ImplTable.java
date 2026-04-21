@@ -85,8 +85,4 @@ public interface ImplTable extends ImplComposite {
     int _selectionForeground();
 
     int _hotIndex();
-
-    int _headerBackground();
-
-    int _headerForeground();
 }

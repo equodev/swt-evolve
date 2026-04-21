@@ -155,8 +155,8 @@ public class SwtAccessible implements IAccessible {
     }
 
     id accessibleHandle(Accessible accessible) {
-        if (accessible.getImpl()._delegate() != null)
-            return accessible.getImpl()._delegate();
+        if (((SwtAccessible) accessible.getImpl()).delegate != null)
+            return ((SwtAccessible) accessible.getImpl()).delegate;
         if (accessible.getImpl()._control() != null) {
             if (accessible.getImpl()._control() == null || accessible.getImpl()._control().getImpl() instanceof SwtControl) {
                 NSView view = accessible.getImpl()._control().view;
@@ -628,7 +628,7 @@ public class SwtAccessible implements IAccessible {
             listener.getColumnHeader(tableEvent);
         }
         if (tableEvent.accessible != null)
-            returnValue = tableEvent.accessible.getImpl()._delegate();
+            returnValue = ((SwtAccessible) tableEvent.accessible.getImpl()).delegate;
         return returnValue;
     }
 
@@ -646,7 +646,7 @@ public class SwtAccessible implements IAccessible {
             Accessible[] accessibles = event.accessibles;
             for (int i = 0; i < accessibles.length; i++) {
                 Accessible acc = accessibles[i];
-                array.addObject(acc.getImpl()._delegate());
+                array.addObject(((SwtAccessible) acc.getImpl()).delegate);
             }
             returnValue = array;
         }
@@ -667,7 +667,7 @@ public class SwtAccessible implements IAccessible {
             Accessible[] accessibles = event.accessibles;
             for (int i = 0; i < accessibles.length; i++) {
                 Accessible acc = accessibles[i];
-                array.addObject(acc.getImpl()._delegate());
+                array.addObject(((SwtAccessible) acc.getImpl()).delegate);
             }
             returnValue = array;
         }
@@ -693,7 +693,7 @@ public class SwtAccessible implements IAccessible {
                     listener.getRow(event);
                 }
                 if (event.accessible != null)
-                    array.addObject(event.accessible.getImpl()._delegate());
+                    array.addObject(((SwtAccessible) event.accessible.getImpl()).delegate);
             }
             returnValue = array;
         }
@@ -739,7 +739,7 @@ public class SwtAccessible implements IAccessible {
             if (acc.getImpl() instanceof SwtAccessible) {
                 ((SwtAccessible) acc.getImpl()).index = i;
             }
-            array.addObject(acc.getImpl()._delegate());
+            array.addObject(((SwtAccessible) acc.getImpl()).delegate);
         }
         return array;
     }
@@ -763,7 +763,7 @@ public class SwtAccessible implements IAccessible {
                     listener.getColumn(event);
                 }
                 if (event.accessible != null)
-                    array.addObject(event.accessible.getImpl()._delegate());
+                    array.addObject(((SwtAccessible) event.accessible.getImpl()).delegate);
             }
             returnValue = array;
         }
@@ -809,7 +809,7 @@ public class SwtAccessible implements IAccessible {
             if (acc.getImpl() instanceof SwtAccessible) {
                 ((SwtAccessible) acc.getImpl()).index = i;
             }
-            array.addObject(acc.getImpl()._delegate());
+            array.addObject(((SwtAccessible) acc.getImpl()).delegate);
         }
         return array;
     }
@@ -1448,7 +1448,7 @@ public class SwtAccessible implements IAccessible {
         if (event.childID == ACC.CHILDID_MULTIPLE && event.accessible == null)
             return null;
         if (event.accessible != null) {
-            return new id(OS.NSAccessibilityUnignoredAncestor(event.accessible.getImpl()._delegate().id));
+            return new id(OS.NSAccessibilityUnignoredAncestor(((SwtAccessible) event.accessible.getImpl()).delegate.id));
         }
         if (event.childID == ACC.CHILDID_SELF || event.childID == ACC.CHILDID_NONE) {
             return new id(OS.NSAccessibilityUnignoredAncestor(control.view.id));
@@ -2125,8 +2125,8 @@ public class SwtAccessible implements IAccessible {
         id returnValue = null;
         if (childID == ACC.CHILDID_SELF) {
             if (parent != null) {
-                if (parent.getImpl()._delegate() != null) {
-                    returnValue = parent.getImpl()._delegate();
+                if (((SwtAccessible) parent.getImpl()).delegate != null) {
+                    returnValue = ((SwtAccessible) parent.getImpl()).delegate;
                 } else {
                     returnValue = new id(OS.NSAccessibilityUnignoredAncestor(accessibleHandle(parent).id));
                 }
@@ -2172,8 +2172,8 @@ public class SwtAccessible implements IAccessible {
                 for (int i = 0; i < childCount; i++) {
                     Object child = children[i];
                     if (child instanceof Accessible accessible) {
-                        if (accessible.getImpl()._delegate() != null) {
-                            childArray.addObject(accessible.getImpl()._delegate());
+                        if (((SwtAccessible) accessible.getImpl()).delegate != null) {
+                            childArray.addObject(((SwtAccessible) accessible.getImpl()).delegate);
                         } else {
                             childArray.addObject(accessibleHandle(accessible));
                         }
@@ -2320,7 +2320,7 @@ public class SwtAccessible implements IAccessible {
             for (int i = 0; i < accessibleTableListenersSize(); i++) {
                 AccessibleTableListener listener = accessibleTableListeners.get(i);
                 listener.getCell(event);
-                returnValue = event.accessible.getImpl()._delegate();
+                returnValue = ((SwtAccessible) event.accessible.getImpl()).delegate;
             }
         }
         return returnValue;
@@ -3791,20 +3791,8 @@ public class SwtAccessible implements IAccessible {
         return currentRole;
     }
 
-    public Map<Integer, SWTAccessibleDelegate> _childToIdMap() {
-        return childToIdMap;
-    }
-
-    public SWTAccessibleDelegate _delegate() {
-        return delegate;
-    }
-
     public int _index() {
         return index;
-    }
-
-    public TableAccessibleDelegate _tableDelegate() {
-        return tableDelegate;
     }
 
     public Accessible getApi() {

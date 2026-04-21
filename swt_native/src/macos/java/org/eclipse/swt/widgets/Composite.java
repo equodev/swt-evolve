@@ -21,6 +21,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.ExceptionStash;
 import org.eclipse.swt.internal.cocoa.*;
 import dev.equo.swt.Config;
+import dev.equo.swt.ConfigDyn;
 
 /**
  * Instances of this class are controls which are capable
@@ -93,7 +94,7 @@ public class Composite extends Scrollable {
      */
     public Composite(Composite parent, int style) {
         this((IComposite) null);
-        setImpl(Config.getCompositeImpl(parent, style, this));
+        setImpl(ConfigDyn.getCompositeImpl(parent, style, this));
     }
 
     /**

@@ -13,10 +13,10 @@ class EquoCommService {
   static void onRaw(String userEventActionId, CommCallback<Object?> onSuccess) {
     // print("comm chromium on: $userEventActionId");
     void jsCallback(JSAny? payload) {
-      print("comm chromium on jsCallback");
+      // print("comm chromium on jsCallback");
       // onSuccess(payload.toString());
       onSuccess(payload.dartify());
-      print("comm chromium on jsCallback after onSuccess");
+      // print("comm chromium on jsCallback after onSuccess");
     }
 
     impl.EquoCommService.on(userEventActionId, jsCallback.toJS);
@@ -42,26 +42,26 @@ class EquoCommService {
   }
 
   static Future send(String userEventActionId) {
-    print("comm chromium send");
+    // print("comm chromium send");
     final promise = impl.EquoCommService.send(userEventActionId);
-    print("comm chromium after send $promise");
+    // print("comm chromium after send $promise");
     // return (port != 0) ? Future.value() : promise.toDart;
     return Future.delayed(const Duration(milliseconds: 1));
     // return Future.value();
   }
 
   static Future sendPayload(String userEventActionId, Object payload) {
-    print("comm chromium sendPayload");
+    // print("comm chromium sendPayload");
     final payloadJS = switch (payload) {
       num i => i.toJS,
       bool b => b.toJS,
       String str => str.toJS,
       _ => jsonEncode(payload).toJS,
     };
-    print("json: $payloadJS");
+    // print("json: $payloadJS");
     final promise =
         impl.EquoCommService.sendPayload(userEventActionId, payloadJS);
-    print("comm chromium after sendPauload $promise");
+    // print("comm chromium after sendPauload $promise");
     return Future.delayed(const Duration(milliseconds: 2));
     // print("comm_chromium after sendPayload");
   }

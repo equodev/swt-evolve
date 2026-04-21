@@ -16,6 +16,9 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.graphics.*;
+import com.dslplatform.json.CompiledJson;
+import com.dslplatform.json.CompiledJson.*;
+import com.dslplatform.json.JsonAttribute;
 
 /**
  * Instances of this class represent sources of touch input that generate <code>Touch</code> objects.
@@ -41,7 +44,14 @@ import org.eclipse.swt.graphics.*;
  *
  * @since 3.7
  */
+@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
 public final class TouchSource {
+
+    public long handle;
+
+    boolean direct;
+
+    Rectangle bounds;
 
     /**
      * Constructs a new touch source from the given inputs.
@@ -51,8 +61,9 @@ public final class TouchSource {
      * @param width width of the source in points.
      */
     TouchSource(long handle, boolean direct, Rectangle bounds) {
-        this((ITouchSource) null);
-        setImpl(new SwtTouchSource(handle, direct, bounds, this));
+        this.handle = handle;
+        this.direct = direct;
+        this.bounds = bounds;
     }
 
     /**
@@ -61,7 +72,7 @@ public final class TouchSource {
      * @return <code>true</code> if the input source is direct, or <code>false</code> otherwise
      */
     public boolean isDirect() {
-        return getImpl().isDirect();
+        return direct;
     }
 
     /**
@@ -73,7 +84,7 @@ public final class TouchSource {
      * @return the bounding rectangle of the input source
      */
     public Rectangle getBounds() {
-        return getImpl().getBounds();
+        return new Rectangle(bounds.x, bounds.y, bounds.width, bounds.height);
     }
 
     /**
@@ -82,27 +93,8 @@ public final class TouchSource {
      *
      * @return a string representation of the event
      */
+    @Override
     public String toString() {
-        return getImpl().toString();
-    }
-
-    protected ITouchSource impl;
-
-    protected TouchSource(ITouchSource impl) {
-        if (impl != null)
-            impl.setApi(this);
-    }
-
-    static TouchSource createApi(ITouchSource impl) {
-        return new TouchSource(impl);
-    }
-
-    public ITouchSource getImpl() {
-        return impl;
-    }
-
-    protected TouchSource setImpl(ITouchSource impl) {
-        this.impl = impl;
-        return this;
+        return "TouchSource {handle=" + handle + " direct=" + direct + " bounds=" + bounds + "}";
     }
 }

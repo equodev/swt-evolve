@@ -1,4 +1,4 @@
-import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/widgets.dart';
 import '../../gen/font.dart';
 import '../../gen/fontdata.dart';
@@ -70,7 +70,8 @@ class FontUtils {
     final fontHeightPoints = fontData.height?.toDouble() ?? defaultFontSize;
     // Apply DPI conversion only on Windows where SWT uses 72-DPI points but screens are 96 DPI.
     // On macOS, SWT points map 1:1 to Flutter logical pixels, so no conversion is needed.
-    final needsDpiScaling = applyDpiScaling && !Platform.isMacOS;
+    final isMacOS = !kIsWeb && defaultTargetPlatform == TargetPlatform.macOS;
+    final needsDpiScaling = applyDpiScaling && !isMacOS;
     final fontSize = needsDpiScaling
         ? fontHeightPoints * (96 / 72)
         : fontHeightPoints;

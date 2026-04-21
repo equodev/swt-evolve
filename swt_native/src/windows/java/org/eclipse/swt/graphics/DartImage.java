@@ -899,8 +899,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     @Override
     public boolean equals(Object object) {
-        if (object != null && ((Image) object).getImpl() instanceof SwtImage swtImage)
-            return (this.getImageData().equals(swtImage.getImageData()));
+        if (object != null && !(((Image) object).getImpl() instanceof DartImage))
+            return (this.getImageData().equals(((Image) object).getImageData()));
         if (object == this.getApi())
             return true;
         if (!(object instanceof Image))

@@ -434,6 +434,8 @@ public abstract class FlutterBridge {
         return ev;
     }
 
+    public abstract void initFlutterView(Composite parent, DartControl control);
+
     public void destroy(DartWidget control) {
         client.getComm().remove(event(control,"ClientReady"));
     }

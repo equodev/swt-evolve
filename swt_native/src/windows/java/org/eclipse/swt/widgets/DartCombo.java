@@ -97,9 +97,6 @@ public class DartCombo extends DartComposite implements ICombo {
     static long /*final*/
     EditProc, ListProc;
 
-    /* Undocumented values. Remained the same at least between Win7 and Win10 */
-    static final int stateFlagsOffset = (C.PTR_SIZEOF == 8) ? 0x68 : 0x54;
-
     static final int stateFlagsFirstPaint = 0x02000000;
 
     /**

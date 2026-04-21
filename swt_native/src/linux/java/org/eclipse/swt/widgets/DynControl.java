@@ -2918,10 +2918,6 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
         return drawCount;
     }
 
-    public int _backgroundAlpha() {
-        return backgroundAlpha;
-    }
-
     public long _dragGesture() {
         return dragGesture;
     }
@@ -3115,8 +3111,6 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
     long provider;
 
     int drawCount;
-
-    int backgroundAlpha;
 
     long dragGesture;
 

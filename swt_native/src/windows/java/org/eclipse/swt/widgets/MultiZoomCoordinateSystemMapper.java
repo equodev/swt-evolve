@@ -245,27 +245,27 @@ class MultiZoomCoordinateSystemMapper implements CoordinateSystemMapper {
 
     private Rectangle getMonitorClientAreaInPixels(Monitor monitor) {
         int zoom = getApplicableMonitorZoom(monitor);
-        int widthInPixels = DPIUtil.pointToPixel(((SwtMonitor) monitor.getImpl()).clientWidth, zoom);
-        int heightInPixels = DPIUtil.pointToPixel(((SwtMonitor) monitor.getImpl()).clientHeight, zoom);
-        return new Rectangle(((SwtMonitor) monitor.getImpl()).clientX, ((SwtMonitor) monitor.getImpl()).clientY, widthInPixels, heightInPixels);
+        int widthInPixels = DPIUtil.pointToPixel(monitor.clientWidth, zoom);
+        int heightInPixels = DPIUtil.pointToPixel(monitor.clientHeight, zoom);
+        return new Rectangle(monitor.clientX, monitor.clientY, widthInPixels, heightInPixels);
     }
 
     private Point getPixelsFromPoint(Monitor monitor, int x, int y) {
         int zoom = getApplicableMonitorZoom(monitor);
-        int mappedX = DPIUtil.pointToPixel(x - ((SwtMonitor) monitor.getImpl()).clientX, zoom) + ((SwtMonitor) monitor.getImpl()).clientX;
-        int mappedY = DPIUtil.pointToPixel(y - ((SwtMonitor) monitor.getImpl()).clientY, zoom) + ((SwtMonitor) monitor.getImpl()).clientY;
+        int mappedX = DPIUtil.pointToPixel(x - monitor.clientX, zoom) + monitor.clientX;
+        int mappedY = DPIUtil.pointToPixel(y - monitor.clientY, zoom) + monitor.clientY;
         return new Point(mappedX, mappedY);
     }
 
     private Point getPointFromPixels(Monitor monitor, int x, int y) {
         int zoom = getApplicableMonitorZoom(monitor);
-        int mappedX = DPIUtil.pixelToPoint(x - ((SwtMonitor) monitor.getImpl()).clientX, zoom) + ((SwtMonitor) monitor.getImpl()).clientX;
-        int mappedY = DPIUtil.pixelToPoint(y - ((SwtMonitor) monitor.getImpl()).clientY, zoom) + ((SwtMonitor) monitor.getImpl()).clientY;
+        int mappedX = DPIUtil.pixelToPoint(x - monitor.clientX, zoom) + monitor.clientX;
+        int mappedY = DPIUtil.pixelToPoint(y - monitor.clientY, zoom) + monitor.clientY;
         return new Point.WithMonitor(mappedX, mappedY, monitor);
     }
 
     private int getApplicableMonitorZoom(Monitor monitor) {
-        return DPIUtil.getZoomForAutoscaleProperty(((SwtMonitor) monitor.getImpl()).zoom);
+        return DPIUtil.getZoomForAutoscaleProperty(monitor.zoom);
     }
 
     @Override

@@ -148,7 +148,7 @@ public class TextStyle {
      *
      * @since 3.2
      */
-    @JsonAttribute(ignore = true)
+    @JsonAttribute()
     public GlyphMetrics metrics;
 
     /**

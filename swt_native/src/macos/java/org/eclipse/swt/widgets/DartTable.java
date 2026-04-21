@@ -2497,14 +2497,6 @@ public class DartTable extends DartComposite implements ITable {
         return imageBounds;
     }
 
-    public double[] _headerBackground() {
-        return headerBackground;
-    }
-
-    public double[] _headerForeground() {
-        return headerForeground;
-    }
-
     public boolean _shouldScroll() {
         return shouldScroll;
     }

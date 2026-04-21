@@ -7894,14 +7894,6 @@ public class SwtTable extends SwtComposite implements ITable {
         return hotIndex;
     }
 
-    public int _headerBackground() {
-        return headerBackground;
-    }
-
-    public int _headerForeground() {
-        return headerForeground;
-    }
-
     public Table getApi() {
         if (api == null)
             api = Table.createApi(this);

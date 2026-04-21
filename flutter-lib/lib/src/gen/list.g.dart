@@ -36,6 +36,9 @@ VList _$VListFromJson(Map<String, dynamic> json) => VList()
       : VMenu.fromJson(json['menu'] as Map<String, dynamic>)
   ..orientation = (json['orientation'] as num?)?.toInt()
   ..redraw = json['redraw'] as bool?
+  ..region = json['region'] == null
+      ? null
+      : VRegion.fromJson(json['region'] as Map<String, dynamic>)
   ..textDirection = (json['textDirection'] as num?)?.toInt()
   ..toolTipText = json['toolTipText'] as String?
   ..touchEnabled = json['touchEnabled'] as bool?
@@ -51,24 +54,25 @@ Map<String, dynamic> _$VListToJson(VList instance) => <String, dynamic>{
   'swt': instance.swt,
   'id': instance.id,
   'style': instance.style,
-  'background': instance.background,
-  'backgroundImage': instance.backgroundImage,
-  'bounds': instance.bounds,
-  'capture': instance.capture,
-  'cursor': instance.cursor,
-  'dragDetect': instance.dragDetect,
-  'enabled': instance.enabled,
-  'font': instance.font,
-  'foreground': instance.foreground,
-  'menu': instance.menu,
-  'orientation': instance.orientation,
-  'redraw': instance.redraw,
-  'textDirection': instance.textDirection,
-  'toolTipText': instance.toolTipText,
-  'touchEnabled': instance.touchEnabled,
-  'visible': instance.visible,
-  'scrollbarsMode': instance.scrollbarsMode,
-  'items': instance.items,
-  'selection': instance.selection,
-  'topIndex': instance.topIndex,
+  'background': ?instance.background,
+  'backgroundImage': ?instance.backgroundImage,
+  'bounds': ?instance.bounds,
+  'capture': ?instance.capture,
+  'cursor': ?instance.cursor,
+  'dragDetect': ?instance.dragDetect,
+  'enabled': ?instance.enabled,
+  'font': ?instance.font,
+  'foreground': ?instance.foreground,
+  'menu': ?instance.menu,
+  'orientation': ?instance.orientation,
+  'redraw': ?instance.redraw,
+  'region': ?instance.region,
+  'textDirection': ?instance.textDirection,
+  'toolTipText': ?instance.toolTipText,
+  'touchEnabled': ?instance.touchEnabled,
+  'visible': ?instance.visible,
+  'scrollbarsMode': ?instance.scrollbarsMode,
+  'items': ?instance.items,
+  'selection': ?instance.selection,
+  'topIndex': ?instance.topIndex,
 };

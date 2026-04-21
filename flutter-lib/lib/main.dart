@@ -19,11 +19,14 @@ import 'src/theme/theme.dart'
 import 'src/theme/named_themes.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui';
 
 import 'native_platform.dart' if (dart.library.html) 'web_platform.dart';
 
 import 'src/comm/comm.dart';
+import 'src/gen/display.dart';
 import 'src/gen/widgets.dart' as gen;
+import 'src/impl/display_evolve.dart';
 import 'fontSize.dart' as font_size;
 import 'imageSize.dart' as image_size;
 import 'widgetSize.dart' as widget_size;
@@ -36,9 +39,10 @@ bool _swtEvolvePropertiesListenerRegistered = false;
 final ValueNotifier<int> _configFlagsVersion = ValueNotifier<int>(0);
 
 void main(List<String> args) async {
-  if (args.isNotEmpty) {
-    print("Using port ${args.first}");
-    EquoCommService.setPort(int.parse(args.first));
+  int? port = getPort(args);
+  if (port != null) {
+    print("Using port $port");
+    EquoCommService.setPort(port);
   }
 
   int? widgetId = getWidgetId(args);
@@ -75,11 +79,8 @@ void main(List<String> args) async {
   var theme = getTheme(args) == "dark" ? ThemeMode.dark : ThemeMode.light;
   int? backgroundColor = getBackgroundColor(args);
   int? parentBackgroundColor = getParentBackgroundColor(args);
-  // Set the global theme for getCurrentTheme() usage
   setCurrentTheme(theme == ThemeMode.dark);
-  // Set the parent background color for buttons
   setParentBackgroundColor(parentBackgroundColor);
-
   unawaited(initSwtEvolveProperties());
 
   Widget contentWidget = createContentWidget(widgetName!, widgetId!);
@@ -90,17 +91,25 @@ void main(List<String> args) async {
     backgroundColor: backgroundColor,
   ));
 
-  sendClientReady(widgetName, widgetId);
+  sendClientReady(widgetName, widgetId, sendWindowSize: (widgetName == "Display"));
 }
 
 void sendClientReady(String widgetName, int widgetId, {bool sendWindowSize = false}) {
   if (sendWindowSize) {
+    final view = PlatformDispatcher.instance.views.first;
+    final size = view.physicalSize / view.devicePixelRatio; // logical pixels
+    final point = VPoint()
+      ..x = 1280
+      ..y = 720;
+    if (size.width > 0 && size.height > 0) {
+      point.x = size.width.round();
+      point.y = size.height.round();
+      EquoCommService.sendPayload("${widgetName}/${widgetId}/ClientReady", point);
+      return;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final view = WidgetsBinding.instance.platformDispatcher.views.first;
       final size = view.physicalSize / view.devicePixelRatio;
-      final point = VPoint()
-        ..x = 1280
-        ..y = 720;
       if (size.width > 0 && size.height > 0) {
         point.x = size.width.round();
         point.y = size.height.round();
@@ -109,7 +118,6 @@ void sendClientReady(String widgetName, int widgetId, {bool sendWindowSize = fal
       EquoCommService.sendPayload("${widgetName}/${widgetId}/ClientReady", point);
     });
   } else {
-    // print("Sent ${widgetName}/${widgetId}/ClientReady");
     EquoCommService.send("${widgetName}/${widgetId}/ClientReady");
   }
 }
@@ -163,6 +171,7 @@ Widget? customWidget(Map<String, dynamic> child) {
     "SideBar" => SideBarComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
     "StatusBar" => StatusBarComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
     "MainComposite" => MainComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
+    "Display" => DisplaySwt(key: ValueKey(id), value: VDisplay()..swt = "Display"..id = id),
     _ => null
   };
 }

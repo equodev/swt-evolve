@@ -775,7 +775,7 @@ public class DynComposite extends DynScrollable implements IComposite {
     }
 
     protected IComposite convert() {
-        IComposite newImpl = convert(Config.getDynImpl(this));
+        IComposite newImpl = convert(ConfigDyn.getDynImpl(this));
         if (Config.isDebug())
             System.out.println("CONVERTED to " + newImpl + " #" + newImpl.getApi().hashCode());
         return newImpl;

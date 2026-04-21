@@ -7,6 +7,7 @@ import '../gen/font.dart';
 import '../gen/image.dart';
 import '../gen/menu.dart';
 import '../gen/rectangle.dart';
+import '../gen/region.dart';
 import '../gen/scrollable.dart';
 import '../impl/composite_evolve.dart';
 import 'widgets.dart';

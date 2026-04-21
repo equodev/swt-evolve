@@ -100,5 +100,5 @@ Map<String, dynamic> _$MenuThemeExtensionToJson(
     instance.menuBarItemMargin,
   ),
   'popupElevation': instance.popupElevation,
-  'textStyle': const TextStyleConverter().toJson(instance.textStyle),
+  'textStyle': ?const TextStyleConverter().toJson(instance.textStyle),
 };

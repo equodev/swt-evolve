@@ -3225,14 +3225,6 @@ public class DartTable extends DartComposite implements ITable {
         return hotIndex;
     }
 
-    public int _headerBackground() {
-        return headerBackground;
-    }
-
-    public int _headerForeground() {
-        return headerForeground;
-    }
-
     public int[] _columnOrder() {
         return columnOrder;
     }

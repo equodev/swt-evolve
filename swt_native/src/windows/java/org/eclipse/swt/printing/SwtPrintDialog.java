@@ -376,7 +376,7 @@ public class SwtPrintDialog extends SwtDialog implements IPrintDialog {
 		 * If user setup info from a previous print dialog was specified,
 		 * then restore the previous DEVMODE struct.
 		 */
-            byte[] devmodeData = ((SwtPrinterData) printerData.getImpl()).otherData;
+            byte[] devmodeData = printerData.otherData;
             if (devmodeData != null && devmodeData.length != 0) {
                 long hMem = OS.GlobalAlloc(OS.GMEM_MOVEABLE | OS.GMEM_ZEROINIT, devmodeData.length);
                 long ptr = OS.GlobalLock(hMem);
@@ -516,8 +516,8 @@ public class SwtPrintDialog extends SwtDialog implements IPrintDialog {
                 hMem = pd.hDevMode;
                 size = OS.GlobalSize(hMem);
                 ptr = OS.GlobalLock(hMem);
-                ((SwtPrinterData) data.getImpl()).otherData = new byte[size];
-                OS.MoveMemory(((SwtPrinterData) data.getImpl()).otherData, ptr, size);
+                data.otherData = new byte[size];
+                OS.MoveMemory(data.otherData, ptr, size);
                 /* Set PrinterData fields from DEVMODE */
                 devmode = new DEVMODE();
                 OS.MoveMemory(devmode, ptr, DEVMODE.sizeof);

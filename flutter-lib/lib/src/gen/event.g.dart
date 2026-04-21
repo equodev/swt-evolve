@@ -35,6 +35,9 @@ VEvent _$VEventFromJson(Map<String, dynamic> json) => VEvent()
   ..stateMask = (json['stateMask'] as num?)?.toInt()
   ..text = json['text'] as String?
   ..time = (json['time'] as num?)?.toInt()
+  ..touches = (json['touches'] as List<dynamic>?)
+      ?.map((e) => VTouch.fromJson(e as Map<String, dynamic>))
+      .toList()
   ..type = (json['type'] as num?)?.toInt()
   ..widget = json['widget'] == null
       ? null
@@ -46,31 +49,32 @@ VEvent _$VEventFromJson(Map<String, dynamic> json) => VEvent()
   ..yDirection = (json['yDirection'] as num?)?.toInt();
 
 Map<String, dynamic> _$VEventToJson(VEvent instance) => <String, dynamic>{
-  'button': instance.button,
-  'character': instance.character,
-  'count': instance.count,
-  'detail': instance.detail,
-  'doit': instance.doit,
-  'end': instance.end,
-  'gc': instance.gc,
-  'height': instance.height,
-  'index': instance.index,
-  'item': instance.item,
-  'keyCode': instance.keyCode,
-  'keyLocation': instance.keyLocation,
-  'magnification': instance.magnification,
-  'rotation': instance.rotation,
-  'segments': instance.segments,
-  'segmentsChars': instance.segmentsChars,
-  'start': instance.start,
-  'stateMask': instance.stateMask,
-  'text': instance.text,
-  'time': instance.time,
-  'type': instance.type,
-  'widget': instance.widget,
-  'width': instance.width,
-  'x': instance.x,
-  'xDirection': instance.xDirection,
-  'y': instance.y,
-  'yDirection': instance.yDirection,
+  'button': ?instance.button,
+  'character': ?instance.character,
+  'count': ?instance.count,
+  'detail': ?instance.detail,
+  'doit': ?instance.doit,
+  'end': ?instance.end,
+  'gc': ?instance.gc,
+  'height': ?instance.height,
+  'index': ?instance.index,
+  'item': ?instance.item,
+  'keyCode': ?instance.keyCode,
+  'keyLocation': ?instance.keyLocation,
+  'magnification': ?instance.magnification,
+  'rotation': ?instance.rotation,
+  'segments': ?instance.segments,
+  'segmentsChars': ?instance.segmentsChars,
+  'start': ?instance.start,
+  'stateMask': ?instance.stateMask,
+  'text': ?instance.text,
+  'time': ?instance.time,
+  'touches': ?instance.touches,
+  'type': ?instance.type,
+  'widget': ?instance.widget,
+  'width': ?instance.width,
+  'x': ?instance.x,
+  'xDirection': ?instance.xDirection,
+  'y': ?instance.y,
+  'yDirection': ?instance.yDirection,
 };

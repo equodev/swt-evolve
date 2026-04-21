@@ -4695,10 +4695,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return drawCount;
     }
 
-    public int _backgroundAlpha() {
-        return backgroundAlpha;
-    }
-
     public long _dragGesture() {
         return dragGesture;
     }
@@ -4795,10 +4791,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return autoScale;
     }
 
-    public Color _background() {
-        return background;
-    }
-
     public Rectangle _bounds() {
         return bounds;
     }
@@ -4813,10 +4805,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public boolean _enabled() {
         return enabled;
-    }
-
-    public Color _foreground() {
-        return foreground;
     }
 
     public boolean _redraw() {

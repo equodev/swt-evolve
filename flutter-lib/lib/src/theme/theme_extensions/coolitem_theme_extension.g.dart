@@ -20,6 +20,6 @@ CoolItemThemeExtension _$CoolItemThemeExtensionFromJson(
 Map<String, dynamic> _$CoolItemThemeExtensionToJson(
   CoolItemThemeExtension instance,
 ) => <String, dynamic>{
-  'textStyle': const TextStyleConverter().toJson(instance.textStyle),
+  'textStyle': ?const TextStyleConverter().toJson(instance.textStyle),
   'contentPadding': const EdgeInsetsConverter().toJson(instance.contentPadding),
 };

@@ -17,6 +17,9 @@ package org.eclipse.swt.layout;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import com.dslplatform.json.CompiledJson;
+import com.dslplatform.json.CompiledJson.*;
+import com.dslplatform.json.JsonAttribute;
 
 /**
  * Each control controlled by a <code>RowLayout</code> can have its initial
@@ -38,6 +41,7 @@ import org.eclipse.swt.graphics.*;
  * @see RowLayout
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
+@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
 public final class RowData {
 
     /**
@@ -80,8 +84,6 @@ public final class RowData {
      * default values.
      */
     public RowData() {
-        this((IRowData) null);
-        setImpl(new SwtRowData(this));
     }
 
     /**
@@ -93,8 +95,8 @@ public final class RowData {
      * @param height a minimum height for the control
      */
     public RowData(int width, int height) {
-        this((IRowData) null);
-        setImpl(new SwtRowData(width, height, this));
+        this.width = width;
+        this.height = height;
     }
 
     /**
@@ -106,8 +108,15 @@ public final class RowData {
      * and y coordinate specifies a minimum height for the control
      */
     public RowData(Point point) {
-        this((IRowData) null);
-        setImpl(new SwtRowData(point, this));
+        this(point.x, point.y);
+    }
+
+    String getName() {
+        String string = getClass().getName();
+        int index = string.lastIndexOf('.');
+        if (index == -1)
+            return string;
+        return string.substring(index + 1, string.length());
     }
 
     /**
@@ -116,27 +125,17 @@ public final class RowData {
      *
      * @return a string representation of the RowData object
      */
+    @Override
     public String toString() {
-        return getImpl().toString();
-    }
-
-    protected IRowData impl;
-
-    protected RowData(IRowData impl) {
-        if (impl != null)
-            impl.setApi(this);
-    }
-
-    static RowData createApi(IRowData impl) {
-        return new RowData(impl);
-    }
-
-    public IRowData getImpl() {
-        return impl;
-    }
-
-    protected RowData setImpl(IRowData impl) {
-        this.impl = impl;
-        return this;
+        String string = getName() + " {";
+        if (width != SWT.DEFAULT)
+            string += "width=" + width + " ";
+        if (height != SWT.DEFAULT)
+            string += "height=" + height + " ";
+        if (exclude)
+            string += "exclude=" + exclude + " ";
+        string = string.trim();
+        string += "}";
+        return string;
     }
 }

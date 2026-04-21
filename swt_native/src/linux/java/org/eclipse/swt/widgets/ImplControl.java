@@ -23,8 +23,6 @@ public interface ImplControl extends ImplWidget {
 
     int _drawCount();
 
-    int _backgroundAlpha();
-
     long _dragGesture();
 
     long _zoomGesture();

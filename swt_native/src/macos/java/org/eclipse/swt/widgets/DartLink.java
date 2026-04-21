@@ -619,10 +619,6 @@ public class DartLink extends DartControl implements ILink {
         return ignoreNextMouseUp;
     }
 
-    public APPEARANCE _lastAppAppearance() {
-        return lastAppAppearance;
-    }
-
     public Color __linkForeground() {
         return _linkForeground;
     }

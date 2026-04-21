@@ -780,8 +780,8 @@ public final class SwtPrinter extends SwtDevice implements IPrinter {
     public void init() {
         settings = GTK.gtk_print_settings_new();
         pageSetup = GTK.gtk_page_setup_new();
-        if (((SwtPrinterData) data.getImpl()).otherData != null) {
-            restore(((SwtPrinterData) data.getImpl()).otherData, settings, pageSetup);
+        if (data.otherData != null) {
+            restore(data.otherData, settings, pageSetup);
         }
         /* Set values of print_settings and page_setup from PrinterData. */
         if (data.printToFile && data.fileName != null) {

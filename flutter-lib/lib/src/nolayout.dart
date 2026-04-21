@@ -9,7 +9,7 @@ import 'theme/theme_extensions/composite_theme_extension.dart';
 
 
 class NoLayout extends StatelessWidget {
-  final VComposite composite;
+  final VComposite? composite;
   final List<VControl> children;
   final Widget Function(VControl child)? childBuilder;
 
@@ -76,13 +76,13 @@ class NoLayout extends StatelessWidget {
 
 class _AbsoluteLayoutDelegate extends MultiChildLayoutDelegate {
   List<VControl> children;
-  VComposite composite;
+  VComposite? composite;
 
   _AbsoluteLayoutDelegate(this.children, this.composite);
 
   @override
   Size getSize(BoxConstraints constraints) {
-    final bounds = composite.bounds;
+    final bounds = composite?.bounds;
     if (bounds != null && bounds.width >= 0 && bounds.height >= 0) {
       return Size(bounds.width.toDouble(), bounds.height.toDouble());
     }

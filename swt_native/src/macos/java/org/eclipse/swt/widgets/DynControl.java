@@ -2875,20 +2875,8 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
         return drawCount;
     }
 
-    public int _backgroundAlpha() {
-        return backgroundAlpha;
-    }
-
     public Menu _menu() {
         return menu;
-    }
-
-    public double[] _foreground() {
-        return foreground;
-    }
-
-    public double[] _background() {
-        return background;
     }
 
     public Image _backgroundImage() {
@@ -3008,12 +2996,6 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
     boolean visibleSet;
 
     int drawCount;
-
-    int backgroundAlpha;
-
-    double[] foreground;
-
-    double[] background;
 
     long visibleRgn;
 

@@ -13,6 +13,6 @@ VCursor _$VCursorFromJson(Map<String, dynamic> json) => VCursor()
       : VImage.fromJson(json['image'] as Map<String, dynamic>);
 
 Map<String, dynamic> _$VCursorToJson(VCursor instance) => <String, dynamic>{
-  'cursorStyle': instance.cursorStyle,
-  'image': instance.image,
+  'cursorStyle': ?instance.cursorStyle,
+  'image': ?instance.image,
 };

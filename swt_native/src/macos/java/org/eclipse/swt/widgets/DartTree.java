@@ -2329,14 +2329,6 @@ public class DartTree extends DartComposite implements ITree {
         return insertBefore;
     }
 
-    public double[] _headerBackground() {
-        return headerBackground;
-    }
-
-    public double[] _headerForeground() {
-        return headerForeground;
-    }
-
     public boolean _shouldExpand() {
         return shouldExpand;
     }

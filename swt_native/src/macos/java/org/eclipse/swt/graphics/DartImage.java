@@ -520,6 +520,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, String filename, Image api) {
         super(device, api);
+        ImageData _imageData = new ImageData(filename);
+        this.imageData = _imageData;
         this.filename = GraphicsUtils.getFilename(filename);
         try {
             if (filename == null)
@@ -528,8 +530,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             init();
         } finally {
         }
-        ImageData data = new ImageData(filename);
-        this.imageData = data;
+        imageData = _imageData;
     }
 
     /**
@@ -563,11 +564,12 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, ImageFileNameProvider imageFileNameProvider, Image api) {
         super(device, api);
-        this.filename = GraphicsUtils.getFilename(imageFileNameProvider.getImagePath(100));
         if (imageFileNameProvider == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         this.imageFileNameProvider = imageFileNameProvider;
         String filename = imageFileNameProvider.getImagePath(100);
+        imageData = new ImageData(filename);
+        this.filename = GraphicsUtils.getFilename(filename);
         if (filename == null)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         try {
@@ -717,8 +719,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     @Override
     public boolean equals(Object object) {
-        if (object != null && ((Image) object).getImpl() instanceof SwtImage swtImage)
-            return (this.getImageData().equals(swtImage.getImageData()));
+        if (object != null && !(((Image) object).getImpl() instanceof DartImage))
+            return (this.getImageData().equals(((Image) object).getImageData()));
         if (object == this.getApi())
             return true;
         if (!(object instanceof Image image))

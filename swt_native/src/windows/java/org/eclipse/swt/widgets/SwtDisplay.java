@@ -1654,7 +1654,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             touchSources = new TouchSource[4];
         int length = touchSources.length;
         for (int i = 0; i < length; i++) {
-            if (touchSources[i] != null && ((SwtTouchSource) touchSources[i].getImpl()).handle == touchDevice) {
+            if (touchSources[i] != null && touchSources[i].handle == touchDevice) {
                 return touchSources[i];
             }
         }
@@ -2354,10 +2354,10 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         lpmi.cbSize = MONITORINFO.sizeof;
         OS.GetMonitorInfo(hmonitor, lpmi);
         Monitor monitor = new Monitor();
-        ((SwtMonitor) monitor.getImpl()).handle = hmonitor;
+        monitor.handle = hmonitor;
         int[] dpiX = new int[1];
         int[] dpiY = new int[1];
-        int result = OS.GetDpiForMonitor(((SwtMonitor) monitor.getImpl()).handle, OS.MDT_EFFECTIVE_DPI, dpiX, dpiY);
+        int result = OS.GetDpiForMonitor(monitor.handle, OS.MDT_EFFECTIVE_DPI, dpiX, dpiY);
         result = (result == OS.S_OK) ? DPIUtil.mapDPIToZoom(dpiX[0]) : 100;
         if (result == 0) {
             System.err.println("***WARNING: GetDpiForMonitor: SWT could not get valid monitor scaling factor.");
@@ -2367,11 +2367,11 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 	 * Always return true monitor zoom value as fetched from native, else will lead
 	 * to scaling issue on OS Win8.1 and above, for more details refer bug 537614.
 	 */
-        ((SwtMonitor) monitor.getImpl()).zoom = result;
+        monitor.zoom = result;
         Rectangle.WithMonitor boundsInPixels = new Rectangle.WithMonitor(lpmi.rcMonitor_left, lpmi.rcMonitor_top, lpmi.rcMonitor_right - lpmi.rcMonitor_left, lpmi.rcMonitor_bottom - lpmi.rcMonitor_top, monitor);
         Rectangle.WithMonitor clientAreaInPixels = new Rectangle.WithMonitor(lpmi.rcWork_left, lpmi.rcWork_top, lpmi.rcWork_right - lpmi.rcWork_left, lpmi.rcWork_bottom - lpmi.rcWork_top, monitor);
-        ((SwtMonitor) monitor.getImpl()).setBounds(coordinateSystemMapper.mapMonitorBounds(boundsInPixels));
-        ((SwtMonitor) monitor.getImpl()).setClientArea(coordinateSystemMapper.mapMonitorBounds(clientAreaInPixels));
+        monitor.setBounds(coordinateSystemMapper.mapMonitorBounds(boundsInPixels));
+        monitor.setClientArea(coordinateSystemMapper.mapMonitorBounds(clientAreaInPixels));
         return monitor;
     }
 

@@ -65,10 +65,6 @@ public interface ImplTree extends ImplComposite {
 
     double _currentAdjustment();
 
-    Color _headerBackground();
-
-    Color _headerForeground();
-
     boolean _boundsChangedSinceLastDraw();
 
     boolean _wasScrolled();

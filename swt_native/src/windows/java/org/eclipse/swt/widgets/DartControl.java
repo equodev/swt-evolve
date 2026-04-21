@@ -2539,7 +2539,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             Shell shell = getShell();
             ((SwtShell) shell.getImpl()).releaseBrushes();
         } else {
-            setBackgroundPixel(control.getImpl()._background() == -1 ? ((DartControl) control.getImpl()).defaultBackground() : control.getImpl()._background());
+            setBackgroundPixel(((DartControl) control.getImpl()).background == -1 ? ((DartControl) control.getImpl()).defaultBackground() : ((DartControl) control.getImpl()).background);
         }
     }
 
@@ -3941,7 +3941,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         Control control = findBackgroundControl();
         if (control == null)
             control = this.getApi();
-        setBackgroundPixel(control.getImpl()._background());
+        setBackgroundPixel(((DartControl) control.getImpl()).background);
     }
 
     void updateBackgroundImage() {
@@ -4236,18 +4236,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public int _drawCount() {
         return drawCount;
-    }
-
-    public int _foreground() {
-        return foreground;
-    }
-
-    public int _background() {
-        return background;
-    }
-
-    public int _backgroundAlpha() {
-        return backgroundAlpha;
     }
 
     public boolean _autoScaleDisabled() {

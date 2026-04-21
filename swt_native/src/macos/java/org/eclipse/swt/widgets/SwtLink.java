@@ -930,10 +930,6 @@ public class SwtLink extends SwtControl implements ILink {
         return ignoreNextMouseUp;
     }
 
-    public APPEARANCE _lastAppAppearance() {
-        return lastAppAppearance;
-    }
-
     public Link getApi() {
         if (api == null)
             api = Link.createApi(this);

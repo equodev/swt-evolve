@@ -37,6 +37,7 @@ import 'theme_settings/sash_theme_settings.dart';
 import 'theme_settings/canvas_theme_settings.dart';
 import 'theme_settings/styledtext_theme_settings.dart';
 import 'theme_settings/theme_color_palette_theme_settings.dart';
+import 'theme_settings/display_theme_settings.dart';
 
 ColorScheme _resolveWidgetColorScheme(
   String widgetKey,
@@ -703,6 +704,11 @@ ThemeData createLightDefaultTheme(int? backgroundColor, {Color? seedColor}) {
   final themeColorPaletteTheme = getThemeColorPaletteLightTheme(
     colorScheme: _resolveWidgetColorScheme('toolbar', colorScheme, Brightness.light),
   );
+  final displayTheme = getDisplayLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -743,6 +749,7 @@ ThemeData createLightDefaultTheme(int? backgroundColor, {Color? seedColor}) {
       canvasTheme,
       styledTextTheme,
       themeColorPaletteTheme,
+      displayTheme,
     ],
   );
 }
@@ -928,6 +935,11 @@ ThemeData createLightNonDefaultTheme(
   final themeColorPaletteTheme = getThemeColorPaletteLightTheme(
     colorScheme: colorScheme,
   );
+  final displayTheme = getDisplayLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -969,6 +981,7 @@ ThemeData createLightNonDefaultTheme(
       canvasTheme,
       styledTextTheme,
       themeColorPaletteTheme,
+      displayTheme,
     ],
   );
 }
@@ -1153,6 +1166,11 @@ ThemeData createDarkDefaultTheme(int? backgroundColor, {Color? seedColor}) {
   final themeColorPaletteTheme = getThemeColorPaletteDarkTheme(
     colorScheme: _resolveWidgetColorScheme('toolbar', colorScheme, Brightness.dark),
   );
+  final displayTheme = getDisplayDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -1193,6 +1211,7 @@ ThemeData createDarkDefaultTheme(int? backgroundColor, {Color? seedColor}) {
       canvasTheme,
       styledTextTheme,
       themeColorPaletteTheme,
+      displayTheme,
     ],
   );
 }
@@ -1378,6 +1397,11 @@ ThemeData createDarkNonDefaultTheme(
   final themeColorPaletteTheme = getThemeColorPaletteDarkTheme(
     colorScheme: colorScheme,
   );
+  final displayTheme = getDisplayDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -1419,6 +1443,7 @@ ThemeData createDarkNonDefaultTheme(
       canvasTheme,
       styledTextTheme,
       themeColorPaletteTheme,
+      displayTheme,
     ],
   );
 }

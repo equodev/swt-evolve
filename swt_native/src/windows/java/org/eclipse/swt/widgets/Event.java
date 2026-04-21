@@ -319,7 +319,7 @@ public class Event {
      *
      * @since 3.7
      */
-    @JsonAttribute(ignore = true)
+    @JsonAttribute()
     public Touch[] touches;
 
     /**

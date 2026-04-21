@@ -16,6 +16,9 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.graphics.*;
+import com.dslplatform.json.CompiledJson;
+import com.dslplatform.json.CompiledJson.*;
+import com.dslplatform.json.JsonAttribute;
 
 /**
  * Instances of this class are descriptions of monitors.
@@ -26,14 +29,21 @@ import org.eclipse.swt.graphics.*;
  *
  * @since 3.0
  */
+@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
 public final class Monitor {
+
+    public long handle;
+
+    int x, y, width, height;
+
+    int clientX, clientY, clientWidth, clientHeight;
+
+    int zoom = 100;
 
     /**
      * Prevents uninitialized instances from being created outside the package.
      */
     Monitor() {
-        this((IMonitor) null);
-        setImpl(new SwtMonitor(this));
     }
 
     /**
@@ -46,8 +56,13 @@ public final class Monitor {
      *
      * @see #hashCode()
      */
+    @Override
     public boolean equals(Object object) {
-        return getImpl().equals(object);
+        if (object == this)
+            return true;
+        if (!(object instanceof Monitor monitor))
+            return false;
+        return handle == monitor.handle;
     }
 
     /**
@@ -58,7 +73,7 @@ public final class Monitor {
      * @return the receiver's bounding rectangle
      */
     public Rectangle getBounds() {
-        return getImpl().getBounds();
+        return new Rectangle(x, y, width, height);
     }
 
     /**
@@ -68,7 +83,7 @@ public final class Monitor {
      * @return the client area
      */
     public Rectangle getClientArea() {
-        return getImpl().getClientArea();
+        return new Rectangle(clientX, clientY, clientWidth, clientHeight);
     }
 
     /**
@@ -79,7 +94,21 @@ public final class Monitor {
      * @since 3.107
      */
     public int getZoom() {
-        return getImpl().getZoom();
+        return zoom;
+    }
+
+    void setBounds(Rectangle rect) {
+        x = rect.x;
+        y = rect.y;
+        width = rect.width;
+        height = rect.height;
+    }
+
+    void setClientArea(Rectangle rect) {
+        clientX = rect.x;
+        clientY = rect.y;
+        clientWidth = rect.width;
+        clientHeight = rect.height;
     }
 
     /**
@@ -92,27 +121,8 @@ public final class Monitor {
      *
      * @see #equals(Object)
      */
+    @Override
     public int hashCode() {
-        return getImpl().hashCode();
-    }
-
-    protected IMonitor impl;
-
-    protected Monitor(IMonitor impl) {
-        if (impl != null)
-            impl.setApi(this);
-    }
-
-    static Monitor createApi(IMonitor impl) {
-        return new Monitor(impl);
-    }
-
-    public IMonitor getImpl() {
-        return impl;
-    }
-
-    protected Monitor setImpl(IMonitor impl) {
-        this.impl = impl;
-        return this;
+        return (int) handle;
     }
 }

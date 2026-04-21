@@ -87,9 +87,23 @@ tasks.register<JavaExec>("runExample") {
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set(project.findProperty("mainClass")?.toString() ?: "dev.equo.StyledTextSnippet3")
 
-    if (currentOs == "macos") {
+    if (currentOs == "macos")
         jvmArgs("-XstartOnFirstThread")
-    }
+    if (System.getProperty("test.debug") != null)
+        jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
+}
+
+tasks.register<JavaExec>("runWebExample") {
+    group = "examples"
+    description = "Run an example class for web. Usage: ./gradlew :examples:runWebExample -PmainClass=dev.equo.StyledTextSnippet1"
+
+    val webJar = project(":swt_native").tasks.named<Jar>("web-wasmJar")
+    dependsOn(webJar)
+    classpath = files(webJar.map { it.archiveFile }) +
+            sourceSets["main"].output +
+            configurations["runtimeClasspath"].filter { !it.path.contains("swt_native") }
+    mainClass.set(project.findProperty("mainClass")?.toString() ?: "dev.equo.GCFillOvalSnippet")
+
     if (System.getProperty("test.debug") != null)
         jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
 }

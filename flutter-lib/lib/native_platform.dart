@@ -3,6 +3,14 @@ import 'src/comm/comm.dart';
 
 //late final ShellListener? listener;
 
+int? getPort(List<String> args) {
+  if (args.isNotEmpty) {
+    print("Using desk port ${args.first}");
+    return int.parse(args.first);
+  }
+  return null;
+}
+
 int? getWidgetId(List<String> args) {
   if (args.isNotEmpty) {
     return int.parse(args[1]);

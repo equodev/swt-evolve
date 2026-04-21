@@ -2542,14 +2542,6 @@ public class DartTree extends DartComposite implements ITree {
         return currentAdjustment;
     }
 
-    public Color _headerBackground() {
-        return headerBackground;
-    }
-
-    public Color _headerForeground() {
-        return headerForeground;
-    }
-
     public boolean _boundsChangedSinceLastDraw() {
         return boundsChangedSinceLastDraw;
     }

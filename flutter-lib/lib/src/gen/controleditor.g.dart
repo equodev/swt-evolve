@@ -20,5 +20,5 @@ Map<String, dynamic> _$VControlEditorToJson(VControlEditor instance) =>
       'swt': instance.swt,
       'id': instance.id,
       'style': instance.style,
-      'editor': instance.editor,
+      'editor': ?instance.editor,
     };

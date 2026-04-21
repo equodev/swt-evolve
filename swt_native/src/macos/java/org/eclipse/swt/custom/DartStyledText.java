@@ -2548,7 +2548,8 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         Display display = getDisplay();
         Point point = display.getCursorLocation();
         point = display.map(null, this.getApi(), point);
-        doMouseLinkCursor(point.x, point.y);
+        //doMouseLinkCursor(point.x, point.y);
+        ;
     }
 
     void doMouseLinkCursor(int x, int y) {

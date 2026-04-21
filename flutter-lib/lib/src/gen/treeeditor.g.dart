@@ -23,7 +23,7 @@ Map<String, dynamic> _$VTreeEditorToJson(VTreeEditor instance) =>
       'swt': instance.swt,
       'id': instance.id,
       'style': instance.style,
-      'column': instance.column,
-      'editor': instance.editor,
-      'item': instance.item,
+      'column': ?instance.column,
+      'editor': ?instance.editor,
+      'item': ?instance.item,
     };

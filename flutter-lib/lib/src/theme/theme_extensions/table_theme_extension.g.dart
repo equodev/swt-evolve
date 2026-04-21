@@ -170,8 +170,8 @@ Map<String, dynamic> _$TableThemeExtensionToJson(
   'headerPadding': const EdgeInsetsConverter().toJson(instance.headerPadding),
   'cellPadding': const EdgeInsetsConverter().toJson(instance.cellPadding),
   'headerBorderWidth': instance.headerBorderWidth,
-  'rowTextStyle': const TextStyleConverter().toJson(instance.rowTextStyle),
-  'headerTextStyle': const TextStyleConverter().toJson(
+  'rowTextStyle': ?const TextStyleConverter().toJson(instance.rowTextStyle),
+  'headerTextStyle': ?const TextStyleConverter().toJson(
     instance.headerTextStyle,
   ),
   'hoverAnimationDuration': instance.hoverAnimationDuration.inMicroseconds,

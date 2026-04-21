@@ -19,6 +19,6 @@ Map<String, dynamic> _$VItemToJson(VItem instance) => <String, dynamic>{
   'swt': instance.swt,
   'id': instance.id,
   'style': instance.style,
-  'image': instance.image,
-  'text': instance.text,
+  'image': ?instance.image,
+  'text': ?instance.text,
 };

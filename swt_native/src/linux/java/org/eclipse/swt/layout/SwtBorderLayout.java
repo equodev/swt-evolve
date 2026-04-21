@@ -167,7 +167,7 @@ public class SwtBorderLayout extends SwtLayout implements IBorderLayout {
         if (list.isEmpty()) {
             return 0;
         }
-        return list.stream().mapToInt(entry -> extractor.applyAsInt(((SwtBorderData) entry.getValue().getImpl()).getSize(entry.getKey()))).sum() + ((list.size() - 1) * getApi().controlSpacing);
+        return list.stream().mapToInt(entry -> extractor.applyAsInt(entry.getValue().getSize(entry.getKey()))).sum() + ((list.size() - 1) * getApi().controlSpacing);
     }
 
     private static int getMax(ToIntFunction<Point> extractor, int region, Map<Integer, List<Entry<Control, BorderData>>> regionMap) {
@@ -181,9 +181,9 @@ public class SwtBorderLayout extends SwtLayout implements IBorderLayout {
         }
         if (maxW != SWT.DEFAULT || maxH != SWT.DEFAULT) {
             // we need to compute a restricted size to at least one of the given sizes
-            return list.stream().mapToInt(entry -> extractor.applyAsInt(((SwtBorderData) entry.getValue().getImpl()).computeSize(entry.getKey(), maxW, maxH, flushCache))).max().orElse(0);
+            return list.stream().mapToInt(entry -> extractor.applyAsInt(entry.getValue().computeSize(entry.getKey(), maxW, maxH, flushCache))).max().orElse(0);
         }
-        return list.stream().mapToInt(entry -> extractor.applyAsInt(((SwtBorderData) entry.getValue().getImpl()).getSize(entry.getKey()))).max().orElse(0);
+        return list.stream().mapToInt(entry -> extractor.applyAsInt(entry.getValue().getSize(entry.getKey()))).max().orElse(0);
     }
 
     @Override
@@ -326,7 +326,7 @@ public class SwtBorderLayout extends SwtLayout implements IBorderLayout {
         Object layoutData = control.getLayoutData();
         if (layoutData instanceof BorderData borderData) {
             if (flushCache) {
-                ((SwtBorderData) borderData.getImpl()).flushCache(control);
+                borderData.flushCache(control);
             }
             return new SimpleEntry<>(control, borderData);
         } else {
@@ -344,7 +344,7 @@ public class SwtBorderLayout extends SwtLayout implements IBorderLayout {
             // we assume all controls without explicit data to be placed in the center area
             return SWT.CENTER;
         }
-        return ((SwtBorderData) borderData.getImpl()).getRegion();
+        return borderData.getRegion();
     }
 
     @Override

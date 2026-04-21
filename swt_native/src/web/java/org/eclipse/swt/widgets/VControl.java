@@ -1,0 +1,197 @@
+package org.eclipse.swt.widgets;
+
+import java.util.*;
+import org.eclipse.swt.*;
+import org.eclipse.swt.accessibility.*;
+import org.eclipse.swt.events.*;
+import org.eclipse.swt.graphics.*;
+import com.dslplatform.json.*;
+import dev.equo.swt.Serializer;
+
+public class VControl extends VWidget {
+
+    protected VControl() {
+    }
+
+    protected VControl(IControl impl) {
+        super(impl);
+    }
+
+    public Color getBackground() {
+        return ((DartControl) impl).getBackground();
+    }
+
+    public void setBackground(Color value) {
+        ((DartControl) impl)._background = value;
+    }
+
+    public Image getBackgroundImage() {
+        Image val = ((DartControl) impl).backgroundImage;
+        if (val != null && !(val.getImpl() instanceof DartImage))
+            return null;
+        return val;
+    }
+
+    public void setBackgroundImage(Image value) {
+        ((DartControl) impl).backgroundImage = value;
+    }
+
+    @JsonAttribute(nullable = true)
+    public Rectangle getBounds() {
+        Rectangle b = ((DartControl) impl).bounds;
+        return new Rectangle(b.x, b.y, b.width, b.height);
+    }
+
+    public void setBounds(Rectangle value) {
+        ((DartControl) impl).bounds = value;
+    }
+
+    public boolean getCapture() {
+        return ((DartControl) impl).capture;
+    }
+
+    public void setCapture(boolean value) {
+        ((DartControl) impl).capture = value;
+    }
+
+    public Cursor getCursor() {
+        Cursor val = ((DartControl) impl).cursor;
+        if (val != null && !(val.getImpl() instanceof DartCursor))
+            return null;
+        return val;
+    }
+
+    public void setCursor(Cursor value) {
+        ((DartControl) impl).cursor = value;
+    }
+
+    public boolean getDragDetect() {
+        return ((DartControl) impl).getDragDetect();
+    }
+
+    public void setDragDetect(boolean value) {
+        ((DartControl) impl).dragDetect = value;
+    }
+
+    public boolean getEnabled() {
+        return ((DartControl) impl).getEnabled();
+    }
+
+    public void setEnabled(boolean value) {
+        ((DartControl) impl).enabled = value;
+    }
+
+    public Font getFont() {
+        Font val = ((DartControl) impl).font;
+        if (val != null && !(val.getImpl() instanceof DartFont))
+            return null;
+        return val;
+    }
+
+    public void setFont(Font value) {
+        ((DartControl) impl).font = value;
+    }
+
+    public Color getForeground() {
+        return ((DartControl) impl).getForeground();
+    }
+
+    public void setForeground(Color value) {
+        ((DartControl) impl).setForeground(value);
+    }
+
+    public Menu getMenu() {
+        Menu val = ((DartControl) impl).menu;
+        if (val != null && !(val.getImpl() instanceof DartMenu))
+            return null;
+        return val;
+    }
+
+    public void setMenu(Menu value) {
+        ((DartControl) impl).menu = value;
+    }
+
+    public int getOrientation() {
+        return ((DartControl) impl).getOrientation();
+    }
+
+    public void setOrientation(int value) {
+        ((DartControl) impl).orientation = value;
+    }
+
+    public boolean getRedraw() {
+        return ((DartControl) impl).redraw;
+    }
+
+    public void setRedraw(boolean value) {
+        ((DartControl) impl).redraw = value;
+    }
+
+    public Region getRegion() {
+        Region val = ((DartControl) impl).region;
+        if (val != null && !(val.getImpl() instanceof DartRegion))
+            return null;
+        return val;
+    }
+
+    public void setRegion(Region value) {
+        ((DartControl) impl).region = value;
+    }
+
+    public int getTextDirection() {
+        return ((DartControl) impl).getTextDirection();
+    }
+
+    public void setTextDirection(int value) {
+        ((DartControl) impl).textDirection = value;
+    }
+
+    public String getToolTipText() {
+        return ((DartControl) impl).getToolTipText();
+    }
+
+    public void setToolTipText(String value) {
+        ((DartControl) impl).toolTipText = value;
+    }
+
+    public boolean getTouchEnabled() {
+        return ((DartControl) impl).getTouchEnabled();
+    }
+
+    public void setTouchEnabled(boolean value) {
+        ((DartControl) impl).touchEnabled = value;
+    }
+
+    public Boolean getVisible() {
+        return ((DartControl) impl).getVisible();
+    }
+
+    public void setVisible(Boolean value) {
+        ((DartControl) impl).visible = Boolean.TRUE.equals(value);
+    }
+
+    @JsonConverter(target = Control.class)
+    public static class ControlJson implements Configuration {
+
+        @Override
+        public void configure(DslJson json) {
+            json.registerWriter(DartControl.class, (JsonWriter.WriteObject<DartControl>) (writer, impl) -> {
+                Serializer.writeWithId(json, writer, impl);
+            });
+            json.registerReader(DartControl.class, (JsonReader.ReadObject<DartControl>) reader -> {
+                return null;
+            });
+        }
+
+        public static Control read(JsonReader<?> reader) {
+            return null;
+        }
+
+        public static void write(JsonWriter writer, Control api) {
+            if (api == null)
+                writer.writeNull();
+            else
+                writer.serializeObject(api.getImpl());
+        }
+    }
+}

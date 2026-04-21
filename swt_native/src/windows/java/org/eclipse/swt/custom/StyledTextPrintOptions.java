@@ -15,6 +15,10 @@
  */
 package org.eclipse.swt.custom;
 
+import com.dslplatform.json.CompiledJson;
+import com.dslplatform.json.CompiledJson.*;
+import com.dslplatform.json.JsonAttribute;
+
 /**
  * Use StyledTextPrintOptions to specify printing options for the
  * StyledText.print(Printer, StyledTextPrintOptions) API.
@@ -37,6 +41,7 @@ package org.eclipse.swt.custom;
  *
  * @since 2.1
  */
+@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.EXPLICIT)
 public class StyledTextPrintOptions {
 
     /**
@@ -61,6 +66,7 @@ public class StyledTextPrintOptions {
      * left aligned, centered and right aligned. They are separated by a tab
      * character (<code>StyledTextPrintOptions.SEPARATOR</code>).
      */
+    @JsonAttribute()
     public String header = null;
 
     /**
@@ -73,31 +79,37 @@ public class StyledTextPrintOptions {
      * left aligned, centered and right aligned. They are separated by a tab
      * character (<code>StyledTextPrintOptions.SEPARATOR</code>).
      */
+    @JsonAttribute()
     public String footer = null;
 
     /**
      * Name of the print job.
      */
+    @JsonAttribute()
     public String jobName = null;
 
     /**
      * Print the text foreground color. Default value is <code>false</code>.
      */
+    @JsonAttribute()
     public boolean printTextForeground = false;
 
     /**
      * Print the text background color. Default value is <code>false</code>.
      */
+    @JsonAttribute()
     public boolean printTextBackground = false;
 
     /**
      * Print the font styles. Default value is <code>false</code>.
      */
+    @JsonAttribute()
     public boolean printTextFontStyle = false;
 
     /**
      * Print the line background color. Default value is <code>false</code>.
      */
+    @JsonAttribute()
     public boolean printLineBackground = false;
 
     /**
@@ -105,6 +117,7 @@ public class StyledTextPrintOptions {
      *
      * @since 3.3
      */
+    @JsonAttribute()
     public boolean printLineNumbers = false;
 
     /**
@@ -112,30 +125,6 @@ public class StyledTextPrintOptions {
      *
      * @since 3.4
      */
+    @JsonAttribute()
     public String[] lineLabels = null;
-
-    public StyledTextPrintOptions() {
-        this((IStyledTextPrintOptions) null);
-        setImpl(new SwtStyledTextPrintOptions(this));
-    }
-
-    protected IStyledTextPrintOptions impl;
-
-    protected StyledTextPrintOptions(IStyledTextPrintOptions impl) {
-        if (impl != null)
-            impl.setApi(this);
-    }
-
-    static StyledTextPrintOptions createApi(IStyledTextPrintOptions impl) {
-        return new StyledTextPrintOptions(impl);
-    }
-
-    public IStyledTextPrintOptions getImpl() {
-        return impl;
-    }
-
-    protected StyledTextPrintOptions setImpl(IStyledTextPrintOptions impl) {
-        this.impl = impl;
-        return this;
-    }
 }

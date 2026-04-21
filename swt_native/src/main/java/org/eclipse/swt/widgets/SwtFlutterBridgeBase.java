@@ -1,6 +1,5 @@
 package org.eclipse.swt.widgets;
 
-import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.FlutterLibraryLoader;
 import dev.equo.swt.GCImageDrawer;
@@ -39,17 +38,17 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     }
 
     public static SwtFlutterBridge of(DartWidget widget) {
-        if (widget instanceof DartControl dartControl && dartControl.parent.getImpl() instanceof SwtComposite) {
-            SwtFlutterBridge bridge = new SwtFlutterBridge(widget);
+        if (widget instanceof DartControl dartControl && !(dartControl.parent.getImpl() instanceof DartComposite)) {
+            FlutterBridge bridge = new SwtFlutterBridge(widget);
             widget.bridge = bridge;
             bridge.initFlutterView(dartControl.parent, dartControl);
             if (widget instanceof DartCTabFolder t) { // workaround
                 t.addSelectionListener(SelectionListener.widgetSelectedAdapter(e -> {
                     Rectangle bounds = t.getBounds();
-                    bridge.setBoundsCTabFolder(t, bounds, true);
+                    ((SwtFlutterBridgeBase) bridge).setBoundsCTabFolder(t, bounds, true);
                 }));
             }
-            return bridge;
+            return (SwtFlutterBridge) bridge;
         }
         if (widget instanceof DartControl dartControl && dartControl.parent.getImpl() instanceof DartComposite c) {
             FlutterBridge bridge = c.getBridge();
@@ -142,7 +141,8 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
         return drawer;
     }
 
-    void initFlutterView(Composite parent, DartControl control) {
+    @Override
+    public void initFlutterView(Composite parent, DartControl control) {
         super.onReady(control, Void.class);
 
         String theme = detectTheme();
@@ -226,7 +226,7 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     }
 
     public void setBoundsCTabFolder(DartCTabFolder folder, Rectangle bounds, boolean viewOnly) {
-        if (folder.getSelection() != null && folder.getSelection().getControl() != null && folder.getSelection().getControl().getImpl() instanceof SwtControl) {
+        if (folder.getSelection() != null && folder.getSelection().getControl() != null && !(folder.getSelection().getControl().getImpl() instanceof DartControl)) {
             if (folder._onBottom()) {
                 setBounds(context, bounds.x, bounds.y, bounds.width, bounds.height, 0, bounds.height - 32, bounds.width, 32);
             } else {

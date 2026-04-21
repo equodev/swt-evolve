@@ -33,6 +33,9 @@ VCLabel _$VCLabelFromJson(Map<String, dynamic> json) => VCLabel()
       : VMenu.fromJson(json['menu'] as Map<String, dynamic>)
   ..orientation = (json['orientation'] as num?)?.toInt()
   ..redraw = json['redraw'] as bool?
+  ..region = json['region'] == null
+      ? null
+      : VRegion.fromJson(json['region'] as Map<String, dynamic>)
   ..textDirection = (json['textDirection'] as num?)?.toInt()
   ..toolTipText = json['toolTipText'] as String?
   ..touchEnabled = json['touchEnabled'] as bool?
@@ -46,6 +49,9 @@ VCLabel _$VCLabelFromJson(Map<String, dynamic> json) => VCLabel()
   ..tabList = (json['tabList'] as List<dynamic>?)
       ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
       .toList()
+  ..IME = json['IME'] == null
+      ? null
+      : VIME.fromJson(json['IME'] as Map<String, dynamic>)
   ..caret = json['caret'] == null
       ? null
       : VCaret.fromJson(json['caret'] as Map<String, dynamic>)
@@ -73,36 +79,38 @@ Map<String, dynamic> _$VCLabelToJson(VCLabel instance) => <String, dynamic>{
   'swt': instance.swt,
   'id': instance.id,
   'style': instance.style,
-  'background': instance.background,
-  'bounds': instance.bounds,
-  'capture': instance.capture,
-  'cursor': instance.cursor,
-  'dragDetect': instance.dragDetect,
-  'enabled': instance.enabled,
-  'font': instance.font,
-  'foreground': instance.foreground,
-  'menu': instance.menu,
-  'orientation': instance.orientation,
-  'redraw': instance.redraw,
-  'textDirection': instance.textDirection,
-  'toolTipText': instance.toolTipText,
-  'touchEnabled': instance.touchEnabled,
-  'visible': instance.visible,
-  'scrollbarsMode': instance.scrollbarsMode,
-  'backgroundMode': instance.backgroundMode,
-  'children': instance.children,
-  'layoutDeferred': instance.layoutDeferred,
-  'tabList': instance.tabList,
-  'caret': instance.caret,
-  'alignment': instance.alignment,
-  'backgroundImage': instance.backgroundImage,
-  'bottomMargin': instance.bottomMargin,
-  'gradientColors': instance.gradientColors,
-  'gradientPercents': instance.gradientPercents,
-  'gradientVertical': instance.gradientVertical,
-  'image': instance.image,
-  'leftMargin': instance.leftMargin,
-  'rightMargin': instance.rightMargin,
-  'text': instance.text,
-  'topMargin': instance.topMargin,
+  'background': ?instance.background,
+  'bounds': ?instance.bounds,
+  'capture': ?instance.capture,
+  'cursor': ?instance.cursor,
+  'dragDetect': ?instance.dragDetect,
+  'enabled': ?instance.enabled,
+  'font': ?instance.font,
+  'foreground': ?instance.foreground,
+  'menu': ?instance.menu,
+  'orientation': ?instance.orientation,
+  'redraw': ?instance.redraw,
+  'region': ?instance.region,
+  'textDirection': ?instance.textDirection,
+  'toolTipText': ?instance.toolTipText,
+  'touchEnabled': ?instance.touchEnabled,
+  'visible': ?instance.visible,
+  'scrollbarsMode': ?instance.scrollbarsMode,
+  'backgroundMode': ?instance.backgroundMode,
+  'children': ?instance.children,
+  'layoutDeferred': ?instance.layoutDeferred,
+  'tabList': ?instance.tabList,
+  'IME': ?instance.IME,
+  'caret': ?instance.caret,
+  'alignment': ?instance.alignment,
+  'backgroundImage': ?instance.backgroundImage,
+  'bottomMargin': ?instance.bottomMargin,
+  'gradientColors': ?instance.gradientColors,
+  'gradientPercents': ?instance.gradientPercents,
+  'gradientVertical': ?instance.gradientVertical,
+  'image': ?instance.image,
+  'leftMargin': ?instance.leftMargin,
+  'rightMargin': ?instance.rightMargin,
+  'text': ?instance.text,
+  'topMargin': ?instance.topMargin,
 };

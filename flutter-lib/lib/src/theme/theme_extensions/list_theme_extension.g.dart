@@ -75,6 +75,6 @@ Map<String, dynamic> _$ListThemeExtensionToJson(
   'borderRadius': instance.borderRadius,
   'itemHeight': instance.itemHeight,
   'itemPadding': const EdgeInsetsConverter().toJson(instance.itemPadding),
-  'textStyle': const TextStyleConverter().toJson(instance.textStyle),
+  'textStyle': ?const TextStyleConverter().toJson(instance.textStyle),
   'animationDuration': instance.animationDuration.inMicroseconds,
 };

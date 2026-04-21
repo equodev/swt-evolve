@@ -219,8 +219,8 @@ public final class SwtPrinter extends SwtDevice implements IPrinter {
         try {
             NSApplication.sharedApplication();
             data = (PrinterData) deviceData;
-            if (((SwtPrinterData) data.getImpl()).otherData != null) {
-                NSData nsData = NSData.dataWithBytes(((SwtPrinterData) data.getImpl()).otherData, ((SwtPrinterData) data.getImpl()).otherData.length);
+            if (data.otherData != null) {
+                NSData nsData = NSData.dataWithBytes(data.otherData, data.otherData.length);
                 printInfo = new NSPrintInfo(NSKeyedUnarchiver.unarchiveObjectWithData(nsData).id);
             } else {
                 printInfo = NSPrintInfo.sharedPrintInfo();

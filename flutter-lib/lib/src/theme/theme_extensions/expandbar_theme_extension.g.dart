@@ -106,7 +106,7 @@ Map<String, dynamic> _$ExpandBarThemeExtensionToJson(
     instance.containerPadding,
   ),
   'itemSpacing': instance.itemSpacing,
-  'headerTextStyle': const TextStyleConverter().toJson(
+  'headerTextStyle': ?const TextStyleConverter().toJson(
     instance.headerTextStyle,
   ),
   'animationDuration': instance.animationDuration.inMicroseconds,

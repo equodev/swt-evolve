@@ -1,11 +1,18 @@
 package dev.equo.swt;
 
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.DartControl;
 import org.eclipse.swt.widgets.DartWidget;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 public class MockFlutterBridge extends FlutterBridge {
+
+    @Override
+    public void initFlutterView(Composite parent, DartControl control) {
+
+    }
 
     @Override
     public void destroy(DartWidget control) {

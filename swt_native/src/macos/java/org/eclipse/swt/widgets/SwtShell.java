@@ -2121,7 +2121,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         }
     }
 
-    void setScrolling() {
+    public void setScrolling() {
         scrolling = true;
         getApi().view.performSelector(OS.sel_clearDeferFlushing, null, 0.0, ((SwtDisplay) display.getImpl()).runLoopModes());
     }
@@ -2338,7 +2338,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         // do nothing
     }
 
-    void updateOpaque() {
+    public void updateOpaque() {
         if (window == null)
             return;
         window.setOpaque(region == null && glContextCount == 0);
@@ -2684,23 +2684,6 @@ public class SwtShell extends SwtDecorations implements IShell {
     @Override
     void windowWillClose(long id, long sel, long notification) {
         closeWidget(true);
-    }
-
-    ToolTip[] toolTips;
-
-    void addToolTip(ToolTip toolTip) {
-        if (toolTips == null)
-            toolTips = new ToolTip[4];
-        for (int i = 0; i < toolTips.length; i++) {
-            if (toolTips[i] == null) {
-                toolTips[i] = toolTip;
-                return;
-            }
-        }
-        ToolTip[] newToolTips = new ToolTip[toolTips.length + 4];
-        newToolTips[toolTips.length] = toolTip;
-        System.arraycopy(toolTips, 0, newToolTips, 0, toolTips.length);
-        toolTips = newToolTips;
     }
 
     public Shell getApi() {
