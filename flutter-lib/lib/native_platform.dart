@@ -1,5 +1,5 @@
 // import 'package:bitsdojo_window/bitsdojo_window.dart';
-import 'src/comm/comm.dart';
+import 'dart:ui' show Size;
 
 //late final ShellListener? listener;
 
@@ -45,6 +45,12 @@ int? getParentBackgroundColor(List<String> args) {
   }
   return null;
 }
+
+Size? getViewportSize() {
+  return null;
+}
+
+void observeViewportChanges(void Function() onChange) {}
 
 void close() {
   //if (listener != null) {

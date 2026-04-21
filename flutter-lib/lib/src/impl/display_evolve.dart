@@ -42,7 +42,20 @@ class _DisplaySwtState extends State<DisplaySwt> {
     final b = s.bounds;
     if (b == null || b.x != 0 || b.y != 0) return false;
     if (b.width == 1024 && b.height == 768) return true; // eclipse workbench default
+    if (!_isModal(s) &&
+        b.width >= (constraints.maxWidth * 0.8).round() &&
+        b.height >= (constraints.maxHeight * 0.8).round()) {
+      return true;
+    }
     return b.width == constraints.maxWidth.toInt() && b.height == constraints.maxHeight.toInt();
+  }
+
+  int _shellArea(VShell shell) {
+    final bounds = shell.bounds;
+    if (bounds == null || bounds.width <= 0 || bounds.height <= 0) {
+      return -1;
+    }
+    return bounds.width * bounds.height;
   }
 
   static bool _isModal(VShell s) {
@@ -61,13 +74,26 @@ class _DisplaySwtState extends State<DisplaySwt> {
     return LayoutBuilder(builder: (context, constraints) {
       final mainShells = <VShell>[];
       final dialogShells = <VShell>[];
+      VShell? largestNonModalShell;
+      var largestNonModalArea = -1;
       for (var s in shells) {
         print("Shell text: ${s.text} ${s.bounds?.x},${s.bounds?.y},${s.bounds?.width},${s.bounds?.height}");
+        if (!_isModal(s)) {
+          final area = _shellArea(s);
+          if (area > largestNonModalArea) {
+            largestNonModalArea = area;
+            largestNonModalShell = s;
+          }
+        }
         if (_isMainShell(s, constraints)) {
           mainShells.add(s);
         } else {
           dialogShells.add(s);
         }
+      }
+      if (mainShells.isEmpty && largestNonModalShell != null) {
+        dialogShells.remove(largestNonModalShell);
+        mainShells.add(largestNonModalShell!);
       }
       for (var s in mainShells) {
         s.bounds!.x = 0;
