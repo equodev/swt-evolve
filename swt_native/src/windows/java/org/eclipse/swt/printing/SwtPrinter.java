@@ -217,7 +217,7 @@ public final class SwtPrinter extends SwtDevice implements IPrinter {
         TCHAR driver = new TCHAR(0, data.driver, true);
         TCHAR device = new TCHAR(0, data.name, true);
         long lpInitData = 0;
-        byte[] devmodeData = ((SwtPrinterData) data.getImpl()).otherData;
+        byte[] devmodeData = data.otherData;
         long hHeap = OS.GetProcessHeap();
         if (devmodeData != null && devmodeData.length != 0) {
             /* If user setup info from a print dialog was specified, restore the DEVMODE struct. */

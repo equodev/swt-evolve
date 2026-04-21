@@ -9,6 +9,7 @@ import '../gen/font.dart';
 import '../gen/image.dart';
 import '../gen/menu.dart';
 import '../gen/rectangle.dart';
+import '../gen/region.dart';
 import '../impl/spinner_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';

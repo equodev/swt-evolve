@@ -28,29 +28,4 @@ public class DeviceData {
     public Error[] errors;
 
     public Object[] objects;
-
-    public DeviceData() {
-        this((IDeviceData) null);
-        setImpl(new SwtDeviceData(this));
-    }
-
-    protected IDeviceData impl;
-
-    protected DeviceData(IDeviceData impl) {
-        if (impl != null)
-            impl.setApi(this);
-    }
-
-    static DeviceData createApi(IDeviceData impl) {
-        return new DeviceData(impl);
-    }
-
-    public IDeviceData getImpl() {
-        return impl;
-    }
-
-    protected DeviceData setImpl(IDeviceData impl) {
-        this.impl = impl;
-        return this;
-    }
 }

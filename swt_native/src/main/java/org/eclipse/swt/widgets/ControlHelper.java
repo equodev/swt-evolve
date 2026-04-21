@@ -10,7 +10,7 @@ public class ControlHelper {
 
     private static Control walkToSwtAncestor(Control control, int[] offset) {
         Control current = control;
-        while (current != null && !(current.getImpl() instanceof SwtControl)) {
+        while (current != null && (current.getImpl() instanceof DartControl)) {
             Rectangle bounds = current.getBounds();
             offset[0] += bounds.x;
             offset[1] += bounds.y;
@@ -96,10 +96,10 @@ public class ControlHelper {
         Control control = null;
         boolean fixFocus = false;
         if (!enabled) {
-            if (((SwtDisplay) c.display.getImpl()).focusEvent != SWT.FocusOut) {
-                control = c.display.getFocusControl();
-                fixFocus = c.isFocusAncestor(control);
-            }
+//            if (((SwtDisplay) c.display.getImpl()).focusEvent != SWT.FocusOut) {
+//                control = c.display.getFocusControl();
+//                fixFocus = c.isFocusAncestor(control);
+//            }
         }
         if (enabled) {
             c.getApi().state &= ~DartWidget.DISABLED;

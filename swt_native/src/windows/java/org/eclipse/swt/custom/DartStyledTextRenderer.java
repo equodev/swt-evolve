@@ -372,7 +372,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         }
     }
 
-    LineSizeInfo getLineSize(int i) {
+    DartStyledTextRenderer.LineSizeInfo getLineSize(int i) {
         if (lineSizes[i] == null) {
             lineSizes[i] = new LineSizeInfo();
         }
@@ -647,7 +647,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             } else {
                 for (Bullet b : bullets) {
                     bullet = b;
-                    bulletIndex = ((SwtBullet) bullet.getImpl()).indexOf(lineInfo.index);
+                    bulletIndex = bullet.indexOf(lineInfo.index);
                     if (bulletIndex != -1)
                         break;
                 }
@@ -813,7 +813,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         if (bulletsIndices != null)
             return defaultBullet;
         for (Bullet bullet : bullets) {
-            if (((SwtBullet) bullet.getImpl()).indexOf(index) != -1)
+            if (bullet.indexOf(index) != -1)
                 return bullet;
         }
         return defaultBullet;
@@ -1311,7 +1311,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             }
             if (bullets != null) {
                 for (Bullet b : bullets) {
-                    if (((SwtBullet) b.getImpl()).indexOf(lineIndex) != -1) {
+                    if (b.indexOf(lineIndex) != -1) {
                         bullet = b;
                         break;
                     }
@@ -1635,7 +1635,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
                 newBulletsList[index] = bullet;
                 bullets = newBulletsList;
             }
-            ((SwtBullet) bullet.getImpl()).addIndices(startLine, count);
+            bullet.addIndices(startLine, count);
         } else {
             updateBullets(startLine, count, 0, false);
             ((DartStyledText) styledText.getImpl()).redrawLinesBullet(redrawLines);
@@ -2030,7 +2030,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         if (bulletsIndices != null)
             return;
         for (Bullet bullet : bullets) {
-            int[] lines = ((SwtBullet) bullet.getImpl()).removeIndices(startLine, replaceLineCount, newLineCount, update);
+            int[] lines = bullet.removeIndices(startLine, replaceLineCount, newLineCount, update);
             if (lines != null) {
                 if (redrawLines == null) {
                     redrawLines = lines;
@@ -2044,7 +2044,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         }
         int removed = 0;
         for (Bullet bullet : bullets) {
-            if (((SwtBullet) bullet.getImpl()).size() == 0)
+            if (bullet.size() == 0)
                 removed++;
         }
         if (removed > 0) {
@@ -2054,7 +2054,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
                 Bullet[] newBulletsList = new Bullet[bullets.length - removed];
                 for (int i = 0, j = 0; i < bullets.length; i++) {
                     Bullet bullet = bullets[i];
-                    if (((SwtBullet) bullet.getImpl()).size() > 0)
+                    if (bullet.size() > 0)
                         newBulletsList[j++] = bullet;
                 }
                 bullets = newBulletsList;

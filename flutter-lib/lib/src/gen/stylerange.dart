@@ -1,6 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 import '../gen/color.dart';
 import '../gen/font.dart';
+import '../gen/glyphmetrics.dart';
 import '../gen/textstyle.dart';
 
 part 'stylerange.g.dart';

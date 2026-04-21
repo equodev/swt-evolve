@@ -92,7 +92,7 @@ public final class SwtGridLayout extends SwtLayout implements IGridLayout {
     public boolean flushCache(Control control) {
         Object data = control.getLayoutData();
         if (data != null)
-            ((SwtGridData) ((GridData) data).getImpl()).flushCache();
+            ((GridData) data).flushCache();
         return true;
     }
 
@@ -142,10 +142,10 @@ public final class SwtGridLayout extends SwtLayout implements IGridLayout {
             if (data == null)
                 child.setLayoutData(data = new GridData());
             if (flushCache)
-                ((SwtGridData) data.getImpl()).flushCache();
-            ((SwtGridData) data.getImpl()).computeSize(child, data.widthHint, data.heightHint, flushCache);
+                data.flushCache();
+            data.computeSize(child, data.widthHint, data.heightHint, flushCache);
             if (data.grabExcessHorizontalSpace && data.minimumWidth > 0) {
-                if (((SwtGridData) data.getImpl()).cacheWidth < data.minimumWidth) {
+                if (data.cacheWidth < data.minimumWidth) {
                     int trim = 0;
                     //TEMPORARY CODE
                     if (child instanceof Scrollable) {
@@ -154,12 +154,12 @@ public final class SwtGridLayout extends SwtLayout implements IGridLayout {
                     } else {
                         trim = child.getBorderWidth() * 2;
                     }
-                    ((SwtGridData) data.getImpl()).cacheWidth = ((SwtGridData) data.getImpl()).cacheHeight = SWT.DEFAULT;
-                    ((SwtGridData) data.getImpl()).computeSize(child, Math.max(0, data.minimumWidth - trim), data.heightHint, false);
+                    data.cacheWidth = data.cacheHeight = SWT.DEFAULT;
+                    data.computeSize(child, Math.max(0, data.minimumWidth - trim), data.heightHint, false);
                 }
             }
             if (data.grabExcessVerticalSpace && data.minimumHeight > 0) {
-                ((SwtGridData) data.getImpl()).cacheHeight = Math.max(((SwtGridData) data.getImpl()).cacheHeight, data.minimumHeight);
+                data.cacheHeight = Math.max(data.cacheHeight, data.minimumHeight);
             }
         }
         /* Build the grid */
@@ -221,7 +221,7 @@ public final class SwtGridLayout extends SwtLayout implements IGridLayout {
                 if (data != null) {
                     int hSpan = Math.max(1, Math.min(data.horizontalSpan, columnCount));
                     if (hSpan == 1) {
-                        int w = ((SwtGridData) data.getImpl()).cacheWidth + data.horizontalIndent;
+                        int w = data.cacheWidth + data.horizontalIndent;
                         widths[j] = Math.max(widths[j], w);
                         if (data.grabExcessHorizontalSpace) {
                             if (!expandColumn[j])
@@ -229,7 +229,7 @@ public final class SwtGridLayout extends SwtLayout implements IGridLayout {
                             expandColumn[j] = true;
                         }
                         if (!data.grabExcessHorizontalSpace || data.minimumWidth != 0) {
-                            w = !data.grabExcessHorizontalSpace || data.minimumWidth == SWT.DEFAULT ? ((SwtGridData) data.getImpl()).cacheWidth : data.minimumWidth;
+                            w = !data.grabExcessHorizontalSpace || data.minimumWidth == SWT.DEFAULT ? data.cacheWidth : data.minimumWidth;
                             w += data.horizontalIndent;
                             minWidths[j] = Math.max(minWidths[j], w);
                         }
@@ -252,7 +252,7 @@ public final class SwtGridLayout extends SwtLayout implements IGridLayout {
                             expandCount++;
                             expandColumn[j] = true;
                         }
-                        int w = ((SwtGridData) data.getImpl()).cacheWidth + data.horizontalIndent - spanWidth - (hSpan - 1) * getApi().horizontalSpacing;
+                        int w = data.cacheWidth + data.horizontalIndent - spanWidth - (hSpan - 1) * getApi().horizontalSpacing;
                         if (w > 0) {
                             if (getApi().makeColumnsEqualWidth) {
                                 int equalWidth = (w + spanWidth) / hSpan;
@@ -279,7 +279,7 @@ public final class SwtGridLayout extends SwtLayout implements IGridLayout {
                             }
                         }
                         if (!data.grabExcessHorizontalSpace || data.minimumWidth != 0) {
-                            w = !data.grabExcessHorizontalSpace || data.minimumWidth == SWT.DEFAULT ? ((SwtGridData) data.getImpl()).cacheWidth : data.minimumWidth;
+                            w = !data.grabExcessHorizontalSpace || data.minimumWidth == SWT.DEFAULT ? data.cacheWidth : data.minimumWidth;
                             w += data.horizontalIndent - spanMinWidth - (hSpan - 1) * getApi().horizontalSpacing;
                             if (w > 0) {
                                 if (spanExpandCount == 0) {
@@ -350,7 +350,7 @@ public final class SwtGridLayout extends SwtLayout implements IGridLayout {
                                             if (expandColumn[j - k])
                                                 spanExpandCount++;
                                         }
-                                        int w = !data.grabExcessHorizontalSpace || data.minimumWidth == SWT.DEFAULT ? ((SwtGridData) data.getImpl()).cacheWidth : data.minimumWidth;
+                                        int w = !data.grabExcessHorizontalSpace || data.minimumWidth == SWT.DEFAULT ? data.cacheWidth : data.minimumWidth;
                                         w += data.horizontalIndent - spanWidth - (hSpan - 1) * getApi().horizontalSpacing;
                                         if (w > 0) {
                                             if (spanExpandCount == 0) {
@@ -401,7 +401,7 @@ public final class SwtGridLayout extends SwtLayout implements IGridLayout {
                                 currentWidth += widths[j - k];
                             }
                             currentWidth += (hSpan - 1) * getApi().horizontalSpacing - data.horizontalIndent;
-                            if ((currentWidth != ((SwtGridData) data.getImpl()).cacheWidth && data.horizontalAlignment == SWT.FILL) || (((SwtGridData) data.getImpl()).cacheWidth > currentWidth)) {
+                            if ((currentWidth != data.cacheWidth && data.horizontalAlignment == SWT.FILL) || (data.cacheWidth > currentWidth)) {
                                 int trim = 0;
                                 if (child instanceof Scrollable) {
                                     Rectangle rect = ((Scrollable) child).computeTrim(0, 0, 0, 0);
@@ -409,10 +409,10 @@ public final class SwtGridLayout extends SwtLayout implements IGridLayout {
                                 } else {
                                     trim = child.getBorderWidth() * 2;
                                 }
-                                ((SwtGridData) data.getImpl()).cacheWidth = ((SwtGridData) data.getImpl()).cacheHeight = SWT.DEFAULT;
-                                ((SwtGridData) data.getImpl()).computeSize(child, Math.max(0, currentWidth - trim), data.heightHint, false);
+                                data.cacheWidth = data.cacheHeight = SWT.DEFAULT;
+                                data.computeSize(child, Math.max(0, currentWidth - trim), data.heightHint, false);
                                 if (data.grabExcessVerticalSpace && data.minimumHeight > 0) {
-                                    ((SwtGridData) data.getImpl()).cacheHeight = Math.max(((SwtGridData) data.getImpl()).cacheHeight, data.minimumHeight);
+                                    data.cacheHeight = Math.max(data.cacheHeight, data.minimumHeight);
                                 }
                                 if (flush == null)
                                     flush = new GridData[count];
@@ -435,7 +435,7 @@ public final class SwtGridLayout extends SwtLayout implements IGridLayout {
                 if (data != null) {
                     int vSpan = Math.max(1, Math.min(data.verticalSpan, rowCount));
                     if (vSpan == 1) {
-                        int h = ((SwtGridData) data.getImpl()).cacheHeight + data.verticalIndent;
+                        int h = data.cacheHeight + data.verticalIndent;
                         heights[i] = Math.max(heights[i], h);
                         if (data.grabExcessVerticalSpace) {
                             if (!expandRow[i])
@@ -443,7 +443,7 @@ public final class SwtGridLayout extends SwtLayout implements IGridLayout {
                             expandRow[i] = true;
                         }
                         if (!data.grabExcessVerticalSpace || data.minimumHeight != 0) {
-                            h = !data.grabExcessVerticalSpace || data.minimumHeight == SWT.DEFAULT ? ((SwtGridData) data.getImpl()).cacheHeight : data.minimumHeight;
+                            h = !data.grabExcessVerticalSpace || data.minimumHeight == SWT.DEFAULT ? data.cacheHeight : data.minimumHeight;
                             h += data.verticalIndent;
                             minHeights[i] = Math.max(minHeights[i], h);
                         }
@@ -466,7 +466,7 @@ public final class SwtGridLayout extends SwtLayout implements IGridLayout {
                             expandCount++;
                             expandRow[i] = true;
                         }
-                        int h = ((SwtGridData) data.getImpl()).cacheHeight + data.verticalIndent - spanHeight - (vSpan - 1) * getApi().verticalSpacing;
+                        int h = data.cacheHeight + data.verticalIndent - spanHeight - (vSpan - 1) * getApi().verticalSpacing;
                         if (h > 0) {
                             if (spanExpandCount == 0) {
                                 heights[i] += h;
@@ -483,7 +483,7 @@ public final class SwtGridLayout extends SwtLayout implements IGridLayout {
                             }
                         }
                         if (!data.grabExcessVerticalSpace || data.minimumHeight != 0) {
-                            h = !data.grabExcessVerticalSpace || data.minimumHeight == SWT.DEFAULT ? ((SwtGridData) data.getImpl()).cacheHeight : data.minimumHeight;
+                            h = !data.grabExcessVerticalSpace || data.minimumHeight == SWT.DEFAULT ? data.cacheHeight : data.minimumHeight;
                             h += data.verticalIndent - spanMinHeight - (vSpan - 1) * getApi().verticalSpacing;
                             if (h > 0) {
                                 if (spanExpandCount == 0) {
@@ -541,7 +541,7 @@ public final class SwtGridLayout extends SwtLayout implements IGridLayout {
                                         if (expandRow[i - k])
                                             spanExpandCount++;
                                     }
-                                    int h = !data.grabExcessVerticalSpace || data.minimumHeight == SWT.DEFAULT ? ((SwtGridData) data.getImpl()).cacheHeight : data.minimumHeight;
+                                    int h = !data.grabExcessVerticalSpace || data.minimumHeight == SWT.DEFAULT ? data.cacheHeight : data.minimumHeight;
                                     h += data.verticalIndent - spanHeight - (vSpan - 1) * getApi().verticalSpacing;
                                     if (h > 0) {
                                         if (spanExpandCount == 0) {
@@ -593,7 +593,7 @@ public final class SwtGridLayout extends SwtLayout implements IGridLayout {
                         }
                         cellWidth += getApi().horizontalSpacing * (hSpan - 1);
                         int childX = gridX + data.horizontalIndent;
-                        int childWidth = Math.min(((SwtGridData) data.getImpl()).cacheWidth, cellWidth);
+                        int childWidth = Math.min(data.cacheWidth, cellWidth);
                         switch(data.horizontalAlignment) {
                             case SWT.CENTER:
                             case GridData.CENTER:
@@ -610,7 +610,7 @@ public final class SwtGridLayout extends SwtLayout implements IGridLayout {
                         }
                         cellHeight += getApi().verticalSpacing * (vSpan - 1);
                         int childY = gridY + data.verticalIndent;
-                        int childHeight = Math.min(((SwtGridData) data.getImpl()).cacheHeight, cellHeight);
+                        int childHeight = Math.min(data.cacheHeight, cellHeight);
                         switch(data.verticalAlignment) {
                             case SWT.CENTER:
                             case GridData.CENTER:
@@ -637,7 +637,7 @@ public final class SwtGridLayout extends SwtLayout implements IGridLayout {
         }
         // clean up cache
         for (int i = 0; i < flushLength; i++) {
-            ((SwtGridData) flush[i].getImpl()).cacheWidth = ((SwtGridData) flush[i].getImpl()).cacheHeight = -1;
+            flush[i].cacheWidth = flush[i].cacheHeight = -1;
         }
         int totalDefaultWidth = 0;
         int totalDefaultHeight = 0;

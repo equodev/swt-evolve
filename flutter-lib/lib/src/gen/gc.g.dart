@@ -17,6 +17,9 @@ VGC _$VGCFromJson(Map<String, dynamic> json) => VGC()
   ..background = json['background'] == null
       ? null
       : VColor.fromJson(json['background'] as Map<String, dynamic>)
+  ..backgroundPattern = json['backgroundPattern'] == null
+      ? null
+      : VPattern.fromJson(json['backgroundPattern'] as Map<String, dynamic>)
   ..clipping = json['clipping'] == null
       ? null
       : VRectangle.fromJson(json['clipping'] as Map<String, dynamic>)
@@ -27,6 +30,9 @@ VGC _$VGCFromJson(Map<String, dynamic> json) => VGC()
   ..foreground = json['foreground'] == null
       ? null
       : VColor.fromJson(json['foreground'] as Map<String, dynamic>)
+  ..foregroundPattern = json['foregroundPattern'] == null
+      ? null
+      : VPattern.fromJson(json['foregroundPattern'] as Map<String, dynamic>)
   ..interpolation = (json['interpolation'] as num?)?.toInt()
   ..lineCap = (json['lineCap'] as num?)?.toInt()
   ..lineDash = (json['lineDash'] as List<dynamic>?)
@@ -35,28 +41,34 @@ VGC _$VGCFromJson(Map<String, dynamic> json) => VGC()
   ..lineJoin = (json['lineJoin'] as num?)?.toInt()
   ..lineStyle = (json['lineStyle'] as num?)?.toInt()
   ..lineWidth = (json['lineWidth'] as num?)?.toInt()
-  ..textAntialias = (json['textAntialias'] as num?)?.toInt();
+  ..textAntialias = (json['textAntialias'] as num?)?.toInt()
+  ..transform = json['transform'] == null
+      ? null
+      : VTransform.fromJson(json['transform'] as Map<String, dynamic>);
 
 Map<String, dynamic> _$VGCToJson(VGC instance) => <String, dynamic>{
   'swt': instance.swt,
   'id': instance.id,
   'style': instance.style,
-  'XORMode': instance.XORMode,
-  'advanced': instance.advanced,
-  'alpha': instance.alpha,
-  'antialias': instance.antialias,
-  'background': instance.background,
-  'clipping': instance.clipping,
-  'fillRule': instance.fillRule,
-  'font': instance.font,
-  'foreground': instance.foreground,
-  'interpolation': instance.interpolation,
-  'lineCap': instance.lineCap,
-  'lineDash': instance.lineDash,
-  'lineJoin': instance.lineJoin,
-  'lineStyle': instance.lineStyle,
-  'lineWidth': instance.lineWidth,
-  'textAntialias': instance.textAntialias,
+  'XORMode': ?instance.XORMode,
+  'advanced': ?instance.advanced,
+  'alpha': ?instance.alpha,
+  'antialias': ?instance.antialias,
+  'background': ?instance.background,
+  'backgroundPattern': ?instance.backgroundPattern,
+  'clipping': ?instance.clipping,
+  'fillRule': ?instance.fillRule,
+  'font': ?instance.font,
+  'foreground': ?instance.foreground,
+  'foregroundPattern': ?instance.foregroundPattern,
+  'interpolation': ?instance.interpolation,
+  'lineCap': ?instance.lineCap,
+  'lineDash': ?instance.lineDash,
+  'lineJoin': ?instance.lineJoin,
+  'lineStyle': ?instance.lineStyle,
+  'lineWidth': ?instance.lineWidth,
+  'textAntialias': ?instance.textAntialias,
+  'transform': ?instance.transform,
 };
 
 VGCCopyAreaImageintint _$VGCCopyAreaImageintintFromJson(
@@ -73,7 +85,7 @@ VGCCopyAreaImageintint _$VGCCopyAreaImageintintFromJson(
 Map<String, dynamic> _$VGCCopyAreaImageintintToJson(
   VGCCopyAreaImageintint instance,
 ) => <String, dynamic>{
-  'image': instance.image,
+  'image': ?instance.image,
   'x': instance.x,
   'y': instance.y,
 };
@@ -178,7 +190,7 @@ VGCDrawImageImageintint _$VGCDrawImageImageintintFromJson(
 Map<String, dynamic> _$VGCDrawImageImageintintToJson(
   VGCDrawImageImageintint instance,
 ) => <String, dynamic>{
-  'image': instance.image,
+  'image': ?instance.image,
   'x': instance.x,
   'y': instance.y,
 };
@@ -199,7 +211,7 @@ VGCDrawImageImageintintintint _$VGCDrawImageImageintintintintFromJson(
 Map<String, dynamic> _$VGCDrawImageImageintintintintToJson(
   VGCDrawImageImageintintintint instance,
 ) => <String, dynamic>{
-  'image': instance.image,
+  'image': ?instance.image,
   'destX': instance.destX,
   'destY': instance.destY,
   'destWidth': instance.destWidth,
@@ -227,7 +239,7 @@ _$VGCDrawImageImageintintintintintintintintFromJson(
 Map<String, dynamic> _$VGCDrawImageImageintintintintintintintintToJson(
   VGCDrawImageImageintintintintintintintint instance,
 ) => <String, dynamic>{
-  'image': instance.image,
+  'image': ?instance.image,
   'srcX': instance.srcX,
   'srcY': instance.srcY,
   'srcWidth': instance.srcWidth,
@@ -290,7 +302,7 @@ VGCDrawPolygonint _$VGCDrawPolygonintFromJson(Map<String, dynamic> json) =>
           .toList();
 
 Map<String, dynamic> _$VGCDrawPolygonintToJson(VGCDrawPolygonint instance) =>
-    <String, dynamic>{'pointArray': instance.pointArray};
+    <String, dynamic>{'pointArray': ?instance.pointArray};
 
 VGCDrawPolylineint _$VGCDrawPolylineintFromJson(Map<String, dynamic> json) =>
     VGCDrawPolylineint()
@@ -299,7 +311,7 @@ VGCDrawPolylineint _$VGCDrawPolylineintFromJson(Map<String, dynamic> json) =>
           .toList();
 
 Map<String, dynamic> _$VGCDrawPolylineintToJson(VGCDrawPolylineint instance) =>
-    <String, dynamic>{'pointArray': instance.pointArray};
+    <String, dynamic>{'pointArray': ?instance.pointArray};
 
 VGCDrawRectangleRectangle _$VGCDrawRectangleRectangleFromJson(
   Map<String, dynamic> json,
@@ -310,7 +322,7 @@ VGCDrawRectangleRectangle _$VGCDrawRectangleRectangleFromJson(
 
 Map<String, dynamic> _$VGCDrawRectangleRectangleToJson(
   VGCDrawRectangleRectangle instance,
-) => <String, dynamic>{'rect': instance.rect};
+) => <String, dynamic>{'rect': ?instance.rect};
 
 VGCDrawRectangleintintintint _$VGCDrawRectangleintintintintFromJson(
   Map<String, dynamic> json,
@@ -506,7 +518,7 @@ VGCFillPolygonint _$VGCFillPolygonintFromJson(Map<String, dynamic> json) =>
           .toList();
 
 Map<String, dynamic> _$VGCFillPolygonintToJson(VGCFillPolygonint instance) =>
-    <String, dynamic>{'pointArray': instance.pointArray};
+    <String, dynamic>{'pointArray': ?instance.pointArray};
 
 VGCFillRectangleRectangle _$VGCFillRectangleRectangleFromJson(
   Map<String, dynamic> json,
@@ -517,7 +529,7 @@ VGCFillRectangleRectangle _$VGCFillRectangleRectangleFromJson(
 
 Map<String, dynamic> _$VGCFillRectangleRectangleToJson(
   VGCFillRectangleRectangle instance,
-) => <String, dynamic>{'rect': instance.rect};
+) => <String, dynamic>{'rect': ?instance.rect};
 
 VGCFillRectangleintintintint _$VGCFillRectangleintintintintFromJson(
   Map<String, dynamic> json,

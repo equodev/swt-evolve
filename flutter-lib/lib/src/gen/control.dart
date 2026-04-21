@@ -6,6 +6,7 @@ import '../gen/font.dart';
 import '../gen/image.dart';
 import '../gen/menu.dart';
 import '../gen/rectangle.dart';
+import '../gen/region.dart';
 import '../gen/widget.dart';
 import 'event.dart';
 import 'widgets.dart';
@@ -119,6 +120,7 @@ class VControl extends VWidget {
   VMenu? menu;
   int? orientation;
   bool? redraw;
+  VRegion? region;
   int? textDirection;
   String? toolTipText;
   bool? touchEnabled;

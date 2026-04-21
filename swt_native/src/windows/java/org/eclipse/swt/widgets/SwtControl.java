@@ -3213,7 +3213,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             ((SwtShell) shell.getImpl()).releaseBrushes();
             setBackgroundImage(SwtImage.win32_getHandle(control.getImpl()._backgroundImage(), getZoom()));
         } else {
-            setBackgroundPixel(control.getImpl()._background() == -1 ? ((SwtControl) control.getImpl()).defaultBackground() : control.getImpl()._background());
+            setBackgroundPixel(((SwtControl) control.getImpl()).background == -1 ? ((SwtControl) control.getImpl()).defaultBackground() : ((SwtControl) control.getImpl()).background);
         }
     }
 
@@ -4863,7 +4863,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control control = findBackgroundControl();
         if (control == null)
             control = this.getApi();
-        setBackgroundPixel(control.getImpl()._background());
+        setBackgroundPixel(((SwtControl) control.getImpl()).background);
     }
 
     void updateBackgroundImage() {
@@ -6530,18 +6530,6 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 
     public int _drawCount() {
         return drawCount;
-    }
-
-    public int _foreground() {
-        return foreground;
-    }
-
-    public int _background() {
-        return background;
-    }
-
-    public int _backgroundAlpha() {
-        return backgroundAlpha;
     }
 
     public boolean _autoScaleDisabled() {

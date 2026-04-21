@@ -1339,7 +1339,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             context.restoreGraphicsState();
             return;
         }
-        double[] background = control.getImpl()._background();
+        double[] background = ((SwtControl) control.getImpl()).background;
         double alpha;
         if (background == null) {
             if (isTransparent())
@@ -3709,7 +3709,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (control.getImpl()._backgroundImage() != null) {
             setBackgroundImage(control.getImpl()._backgroundImage().handle);
         } else {
-            double[] color = control.getImpl()._background() != null ? control.getImpl()._background() : ((SwtControl) control.getImpl()).defaultBackground().handle;
+            double[] color = ((SwtControl) control.getImpl()).background != null ? ((SwtControl) control.getImpl()).background : ((SwtControl) control.getImpl()).defaultBackground().handle;
             NSColor nsColor = NSColor.colorWithDeviceRed(color[0], color[1], color[2], color[3]);
             setBackgroundColor(nsColor);
         }
@@ -5476,7 +5476,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         Control control = findBackgroundControl();
         if (control == null)
             control = this.getApi();
-        double[] color = control.getImpl()._background() != null ? control.getImpl()._background() : ((SwtControl) control.getImpl()).defaultBackground().handle;
+        double[] color = ((SwtControl) control.getImpl()).background != null ? ((SwtControl) control.getImpl()).background : ((SwtControl) control.getImpl()).defaultBackground().handle;
         NSColor nsColor = NSColor.colorWithDeviceRed(color[0], color[1], color[2], color[3]);
         setBackgroundColor(nsColor);
     }
@@ -5569,20 +5569,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return drawCount;
     }
 
-    public int _backgroundAlpha() {
-        return backgroundAlpha;
-    }
-
     public Menu _menu() {
         return menu;
-    }
-
-    public double[] _foreground() {
-        return foreground;
-    }
-
-    public double[] _background() {
-        return background;
     }
 
     public Image _backgroundImage() {

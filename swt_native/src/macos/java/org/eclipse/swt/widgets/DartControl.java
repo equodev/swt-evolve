@@ -2616,8 +2616,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         } else if (move) {
         } else if (resize) {
         }
+        boolean sizeChanged = resize && (this.bounds.width != newValue.width || this.bounds.height != newValue.height);
         this.bounds = newValue;
         getBridge().setBounds(this, bounds);
+        if (sizeChanged)
+            resized();
         ((SwtDisplay) display.getImpl()).ignoreFocusControl = oldIgnoreFocusControl;
         ;
     }
@@ -4005,20 +4008,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return drawCount;
     }
 
-    public int _backgroundAlpha() {
-        return backgroundAlpha;
-    }
-
     public Menu _menu() {
         return menu;
-    }
-
-    public double[] _foreground() {
-        return foreground;
-    }
-
-    public double[] _background() {
-        return background;
     }
 
     public Image _backgroundImage() {

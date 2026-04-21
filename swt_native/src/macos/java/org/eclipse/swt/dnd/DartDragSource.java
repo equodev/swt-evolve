@@ -106,8 +106,6 @@ public class DartDragSource extends DartWidget implements IDragSource {
     // TODO: These should either move out of Display or be accessible to this class.
     static byte[] types = { '*', '\0' };
 
-    static int size = C.PTR_SIZEOF, align = C.PTR_SIZEOF == 4 ? 2 : 3;
-
     static final byte[] SWT_OBJECT = { 'S', 'W', 'T', '_', 'O', 'B', 'J', 'E', 'C', 'T', '\0' };
 
     static long proc2 = 0, proc3 = 0, proc4 = 0, proc5 = 0, proc6 = 0;

@@ -4422,14 +4422,6 @@ public class SwtTable extends SwtComposite implements ITable {
         return drawFlags;
     }
 
-    public Color _headerBackground() {
-        return headerBackground;
-    }
-
-    public Color _headerForeground() {
-        return headerForeground;
-    }
-
     public boolean _ownerDraw() {
         return ownerDraw;
     }

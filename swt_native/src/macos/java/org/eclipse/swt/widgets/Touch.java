@@ -15,6 +15,10 @@
  */
 package org.eclipse.swt.widgets;
 
+import com.dslplatform.json.CompiledJson;
+import com.dslplatform.json.CompiledJson.*;
+import com.dslplatform.json.JsonAttribute;
+
 /**
  * Instances of this class are created in response to a
  * touch-based input device being touched. They are found
@@ -25,6 +29,7 @@ package org.eclipse.swt.widgets;
  *
  * @since 3.7
  */
+@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.EXPLICIT)
 public final class Touch {
 
     /**
@@ -32,11 +37,13 @@ public final class Touch {
      * during the touch's life. Two touches may have the same identity even if they
      * come from different sources.
      */
+    @JsonAttribute()
     public long id;
 
     /**
      * The object representing the input source that generated the touch.
      */
+    @JsonAttribute()
     public TouchSource source;
 
     /**
@@ -48,6 +55,7 @@ public final class Touch {
      * @see org.eclipse.swt.SWT#TOUCHSTATE_MOVE
      * @see org.eclipse.swt.SWT#TOUCHSTATE_UP
      */
+    @JsonAttribute()
     public int state;
 
     /**
@@ -55,16 +63,19 @@ public final class Touch {
      * state of no touch points. Once designated as such, the touch remains
      * the primary touch until all fingers are removed from the device.
      */
+    @JsonAttribute()
     public boolean primary;
 
     /**
      * The x location of the touch in TouchSource coordinates.
      */
+    @JsonAttribute()
     public int x;
 
     /**
      * The y location of the touch in TouchSource coordinates.
      */
+    @JsonAttribute()
     public int y;
 
     /**
@@ -77,9 +88,13 @@ public final class Touch {
      * @param x X location of the touch in screen coordinates
      * @param y Y location of the touch in screen coordinates
      */
-    Touch(long identity, TouchSource source, int state, boolean primary, int x, int y) {
-        this((ITouch) null);
-        setImpl(new SwtTouch(identity, source, state, primary, x, y, this));
+    Touch(long id, TouchSource source, int state, boolean primary, int x, int y) {
+        this.id = id;
+        this.source = source;
+        this.state = state;
+        this.primary = primary;
+        this.x = x;
+        this.y = y;
     }
 
     /**
@@ -88,27 +103,8 @@ public final class Touch {
      *
      * @return a string representation of the event
      */
+    @Override
     public String toString() {
-        return getImpl().toString();
-    }
-
-    protected ITouch impl;
-
-    protected Touch(ITouch impl) {
-        if (impl != null)
-            impl.setApi(this);
-    }
-
-    static Touch createApi(ITouch impl) {
-        return new Touch(impl);
-    }
-
-    public ITouch getImpl() {
-        return impl;
-    }
-
-    protected Touch setImpl(ITouch impl) {
-        this.impl = impl;
-        return this;
+        return "Touch {id=" + id + " source=" + source + " state=" + state + " primary=" + primary + " x=" + x + " y=" + y + "}";
     }
 }

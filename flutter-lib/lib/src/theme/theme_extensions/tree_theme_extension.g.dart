@@ -305,12 +305,12 @@ Map<String, dynamic> _$TreeThemeExtensionToJson(
   'headerPadding': const EdgeInsetsConverter().toJson(instance.headerPadding),
   'headerBorderWidth': instance.headerBorderWidth,
   'headerColumnBorderVerticalMargin': instance.headerColumnBorderVerticalMargin,
-  'itemTextStyle': const TextStyleConverter().toJson(instance.itemTextStyle),
-  'headerTextStyle': const TextStyleConverter().toJson(
+  'itemTextStyle': ?const TextStyleConverter().toJson(instance.itemTextStyle),
+  'headerTextStyle': ?const TextStyleConverter().toJson(
     instance.headerTextStyle,
   ),
-  'badgeTextStyle': const TextStyleConverter().toJson(instance.badgeTextStyle),
-  'columnTextStyle': const TextStyleConverter().toJson(
+  'badgeTextStyle': ?const TextStyleConverter().toJson(instance.badgeTextStyle),
+  'columnTextStyle': ?const TextStyleConverter().toJson(
     instance.columnTextStyle,
   ),
   'hoverAnimationDuration': instance.hoverAnimationDuration.inMicroseconds,
@@ -366,10 +366,10 @@ Map<String, dynamic> _$TreeThemeExtensionToJson(
   'itemPaddingWithCols': const EdgeInsetsConverter().toJson(
     instance.itemPaddingWithCols,
   ),
-  'headerTextStyleWithCols': const TextStyleConverter().toJson(
+  'headerTextStyleWithCols': ?const TextStyleConverter().toJson(
     instance.headerTextStyleWithCols,
   ),
-  'itemTextStyleWithCols': const TextStyleConverter().toJson(
+  'itemTextStyleWithCols': ?const TextStyleConverter().toJson(
     instance.itemTextStyleWithCols,
   ),
   'columnTextColorWithCols': const ColorConverter().toJson(

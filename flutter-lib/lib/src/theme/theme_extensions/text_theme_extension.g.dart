@@ -124,7 +124,7 @@ Map<String, dynamic> _$TextThemeExtensionToJson(
   'contentPadding': const EdgeInsetsConverter().toJson(instance.contentPadding),
   'fontSize': instance.fontSize,
   'fontWeight': const FontWeightConverter().toJson(instance.fontWeight),
-  'fontFamily': instance.fontFamily,
+  'fontFamily': ?instance.fontFamily,
   'letterSpacing': instance.letterSpacing,
   'lineHeight': instance.lineHeight,
   'helperTextFontSize': instance.helperTextFontSize,

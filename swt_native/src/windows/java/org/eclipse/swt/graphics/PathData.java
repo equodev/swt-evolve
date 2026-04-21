@@ -15,6 +15,10 @@
  */
 package org.eclipse.swt.graphics;
 
+import com.dslplatform.json.CompiledJson;
+import com.dslplatform.json.CompiledJson.*;
+import com.dslplatform.json.JsonAttribute;
+
 /**
  * Instances of this class describe device-independent paths.
  *
@@ -23,6 +27,7 @@ package org.eclipse.swt.graphics;
  *
  * @since 3.1
  */
+@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
 public final class PathData {
 
     /**
@@ -34,29 +39,4 @@ public final class PathData {
      * The points of a path.
      */
     public float[] points;
-
-    public PathData() {
-        this((IPathData) null);
-        setImpl(new SwtPathData(this));
-    }
-
-    protected IPathData impl;
-
-    protected PathData(IPathData impl) {
-        if (impl != null)
-            impl.setApi(this);
-    }
-
-    static PathData createApi(IPathData impl) {
-        return new PathData(impl);
-    }
-
-    public IPathData getImpl() {
-        return impl;
-    }
-
-    protected PathData setImpl(IPathData impl) {
-        this.impl = impl;
-        return this;
-    }
 }

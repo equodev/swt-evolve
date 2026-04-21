@@ -106,7 +106,7 @@ Map<String, dynamic> _$SpinnerThemeExtensionToJson(
   'textFieldPadding': const EdgeInsetsConverter().toJson(
     instance.textFieldPadding,
   ),
-  'textStyle': const TextStyleConverter().toJson(instance.textStyle),
+  'textStyle': ?const TextStyleConverter().toJson(instance.textStyle),
   'defaultMinimum': instance.defaultMinimum,
   'defaultMaximum': instance.defaultMaximum,
   'defaultSelection': instance.defaultSelection,

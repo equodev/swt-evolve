@@ -10,6 +10,7 @@ import '../gen/font.dart';
 import '../gen/image.dart';
 import '../gen/menu.dart';
 import '../gen/rectangle.dart';
+import '../gen/region.dart';
 import '../impl/expandbar_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';

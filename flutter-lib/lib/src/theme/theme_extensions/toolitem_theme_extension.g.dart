@@ -122,7 +122,7 @@ Map<String, dynamic> _$ToolItemThemeExtensionToJson(
   'separatorWidth': instance.separatorWidth,
   'separatorThickness': instance.separatorThickness,
   'separatorIndent': instance.separatorIndent,
-  'fontStyle': const TextStyleConverter().toJson(instance.fontStyle),
+  'fontStyle': ?const TextStyleConverter().toJson(instance.fontStyle),
   'defaultIconSize': instance.defaultIconSize,
   'iconSize': instance.iconSize,
   'emptyButtonSize': instance.emptyButtonSize,
@@ -163,7 +163,7 @@ Map<String, dynamic> _$ToolItemThemeExtensionToJson(
   'segmentKeywordText': instance.segmentKeywordText,
   'segmentDebugText': instance.segmentDebugText,
   'specialDropdownTooltipText': instance.specialDropdownTooltipText,
-  'specialDropdownImageFilename': instance.specialDropdownImageFilename,
+  'specialDropdownImageFilename': ?instance.specialDropdownImageFilename,
   'specialDropdownText': instance.specialDropdownText,
   'specialDropdownBackgroundColor': const ColorConverter().toJson(
     instance.specialDropdownBackgroundColor,

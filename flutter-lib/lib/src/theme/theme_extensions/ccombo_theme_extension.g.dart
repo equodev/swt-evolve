@@ -84,7 +84,7 @@ Map<String, dynamic> _$CComboThemeExtensionToJson(
   'textFieldPadding': const EdgeInsetsConverter().toJson(
     instance.textFieldPadding,
   ),
-  'textStyle': const TextStyleConverter().toJson(instance.textStyle),
+  'textStyle': ?const TextStyleConverter().toJson(instance.textStyle),
   'dividerColor': const ColorConverter().toJson(instance.dividerColor),
   'dividerHeight': instance.dividerHeight,
   'dividerThickness': instance.dividerThickness,

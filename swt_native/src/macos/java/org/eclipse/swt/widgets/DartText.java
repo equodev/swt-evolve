@@ -1827,10 +1827,6 @@ public class DartText extends DartScrollable implements IText {
         return actionCancel;
     }
 
-    public APPEARANCE _lastAppAppearance() {
-        return lastAppAppearance;
-    }
-
     public int _caretPosition() {
         return caretPosition;
     }

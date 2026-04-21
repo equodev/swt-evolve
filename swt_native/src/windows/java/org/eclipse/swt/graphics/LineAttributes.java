@@ -90,8 +90,7 @@ public class LineAttributes {
      * @param width the line width
      */
     public LineAttributes(float width) {
-        this((ILineAttributes) null);
-        setImpl(new SwtLineAttributes(width, this));
+        this(width, SWT.CAP_FLAT, SWT.JOIN_MITER, SWT.LINE_SOLID, null, 0, 10);
     }
 
     /**
@@ -102,8 +101,7 @@ public class LineAttributes {
      * @param join the line join style
      */
     public LineAttributes(float width, int cap, int join) {
-        this((ILineAttributes) null);
-        setImpl(new SwtLineAttributes(width, cap, join, this));
+        this(width, cap, join, SWT.LINE_SOLID, null, 0, 10);
     }
 
     /**
@@ -118,8 +116,13 @@ public class LineAttributes {
      * @param miterLimit the line miter limit
      */
     public LineAttributes(float width, int cap, int join, int style, float[] dash, float dashOffset, float miterLimit) {
-        this((ILineAttributes) null);
-        setImpl(new SwtLineAttributes(width, cap, join, style, dash, dashOffset, miterLimit, this));
+        this.width = width;
+        this.cap = cap;
+        this.join = join;
+        this.style = style;
+        this.dash = dash;
+        this.dashOffset = dashOffset;
+        this.miterLimit = miterLimit;
     }
 
     /**
@@ -132,8 +135,36 @@ public class LineAttributes {
      *
      * @see #hashCode()
      */
+    @Override
     public boolean equals(Object object) {
-        return getImpl().equals(object);
+        if (object == this)
+            return true;
+        if (!(object instanceof LineAttributes p))
+            return false;
+        if (p.width != width)
+            return false;
+        if (p.cap != cap)
+            return false;
+        if (p.join != join)
+            return false;
+        if (p.style != style)
+            return false;
+        if (p.dashOffset != dashOffset)
+            return false;
+        if (p.miterLimit != miterLimit)
+            return false;
+        if (p.dash != null && dash != null) {
+            if (p.dash.length != dash.length)
+                return false;
+            for (int i = 0; i < dash.length; i++) {
+                if (p.dash[i] != dash[i])
+                    return false;
+            }
+        } else {
+            if (p.dash != null || dash != null)
+                return false;
+        }
+        return true;
     }
 
     /**
@@ -146,27 +177,19 @@ public class LineAttributes {
      *
      * @see #equals(Object)
      */
+    @Override
     public int hashCode() {
-        return getImpl().hashCode();
-    }
-
-    protected ILineAttributes impl;
-
-    protected LineAttributes(ILineAttributes impl) {
-        if (impl != null)
-            impl.setApi(this);
-    }
-
-    static LineAttributes createApi(ILineAttributes impl) {
-        return new LineAttributes(impl);
-    }
-
-    public ILineAttributes getImpl() {
-        return impl;
-    }
-
-    protected LineAttributes setImpl(ILineAttributes impl) {
-        this.impl = impl;
-        return this;
+        int hashCode = Float.floatToIntBits(width);
+        hashCode = 31 * hashCode + cap;
+        hashCode = 31 * hashCode + join;
+        hashCode = 31 * hashCode + style;
+        hashCode = 31 * hashCode + Float.floatToIntBits(dashOffset);
+        hashCode = 31 * hashCode + Float.floatToIntBits(miterLimit);
+        if (dash != null) {
+            for (float element : dash) {
+                hashCode = 31 * hashCode + Float.floatToIntBits(element);
+            }
+        }
+        return hashCode;
     }
 }

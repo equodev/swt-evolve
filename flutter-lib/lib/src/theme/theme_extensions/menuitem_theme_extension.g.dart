@@ -170,8 +170,8 @@ Map<String, dynamic> _$MenuItemThemeExtensionToJson(
   'radioButtonBorderWidth': instance.radioButtonBorderWidth,
   'radioButtonInnerSize': instance.radioButtonInnerSize,
   'disabledOpacity': instance.disabledOpacity,
-  'textStyle': const TextStyleConverter().toJson(instance.textStyle),
-  'acceleratorTextStyle': const TextStyleConverter().toJson(
+  'textStyle': ?const TextStyleConverter().toJson(instance.textStyle),
+  'acceleratorTextStyle': ?const TextStyleConverter().toJson(
     instance.acceleratorTextStyle,
   ),
 };

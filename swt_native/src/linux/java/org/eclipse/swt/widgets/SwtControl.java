@@ -7102,10 +7102,6 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return drawCount;
     }
 
-    public int _backgroundAlpha() {
-        return backgroundAlpha;
-    }
-
     public long _dragGesture() {
         return dragGesture;
     }

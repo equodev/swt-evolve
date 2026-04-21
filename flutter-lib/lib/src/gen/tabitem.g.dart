@@ -23,8 +23,8 @@ Map<String, dynamic> _$VTabItemToJson(VTabItem instance) => <String, dynamic>{
   'swt': instance.swt,
   'id': instance.id,
   'style': instance.style,
-  'image': instance.image,
-  'text': instance.text,
-  'control': instance.control,
-  'toolTipText': instance.toolTipText,
+  'image': ?instance.image,
+  'text': ?instance.text,
+  'control': ?instance.control,
+  'toolTipText': ?instance.toolTipText,
 };

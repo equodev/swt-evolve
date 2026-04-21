@@ -161,9 +161,9 @@ public final class SwtFormLayout extends SwtLayout implements IFormLayout {
  * 		CX = -B. Solving in terms of U and V gives us X = (-B * V) / U.
  */
     int computeHeight(Control control, FormData data, boolean flushCache) {
-        FormAttachment top = ((SwtFormData) data.getImpl()).getTopAttachment(control, getApi().spacing, flushCache);
-        FormAttachment bottom = ((SwtFormData) data.getImpl()).getBottomAttachment(control, getApi().spacing, flushCache);
-        FormAttachment height = ((SwtFormAttachment) bottom.getImpl()).minus(top);
+        FormAttachment top = data.getTopAttachment(control, getApi().spacing, flushCache);
+        FormAttachment bottom = data.getBottomAttachment(control, getApi().spacing, flushCache);
+        FormAttachment height = bottom.minus(top);
         if (height.numerator == 0) {
             if (bottom.numerator == 0)
                 return bottom.offset;
@@ -175,7 +175,7 @@ public final class SwtFormLayout extends SwtLayout implements IFormLayout {
             int divider = bottom.denominator - bottom.numerator;
             return bottom.denominator * bottom.offset / divider;
         }
-        return ((SwtFormAttachment) height.getImpl()).solveY(((SwtFormData) data.getImpl()).getHeight(control, flushCache));
+        return height.solveY(data.getHeight(control, flushCache));
     }
 
     @Override
@@ -192,7 +192,7 @@ public final class SwtFormLayout extends SwtLayout implements IFormLayout {
     public boolean flushCache(Control control) {
         Object data = control.getLayoutData();
         if (data != null)
-            ((SwtFormData) ((FormData) data).getImpl()).flushCache();
+            ((FormData) data).flushCache();
         return true;
     }
 
@@ -209,9 +209,9 @@ public final class SwtFormLayout extends SwtLayout implements IFormLayout {
  * respect to the preferred height of the control.
  */
     int computeWidth(Control control, FormData data, boolean flushCache) {
-        FormAttachment left = ((SwtFormData) data.getImpl()).getLeftAttachment(control, getApi().spacing, flushCache);
-        FormAttachment right = ((SwtFormData) data.getImpl()).getRightAttachment(control, getApi().spacing, flushCache);
-        FormAttachment width = ((SwtFormAttachment) right.getImpl()).minus(left);
+        FormAttachment left = data.getLeftAttachment(control, getApi().spacing, flushCache);
+        FormAttachment right = data.getRightAttachment(control, getApi().spacing, flushCache);
+        FormAttachment width = right.minus(left);
         if (width.numerator == 0) {
             if (right.numerator == 0)
                 return right.offset;
@@ -223,7 +223,7 @@ public final class SwtFormLayout extends SwtLayout implements IFormLayout {
             int divider = right.denominator - right.numerator;
             return right.denominator * right.offset / divider;
         }
-        return ((SwtFormAttachment) width.getImpl()).solveY(((SwtFormData) data.getImpl()).getWidth(control, flushCache));
+        return width.solveY(data.getWidth(control, flushCache));
     }
 
     @Override
@@ -243,8 +243,8 @@ public final class SwtFormLayout extends SwtLayout implements IFormLayout {
             if (data == null)
                 child.setLayoutData(data = new FormData());
             if (flushCache)
-                ((SwtFormData) data.getImpl()).flushCache();
-            ((SwtFormData) data.getImpl()).cacheLeft = ((SwtFormData) data.getImpl()).cacheRight = ((SwtFormData) data.getImpl()).cacheTop = ((SwtFormData) data.getImpl()).cacheBottom = null;
+                data.flushCache();
+            data.cacheLeft = data.cacheRight = data.cacheTop = data.cacheBottom = null;
         }
         boolean[] flush = null;
         Rectangle[] bounds = null;
@@ -253,11 +253,11 @@ public final class SwtFormLayout extends SwtLayout implements IFormLayout {
             Control child = children[i];
             FormData data = (FormData) child.getLayoutData();
             if (width != SWT.DEFAULT) {
-                ((SwtFormData) data.getImpl()).needed = false;
-                FormAttachment left = ((SwtFormData) data.getImpl()).getLeftAttachment(child, getApi().spacing, flushCache);
-                FormAttachment right = ((SwtFormData) data.getImpl()).getRightAttachment(child, getApi().spacing, flushCache);
-                int x1 = ((SwtFormAttachment) left.getImpl()).solveX(width), x2 = ((SwtFormAttachment) right.getImpl()).solveX(width);
-                if (data.height == SWT.DEFAULT && !((SwtFormData) data.getImpl()).needed) {
+                data.needed = false;
+                FormAttachment left = data.getLeftAttachment(child, getApi().spacing, flushCache);
+                FormAttachment right = data.getRightAttachment(child, getApi().spacing, flushCache);
+                int x1 = left.solveX(width), x2 = right.solveX(width);
+                if (data.height == SWT.DEFAULT && !data.needed) {
                     int trim = 0;
                     //TEMPORARY CODE
                     if (child instanceof Scrollable) {
@@ -266,9 +266,9 @@ public final class SwtFormLayout extends SwtLayout implements IFormLayout {
                     } else {
                         trim = child.getBorderWidth() * 2;
                     }
-                    ((SwtFormData) data.getImpl()).cacheWidth = ((SwtFormData) data.getImpl()).cacheHeight = -1;
+                    data.cacheWidth = data.cacheHeight = -1;
                     int currentWidth = Math.max(0, x2 - x1 - trim);
-                    ((SwtFormData) data.getImpl()).computeSize(child, currentWidth, data.height, flushCache);
+                    data.computeSize(child, currentWidth, data.height, flushCache);
                     if (flush == null)
                         flush = new boolean[children.length];
                     flush[i] = true;
@@ -289,8 +289,8 @@ public final class SwtFormLayout extends SwtLayout implements IFormLayout {
             Control child = children[i];
             FormData data = (FormData) child.getLayoutData();
             if (height != SWT.DEFAULT) {
-                int y1 = ((SwtFormAttachment) ((SwtFormData) data.getImpl()).getTopAttachment(child, getApi().spacing, flushCache).getImpl()).solveX(height);
-                int y2 = ((SwtFormAttachment) ((SwtFormData) data.getImpl()).getBottomAttachment(child, getApi().spacing, flushCache).getImpl()).solveX(height);
+                int y1 = data.getTopAttachment(child, getApi().spacing, flushCache).solveX(height);
+                int y2 = data.getBottomAttachment(child, getApi().spacing, flushCache).solveX(height);
                 h = Math.max(y2, h);
                 if (move) {
                     bounds[i].y = y + y1;
@@ -304,8 +304,8 @@ public final class SwtFormLayout extends SwtLayout implements IFormLayout {
             Control child = children[i];
             FormData data = (FormData) child.getLayoutData();
             if (flush != null && flush[i])
-                ((SwtFormData) data.getImpl()).cacheWidth = ((SwtFormData) data.getImpl()).cacheHeight = -1;
-            ((SwtFormData) data.getImpl()).cacheLeft = ((SwtFormData) data.getImpl()).cacheRight = ((SwtFormData) data.getImpl()).cacheTop = ((SwtFormData) data.getImpl()).cacheBottom = null;
+                data.cacheWidth = data.cacheHeight = -1;
+            data.cacheLeft = data.cacheRight = data.cacheTop = data.cacheBottom = null;
         }
         if (move) {
             for (int i = 0; i < children.length; i++) {

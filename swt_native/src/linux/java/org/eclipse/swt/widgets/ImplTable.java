@@ -40,10 +40,6 @@ public interface ImplTable extends ImplComposite {
 
     int _drawFlags();
 
-    Color _headerBackground();
-
-    Color _headerForeground();
-
     boolean _ownerDraw();
 
     boolean _ignoreSize();

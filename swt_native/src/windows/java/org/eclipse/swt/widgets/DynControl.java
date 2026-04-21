@@ -2919,18 +2919,6 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
         return drawCount;
     }
 
-    public int _foreground() {
-        return foreground;
-    }
-
-    public int _background() {
-        return background;
-    }
-
-    public int _backgroundAlpha() {
-        return backgroundAlpha;
-    }
-
     public boolean _autoScaleDisabled() {
         return autoScaleDisabled;
     }
@@ -3026,12 +3014,6 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
     Accessible accessible;
 
     int drawCount;
-
-    int foreground;
-
-    int background;
-
-    int backgroundAlpha;
 
     boolean autoScaleDisabled;
 

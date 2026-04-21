@@ -1350,7 +1350,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         id touchDevice = touch.device();
         TouchSource source = null;
         while (index < length && touchSources[index] != null) {
-            if (((SwtTouchSource) touchSources[index].getImpl()).handle == touchDevice.id) {
+            if (touchSources[index].handle == touchDevice.id) {
                 source = touchSources[index];
                 break;
             }
@@ -1467,7 +1467,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         return findDisplay(Thread.currentThread());
     }
 
-    int getCaretBlinkTime() {
+    public int getCaretBlinkTime() {
         //	checkDevice ();
         return blinkTime;
     }
@@ -1853,17 +1853,17 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             Monitor monitor = new Monitor();
             NSScreen screen = new NSScreen(screens.objectAtIndex(i));
             NSRect frame = screen.frame();
-            ((SwtMonitor) monitor.getImpl()).handle = screen.id;
-            ((SwtMonitor) monitor.getImpl()).x = (int) frame.x;
-            ((SwtMonitor) monitor.getImpl()).y = (int) (primaryFrame.height - (frame.y + frame.height));
-            ((SwtMonitor) monitor.getImpl()).width = (int) frame.width;
-            ((SwtMonitor) monitor.getImpl()).height = (int) frame.height;
+            monitor.handle = screen.id;
+            monitor.x = (int) frame.x;
+            monitor.y = (int) (primaryFrame.height - (frame.y + frame.height));
+            monitor.width = (int) frame.width;
+            monitor.height = (int) frame.height;
             NSRect visibleFrame = screen.visibleFrame();
-            ((SwtMonitor) monitor.getImpl()).clientX = (int) visibleFrame.x;
-            ((SwtMonitor) monitor.getImpl()).clientY = (int) (primaryFrame.height - (visibleFrame.y + visibleFrame.height));
-            ((SwtMonitor) monitor.getImpl()).clientWidth = (int) visibleFrame.width;
-            ((SwtMonitor) monitor.getImpl()).clientHeight = (int) visibleFrame.height;
-            ((SwtMonitor) monitor.getImpl()).zoom = (int) (screen.backingScaleFactor() * 100);
+            monitor.clientX = (int) visibleFrame.x;
+            monitor.clientY = (int) (primaryFrame.height - (visibleFrame.y + visibleFrame.height));
+            monitor.clientWidth = (int) visibleFrame.width;
+            monitor.clientHeight = (int) visibleFrame.height;
+            monitor.zoom = (int) (screen.backingScaleFactor() * 100);
             monitors[i] = monitor;
         }
         return monitors;
@@ -1889,17 +1889,17 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             return monitor;
         NSScreen screen = new NSScreen(screens.objectAtIndex(0));
         NSRect frame = screen.frame();
-        ((SwtMonitor) monitor.getImpl()).handle = screen.id;
-        ((SwtMonitor) monitor.getImpl()).x = (int) frame.x;
-        ((SwtMonitor) monitor.getImpl()).y = (int) (frame.height - (frame.y + frame.height));
-        ((SwtMonitor) monitor.getImpl()).width = (int) frame.width;
-        ((SwtMonitor) monitor.getImpl()).height = (int) frame.height;
+        monitor.handle = screen.id;
+        monitor.x = (int) frame.x;
+        monitor.y = (int) (frame.height - (frame.y + frame.height));
+        monitor.width = (int) frame.width;
+        monitor.height = (int) frame.height;
         NSRect visibleFrame = screen.visibleFrame();
-        ((SwtMonitor) monitor.getImpl()).clientX = (int) visibleFrame.x;
-        ((SwtMonitor) monitor.getImpl()).clientY = (int) (frame.height - (visibleFrame.y + visibleFrame.height));
-        ((SwtMonitor) monitor.getImpl()).clientWidth = (int) visibleFrame.width;
-        ((SwtMonitor) monitor.getImpl()).clientHeight = (int) visibleFrame.height;
-        ((SwtMonitor) monitor.getImpl()).zoom = (int) (screen.backingScaleFactor() * 100);
+        monitor.clientX = (int) visibleFrame.x;
+        monitor.clientY = (int) (frame.height - (visibleFrame.y + visibleFrame.height));
+        monitor.clientWidth = (int) visibleFrame.width;
+        monitor.clientHeight = (int) visibleFrame.height;
+        monitor.zoom = (int) (screen.backingScaleFactor() * 100);
         return monitor;
     }
 
@@ -4947,7 +4947,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         }
     };
 
-    void setCurrentCaret(Caret caret) {
+    public void setCurrentCaret(Caret caret) {
         currentCaret = caret;
         int blinkRate = currentCaret != null ? currentCaret.getImpl()._blinkRate() : -1;
         timerExec(blinkRate, caretTimer);

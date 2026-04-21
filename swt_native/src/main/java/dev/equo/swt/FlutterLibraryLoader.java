@@ -22,6 +22,7 @@ public class FlutterLibraryLoader {
     // OS and Architecture Constants
     private static final String OS_LINUX = "linux";
     private static final String OS_MACOSX = "macosx";
+    public static final String OS_WIN = "win32";
     private static final String OS_WINDOWS_PREFIX = "Win";
     private static final String ARCH_AMD64 = "amd64";
     private static final String ARCH_X86_64 = "x86_64";
@@ -63,6 +64,14 @@ public class FlutterLibraryLoader {
         }
     }
 
+    public static File initializeWeb() {
+        try {
+            return extractWebFlutterLibraries();
+        } catch (Exception e) {
+            throw new LibraryLoaderException("Failed to initialize Flutter libraries", e);
+        }
+    }
+
     /**
      * Main method to orchestrate library extraction and loading based on OS.
      * This method now throws IOException to be handled by the public entry point.
@@ -83,11 +92,21 @@ public class FlutterLibraryLoader {
             extractAndLoadMacOSLibraries(equoLibDir, isDevelopmentMode);
         } else if (OS_LINUX.equals(os)) {
             extractAndLoadLinuxLibraries(equoLibDir, isDevelopmentMode);
-        } else if ("win32".equals(os)) {
+        } else if (OS_WIN.equals(os)) {
             extractAndLoadWinLibraries(equoLibDir, isDevelopmentMode);
         } else {
             throw new UnsupportedOperationException("Unsupported OS: " + os + ". Equo SWT currently supports macOS, Windows and Linux.");
         }
+    }
+
+    private static File extractWebFlutterLibraries() throws IOException {
+        File equoLibDir = new File(USER_HOME, EQUO_BASE_DIR_NAME + SEP + SWT_DIR_NAME + SEP + LIB_SUB_DIR_NAME);
+
+        ensureDirectoryExists(equoLibDir);
+
+        boolean isDevelopmentMode = isDevelopmentMode();
+        System.out.println("Running in development: " + isDevelopmentMode);
+        return extractAndLoadWebLibraries(equoLibDir, isDevelopmentMode);
     }
 
     private static void extractAndLoadMacOSLibraries(File targetDir, boolean isDevelopmentMode) throws IOException {
@@ -97,6 +116,28 @@ public class FlutterLibraryLoader {
             loadLibrary(libFile.getAbsolutePath());
         } else {
             loadOSLibraries(SWTFLUTTER_APP_CONTENTS, MACOS_LIB_NAME);
+        }
+    }
+
+    private static File extractAndLoadWebLibraries(File targetDir, boolean isDevelopmentMode) throws IOException {
+        if (!isDevelopmentMode) {
+            if (!loaded) {
+                loaded = true;
+                extractDirectoryFromJar("web", targetDir);
+            }
+            return new File(targetDir, "web");
+        } else {
+            System.out.println("Development mode: loading Flutter libraries directly from build directory");
+            File flutterBuildDir = findFlutterBuildDirectory();
+            if (flutterBuildDir == null) {
+                throw new IOException("Flutter build directory not found. Searched in common locations like 'flutter-lib/build'. Please build the Flutter app first.");
+            }
+
+            File releaseDir = new File(flutterBuildDir, "web");
+            if (!releaseDir.exists() || !releaseDir.isDirectory()) {
+                throw new IOException("Flutter Release build not found at: " + releaseDir.getAbsolutePath());
+            }
+            return releaseDir;
         }
     }
 
@@ -254,7 +295,7 @@ public class FlutterLibraryLoader {
         String osName = System.getProperty("os.name");
         if (osName.equalsIgnoreCase(OS_LINUX)) return OS_LINUX;
         if (osName.equalsIgnoreCase("Mac OS X")) return OS_MACOSX;
-        if (osName.startsWith(OS_WINDOWS_PREFIX)) return "win32";
+        if (osName.startsWith(OS_WINDOWS_PREFIX)) return OS_WIN;
         return osName.toLowerCase().replaceAll("\\s+", "");
     }
 

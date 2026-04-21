@@ -40,10 +40,10 @@ Map<String, dynamic> _$CTabItemThemeExtensionToJson(
   'tabItemDisabledTextColor': const ColorConverter().toJson(
     instance.tabItemDisabledTextColor,
   ),
-  'tabItemTextStyle': const TextStyleConverter().toJson(
+  'tabItemTextStyle': ?const TextStyleConverter().toJson(
     instance.tabItemTextStyle,
   ),
-  'tabItemSelectedTextStyle': const TextStyleConverter().toJson(
+  'tabItemSelectedTextStyle': ?const TextStyleConverter().toJson(
     instance.tabItemSelectedTextStyle,
   ),
   'tabItemHorizontalPadding': instance.tabItemHorizontalPadding,

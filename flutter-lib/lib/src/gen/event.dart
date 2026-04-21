@@ -1,5 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 import '../gen/gc.dart';
+import '../gen/touch.dart';
 import '../gen/widget.dart';
 
 part 'event.g.dart';
@@ -29,6 +30,7 @@ class VEvent {
   int? stateMask;
   String? text;
   int? time;
+  List<VTouch>? touches;
   int? type;
   VWidget? widget;
   int? width;

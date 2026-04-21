@@ -74,35 +74,35 @@ VStyledTextRenderer _$VStyledTextRendererFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$VStyledTextRendererToJson(
   VStyledTextRenderer instance,
 ) => <String, dynamic>{
-  'ascent': instance.ascent,
-  'averageCharWidth': instance.averageCharWidth,
-  'averageLineHeight': instance.averageLineHeight,
-  'boldFont': instance.boldFont,
-  'boldItalicFont': instance.boldItalicFont,
-  'bulletsIndices': instance.bulletsIndices,
-  'descent': instance.descent,
-  'fixedPitch': instance.fixedPitch,
-  'hasLinks': instance.hasLinks,
-  'idleRunning': instance.idleRunning,
-  'italicFont': instance.italicFont,
-  'lineCount': instance.lineCount,
-  'lineSizes': instance.lineSizes,
-  'lineSpacingComputing': instance.lineSpacingComputing,
-  'lines': instance.lines,
-  'linesInAverageLineHeight': instance.linesInAverageLineHeight,
-  'maxWidth': instance.maxWidth,
-  'maxWidthLineIndex': instance.maxWidthLineIndex,
-  'ranges': instance.ranges,
-  'redrawLines': instance.redrawLines,
-  'regularFont': instance.regularFont,
-  'styleCount': instance.styleCount,
-  'styledText': instance.styledText,
-  'styles': instance.styles,
-  'stylesSet': instance.stylesSet,
-  'stylesSetCount': instance.stylesSetCount,
-  'tabLength': instance.tabLength,
-  'tabWidth': instance.tabWidth,
-  'topIndex': instance.topIndex,
+  'ascent': ?instance.ascent,
+  'averageCharWidth': ?instance.averageCharWidth,
+  'averageLineHeight': ?instance.averageLineHeight,
+  'boldFont': ?instance.boldFont,
+  'boldItalicFont': ?instance.boldItalicFont,
+  'bulletsIndices': ?instance.bulletsIndices,
+  'descent': ?instance.descent,
+  'fixedPitch': ?instance.fixedPitch,
+  'hasLinks': ?instance.hasLinks,
+  'idleRunning': ?instance.idleRunning,
+  'italicFont': ?instance.italicFont,
+  'lineCount': ?instance.lineCount,
+  'lineSizes': ?instance.lineSizes,
+  'lineSpacingComputing': ?instance.lineSpacingComputing,
+  'lines': ?instance.lines,
+  'linesInAverageLineHeight': ?instance.linesInAverageLineHeight,
+  'maxWidth': ?instance.maxWidth,
+  'maxWidthLineIndex': ?instance.maxWidthLineIndex,
+  'ranges': ?instance.ranges,
+  'redrawLines': ?instance.redrawLines,
+  'regularFont': ?instance.regularFont,
+  'styleCount': ?instance.styleCount,
+  'styledText': ?instance.styledText,
+  'styles': ?instance.styles,
+  'stylesSet': ?instance.stylesSet,
+  'stylesSetCount': ?instance.stylesSetCount,
+  'tabLength': ?instance.tabLength,
+  'tabWidth': ?instance.tabWidth,
+  'topIndex': ?instance.topIndex,
 };
 
 VLineSizeInfo _$VLineSizeInfoFromJson(Map<String, dynamic> json) =>
@@ -111,7 +111,7 @@ VLineSizeInfo _$VLineSizeInfoFromJson(Map<String, dynamic> json) =>
       ..width = (json['width'] as num?)?.toInt();
 
 Map<String, dynamic> _$VLineSizeInfoToJson(VLineSizeInfo instance) =>
-    <String, dynamic>{'height': instance.height, 'width': instance.width};
+    <String, dynamic>{'height': ?instance.height, 'width': ?instance.width};
 
 VLineInfo _$VLineInfoFromJson(Map<String, dynamic> json) => VLineInfo()
   ..alignment = (json['alignment'] as num?)?.toInt()
@@ -134,14 +134,14 @@ VLineInfo _$VLineInfoFromJson(Map<String, dynamic> json) => VLineInfo()
   ..wrapIndent = (json['wrapIndent'] as num?)?.toInt();
 
 Map<String, dynamic> _$VLineInfoToJson(VLineInfo instance) => <String, dynamic>{
-  'alignment': instance.alignment,
-  'background': instance.background,
-  'flags': instance.flags,
-  'indent': instance.indent,
-  'justify': instance.justify,
-  'segments': instance.segments,
-  'segmentsChars': instance.segmentsChars,
-  'tabStops': instance.tabStops,
-  'verticalIndent': instance.verticalIndent,
-  'wrapIndent': instance.wrapIndent,
+  'alignment': ?instance.alignment,
+  'background': ?instance.background,
+  'flags': ?instance.flags,
+  'indent': ?instance.indent,
+  'justify': ?instance.justify,
+  'segments': ?instance.segments,
+  'segmentsChars': ?instance.segmentsChars,
+  'tabStops': ?instance.tabStops,
+  'verticalIndent': ?instance.verticalIndent,
+  'wrapIndent': ?instance.wrapIndent,
 };

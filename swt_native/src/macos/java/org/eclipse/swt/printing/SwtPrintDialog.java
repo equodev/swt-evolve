@@ -250,8 +250,8 @@ public class SwtPrintDialog extends SwtDialog implements IPrintDialog {
             OS.PMGetDuplex(settings, outDuplexSetting);
             data.duplex = outDuplexSetting[0] == OS.kPMDuplexTumble ? PrinterData.DUPLEX_SHORT_EDGE : outDuplexSetting[0] == OS.kPMDuplexNoTumble ? PrinterData.DUPLEX_LONG_EDGE : PrinterData.DUPLEX_NONE;
             NSData nsData = NSKeyedArchiver.archivedDataWithRootObject(printInfo);
-            ((SwtPrinterData) data.getImpl()).otherData = new byte[(int) nsData.length()];
-            C.memmove(((SwtPrinterData) data.getImpl()).otherData, nsData.bytes(), ((SwtPrinterData) data.getImpl()).otherData.length);
+            data.otherData = new byte[(int) nsData.length()];
+            C.memmove(data.otherData, nsData.bytes(), data.otherData.length);
             printerData = data;
         }
         printInfo.release();

@@ -1055,7 +1055,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     }
 
     private int getMonitorZoom() {
-        return ((SwtMonitor) getParent().getShell().getMonitor().getImpl()).zoom;
+        return getParent().getShell().getMonitor().zoom;
     }
 
     private int getMenuZoom() {

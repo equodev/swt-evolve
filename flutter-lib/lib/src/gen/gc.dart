@@ -4,7 +4,9 @@ import 'package:json_annotation/json_annotation.dart';
 import '../gen/color.dart';
 import '../gen/font.dart';
 import '../gen/image.dart';
+import '../gen/pattern.dart';
 import '../gen/rectangle.dart';
+import '../gen/transform.dart';
 import '../impl/gc_evolve.dart';
 import 'widget.dart';
 import 'widgets.dart';
@@ -33,10 +35,12 @@ class VGC extends VWidget {
   int? alpha;
   int? antialias;
   VColor? background;
+  VPattern? backgroundPattern;
   VRectangle? clipping;
   int? fillRule;
   VFont? font;
   VColor? foreground;
+  VPattern? foregroundPattern;
   int? interpolation;
   int? lineCap;
   List<int>? lineDash;
@@ -44,6 +48,7 @@ class VGC extends VWidget {
   int? lineStyle;
   int? lineWidth;
   int? textAntialias;
+  VTransform? transform;
 
   factory VGC.fromJson(Map<String, dynamic> json) => _$VGCFromJson(json);
   Map<String, dynamic> toJson() => _$VGCToJson(this);

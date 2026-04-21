@@ -43,5 +43,5 @@ Map<String, dynamic> _$TabItemThemeExtensionToJson(
   'imagePadding': const EdgeInsetsConverter().toJson(instance.imagePadding),
   'textPadding': const EdgeInsetsConverter().toJson(instance.textPadding),
   'imageTextSpacing': instance.imageTextSpacing,
-  'textStyle': const TextStyleConverter().toJson(instance.textStyle),
+  'textStyle': ?const TextStyleConverter().toJson(instance.textStyle),
 };

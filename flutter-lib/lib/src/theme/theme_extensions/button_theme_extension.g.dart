@@ -263,16 +263,16 @@ Map<String, dynamic> _$ButtonThemeExtensionToJson(
   'radioButtonSelectedBorderWidth': instance.radioButtonSelectedBorderWidth,
   'dropdownButtonBorderWidth': instance.dropdownButtonBorderWidth,
   'checkboxBorderWidth': instance.checkboxBorderWidth,
-  'pushButtonFontStyle': const TextStyleConverter().toJson(
+  'pushButtonFontStyle': ?const TextStyleConverter().toJson(
     instance.pushButtonFontStyle,
   ),
-  'radioButtonFontStyle': const TextStyleConverter().toJson(
+  'radioButtonFontStyle': ?const TextStyleConverter().toJson(
     instance.radioButtonFontStyle,
   ),
-  'dropdownButtonFontStyle': const TextStyleConverter().toJson(
+  'dropdownButtonFontStyle': ?const TextStyleConverter().toJson(
     instance.dropdownButtonFontStyle,
   ),
-  'checkboxFontStyle': const TextStyleConverter().toJson(
+  'checkboxFontStyle': ?const TextStyleConverter().toJson(
     instance.checkboxFontStyle,
   ),
   'radioButtonSize': instance.radioButtonSize,

@@ -20,14 +20,14 @@ class DynCompositeTest {
     @BeforeEach
     void enableDyn() {
         Config.defaultToEquo();
-        Config.dynEnabled = true;
+        ConfigDyn.dynEnabled = true;
     }
 
     @AfterEach
     void reset() {
         System.clearProperty(Config.PROPERTY_PREFIX+"Composite");
         System.clearProperty(Config.PROPERTY_PREFIX+"ProblemsView");
-        Config.dynEnabled = false;
+        ConfigDyn.dynEnabled = false;
     }
 
     @Test

@@ -18,6 +18,7 @@ public class CharConverter {
             String str = reader.readString();
             return str.isEmpty() ? '\0' : str.charAt(0);
         }
+        if (reader.wasNull()) return (char) -1;
         return (char) (int) NumberConverter.deserializeDouble(reader);
     }
 }

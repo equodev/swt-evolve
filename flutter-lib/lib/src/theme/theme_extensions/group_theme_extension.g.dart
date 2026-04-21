@@ -40,5 +40,5 @@ Map<String, dynamic> _$GroupThemeExtensionToJson(
   'borderWidth': instance.borderWidth,
   'borderRadius': instance.borderRadius,
   'foregroundColor': const ColorConverter().toJson(instance.foregroundColor),
-  'textStyle': const TextStyleConverter().toJson(instance.textStyle),
+  'textStyle': ?const TextStyleConverter().toJson(instance.textStyle),
 };

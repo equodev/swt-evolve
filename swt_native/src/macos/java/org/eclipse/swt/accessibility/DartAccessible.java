@@ -1444,20 +1444,8 @@ public class DartAccessible implements IAccessible {
         return currentRole;
     }
 
-    public Map<Integer, SWTAccessibleDelegate> _childToIdMap() {
-        return childToIdMap;
-    }
-
-    public SWTAccessibleDelegate _delegate() {
-        return delegate;
-    }
-
     public int _index() {
         return index;
-    }
-
-    public TableAccessibleDelegate _tableDelegate() {
-        return tableDelegate;
     }
 
     public int _focus() {

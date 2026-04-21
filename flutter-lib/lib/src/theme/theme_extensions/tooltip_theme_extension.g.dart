@@ -24,7 +24,7 @@ Map<String, dynamic> _$TooltipThemeExtensionToJson(
 ) => <String, dynamic>{
   'backgroundColor': const ColorConverter().toJson(instance.backgroundColor),
   'borderRadius': instance.borderRadius,
-  'messageTextStyle': const TextStyleConverter().toJson(
+  'messageTextStyle': ?const TextStyleConverter().toJson(
     instance.messageTextStyle,
   ),
   'waitDuration': instance.waitDuration.inMicroseconds,

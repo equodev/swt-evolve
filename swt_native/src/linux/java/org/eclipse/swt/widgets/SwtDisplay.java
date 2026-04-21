@@ -1977,7 +1977,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         return findDisplay(Thread.currentThread());
     }
 
-    int getCaretBlinkTime() {
+    public int getCaretBlinkTime() {
         //	checkDevice ();
         long settings = GTK.gtk_settings_get_default();
         if (settings == 0)
@@ -2808,26 +2808,26 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                     long gdkMonitor = GTK.GTK4 ? OS.g_list_model_get_item(monitorList, i) : GDK.gdk_display_get_monitor(display, i);
                     GDK.gdk_monitor_get_geometry(gdkMonitor, geometry);
                     Monitor monitor = new Monitor();
-                    ((SwtMonitor) monitor.getImpl()).handle = gdkMonitor;
-                    ((SwtMonitor) monitor.getImpl()).x = geometry.x;
-                    ((SwtMonitor) monitor.getImpl()).y = geometry.y;
-                    ((SwtMonitor) monitor.getImpl()).width = geometry.width;
-                    ((SwtMonitor) monitor.getImpl()).height = geometry.height;
+                    monitor.handle = gdkMonitor;
+                    monitor.x = geometry.x;
+                    monitor.y = geometry.y;
+                    monitor.width = geometry.width;
+                    monitor.height = geometry.height;
                     if (!OS.isX11() || GTK.GTK4) {
                         int scaleFactor = (int) GDK.gdk_monitor_get_scale_factor(gdkMonitor);
-                        ((SwtMonitor) monitor.getImpl()).zoom = scaleFactor * 100;
+                        monitor.zoom = scaleFactor * 100;
                     } else {
-                        ((SwtMonitor) monitor.getImpl()).zoom = SwtDisplay._getDeviceZoom(((SwtMonitor) monitor.getImpl()).handle);
+                        monitor.zoom = SwtDisplay._getDeviceZoom(monitor.handle);
                     }
                     /* workarea was defined in GTK 3.4. If present, it will return the best results
 				 * since it takes into account per-monitor trim. Not available in GTK4.
 				 */
                     if (!GTK.GTK4)
                         GDK.gdk_monitor_get_workarea(gdkMonitor, geometry);
-                    ((SwtMonitor) monitor.getImpl()).clientX = geometry.x;
-                    ((SwtMonitor) monitor.getImpl()).clientY = geometry.y;
-                    ((SwtMonitor) monitor.getImpl()).clientWidth = geometry.width;
-                    ((SwtMonitor) monitor.getImpl()).clientHeight = geometry.height;
+                    monitor.clientX = geometry.x;
+                    monitor.clientY = geometry.y;
+                    monitor.clientWidth = geometry.width;
+                    monitor.clientHeight = geometry.height;
                     monitors[i] = monitor;
                 }
             }
@@ -2836,20 +2836,20 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             /* No multimonitor support detected, default to one monitor */
             Monitor monitor = new Monitor();
             Rectangle bounds = getBounds();
-            ((SwtMonitor) monitor.getImpl()).x = bounds.x;
-            ((SwtMonitor) monitor.getImpl()).y = bounds.y;
-            ((SwtMonitor) monitor.getImpl()).width = bounds.width;
-            ((SwtMonitor) monitor.getImpl()).height = bounds.height;
+            monitor.x = bounds.x;
+            monitor.y = bounds.y;
+            monitor.width = bounds.width;
+            monitor.height = bounds.height;
             if (workArea != null) {
-                ((SwtMonitor) monitor.getImpl()).clientX = workArea.x;
-                ((SwtMonitor) monitor.getImpl()).clientY = workArea.y;
-                ((SwtMonitor) monitor.getImpl()).clientWidth = workArea.width;
-                ((SwtMonitor) monitor.getImpl()).clientHeight = workArea.height;
+                monitor.clientX = workArea.x;
+                monitor.clientY = workArea.y;
+                monitor.clientWidth = workArea.width;
+                monitor.clientHeight = workArea.height;
             } else {
-                ((SwtMonitor) monitor.getImpl()).clientX = ((SwtMonitor) monitor.getImpl()).x;
-                ((SwtMonitor) monitor.getImpl()).clientY = ((SwtMonitor) monitor.getImpl()).y;
-                ((SwtMonitor) monitor.getImpl()).clientWidth = ((SwtMonitor) monitor.getImpl()).width;
-                ((SwtMonitor) monitor.getImpl()).clientHeight = ((SwtMonitor) monitor.getImpl()).height;
+                monitor.clientX = monitor.x;
+                monitor.clientY = monitor.y;
+                monitor.clientWidth = monitor.width;
+                monitor.clientHeight = monitor.height;
             }
             monitors = new Monitor[] { monitor };
         }
@@ -6127,7 +6127,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         sendJDKInternalEvent(SWT.PostExternalEventDispatch);
     }
 
-    void setCurrentCaret(Caret caret) {
+    public void setCurrentCaret(Caret caret) {
         if (caretId != 0)
             OS.g_source_remove(caretId);
         caretId = 0;

@@ -248,7 +248,7 @@ class TableAccessibleDelegate {
     void release() {
         if (childRowToIdMap != null) {
             for (AccessibleTableRow delegate : childRowToIdMap.values()) {
-                SWTAccessibleDelegate childDelegate = delegate.getImpl()._delegate();
+                SWTAccessibleDelegate childDelegate = ((SwtAccessible) delegate.getImpl()).delegate;
                 if (childDelegate != null) {
                     childDelegate.internal_dispose_SWTAccessibleDelegate();
                     childDelegate.release();
@@ -259,7 +259,7 @@ class TableAccessibleDelegate {
         }
         if (childColumnToIdMap != null) {
             for (AccessibleTableColumn delegate : childColumnToIdMap.values()) {
-                SWTAccessibleDelegate childDelegate = delegate.getImpl()._delegate();
+                SWTAccessibleDelegate childDelegate = ((SwtAccessible) delegate.getImpl()).delegate;
                 if (childDelegate != null) {
                     childDelegate.internal_dispose_SWTAccessibleDelegate();
                     childDelegate.release();

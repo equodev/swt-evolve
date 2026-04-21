@@ -90,10 +90,6 @@ public interface ImplTree extends ImplComposite {
 
     int _lastTimerCount();
 
-    int _headerBackground();
-
-    int _headerForeground();
-
     int[] _cachedItemOrder();
 
     long _cachedFirstItem();

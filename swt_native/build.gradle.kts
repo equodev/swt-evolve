@@ -12,11 +12,12 @@ repositories {
 
 val arch = System.getProperty("os.arch")
 
-val oss = listOf("windows", "linux", "macos")
+val oss = listOf("windows", "linux", "macos", "web")
 val platforms = listOf(
     "windows-x86_64", "windows-aarch64",
     "linux-x86_64", "linux-aarch64",
-    "macos-x86_64", "macos-aarch64"
+    "macos-x86_64", "macos-aarch64",
+    "web-wasm"
 )
 
 val currentOs = when {
@@ -28,13 +29,15 @@ val currentOs = when {
 fun getSwtWs(os: String): String = when (os) {
     "macos" -> "cocoa"
     "windows" -> "win32"
-    else -> "gtk"
+    "linux" -> "gtk"
+    else -> "cocoa"
 }
 
 fun getSwtOs(os: String): String = when (os) {
     "macos" -> "macosx"
     "windows" -> "win32"
-    else -> "linux"
+    "linux" -> "linux"
+    else -> "macosx"
 }
 
 fun getSwtArch(arch: String): String =
@@ -127,6 +130,9 @@ sourceSets {
                     "src/main/java",
                     nativeSrc
                 ))
+                if (os == "web") {
+                    exclude("dev/equo/swt/ConfigDyn.java")
+                }
             }
             annotationProcessorPath += sourceSets.main.get().annotationProcessorPath
             compileClasspath += sourceSets.main.get().compileClasspath
@@ -143,8 +149,9 @@ sourceSets {
 }
 
 // Configure Java compilation
-tasks.compileJava {
+tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
+    options.compilerArgs.add("-parameters")
 }
 
 tasks.test {
@@ -228,13 +235,14 @@ platforms.forEach { platform ->
     val osArch = platform.split("-")
     val swtWs = getSwtWs(osArch[0])
     val swtOs = getSwtOs(osArch[0])
+    val targetArch = if (osArch[1] == "wasm") "aarch64" else osArch[1]
 
     configurations.create("${platform}SwtImpl") {
         exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
     }
 
     dependencies {
-        configurations["${platform}SwtImpl"]("org.eclipse.platform:org.eclipse.swt.$swtWs.$swtOs.${osArch[1]}:$swtVersion")
+        configurations["${platform}SwtImpl"]("org.eclipse.platform:org.eclipse.swt.$swtWs.$swtOs.${targetArch}:$swtVersion")
     }
 
     tasks.register<Exec>("${platform}FlutterLib") {
@@ -264,7 +272,7 @@ platforms.forEach { platform ->
     tasks.register<Copy>("${platform}CopyFlutterBinaries") {
         group = "build"
         description = "Copies Flutter binaries for $platform"
-        if (currentPlatform == platform && System.getProperty("skipFlutterLib") == null)
+        if ((currentPlatform == platform || platform == "web-wasm") && System.getProperty("skipFlutterLib") == null)
             dependsOn("${platform}FlutterLib")
 
         // For macOS, both architectures share the same output directory, so we need to
@@ -275,10 +283,8 @@ platforms.forEach { platform ->
 
         val flutterArch = if (osArch[1] == "aarch64") "arm64" else "x64"
         when (osArch[0]) {
-            "macos" -> {
-                from("../flutter-lib/build/macos/Build/Products/Release/swtflutter.app") {
-                    into("swtflutter.app")
-                }
+            "macos" -> from("../flutter-lib/build/macos/Build/Products/Release/swtflutter.app") {
+                into("swtflutter.app")
             }
             "linux" -> {
                 from("../flutter-lib/build/linux/$flutterArch/release/runner") {
@@ -294,10 +300,16 @@ platforms.forEach { platform ->
                     into("bundle/data")
                 }
             }
-            "windows" -> {
-                from("../flutter-lib/build/windows/$flutterArch/runner/Release/") {
-                    include("*.dll", "data/")
-                    into("runner")
+            "windows" -> from("../flutter-lib/build/windows/$flutterArch/runner/Release/") {
+                include("*.dll", "data/")
+                into("runner")
+            }
+            "web" -> {
+                from("../flutter-lib/build/web") {
+                    into("web")
+                }
+                from("../flutter-lib/build/macos/Build/Products/Release/swtflutter.app") {
+                    into("swtflutter.app")
                 }
             }
         }
@@ -326,9 +338,9 @@ platforms.forEach { platform ->
         manifest {
             attributes(
                 "Fragment-Host" to provider { "org.eclipse.swt;bundle-version=\"[${swtVersionProvider.get().substring(0..6)},4.0.0)\"" },
-                "Bundle-Name" to "SWT Evolve for ${osArch[0]} on ${osArch[1]}",
+                "Bundle-Name" to "SWT Evolve for ${osArch[0]} on $targetArch",
                 "Bundle-Vendor" to "Equo Tech, Inc.",
-                "Bundle-SymbolicName" to "org.eclipse.swt.$swtWs.$swtOs.${osArch[1]}; singleton:=true",
+                "Bundle-SymbolicName" to "org.eclipse.swt.$swtWs.$swtOs.$targetArch; singleton:=true",
                 "Bundle-Version" to swtVersionProvider,
                 "Bundle-ManifestVersion" to 2,
                 "Export-Package" to "org.eclipse.swt,org.eclipse.swt.accessibility,"+
@@ -338,11 +350,13 @@ platforms.forEach { platform ->
                         "org.eclipse.swt.program,org.eclipse.swt.widgets,org.eclipse.swt.internal; x-friends:=\"org.eclipse.ui\","+
                         "org.eclipse.swt.internal.image; x-internal:=true,org.eclipse.swt.internal.$swtWs; x-friends:=\"org.eclipse.ui\"," +
                         "com.equo.chromium.swt",
-                "Eclipse-PlatformFilter" to "(& (osgi.ws=$swtWs) (osgi.os=$swtOs) (osgi.arch=${osArch[1]}) )",
-                "SWT-WS" to swtWs,
-                "SWT-OS" to swtOs,
-                "SWT-Arch" to osArch[1],
-                "Automatic-Module-Name" to "org.eclipse.swt.$swtWs.$swtOs.${osArch[1]}",
+                *(if (osArch[0] != "web") arrayOf(
+                    "Eclipse-PlatformFilter" to "(& (osgi.ws=$swtWs) (osgi.os=$swtOs) (osgi.arch=$targetArch) )",
+                    "SWT-WS" to swtWs,
+                    "SWT-OS" to swtOs,
+                    "SWT-Arch" to targetArch,
+                ) else emptyArray()),
+                "Automatic-Module-Name" to "org.eclipse.swt.$swtWs.$swtOs.$targetArch",
                 "Evolve-Version" to (gradle.parent?.rootProject?.version ?: project.version),
             )
         }

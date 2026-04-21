@@ -16,6 +16,9 @@
 package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
+import com.dslplatform.json.CompiledJson;
+import com.dslplatform.json.CompiledJson.*;
+import com.dslplatform.json.JsonAttribute;
 
 /**
  * Instances of this class represent glyph metrics.
@@ -37,6 +40,7 @@ import org.eclipse.swt.*;
  *
  * @since 3.2
  */
+@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
 public final class GlyphMetrics {
 
     /**
@@ -67,8 +71,12 @@ public final class GlyphMetrics {
      * </ul>
      */
     public GlyphMetrics(int ascent, int descent, int width) {
-        this((IGlyphMetrics) null);
-        setImpl(new SwtGlyphMetrics(ascent, descent, width, this));
+        if (ascent < 0 || descent < 0 || width < 0) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        this.ascent = ascent;
+        this.descent = descent;
+        this.width = width;
     }
 
     /**
@@ -81,8 +89,13 @@ public final class GlyphMetrics {
      *
      * @see #hashCode()
      */
+    @Override
     public boolean equals(Object object) {
-        return getImpl().equals(object);
+        if (object == this)
+            return true;
+        if (!(object instanceof GlyphMetrics metrics))
+            return false;
+        return metrics.ascent == ascent && metrics.descent == descent && metrics.width == width;
     }
 
     /**
@@ -95,8 +108,9 @@ public final class GlyphMetrics {
      *
      * @see #equals(Object)
      */
+    @Override
     public int hashCode() {
-        return getImpl().hashCode();
+        return ascent ^ descent ^ width;
     }
 
     /**
@@ -105,27 +119,9 @@ public final class GlyphMetrics {
      *
      * @return a string representation of the <code>GlyphMetrics</code>
      */
+    @Override
     public String toString() {
-        return getImpl().toString();
-    }
-
-    protected IGlyphMetrics impl;
-
-    protected GlyphMetrics(IGlyphMetrics impl) {
-        if (impl != null)
-            impl.setApi(this);
-    }
-
-    static GlyphMetrics createApi(IGlyphMetrics impl) {
-        return new GlyphMetrics(impl);
-    }
-
-    public IGlyphMetrics getImpl() {
-        return impl;
-    }
-
-    protected GlyphMetrics setImpl(IGlyphMetrics impl) {
-        this.impl = impl;
-        return this;
+        //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+        return "GlyphMetrics {" + ascent + ", " + descent + ", " + width + "}";
     }
 }

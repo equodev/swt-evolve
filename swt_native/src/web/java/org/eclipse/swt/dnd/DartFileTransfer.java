@@ -1,0 +1,141 @@
+/**
+ * ****************************************************************************
+ *  Copyright (c) 2000, 2012 IBM Corporation and others.
+ *
+ *  This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License 2.0
+ *  which accompanies this distribution, and is available at
+ *  https://www.eclipse.org/legal/epl-2.0/
+ *
+ *  SPDX-License-Identifier: EPL-2.0
+ *
+ *  Contributors:
+ *      IBM Corporation - initial API and implementation
+ *      Outhink - support for typeFileURL
+ * *****************************************************************************
+ */
+package org.eclipse.swt.dnd;
+
+import dev.equo.swt.*;
+
+/**
+ * The class <code>FileTransfer</code> provides a platform specific mechanism
+ * for converting a list of files represented as a java <code>String[]</code> to a
+ * platform specific representation of the data and vice versa.
+ * Each <code>String</code> in the array contains the absolute path for a single
+ * file or directory.
+ *
+ * <p>An example of a java <code>String[]</code> containing a list of files is shown
+ * below:</p>
+ *
+ * <pre><code>
+ *     File file1 = new File("C:\\temp\\file1");
+ *     File file2 = new File("C:\\temp\\file2");
+ *     String[] fileData = new String[2];
+ *     fileData[0] = file1.getAbsolutePath();
+ *     fileData[1] = file2.getAbsolutePath();
+ * </code></pre>
+ *
+ * @see Transfer
+ */
+public class DartFileTransfer extends DartByteArrayTransfer implements IFileTransfer {
+
+    static FileTransfer _instance = new FileTransfer();
+
+    static final String ID_NAME = "NSFilenamesPboardType";
+
+    static final int ID = registerType(ID_NAME);
+
+    static final String ID1_NAME = "public.file-url";
+
+    static final int ID1 = registerType(ID1_NAME);
+
+    DartFileTransfer(FileTransfer api) {
+        super(api);
+    }
+
+    /**
+     * Returns the singleton instance of the FileTransfer class.
+     *
+     * @return the singleton instance of the FileTransfer class
+     */
+    public static FileTransfer getInstance() {
+        return _instance;
+    }
+
+    /**
+     * This implementation of <code>javaToNative</code> converts a list of file names
+     * represented by a java <code>String[]</code> to a platform specific representation.
+     * Each <code>String</code> in the array contains the absolute path for a single
+     * file or directory.
+     *
+     * @param object a java <code>String[]</code> containing the file names to be converted
+     * @param transferData an empty <code>TransferData</code> object that will
+     *  	be filled in on return with the platform specific format of the data
+     *
+     * @see Transfer#nativeToJava
+     */
+    @Override
+    public void javaToNative(Object object, TransferData transferData) {
+        if (!checkFile(object) || !isSupportedType(transferData)) {
+            DND.error(DND.ERROR_INVALID_DATA);
+        }
+        String[] files = (String[]) object;
+        int length = files.length;
+        for (int i = 0; i < length; i++) {
+        }
+    }
+
+    /**
+     * This implementation of <code>nativeToJava</code> converts a platform specific
+     * representation of a list of file names to a java <code>String[]</code>.
+     * Each String in the array contains the absolute path for a single file or directory.
+     *
+     * @param transferData the platform specific representation of the data to be converted
+     * @return a java <code>String[]</code> containing a list of file names if the conversion
+     * 		was successful; otherwise null
+     *
+     * @see Transfer#javaToNative
+     */
+    @Override
+    public Object nativeToJava(TransferData transferData) {
+        return null;
+    }
+
+    @Override
+    public int[] getTypeIds() {
+        return new int[] { ID, ID1 };
+    }
+
+    @Override
+    public String[] getTypeNames() {
+        return new String[] { ID_NAME, ID1_NAME };
+    }
+
+    boolean checkFile(Object object) {
+        if (object == null || !(object instanceof String[] strings) || ((String[]) object).length == 0)
+            return false;
+        for (int i = 0; i < strings.length; i++) {
+            if (strings[i] == null || strings[i].length() == 0)
+                return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean validate(Object object) {
+        return checkFile(object);
+    }
+
+    public FileTransfer getApi() {
+        if (api == null)
+            api = FileTransfer.createApi(this);
+        return (FileTransfer) api;
+    }
+
+    public VFileTransfer getValue() {
+        if (value == null)
+            value = new VFileTransfer(this);
+        return (VFileTransfer) value;
+    }
+}

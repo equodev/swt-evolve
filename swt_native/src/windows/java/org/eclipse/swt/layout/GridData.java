@@ -18,6 +18,9 @@ package org.eclipse.swt.layout;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import com.dslplatform.json.CompiledJson;
+import com.dslplatform.json.CompiledJson.*;
+import com.dslplatform.json.JsonAttribute;
 
 /**
  * <code>GridData</code> is the layout data object associated with
@@ -57,6 +60,7 @@ import org.eclipse.swt.widgets.*;
  * @see Control#setLayoutData
  * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
  */
+@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.EXPLICIT)
 public final class GridData {
 
     /**
@@ -72,6 +76,7 @@ public final class GridData {
      *    <li>SWT.FILL: Resize the control to fill the cell vertically</li>
      * </ul>
      */
+    @JsonAttribute()
     public int verticalAlignment = CENTER;
 
     /**
@@ -87,6 +92,7 @@ public final class GridData {
      *    <li>SWT.FILL: Resize the control to fill the cell horizontally</li>
      * </ul>
      */
+    @JsonAttribute()
     public int horizontalAlignment = BEGINNING;
 
     /**
@@ -98,6 +104,7 @@ public final class GridData {
      *
      * @see Control#computeSize(int, int, boolean)
      */
+    @JsonAttribute()
     public int widthHint = SWT.DEFAULT;
 
     /**
@@ -109,6 +116,7 @@ public final class GridData {
      *
      * @see Control#computeSize(int, int, boolean)
      */
+    @JsonAttribute()
     public int heightHint = SWT.DEFAULT;
 
     /**
@@ -117,6 +125,7 @@ public final class GridData {
      *
      * The default value is 0.
      */
+    @JsonAttribute()
     public int horizontalIndent = 0;
 
     /**
@@ -127,6 +136,7 @@ public final class GridData {
      *
      * @since 3.1
      */
+    @JsonAttribute()
     public int verticalIndent = 0;
 
     /**
@@ -135,6 +145,7 @@ public final class GridData {
      *
      * The default value is 1.
      */
+    @JsonAttribute()
     public int horizontalSpan = 1;
 
     /**
@@ -143,6 +154,7 @@ public final class GridData {
      *
      * The default value is 1.
      */
+    @JsonAttribute()
     public int verticalSpan = 1;
 
     /**
@@ -174,6 +186,7 @@ public final class GridData {
      * @see GridData#minimumWidth
      * @see GridData#widthHint
      */
+    @JsonAttribute()
     public boolean grabExcessHorizontalSpace = false;
 
     /**
@@ -205,6 +218,7 @@ public final class GridData {
      * @see GridData#minimumHeight
      * @see GridData#heightHint
      */
+    @JsonAttribute()
     public boolean grabExcessVerticalSpace = false;
 
     /**
@@ -220,6 +234,7 @@ public final class GridData {
      * @see Control#computeSize(int, int, boolean)
      * @see GridData#widthHint
      */
+    @JsonAttribute()
     public int minimumWidth = 0;
 
     /**
@@ -235,6 +250,7 @@ public final class GridData {
      * @see Control#computeSize(int, int, boolean)
      * @see GridData#heightHint
      */
+    @JsonAttribute()
     public int minimumHeight = 0;
 
     /**
@@ -248,6 +264,7 @@ public final class GridData {
      *
      * @since 3.1
      */
+    @JsonAttribute()
     public boolean exclude = false;
 
     /**
@@ -401,13 +418,21 @@ public final class GridData {
      */
     public static final int FILL_BOTH = FILL_VERTICAL | FILL_HORIZONTAL;
 
+    @JsonAttribute()
+    int cacheWidth = -1, cacheHeight = -1;
+
+    @JsonAttribute()
+    int defaultWhint, defaultHhint, defaultWidth = -1, defaultHeight = -1;
+
+    @JsonAttribute()
+    int currentWhint, currentHhint, currentWidth = -1, currentHeight = -1;
+
     /**
      * Constructs a new instance of GridData using
      * default values.
      */
     public GridData() {
-        this((IGridData) null);
-        setImpl(new SwtGridData(this));
+        super();
     }
 
     /**
@@ -417,8 +442,25 @@ public final class GridData {
      * @param style the GridData style
      */
     public GridData(int style) {
-        this((IGridData) null);
-        setImpl(new SwtGridData(style, this));
+        super();
+        if ((style & VERTICAL_ALIGN_BEGINNING) != 0)
+            verticalAlignment = BEGINNING;
+        if ((style & VERTICAL_ALIGN_CENTER) != 0)
+            verticalAlignment = CENTER;
+        if ((style & VERTICAL_ALIGN_FILL) != 0)
+            verticalAlignment = FILL;
+        if ((style & VERTICAL_ALIGN_END) != 0)
+            verticalAlignment = END;
+        if ((style & HORIZONTAL_ALIGN_BEGINNING) != 0)
+            horizontalAlignment = BEGINNING;
+        if ((style & HORIZONTAL_ALIGN_CENTER) != 0)
+            horizontalAlignment = CENTER;
+        if ((style & HORIZONTAL_ALIGN_FILL) != 0)
+            horizontalAlignment = FILL;
+        if ((style & HORIZONTAL_ALIGN_END) != 0)
+            horizontalAlignment = END;
+        grabExcessHorizontalSpace = (style & GRAB_HORIZONTAL) != 0;
+        grabExcessVerticalSpace = (style & GRAB_VERTICAL) != 0;
     }
 
     /**
@@ -434,8 +476,7 @@ public final class GridData {
      * @since 3.0
      */
     public GridData(int horizontalAlignment, int verticalAlignment, boolean grabExcessHorizontalSpace, boolean grabExcessVerticalSpace) {
-        this((IGridData) null);
-        setImpl(new SwtGridData(horizontalAlignment, verticalAlignment, grabExcessHorizontalSpace, grabExcessVerticalSpace, this));
+        this(horizontalAlignment, verticalAlignment, grabExcessHorizontalSpace, grabExcessVerticalSpace, 1, 1);
     }
 
     /**
@@ -453,8 +494,13 @@ public final class GridData {
      * @since 3.0
      */
     public GridData(int horizontalAlignment, int verticalAlignment, boolean grabExcessHorizontalSpace, boolean grabExcessVerticalSpace, int horizontalSpan, int verticalSpan) {
-        this((IGridData) null);
-        setImpl(new SwtGridData(horizontalAlignment, verticalAlignment, grabExcessHorizontalSpace, grabExcessVerticalSpace, horizontalSpan, verticalSpan, this));
+        super();
+        this.horizontalAlignment = horizontalAlignment;
+        this.verticalAlignment = verticalAlignment;
+        this.grabExcessHorizontalSpace = grabExcessHorizontalSpace;
+        this.grabExcessVerticalSpace = grabExcessVerticalSpace;
+        this.horizontalSpan = horizontalSpan;
+        this.verticalSpan = verticalSpan;
     }
 
     /**
@@ -468,8 +514,49 @@ public final class GridData {
      * @since 3.0
      */
     public GridData(int width, int height) {
-        this((IGridData) null);
-        setImpl(new SwtGridData(width, height, this));
+        super();
+        this.widthHint = width;
+        this.heightHint = height;
+    }
+
+    void computeSize(Control control, int wHint, int hHint, boolean flushCache) {
+        if (cacheWidth != -1 && cacheHeight != -1)
+            return;
+        if (wHint == this.widthHint && hHint == this.heightHint) {
+            if (defaultWidth == -1 || defaultHeight == -1 || wHint != defaultWhint || hHint != defaultHhint) {
+                Point size = control.computeSize(wHint, hHint, flushCache);
+                defaultWhint = wHint;
+                defaultHhint = hHint;
+                defaultWidth = size.x;
+                defaultHeight = size.y;
+            }
+            cacheWidth = defaultWidth;
+            cacheHeight = defaultHeight;
+            return;
+        }
+        if (currentWidth == -1 || currentHeight == -1 || wHint != currentWhint || hHint != currentHhint) {
+            Point size = control.computeSize(wHint, hHint, flushCache);
+            currentWhint = wHint;
+            currentHhint = hHint;
+            currentWidth = size.x;
+            currentHeight = size.y;
+        }
+        cacheWidth = currentWidth;
+        cacheHeight = currentHeight;
+    }
+
+    void flushCache() {
+        cacheWidth = cacheHeight = -1;
+        defaultWidth = defaultHeight = -1;
+        currentWidth = currentHeight = -1;
+    }
+
+    String getName() {
+        String string = getClass().getName();
+        int index = string.lastIndexOf('.');
+        if (index == -1)
+            return string;
+        return string.substring(index + 1, string.length());
     }
 
     /**
@@ -478,27 +565,77 @@ public final class GridData {
      *
      * @return a string representation of the GridData object
      */
+    @Override
     public String toString() {
-        return getImpl().toString();
-    }
-
-    protected IGridData impl;
-
-    protected GridData(IGridData impl) {
-        if (impl != null)
-            impl.setApi(this);
-    }
-
-    static GridData createApi(IGridData impl) {
-        return new GridData(impl);
-    }
-
-    public IGridData getImpl() {
-        return impl;
-    }
-
-    protected GridData setImpl(IGridData impl) {
-        this.impl = impl;
-        return this;
+        String hAlign = "";
+        hAlign = switch(horizontalAlignment) {
+            case SWT.FILL ->
+                "SWT.FILL";
+            case SWT.BEGINNING ->
+                "SWT.BEGINNING";
+            case SWT.LEFT ->
+                "SWT.LEFT";
+            case SWT.END ->
+                "SWT.END";
+            case END ->
+                "GridData.END";
+            case SWT.RIGHT ->
+                "SWT.RIGHT";
+            case SWT.CENTER ->
+                "SWT.CENTER";
+            case CENTER ->
+                "GridData.CENTER";
+            default ->
+                "Undefined " + horizontalAlignment;
+        };
+        String vAlign = "";
+        vAlign = switch(verticalAlignment) {
+            case SWT.FILL ->
+                "SWT.FILL";
+            case SWT.BEGINNING ->
+                "SWT.BEGINNING";
+            case SWT.TOP ->
+                "SWT.TOP";
+            case SWT.END ->
+                "SWT.END";
+            case END ->
+                "GridData.END";
+            case SWT.BOTTOM ->
+                "SWT.BOTTOM";
+            case SWT.CENTER ->
+                "SWT.CENTER";
+            case CENTER ->
+                "GridData.CENTER";
+            default ->
+                "Undefined " + verticalAlignment;
+        };
+        String string = getName() + " {";
+        string += "horizontalAlignment=" + hAlign + " ";
+        if (horizontalIndent != 0)
+            string += "horizontalIndent=" + horizontalIndent + " ";
+        if (horizontalSpan != 1)
+            string += "horizontalSpan=" + horizontalSpan + " ";
+        if (grabExcessHorizontalSpace)
+            string += "grabExcessHorizontalSpace=" + grabExcessHorizontalSpace + " ";
+        if (widthHint != SWT.DEFAULT)
+            string += "widthHint=" + widthHint + " ";
+        if (minimumWidth != 0)
+            string += "minimumWidth=" + minimumWidth + " ";
+        string += "verticalAlignment=" + vAlign + " ";
+        if (verticalIndent != 0)
+            string += "verticalIndent=" + verticalIndent + " ";
+        if (verticalSpan != 1)
+            string += "verticalSpan=" + verticalSpan + " ";
+        if (grabExcessVerticalSpace)
+            string += "grabExcessVerticalSpace=" + grabExcessVerticalSpace + " ";
+        if (heightHint != SWT.DEFAULT)
+            string += "heightHint=" + heightHint + " ";
+        if (minimumHeight != 0)
+            string += "minimumHeight=" + minimumHeight + " ";
+        if (exclude)
+            string += "exclude=" + exclude + " ";
+        string = string.trim();
+        string += "}";
+        return string;
     }
 }

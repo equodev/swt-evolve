@@ -20,13 +20,20 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import com.dslplatform.json.CompiledJson;
+import com.dslplatform.json.CompiledJson.*;
+import com.dslplatform.json.JsonAttribute;
 
 /**
  * Controls the several aspects of a {@link BorderLayout}.
  *
  * @since 3.119
  */
+@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
 public final class BorderData {
+
+    @JsonAttribute(ignore = true)
+    private final Map<Control, Point> cachedSize = new IdentityHashMap<>(1);
 
     public int hHint = SWT.DEFAULT;
 
@@ -38,8 +45,6 @@ public final class BorderData {
      * creates a {@link BorderData} with default options
      */
     public BorderData() {
-        this((IBorderData) null);
-        setImpl(new SwtBorderData(this));
     }
 
     /**
@@ -52,8 +57,7 @@ public final class BorderData {
      *               {@link SWT#BOTTOM}
      */
     public BorderData(int region) {
-        this((IBorderData) null);
-        setImpl(new SwtBorderData(region, this));
+        this.region = region;
     }
 
     /**
@@ -67,31 +71,63 @@ public final class BorderData {
      * @param heightHint he default hint for the height
      */
     public BorderData(int region, int widthHint, int heightHint) {
-        this((IBorderData) null);
-        setImpl(new SwtBorderData(region, widthHint, heightHint, this));
+        this.region = region;
+        this.wHint = widthHint;
+        this.hHint = heightHint;
     }
 
+    Point getSize(Control control) {
+        return cachedSize.computeIfAbsent(control, c -> c.computeSize(wHint, hHint, true));
+    }
+
+    Point computeSize(Control control, int wHint, int hHint, boolean changed) {
+        if (wHint == SWT.DEFAULT) {
+            wHint = this.wHint;
+        }
+        if (hHint == SWT.DEFAULT) {
+            hHint = this.hHint;
+        }
+        return control.computeSize(wHint, hHint, changed);
+    }
+
+    void flushCache(Control control) {
+        cachedSize.remove(control);
+    }
+
+    @Override
     public String toString() {
-        return getImpl().toString();
+        return "BorderData [region=" + getRegionString(region) + ", hHint=" + hHint + ", wHint=" + wHint + "]";
     }
 
-    protected IBorderData impl;
-
-    protected BorderData(IBorderData impl) {
-        if (impl != null)
-            impl.setApi(this);
+    static String getRegionString(int region) {
+        return switch(region) {
+            case SWT.TOP ->
+                "SWT.TOP";
+            case SWT.RIGHT ->
+                "SWT.RIGHT";
+            case SWT.BOTTOM ->
+                "SWT.BOTTOM";
+            case SWT.LEFT ->
+                "SWT.LEFT";
+            case SWT.CENTER ->
+                "SWT.CENTER";
+            default ->
+                "SWT.NONE";
+        };
     }
 
-    static BorderData createApi(IBorderData impl) {
-        return new BorderData(impl);
-    }
-
-    public IBorderData getImpl() {
-        return impl;
-    }
-
-    protected BorderData setImpl(IBorderData impl) {
-        this.impl = impl;
-        return this;
+    /**
+     * @return the region of this BorderData or {@link SWT#NONE} if it is out of
+     *         range
+     */
+    int getRegion() {
+        return switch(region) {
+            case TOP, BOTTOM, CENTER, RIGHT, LEFT ->
+                region;
+            case SWT.NONE ->
+                SWT.NONE;
+            default ->
+                SWT.NONE;
+        };
     }
 }

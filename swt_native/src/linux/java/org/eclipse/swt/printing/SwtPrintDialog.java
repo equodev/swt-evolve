@@ -324,8 +324,8 @@ public class SwtPrintDialog extends SwtDialog implements IPrintDialog {
         /* Set state into print dialog settings. */
         long settings = GTK.gtk_print_settings_new();
         long page_setup = GTK.gtk_page_setup_new();
-        if (((SwtPrinterData) printerData.getImpl()).otherData != null) {
-            SwtPrinter.restore(((SwtPrinterData) printerData.getImpl()).otherData, settings, page_setup);
+        if (printerData.otherData != null) {
+            SwtPrinter.restore(printerData.otherData, settings, page_setup);
         }
         /* Set values of print_settings and page_setup from PrinterData. */
         String printerName = printerData.name;
@@ -502,7 +502,7 @@ public class SwtPrintDialog extends SwtDialog implements IPrintDialog {
                 store("paper_size_height", GTK.gtk_paper_size_get_height(paper_size, GTK.GTK_UNIT_MM));
                 //$NON-NLS-1$
                 store("paper_size_is_custom", GTK.gtk_paper_size_is_custom(paper_size));
-                ((SwtPrinterData) data.getImpl()).otherData = settingsData;
+                data.otherData = settingsData;
                 OS.g_object_unref(settings);
                 printerData = data;
             }

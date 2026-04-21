@@ -1,0 +1,66 @@
+package org.eclipse.swt.widgets;
+
+import org.eclipse.swt.*;
+import org.eclipse.swt.accessibility.*;
+import org.eclipse.swt.graphics.*;
+import com.dslplatform.json.*;
+import dev.equo.swt.Serializer;
+
+@CompiledJson()
+public class VCanvas extends VComposite {
+
+    protected VCanvas() {
+    }
+
+    protected VCanvas(DartCanvas impl) {
+        super(impl);
+    }
+
+    @JsonAttribute(name = "IME")
+    public IME getIME() {
+        IME val = ((DartCanvas) impl).ime;
+        if (val != null && !(val.getImpl() instanceof DartIME))
+            return null;
+        return val;
+    }
+
+    public void setIME(IME value) {
+        ((DartCanvas) impl).ime = value;
+    }
+
+    public Caret getCaret() {
+        Caret val = ((DartCanvas) impl).caret;
+        if (val != null && !(val.getImpl() instanceof DartCaret))
+            return null;
+        return val;
+    }
+
+    public void setCaret(Caret value) {
+        ((DartCanvas) impl).caret = value;
+    }
+
+    @JsonConverter(target = Canvas.class)
+    public static class CanvasJson implements Configuration {
+
+        @Override
+        public void configure(DslJson json) {
+            json.registerWriter(DartCanvas.class, (JsonWriter.WriteObject<DartCanvas>) (writer, impl) -> {
+                Serializer.writeWithId(json, writer, impl);
+            });
+            json.registerReader(DartCanvas.class, (JsonReader.ReadObject<DartCanvas>) reader -> {
+                return null;
+            });
+        }
+
+        public static Canvas read(JsonReader<?> reader) {
+            return null;
+        }
+
+        public static void write(JsonWriter writer, Canvas api) {
+            if (api == null)
+                writer.writeNull();
+            else
+                writer.serializeObject(api.getImpl());
+        }
+    }
+}

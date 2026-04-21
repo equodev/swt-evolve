@@ -34,12 +34,6 @@ public interface ImplControl extends ImplWidget {
 
     int _drawCount();
 
-    int _foreground();
-
-    int _background();
-
-    int _backgroundAlpha();
-
     boolean _autoScaleDisabled();
 
     Control computeTabRoot();

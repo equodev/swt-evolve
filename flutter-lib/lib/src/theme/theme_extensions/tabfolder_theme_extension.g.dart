@@ -112,8 +112,8 @@ Map<String, dynamic> _$TabFolderThemeExtensionToJson(
   'tabSelectedBorderWidth': instance.tabSelectedBorderWidth,
   'tabBorderRadius': instance.tabBorderRadius,
   'tabPadding': instance.tabPadding,
-  'tabTextStyle': const TextStyleConverter().toJson(instance.tabTextStyle),
-  'tabSelectedTextStyle': const TextStyleConverter().toJson(
+  'tabTextStyle': ?const TextStyleConverter().toJson(instance.tabTextStyle),
+  'tabSelectedTextStyle': ?const TextStyleConverter().toJson(
     instance.tabSelectedTextStyle,
   ),
   'tabContentBackgroundColor': const ColorConverter().toJson(

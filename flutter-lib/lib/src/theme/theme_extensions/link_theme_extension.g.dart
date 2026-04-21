@@ -64,17 +64,17 @@ Map<String, dynamic> _$LinkThemeExtensionToJson(
   'disabledTextColor': const ColorConverter().toJson(
     instance.disabledTextColor,
   ),
-  'backgroundColor': _$JsonConverterToJson<String, Color>(
+  'backgroundColor': ?_$JsonConverterToJson<String, Color>(
     instance.backgroundColor,
     const ColorConverter().toJson,
   ),
-  'hoverBackgroundColor': _$JsonConverterToJson<String, Color>(
+  'hoverBackgroundColor': ?_$JsonConverterToJson<String, Color>(
     instance.hoverBackgroundColor,
     const ColorConverter().toJson,
   ),
-  'textStyle': const TextStyleConverter().toJson(instance.textStyle),
-  'linkTextStyle': const TextStyleConverter().toJson(instance.linkTextStyle),
-  'disabledTextStyle': const TextStyleConverter().toJson(
+  'textStyle': ?const TextStyleConverter().toJson(instance.textStyle),
+  'linkTextStyle': ?const TextStyleConverter().toJson(instance.linkTextStyle),
+  'disabledTextStyle': ?const TextStyleConverter().toJson(
     instance.disabledTextStyle,
   ),
   'padding': const EdgeInsetsConverter().toJson(instance.padding),

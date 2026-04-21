@@ -2636,10 +2636,6 @@ public class SwtText extends SwtScrollable implements IText {
         return actionCancel;
     }
 
-    public APPEARANCE _lastAppAppearance() {
-        return lastAppAppearance;
-    }
-
     public Text getApi() {
         if (api == null)
             api = Text.createApi(this);

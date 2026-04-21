@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
 import '../gen/control.dart';
+import '../gen/transfer.dart';
 import '../gen/widget.dart';
 import '../impl/dragsource_evolve.dart';
 import 'event.dart';
@@ -37,6 +38,7 @@ class VDragSource extends VWidget {
   }
 
   VControl? control;
+  List<VTransfer>? transfer;
 
   factory VDragSource.fromJson(Map<String, dynamic> json) =>
       _$VDragSourceFromJson(json);

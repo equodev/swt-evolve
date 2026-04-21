@@ -8915,14 +8915,6 @@ public class SwtTree extends SwtComposite implements ITree {
         return lastTimerCount;
     }
 
-    public int _headerBackground() {
-        return headerBackground;
-    }
-
-    public int _headerForeground() {
-        return headerForeground;
-    }
-
     public int[] _cachedItemOrder() {
         return cachedItemOrder;
     }

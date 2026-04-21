@@ -119,14 +119,6 @@ public abstract class DartLayout implements ILayout {
             api.impl = this;
     }
 
-    protected VLayout value;
-
-    public VLayout getValue() {
-        if (value == null)
-            value = new VLayout(this);
-        return (VLayout) value;
-    }
-
     public DartLayout(Layout api) {
         setApi(api);
     }

@@ -7,8 +7,10 @@ import '../gen/control.dart';
 import '../gen/cursor.dart';
 import '../gen/font.dart';
 import '../gen/image.dart';
+import '../gen/ime.dart';
 import '../gen/menu.dart';
 import '../gen/rectangle.dart';
+import '../gen/region.dart';
 import '../impl/clabel_evolve.dart';
 import 'widgets.dart';
 

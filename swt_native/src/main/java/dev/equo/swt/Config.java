@@ -30,9 +30,7 @@ public class Config {
 
     private static final String os = System.getProperty("os.name").toLowerCase();
     static final Map<Class<?>, Impl> equoEnabled;
-    private static boolean forceEclipse = Boolean.getBoolean("dev.equo.swt.forceEclipse");
-
-    static boolean dynEnabled = Boolean.getBoolean("dev.equo.swt.dyn.Composite");
+    static boolean forceEclipse = Boolean.getBoolean("dev.equo.swt.forceEclipse");
     static boolean debug = Boolean.getBoolean("dev.equo.swt.debug");
     static boolean idTracker = Boolean.getBoolean("dev.equo.swt.tracker");
     static IdWidgetTracker widgetTracker;
@@ -330,6 +328,9 @@ public class Config {
         }
         if (parent != null && clazz == Caret.class && parent.getImpl().getClass().getSimpleName().startsWith(DART))
             return true;
+        boolean isDesk = "true".equals(System.getProperty("dev.equo.swt.desktop", "true"));
+        if (!isDesk && (clazz == DirectoryDialog.class || clazz == FileDialog.class))
+            return false;
         if (parent != null && parent.getImpl().getClass().getSimpleName().startsWith(DART) && !isSwtCTabFolderBody(clazz, parent))
             return true;
         if (isSwtCTabFolderBody(clazz, parent))
@@ -357,17 +358,17 @@ public class Config {
     private static final String E4_TOOLBAR_CLASS = "org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout";
     private static final String E4_TOOLBAR_METHOD = "getTrimComposite";
 
-    private static boolean isMainToolbarComposite(Class<?> clazz, Composite parent) {
+    static boolean isMainToolbarComposite(Class<?> clazz, Composite parent) {
         String id = getId(clazz, parent);
         return id.equals("/Shell/0/Composite/2") && isInStackTrace(E4_TOOLBAR_CLASS, E4_TOOLBAR_METHOD);
     }
 
-    private static boolean isSideToolbarComposite(Class<?> clazz, Composite parent) {
+    static boolean isSideToolbarComposite(Class<?> clazz, Composite parent) {
         String id = getId(clazz, parent);
         return (id.equals("/Shell/0/Composite/4") || id.equals("/Shell/0/Composite/5")) && isInStackTrace(E4_TOOLBAR_CLASS, E4_TOOLBAR_METHOD);
     }
 
-    private static boolean isStatusToolbarComposite(Class<Composite> clazz, Composite parent) {
+    static boolean isStatusToolbarComposite(Class<Composite> clazz, Composite parent) {
         String id = getId(clazz, parent);
         return id.equals("/Shell/0/Composite/3") && isInStackTrace(E4_TOOLBAR_CLASS, E4_TOOLBAR_METHOD);
     }
@@ -398,9 +399,6 @@ public class Config {
     }
 
     public static IWidget getCompositeImpl(Composite parent, int style, Composite composite) {
-        if (dynEnabled && ("dyn".equals(parent != null ? parent.getData(getKey(Composite.class)) : null) || mustBeDynComposite(composite))) {
-            return new DynComposite(parent, style, composite);
-        }
         if (mainToolbarImpl == Impl.equo && isMainToolbarComposite(Composite.class, parent))
             return new DartMainToolbar(parent, style, composite);
         if (sideBarImpl == Impl.equo && isSideToolbarComposite(Composite.class, parent))
@@ -410,65 +408,7 @@ public class Config {
         if (mainCompositeImpl == Impl.equo && isMainComposite(Composite.class, parent)){
             return new DartMainComposite(parent, style, composite);
         }
-        if (Config.isEquo(composite.getClass(), parent))
-            return new DartComposite(parent, style, composite);
-        // In eclipse mode, always use SWT implementation without any special handling
-        if (defaultImpl == Impl.eclipse || forceEclipse)
-            return new SwtComposite(parent, style, composite);
-        return new SwtComposite(parent, style, composite);
-    }
-
-    private static boolean mustBeDynComposite(Composite composite) {
-        if (composite.getClass().getName().equals("org.eclipse.e4.ui.workbench.renderers.swt.ContributedPartRenderer$1"))
-            return true;
-//        return isInStackTrace("org.eclipse.e4.ui.workbench.renderers.swt.ElementReferenceRenderer", "createWidget");
-        return false;
-    }
-
-    public static IComposite getDynImpl(DynComposite dynComposite) {
-        Composite parent = dynComposite.getParent();
-        int style = dynComposite.getStyle();
-        Composite composite = dynComposite.getApi();
-        Object modelElementId = dynComposite.getData("modelElement");
-
-        if (modelElementId != null) {
-            String modelStr = modelElementId.toString();
-            String forcedImpl;
-
-            int contribIdx = modelStr.indexOf("contributionURI:");
-            if (contribIdx >= 0) {
-                String afterColon = modelStr.substring(contribIdx + "contributionURI:".length()).trim();
-                int end = afterColon.length();
-                for (int i = 0; i < afterColon.length(); i++) {
-                    char c = afterColon.charAt(i);
-                    if (c == ' ' || c == ',' || c == '\n' || c == ')') { end = i; break; }
-                }
-                String uri = afterColon.substring(0, end);
-                int lastSlash = uri.lastIndexOf('/');
-                if (lastSlash >= 0) {
-                    String className = uri.substring(lastSlash + 1);
-                    System.out.print("-- View: " +className);
-                    forcedImpl = System.getProperty(PROPERTY_PREFIX + className);
-                    if (forcedImpl != null) {
-                        return Impl.equo.name().equals(forcedImpl) ? new DartComposite(parent, style, composite) : new SwtComposite(parent, style, composite);
-                    }
-                }
-            }
-
-            String[] parts = modelStr.split("=");
-            if (parts.length > 0) {
-                String id = IDREGEX.matcher(parts[0]).replaceFirst("");
-                System.out.println(" -- id: " +id);
-                forcedImpl = System.getProperty(PROPERTY_PREFIX+id);
-                if (forcedImpl != null) {
-                    return Impl.equo.name().equals(forcedImpl) ? new DartComposite(parent, style, composite) : new SwtComposite(parent, style, composite);
-                }
-            }
-        }
-
-        if (Config.isEquo(composite.getClass(), parent))
-            return new DartComposite(parent, style, composite);
-        return new SwtComposite(parent, style, composite);
+        return new DartComposite(parent, style, composite);
     }
 
     private static final String EDITOR_CLASS = "org.eclipse.ui.texteditor.AbstractTextEditor";
@@ -554,7 +494,7 @@ public class Config {
         return -1;
     }
 
-    private static String getKey(Class<?> clazz) {
+    static String getKey(Class<?> clazz) {
         return PROPERTY_PREFIX + clazz.getSimpleName();
     }
 

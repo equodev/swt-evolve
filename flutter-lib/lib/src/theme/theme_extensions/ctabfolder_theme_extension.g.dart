@@ -179,8 +179,8 @@ Map<String, dynamic> _$CTabFolderThemeExtensionToJson(
   'tabBorderRadius': instance.tabBorderRadius,
   'tabHorizontalPadding': instance.tabHorizontalPadding,
   'tabVerticalPadding': instance.tabVerticalPadding,
-  'tabTextStyle': const TextStyleConverter().toJson(instance.tabTextStyle),
-  'tabSelectedTextStyle': const TextStyleConverter().toJson(
+  'tabTextStyle': ?const TextStyleConverter().toJson(instance.tabTextStyle),
+  'tabSelectedTextStyle': ?const TextStyleConverter().toJson(
     instance.tabSelectedTextStyle,
   ),
   'tabContentBackgroundColor': const ColorConverter().toJson(

@@ -36,6 +36,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
 
   @override
   Widget build(BuildContext context) {
+    widget.sendPaintPaint(state, null);
     final widgetTheme = _theme;
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = getConstraintsFromBounds(state.bounds);

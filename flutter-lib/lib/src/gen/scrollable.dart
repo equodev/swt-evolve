@@ -6,6 +6,7 @@ import '../gen/font.dart';
 import '../gen/image.dart';
 import '../gen/menu.dart';
 import '../gen/rectangle.dart';
+import '../gen/region.dart';
 import 'widgets.dart';
 
 part 'scrollable.g.dart';

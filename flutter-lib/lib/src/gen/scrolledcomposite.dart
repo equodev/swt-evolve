@@ -9,6 +9,7 @@ import '../gen/image.dart';
 import '../gen/menu.dart';
 import '../gen/point.dart';
 import '../gen/rectangle.dart';
+import '../gen/region.dart';
 import '../impl/scrolledcomposite_evolve.dart';
 import 'widgets.dart';
 

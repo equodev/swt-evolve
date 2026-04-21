@@ -22,7 +22,7 @@ Map<String, dynamic> _$VCaretToJson(VCaret instance) => <String, dynamic>{
   'swt': instance.swt,
   'id': instance.id,
   'style': instance.style,
-  'font': instance.font,
-  'image': instance.image,
-  'visible': instance.visible,
+  'font': ?instance.font,
+  'image': ?instance.image,
+  'visible': ?instance.visible,
 };

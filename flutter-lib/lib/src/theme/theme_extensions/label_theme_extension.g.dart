@@ -127,43 +127,43 @@ Map<String, dynamic> _$LabelThemeExtensionToJson(
   'linkHoverTextColor': const ColorConverter().toJson(
     instance.linkHoverTextColor,
   ),
-  'backgroundColor': _$JsonConverterToJson<String, Color>(
+  'backgroundColor': ?_$JsonConverterToJson<String, Color>(
     instance.backgroundColor,
     const ColorConverter().toJson,
   ),
-  'hoverBackgroundColor': _$JsonConverterToJson<String, Color>(
+  'hoverBackgroundColor': ?_$JsonConverterToJson<String, Color>(
     instance.hoverBackgroundColor,
     const ColorConverter().toJson,
   ),
-  'selectedBackgroundColor': _$JsonConverterToJson<String, Color>(
+  'selectedBackgroundColor': ?_$JsonConverterToJson<String, Color>(
     instance.selectedBackgroundColor,
     const ColorConverter().toJson,
   ),
-  'borderColor': _$JsonConverterToJson<String, Color>(
+  'borderColor': ?_$JsonConverterToJson<String, Color>(
     instance.borderColor,
     const ColorConverter().toJson,
   ),
-  'focusBorderColor': _$JsonConverterToJson<String, Color>(
+  'focusBorderColor': ?_$JsonConverterToJson<String, Color>(
     instance.focusBorderColor,
     const ColorConverter().toJson,
   ),
-  'primaryTextStyle': const TextStyleConverter().toJson(
+  'primaryTextStyle': ?const TextStyleConverter().toJson(
     instance.primaryTextStyle,
   ),
-  'secondaryTextStyle': const TextStyleConverter().toJson(
+  'secondaryTextStyle': ?const TextStyleConverter().toJson(
     instance.secondaryTextStyle,
   ),
-  'errorTextStyle': const TextStyleConverter().toJson(instance.errorTextStyle),
-  'warningTextStyle': const TextStyleConverter().toJson(
+  'errorTextStyle': ?const TextStyleConverter().toJson(instance.errorTextStyle),
+  'warningTextStyle': ?const TextStyleConverter().toJson(
     instance.warningTextStyle,
   ),
-  'successTextStyle': const TextStyleConverter().toJson(
+  'successTextStyle': ?const TextStyleConverter().toJson(
     instance.successTextStyle,
   ),
-  'disabledTextStyle': const TextStyleConverter().toJson(
+  'disabledTextStyle': ?const TextStyleConverter().toJson(
     instance.disabledTextStyle,
   ),
-  'linkTextStyle': const TextStyleConverter().toJson(instance.linkTextStyle),
+  'linkTextStyle': ?const TextStyleConverter().toJson(instance.linkTextStyle),
   'padding': const EdgeInsetsConverter().toJson(instance.padding),
   'margin': const EdgeInsetsConverter().toJson(instance.margin),
   'iconTextSpacing': instance.iconTextSpacing,
