@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:swtflutter/src/gen/point.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
@@ -37,6 +36,7 @@ bool _themeConfigLogged = false;
 Completer<void>? _swtEvolvePropertiesCompleter;
 bool _swtEvolvePropertiesListenerRegistered = false;
 final ValueNotifier<int> _configFlagsVersion = ValueNotifier<int>(0);
+_DisplayMetricsReporter? _displayMetricsReporter;
 
 void main(List<String> args) async {
   int? port = getPort(args);
@@ -89,38 +89,80 @@ void main(List<String> args) async {
     contentWidget: contentWidget,
     theme: theme,
     backgroundColor: backgroundColor,
-    widgetName: widgetName,
   ));
 
   sendClientReady(widgetName, widgetId, sendWindowSize: (widgetName == "Display"));
+  if (widgetName == "Display") {
+    _displayMetricsReporter ??= _DisplayMetricsReporter(widgetId);
+  }
 }
 
 void sendClientReady(String widgetName, int widgetId, {bool sendWindowSize = false}) {
   if (sendWindowSize) {
-    final view = PlatformDispatcher.instance.views.first;
-    final size = view.physicalSize / view.devicePixelRatio; // logical pixels
-    final point = VPoint()
-      ..x = 1280
-      ..y = 720;
-    if (size.width > 0 && size.height > 0) {
-      point.x = size.width.round();
-      point.y = size.height.round();
-      EquoCommService.sendPayload("${widgetName}/${widgetId}/ClientReady", point);
-      return;
-    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final view = WidgetsBinding.instance.platformDispatcher.views.first;
-      final size = view.physicalSize / view.devicePixelRatio;
-      if (size.width > 0 && size.height > 0) {
-        point.x = size.width.round();
-        point.y = size.height.round();
-      }
-      // print("Sent ${widgetName}/${widgetId}/ClientReady with windowSize ${point.x}x${point.y}");
-      EquoCommService.sendPayload("${widgetName}/${widgetId}/ClientReady", point);
+      _sendWindowSizedClientReady(widgetName, widgetId);
     });
   } else {
     EquoCommService.send("${widgetName}/${widgetId}/ClientReady");
   }
+}
+
+class _DisplayMetricsReporter with WidgetsBindingObserver {
+  _DisplayMetricsReporter(this.widgetId) {
+    WidgetsBinding.instance.addObserver(this);
+    observeViewportChanges(_sendCurrentSize);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _sendCurrentSize();
+    });
+  }
+
+  final int widgetId;
+  Size? _lastSentSize;
+
+  @override
+  void didChangeMetrics() {
+    _sendCurrentSize();
+  }
+
+  void _sendCurrentSize() {
+    final rounded = _currentLogicalViewSize();
+    if (rounded == null) {
+      return;
+    }
+    if (_lastSentSize == rounded) {
+      return;
+    }
+    _lastSentSize = rounded;
+    _sendWindowSizedClientReady("Display", widgetId, sizeOverride: rounded);
+  }
+}
+
+Size? _currentLogicalViewSize() {
+  final viewportSize = getViewportSize();
+  if (viewportSize != null) {
+    return Size(
+      viewportSize.width.roundToDouble(),
+      viewportSize.height.roundToDouble(),
+    );
+  }
+  final dispatcher = WidgetsBinding.instance.platformDispatcher;
+  if (dispatcher.views.isEmpty) {
+    return null;
+  }
+  final view = dispatcher.views.first;
+  final size = view.physicalSize / view.devicePixelRatio;
+  if (size.width <= 0 || size.height <= 0) {
+    return null;
+  }
+  return Size(size.width.roundToDouble(), size.height.roundToDouble());
+}
+
+void _sendWindowSizedClientReady(String widgetName, int widgetId, {Size? sizeOverride}) {
+  final size = sizeOverride ?? _currentLogicalViewSize();
+  final point = VPoint()
+    ..x = size?.width.toInt() ?? 1280
+    ..y = size?.height.toInt() ?? 720;
+  EquoCommService.sendPayload("$widgetName/$widgetId/ClientReady", point);
 }
 
 Future<void> initSwtEvolveProperties() async {
@@ -197,14 +239,12 @@ class EvolveApp extends StatelessWidget {
   final Widget contentWidget;
   final ThemeMode theme;
   final int? backgroundColor;
-  final String? widgetName;
 
   const EvolveApp({
     Key? key,
     required this.contentWidget,
     required this.theme,
     this.backgroundColor,
-    this.widgetName,
   }) : super(key: key);
 
   @override

@@ -17,7 +17,7 @@ public class SwtFlutterBridge extends FlutterBridge {
 
     /**
      * Compatibility constructor required so that {@link SwtFlutterBridgeBase#of(DartWidget)}
-     * compiles when the web class is on the classpath.  This constructor is <em>not</em>
+     * compiles when the web class is on the classpath. This constructor is not
      * called at runtime in the web context.
      */
     SwtFlutterBridge(DartWidget widget) {
@@ -46,6 +46,7 @@ public class SwtFlutterBridge extends FlutterBridge {
                 DartDisplay dartDisplay = (DartDisplay) display.getImpl();
                 if (widget instanceof DartShell dartShell) {
                     dartDisplay.addShell((Shell) dartShell.getApi());
+                    dartShell.bounds = dartDisplay.bounds;
                 }
                 return dartDisplay.displayBridge;
             }
@@ -56,26 +57,26 @@ public class SwtFlutterBridge extends FlutterBridge {
     private void startWebServer(DartDisplay display) {
         long displayId = display.getApi().hashCode();
 
-        // Listen for Display/{id}/ClientReady from the Flutter app
         client.getComm().on("Display/" + displayId + "/ClientReady", Point.class, p -> {
+            if (p != null) {
+                Point size = p;
+                Display d = display.getApi();
+                d.syncExec(() -> {
+                    Rectangle previousBounds = display.bounds;
+                    Rectangle nextBounds = new Rectangle(0, 0, size.x, size.y);
+                    if (!previousBounds.equals(nextBounds)) {
+                        display.bounds = nextBounds;
+                        resizeMainShells(display, previousBounds, nextBounds);
+                    }
+                });
+            }
+
             if (!clientReady.isDone()) {
-                System.out.println("Display ClientReady: " + displayId);
                 clientReady.complete(true);
                 sendSwtEvolveProperties();
-                // Send initial display state (shells) to Flutter
-                sendDisplayUpdate(display);
-                // Inform the display of the reported window size
-                if (p != null) {
-                    Point size = p;
-                    Display d = display.getApi();
-                    d.syncExec(() -> {
-                        display.bounds = new Rectangle(0, 0, size.x, size.y);
-                    });
-                }
-            } else {
-                // hot reload — re-send the current state
-                sendDisplayUpdate(display);
             }
+
+            sendDisplayUpdate(display);
         });
 
         int port = client.getPort();
@@ -86,28 +87,70 @@ public class SwtFlutterBridge extends FlutterBridge {
                 .build();
         try {
             webServer.start();
-            System.out.println("Display " + displayId + " URL: " + webServer.getApplicationUrl());
             webServer.launchBrowser();
         } catch (Exception e) {
             throw new RuntimeException("Failed to start web server for Display", e);
         }
     }
 
-    /** Serializes the display's visible shells and pushes the update to Flutter. */
     public void sendDisplayUpdate(DartDisplay display) {
         if (!clientReady.isDone()) return;
         try {
             VDisplay vd = VDisplay.of(display);
-            System.out.println("sendDisplayUpdate: " + vd.shells.length + " visible shell(s)");
             serializeAndSend("Display/" + vd.id, vd);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    private void resizeMainShells(DartDisplay display, Rectangle previousBounds, Rectangle nextBounds) {
+        for (Shell shell : display._shells()) {
+            if (shell == null || shell.isDisposed()) {
+                continue;
+            }
+            if (!shouldTrackDisplayBounds(shell)) {
+                continue;
+            }
+            Rectangle shellBounds = shell.getBounds();
+            boolean tracksDisplayBounds =
+                    shellBounds != null
+                            && shellBounds.x == 0
+                            && shellBounds.y == 0
+                            && shellBounds.width == previousBounds.width
+                            && shellBounds.height == previousBounds.height;
+            boolean isLikelyWorkbenchShell =
+                    shellBounds != null
+                            && shellBounds.x == 0
+                            && shellBounds.y == 0
+                            && shellBounds.width > 0
+                            && shellBounds.height > 0;
+            if (tracksDisplayBounds || isLikelyWorkbenchShell || shell.getMaximized() || shell.getFullScreen()) {
+                shell.setBounds(0, 0, nextBounds.width, nextBounds.height);
+            }
+        }
+    }
+
+    private boolean shouldTrackDisplayBounds(Shell shell) {
+        if (shell.getParent() != null) {
+            return false;
+        }
+        int style = shell.getStyle();
+        int modalMask = org.eclipse.swt.SWT.PRIMARY_MODAL
+                | org.eclipse.swt.SWT.APPLICATION_MODAL
+                | org.eclipse.swt.SWT.SYSTEM_MODAL;
+        if ((style & modalMask) != 0) {
+            return false;
+        }
+        return (style & org.eclipse.swt.SWT.TOOL) == 0;
+    }
+
+    public String registerBrowserHtml(long browserId, String html) {
+        return "";
+    }
+
     @Override
     public void initFlutterView(Composite parent, DartControl control) {
-        // Bridge is initialized at Display level in initForDisplay() — nothing to do here.
+        // Bridge is initialized at Display level in initForDisplay().
     }
 
     @Override
@@ -118,7 +161,6 @@ public class SwtFlutterBridge extends FlutterBridge {
         }
     }
 
-    /** Stop the web server when the display is being disposed. */
     public void destroyDisplay() {
         if (webServer != null) {
             webServer.stop();
@@ -144,7 +186,26 @@ public class SwtFlutterBridge extends FlutterBridge {
 
     @Override
     public void setVisible(DartControl control, boolean visible) {
-        if (control instanceof DartShell) {
+        if (control instanceof DartShell dartShell) {
+            Shell shell = (Shell) dartShell.getApi();
+            boolean resizedToDisplayBounds = false;
+            if (visible && forDisplay != null) {
+                if (shouldTrackDisplayBounds(shell)) {
+                    Rectangle displayBounds = forDisplay.bounds;
+                    Rectangle shellBounds = shell.getBounds();
+                    if (shellBounds != null
+                            && shellBounds.x == 0
+                            && shellBounds.y == 0
+                            && shellBounds.width < displayBounds.width
+                            && shellBounds.height < displayBounds.height) {
+                        shell.setBounds(0, 0, displayBounds.width, displayBounds.height);
+                        resizedToDisplayBounds = true;
+                    }
+                }
+            }
+            if (resizedToDisplayBounds) {
+                shell.layout(true, true);
+            }
             sendDisplayUpdate(forDisplay);
         }
     }
