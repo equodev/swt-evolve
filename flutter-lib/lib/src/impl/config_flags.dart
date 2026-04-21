@@ -18,6 +18,7 @@ class ConfigFlags {
   bool? show_theme_color_palette;
   bool? use_special_dropdown_button;
   bool? preserve_icon_colors;
+  bool? show_scaling_control;
 
   factory ConfigFlags.fromJson(Map<String, dynamic> json) =>
       _$ConfigFlagsFromJson(json);

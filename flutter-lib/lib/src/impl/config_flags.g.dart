@@ -22,7 +22,8 @@ ConfigFlags _$ConfigFlagsFromJson(Map<String, dynamic> json) => ConfigFlags()
       )
   ..show_theme_color_palette = json['show_theme_color_palette'] as bool?
   ..use_special_dropdown_button = json['use_special_dropdown_button'] as bool?
-  ..preserve_icon_colors = json['preserve_icon_colors'] as bool?;
+  ..preserve_icon_colors = json['preserve_icon_colors'] as bool?
+  ..show_scaling_control = json['show_scaling_control'] as bool?;
 
 Map<String, dynamic> _$ConfigFlagsToJson(
   ConfigFlags instance,
@@ -39,4 +40,5 @@ Map<String, dynamic> _$ConfigFlagsToJson(
   'show_theme_color_palette': ?instance.show_theme_color_palette,
   'use_special_dropdown_button': ?instance.use_special_dropdown_button,
   'preserve_icon_colors': ?instance.preserve_icon_colors,
+  'show_scaling_control': ?instance.show_scaling_control,
 };

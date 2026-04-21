@@ -38,6 +38,7 @@ import 'theme_settings/canvas_theme_settings.dart';
 import 'theme_settings/styledtext_theme_settings.dart';
 import 'theme_settings/theme_color_palette_theme_settings.dart';
 import 'theme_settings/display_theme_settings.dart';
+import 'theme_settings/scaling_scale_theme_settings.dart';
 
 ColorScheme _resolveWidgetColorScheme(
   String widgetKey,
@@ -704,6 +705,9 @@ ThemeData createLightDefaultTheme(int? backgroundColor, {Color? seedColor}) {
   final themeColorPaletteTheme = getThemeColorPaletteLightTheme(
     colorScheme: _resolveWidgetColorScheme('toolbar', colorScheme, Brightness.light),
   );
+  final scalingScaleTheme = getScalingScaleLightTheme(
+    colorScheme: _resolveWidgetColorScheme('toolbar', colorScheme, Brightness.light),
+  );
   final displayTheme = getDisplayLightTheme(
     colorScheme: colorScheme,
     textTheme: defaultTextTheme,
@@ -750,6 +754,7 @@ ThemeData createLightDefaultTheme(int? backgroundColor, {Color? seedColor}) {
       styledTextTheme,
       themeColorPaletteTheme,
       displayTheme,
+      scalingScaleTheme,
     ],
   );
 }
@@ -935,6 +940,9 @@ ThemeData createLightNonDefaultTheme(
   final themeColorPaletteTheme = getThemeColorPaletteLightTheme(
     colorScheme: colorScheme,
   );
+  final scalingScaleTheme = getScalingScaleLightTheme(
+    colorScheme: colorScheme,
+  );
   final displayTheme = getDisplayLightTheme(
     colorScheme: colorScheme,
     textTheme: materialTextTheme,
@@ -982,6 +990,7 @@ ThemeData createLightNonDefaultTheme(
       styledTextTheme,
       themeColorPaletteTheme,
       displayTheme,
+      scalingScaleTheme,
     ],
   );
 }
@@ -1166,6 +1175,9 @@ ThemeData createDarkDefaultTheme(int? backgroundColor, {Color? seedColor}) {
   final themeColorPaletteTheme = getThemeColorPaletteDarkTheme(
     colorScheme: _resolveWidgetColorScheme('toolbar', colorScheme, Brightness.dark),
   );
+  final scalingScaleTheme = getScalingScaleDarkTheme(
+    colorScheme: _resolveWidgetColorScheme('toolbar', colorScheme, Brightness.dark),
+  );
   final displayTheme = getDisplayDarkTheme(
     colorScheme: colorScheme,
     textTheme: defaultTextTheme,
@@ -1212,6 +1224,7 @@ ThemeData createDarkDefaultTheme(int? backgroundColor, {Color? seedColor}) {
       styledTextTheme,
       themeColorPaletteTheme,
       displayTheme,
+      scalingScaleTheme,
     ],
   );
 }
@@ -1402,6 +1415,9 @@ ThemeData createDarkNonDefaultTheme(
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final scalingScaleTheme = getScalingScaleDarkTheme(
+    colorScheme: colorScheme,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -1444,6 +1460,7 @@ ThemeData createDarkNonDefaultTheme(
       styledTextTheme,
       themeColorPaletteTheme,
       displayTheme,
+      scalingScaleTheme,
     ],
   );
 }
