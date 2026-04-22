@@ -28,6 +28,7 @@ public class ConfigFlags {
     public boolean show_theme_color_palette;
 
     public boolean show_scaling_control;
+    public String decorations_align;
 
     public static ConfigFlags use_swt_fonts(boolean v) {
         ConfigFlags configFlags = new ConfigFlags();
@@ -50,6 +51,7 @@ public class ConfigFlags {
                 ", show_theme_color_palette=" + show_theme_color_palette +
                 ", preserve_icon_colors=" + preserve_icon_colors +
                 ", show_scaling_control=" + show_scaling_control +
+                ", decorations_align='" + decorations_align + '\'' +
                 '}';
     }
 }

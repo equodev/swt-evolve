@@ -53,10 +53,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   final FocusNode _focusNode = FocusNode();
 
   @override
-  Color get bg => colorFromVColor(
-    state.background,
-    defaultColor: _styledTextTheme.backgroundColor,
-  );
+  Color get bg =>
+      getBackgroundColor(
+        background: state.background,
+        defaultColor: _styledTextTheme.backgroundColor,
+      ) ??
+      _styledTextTheme.backgroundColor;
 
   @override
   void initState() {

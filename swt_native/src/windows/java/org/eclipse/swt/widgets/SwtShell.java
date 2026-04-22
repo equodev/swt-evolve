@@ -2413,6 +2413,8 @@ public class SwtShell extends SwtDecorations implements IShell {
     private void fillUnpaintedRegionInShellWindow() {
         if (menuBar == null)
             return;
+        if (!(menuBar.getImpl() instanceof SwtMenu))
+            return;
         Rectangle clientArea = getClientRectInWindow();
         Rectangle menuArea = ((SwtMenu) menuBar.getImpl()).getBounds();
         Rectangle windowBounds = getBoundsInPixels();

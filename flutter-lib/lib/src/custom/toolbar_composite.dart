@@ -9,6 +9,7 @@ import '../gen/toolbar.dart';
 import '../gen/toolitem.dart';
 import '../gen/widgets.dart';
 import '../impl/composite_evolve.dart';
+import '../impl/decorations_evolve.dart';
 import '../nolayout.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
@@ -128,7 +129,7 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
         );
       }
 
-      return Container(
+      final toolbarBody = Container(
         height: toolbarHeight,
         decoration: BoxDecoration(color: backgroundColor),
         child: ToolbarAreaMarker(
@@ -136,6 +137,7 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const VerticalMenuButton(atStart: true),
               Expanded(
                 child: Stack(
                   key: _stackKey,
@@ -144,20 +146,23 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
                 ),
               ),
               if (isRootToolbar) ToolbarOptionalControlsRow(useBoundsLayout: true),
+              const VerticalMenuButton(atStart: false),
             ],
           ),
         ),
       );
+      return toolbarBody;
     }
 
     final widgets = visibleChildren.map((child) => buildMapWidgetFromValue(child)).toList();
-    return Container(
+    final toolbarBody = Container(
       decoration: BoxDecoration(color: backgroundColor),
       child: ToolbarAreaMarker(
         active: true,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            const VerticalMenuButton(atStart: true),
             Expanded(
               child: ClipRect(
                 child: Align(
@@ -171,10 +176,12 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
               ),
             ),
             if (isRootToolbar) ToolbarOptionalControlsRow(useBoundsLayout: true),
+            const VerticalMenuButton(atStart: false),
           ],
         ),
       ),
     );
+    return toolbarBody;
   }
 
   static bool _isToolbarSeparatorCanvas(VCanvas child) {

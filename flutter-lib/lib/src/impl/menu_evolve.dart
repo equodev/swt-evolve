@@ -6,6 +6,7 @@ import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/menu_theme_extension.dart';
+import 'widget_config.dart';
 import 'utils/text_utils.dart';
 
 class MenuState {
@@ -89,7 +90,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       return _buildPopupMenu(context, widgetTheme, enabled, visible);
     }
 
-    if (!visible) {
+    if (!isBar && !visible) {
       return const SizedBox.shrink();
     }
 
@@ -107,6 +108,8 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
     bool visible,
   ) {
     final menuItems = _getMenuItems();
+    final mode = (getConfigFlags().decorations_align ?? "hleft").toLowerCase();
+    final alignRight = mode == "hright";
     final backgroundColor = enabled
         ? widgetTheme.menuBarBackgroundColor
         : widgetTheme.disabledBackgroundColor;
@@ -134,6 +137,8 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
         ),
       ),
       child: Row(
+        mainAxisAlignment:
+            alignRight ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: menuItems
             .map(
               (item) => _MenuBarItem(
