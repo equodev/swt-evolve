@@ -10,6 +10,7 @@ import '../theme/theme_extensions/menu_theme_extension.dart';
 import '../theme/theme_extensions/menuitem_theme_extension.dart';
 import '../theme/theme_settings/menuitem_theme_settings.dart';
 import 'menu_evolve.dart';
+import 'utils/image_utils.dart';
 import 'utils/text_utils.dart';
 
 class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
@@ -59,6 +60,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
         menuTheme: menuTheme,
         isEnabled: isEnabled,
         text: state.text,
+        leading: _buildMenuIcon(widgetTheme, isEnabled),
         subMenu: state.menu!,
       );
     }
@@ -97,10 +99,14 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
       widgetTheme: widgetTheme,
       isEnabled: isEnabled,
       onTap: isEnabled ? _onCheckPressed : null,
-      leading: _MenuCheckbox(
+      leading: _buildToggleLeading(
+        indicator: _MenuCheckbox(
+          widgetTheme: widgetTheme,
+          isEnabled: isEnabled,
+          isSelected: isChecked,
+        ),
         widgetTheme: widgetTheme,
         isEnabled: isEnabled,
-        isSelected: isChecked,
       ),
       child: Text(stripAccelerators(state.text), style: textStyle),
     );
@@ -118,10 +124,14 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
       widgetTheme: widgetTheme,
       isEnabled: isEnabled,
       onTap: isEnabled ? _onRadioPressed : null,
-      leading: _MenuRadioButton(
+      leading: _buildToggleLeading(
+        indicator: _MenuRadioButton(
+          widgetTheme: widgetTheme,
+          isEnabled: isEnabled,
+          isSelected: isSelected,
+        ),
         widgetTheme: widgetTheme,
         isEnabled: isEnabled,
-        isSelected: isSelected,
       ),
       child: Text(stripAccelerators(state.text), style: textStyle),
     );
@@ -154,10 +164,40 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
           notifier.closeMenu();
         }
       } : null,
+      leading: _buildMenuIcon(widgetTheme, isEnabled),
       trailing: acceleratorText.isNotEmpty
           ? Text(acceleratorText, style: acceleratorStyle)
           : null,
       child: Text(stripAccelerators(capturedState.text), style: textStyle),
+    );
+  }
+
+  Widget? _buildMenuIcon(MenuItemThemeExtension widgetTheme, bool isEnabled) {
+    if (state.image == null) return null;
+    return ImageUtils.buildVImage(
+      state.image,
+      size: widgetTheme.iconSize,
+      color: isEnabled ? widgetTheme.iconColor : widgetTheme.disabledIconColor,
+      enabled: isEnabled,
+      useBinaryImage: true,
+      renderAsIcon: true,
+    );
+  }
+
+  Widget _buildToggleLeading({
+    required Widget indicator,
+    required MenuItemThemeExtension widgetTheme,
+    required bool isEnabled,
+  }) {
+    final icon = _buildMenuIcon(widgetTheme, isEnabled);
+    if (icon == null) return indicator;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        indicator,
+        SizedBox(width: widgetTheme.iconTextSpacing),
+        icon,
+      ],
     );
   }
 
@@ -276,6 +316,7 @@ class _CascadeMenuItemRow extends StatefulWidget {
   final MenuThemeExtension menuTheme;
   final bool isEnabled;
   final String? text;
+  final Widget? leading;
   final VMenu subMenu;
 
   const _CascadeMenuItemRow({
@@ -283,6 +324,7 @@ class _CascadeMenuItemRow extends StatefulWidget {
     required this.menuTheme,
     required this.isEnabled,
     required this.text,
+    this.leading,
     required this.subMenu,
   });
 
@@ -394,6 +436,10 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
         menuChildren: _menuChildren,
         child: Row(
           children: [
+            if (widget.leading != null) ...[
+              widget.leading!,
+              SizedBox(width: widget.widgetTheme.iconTextSpacing),
+            ],
             Expanded(
               child: Text(stripAccelerators(widget.text), style: textStyle),
             ),
