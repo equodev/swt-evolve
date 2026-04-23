@@ -1,6 +1,3 @@
-import 'dart:io';
-import 'dart:typed_data' show Uint8List;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/material.dart' as material;
 import 'package:flutter/widgets.dart';
@@ -24,14 +21,30 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     CTabFolderThemeExtension folderTheme,
     VImage? image,
     Color? iconColor,
+    bool enabled,
   ) {
-    return ImageUtils.buildVImage(
-      image,
-      size: folderTheme.tabIconSize,
-      color: iconColor,
-      enabled: true,
-      useBinaryImage: true,
-      renderAsIcon: true,
+    if (image == null) return null;
+    final iconSize = folderTheme.tabIconSize;
+    final imageKey =
+        image.filename ?? image.imageData?.hashCode.toString() ?? 'no-image';
+    final futureKey =
+        '${imageKey}_${iconSize}_${iconColor?.value ?? 'null'}_$enabled';
+    return FutureBuilder<Widget?>(
+      key: ValueKey(futureKey),
+      future: ImageUtils.buildVImageAsync(
+        image,
+        size: iconSize,
+        color: iconColor,
+        enabled: enabled,
+        useBinaryImage: true,
+        renderAsIcon: true,
+      ),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          return snapshot.data ?? const SizedBox.shrink();
+        }
+        return SizedBox(width: iconSize, height: iconSize);
+      },
     );
   }
 
@@ -71,6 +84,7 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
       folderTheme,
       state.image,
       preserveIconColors ? null : textColor,
+      isEnabled,
     );
 
     return Padding(
