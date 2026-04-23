@@ -443,6 +443,14 @@ public class TableHelper {
         } finally {
             table.loadingVirtualData = false;
         }
+        if (table.hooks(SWT.PaintItem)) {
+            for (int i = 0; i < table.getItemCount(); i++) {
+                TableItem item = table._getItem(i);
+                if (item != null && item.getData() != null) {
+                    ((DartTableItem) item.getImpl()).firePaintItemForAllColumns();
+                }
+            }
+        }
         table.dirty();
     }
 
