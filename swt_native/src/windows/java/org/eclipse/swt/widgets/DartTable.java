@@ -476,10 +476,16 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void clearAll() {
         checkWidget();
-        boolean cleared = false;
-        if (cleared) {
-            setScrollWidth(null, false);
+        if (items != null) {
+            for (int i = 0; i < items.length; i++) {
+                TableItem item = items[i];
+                if (item != null) {
+                    ((DartTableItem) item.getImpl()).clear();
+                }
+            }
         }
+        setScrollWidth(null, true);
+        TableHelper.loadVirtualItems(this);
     }
 
     @Override
