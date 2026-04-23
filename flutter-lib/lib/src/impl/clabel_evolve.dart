@@ -173,14 +173,40 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
   }
 
   Widget? _buildImageWidget(VImage? image, bool enabled) {
-    return ImageUtils.buildVImage(
-      image,
-      width: image?.imageData?.width?.toDouble() ?? 0,
-      height: image?.imageData?.height?.toDouble() ?? 0,
-      enabled: enabled,
-      constraints: null,
-      useBinaryImage: true,
-      renderAsIcon: false,
+    if (image == null) return null;
+    final w = image.imageData?.width?.toDouble();
+    final h = image.imageData?.height?.toDouble();
+    final validW = (w != null && w > 0) ? w : null;
+    final validH = (h != null && h > 0) ? h : null;
+    final imageKey =
+        image.filename ?? image.imageData?.hashCode.toString() ?? 'no-image';
+    final futureKey = '${imageKey}_${validW}_${validH}_$enabled';
+    // sync fallback shown immediately while async loads
+    final fallback = ImageUtils.buildVImage(
+          image,
+          width: validW,
+          height: validH,
+          enabled: enabled,
+          useBinaryImage: true,
+          renderAsIcon: false,
+        ) ??
+        const SizedBox.shrink();
+    return FutureBuilder<Widget?>(
+      key: ValueKey(futureKey),
+      future: ImageUtils.buildVImageAsync(
+        image,
+        width: validW,
+        height: validH,
+        enabled: enabled,
+        useBinaryImage: true,
+        renderAsIcon: false,
+      ),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          return snapshot.data ?? fallback;
+        }
+        return fallback;
+      },
     );
   }
 
