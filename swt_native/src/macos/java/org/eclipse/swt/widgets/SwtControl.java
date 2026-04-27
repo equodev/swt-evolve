@@ -3956,7 +3956,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         this.cursor = cursor;
         if (!isEnabled())
             return;
-        if (!getApi().view.window().areCursorRectsEnabled())
+        if (getApi().view.window() == null || !getApi().view.window().areCursorRectsEnabled())
             return;
         ((SwtDisplay) display.getImpl()).setCursor(((SwtDisplay) display.getImpl()).currentControl);
     }
@@ -4649,8 +4649,13 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         NSView topView = topView();
         if (parent.getImpl() instanceof SwtControl) {
             ((SwtControl) parent.getImpl()).contentView().addSubview(topView, OS.NSWindowBelow, null);
-        } else
-            ((NSView) ((DartComposite) parent.getImpl()).contentView()).addSubview(topView, OS.NSWindowBelow, null);
+        } else if (parent.getImpl() instanceof DartComposite) {
+            Object cv = ((DartComposite) parent.getImpl()).contentView();
+            if (cv instanceof NSView nsView) {
+                nsView.addSubview(topView, OS.NSWindowBelow, null);
+            }
+            // else: Flutter-backed composite has no native NSView; skip native z-ordering
+        }
     }
 
     @Override

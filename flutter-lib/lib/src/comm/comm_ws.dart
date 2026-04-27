@@ -3,6 +3,7 @@ import 'dart:io';
 
 import '../gen/widgets.dart';
 import '../gen/widget.dart';
+import '../impl/widget_config.dart';
 import 'comm_api.dart';
 
 class EquoCommService {
@@ -246,7 +247,9 @@ class _EquoComm implements _EquoCommI {
       'error': userEvent.error,
       'callbackId': callback?.id,
     });
-    print("ws about to send: $event");
+    if (!userEvent.actionId.contains('MouseMove') || (getConfigFlags().print_move ?? false)) {
+      print("ws about to send: $event");
+    }
     return ws.then((ws) {
       // print("ws sent");
       ws.add(event);

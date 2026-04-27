@@ -63,8 +63,8 @@ public class Config {
                     entry(Tree.class, Impl.equo),
                     entry(TreeItem.class, Impl.equo),
                     entry(TreeColumn.class, Impl.equo),
-                    entry(Canvas.class, Impl.equo),
-                    entry(Cursor.class, Impl.equo),
+                    entry(Canvas.class, Impl.equo)
+                    //entry(Cursor.class, Impl.equo),
                     //entry(ScrolledComposite.class, Impl.equo)
                     //entry(Menu.class, Impl.equo)
                     //entry(MenuItem.class, Impl.equo),
@@ -77,7 +77,7 @@ public class Config {
                     //entry(Spinner.class, Impl.equo),
                     //entry(ToolTip.class, Impl.equo),
                     //entry(Shell.class, Impl.equo),
-                    entry(Composite.class, Impl.equo)
+                    //entry(Composite.class, Impl.equo)
                     //entry(DateTime.class, Impl.equo),
                     //entry(Tray.class, Impl.equo),
                     //entry(TrayItem.class, Impl.equo)
@@ -333,8 +333,10 @@ public class Config {
             return false;
         if (parent != null && parent.getImpl().getClass().getSimpleName().startsWith(DART) && !isSwtCTabFolderBody(clazz, parent))
             return true;
-        if (isSwtCTabFolderBody(clazz, parent))
+        if (clazz == ToolItem.class && parent != null && !(parent.getImpl() instanceof DartToolBar))
             return false;
+        if (isSwtCTabFolderBody(clazz, parent))
+            return false; // Hybrid
         if (isSplash(parent))
             return false;
         return isEquo(clazz);
@@ -373,7 +375,7 @@ public class Config {
         return id.equals("/Shell/0/Composite/3") && isInStackTrace(E4_TOOLBAR_CLASS, E4_TOOLBAR_METHOD);
     }
 
-    private static boolean isMainComposite(Class<?> clazz, Composite parent) {
+    static boolean isMainComposite(Class<?> clazz, Composite parent) {
         String id = getId(clazz, parent);
         return id.equals("/Shell/0/Composite/1/Composite/1/Composite/1/Composite/1");
     }
@@ -444,7 +446,7 @@ public class Config {
     private static final String E4_CLASS = "org.eclipse.e4.ui.workbench.renderers.swt.StackRenderer";
     private static final String E4_METHOD = "addTopRight";
 
-    private static boolean isToolBar() {
+    public static boolean isToolBar() {
         return isInStackTrace(E4_CLASS, E4_METHOD);
     }
 
@@ -517,6 +519,7 @@ public class Config {
             configFlags.show_theme_color_palette = Boolean.getBoolean("swt.evolve.show_theme_color_palette");
             configFlags.show_scaling_control = Boolean.getBoolean("swt.evolve.show_scaling_control");
             configFlags.decorations_align = System.getProperty("swt.evolve.decorations_align");
+            configFlags.print_move = Boolean.getBoolean("dev.equo.swt.printMove");
             configFlags.force_theme = System.getProperty("swt.evolve.force_theme");
             configFlags.theme_name = System.getProperty("swt.evolve.theme_name");
             configFlags.theme_color = System.getProperty("swt.evolve.theme_color");

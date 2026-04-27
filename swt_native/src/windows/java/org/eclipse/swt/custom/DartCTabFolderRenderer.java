@@ -1499,7 +1499,7 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
                     int imageHeight = imageBounds.height;
                     int imageY = y + (height - imageHeight) / 2;
                     imageY += ((DartCTabFolder) getApi().parent.getImpl()).onBottom ? -1 : 1;
-                    int imageWidth = imageBounds.width * imageHeight / imageBounds.height;
+                    int imageWidth = imageBounds.height != 0 ? imageBounds.width * imageHeight / imageBounds.height : imageHeight;
                     gc.drawImage(image, imageX, imageY, imageWidth, imageHeight);
                     xDraw += imageWidth + INTERNAL_SPACING;
                 }

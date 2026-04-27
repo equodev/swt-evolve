@@ -24,7 +24,8 @@ ConfigFlags _$ConfigFlagsFromJson(Map<String, dynamic> json) => ConfigFlags()
   ..use_special_dropdown_button = json['use_special_dropdown_button'] as bool?
   ..preserve_icon_colors = json['preserve_icon_colors'] as bool?
   ..show_scaling_control = json['show_scaling_control'] as bool?
-  ..decorations_align = json['decorations_align'] as String?;
+  ..decorations_align = json['decorations_align'] as String?
+  ..print_move = json['print_move'] as bool?;
 
 Map<String, dynamic> _$ConfigFlagsToJson(
   ConfigFlags instance,
@@ -43,4 +44,5 @@ Map<String, dynamic> _$ConfigFlagsToJson(
   'preserve_icon_colors': ?instance.preserve_icon_colors,
   'show_scaling_control': ?instance.show_scaling_control,
   'decorations_align': ?instance.decorations_align,
+  'print_move': ?instance.print_move,
 };

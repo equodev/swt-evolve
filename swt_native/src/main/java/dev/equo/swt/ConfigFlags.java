@@ -30,6 +30,8 @@ public class ConfigFlags {
     public boolean show_scaling_control;
     public String decorations_align;
 
+    public boolean print_move;
+
     public static ConfigFlags use_swt_fonts(boolean v) {
         ConfigFlags configFlags = new ConfigFlags();
         configFlags.use_swt_fonts = v;

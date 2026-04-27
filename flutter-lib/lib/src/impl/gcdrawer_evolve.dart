@@ -436,8 +436,10 @@ class GCDrawer extends GCDrawerBase {
     final f = ImageShape.fromVImageDetailed(o.image!, o, capturedClipping);
     _pendingImages.add(f);
     f.then((s) {
-      shapes[idx] = s;
-      onShapesUpdated?.call(shapes);
+      if (idx < shapes.length) {
+        shapes[idx] = s;
+        onShapesUpdated?.call(shapes);
+      }
     });
   }
 
