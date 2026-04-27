@@ -20,6 +20,7 @@ class ConfigFlags {
   bool? preserve_icon_colors;
   bool? show_scaling_control;
   String? decorations_align;
+  bool? print_move;
 
   factory ConfigFlags.fromJson(Map<String, dynamic> json) =>
       _$ConfigFlagsFromJson(json);

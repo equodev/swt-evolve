@@ -3941,7 +3941,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         Control control = findBackgroundControl();
         if (control == null)
             control = this.getApi();
-        setBackgroundPixel(((DartControl) control.getImpl()).background);
+        if (control.getImpl() instanceof DartControl dc) {
+            setBackgroundPixel(dc.background);
+        } else if (control.getImpl() instanceof SwtControl sc) {
+            setBackgroundPixel(sc.background);
+        }
     }
 
     void updateBackgroundImage() {

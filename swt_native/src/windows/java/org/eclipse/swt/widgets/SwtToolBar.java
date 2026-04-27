@@ -1030,19 +1030,10 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 
     @Override
     void setBoundsInPixels(int x, int y, int width, int height, int flags) {
-        /*
-	* Feature in Windows.  For some reason, when a tool bar is
-	* repositioned more than once using DeferWindowPos () into
-	* the same HDWP, the toolbar redraws more than once, defeating
-	* the purpose of DeferWindowPos ().  The fix is to end the
-	* deferred positioning before the next tool bar is added,
-	* ensuring that only one tool bar position is deferred at
-	* any given time.
-	*/
-        if (((SwtComposite) parent.getImpl()).lpwp != null) {
+        if (parent.getImpl() instanceof SwtComposite swtParent && swtParent.lpwp != null) {
             if (getDrawing() && OS.IsWindowVisible(getApi().handle)) {
-                ((SwtComposite) parent.getImpl()).setResizeChildren(false);
-                ((SwtComposite) parent.getImpl()).setResizeChildren(true);
+                swtParent.setResizeChildren(false);
+                swtParent.setResizeChildren(true);
             }
         }
         super.setBoundsInPixels(x, y, width, height, flags);

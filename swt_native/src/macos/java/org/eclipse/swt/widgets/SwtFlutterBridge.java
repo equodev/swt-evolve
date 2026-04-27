@@ -110,7 +110,11 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
             if (parent.getImpl() instanceof SwtComposite) {
                 ((SwtComposite) parent.getImpl()).contentView().addSubview(topView, above ? org.eclipse.swt.internal.cocoa.OS.NSWindowAbove : org.eclipse.swt.internal.cocoa.OS.NSWindowBelow, otherView);
             } else if (parent.getImpl() instanceof DartComposite) {
-                ((org.eclipse.swt.internal.cocoa.NSView) ((DartComposite) parent.getImpl()).contentView()).addSubview(topView, above ? org.eclipse.swt.internal.cocoa.OS.NSWindowAbove : org.eclipse.swt.internal.cocoa.OS.NSWindowBelow, otherView);
+                Object cv = ((DartComposite) parent.getImpl()).contentView();
+                if (cv instanceof org.eclipse.swt.internal.cocoa.NSView nsView) {
+                    nsView.addSubview(topView, above ? org.eclipse.swt.internal.cocoa.OS.NSWindowAbove : org.eclipse.swt.internal.cocoa.OS.NSWindowBelow, otherView);
+                }
+                // else: Flutter-backed composite has no native NSView; z-order is managed by Flutter
             }
             topView.release();
         }

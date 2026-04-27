@@ -13,21 +13,22 @@ public class ConfigDyn {
     static final Pattern IDREGEX = Pattern.compile("\\([^)]*\\)");
 
     public static IWidget getCompositeImpl(Composite parent, int style, Composite composite) {
-        if (dynEnabled && ("dyn".equals(parent != null ? parent.getData(Config.getKey(Composite.class)) : null) || mustBeDynComposite(composite))) {
+        if (dynEnabled && ("dyn".equals(parent != null ? parent.getData(Config.getKey(Composite.class)) : null) || mustBeDynComposite(composite)))
             return new DynComposite(parent, style, composite);
-        }
         if (mainToolbarImpl == Impl.equo && isMainToolbarComposite(Composite.class, parent))
             return new DartMainToolbar(parent, style, composite);
         if (sideBarImpl == Impl.equo && isSideToolbarComposite(Composite.class, parent))
             return new DartSideBar(parent, style, composite);
         if (statusBarImpl == Impl.equo && isStatusToolbarComposite(Composite.class, parent))
             return new DartStatusBar(parent, style, composite);
-        // In eclipse mode, always use SWT implementation without any special handling
-        if (Config.isEquo(composite.getClass(), parent))
-            return new DartComposite(parent, style, composite);
+        if (mainCompositeImpl == Impl.equo && isMainComposite(Composite.class, parent))
+            return new DartMainComposite(parent, style, composite);
         if (defaultImpl == Impl.eclipse || forceEclipse)
             return new SwtComposite(parent, style, composite);
-        return new SwtComposite(parent, style, composite);
+        if (Config.isEquo(composite.getClass(), parent))
+            return new DartComposite(parent, style, composite);
+        else
+            return new SwtComposite(parent, style, composite);
     }
 
     private static boolean mustBeDynComposite(Composite composite) {
