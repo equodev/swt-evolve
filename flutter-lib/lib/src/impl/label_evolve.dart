@@ -8,6 +8,7 @@ import './utils/image_utils.dart';
 import './utils/font_utils.dart';
 import './utils/text_utils.dart';
 import './utils/widget_utils.dart';
+import '../custom/toolbar_composite.dart';
 import '../theme/theme_extensions/label_theme_extension.dart';
 
 class LabelImpl<T extends LabelSwt, V extends VLabel>
@@ -84,10 +85,8 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
   ) {
     final text = stripAccelerators(state.text);
     final textAlign = getTextAlignFromStyle(state.style, widgetTheme.textAlign);
-    final backgroundColor = getBackgroundColor(
-      background: state.background,
-      defaultColor: widgetTheme.backgroundColor,
-    );
+    final backgroundColor = ToolbarAreaMarker.backgroundOf(context) ??
+        getBackgroundColor(background: state.background, defaultColor: widgetTheme.backgroundColor);
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = getConstraintsFromBounds(state.bounds);
 
