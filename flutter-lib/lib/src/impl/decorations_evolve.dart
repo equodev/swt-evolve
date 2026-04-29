@@ -11,11 +11,13 @@ import '../theme/theme_extensions/menu_theme_extension.dart';
 class DecorationsMenuData extends InheritedWidget {
   final VMenu? menuBar;
   final bool isAtStart;
+  final bool isHorizontal;
 
   const DecorationsMenuData({
     super.key,
     required this.menuBar,
     required this.isAtStart,
+    required this.isHorizontal,
     required super.child,
   });
 
@@ -24,7 +26,7 @@ class DecorationsMenuData extends InheritedWidget {
 
   @override
   bool updateShouldNotify(DecorationsMenuData old) =>
-      menuBar != old.menuBar || isAtStart != old.isAtStart;
+      menuBar != old.menuBar || isAtStart != old.isAtStart || isHorizontal != old.isHorizontal;
 }
 
 class VerticalMenuButton extends StatefulWidget {
@@ -52,7 +54,7 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
   Widget build(BuildContext context) {
     final data = DecorationsMenuData.of(context);
     final menuBar = data?.menuBar;
-    if (menuBar == null || data!.isAtStart != widget.atStart) {
+    if (menuBar == null || data!.isHorizontal || data.isAtStart != widget.atStart) {
       return const SizedBox.shrink();
     }
 
@@ -110,22 +112,11 @@ class DecorationsImpl<T extends DecorationsSwt, V extends VDecorations>
     final isVertical = menuMode == "vleft" || menuMode == "vright";
     final isAtStart = menuMode == "vleft";
 
-    final Widget content;
-    if (!isVertical && state.menuBar != null) {
-      content = Column(
-        children: [
-          MenuSwt(value: state.menuBar!),
-          Expanded(child: super.build(context)),
-        ],
-      );
-    } else {
-      content = super.build(context);
-    }
-
     return DecorationsMenuData(
-      menuBar: isVertical ? state.menuBar : null,
+      menuBar: state.menuBar,
       isAtStart: isAtStart,
-      child: content,
+      isHorizontal: !isVertical,
+      child: super.build(context),
     );
   }
 }

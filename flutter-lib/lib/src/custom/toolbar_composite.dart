@@ -15,6 +15,19 @@ import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import 'controls_item.dart';
 
+class HorizontalMenuBar extends StatelessWidget {
+  const HorizontalMenuBar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final data = DecorationsMenuData.of(context);
+    if (data == null || !data.isHorizontal || data.menuBar == null) {
+      return const SizedBox.shrink();
+    }
+    return mapWidgetFromValue(data.menuBar!);
+  }
+}
+
 class ToolbarComposite extends CompositeSwt<VComposite> {
   final bool useBoundsLayout;
   final Color? backgroundColor;
@@ -48,6 +61,9 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
     final visibleChildren = children.where((child) => child.visible != false).toList();
     final isRootToolbar = widget.value.swt == "MainToolbar";
 
+    final menuData = isRootToolbar ? DecorationsMenuData.of(context) : null;
+    final hasHorizontalMenu = menuData?.isHorizontal == true && menuData?.menuBar != null;
+
     if (widget.useBoundsLayout) {
       final boundsHeight = state.bounds?.height;
       final toolbarHeight = (boundsHeight != null && boundsHeight > 0)
@@ -59,8 +75,6 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
       final dividerColor = widgetTheme!.borderColor;
       final dividerThickness = widgetTheme!.separatorThickness;
       final dividerVerticalPadding = widgetTheme!.dividerVerticalPadding;
-
-      final positionedContent = <Widget>[];
 
       final nonSepChildren = visibleChildren
           .where((c) => c is! VLabel)
@@ -98,90 +112,125 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
         }
       });
 
-      for (var i = 0; i < nonSepChildren.length; i++) {
-        final child = nonSepChildren[i];
-        final key = _childKeys.putIfAbsent(i, () => GlobalKey());
-        final baseLeft = (child.bounds?.x ?? 0).toDouble();
-        final isKeyword = child is VToolBar &&
-            child.items?.any((item) => item.text?.trim().toLowerCase() == keywordTextLower) == true;
-        final left = isKeyword ? baseLeft - keywordLeftOffset : baseLeft;
-        final builtChild = buildMapWidgetFromValue(child);
-        positionedContent.add(
-          Positioned(
-            key: key,
-            left: left,
-            top: 0,
-            bottom: 0,
-            child: builtChild,
+      final builtChildren = [
+        for (var i = 0; i < nonSepChildren.length; i++)
+          (
+            key: _childKeys.putIfAbsent(i, () => GlobalKey()),
+            child: nonSepChildren[i],
+            widget: buildMapWidgetFromValue(nonSepChildren[i]),
           ),
-        );
-      }
+      ];
 
-      for (final dividerX in _dividerLocalXs) {
-        positionedContent.add(
-          Positioned(
-            left: dividerX - dividerThickness / 2,
-            top: dividerVerticalPadding,
-            bottom: dividerVerticalPadding,
-            width: dividerThickness,
-            child: ColoredBox(color: dividerColor),
+      final toolbarRow = Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (isRootToolbar) const VerticalMenuButton(atStart: true),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (_, box) {
+                final availW = box.maxWidth;
+                final javaW = (state.bounds?.width.toDouble()) ?? availW;
+                final scaleX =
+                    (javaW > availW && javaW > 0) ? availW / javaW : 1.0;
+
+                final scaledContent = <Widget>[];
+                for (final entry in builtChildren) {
+                  final baseLeft =
+                      (entry.child.bounds?.x ?? 0).toDouble() * scaleX;
+                  final isKeyword = entry.child is VToolBar &&
+                      (entry.child as VToolBar)
+                              .items
+                              ?.any((item) =>
+                                  item.text?.trim().toLowerCase() ==
+                                  keywordTextLower) ==
+                          true;
+                  final left = isKeyword
+                      ? baseLeft - keywordLeftOffset * scaleX
+                      : baseLeft;
+                  scaledContent.add(Positioned(
+                    key: entry.key,
+                    left: left,
+                    top: 0,
+                    bottom: 0,
+                    child: entry.widget,
+                  ));
+                }
+                for (final dividerX in _dividerLocalXs) {
+                  scaledContent.add(Positioned(
+                    left: dividerX - dividerThickness / 2,
+                    top: dividerVerticalPadding,
+                    bottom: dividerVerticalPadding,
+                    width: dividerThickness,
+                    child: ColoredBox(color: dividerColor),
+                  ));
+                }
+                return Stack(
+                  key: _stackKey,
+                  clipBehavior: Clip.hardEdge,
+                  children: scaledContent,
+                );
+              },
+            ),
           ),
-        );
-      }
+          if (isRootToolbar) ToolbarOptionalControlsRow(useBoundsLayout: true),
+          if (isRootToolbar) const VerticalMenuButton(atStart: false),
+        ],
+      );
 
-      final toolbarBody = Container(
+      return Container(
         height: toolbarHeight,
         decoration: BoxDecoration(color: backgroundColor),
         child: ToolbarAreaMarker(
           active: true,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const VerticalMenuButton(atStart: true),
-              Expanded(
-                child: Stack(
-                  key: _stackKey,
-                  clipBehavior: Clip.hardEdge,
-                  children: positionedContent,
-                ),
-              ),
-              if (isRootToolbar) ToolbarOptionalControlsRow(useBoundsLayout: true),
-              const VerticalMenuButton(atStart: false),
-            ],
-          ),
+          child: hasHorizontalMenu
+              ? Column(
+                  children: [
+                    const HorizontalMenuBar(),
+                    Expanded(child: toolbarRow),
+                  ],
+                )
+              : toolbarRow,
         ),
       );
-      return toolbarBody;
     }
 
     final widgets = visibleChildren.map((child) => buildMapWidgetFromValue(child)).toList();
-    final toolbarBody = Container(
+    final nonBoundsRow = Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        if (isRootToolbar) const VerticalMenuButton(atStart: true),
+        Expanded(
+          child: ClipRect(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: widgets,
+              ),
+            ),
+          ),
+        ),
+        if (isRootToolbar) ToolbarOptionalControlsRow(useBoundsLayout: false),
+        if (isRootToolbar) const VerticalMenuButton(atStart: false),
+      ],
+    );
+
+    return Container(
       decoration: BoxDecoration(color: backgroundColor),
       child: ToolbarAreaMarker(
         active: true,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const VerticalMenuButton(atStart: true),
-            Expanded(
-              child: ClipRect(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: widgets,
-                  ),
-                ),
-              ),
-            ),
-            if (isRootToolbar) ToolbarOptionalControlsRow(useBoundsLayout: true),
-            const VerticalMenuButton(atStart: false),
-          ],
-        ),
+        child: hasHorizontalMenu
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const HorizontalMenuBar(),
+                  nonBoundsRow,
+                ],
+              )
+            : nonBoundsRow,
       ),
     );
-    return toolbarBody;
   }
 
   static bool _isToolbarSeparatorCanvas(VCanvas child) {
@@ -229,13 +278,51 @@ class StatusBarCompositeImpl extends CompositeImpl<StatusBarComposite, VComposit
       return wrap(const SizedBox.shrink());
     }
 
-    final widgetTheme = Theme.of(context).extension<ToolBarThemeExtension>();
-    final backgroundColor = widgetTheme?.toolbarBackgroundColor ?? Colors.white;
-    final visibleChildren = children.where((child) => child.visible == true).toList();
+    final widgetTheme = Theme.of(context).extension<ToolBarThemeExtension>()!;
+    final backgroundColor = widgetTheme.compositeBackgroundColor;
 
-    return ColoredBox(
-      color: backgroundColor,
-      child: NoLayout(children: visibleChildren, composite: state),
+    final visibleChildren = children.where((child) => child.visible != false).toList()
+      ..sort((a, b) => (a.bounds?.x ?? 0).compareTo(b.bounds?.x ?? 0));
+
+    final positionedItems = visibleChildren.map((child) {
+      return Positioned(
+        left: (child.bounds?.x ?? 0).toDouble(),
+        top: (child.bounds?.y ?? 0).toDouble(),
+        width: child.bounds?.width.toDouble(),
+        height: child.bounds?.height.toDouble(),
+        child: mapWidgetFromValue(child),
+      );
+    }).toList();
+
+    double contentHeight = 0;
+    for (final child in visibleChildren) {
+      final bottom = (child.bounds?.y ?? 0) + (child.bounds?.height ?? 0);
+      if (bottom > contentHeight) contentHeight = bottom.toDouble();
+    }
+
+    final barHeight = (state.bounds?.height ?? 0) > 0
+        ? state.bounds!.height.toDouble()
+        : 30.0;
+    if (contentHeight <= 0) contentHeight = barHeight;
+    final effectiveHeight = contentHeight > barHeight ? contentHeight : barHeight;
+
+    return Container(
+      width: double.infinity,
+      height: effectiveHeight,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        border: Border(
+          top: BorderSide(
+            color: widgetTheme.borderColor,
+            width: widgetTheme.borderWidth,
+          ),
+        ),
+      ),
+      child: ToolbarAreaMarker(
+        active: true,
+        background: backgroundColor,
+        child: Stack(clipBehavior: Clip.none, children: positionedItems),
+      ),
     );
   }
 }
@@ -341,10 +428,12 @@ class SideBarCompositeImpl extends CompositeImpl<SideBarComposite, VComposite> {
 
 class ToolbarAreaMarker extends InheritedWidget {
   final bool active;
+  final Color? background;
 
   const ToolbarAreaMarker({
     super.key,
     required this.active,
+    this.background,
     required super.child,
   });
 
@@ -352,7 +441,10 @@ class ToolbarAreaMarker extends InheritedWidget {
       context.dependOnInheritedWidgetOfExactType<ToolbarAreaMarker>()?.active ??
           false;
 
+  static Color? backgroundOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ToolbarAreaMarker>()?.background;
+
   @override
   bool updateShouldNotify(ToolbarAreaMarker oldWidget) =>
-      active != oldWidget.active;
+      active != oldWidget.active || background != oldWidget.background;
 }

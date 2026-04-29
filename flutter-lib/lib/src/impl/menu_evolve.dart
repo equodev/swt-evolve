@@ -267,7 +267,55 @@ class _MenuBarItem extends StatefulWidget {
 
 class _MenuBarItemState extends State<_MenuBarItem> {
   bool _isHovered = false;
+  bool _itemsLoaded = false;
+  bool _pendingOpen = false;
+  List<Widget> _menuChildren = const [SizedBox.shrink()];
   final MenuController _subMenuController = MenuController();
+
+  @override
+  void initState() {
+    super.initState();
+    final preItems = widget.item.menu?.items;
+    if (preItems != null && preItems.isNotEmpty) {
+      _itemsLoaded = true;
+      _menuChildren =
+          preItems.map((item) => MenuItemSwt(value: item)).toList();
+    }
+  }
+
+  @override
+  void dispose() {
+    if (widget.item.menu != null) {
+      EquoCommService.remove("Menu/${widget.item.menu!.id}");
+    }
+    super.dispose();
+  }
+
+  void _requestItems() {
+    if (_itemsLoaded || widget.item.menu == null) return;
+    final subMenu = widget.item.menu!;
+    final channelName = "Menu/${subMenu.id}";
+    EquoCommService.on<VMenu>(channelName, (VMenu updatedMenu) {
+      EquoCommService.remove(channelName);
+      if (!mounted) return;
+      final items = (updatedMenu.items ?? [])
+          .map((item) => MenuItemSwt(value: item))
+          .toList();
+      setState(() {
+        _itemsLoaded = true;
+        _menuChildren = items.isEmpty ? const [SizedBox.shrink()] : items;
+      });
+      if (_pendingOpen) {
+        _pendingOpen = false;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && !_subMenuController.isOpen) {
+            _subMenuController.open();
+          }
+        });
+      }
+    });
+    MenuSwt<VMenu>(value: subMenu).sendMenuShow(subMenu, null);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -308,39 +356,45 @@ class _MenuBarItemState extends State<_MenuBarItem> {
             closeMenu: _subMenuController.close,
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: (widget.item.menu!.items ?? [])
-                  .map((item) => MenuItemSwt(value: item))
-                  .toList(),
+              children: _menuChildren,
             ),
           ),
         ],
         builder: (context, controller, child) {
           return MouseRegion(
-            onEnter: (_) => setState(() => _isHovered = true),
+            onEnter: (_) {
+              setState(() => _isHovered = true);
+              _requestItems();
+            },
             onExit: (_) => setState(() => _isHovered = false),
             child: AnimatedContainer(
               duration: widget.widgetTheme.animationDuration,
               color: _isHovered && enabled
                   ? widget.widgetTheme.hoverBackgroundColor
                   : Colors.transparent,
-              child: InkWell(
-                onTap: enabled
-                    ? () {
-                        if (controller.isOpen) {
-                          controller.close();
-                        } else {
-                          controller.open();
-                        }
-                      }
-                    : null,
-                child: Padding(
-                  padding: widget.widgetTheme.menuBarItemPadding,
-                  child: Text(
-                    stripAccelerators(widget.item.text),
-                    style: widget.textStyle.copyWith(
-                      color: enabled
-                          ? widget.textColor
-                          : widget.widgetTheme.disabledTextColor,
+              child: Listener(
+                onPointerUp: (e) {
+                  if (enabled && e.buttons == 0) {
+                    if (controller.isOpen) {
+                      controller.close();
+                    } else if (_itemsLoaded) {
+                      controller.open();
+                    } else {
+                      _pendingOpen = true;
+                      _requestItems();
+                    }
+                  }
+                },
+                child: GestureDetector(
+                  child: Padding(
+                    padding: widget.widgetTheme.menuBarItemPadding,
+                    child: Text(
+                      stripAccelerators(widget.item.text),
+                      style: widget.textStyle.copyWith(
+                        color: enabled
+                            ? widget.textColor
+                            : widget.widgetTheme.disabledTextColor,
+                      ),
                     ),
                   ),
                 ),
@@ -359,16 +413,18 @@ class _MenuBarItemState extends State<_MenuBarItem> {
         color: _isHovered && enabled
             ? widget.widgetTheme.hoverBackgroundColor
             : Colors.transparent,
-        child: InkWell(
-          onTap: enabled ? () {} : null,
-          child: Padding(
-            padding: widget.widgetTheme.menuBarItemPadding,
-            child: Text(
-              stripAccelerators(widget.item.text),
-              style: widget.textStyle.copyWith(
-                color: enabled
-                    ? widget.textColor
-                    : widget.widgetTheme.disabledTextColor,
+        child: Listener(
+          onPointerUp: (e) {},
+          child: GestureDetector(
+            child: Padding(
+              padding: widget.widgetTheme.menuBarItemPadding,
+              child: Text(
+                stripAccelerators(widget.item.text),
+                style: widget.textStyle.copyWith(
+                  color: enabled
+                      ? widget.textColor
+                      : widget.widgetTheme.disabledTextColor,
+                ),
               ),
             ),
           ),
