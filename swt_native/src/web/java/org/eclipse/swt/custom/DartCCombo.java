@@ -177,7 +177,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
             listStyle |= SWT.RIGHT_TO_LEFT;
         if ((checkedStyle & SWT.LEFT_TO_RIGHT) != 0)
             listStyle |= SWT.LEFT_TO_RIGHT;
-        list = new List(getShell(), listStyle);
+        list = new List(this.getApi(), listStyle);
         int[] listEvents = { SWT.MouseUp, SWT.Selection, SWT.Traverse, SWT.KeyDown, SWT.KeyUp, SWT.FocusIn, SWT.FocusOut, SWT.Dispose };
         for (int listEvent : listEvents) list.addListener(listEvent, listener);
         ;
@@ -1825,6 +1825,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         this.items = items;
+        list.setItems(items);
         //$NON-NLS-1$
         if (!text.getEditable())
             text.setText("");
