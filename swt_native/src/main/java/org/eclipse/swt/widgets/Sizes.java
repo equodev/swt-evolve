@@ -413,8 +413,8 @@ public class Sizes {
         int columnCount = t.getColumnCount();
         int itemCount = t.getItemCount();
 
-        int width = wHint != SWT.DEFAULT ? wHint : (columnCount > 0 ? columnCount * 30 : 200);
-        int height = hHint != SWT.DEFAULT ? hHint : Math.min(itemCount, DEFAULT_VISIBLE_ITEM_COUNT) * DEFAULT_ITEM_HEIGHT;
+        int width = (wHint != SWT.DEFAULT && wHint > 0) ? wHint : (columnCount > 0 ? columnCount * 30 : 200);
+        int height = (hHint != SWT.DEFAULT && hHint > 0) ? hHint : Math.min(itemCount, DEFAULT_VISIBLE_ITEM_COUNT) * DEFAULT_ITEM_HEIGHT;
 
         return new Point(width, height);
     }
