@@ -11,10 +11,14 @@ VDisplay _$VDisplayFromJson(Map<String, dynamic> json) => VDisplay()
   ..id = (json['id'] as num?)?.toInt()
   ..shells = (json['shells'] as List<dynamic>?)
       ?.map((e) => VShell.fromJson(e as Map<String, dynamic>))
+      .toList()
+  ..popups = (json['popups'] as List<dynamic>?)
+      ?.map((e) => VMenu.fromJson(e as Map<String, dynamic>))
       .toList();
 
 Map<String, dynamic> _$VDisplayToJson(VDisplay instance) => <String, dynamic>{
   'swt': ?instance.swt,
   'id': ?instance.id,
   'shells': ?instance.shells,
+  'popups': ?instance.popups,
 };

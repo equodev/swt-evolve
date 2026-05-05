@@ -884,6 +884,10 @@ public class DartMenu extends DartWidget implements IMenu {
         this.x = x;
         this.y = y;
         hasLocation = true;
+        if (location == null || location.x != x || location.y != y) {
+            location = new Point(x, y);
+            dirty();
+        }
     }
 
     /**

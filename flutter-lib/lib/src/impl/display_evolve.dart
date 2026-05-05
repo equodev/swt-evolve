@@ -104,6 +104,8 @@ class _DisplaySwtState extends State<DisplaySwt> {
 
       return Stack(children: [
         for (final s in mainShells) Positioned.fill(child: gen.mapWidgetFromValue(s)),
+        for (final popup in (_display.popups ?? []))
+          Positioned.fill(child: gen.mapWidgetFromValue(popup)),
         if (dialogShells.any(_isModal))
           Positioned.fill(
             child: ColoredBox(
