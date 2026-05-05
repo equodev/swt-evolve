@@ -416,6 +416,21 @@ class ImageUtils {
     required bool useBinaryImage,
     required bool renderAsIcon,
   }) async {
+    // SVG content loaded by Java (no filesystem access needed)
+    if (image.svgContent?.isNotEmpty ?? false) {
+      return _buildReplacementWidget(
+        image.svgContent!,
+        filename: image.svgContent!,
+        size: size,
+        width: width,
+        height: height,
+        color: color,
+        enabled: enabled,
+        constraints: constraints,
+        renderAsIcon: renderAsIcon,
+      );
+    }
+
     // Try AssetsManager replacement first (if filename exists)
     if (image.filename?.isNotEmpty ?? false) {
       try {
@@ -453,7 +468,7 @@ class ImageUtils {
       }
     }
 
-    // Try binary image data
+    // Try binary image data (encoded PNG/JPG bytes sent from Java)
     if (useBinaryImage && image.imageData?.data != null) {
       return _buildBinaryImage(
         bytes: Uint8List.fromList(image.imageData!.data!),
@@ -484,6 +499,21 @@ class ImageUtils {
   }) {
     if (image == null) return null;
 
+    // SVG content loaded by Java (no filesystem access needed)
+    if (image.svgContent?.isNotEmpty ?? false) {
+      return _buildReplacementWidget(
+        image.svgContent!,
+        filename: image.svgContent!,
+        size: size,
+        width: width,
+        height: height,
+        color: color,
+        enabled: enabled,
+        constraints: constraints,
+        renderAsIcon: renderAsIcon,
+      );
+    }
+
     // Try icon filename first
     if (image.filename?.isNotEmpty ?? false) {
       final iconWidget = buildIconWidget(
@@ -495,13 +525,10 @@ class ImageUtils {
       if (iconWidget != null) return iconWidget;
     }
 
-    // Try binary image data
-    if (useBinaryImage &&
-        (image.imageData?.data != null || image.filename != null)) {
+    // Try binary image data (encoded PNG/JPG bytes sent from Java)
+    if (useBinaryImage && image.imageData?.data != null) {
       return _buildBinaryImage(
-        bytes: (image.imageData?.data != null)
-            ? Uint8List.fromList(image.imageData!.data!)
-            : null,
+        bytes: Uint8List.fromList(image.imageData!.data!),
         file: (image.filename != null) ? image.filename : null,
         size: size,
         width: width,

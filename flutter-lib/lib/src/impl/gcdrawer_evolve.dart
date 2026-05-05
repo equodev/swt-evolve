@@ -1106,7 +1106,9 @@ class ImageShape extends Shape {
   static Future<ImageShape> fromVImageDetailed(VImage vImage,
       VGCDrawImageImageintintintintintintintint opArgs, Rect? clipRect) async {
     Object? replacement;
-    if (vImage.filename != null && vImage.filename!.isNotEmpty) {
+    if (vImage.svgContent?.isNotEmpty ?? false) {
+      replacement = vImage.svgContent!;
+    } else if (vImage.filename != null && vImage.filename!.isNotEmpty) {
       replacement = await AssetsManager.loadReplacement(vImage.filename!);
     }
 

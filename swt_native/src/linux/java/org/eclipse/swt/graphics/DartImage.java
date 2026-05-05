@@ -1345,6 +1345,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     ImageData imageData;
 
+    String svgContent;
+
     public int _transparentPixel() {
         return transparentPixel;
     }
@@ -1371,6 +1373,10 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     public ImageData _imageData() {
         return imageData;
+    }
+
+    public String _svgContent() {
+        return svgContent;
     }
 
     java.util.concurrent.CompletableFuture<Void> pendingRenderFuture;
