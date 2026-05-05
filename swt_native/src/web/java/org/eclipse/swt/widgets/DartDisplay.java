@@ -488,6 +488,9 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
             popups = newPopups;
         }
         popups[index] = menu;
+        if (displayBridge != null) {
+            displayBridge.sendDisplayUpdate(this);
+        }
     }
 
     void addSkinnableWidget(Widget widget) {
@@ -985,6 +988,20 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     public Shell getActiveShell() {
         checkDevice();
+        Control focus = getFocusControl();
+        if (focus != null && !focus.isDisposed()) {
+            Shell shell = focus.getShell();
+            if (shell != null && !shell.isDisposed() && shell.getVisible()) {
+                return shell;
+            }
+        }
+        Shell[] currentShells = getShells();
+        for (int i = currentShells.length - 1; i >= 0; i--) {
+            Shell shell = currentShells[i];
+            if (shell != null && !shell.isDisposed() && shell.getVisible()) {
+                return shell;
+            }
+        }
         return null;
     }
 
@@ -2684,6 +2701,9 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         for (int i = 0; i < popups.length; i++) {
             if (popups[i] == menu) {
                 popups[i] = null;
+                if (displayBridge != null) {
+                    displayBridge.sendDisplayUpdate(this);
+                }
                 return;
             }
         }

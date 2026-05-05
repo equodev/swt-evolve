@@ -884,6 +884,10 @@ public class DartMenu extends DartWidget implements IMenu {
         this.x = x;
         this.y = y;
         hasLocation = true;
+        if (location == null || location.x != x || location.y != y) {
+            location = new Point(x, y);
+            dirty();
+        }
     }
 
     /**
@@ -968,6 +972,27 @@ public class DartMenu extends DartWidget implements IMenu {
         checkWidget();
         if ((getApi().style & (SWT.BAR | SWT.DROP_DOWN)) != 0)
             return;
+        if (visible) {
+            if (!hasLocation) {
+                Point menuLocation = display.getCursorLocation();
+                if (menuLocation == null || (menuLocation.x == 0 && menuLocation.y == 0)) {
+                    Control owner = findOwnerControl();
+                    if (owner != null && !owner.isDisposed()) {
+                        Point ownerSize = owner.getSize();
+                        int yOffset = ownerSize != null ? ownerSize.y : 0;
+                        menuLocation = owner.toDisplay(0, yOffset);
+                    }
+                }
+                if (menuLocation != null) {
+                    x = menuLocation.x;
+                    y = menuLocation.y;
+                    location = menuLocation;
+                    hasLocation = true;
+                    dirty();
+                }
+            }
+            hasLocation = false;
+        }
         this.visible = newValue;
         if (visible) {
             ((DartDisplay) display.getImpl()).addPopup(this.getApi());

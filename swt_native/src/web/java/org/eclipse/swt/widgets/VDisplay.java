@@ -13,6 +13,7 @@ public class VDisplay {
     public long id;
     public String swt;
     public Shell[] shells;
+    public Menu[] popups;
 
     protected VDisplay() {
     }
@@ -29,6 +30,16 @@ public class VDisplay {
             }
         }
         v.shells = visible.toArray(Shell[]::new);
+        Menu[] displayPopups = display.popups;
+        ArrayList<Menu> popupList = new ArrayList<>();
+        if (displayPopups != null) {
+            for (Menu menu : displayPopups) {
+                if (menu != null && !menu.isDisposed()) {
+                    popupList.add(menu);
+                }
+            }
+        }
+        v.popups = popupList.toArray(Menu[]::new);
         return v;
     }
 
@@ -63,6 +74,17 @@ public class VDisplay {
                 for (int i = 0; i < v.shells.length; i++) {
                     if (i > 0) writer.writeByte((byte) ',');
                     VShell.ShellJson.write(writer, v.shells[i]);
+                }
+                writer.writeByte((byte) ']');
+            }
+            writer.writeAscii(",\"popups\":");
+            if (v.popups == null || v.popups.length == 0) {
+                writer.writeAscii("[]");
+            } else {
+                writer.writeByte((byte) '[');
+                for (int i = 0; i < v.popups.length; i++) {
+                    if (i > 0) writer.writeByte((byte) ',');
+                    VMenu.MenuJson.write(writer, v.popups[i]);
                 }
                 writer.writeByte((byte) ']');
             }

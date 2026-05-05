@@ -25,7 +25,7 @@ public class ControlHelper {
         if (ancestor != null) {
             return ancestor.toDisplay(x + offset[0], y + offset[1]);
         }
-        return dartControl.display.map(dartControl.getApi(), null, x, y);
+        return new Point(x + offset[0], y + offset[1]);
     }
 
     static Point toControl(DartControl dartControl, int x, int y) {
