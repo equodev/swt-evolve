@@ -239,6 +239,10 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, Image srcImage, int flag, Image api) {
         super(device, api);
+        DartImage srcImg = (DartImage) srcImage.getImpl();
+        if (srcImg.filename != null) {
+            this.filename = srcImg.filename;
+        }
         if (srcImage == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (srcImage.isDisposed())
@@ -1192,6 +1196,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     ImageData imageData;
 
+    String svgContent;
+
     public GC _memGC() {
         return memGC;
     }
@@ -1214,6 +1220,10 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     public ImageData _imageData() {
         return imageData;
+    }
+
+    public String _svgContent() {
+        return svgContent;
     }
 
     java.util.concurrent.CompletableFuture<Void> pendingRenderFuture;

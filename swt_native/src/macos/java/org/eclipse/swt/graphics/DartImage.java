@@ -1192,6 +1192,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     ImageData imageData;
 
+    String svgContent;
+
     public GC _memGC() {
         return memGC;
     }
@@ -1214,6 +1216,10 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     public ImageData _imageData() {
         return imageData;
+    }
+
+    public String _svgContent() {
+        return svgContent;
     }
 
     java.util.concurrent.CompletableFuture<Void> pendingRenderFuture;

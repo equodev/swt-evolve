@@ -41,6 +41,14 @@ public class VImage extends VResource {
         ((DartImage) impl).imageData = value;
     }
 
+    public String getSvgContent() {
+        return ((DartImage) impl).svgContent;
+    }
+
+    public void setSvgContent(String value) {
+        ((DartImage) impl).svgContent = value;
+    }
+
     @JsonConverter(target = Image.class)
     public static class ImageJson implements Configuration {
 
