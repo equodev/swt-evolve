@@ -61,43 +61,53 @@ public class GraphicsUtils {
         }
     }
 
-    // Returns true if a replacement was found and applied to the target DartImage.
-    private static boolean tryApplyReplacement(String filename, DartImage target) {
+    private static java.util.Map<String, java.io.File> assetFilesCache = null;
+
+    private static void initAssetsCache() {
+        if (assetFilesCache != null) return;
+        assetFilesCache = new java.util.HashMap<>();
         String assetsPath = Config.getConfigFlags().assets_path;
-        if (assetsPath == null || assetsPath.isBlank()) {
-            return false;
-        }
+        if (assetsPath == null || assetsPath.isBlank()) return;
         assetsPath = assetsPath.replace("\"", "");
         java.io.File dir = new java.io.File(assetsPath);
         if (!dir.isAbsolute()) {
             dir = new java.io.File(System.getProperty("user.dir"), assetsPath);
         }
-        java.io.File[] matches = dir.listFiles(f -> {
-            String n = f.getName();
-            int dot = n.lastIndexOf('.');
-            return dot > 0 && n.substring(0, dot).equals(filename);
-        });
-        if (matches == null || matches.length == 0) {
-            return false;
+        java.io.File[] files = dir.listFiles();
+        if (files != null) {
+            for (java.io.File f : files) {
+                String n = f.getName();
+                int dot = n.lastIndexOf('.');
+                if (dot > 0) {
+                    assetFilesCache.put(n.substring(0, dot), f);
+                }
+            }
         }
-        java.io.File file = matches[0];
-        String name = file.getName();
-        String ext = name.substring(name.lastIndexOf('.') + 1).toLowerCase();
+    }
+
+    // Returns true if a replacement was found and applied to the target DartImage.
+    private static boolean tryApplyReplacement(String filename, DartImage target) {
+        initAssetsCache();
+        java.io.File file = assetFilesCache.get(filename);
+        if (file == null) return false;
+        String n = file.getName();
+        int dot = n.lastIndexOf('.');
+        String ext = n.substring(dot + 1).toLowerCase();
         try {
+            byte[] bytes = java.nio.file.Files.readAllBytes(file.toPath());
             if (ext.equals("svg")) {
-                target.svgContent = new String(java.nio.file.Files.readAllBytes(file.toPath()), java.nio.charset.StandardCharsets.UTF_8);
+                target.svgContent = new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
             } else {
                 // Use ImageData as a byte transport: Flutter decodes the raw encoded bytes
                 // via Image.memory(), so width/height/depth are dummy values.
-                byte[] fileBytes = java.nio.file.Files.readAllBytes(file.toPath());
                 ImageData imgData = new ImageData(1, 1, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF));
-                imgData.data = fileBytes;
+                imgData.data = bytes;
                 target.imageData = imgData;
             }
             return true;
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            return false;
         }
-        return false;
     }
 
     /**
