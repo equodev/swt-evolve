@@ -25,8 +25,7 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
   ) {
     if (image == null) return null;
     final iconSize = folderTheme.tabIconSize;
-    final imageKey =
-        image.filename ?? image.imageData?.hashCode.toString() ?? 'no-image';
+    final imageKey = ImageUtils.stableImageKey(image);
     final futureKey =
         '${imageKey}_${iconSize}_${iconColor?.value ?? 'null'}_$enabled';
     return FutureBuilder<Widget?>(

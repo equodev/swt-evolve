@@ -262,8 +262,7 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
     final h = size ?? image.imageData?.height?.toDouble();
     final validW = (w != null && w > 0) ? w : null;
     final validH = (h != null && h > 0) ? h : null;
-    final imageKey =
-        image.filename ?? image.imageData?.hashCode.toString() ?? 'no-image';
+    final imageKey = ImageUtils.stableImageKey(image);
     final futureKey = '${imageKey}_${validW}_${validH}_$enabled';
     // sync fallback shown immediately while async loads
     final fallback = ImageUtils.buildVImage(

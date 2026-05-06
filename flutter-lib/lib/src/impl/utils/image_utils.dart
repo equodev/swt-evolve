@@ -74,7 +74,7 @@ class ImageUtils {
         ? 'icon-${bytes?.length ?? file ?? 'none'}-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled-$preserveColors'
         : (file != null)
         ? 'img-${file}-${width ?? 'default'}-${height ?? 'default'}-$enabled'
-        : 'img-${bytes?.length ?? 'none'}-${width ?? 'default'}-${height ?? 'default'}-$enabled';
+        : 'img-${bytes?.length ?? 'none'}-$enabled';
 
     if (_imageCache.containsKey(cacheKey)) {
       return _imageCache[cacheKey];
@@ -378,7 +378,7 @@ class ImageUtils {
     // Generate cache key based on all parameters that affect the result
     final preserveColors = getConfigFlags().preserve_icon_colors ?? false;
     final cacheKey =
-        'future-${image.filename ?? ''}-${image.imageData?.data?.length ?? 0}-'
+        'future-${stableImageKey(image)}-'
         '${size ?? width ?? height ?? 'default'}-${color?.value ?? 'default'}-'
         '$preserveColors-$enabled-$renderAsIcon';
 
@@ -541,6 +541,29 @@ class ImageUtils {
     }
 
     return null;
+  }
+
+  /// Returns a stable string key for a VImage suitable for use as a widget key.
+  /// Replaced images have filename=null (Java clears it), so we derive a stable
+  /// key from the content instead of the object reference (which changes each rebuild).
+  static String stableImageKey(VImage? image) {
+    if (image == null) return 'no-image';
+    if (image.filename?.isNotEmpty ?? false) return image.filename!;
+    if (image.svgContent?.isNotEmpty ?? false) {
+      return 'svg-${image.svgContent!.hashCode}';
+    }
+    final data = image.imageData?.data;
+    if (data != null && data.isNotEmpty) {
+      final len = data.length;
+      // Use length + first 32 bytes folded into a hash for content identity
+      final limit = len < 32 ? len : 32;
+      var h = 0;
+      for (var i = 0; i < limit; i++) {
+        h = h * 31 + data[i];
+      }
+      return 'bin-$len-$h';
+    }
+    return 'no-image';
   }
 
   // Cache management
