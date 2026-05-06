@@ -153,7 +153,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
           ..button = _lastButton
           ..x = e.localPosition.dx.round()
           ..y = e.localPosition.dy.round()
-          ..count = 1;
+          ..count = 2;
         this.widget.sendMouseMouseDown(state, event);
       },
       onPointerUp: (e) {

@@ -1033,7 +1033,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public int getItemHeight() {
         checkWidget();
-        return RequestResponse.call(this, "GetItemHeight", null, Integer.class, 500, 20);
+        return RequestResponse.call(this, "GetItemHeight", null, Integer.class, 100, 20);
     }
 
     /**
