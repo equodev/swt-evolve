@@ -245,8 +245,16 @@ Win32Window::MessageHandler(HWND hwnd,
         case WM_CHAR:
         case WM_SYSKEYDOWN:
         case WM_SYSKEYUP:
+            if (child_content_ != nullptr && !headless_) {
+                return SendMessage(child_content_, message, wparam, lparam);
+            }
+            return 0;
+
         case WM_DPICHANGED: {
             UINT new_dpi = HIWORD(wparam);
+            if (new_dpi == 0) {
+                return 0;
+            }
             scale_factor_ = new_dpi / 96.0;
             std::cout << "Win32Window: WM_DPICHANGED dpi=" << new_dpi << " scale=" << scale_factor_ << std::endl;
             auto newRectSize = reinterpret_cast<RECT*>(lparam);
@@ -347,13 +355,7 @@ void Win32Window::SetChildContent(HWND content) {
   MoveWindow(content, frame.left, frame.top, frame.right - frame.left,
              frame.bottom - frame.top, true);
 
-  if (headless_) {
-    HWND prevFocus = GetFocus();
-    SetFocus(child_content_);
-    if (prevFocus != nullptr && IsWindow(prevFocus)) {
-      SetFocus(prevFocus);
-    }
-  } else {
+  if (!headless_) {
     SetFocus(child_content_);
   }
   std::cout << "Win32Window::SetChildContent - Complete, child focus set" << std::endl;
