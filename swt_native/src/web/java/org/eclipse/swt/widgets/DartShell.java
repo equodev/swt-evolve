@@ -957,6 +957,9 @@ public class DartShell extends DartDecorations implements IShell {
         setWindowVisible(true, true);
         if (isDisposed())
             return;
+        sendEvent(SWT.Activate);
+        if (isDisposed())
+            return;
         if (!restoreFocus() && !traverseGroup(true)) {
             // if the parent shell is minimized, setting focus will cause it
         }
