@@ -188,7 +188,6 @@ public class SwtFlutterBridge extends FlutterBridge {
     public void setVisible(DartControl control, boolean visible) {
         if (control instanceof DartShell dartShell) {
             Shell shell = (Shell) dartShell.getApi();
-            boolean resizedToDisplayBounds = false;
             if (visible && forDisplay != null) {
                 if (shouldTrackDisplayBounds(shell)) {
                     Rectangle displayBounds = forDisplay.bounds;
@@ -199,11 +198,10 @@ public class SwtFlutterBridge extends FlutterBridge {
                             && shellBounds.width < displayBounds.width
                             && shellBounds.height < displayBounds.height) {
                         shell.setBounds(0, 0, displayBounds.width, displayBounds.height);
-                        resizedToDisplayBounds = true;
                     }
                 }
             }
-            if (resizedToDisplayBounds) {
+            if (visible) {
                 shell.layout(true, true);
             }
             sendDisplayUpdate(forDisplay);
