@@ -71,6 +71,7 @@ public final class DartRegion extends DartResource implements IRegion {
      */
     public DartRegion(Device device, Region api) {
         super(device, api);
+        getApi().handle = System.identityHashCode(this) | 1L;
         init();
     }
 

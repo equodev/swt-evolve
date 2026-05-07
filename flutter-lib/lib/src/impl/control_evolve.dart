@@ -164,6 +164,12 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
           ..count = 1;
         this.widget.sendMouseMouseUp(state, event);
       },
+      onPointerMove: (e) {
+        final event = VEvent()
+          ..x = e.localPosition.dx.round()
+          ..y = e.localPosition.dy.round();
+        this.widget.sendMouseMoveMouseMove(state, event);
+      },
       child: MouseRegion(
         onEnter: (_) => this.widget.sendMouseTrackMouseEnter(state, null),
         onExit: (_) => this.widget.sendMouseTrackMouseExit(state, null),
