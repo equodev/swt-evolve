@@ -19,6 +19,7 @@ public final class FontMetricsUtil {
         if (font == null) return null;
         FontData fd = font.getFontData()[0];
         Metrics m = GenFontMetrics.DATA.get(getId(fd));
+        if (m == null) m = GenFontMetrics.DATA.get("Verdana-0-3");
         if (m == null) return null;
         int h = fd.getHeight();
         double scale = (double) h / GenFontMetrics.BASE;

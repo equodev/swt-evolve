@@ -529,7 +529,7 @@ public abstract class DartDevice implements Drawable, IDevice {
         COLOR_MAGENTA = new Color(this.getApi(), 0xFF, 0, 0xFF);
         COLOR_CYAN = new Color(this.getApi(), 0, 0xFF, 0xFF);
         COLOR_WHITE = new Color(this.getApi(), 0xFF, 0xFF, 0xFF);
-        systemFont = new Font(this.getApi(), "system", 12, SWT.NORMAL);
+        systemFont = new Font(this.getApi(), "system", 11, SWT.NORMAL);
     }
 
     /**

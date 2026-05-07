@@ -280,6 +280,9 @@ platforms.forEach { platform ->
         if (osArch[0] == "macos") {
             mustRunAfter("macos-aarch64FlutterLib", "macos-x86_64FlutterLib")
         }
+        if (osArch[0] == "web") {
+            mustRunAfter("macos-aarch64FlutterLib", "macos-x86_64FlutterLib")
+        }
 
         val flutterArch = if (osArch[1] == "aarch64") "arm64" else "x64"
         when (osArch[0]) {

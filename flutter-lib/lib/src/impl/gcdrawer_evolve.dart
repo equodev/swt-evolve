@@ -41,6 +41,8 @@ class GCDrawer extends GCDrawerBase {
   // Used in copyArea to capture the widget's actual rendered pixels via toImageSync().
   GlobalKey? widgetBoundaryKey;
 
+  List<Shape> _staging = [];
+
   /// Standalone mode: registers comm listeners for state + all draw ops + imageInit/gcDispose.
   /// Used for headless image rendering (new GC(image)).
   GCDrawer.standalone(VGC state) : onShapesUpdated = null, onGCDispose = null, super(state) {
@@ -63,9 +65,20 @@ class GCDrawer extends GCDrawerBase {
   /// Embedded mode: registers comm listeners for state + all draw ops + gcDispose.
   /// onShapesUpdated triggers GCImpl.setState().
   GCDrawer.embedded(VGC state, {this.onShapesUpdated, this.onGCDispose}) : super(state) {
-    EquoCommService.onRaw("${state.swt}/${state.id}/gcDispose", (_) {
-      if (shapes.isNotEmpty) onGCDispose?.call(List.from(shapes));
+    EquoCommService.onRaw("${state.swt}/${state.id}/gcDispose", (_) async {
+      final cycleStaging = _staging;
+      _staging = [];
+
+      final pending = List<Future<ImageShape>>.from(_pendingImages);
+      _pendingImages.clear();
+      if (pending.isNotEmpty) await Future.wait(pending);
+
+      cycleStaging.removeWhere((s) => s is _PlaceholderShape);
+
       shapes.clear();
+      shapes.addAll(cycleStaging);
+
+      if (shapes.isNotEmpty) onGCDispose?.call(List.from(shapes));
       onShapesUpdated?.call(shapes);
     });
   }
@@ -102,11 +115,13 @@ class GCDrawer extends GCDrawerBase {
 
   // ── Shape helpers ───────────────────────────────────────────────────────
 
-  void clearShapes() => shapes.clear();
+  void clearShapes() {
+    shapes.clear();
+    _staging = [];
+  }
 
   void _addShape(Shape shape) {
-    shapes.add(shape);
-    onShapesUpdated?.call(shapes);
+    _staging.add(shape);
   }
 
   Rect _getRectFromArgs(int? x, int? y, int? w, int? h) => Rect.fromLTWH(
@@ -431,15 +446,13 @@ class GCDrawer extends GCDrawerBase {
       VGCDrawImageImageintintintintintintintint o) {
     if (o.image == null) return;
     final capturedClipping = clipping;
-    final idx = shapes.length;
-    shapes.add(_PlaceholderShape());
+    final targetStaging = _staging;
+    final idx = targetStaging.length;
+    targetStaging.add(_PlaceholderShape());
     final f = ImageShape.fromVImageDetailed(o.image!, o, capturedClipping);
     _pendingImages.add(f);
     f.then((s) {
-      if (idx < shapes.length) {
-        shapes[idx] = s;
-        onShapesUpdated?.call(shapes);
-      }
+      if (idx < targetStaging.length) targetStaging[idx] = s;
     });
   }
 
@@ -447,10 +460,15 @@ class GCDrawer extends GCDrawerBase {
     VImage vImage,
     VGCDrawImageImageintintintintintintintint opArgs,
     Rect? capturedClipping,
-  ) async {
-    final imageShape =
-        await ImageShape.fromVImageDetailed(vImage, opArgs, capturedClipping);
-    _addShape(imageShape);
+  ) {
+    final targetStaging = _staging;
+    final idx = targetStaging.length;
+    targetStaging.add(_PlaceholderShape());
+    final f = ImageShape.fromVImageDetailed(vImage, opArgs, capturedClipping);
+    _pendingImages.add(f);
+    f.then((imageShape) {
+      if (idx < targetStaging.length) targetStaging[idx] = imageShape;
+    });
   }
 
   @override
@@ -569,12 +587,12 @@ class GCDrawer extends GCDrawerBase {
       (o.destX ?? 0) - (o.srcX ?? 0).toDouble(),
       (o.destY ?? 0) - (o.srcY ?? 0).toDouble(),
     );
-    final copiedShapes = shapes
+    final copiedShapes = _staging
         .where((shape) => _shapeIntersects(shape, srcRect))
         .map((shape) => _translateShapeWithClip(shape, destOffset, srcRect))
         .toList();
     for (final s in copiedShapes) {
-      _addShape(s);
+      _staging.add(s);
     }
   }
 
@@ -617,7 +635,7 @@ class GCDrawer extends GCDrawerBase {
           ui.Paint()..color = const Color(0xFFFFFFFF),
         );
       }
-      for (final shape in shapes) {
+      for (final shape in [...shapes, ..._staging]) {
         shape.draw(canvas);
       }
       final fullImage =
@@ -653,12 +671,12 @@ class GCDrawer extends GCDrawerBase {
       (o.destX).toDouble() - (o.srcX).toDouble(),
       (o.destY).toDouble() - (o.srcY).toDouble(),
     );
-    final copiedShapes = shapes
+    final copiedShapes = _staging
         .where((shape) => _shapeIntersects(shape, srcRect))
         .map((shape) => _translateShapeWithClip(shape, destOffset, srcRect))
         .toList();
     for (final s in copiedShapes) {
-      _addShape(s);
+      _staging.add(s);
     }
   }
 
