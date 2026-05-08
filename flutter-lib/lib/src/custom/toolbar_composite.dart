@@ -58,6 +58,33 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
       return wrap(const SizedBox.shrink());
     }
 
+    // If all visible children are VCLabel chips, render as chip widget directly.
+    // This keeps the ToolbarComposite element stable (no widget-type change) while
+    // still supporting chip rendering for composites that contain only chip labels.
+    final visibleKidsForChip = children.where((c) => c.visible != false).toList();
+    if (visibleKidsForChip.isNotEmpty) {
+      final labels = visibleKidsForChip.whereType<VCLabel>().toList();
+      if (labels.length == visibleKidsForChip.length) {
+        final chipLabels = labels.where((l) =>
+            l.cursor?.cursorStyle == SWT.CURSOR_HAND &&
+            l.image != null &&
+            (l.toolTipText?.isNotEmpty == true ||
+                (l.text?.isNotEmpty == true && l.text != '<none>'))).toList();
+        if (chipLabels.isNotEmpty) {
+          final addonImages = labels
+              .where((l) => !chipLabels.contains(l) && l.image != null)
+              .map((l) => l.image!)
+              .toList();
+          chipLabels.sort((a, b) => (a.bounds?.x ?? 0).compareTo(b.bounds?.x ?? 0));
+          Widget chipWidget = mapWidgetFromValue(chipLabels.first);
+          if (addonImages.isNotEmpty) {
+            chipWidget = ChipAddonImages(addonImages: addonImages, child: chipWidget);
+          }
+          return chipWidget;
+        }
+      }
+    }
+
     final widgetTheme = Theme.of(context).extension<ToolBarThemeExtension>();
     final backgroundColor = widget.backgroundColor ?? widgetTheme!.toolbarBackgroundColor;
     final visibleChildren = children.where((child) => child.visible != false).toList();
@@ -330,36 +357,23 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
   }
 
   Widget buildMapWidgetFromValue(VControl child) {
-    if (child is VComposite && (child.swt == "Composite")) {
-      final visibleKids = child.children?.where((c) => c.visible != false).toList();
-      if (visibleKids != null && visibleKids.isNotEmpty) {
-        final labels = visibleKids.whereType<VCLabel>().toList();
-        if (labels.length == visibleKids.length) {
-          final chipLabels = labels.where((l) =>
-              l.cursor?.cursorStyle == SWT.CURSOR_HAND &&
-              l.image != null &&
-              (l.toolTipText?.isNotEmpty == true ||
-                  (l.text?.isNotEmpty == true && l.text != '<none>'))).toList();
-          if (chipLabels.isNotEmpty) {
-            final addonImages = labels
-                .where((l) => !chipLabels.contains(l) && l.image != null)
-                .map((l) => l.image!)
-                .toList();
-            chipLabels.sort((a, b) => (a.bounds?.x ?? 0).compareTo(b.bounds?.x ?? 0));
-            Widget chipWidget = mapWidgetFromValue(chipLabels.first);
-            if (addonImages.isNotEmpty) {
-              chipWidget = ChipAddonImages(addonImages: addonImages, child: chipWidget);
-            }
-            return chipWidget;
-          }
-        }
-      }
-      return ToolbarComposite(value: child, useBoundsLayout: widget.useBoundsLayout, backgroundColor: widget.backgroundColor);
-    } else if (child is VCanvas) {
-      if (child is VCLabel) {
-        return mapWidgetFromValue(child);
-      }
-      return ToolbarComposite(value: child, useBoundsLayout: widget.useBoundsLayout, backgroundColor: widget.backgroundColor);
+    if (child is VComposite && child.swt == "Composite") {
+      // Always wrap in a keyed ToolbarComposite so Flutter never changes the
+      // element type at this position (which would destroy canvas GC state).
+      // Chip rendering is handled inside ToolbarComposite.buildComposite().
+      return ToolbarComposite(
+        key: ValueKey(child.id),
+        value: child,
+        useBoundsLayout: widget.useBoundsLayout,
+        backgroundColor: widget.backgroundColor,
+      );
+    } else if (child is VCanvas && child is! VCLabel) {
+      return ToolbarComposite(
+        key: ValueKey(child.id),
+        value: child as VComposite,
+        useBoundsLayout: widget.useBoundsLayout,
+        backgroundColor: widget.backgroundColor,
+      );
     }
     return mapWidgetFromValue(child);
   }

@@ -117,7 +117,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     final VImage? image = state.image;
 
     final bool selected = _context?.treeImpl?.isItemSelected(state.id) ?? false;
-    final bool enabled = _context?.parentTreeValue.enabled ?? false;
+    final bool enabled = _context?.parentTreeValue.enabled ?? true;
     final bool nextItemSelected =
         _context?.treeImpl?.isNextItemSelected(state.id) ?? false;
 
@@ -431,8 +431,11 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     }
 
     final Color iconColor = _getItemIconColor(widgetTheme!, enabled, selected);
+    final futureKey =
+        '${ImageUtils.stableImageKey(image)}_${iconColor.value}_$enabled';
 
     return FutureBuilder<Widget?>(
+      key: ValueKey(futureKey),
       future: ImageUtils.buildVImageAsync(
         image,
         color: iconColor,

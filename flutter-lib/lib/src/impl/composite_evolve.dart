@@ -15,12 +15,21 @@ import '../theme/theme_settings/composite_theme_settings.dart';
 Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
   final state = impl.state;
 
+  // Cursor is merged into the existing MouseRegion instead of adding a new
+  // outer wrapper. Adding/removing a wrapper widget on cursor-change would
+  // change the root widget type returned by build(), deactivating all child
+  // elements (CTabFolder, Canvas, Tree, …) and destroying their state.
+  final cursor = state.cursor?.cursorStyle != null
+      ? impl.swtCursorToFlutter(state.cursor!.cursorStyle!)
+      : MouseCursor.defer;
+
   Widget listener = MouseRegion(
+    cursor: cursor,
     onHover: (e) {
       final event = VEvent()
         ..x = e.localPosition.dx.round()
         ..y = e.localPosition.dy.round();
-      impl.widget.sendMouseMoveMouseMove(state, event);
+      impl.sendThrottledMouseMove(state, event);
     },
     child: Listener(
       behavior: HitTestBehavior.translucent,
@@ -41,22 +50,13 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         final event = VEvent()
           ..x = e.localPosition.dx.round()
           ..y = e.localPosition.dy.round();
-        impl.widget.sendMouseMoveMouseMove(state, event);
+        impl.sendThrottledDragMove(state, event);
       },
       child: content,
     ),
   );
 
-  Widget result = impl.gcOverlay != null ? impl.wrapWithGCOverlay(listener) : listener;
-
-  if (state.cursor?.cursorStyle != null) {
-    result = MouseRegion(
-      cursor: impl.swtCursorToFlutter(state.cursor!.cursorStyle!),
-      child: result,
-    );
-  }
-
-  return result;
+  return impl.gcOverlay != null ? impl.wrapWithGCOverlay(listener) : listener;
 }
 
 class CompositeImpl<T extends CompositeSwt, V extends VComposite>

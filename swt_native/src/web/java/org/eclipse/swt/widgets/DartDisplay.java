@@ -1606,7 +1606,12 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     public Cursor getSystemCursor(int id) {
         checkDevice();
-        return null;
+        if (!(0 <= id && id < cursors.length))
+            return null;
+        if (cursors[id] == null) {
+            cursors[id] = new Cursor(this.getApi(), id);
+        }
+        return cursors[id];
     }
 
     /**

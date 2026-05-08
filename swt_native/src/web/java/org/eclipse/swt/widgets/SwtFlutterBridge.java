@@ -73,7 +73,6 @@ public class SwtFlutterBridge extends FlutterBridge {
 
             if (!clientReady.isDone()) {
                 clientReady.complete(true);
-                sendSwtEvolveProperties();
             }
             sendSwtEvolveProperties();
 

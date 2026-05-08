@@ -18,6 +18,26 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
   final GlobalKey<State<MenuSwt>> _menuKey = GlobalKey<State<MenuSwt>>();
   int _lastButton = 1;
+  int _lastMouseMoveMs = 0;
+  int _lastDragMoveMs = 0;
+  static const int _mouseMoveThrottleMs = 15;
+  static const int _dragMoveThrottleMs = 15;
+
+  void sendThrottledMouseMove(V state, VEvent event) {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - _lastMouseMoveMs >= _mouseMoveThrottleMs) {
+      _lastMouseMoveMs = now;
+      widget.sendMouseMoveMouseMove(state, event);
+    }
+  }
+
+  void sendThrottledDragMove(V state, VEvent event) {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - _lastDragMoveMs >= _dragMoveThrottleMs) {
+      _lastDragMoveMs = now;
+      widget.sendMouseMoveMouseMove(state, event);
+    }
+  }
 
   void openContextMenu(Offset globalPosition) {
     final menuState = _menuKey.currentState;
@@ -168,7 +188,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         final event = VEvent()
           ..x = e.localPosition.dx.round()
           ..y = e.localPosition.dy.round();
-        this.widget.sendMouseMoveMouseMove(state, event);
+        sendThrottledDragMove(state, event);
       },
       child: MouseRegion(
         onEnter: (_) => this.widget.sendMouseTrackMouseEnter(state, null),
@@ -177,7 +197,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
           final event = VEvent()
             ..x = e.localPosition.dx.round()
             ..y = e.localPosition.dy.round();
-          this.widget.sendMouseMoveMouseMove(state, event);
+          sendThrottledMouseMove(state, event);
         },
         child: widget,
       ),
