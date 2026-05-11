@@ -43,7 +43,7 @@ ToolBarThemeExtension _getToolBarTheme({
     itemPadding: EdgeInsets.zero,
     compositeBackgroundColor: surfaceToolbar,
     toolbarBackgroundColor: surfaceToolbar,
-    keywordLeftOffset: 50.0,
+    keywordLeftOffset: 8.0,
     dividerVerticalPadding: 6.0,
     separatorThickness: 1.0,
     separatorWidth: 16.0,

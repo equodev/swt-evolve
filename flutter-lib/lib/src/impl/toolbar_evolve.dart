@@ -81,6 +81,7 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
           );
         } else {
           bar = FittedBox(
+            fit: BoxFit.scaleDown,
             alignment: isRightToLeft ? Alignment.centerRight : Alignment.centerLeft,
             child: isVertical
                 ? Column(

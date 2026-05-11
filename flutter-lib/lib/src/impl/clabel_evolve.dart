@@ -9,16 +9,100 @@ import './utils/image_utils.dart';
 import './utils/widget_utils.dart';
 import './utils/font_utils.dart';
 import '../theme/theme_extensions/clabel_theme_extension.dart';
+import '../theme/theme_extensions/toolitem_theme_extension.dart';
+import '../theme/theme_extensions/toolbar_theme_extension.dart';
+import '../custom/toolbar_composite.dart';
 
 class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
     extends CanvasImpl<T, V> {
+  bool _isHovered = false;
+
+  bool get _isChipMode =>
+      state.cursor?.cursorStyle == SWT.CURSOR_HAND &&
+      state.image != null &&
+      ((state.text?.isNotEmpty == true && state.text != '<none>') ||
+          state.toolTipText?.isNotEmpty == true);
+
+  @override
+  Widget wrapWithGCOverlay(Widget child) {
+    if (_isChipMode) return child;
+    return super.wrapWithGCOverlay(child);
+  }
+
   @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<CLabelThemeExtension>()!;
-
     final enabled = state.enabled ?? true;
 
+    final isInToolbar = ToolbarAreaMarker.of(context);
+    if (isInToolbar && _isChipMode) {
+      final rawText = state.text ?? '';
+      final effectiveText = rawText == '<none>' ? '' : rawText;
+      return wrap(_buildToolbarChip(context, widgetTheme, enabled, effectiveText, state.image!));
+    }
+
     return _buildCLabel(context, widgetTheme, enabled);
+  }
+
+  Widget _buildToolbarChip(
+    BuildContext context,
+    CLabelThemeExtension clabelTheme,
+    bool enabled,
+    String text,
+    VImage image,
+  ) {
+    final itemTheme = Theme.of(context).extension<ToolItemThemeExtension>()!;
+
+    final textColor = getForegroundColor(
+      foreground: state.foreground,
+      defaultColor: clabelTheme.primaryTextColor,
+    );
+    final textStyle = getTextStyle(
+      context: context,
+      font: state.font,
+      textColor: textColor,
+      baseTextStyle: clabelTheme.primaryTextStyle,
+    );
+
+    return MouseRegion(
+      onEnter: enabled ? (_) => setState(() => _isHovered = true) : null,
+      onExit: enabled ? (_) => setState(() => _isHovered = false) : null,
+      child: Align(
+        alignment: Alignment.center,
+        child: Container(
+          padding: EdgeInsets.fromLTRB(
+            (state.leftMargin ?? 0).toDouble(),
+            (state.topMargin ?? 0).toDouble(),
+            (state.rightMargin ?? 0).toDouble(),
+            (state.bottomMargin ?? 0).toDouble(),
+          ),
+          decoration: BoxDecoration(
+            color: _isHovered
+                ? itemTheme.hoverColor
+                : itemTheme.segmentUnselectedBackgroundColor,
+            borderRadius: BorderRadius.circular(itemTheme.segmentBorderRadius),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _buildImageWidget(image, enabled, size: clabelTheme.iconSize) ?? const SizedBox.shrink(),
+              if (text.isNotEmpty) ...[
+                SizedBox(width: clabelTheme.iconTextSpacing),
+                Text(
+                  text,
+                  style: textStyle,
+                  softWrap: false,
+                  overflow: TextOverflow.clip,
+                ),
+              ],
+              for (final addonImage in ChipAddonImages.of(context) ?? [])
+                _buildImageWidget(addonImage, enabled, size: clabelTheme.iconSize) ?? const SizedBox.shrink(),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildCLabel(
@@ -172,10 +256,10 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
     }
   }
 
-  Widget? _buildImageWidget(VImage? image, bool enabled) {
+  Widget? _buildImageWidget(VImage? image, bool enabled, {double? size}) {
     if (image == null) return null;
-    final w = image.imageData?.width?.toDouble();
-    final h = image.imageData?.height?.toDouble();
+    final w = size ?? image.imageData?.width?.toDouble();
+    final h = size ?? image.imageData?.height?.toDouble();
     final validW = (w != null && w > 0) ? w : null;
     final validH = (h != null && h > 0) ? h : null;
     final imageKey =

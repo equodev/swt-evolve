@@ -3,6 +3,7 @@ import 'dart:typed_data' show Uint8List;
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
+import 'dart:math' as math;
 import '../gen/swt.dart';
 import '../gen/toolitem.dart';
 import '../gen/widget.dart';
@@ -26,26 +27,10 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
 
   double _calculateIconSize(BoxConstraints? constraints, double defaultSize) {
     if (constraints == null) return defaultSize;
-
-    if (constraints.minWidth > 0 &&
-        constraints.maxWidth.isFinite &&
-        constraints.minWidth == constraints.maxWidth) {
-      return constraints.minWidth;
-    }
-
-    if (constraints.minWidth > 0 && constraints.minHeight > 0) {
-      return constraints.minWidth < constraints.minHeight
-          ? constraints.minWidth
-          : constraints.minHeight;
-    }
-
-    if (constraints.maxWidth.isFinite && constraints.maxHeight.isFinite) {
-      return constraints.maxWidth < constraints.maxHeight
-          ? constraints.maxWidth
-          : constraints.maxHeight;
-    }
-
-    return defaultSize;
+    final maxW = constraints.maxWidth.isFinite ? constraints.maxWidth : defaultSize;
+    final maxH = constraints.maxHeight.isFinite ? constraints.maxHeight : defaultSize;
+    final cap = math.max(10.0, math.min(maxW, maxH));
+    return math.min(defaultSize, cap);
   }
 
   Widget _buildImageWidget(
@@ -237,9 +222,28 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
       defaultColor: backgroundColor ?? Colors.transparent,
     );
 
-    Widget hoverableContent;
+    Widget buildHoverable(double availableWidth) {
+      final hasFiniteW = availableWidth.isFinite && availableWidth > 0;
+      final horizontalPadding =
+          widgetTheme.buttonPadding.resolve(Directionality.of(context)).horizontal;
+      final minArrow = 10.0;
+      final arrowSize = hasFiniteW
+          ? math.max(minArrow, math.min(widgetTheme.dropdownArrowSize, availableWidth * 0.28))
+          : widgetTheme.dropdownArrowSize;
 
-    if (isDropdown) {
+      Widget adaptChild(Widget baseChild) {
+        if (!hasFiniteW) return baseChild;
+        return ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: math.max(0.0, availableWidth - horizontalPadding)),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: baseChild,
+          ),
+        );
+      }
+
+      if (isDropdown) {
       Widget mainContentButton = Material(
         color: Colors.transparent,
         child: InkWell(
@@ -260,7 +264,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
             widgetTheme.highlightOpacity,
           ),
           borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
-          child: child,
+          child: adaptChild(child),
         ),
       );
 
@@ -286,7 +290,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
                 : SystemMouseCursors.basic,
             child: Icon(
               Icons.arrow_drop_down,
-              size: widgetTheme.dropdownArrowSize,
+              size: arrowSize,
               color: textColor,
             ),
           ),
@@ -301,31 +305,28 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
             : Colors.transparent,
       );
 
-      hoverableContent = IntrinsicWidth(
-        child: IntrinsicHeight(
-          child: MouseRegion(
-            onEnter: enabled ? (_) => setState(() => _isHovered = true) : null,
-            onExit: enabled ? (_) => setState(() => _isHovered = false) : null,
-            child: Container(
-              padding: widgetTheme.buttonPadding,
-              decoration: BoxDecoration(
-                color: enabled && _isHovered
-                    ? widgetTheme.hoverColor
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [mainContentButton, separator, dropdownArrow],
-              ),
-            ),
+      return MouseRegion(
+        onEnter: enabled ? (_) => setState(() => _isHovered = true) : null,
+        onExit: enabled ? (_) => setState(() => _isHovered = false) : null,
+        child: Container(
+          constraints: hasFiniteW ? BoxConstraints(maxWidth: availableWidth) : null,
+          padding: widgetTheme.buttonPadding,
+          decoration: BoxDecoration(
+            color: enabled && _isHovered
+                ? widgetTheme.hoverColor
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [Flexible(child: mainContentButton), separator, dropdownArrow],
           ),
         ),
       );
     } else {
-      hoverableContent = IntrinsicWidth(
-        child: IntrinsicHeight(
-          child: _buildClickableButton(
+      return ConstrainedBox(
+        constraints: hasFiniteW ? BoxConstraints(maxWidth: availableWidth) : const BoxConstraints(),
+        child: _buildClickableButton(
             onTap: enabled
                 ? () {
                     setState(() => _isHovered = false);
@@ -341,11 +342,15 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
             hoverBackgroundColor: enabled && _isHovered
                 ? widgetTheme.hoverColor
                 : Colors.transparent,
-            child: child,
+            child: adaptChild(child),
           ),
-        ),
       );
     }
+    }
+
+    Widget hoverableContent = LayoutBuilder(
+      builder: (_, incoming) => buildHoverable(incoming.maxWidth),
+    );
 
     hoverableContent = Tooltip(
       message: tooltip ?? state.toolTipText ?? '',
@@ -393,6 +398,10 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
       baseTextStyle: widgetTheme.fontStyle,
     );
 
+    final effectiveDefaultIconSize = constraints != null
+        ? _calculateIconSize(constraints, widgetTheme.defaultIconSize)
+        : widgetTheme.defaultIconSize;
+
     return Container(
       constraints: constraints,
       child: switch (state.style & bits) {
@@ -406,7 +415,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
               image,
               enabled,
               constraints,
-              widgetTheme.defaultIconSize,
+              effectiveDefaultIconSize,
               textColor,
               widgetTheme,
             );
@@ -465,7 +474,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
               image,
               enabled,
               constraints,
-              widgetTheme.defaultIconSize,
+              effectiveDefaultIconSize,
               textColor,
               widgetTheme,
             );
@@ -521,7 +530,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
               image: image,
               enabled: enabled,
               constraints: constraints,
-              defaultIconSize: widgetTheme.defaultIconSize,
+              defaultIconSize: effectiveDefaultIconSize,
               iconColor: textColor,
               widgetTheme: widgetTheme,
               text: text,
@@ -543,7 +552,28 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
               image: image,
               enabled: enabled,
               constraints: constraints,
-              defaultIconSize: widgetTheme.defaultIconSize,
+              defaultIconSize: effectiveDefaultIconSize,
+              iconColor: textColor,
+              widgetTheme: widgetTheme,
+              text: text,
+              textStyle: textStyle,
+              textOnRight: textOnRight,
+            ),
+          );
+        }(),
+        SWT.SEPARATOR when (state.image != null || (state.text?.isNotEmpty == true)) => () {
+          final image = _getImageForState(enabled);
+          return _buildToolbarButton(
+            context: context,
+            widgetTheme: widgetTheme,
+            enabled: enabled,
+            tooltip: state.toolTipText ?? text ?? '',
+            constraints: constraints,
+            child: _buildChildContent(
+              image: image,
+              enabled: enabled,
+              constraints: constraints,
+              defaultIconSize: effectiveDefaultIconSize,
               iconColor: textColor,
               widgetTheme: widgetTheme,
               text: text,
@@ -573,7 +603,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
               image: image,
               enabled: enabled,
               constraints: constraints,
-              defaultIconSize: widgetTheme.defaultIconSize,
+              defaultIconSize: effectiveDefaultIconSize,
               iconColor: textColor,
               widgetTheme: widgetTheme,
               text: text,
