@@ -1,16 +1,22 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:swtflutter/src/gen/canvas.dart';
 
+import '../gen/clabel.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
+import '../gen/image.dart';
 import '../gen/label.dart';
+import '../gen/swt.dart';
 import '../gen/toolbar.dart';
 import '../gen/toolitem.dart';
 import '../gen/widgets.dart';
 import '../impl/composite_evolve.dart';
 import '../impl/decorations_evolve.dart';
 import '../nolayout.dart';
+import '../theme/theme_extensions/clabel_theme_extension.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import 'controls_item.dart';
@@ -44,10 +50,6 @@ class ToolbarComposite extends CompositeSwt<VComposite> {
 }
 
 class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposite> {
-  final Map<int, GlobalKey> _childKeys = {};
-  final GlobalKey _stackKey = GlobalKey();
-  List<double> _dividerLocalXs = [];
-
   @override
   Widget buildComposite() {
     final children = state.children;
@@ -68,7 +70,7 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
       final boundsHeight = state.bounds?.height;
       final toolbarHeight = (boundsHeight != null && boundsHeight > 0)
           ? boundsHeight.toDouble()
-          : double.infinity;
+          : 70.0;
       final toolItemTheme = Theme.of(context).extension<ToolItemThemeExtension>();
       final keywordTextLower = toolItemTheme!.segmentKeywordText.toLowerCase();
       final keywordLeftOffset = widgetTheme!.keywordLeftOffset;
@@ -78,47 +80,27 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
 
       final nonSepChildren = visibleChildren
           .where((c) => c is! VLabel)
-          .where((c) => !(c is VCanvas && _isToolbarSeparatorCanvas(c)))
+          .where((c) => (c.bounds?.width ?? 0) > 0 || (c.bounds?.height ?? 0) > 0)
           .toList()
         ..sort((a, b) => (a.bounds?.x ?? 0).compareTo(b.bounds?.x ?? 0));
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final stackBox = _stackKey.currentContext?.findRenderObject() as RenderBox?;
-        if (stackBox == null) return;
-        final stackGlobalX = stackBox.localToGlobal(Offset.zero).dx;
-
-        final newDividers = <double>[];
-        for (var i = 0; i < nonSepChildren.length; i++) {
-          final box = _childKeys[i]?.currentContext?.findRenderObject() as RenderBox?;
-          if (box != null) {
-            final posEnd = box.localToGlobal(Offset(box.size.width, 0));
-            final child = nonSepChildren[i];
-
-            if ((child is VToolBar) && i + 1 < nonSepChildren.length) {
-              final boxNext = _childKeys[i + 1]?.currentContext?.findRenderObject() as RenderBox?;
-              if (boxNext != null) {
-                final endGlobal = posEnd.dx;
-                final startNextGlobal = boxNext.localToGlobal(Offset.zero).dx;
-                if (!endGlobal.isNaN && !startNextGlobal.isNaN) {
-                  newDividers.add((endGlobal + startNextGlobal) / 2 - stackGlobalX);
-                }
-              }
-            }
+      final computedDividers = <double>[];
+      for (var i = 0; i < nonSepChildren.length - 1; i++) {
+        final curr = nonSepChildren[i];
+        final next = nonSepChildren[i + 1];
+        if (curr is VToolBar) {
+          final currEnd =
+              ((curr.bounds?.x ?? 0) + (curr.bounds?.width ?? 0)).toDouble();
+          final nextStart = (next.bounds?.x ?? 0).toDouble();
+          if (nextStart > currEnd) {
+            computedDividers.add((currEnd + nextStart) / 2.0);
           }
         }
-
-        if (!listEquals(_dividerLocalXs, newDividers)) {
-          setState(() => _dividerLocalXs = newDividers);
-        }
-      });
+      }
 
       final builtChildren = [
-        for (var i = 0; i < nonSepChildren.length; i++)
-          (
-            key: _childKeys.putIfAbsent(i, () => GlobalKey()),
-            child: nonSepChildren[i],
-            widget: buildMapWidgetFromValue(nonSepChildren[i]),
-          ),
+        for (final child in nonSepChildren)
+          (child: child, widget: buildMapWidgetFromValue(child)),
       ];
 
       final toolbarRow = Row(
@@ -129,45 +111,78 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
             child: LayoutBuilder(
               builder: (_, box) {
                 final availW = box.maxWidth;
-                final javaW = (state.bounds?.width.toDouble()) ?? availW;
-                final scaleX =
-                    (javaW > availW && javaW > 0) ? availW / javaW : 1.0;
+                final effectiveH =
+                    box.maxHeight.isFinite ? box.maxHeight : toolbarHeight;
 
-                final scaledContent = <Widget>[];
+                double currentRightNatural = 0.0;
+                final reflowItems = <({
+                  double effectiveLeft,
+                  double effectiveW,
+                  Widget widget,
+                })>[];
+
                 for (final entry in builtChildren) {
-                  final baseLeft =
-                      (entry.child.bounds?.x ?? 0).toDouble() * scaleX;
-                  final isKeyword = entry.child is VToolBar &&
-                      (entry.child as VToolBar)
-                              .items
-                              ?.any((item) =>
-                                  item.text?.trim().toLowerCase() ==
-                                  keywordTextLower) ==
-                          true;
-                  final left = isKeyword
-                      ? baseLeft - keywordLeftOffset * scaleX
-                      : baseLeft;
-                  scaledContent.add(Positioned(
-                    key: entry.key,
-                    left: left,
+                  final rawLeft = (entry.child.bounds?.x ?? 0).toDouble();
+                  final javaChildW =
+                      (entry.child.bounds?.width ?? 0).toDouble();
+                  final isKeyword = isRootToolbar &&
+                      _containsKeyword(entry.child, keywordTextLower);
+                  final isVCLabelItem = _containsVCLabel(entry.child);
+
+                  final effectiveLeft = (isKeyword || isVCLabelItem)
+                      ? currentRightNatural
+                      : math.max(rawLeft, currentRightNatural);
+
+                  final naturalW = _estimateChildNaturalWidth(entry.child, toolItemTheme!);
+                  final double effectiveW;
+                  if (isVCLabelItem && entry.child is VCLabel) {
+                    final vcl = entry.child as VCLabel;
+                    effectiveW = _isVCLabelChip(vcl) ? _measureChipW(vcl) : javaChildW;
+                  } else if (isVCLabelItem && entry.child is VComposite) {
+                    effectiveW = _getVCLabelCompositeW(entry.child as VComposite);
+                  } else if (isVCLabelItem) {
+                    effectiveW = javaChildW;
+                  } else {
+                    effectiveW = math.max(javaChildW, naturalW);
+                  }
+                  reflowItems.add((effectiveLeft: effectiveLeft, effectiveW: effectiveW, widget: entry.widget));
+                  currentRightNatural = math.max(currentRightNatural, effectiveLeft + effectiveW);
+                }
+
+                final totalRight = currentRightNatural;
+                final finalScaleX = (totalRight > availW && totalRight > 0)
+                    ? availW / totalRight
+                    : 1.0;
+
+                final stackChildren = <Widget>[];
+
+                for (final item in reflowItems) {
+                  stackChildren.add(Positioned(
+                    left: item.effectiveLeft * finalScaleX,
                     top: 0,
                     bottom: 0,
-                    child: entry.widget,
+                    width: item.effectiveW * finalScaleX,
+                    child: item.widget,
                   ));
                 }
-                for (final dividerX in _dividerLocalXs) {
-                  scaledContent.add(Positioned(
-                    left: dividerX - dividerThickness / 2,
+
+                for (final dividerX in computedDividers) {
+                  stackChildren.add(Positioned(
+                    left: dividerX * finalScaleX - dividerThickness / 2,
                     top: dividerVerticalPadding,
                     bottom: dividerVerticalPadding,
                     width: dividerThickness,
                     child: ColoredBox(color: dividerColor),
                   ));
                 }
-                return Stack(
-                  key: _stackKey,
-                  clipBehavior: Clip.hardEdge,
-                  children: scaledContent,
+
+                return SizedBox(
+                  width: availW,
+                  height: effectiveH,
+                  child: Stack(
+                    clipBehavior: Clip.hardEdge,
+                    children: stackChildren,
+                  ),
                 );
               },
             ),
@@ -233,26 +248,137 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
     );
   }
 
-  static bool _isToolbarSeparatorCanvas(VCanvas child) {
-    final b = child.bounds;
-    if (b == null) return false;
-    final w = b.width;
-    final h = b.height;
-    return w > 0 && w <= 24 && h >= 20;
+  bool _isVCLabelChip(VCLabel vcl) =>
+      vcl.cursor?.cursorStyle == SWT.CURSOR_HAND &&
+      vcl.image != null &&
+      ((vcl.text?.isNotEmpty == true && vcl.text != '<none>') ||
+          vcl.toolTipText?.isNotEmpty == true);
+
+  double _measureChipW(VCLabel vcl) {
+    final text = (vcl.text == null || vcl.text == '<none>') ? '' : vcl.text!;
+    final clabelTheme = Theme.of(context).extension<CLabelThemeExtension>()!;
+    final margins = (vcl.leftMargin ?? 0) + (vcl.rightMargin ?? 0);
+    double textW = 0;
+    if (text.isNotEmpty && clabelTheme.primaryTextStyle != null) {
+      textW = (TextPainter(text: TextSpan(text: text, style: clabelTheme.primaryTextStyle), textDirection: TextDirection.ltr)..layout()).width;
+    }
+    return math.max(
+      margins + clabelTheme.iconSize + (text.isNotEmpty ? clabelTheme.iconTextSpacing + textW : 0.0),
+      (vcl.bounds?.width ?? 0).toDouble(),
+    );
+  }
+
+  double _getVCLabelCompositeW(VComposite composite) {
+    final vcLabels = (composite.children ?? []).whereType<VCLabel>().toList();
+    if (vcLabels.isEmpty) return (composite.bounds?.width ?? 0).toDouble();
+    return vcLabels.fold(0.0, (total, vcl) =>
+        total + (_isVCLabelChip(vcl) ? _measureChipW(vcl) : (vcl.bounds?.width ?? 0).toDouble()));
+  }
+
+  static bool _containsKeyword(VControl child, String keywordTextLower) {
+    if (child is VToolBar) {
+      return child.items?.any(
+            (item) => item.text?.trim().toLowerCase() == keywordTextLower,
+          ) ==
+          true;
+    }
+    if (child is VComposite) {
+      return child.children?.any(
+            (c) => _containsKeyword(c, keywordTextLower),
+          ) ==
+          true;
+    }
+    return false;
+  }
+
+  static bool _containsVCLabel(VControl child) {
+    if (child is VCLabel) return true;
+    if (child is VComposite) {
+      return child.children?.any(_containsVCLabel) == true;
+    }
+    return false;
+  }
+
+  static double _estimateChildNaturalWidth(
+      VControl child, ToolItemThemeExtension itemTheme) {
+    if (child is VToolBar) {
+      final items = child.items;
+      if (items == null || items.isEmpty) {
+        return itemTheme.defaultIconSize + itemTheme.buttonPadding.horizontal;
+      }
+      return items.fold(0.0, (acc, item) {
+        if ((item.style & SWT.SEPARATOR) != 0 && item.image == null) return acc + itemTheme.separatorWidth;
+        if ((item.style & SWT.DROP_DOWN) != 0) {
+          return acc +
+              itemTheme.defaultIconSize +
+              itemTheme.buttonPadding.horizontal +
+              itemTheme.separatorBarWidth +
+              itemTheme.dropdownArrowSize;
+        }
+        return acc + itemTheme.defaultIconSize + itemTheme.buttonPadding.horizontal;
+      });
+    }
+    if (child is VComposite) {
+      final javaW = (child.bounds?.width ?? 0).toDouble();
+      final children = child.children;
+      if (children == null || children.isEmpty) return javaW;
+      final childrenSum = children.fold(
+          0.0, (acc, c) => acc + _estimateChildNaturalWidth(c, itemTheme));
+      return math.max(javaW, childrenSum);
+    }
+    return (child.bounds?.width ?? 0).toDouble();
   }
 
   Widget buildMapWidgetFromValue(VControl child) {
     if (child is VComposite && (child.swt == "Composite")) {
+      final visibleKids = child.children?.where((c) => c.visible != false).toList();
+      if (visibleKids != null && visibleKids.isNotEmpty) {
+        final labels = visibleKids.whereType<VCLabel>().toList();
+        if (labels.length == visibleKids.length) {
+          final chipLabels = labels.where((l) =>
+              l.cursor?.cursorStyle == SWT.CURSOR_HAND &&
+              l.image != null &&
+              (l.toolTipText?.isNotEmpty == true ||
+                  (l.text?.isNotEmpty == true && l.text != '<none>'))).toList();
+          if (chipLabels.isNotEmpty) {
+            final addonImages = labels
+                .where((l) => !chipLabels.contains(l) && l.image != null)
+                .map((l) => l.image!)
+                .toList();
+            chipLabels.sort((a, b) => (a.bounds?.x ?? 0).compareTo(b.bounds?.x ?? 0));
+            Widget chipWidget = mapWidgetFromValue(chipLabels.first);
+            if (addonImages.isNotEmpty) {
+              chipWidget = ChipAddonImages(addonImages: addonImages, child: chipWidget);
+            }
+            return chipWidget;
+          }
+        }
+      }
       return ToolbarComposite(value: child, useBoundsLayout: widget.useBoundsLayout, backgroundColor: widget.backgroundColor);
     } else if (child is VCanvas) {
-      if (_isToolbarSeparatorCanvas(child)) {
-        final theme = Theme.of(context).extension<ToolBarThemeExtension>()!;
-        return VerticalDivider(width: theme.separatorWidth, thickness: theme.separatorThickness, color: theme.borderColor);
+      if (child is VCLabel) {
+        return mapWidgetFromValue(child);
       }
       return ToolbarComposite(value: child, useBoundsLayout: widget.useBoundsLayout, backgroundColor: widget.backgroundColor);
     }
     return mapWidgetFromValue(child);
   }
+}
+
+class ChipAddonImages extends InheritedWidget {
+  final List<VImage> addonImages;
+
+  const ChipAddonImages({
+    super.key,
+    required this.addonImages,
+    required super.child,
+  });
+
+  static List<VImage>? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ChipAddonImages>()?.addonImages;
+
+  @override
+  bool updateShouldNotify(ChipAddonImages old) => addonImages != old.addonImages;
 }
 
 class SideBarComposite extends CompositeSwt<VComposite> {
