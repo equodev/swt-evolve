@@ -1347,8 +1347,8 @@ class WidgetMeasurer {
     }) {
       if (isConstantSize) {
         // Constant-size widget - just use the constants directly
-        buffer.writeln('${indent}width = $styleName.MIN_WIDTH;');
-        buffer.writeln('${indent}height = $styleName.MIN_HEIGHT;');
+        buffer.writeln('${indent}width = wHint != SWT.DEFAULT ? wHint : $styleName.MIN_WIDTH;');
+        buffer.writeln('${indent}height = hHint != SWT.DEFAULT ? hHint : $styleName.MIN_HEIGHT;');
       } else {
         // Make padding conditional on text/image existence when empty text doesn't affect sizing
         final emptyTextAffectsSizing = constants['emptyTextAffectsSizing'] as bool;
@@ -1410,11 +1410,11 @@ class WidgetMeasurer {
 
         if (useHorizontalPadding) {
           buffer.writeln(
-            '${indent}width = Math.max($textWidthExpr + ($widthCondition ? $styleName.HORIZONTAL_PADDING : 0), $styleName.MIN_WIDTH);',
+            '${indent}width = wHint != SWT.DEFAULT ? wHint : Math.max($textWidthExpr + ($widthCondition ? $styleName.HORIZONTAL_PADDING : 0), $styleName.MIN_WIDTH);',
           );
         } else {
           buffer.writeln(
-            '${indent}width = Math.max($textWidthExpr, $styleName.MIN_WIDTH);',
+            '${indent}width = wHint != SWT.DEFAULT ? wHint : Math.max($textWidthExpr, $styleName.MIN_WIDTH);',
           );
         }
 
@@ -1422,7 +1422,7 @@ class WidgetMeasurer {
           if (emptyTextAffectsSizing) {
             // Always add padding (for widgets like Label)
             buffer.writeln(
-              '${indent}height = Math.max($textHeightExpr + $styleName.VERTICAL_PADDING, $styleName.MIN_HEIGHT);',
+              '${indent}height = hHint != SWT.DEFAULT ? hHint : Math.max($textHeightExpr + $styleName.VERTICAL_PADDING, $styleName.MIN_HEIGHT);',
             );
           } else {
             // Conditionally add padding when text or image exists (for widgets like Button)
@@ -1430,12 +1430,12 @@ class WidgetMeasurer {
                 ? '($textY > 0 || m.image.y() > 0)'
                 : '$textY > 0';
             buffer.writeln(
-              '${indent}height = Math.max($textHeightExpr + ($heightCondition ? $styleName.VERTICAL_PADDING : 0), $styleName.MIN_HEIGHT);',
+              '${indent}height = hHint != SWT.DEFAULT ? hHint : Math.max($textHeightExpr + ($heightCondition ? $styleName.VERTICAL_PADDING : 0), $styleName.MIN_HEIGHT);',
             );
           }
         } else {
           buffer.writeln(
-            '${indent}height = Math.max($textHeightExpr, $styleName.MIN_HEIGHT);',
+            '${indent}height = hHint != SWT.DEFAULT ? hHint : Math.max($textHeightExpr, $styleName.MIN_HEIGHT);',
           );
         }
       }

@@ -19,7 +19,7 @@ public class ComboSizes {
 
     static class DROP_DOWN {
         static final double MIN_WIDTH = 52.0;
-        static final double MIN_HEIGHT = 31.0;
+        static final double MIN_HEIGHT = 30.0;
         static final double HORIZONTAL_PADDING = 53.333333333333336;
         static final double VERTICAL_PADDING = 18.0;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = true;
@@ -27,7 +27,7 @@ public class ComboSizes {
 
     static class SIMPLE {
         static final double MIN_WIDTH = 24.0;
-        static final double MIN_HEIGHT = 32.0;
+        static final double MIN_HEIGHT = 31.0;
         static final double HORIZONTAL_PADDING = 25.333333333333332;
         static final double VERTICAL_PADDING = 19.0;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = true;
@@ -46,12 +46,12 @@ public class ComboSizes {
 
         if (hasFlags(style, SWT.SIMPLE) || hasFlags(style, (SWT.SIMPLE | SWT.READ_ONLY))) {
             m.text = computeText(widget, m, SIMPLE.EMPTY_TEXT_AFFECTS_SIZING);
-            width = Math.max(m.text.x() + (m.text.x() > 0 ? SIMPLE.HORIZONTAL_PADDING : 0), SIMPLE.MIN_WIDTH);
-            height = Math.max(m.text.y() + SIMPLE.VERTICAL_PADDING, SIMPLE.MIN_HEIGHT);
+            width = wHint != SWT.DEFAULT ? wHint : Math.max(m.text.x() + (m.text.x() > 0 ? SIMPLE.HORIZONTAL_PADDING : 0), SIMPLE.MIN_WIDTH);
+            height = hHint != SWT.DEFAULT ? hHint : Math.max(m.text.y() + SIMPLE.VERTICAL_PADDING, SIMPLE.MIN_HEIGHT);
         } else { // DROP_DOWN, DROP_DOWN|READ_ONLY
             m.text = computeText(widget, m, DROP_DOWN.EMPTY_TEXT_AFFECTS_SIZING);
-            width = Math.max(m.text.x() + (m.text.x() > 0 ? DROP_DOWN.HORIZONTAL_PADDING : 0), DROP_DOWN.MIN_WIDTH);
-            height = Math.max(m.text.y() + DROP_DOWN.VERTICAL_PADDING, DROP_DOWN.MIN_HEIGHT);
+            width = wHint != SWT.DEFAULT ? wHint : Math.max(m.text.x() + (m.text.x() > 0 ? DROP_DOWN.HORIZONTAL_PADDING : 0), DROP_DOWN.MIN_WIDTH);
+            height = hHint != SWT.DEFAULT ? hHint : Math.max(m.text.y() + DROP_DOWN.VERTICAL_PADDING, DROP_DOWN.MIN_HEIGHT);
         }
 
         m.widget = new Point((int) Math.ceil(width), (int) Math.ceil(height));
