@@ -531,6 +531,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             if (filename == null)
                 SWT.error(SWT.ERROR_NULL_ARGUMENT);
             initNative(filename);
+            init(_imageData, 100);
             init();
         } finally {
         }
@@ -578,6 +579,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         try {
             initNative(filename);
+            init(imageData, 100);
             init();
             String filename2x = imageFileNameProvider.getImagePath(200);
             if (filename2x != null) {
@@ -658,8 +660,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, ImageGcDrawer imageGcDrawer, int width, int height, Image api) {
         super(device, api);
-        init();
         this.imageData = new ImageData(width, height, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF));
+        init(width, height);
+        init();
         GC gc = new GC(getApi());
         imageGcDrawer.drawOn(gc, width, height);
         gc.dispose();
