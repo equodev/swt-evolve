@@ -39,11 +39,11 @@ public class ScaleSizes {
         double width, height;
 
         if (hasFlags(style, SWT.VERTICAL)) {
-            width = VERTICAL.MIN_WIDTH;
-            height = VERTICAL.MIN_HEIGHT;
+            width = wHint != SWT.DEFAULT ? wHint : VERTICAL.MIN_WIDTH;
+            height = hHint != SWT.DEFAULT ? hHint : VERTICAL.MIN_HEIGHT;
         } else { // HORIZONTAL
-            width = HORIZONTAL.MIN_WIDTH;
-            height = HORIZONTAL.MIN_HEIGHT;
+            width = wHint != SWT.DEFAULT ? wHint : HORIZONTAL.MIN_WIDTH;
+            height = hHint != SWT.DEFAULT ? hHint : HORIZONTAL.MIN_HEIGHT;
         }
 
         m.widget = new Point((int) Math.ceil(width), (int) Math.ceil(height));

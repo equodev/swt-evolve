@@ -19,7 +19,7 @@ public class TextSizes {
 
     static class LEFT {
         static final double MIN_WIDTH = 27.0;
-        static final double MIN_HEIGHT = 25.0;
+        static final double MIN_HEIGHT = 24.0;
         static final double HORIZONTAL_PADDING = 24.0;
         static final double VERTICAL_PADDING = 12.0;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = true;
@@ -37,8 +37,8 @@ public class TextSizes {
         double width, height;
 
         m.text = computeText(widget, m, LEFT.EMPTY_TEXT_AFFECTS_SIZING);
-        width = Math.max(m.text.x() + (m.text.x() > 0 ? LEFT.HORIZONTAL_PADDING : 0), LEFT.MIN_WIDTH);
-        height = Math.max(m.text.y() + LEFT.VERTICAL_PADDING, LEFT.MIN_HEIGHT);
+        width = wHint != SWT.DEFAULT ? wHint : Math.max(m.text.x() + (m.text.x() > 0 ? LEFT.HORIZONTAL_PADDING : 0), LEFT.MIN_WIDTH);
+        height = hHint != SWT.DEFAULT ? hHint : Math.max(m.text.y() + LEFT.VERTICAL_PADDING, LEFT.MIN_HEIGHT);
 
         m.widget = new Point((int) Math.ceil(width), (int) Math.ceil(height));
         return m;
