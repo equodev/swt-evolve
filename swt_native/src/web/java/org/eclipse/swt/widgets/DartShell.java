@@ -1805,6 +1805,17 @@ public class DartShell extends DartDecorations implements IShell {
                 sendEvent(SWT.Iconify, e);
             });
         });
+        FlutterBridge.on(this, "Shell", "SetBounds", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                if (e == null)
+                    return;
+                getApi().setBounds(e.x, e.y, e.width, e.height);
+                dirty();
+                ((SwtFlutterBridge) getBridge()).sendDisplayUpdate((DartDisplay) display.getImpl());
+            });
+        });
     }
 
     public Shell getApi() {
