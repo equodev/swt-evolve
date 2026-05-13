@@ -46,6 +46,10 @@ class ShellSwt<V extends VShell> extends DecorationsSwt<V> {
   void sendShellIconify(V val, VEvent? payload) {
     sendEvent(val, "Shell/Iconify", payload);
   }
+
+  void sendShellSetBounds(V val, VEvent? payload) {
+    sendEvent(val, "Shell/SetBounds", payload);
+  }
 }
 
 @JsonSerializable()
