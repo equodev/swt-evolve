@@ -4,6 +4,7 @@ import '../gen/control.dart';
 import '../gen/gc.dart';
 import '../gen/canvas.dart';
 import '../gen/widgets.dart';
+import '../nolayout.dart';
 import 'composite_evolve.dart';
 import '../custom/toolbar_composite.dart';
 import 'color_utils.dart';
@@ -68,17 +69,31 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     return Size(_theme.defaultWidth, _theme.defaultHeight);
   }
 
+  // When a Canvas has child controls the children container must be transparent so the GC layer shows through.
+  @override
+  Widget buildComposite() {
+    final children = state.children;
+    if (children == null || children.isEmpty) {
+      final content = wrap(ColoredBox(color: bg, child: const SizedBox.expand()));
+      return wrapCompositeInteractionChrome(this, content);
+    }
+    final rawLayout = NoLayout(children: children, composite: state);
+    return wrapCompositeInteractionChrome(
+      this,
+      ColoredBox(color: Colors.transparent, child: rawLayout),
+    );
+  }
+
   // Canvas always shows GCSwt directly (never in Offstage) to preserve
-  // coordinate system consistency. The old code rendered GCSwt as the main
-  // content, so we replicate that: GCSwt is always visible via Positioned.fill.
+  // coordinate system consistency. GC is the background; children sit on top.
   @override
   Widget wrapWithGCOverlay(Widget child) {
     final gc = gcOverlay ?? (VGC()..id = state.id);
     final gcWidget = GCSwt<VGC>(key: gcOverlayKey, value: gc);
     return Stack(
       children: [
-        child,
         Positioned.fill(child: IgnorePointer(child: gcWidget)),
+        child,
       ],
     );
   }

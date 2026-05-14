@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2016 IBM Corporation and others.
+ *  Copyright (c) 2000, 2012 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -18,8 +18,9 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.cocoa.*;
-import dev.equo.swt.Config;
+import org.eclipse.swt.internal.*;
+import java.util.Objects;
+import dev.equo.swt.*;
 
 /**
  * Instances of this class are selectable user interface
@@ -50,7 +51,38 @@ import dev.equo.swt.Config;
  * @since 3.3
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class DateTime extends Composite {
+public class DartDateTime extends DartComposite implements IDateTime {
+
+    // Gregorian switchover in North America: September 19, 1752
+    static final int MIN_YEAR = 1752;
+
+    static final int MAX_YEAR = 9999;
+
+    boolean doubleClick, ignoreSelection;
+
+    // short date format may include quoted text
+    static final char SINGLE_QUOTE = '\'';
+
+    // 1-4 lowercase 'd's represent day
+    static final char DAY_FORMAT_CONSTANT = 'd';
+
+    // 1-4 uppercase 'M's represent month
+    static final char MONTH_FORMAT_CONSTANT = 'M';
+
+    // 1-5 lowercase 'y's represent year
+    static final char YEAR_FORMAT_CONSTANT = 'y';
+
+    // 1-2 upper or lowercase 'h's represent hours
+    static final char HOURS_FORMAT_CONSTANT = 'h';
+
+    // 1-2 lowercase 'm's represent minutes
+    static final char MINUTES_FORMAT_CONSTANT = 'm';
+
+    // 1-2 lowercase 's's represent seconds
+    static final char SECONDS_FORMAT_CONSTANT = 's';
+
+    // 1-2 lowercase 't's represent am/pm
+    static final char AMPM_FORMAT_CONSTANT = 't';
 
     /**
      * Constructs a new instance of this class given its parent
@@ -87,13 +119,10 @@ public class DateTime extends Composite {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public DateTime(Composite parent, int style) {
-        this((IDateTime) null);
-        setImpl(Config.isEquo(DateTime.class, parent) ? new DartDateTime(parent, style, this) : new SwtDateTime(parent, style, this));
-    }
-
-    protected void checkSubclass() {
-        getImpl().checkSubclass();
+    public DartDateTime(Composite parent, int style, DateTime api) {
+        super(parent, checkStyle(style), api);
+        if ((this.getApi().style & SWT.SHORT) != 0) {
+        }
     }
 
     /**
@@ -121,15 +150,75 @@ public class DateTime extends Composite {
      * @see SelectionEvent
      */
     public void addSelectionListener(SelectionListener listener) {
-        getImpl().addSelectionListener(listener);
+        addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
     }
 
-    public Point computeSize(int wHint, int hHint, boolean changed) {
-        return getImpl().computeSize(wHint, hHint, changed);
+    static int checkStyle(int style) {
+        /*
+	* Even though it is legal to create this widget
+	* with scroll bars, they serve no useful purpose
+	* because they do not automatically scroll the
+	* widget's client area.  The fix is to clear
+	* the SWT style.
+	*/
+        style &= ~(SWT.H_SCROLL | SWT.V_SCROLL);
+        style = checkBits(style, SWT.DATE, SWT.TIME, SWT.CALENDAR, 0, 0, 0);
+        style = checkBits(style, SWT.MEDIUM, SWT.SHORT, SWT.LONG, 0, 0, 0);
+        if ((style & SWT.DATE) == 0)
+            style &= ~SWT.DROP_DOWN;
+        return style;
     }
 
-    public Control[] getChildren() {
-        return getImpl().getChildren();
+    @Override
+    public void checkSubclass() {
+        if (!isValidSubclass())
+            error(SWT.ERROR_INVALID_SUBCLASS);
+    }
+
+    @Override
+    Point computeSizeInPixels(Point hintInPoints, int zoom, boolean changed) {
+        return Sizes.computeSize(this, hintInPoints.x, hintInPoints.y, changed);
+    }
+
+    @Override
+    void createHandle() {
+    }
+
+    @Override
+    int defaultBackground() {
+        return 0;
+    }
+
+    String getCustomShortDateFormat() {
+        return null;
+    }
+
+    String getCustomShortTimeFormat() {
+        StringBuilder buffer = new StringBuilder(getTimeFormat());
+        int length = buffer.length();
+        boolean inQuotes = false;
+        int start = 0, end = 0;
+        while (start < length) {
+            char ch = buffer.charAt(start);
+            if (ch == SINGLE_QUOTE)
+                inQuotes = !inQuotes;
+            else if (ch == SECONDS_FORMAT_CONSTANT && !inQuotes) {
+                end = start + 1;
+                while (end < length && buffer.charAt(end) == SECONDS_FORMAT_CONSTANT) end++;
+                // skip the preceding separator
+                while (start > 0 && buffer.charAt(start) != MINUTES_FORMAT_CONSTANT) start--;
+                start++;
+                break;
+            }
+            start++;
+        }
+        if (start < end)
+            buffer.delete(start, end);
+        return buffer.toString();
+    }
+
+    String getTimeFormat() {
+        return null;
     }
 
     /**
@@ -146,7 +235,8 @@ public class DateTime extends Composite {
      * </ul>
      */
     public int getDay() {
-        return getImpl().getDay();
+        checkWidget();
+        return this.day;
     }
 
     /**
@@ -163,7 +253,8 @@ public class DateTime extends Composite {
      * </ul>
      */
     public int getHours() {
-        return getImpl().getHours();
+        checkWidget();
+        return this.hours;
     }
 
     /**
@@ -180,7 +271,8 @@ public class DateTime extends Composite {
      * </ul>
      */
     public int getMinutes() {
-        return getImpl().getMinutes();
+        checkWidget();
+        return this.minutes;
     }
 
     /**
@@ -197,7 +289,13 @@ public class DateTime extends Composite {
      * </ul>
      */
     public int getMonth() {
-        return getImpl().getMonth();
+        checkWidget();
+        return this.month;
+    }
+
+    @Override
+    String getNameText() {
+        return (getApi().style & SWT.TIME) != 0 ? getHours() + ":" + getMinutes() + ":" + getSeconds() : (getMonth() + 1) + "/" + getDay() + "/" + getYear();
     }
 
     /**
@@ -214,7 +312,8 @@ public class DateTime extends Composite {
      * </ul>
      */
     public int getSeconds() {
-        return getImpl().getSeconds();
+        checkWidget();
+        return this.seconds;
     }
 
     /**
@@ -231,7 +330,13 @@ public class DateTime extends Composite {
      * </ul>
      */
     public int getYear() {
-        return getImpl().getYear();
+        checkWidget();
+        return this.year;
+    }
+
+    @Override
+    void releaseWidget() {
+        super.releaseWidget();
     }
 
     /**
@@ -252,7 +357,13 @@ public class DateTime extends Composite {
      * @see #addSelectionListener
      */
     public void removeSelectionListener(SelectionListener listener) {
-        getImpl().removeSelectionListener(listener);
+        checkWidget();
+        if (listener == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
+        if (eventTable == null)
+            return;
+        eventTable.unhook(SWT.Selection, listener);
+        eventTable.unhook(SWT.DefaultSelection, listener);
     }
 
     /**
@@ -274,7 +385,9 @@ public class DateTime extends Composite {
      * @since 3.4
      */
     public void setDate(int year, int month, int day) {
-        getImpl().setDate(year, month, day);
+        checkWidget();
+        if (year < MIN_YEAR || year > MAX_YEAR)
+            return;
     }
 
     /**
@@ -294,7 +407,12 @@ public class DateTime extends Composite {
      * @see #setDate
      */
     public void setDay(int day) {
-        getImpl().setDay(day);
+        int newValue = day;
+        if (!java.util.Objects.equals(this.day, newValue)) {
+            dirty();
+        }
+        checkWidget();
+        this.day = newValue;
     }
 
     /**
@@ -311,7 +429,14 @@ public class DateTime extends Composite {
      * </ul>
      */
     public void setHours(int hours) {
-        getImpl().setHours(hours);
+        int newValue = hours;
+        if (!java.util.Objects.equals(this.hours, newValue)) {
+            dirty();
+        }
+        checkWidget();
+        if (hours < 0 || hours > 23)
+            return;
+        this.hours = newValue;
     }
 
     /**
@@ -328,7 +453,14 @@ public class DateTime extends Composite {
      * </ul>
      */
     public void setMinutes(int minutes) {
-        getImpl().setMinutes(minutes);
+        int newValue = minutes;
+        if (!java.util.Objects.equals(this.minutes, newValue)) {
+            dirty();
+        }
+        checkWidget();
+        if (minutes < 0 || minutes > 59)
+            return;
+        this.minutes = newValue;
     }
 
     /**
@@ -348,7 +480,20 @@ public class DateTime extends Composite {
      * @see #setDate
      */
     public void setMonth(int month) {
-        getImpl().setMonth(month);
+        int newValue = month;
+        if (!java.util.Objects.equals(this.month, newValue)) {
+            dirty();
+        }
+        checkWidget();
+        this.month = newValue;
+    }
+
+    @Override
+    public void setOrientation(int orientation) {
+        dirty();
+        /* Currently supported only for CALENDAR style. */
+        if ((getApi().style & SWT.CALENDAR) != 0)
+            super.setOrientation(orientation);
     }
 
     /**
@@ -365,7 +510,14 @@ public class DateTime extends Composite {
      * </ul>
      */
     public void setSeconds(int seconds) {
-        getImpl().setSeconds(seconds);
+        int newValue = seconds;
+        if (!java.util.Objects.equals(this.seconds, newValue)) {
+            dirty();
+        }
+        checkWidget();
+        if (seconds < 0 || seconds > 59)
+            return;
+        this.seconds = newValue;
     }
 
     /**
@@ -383,7 +535,12 @@ public class DateTime extends Composite {
      * @since 3.4
      */
     public void setTime(int hours, int minutes, int seconds) {
-        getImpl().setTime(hours, minutes, seconds);
+        dirty();
+        checkWidget();
+        if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59)
+            return;
+        if ((getApi().style & SWT.CALENDAR) != 0 && hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59 && seconds >= 0 && seconds <= 59) {
+        }
     }
 
     /**
@@ -403,18 +560,107 @@ public class DateTime extends Composite {
      * @see #setDate
      */
     public void setYear(int year) {
-        getImpl().setYear(year);
+        int newValue = year;
+        if (!java.util.Objects.equals(this.year, newValue)) {
+            dirty();
+        }
+        checkWidget();
+        if (year < MIN_YEAR || year > MAX_YEAR)
+            return;
+        this.year = newValue;
     }
 
-    protected DateTime(IDateTime impl) {
-        super(impl);
+    @Override
+    int widgetStyle() {
+        if ((getApi().style & SWT.CALENDAR_WEEKNUMBERS) != 0) {
+        }
+        if ((getApi().style & SWT.DATE) != 0) {
+        }
+        return 0;
     }
 
-    static DateTime createApi(IDateTime impl) {
-        return new DateTime(impl);
+    int day;
+
+    int hours;
+
+    int minutes;
+
+    int month;
+
+    int seconds;
+
+    int year;
+
+    public boolean _doubleClick() {
+        return doubleClick;
     }
 
-    public IDateTime getImpl() {
-        return (IDateTime) super.getImpl();
+    public boolean _ignoreSelection() {
+        return ignoreSelection;
+    }
+
+    public int _day() {
+        return day;
+    }
+
+    public int _hours() {
+        return hours;
+    }
+
+    public int _minutes() {
+        return minutes;
+    }
+
+    public int _month() {
+        return month;
+    }
+
+    public int _seconds() {
+        return seconds;
+    }
+
+    public int _year() {
+        return year;
+    }
+
+    protected void _hookEvents() {
+        super._hookEvents();
+        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                if (e != null) {
+                    if ((getApi().style & SWT.TIME) != 0) {
+                        hours = e.height;
+                        minutes = e.count;
+                        seconds = e.index;
+                    } else {
+                        year = e.x;
+                        month = e.y;
+                        day = e.width;
+                    }
+                }
+                sendEvent(SWT.Selection, e);
+            });
+        });
+    }
+
+    public DateTime getApi() {
+        if (api == null)
+            api = DateTime.createApi(this);
+        return (DateTime) api;
+    }
+
+    public VDateTime getValue() {
+        if (value == null)
+            value = new VDateTime(this);
+        return (VDateTime) value;
     }
 }

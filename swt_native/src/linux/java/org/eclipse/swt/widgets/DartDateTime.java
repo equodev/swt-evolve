@@ -26,9 +26,7 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.gtk.*;
-import org.eclipse.swt.internal.gtk3.*;
-import org.eclipse.swt.internal.gtk4.*;
+import dev.equo.swt.*;
 
 /*
  * Developer note: Unit tests for this class can be found under:
@@ -63,7 +61,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * @since 3.3
  * @noextend This class is not intended to be subclassed by clients.
  */
-public class SwtDateTime extends SwtComposite implements IDateTime {
+public class DartDateTime extends DartComposite implements IDateTime {
 
     int day, month, year, hours, minutes, seconds;
 
@@ -179,13 +177,12 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
      * @see Widget#checkSubclass
      * @see Widget#getStyle
      */
-    public SwtDateTime(Composite parent, int style, DateTime api) {
+    public DartDateTime(Composite parent, int style, DateTime api) {
         super(parent, checkStyle(style), api);
         if (isDate() || isTime()) {
             createText();
         }
         if (isCalendar()) {
-            GTK.gtk_calendar_mark_day(calendarHandle, Calendar.getInstance().get(Calendar.DAY_OF_MONTH));
         }
         if (isDateWithDropDownButton()) {
             createDropDownButton();
@@ -316,195 +313,51 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
                 break;
             default:
         }
-        Point textSize = computeNativeSize(GTK.GTK4 ? getApi().handle : textEntryHandle, wHint, hHint, changed);
         // Change the text back to match the current calendar
         updateControl();
-        return textSize;
+        return null;
     }
 
     @Override
     Point computeSizeInPixels(int wHint, int hHint, boolean changed) {
-        checkWidget();
-        int width = 0, height = 0;
-        //For Date and Time, we cache the preffered size as there is no need to recompute it.
-        if (!changed && (isDate() || isTime()) && prefferedSize != null) {
-            width = (wHint != SWT.DEFAULT) ? wHint : prefferedSize.x;
-            height = (hHint != SWT.DEFAULT) ? hHint : prefferedSize.y;
-            return new Point(width, height);
-        }
-        if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
-            if (isCalendar()) {
-                Point size = computeNativeSize(containerHandle, wHint, hHint, changed);
-                width = size.x;
-                height = size.y;
-            } else {
-                /*
-			 * Bug 538612: Computing the native size for textEntry when the current text
-			 * is not the longest length possible causes sizing issues when the entry text
-			 * is changed. Fix is to always allocate enough size to hold the longest possible
-			 * formatted text.
-			 */
-                Point textSize = computeMaxTextSize(wHint, hHint, changed);
-                Rectangle trim = computeTrimInPixels(0, 0, textSize.x, textSize.y);
-                if (isDateWithDropDownButton()) {
-                    Point buttonSize = ((SwtButton) down.getImpl()).computeSizeInPixels(SWT.DEFAULT, SWT.DEFAULT, changed);
-                    width = trim.width + buttonSize.x;
-                    height = Math.max(trim.height, buttonSize.y);
-                } else if (isDate() || isTime()) {
-                    width = trim.width;
-                    height = trim.height;
-                }
-            }
-        }
-        if (width == 0)
-            width = DEFAULT_WIDTH;
-        if (height == 0)
-            height = DEFAULT_HEIGHT;
-        if (wHint != SWT.DEFAULT)
-            width = wHint;
-        if (hHint != SWT.DEFAULT)
-            height = hHint;
-        int borderWidth = getBorderWidthInPixels();
-        if (prefferedSize == null && isDateWithDropDownButton()) {
-            prefferedSize = new Point(width + 2 * borderWidth, height + 2 * borderWidth);
-            return prefferedSize;
-        } else {
-            return new Point(width + 2 * borderWidth, height + 2 * borderWidth);
-        }
+        return Sizes.computeSize(this, wHint, hHint, changed);
     }
 
     @Override
     Rectangle computeTrimInPixels(int x, int y, int width, int height) {
-        if (isCalendar()) {
-            return super.computeTrimInPixels(x, y, width, height);
-        }
-        checkWidget();
-        Rectangle trim = super.computeTrimInPixels(x, y, width, height);
-        int xborder = 0, yborder = 0;
-        GtkBorder tmp = new GtkBorder();
-        long context = GTK.gtk_widget_get_style_context(GTK.GTK4 ? editableHandle : textEntryHandle);
-        int state_flag = GTK.gtk_widget_get_state_flags(GTK.GTK4 ? editableHandle : textEntryHandle);
-        gtk_style_context_get_padding(context, state_flag, tmp);
-        trim.x -= tmp.left;
-        trim.y -= tmp.top;
-        trim.width += tmp.left + tmp.right;
-        trim.height += tmp.top + tmp.bottom;
-        if ((getApi().style & SWT.BORDER) != 0) {
-            int state = GTK.gtk_widget_get_state_flags(GTK.GTK4 ? editableHandle : textEntryHandle);
-            gtk_style_context_get_border(context, state, tmp);
-            trim.x -= tmp.left;
-            trim.y -= tmp.top;
-            trim.width += tmp.left + tmp.right;
-            trim.height += tmp.top + tmp.bottom;
-        }
-        trim.x -= xborder;
-        trim.y -= yborder;
-        trim.width += 2 * xborder;
-        trim.height += 2 * yborder;
-        trim.width += SPACE_FOR_CURSOR;
-        return new Rectangle(trim.x, trim.y, trim.width, trim.height);
+        return Sizes.computeTrim(this, x, y, width, height);
     }
 
     @Override
     void createHandle(int index) {
-        if (isCalendar()) {
-            getApi().state |= HANDLE;
-            createSWTFixedHandle();
-            createHandleForCalendar();
-        } else {
-            createSWTFixedHandle();
-            if (isDateWithDropDownButton()) {
-                createHandleForDateWithDropDown();
-            } else {
-                createHandleForDateTime();
-            }
-            GTK.gtk_editable_set_editable(textEntryHandle, (getApi().style & SWT.READ_ONLY) == 0);
-        }
     }
 
     private void createSWTFixedHandle() {
-        fixedHandle = OS.g_object_new(((SwtDisplay) display.getImpl()).gtk_fixed_get_type(), 0);
         if (fixedHandle == 0)
             error(SWT.ERROR_NO_HANDLES);
-        if (!GTK.GTK4)
-            GTK3.gtk_widget_set_has_window(fixedHandle, true);
     }
 
     private void createHandleForCalendar() {
-        getApi().handle = GTK.gtk_calendar_new();
         if (getApi().handle == 0)
             error(SWT.ERROR_NO_HANDLES);
         //Calendar becomes container in this case.
         calendarHandle = getApi().handle;
         containerHandle = calendarHandle;
-        if (GTK.GTK4) {
-            OS.swt_fixed_add(fixedHandle, getApi().handle);
-            GTK4.gtk_calendar_set_show_heading(getApi().handle, true);
-            GTK4.gtk_calendar_set_show_day_names(getApi().handle, true);
-            GTK4.gtk_calendar_set_show_week_numbers(getApi().handle, showWeekNumbers());
-        } else {
-            GTK3.gtk_container_add(fixedHandle, getApi().handle);
-            int flags = GTK.GTK_CALENDAR_SHOW_HEADING | GTK.GTK_CALENDAR_SHOW_DAY_NAMES;
-            if (showWeekNumbers()) {
-                flags |= GTK.GTK_CALENDAR_SHOW_WEEK_NUMBERS;
-            }
-            GTK3.gtk_calendar_set_display_options(getApi().handle, flags);
-            gtk_widget_show(getApi().handle);
-        }
     }
 
     private void createHandleForDateWithDropDown() {
-        getApi().handle = gtk_box_new(GTK.GTK_ORIENTATION_HORIZONTAL, false, 0);
         if (getApi().handle == 0)
             error(SWT.ERROR_NO_HANDLES);
         containerHandle = getApi().handle;
-        if (GTK.GTK4) {
-            editableHandle = GTK.gtk_entry_new();
-            if (editableHandle == 0)
-                error(SWT.ERROR_NO_HANDLES);
-            textEntryHandle = GTK4.gtk_editable_get_delegate(editableHandle);
-            OS.swt_fixed_add(fixedHandle, getApi().handle);
-            GTK4.gtk_box_append(getApi().handle, editableHandle);
-        } else {
-            textEntryHandle = GTK.gtk_entry_new();
-            if (textEntryHandle == 0)
-                error(SWT.ERROR_NO_HANDLES);
-            GTK3.gtk_container_add(fixedHandle, getApi().handle);
-            GTK3.gtk_container_add(getApi().handle, textEntryHandle);
-            gtk_widget_show(containerHandle);
-            gtk_widget_show(textEntryHandle);
-            // In GTK 3 font description is inherited from parent widget which is not how SWT has always worked,
-            // reset to default font to get the usual behavior
-            setFontDescription(defaultFont().handle);
-        }
     }
 
     private void createHandleForDateTime() {
-        long adjustment = GTK.gtk_adjustment_new(0, -9999, 9999, 1, 0, 0);
-        if (GTK.GTK4) {
-            getApi().handle = GTK.gtk_spin_button_new(adjustment, 1, 0);
-            editableHandle = getApi().handle;
-            textEntryHandle = GTK4.gtk_editable_get_delegate(editableHandle);
-            containerHandle = textEntryHandle;
-        } else {
-            getApi().handle = GTK.gtk_spin_button_new(adjustment, 1, 0);
-            textEntryHandle = getApi().handle;
-            containerHandle = textEntryHandle;
-        }
         if (textEntryHandle == 0)
             error(SWT.ERROR_NO_HANDLES);
-        if (GTK.GTK4) {
-            OS.swt_fixed_add(fixedHandle, getApi().handle);
-        } else {
-            GTK3.gtk_container_add(fixedHandle, getApi().handle);
-        }
-        GTK.gtk_spin_button_set_numeric(getApi().handle, false);
-        GTK.gtk_spin_button_set_wrap(getApi().handle, (getApi().style & SWT.WRAP) != 0);
     }
 
     void createDropDownButton() {
         down = new Button(this.getApi(), SWT.ARROW | SWT.DOWN);
-        GTK.gtk_widget_set_can_focus(down.handle, false);
         down.addListener(SWT.Selection, event -> {
             setFocus();
             dropDownCalendar(!isDropped());
@@ -518,7 +371,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
                 popupCalendarEvent(event);
                 return;
             }
-            if (event.widget == SwtDateTime.this.getApi()) {
+            if (event.widget == DartDateTime.this.getApi()) {
                 onDispose(event);
                 return;
             }
@@ -532,7 +385,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
         };
         popupFilter = event -> {
             Shell shell = ((Control) event.widget).getShell();
-            if (shell == SwtDateTime.this.getApi().getShell()) {
+            if (shell == DartDateTime.this.getApi().getShell()) {
                 handleFocus(SWT.FocusOut);
             }
         };
@@ -625,9 +478,9 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
         }
         //This is the x/y/width/height of the container of DateTime
         Point containerBounds = getSizeInPixels();
-        Point calendarSize = ((SwtDateTime) popupCalendar.getImpl()).computeSizeInPixels(SWT.DEFAULT, SWT.DEFAULT, false);
+        Point calendarSize = ((DartDateTime) popupCalendar.getImpl()).computeSizeInPixels(SWT.DEFAULT, SWT.DEFAULT, false);
         //Set the inner calendar pos/size. (not the popup shell pos/size)
-        ((SwtDateTime) popupCalendar.getImpl()).setBoundsInPixels(1, 1, Math.max(containerBounds.x - 2, calendarSize.x), calendarSize.y);
+        ((DartDateTime) popupCalendar.getImpl()).setBoundsInPixels(1, 1, Math.max(containerBounds.x - 2, calendarSize.x), calendarSize.y);
         //Set Date & focus current day
         popupCalendar.setDate(savedYear, savedMonth, savedDay);
         focusDayOnPopupCalendar();
@@ -644,7 +497,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
         int height = calendarSize.y + 2;
         int y = calculateCalendarYpos(containerBounds, coordsRelativeToScreen, height, displayRect);
         int x = calculateCalendarXpos(calendarSize, coordsRelativeToScreen, displayRect, width);
-        ((SwtControl) popupShell.getImpl()).setBoundsInPixels(x, y, width, height);
+        ((DartControl) popupShell.getImpl()).setBoundsInPixels(x, y, width, height);
         popupShell.setVisible(true);
         if (isFocusControl()) {
             popupCalendar.setFocus();
@@ -675,8 +528,6 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
         int currentYear = Calendar.getInstance().get(Calendar.YEAR);
         int currentMonth = Calendar.getInstance().get(Calendar.MONTH);
         if (savedYear == currentYear && savedMonth == currentMonth) {
-            int currentDay = Calendar.getInstance().get(Calendar.DAY_OF_MONTH);
-            GTK.gtk_calendar_mark_day(popupCalendar.handle, currentDay);
         }
     }
 
@@ -699,7 +550,6 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
 
     private void hideDropDownCalendar() {
         popupShell.setVisible(false);
-        GTK.gtk_calendar_clear_marks(popupCalendar.handle);
         display.removeFilter(SWT.MouseDown, mouseEventListener);
         return;
     }
@@ -717,19 +567,6 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
     }
 
     void getDate() {
-        int[] y = new int[1], m = new int[1], d = new int[1];
-        if (GTK.GTK4) {
-            long dateTime = GTK4.gtk_calendar_get_date(calendarHandle);
-            OS.g_date_time_get_ymd(dateTime, y, m, d);
-            year = y[0];
-            month = m[0] - 1;
-            day = d[0];
-        } else {
-            GTK3.gtk_calendar_get_date(calendarHandle, y, m, d);
-            year = y[0];
-            month = m[0];
-            day = d[0];
-        }
     }
 
     /**
@@ -897,24 +734,6 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
     }
 
     @Override
-    long gtk_day_selected(long widget) {
-        sendSelectionEvent();
-        return 0;
-    }
-
-    @Override
-    long gtk_day_selected_double_click(long widget) {
-        sendSelectionEvent(SWT.DefaultSelection);
-        return 0;
-    }
-
-    @Override
-    long gtk_month_changed(long widget) {
-        sendSelectionEvent();
-        return 0;
-    }
-
-    @Override
     long eventHandle() {
         return dateTimeHandle();
     }
@@ -950,40 +769,16 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
             if ((getApi().style & SWT.DROP_DOWN) == 0) {
                 hookEventsForDateTimeSpinner();
             }
-            if (!GTK.GTK4) {
-                int eventMask = GDK.GDK_POINTER_MOTION_MASK | GDK.GDK_BUTTON_PRESS_MASK | GDK.GDK_BUTTON_RELEASE_MASK;
-                GTK3.gtk_widget_add_events(textEntryHandle, eventMask);
-                if (OS.G_OBJECT_TYPE(textEntryHandle) == GTK3.GTK_TYPE_MENU()) {
-                    hookEventsForMenu();
-                }
-            }
         }
     }
 
     final private void hookEventsForCalendar() {
-        OS.g_signal_connect_closure(calendarHandle, OS.day_selected, ((SwtDisplay) display.getImpl()).getClosure(DAY_SELECTED), false);
-        if (GTK.GTK4) {
-            OS.g_signal_connect_closure(calendarHandle, OS.next_month, ((SwtDisplay) display.getImpl()).getClosure(MONTH_CHANGED), false);
-            OS.g_signal_connect_closure(calendarHandle, OS.next_year, ((SwtDisplay) display.getImpl()).getClosure(MONTH_CHANGED), false);
-            OS.g_signal_connect_closure(calendarHandle, OS.prev_month, ((SwtDisplay) display.getImpl()).getClosure(MONTH_CHANGED), false);
-            OS.g_signal_connect_closure(calendarHandle, OS.prev_year, ((SwtDisplay) display.getImpl()).getClosure(MONTH_CHANGED), false);
-        } else {
-            OS.g_signal_connect_closure(calendarHandle, OS.day_selected_double_click, ((SwtDisplay) display.getImpl()).getClosure(DAY_SELECTED_DOUBLE_CLICK), false);
-            OS.g_signal_connect_closure(calendarHandle, OS.month_changed, ((SwtDisplay) display.getImpl()).getClosure(MONTH_CHANGED), false);
-        }
     }
 
     final private void hookEventsForDateTimeSpinner() {
-        OS.g_signal_connect_closure(getApi().handle, OS.output, ((SwtDisplay) display.getImpl()).getClosure(OUTPUT), true);
-        if (GTK.GTK4) {
-            //TODO: GTK4 focus-in (focus event)?
-        } else {
-            OS.g_signal_connect_closure(textEntryHandle, OS.focus_in_event, ((SwtDisplay) display.getImpl()).getClosure(FOCUS_IN_EVENT), true);
-        }
     }
 
     final private void hookEventsForMenu() {
-        OS.g_signal_connect_closure(down.handle, OS.selection_done, ((SwtDisplay) display.getImpl()).getClosure(SELECTION_DONE), true);
     }
 
     void incrementField(int amount) {
@@ -1379,21 +1174,13 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
         int[] y = new int[1];
         int[] m = new int[1];
         int[] d = new int[1];
-        if (GTK.GTK4) {
-            long dateTime = GTK4.gtk_calendar_get_date(calendarHandle);
-            OS.g_date_time_get_ymd(dateTime, y, m, d);
-        } else {
-            GTK3.gtk_calendar_get_date(calendarHandle, y, m, d);
-        }
         if (d[0] != day || m[0] != month || y[0] != year) {
             year = y[0];
             month = m[0];
             day = d[0];
             /* Highlight the current (today) date */
             if (year == Calendar.getInstance().get(Calendar.YEAR) && month == Calendar.getInstance().get(Calendar.MONTH)) {
-                GTK.gtk_calendar_mark_day(calendarHandle, Calendar.getInstance().get(Calendar.DAY_OF_MONTH));
             } else {
-                GTK.gtk_calendar_clear_marks(calendarHandle);
             }
             sendSelectionEvent(SWT.Selection);
         }
@@ -1401,6 +1188,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
 
     @Override
     public void setBackground(Color color) {
+        dirty();
         super.setBackground(color);
         bg = color;
         if (popupCalendar != null)
@@ -1408,30 +1196,8 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
     }
 
     @Override
-    void setBackgroundGdkRGBA(GdkRGBA rgba) {
-        super.setBackgroundGdkRGBA(rgba);
-        if (calendarHandle != 0) {
-            setBackgroundGdkRGBA(calendarHandle, rgba);
-        }
-        super.setBackgroundGdkRGBA(rgba);
-    }
-
-    @Override
-    void setBackgroundGdkRGBA(long context, long handle, GdkRGBA rgba) {
-        // We need to override here because DateTime widgets use "background" instead of
-        // "background-color" as their CSS property.
-        // Form background string
-        String name = ((SwtDisplay) display.getImpl()).gtk_widget_class_get_css_name(handle);
-        String css = name + " {background: " + ((SwtDisplay) display.getImpl()).gtk_rgba_to_css_string(rgba) + ";}\n" + name + ":selected" + " {background: " + ((SwtDisplay) display.getImpl()).gtk_rgba_to_css_string(((SwtDisplay) display.getImpl()).COLOR_LIST_SELECTION_RGBA) + ";}";
-        // Cache background
-        cssBackground = css;
-        // Apply background color and any cached foreground color
-        String finalCss = ((SwtDisplay) display.getImpl()).gtk_css_create_css_color_string(cssBackground, cssForeground, SWT.BACKGROUND);
-        gtk_css_provider_load_from_css(context, finalCss);
-    }
-
-    @Override
     public void setEnabled(boolean enabled) {
+        dirty();
         super.setEnabled(enabled);
         if (isDateWithDropDownButton())
             down.setEnabled(enabled);
@@ -1439,6 +1205,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
 
     @Override
     public void setFont(Font font) {
+        dirty();
         super.setFont(font);
         this.font = font;
         if (popupCalendar != null)
@@ -1447,12 +1214,8 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
     }
 
     @Override
-    void setForegroundGdkRGBA(GdkRGBA rgba) {
-        setForegroundGdkRGBA(containerHandle, rgba);
-    }
-
-    @Override
     public void setForeground(Color color) {
+        dirty();
         super.setForeground(color);
         fg = color;
         if (popupCalendar != null)
@@ -1498,20 +1261,21 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
      */
     public void setDate(int year, int month, int day) {
         checkWidget();
+        if (!java.util.Objects.equals(this.year, year)) {
+            dirty();
+        }
+        if (!java.util.Objects.equals(this.month, month)) {
+            dirty();
+        }
+        if (!java.util.Objects.equals(this.day, day)) {
+            dirty();
+        }
         if (!isValidDate(year, month, day))
             return;
         if (isCalendar()) {
             this.year = year;
             this.month = month;
             this.day = day;
-            if (GTK.GTK4) {
-                long dateTime = OS.g_date_time_new_local(year, month + 1, day, 0, 0, 0);
-                GTK4.gtk_calendar_select_day(calendarHandle, dateTime);
-                OS.g_date_time_unref(dateTime);
-            } else {
-                GTK3.gtk_calendar_select_month(calendarHandle, month, year);
-                GTK3.gtk_calendar_select_day(calendarHandle, day);
-            }
         } else {
             calendar.set(year, month, day);
             updateControl();
@@ -1536,16 +1300,13 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
      */
     public void setDay(int day) {
         checkWidget();
+        if (!java.util.Objects.equals(this.day, day)) {
+            dirty();
+        }
         if (!isValidDate(getYear(), getMonth(), day))
             return;
         if (isCalendar()) {
             this.day = day;
-            if (GTK.GTK4) {
-                long dateTime = OS.g_date_time_new_local(this.year, this.month + 1, day, 0, 0, 0);
-                GTK4.gtk_calendar_select_day(calendarHandle, dateTime);
-            } else {
-                GTK3.gtk_calendar_select_day(calendarHandle, day);
-            }
         } else {
             calendar.set(Calendar.DAY_OF_MONTH, day);
             updateControl();
@@ -1567,6 +1328,9 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
      */
     public void setHours(int hours) {
         checkWidget();
+        if (!java.util.Objects.equals(this.hours, hours)) {
+            dirty();
+        }
         if (!isValidTime(Calendar.HOUR_OF_DAY, hours))
             return;
         if (isCalendar()) {
@@ -1579,6 +1343,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
 
     @Override
     public void setMenu(Menu menu) {
+        dirty();
         super.setMenu(menu);
         if (down != null)
             down.setMenu(menu);
@@ -1599,6 +1364,9 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
      */
     public void setMinutes(int minutes) {
         checkWidget();
+        if (!java.util.Objects.equals(this.minutes, minutes)) {
+            dirty();
+        }
         if (!isValidTime(Calendar.MINUTE, minutes))
             return;
         if (isCalendar()) {
@@ -1627,17 +1395,13 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
      */
     public void setMonth(int month) {
         checkWidget();
+        if (!java.util.Objects.equals(this.month, month)) {
+            dirty();
+        }
         if (!isValidDate(getYear(), month, getDay()))
             return;
         if (isCalendar()) {
             this.month = month;
-            if (GTK.GTK4) {
-                long dateTime = OS.g_date_time_new_local(year, month + 1, day, 0, 0, 0);
-                GTK4.gtk_calendar_select_day(calendarHandle, dateTime);
-                OS.g_date_time_unref(dateTime);
-            } else {
-                GTK3.gtk_calendar_select_month(calendarHandle, month, year);
-            }
         } else {
             calendar.set(Calendar.MONTH, month);
             updateControl();
@@ -1659,6 +1423,9 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
      */
     public void setSeconds(int seconds) {
         checkWidget();
+        if (!java.util.Objects.equals(this.seconds, seconds)) {
+            dirty();
+        }
         if (!isValidTime(Calendar.SECOND, seconds))
             return;
         if (isCalendar()) {
@@ -1685,6 +1452,15 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
      */
     public void setTime(int hours, int minutes, int seconds) {
         checkWidget();
+        if (!java.util.Objects.equals(this.seconds, seconds)) {
+            dirty();
+        }
+        if (!java.util.Objects.equals(this.minutes, minutes)) {
+            dirty();
+        }
+        if (!java.util.Objects.equals(this.hours, hours)) {
+            dirty();
+        }
         if (!isValidTime(Calendar.HOUR_OF_DAY, hours))
             return;
         if (!isValidTime(Calendar.MINUTE, minutes))
@@ -1721,17 +1497,13 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
      */
     public void setYear(int year) {
         checkWidget();
+        if (!java.util.Objects.equals(this.year, year)) {
+            dirty();
+        }
         if (!isValidDate(year, getMonth(), getDay()))
             return;
         if (isCalendar()) {
             this.year = year;
-            if (GTK.GTK4) {
-                long dateTime = OS.g_date_time_new_local(year, month + 1, day, 0, 0, 0);
-                GTK4.gtk_calendar_select_day(calendarHandle, dateTime);
-                OS.g_date_time_unref(dateTime);
-            } else {
-                GTK3.gtk_calendar_select_month(calendarHandle, month, year);
-            }
         } else {
             calendar.set(Calendar.YEAR, year);
             updateControl();
@@ -1742,13 +1514,6 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
     void setBoundsInPixels(int x, int y, int width, int height) {
         //Date with Drop down is in container. Needs extra handling.
         if (isDateWithDropDownButton()) {
-            long sizingHandle = GTK.GTK4 ? editableHandle : textEntryHandle;
-            GtkRequisition requisition = new GtkRequisition();
-            GTK.gtk_widget_get_preferred_size(sizingHandle, null, requisition);
-            //Entry should not expand vertically. It is single liner.
-            int oldHeight = requisition.height;
-            int newWidth = width - (down.getImpl().getSizeInPixels().x + getGtkBorderPadding().right);
-            GTK.gtk_widget_set_size_request(sizingHandle, (newWidth >= 0) ? newWidth : 0, oldHeight);
         }
         super.setBoundsInPixels(x, y, width, height);
     }
@@ -1757,37 +1522,12 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
      * Usually called when control is resized or first initialized.
      */
     private void setDropDownButtonSize() {
-        Rectangle rect = getClientAreaInPixels();
-        int parentWidth = rect.width;
-        int parentHeight = rect.height;
-        Point buttonSize = ((SwtControl) down.getImpl()).computeSizeInPixels(SWT.DEFAULT, parentHeight);
-        int dateEntryHeight = computeNativeSize(GTK.GTK4 ? editableHandle : textEntryHandle, SWT.DEFAULT, SWT.DEFAULT, false).y;
-        //Move button a little closer to entry field, by amount of padding.
-        int newXpos = parentWidth - buttonSize.x - getGtkBorderPadding().left - getGtkBorderPadding().right;
-        int newYPos = parentHeight / 2 - dateEntryHeight / 2;
-        ((SwtControl) down.getImpl()).setBoundsInPixels(newXpos, newYPos, buttonSize.x, dateEntryHeight);
-    }
-
-    /**
-     * Gets the border padding structure, which can be used to determine the inner padding of the text field.
-     * Note, this function returns the correct padding only under GTK3.
-     * @return GtkBorder object that holds the padding values.
-     */
-    GtkBorder getGtkBorderPadding() {
-        //In Gtk3, acquire border.
-        GtkBorder gtkBorderPadding = new GtkBorder();
-        long contextHandle = GTK.GTK4 ? editableHandle : textEntryHandle;
-        long context = GTK.gtk_widget_get_style_context(contextHandle);
-        int state_flag = GTK.gtk_widget_get_state_flags(contextHandle);
-        gtk_style_context_get_padding(context, state_flag, gtkBorderPadding);
-        return gtkBorderPadding;
     }
 
     boolean onNumberKeyInput(int key) {
         if (currentField == null) {
             return false;
         }
-        int fieldName = getCalendarField(currentField);
         StringBuilder prefix = new StringBuilder();
         StringBuilder current = new StringBuilder();
         StringBuilder suffix = new StringBuilder();
@@ -1807,43 +1547,6 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
             typeBuffer.append(current);
             typeBufferPos = 0;
         }
-        if (key == GDK.GDK_BackSpace) {
-            if (typeBufferPos > 0 && typeBufferPos <= typeBuffer.length()) {
-                typeBuffer.deleteCharAt(typeBufferPos - 1);
-                typeBufferPos--;
-            }
-        } else if (key == GDK.GDK_Delete) {
-            if (typeBufferPos >= 0 && typeBufferPos < typeBuffer.length()) {
-                typeBuffer.deleteCharAt(typeBufferPos);
-            }
-        } else {
-            char newText = keyToString(key);
-            // Don't allow non-digit character inputs for SWT.TIME, unless modifying the AM/PM field
-            if ((getApi().style & SWT.TIME) != 0 && fieldName != Calendar.AM_PM && !Character.isDigit(newText)) {
-                return false;
-            }
-            if (!Character.isAlphabetic(newText) && !Character.isDigit(newText)) {
-                return false;
-            }
-            if (fieldName == Calendar.AM_PM) {
-                if (dateFormat instanceof SimpleDateFormat) {
-                    String[] amPmStrings = ((SimpleDateFormat) dateFormat).getDateFormatSymbols().getAmPmStrings();
-                    if (amPmStrings[Calendar.AM].charAt(0) == newText) {
-                        setTextField(currentField, Calendar.AM);
-                        return false;
-                    } else if (amPmStrings[Calendar.PM].charAt(0) == newText) {
-                        setTextField(currentField, Calendar.PM);
-                        return false;
-                    }
-                }
-            }
-            if (typeBufferPos < typeBuffer.length()) {
-                typeBuffer.replace(typeBufferPos, typeBufferPos + 1, Character.toString(newText));
-            } else {
-                typeBuffer.append(newText);
-            }
-            typeBufferPos++;
-        }
         StringBuilder newText = new StringBuilder(prefix);
         newText.append(typeBuffer);
         newText.append(suffix);
@@ -1860,15 +1563,6 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
             }
         }
         return false;
-    }
-
-    private char keyToString(int key) {
-        // If numberpad keys were pressed.
-        if (key >= GDK.GDK_KP_0 && key <= GDK.GDK_KP_9) {
-            // convert numberpad button to regular key;
-            key -= 65408;
-        }
-        return (char) GDK.gdk_keyval_to_unicode(key);
     }
 
     void updateControl() {
@@ -1890,11 +1584,6 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
     }
 
     @Override
-    GdkRGBA defaultBackground() {
-        return display.getSystemColor(SWT.COLOR_LIST_BACKGROUND).handle;
-    }
-
-    @Override
     void deregister() {
         super.deregister();
         if (getApi().handle != 0 && ((SwtDisplay) display.getImpl()).getWidget(getApi().handle) != null)
@@ -1907,7 +1596,6 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
 
     int getArrow(long widget) {
         updateControl();
-        int adj_value = (int) GTK.gtk_adjustment_get_value(GTK.gtk_spin_button_get_adjustment(widget));
         int new_value = 0;
         if (isDate()) {
             FieldPosition firstField = getNextField(null);
@@ -1917,14 +1605,8 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
                 if ((getApi().style & SWT.SHORT) != 0) {
                     // adj_value returns the month as a number between 1-12
                     // new_value gets the month as a number between 0-11
-                    // shift the adj_value by offset so that we get the correct arrow direction
-                    adj_value--;
                 } else if ((getApi().style & SWT.MEDIUM) != 0 || (getApi().style & SWT.LONG) != 0) {
-                    // adj_value is either +1, 0, -1 when month is displayed as string
-                    if (adj_value == 0) {
-                        return 0;
-                    } else {
-                        return adj_value > 0 ? SWT.ARROW_UP : SWT.ARROW_DOWN;
+                    {
                     }
                 }
             }
@@ -1940,12 +1622,8 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
                     new_value = 12;
             }
         }
-        if (adj_value == 0 && firstTime)
-            return 0;
         firstTime = false;
-        if (adj_value == new_value)
-            return 0;
-        return adj_value > new_value ? SWT.ARROW_UP : SWT.ARROW_DOWN;
+        return 0;
     }
 
     /**
@@ -1954,19 +1632,6 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
      */
     void setText(String dateTimeText) {
         if (dateTimeText != null) {
-            byte[] dateTimeConverted = Converter.javaStringToCString(dateTimeText);
-            if (GTK.GTK4) {
-                if (isDateWithDropDownButton()) {
-                    GTK.gtk_entry_buffer_set_text(GTK4.gtk_text_get_buffer(textEntryHandle), dateTimeConverted, dateTimeText.length());
-                } else {
-                    GTK4.gtk_editable_set_max_width_chars(getApi().handle, dateTimeText.length());
-                    GTK4.gtk_editable_set_text(getApi().handle, dateTimeConverted);
-                }
-            } else {
-                //note, this is ignored if the control is in a fill-layout.
-                GTK3.gtk_entry_set_width_chars(textEntryHandle, dateTimeText.length());
-                GTK3.gtk_entry_set_text(textEntryHandle, dateTimeConverted);
-            }
             if (popupCalendar != null && calendar != null) {
                 Date parse;
                 try {
@@ -1988,98 +1653,6 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
                 }
             }
         }
-    }
-
-    @Override
-    boolean gtk4_key_press_event(long controller, int keyval, int keycode, int state, long event) {
-        if (!isReadOnly() && (isTime() || isDate())) {
-            switch(keyval) {
-                case GDK.GDK_Up:
-                case GDK.GDK_KP_Up:
-                    incrementField(+1);
-                    break;
-                case GDK.GDK_Down:
-                case GDK.GDK_KP_Down:
-                    incrementField(-1);
-                    break;
-                case GDK.GDK_Tab:
-                case GDK.GDK_Right:
-                case GDK.GDK_KP_Right:
-                    selectField(getNextField(currentField));
-                    sendEvent(SWT.Traverse);
-                    break;
-                case GDK.GDK_Left:
-                case GDK.GDK_KP_Left:
-                    selectField(getPreviousField(currentField));
-                    sendEvent(SWT.Traverse);
-                    break;
-                case GDK.GDK_Home:
-                case GDK.GDK_KP_Home:
-                    /* Set the value of the current field to its minimum */
-                    if (currentField != null) {
-                        setTextField(currentField, calendar.getActualMinimum(getCalendarField(currentField)));
-                    }
-                    break;
-                case GDK.GDK_End:
-                case GDK.GDK_KP_End:
-                    /* Set the value of the current field to its maximum */
-                    if (currentField != null) {
-                        setTextField(currentField, calendar.getActualMaximum(getCalendarField(currentField)));
-                    }
-                    break;
-                default:
-                    onNumberKeyInput(keyval);
-            }
-        }
-        return true;
-    }
-
-    @Override
-    long gtk3_key_press_event(long widget, long event) {
-        if (!isReadOnly() && (isTime() || isDate())) {
-            int[] key = new int[1];
-            GDK.gdk_event_get_keyval(event, key);
-            switch(key[0]) {
-                case GDK.GDK_Up:
-                case GDK.GDK_KP_Up:
-                    incrementField(+1);
-                    commitData();
-                    break;
-                case GDK.GDK_Down:
-                case GDK.GDK_KP_Down:
-                    incrementField(-1);
-                    commitData();
-                    break;
-                case GDK.GDK_Tab:
-                case GDK.GDK_Right:
-                case GDK.GDK_KP_Right:
-                    selectField(getNextField(currentField));
-                    sendEvent(SWT.Traverse);
-                    break;
-                case GDK.GDK_Left:
-                case GDK.GDK_KP_Left:
-                    selectField(getPreviousField(currentField));
-                    sendEvent(SWT.Traverse);
-                    break;
-                case GDK.GDK_Home:
-                case GDK.GDK_KP_Home:
-                    /* Set the value of the current field to its minimum */
-                    if (currentField != null) {
-                        setTextField(currentField, calendar.getActualMinimum(getCalendarField(currentField)));
-                    }
-                    break;
-                case GDK.GDK_End:
-                case GDK.GDK_KP_End:
-                    /* Set the value of the current field to its maximum */
-                    if (currentField != null) {
-                        setTextField(currentField, calendar.getActualMaximum(getCalendarField(currentField)));
-                    }
-                    break;
-                default:
-                    onNumberKeyInput(key[0]);
-            }
-        }
-        return 1;
     }
 
     void commitData() {
@@ -2107,21 +1680,10 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
     String getText() {
         checkWidget();
         if (textEntryHandle != 0) {
-            long stringPtr;
-            if (GTK.GTK4) {
-                stringPtr = GTK.gtk_entry_buffer_get_text(GTK4.gtk_text_get_buffer(textEntryHandle));
-            } else {
-                stringPtr = GTK3.gtk_entry_get_text(textEntryHandle);
-            }
-            if (stringPtr == 0)
-                return "";
-            int length = C.strlen(stringPtr);
-            byte[] buffer = new byte[length];
-            C.memmove(buffer, stringPtr, length);
-            return new String(Converter.mbcsToWcs(buffer));
         } else {
             return "";
         }
+        return null;
     }
 
     /**
@@ -2159,15 +1721,6 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
         checkWidget();
         int[] start = new int[1];
         int[] end = new int[1];
-        GTK.gtk_editable_get_selection_bounds(textEntryHandle, start, end);
-        long stringPtr;
-        if (GTK.GTK4) {
-            stringPtr = GTK.gtk_entry_buffer_get_text(GTK4.gtk_text_get_buffer(textEntryHandle));
-        } else {
-            stringPtr = GTK3.gtk_entry_get_text(textEntryHandle);
-        }
-        start[0] = (int) OS.g_utf8_offset_to_utf16_offset(stringPtr, start[0]);
-        end[0] = (int) OS.g_utf8_offset_to_utf16_offset(stringPtr, end[0]);
         return new Point(start[0], end[0]);
     }
 
@@ -2176,16 +1729,6 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
      */
     void setTextSelection(int start, int end) {
         checkWidget();
-        long stringPtr;
-        if (GTK.GTK4) {
-            stringPtr = GTK.gtk_entry_buffer_get_text(GTK4.gtk_text_get_buffer(textEntryHandle));
-        } else {
-            stringPtr = GTK3.gtk_entry_get_text(textEntryHandle);
-        }
-        start = (int) OS.g_utf16_offset_to_utf8_offset(stringPtr, start);
-        end = (int) OS.g_utf16_offset_to_utf8_offset(stringPtr, end);
-        GTK.gtk_editable_set_position(textEntryHandle, start);
-        GTK.gtk_editable_select_region(textEntryHandle, start, end);
     }
 
     void setTextField(FieldPosition field, int value) {
@@ -2222,68 +1765,10 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
         return value;
     }
 
-    @Override
-    long gtk_button_release_event(long widget, long event) {
-        if (isDate() || isTime()) {
-            int[] eventButton = new int[1];
-            GDK.gdk_event_get_button(event, eventButton);
-            if (eventButton[0] == 1) {
-                // left mouse button.
-                onTextMouseClick();
-            }
-        }
-        return super.gtk_button_release_event(widget, event);
-    }
-
-    @Override
-    int gtk_gesture_release_event(long gesture, int n_press, double x, double y, long event) {
-        if (isDate() || isTime()) {
-            int button = GTK.gtk_gesture_single_get_current_button(gesture);
-            if (button == 1) {
-                onTextMouseClick();
-            }
-        }
-        return super.gtk_gesture_release_event(gesture, n_press, x, y, event);
-    }
-
-    /**
-     * Output signal is called when Spinner's arrow buttons are triggered,
-     * usually by clicking the mouse on the [gtk3: +/-] buttons.
-     * On every click output is called twice presenting current and previous value.
-     * This method compares two values and determines if Up or down arrow was called.
-     */
-    @Override
-    long gtk_output(long widget) {
-        if (calendar == null) {
-            //Guard: Object not fully initialized yet.
-            return 0;
-        }
-        int arrowType = getArrow(widget);
-        switch(arrowType) {
-            case // Gtk3 "+" button.
-            SWT.ARROW_UP:
-                commitData();
-                incrementField(+1);
-                break;
-            case // Gtk3 "-" button.
-            SWT.ARROW_DOWN:
-                commitData();
-                incrementField(-1);
-                break;
-        }
-        return 1;
-    }
-
     void replaceCurrentlySelectedTextRegion(String string) {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        byte[] buffer = Converter.wcsToMbcs(string, false);
-        int[] start = new int[1], end = new int[1];
-        GTK.gtk_editable_get_selection_bounds(textEntryHandle, start, end);
-        GTK.gtk_editable_delete_selection(textEntryHandle);
-        GTK.gtk_editable_insert_text(textEntryHandle, buffer, buffer.length, start);
-        GTK.gtk_editable_set_position(textEntryHandle, start[0]);
     }
 
     void onTextMouseClick() {
@@ -2337,13 +1822,10 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
 
     void selectAll() {
         checkWidget();
-        if (textEntryHandle != 0)
-            GTK.gtk_editable_select_region(textEntryHandle, 0, -1);
     }
 
     void hideDateTime() {
         if (isDate() || isTime()) {
-            gtk_widget_hide(fixedHandle);
         }
     }
 
@@ -2631,9 +2113,44 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
         return mouseEventListener;
     }
 
+    protected void _hookEvents() {
+        super._hookEvents();
+        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                sendEvent(SWT.DefaultSelection, e);
+            });
+        });
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                if (e != null) {
+                    if ((getApi().style & SWT.TIME) != 0) {
+                        hours = e.height;
+                        minutes = e.count;
+                        seconds = e.index;
+                    } else {
+                        year = e.x;
+                        month = e.y;
+                        day = e.width;
+                    }
+                }
+                sendEvent(SWT.Selection, e);
+            });
+        });
+    }
+
     public DateTime getApi() {
         if (api == null)
             api = DateTime.createApi(this);
         return (DateTime) api;
+    }
+
+    public VDateTime getValue() {
+        if (value == null)
+            value = new VDateTime(this);
+        return (VDateTime) value;
     }
 }

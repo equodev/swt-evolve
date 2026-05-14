@@ -12,6 +12,24 @@ import '../theme/theme_extensions/composite_theme_extension.dart';
 import '../theme/theme_settings/composite_theme_settings.dart';
 
 
+/// Returns true if [pos] falls inside the bounds of any child control.
+/// Used to replicate SWT behaviour where mouse events on a child widget do
+/// not propagate to the parent composite.
+bool _hitsAnyChild(VComposite state, Offset pos) {
+  final children = state.children;
+  if (children == null || children.isEmpty) return false;
+  for (final child in children) {
+    final b = child.bounds;
+    if (b == null) continue;
+    final rect = Rect.fromLTWH(
+      b.x.toDouble(), b.y.toDouble(),
+      b.width.toDouble(), b.height.toDouble(),
+    );
+    if (rect.contains(pos)) return true;
+  }
+  return false;
+}
+
 Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
   final state = impl.state;
 
@@ -31,29 +49,43 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         ..y = e.localPosition.dy.round();
       impl.sendThrottledMouseMove(state, event);
     },
-    child: Listener(
-      behavior: HitTestBehavior.translucent,
-      onPointerDown: (e) {
+    child: GestureDetector(
+      onDoubleTapDown: (e) {
+        if (_hitsAnyChild(state, e.localPosition)) return;
         final event = VEvent()
           ..x = e.localPosition.dx.round()
           ..y = e.localPosition.dy.round()
-          ..button = 1;
-        impl.widget.sendMouseMouseDown(state, event);
+          ..button = 1
+          ..count = 2;
+        impl.widget.sendMouseMouseDoubleClick(state, event);
       },
-      onPointerUp: (e) {
-        final event = VEvent()
-          ..x = e.localPosition.dx.round()
-          ..y = e.localPosition.dy.round();
-        impl.widget.sendMouseMouseUp(state, event);
-      },
-      onPointerMove: (e) {
-        final event = VEvent()
-          ..x = e.localPosition.dx.round()
-          ..y = e.localPosition.dy.round();
-        impl.sendThrottledDragMove(state, event);
-      },
-      child: content,
+      child: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: (e) {
+          if (_hitsAnyChild(state, e.localPosition)) return;
+          final event = VEvent()
+            ..x = e.localPosition.dx.round()
+            ..y = e.localPosition.dy.round()
+            ..button = 1;
+          impl.widget.sendMouseMouseDown(state, event);
+        },
+        onPointerUp: (e) {
+          if (_hitsAnyChild(state, e.localPosition)) return;
+          final event = VEvent()
+            ..x = e.localPosition.dx.round()
+            ..y = e.localPosition.dy.round();
+          impl.widget.sendMouseMouseUp(state, event);
+        },
+        onPointerMove: (e) {
+          final event = VEvent()
+            ..x = e.localPosition.dx.round()
+            ..y = e.localPosition.dy.round();
+          impl.sendThrottledDragMove(state, event);
+        },
+        child: content,
+      ),
     ),
+
   );
 
   return impl.gcOverlay != null ? impl.wrapWithGCOverlay(listener) : listener;

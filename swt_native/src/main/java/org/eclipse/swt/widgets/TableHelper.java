@@ -19,7 +19,28 @@ public class TableHelper {
     }
 
     public static void sendSelection(DartTable table, Event event, int selectionType) {
-        table.setSelection(event.segments);
+        if (event.detail == SWT.CHECK) {
+            if (event.segments != null && event.segments.length > 0) {
+                int index = event.segments[0];
+                if (table.items != null && index >= 0 && index < table.items.length) {
+                    TableItem item = table.items[index];
+                    item.setChecked(!item.getChecked());
+                    event.item = item;
+                    event.index = index;
+                }
+            }
+        } else {
+            if (event.segments != null) {
+                table.setSelection(event.segments);
+            }
+            if (event.item == null && event.segments != null && event.segments.length > 0) {
+                int index = event.segments[0];
+                if (table.items != null && index >= 0 && index < table.items.length) {
+                    event.item = table.items[index];
+                    event.index = index;
+                }
+            }
+        }
         table.sendSelectionEvent(selectionType, event, true);
     }
 

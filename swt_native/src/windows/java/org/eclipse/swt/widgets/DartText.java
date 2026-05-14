@@ -1961,7 +1961,9 @@ public class DartText extends DartScrollable implements IText {
                         crEvent.character = '\r';
                         sendEvent(SWT.KeyDown, crEvent);
                     }
-                    sendEvent(SWT.DefaultSelection, e);
+                    if (!isDisposed()) {
+                        sendEvent(SWT.DefaultSelection, e);
+                    }
                 }
             });
         });

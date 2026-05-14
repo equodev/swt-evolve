@@ -4,7 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 
-public interface IDateTime extends IComposite {
+public interface IDateTime extends IComposite, ImplDateTime {
 
     void checkSubclass();
 

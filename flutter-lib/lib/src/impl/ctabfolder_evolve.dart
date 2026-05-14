@@ -63,9 +63,16 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
         _selectedIndex = state.selection!;
       }
     }
-    // If _selectedIndex is out of range (e.g. after tab removal), clamp it
-    else if (itemCount > 0 && _selectedIndex >= itemCount) {
-      _selectedIndex = itemCount - 1;
+    // If state.selection is null (means 0 in Java due to skipDefaultValues) or out of range,
+    // ensure _selectedIndex is valid
+    else if (itemCount > 0) {
+      if (_selectedIndex >= itemCount) {
+        // _selectedIndex is out of range after tab removal, adjust it
+        _selectedIndex = itemCount - 1;
+      } else if (state.selection == null && _selectedIndex != 0) {
+        // state.selection=null means Java has selection=0, update if different
+        _selectedIndex = 0;
+      }
     }
 
     if (state.minimized != null || state.maximized != null) {

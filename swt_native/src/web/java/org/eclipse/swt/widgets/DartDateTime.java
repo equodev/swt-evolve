@@ -472,6 +472,12 @@ public class DartDateTime extends DartComposite implements IDateTime {
         checkWidget();
         if (year < MIN_YEAR || year > MAX_YEAR)
             return;
+        if (this.year != year || this.month != month || this.day != day) {
+            dirty();
+        }
+        this.year = year;
+        this.month = month;
+        this.day = day;
     }
 
     /**
@@ -628,6 +634,12 @@ public class DartDateTime extends DartComposite implements IDateTime {
         checkWidget();
         if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59)
             return;
+        if (this.hours != hours || this.minutes != minutes || this.seconds != seconds) {
+            dirty();
+        }
+        this.hours = hours;
+        this.minutes = minutes;
+        this.seconds = seconds;
     }
 
     /**
@@ -730,6 +742,17 @@ public class DartDateTime extends DartComposite implements IDateTime {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                if (e != null) {
+                    if ((getApi().style & SWT.TIME) != 0) {
+                        hours = e.height;
+                        minutes = e.count;
+                        seconds = e.index;
+                    } else {
+                        year = e.x;
+                        month = e.y;
+                        day = e.width;
+                    }
+                }
                 sendEvent(SWT.Selection, e);
             });
         });

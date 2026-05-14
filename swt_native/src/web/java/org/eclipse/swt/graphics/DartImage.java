@@ -271,6 +271,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             this.styleFlag = ((DartImage) srcImage.getImpl()).styleFlag | flag;
             if (imageFileNameProvider != null || imageDataProvider != null || ((DartImage) srcImage.getImpl()).imageGcDrawer != null) {
             }
+            init(this.imageData, 100);
             init();
         } finally {
         }

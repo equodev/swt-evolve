@@ -31,12 +31,13 @@ class TextImpl<T extends TextSwt, V extends VText>
     bool textChanged = _controller.text != newText;
 
     if (textChanged) {
-      if (_focusNode != null && _focusNode!.hasFocus) {
-        return;
-      }
+      final isReadOnly =
+          !(state.editable ?? true) || hasStyle(state.style, SWT.READ_ONLY);
+      final cursorOffset = isReadOnly ? 0 : newText.length;
+
       _controller.value = _controller.value.copyWith(
         text: newText,
-        selection: TextSelection.collapsed(offset: newText.length),
+        selection: TextSelection.collapsed(offset: cursorOffset),
         composing: TextRange.empty,
       );
 
@@ -89,7 +90,7 @@ class TextImpl<T extends TextSwt, V extends VText>
     bool hasValidBounds,
   ) {
     final textStyle = getTextFieldTextStyle(context, state, widgetTheme);
-    final decoration = getInputDecoration(
+    var decoration = getInputDecoration(
       context,
       state,
       widgetTheme,
@@ -101,12 +102,19 @@ class TextImpl<T extends TextSwt, V extends VText>
       },
     );
 
+    if (hasValidBounds) {
+      final hPadding = widgetTheme.contentPadding.left;
+      decoration = decoration.copyWith(
+        contentPadding: EdgeInsets.symmetric(horizontal: hPadding),
+      );
+    }
+
     final cursorColor = getForegroundColor(
       foreground: state.foreground,
       defaultColor: widgetTheme.textColor,
     );
 
-    final shouldExpand = hasValidBounds && isMultiLine;
+    final shouldExpand = hasValidBounds;
 
     return TextField(
       controller: _controller,
@@ -115,11 +123,11 @@ class TextImpl<T extends TextSwt, V extends VText>
       obscureText: hasStyle(state.style, SWT.PASSWORD),
       readOnly:
           !(state.editable ?? true) || hasStyle(state.style, SWT.READ_ONLY),
-      maxLines: isMultiLine && !hasStyle(state.style, SWT.PASSWORD)
-          ? (shouldExpand ? null : null)
-          : 1,
+      maxLines: shouldExpand
+          ? null
+          : (isMultiLine && !hasStyle(state.style, SWT.PASSWORD) ? null : 1),
       expands: shouldExpand,
-      textAlignVertical: TextAlignVertical.top,
+      textAlignVertical: TextAlignVertical.center,
       textAlign: textAlign,
       style: textStyle,
       decoration: decoration,
@@ -147,6 +155,18 @@ class TextImpl<T extends TextSwt, V extends VText>
   }
 
   void _handleTextChanged(String value) {
+    final isSingleLineExpand =
+        hasBounds(state.bounds) && !hasStyle(state.style, SWT.MULTI);
+    if (isSingleLineExpand && value.contains('\n')) {
+      final clean = value.replaceAll('\n', '');
+      _controller.value = _controller.value.copyWith(
+        text: clean,
+        selection: TextSelection.collapsed(offset: clean.length),
+        composing: TextRange.empty,
+      );
+      _handleSubmitted(clean);
+      return;
+    }
     print("Text ${state.id} text changed to: '$value'");
     state.text = value;
     var e = VEvent()
