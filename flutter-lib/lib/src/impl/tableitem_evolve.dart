@@ -257,7 +257,9 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
           if (_context?.tableImpl != null) {
             _context!.tableImpl!.setState(() {});
           }
-          final e = VEvent()..detail = SWT.CHECK;
+          final e = VEvent()
+            ..detail = SWT.CHECK
+            ..segments = [_context!.rowIndex];
           _context?.parentTable.sendSelectionSelection(
             _context!.parentTableValue,
             e,

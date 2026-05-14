@@ -914,6 +914,14 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
         return code == 0 ? LRESULT.ZERO : new LRESULT(code);
     }
 
+    public boolean _doubleClick() {
+        return doubleClick;
+    }
+
+    public boolean _ignoreSelection() {
+        return ignoreSelection;
+    }
+
     public DateTime getApi() {
         if (api == null)
             api = DateTime.createApi(this);

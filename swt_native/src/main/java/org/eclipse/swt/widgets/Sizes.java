@@ -122,6 +122,36 @@ public class Sizes {
         return new Point(rect.width, rect.height);
     }
 
+    public static Point computeSize(DartDateTime c, int wHint, int hHint, boolean changed) {
+        int style = c.getApi().style;
+        int width, height;
+        if ((style & SWT.CALENDAR) != 0) {
+            boolean weekNumbers = (style & SWT.CALENDAR_WEEKNUMBERS) != 0;
+            width = (weekNumbers ? 8 : 7) * 28 + 8;
+            height = 30 + 28 + 6 * 28 + 8;
+        } else if ((style & SWT.TIME) != 0) {
+            if ((style & SWT.SHORT) != 0) {
+                width = 66;   // HH + : + MM + spinner + border → 21+6+21+20+2 - 4
+            } else {
+                width = 93;   // HH + : + MM + : + SS + spinner + border → 21+6+21+6+21+20+2 - 4
+            }
+            height = 32;
+        } else {
+            if ((style & SWT.SHORT) != 0) {
+                width = 80;   // MM + / + YYYY + spinner + border → 21+6+37+20+2 - 6
+            } else {
+                width = 107;  // MM + / + DD + / + YYYY + spinner + border → 21+6+21+6+37+20+2 - 6
+            }
+            if ((style & SWT.DROP_DOWN) != 0) {
+                width += 24;  // _DropDownArrow: buttonWidth(20) + 4
+            }
+            height = 32;
+        }
+        if (wHint != SWT.DEFAULT) width = wHint;
+        if (hHint != SWT.DEFAULT) height = hHint;
+        return new Point(width, height);
+    }
+
     public static Point computeSize(DartControl dartControl, int wHint, int hHint, boolean changed) {
         return new Point(100, 100);
     }

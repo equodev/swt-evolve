@@ -169,7 +169,10 @@ InputDecoration getInputDecoration(
   final textHeight = widgetTheme.fontSize * widgetTheme.lineHeight;
   final iconSize = min(widgetTheme.searchIconSize, textHeight);
 
-  final noBorder = InputBorder.none;
+  final transparentBorder = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(borderRadius),
+    borderSide: BorderSide.none,
+  );
   final outlineBorder = OutlineInputBorder(
     borderRadius: BorderRadius.circular(borderRadius),
     borderSide: BorderSide(color: normalBorderColor, width: borderWidth),
@@ -204,10 +207,10 @@ InputDecoration getInputDecoration(
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
           )
         : null,
-    border: isReadOnly ? noBorder : outlineBorder,
-    enabledBorder: isReadOnly ? noBorder : outlineEnabled,
-    focusedBorder: isReadOnly ? noBorder : outlineFocused,
-    disabledBorder: isReadOnly ? noBorder : outlineDisabled,
+    border: isReadOnly ? transparentBorder : outlineBorder,
+    enabledBorder: isReadOnly ? transparentBorder : outlineEnabled,
+    focusedBorder: isReadOnly ? transparentBorder : outlineFocused,
+    disabledBorder: isReadOnly ? transparentBorder : outlineDisabled,
     fillColor: bgColor,
     filled: true,
     counterText: '',

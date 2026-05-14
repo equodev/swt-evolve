@@ -20,6 +20,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.win32.*;
+import dev.equo.swt.Config;
 
 /**
  * Instances of this class are selectable user interface
@@ -89,7 +90,7 @@ public class DateTime extends Composite {
      */
     public DateTime(Composite parent, int style) {
         this((IDateTime) null);
-        setImpl(new SwtDateTime(parent, style, this));
+        setImpl(Config.isEquo(DateTime.class, parent) ? new DartDateTime(parent, style, this) : new SwtDateTime(parent, style, this));
     }
 
     /**

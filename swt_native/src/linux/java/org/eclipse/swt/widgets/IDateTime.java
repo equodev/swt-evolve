@@ -10,7 +10,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 
-public interface IDateTime extends IComposite {
+public interface IDateTime extends IComposite, ImplDateTime {
 
     /**
      * Adds the listener to the collection of listeners who will

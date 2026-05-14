@@ -29,6 +29,7 @@ import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
+import dev.equo.swt.Config;
 
 /*
  * Developer note: Unit tests for this class can be found under:
@@ -102,7 +103,7 @@ public class DateTime extends Composite {
      */
     public DateTime(Composite parent, int style) {
         this((IDateTime) null);
-        setImpl(new SwtDateTime(parent, style, this));
+        setImpl(Config.isEquo(DateTime.class, parent) ? new DartDateTime(parent, style, this) : new SwtDateTime(parent, style, this));
     }
 
     /**

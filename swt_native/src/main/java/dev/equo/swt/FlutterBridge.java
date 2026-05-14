@@ -235,6 +235,7 @@ public abstract class FlutterBridge {
     public static void on(DartWidget widget, String listener, String event, Consumer<Event> cb) {
         String eventName = event(widget, listener, event);
         client.getComm().on(eventName, p -> {
+            if (widget.isDisposed()) return;
             if (!eventName.contains("MouseMove") || getConfigFlags().print_move)
                 System.out.println(eventName + ", payload:"+p);
             if (p != null) {

@@ -72,12 +72,14 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     final isFullScreen = state.fullScreen == true;
     final b = state.bounds;
 
+    final rawW = (b?.width ?? 400).toDouble();
+    final rawH = (b?.height ?? 300).toDouble();
     final bodyW = _size != null
         ? _size!.width
-        : (b?.width ?? 400).toDouble().clamp(200.0, viewport.maxWidth * 0.9);
+        : (!_showTitleBar && !_showBorder ? rawW : rawW.clamp(200.0, viewport.maxWidth * 0.9));
     final bodyH = _size != null
         ? _size!.height
-        : (b?.height ?? 300).toDouble().clamp(150.0, viewport.maxHeight * 0.9);
+        : (!_showTitleBar && !_showBorder ? rawH : rawH.clamp(150.0, viewport.maxHeight * 0.9));
 
     final titleBarH = _isTool ? theme.toolWindowTitleBarHeight : theme.titleBarHeight;
     final headerH = _showTitleBar ? titleBarH : 0.0;
