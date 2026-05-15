@@ -1010,6 +1010,8 @@ public class DartShell extends DartDecorations implements IShell {
 
     @Override
     void releaseWidget() {
+        Display savedDisplay = display;
+        Composite savedParent = parent;
         super.releaseWidget();
         if (toolBar != null) {
             toolBar.dispose();
@@ -1022,6 +1024,14 @@ public class DartShell extends DartDecorations implements IShell {
         updateParent(false);
         ((DartDisplay) display.getImpl()).updateQuitMenu();
         lastActive = null;
+        if (savedParent != null && savedDisplay != null && !savedDisplay.isDisposed()) {
+            savedDisplay.asyncExec(() -> {
+                Shell toActivate = (savedParent instanceof Shell sp && !sp.isDisposed() && sp.isVisible()) ? sp : savedDisplay.getActiveShell();
+                if (toActivate != null && !toActivate.isDisposed()) {
+                    ((DartShell) toActivate.getImpl()).sendEvent(SWT.Activate);
+                }
+            });
+        }
     }
 
     void removeObserversFromWindow() {
@@ -1387,10 +1397,9 @@ public class DartShell extends DartDecorations implements IShell {
      * @since 3.1
      */
     public void setMinimumSize(int width, int height) {
-        dirty();
-        Point newValue = new Point(minimumSize.x, minimumSize.y);
         checkWidget();
-        this.minimumSize = newValue;
+        dirty();
+        this.minimumSize = new Point(width, height);
     }
 
     /**

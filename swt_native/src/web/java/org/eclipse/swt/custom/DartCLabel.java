@@ -487,7 +487,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
             }
         }
         GC gc = event.gc;
-        String[] lines = text == null ? null : splitString(text);
+        String[] lines = t == null ? null : splitString(t);
         // shorten the text
         if (shortenText) {
             extent.x = 0;
@@ -501,7 +501,8 @@ public class DartCLabel extends DartCanvas implements ICLabel {
                 }
             }
             if (appToolTipText == null) {
-                super.setToolTipText(text);
+                super.setToolTipText(t);
+                ;
             }
         } else {
             super.setToolTipText(appToolTipText);
