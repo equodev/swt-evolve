@@ -631,10 +631,6 @@ public class DartToolTip extends DartWidget implements IToolTip {
         return parent;
     }
 
-    public Shell _tip() {
-        return tip;
-    }
-
     public TrayItem _item() {
         return item;
     }

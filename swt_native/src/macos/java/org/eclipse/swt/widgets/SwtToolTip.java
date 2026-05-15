@@ -629,10 +629,6 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
         return parent;
     }
 
-    public Shell _tip() {
-        return tip;
-    }
-
     public TrayItem _item() {
         return item;
     }

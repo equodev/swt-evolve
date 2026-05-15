@@ -8,8 +8,6 @@ public interface ImplToolTip extends ImplWidget {
 
     Shell _parent();
 
-    Shell _tip();
-
     TrayItem _item();
 
     int _x();

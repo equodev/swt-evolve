@@ -46,7 +46,7 @@ import dev.equo.swt.*;
  */
 public class DartToolTip extends DartWidget implements IToolTip {
 
-    Shell parent, tip;
+    Shell parent;
 
     TrayItem item;
 
@@ -148,60 +148,6 @@ public class DartToolTip extends DartWidget implements IToolTip {
      */
     public void addSelectionListener(SelectionListener listener) {
         addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
-    }
-
-    void configure() {
-        Display display = parent.getDisplay();
-        int x = this.x;
-        int y = this.y;
-        if (x == -1 || y == -1) {
-            Point point;
-            if (item != null) {
-                point = ((DartTrayItem) item.getImpl()).getLocation();
-            } else {
-                point = display.getCursorLocation();
-            }
-            x = point.x;
-            y = point.y;
-        }
-        Monitor monitor = parent.getMonitor();
-        Rectangle dest = monitor.getBounds();
-        Point size = getSize(dest.width / 4);
-        int w = size.x;
-        int h = size.y;
-        int t = (getApi().style & SWT.BALLOON) != 0 ? TIP_HEIGHT : 0;
-        int i = (getApi().style & SWT.BALLOON) != 0 ? 16 : 0;
-        tip.setSize(w, h + t);
-        int[] polyline;
-        spikeAbove = dest.height >= y + size.y + t;
-        if (dest.width >= x + size.x) {
-            if (dest.height >= y + size.y + t) {
-                polyline = new int[] { 0, 5 + t, 1, 5 + t, 1, 3 + t, 3, 1 + t, 5, 1 + t, 5, t, 16, t, 16, 0, 35, t, w - 5, t, w - 5, 1 + t, w - 3, 1 + t, w - 1, 3 + t, w - 1, 5 + t, w, 5 + t, w, h - 5 + t, w - 1, h - 5 + t, w - 1, h - 3 + t, w - 2, h - 3 + t, w - 2, h - 2 + t, w - 3, h - 2 + t, w - 3, h - 1 + t, w - 5, h - 1 + t, w - 5, h + t, 5, h + t, 5, h - 1 + t, 3, h - 1 + t, 3, h - 2 + t, 2, h - 2 + t, 2, h - 3 + t, 1, h - 3 + t, 1, h - 5 + t, 0, h - 5 + t, 0, 5 + t };
-                borderPolygon = new int[] { 0, 5 + t, 1, 4 + t, 1, 3 + t, 3, 1 + t, 4, 1 + t, 5, t, 16, t, 16, 1, 35, t, w - 6, 0 + t, w - 5, 1 + t, w - 4, 1 + t, w - 2, 3 + t, w - 2, 4 + t, w - 1, 5 + t, w - 1, h - 6 + t, w - 2, h - 5 + t, w - 2, h - 4 + t, w - 4, h - 2 + t, w - 5, h - 2 + t, w - 6, h - 1 + t, 5, h - 1 + t, 4, h - 2 + t, 3, h - 2 + t, 1, h - 4 + t, 1, h - 5 + t, 0, h - 6 + t, 0, 5 + t };
-                tip.setLocation(Math.max(0, x - i), y);
-            } else {
-                polyline = new int[] { 0, 5, 1, 5, 1, 3, 3, 1, 5, 1, 5, 0, w - 5, 0, w - 5, 1, w - 3, 1, w - 1, 3, w - 1, 5, w, 5, w, h - 5, w - 1, h - 5, w - 1, h - 3, w - 2, h - 3, w - 2, h - 2, w - 3, h - 2, w - 3, h - 1, w - 5, h - 1, w - 5, h, 35, h, 16, h + t, 16, h, 5, h, 5, h - 1, 3, h - 1, 3, h - 2, 2, h - 2, 2, h - 3, 1, h - 3, 1, h - 5, 0, h - 5, 0, 5 };
-                borderPolygon = new int[] { 0, 5, 1, 4, 1, 3, 3, 1, 4, 1, 5, 0, w - 6, 0, w - 5, 1, w - 4, 1, w - 2, 3, w - 2, 4, w - 1, 5, w - 1, h - 6, w - 2, h - 5, w - 2, h - 4, w - 4, h - 2, w - 5, h - 2, w - 6, h - 1, 36, h - 1, 16, h + t - 1, 16, h - 1, 5, h - 1, 4, h - 2, 3, h - 2, 1, h - 4, 1, h - 5, 0, h - 6, 0, 5 };
-                tip.setLocation(Math.max(0, x - i), y - size.y - t);
-            }
-        } else {
-            if (dest.height >= y + size.y + t) {
-                polyline = new int[] { 0, 5 + t, 1, 5 + t, 1, 3 + t, 3, 1 + t, 5, 1 + t, 5, t, w - 35, t, w - 16, 0, w - 16, t, w - 5, t, w - 5, 1 + t, w - 3, 1 + t, w - 1, 3 + t, w - 1, 5 + t, w, 5 + t, w, h - 5 + t, w - 1, h - 5 + t, w - 1, h - 3 + t, w - 2, h - 3 + t, w - 2, h - 2 + t, w - 3, h - 2 + t, w - 3, h - 1 + t, w - 5, h - 1 + t, w - 5, h + t, 5, h + t, 5, h - 1 + t, 3, h - 1 + t, 3, h - 2 + t, 2, h - 2 + t, 2, h - 3 + t, 1, h - 3 + t, 1, h - 5 + t, 0, h - 5 + t, 0, 5 + t };
-                borderPolygon = new int[] { 0, 5 + t, 1, 4 + t, 1, 3 + t, 3, 1 + t, 4, 1 + t, 5, t, w - 35, t, w - 17, 2, w - 17, t, w - 6, t, w - 5, 1 + t, w - 4, 1 + t, w - 2, 3 + t, w - 2, 4 + t, w - 1, 5 + t, w - 1, h - 6 + t, w - 2, h - 5 + t, w - 2, h - 4 + t, w - 4, h - 2 + t, w - 5, h - 2 + t, w - 6, h - 1 + t, 5, h - 1 + t, 4, h - 2 + t, 3, h - 2 + t, 1, h - 4 + t, 1, h - 5 + t, 0, h - 6 + t, 0, 5 + t };
-                tip.setLocation(Math.min(dest.width - size.x, x - size.x + i), y);
-            } else {
-                polyline = new int[] { 0, 5, 1, 5, 1, 3, 3, 1, 5, 1, 5, 0, w - 5, 0, w - 5, 1, w - 3, 1, w - 1, 3, w - 1, 5, w, 5, w, h - 5, w - 1, h - 5, w - 1, h - 3, w - 2, h - 3, w - 2, h - 2, w - 3, h - 2, w - 3, h - 1, w - 5, h - 1, w - 5, h, w - 16, h, w - 16, h + t, w - 35, h, 5, h, 5, h - 1, 3, h - 1, 3, h - 2, 2, h - 2, 2, h - 3, 1, h - 3, 1, h - 5, 0, h - 5, 0, 5 };
-                borderPolygon = new int[] { 0, 5, 1, 4, 1, 3, 3, 1, 4, 1, 5, 0, w - 6, 0, w - 5, 1, w - 4, 1, w - 2, 3, w - 2, 4, w - 1, 5, w - 1, h - 6, w - 2, h - 5, w - 2, h - 4, w - 4, h - 2, w - 5, h - 2, w - 6, h - 1, w - 17, h - 1, w - 17, h + t - 2, w - 36, h - 1, 5, h - 1, 4, h - 2, 3, h - 2, 1, h - 4, 1, h - 5, 0, h - 6, 0, 5 };
-                tip.setLocation(Math.min(dest.width - size.x, x - size.x + i), y - size.y - t);
-            }
-        }
-        if ((getApi().style & SWT.BALLOON) != 0) {
-            if (region != null)
-                region.dispose();
-            region = new Region(display);
-            region.add(polyline);
-            tip.setRegion(region);
-        }
     }
 
     /**
@@ -315,9 +261,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
      */
     public boolean getVisible() {
         checkWidget();
-        if (tip == null)
-            return false;
-        return tip.getVisible();
+        return false;
     }
 
     /**
@@ -350,8 +294,8 @@ public class DartToolTip extends DartWidget implements IToolTip {
             display.timerExec(-1, runnable);
         }
         runnable = null;
-        tip.dispose();
-        tip = null;
+        ;
+        ;
         if (region != null)
             region.dispose();
         region = null;
@@ -381,8 +325,6 @@ public class DartToolTip extends DartWidget implements IToolTip {
                 y += TIP_HEIGHT;
             gc.drawPolygon(borderPolygon);
         } else {
-            Rectangle rect = tip.getClientArea();
-            gc.drawRectangle(rect.x, rect.y, rect.width - 1, rect.height - 1);
         }
         if (layoutText != null) {
             x += INSET;
@@ -471,8 +413,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
         this.x = x;
         this.y = y;
         this.location = newValue;
-        if (tip.getVisible())
-            configure();
+        ;
     }
 
     /**
@@ -534,8 +475,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
             layoutMessage.setText(string);
         }
         this.message = newValue;
-        if (tip.getVisible())
-            configure();
+        ;
     }
 
     /**
@@ -576,8 +516,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
             layoutText.setStyle(style, 0, string.length());
         }
         this.text = newValue;
-        if (tip.getVisible())
-            configure();
+        ;
     }
 
     /**
@@ -602,9 +541,8 @@ public class DartToolTip extends DartWidget implements IToolTip {
             dirty();
         }
         checkWidget();
-        if (visible)
-            configure();
-        tip.setVisible(visible);
+        ;
+        ;
         Display display = getDisplay();
         if (runnable != null)
             display.timerExec(-1, runnable);
@@ -629,10 +567,6 @@ public class DartToolTip extends DartWidget implements IToolTip {
 
     public Shell _parent() {
         return parent;
-    }
-
-    public Shell _tip() {
-        return tip;
     }
 
     public TrayItem _item() {
