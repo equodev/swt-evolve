@@ -85,10 +85,18 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         child: content,
       ),
     ),
-
   );
 
-  return impl.gcOverlay != null ? impl.wrapWithGCOverlay(listener) : listener;
+  Widget result = impl.gcOverlay != null ? impl.wrapWithGCOverlay(listener) : listener;
+
+  if (state.cursor?.cursorStyle != null) {
+    result = MouseRegion(
+      cursor: impl.swtCursorToFlutter(state.cursor!.cursorStyle!),
+      child: result,
+    );
+  }
+
+  return result;
 }
 
 class CompositeImpl<T extends CompositeSwt, V extends VComposite>

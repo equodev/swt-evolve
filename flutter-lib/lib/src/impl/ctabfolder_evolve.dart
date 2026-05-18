@@ -28,26 +28,11 @@ import 'color_utils.dart';
 class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     extends CompositeImpl<T, V> {
   late int _selectedIndex;
-  bool _hoveringTopBar = false;
-  bool _scrollbarVisible = false;
-  Timer? _scrollbarHideTimer;
-  final GlobalKey _tabBarKey = GlobalKey();
-  late final ScrollController _horizontalScrollController;
-  bool _isMinimizeHovered = false;
-  bool _isMaximizeHovered = false;
 
   @override
   void initState() {
     super.initState();
     _selectedIndex = state.selection ?? 0;
-    _horizontalScrollController = ScrollController();
-  }
-
-  @override
-  void dispose() {
-    _scrollbarHideTimer?.cancel();
-    _horizontalScrollController.dispose();
-    super.dispose();
   }
 
   @override
@@ -82,35 +67,30 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
   @override
   Widget build(BuildContext context) {
-    final widgetTheme = Theme.of(
-      context,
-    ).extension<CTabFolderThemeExtension>()!;
     final tabItems = getTabItems();
     final tabBodies = getTabBodies();
 
-    final useSimpleStyle = false;
-    final isSingle = state.single ?? false;
     final isTabBottom = state.tabPosition == SWT.BOTTOM ?? false;
     final isMinimized = state.minimized ?? false;
-    final isMaximized = state.maximized ?? false;
 
     final double? tabHeight = 32;
-        //(state.tabHeight != null && state.tabHeight != SWT.DEFAULT)
-        //? state.tabHeight!.toDouble()
-        //: null;
 
     final constraints = getConstraintsFromBounds(state.bounds);
 
     Widget column = Column(
       children: [
         if (!isTabBottom)
-          buildTabBar(
-            context,
-            widgetTheme,
-            tabItems,
-            tabHeight,
-            useSimpleStyle,
-            isSingle,
+          _CTabBar(
+            state: state,
+            selectedIndex: _selectedIndex,
+            tabItems: tabItems,
+            tabHeight: tabHeight,
+            useSimpleStyle: false,
+            topRightComposite: getTopRightComposite(),
+            onTabSelected: _handleTabSelection,
+            onTabClose: _handleTabClose,
+            onMinimize: _toggleMinimize,
+            onMaximize: _toggleMaximize,
           ),
         if (!isMinimized)
           Expanded(
@@ -120,13 +100,17 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             ),
           ),
         if (isTabBottom)
-          buildTabBar(
-            context,
-            widgetTheme,
-            tabItems,
-            tabHeight,
-            useSimpleStyle,
-            isSingle,
+          _CTabBar(
+            state: state,
+            selectedIndex: _selectedIndex,
+            tabItems: tabItems,
+            tabHeight: tabHeight,
+            useSimpleStyle: false,
+            topRightComposite: getTopRightComposite(),
+            onTabSelected: _handleTabSelection,
+            onTabClose: _handleTabClose,
+            onMinimize: _toggleMinimize,
+            onMaximize: _toggleMaximize,
           ),
       ],
     );
@@ -138,39 +122,180 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     return column;
   }
 
-  Widget buildTabBar(
-    BuildContext context,
-    CTabFolderThemeExtension widgetTheme,
-    List<CTabItem> tabItems,
-    double? height,
-    bool useSimpleStyle,
-    bool isSingle,
-  ) {
-    List<CTabItem> visibleTabs = isSingle
-        ? (_selectedIndex < tabItems.length ? [tabItems[_selectedIndex]] : [])
-        : tabItems;
+  void _handleTabSelection(int index) {
+    if (state.enabled != true) return;
+    setState(() {
+      _selectedIndex = index;
+      state.selection = index;
+    });
+    var e = VEvent()..index = index;
+    widget.sendSelectionSelection(state, e);
+  }
 
-    final topRightComposite = getTopRightComposite();
-    if (useSimpleStyle) {
-      return buildSimpleTabBar(context, widgetTheme, visibleTabs, height);
+  void _toggleMinimize() {
+    if (state.enabled != true) return;
+    final isMinimized = state.minimized ?? false;
+    var e = VEvent();
+    if (isMinimized) {
+      widget.sendCTabFolder2restore(state, e);
     } else {
-      return buildAdvancedTabBar(
+      widget.sendCTabFolder2minimize(state, e);
+    }
+  }
+
+  void _toggleMaximize() {
+    if (state.enabled != true) return;
+    final isMaximized = state.maximized ?? false;
+    var e = VEvent();
+    if (isMaximized) {
+      widget.sendCTabFolder2restore(state, e);
+    } else {
+      widget.sendCTabFolder2maximize(state, e);
+    }
+  }
+
+  VComposite? getTopRightComposite() {
+    return state.topRight is VComposite ? state.topRight as VComposite : null;
+  }
+
+  List<CTabItem> getTabItems() {
+    if (state.items == null) {
+      return [];
+    }
+    return state.items!
+        .whereType<VCTabItem>()
+        .map((tabItem) => getWidgetForTabItem(tabItem))
+        .toList();
+  }
+
+  CTabItem getWidgetForTabItem(VCTabItem tabItem) {
+    final tabItemWidget = CTabItemSwt(value: tabItem);
+
+    return CTabItem(
+      label: tabItem.text ?? "",
+      showCloseButton: tabItem.showClose ?? false,
+      customContent: tabItemWidget,
+      toolTipText: tabItem.toolTipText,
+    );
+  }
+
+  List<Widget> getTabBodies() {
+    if (state.items == null) {
+      return <Widget>[];
+    }
+    return state.items!.whereType<VCTabItem>().map((e) => tabBody(e)).toList();
+  }
+
+  Widget tabBody(VCTabItem e) {
+    if (e.control != null) {
+      final control = e.control!;
+
+      if (hasBounds(control.bounds)) {
+        final bounds = control.bounds!;
+        return SizedBox(
+          width: bounds.width.toDouble(),
+          height: bounds.height.toDouble(),
+          child: mapWidgetFromValue(control),
+        );
+      } else {
+        return SizedBox.expand(child: mapWidgetFromValue(control));
+      }
+    }
+    return Container();
+  }
+
+  void _handleTabClose(int index) {
+    if (state.enabled != true) return;
+    var e = VEvent()..index = index;
+    widget.sendCTabFolder2close(state, e);
+    widget.sendCTabFolderitemClosed(state, e);
+  }
+}
+
+class _CTabBar extends StatefulWidget {
+  final VCTabFolder state;
+  final int selectedIndex;
+  final List<CTabItem> tabItems;
+  final double? tabHeight;
+  final bool useSimpleStyle;
+  final VComposite? topRightComposite;
+  final ValueChanged<int> onTabSelected;
+  final ValueChanged<int> onTabClose;
+  final VoidCallback onMinimize;
+  final VoidCallback onMaximize;
+
+  const _CTabBar({
+    required this.state,
+    required this.selectedIndex,
+    required this.tabItems,
+    required this.tabHeight,
+    required this.useSimpleStyle,
+    required this.topRightComposite,
+    required this.onTabSelected,
+    required this.onTabClose,
+    required this.onMinimize,
+    required this.onMaximize,
+  });
+
+  @override
+  State<_CTabBar> createState() => _CTabBarState();
+}
+
+class _CTabBarState extends State<_CTabBar> {
+  bool _hoveringTopBar = false;
+  bool _scrollbarVisible = false;
+  Timer? _scrollbarHideTimer;
+  final GlobalKey _tabBarKey = GlobalKey();
+  late final ScrollController _horizontalScrollController;
+  bool _isMinimizeHovered = false;
+  bool _isMaximizeHovered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _horizontalScrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollbarHideTimer?.cancel();
+    _horizontalScrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final widgetTheme = Theme.of(
+      context,
+    ).extension<CTabFolderThemeExtension>()!;
+    final isSingle = widget.state.single ?? false;
+
+    List<CTabItem> visibleTabs = isSingle
+        ? (widget.selectedIndex < widget.tabItems.length
+            ? [widget.tabItems[widget.selectedIndex]]
+            : [])
+        : widget.tabItems;
+
+    if (widget.useSimpleStyle) {
+      return _buildSimpleTabBar(context, widgetTheme, visibleTabs, widget.tabHeight);
+    } else {
+      return _buildAdvancedTabBar(
         context,
         widgetTheme,
         visibleTabs,
-        height,
-        topRightComposite,
+        widget.tabHeight,
+        widget.topRightComposite,
       );
     }
   }
 
-  Widget buildSimpleTabBar(
+  Widget _buildSimpleTabBar(
     BuildContext context,
     CTabFolderThemeExtension widgetTheme,
     List<CTabItem> tabs,
     double? height,
   ) {
-    final isTabBottom = state.tabPosition == SWT.BOTTOM ?? false;
+    final isTabBottom = widget.state.tabPosition == SWT.BOTTOM ?? false;
     Widget tabBarContent = Row(
       children: [
         Expanded(
@@ -185,11 +310,11 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
                   child: _buildSimpleTab(
                     context: context,
                     widgetTheme: widgetTheme,
-                    isSelected: index == _selectedIndex,
+                    isSelected: index == widget.selectedIndex,
                     tab: tab,
-                    onTap: () => _handleTabSelection(index),
+                    onTap: () => widget.onTabSelected(index),
                     onClose: tab.showCloseButton
-                        ? () => _handleTabClose(index)
+                        ? () => widget.onTabClose(index)
                         : null,
                     isTabBottom: isTabBottom,
                   ),
@@ -209,19 +334,19 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     );
   }
 
-  Widget buildAdvancedTabBar(
+  Widget _buildAdvancedTabBar(
     BuildContext context,
     CTabFolderThemeExtension widgetTheme,
     List<CTabItem> tabs,
     double? height,
     VComposite? topRightComposite,
   ) {
-    final isTabBottom = state.tabPosition == SWT.BOTTOM ?? false;
-    final showMinimizeButton = state.minimizeVisible ?? false;
-    final showMaximizeButton = state.maximizeVisible ?? false;
-    final isMinimized = state.minimized ?? false;
-    final isMaximized = state.maximized ?? false;
-    final topRightAlignment = state.topRightAlignment ?? SWT.RIGHT;
+    final isTabBottom = widget.state.tabPosition == SWT.BOTTOM ?? false;
+    final showMinimizeButton = widget.state.minimizeVisible ?? false;
+    final showMaximizeButton = widget.state.maximizeVisible ?? false;
+    final isMinimized = widget.state.minimized ?? false;
+    final isMaximized = widget.state.maximized ?? false;
+    final topRightAlignment = widget.state.topRightAlignment ?? SWT.RIGHT;
 
     Widget tabBarContent = Row(
       key: _tabBarKey,
@@ -238,11 +363,11 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
                   child: _buildAdvancedTab(
                     context: context,
                     widgetTheme: widgetTheme,
-                    isSelected: index == _selectedIndex,
+                    isSelected: index == widget.selectedIndex,
                     tab: tab,
-                    onTap: () => _handleTabSelection(index),
+                    onTap: () => widget.onTabSelected(index),
                     onClose: tab.showCloseButton
-                        ? () => _handleTabClose(index)
+                        ? () => widget.onTabClose(index)
                         : null,
                     isTabBottom: isTabBottom,
                   ),
@@ -291,14 +416,14 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     VoidCallback? onClose,
     required bool isTabBottom,
   }) {
-    final enabled = state.enabled ?? false;
+    final enabled = widget.state.enabled ?? false;
 
     final resolvedSelectionForeground = getForegroundColor(
-      foreground: state.selectionForeground,
+      foreground: widget.state.selectionForeground,
       defaultColor: widgetTheme.tabSelectedTextColor,
     );
     final resolvedSelectionBackground = getBackgroundColor(
-      background: state.selectionBackground,
+      background: widget.state.selectionBackground,
       defaultColor: widgetTheme.tabSelectedBackgroundColor,
     ) ?? widgetTheme.tabSelectedBackgroundColor;
 
@@ -347,9 +472,9 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
                   ? BorderSide(
                       color: backgroundColor,
                       width:
-                          (state.selectionBarThickness != null &&
-                              state.selectionBarThickness! > 0)
-                          ? state.selectionBarThickness!.toDouble()
+                          (widget.state.selectionBarThickness != null &&
+                              widget.state.selectionBarThickness! > 0)
+                          ? widget.state.selectionBarThickness!.toDouble()
                           : widgetTheme.tabSelectedBorderWidth,
                     )
                   : !isTabBottom
@@ -362,9 +487,9 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
                   ? BorderSide(
                       color: backgroundColor,
                       width:
-                          (state.selectionBarThickness != null &&
-                              state.selectionBarThickness! > 0)
-                          ? state.selectionBarThickness!.toDouble()
+                          (widget.state.selectionBarThickness != null &&
+                              widget.state.selectionBarThickness! > 0)
+                          ? widget.state.selectionBarThickness!.toDouble()
                           : widgetTheme.tabSelectedBorderWidth,
                     )
                   : isTabBottom
@@ -412,27 +537,26 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     VoidCallback? onClose,
     required bool isTabBottom,
   }) {
-    final showUnselectedClose = state.unselectedCloseVisible ?? false;
+    final showUnselectedClose = widget.state.unselectedCloseVisible ?? false;
     final shouldShowClose =
         (onClose != null) && (isSelected || showUnselectedClose);
 
-    final showUnselectedImage = state.unselectedImageVisible ?? false;
-    final showSelectedImage = state.selectedImageVisible ?? true;
+    final showUnselectedImage = widget.state.unselectedImageVisible ?? false;
+    final showSelectedImage = widget.state.selectedImageVisible ?? true;
     final shouldShowImage =
         (isSelected && showSelectedImage) ||
         (!isSelected && showUnselectedImage);
 
-    final showHighlight = state.highlightEnabled ?? false;
-    final enabled = state.enabled ?? false;
+    final showHighlight = widget.state.highlightEnabled ?? false;
+    final enabled = widget.state.enabled ?? false;
     final useDefaultTheme = getConfigFlags().theme_name == null;
 
-    // Determine colors based on enabled state
     final resolvedSelectionForeground = getForegroundColor(
-      foreground: state.selectionForeground,
+      foreground: widget.state.selectionForeground,
       defaultColor: widgetTheme.tabSelectedTextColor,
     );
     final resolvedSelectionBackground = getBackgroundColor(
-      background: state.selectionBackground,
+      background: widget.state.selectionBackground,
       defaultColor: widgetTheme.tabSelectedBackgroundColor,
     ) ?? widgetTheme.tabSelectedBackgroundColor;
 
@@ -484,9 +608,9 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
                   ? BorderSide(
                       color: backgroundColor,
                       width:
-                          (state.selectionBarThickness != null &&
-                              state.selectionBarThickness! > 0)
-                          ? state.selectionBarThickness!.toDouble()
+                          (widget.state.selectionBarThickness != null &&
+                              widget.state.selectionBarThickness! > 0)
+                          ? widget.state.selectionBarThickness!.toDouble()
                           : widgetTheme.tabSelectedBorderWidth,
                     )
                   : isTabBottom
@@ -509,9 +633,9 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
                   ? BorderSide(
                       color: backgroundColor,
                       width:
-                          (state.selectionBarThickness != null &&
-                              state.selectionBarThickness! > 0)
-                          ? state.selectionBarThickness!.toDouble()
+                          (widget.state.selectionBarThickness != null &&
+                              widget.state.selectionBarThickness! > 0)
+                          ? widget.state.selectionBarThickness!.toDouble()
                           : widgetTheme.tabSelectedBorderWidth,
                     )
                   : !isTabBottom
@@ -601,10 +725,6 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
   Widget _buildTopRightComposite(VComposite composite, {Color? backgroundColor}) {
     return ToolbarComposite(value: composite, backgroundColor: backgroundColor);
-  }
-
-  VComposite? getTopRightComposite() {
-    return state.topRight is VComposite ? state.topRight as VComposite : null;
   }
 
   Widget _buildControlButton({
@@ -723,7 +843,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     required Widget child,
     required bool isTabBottom,
   }) {
-    final borderVisible = state.borderVisible ?? true;
+    final borderVisible = widget.state.borderVisible ?? true;
     final decoration = BoxDecoration(
       color: widgetTheme.tabBarBackgroundColor,
       border: borderVisible
@@ -752,86 +872,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     );
   }
 
-  void _handleTabSelection(int index) {
-    if (state.enabled != true) return;
-    setState(() {
-      _selectedIndex = index;
-      state.selection = index;
-    });
-    var e = VEvent()..index = index;
-    widget.sendSelectionSelection(state, e);
-  }
-
-  void _toggleMinimize() {
-    if (state.enabled != true) return;
-    final isMinimized = state.minimized ?? false;
-    var e = VEvent();
-    if (isMinimized) {
-      widget.sendCTabFolder2restore(state, e);
-    } else {
-      widget.sendCTabFolder2minimize(state, e);
-    }
-  }
-
-  void _toggleMaximize() {
-    if (state.enabled != true) return;
-    final isMaximized = state.maximized ?? false;
-    var e = VEvent();
-    if (isMaximized) {
-      widget.sendCTabFolder2restore(state, e);
-    } else {
-      widget.sendCTabFolder2maximize(state, e);
-    }
-  }
-
-  List<CTabItem> getTabItems() {
-    if (state.items == null) {
-      return [];
-    }
-    return state.items!
-        .whereType<VCTabItem>()
-        .map((tabItem) => getWidgetForTabItem(tabItem))
-        .toList();
-  }
-
-  CTabItem getWidgetForTabItem(VCTabItem tabItem) {
-    final tabItemWidget = CTabItemSwt(value: tabItem);
-
-    return CTabItem(
-      label: tabItem.text ?? "",
-      showCloseButton: tabItem.showClose ?? false,
-      customContent: tabItemWidget,
-      toolTipText: tabItem.toolTipText,
-    );
-  }
-
-  List<Widget> getTabBodies() {
-    if (state.items == null) {
-      return <Widget>[];
-    }
-    return state.items!.whereType<VCTabItem>().map((e) => tabBody(e)).toList();
-  }
-
-  Widget tabBody(VCTabItem e) {
-    if (e.control != null) {
-      final control = e.control!;
-
-      if (hasBounds(control.bounds)) {
-        final bounds = control.bounds!;
-        return SizedBox(
-          width: bounds.width.toDouble(),
-          height: bounds.height.toDouble(),
-          child: mapWidgetFromValue(control),
-        );
-      } else {
-        return SizedBox.expand(child: mapWidgetFromValue(control));
-      }
-    }
-    return Container();
-  }
-
   String _getTabText(String label) {
-    final minChars = state.minimumCharacters;
+    final minChars = widget.state.minimumCharacters;
     if (minChars != null && minChars > 0 && label.length > minChars) {
       return '${label.substring(0, minChars)}...';
     }
@@ -839,11 +881,9 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   }
 
   DecorationImage? _buildSelectionBgImage() {
-    final image = state.selectionBgImage;
+    final image = widget.state.selectionBgImage;
     if (image == null) return null;
 
-    // For now, we'll use the filename if available
-    // In a full implementation, you'd need to handle imageData as well
     if (image.filename != null && image.filename!.isNotEmpty) {
       try {
         return DecorationImage(
@@ -851,7 +891,6 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
           fit: BoxFit.cover,
         );
       } catch (e) {
-        // If file doesn't exist, return null
         return null;
       }
     }
@@ -878,7 +917,10 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (topRightComposite != null)
-          _buildTopRightComposite(topRightComposite, backgroundColor: widgetTheme.tabBarBackgroundColor),
+          _buildTopRightComposite(
+            topRightComposite,
+            backgroundColor: widgetTheme.tabBarBackgroundColor,
+          ),
         if (showMinimizeButton)
           Builder(
             builder: (context) {
@@ -890,7 +932,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
                 context: context,
                 widgetTheme: widgetTheme,
                 icon: isMinimized ? Icons.maximize : Icons.minimize,
-                onTap: isVisible ? _toggleMinimize : () {},
+                onTap: isVisible ? widget.onMinimize : () {},
                 isHovered: _isMinimizeHovered,
                 onHoverChanged: (hovered) {
                   setState(() {
@@ -912,7 +954,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
                 context: context,
                 widgetTheme: widgetTheme,
                 icon: isMaximized ? Icons.fullscreen_exit : Icons.fullscreen,
-                onTap: isVisible ? _toggleMaximize : () {},
+                onTap: isVisible ? widget.onMaximize : () {},
                 isHovered: _isMaximizeHovered,
                 onHoverChanged: (hovered) {
                   setState(() {
@@ -969,13 +1011,6 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     } else {
       return scaledWidget;
     }
-  }
-
-  void _handleTabClose(int index) {
-    if (state.enabled != true) return;
-    var e = VEvent()..index = index;
-    widget.sendCTabFolder2close(state, e);
-    widget.sendCTabFolderitemClosed(state, e);
   }
 }
 

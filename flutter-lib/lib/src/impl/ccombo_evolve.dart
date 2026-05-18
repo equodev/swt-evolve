@@ -15,6 +15,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     extends CompositeImpl<T, V> {
   late TextEditingController _controller;
   FocusNode? _focusNode;
+  bool _menuOpen = false;
   bool _isFocused = false;
   bool _isHovered = false;
 
@@ -136,12 +137,13 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
             widgetTheme: widgetTheme,
             controller: _controller,
             focusNode: _focusNode,
+            onArrowTap: () { if (mounted) setState(() => _menuOpen = true); },
             items: state.items ?? [],
             enabled: isEnabled,
             isReadOnly: isReadOnly,
             textStyle: textStyle,
             onSelected: isEnabled ? onChanged : null,
-          controlHeight: height,
+            controlHeight: height,
           ),
         ),
       );
@@ -160,6 +162,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
       _controller.text = value ?? "";
     });
     widget.sendSelectionSelection(state, VEvent()..text = value);
+    _focusNode?.requestFocus();
   }
 
   void onTextChanged(String value) {
@@ -179,8 +182,9 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     if (!mounted) return;
     setState(() => _isFocused = _focusNode!.hasFocus);
     if (_focusNode!.hasFocus) {
+      _menuOpen = false;
       widget.sendFocusFocusIn(state, null);
-    } else {
+    } else if (!_menuOpen) {
       widget.sendFocusFocusOut(state, null);
     }
   }
@@ -199,6 +203,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
   final CComboThemeExtension widgetTheme;
   final TextEditingController controller;
   final FocusNode? focusNode;
+  final VoidCallback? onArrowTap;
   final List<String> items;
   final bool enabled;
   final bool isReadOnly;
@@ -211,6 +216,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
     required this.widgetTheme,
     required this.controller,
     this.focusNode,
+    this.onArrowTap,
     required this.items,
     required this.enabled,
     required this.isReadOnly,
@@ -262,7 +268,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
         ? BoxConstraints.tightFor(height: controlHeight)
         : null;
 
-    return DropdownMenu<String>(
+    final dropdown = DropdownMenu<String>(
       enabled: enabled,
       focusNode: focusNode,
       controller: controller,
@@ -306,6 +312,33 @@ class _StyledDropdownCCombo extends StatelessWidget {
           ),
         );
       }).toList(),
+    );
+
+    // Overlay to absorb taps on the text area so the dropdown only opens via
+    // the arrow button. The arrow area is left transparent so its tap falls
+    // through to the underlying DropdownMenu button.
+    final arrowAreaWidth = widgetTheme.iconSize + 24.0;
+    return Stack(
+      children: [
+        dropdown,
+        Positioned.fill(
+          child: Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {},
+                ),
+              ),
+              GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: onArrowTap,
+                child: SizedBox(width: arrowAreaWidth),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
