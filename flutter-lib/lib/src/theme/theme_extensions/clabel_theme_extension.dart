@@ -29,6 +29,9 @@ class CLabelThemeExtension extends ThemeExtension<CLabelThemeExtension> with _$C
   final double iconSize;
   final double iconTextSpacing;
 
+  // Margin
+  final double defaultMargin;
+
   // Interactive properties
   final double disabledOpacity;
 
@@ -45,6 +48,7 @@ class CLabelThemeExtension extends ThemeExtension<CLabelThemeExtension> with _$C
     this.disabledTextStyle,
     required this.iconSize,
     required this.iconTextSpacing,
+    required this.defaultMargin,
     required this.disabledOpacity,
     required this.textAlign,
     required this.mainAxisAlignment,

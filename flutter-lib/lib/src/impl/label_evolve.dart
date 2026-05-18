@@ -190,16 +190,20 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     // Handle image
     Widget? imageWidget;
     if (state.image != null) {
-      imageWidget = ImageUtils.buildVImage(
-        state.image,
-        width:
-            state.image?.imageData?.width?.toDouble() ?? widgetTheme.iconSize,
-        height:
-            state.image?.imageData?.height?.toDouble() ?? widgetTheme.iconSize,
-        enabled: enabled,
-        constraints: null,
-        useBinaryImage: true,
-        renderAsIcon: false,
+      final imgW = state.image?.imageData?.width?.toDouble() ?? widgetTheme.iconSize;
+      final imgH = state.image?.imageData?.height?.toDouble() ?? widgetTheme.iconSize;
+      imageWidget = SizedBox(
+        width: imgW,
+        height: imgH,
+        child: ImageUtils.buildVImage(
+          state.image,
+          width: imgW,
+          height: imgH,
+          enabled: enabled,
+          constraints: null,
+          useBinaryImage: true,
+          renderAsIcon: false,
+        ),
       );
     }
 

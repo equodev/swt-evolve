@@ -18,6 +18,7 @@ mixin _$CLabelThemeExtensionTailorMixin
   TextStyle? get disabledTextStyle;
   double get iconSize;
   double get iconTextSpacing;
+  double get defaultMargin;
   double get disabledOpacity;
   TextAlign get textAlign;
   MainAxisAlignment get mainAxisAlignment;
@@ -32,6 +33,7 @@ mixin _$CLabelThemeExtensionTailorMixin
     TextStyle? disabledTextStyle,
     double? iconSize,
     double? iconTextSpacing,
+    double? defaultMargin,
     double? disabledOpacity,
     TextAlign? textAlign,
     MainAxisAlignment? mainAxisAlignment,
@@ -45,6 +47,7 @@ mixin _$CLabelThemeExtensionTailorMixin
       disabledTextStyle: disabledTextStyle ?? this.disabledTextStyle,
       iconSize: iconSize ?? this.iconSize,
       iconTextSpacing: iconTextSpacing ?? this.iconTextSpacing,
+      defaultMargin: defaultMargin ?? this.defaultMargin,
       disabledOpacity: disabledOpacity ?? this.disabledOpacity,
       textAlign: textAlign ?? this.textAlign,
       mainAxisAlignment: mainAxisAlignment ?? this.mainAxisAlignment,
@@ -82,6 +85,7 @@ mixin _$CLabelThemeExtensionTailorMixin
       ),
       iconSize: t < 0.5 ? iconSize : other.iconSize,
       iconTextSpacing: t < 0.5 ? iconTextSpacing : other.iconTextSpacing,
+      defaultMargin: t < 0.5 ? defaultMargin : other.defaultMargin,
       disabledOpacity: t < 0.5 ? disabledOpacity : other.disabledOpacity,
       textAlign: t < 0.5 ? textAlign : other.textAlign,
       mainAxisAlignment: t < 0.5 ? mainAxisAlignment : other.mainAxisAlignment,
@@ -122,6 +126,10 @@ mixin _$CLabelThemeExtensionTailorMixin
               other.iconTextSpacing,
             ) &&
             const DeepCollectionEquality().equals(
+              defaultMargin,
+              other.defaultMargin,
+            ) &&
+            const DeepCollectionEquality().equals(
               disabledOpacity,
               other.disabledOpacity,
             ) &&
@@ -147,6 +155,7 @@ mixin _$CLabelThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(disabledTextStyle),
       const DeepCollectionEquality().hash(iconSize),
       const DeepCollectionEquality().hash(iconTextSpacing),
+      const DeepCollectionEquality().hash(defaultMargin),
       const DeepCollectionEquality().hash(disabledOpacity),
       const DeepCollectionEquality().hash(textAlign),
       const DeepCollectionEquality().hash(mainAxisAlignment),
@@ -165,6 +174,7 @@ extension CLabelThemeExtensionBuildContextProps on BuildContext {
   TextStyle? get disabledTextStyle => cLabelThemeExtension.disabledTextStyle;
   double get iconSize => cLabelThemeExtension.iconSize;
   double get iconTextSpacing => cLabelThemeExtension.iconTextSpacing;
+  double get defaultMargin => cLabelThemeExtension.defaultMargin;
   double get disabledOpacity => cLabelThemeExtension.disabledOpacity;
   TextAlign get textAlign => cLabelThemeExtension.textAlign;
   MainAxisAlignment get mainAxisAlignment =>

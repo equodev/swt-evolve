@@ -56,6 +56,9 @@ CLabelThemeExtension _getCLabelTheme({
     iconSize: 16.0,
     iconTextSpacing: 4.0,
 
+    // Margin
+    defaultMargin: 3.0,
+
     // Interactive properties
     disabledOpacity: 0.5,
 

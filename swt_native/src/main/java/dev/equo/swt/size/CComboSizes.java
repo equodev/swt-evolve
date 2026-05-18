@@ -21,7 +21,6 @@ public class CComboSizes {
         static final double MIN_WIDTH = 66.0;
         static final double MIN_HEIGHT = 54.0;
         static final double HORIZONTAL_PADDING = 68.66666666666667;
-        static final double VERTICAL_PADDING = 37.5;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = true;
     }
 
@@ -29,7 +28,6 @@ public class CComboSizes {
         static final double MIN_WIDTH = 62.0;
         static final double MIN_HEIGHT = 50.0;
         static final double HORIZONTAL_PADDING = 64.66666666666667;
-        static final double VERTICAL_PADDING = 33.5;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = true;
     }
 
@@ -47,11 +45,11 @@ public class CComboSizes {
         if (hasFlags(style, SWT.READ_ONLY) || hasFlags(style, SWT.FLAT) || hasFlags(style, SWT.LEAD) || hasFlags(style, SWT.LEFT) || hasFlags(style, SWT.CENTER) || hasFlags(style, SWT.TRAIL) || hasFlags(style, SWT.RIGHT)) {
             m.text = computeText(widget, m, FLAT.EMPTY_TEXT_AFFECTS_SIZING);
             width = wHint != SWT.DEFAULT ? wHint : Math.max(m.text.x() + (m.text.x() > 0 ? FLAT.HORIZONTAL_PADDING : 0), FLAT.MIN_WIDTH);
-            height = hHint != SWT.DEFAULT ? hHint : Math.max(m.text.y() + FLAT.VERTICAL_PADDING, FLAT.MIN_HEIGHT);
+            height = hHint != SWT.DEFAULT ? hHint : Math.max(m.text.y(), FLAT.MIN_HEIGHT);
         } else { // BORDER
             m.text = computeText(widget, m, BORDER.EMPTY_TEXT_AFFECTS_SIZING);
             width = wHint != SWT.DEFAULT ? wHint : Math.max(m.text.x() + (m.text.x() > 0 ? BORDER.HORIZONTAL_PADDING : 0), BORDER.MIN_WIDTH);
-            height = hHint != SWT.DEFAULT ? hHint : Math.max(m.text.y() + BORDER.VERTICAL_PADDING, BORDER.MIN_HEIGHT);
+            height = hHint != SWT.DEFAULT ? hHint : Math.max(m.text.y(), BORDER.MIN_HEIGHT);
         }
 
         m.widget = new Point((int) Math.ceil(width), (int) Math.ceil(height));
