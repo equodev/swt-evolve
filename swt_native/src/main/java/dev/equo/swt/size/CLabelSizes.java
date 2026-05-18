@@ -20,10 +20,10 @@ import static dev.equo.swt.Styles.hasFlags;
 public class CLabelSizes {
 
     static class LEFT {
-        static final double MIN_WIDTH = 0.0;
-        static final double MIN_HEIGHT = 0.0;
-        static final double HORIZONTAL_PADDING = 0.0;
-        static final double VERTICAL_PADDING = 0.0;
+        static final double MIN_WIDTH = 6.0;
+        static final double MIN_HEIGHT = 6.0;
+        static final double HORIZONTAL_PADDING = 6.0;
+        static final double VERTICAL_PADDING = 6.0;
         static final double IMAGE_SPACING = 4.0;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = false;
     }

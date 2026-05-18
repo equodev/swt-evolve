@@ -27,6 +27,7 @@ CLabelThemeExtension _$CLabelThemeExtensionFromJson(
   ),
   iconSize: (json['iconSize'] as num).toDouble(),
   iconTextSpacing: (json['iconTextSpacing'] as num).toDouble(),
+  defaultMargin: (json['defaultMargin'] as num).toDouble(),
   disabledOpacity: (json['disabledOpacity'] as num).toDouble(),
   textAlign: const TextAlignConverter().fromJson(
     (json['textAlign'] as num).toInt(),
@@ -58,6 +59,7 @@ Map<String, dynamic> _$CLabelThemeExtensionToJson(
   ),
   'iconSize': instance.iconSize,
   'iconTextSpacing': instance.iconTextSpacing,
+  'defaultMargin': instance.defaultMargin,
   'disabledOpacity': instance.disabledOpacity,
   'textAlign': const TextAlignConverter().toJson(instance.textAlign),
   'mainAxisAlignment': const MainAxisAlignmentConverter().toJson(

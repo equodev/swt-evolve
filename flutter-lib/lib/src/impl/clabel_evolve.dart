@@ -136,11 +136,12 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
       hasValidBounds,
     );
 
+    final dm = widgetTheme.defaultMargin;
     final padding = EdgeInsets.fromLTRB(
-        (state.leftMargin ?? 0).toDouble(),
-        (state.topMargin ?? 0).toDouble(),
-        (state.rightMargin ?? 0).toDouble(),
-        (state.bottomMargin ?? 0).toDouble(),
+        state.leftMargin?.toDouble() ?? dm,
+        state.topMargin?.toDouble() ?? dm,
+        state.rightMargin?.toDouble() ?? dm,
+        state.bottomMargin?.toDouble() ?? dm,
       );
 
     return wrap(
@@ -273,7 +274,7 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
           useBinaryImage: true,
           renderAsIcon: false,
         ) ??
-        const SizedBox.shrink();
+        SizedBox(width: validW ?? 0, height: validH ?? 0);
     return FutureBuilder<Widget?>(
       key: ValueKey(futureKey),
       future: ImageUtils.buildVImageAsync(

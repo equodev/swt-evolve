@@ -459,13 +459,11 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
           renderAsIcon: false,
         );
 
-        if (builtImage != null) {
-          imageWidget = SizedBox(
-            width: imageWidth,
-            height: imageHeight,
-            child: builtImage,
-          );
-        }
+        imageWidget = SizedBox(
+          width: imageWidth,
+          height: imageHeight,
+          child: builtImage,
+        );
       }
     }
 

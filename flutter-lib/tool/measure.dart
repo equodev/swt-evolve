@@ -759,6 +759,12 @@ class WidgetMeasurer {
           'width': imageBox.size.width,
           'height': imageBox.size.height,
         };
+      } else if (expectedComponents['image'] != null) {
+        final img = expectedComponents['image'] as (int, int);
+        discovered['image'] = {
+          'width': img.$1.toDouble(),
+          'height': img.$2.toDouble(),
+        };
       }
     }
 
