@@ -2309,10 +2309,9 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
             error(SWT.ERROR_INVALID_ARGUMENT);
         if (to != null && to.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
-        Point point = new Point(x, y);
         if (from == to)
-            return point;
-        return point;
+            return new Point(x, y);
+        return DisplayHelper.mapOrigin(from, to, x, y);
     }
 
     /**
@@ -2405,6 +2404,9 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         Rectangle rectangle = new Rectangle(x, y, width, height);
         if (from == to)
             return rectangle;
+        Point origin = DisplayHelper.mapOrigin(from, to, x, y);
+        rectangle.x = origin.x;
+        rectangle.y = origin.y;
         return rectangle;
     }
 
