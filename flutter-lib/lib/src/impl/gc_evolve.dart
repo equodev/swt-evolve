@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../gen/canvas.dart';
 import '../gen/gc.dart';
 import '../gen/widget.dart';
-import '../custom/toolbar_composite.dart';
+import 'utils/widget_utils.dart';
 import '../theme/theme_extensions/canvas_theme_extension.dart';
 import 'canvas_evolve.dart';
 import 'gcdrawer_evolve.dart';
@@ -83,7 +83,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   Color get canvasBg {
     final canvas = context.findAncestorWidgetOfExactType<CanvasSwt>();
     if (canvas != null && canvas.value.id == state.id) {
-      final forced = ToolbarAreaMarker.backgroundOf(context);
+      final forced = ParentBackgroundScope.backgroundOf(context);
       if (forced != null) return forced;
       if (state.background != null) return _drawer.bg;
       return _canvasTheme.backgroundColor;

@@ -102,6 +102,11 @@ class TextImpl<T extends TextSwt, V extends VText>
       },
     );
 
+    final parentBg = ParentBackgroundScope.backgroundOf(context);
+    if (parentBg != null) {
+      decoration = decoration.copyWith(filled: true, fillColor: parentBg);
+    }
+
     if (hasValidBounds) {
       final hPadding = widgetTheme.contentPadding.left;
       decoration = decoration.copyWith(

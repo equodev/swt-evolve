@@ -32,12 +32,13 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     if (!useSwtColors) {
       final defaultBg =
           Theme.of(context).extension<ButtonThemeExtension>()!.controlBackgroundColor;
+      final parentBg = ParentBackgroundScope.backgroundOf(context);
       final bg = getBackgroundColor(
         background: state.background,
-        defaultColor: defaultBg,
+        defaultColor: parentBg ?? defaultBg,
       );
       return Container(
-        color: bg ?? defaultBg,
+        color: bg ?? parentBg ?? defaultBg,
         child: button,
       );
     }

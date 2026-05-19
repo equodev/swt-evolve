@@ -119,9 +119,10 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
       state.alignment,
       widgetTheme.textAlign,
     );
+    final parentBg = ParentBackgroundScope.backgroundOf(context);
     final backgroundColor = getBackgroundColor(
       background: state.background,
-      defaultColor: widgetTheme.backgroundColor,
+      defaultColor: parentBg ?? widgetTheme.backgroundColor,
     );
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = getConstraintsFromBounds(state.bounds);

@@ -453,9 +453,9 @@ public class Sizes {
         return TextSizes.computeSize(c, wHint, hHint, changed);
     }
 
-    private static final int GROUP_BORDER_WIDTH = 3;
-    private static final int GROUP_MARGIN = 3;
-    private static final int GROUP_TITLE_PADDING = 8;
+    private static final int GROUP_BORDER_WIDTH = 1;
+    private static final int GROUP_MARGIN = 8;
+    private static final int GROUP_TITLE_PADDING = 4;
     private static final int GROUP_BORDER = GROUP_BORDER_WIDTH + GROUP_MARGIN;
 
     private static int getGroupTitleHeight(DartGroup widget) {
@@ -584,11 +584,12 @@ public class Sizes {
 
     public static Rectangle getClientArea(DartGroup widget) {
         Rectangle b = widget.getBounds();
-        int topMargin = Math.max(GROUP_BORDER, getGroupTitleHeight(widget));
-
+        int titleHeight = getGroupTitleHeight(widget);
+        int topMargin = Math.max(GROUP_BORDER, titleHeight);
+        int yOffset = titleHeight > 0 ? 0 : GROUP_BORDER;
         return new Rectangle(
             GROUP_BORDER,
-            topMargin,
+            yOffset,
             Math.max(0, b.width - GROUP_BORDER * 2),
             Math.max(0, b.height - topMargin - GROUP_BORDER)
         );

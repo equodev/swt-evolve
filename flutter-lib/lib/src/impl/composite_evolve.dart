@@ -8,6 +8,7 @@ import '../gen/widget.dart';
 import '../impl/gc_evolve.dart';
 import '../impl/scrollable_evolve.dart';
 import '../custom/toolbar_composite.dart';
+import 'utils/widget_utils.dart';
 import '../theme/theme_extensions/composite_theme_extension.dart';
 import '../theme/theme_settings/composite_theme_settings.dart';
 
@@ -128,7 +129,7 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     final enabled = state.enabled ?? true;
     final children = state.children;
 
-    final backgroundColor = ToolbarAreaMarker.backgroundOf(context) ??
+    final backgroundColor = ParentBackgroundScope.backgroundOf(context) ??
         getCompositeBackgroundColor(state, widgetTheme, isEnabled: enabled);
 
     if (children == null || children.isEmpty) {

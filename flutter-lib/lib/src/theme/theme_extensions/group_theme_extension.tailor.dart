@@ -18,6 +18,20 @@ mixin _$GroupThemeExtensionTailorMixin on ThemeExtension<GroupThemeExtension> {
   double get borderRadius;
   Color get foregroundColor;
   TextStyle? get textStyle;
+  double get titleHorizontalOffset;
+  double get titleLabelPadding;
+  Color get shadowHighlightColor;
+  Color get shadowDarkColor;
+  double get shadowOutOpacity;
+  double get shadowOutOpacityAlt;
+  double get shadowOutBlurRadius;
+  double get shadowOutBlurRadiusAlt;
+  double get shadowOutElevation;
+  double get shadowSecondaryElevation;
+  double get shadowEtchedOpacity;
+  double get shadowEtchedBlurRadius;
+  double get shadowInBorderFactor;
+  double get shadowInBgFactor;
 
   @override
   GroupThemeExtension copyWith({
@@ -29,6 +43,20 @@ mixin _$GroupThemeExtensionTailorMixin on ThemeExtension<GroupThemeExtension> {
     double? borderRadius,
     Color? foregroundColor,
     TextStyle? textStyle,
+    double? titleHorizontalOffset,
+    double? titleLabelPadding,
+    Color? shadowHighlightColor,
+    Color? shadowDarkColor,
+    double? shadowOutOpacity,
+    double? shadowOutOpacityAlt,
+    double? shadowOutBlurRadius,
+    double? shadowOutBlurRadiusAlt,
+    double? shadowOutElevation,
+    double? shadowSecondaryElevation,
+    double? shadowEtchedOpacity,
+    double? shadowEtchedBlurRadius,
+    double? shadowInBorderFactor,
+    double? shadowInBgFactor,
   }) {
     return GroupThemeExtension(
       backgroundColor: backgroundColor ?? this.backgroundColor,
@@ -39,6 +67,24 @@ mixin _$GroupThemeExtensionTailorMixin on ThemeExtension<GroupThemeExtension> {
       borderRadius: borderRadius ?? this.borderRadius,
       foregroundColor: foregroundColor ?? this.foregroundColor,
       textStyle: textStyle ?? this.textStyle,
+      titleHorizontalOffset:
+          titleHorizontalOffset ?? this.titleHorizontalOffset,
+      titleLabelPadding: titleLabelPadding ?? this.titleLabelPadding,
+      shadowHighlightColor: shadowHighlightColor ?? this.shadowHighlightColor,
+      shadowDarkColor: shadowDarkColor ?? this.shadowDarkColor,
+      shadowOutOpacity: shadowOutOpacity ?? this.shadowOutOpacity,
+      shadowOutOpacityAlt: shadowOutOpacityAlt ?? this.shadowOutOpacityAlt,
+      shadowOutBlurRadius: shadowOutBlurRadius ?? this.shadowOutBlurRadius,
+      shadowOutBlurRadiusAlt:
+          shadowOutBlurRadiusAlt ?? this.shadowOutBlurRadiusAlt,
+      shadowOutElevation: shadowOutElevation ?? this.shadowOutElevation,
+      shadowSecondaryElevation:
+          shadowSecondaryElevation ?? this.shadowSecondaryElevation,
+      shadowEtchedOpacity: shadowEtchedOpacity ?? this.shadowEtchedOpacity,
+      shadowEtchedBlurRadius:
+          shadowEtchedBlurRadius ?? this.shadowEtchedBlurRadius,
+      shadowInBorderFactor: shadowInBorderFactor ?? this.shadowInBorderFactor,
+      shadowInBgFactor: shadowInBgFactor ?? this.shadowInBgFactor,
     );
   }
 
@@ -57,6 +103,42 @@ mixin _$GroupThemeExtensionTailorMixin on ThemeExtension<GroupThemeExtension> {
       borderRadius: t < 0.5 ? borderRadius : other.borderRadius,
       foregroundColor: Color.lerp(foregroundColor, other.foregroundColor, t)!,
       textStyle: TextStyle.lerp(textStyle, other.textStyle, t),
+      titleHorizontalOffset: t < 0.5
+          ? titleHorizontalOffset
+          : other.titleHorizontalOffset,
+      titleLabelPadding: t < 0.5 ? titleLabelPadding : other.titleLabelPadding,
+      shadowHighlightColor: Color.lerp(
+        shadowHighlightColor,
+        other.shadowHighlightColor,
+        t,
+      )!,
+      shadowDarkColor: Color.lerp(shadowDarkColor, other.shadowDarkColor, t)!,
+      shadowOutOpacity: t < 0.5 ? shadowOutOpacity : other.shadowOutOpacity,
+      shadowOutOpacityAlt: t < 0.5
+          ? shadowOutOpacityAlt
+          : other.shadowOutOpacityAlt,
+      shadowOutBlurRadius: t < 0.5
+          ? shadowOutBlurRadius
+          : other.shadowOutBlurRadius,
+      shadowOutBlurRadiusAlt: t < 0.5
+          ? shadowOutBlurRadiusAlt
+          : other.shadowOutBlurRadiusAlt,
+      shadowOutElevation: t < 0.5
+          ? shadowOutElevation
+          : other.shadowOutElevation,
+      shadowSecondaryElevation: t < 0.5
+          ? shadowSecondaryElevation
+          : other.shadowSecondaryElevation,
+      shadowEtchedOpacity: t < 0.5
+          ? shadowEtchedOpacity
+          : other.shadowEtchedOpacity,
+      shadowEtchedBlurRadius: t < 0.5
+          ? shadowEtchedBlurRadius
+          : other.shadowEtchedBlurRadius,
+      shadowInBorderFactor: t < 0.5
+          ? shadowInBorderFactor
+          : other.shadowInBorderFactor,
+      shadowInBgFactor: t < 0.5 ? shadowInBgFactor : other.shadowInBgFactor,
     );
   }
 
@@ -87,12 +169,68 @@ mixin _$GroupThemeExtensionTailorMixin on ThemeExtension<GroupThemeExtension> {
               foregroundColor,
               other.foregroundColor,
             ) &&
-            const DeepCollectionEquality().equals(textStyle, other.textStyle));
+            const DeepCollectionEquality().equals(textStyle, other.textStyle) &&
+            const DeepCollectionEquality().equals(
+              titleHorizontalOffset,
+              other.titleHorizontalOffset,
+            ) &&
+            const DeepCollectionEquality().equals(
+              titleLabelPadding,
+              other.titleLabelPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              shadowHighlightColor,
+              other.shadowHighlightColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              shadowDarkColor,
+              other.shadowDarkColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              shadowOutOpacity,
+              other.shadowOutOpacity,
+            ) &&
+            const DeepCollectionEquality().equals(
+              shadowOutOpacityAlt,
+              other.shadowOutOpacityAlt,
+            ) &&
+            const DeepCollectionEquality().equals(
+              shadowOutBlurRadius,
+              other.shadowOutBlurRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
+              shadowOutBlurRadiusAlt,
+              other.shadowOutBlurRadiusAlt,
+            ) &&
+            const DeepCollectionEquality().equals(
+              shadowOutElevation,
+              other.shadowOutElevation,
+            ) &&
+            const DeepCollectionEquality().equals(
+              shadowSecondaryElevation,
+              other.shadowSecondaryElevation,
+            ) &&
+            const DeepCollectionEquality().equals(
+              shadowEtchedOpacity,
+              other.shadowEtchedOpacity,
+            ) &&
+            const DeepCollectionEquality().equals(
+              shadowEtchedBlurRadius,
+              other.shadowEtchedBlurRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
+              shadowInBorderFactor,
+              other.shadowInBorderFactor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              shadowInBgFactor,
+              other.shadowInBgFactor,
+            ));
   }
 
   @override
   int get hashCode {
-    return Object.hash(
+    return Object.hashAll([
       runtimeType.hashCode,
       const DeepCollectionEquality().hash(backgroundColor),
       const DeepCollectionEquality().hash(borderColor),
@@ -102,7 +240,21 @@ mixin _$GroupThemeExtensionTailorMixin on ThemeExtension<GroupThemeExtension> {
       const DeepCollectionEquality().hash(borderRadius),
       const DeepCollectionEquality().hash(foregroundColor),
       const DeepCollectionEquality().hash(textStyle),
-    );
+      const DeepCollectionEquality().hash(titleHorizontalOffset),
+      const DeepCollectionEquality().hash(titleLabelPadding),
+      const DeepCollectionEquality().hash(shadowHighlightColor),
+      const DeepCollectionEquality().hash(shadowDarkColor),
+      const DeepCollectionEquality().hash(shadowOutOpacity),
+      const DeepCollectionEquality().hash(shadowOutOpacityAlt),
+      const DeepCollectionEquality().hash(shadowOutBlurRadius),
+      const DeepCollectionEquality().hash(shadowOutBlurRadiusAlt),
+      const DeepCollectionEquality().hash(shadowOutElevation),
+      const DeepCollectionEquality().hash(shadowSecondaryElevation),
+      const DeepCollectionEquality().hash(shadowEtchedOpacity),
+      const DeepCollectionEquality().hash(shadowEtchedBlurRadius),
+      const DeepCollectionEquality().hash(shadowInBorderFactor),
+      const DeepCollectionEquality().hash(shadowInBgFactor),
+    ]);
   }
 }
 
@@ -117,4 +269,21 @@ extension GroupThemeExtensionBuildContextProps on BuildContext {
   double get borderRadius => groupThemeExtension.borderRadius;
   Color get foregroundColor => groupThemeExtension.foregroundColor;
   TextStyle? get textStyle => groupThemeExtension.textStyle;
+  double get titleHorizontalOffset => groupThemeExtension.titleHorizontalOffset;
+  double get titleLabelPadding => groupThemeExtension.titleLabelPadding;
+  Color get shadowHighlightColor => groupThemeExtension.shadowHighlightColor;
+  Color get shadowDarkColor => groupThemeExtension.shadowDarkColor;
+  double get shadowOutOpacity => groupThemeExtension.shadowOutOpacity;
+  double get shadowOutOpacityAlt => groupThemeExtension.shadowOutOpacityAlt;
+  double get shadowOutBlurRadius => groupThemeExtension.shadowOutBlurRadius;
+  double get shadowOutBlurRadiusAlt =>
+      groupThemeExtension.shadowOutBlurRadiusAlt;
+  double get shadowOutElevation => groupThemeExtension.shadowOutElevation;
+  double get shadowSecondaryElevation =>
+      groupThemeExtension.shadowSecondaryElevation;
+  double get shadowEtchedOpacity => groupThemeExtension.shadowEtchedOpacity;
+  double get shadowEtchedBlurRadius =>
+      groupThemeExtension.shadowEtchedBlurRadius;
+  double get shadowInBorderFactor => groupThemeExtension.shadowInBorderFactor;
+  double get shadowInBgFactor => groupThemeExtension.shadowInBgFactor;
 }

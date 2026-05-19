@@ -234,6 +234,11 @@ public class DartGroup extends DartComposite implements IGroup {
         return vMargin;
     }
 
+    @Override
+    public Rectangle getClientArea() {
+        return Sizes.getClientArea(this);
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
     }

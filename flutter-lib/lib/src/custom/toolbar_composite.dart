@@ -14,6 +14,7 @@ import '../gen/toolbar.dart';
 import '../gen/toolitem.dart';
 import '../gen/widgets.dart';
 import '../impl/composite_evolve.dart';
+import '../impl/utils/widget_utils.dart';
 import '../impl/decorations_evolve.dart';
 import '../nolayout.dart';
 import '../theme/theme_extensions/clabel_theme_extension.dart';
@@ -461,7 +462,10 @@ class StatusBarCompositeImpl extends CompositeImpl<StatusBarComposite, VComposit
       child: ToolbarAreaMarker(
         active: true,
         background: backgroundColor,
-        child: Stack(clipBehavior: Clip.none, children: positionedItems),
+        child: ParentBackgroundScope(
+          background: backgroundColor,
+          child: Stack(clipBehavior: Clip.none, children: positionedItems),
+        ),
       ),
     );
   }
