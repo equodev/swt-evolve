@@ -172,3 +172,20 @@ EdgeInsets adjustPaddingForAlignment({
     );
   }
 }
+
+class ParentBackgroundScope extends InheritedWidget {
+  final Color? background;
+
+  const ParentBackgroundScope({
+    super.key,
+    required this.background,
+    required super.child,
+  });
+
+  static Color? backgroundOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ParentBackgroundScope>()?.background;
+
+  @override
+  bool updateShouldNotify(ParentBackgroundScope oldWidget) =>
+      background != oldWidget.background;
+}

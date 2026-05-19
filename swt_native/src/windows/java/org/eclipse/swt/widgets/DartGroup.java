@@ -276,6 +276,11 @@ public class DartGroup extends DartComposite implements IGroup {
         return Sizes.computeTrim(this, x, y, width, height);
     }
 
+    @Override
+    public Rectangle getClientArea() {
+        return Sizes.getClientArea(this);
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
     }
