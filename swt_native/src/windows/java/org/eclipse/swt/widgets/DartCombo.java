@@ -1912,6 +1912,11 @@ public class DartCombo extends DartComposite implements ICombo {
                     return;
                 if (e.text != null) {
                     text = e.text;
+                    int idx = indexOf(e.text);
+                    if (idx >= 0 && idx != selectedIndex) {
+                        selectedIndex = idx;
+                        dirty();
+                    }
                 }
                 sendEvent(SWT.Selection, e);
             });

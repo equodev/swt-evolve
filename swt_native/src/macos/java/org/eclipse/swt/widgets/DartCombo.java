@@ -1192,6 +1192,7 @@ public class DartCombo extends DartComposite implements ICombo {
             selectedIndex = index;
             ignoreSelection = true;
             if ((getApi().style & SWT.READ_ONLY) != 0) {
+                text = items[index];
                 sendEvent(SWT.Modify);
             } else {
                 setText(items[index], true);
@@ -1590,6 +1591,11 @@ public class DartCombo extends DartComposite implements ICombo {
                     return;
                 if (e.text != null) {
                     text = e.text;
+                    int idx = indexOf(e.text);
+                    if (idx >= 0 && idx != selectedIndex) {
+                        selectedIndex = idx;
+                        dirty();
+                    }
                 }
                 sendEvent(SWT.Selection, e);
             });
