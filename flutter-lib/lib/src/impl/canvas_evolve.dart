@@ -43,6 +43,8 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
 
   final int _alpha = 255;
   Rect? clipRect;
+  DateTime? _lastPointerDownTime;
+  Offset? _lastPointerDownPos;
   Color applyAlpha(Color color) {
     if (_alpha == 255) return color;
     return color.withOpacity(_alpha / 255.0);
@@ -110,7 +112,36 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       );
     }
 
-    return _wrapWithScrollbars(base);
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (e) {
+        final now = DateTime.now();
+        final pos = e.localPosition;
+        final last = _lastPointerDownTime;
+        final lastPos = _lastPointerDownPos;
+        if (last != null && lastPos != null &&
+            now.difference(last).inMilliseconds < 300) {
+          final dx = pos.dx - lastPos.dx;
+          final dy = pos.dy - lastPos.dy;
+          if (dx * dx + dy * dy <= 25) {
+            _lastPointerDownTime = null;
+            _lastPointerDownPos = null;
+            widget.sendMouseMouseDoubleClick(
+              state,
+              VEvent()
+                ..x = pos.dx.round()
+                ..y = pos.dy.round()
+                ..button = 1
+                ..count = 2,
+            );
+            return;
+          }
+        }
+        _lastPointerDownTime = now;
+        _lastPointerDownPos = pos;
+      },
+      child: _wrapWithScrollbars(base),
+    );
   }
 
   Size getBounds() {
