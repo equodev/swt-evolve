@@ -1381,6 +1381,17 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     java.util.concurrent.CompletableFuture<Void> pendingRenderFuture;
 
+    public void cancelRenderFuture() {
+        java.util.concurrent.CompletableFuture<Void> f = pendingRenderFuture;
+        if (f != null && !f.isDone()) {
+            f.complete(null);
+            pendingRenderFuture = null;
+            Display d = Display.getCurrent();
+            if (d != null && !d.isDisposed())
+                d.wake();
+        }
+    }
+
     void updateImageData(ImageData newData) {
         this.imageData = newData;
         pendingRenderFuture = null;

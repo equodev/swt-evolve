@@ -19,6 +19,8 @@ import java.util.function.Consumer;
  */
 public class GCImageDrawer extends SwtFlutterBridgeBase {
 
+    private static volatile boolean nativeWindowAvailable = true;
+
     private long ctx;
     private long gcId;
 
@@ -61,6 +63,10 @@ public class GCImageDrawer extends SwtFlutterBridgeBase {
     }
 
     public void initFlutterView(long gcId, Image dartImage, Consumer<String> onImageResult) {
+        if (!nativeWindowAvailable) {
+            cancelAndWake(dartImage);
+            return;
+        }
         this.gcId = gcId;
         super.onReady(this, Void.class).thenRun(() -> {
             try {
@@ -76,7 +82,19 @@ public class GCImageDrawer extends SwtFlutterBridgeBase {
             // GCDrawer.standalone has registered its listeners.
             flushOps();
         });
-        ctx = initializeFlutterWindow(client.getPort(), 0, gcId, widgetName(this), "", 0, 0);
+        try {
+            ctx = initializeFlutterWindow(client.getPort(), 0, gcId, widgetName(this), "", 0, 0);
+        } catch (Error e) {
+            nativeWindowAvailable = false;
+            System.err.println("[GCImageDrawer] Native Flutter window unavailable — off-screen GC will be a no-op: " + e.getMessage());
+            cancelAndWake(dartImage);
+        }
+    }
+
+    private static void cancelAndWake(Image dartImage) {
+        if (dartImage != null && dartImage.getImpl() instanceof org.eclipse.swt.graphics.DartImage di) {
+            di.cancelRenderFuture();
+        }
     }
 
     /**
