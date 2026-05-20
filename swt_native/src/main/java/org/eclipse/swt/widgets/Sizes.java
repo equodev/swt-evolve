@@ -595,9 +595,13 @@ public class Sizes {
         );
     }
 
+    public static final int SCROLL_BAR_SIZE = 17;
+
     public static Rectangle getClientArea(DartScrollable widget) {
         Rectangle b = widget.getBounds();
-        return new Rectangle(0, 0, Math.max(0, b.width), Math.max(0, b.height));
+        int vBarWidth = (widget.verticalBar != null && widget.verticalBar.isVisible()) ? SCROLL_BAR_SIZE : 0;
+        int hBarHeight = (widget.horizontalBar != null && widget.horizontalBar.isVisible()) ? SCROLL_BAR_SIZE : 0;
+        return new Rectangle(0, 0, Math.max(0, b.width - vBarWidth), Math.max(0, b.height - hBarHeight));
     }
 
     public static Point getSize(DartScrollBar scrollBar) {

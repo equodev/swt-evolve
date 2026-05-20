@@ -9,6 +9,7 @@ import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollable.dart';
+import '../gen/scrollbar.dart';
 import '../impl/list_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';

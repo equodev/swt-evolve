@@ -146,9 +146,9 @@ public abstract class DynScrollable extends DynControl implements IScrollable {
      * </ul>
      */
     public ScrollBar getHorizontalBar() {
-        System.out.println("+++ CONVERTING DynComposite from Scrollable#getHorizontalBar() #" + getApi().hashCode());
-        IScrollable newImpl = (IScrollable) convert();
-        return newImpl.getHorizontalBar();
+        if (Config.isDebug())
+            System.out.println("++ Called Scrollable#getHorizontalBar() on DynScrollable" + " #" + getApi().hashCode());
+        return this.horizontalBar;
     }
 
     /**
@@ -220,9 +220,9 @@ public abstract class DynScrollable extends DynControl implements IScrollable {
      * </ul>
      */
     public ScrollBar getVerticalBar() {
-        System.out.println("+++ CONVERTING DynComposite from Scrollable#getVerticalBar() #" + getApi().hashCode());
-        IScrollable newImpl = (IScrollable) convert();
-        return newImpl.getVerticalBar();
+        if (Config.isDebug())
+            System.out.println("++ Called Scrollable#getVerticalBar() on DynScrollable" + " #" + getApi().hashCode());
+        return this.verticalBar;
     }
 
     public ScrollBar _horizontalBar() {
@@ -233,13 +233,17 @@ public abstract class DynScrollable extends DynControl implements IScrollable {
         return verticalBar;
     }
 
+    ScrollBar horizontalBar;
+
+    boolean horizontalBarSet;
+
     int scrollbarsMode;
 
     boolean scrollbarsModeSet;
 
-    ScrollBar horizontalBar;
-
     ScrollBar verticalBar;
+
+    boolean verticalBarSet;
 
     public Scrollable getApi() {
         return (Scrollable) api;
@@ -247,8 +251,12 @@ public abstract class DynScrollable extends DynControl implements IScrollable {
 
     protected IScrollable convert(IScrollable newImpl) {
         super.convert(newImpl);
+        //newImpl.horizontalBar = getHorizontalBar();
+        ;
         if (scrollbarsModeSet)
             newImpl.setScrollbarsMode(getScrollbarsMode());
+        //newImpl.verticalBar = getVerticalBar();
+        ;
         return newImpl;
     }
 }

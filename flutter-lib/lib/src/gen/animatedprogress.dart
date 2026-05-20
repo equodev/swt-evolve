@@ -11,6 +11,7 @@ import '../gen/ime.dart';
 import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
+import '../gen/scrollbar.dart';
 import '../impl/animatedprogress_evolve.dart';
 import 'widgets.dart';
 

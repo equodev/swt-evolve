@@ -43,7 +43,13 @@ VText _$VTextFromJson(Map<String, dynamic> json) => VText()
   ..toolTipText = json['toolTipText'] as String?
   ..touchEnabled = json['touchEnabled'] as bool?
   ..visible = json['visible'] as bool?
+  ..horizontalBar = json['horizontalBar'] == null
+      ? null
+      : VScrollBar.fromJson(json['horizontalBar'] as Map<String, dynamic>)
   ..scrollbarsMode = (json['scrollbarsMode'] as num?)?.toInt()
+  ..verticalBar = json['verticalBar'] == null
+      ? null
+      : VScrollBar.fromJson(json['verticalBar'] as Map<String, dynamic>)
   ..caretPosition = (json['caretPosition'] as num?)?.toInt()
   ..doubleClickEnabled = json['doubleClickEnabled'] as bool?
   ..echoCharacter = (json['echoCharacter'] as num?)?.toInt()
@@ -84,7 +90,9 @@ Map<String, dynamic> _$VTextToJson(VText instance) => <String, dynamic>{
   'toolTipText': ?instance.toolTipText,
   'touchEnabled': ?instance.touchEnabled,
   'visible': ?instance.visible,
+  'horizontalBar': ?instance.horizontalBar,
   'scrollbarsMode': ?instance.scrollbarsMode,
+  'verticalBar': ?instance.verticalBar,
   'caretPosition': ?instance.caretPosition,
   'doubleClickEnabled': ?instance.doubleClickEnabled,
   'echoCharacter': ?instance.echoCharacter,

@@ -568,14 +568,22 @@ public class DartSlider extends DartControl implements ISlider {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                sendEvent(SWT.DefaultSelection, e);
+                Event event = new Event();
+                event.detail = SWT.NONE;
+                event.widget = getApi();
+                setSelection(e.index);
+                sendSelectionEvent(SWT.Selection, event, true);
             });
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                Event event = new Event();
+                event.detail = SWT.DRAG;
+                event.widget = getApi();
                 setSelection(e.index);
+                sendSelectionEvent(SWT.Selection, event, true);
             });
         });
     }

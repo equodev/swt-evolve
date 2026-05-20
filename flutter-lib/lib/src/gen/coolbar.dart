@@ -11,6 +11,7 @@ import '../gen/menu.dart';
 import '../gen/point.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
+import '../gen/scrollbar.dart';
 import '../impl/coolbar_evolve.dart';
 import 'widgets.dart';
 

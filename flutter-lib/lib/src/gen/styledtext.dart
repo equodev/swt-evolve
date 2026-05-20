@@ -14,6 +14,7 @@ import '../gen/menu.dart';
 import '../gen/point.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
+import '../gen/scrollbar.dart';
 import '../gen/styledtextrenderer.dart';
 import '../gen/stylerange.dart';
 import '../impl/styledtext_evolve.dart';
