@@ -43,7 +43,13 @@ VScrollable _$VScrollableFromJson(Map<String, dynamic> json) => VScrollable()
   ..toolTipText = json['toolTipText'] as String?
   ..touchEnabled = json['touchEnabled'] as bool?
   ..visible = json['visible'] as bool?
-  ..scrollbarsMode = (json['scrollbarsMode'] as num?)?.toInt();
+  ..horizontalBar = json['horizontalBar'] == null
+      ? null
+      : VScrollBar.fromJson(json['horizontalBar'] as Map<String, dynamic>)
+  ..scrollbarsMode = (json['scrollbarsMode'] as num?)?.toInt()
+  ..verticalBar = json['verticalBar'] == null
+      ? null
+      : VScrollBar.fromJson(json['verticalBar'] as Map<String, dynamic>);
 
 Map<String, dynamic> _$VScrollableToJson(VScrollable instance) =>
     <String, dynamic>{
@@ -67,5 +73,7 @@ Map<String, dynamic> _$VScrollableToJson(VScrollable instance) =>
       'toolTipText': ?instance.toolTipText,
       'touchEnabled': ?instance.touchEnabled,
       'visible': ?instance.visible,
+      'horizontalBar': ?instance.horizontalBar,
       'scrollbarsMode': ?instance.scrollbarsMode,
+      'verticalBar': ?instance.verticalBar,
     };

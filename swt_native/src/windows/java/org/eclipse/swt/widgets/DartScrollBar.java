@@ -829,6 +829,13 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         return visible;
     }
 
+    protected void dirty() {
+        super.dirty();
+        if (parent != null && parent.getImpl() instanceof DartControl) {
+            ((DartControl) parent.getImpl()).dirty();
+        }
+    }
+
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;
@@ -850,7 +857,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                setSelection(e.index);
+                selection = e.index;
+                Event swtEvent = new Event();
+                swtEvent.detail = e.detail;
+                sendSelectionEvent(SWT.Selection, swtEvent, true);
             });
         });
     }

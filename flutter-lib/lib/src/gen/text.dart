@@ -10,6 +10,7 @@ import '../gen/point.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollable.dart';
+import '../gen/scrollbar.dart';
 import '../impl/text_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';

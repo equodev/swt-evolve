@@ -43,7 +43,13 @@ VCCombo _$VCComboFromJson(Map<String, dynamic> json) => VCCombo()
   ..toolTipText = json['toolTipText'] as String?
   ..touchEnabled = json['touchEnabled'] as bool?
   ..visible = json['visible'] as bool?
+  ..horizontalBar = json['horizontalBar'] == null
+      ? null
+      : VScrollBar.fromJson(json['horizontalBar'] as Map<String, dynamic>)
   ..scrollbarsMode = (json['scrollbarsMode'] as num?)?.toInt()
+  ..verticalBar = json['verticalBar'] == null
+      ? null
+      : VScrollBar.fromJson(json['verticalBar'] as Map<String, dynamic>)
   ..backgroundMode = (json['backgroundMode'] as num?)?.toInt()
   ..children = (json['children'] as List<dynamic>?)
       ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
@@ -84,7 +90,9 @@ Map<String, dynamic> _$VCComboToJson(VCCombo instance) => <String, dynamic>{
   'toolTipText': ?instance.toolTipText,
   'touchEnabled': ?instance.touchEnabled,
   'visible': ?instance.visible,
+  'horizontalBar': ?instance.horizontalBar,
   'scrollbarsMode': ?instance.scrollbarsMode,
+  'verticalBar': ?instance.verticalBar,
   'backgroundMode': ?instance.backgroundMode,
   'children': ?instance.children,
   'layoutDeferred': ?instance.layoutDeferred,

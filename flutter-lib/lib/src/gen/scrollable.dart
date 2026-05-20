@@ -7,6 +7,7 @@ import '../gen/image.dart';
 import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
+import '../gen/scrollbar.dart';
 import 'widgets.dart';
 
 part 'scrollable.g.dart';
@@ -22,7 +23,9 @@ class VScrollable extends VControl {
     swt = "Scrollable";
   }
 
+  VScrollBar? horizontalBar;
   int? scrollbarsMode;
+  VScrollBar? verticalBar;
 
   factory VScrollable.fromJson(Map<String, dynamic> json) =>
       _$VScrollableFromJson(json);

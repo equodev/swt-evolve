@@ -43,7 +43,13 @@ VList _$VListFromJson(Map<String, dynamic> json) => VList()
   ..toolTipText = json['toolTipText'] as String?
   ..touchEnabled = json['touchEnabled'] as bool?
   ..visible = json['visible'] as bool?
+  ..horizontalBar = json['horizontalBar'] == null
+      ? null
+      : VScrollBar.fromJson(json['horizontalBar'] as Map<String, dynamic>)
   ..scrollbarsMode = (json['scrollbarsMode'] as num?)?.toInt()
+  ..verticalBar = json['verticalBar'] == null
+      ? null
+      : VScrollBar.fromJson(json['verticalBar'] as Map<String, dynamic>)
   ..items = (json['items'] as List<dynamic>?)?.map((e) => e as String).toList()
   ..selection = (json['selection'] as List<dynamic>?)
       ?.map((e) => (e as num).toInt())
@@ -71,7 +77,9 @@ Map<String, dynamic> _$VListToJson(VList instance) => <String, dynamic>{
   'toolTipText': ?instance.toolTipText,
   'touchEnabled': ?instance.touchEnabled,
   'visible': ?instance.visible,
+  'horizontalBar': ?instance.horizontalBar,
   'scrollbarsMode': ?instance.scrollbarsMode,
+  'verticalBar': ?instance.verticalBar,
   'items': ?instance.items,
   'selection': ?instance.selection,
   'topIndex': ?instance.topIndex,

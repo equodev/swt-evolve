@@ -6,7 +6,6 @@ class ScrollBarImpl<T extends ScrollBarSwt, V extends VScrollBar>
     extends WidgetSwtState<T, V> {
   @override
   Widget build(BuildContext context) {
-    // TODO: implement the widget, remove this line to stop regenerating
-    return const Text("ScrollBar");
+    return const SizedBox.shrink();
   }
 }

@@ -10,6 +10,7 @@ import '../gen/image.dart';
 import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
+import '../gen/scrollbar.dart';
 import '../gen/treecolumn.dart';
 import '../gen/treeeditor.dart';
 import '../gen/treeitem.dart';
