@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
-import 'dart:ui' as ui;
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
@@ -25,6 +25,7 @@ import 'utils/image_utils.dart';
 class GCDrawer extends GCDrawerBase {
   final List<Shape> shapes = [];
   final void Function(List<Shape>)? onShapesUpdated;
+
 
   // BuildContext for text style resolution (widget mode only, null in image mode).
   // Updated by GCImpl before each build via syncContext().
@@ -85,6 +86,22 @@ class GCDrawer extends GCDrawerBase {
 
   /// Called by GCImpl.build() to provide context for text style resolution.
   void syncContext(BuildContext ctx) => _context = ctx;
+
+  // SWT {m11,m12,m21,m22,dx,dy} → Flutter column-major 4×4, or null for identity.
+  Float64List? get currentTransform {
+    final e = state.transform?.elements;
+    if (e == null || e.length < 6) return null;
+    final m11 = e[0], m12 = e[1];
+    final m21 = e[2], m22 = e[3];
+    final dx  = e[4], dy  = e[5];
+    if (m11 == 1 && m12 == 0 && m21 == 0 && m22 == 1 && dx == 0 && dy == 0) return null;
+    return Float64List.fromList([
+      m11, m12, 0, 0,
+      m21, m22, 0, 0,
+      0,   0,   1, 0,
+      dx,  dy,  0, 1,
+    ]);
+  }
 
   // ── State getters (read from VGC) ──────────────────────────────────────
 
@@ -245,17 +262,26 @@ class GCDrawer extends GCDrawerBase {
       applyDpiScaling: true,
     );
 
+    final transform = currentTransform;
+    final childClip = transform != null ? null : clipping;
+
+    final shapes = <Shape>[];
     if (!transparent) {
-      final textPainter = TextPainter(
+      final tp = TextPainter(
         text: TextSpan(text: processedText, style: textStyle),
         textDirection: TextDirection.ltr,
       )..layout();
-      final rect = Rect.fromLTWH(x, y, textPainter.width, textPainter.height);
-      _addShape(RectShape(rect, applyAlpha(bg), 0, lineCap, lineJoin,
-          isFilled: true, clipRect: clipping));
+      shapes.add(RectShape(Rect.fromLTWH(x, y, tp.width, tp.height),
+          applyAlpha(bg), 0, lineCap, lineJoin,
+          isFilled: true, clipRect: childClip));
     }
+    shapes.add(TextShape(processedText, Offset(x, y), textStyle, childClip));
 
-    _addShape(TextShape(processedText, Offset(x, y), textStyle, clipping));
+    if (transform != null) {
+      _addShape(TransformShape(transform, shapes, clipping));
+    } else {
+      for (final s in shapes) { _addShape(s); }
+    }
   }
 
   String _processTextFlags(String text, int flags) {
@@ -726,6 +752,30 @@ abstract class Shape {
   @override
   String toString();
   Rect? get clipRect => null;
+}
+
+class TransformShape extends Shape {
+  TransformShape(this.matrix, this.children, [this.clipRect]);
+  final Float64List matrix;
+  final List<Shape> children;
+
+  @override
+  final Rect? clipRect;
+
+  @override
+  void draw(ui.Canvas c) {
+    c.save();
+    // Clip in device space BEFORE rotating so the rect coords are correct.
+    if (clipRect != null) c.clipRect(clipRect!);
+    c.transform(matrix);
+    for (final s in children) {
+      s.draw(c);
+    }
+    c.restore();
+  }
+
+  @override
+  String toString() => 'Transform [${children.length} shapes]';
 }
 
 class TextShape extends Shape {
