@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../gen/display.dart';
 import '../gen/shell.dart';
 import '../gen/swt.dart';
+import '../gen/tooltip.dart';
 import '../gen/widgets.dart' as gen;
 import '../comm/comm.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
@@ -108,6 +109,11 @@ class _DisplaySwtState extends State<DisplaySwt> {
         for (final s in mainShells) Positioned.fill(child: gen.mapWidgetFromValue(s)),
         for (final popup in (_display.popups ?? []))
           Positioned.fill(child: gen.mapWidgetFromValue(popup)),
+        for (final tooltip in (_display.tooltips ?? []))
+          KeyedSubtree(
+            key: ValueKey('tooltip_${tooltip.id}'),
+            child: Positioned.fill(child: gen.mapWidgetFromValue(tooltip)),
+          ),
         if (dialogShells.any(_isModal))
           Positioned.fill(
             child: ColoredBox(

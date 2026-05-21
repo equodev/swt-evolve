@@ -261,7 +261,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
      */
     public boolean getVisible() {
         checkWidget();
-        return false;
+        return visible;
     }
 
     /**
@@ -414,6 +414,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
         this.y = y;
         this.location = newValue;
         ;
+        dirty();
+        if (display != null) {
+            ((DartDisplay) display.getImpl())._addActiveTooltip(this.getApi());
+        }
     }
 
     /**
@@ -555,6 +559,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
             };
             display.timerExec(DELAY, runnable);
         }
+        dirty();
+        if (display != null) {
+            ((DartDisplay) display.getImpl())._addActiveTooltip(this.getApi());
+        }
     }
 
     Point location;
@@ -645,6 +653,14 @@ public class DartToolTip extends DartWidget implements IToolTip {
         autohide = true;
     }
 
+    @Override
+    protected void releaseWidget() {
+        if (display != null && !display.isDisposed()) {
+            ((DartDisplay) display.getImpl())._removeActiveTooltip(this.getApi());
+        }
+        super.releaseWidget();
+    }
+
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;
@@ -666,6 +682,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                setVisible(false);
                 sendEvent(SWT.Selection, e);
             });
         });

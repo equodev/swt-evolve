@@ -3512,32 +3512,23 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     public void timerExec(int milliseconds, Runnable runnable) {
         checkDevice();
-        //TODO - remove a timer, reschedule a timer not tested
         if (runnable == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if (timerList == null)
-            timerList = new Runnable[4];
-        int index = 0;
-        while (index < timerList.length) {
-            if (timerList[index] == runnable)
-                break;
-            index++;
-        }
-        if (index != timerList.length) {
-        }
+        TimerTask existing = _timerExecTasks.remove(runnable);
+        if (existing != null)
+            existing.cancel();
         if (milliseconds < 0)
             return;
-        index = 0;
-        while (index < timerList.length) {
-            if (timerList[index] == null)
-                break;
-            index++;
-        }
-        if (index == timerList.length) {
-            Runnable[] newTimerList = new Runnable[timerList.length + 4];
-            System.arraycopy(timerList, 0, newTimerList, 0, timerList.length);
-            timerList = newTimerList;
-        }
+        TimerTask task = new TimerTask() {
+
+            @Override
+            public void run() {
+                _timerExecTasks.remove(runnable);
+                asyncExec(runnable);
+            }
+        };
+        _timerExecTasks.put(runnable, task);
+        _timerExecTimer.schedule(task, milliseconds);
     }
 
     /**
@@ -3992,6 +3983,29 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         for (Shell s : shells) if (s != shell)
             newShells[i++] = s;
         shells = newShells;
+    }
+
+    Map<Runnable, TimerTask> _timerExecTasks = new HashMap<>();
+
+    Timer _timerExecTimer = new Timer(true);
+
+    ArrayList<ToolTip> activeTooltips = new ArrayList<>();
+
+    public void _addActiveTooltip(ToolTip tip) {
+        if (!activeTooltips.contains(tip))
+            activeTooltips.add(tip);
+        if (displayBridge != null)
+            displayBridge.sendDisplayUpdate(this);
+    }
+
+    public void _removeActiveTooltip(ToolTip tip) {
+        activeTooltips.remove(tip);
+        if (displayBridge != null)
+            displayBridge.sendDisplayUpdate(this);
+    }
+
+    public ToolTip[] _activeTooltips() {
+        return activeTooltips.stream().filter(t -> t != null && !t.isDisposed()).toArray(ToolTip[]::new);
     }
 
     public Display getApi() {

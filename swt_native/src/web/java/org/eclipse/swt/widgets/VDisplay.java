@@ -14,6 +14,7 @@ public class VDisplay {
     public String swt;
     public Shell[] shells;
     public Menu[] popups;
+    public ToolTip[] tooltips;
 
     protected VDisplay() {
     }
@@ -40,6 +41,16 @@ public class VDisplay {
             }
         }
         v.popups = popupList.toArray(Menu[]::new);
+        ToolTip[] allTooltips = display._activeTooltips();
+        ArrayList<ToolTip> tooltipList = new ArrayList<>();
+        if (allTooltips != null) {
+            for (ToolTip t : allTooltips) {
+                if (t != null && !t.isDisposed()) {
+                    tooltipList.add(t);
+                }
+            }
+        }
+        v.tooltips = tooltipList.toArray(ToolTip[]::new);
         return v;
     }
 
@@ -85,6 +96,17 @@ public class VDisplay {
                 for (int i = 0; i < v.popups.length; i++) {
                     if (i > 0) writer.writeByte((byte) ',');
                     VMenu.MenuJson.write(writer, v.popups[i]);
+                }
+                writer.writeByte((byte) ']');
+            }
+            writer.writeAscii(",\"tooltips\":");
+            if (v.tooltips == null || v.tooltips.length == 0) {
+                writer.writeAscii("[]");
+            } else {
+                writer.writeByte((byte) '[');
+                for (int i = 0; i < v.tooltips.length; i++) {
+                    if (i > 0) writer.writeByte((byte) ',');
+                    VToolTip.ToolTipJson.write(writer, v.tooltips[i]);
                 }
                 writer.writeByte((byte) ']');
             }
