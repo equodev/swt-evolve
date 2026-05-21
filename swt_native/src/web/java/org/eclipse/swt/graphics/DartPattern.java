@@ -41,10 +41,6 @@ public class DartPattern extends DartResource implements IPattern {
 
     Image image;
 
-    double[] color1, color2;
-
-    int alpha1, alpha2;
-
     /**
      * Constructs a new Pattern given an image. Drawing with the resulting
      * pattern will cause the image to be tiled over the resulting area.
@@ -166,28 +162,24 @@ public class DartPattern extends DartResource implements IPattern {
      */
     public DartPattern(Device device, float x1, float y1, float x2, float y2, Color color1, int alpha1, Color color2, int alpha2, Pattern api) {
         super(device, api);
-        if (color1 == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color1.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        if (color2 == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color2.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        try {
-            this.color1 = color1.handle;
-            this.color2 = color2.handle;
-            this.alpha1 = alpha1;
-            this.alpha2 = alpha2;
-            init();
-        } finally {
-        }
+        this.color1 = new Color(new RGB(color1.getRed(), color1.getGreen(), color1.getBlue()), alpha1);
+        this.color2 = new Color(new RGB(color2.getRed(), color2.getGreen(), color2.getBlue()), alpha2);
+        this.startX = x1;
+        this.startY = y1;
+        this.endX = x2;
+        this.endY = y2;
+        init();
     }
 
     @Override
     void destroy() {
         image = null;
-        color1 = color2 = null;
+        color1 = null;
+        color2 = null;
     }
 
     /**
@@ -218,25 +210,37 @@ public class DartPattern extends DartResource implements IPattern {
         return null;
     }
 
+    float endX;
+
+    float endY;
+
+    float startX;
+
+    float startY;
+
     public Image _image() {
         return image;
     }
 
-    public double[] _color1() {
-        return color1;
+    public float _endX() {
+        return endX;
     }
 
-    public double[] _color2() {
-        return color2;
+    public float _endY() {
+        return endY;
     }
 
-    public int _alpha1() {
-        return alpha1;
+    public float _startX() {
+        return startX;
     }
 
-    public int _alpha2() {
-        return alpha2;
+    public float _startY() {
+        return startY;
     }
+
+    Color color1;
+
+    Color color2;
 
     public Pattern getApi() {
         if (api == null)

@@ -221,9 +221,7 @@ public final class DartRegion extends DartResource implements IRegion {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (width < 0 || height < 0)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        try {
-        } finally {
-        }
+        RegionHelper.add(rects, x, y, width, height);
     }
 
     /**
@@ -334,13 +332,7 @@ public final class DartRegion extends DartResource implements IRegion {
     public Rectangle getBounds() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        try {
-            short[] bounds = new short[4];
-            int width = bounds[3] - bounds[1];
-            int height = bounds[2] - bounds[0];
-            return new Rectangle(bounds[1], bounds[0], width, height);
-        } finally {
-        }
+        return RegionHelper.getBounds(rects);
     }
 
     short[] rect = new short[4];
@@ -603,9 +595,7 @@ public final class DartRegion extends DartResource implements IRegion {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (width < 0 || height < 0)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        try {
-        } finally {
-        }
+        RegionHelper.subtract(rects, x, y, width, height);
     }
 
     /**
@@ -698,6 +688,8 @@ public final class DartRegion extends DartResource implements IRegion {
     public short[] _rect() {
         return rect;
     }
+
+    java.util.List<int[]> rects = new java.util.ArrayList<>();
 
     public Region getApi() {
         if (api == null)
