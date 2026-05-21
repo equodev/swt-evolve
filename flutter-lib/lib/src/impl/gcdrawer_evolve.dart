@@ -130,6 +130,13 @@ class GCDrawer extends GCDrawerBase {
     return color.withOpacity(alpha / 255.0);
   }
 
+  Alignment _patternAlignment(double px, double py, Rect rect) {
+    if (rect.width <= 0 || rect.height <= 0) return Alignment.center;
+    final ax = (px - rect.left - rect.width / 2) / (rect.width / 2);
+    final ay = (py - rect.top - rect.height / 2) / (rect.height / 2);
+    return Alignment(ax, ay);
+  }
+
   // ── Shape helpers ───────────────────────────────────────────────────────
 
   void clearShapes() {
@@ -189,10 +196,21 @@ class GCDrawer extends GCDrawerBase {
     required bool isFilled,
   }) {
     final rect = _getRectFromArgs(x, y, width, height);
-    final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
-    final strokeWidth = isFilled ? 0.0 : lineWidth;
-    _addShape(RectShape(rect, color, strokeWidth, lineCap, lineJoin,
-        isFilled: isFilled, clipRect: clipping));
+    final pattern = isFilled ? state.backgroundPattern : null;
+    if (pattern != null) {
+      final c1 = colorFromVColor(pattern.color1);
+      final c2 = colorFromVColor(pattern.color2);
+      final begin = _patternAlignment(
+          pattern.startX ?? 0, pattern.startY ?? 0, rect);
+      final end = _patternAlignment(
+          pattern.endX ?? 0, pattern.endY ?? 0, rect);
+      _addShape(GradientRectShape.aligned(rect, c1, c2, begin, end, clipping));
+    } else {
+      final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
+      final strokeWidth = isFilled ? 0.0 : lineWidth;
+      _addShape(RectShape(rect, color, strokeWidth, lineCap, lineJoin,
+          isFilled: isFilled, clipRect: clipping));
+    }
   }
 
   void _addPolygonShape({
@@ -388,9 +406,9 @@ class GCDrawer extends GCDrawerBase {
           s.rect.translate(offset.dx, offset.dy), s.radiusX, s.radiusY,
           s.color, s.strokeWidth, s.lineCap, s.lineJoin,
           isFilled: s.isFilled, clipRect: clipArea),
-      GradientRectShape s => GradientRectShape(
+      GradientRectShape s => GradientRectShape.aligned(
           s.rect.translate(offset.dx, offset.dy),
-          s.fromColor, s.toColor, s.vertical, clipArea),
+          s.fromColor, s.toColor, s.begin, s.end, clipArea),
       FocusRectShape s => FocusRectShape(
           s.rect.translate(offset.dx, offset.dy), s.color, clipArea),
       ImageShape s when s.type == ImageType.raster => ImageShape.raster(
@@ -885,12 +903,19 @@ class RectShape extends Shape {
 }
 
 class GradientRectShape extends Shape {
-  GradientRectShape(this.rect, this.fromColor, this.toColor, this.vertical,
-      [this.clipRect]);
+  GradientRectShape(this.rect, this.fromColor, this.toColor, bool vertical,
+      [this.clipRect])
+      : begin = vertical ? Alignment.topCenter : Alignment.centerLeft,
+        end = vertical ? Alignment.bottomCenter : Alignment.centerRight;
+
+  GradientRectShape.aligned(this.rect, this.fromColor, this.toColor,
+      this.begin, this.end, [this.clipRect]);
+
   final Rect rect;
   final Color fromColor;
   final Color toColor;
-  final bool vertical;
+  final Alignment begin;
+  final Alignment end;
   @override
   final Rect? clipRect;
 
@@ -898,8 +923,8 @@ class GradientRectShape extends Shape {
   void draw(ui.Canvas c) {
     if (clipRect != null) { c.save(); c.clipRect(clipRect!); }
     final gradient = LinearGradient(
-      begin: vertical ? Alignment.topCenter : Alignment.centerLeft,
-      end: vertical ? Alignment.bottomCenter : Alignment.centerRight,
+      begin: begin,
+      end: end,
       colors: [fromColor, toColor],
     );
     c.drawRect(rect, Paint()
