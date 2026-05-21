@@ -14,6 +14,16 @@ public class VTransform extends VResource {
         super(impl);
     }
 
+    public float[] getElements() {
+        float[] result = new float[6];
+        ((DartTransform) impl).getElements(result);
+        return result;
+    }
+
+    public void setElements(float[] value) {
+        ((DartTransform) impl).setElements(value[0], value[1], value[2], value[3], value[4], value[5]);
+    }
+
     @JsonConverter(target = Transform.class)
     public static class TransformJson implements Configuration {
 

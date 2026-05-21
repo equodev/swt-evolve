@@ -7,6 +7,8 @@ class VTransform {
   VTransform() : this.empty();
   VTransform.empty();
 
+  List<double>? elements;
+
   factory VTransform.fromJson(Map<String, dynamic> json) =>
       _$VTransformFromJson(json);
   Map<String, dynamic> toJson() => _$VTransformToJson(this);

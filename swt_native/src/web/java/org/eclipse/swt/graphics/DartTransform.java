@@ -173,9 +173,12 @@ public class DartTransform extends DartResource implements ITransform {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (elements.length < 6)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        try {
-        } finally {
-        }
+        elements[0] = m11;
+        elements[1] = m12;
+        elements[2] = m21;
+        elements[3] = m22;
+        elements[4] = dx;
+        elements[5] = dy;
     }
 
     /**
@@ -191,9 +194,12 @@ public class DartTransform extends DartResource implements ITransform {
     public void identity() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        try {
-        } finally {
-        }
+        m11 = 1;
+        m12 = 0;
+        m21 = 0;
+        m22 = 1;
+        dx = 0;
+        dy = 0;
     }
 
     /**
@@ -208,9 +214,17 @@ public class DartTransform extends DartResource implements ITransform {
     public void invert() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        try {
-        } finally {
-        }
+        float det = m11 * m22 - m21 * m12;
+        if (det == 0)
+            SWT.error(SWT.ERROR_CANNOT_INVERT_MATRIX);
+        float nm11 = m22 / det, nm12 = -m12 / det, nm21 = -m21 / det, nm22 = m11 / det;
+        float ndx = (-m22 * dx + m21 * dy) / det, ndy = (m12 * dx - m11 * dy) / det;
+        m11 = nm11;
+        m12 = nm12;
+        m21 = nm21;
+        m22 = nm22;
+        dx = ndx;
+        dy = ndy;
     }
 
     /**
@@ -237,10 +251,7 @@ public class DartTransform extends DartResource implements ITransform {
     public boolean isIdentity() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        try {
-        } finally {
-        }
-        return false;
+        return m11 == 1 && m12 == 0 && m21 == 0 && m22 == 1 && dx == 0 && dy == 0;
     }
 
     /**
@@ -265,9 +276,9 @@ public class DartTransform extends DartResource implements ITransform {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (matrix.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        try {
-        } finally {
-        }
+        float[] e = new float[6];
+        matrix.getElements(e);
+        multiplyBy(e[0], e[1], e[2], e[3], e[4], e[5]);
     }
 
     /**
@@ -286,9 +297,10 @@ public class DartTransform extends DartResource implements ITransform {
     public void rotate(float angle) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        try {
-        } finally {
-        }
+        float rad = (float) (angle * Math.PI / 180.0);
+        float cos = (float) Math.cos(rad);
+        float sin = (float) Math.sin(rad);
+        multiplyBy(cos, sin, -sin, cos, 0, 0);
     }
 
     /**
@@ -305,9 +317,7 @@ public class DartTransform extends DartResource implements ITransform {
     public void scale(float scaleX, float scaleY) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        try {
-        } finally {
-        }
+        multiplyBy(scaleX, 0, 0, scaleY, 0, 0);
     }
 
     /**
@@ -328,9 +338,12 @@ public class DartTransform extends DartResource implements ITransform {
     public void setElements(float m11, float m12, float m21, float m22, float dx, float dy) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        try {
-        } finally {
-        }
+        this.m11 = m11;
+        this.m12 = m12;
+        this.m21 = m21;
+        this.m22 = m22;
+        this.dx = dx;
+        this.dy = dy;
     }
 
     /**
@@ -349,9 +362,7 @@ public class DartTransform extends DartResource implements ITransform {
     public void shear(float shearX, float shearY) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        try {
-        } finally {
-        }
+        multiplyBy(1, shearY, shearX, 1, 0, 0);
     }
 
     /**
@@ -373,11 +384,11 @@ public class DartTransform extends DartResource implements ITransform {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (pointArray == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        try {
-            int length = pointArray.length / 2;
-            for (int i = 0, j = 0; i < length; i++, j += 2) {
-            }
-        } finally {
+        int length = pointArray.length / 2;
+        for (int i = 0, j = 0; i < length; i++, j += 2) {
+            float x = pointArray[j], y = pointArray[j + 1];
+            pointArray[j] = m11 * x + m21 * y + dx;
+            pointArray[j + 1] = m12 * x + m22 * y + dy;
         }
     }
 
@@ -395,9 +406,7 @@ public class DartTransform extends DartResource implements ITransform {
     public void translate(float offsetX, float offsetY) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        try {
-        } finally {
-        }
+        multiplyBy(1, 0, 0, 1, offsetX, offsetY);
     }
 
     /**
@@ -413,6 +422,19 @@ public class DartTransform extends DartResource implements ITransform {
         float[] elements = new float[6];
         getElements(elements);
         return "Transform {" + elements[0] + ", " + elements[1] + ", " + elements[2] + ", " + elements[3] + ", " + elements[4] + ", " + elements[5] + "}";
+    }
+
+    float m11, m12, m21, m22, dx, dy;
+
+    private void multiplyBy(float bm11, float bm12, float bm21, float bm22, float bdx, float bdy) {
+        float am11 = this.m11, am12 = this.m12, am21 = this.m21;
+        float am22 = this.m22, adx = this.dx, ady = this.dy;
+        this.m11 = am11 * bm11 + am12 * bm21;
+        this.m12 = am11 * bm12 + am12 * bm22;
+        this.m21 = am21 * bm11 + am22 * bm21;
+        this.m22 = am21 * bm12 + am22 * bm22;
+        this.dx = am11 * bdx + am21 * bdy + adx;
+        this.dy = am12 * bdx + am22 * bdy + ady;
     }
 
     public Transform getApi() {
