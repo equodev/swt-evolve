@@ -1,6 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'menu.dart';
 import 'shell.dart';
+import 'tooltip.dart';
 
 part 'display.g.dart';
 
@@ -10,6 +11,7 @@ class VDisplay {
   int? id;
   List<VShell>? shells;
   List<VMenu>? popups;
+  List<VToolTip>? tooltips;
 
   VDisplay();
 

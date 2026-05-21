@@ -3,101 +3,93 @@ import '../gen/swt.dart';
 import '../gen/tooltip.dart';
 import '../gen/widget.dart';
 import '../styles.dart';
-import 'color_utils.dart';
+import '../theme/theme_extensions/tooltip_theme_extension.dart';
 import 'widget_config.dart';
 
 class ToolTipImpl<T extends ToolTipSwt, V extends VToolTip>
     extends WidgetSwtState<T, V> {
-  OverlayEntry? _overlayEntry;
-  bool _isVisible = false;
+  bool _animVisible = false;
+  bool _rendered = false;
+  bool _dismissed = false;
+  bool _prevEffectiveVisible = false;
+
+  TooltipThemeExtension get _theme =>
+      Theme.of(context).extension<TooltipThemeExtension>()!;
 
   @override
   void initState() {
     super.initState();
-    _updateVisibility();
+    if (state.visible ?? false) {
+      _rendered = true;
+      _prevEffectiveVisible = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_dismissed) setState(() => _animVisible = true);
+      });
+    }
   }
 
   @override
   void extraSetState() {
     super.extraSetState();
-    _updateVisibility();
-  }
+    final visible = state.visible ?? false;
+    if (!visible) _dismissed = false;
+    final effectiveVisible = visible && !_dismissed;
 
-  void _updateVisibility() {
-    final shouldBeVisible = state.visible ?? false;
-
-    if (shouldBeVisible && !_isVisible) {
-      _showTooltip();
-    } else if (!shouldBeVisible && _isVisible) {
-      _hideTooltip();
+    if (effectiveVisible && !_prevEffectiveVisible) {
+      _rendered = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_dismissed) setState(() => _animVisible = true);
+      });
+    } else if (!effectiveVisible && _prevEffectiveVisible) {
+      setState(() => _animVisible = false);
     }
+    _prevEffectiveVisible = effectiveVisible;
   }
 
-  void _showTooltip() {
-    if (_overlayEntry != null) {
-      return; // Already showing
-    }
-
-    _isVisible = true;
-    _overlayEntry = _createOverlayEntry();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final overlay = Overlay.of(context);
-      overlay.insert(_overlayEntry!);
-
-      // Auto-hide if autoHide is enabled
-      if (state.autoHide ?? true) {
-        Future.delayed(const Duration(seconds: 5), () {
-          _hideTooltip();
-        });
-      }
-    });
-  }
-
-  void _hideTooltip() {
-    if (_overlayEntry == null) {
-      return;
-    }
-
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-    _isVisible = false;
-  }
-
-  OverlayEntry _createOverlayEntry() {
-    return OverlayEntry(
-      builder: (context) => Positioned(
-        top: 100, // Default position, could be enhanced with bounds
-        left: 100,
-        child: Material(
-          color: Colors.transparent,
-          child: _TooltipContent(
-            message: state.message,
-            text: state.text,
-            style: state.style,
-            onDismiss: _handleDismiss,
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _handleDismiss() {
-    _hideTooltip();
+  void _onTap() {
+    _dismissed = true;
+    setState(() => _animVisible = false);
     widget.sendSelectionSelection(state, null);
   }
 
   @override
   Widget build(BuildContext context) {
-    // ToolTip is an overlay-based widget, so we return an empty container
-    // The actual tooltip is rendered via OverlayEntry
-    return const SizedBox.shrink();
-  }
+    if (!_rendered) return const SizedBox.shrink();
+    final theme = _theme;
+    final x = (state.location?.x ?? 0).toDouble();
+    final y = (state.location?.y ?? 0).toDouble();
 
-  @override
-  void dispose() {
-    _hideTooltip();
-    super.dispose();
+    return Stack(children: [
+      Positioned(
+        left: x,
+        top: y,
+        child: AnimatedOpacity(
+          opacity: _animVisible ? 1.0 : 0.0,
+          duration: _animVisible ? theme.fadeInDuration : theme.fadeOutDuration,
+          curve: _animVisible ? Curves.easeOut : Curves.easeIn,
+          onEnd: () {
+            if (!_animVisible && mounted) setState(() => _rendered = false);
+          },
+          child: AnimatedSlide(
+            offset: _animVisible ? Offset.zero : Offset(0, theme.slideOffsetY),
+            duration: _animVisible ? theme.fadeInDuration : theme.fadeOutDuration,
+            curve: _animVisible ? Curves.easeOut : Curves.easeIn,
+            child: IgnorePointer(
+              ignoring: !_animVisible,
+              child: Material(
+                color: Colors.transparent,
+                child: _TooltipContent(
+                  message: state.message,
+                  text: state.text,
+                  style: state.style ?? 0,
+                  onTap: _onTap,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ]);
   }
 }
 
@@ -105,87 +97,66 @@ class _TooltipContent extends StatelessWidget {
   final String? message;
   final String? text;
   final int style;
-  final VoidCallback onDismiss;
+  final VoidCallback onTap;
 
   const _TooltipContent({
     this.message,
     this.text,
     required this.style,
-    required this.onDismiss,
+    required this.onTap,
   });
 
   IconData? _getIcon() {
-    if (style.has(SWT.ICON_INFORMATION)) {
-      return Icons.info_outline;
-    } else if (style.has(SWT.ICON_WARNING)) {
-      return Icons.warning_amber_outlined;
-    } else if (style.has(SWT.ICON_ERROR)) {
-      return Icons.error_outline;
-    }
+    if (style.has(SWT.ICON_INFORMATION)) return Icons.info_outline;
+    if (style.has(SWT.ICON_WARNING)) return Icons.warning_amber_outlined;
+    if (style.has(SWT.ICON_ERROR)) return Icons.error_outline;
     return null;
   }
 
-  Color _getIconColor() {
-    if (style.has(SWT.ICON_INFORMATION)) {
-      return Colors.blue;
-    } else if (style.has(SWT.ICON_WARNING)) {
-      return Colors.orange;
-    } else if (style.has(SWT.ICON_ERROR)) {
-      return Colors.red;
-    }
-    return getForeground();
+  Color _iconColor(TooltipThemeExtension theme) {
+    if (style.has(SWT.ICON_INFORMATION)) return theme.informationIconColor;
+    if (style.has(SWT.ICON_WARNING)) return theme.warningIconColor;
+    if (style.has(SWT.ICON_ERROR)) return theme.errorIconColor;
+    return theme.textColor;
   }
 
-  Color _getBackgroundColor() {
-    if (style.has(SWT.ICON_INFORMATION)) {
-      return getCurrentTheme()
-          ? const Color(0xFF1E3A5F)
-          : const Color(0xFFE3F2FD);
-    } else if (style.has(SWT.ICON_WARNING)) {
-      return getCurrentTheme()
-          ? const Color(0xFF4A3F1F)
-          : const Color(0xFFFFF3E0);
-    } else if (style.has(SWT.ICON_ERROR)) {
-      return getCurrentTheme()
-          ? const Color(0xFF4A1F1F)
-          : const Color(0xFFFFEBEE);
-    }
-    return getBackground();
+  Color _backgroundColor(TooltipThemeExtension theme) {
+    if (style.has(SWT.ICON_INFORMATION)) return theme.informationBackgroundColor;
+    if (style.has(SWT.ICON_WARNING)) return theme.warningBackgroundColor;
+    if (style.has(SWT.ICON_ERROR)) return theme.errorBackgroundColor;
+    return theme.backgroundColor;
   }
 
   @override
   Widget build(BuildContext context) {
-    final displayMessage = message ?? '';
-    final displayTitle = text ?? '';
-    final backgroundColor = _getBackgroundColor();
-    final foregroundColor = getForeground();
-    final borderColor = getBorderColor();
-    final icon = _getIcon();
-    final iconColor = _getIconColor();
+    final theme = Theme.of(context).extension<TooltipThemeExtension>()!;
     final isBalloon = style.has(SWT.BALLOON);
+    final icon = _getIcon();
+    final displayTitle = text ?? '';
+    final displayMessage = message ?? '';
 
     return GestureDetector(
-      onTap: onDismiss,
+      onTap: onTap,
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: Container(
-          constraints: const BoxConstraints(
-            minWidth: 100,
-            maxWidth: 350,
-            minHeight: 40,
+          constraints: BoxConstraints(
+            minWidth: theme.minWidth,
+            maxWidth: theme.maxWidth,
+            minHeight: theme.minHeight,
           ),
-          padding: const EdgeInsets.all(12),
+          padding: theme.padding,
           decoration: BoxDecoration(
-            color: backgroundColor,
-            border: Border.all(color: borderColor, width: 1),
-            borderRadius: isBalloon
-                ? BorderRadius.circular(12)
-                : BorderRadius.circular(4),
+            color: _backgroundColor(theme),
+            border: Border.all(color: theme.borderColor, width: theme.borderWidth),
+            borderRadius: BorderRadius.circular(
+              isBalloon ? theme.balloonBorderRadius : theme.borderRadius,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
+                color: theme.shadowColor,
+                blurRadius: theme.shadowBlurRadius,
+                offset: Offset(0, theme.shadowOffsetY),
               ),
             ],
           ),
@@ -194,8 +165,8 @@ class _TooltipContent extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (icon != null) ...[
-                Icon(icon, color: iconColor, size: 24),
-                const SizedBox(width: 12),
+                Icon(icon, color: _iconColor(theme), size: theme.iconSize),
+                SizedBox(width: theme.iconSpacing),
               ],
               Flexible(
                 child: Column(
@@ -203,21 +174,14 @@ class _TooltipContent extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (displayTitle.isNotEmpty)
-                      Text(
-                        displayTitle,
-                        style: TextStyle(
-                          color: foregroundColor,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      Text(displayTitle, style: theme.titleTextStyle),
                     if (displayTitle.isNotEmpty && displayMessage.isNotEmpty)
-                      const SizedBox(height: 4),
+                      SizedBox(height: theme.titleMessageSpacing),
                     if (displayMessage.isNotEmpty)
                       Text(
                         displayMessage,
-                        style: TextStyle(color: foregroundColor, fontSize: 12),
-                        maxLines: 10,
+                        style: theme.messageTextStyle,
+                        maxLines: theme.messageMaxLines,
                         overflow: TextOverflow.ellipsis,
                       ),
                   ],

@@ -728,6 +728,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                setVisible(false);
                 sendEvent(SWT.Selection, e);
             });
         });
