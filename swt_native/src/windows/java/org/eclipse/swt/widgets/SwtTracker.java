@@ -423,7 +423,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
         checkWidget();
         Rectangle[] result = getRectanglesInPixels();
         for (int i = 0; i < result.length; i++) {
-            result[i] = Win32DPIUtils.pixelToPoint(result[i], getZoom());
+            result[i] = Win32DPIUtils.pixelToPoint(result[i], getAutoscalingZoom());
         }
         return result;
     }
@@ -837,7 +837,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
         clientCursor = newCursor;
         if (newCursor != null) {
             if (inEvent)
-                OS.SetCursor(SwtCursor.win32_getHandle(clientCursor, DPIUtil.getZoomForAutoscaleProperty(parent != null ? ((SwtControl) parent.getImpl()).getShellZoom() : getNativeZoom())));
+                OS.SetCursor(SwtCursor.win32_getHandle(clientCursor, DPIUtil.getZoomForAutoscaleProperty(parent != null ? ((SwtControl) parent.getImpl()).getShellZoom() : getApi().nativeZoom)));
         }
     }
 
@@ -861,7 +861,11 @@ public class SwtTracker extends SwtWidget implements ITracker {
             error(SWT.ERROR_NULL_ARGUMENT);
         Rectangle[] rectanglesInPixels = new Rectangle[rectangles.length];
         for (int i = 0; i < rectangles.length; i++) {
-            rectanglesInPixels[i] = Win32DPIUtils.pointToPixel(rectangles[i], getZoom());
+            if (parent != null) {
+                rectanglesInPixels[i] = Win32DPIUtils.pointToPixel(rectangles[i], getAutoscalingZoom());
+            } else {
+                rectanglesInPixels[i] = ((SwtDisplay) display.getImpl()).translateToDisplayCoordinates(rectangles[i]);
+            }
         }
         setRectanglesInPixels(rectanglesInPixels);
     }
@@ -909,7 +913,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
                 break;
             case OS.WM_SETCURSOR:
                 if (clientCursor != null) {
-                    OS.SetCursor(SwtCursor.win32_getHandle(clientCursor, DPIUtil.getZoomForAutoscaleProperty(parent != null ? ((SwtControl) parent.getImpl()).getShellZoom() : getNativeZoom())));
+                    OS.SetCursor(SwtCursor.win32_getHandle(clientCursor, DPIUtil.getZoomForAutoscaleProperty(parent != null ? ((SwtControl) parent.getImpl()).getShellZoom() : getApi().nativeZoom)));
                     return 1;
                 }
                 if (resizeCursor != 0) {
@@ -1019,7 +1023,8 @@ public class SwtTracker extends SwtWidget implements ITracker {
                 rectsToErase[i] = new Rectangle(current.x, current.y, current.width, current.height);
             }
             Event event = new Event();
-            event.setLocation(DPIUtil.pixelToPoint(oldX + xChange, getZoom()), DPIUtil.pixelToPoint(oldY + yChange, getZoom()));
+            Point newLocationInPoints = ((SwtDisplay) display.getImpl()).translateFromDisplayCoordinates(new Point(oldX + xChange, oldY + yChange));
+            event.setLocation(newLocationInPoints.x, newLocationInPoints.y);
             Point cursorPos;
             if ((getApi().style & SWT.RESIZE) != 0) {
                 resizeRectangles(xChange, yChange);
@@ -1140,8 +1145,8 @@ public class SwtTracker extends SwtWidget implements ITracker {
                 rectsToErase[i] = new Rectangle(current.x, current.y, current.width, current.height);
             }
             Event event = new Event();
-            int zoom = getZoom();
-            event.setLocation(DPIUtil.pixelToPoint(newX, zoom), DPIUtil.pixelToPoint(newY, zoom));
+            Point newLocationInPoints = ((SwtDisplay) display.getImpl()).translateFromDisplayCoordinates(new Point(newX, newY));
+            event.setLocation(newLocationInPoints.x, newLocationInPoints.y);
             if ((getApi().style & SWT.RESIZE) != 0) {
                 if (isMirrored) {
                     resizeRectangles(oldX - newX, newY - oldY);

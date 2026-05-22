@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -1925,6 +1925,26 @@ public abstract class Control extends Widget implements Drawable {
      */
     public void redraw(int x, int y, int width, int height, boolean all) {
         getImpl().redraw(x, y, width, height, all);
+    }
+
+    /**
+     * Sets the autoscaling mode for this widget. The capability is not supported on
+     * every platform, such that calling this method may not have an effect on
+     * unsupported platforms. The return value indicates if the autoscale mode was
+     * set properly. With {@link #isAutoScalable()}, the autoscale enablement can
+     * also be evaluated at any later point in time.
+     * <p>
+     * Currently, this is only supported on Windows.
+     * </p>
+     *
+     * @param autoscalingMode the autoscaling mode to set
+     *
+     * @return {@code false} if the operation was called on an unsupported platform
+     *
+     * @since 3.133
+     */
+    public boolean setAutoscalingMode(AutoscalingMode autoscalingMode) {
+        return getImpl().setAutoscalingMode(autoscalingMode);
     }
 
     /**

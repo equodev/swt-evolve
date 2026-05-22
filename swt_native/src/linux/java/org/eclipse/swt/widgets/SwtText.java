@@ -249,8 +249,6 @@ public class SwtText extends SwtScrollable implements IText {
                 long context = GTK.gtk_widget_get_style_context(getApi().handle);
                 String background = ((SwtDisplay) display.getImpl()).gtk_rgba_to_css_string(((SwtDisplay) display.getImpl()).COLOR_LIST_BACKGROUND_RGBA);
                 gtk_css_provider_load_from_css(context, "entry {border: solid; background: " + background + ";}");
-                if (!GTK.GTK4)
-                    GTK3.gtk_style_context_invalidate(context);
             }
             float alignment = 0.0f;
             if ((getApi().style & SWT.CENTER) != 0)

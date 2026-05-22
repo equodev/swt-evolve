@@ -3463,6 +3463,17 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         return false;
     }
 
+    boolean isBundledIconSet() {
+        NSBundle mainBundle = NSBundle.mainBundle();
+        if (mainBundle != null) {
+            NSDictionary info = mainBundle.infoDictionary();
+            if (info != null) {
+                return info.objectForKey(NSString.stringWith("CFBundleIconName")) != null || info.objectForKey(NSString.stringWith("CFBundleIconFile")) != null;
+            }
+        }
+        return false;
+    }
+
     static boolean isValidClass(Class<?> clazz) {
         String name = clazz.getName();
         int index = name.lastIndexOf('.');
@@ -5463,6 +5474,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * @exception SWTException <ul>
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_NO_HANDLES if a handle could not be obtained for timer creation</li>
      * </ul>
      *
      * @see #asyncExec
@@ -5516,14 +5528,14 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         }
         NSNumber userInfo = NSNumber.numberWithInt(index);
         NSTimer timer = NSTimer.scheduledTimerWithTimeInterval(milliseconds / 1000.0, timerDelegate, OS.sel_timerProc_, userInfo, false);
+        if (timer == null)
+            SWT.error(SWT.ERROR_NO_HANDLES);
         NSRunLoop runLoop = NSRunLoop.currentRunLoop();
         runLoop.addTimer(timer, OS.NSModalPanelRunLoopMode);
         runLoop.addTimer(timer, OS.NSEventTrackingRunLoopMode);
         timer.retain();
-        if (timer != null) {
-            nsTimers[index] = timer;
-            timerList[index] = runnable;
-        }
+        nsTimers[index] = timer;
+        timerList[index] = runnable;
     }
 
     long timerProc(long id, long sel, long timerID) {

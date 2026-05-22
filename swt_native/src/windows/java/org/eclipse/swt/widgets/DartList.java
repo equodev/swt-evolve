@@ -347,7 +347,7 @@ public class DartList extends DartScrollable implements IList {
      */
     public int getItemHeight() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getItemHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getItemHeightInPixels(), getAutoscalingZoom());
     }
 
     int getItemHeightInPixels() {
@@ -1209,7 +1209,7 @@ public class DartList extends DartScrollable implements IList {
             y = Math.min(y, clientArea.y + clientArea.height);
         }
         Point pt = toDisplayInPixels(x, y);
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         event.setLocation(DPIUtil.pixelToPoint(pt.x, zoom), DPIUtil.pixelToPoint(pt.y, zoom));
     }
 

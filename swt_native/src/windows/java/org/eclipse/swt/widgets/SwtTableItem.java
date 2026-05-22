@@ -167,9 +167,9 @@ public class SwtTableItem extends SwtItem implements ITableItem {
 
     long fontHandle(int index) {
         if (cellFont != null && cellFont[index] != null)
-            return SWTFontProvider.getFontHandle(cellFont[index], getNativeZoom());
+            return SWTFontProvider.getFontHandle(cellFont[index], getApi().nativeZoom);
         if (font != null)
-            return SWTFontProvider.getFontHandle(font, getNativeZoom());
+            return SWTFontProvider.getFontHandle(font, getApi().nativeZoom);
         return -1;
     }
 
@@ -233,7 +233,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getBoundsInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPoint(getBoundsInPixels(), getAutoscalingZoom());
     }
 
     Rectangle getBoundsInPixels() {
@@ -261,7 +261,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      */
     public Rectangle getBounds(int index) {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getBoundsInPixels(index), getZoom());
+        return Win32DPIUtils.pixelToPoint(getBoundsInPixels(index), getAutoscalingZoom());
     }
 
     Rectangle getBoundsInPixels(int index) {
@@ -641,7 +641,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      */
     public Rectangle getImageBounds(int index) {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getImageBoundsInPixels(index), getZoom());
+        return Win32DPIUtils.pixelToPoint(getImageBoundsInPixels(index), getAutoscalingZoom());
     }
 
     Rectangle getImageBoundsInPixels(int index) {
@@ -750,7 +750,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
      */
     public Rectangle getTextBounds(int index) {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getTextBoundsInPixels(index), getZoom());
+        return Win32DPIUtils.pixelToPoint(getTextBoundsInPixels(index), getAutoscalingZoom());
     }
 
     Rectangle getTextBoundsInPixels(int index) {
@@ -946,7 +946,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         Font oldFont = this.font;
-        Font newFont = (font == null ? font : SwtFont.win32_new(font, getNativeZoom()));
+        Font newFont = (font == null ? font : SwtFont.win32_new(font, getApi().nativeZoom));
         if (oldFont == newFont)
             return;
         this.font = newFont;
@@ -1018,7 +1018,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
         Font oldFont = cellFont[index];
         if (oldFont == font)
             return;
-        cellFont[index] = font == null ? font : SwtFont.win32_new(font, getNativeZoom());
+        cellFont[index] = font == null ? font : SwtFont.win32_new(font, getApi().nativeZoom);
         if (oldFont != null && oldFont.equals(font))
             return;
         if (font != null)
@@ -1388,7 +1388,7 @@ public class SwtTableItem extends SwtItem implements ITableItem {
         if (cellFonts != null) {
             for (int index = 0; index < cellFonts.length; index++) {
                 Font cellFont = cellFonts[index];
-                cellFonts[index] = cellFont == null ? null : SwtFont.win32_new(cellFont, getNativeZoom());
+                cellFonts[index] = cellFont == null ? null : SwtFont.win32_new(cellFont, getApi().nativeZoom);
             }
         }
     }

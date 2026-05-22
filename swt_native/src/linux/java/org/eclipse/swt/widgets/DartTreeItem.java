@@ -464,7 +464,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public boolean getExpanded() {
         checkWidget();
-        return this.isExpanded;
+        return isExpanded;
     }
 
     /**
@@ -1083,7 +1083,6 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         if (!java.util.Objects.equals(this.isExpanded, expanded)) {
             dirty();
         }
-        isExpanded = expanded;
     }
 
     /**

@@ -358,7 +358,7 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
      */
     public Point getSize() {
         checkWidget();
-        return Win32DPIUtils.pixelToPointAsSize(getSizeInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPointAsSize(getSizeInPixels(), getAutoscalingZoom());
     }
 
     public Point getSizeInPixels() {
@@ -416,7 +416,7 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
      */
     public Rectangle getThumbBounds() {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getThumbBoundsInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPoint(getThumbBoundsInPixels(), getAutoscalingZoom());
     }
 
     Rectangle getThumbBoundsInPixels() {
@@ -462,7 +462,7 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
      */
     public Rectangle getThumbTrackBounds() {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getThumbTrackBoundsInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPoint(getThumbTrackBoundsInPixels(), getAutoscalingZoom());
     }
 
     Rectangle getThumbTrackBoundsInPixels() {
@@ -1032,6 +1032,15 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
         sendSelectionEvent(SWT.Selection, event, true);
         // the widget could be destroyed at this point
         return null;
+    }
+
+    @Override
+    int getSystemMetrics(int nIndex) {
+        // Control#getSystemMetrics should be used if possible,
+        // as it considers if autoscaling of a Control is
+        // disabled which would affect the ScrollBar as well,
+        // therefore the value is fetched via the parent
+        return ((SwtControl) parent.getImpl()).getSystemMetrics(nIndex);
     }
 
     public Scrollable _parent() {

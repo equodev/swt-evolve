@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -1823,15 +1823,16 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 
     void snapshotDrawProc(long handle, long snapshot) {
         Display display = getCurrent();
-        Widget widget = ((SwtDisplay) display.getImpl()).getWidget(handle);
-        if (widget != null)
-            ((SwtWidget) widget.getImpl()).snapshotToDraw(handle, snapshot);
         long child = GTK4.gtk_widget_get_first_child(handle);
-        // Propagate the snapshot down the widget tree
+        // Propagate the snapshot down the widget tree first
         while (child != 0) {
             GTK4.gtk_widget_snapshot_child(handle, child, snapshot);
             child = GTK4.gtk_widget_get_next_sibling(child);
         }
+        // Draw custom paint on top of children
+        Widget widget = ((SwtDisplay) display.getImpl()).getWidget(handle);
+        if (widget != null)
+            ((SwtWidget) widget.getImpl()).snapshotToDraw(handle, snapshot);
     }
 
     static long rendererGetPreferredWidthProc(long cell, long handle, long minimun_size, long natural_size) {
@@ -3398,8 +3399,6 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         GTK.gtk_style_context_save(shellContext);
         GTK.gtk_style_context_add_class(shellContext, GTK.GTK_STYLE_CLASS_VIEW);
         GTK.gtk_style_context_add_class(shellContext, GTK.GTK_STYLE_CLASS_CELL);
-        if (!GTK.GTK4)
-            GTK3.gtk_style_context_invalidate(shellContext);
         COLOR_LIST_FOREGROUND_RGBA = styleContextGetColor(shellContext, GTK.GTK_STATE_FLAG_NORMAL);
         COLOR_LIST_BACKGROUND_RGBA = styleContextEstimateBackgroundColor(shellContext, GTK.GTK_STATE_FLAG_NORMAL);
         /*
@@ -4156,32 +4155,9 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         if (to != null && to.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         Point point = new Point(x, y);
-        if (from == to)
+        if (GTK.GTK4 && (to == null || from == null)) {
             return point;
-        if (from != null) {
-            Point origin = GTK.GTK4 ? from.getImpl().getSurfaceOrigin() : from.getImpl().getWindowOrigin();
-            if ((from.style & SWT.MIRRORED) != 0)
-                point.x = ((SwtControl) from.getImpl()).getClientWidth() - point.x;
-            point.x += origin.x;
-            point.y += origin.y;
         }
-        if (to != null) {
-            Point origin = GTK.GTK4 ? to.getImpl().getSurfaceOrigin() : to.getImpl().getWindowOrigin();
-            point.x -= origin.x;
-            point.y -= origin.y;
-            if ((to.style & SWT.MIRRORED) != 0)
-                point.x = ((SwtControl) to.getImpl()).getClientWidth() - point.x;
-        }
-        return point;
-    }
-
-    Point mapInPixels(Control from, Control to, int x, int y) {
-        checkDevice();
-        if (from != null && from.isDisposed())
-            error(SWT.ERROR_INVALID_ARGUMENT);
-        if (to != null && to.isDisposed())
-            error(SWT.ERROR_INVALID_ARGUMENT);
-        Point point = new Point(x, y);
         if (from == to)
             return point;
         if (from != null) {
@@ -4244,13 +4220,6 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         return map(from, to, rectangle.x, rectangle.y, rectangle.width, rectangle.height);
     }
 
-    Rectangle mapInPixels(Control from, Control to, Rectangle rectangle) {
-        checkDevice();
-        if (rectangle == null)
-            error(SWT.ERROR_NULL_ARGUMENT);
-        return mapInPixels(from, to, rectangle.x, rectangle.y, rectangle.width, rectangle.height);
-    }
-
     /**
      * Maps a point from one coordinate system to another.
      * When the control is null, coordinates are mapped to
@@ -4298,6 +4267,9 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         Rectangle rect = new Rectangle(x, y, width, height);
         if (from == to)
             return rect;
+        if (GTK.GTK4 && (to == null || from == null)) {
+            return rect;
+        }
         boolean fromRTL = false, toRTL = false;
         if (from != null) {
             Point origin = GTK.GTK4 ? from.getImpl().getSurfaceOrigin() : from.getImpl().getWindowOrigin();
@@ -4308,38 +4280,6 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         }
         if (to != null) {
             Point origin = GTK.GTK4 ? to.getImpl().getSurfaceOrigin() : to.getImpl().getWindowOrigin();
-            rect.x -= origin.x;
-            rect.y -= origin.y;
-            if (toRTL = (to.style & SWT.MIRRORED) != 0)
-                rect.x = ((SwtControl) to.getImpl()).getClientWidth() - rect.x;
-        }
-        if (fromRTL != toRTL)
-            rect.x -= rect.width;
-        return rect;
-    }
-
-    Rectangle mapInPixels(Control from, Control to, int x, int y, int width, int height) {
-        checkDevice();
-        if (from != null && from.isDisposed())
-            error(SWT.ERROR_INVALID_ARGUMENT);
-        if (to != null && to.isDisposed())
-            error(SWT.ERROR_INVALID_ARGUMENT);
-        // TODO: GTK4 no longer able to retrieve surface/window origin
-        if (GTK.GTK4)
-            return new Rectangle(x, y, 0, 0);
-        Rectangle rect = new Rectangle(x, y, width, height);
-        if (from == to)
-            return rect;
-        boolean fromRTL = false, toRTL = false;
-        if (from != null) {
-            Point origin = from.getImpl().getWindowOrigin();
-            if (fromRTL = (from.style & SWT.MIRRORED) != 0)
-                rect.x = ((SwtControl) from.getImpl()).getClientWidth() - rect.x;
-            rect.x += origin.x;
-            rect.y += origin.y;
-        }
-        if (to != null) {
-            Point origin = to.getImpl().getWindowOrigin();
             rect.x -= origin.x;
             rect.y -= origin.y;
             if (toRTL = (to.style & SWT.MIRRORED) != 0)
@@ -5880,6 +5820,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
      * @exception SWTException <ul>
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_NO_HANDLES if a handle could not be obtained for timer creation</li>
      * </ul>
      *
      * @see #asyncExec
@@ -5928,10 +5869,10 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         } else {
             timerId = GDK.gdk_threads_add_timeout(milliseconds, timerProc, index);
         }
-        if (timerId != 0) {
-            timerIds[index] = timerId;
-            timerList[index] = runnable;
-        }
+        if (timerId == 0)
+            SWT.error(SWT.ERROR_NO_HANDLES);
+        timerIds[index] = timerId;
+        timerList[index] = runnable;
     }
 
     long timerProc(long i) {

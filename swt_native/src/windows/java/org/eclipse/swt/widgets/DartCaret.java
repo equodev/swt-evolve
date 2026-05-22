@@ -231,19 +231,19 @@ public class DartCaret extends DartWidget implements ICaret {
     }
 
     private int getWidthInPixels() {
-        return DPIUtil.pointToPixel(width, getZoom());
+        return DPIUtil.pointToPixel(width, getAutoscalingZoom());
     }
 
     private int getHeightInPixels() {
-        return DPIUtil.pointToPixel(height, getZoom());
+        return DPIUtil.pointToPixel(height, getAutoscalingZoom());
     }
 
     private int getXInPixels() {
-        return DPIUtil.pointToPixel(x, getZoom());
+        return DPIUtil.pointToPixel(x, getAutoscalingZoom());
     }
 
     private int getYInPixels() {
-        return DPIUtil.pointToPixel(y, getZoom());
+        return DPIUtil.pointToPixel(y, getAutoscalingZoom());
     }
 
     /**
@@ -448,7 +448,7 @@ public class DartCaret extends DartWidget implements ICaret {
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        this.font = font == null ? null : DartFont.win32_new(font, getNativeZoom());
+        this.font = font == null ? null : DartFont.win32_new(font, getApi().nativeZoom);
         if (hasFocus())
             setIMEFont();
     }
@@ -628,8 +628,9 @@ public class DartCaret extends DartWidget implements ICaret {
         if (font != null) {
             setFont(font);
         }
-        if (isVisible && hasFocus())
-            resize();
+        if (isFocusCaret()) {
+            setFocus();
+        }
     }
 
     public Canvas _parent() {

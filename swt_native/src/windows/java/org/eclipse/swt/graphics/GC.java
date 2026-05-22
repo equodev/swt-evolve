@@ -16,15 +16,12 @@
 package org.eclipse.swt.graphics;
 
 import java.util.*;
-import java.util.List;
 import java.util.function.*;
-import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.Image.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gdip.*;
 import org.eclipse.swt.internal.win32.*;
-import org.eclipse.swt.widgets.*;
 import dev.equo.swt.Config;
 
 /**

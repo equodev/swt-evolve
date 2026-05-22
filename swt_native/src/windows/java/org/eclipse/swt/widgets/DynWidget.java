@@ -919,12 +919,6 @@ public abstract class DynWidget implements IWidget {
         return getName() + " {" + (!isDisposed() ? getNameText() : "*Disposed*") + "}";
     }
 
-    public int getZoom() {
-        System.out.println("+++ CONVERTING DynComposite from Widget#getZoom() #" + getApi().hashCode());
-        IWidget newImpl = (IWidget) convert();
-        return newImpl.getZoom();
-    }
-
     public Display _display() {
         return display;
     }

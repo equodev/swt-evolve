@@ -560,10 +560,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public boolean getExpanded() {
         checkWidget();
-        long path = GTK.gtk_tree_model_get_path(((SwtTree) parent.getImpl()).modelHandle, getApi().handle);
-        boolean answer = GTK.gtk_tree_view_row_expanded(parent.handle, path);
-        GTK.gtk_tree_path_free(path);
-        return answer;
+        return isExpanded;
     }
 
     /**
@@ -1285,20 +1282,24 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
     public void setExpanded(boolean expanded) {
         checkWidget();
         long path = GTK.gtk_tree_model_get_path(((SwtTree) parent.getImpl()).modelHandle, getApi().handle);
-        if (expanded != GTK.gtk_tree_view_row_expanded(parent.handle, path)) {
-            if (expanded) {
-                OS.g_signal_handlers_block_matched(parent.handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, TEST_EXPAND_ROW);
-                GTK.gtk_tree_view_expand_row(parent.handle, path, false);
-                OS.g_signal_handlers_unblock_matched(parent.handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, TEST_EXPAND_ROW);
-            } else {
-                OS.g_signal_handlers_block_matched(parent.handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, TEST_COLLAPSE_ROW);
-                GTK.gtk_widget_realize(parent.handle);
-                GTK.gtk_tree_view_collapse_row(parent.handle, path);
-                OS.g_signal_handlers_unblock_matched(parent.handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, TEST_COLLAPSE_ROW);
+        // Do nothing when the item is a leaf or already expanded
+        boolean hasChildren = GTK.gtk_tree_model_iter_n_children(((SwtTree) parent.getImpl()).modelHandle, getApi().handle) != 0;
+        if (hasChildren) {
+            if (expanded != GTK.gtk_tree_view_row_expanded(parent.handle, path)) {
+                if (expanded) {
+                    OS.g_signal_handlers_block_matched(parent.handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, TEST_EXPAND_ROW);
+                    GTK.gtk_tree_view_expand_row(parent.handle, path, false);
+                    OS.g_signal_handlers_unblock_matched(parent.handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, TEST_EXPAND_ROW);
+                } else {
+                    OS.g_signal_handlers_block_matched(parent.handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, TEST_COLLAPSE_ROW);
+                    GTK.gtk_widget_realize(parent.handle);
+                    GTK.gtk_tree_view_collapse_row(parent.handle, path);
+                    OS.g_signal_handlers_unblock_matched(parent.handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, TEST_COLLAPSE_ROW);
+                }
             }
+            isExpanded = expanded;
         }
         GTK.gtk_tree_path_free(path);
-        isExpanded = expanded;
     }
 
     /**

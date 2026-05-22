@@ -219,7 +219,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
             return null;
         int newX = bounds.x + bounds.width / 2;
         int newY = bounds.y;
-        Point point = ((SwtDisplay) display.getImpl()).mapInPixels(parent, null, newX, newY);
+        Point point = display.map(parent, null, newX, newY);
         display.setCursorLocation(point);
         int[] actualX = new int[1], actualY = new int[1], state = new int[1];
         if (GTK.GTK4) {
@@ -251,7 +251,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
         } else {
             newY = bounds.y + bounds.height / 2;
         }
-        Point point = ((SwtDisplay) display.getImpl()).mapInPixels(parent, null, newX, newY);
+        Point point = display.map(parent, null, newX, newY);
         display.setCursorLocation(point);
         /*
 	 * The call to XWarpPointer does not always place the pointer on the
@@ -382,7 +382,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
             // Ensure we have absolute screen coordinates. (btw, there are no absolute coordinates on Wayland, so Tracker(Display) is probably broken).
             if (parent != null) {
                 // if Tracker(Display) has absolute coords.  Tracker(Composite) has relative. For relative, we need to find absolute.
-                cachedUnion = ((SwtDisplay) display.getImpl()).mapInPixels(parent, null, cachedUnion);
+                cachedUnion = display.map(parent, null, cachedUnion);
             }
             if (!cachedCombinedDisplayResolution.intersects(cachedUnion)) {
                 isOnScreen = false;
@@ -394,7 +394,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
             // Combine Rects into a region. (region is not necessarily a rectangle, E.g it can be 'L' shaped etc..).
             for (int i = 0; i < rects.length; i++) {
                 // Turn filled rectangles into just the outer lines by drawing one line at a time.
-                Rectangle r = parent != null ? ((SwtDisplay) display.getImpl()).mapInPixels(parent, null, rects[i]) : rects[i];
+                Rectangle r = parent != null ? display.map(parent, null, rects[i]) : rects[i];
                 rect.x = r.x;
                 rect.y = r.y;
                 rect.width = r.width + 1;
@@ -658,7 +658,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
                 Rectangle eventRect = new Rectangle(newX[0], newY[0], 0, 0);
                 event.setBounds(eventRect);
             } else {
-                Point screenCoord = ((SwtDisplay) display.getImpl()).mapInPixels(parent, null, newX[0], newY[0]);
+                Point screenCoord = display.map(parent, null, newX[0], newY[0]);
                 Rectangle eventRect = new Rectangle(screenCoord.x, screenCoord.y, 0, 0);
                 event.setBounds(eventRect);
             }
@@ -909,7 +909,6 @@ public class SwtTracker extends SwtWidget implements ITracker {
             GTK4.gtk_css_provider_load_from_data(provider, Converter.wcsToMbcs(css, true), -1);
         } else {
             GTK3.gtk_css_provider_load_from_data(provider, Converter.wcsToMbcs(css, true), -1, null);
-            GTK3.gtk_style_context_invalidate(context);
         }
         long region = Cairo.cairo_region_create();
         if (GTK.GTK4) {

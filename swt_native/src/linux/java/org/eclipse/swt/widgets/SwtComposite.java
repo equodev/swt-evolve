@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -572,7 +572,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
             long cairo = data.cairo;
             Cairo.cairo_save(cairo);
             if (control.getImpl()._backgroundImage() != null) {
-                Point pt = ((SwtDisplay) display.getImpl()).mapInPixels(this.getApi(), control, 0, 0);
+                Point pt = display.map(this.getApi(), control, 0, 0);
                 Cairo.cairo_translate(cairo, -pt.x - offsetX, -pt.y - offsetY);
                 x += pt.x + offsetX;
                 y += pt.y + offsetY;
@@ -601,7 +601,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
             Cairo.cairo_fill(cairo);
             Cairo.cairo_restore(cairo);
         } else {
-            gc.fillRectangle(new Rectangle(x, y, width, height));
+            gc.fillRectangle(x, y, width, height);
         }
     }
 
@@ -1484,7 +1484,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         gc.setClipping(newClip);
         super.printWidget(gc, drawable, depth, x, y);
         Rectangle clientRect = getClientAreaInPixels();
-        Point pt = ((SwtDisplay) display.getImpl()).mapInPixels(this.getApi(), parent, clientRect.x, clientRect.y);
+        Point pt = display.map(this.getApi(), parent, clientRect.x, clientRect.y);
         clientRect.x = x + pt.x - rect.x;
         clientRect.y = y + pt.y - rect.y;
         newClip.intersect(clientRect);
@@ -1493,7 +1493,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         for (int i = children.length - 1; i >= 0; --i) {
             Control child = children[i];
             if (child.getVisible()) {
-                Point location = ((SwtControl) child.getImpl()).getLocationInPixels();
+                Point location = child.getLocation();
                 ((SwtControl) child.getImpl()).printWidget(gc, drawable, depth, x + location.x, y + location.y);
             }
         }

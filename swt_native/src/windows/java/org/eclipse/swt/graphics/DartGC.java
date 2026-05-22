@@ -16,9 +16,7 @@
 package org.eclipse.swt.graphics;
 
 import java.util.*;
-import java.util.List;
 import java.util.function.*;
-import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.Image.*;
 import org.eclipse.swt.internal.*;
@@ -75,7 +73,7 @@ public final class DartGC extends DartResource implements IGC {
 
     private final GCData originalData = new GCData();
 
-    private final List<Operation> operations = new ArrayList<>();
+    private final java.util.List<Operation> operations = new ArrayList<>();
 
     static final int FOREGROUND = 1 << 0;
 
@@ -850,6 +848,20 @@ public final class DartGC extends DartResource implements IGC {
         FlutterBridge.send(this, "drawImageImageintint", drawOp);
     }
 
+    private float calculateTransformationScale() {
+        Transform current = new Transform(device);
+        getTransform(current);
+        float[] m = new float[6];
+        current.getElements(m);
+        // this calculates the effective length in x and y
+        // direction without being affected by the rotation
+        // of the transformation
+        float scaleWidth = (float) Math.hypot(m[0], m[2]);
+        float scaleHeight = (float) Math.hypot(m[1], m[3]);
+        current.dispose();
+        return Math.max(scaleWidth, scaleHeight);
+    }
+
     private class DrawImageOperation extends ImageOperation {
 
         private final Point location;
@@ -978,16 +990,32 @@ public final class DartGC extends DartResource implements IGC {
 
         @Override
         void apply() {
-            int gcZoom = getZoom();
-            int srcImageZoom = calculateZoomForImage(gcZoom, source.width, source.height, destination.width, destination.height);
-            drawImage(getImage(), source.x, source.y, source.width, source.height, destination.x, destination.y, destination.width, destination.height, gcZoom, srcImageZoom);
+            draw(getImage(), source.x, source.y, source.width, source.height, destination.x, destination.y, destination.width, destination.height);
         }
 
-        private Collection<Integer> getAllCurrentMonitorZooms() {
-            if (device instanceof Display display) {
-                return Arrays.stream(display.getMonitors()).map(Monitor::getZoom).collect(Collectors.toSet());
+        private void draw(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight) {
+            int gcZoom = getZoom();
+            int requestedImageZoom = calculateZoomForImage(gcZoom, source.width, source.height, destination.width, destination.height);
+            float transformationScale = calculateTransformationScale();
+            Rectangle src = new Rectangle(srcX, srcY, srcWidth, srcHeight);
+            Rectangle fullImageBounds = image.getBounds();
+            // In case there is a memGC for the image, a handle at proper zoom can be created by reapplying the GC operation
+            if (image.getImpl()._memGC() != null) {
+                ((DartImage) image.getImpl()).getHandle(getZoom(), data.nativeZoom);
             }
-            return Collections.emptySet();
+        }
+
+        private Rectangle computeSourceRectangle(DartImage.ImageHandle imageHandle, Rectangle fullImageBounds, Rectangle src) {
+            /*
+		 * The point values (x, y, width, height) of the source "part" in points will be
+		 * computed to pixels depending on the factor of the full image bounds to the
+		 * actual OS handle size that will be used.
+		 */
+            float scaleFactor = Math.min(1f * imageHandle.width() / fullImageBounds.width, 1f * imageHandle.height() / fullImageBounds.height);
+            int closestZoomOfHandle = Math.round(scaleFactor * 100);
+            if (closestZoomOfHandle != 100) {
+            }
+            return null;
         }
 
         private int calculateZoomForImage(int gcZoom, int srcWidth, int srcHeight, int destWidth, int destHeight) {
@@ -1002,15 +1030,9 @@ public final class DartGC extends DartResource implements IGC {
             if (drawable != null && !drawable.isAutoScalable()) {
                 return gcZoom;
             }
-            float imageScaleFactor = 1f * destWidth / srcWidth;
+            float imageScaleFactor = Math.max(1f * destWidth / srcWidth, 1f * destHeight / srcHeight);
             int imageZoom = Math.round(gcZoom * imageScaleFactor);
-            if (getAllCurrentMonitorZooms().contains(imageZoom)) {
-                return imageZoom;
-            }
-            if (imageZoom > 150) {
-                return 200;
-            }
-            return 100;
+            return imageZoom;
         }
     }
 
@@ -1025,16 +1047,16 @@ public final class DartGC extends DartResource implements IGC {
 
         @Override
         void apply() {
-            int gcZoom = getZoom();
-            drawImage(getImage(), destination.x, destination.y, destination.width, destination.height, gcZoom);
+            draw(getImage(), destination.x, destination.y, destination.width, destination.height);
         }
-    }
 
-    private void drawImage(Image image, int destX, int destY, int destWidth, int destHeight, int imageZoom) {
-    }
-
-    private void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, int imageZoom, int scaledImageZoom) {
-        if (scaledImageZoom != 100) {
+        private void draw(Image image, int destX, int destY, int destWidth, int destHeight) {
+            int gcZoom = getZoom();
+            float transformationScale = calculateTransformationScale();
+            // In case there is a memGC for the image, a handle at proper zoom can be created by reapplying the GC operation
+            if (image.getImpl()._memGC() != null) {
+                ((DartImage) image.getImpl()).getHandle(getZoom(), data.nativeZoom);
+            }
         }
     }
 
@@ -1080,7 +1102,7 @@ public final class DartGC extends DartResource implements IGC {
                 drawBitmap(srcImage, tempImageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
                 break;
             case SWT.ICON:
-                drawIcon(tempImageHandle.getHandle(), srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+                drawIcon(tempImageHandle.handle(), srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
                 break;
         }
     }
@@ -2997,6 +3019,39 @@ public final class DartGC extends DartResource implements IGC {
         }
         if (hDC == 0)
             hDC = 1;
+        DartImage.ImageHandle imageHandle = null;
+        GCHelper.ImageGCContext imageCtx = GCHelper.setupImageGC(drawable, data, this.getApi());
+        if (imageCtx != null) {
+            drawable = imageCtx.resolvedDrawable();
+            swtImageSource = imageCtx.swtSource();
+            final Image capturedDart = imageCtx.dartImage();
+            final Image capturedSwt = imageCtx.swtSource();
+            final java.util.concurrent.CompletableFuture<Void> capturedFuture = imageCtx.renderFuture();
+            gcImageId = System.identityHashCode(this);
+            this.bridge = SwtFlutterBridgeBase.of(gcImageId, capturedDart, pngBase64 -> {
+                GCHelper.updateImageFromPng(capturedDart, capturedSwt, pngBase64);
+                capturedFuture.complete(null);
+                Display d = Display.getDefault();
+                if (d != null && !d.isDisposed())
+                    d.wake();
+            });
+        }
+        init(drawable, data, hDC, imageHandle);
+    }
+
+    private void init(Drawable drawable, GCData data, long hDC, DartImage.ImageHandle imageHandle) {
+        if (this.background == null) {
+            Color white = new Color(255, 255, 255);
+            data.background = white.handle;
+            this.background = white;
+        }
+        if (this.foreground == null) {
+            Color black = new Color(0, 0, 0);
+            data.foreground = black.handle;
+            this.foreground = black;
+        }
+        if (hDC == 0)
+            hDC = 1;
         int foreground = data.foreground;
         if (foreground != -1) {
             data.state &= ~(FOREGROUND | FOREGROUND_TEXT | PEN);
@@ -3023,20 +3078,14 @@ public final class DartGC extends DartResource implements IGC {
             }
         }
         GCHelper.ImageGCContext imageCtx = GCHelper.setupImageGC(drawable, data, this.getApi());
-        if (imageCtx != null) {
-            drawable = imageCtx.resolvedDrawable();
-            swtImageSource = imageCtx.swtSource();
-            final Image capturedDart = imageCtx.dartImage();
-            final Image capturedSwt = imageCtx.swtSource();
-            final java.util.concurrent.CompletableFuture<Void> capturedFuture = imageCtx.renderFuture();
-            gcImageId = System.identityHashCode(this);
-            this.bridge = SwtFlutterBridgeBase.of(gcImageId, capturedDart, pngBase64 -> {
-                GCHelper.updateImageFromPng(capturedDart, capturedSwt, pngBase64);
-                capturedFuture.complete(null);
-                Display d = Display.getDefault();
-                if (d != null && !d.isDisposed())
-                    d.wake();
-            });
+        Image image = data.image;
+        if (imageHandle != null) {
+            if (image.getImpl() instanceof DartImage) {
+                ((DartImage) image.getImpl()).memGC = this.getApi();
+            }
+            if (image.getImpl() instanceof SwtImage) {
+                ((SwtImage) image.getImpl()).memGC = this.getApi();
+            }
         }
         int layout = data.layout;
         if (layout != -1) {
@@ -4558,13 +4607,13 @@ public final class DartGC extends DartResource implements IGC {
         return null;
     }
 
-    void refreshFor(Drawable drawable) {
+    void refreshFor(Drawable drawable, DartImage.ImageHandle imageHandle) {
         if (drawable == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         destroy();
         GCData newData = new GCData();
         ((SwtGCData) originalData.getImpl()).copyTo(newData);
-        createGcHandle(drawable, newData);
+        createGcHandle(drawable, newData, imageHandle);
     }
 
     /**
@@ -4628,11 +4677,11 @@ public final class DartGC extends DartResource implements IGC {
         }
     }
 
-    private void createGcHandle(Drawable drawable, GCData newData) {
-        long newHandle = drawable.internal_new_GC(newData);
-        if (newHandle == 0)
+    private void createGcHandle(Drawable drawable, GCData newData, DartImage.ImageHandle imageHandle) {
+        long gcHandle = drawable.internal_new_GC(newData);
+        if (gcHandle == 0)
             SWT.error(SWT.ERROR_NO_HANDLES);
-        init(drawable, newData, newHandle);
+        init(drawable, newData, gcHandle, imageHandle);
         for (Operation operation : operations) {
             operation.apply();
         }
@@ -4653,7 +4702,7 @@ public final class DartGC extends DartResource implements IGC {
 
     private abstract class Operation {
 
-        private final List<Resource> disposables = new ArrayList<>();
+        private final java.util.List<Resource> disposables = new ArrayList<>();
 
         abstract void apply();
 

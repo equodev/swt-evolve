@@ -285,7 +285,7 @@ public class DartComposite extends DartScrollable implements IComposite {
      */
     public void drawBackground(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
         checkWidget();
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         offsetX = DPIUtil.pointToPixel(offsetX, zoom);
         offsetY = DPIUtil.pointToPixel(offsetY, zoom);
     }

@@ -46,27 +46,27 @@ import dev.equo.swt.*;
  */
 public class DartAccessible implements IAccessible {
 
-    List<AccessibleListener> accessibleListeners;
+    java.util.List<AccessibleListener> accessibleListeners;
 
-    List<AccessibleControlListener> accessibleControlListeners;
+    java.util.List<AccessibleControlListener> accessibleControlListeners;
 
-    List<AccessibleTextListener> accessibleTextListeners;
+    java.util.List<AccessibleTextListener> accessibleTextListeners;
 
-    List<AccessibleActionListener> accessibleActionListeners;
+    java.util.List<AccessibleActionListener> accessibleActionListeners;
 
-    List<AccessibleEditableTextListener> accessibleEditableTextListeners;
+    java.util.List<AccessibleEditableTextListener> accessibleEditableTextListeners;
 
-    List<AccessibleHyperlinkListener> accessibleHyperlinkListeners;
+    java.util.List<AccessibleHyperlinkListener> accessibleHyperlinkListeners;
 
-    List<AccessibleTableListener> accessibleTableListeners;
+    java.util.List<AccessibleTableListener> accessibleTableListeners;
 
-    List<AccessibleTableCellListener> accessibleTableCellListeners;
+    java.util.List<AccessibleTableCellListener> accessibleTableCellListeners;
 
-    List<AccessibleTextExtendedListener> accessibleTextExtendedListeners;
+    java.util.List<AccessibleTextExtendedListener> accessibleTextExtendedListeners;
 
-    List<AccessibleValueListener> accessibleValueListeners;
+    java.util.List<AccessibleValueListener> accessibleValueListeners;
 
-    List<AccessibleAttributeListener> accessibleAttributeListeners;
+    java.util.List<AccessibleAttributeListener> accessibleAttributeListeners;
 
     Accessible parent;
 
@@ -74,9 +74,9 @@ public class DartAccessible implements IAccessible {
 
     Control control;
 
-    List<Relation> relations;
+    java.util.List<Relation> relations;
 
-    List<Accessible> children;
+    java.util.List<Accessible> children;
 
     static class Relation {
 
@@ -595,7 +595,7 @@ public class DartAccessible implements IAccessible {
 
     public void release() {
         if (children != null) {
-            List<Accessible> temp = new ArrayList<>(children);
+            java.util.List<Accessible> temp = new ArrayList<>(children);
             for (int i = 0; i < temp.size(); i++) {
                 Accessible child = temp.get(i);
                 child.dispose();
@@ -1159,47 +1159,47 @@ public class DartAccessible implements IAccessible {
 
     int focus;
 
-    public List<AccessibleListener> _accessibleListeners() {
+    public java.util.List<AccessibleListener> _accessibleListeners() {
         return accessibleListeners;
     }
 
-    public List<AccessibleControlListener> _accessibleControlListeners() {
+    public java.util.List<AccessibleControlListener> _accessibleControlListeners() {
         return accessibleControlListeners;
     }
 
-    public List<AccessibleTextListener> _accessibleTextListeners() {
+    public java.util.List<AccessibleTextListener> _accessibleTextListeners() {
         return accessibleTextListeners;
     }
 
-    public List<AccessibleActionListener> _accessibleActionListeners() {
+    public java.util.List<AccessibleActionListener> _accessibleActionListeners() {
         return accessibleActionListeners;
     }
 
-    public List<AccessibleEditableTextListener> _accessibleEditableTextListeners() {
+    public java.util.List<AccessibleEditableTextListener> _accessibleEditableTextListeners() {
         return accessibleEditableTextListeners;
     }
 
-    public List<AccessibleHyperlinkListener> _accessibleHyperlinkListeners() {
+    public java.util.List<AccessibleHyperlinkListener> _accessibleHyperlinkListeners() {
         return accessibleHyperlinkListeners;
     }
 
-    public List<AccessibleTableListener> _accessibleTableListeners() {
+    public java.util.List<AccessibleTableListener> _accessibleTableListeners() {
         return accessibleTableListeners;
     }
 
-    public List<AccessibleTableCellListener> _accessibleTableCellListeners() {
+    public java.util.List<AccessibleTableCellListener> _accessibleTableCellListeners() {
         return accessibleTableCellListeners;
     }
 
-    public List<AccessibleTextExtendedListener> _accessibleTextExtendedListeners() {
+    public java.util.List<AccessibleTextExtendedListener> _accessibleTextExtendedListeners() {
         return accessibleTextExtendedListeners;
     }
 
-    public List<AccessibleValueListener> _accessibleValueListeners() {
+    public java.util.List<AccessibleValueListener> _accessibleValueListeners() {
         return accessibleValueListeners;
     }
 
-    public List<AccessibleAttributeListener> _accessibleAttributeListeners() {
+    public java.util.List<AccessibleAttributeListener> _accessibleAttributeListeners() {
         return accessibleAttributeListeners;
     }
 
@@ -1215,7 +1215,7 @@ public class DartAccessible implements IAccessible {
         return control;
     }
 
-    public List<Accessible> _children() {
+    public java.util.List<Accessible> _children() {
         return children;
     }
 

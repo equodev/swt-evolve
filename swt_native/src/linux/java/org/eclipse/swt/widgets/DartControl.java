@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -202,7 +202,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (region != 0) {
         }
         if (control.getImpl()._backgroundImage() != null) {
-            Point pt = ((SwtDisplay) display.getImpl()).mapInPixels(this.getApi(), control, 0, 0);
+            Point pt = display.map(this.getApi(), control, 0, 0);
             x += pt.x;
             y += pt.y;
             if ((getApi().style & SWT.MIRRORED) != 0) {
@@ -881,11 +881,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public Point getLocation() {
         checkWidget();
-        return getLocationInPixels();
-    }
-
-    Point getLocationInPixels() {
-        checkWidget();
         if ((parent.style & SWT.MIRRORED) != 0) {
         }
         return new Point(bounds.x, bounds.y);
@@ -916,13 +911,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         setBounds(location.x, location.y, 0, 0, true, false);
     }
 
-    void setLocationInPixels(Point location) {
-        checkWidget();
-        if (location == null)
-            error(SWT.ERROR_NULL_ARGUMENT);
-        setBounds(location.x, location.y, 0, 0, true, false);
-    }
-
     /**
      * Sets the receiver's location to the point specified by the arguments which
      * are relative to the receiver's parent (or its display if its parent is null),
@@ -943,12 +931,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setLocation(int x, int y) {
         dirty();
-        checkWidget();
-        Point loc = new Point(x, y);
-        setBounds(loc.x, loc.y, 0, 0, true, false);
-    }
-
-    void setLocationInPixels(int x, int y) {
         checkWidget();
         setBounds(x, y, 0, 0, true, false);
     }
@@ -1311,16 +1293,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public Point toDisplay(int x, int y) {
         checkWidget();
         return ControlHelper.toDisplay(this, x, y);
-    }
-
-    Point toDisplayInPixels(int x, int y) {
-        checkWidget();
-        int[] origin_x = new int[1], origin_y = new int[1];
-        if ((getApi().style & SWT.MIRRORED) != 0)
-            x = getClientWidth() - x;
-        x += origin_x[0];
-        y += origin_y[0];
-        return new Point(x, y);
     }
 
     /**
@@ -3093,10 +3065,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         // to determine DnD threshold.
         // This is to preserve backwards Cocoa/Win32 compatibility.
         Event mouseDownEvent = dragDetectionQueue.getFirst();
-        // force send MouseDown to avoid subsequent MouseMove before MouseDown.
-        mouseDownEvent.data = Boolean.valueOf(true);
+        mouseDownEvent.data = null;
         dragDetectionQueue = null;
-        sendOrPost(SWT.MouseDown, mouseDownEvent);
+        sendEvent(SWT.MouseDown, mouseDownEvent);
     }
 
     boolean sendDragEvent(int button, int stateMask, int x, int y, boolean isStateMask) {
@@ -3298,6 +3269,31 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return event.doit;
     }
 
+    /**
+     * Sets the autoscaling mode for this widget. The capability is not supported on
+     * every platform, such that calling this method may not have an effect on
+     * unsupported platforms. The return value indicates if the autoscale mode was
+     * set properly. With {@link #isAutoScalable()}, the autoscale enablement can
+     * also be evaluated at any later point in time.
+     * <p>
+     * Currently, this is only supported on Windows.
+     * </p>
+     *
+     * @param autoscalingMode the autoscaling mode to set
+     *
+     * @return {@code false} if the operation was called on an unsupported platform
+     *
+     * @since 3.133
+     */
+    public boolean setAutoscalingMode(AutoscalingMode autoscalingMode) {
+        AutoscalingMode newValue = autoscalingMode;
+        if (!java.util.Objects.equals(this.autoscalingMode, newValue)) {
+            dirty();
+        }
+        this.autoscalingMode = newValue;
+        return false;
+    }
+
     void setBackground() {
         if ((getApi().state & BACKGROUND) == 0 && backgroundImage == null) {
             if ((getApi().state & PARENT_BACKGROUND) != 0) {
@@ -3347,17 +3343,13 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        boolean set = false;
         if (color != null) {
             backgroundAlpha = color.getAlpha();
         }
-        set = true;
-        if (set) {
-            if (color == null) {
-                getApi().state &= ~BACKGROUND;
-            } else {
-                getApi().state |= BACKGROUND;
-            }
+        if (color == null) {
+            getApi().state &= ~BACKGROUND;
+        } else {
+            getApi().state |= BACKGROUND;
         }
         this.background = newValue;
         redrawChildren();
@@ -3614,9 +3606,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        boolean set = false;
         this.foreground = color;
-        set = !getForeground().equals(color);
+        boolean set = !getForeground().equals(color);
         if (set) {
             if (color == null) {
                 getApi().state &= ~FOREGROUND;
@@ -4647,6 +4638,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return getBridge().getWindowOrigin(this);
     }
 
+    AutoscalingMode autoscalingMode;
+
     Color background;
 
     Rectangle bounds = new Rectangle(0, 0, 0, 0);
@@ -4789,6 +4782,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public boolean _autoScale() {
         return autoScale;
+    }
+
+    public AutoscalingMode _autoscalingMode() {
+        return autoscalingMode;
     }
 
     public Rectangle _bounds() {

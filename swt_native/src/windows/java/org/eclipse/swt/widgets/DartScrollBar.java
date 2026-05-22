@@ -781,6 +781,15 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         this.visible = newValue;
     }
 
+    @Override
+    int getSystemMetrics(int nIndex) {
+        // Control#getSystemMetrics should be used if possible,
+        // as it considers if autoscaling of a Control is
+        // disabled which would affect the ScrollBar as well,
+        // therefore the value is fetched via the parent
+        return ((DartControl) parent.getImpl()).getSystemMetrics(nIndex);
+    }
+
     boolean enabled = true;
 
     int maximum;

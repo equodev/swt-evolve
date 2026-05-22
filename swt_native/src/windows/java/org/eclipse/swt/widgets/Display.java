@@ -1881,6 +1881,7 @@ public class Display extends Device implements Executor {
      * @exception SWTException <ul>
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_NO_HANDLES if a handle could not be obtained for timer creation</li>
      * </ul>
      *
      * @see #asyncExec

@@ -286,7 +286,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
      */
     public int getSpacing() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getSpacingInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getSpacingInPixels(), getAutoscalingZoom());
     }
 
     int getSpacingInPixels() {
@@ -447,7 +447,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
      */
     public void setSpacing(int spacing) {
         checkWidget();
-        setSpacingInPixels(DPIUtil.pointToPixel(spacing, getZoom()));
+        setSpacingInPixels(DPIUtil.pointToPixel(spacing, getAutoscalingZoom()));
     }
 
     void setSpacingInPixels(int spacing) {
@@ -511,7 +511,9 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
     void handleDPIChange(Event event, float scalingFactor) {
         super.handleDPIChange(event, scalingFactor);
         for (ExpandItem item : getItems()) {
-            item.notifyListeners(SWT.ZoomChanged, event);
+            if (item != null && !item.isDisposed()) {
+                item.notifyListeners(SWT.ZoomChanged, event);
+            }
         }
         layoutItems(0, true);
         redraw();

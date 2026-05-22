@@ -245,7 +245,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
 	 * Since computeTrim can be overridden by subclasses, we cannot
 	 * call computeTrimInPixels directly.
 	 */
-        Rectangle trim = Win32DPIUtils.pointToPixelWithSufficientlyLargeSize(computeTrim(0, 0, sizeInPoints.x, sizeInPoints.y), getZoom());
+        Rectangle trim = Win32DPIUtils.pointToPixelWithSufficientlyLargeSize(computeTrim(0, 0, sizeInPoints.x, sizeInPoints.y), getAutoscalingZoom());
         return new Point(trim.width, trim.height);
     }
 
@@ -367,7 +367,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
      */
     public void drawBackground(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
         checkWidget();
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         Rectangle rectangle = Win32DPIUtils.pointToPixel(new Rectangle(x, y, width, height), zoom);
         offsetX = DPIUtil.pointToPixel(offsetX, zoom);
         offsetY = DPIUtil.pointToPixel(offsetY, zoom);
@@ -1484,7 +1484,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         long code = callWindowProc(getApi().handle, OS.WM_GETFONT, wParam, lParam);
         if (code != 0)
             return new LRESULT(code);
-        return new LRESULT(font != null ? SWTFontProvider.getFontHandle(font, getNativeZoom()) : defaultFont());
+        return new LRESULT(font != null ? SWTFontProvider.getFontHandle(font, getApi().nativeZoom) : defaultFont());
     }
 
     @Override
@@ -1592,7 +1592,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                         if (control == null)
                             control = this.getApi();
                         data.background = control.getImpl().getBackgroundPixel();
-                        data.font = SWTFontProvider.getFont(display, OS.SendMessage(getApi().handle, OS.WM_GETFONT, 0, 0), getNativeZoom());
+                        data.font = SWTFontProvider.getFont(display, OS.SendMessage(getApi().handle, OS.WM_GETFONT, 0, 0), getApi().nativeZoom);
                         data.uiState = (int) OS.SendMessage(getApi().handle, OS.WM_QUERYUISTATE, 0, 0);
                         if ((getApi().style & SWT.NO_BACKGROUND) != 0) {
                             /* This code is intentionally commented because it may be slow to copy bits from the screen */
@@ -1605,7 +1605,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                         GC gc = createNewGC(phdc[0], data);
                         Event event = new Event();
                         event.gc = gc;
-                        event.setBounds(Win32DPIUtils.pixelToPoint(new Rectangle(ps.left, ps.top, width, height), getZoom()));
+                        event.setBounds(Win32DPIUtils.pixelToPoint(new Rectangle.OfFloat(ps.left, ps.top, width, height), getAutoscalingZoom()));
                         sendEvent(SWT.Paint, event);
                         if (data.focusDrawn && !isDisposed())
                             updateUIState();
@@ -1674,7 +1674,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                     Event event = new Event();
                     event.gc = gc;
                     RECT rect = null;
-                    int zoom = getZoom();
+                    int zoom = getAutoscalingZoom();
                     if ((getApi().style & SWT.NO_MERGE_PAINTS) != 0 && OS.GetRgnBox(sysRgn, rect = new RECT()) == OS.COMPLEXREGION) {
                         int nBytes = OS.GetRegionData(sysRgn, 0, null);
                         int[] lpRgnData = new int[nBytes / 4];
@@ -1708,7 +1708,6 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                             if (gcData.focusDrawn && !isDisposed())
                                 updateUIState();
                         }
-                        gc.dispose();
                         if (!isDisposed()) {
                             paintGC.drawImage(image, DPIUtil.pixelToPoint(ps.left, zoom), DPIUtil.pixelToPoint(ps.top, zoom));
                         }
@@ -1775,7 +1774,7 @@ public class SwtComposite extends SwtScrollable implements IComposite {
                 GC gc = createNewGC(wParam, data);
                 Event event = new Event();
                 event.gc = gc;
-                event.setBounds(Win32DPIUtils.pixelToPoint(new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top), getZoom()));
+                event.setBounds(Win32DPIUtils.pixelToPoint(new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top), getAutoscalingZoom()));
                 sendEvent(SWT.Paint, event);
                 event.gc = null;
                 gc.dispose();

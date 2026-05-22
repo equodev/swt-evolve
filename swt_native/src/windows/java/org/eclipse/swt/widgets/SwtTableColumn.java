@@ -314,7 +314,7 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
      */
     public int getWidth() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getWidthInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getWidthInPixels(), getAutoscalingZoom());
     }
 
     int getWidthInPixels() {
@@ -404,13 +404,13 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
         long hwnd = parent.handle;
         int oldWidth = (int) OS.SendMessage(hwnd, OS.LVM_GETCOLUMNWIDTH, index, 0);
         TCHAR buffer = new TCHAR(((SwtControl) parent.getImpl()).getCodePage(), text, true);
-        int headerWidth = (int) (OS.SendMessage(hwnd, OS.LVM_GETSTRINGWIDTH, 0, buffer) + Win32DPIUtils.pointToPixel(SwtTable.HEADER_MARGIN, getZoom()));
+        int headerWidth = (int) (OS.SendMessage(hwnd, OS.LVM_GETSTRINGWIDTH, 0, buffer) + Win32DPIUtils.pointToPixel(SwtTable.HEADER_MARGIN, getAutoscalingZoom()));
         if (OS.IsAppThemed())
-            headerWidth += Win32DPIUtils.pointToPixel(SwtTable.HEADER_EXTRA, getZoom());
+            headerWidth += Win32DPIUtils.pointToPixel(SwtTable.HEADER_EXTRA, getAutoscalingZoom());
         boolean hasHeaderImage = false;
         if (image != null) {
             hasHeaderImage = true;
-            Rectangle bounds = Win32DPIUtils.pointToPixel(image.getBounds(), getZoom());
+            Rectangle bounds = Win32DPIUtils.pointToPixel(image.getBounds(), getAutoscalingZoom());
             headerWidth += bounds.width;
             long hwndHeader = OS.SendMessage(hwnd, OS.LVM_GETHEADER, 0, 0);
             int margin = (int) OS.SendMessage(hwndHeader, OS.HDM_GETBITMAPMARGIN, 0, 0);
@@ -440,7 +440,7 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
                     if (isDisposed() || parent.isDisposed())
                         break;
                     Rectangle bounds = event.getBounds();
-                    columnWidth = Math.max(columnWidth, DPIUtil.pointToPixel(bounds.x + bounds.width, getZoom()) - headerRect.left);
+                    columnWidth = Math.max(columnWidth, DPIUtil.pointToPixel(bounds.x + bounds.width, getAutoscalingZoom()) - headerRect.left);
                 }
             }
             if (newFont != 0)
@@ -873,7 +873,7 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
      */
     public void setWidth(int width) {
         checkWidget();
-        setWidthInPixels(DPIUtil.pointToPixel(width, getZoom()));
+        setWidthInPixels(DPIUtil.pointToPixel(width, getAutoscalingZoom()));
     }
 
     void setWidthInPixels(int width) {

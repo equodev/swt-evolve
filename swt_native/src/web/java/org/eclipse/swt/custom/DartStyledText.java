@@ -11510,9 +11510,11 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 caretSet.add(caret);
             }
         }
-        caretSet.stream().filter(Objects::nonNull).forEach(caretToRefresh -> {
-            caretToRefresh.notifyListeners(SWT.ZoomChanged, event);
-        });
+        for (Caret caretToRefresh : caretSet) {
+            if (caretToRefresh != null && !caretToRefresh.isDisposed()) {
+                caretToRefresh.notifyListeners(SWT.ZoomChanged, event);
+            }
+        }
     }
 
     @Override

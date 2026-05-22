@@ -1040,7 +1040,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         Font oldFont = this.font;
-        Font newFont = (font == null ? font : DartFont.win32_new(font, getNativeZoom()));
+        Font newFont = (font == null ? font : DartFont.win32_new(font, getApi().nativeZoom));
         if (oldFont == newFont)
             return;
         this.font = newFont;
@@ -1097,7 +1097,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         Font oldFont = cellFont[index];
         if (oldFont == font)
             return;
-        cellFont[index] = font == null ? font : DartFont.win32_new(font, getNativeZoom());
+        cellFont[index] = font == null ? font : DartFont.win32_new(font, getApi().nativeZoom);
         if (oldFont != null && oldFont.equals(font))
             return;
         if (font != null)
@@ -1478,6 +1478,11 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     @Override
     void handleDPIChange(Event event, float scalingFactor) {
         super.handleDPIChange(event, scalingFactor);
+        if (images != null) {
+            for (int i = 1; i < images.length; i++) {
+                setImage(i, images[i]);
+            }
+        }
         if (font != null) {
             setFont(font);
         }
@@ -1485,11 +1490,13 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         if (cellFonts != null) {
             for (int index = 0; index < cellFonts.length; index++) {
                 Font cellFont = cellFonts[index];
-                cellFonts[index] = cellFont == null ? null : DartFont.win32_new(cellFont, getNativeZoom());
+                cellFonts[index] = cellFont == null ? null : DartFont.win32_new(cellFont, getApi().nativeZoom);
             }
         }
         for (TreeItem item : getItems()) {
-            item.notifyListeners(SWT.ZoomChanged, event);
+            if (item != null && !item.isDisposed()) {
+                item.notifyListeners(SWT.ZoomChanged, event);
+            }
         }
     }
 

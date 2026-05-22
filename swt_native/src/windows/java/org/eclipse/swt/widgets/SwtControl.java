@@ -16,6 +16,7 @@
  */
 package org.eclipse.swt.widgets;
 
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.stream.*;
@@ -74,12 +75,24 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 
     int drawCount, foreground, background, backgroundAlpha = 255;
 
-    boolean autoScaleDisabled = false;
+    AutoscalingMode autoscalingMode = AutoscalingMode.ENABLED;
 
+    /**
+     * @deprecated use {@link Shell#getZoom(AutoscalingMode)} instead to obtain the zoom of the shell.
+     */
+    @Deprecated(since = "2026-03", forRemoval = true)
     private static final String DATA_SHELL_ZOOM = "SHELL_ZOOM";
 
+    /**
+     * @deprecated use {@link Control#setAutoscalingMode(AutoscalingMode)} instead to set the autoscaling mode directly.
+     */
+    @Deprecated(since = "2026-03", forRemoval = true)
     private static final String DATA_AUTOSCALE_DISABLED = "AUTOSCALE_DISABLED";
 
+    /**
+     * @deprecated use {@link Control#setAutoscalingMode(AutoscalingMode)} instead to set the autoscaling mode directly.
+     */
+    @Deprecated(since = "2026-03", forRemoval = true)
     private static final String PROPOGATE_AUTOSCALE_DISABLED = "PROPOGATE_AUTOSCALE_DISABLED";
 
     /**
@@ -122,11 +135,11 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     public SwtControl(Composite parent, int style, Control api) {
         super(parent, style, api);
         this.parent = parent;
-        Boolean parentPropagateAutoscaleDisabled = (Boolean) parent.getData(PROPOGATE_AUTOSCALE_DISABLED);
-        if (parentPropagateAutoscaleDisabled == null || parentPropagateAutoscaleDisabled) {
-            this.autoScaleDisabled = parent.getImpl()._autoScaleDisabled();
+        AutoscalingMode parentAutoscaleMode = parent.getImpl()._autoscalingMode();
+        if (parentAutoscaleMode == AutoscalingMode.DISABLED_INHERITED) {
+            this.autoscalingMode = parent.getImpl()._autoscalingMode();
         }
-        if (!autoScaleDisabled) {
+        if (!isAutoscalingDisabled()) {
             this.getApi().nativeZoom = getShellZoom();
         }
         notifyCreationTracker();
@@ -740,7 +753,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     long defaultFont() {
-        return SWTFontProvider.getSystemFontHandle(display, getNativeZoom());
+        return SWTFontProvider.getSystemFontHandle(display, getApi().nativeZoom);
     }
 
     int defaultForeground() {
@@ -801,7 +814,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (event == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         Point loc = event.getLocation();
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         return dragDetect(event.button, event.count, event.stateMask, DPIUtil.pointToPixel(loc.x, zoom), DPIUtil.pointToPixel(loc.y, zoom));
     }
 
@@ -845,7 +858,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         checkWidget();
         if (event == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         // To Pixels
         return dragDetect(event.button, event.count, event.stateMask, DPIUtil.pointToPixel(event.x, zoom), DPIUtil.pointToPixel(event.y, zoom));
     }
@@ -983,7 +996,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             Image image = control.getImpl()._backgroundImage();
             if (image != null) {
                 if (control.getImpl() instanceof SwtControl) {
-                    ((SwtControl) control.getImpl()).drawImageBackground(hDC, getApi().handle, SwtImage.win32_getHandle(image, getZoom()), rect, tx, ty);
+                    ((SwtControl) control.getImpl()).drawImageBackground(hDC, getApi().handle, SwtImage.win32_getHandle(image, getAutoscalingZoom()), rect, tx, ty);
                 }
             }
         }
@@ -1214,7 +1227,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      */
     public int getBorderWidth() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getBorderWidthInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getBorderWidthInPixels(), getAutoscalingZoom());
     }
 
     int getBorderWidthInPixels() {
@@ -1324,14 +1337,28 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     @Override
     public void setData(String key, Object value) {
         super.setData(key, value);
-        if (DATA_AUTOSCALE_DISABLED.equals(key)) {
-            autoScaleDisabled = Boolean.parseBoolean(value.toString());
-            if (autoScaleDisabled) {
-                this.getApi().nativeZoom = 100;
-            } else {
-                this.getApi().nativeZoom = getShellZoom();
-            }
+        if (DATA_AUTOSCALE_DISABLED.equals(key) || PROPOGATE_AUTOSCALE_DISABLED.equals(key)) {
+            updateAutoScalingModeFromData();
         }
+    }
+
+    /**
+     * @deprecated use {@link Control#setAutoscalingMode(AutoscalingMode)} instead.
+     * These hidden data objects will be removed in a future release and one has to
+     * migrate to the new API for that purpose.
+     */
+    @Deprecated(since = "2026-03", forRemoval = true)
+    private void updateAutoScalingModeFromData() {
+        Object propagateAutoscaleDisabled = getData(PROPOGATE_AUTOSCALE_DISABLED);
+        boolean propagateAutoscaling = propagateAutoscaleDisabled == null || Boolean.parseBoolean(propagateAutoscaleDisabled.toString());
+        Object autoscaleDisabled = getData(DATA_AUTOSCALE_DISABLED);
+        boolean isAutoscaleDisabledOnControl = autoscaleDisabled != null && Boolean.parseBoolean(autoscaleDisabled.toString());
+        boolean isAutoscaleDisabledInheritedFromParent = parent != null && parent.getImpl()._autoscalingMode() == AutoscalingMode.DISABLED_INHERITED;
+        AutoscalingMode newAutoscalingMode = AutoscalingMode.ENABLED;
+        if (isAutoscaleDisabledOnControl || isAutoscaleDisabledInheritedFromParent) {
+            newAutoscalingMode = propagateAutoscaling ? AutoscalingMode.DISABLED_INHERITED : AutoscalingMode.DISABLED;
+        }
+        setAutoscalingMode(newAutoscalingMode);
     }
 
     /**
@@ -1393,7 +1420,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         long hFont = OS.SendMessage(getApi().handle, OS.WM_GETFONT, 0, 0);
         if (hFont == 0)
             hFont = defaultFont();
-        return SWTFontProvider.getFont(display, hFont, getNativeZoom());
+        return SWTFontProvider.getFont(display, hFont, getApi().nativeZoom);
     }
 
     /**
@@ -1839,7 +1866,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 }
             }
             data.device = display;
-            data.nativeZoom = getNativeZoom();
+            data.nativeZoom = getApi().nativeZoom;
             int foreground = getForegroundPixel();
             if (foreground != OS.GetTextColor(hDC))
                 data.foreground = foreground;
@@ -2090,7 +2117,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (hwnd != getApi().handle) {
             POINT point = new POINT();
             Point loc = event.getLocation();
-            int zoom = getZoom();
+            int zoom = getAutoscalingZoom();
             point.x = DPIUtil.pointToPixel(loc.x, zoom);
             point.y = DPIUtil.pointToPixel(loc.y, zoom);
             OS.MapWindowPoints(hwnd, getApi().handle, point, 1);
@@ -2309,6 +2336,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         long hdc = gc.handle;
         int state = 0;
         long gdipGraphics = gc.getGCData().gdipGraphics;
+        float scaleFactor = 1f * gc.getGCData().nativeZoom / getApi().nativeZoom;
         if (gdipGraphics != 0) {
             long clipRgn = 0;
             Gdip.Graphics_SetPixelOffsetMode(gdipGraphics, Gdip.PixelOffsetModeNone);
@@ -2326,6 +2354,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             if (matrix == 0)
                 error(SWT.ERROR_NO_HANDLES);
             Gdip.Graphics_GetTransform(gdipGraphics, matrix);
+            Gdip.Matrix_Scale(matrix, scaleFactor, scaleFactor, Gdip.MatrixOrderPrepend);
             if (!Gdip.Matrix_IsIdentity(matrix)) {
                 lpXform = new float[6];
                 Gdip.Matrix_GetElements(matrix, lpXform);
@@ -2335,12 +2364,16 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             state = OS.SaveDC(hdc);
             if (lpXform != null) {
                 OS.SetGraphicsMode(hdc, OS.GM_ADVANCED);
-                OS.SetWorldTransform(hdc, lpXform);
+                OS.ModifyWorldTransform(hdc, lpXform, OS.MWT_LEFTMULTIPLY);
             }
             if (clipRgn != 0) {
                 OS.SelectClipRgn(hdc, clipRgn);
                 OS.DeleteObject(clipRgn);
             }
+        } else {
+            state = OS.SaveDC(hdc);
+            float[] translateMatrix = new float[] { scaleFactor, 0, 0, scaleFactor, 0, 0 };
+            OS.ModifyWorldTransform(hdc, translateMatrix, OS.MWT_LEFTMULTIPLY);
         }
         int flags = OS.RDW_UPDATENOW | OS.RDW_ALLCHILDREN;
         OS.RedrawWindow(topHandle, null, 0, flags);
@@ -2351,8 +2384,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 	 */
         printWindowFlags |= OS.PW_RENDERFULLCONTENT;
         printWidget(topHandle, hdc, gc, printWindowFlags);
+        OS.RestoreDC(hdc, state);
         if (gdipGraphics != 0) {
-            OS.RestoreDC(hdc, state);
             Gdip.Graphics_ReleaseHDC(gdipGraphics, hdc);
         }
         return true;
@@ -2564,7 +2597,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      */
     public void redraw(int x, int y, int width, int height, boolean all) {
         checkWidget();
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         if (width <= 0 || height <= 0)
             return;
         Rectangle rectangle = Win32DPIUtils.pointToPixel(new Rectangle(x, y, width, height), zoom);
@@ -3097,7 +3130,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         int type = 0;
         Point globalPt = new Point(gi.x, gi.y);
         Point point = toControlInPixels(globalPt.x, globalPt.y);
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         event.setLocation(DPIUtil.pixelToPoint(point.x, zoom), DPIUtil.pixelToPoint(point.y, zoom));
         switch(gi.dwID) {
             case OS.GID_ZOOM:
@@ -3180,7 +3213,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         POINT pt = new POINT();
         OS.GetCursorPos(pt);
         OS.ScreenToClient(getApi().handle, pt);
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         event.setLocation(DPIUtil.pixelToPoint(pt.x, zoom), DPIUtil.pixelToPoint(pt.y, zoom));
         Touch[] touches = new Touch[touchInput.length];
         Monitor monitor = getMonitor();
@@ -3211,7 +3244,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (control.getImpl()._backgroundImage() != null) {
             Shell shell = getShell();
             ((SwtShell) shell.getImpl()).releaseBrushes();
-            setBackgroundImage(SwtImage.win32_getHandle(control.getImpl()._backgroundImage(), getZoom()));
+            setBackgroundImage(SwtImage.win32_getHandle(control.getImpl()._backgroundImage(), getAutoscalingZoom()));
         } else {
             setBackgroundPixel(((SwtControl) control.getImpl()).background == -1 ? ((SwtControl) control.getImpl()).defaultBackground() : ((SwtControl) control.getImpl()).background);
         }
@@ -3426,7 +3459,78 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         int zoom = computeBoundsZoom();
-        setBoundsInPixels(Win32DPIUtils.pointToPixel(rect, zoom));
+        Rectangle boundsInPixels = Win32DPIUtils.pointToPixel(rect, zoom);
+        fitInParentBounds(boundsInPixels, zoom);
+        setBoundsInPixels(boundsInPixels);
+    }
+
+    /**
+     * Cope with limited invertibility of pixel/point conversions.
+     * <p>
+     * Example: 125% monitor, layout fills composite with single child
+     * <ul>
+     * <li>Composite with client area of 527 pixels
+     * <li>getClientArea() returns 527 / 1,25 = 421,6 points
+     * <li>So layout sets rounded 422 points to child
+     * <li>This conforms to 422 * 1,25 = 527,5 pixels, which is rounded up to 528,
+     * i.e., one more than parent size
+     * </ul>
+     * Alternatives:
+     * <ul>
+     * <li>rounding down the client area instead could lead to areas not redrawn, as
+     * rounded down 421 points result in 526 pixels, one less than the actual size
+     * of the composite
+     * <li>rounding down the passed bounds leads to controls becoming unnecessarily
+     * smaller than their calculated size
+     * </ul>
+     * Thus, reduce the control size in case it would not fit anyway
+     */
+    private void fitInParentBounds(Rectangle boundsInPixels, int zoom) {
+        if (parent == null) {
+            return;
+        }
+        Rectangle parentBoundsInPixels = ((SwtControl) parent.getImpl()).getBoundsInPixels();
+        // Check if child does not fit into parent, but that it would fit when taking an
+        // off-by-one for the width/height in points into account, as such an off-by-one
+        // can happen when doing bounds calculations in points due to rounding (e.g., in
+        // layouts)
+        boolean childNotFittingHorizontally = parentBoundsInPixels.width < boundsInPixels.x + boundsInPixels.width;
+        boolean childFittingHorizontallyWithOffByOne = parentBoundsInPixels.width >= boundsInPixels.x + boundsInPixels.width - Win32DPIUtils.pointToPixel(1.0f, zoom);
+        if (childNotFittingHorizontally && childFittingHorizontallyWithOffByOne) {
+            boundsInPixels.width = parentBoundsInPixels.width - boundsInPixels.x;
+        }
+        boolean childNotFittingVertically = parentBoundsInPixels.height < boundsInPixels.y + boundsInPixels.height;
+        boolean childFittingVerticallyWithOffByOne = parentBoundsInPixels.height >= boundsInPixels.y + boundsInPixels.height - Win32DPIUtils.pointToPixel(1.0f, zoom);
+        if (childNotFittingVertically && childFittingVerticallyWithOffByOne) {
+            boundsInPixels.height = parentBoundsInPixels.height - boundsInPixels.y;
+        }
+    }
+
+    /**
+     * Sets the autoscaling mode for this widget. The capability is not supported on
+     * every platform, such that calling this method may not have an effect on
+     * unsupported platforms. The return value indicates if the autoscale mode was
+     * set properly. With {@link #isAutoScalable()}, the autoscale enablement can
+     * also be evaluated at any later point in time.
+     * <p>
+     * Currently, this is only supported on Windows.
+     * </p>
+     *
+     * @param autoscalingMode the autoscaling mode to set
+     *
+     * @return {@code false} if the operation was called on an unsupported platform
+     *
+     * @since 3.133
+     */
+    public boolean setAutoscalingMode(AutoscalingMode autoscalingMode) {
+        this.autoscalingMode = autoscalingMode;
+        int newZoom = isAutoscalingDisabled() ? 100 : getShellZoom();
+        if (getApi().nativeZoom != newZoom) {
+            getApi().nativeZoom = newZoom;
+            Event zoomChangedEvent = createZoomChangedEvent(newZoom, false);
+            notifyListeners(SWT.ZoomChanged, zoomChangedEvent);
+        }
+        return true;
     }
 
     void setBoundsInPixels(Rectangle rect) {
@@ -3505,7 +3609,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     void setDefaultFont() {
-        long hFont = SWTFontProvider.getSystemFontHandle(display, getNativeZoom());
+        long hFont = SWTFontProvider.getSystemFontHandle(display, getApi().nativeZoom);
         OS.SendMessage(getApi().handle, OS.WM_SETFONT, hFont, 0);
     }
 
@@ -3610,7 +3714,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (newFont != null) {
             if (newFont.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
-            newFont = SwtFont.win32_new(newFont, getNativeZoom());
+            newFont = SwtFont.win32_new(newFont, getApi().nativeZoom);
         }
         long hFont = 0;
         if (newFont != null) {
@@ -3923,7 +4027,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         long hRegion = 0;
         if (region != null) {
             hRegion = OS.CreateRectRgn(0, 0, 0, 0);
-            OS.CombineRgn(hRegion, SwtRegion.win32_getHandle(region, getZoom()), hRegion, OS.RGN_OR);
+            OS.CombineRgn(hRegion, SwtRegion.win32_getHandle(region, getAutoscalingZoom()), hRegion, OS.RGN_OR);
         }
         OS.SetWindowRgn(getApi().handle, hRegion, true);
         this.region = region;
@@ -3953,9 +4057,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     public void setSize(int width, int height) {
         checkWidget();
         int zoom = computeBoundsZoom();
-        width = DPIUtil.pointToPixel(width, zoom);
-        height = DPIUtil.pointToPixel(height, zoom);
-        setSizeInPixels(width, height);
+        setSize(new Point(width, height), zoom);
     }
 
     void setSizeInPixels(int width, int height) {
@@ -3990,8 +4092,18 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        size = Win32DPIUtils.pointToPixelAsSize(size, computeBoundsZoom());
-        setSizeInPixels(size.x, size.y);
+        int zoom = computeBoundsZoom();
+        setSize(size, zoom);
+    }
+
+    private void setSize(Point size, int zoom) {
+        // Use the exact (non-rounded) bounds to apply proper rounding when converting the size from point to pixel
+        Rectangle bounds = Win32DPIUtils.pixelToPoint(Rectangle.OfFloat.from(getBoundsInPixels()), zoom);
+        bounds.width = size.x;
+        bounds.height = size.y;
+        Rectangle boundsInPixels = Win32DPIUtils.pointToPixel(bounds, zoom);
+        fitInParentBounds(boundsInPixels, zoom);
+        setSizeInPixels(boundsInPixels.width, boundsInPixels.height);
     }
 
     @Override
@@ -4212,7 +4324,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         checkWidget();
         Point displayPointInPixels = ((SwtDisplay) getDisplay().getImpl()).translateToDisplayCoordinates(new Point(x, y));
         final Point controlPointInPixels = toControlInPixels(displayPointInPixels.x, displayPointInPixels.y);
-        return Win32DPIUtils.pixelToPointAsLocation(controlPointInPixels, getZoom());
+        return Win32DPIUtils.pixelToPointAsLocation(controlPointInPixels, getAutoscalingZoom());
     }
 
     Point toControlInPixels(int x, int y) {
@@ -4272,7 +4384,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      */
     public Point toDisplay(int x, int y) {
         checkWidget();
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         Point displayPointInPixels = toDisplayInPixels(DPIUtil.pointToPixel(x, zoom), DPIUtil.pointToPixel(y, zoom));
         return ((SwtDisplay) getDisplay().getImpl()).translateFromDisplayCoordinates(displayPointInPixels);
     }
@@ -4869,7 +4981,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     void updateBackgroundImage() {
         Control control = findBackgroundControl();
         Image image = control != null ? control.getImpl()._backgroundImage() : backgroundImage;
-        setBackgroundImage(image != null ? SwtImage.win32_getHandle(image, getZoom()) : 0);
+        setBackgroundImage(image != null ? SwtImage.win32_getHandle(image, getAutoscalingZoom()) : 0);
     }
 
     public void updateBackgroundMode() {
@@ -5018,19 +5130,19 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 
     @Override
     GC createNewGC(long hDC, GCData data) {
-        data.nativeZoom = getNativeZoom();
-        if (autoScaleDisabled && data.font != null) {
+        data.nativeZoom = getApi().nativeZoom;
+        if (isAutoscalingDisabled() && data.font != null) {
             data.font = SWTFontProvider.getFont(display, data.font.getFontData()[0], 100);
         }
         return SwtGC.win32_new(hDC, data);
     }
 
     @Override
-    public int getZoom() {
-        if (autoScaleDisabled) {
+    int getAutoscalingZoom() {
+        if (isAutoscalingDisabled()) {
             return 100;
         }
-        return super.getZoom();
+        return super.getAutoscalingZoom();
     }
 
     int getShellZoom() {
@@ -5040,18 +5152,18 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return getApi().nativeZoom;
     }
 
-    private int computeGetBoundsZoom() {
-        if (parent != null && !autoScaleDisabled) {
-            return parent.getImpl().getZoom();
+    int computeGetBoundsZoom() {
+        if (parent != null && !isAutoscalingDisabled()) {
+            return ((SwtControl) parent.getImpl()).getAutoscalingZoom();
         }
-        return getZoom();
+        return getAutoscalingZoom();
     }
 
     int computeBoundsZoom() {
         if (parent != null) {
-            return parent.getImpl().getZoom();
+            return ((SwtControl) parent.getImpl()).getAutoscalingZoom();
         }
-        return getZoom();
+        return getAutoscalingZoom();
     }
 
     abstract TCHAR windowClass();
@@ -6197,7 +6309,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 event.yDirection = 1;
                 break;
         }
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         event.setLocation(DPIUtil.pixelToPoint(fPoint.x, zoom), DPIUtil.pixelToPoint(fPoint.y, zoom));
         event.type = SWT.Gesture;
         event.detail = SWT.GESTURE_SWIPE;
@@ -6343,7 +6455,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             RECT rect = new RECT();
             OS.GetClientRect(getApi().handle, rect);
             long hwnd = control.handle;
-            long hBitmap = SwtImage.win32_getHandle(control.getImpl()._backgroundImage(), getZoom());
+            long hBitmap = SwtImage.win32_getHandle(control.getImpl()._backgroundImage(), getAutoscalingZoom());
             OS.MapWindowPoints(getApi().handle, hwnd, rect, 2);
             POINT lpPoint = new POINT();
             OS.GetWindowOrgEx(wParam, lpPoint);
@@ -6414,7 +6526,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 asyncExec &= (comp.getImpl()._layout() != null);
             }
             if (asyncExec) {
-                control.getDisplay().asyncExec(operation::run);
+                DPIChangeProcessingCallback.schedule(control, operation);
             } else {
                 operation.run();
             }
@@ -6429,6 +6541,50 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 
         private boolean decrement() {
             return taskCount.decrementAndGet() <= 0;
+        }
+    }
+
+    private static class DPIChangeProcessingCallback {
+
+        private final Runnable operation;
+
+        private final long address;
+
+        private DPIChangeProcessingCallback(Control control, Runnable dpiChangeProcessing) {
+            // Has to have TIMERPROC signature, see https://learn.microsoft.com/en-us/windows/win32/api/winuser/nc-winuser-timerproc
+            Callback callback = new Callback(this, "run", void.class, new Type[] { int.class, int.class, int.class, int.class });
+            this.operation = () -> {
+                if (!control.isDisposed()) {
+                    dpiChangeProcessing.run();
+                }
+                callback.dispose();
+            };
+            this.address = callback.getAddress();
+        }
+
+        // Executed as callback method referenced by signature description
+        @SuppressWarnings("unused")
+        public void run(int hwnd, int msg, int idEvent, int dwTime) {
+            OS.KillTimer(hwnd, idEvent);
+            operation.run();
+        }
+
+        private long getAddress() {
+            return address;
+        }
+
+        static void schedule(Control control, Runnable runnable) {
+            try {
+                DPIChangeProcessingCallback callback = new DPIChangeProcessingCallback(control, runnable);
+                OS.SetTimer(0, 0, 0, callback.getAddress());
+            } catch (SWTError error) {
+                // In case of too many callbacks, fall back to running the operation synchronously
+                if (error.code == SWT.ERROR_NO_MORE_CALLBACKS) {
+                    runnable.run();
+                } else {
+                    throw error;
+                }
+            }
         }
     }
 
@@ -6454,13 +6610,17 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         }
     }
 
+    private boolean isAutoscalingDisabled() {
+        return autoscalingMode != AutoscalingMode.ENABLED;
+    }
+
     @Override
     void handleDPIChange(Event event, float scalingFactor) {
         super.handleDPIChange(event, scalingFactor);
-        if (this.autoScaleDisabled) {
+        if (isAutoscalingDisabled()) {
             this.getApi().nativeZoom = 100;
         }
-        resizeFont(this.getApi(), getNativeZoom());
+        resizeFont(this.getApi(), getApi().nativeZoom);
         Image image = backgroundImage;
         if (image != null) {
             if (image.isDisposed()) {
@@ -6472,6 +6632,19 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (getRegion() != null) {
             setRegion(getRegion());
         }
+    }
+
+    @Override
+    int getSystemMetrics(int nIndex) {
+        Shell shell = getShell();
+        int zoom = shell != null ? shell.getZoom() : getApi().nativeZoom;
+        return OS.GetSystemMetricsForDpi(nIndex, DPIUtil.mapZoomToDPI(zoom));
+    }
+
+    boolean adjustWindowRectEx(RECT lpRect, int dwStyle, boolean bMenu, int dwExStyle) {
+        Shell shell = getShell();
+        int zoom = shell != null ? shell.getZoom() : getApi().nativeZoom;
+        return OS.AdjustWindowRectExForDpi(lpRect, dwStyle, bMenu, dwExStyle, DPIUtil.mapZoomToDPI(zoom));
     }
 
     private static void resizeFont(Control control, int newZoom) {
@@ -6532,8 +6705,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return drawCount;
     }
 
-    public boolean _autoScaleDisabled() {
-        return autoScaleDisabled;
+    public AutoscalingMode _autoscalingMode() {
+        return autoscalingMode;
     }
 
     public Control getApi() {

@@ -731,4 +731,15 @@ public class Cairo extends Platform {
      * @param size cast=(size_t)
      */
     public static final native void memmove(double[] dest, long src, long size);
+
+    /**
+     * Surface type constant for SVG
+     */
+    public static final int CAIRO_SURFACE_TYPE_SVG = 4;
+
+    /**
+     * @method flags=dynamic
+     * @param filename cast=(const char *)
+     */
+    public static final native long cairo_pdf_surface_create(byte[] filename, double width_in_points, double height_in_points);
 }

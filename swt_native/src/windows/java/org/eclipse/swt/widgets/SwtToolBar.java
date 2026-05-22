@@ -608,7 +608,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        return getItemInPixels(Win32DPIUtils.pointToPixelAsLocation(point, getZoom()));
+        return getItemInPixels(Win32DPIUtils.pointToPixelAsLocation(point, getAutoscalingZoom()));
     }
 
     ToolItem getItemInPixels(Point point) {
@@ -1093,7 +1093,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         long hImageList = 0;
         if ((disabledImageList = imageList) != null) {
             hImageList = OS.SendMessage(getApi().handle, OS.TB_GETDISABLEDIMAGELIST, 0, 0);
-            long newImageList = disabledImageList.getHandle(getZoom());
+            long newImageList = disabledImageList.getHandle(getAutoscalingZoom());
             if (hImageList == newImageList)
                 return;
             hImageList = newImageList;
@@ -1134,7 +1134,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         long hImageList = 0;
         if ((hotImageList = imageList) != null) {
             hImageList = OS.SendMessage(getApi().handle, OS.TB_GETHOTIMAGELIST, 0, 0);
-            long newImageList = hotImageList.getHandle(getZoom());
+            long newImageList = hotImageList.getHandle(getAutoscalingZoom());
             if (hImageList == newImageList)
                 return;
             hImageList = newImageList;
@@ -1148,7 +1148,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         long hImageList = 0;
         if ((this.imageList = imageList) != null) {
             hImageList = OS.SendMessage(getApi().handle, OS.TB_GETIMAGELIST, 0, 0);
-            long newImageList = imageList.getHandle(getZoom());
+            long newImageList = imageList.getHandle(getAutoscalingZoom());
             if (hImageList == newImageList)
                 return;
             hImageList = newImageList;
@@ -1331,9 +1331,9 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
         super.updateOrientation();
         if (imageList != null) {
             Point sizeInPoints = imageList.getImageSize();
-            ImageList newImageList = ((SwtDisplay) display.getImpl()).getImageListToolBar(getApi().style & SWT.RIGHT_TO_LEFT, sizeInPoints.x, sizeInPoints.y, getZoom());
-            ImageList newHotImageList = ((SwtDisplay) display.getImpl()).getImageListToolBarHot(getApi().style & SWT.RIGHT_TO_LEFT, sizeInPoints.x, sizeInPoints.y, getZoom());
-            ImageList newDisabledImageList = ((SwtDisplay) display.getImpl()).getImageListToolBarDisabled(getApi().style & SWT.RIGHT_TO_LEFT, sizeInPoints.x, sizeInPoints.y, getZoom());
+            ImageList newImageList = ((SwtDisplay) display.getImpl()).getImageListToolBar(getApi().style & SWT.RIGHT_TO_LEFT, sizeInPoints.x, sizeInPoints.y, getAutoscalingZoom());
+            ImageList newHotImageList = ((SwtDisplay) display.getImpl()).getImageListToolBarHot(getApi().style & SWT.RIGHT_TO_LEFT, sizeInPoints.x, sizeInPoints.y, getAutoscalingZoom());
+            ImageList newDisabledImageList = ((SwtDisplay) display.getImpl()).getImageListToolBarDisabled(getApi().style & SWT.RIGHT_TO_LEFT, sizeInPoints.x, sizeInPoints.y, getAutoscalingZoom());
             TBBUTTONINFO info = new TBBUTTONINFO();
             info.cbSize = TBBUTTONINFO.sizeof;
             info.dwMask = OS.TBIF_IMAGE;
@@ -1361,9 +1361,9 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
             ((SwtDisplay) display.getImpl()).releaseToolImageList(imageList);
             ((SwtDisplay) display.getImpl()).releaseToolHotImageList(hotImageList);
             ((SwtDisplay) display.getImpl()).releaseToolDisabledImageList(disabledImageList);
-            OS.SendMessage(getApi().handle, OS.TB_SETIMAGELIST, 0, newImageList.getHandle(getZoom()));
-            OS.SendMessage(getApi().handle, OS.TB_SETHOTIMAGELIST, 0, newHotImageList.getHandle(getZoom()));
-            OS.SendMessage(getApi().handle, OS.TB_SETDISABLEDIMAGELIST, 0, newDisabledImageList.getHandle(getZoom()));
+            OS.SendMessage(getApi().handle, OS.TB_SETIMAGELIST, 0, newImageList.getHandle(getAutoscalingZoom()));
+            OS.SendMessage(getApi().handle, OS.TB_SETHOTIMAGELIST, 0, newHotImageList.getHandle(getAutoscalingZoom()));
+            OS.SendMessage(getApi().handle, OS.TB_SETDISABLEDIMAGELIST, 0, newDisabledImageList.getHandle(getAutoscalingZoom()));
             imageList = newImageList;
             hotImageList = newHotImageList;
             disabledImageList = newDisabledImageList;
@@ -1738,7 +1738,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
                     int index = (int) OS.SendMessage(getApi().handle, OS.TB_COMMANDTOINDEX, lpnmtb.iItem, 0);
                     RECT rect = new RECT();
                     OS.SendMessage(getApi().handle, OS.TB_GETITEMRECT, index, rect);
-                    int zoom = getZoom();
+                    int zoom = getAutoscalingZoom();
                     event.setLocation(DPIUtil.pixelToPoint(rect.left, zoom), DPIUtil.pixelToPoint(rect.bottom, zoom));
                     ((SwtWidget) child.getImpl()).sendSelectionEvent(SWT.Selection, event, false);
                 }

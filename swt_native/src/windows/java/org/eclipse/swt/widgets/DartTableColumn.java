@@ -315,7 +315,7 @@ public class DartTableColumn extends DartItem implements ITableColumn {
      */
     public int getWidth() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getWidthInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getWidthInPixels(), getAutoscalingZoom());
     }
 
     int getWidthInPixels() {
@@ -661,7 +661,7 @@ public class DartTableColumn extends DartItem implements ITableColumn {
      */
     public void setWidth(int width) {
         checkWidget();
-        setWidthInPixels(DPIUtil.pointToPixel(width, getZoom()));
+        setWidthInPixels(DPIUtil.pointToPixel(width, getAutoscalingZoom()));
     }
 
     void setWidthInPixels(int width) {

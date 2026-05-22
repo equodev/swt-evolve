@@ -21,6 +21,7 @@ import java.util.*;
 import java.util.function.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.AutoScaleCalculation.*;
 
 /**
  * This class hold common constants and utility functions w.r.t. to SWT high DPI
@@ -54,14 +55,15 @@ public class DPIUtil {
 
     private static AutoScaleMethod autoScaleMethod;
 
-    private static String autoScaleValue;
-
-    private static final Set<String> ALLOWED_AUTOSCALE_VALUES_FOR_UPDATE_ON_RUNTIME = Set.of("quarter", "exact", "false");
+    private static AutoScale autoScaleValue;
 
     /**
-     * System property to enable to scale the application on runtime
-     * when a DPI change is detected.
+     * System property to enable to scale the application on runtime when a DPI
+     * change is detected.
      * <ul>
+     * <li>"force": the application is scaled on DPI changes even if an unsupported
+     * value for swt.autoScale are defined. See allowed values in
+     * {@link AutoScaleCalculation}.</li>
      * <li>"true": the application is scaled on DPI changes</li>
      * <li>"false": the application will remain in its initial scaling</li>
      * </ul>
@@ -78,7 +80,6 @@ public class DPIUtil {
      *     but only uses integer multiples of 100%. The detected native zoom is
      *     generally rounded down (e.g. at 150%, will use 100%), unless close to
      *     the next integer multiple (currently at 175%, will use 200%).</li>
-     * <li><b>integer200</b>: like <b>integer</b>, but the maximal zoom level is 200%.</li>
      * <li><b>half</b>: deviceZoom depends on the current display resolution,
      *     but only uses integer multiples of 50%. The detected native zoom is
      *     rounded to the closest permissible value, with tie-breaker towards even.</li>
@@ -90,7 +91,7 @@ public class DPIUtil {
      * <li><i>&lt;value&gt;</i>: deviceZoom uses the given integer value in
      *     percent as zoom level.</li>
      * </ul>
-     * The current default is "integer200".
+     * The current default is "integer".
      */
     private static final String SWT_AUTOSCALE = "swt.autoScale";
 
@@ -107,18 +108,26 @@ public class DPIUtil {
     private static final String SWT_AUTOSCALE_METHOD = "swt.autoScale.method";
 
     static {
-        autoScaleValue = System.getProperty(SWT_AUTOSCALE);
+        updateAutoScaleValue();
         String value = System.getProperty(SWT_AUTOSCALE_METHOD);
         AUTO_SCALE_METHOD_SETTING = AutoScaleMethod.forString(value).orElse(AutoScaleMethod.AUTO);
         autoScaleMethod = AUTO_SCALE_METHOD_SETTING != AutoScaleMethod.AUTO ? AUTO_SCALE_METHOD_SETTING : AutoScaleMethod.NEAREST;
     }
 
-    static String getAutoScaleValue() {
-        return autoScaleValue;
+    private static void updateAutoScaleValue() {
+        String autoScaleProperty = System.getProperty(SWT_AUTOSCALE);
+        autoScaleValue = AutoScaleCalculation.parseFrom(autoScaleProperty);
+        if (DPIUtil.isMonitorSpecificScalingActive() && !DPIUtil.isSetupCompatibleToMonitorSpecificScaling()) {
+            throw new SWTError(SWT.ERROR_NOT_IMPLEMENTED, "monitor-specific scaling is only implemented for auto-scale values \"quarter\", \"exact\", but \"" + autoScaleProperty + "\" has been specified");
+        }
     }
 
-    static void setAutoScaleValue(String autoScaleValueArg) {
-        autoScaleValue = autoScaleValueArg;
+    public static boolean isCustomAutoScale() {
+        return System.getProperty(SWT_AUTOSCALE) != null;
+    }
+
+    public static String getEffectiveAutoScaleValue() {
+        return autoScaleValue.toString();
     }
 
     /**
@@ -131,13 +140,13 @@ public class DPIUtil {
      *
      * The supported auto-scale modes are "quarter" and "exact" or explicit zoom values given
      * by the value itself or "false". Every other value will be treated as
-     * "integer"/"integer200" and is thus not supported.
+     * "integer" and is thus not supported.
      *
      * <p>
      * <b>Background information:</b>
      * Monitor-specific scaling on Windows only supports auto-scale modes in which
      * all elements (font, images, control bounds etc.) are scaled equally or almost
-     * equally. The previously default mode "integer"/"integer200", which rounded
+     * equally. The previously default mode "integer", which rounded
      * the scale factor for everything but fonts to multiples of 100, is complex and
      * difficult to realize with monitor-specific rescaling of UI elements. Since a
      * uniform scale factor for everything should perspectively be used anyway,
@@ -145,24 +154,35 @@ public class DPIUtil {
      * scaling.
      */
     public static boolean isSetupCompatibleToMonitorSpecificScaling() {
-        if (DPIUtil.getAutoScaleValue() == null) {
+        if (!"win32".equals(SWT.getPlatform())) {
             return false;
         }
-        if (ALLOWED_AUTOSCALE_VALUES_FOR_UPDATE_ON_RUNTIME.contains(DPIUtil.getAutoScaleValue().toLowerCase())) {
+        if (System.getProperty(SWT_AUTOSCALE) == null || isMonitorSpecificScalingEnforced()) {
             return true;
         }
-        try {
-            Integer.parseInt(DPIUtil.getAutoScaleValue());
-            return true;
-        } catch (NumberFormatException e) {
-            // unsupported value, use default
+        return autoScaleValue.isCompatibleToMonitorSpecificScaling();
+    }
+
+    private static boolean isMonitorSpecificScalingEnforced() {
+        return "force".equals(System.getProperty(SWT_AUTOSCALE_UPDATE_ON_RUNTIME));
+    }
+
+    public static void setMonitorSpecificScaling(boolean activate) {
+        // If monitor-specific scaling was enforced via system property, calling this
+        // method with "true" should preserve the enforcement and not overwrite the
+        // system property with a simple "true"
+        if (!activate || !isMonitorSpecificScalingEnforced()) {
+            System.setProperty(DPIUtil.SWT_AUTOSCALE_UPDATE_ON_RUNTIME, Boolean.toString(activate));
         }
-        return false;
+        updateAutoScaleValue();
     }
 
     public static boolean isMonitorSpecificScalingActive() {
-        boolean updateOnRuntimeValue = Boolean.getBoolean(DPIUtil.SWT_AUTOSCALE_UPDATE_ON_RUNTIME);
-        return updateOnRuntimeValue;
+        if (!"win32".equals(SWT.getPlatform())) {
+            return false;
+        }
+        String updateOnRuntimeValue = System.getProperty(SWT_AUTOSCALE_UPDATE_ON_RUNTIME);
+        return !"false".equalsIgnoreCase(updateOnRuntimeValue);
     }
 
     public static int pixelToPoint(int size, int zoom) {
@@ -392,10 +412,32 @@ public class DPIUtil {
         return null;
     }
 
+    /**
+     * Returns the native zoom of the UI and its controls according to the adapted
+     * OS elements. Particularly on Windows, this is the zoom used for fonts by the
+     * OS, no matter what autoscaling of SWT might be applied on top.
+     * <p>
+     * <b>Warning:</b> When using monitor-specific scaling on Windows, this value
+     * may not be reasonable as there is no single zoom for the application but one
+     * per shell and its monitor. In that case, this method will return the native
+     * zoom for the shell whose zoom has last been changed (via moving the shell to
+     * another monitor or changing the zoom of a monitor).
+     */
     public static int getNativeDeviceZoom() {
         return nativeDeviceZoom;
     }
 
+    /**
+     * Returns the zoom of the UI and its controls according to SWT autoscaling
+     * settings. It is an adapted value of {@link #getNativeDeviceZoom()} based on
+     * the setting of the {@code swt.autoScale} property.
+     * <p>
+     * <b>Warning:</b> When using monitor-specific scaling on Windows, this value
+     * may not be reasonable as there is no single zoom for the application but one
+     * per shell and its monitor. In that case, this method will return the
+     * autoscaling zoom for the shell whose zoom has last been changed (via moving
+     * the shell to another monitor or changing the zoom of a monitor).
+     */
     public static int getDeviceZoom() {
         return deviceZoom;
     }
@@ -408,7 +450,7 @@ public class DPIUtil {
         // in GTK, preserve the current method when switching to a 100% monitor
         boolean preserveScalingMethod = SWT.getPlatform().equals("gtk") && deviceZoom == 100;
         if (!preserveScalingMethod && AUTO_SCALE_METHOD_SETTING == AutoScaleMethod.AUTO) {
-            if (useSmoothScalingByDefaultProvider.shouldUseSmoothScaling()) {
+            if (shouldUseSmoothScaling()) {
                 autoScaleMethod = AutoScaleMethod.SMOOTH;
             } else {
                 autoScaleMethod = AutoScaleMethod.NEAREST;
@@ -416,55 +458,20 @@ public class DPIUtil {
         }
     }
 
-    @FunctionalInterface
-    interface UseSmoothScalingProvider {
-
-        boolean shouldUseSmoothScaling();
-    }
-
-    private static UseSmoothScalingProvider useSmoothScalingByDefaultProvider = () -> false;
-
-    static void setUseSmoothScalingByDefaultProvider(UseSmoothScalingProvider provider) {
-        useSmoothScalingByDefaultProvider = provider;
+    private static boolean shouldUseSmoothScaling() {
+        if ("gtk".equals(SWT.getPlatform())) {
+            return DPIUtil.getDeviceZoom() / 100 * 100 != DPIUtil.getDeviceZoom();
+        }
+        return isMonitorSpecificScalingActive();
     }
 
     public static int getZoomForAutoscaleProperty(int nativeDeviceZoom) {
-        return getZoomForAutoscaleProperty(nativeDeviceZoom, autoScaleValue);
-    }
-
-    private static int getZoomForAutoscaleProperty(int nativeDeviceZoom, String autoScaleValue) {
-        int zoom = 0;
-        if (autoScaleValue != null) {
-            if ("false".equalsIgnoreCase(autoScaleValue)) {
-                zoom = 100;
-            } else if ("half".equalsIgnoreCase(autoScaleValue)) {
-                // Math.round rounds 125->150 and 175->200,
-                // Math.rint rounds 125->100 and 175->200 matching
-                // "integer200"
-                zoom = (int) Math.rint(nativeDeviceZoom / 50d) * 50;
-            } else if ("quarter".equalsIgnoreCase(autoScaleValue)) {
-                zoom = Math.round(nativeDeviceZoom / 25f) * 25;
-            } else if ("exact".equalsIgnoreCase(autoScaleValue)) {
-                zoom = nativeDeviceZoom;
-            } else {
-                try {
-                    int zoomValue = Integer.parseInt(autoScaleValue);
-                    zoom = Math.max(Math.min(zoomValue, 1600), 25);
-                } catch (NumberFormatException e) {
-                    // unsupported value, use default
-                }
-            }
-        }
-        if (zoom == 0) {
-            // || "integer".equalsIgnoreCase (value) || "integer200".equalsIgnoreCase (value)
-            zoom = Math.max((nativeDeviceZoom + 25) / 100 * 100, 100);
-        }
-        return zoom;
+        return autoScaleValue.getAutoScaledZoom(nativeDeviceZoom);
     }
 
     public static void runWithAutoScaleValue(String autoScaleValue, Runnable runnable) {
-        String initialAutoScaleValue = DPIUtil.autoScaleValue;
-        DPIUtil.autoScaleValue = autoScaleValue;
+        AutoScale initialAutoScaleValue = DPIUtil.autoScaleValue;
+        DPIUtil.autoScaleValue = AutoScaleCalculation.parseFrom(autoScaleValue);
         DPIUtil.deviceZoom = getZoomForAutoscaleProperty(nativeDeviceZoom);
         try {
             runnable.run();

@@ -123,7 +123,7 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
      */
     public Rectangle computeTrim(int x, int y, int width, int height) {
         checkWidget();
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         Rectangle rectangle = Win32DPIUtils.pointToPixelWithSufficientlyLargeSize(new Rectangle(x, y, width, height), zoom);
         return Win32DPIUtils.pixelToPointWithSufficientlyLargeSize(computeTrimInPixels(rectangle.x, rectangle.y, rectangle.width, rectangle.height), zoom);
     }
@@ -221,7 +221,7 @@ public abstract class SwtScrollable extends SwtControl implements IScrollable {
      */
     public Rectangle getClientArea() {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getClientAreaInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPoint(getClientAreaInPixels(), getAutoscalingZoom());
     }
 
     Rectangle getClientAreaInPixels() {

@@ -1204,7 +1204,7 @@ public abstract class DartWidget implements IWidget {
     boolean sendDragEvent(int button, int x, int y) {
         Event event = new Event();
         event.button = button;
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         event.setLocation(DPIUtil.pixelToPoint(x, zoom), DPIUtil.pixelToPoint(y, zoom));
         setInputState(event, SWT.DragDetect);
         postEvent(SWT.DragDetect, event);
@@ -1216,7 +1216,7 @@ public abstract class DartWidget implements IWidget {
     boolean sendDragEvent(int button, int stateMask, int x, int y) {
         Event event = new Event();
         event.button = button;
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         event.setLocation(DPIUtil.pixelToPoint(x, zoom), DPIUtil.pixelToPoint(y, zoom));
         event.stateMask = stateMask;
         postEvent(SWT.DragDetect, event);
@@ -1575,11 +1575,7 @@ public abstract class DartWidget implements IWidget {
         return null;
     }
 
-    int getNativeZoom() {
-        return getApi().nativeZoom;
-    }
-
-    public int getZoom() {
+    int getAutoscalingZoom() {
         return DPIUtil.getZoomForAutoscaleProperty(getApi().nativeZoom);
     }
 

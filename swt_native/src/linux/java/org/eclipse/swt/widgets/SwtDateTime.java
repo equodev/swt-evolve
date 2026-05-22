@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -633,7 +633,7 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
         focusDayOnPopupCalendar();
         Display display = getDisplay();
         //To display popup calendar, we need to know where the parent is relative to the whole screen.
-        Rectangle coordsRelativeToScreen = ((SwtDisplay) display.getImpl()).mapInPixels(getParent(), null, getBoundsInPixels());
+        Rectangle coordsRelativeToScreen = display.map(getParent(), null, getBoundsInPixels());
         Rectangle displayRect = getMonitor().getClientArea();
         showPopupShell(containerBounds, calendarSize, coordsRelativeToScreen, displayRect);
         display.addFilter(SWT.MouseDown, mouseEventListener);
@@ -1506,7 +1506,11 @@ public class SwtDateTime extends SwtComposite implements IDateTime {
             this.day = day;
             if (GTK.GTK4) {
                 long dateTime = OS.g_date_time_new_local(year, month + 1, day, 0, 0, 0);
-                GTK4.gtk_calendar_select_day(calendarHandle, dateTime);
+                if (GTK.GTK_VERSION >= OS.VERSION(4, 20, 0)) {
+                    GTK4.gtk_calendar_set_date(calendarHandle, dateTime);
+                } else {
+                    GTK4.gtk_calendar_select_day(calendarHandle, dateTime);
+                }
                 OS.g_date_time_unref(dateTime);
             } else {
                 GTK3.gtk_calendar_select_month(calendarHandle, month, year);

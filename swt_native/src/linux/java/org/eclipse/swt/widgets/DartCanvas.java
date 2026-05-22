@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -266,7 +266,7 @@ public class DartCanvas extends DartComposite implements ICanvas {
             for (Control child : _getChildren()) {
                 Rectangle rect = ((DartControl) child.getImpl()).getBoundsInPixels();
                 if (Math.min(x + width, rect.x + rect.width) >= Math.max(x, rect.x) && Math.min(y + height, rect.y + rect.height) >= Math.max(y, rect.y)) {
-                    ((DartControl) child.getImpl()).setLocationInPixels(rect.x + deltaX, rect.y + deltaY);
+                    child.setLocation(rect.x + deltaX, rect.y + deltaY);
                 }
             }
         }
@@ -367,6 +367,16 @@ public class DartCanvas extends DartComposite implements ICanvas {
         long imHandle = imHandle();
         if (imHandle == 0)
             return;
+    }
+
+    @Override
+    void snapshotToDraw(long handle, long snapshot) {
+        // Skip drawing if this is being called on fixedHandle to prevent double draws
+        // making carret not visible at all
+        if (fixedHandle != 0 && handle == fixedHandle) {
+            return;
+        }
+        super.snapshotToDraw(handle, snapshot);
     }
 
     public Caret _caret() {

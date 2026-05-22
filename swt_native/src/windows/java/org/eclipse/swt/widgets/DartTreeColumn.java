@@ -317,7 +317,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public int getWidth() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getWidthInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getWidthInPixels(), getAutoscalingZoom());
     }
 
     int getWidthInPixels() {
@@ -581,7 +581,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public void setWidth(int width) {
         checkWidget();
-        setWidthInPixels(DPIUtil.pointToPixel(width, getZoom()));
+        setWidthInPixels(DPIUtil.pointToPixel(width, getAutoscalingZoom()));
     }
 
     void setWidthInPixels(int width) {
@@ -614,6 +614,15 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
         if (image != null) {
             setImage(image);
         }
+    }
+
+    @Override
+    int getSystemMetrics(int nIndex) {
+        // Control#getSystemMetrics should be used if possible,
+        // as it considers if autoscaling of a Control is
+        // disabled which would affect the TreeColumn as well,
+        // therefore the value is fetched via the parent
+        return ((DartControl) parent.getImpl()).getSystemMetrics(nIndex);
     }
 
     int width;

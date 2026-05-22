@@ -413,7 +413,7 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         this.transferAgents = transferAgents;
         // Register the types as valid drop types in Cocoa.
         // Accumulate all of the transfer types into a list.
-        List<String> typeStrings = new ArrayList<>();
+        java.util.List<String> typeStrings = new ArrayList<>();
         for (int i = 0; i < this.transferAgents.length; i++) {
             String[] types = transferAgents[i].getTypeNames();
             for (int j = 0; j < types.length; j++) {

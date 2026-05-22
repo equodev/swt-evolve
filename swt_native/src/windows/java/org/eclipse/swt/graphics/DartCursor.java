@@ -547,14 +547,9 @@ public final class DartCursor extends DartResource implements ICursor {
 
         @Override
         public CursorHandle createHandle(Device device, int zoom) {
-            ImageData source;
-            if (zoom == DEFAULT_ZOOM) {
-                source = this.provider.getImageData(DEFAULT_ZOOM);
-            } else {
-                Image tempImage = new Image(device, this.provider);
-                source = tempImage.getImageData(zoom);
-                tempImage.dispose();
-            }
+            Image tempImage = new Image(device, this.provider);
+            ImageData source = tempImage.getImageData(zoom);
+            tempImage.dispose();
             return setupCursorFromImageData(device, source, null, getHotpotXInPixels(zoom), getHotpotYInPixels(zoom));
         }
     }
@@ -573,9 +568,7 @@ public final class DartCursor extends DartResource implements ICursor {
 
         @Override
         public CursorHandle createHandle(Device device, int zoom) {
-            float accessibilityFactor = getPointerSizeScaleFactor();
-            int scaledZoom = (int) (zoom * accessibilityFactor);
-            ImageData scaledSource = DPIUtil.scaleImageData(device, this.source, scaledZoom, DEFAULT_ZOOM);
+            ImageData scaledSource = DPIUtil.scaleImageData(device, this.source, zoom, DEFAULT_ZOOM);
             return setupCursorFromImageData(device, scaledSource, null, getHotpotXInPixels(zoom), getHotpotYInPixels(zoom));
         }
     }
@@ -606,7 +599,7 @@ public final class DartCursor extends DartResource implements ICursor {
 
         @Override
         public CursorHandle createHandle(Device device, int zoom) {
-            float scaledZoomFactor = zoom * getPointerSizeScaleFactor() / 100f;
+            float scaledZoomFactor = zoom / 100f;
             int scaledSourceWidth = Math.round(this.source.width * scaledZoomFactor);
             int scaledSourceHeight = Math.round(this.source.height * scaledZoomFactor);
             ImageData scaledSource = this.source.scaledTo(scaledSourceWidth, scaledSourceHeight);

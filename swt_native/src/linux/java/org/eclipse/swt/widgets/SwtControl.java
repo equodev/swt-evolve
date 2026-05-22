@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -246,7 +246,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             Cairo.cairo_clip(cairo);
         }
         if (control.getImpl()._backgroundImage() != null) {
-            Point pt = ((SwtDisplay) display.getImpl()).mapInPixels(this.getApi(), control, 0, 0);
+            Point pt = display.map(this.getApi(), control, 0, 0);
             Cairo.cairo_translate(cairo, -pt.x, -pt.y);
             x += pt.x;
             y += pt.y;
@@ -1284,11 +1284,6 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      */
     public Point getLocation() {
         checkWidget();
-        return getLocationInPixels();
-    }
-
-    Point getLocationInPixels() {
-        checkWidget();
         long topHandle = topHandle();
         GtkAllocation allocation = new GtkAllocation();
         GTK.gtk_widget_get_allocation(topHandle, allocation);
@@ -1325,13 +1320,6 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         setBounds(location.x, location.y, 0, 0, true, false);
     }
 
-    void setLocationInPixels(Point location) {
-        checkWidget();
-        if (location == null)
-            error(SWT.ERROR_NULL_ARGUMENT);
-        setBounds(location.x, location.y, 0, 0, true, false);
-    }
-
     /**
      * Sets the receiver's location to the point specified by the arguments which
      * are relative to the receiver's parent (or its display if its parent is null),
@@ -1351,12 +1339,6 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      * </ul>
      */
     public void setLocation(int x, int y) {
-        checkWidget();
-        Point loc = new Point(x, y);
-        setBounds(loc.x, loc.y, 0, 0, true, false);
-    }
-
-    void setLocationInPixels(int x, int y) {
         checkWidget();
         setBounds(x, y, 0, 0, true, false);
     }
@@ -1798,24 +1780,6 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return new Point(x, y);
     }
 
-    Point toDisplayInPixels(int x, int y) {
-        checkWidget();
-        int[] origin_x = new int[1], origin_y = new int[1];
-        if (GTK.GTK4) {
-            Point origin = getControlOrigin();
-            origin_x[0] = origin.x;
-            origin_y[0] = origin.y;
-        } else {
-            long window = eventWindow();
-            GDK.gdk_window_get_origin(window, origin_x, origin_y);
-        }
-        if ((getApi().style & SWT.MIRRORED) != 0)
-            x = getClientWidth() - x;
-        x += origin_x[0];
-        y += origin_y[0];
-        return new Point(x, y);
-    }
-
     /**
      * Returns a point which is the result of converting the
      * argument, which is specified in coordinates relative to
@@ -1849,7 +1813,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      */
     Point getControlOrigin() {
         double[] originX = new double[1], originY = new double[1];
-        boolean success = GTK4.gtk_widget_translate_coordinates(fixedHandle, ((SwtShell) getShell().getImpl()).shellHandle, 0, 0, originX, originY);
+        long widgetHandle = fixedHandle != 0 ? fixedHandle : eventHandle();
+        boolean success = GTK4.gtk_widget_translate_coordinates(widgetHandle, ((SwtShell) getShell().getImpl()).shellHandle, 0, 0, originX, originY);
         return success ? new Point((int) originX[0], (int) originY[0]) : new Point(0, 0);
     }
 
@@ -4232,7 +4197,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             if (((SwtDisplay) display.getImpl()).currentControl != null && !((SwtDisplay) display.getImpl()).currentControl.isDisposed()) {
                 ((SwtDisplay) display.getImpl()).removeMouseHoverTimeout(((SwtDisplay) display.getImpl()).currentControl.handle);
                 /*
-			 *  Note: for GTK4, the call to display.mapInPixels function was removed due to the
+			 *  Note: for GTK4, the call to display.map function was removed due to the
 			 *  inability to get the origin of surfaces. Testing needs to be done to see if
 			 *  the x, y, coordinates suffice.
 			 */
@@ -4319,7 +4284,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (this.getApi() != ((SwtDisplay) display.getImpl()).currentControl) {
             if (((SwtDisplay) display.getImpl()).currentControl != null && !((SwtDisplay) display.getImpl()).currentControl.isDisposed()) {
                 ((SwtDisplay) display.getImpl()).removeMouseHoverTimeout(((SwtDisplay) display.getImpl()).currentControl.handle);
-                Point pt = ((SwtDisplay) display.getImpl()).mapInPixels(this.getApi(), ((SwtDisplay) display.getImpl()).currentControl, (int) x, (int) y);
+                Point pt = display.map(this.getApi(), ((SwtDisplay) display.getImpl()).currentControl, (int) x, (int) y);
                 ((SwtControl) ((SwtDisplay) display.getImpl()).currentControl.getImpl()).sendMouseEvent(SWT.MouseExit, 0, time, pt.x, pt.y, isHint, state[0]);
             }
             if (!isDisposed()) {
@@ -4947,10 +4912,9 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         // to determine DnD threshold.
         // This is to preserve backwards Cocoa/Win32 compatibility.
         Event mouseDownEvent = dragDetectionQueue.getFirst();
-        // force send MouseDown to avoid subsequent MouseMove before MouseDown.
-        mouseDownEvent.data = Boolean.valueOf(true);
+        mouseDownEvent.data = null;
         dragDetectionQueue = null;
-        sendOrPost(SWT.MouseDown, mouseDownEvent);
+        sendEvent(SWT.MouseDown, mouseDownEvent);
     }
 
     boolean sendDragEvent(int button, int stateMask, int x, int y, boolean isStateMask) {
@@ -5208,6 +5172,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                                 flushQueueOnDnd();
                             } else {
                                 dragDetectionQueue.add(event);
+                                return true;
                             }
                             break;
                         case SWT.MouseUp:
@@ -5259,6 +5224,26 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         GTK.gtk_label_set_yalign(label, yAlign);
     }
 
+    /**
+     * Sets the autoscaling mode for this widget. The capability is not supported on
+     * every platform, such that calling this method may not have an effect on
+     * unsupported platforms. The return value indicates if the autoscale mode was
+     * set properly. With {@link #isAutoScalable()}, the autoscale enablement can
+     * also be evaluated at any later point in time.
+     * <p>
+     * Currently, this is only supported on Windows.
+     * </p>
+     *
+     * @param autoscalingMode the autoscaling mode to set
+     *
+     * @return {@code false} if the operation was called on an unsupported platform
+     *
+     * @since 3.133
+     */
+    public boolean setAutoscalingMode(AutoscalingMode autoscalingMode) {
+        return false;
+    }
+
     void setBackground() {
         if ((getApi().state & BACKGROUND) == 0 && backgroundImage == null) {
             if ((getApi().state & PARENT_BACKGROUND) != 0) {
@@ -5304,21 +5289,17 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        boolean set = false;
         GdkRGBA rgba = null;
         if (color != null) {
             rgba = color.handle;
             backgroundAlpha = color.getAlpha();
         }
-        set = true;
-        if (set) {
-            if (color == null) {
-                getApi().state &= ~BACKGROUND;
-            } else {
-                getApi().state |= BACKGROUND;
-            }
-            setBackgroundGdkRGBA(rgba);
+        if (color == null) {
+            getApi().state &= ~BACKGROUND;
+        } else {
+            getApi().state |= BACKGROUND;
         }
+        setBackgroundGdkRGBA(rgba);
         redrawChildren();
     }
 
@@ -5373,8 +5354,6 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         }
         long context = GTK.gtk_widget_get_style_context(handle);
         setBackgroundGdkRGBA(context, handle, rgba);
-        if (!GTK.GTK4)
-            GTK3.gtk_style_context_invalidate(context);
     }
 
     /**
@@ -5667,8 +5646,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        boolean set = false;
-        set = !getForeground().equals(color);
+        boolean set = !getForeground().equals(color);
         if (set) {
             if (color == null) {
                 getApi().state &= ~FOREGROUND;
@@ -7070,7 +7048,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
      */
     public Point getSurfaceOrigin() {
         double[] originX = new double[1], originY = new double[1];
-        boolean success = GTK4.gtk_widget_translate_coordinates(fixedHandle, ((SwtShell) getShell().getImpl()).shellHandle, 0, 0, originX, originY);
+        long widgetHandle = fixedHandle != 0 ? fixedHandle : eventHandle();
+        boolean success = GTK4.gtk_widget_translate_coordinates(widgetHandle, ((SwtShell) getShell().getImpl()).shellHandle, 0, 0, originX, originY);
         return success ? new Point((int) originX[0], (int) originY[0]) : new Point(0, 0);
     }
 

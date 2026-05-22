@@ -612,7 +612,29 @@ public class OS extends C {
 
     public static final int DM_ORIENTATION = 0x00000001;
 
+    public static final int DM_PAPERSIZE = 0x00000002;
+
+    public static final int DM_PAPERLENGTH = 0x00000004;
+
+    public static final int DM_PAPERWIDTH = 0x00000008;
+
     public static final int DM_OUT_BUFFER = 2;
+
+    public static final short DMPAPER_LETTER = 1;
+
+    public static final short DMPAPER_LEGAL = 5;
+
+    public static final short DMPAPER_EXECUTIVE = 7;
+
+    public static final short DMPAPER_A3 = 8;
+
+    public static final short DMPAPER_A4 = 9;
+
+    public static final short DMPAPER_A5 = 11;
+
+    public static final short DMPAPER_TABLOID = 3;
+
+    public static final short DMPAPER_USER = 256;
 
     public static final short DMORIENT_PORTRAIT = 1;
 
@@ -624,15 +646,15 @@ public class OS extends C {
 
     public static final short DMDUP_HORIZONTAL = 3;
 
-    public static final int DPI_AWARENESS_CONTEXT_UNAWARE = 24592;
+    public static final long DPI_AWARENESS_CONTEXT_UNAWARE = DPI_AWARENESS_CONTEXT_UNAWARE();
 
-    public static final int DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED = 1073766416;
+    public static final long DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED = DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED();
 
-    public static final int DPI_AWARENESS_CONTEXT_SYSTEM_AWARE = 24593;
+    public static final long DPI_AWARENESS_CONTEXT_SYSTEM_AWARE = DPI_AWARENESS_CONTEXT_SYSTEM_AWARE();
 
-    public static final int DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE = 18;
+    public static final long DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE = DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE();
 
-    public static final int DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = 34;
+    public static final long DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2();
 
     public static final int DSTINVERT = 0x550009;
 
@@ -4331,6 +4353,13 @@ public class OS extends C {
     public static final native boolean Arc(long hdc, int nLeftRect, int nTopRect, int nRightRect, int nBottomRect, int nXStartArc, int nYStartArc, int nXEndArc, int nYEndArc);
 
     /**
+     * @method flags=dynamic
+     * @param dpiContextA cast=(DPI_AWARENESS_CONTEXT)
+     * @param dpiContextB cast=(DPI_AWARENESS_CONTEXT)
+     */
+    public static final native boolean AreDpiAwarenessContextsEqual(long dpiContextA, long dpiContextB);
+
+    /**
      * @param pszAssoc flags=no_out
      * @param pszExtra flags=no_out
      * @param pcchOut cast=(DWORD *)
@@ -4692,6 +4721,31 @@ public class OS extends C {
      * @param pDevModeInput cast=(PDEVMODEW)
      */
     public static final native int DocumentProperties(long hWnd, long hPrinter, char[] pDeviceName, long pDevModeOutput, long pDevModeInput, int fMode);
+
+    /**
+     * @method flags=no_gen
+     */
+    public static final native long DPI_AWARENESS_CONTEXT_UNAWARE();
+
+    /**
+     * @method flags=no_gen
+     */
+    public static final native long DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED();
+
+    /**
+     * @method flags=no_gen
+     */
+    public static final native long DPI_AWARENESS_CONTEXT_SYSTEM_AWARE();
+
+    /**
+     * @method flags=no_gen
+     */
+    public static final native long DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE();
+
+    /**
+     * @method flags=no_gen
+     */
+    public static final native long DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2();
 
     /**
      * @param hwnd cast=(HWND)

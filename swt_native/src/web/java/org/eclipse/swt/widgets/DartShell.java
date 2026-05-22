@@ -19,6 +19,7 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.*;
 import dev.equo.swt.*;
 
 /**
@@ -972,7 +973,13 @@ public class DartShell extends DartDecorations implements IShell {
             error(SWT.ERROR_NULL_ARGUMENT);
         if (gc.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
-        return false;
+        // Print only the client area (children) without shell decorations
+        Control[] children = _getChildren();
+        for (Control child : children) {
+            // Print the child control
+            child.print(gc);
+        }
+        return true;
     }
 
     @Override
@@ -1445,6 +1452,21 @@ public class DartShell extends DartDecorations implements IShell {
         }
         checkWidget();
         this.modified = newValue;
+    }
+
+    /**
+     * Returns the zoom of the shell.
+     * <p>
+     * Hint: The returned value is the zoom of the shell as originally considered by
+     * the OS and not an adjusted zoom value as considered by SWT autoscaling capabilities.
+     * </p>
+     *
+     * @return the zoom for this shell
+     *
+     * @since 3.133
+     */
+    public int getZoom() {
+        return DPIUtil.getNativeDeviceZoom();
     }
 
     /**

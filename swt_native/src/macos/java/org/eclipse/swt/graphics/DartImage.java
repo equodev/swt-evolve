@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -15,6 +15,7 @@
  */
 package org.eclipse.swt.graphics;
 
+import static org.eclipse.swt.internal.DPIUtil.pixelToPoint;
 import static org.eclipse.swt.internal.DPIUtil.pointToPixel;
 import static org.eclipse.swt.internal.image.ImageColorTransformer.DEFAULT_DISABLED_IMAGE_TRANSFORMER;
 import java.io.*;
@@ -265,7 +266,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             imageDataProvider = ((DartImage) srcImage.getImpl()).imageDataProvider;
             imageGcDrawer = ((DartImage) srcImage.getImpl()).imageGcDrawer;
             this.styleFlag = ((DartImage) srcImage.getImpl()).styleFlag | flag;
-            if (imageFileNameProvider != null || imageDataProvider != null || ((DartImage) srcImage.getImpl()).imageGcDrawer != null) {
+            if (imageFileNameProvider != null || imageDataProvider != null || imageGcDrawer != null) {
             }
             init();
         } finally {
@@ -473,17 +474,10 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, InputStream stream, Image api) {
         super(device, api);
-        if (stream == null) {
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        }
-        try {
-            byte[] input = stream.readAllBytes();
-            initWithSupplier(zoom -> ImageDataLoader.canLoadAtZoom(new ByteArrayInputStream(input), FileFormat.DEFAULT_ZOOM, zoom), zoom -> ImageDataLoader.loadByZoom(new ByteArrayInputStream(input), FileFormat.DEFAULT_ZOOM, zoom).element());
-            init();
-        } catch (IOException e) {
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT, e);
-        } finally {
-        }
+        ImageData data = new ImageData(stream);
+        this.imageData = data;
+        init(data, 100);
+        init();
     }
 
     /**
@@ -526,7 +520,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         try {
             if (filename == null)
                 SWT.error(SWT.ERROR_NULL_ARGUMENT);
-            initNative(filename);
+            initUsingFileNameProvider(zoom -> zoom == 100 ? filename : null);
             init();
         } finally {
         }
@@ -566,22 +560,25 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         super(device, api);
         if (imageFileNameProvider == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        try {
+            initUsingFileNameProvider(imageFileNameProvider);
+            init();
+        } finally {
+        }
+    }
+
+    private void initUsingFileNameProvider(ImageFileNameProvider imageFileNameProvider) {
         this.imageFileNameProvider = imageFileNameProvider;
         String filename = imageFileNameProvider.getImagePath(100);
-        imageData = new ImageData(filename);
-        this.filename = GraphicsUtils.getFilename(filename);
-        if (filename == null)
+        if (filename == null) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        try {
-            initNative(filename);
-            init();
-            String filename2x = imageFileNameProvider.getImagePath(200);
-            if (filename2x != null) {
-                alphaInfo_200 = new AlphaInfo();
-            } else if (ImageDataLoader.canLoadAtZoom(filename, 100, 200)) {
-                alphaInfo_200 = new AlphaInfo();
-            }
-        } finally {
+        }
+        initNative(filename);
+        String filename2x = imageFileNameProvider.getImagePath(200);
+        if (filename2x != null) {
+            alphaInfo_200 = new AlphaInfo();
+        } else if (ImageDataLoader.canLoadAtZoom(filename, 100, 200)) {
+            alphaInfo_200 = new AlphaInfo();
         }
     }
 
@@ -618,18 +615,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         super(device, api);
         if (imageDataProvider == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        this.imageDataProvider = imageDataProvider;
-        ImageData data = imageDataProvider.getImageData(100);
-        if (data == null)
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        data = GraphicsUtils.copyImageData(data);
         try {
-            init(data, 100);
+            initUsingImageDataProvider(imageDataProvider);
             init();
-            ImageData data2x = imageDataProvider.getImageData(200);
-            if (data2x != null) {
-                alphaInfo_200 = new AlphaInfo();
-            }
         } finally {
         }
     }
@@ -936,11 +924,15 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             alphaInfo_100 = new AlphaInfo();
     }
 
-    private void initWithSupplier(Function<Integer, Boolean> canLoadAtZoom, Function<Integer, ImageData> zoomToImageData) {
-        ImageData imageData = zoomToImageData.apply(100);
-        imageData = GraphicsUtils.copyImageData(imageData);
+    private void initUsingImageDataProvider(ImageDataProvider imageDataProvider) {
+        this.imageDataProvider = imageDataProvider;
+        ImageData imageData = imageDataProvider.getImageData(100);
+        if (imageData == null) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
         init(imageData, 100);
-        if (canLoadAtZoom.apply(200)) {
+        ImageData imageData2x = imageDataProvider.getImageData(200);
+        if (imageData2x != null) {
             alphaInfo_200 = new AlphaInfo();
         }
     }
@@ -1122,7 +1114,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     }
 
     void executeOnImageAtSizeBestFittingSize(Consumer<Image> imageAtBestFittingSizeConsumer, int destWidth, int destHeight) {
-        Optional<Image> imageAtSize = cachedImageAtSize.refresh(destWidth, destHeight);
+        Optional<Image> imageAtSize = cachedImageAtSize.refresh(Math.max(1, destWidth), Math.max(1, destHeight));
         imageAtBestFittingSizeConsumer.accept(imageAtSize.orElse(this.getApi()));
     }
 

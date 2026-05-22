@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2022 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -370,14 +370,6 @@ public final class DartGC extends DartResource implements IGC {
         RequestResponse.callOnDisplay(this, "copyAreaImageintint", drawOp, String.class, p -> GCHelper.updateImageFromPng(image, null, p), 10_000);
     }
 
-    void copyAreaInPixels(Image image, int x, int y) {
-        if (data.image != null) {
-        } else if (data.drawable != 0) {
-        } else {
-            return;
-        }
-    }
-
     /**
      * Copies a rectangular area of the receiver at the source
      * position onto the receiver at the destination position.
@@ -402,10 +394,6 @@ public final class DartGC extends DartResource implements IGC {
         drawOp.destX = destX;
         drawOp.destY = destY;
         FlutterBridge.send(this, "copyAreaintintintintintint", drawOp);
-    }
-
-    void copyAreaInPixels(int srcX, int srcY, int width, int height, int destX, int destY) {
-        copyAreaInPixels(srcX, srcY, width, height, destX, destY, true);
     }
 
     /**
@@ -436,38 +424,6 @@ public final class DartGC extends DartResource implements IGC {
         drawOp.destY = destY;
         drawOp.paint = paint;
         FlutterBridge.send(this, "copyAreaintintintintintintboolean", drawOp);
-    }
-
-    void copyAreaInPixels(int srcX, int srcY, int width, int height, int destX, int destY, boolean paint) {
-        if (width <= 0 || height <= 0)
-            return;
-        int deltaX = destX - srcX, deltaY = destY - srcY;
-        if (deltaX == 0 && deltaY == 0)
-            return;
-        long drawable = data.drawable;
-        if (data.image != null) {
-            // As source and target area may be overlapping, we need to draw on
-            // an intermediate surface to avoid that parts of the source area are
-        } else if (drawable != 0) {
-            if (paint) {
-            }
-        }
-        if (data.image == null && paint) {
-            boolean disjoint = (destX + width < srcX) || (srcX + width < destX) || (destY + height < srcY) || (srcY + height < destY);
-            if (disjoint) {
-            } else {
-                if (deltaX != 0) {
-                    int newX = destX - deltaX;
-                    if (deltaX < 0)
-                        newX = destX + width;
-                }
-                if (deltaY != 0) {
-                    int newY = destY - deltaY;
-                    if (deltaY < 0)
-                        newY = destY + height;
-                }
-            }
-        }
     }
 
     void createLayout() {
@@ -556,29 +512,6 @@ public final class DartGC extends DartResource implements IGC {
         FlutterBridge.send(this, "drawArcintintintintintint", drawOp);
     }
 
-    void drawArcInPixels(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        checkGC(DRAW);
-        if (width < 0) {
-            x = x + width;
-            width = -width;
-        }
-        if (height < 0) {
-            y = y + height;
-            height = -height;
-        }
-        if (width == 0 || height == 0 || arcAngle == 0)
-            return;
-        if (width == height) {
-            if (arcAngle >= 0) {
-            } else {
-            }
-        } else {
-            if (arcAngle >= 0) {
-            } else {
-            }
-        }
-    }
-
     /**
      * Draws a rectangle, based on the specified arguments, which has
      * the appearance of the platform's <em>focus rectangle</em> if the
@@ -603,10 +536,6 @@ public final class DartGC extends DartResource implements IGC {
         drawOp.width = width;
         drawOp.height = height;
         FlutterBridge.send(this, "drawFocusintintintint", drawOp);
-    }
-
-    void drawFocusInPixels(int x, int y, int width, int height) {
-        checkGC(FOREGROUND);
     }
 
     /**
@@ -634,10 +563,6 @@ public final class DartGC extends DartResource implements IGC {
         drawOp.x = x;
         drawOp.y = y;
         FlutterBridge.send(this, "drawImageImageintint", drawOp);
-    }
-
-    void drawImageInPixels(Image image, int x, int y) {
-        drawImage(image, 0, 0, -1, -1, x, y, -1, -1, true);
     }
 
     /**
@@ -795,10 +720,6 @@ public final class DartGC extends DartResource implements IGC {
         FlutterBridge.send(this, "drawLineintintintint", drawOp);
     }
 
-    void drawLineInPixels(int x1, int y1, int x2, int y2) {
-        checkGC(DRAW);
-    }
-
     /**
      * Draws the outline of an oval, using the foreground color,
      * within the specified rectangular area.
@@ -827,21 +748,6 @@ public final class DartGC extends DartResource implements IGC {
         drawOp.width = width;
         drawOp.height = height;
         FlutterBridge.send(this, "drawOvalintintintint", drawOp);
-    }
-
-    void drawOvalInPixels(int x, int y, int width, int height) {
-        checkGC(DRAW);
-        if (width < 0) {
-            x = x + width;
-            width = -width;
-        }
-        if (height < 0) {
-            y = y + height;
-            height = -height;
-        }
-        if (width == height) {
-        } else {
-        }
     }
 
     /**
@@ -901,10 +807,6 @@ public final class DartGC extends DartResource implements IGC {
         FlutterBridge.send(this, "drawPointintint", drawOp);
     }
 
-    void drawPointInPixels(int x, int y) {
-        checkGC(DRAW);
-    }
-
     /**
      * Draws the closed polygon which is defined by the specified array
      * of integer coordinates, using the receiver's foreground color. The array
@@ -928,10 +830,6 @@ public final class DartGC extends DartResource implements IGC {
         FlutterBridge.send(this, "drawPolygonint", drawOp);
     }
 
-    void drawPolygonInPixels(int[] pointArray) {
-        checkGC(DRAW);
-    }
-
     /**
      * Draws the polyline which is defined by the specified array
      * of integer coordinates, using the receiver's foreground color. The array
@@ -953,10 +851,6 @@ public final class DartGC extends DartResource implements IGC {
         VGCDrawPolylineint drawOp = new VGCDrawPolylineint();
         drawOp.pointArray = pointArray;
         FlutterBridge.send(this, "drawPolylineint", drawOp);
-    }
-
-    void drawPolylineInPixels(int[] pointArray) {
-        checkGC(DRAW);
     }
 
     /**
@@ -983,18 +877,6 @@ public final class DartGC extends DartResource implements IGC {
         FlutterBridge.send(this, "drawRectangleintintintint", drawOp);
     }
 
-    void drawRectangleInPixels(int x, int y, int width, int height) {
-        checkGC(DRAW);
-        if (width < 0) {
-            x = x + width;
-            width = -width;
-        }
-        if (height < 0) {
-            y = y + height;
-            height = -height;
-        }
-    }
-
     /**
      * Draws the outline of the specified rectangle, using the receiver's
      * foreground color. The left and right edges of the rectangle are at
@@ -1015,10 +897,6 @@ public final class DartGC extends DartResource implements IGC {
         VGCDrawRectangleRectangle drawOp = new VGCDrawRectangleRectangle();
         drawOp.rect = rect;
         FlutterBridge.send(this, "drawRectangleRectangle", drawOp);
-    }
-
-    void drawRectangleInPixels(Rectangle rect) {
-        drawRectangleInPixels(rect.x, rect.y, rect.width, rect.height);
     }
 
     /**
@@ -1053,31 +931,6 @@ public final class DartGC extends DartResource implements IGC {
         FlutterBridge.send(this, "drawRoundRectangleintintintintintint", drawOp);
     }
 
-    void drawRoundRectangleInPixels(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        checkGC(DRAW);
-        int nx = x;
-        int ny = y;
-        int nw = width;
-        int nh = height;
-        int naw = arcWidth;
-        int nah = arcHeight;
-        if (nw < 0) {
-            nw = 0 - nw;
-            nx = nx - nw;
-        }
-        if (nh < 0) {
-            nh = 0 - nh;
-            ny = ny - nh;
-        }
-        if (naw < 0)
-            naw = 0 - naw;
-        if (nah < 0)
-            nah = 0 - nah;
-        if (naw == 0 || nah == 0) {
-        } else {
-        }
-    }
-
     /**
      * Draws the given string, using the receiver's current font and
      * foreground color. No tab expansion or carriage return processing
@@ -1106,10 +959,6 @@ public final class DartGC extends DartResource implements IGC {
         drawOp.x = x;
         drawOp.y = y;
         FlutterBridge.send(this, "drawStringStringintint", drawOp);
-    }
-
-    void drawStringInPixels(String string, int x, int y) {
-        drawStringInPixels(string, x, y, false);
     }
 
     /**
@@ -1148,10 +997,6 @@ public final class DartGC extends DartResource implements IGC {
         FlutterBridge.send(this, "drawStringStringintintboolean", drawOp);
     }
 
-    void drawStringInPixels(String string, int x, int y, boolean isTransparent) {
-        drawTextInPixels(string, x, y, isTransparent ? SWT.DRAW_TRANSPARENT : 0);
-    }
-
     /**
      * Draws the given string, using the receiver's current font and
      * foreground color. Tab expansion and carriage return processing
@@ -1180,10 +1025,6 @@ public final class DartGC extends DartResource implements IGC {
         drawOp.x = x;
         drawOp.y = y;
         FlutterBridge.send(this, "drawTextStringintint", drawOp);
-    }
-
-    void drawTextInPixels(String string, int x, int y) {
-        drawTextInPixels(string, x, y, SWT.DRAW_DELIMITER | SWT.DRAW_TAB);
     }
 
     /**
@@ -1217,13 +1058,6 @@ public final class DartGC extends DartResource implements IGC {
         drawOp.y = y;
         drawOp.isTransparent = isTransparent;
         FlutterBridge.send(this, "drawTextStringintintboolean", drawOp);
-    }
-
-    void drawTextInPixels(String string, int x, int y, boolean isTransparent) {
-        int flags = SWT.DRAW_DELIMITER | SWT.DRAW_TAB;
-        if (isTransparent)
-            flags |= SWT.DRAW_TRANSPARENT;
-        drawTextInPixels(string, x, y, flags);
     }
 
     /**
@@ -1272,31 +1106,6 @@ public final class DartGC extends DartResource implements IGC {
         drawOp.y = y;
         drawOp.flags = flags;
         FlutterBridge.send(this, "drawTextStringintintint", drawOp);
-    }
-
-    void drawTextInPixels(String string, int x, int y, int flags) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (string == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (string.length() == 0)
-            return;
-        setString(string, flags);
-        checkGC(FONT);
-        if ((flags & SWT.DRAW_TRANSPARENT) == 0) {
-            checkGC(BACKGROUND);
-            if (data.stringWidth == -1) {
-                computeStringSize();
-            }
-        }
-        checkGC(FOREGROUND);
-        if ((data.style & SWT.MIRRORED) != 0) {
-            if (data.stringWidth == -1) {
-                computeStringSize();
-            }
-        }
-        if ((data.style & SWT.MIRRORED) != 0) {
-        }
     }
 
     /**
@@ -1361,29 +1170,6 @@ public final class DartGC extends DartResource implements IGC {
         FlutterBridge.send(this, "fillArcintintintintintint", drawOp);
     }
 
-    void fillArcInPixels(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        checkGC(FILL);
-        if (width < 0) {
-            x = x + width;
-            width = -width;
-        }
-        if (height < 0) {
-            y = y + height;
-            height = -height;
-        }
-        if (width == 0 || height == 0 || arcAngle == 0)
-            return;
-        if (width == height) {
-            if (arcAngle >= 0) {
-            } else {
-            }
-        } else {
-            if (arcAngle >= 0) {
-            } else {
-            }
-        }
-    }
-
     /**
      * Fills the interior of the specified rectangle with a gradient
      * sweeping from left to right or top to bottom progressing
@@ -1414,42 +1200,6 @@ public final class DartGC extends DartResource implements IGC {
         FlutterBridge.send(this, "fillGradientRectangleintintintintboolean", drawOp);
     }
 
-    void fillGradientRectangleInPixels(int x, int y, int width, int height, boolean vertical) {
-        if ((width == 0) || (height == 0))
-            return;
-        /* Rewrite this to use GdkPixbuf */
-        RGB backgroundRGB, foregroundRGB;
-        backgroundRGB = getBackground().getRGB();
-        foregroundRGB = getForeground().getRGB();
-        RGB fromRGB, toRGB;
-        fromRGB = foregroundRGB;
-        toRGB = backgroundRGB;
-        boolean swapColors = false;
-        if (width < 0) {
-            x += width;
-            width = -width;
-            if (!vertical)
-                swapColors = true;
-        }
-        if (height < 0) {
-            y += height;
-            height = -height;
-            if (vertical)
-                swapColors = true;
-        }
-        if (swapColors) {
-            fromRGB = backgroundRGB;
-            toRGB = foregroundRGB;
-        }
-        if (fromRGB.equals(toRGB)) {
-            fillRectangleInPixels(x, y, width, height);
-            return;
-        }
-        if (vertical) {
-        } else {
-        }
-    }
-
     /**
      * Fills the interior of an oval, within the specified
      * rectangular area, with the receiver's background
@@ -1473,21 +1223,6 @@ public final class DartGC extends DartResource implements IGC {
         drawOp.width = width;
         drawOp.height = height;
         FlutterBridge.send(this, "fillOvalintintintint", drawOp);
-    }
-
-    void fillOvalInPixels(int x, int y, int width, int height) {
-        checkGC(FILL);
-        if (width < 0) {
-            x = x + width;
-            width = -width;
-        }
-        if (height < 0) {
-            y = y + height;
-            height = -height;
-        }
-        if (width == height) {
-        } else {
-        }
     }
 
     /**
@@ -1548,10 +1283,6 @@ public final class DartGC extends DartResource implements IGC {
         FlutterBridge.send(this, "fillPolygonint", drawOp);
     }
 
-    void fillPolygonInPixels(int[] pointArray) {
-        checkGC(FILL);
-    }
-
     /**
      * Fills the interior of the rectangle specified by the arguments,
      * using the receiver's background color.
@@ -1576,21 +1307,6 @@ public final class DartGC extends DartResource implements IGC {
         FlutterBridge.send(this, "fillRectangleintintintint", drawOp);
     }
 
-    void fillRectangleInPixels(int x, int y, int width, int height) {
-        checkGC(FILL);
-        if (width < 0) {
-            x = x + width;
-            width = -width;
-        }
-        if (height < 0) {
-            y = y + height;
-            height = -height;
-        }
-        if (data.regionSet != 0) {
-        } else {
-        }
-    }
-
     /**
      * Fills the interior of the specified rectangle, using the receiver's
      * background color.
@@ -1610,10 +1326,6 @@ public final class DartGC extends DartResource implements IGC {
         VGCFillRectangleRectangle drawOp = new VGCFillRectangleRectangle();
         drawOp.rect = rect;
         FlutterBridge.send(this, "fillRectangleRectangle", drawOp);
-    }
-
-    void fillRectangleInPixels(Rectangle rect) {
-        fillRectangleInPixels(rect.x, rect.y, rect.width, rect.height);
     }
 
     /**
@@ -1642,31 +1354,6 @@ public final class DartGC extends DartResource implements IGC {
         drawOp.arcWidth = arcWidth;
         drawOp.arcHeight = arcHeight;
         FlutterBridge.send(this, "fillRoundRectangleintintintintintint", drawOp);
-    }
-
-    void fillRoundRectangleInPixels(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        checkGC(FILL);
-        int nx = x;
-        int ny = y;
-        int nw = width;
-        int nh = height;
-        int naw = arcWidth;
-        int nah = arcHeight;
-        if (nw < 0) {
-            nw = 0 - nw;
-            nx = nx - nw;
-        }
-        if (nh < 0) {
-            nh = 0 - nh;
-            ny = ny - nh;
-        }
-        if (naw < 0)
-            naw = 0 - naw;
-        if (nah < 0)
-            nah = 0 - nah;
-        if (naw == 0 || nah == 0) {
-        } else {
-        }
     }
 
     int fixMnemonic(char[] buffer) {
@@ -1866,67 +1553,6 @@ public final class DartGC extends DartResource implements IGC {
         return this.clipping;
     }
 
-    Rectangle getClippingInPixels() {
-        /* Calculate visible bounds in device space */
-        int x = 0, y = 0, width = 0, height = 0;
-        int[] w = new int[1], h = new int[1];
-        getSize(w, h);
-        width = w[0];
-        height = h[0];
-        /* Intersect visible bounds with clipping in device space and then convert then to user space */
-        long cairo = data.cairo;
-        long clipRgn = data.clipRgn;
-        long damageRgn = data.damageRgn;
-        if (clipRgn != 0 || damageRgn != 0 || cairo != 0) {
-            if (damageRgn != 0) {
-            }
-            /* Intersect visible bounds with clipping */
-            if (clipRgn != 0) {
-                /* Convert clipping to device space if needed */
-                if (!Arrays.equals(data.clippingTransform, currentTransform)) {
-                    double[] clippingTransform;
-                    if (currentTransform != null && data.clippingTransform == null) {
-                        /*
-					 * User actions in this case are:
-					 * 1. Set clipping.
-					 * 2. Set a transformation B.
-		             *
-					 * The clipping was specified before transformation B was set.
-					 * So to convert it to the new space, we just invert the transformation B.
-					 */
-                        clippingTransform = currentTransform.clone();
-                    } else if (currentTransform != null && data.clippingTransform != null) {
-                        /*
-					 * User actions in this case are:
-					 * 1. Set a transformation A.
-					 * 2. Set clipping.
-					 * 3. Set a different transformation B. This is global and wipes out transformation A.
-					 *
-					 * Since step 3. wipes out transformation A, we must apply A on the clipping rectangle to have
-					 * the correct clipping rectangle after transformation A is wiped.
-					 * Then, we apply the inverted transformation B on the resulting clipping,
-					 * to convert it to the new space (which results after applying B).
-					 */
-                        clippingTransform = new double[6];
-                    } else {
-                        /*
-					 * User actions in this case are:
-					 * 1. Set a transformation A.
-					 * 2. Set clipping.
-					 * 3. Wipe the transformation A (i.e. call GC.setTransformation(A)).
-					 *
-					 * We must apply transformation A on the clipping, to convert it to the new space.
-					 */
-                        clippingTransform = data.clippingTransform.clone();
-                    }
-                    clipRgn = convertRgn(clipRgn, clippingTransform);
-                } else {
-                }
-            }
-        }
-        return new Rectangle(x, y, width, height);
-    }
-
     /**
      * Sets the region managed by the argument to the current
      * clipping region of the receiver.
@@ -2106,12 +1732,6 @@ public final class DartGC extends DartResource implements IGC {
     public LineAttributes getLineAttributes() {
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        LineAttributes attributes = getLineAttributesInPixels();
-        attributes.width = attributes.width;
-        return attributes;
-    }
-
-    LineAttributes getLineAttributesInPixels() {
         float[] dashes = null;
         if (data.lineDashes != null) {
             dashes = new float[data.lineDashes.length];
@@ -2215,10 +1835,6 @@ public final class DartGC extends DartResource implements IGC {
     public int getLineWidth() {
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return getLineWidthInPixels();
-    }
-
-    int getLineWidthInPixels() {
         return (int) data.lineWidth;
     }
 
@@ -2816,13 +2432,9 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setClipping(int x, int y, int width, int height) {
+        dirty();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        setClippingInPixels(x, y, width, height);
-    }
-
-    void setClippingInPixels(int x, int y, int width, int height) {
-        dirty();
         if (width < 0) {
             x = x + width;
             width = -width;
@@ -2886,17 +2498,10 @@ public final class DartGC extends DartResource implements IGC {
     public void setClipping(Rectangle rect) {
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        setClippingInPixels(rect);
-    }
-
-    void setClippingInPixels(Rectangle rect) {
         if (rect == null) {
             resetClipping();
         } else {
-            setClippingInPixels(rect.x, rect.y, rect.width, rect.height);
-        }
-        if (!java.util.Objects.equals(this.clipping, rect)) {
-            dirty();
+            setClipping(rect.x, rect.y, rect.width, rect.height);
         }
     }
 
@@ -3147,19 +2752,14 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.3
      */
     public void setLineAttributes(LineAttributes attributes) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (attributes == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        attributes.width = attributes.width;
-        setLineAttributesInPixels(attributes);
-    }
-
-    void setLineAttributesInPixels(LineAttributes attributes) {
         LineAttributes newValue = attributes;
         if (!java.util.Objects.equals(this.lineAttributes, newValue)) {
             dirty();
         }
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (attributes == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
         int mask = 0;
         float lineWidth = attributes.width;
         if (lineWidth != data.lineWidth) {
@@ -3446,16 +3046,12 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setLineWidth(int lineWidth) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        setLineWidthInPixels(lineWidth);
-    }
-
-    void setLineWidthInPixels(int lineWidth) {
         int newValue = lineWidth;
         if (!java.util.Objects.equals(this.lineWidth, newValue)) {
             dirty();
         }
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (data.lineWidth == lineWidth)
             return;
         data.lineWidth = lineWidth;
@@ -3660,10 +3256,6 @@ public final class DartGC extends DartResource implements IGC {
      */
     public Point textExtent(String string) {
         return textExtent(string, SWT.DRAW_DELIMITER | SWT.DRAW_TAB);
-    }
-
-    Point textExtentInPixels(String string) {
-        return textExtentInPixels(string, SWT.DRAW_DELIMITER | SWT.DRAW_TAB);
     }
 
     /**

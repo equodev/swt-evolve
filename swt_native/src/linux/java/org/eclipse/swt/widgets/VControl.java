@@ -18,6 +18,15 @@ public class VControl extends VWidget {
         super(impl);
     }
 
+    @JsonAttribute(ignore = true)
+    public AutoscalingMode getAutoscalingMode() {
+        return ((DartControl) impl).autoscalingMode;
+    }
+
+    public void setAutoscalingMode(AutoscalingMode value) {
+        ((DartControl) impl).autoscalingMode = value;
+    }
+
     public Color getBackground() {
         return ((DartControl) impl).background;
     }

@@ -1351,7 +1351,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
 
     private int getMenuZoom() {
         if (getDisplay().isRescalingAtRuntime()) {
-            return super.getZoom();
+            return super.getAutoscalingZoom();
         } else {
             return DPIUtil.getZoomForAutoscaleProperty(getMonitorZoom());
         }
@@ -1419,7 +1419,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
         if ((parent.style & SWT.BAR) != 0) {
             if (((SwtMenu) parent.getImpl()).needsMenuCallback()) {
                 Point point = calculateRenderedTextSize();
-                int menuZoom = getDisplay().isRescalingAtRuntime() ? super.getZoom() : getMonitorZoom();
+                int menuZoom = getDisplay().isRescalingAtRuntime() ? super.getAutoscalingZoom() : getMonitorZoom();
                 struct.itemHeight = DPIUtil.pointToPixel(point.y, menuZoom);
                 /*
 			 * Weirdness in Windows. Setting `HBMMENU_CALLBACK` causes
@@ -1437,7 +1437,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
         }
         int width = 0, height = 0;
         if (image != null) {
-            Rectangle rect = Win32DPIUtils.pointToPixel(image.getBounds(), getZoom());
+            Rectangle rect = Win32DPIUtils.pointToPixel(image.getBounds(), getAutoscalingZoom());
             width = rect.width;
             height = rect.height;
         } else {
@@ -1459,7 +1459,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
             if ((lpcmi.dwStyle & OS.MNS_CHECKORBMP) == 0) {
                 for (MenuItem item : parent.getItems()) {
                     if (((SwtItem) item.getImpl()).image != null) {
-                        Rectangle rect = Win32DPIUtils.pointToPixel(((SwtItem) item.getImpl()).image.getBounds(), getZoom());
+                        Rectangle rect = Win32DPIUtils.pointToPixel(((SwtItem) item.getImpl()).image.getBounds(), getAutoscalingZoom());
                         width = Math.max(width, rect.width);
                     }
                 }
@@ -1520,7 +1520,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
         }
         // Refresh the sub menu
         Menu subMenu = getMenu();
-        if (subMenu != null) {
+        if (subMenu != null && !subMenu.isDisposed()) {
             subMenu.notifyListeners(SWT.ZoomChanged, event);
         }
     }

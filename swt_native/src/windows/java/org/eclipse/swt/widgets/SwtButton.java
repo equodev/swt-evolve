@@ -154,7 +154,7 @@ public class SwtButton extends SwtControl implements IButton {
             imageList.dispose();
         imageList = null;
         if (image != null) {
-            imageList = new ImageList(getApi().style & SWT.RIGHT_TO_LEFT, getZoom());
+            imageList = new ImageList(getApi().style & SWT.RIGHT_TO_LEFT, getAutoscalingZoom());
             if (OS.IsWindowEnabled(getApi().handle)) {
                 imageList.add(image);
             } else {
@@ -164,7 +164,7 @@ public class SwtButton extends SwtControl implements IButton {
                 imageList.add(disabledImage);
             }
             BUTTON_IMAGELIST buttonImageList = new BUTTON_IMAGELIST();
-            buttonImageList.himl = imageList.getHandle(getZoom());
+            buttonImageList.himl = imageList.getHandle(getAutoscalingZoom());
             int oldBits = OS.GetWindowLong(getApi().handle, OS.GWL_STYLE), newBits = oldBits;
             newBits &= ~(OS.BS_LEFT | OS.BS_CENTER | OS.BS_RIGHT);
             if ((getApi().style & SWT.LEFT) != 0)
@@ -214,7 +214,7 @@ public class SwtButton extends SwtControl implements IButton {
             newBits |= OS.BS_RIGHT;
         if (imageList != null) {
             BUTTON_IMAGELIST buttonImageList = new BUTTON_IMAGELIST();
-            buttonImageList.himl = imageList.getHandle(getZoom());
+            buttonImageList.himl = imageList.getHandle(getAutoscalingZoom());
             if (text.length() == 0) {
                 if ((getApi().style & SWT.LEFT) != 0)
                     buttonImageList.uAlign = OS.BUTTON_IMAGELIST_ALIGN_LEFT;
@@ -326,7 +326,7 @@ public class SwtButton extends SwtControl implements IButton {
             return MARGIN;
         int margin = 0;
         if (image != null && text.length() != 0) {
-            Rectangle bounds = Win32DPIUtils.scaleBounds(image.getBounds(), this.getZoom(), 100);
+            Rectangle bounds = Win32DPIUtils.scaleBounds(image.getBounds(), this.getAutoscalingZoom(), 100);
             margin += bounds.width + MARGIN * 2;
             long oldFont = 0;
             long hDC = OS.GetDC(getApi().handle);
@@ -390,14 +390,14 @@ public class SwtButton extends SwtControl implements IButton {
                 boolean hasImage = image != null, hasText = true;
                 if (hasImage) {
                     if (image != null) {
-                        Rectangle rect = Win32DPIUtils.scaleBounds(image.getBounds(), this.getZoom(), 100);
+                        Rectangle rect = Win32DPIUtils.scaleBounds(image.getBounds(), this.getAutoscalingZoom(), 100);
                         width = rect.width;
                         if (hasText && text.length() != 0) {
-                            width += DPIUtil.pointToPixel(MARGIN * 2, getZoom());
+                            width += DPIUtil.pointToPixel(MARGIN * 2, getAutoscalingZoom());
                             ;
                         }
                         height = rect.height;
-                        extra = DPIUtil.pointToPixel(MARGIN * 2, getZoom());
+                        extra = DPIUtil.pointToPixel(MARGIN * 2, getAutoscalingZoom());
                         ;
                     }
                 }
@@ -413,7 +413,7 @@ public class SwtButton extends SwtControl implements IButton {
                     if (length == 0) {
                         height = Math.max(height, lptm.tmHeight);
                     } else {
-                        extra = Math.max(DPIUtil.pointToPixel(MARGIN * 2, getZoom()), lptm.tmAveCharWidth);
+                        extra = Math.max(DPIUtil.pointToPixel(MARGIN * 2, getAutoscalingZoom()), lptm.tmAveCharWidth);
                         char[] buffer = text.toCharArray();
                         RECT rect = new RECT();
                         int flags = OS.DT_CALCRECT | OS.DT_SINGLELINE;
@@ -840,7 +840,7 @@ public class SwtButton extends SwtControl implements IButton {
             newBits |= OS.BS_RIGHT;
         if (imageList != null) {
             BUTTON_IMAGELIST buttonImageList = new BUTTON_IMAGELIST();
-            buttonImageList.himl = imageList.getHandle(getZoom());
+            buttonImageList.himl = imageList.getHandle(getAutoscalingZoom());
             if (text.length() == 0) {
                 if ((getApi().style & SWT.LEFT) != 0)
                     buttonImageList.uAlign = OS.BUTTON_IMAGELIST_ALIGN_LEFT;
@@ -1114,7 +1114,7 @@ public class SwtButton extends SwtControl implements IButton {
             OS.SendMessage(getApi().handle, OS.BCM_GETIMAGELIST, 0, buttonImageList);
             if (imageList != null)
                 imageList.dispose();
-            imageList = new ImageList(getApi().style & SWT.RIGHT_TO_LEFT, getZoom());
+            imageList = new ImageList(getApi().style & SWT.RIGHT_TO_LEFT, getAutoscalingZoom());
             if (OS.IsWindowEnabled(getApi().handle)) {
                 imageList.add(image);
             } else {
@@ -1123,7 +1123,7 @@ public class SwtButton extends SwtControl implements IButton {
                 disabledImage = new Image(display, image, SWT.IMAGE_DISABLE);
                 imageList.add(disabledImage);
             }
-            buttonImageList.himl = imageList.getHandle(getZoom());
+            buttonImageList.himl = imageList.getHandle(getAutoscalingZoom());
             OS.SendMessage(getApi().handle, OS.BCM_SETIMAGELIST, 0, buttonImageList);
             /*
 		* Bug in Windows.  Under certain cirumstances yet to be
@@ -1481,13 +1481,13 @@ public class SwtButton extends SwtControl implements IButton {
                                     data.device = display;
                                     GC gc = createNewGC(nmcd.hdc, data);
                                     int margin = computeLeftMargin();
-                                    Rectangle imageBounds = Win32DPIUtils.scaleBounds(image.getBounds(), this.getZoom(), 100);
+                                    Rectangle imageBounds = Win32DPIUtils.scaleBounds(image.getBounds(), this.getAutoscalingZoom(), 100);
                                     int imageWidth = imageBounds.width;
                                     // for SWT.RIGHT_TO_LEFT right and left are inverted
                                     left += (imageWidth + (isRadioOrCheck() ? 2 * MARGIN : MARGIN));
                                     int x = margin + (isRadioOrCheck() ? radioOrCheckTextPadding : 3);
                                     int y = Math.max(0, (nmcd.bottom - imageBounds.height) / 2);
-                                    int zoom = getZoom();
+                                    int zoom = getAutoscalingZoom();
                                     gc.drawImage(image, DPIUtil.pixelToPoint(x, zoom), DPIUtil.pixelToPoint(y, zoom));
                                     gc.dispose();
                                 }

@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2020 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -598,11 +598,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      * </ul>
      */
     public void draw(GC gc, int x, int y) {
-        drawInPixels(gc, x, y);
-    }
-
-    void drawInPixels(GC gc, int x, int y) {
-        drawInPixels(gc, x, y, -1, -1, null, null);
+        drawInPixels(gc, x, y, -1, -1, null, null, 0);
     }
 
     /**
@@ -626,10 +622,6 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Color selectionForeground, Color selectionBackground) {
         checkLayout();
-        drawInPixels(gc, x, y, selectionStart, selectionEnd, selectionForeground, selectionBackground);
-    }
-
-    void drawInPixels(GC gc, int x, int y, int selectionStart, int selectionEnd, Color selectionForeground, Color selectionBackground) {
         drawInPixels(gc, x, y, selectionStart, selectionEnd, selectionForeground, selectionBackground, 0);
     }
 
@@ -731,7 +723,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                     if (ascentInPoints != -1 && descentInPoints != -1) {
                         height = Math.max(height, ascentInPoints + descentInPoints);
                     }
-                    height += getSpacingInPixels();
+                    height += OS.PANGO_PIXELS(OS.pango_layout_get_spacing(layout));
                     int width = (flags & SWT.FULL_SELECTION) != 0 ? 0x7fff : height / 3;
                     Cairo.cairo_rectangle(cairo, lineX, lineY, width, height);
                     Cairo.cairo_fill(cairo);
@@ -766,7 +758,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
                 selectionForeground = device.getSystemColor(SWT.COLOR_LIST_SELECTION_TEXT);
             if (selectionBackground == null)
                 selectionBackground = device.getSystemColor(SWT.COLOR_LIST_SELECTION);
-            int yExtent = extent ? getSpacingInPixels() : 0;
+            int yExtent = extent ? OS.PANGO_PIXELS(OS.pango_layout_get_spacing(layout)) : 0;
             boolean fullSelection = selectionStart == 0 && selectionEnd == length - 1;
             if (fullSelection) {
                 long ptr = OS.pango_layout_get_text(layout);
@@ -976,11 +968,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      * @see #getLineBounds(int)
      */
     public Rectangle getBounds() {
-        int spacingInPixels = getSpacingInPixels();
-        return getBoundsInPixels(spacingInPixels);
-    }
-
-    Rectangle getBoundsInPixels(int spacingInPixels) {
+        int spacingInPixels = OS.PANGO_PIXELS(OS.pango_layout_get_spacing(layout));
         checkLayout();
         computeRuns();
         int[] w = new int[1], h = new int[1];
@@ -1011,11 +999,6 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      * </ul>
      */
     public Rectangle getBounds(int start, int end) {
-        checkLayout();
-        return getBoundsInPixels(start, end);
-    }
-
-    Rectangle getBoundsInPixels(int start, int end) {
         checkLayout();
         computeRuns();
         int length = text.length();
@@ -1122,10 +1105,6 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public int getIndent() {
         checkLayout();
-        return getIndentInPixels();
-    }
-
-    int getIndentInPixels() {
         return indent;
     }
 
@@ -1206,10 +1185,6 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public Rectangle getLineBounds(int lineIndex) {
         checkLayout();
-        return getLineBoundsInPixels(lineIndex);
-    }
-
-    Rectangle getLineBoundsInPixels(int lineIndex) {
         computeRuns();
         int lineCount = OS.pango_layout_get_line_count(layout);
         if (!(0 <= lineIndex && lineIndex < lineCount))
@@ -1405,10 +1380,6 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public Point getLocation(int offset, boolean trailing) {
         checkLayout();
-        return getLocationInPixels(offset, trailing);
-    }
-
-    Point getLocationInPixels(int offset, boolean trailing) {
         computeRuns();
         int length = text.length();
         if (!(0 <= offset && offset <= length))
@@ -1557,14 +1528,7 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      * @see #getLocation(int, boolean)
      */
     public int getOffset(Point point, int[] trailing) {
-        checkLayout();
-        return getOffsetInPixels(point, trailing);
-    }
-
-    int getOffsetInPixels(Point point, int[] trailing) {
-        if (point == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return getOffsetInPixels(point.x, point.y, trailing);
+        return getOffset(point.x, point.y, trailing);
     }
 
     /**
@@ -1592,10 +1556,6 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public int getOffset(int x, int y, int[] trailing) {
         checkLayout();
-        return getOffset(new Point(x, y), trailing);
-    }
-
-    int getOffsetInPixels(int x, int y, int[] trailing) {
         computeRuns();
         if (trailing != null && trailing.length < 1)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1792,10 +1752,6 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public int getSpacing() {
         checkLayout();
-        return getSpacingInPixels();
-    }
-
-    int getSpacingInPixels() {
         return OS.PANGO_PIXELS(OS.pango_layout_get_spacing(layout));
     }
 
@@ -1942,10 +1898,6 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public int getWidth() {
         checkLayout();
-        return getWidthInPixels();
-    }
-
-    int getWidthInPixels() {
         return wrapWidth;
     }
 
@@ -1962,10 +1914,6 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public int getWrapIndent() {
         checkLayout();
-        return getWrapIndentInPixels();
-    }
-
-    int getWrapIndentInPixels() {
         return wrapIndent;
     }
 
@@ -2161,11 +2109,6 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
      */
     public void setIndent(int indent) {
         checkLayout();
-        setIndentInPixels(indent);
-    }
-
-    void setIndentInPixels(int indent) {
-        checkLayout();
         if (indent < 0)
             return;
         if (this.indent == indent)
@@ -2241,10 +2184,6 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         checkLayout();
         if (spacing < 0)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        setSpacingInPixels(spacing);
-    }
-
-    void setSpacingInPixels(int spacing) {
         OS.pango_layout_set_spacing(layout, spacing * OS.PANGO_SCALE);
     }
 
@@ -2478,10 +2417,6 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         checkLayout();
         if (this.tabs == null && tabs == null)
             return;
-        setTabsInPixels(tabs);
-    }
-
-    void setTabsInPixels(int[] tabs) {
         if (Arrays.equals(this.tabs, tabs))
             return;
         this.tabs = tabs;
@@ -2578,10 +2513,6 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         checkLayout();
         if (width < -1 || width == 0)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        setWidthInPixels(width);
-    }
-
-    void setWidthInPixels(int width) {
         if (wrapWidth == width)
             return;
         freeRuns();
@@ -2618,10 +2549,6 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         checkLayout();
         if (wrapIndent < 0)
             return;
-        setWrapIndentInPixels(wrapIndent);
-    }
-
-    void setWrapIndentInPixels(int wrapIndent) {
         if (this.wrapIndent == wrapIndent)
             return;
         this.wrapIndent = wrapIndent;

@@ -239,8 +239,8 @@ class Edge extends WebBrowser {
             HttpCookie parser = HttpCookie.parse(CookieValue).get(0);
             URL origin;
             try {
-                origin = new URL(CookieUrl);
-            } catch (MalformedURLException e) {
+                origin = new URI(CookieUrl).toURL();
+            } catch (URISyntaxException | IllegalArgumentException | MalformedURLException e) {
                 return;
             }
             if (parser.getDomain() == null) {
@@ -617,7 +617,8 @@ class Edge extends WebBrowser {
         MSG msg = new MSG();
         AtomicBoolean timeoutOccurred = new AtomicBoolean();
         // The timer call also wakes up the display to avoid being stuck in display.sleep()
-        display.timerExec((int) MAXIMUM_OPERATION_TIME.toMillis(), () -> timeoutOccurred.set(true));
+        Runnable runnable = () -> timeoutOccurred.set(true);
+        display.timerExec((int) MAXIMUM_OPERATION_TIME.toMillis(), runnable);
         while (!display.isDisposed() && !condition.get() && !timeoutOccurred.get()) {
             if (OS.PeekMessage(msg, 0, 0, 0, OS.PM_NOREMOVE | OS.PM_QS_POSTMESSAGE)) {
                 display.readAndDispatch();
@@ -625,6 +626,7 @@ class Edge extends WebBrowser {
                 display.sleep();
             }
         }
+        display.timerExec(-1, runnable);
         if (!condition.get()) {
             timeoutHandler.accept(createTimeOutException());
         }

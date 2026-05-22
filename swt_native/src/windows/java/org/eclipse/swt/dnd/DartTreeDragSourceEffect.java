@@ -91,6 +91,18 @@ public class DartTreeDragSourceEffect extends DartDragSourceEffect implements IT
         return null;
     }
 
+    private static byte computeAlpha(byte[] src, int sp, int crColorKey) {
+        if (crColorKey == -1)
+            return src[sp];
+        int b = src[sp] & 0xFF;
+        int g = src[sp + 1] & 0xFF;
+        int r = src[sp + 2] & 0xFF;
+        int keyR = crColorKey & 0xFF;
+        int keyG = (crColorKey >> 8) & 0xFF;
+        int keyB = (crColorKey >> 16) & 0xFF;
+        return (r == keyR && g == keyG && b == keyB) ? 0 : (byte) 255;
+    }
+
     public Image _dragSourceImage() {
         return dragSourceImage;
     }

@@ -245,7 +245,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getBoundsInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPoint(getBoundsInPixels(), getAutoscalingZoom());
     }
 
     Rectangle getBoundsInPixels() {
@@ -459,7 +459,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
      */
     public int getWidth() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getWidthInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getWidthInPixels(), getAutoscalingZoom());
     }
 
     int getWidthInPixels() {
@@ -1117,7 +1117,7 @@ public class SwtToolItem extends SwtItem implements IToolItem {
      */
     public void setWidth(int width) {
         checkWidget();
-        setWidthInPixels(DPIUtil.pointToPixel(width, getZoom()));
+        setWidthInPixels(DPIUtil.pointToPixel(width, getAutoscalingZoom()));
     }
 
     void setWidthInPixels(int width) {
@@ -1151,13 +1151,13 @@ public class SwtToolItem extends SwtItem implements IToolItem {
             Rectangle boundsInPoints = image.getBounds();
             int listStyle = parent.style & SWT.RIGHT_TO_LEFT;
             if (imageList == null) {
-                imageList = ((SwtDisplay) display.getImpl()).getImageListToolBar(listStyle, boundsInPoints.width, boundsInPoints.height, getZoom());
+                imageList = ((SwtDisplay) display.getImpl()).getImageListToolBar(listStyle, boundsInPoints.width, boundsInPoints.height, getAutoscalingZoom());
             }
             if (disabledImageList == null) {
-                disabledImageList = ((SwtDisplay) display.getImpl()).getImageListToolBarDisabled(listStyle, boundsInPoints.width, boundsInPoints.height, getZoom());
+                disabledImageList = ((SwtDisplay) display.getImpl()).getImageListToolBarDisabled(listStyle, boundsInPoints.width, boundsInPoints.height, getAutoscalingZoom());
             }
             if (hotImageList == null) {
-                hotImageList = ((SwtDisplay) display.getImpl()).getImageListToolBarHot(listStyle, boundsInPoints.width, boundsInPoints.height, getZoom());
+                hotImageList = ((SwtDisplay) display.getImpl()).getImageListToolBarHot(listStyle, boundsInPoints.width, boundsInPoints.height, getAutoscalingZoom());
             }
             Image disabled = disabledImage;
             if (disabledImage == null) {

@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -418,7 +418,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      * @see #dispose()
      */
     public SwtImage(Device device, ImageData data, Image api) {
-        this(device, GtkDPIUtil.pointToPixel(device, data), DPIUtil.getDeviceZoom(), api);
+        this(device, DPIUtil.autoScaleImageData(device, data, 100), DPIUtil.getDeviceZoom(), api);
     }
 
     SwtImage(Device device, ImageData data, int zoom, Image api) {
@@ -470,8 +470,8 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         currentDeviceZoom = DPIUtil.getDeviceZoom();
-        source = GtkDPIUtil.pointToPixel(device, source);
-        mask = GtkDPIUtil.pointToPixel(device, mask);
+        source = DPIUtil.autoScaleImageData(device, source, 100);
+        mask = DPIUtil.autoScaleImageData(device, mask, 100);
         mask = ImageData.convertMask(mask);
         ImageData image = new ImageData(source.width, source.height, source.depth, source.palette, source.scanlinePad, source.data);
         image.maskPad = mask.scanlinePad;
@@ -535,11 +535,17 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      */
     public SwtImage(Device device, InputStream stream, Image api) {
         super(device, api);
-        currentDeviceZoom = DPIUtil.getDeviceZoom();
-        ElementAtZoom<ImageData> image = ImageDataLoader.loadByZoom(stream, FileFormat.DEFAULT_ZOOM, currentDeviceZoom);
-        ImageData data = DPIUtil.scaleImageData(device, image, currentDeviceZoom);
-        init(data);
-        init();
+        if (stream == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
+        try {
+            currentDeviceZoom = DPIUtil.getDeviceZoom();
+            this.imageDataProvider = createImageDataProvider(stream);
+            initFromImageDataProvider(currentDeviceZoom);
+            init();
+        } catch (IOException e) {
+            SWT.error(SWT.ERROR_IO, e);
+        }
     }
 
     /**
@@ -579,10 +585,9 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         this.filename = GraphicsUtils.getFilename(filename);
         if (filename == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        this.imageFileNameProvider = zoom -> zoom == 100 ? filename : null;
         currentDeviceZoom = DPIUtil.getDeviceZoom();
-        ElementAtZoom<ImageData> image = ImageDataLoader.loadByZoom(filename, FileFormat.DEFAULT_ZOOM, currentDeviceZoom);
-        ImageData data = DPIUtil.scaleImageData(device, image, currentDeviceZoom);
-        init(data);
+        initFromFileNameProvider(currentDeviceZoom);
         init();
     }
 
@@ -789,6 +794,27 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         init(resizedData);
     }
 
+    private static ImageDataProvider createImageDataProvider(InputStream stream) throws IOException {
+        byte[] streamData = stream.readAllBytes();
+        if (ImageDataLoader.isDynamicallySizable(new ByteArrayInputStream(streamData))) {
+            ImageDataAtSizeProvider imageDataAtSizeProvider = new ImageDataAtSizeProvider() {
+
+                @Override
+                public ImageData getImageData(int zoom) {
+                    return ImageDataLoader.loadByZoom(new ByteArrayInputStream(streamData), FileFormat.DEFAULT_ZOOM, zoom).element();
+                }
+
+                @Override
+                public ImageData getImageData(int width, int height) {
+                    return ImageDataLoader.loadBySize(new ByteArrayInputStream(streamData), width, height);
+                }
+            };
+            return imageDataAtSizeProvider;
+        }
+        ImageData imageData = ImageDataLoader.loadByZoom(new ByteArrayInputStream(streamData), FileFormat.DEFAULT_ZOOM, 100).element();
+        return zoom -> zoom == 100 ? imageData : null;
+    }
+
     void createFromPixbuf(int type, long pixbuf) {
         this.getApi().type = type;
         int pixbufWidth = GDK.gdk_pixbuf_get_width(pixbuf);
@@ -993,7 +1019,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
     }
 
     void executeOnImageAtSize(Consumer<Image> imageAtBestFittingSizeConsumer, int destWidth, int destHeight) {
-        Optional<Image> imageAtSize = cachedImageAtSize.refresh(destWidth, destHeight);
+        Optional<Image> imageAtSize = cachedImageAtSize.refresh(Math.max(1, destWidth), Math.max(1, destHeight));
         imageAtBestFittingSizeConsumer.accept(imageAtSize.orElse(this.getApi()));
     }
 

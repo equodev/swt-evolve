@@ -377,7 +377,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public void setPreferredSize(int width, int height) {
         checkWidget();
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         setPreferredSizeInPixels(DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom));
     }
 
@@ -471,7 +471,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public void setSize(int width, int height) {
         checkWidget();
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         setSizeInPixels(DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom));
     }
 
@@ -569,7 +569,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public void setMinimumSize(int width, int height) {
         checkWidget();
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         setMinimumSizeInPixels(DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom));
     }
 

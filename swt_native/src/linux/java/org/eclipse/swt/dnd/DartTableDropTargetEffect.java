@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -138,8 +138,7 @@ public class DartTableDropTargetEffect extends DartDropTargetEffect implements I
     public void dragOver(DropTargetEvent event) {
         Table table = (Table) control;
         int effect = checkEffect(event.feedback);
-        Point coordinates = new Point(event.x, event.y);
-        coordinates = table.toControl(coordinates);
+        Point coordinates = table.toControl(event.x, event.y);
         long[] path = new long[1];
         int index = -1;
         if (path[0] != 0) {

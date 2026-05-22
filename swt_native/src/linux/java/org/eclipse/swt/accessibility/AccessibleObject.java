@@ -4856,6 +4856,9 @@ class AccessibleObject {
     }
 
     void addRelation(int type, Accessible target) {
+        //TODO investigate proper way for GTK 4.x
+        if (GTK.GTK4)
+            return;
         if (target.getImpl() instanceof SwtAccessible) {
             AccessibleObject targetAccessibleObject = ((SwtAccessible) target.getImpl()).getAccessibleObject();
             if (targetAccessibleObject != null) {
@@ -4892,6 +4895,9 @@ class AccessibleObject {
     }
 
     void removeRelation(int type, Accessible target) {
+        //TODO investigate proper way for GTK 4.x
+        if (GTK.GTK4)
+            return;
         if (target.getImpl() instanceof SwtAccessible) {
             AccessibleObject targetAccessibleObject = ((SwtAccessible) target.getImpl()).getAccessibleObject();
             if (targetAccessibleObject != null) {

@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.stream.*;
@@ -34,7 +35,7 @@ public interface ImplControl extends ImplWidget {
 
     int _drawCount();
 
-    boolean _autoScaleDisabled();
+    AutoscalingMode _autoscalingMode();
 
     Control computeTabRoot();
 
@@ -87,6 +88,4 @@ public interface ImplControl extends ImplWidget {
     void updateBackgroundMode();
 
     void updateLayout(boolean resize, boolean all);
-
-    int getZoom();
 }

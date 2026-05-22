@@ -86,6 +86,7 @@ public class SwtTrayItem extends SwtItem implements ITrayItem {
     public SwtTrayItem(Tray parent, int style, TrayItem api) {
         super(parent, style, api);
         this.parent = parent;
+        this.getApi().nativeZoom = display.getDeviceZoom();
         ((SwtTray) parent.getImpl()).createItem(this.getApi(), parent.getItemCount());
         createUpdateWidget(true);
     }
@@ -483,11 +484,11 @@ public class SwtTrayItem extends SwtItem implements ITrayItem {
         if (icon != null) {
             switch(icon.type) {
                 case SWT.BITMAP:
-                    image2 = SwtDisplay.createIcon(image, getZoom());
-                    hIcon = SwtImage.win32_getHandle(image2, getZoom());
+                    image2 = SwtDisplay.createIcon(image, getAutoscalingZoom());
+                    hIcon = SwtImage.win32_getHandle(image2, getAutoscalingZoom());
                     break;
                 case SWT.ICON:
-                    hIcon = SwtImage.win32_getHandle(icon, getZoom());
+                    hIcon = SwtImage.win32_getHandle(icon, getAutoscalingZoom());
                     break;
             }
         }
