@@ -58,8 +58,8 @@ public class TreeHelper {
 
         if (wasExpanded != expand) {
             item.setExpanded(expand);
-            dartTree.getBridge().dirty(dartTree);
             dartTree.sendEvent(expand ? SWT.Expand : SWT.Collapse, event);
+            dartTree.getBridge().dirty(dartTree);
         }
     }
 
