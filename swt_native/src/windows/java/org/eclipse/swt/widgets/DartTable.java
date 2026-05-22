@@ -1024,7 +1024,7 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     int getGridLineWidthInPixels() {
-        return DPIUtil.pointToPixel(GRID_WIDTH, getZoom());
+        return DPIUtil.pointToPixel(GRID_WIDTH, getAutoscalingZoom());
     }
 
     /**
@@ -1085,7 +1085,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public int getHeaderHeight() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getHeaderHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getHeaderHeightInPixels(), getAutoscalingZoom());
     }
 
     int getHeaderHeightInPixels() {
@@ -2515,7 +2515,7 @@ public class DartTable extends DartComposite implements ITable {
 			*/
                 newWidth++;
             }
-            newWidth += INSET * 2 + DPIUtil.pointToPixel(VISTA_EXTRA, getZoom());
+            newWidth += INSET * 2 + DPIUtil.pointToPixel(VISTA_EXTRA, getAutoscalingZoom());
         }
         return false;
     }
@@ -2983,7 +2983,7 @@ public class DartTable extends DartComposite implements ITable {
             y = Math.min(y, clientArea.y + clientArea.height);
         }
         Point pt = toDisplayInPixels(x, y);
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         event.setLocation(DPIUtil.pixelToPoint(pt.x, zoom), DPIUtil.pixelToPoint(pt.y, zoom));
     }
 
@@ -3028,6 +3028,11 @@ public class DartTable extends DartComposite implements ITable {
         return 0;
     }
 
+    void destroyImageList() {
+        // Bug in windows: Cannot set the imageList handle to 0 directly, it doesn't
+        // seems to cache the previous imageList and show flaky behavior. Instead set
+    }
+
     @Override
     void handleDPIChange(Event event, float scalingFactor) {
         super.handleDPIChange(event, scalingFactor);
@@ -3036,22 +3041,30 @@ public class DartTable extends DartComposite implements ITable {
         // Request ScrollWidth
         if (getColumns().length == 0) {
         }
+        if ((getApi().style & SWT.CHECK) != 0) {
+            destroyImageList();
+            int size = getItemHeightInPixels();
+            setCheckboxImageList(size, size, true);
+        }
         // if the item height was set at least once programmatically with CDDS_SUBITEMPREPAINT,
         // the item height of the table is not managed by the OS anymore e.g. when the zoom
         // on the monitor is changed, the height of the item will stay at the fixed size.
         // Resetting it will re-enable the default behavior again
         setItemHeight(-1);
         for (TableItem item : getItems()) {
-            item.notifyListeners(SWT.ZoomChanged, event);
+            if (item != null && !item.isDisposed()) {
+                item.notifyListeners(SWT.ZoomChanged, event);
+            }
         }
         for (TableColumn tableColumn : getColumns()) {
-            tableColumn.notifyListeners(SWT.ZoomChanged, event);
+            if (tableColumn != null && !tableColumn.isDisposed()) {
+                tableColumn.notifyListeners(SWT.ZoomChanged, event);
+            }
         }
         if (getColumns().length == 0 && scrollWidth != 0) {
             // Update scrollbar width if no columns are available
             setScrollWidth(scrollWidth);
         }
-        fixCheckboxImageListColor(true);
         settingItemHeight = false;
     }
 

@@ -99,6 +99,8 @@ public interface IShell extends IDecorations {
      */
     boolean getFullScreen();
 
+    Point getLocation();
+
     boolean getMaximized();
 
     /**
@@ -431,6 +433,19 @@ public interface IShell extends IDecorations {
      * @since 3.5
      */
     void setModified(boolean modified);
+
+    /**
+     * Returns the zoom of the shell.
+     * <p>
+     * Hint: The returned value is the zoom of the shell as originally considered by
+     * the OS and not an adjusted zoom value as considered by SWT autoscaling capabilities.
+     * </p>
+     *
+     * @return the zoom for this shell
+     *
+     * @since 3.133
+     */
+    int getZoom();
 
     /**
      * Sets the shape of the shell to the region specified

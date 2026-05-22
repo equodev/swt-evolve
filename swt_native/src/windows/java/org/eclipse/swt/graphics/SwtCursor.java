@@ -322,14 +322,15 @@ public final class SwtCursor extends SwtResource implements ICursor {
         if (cursor.getImpl() instanceof DartCursor) {
             return DartCursor.win32_getHandle(cursor, zoom);
         }
-        if (((SwtCursor) cursor.getImpl()).zoomLevelToHandle.get(zoom) != null) {
-            return ((SwtCursor) cursor.getImpl()).zoomLevelToHandle.get(zoom).getHandle();
+        int zoomWithPointerSizeScaleFactor = (int) (zoom * getPointerSizeScaleFactor());
+        if (((SwtCursor) cursor.getImpl()).zoomLevelToHandle.get(zoomWithPointerSizeScaleFactor) != null) {
+            return ((SwtCursor) cursor.getImpl()).zoomLevelToHandle.get(zoomWithPointerSizeScaleFactor).getHandle();
         }
-        CursorHandle handle = ((SwtCursor) cursor.getImpl()).cursorHandleProvider.createHandle(cursor.getImpl()._device(), zoom);
+        CursorHandle handle = ((SwtCursor) cursor.getImpl()).cursorHandleProvider.createHandle(cursor.getImpl()._device(), zoomWithPointerSizeScaleFactor);
         if (cursor.getImpl() instanceof SwtCursor) {
-            ((SwtCursor) cursor.getImpl()).setHandleForZoomLevel(handle, zoom);
+            ((SwtCursor) cursor.getImpl()).setHandleForZoomLevel(handle, zoomWithPointerSizeScaleFactor);
         }
-        return ((SwtCursor) cursor.getImpl()).zoomLevelToHandle.get(zoom).getHandle();
+        return ((SwtCursor) cursor.getImpl()).zoomLevelToHandle.get(zoomWithPointerSizeScaleFactor).getHandle();
     }
 
     private void setHandleForZoomLevel(CursorHandle handle, Integer zoom) {
@@ -639,14 +640,9 @@ public final class SwtCursor extends SwtResource implements ICursor {
 
         @Override
         public CursorHandle createHandle(Device device, int zoom) {
-            ImageData source;
-            if (zoom == DEFAULT_ZOOM) {
-                source = this.provider.getImageData(DEFAULT_ZOOM);
-            } else {
-                Image tempImage = new Image(device, this.provider);
-                source = tempImage.getImageData(zoom);
-                tempImage.dispose();
-            }
+            Image tempImage = new Image(device, this.provider);
+            ImageData source = tempImage.getImageData(zoom);
+            tempImage.dispose();
             return setupCursorFromImageData(device, source, null, getHotpotXInPixels(zoom), getHotpotYInPixels(zoom));
         }
     }
@@ -665,9 +661,7 @@ public final class SwtCursor extends SwtResource implements ICursor {
 
         @Override
         public CursorHandle createHandle(Device device, int zoom) {
-            float accessibilityFactor = getPointerSizeScaleFactor();
-            int scaledZoom = (int) (zoom * accessibilityFactor);
-            ImageData scaledSource = DPIUtil.scaleImageData(device, this.source, scaledZoom, DEFAULT_ZOOM);
+            ImageData scaledSource = DPIUtil.scaleImageData(device, this.source, zoom, DEFAULT_ZOOM);
             return setupCursorFromImageData(device, scaledSource, null, getHotpotXInPixels(zoom), getHotpotYInPixels(zoom));
         }
     }
@@ -698,7 +692,7 @@ public final class SwtCursor extends SwtResource implements ICursor {
 
         @Override
         public CursorHandle createHandle(Device device, int zoom) {
-            float scaledZoomFactor = zoom * getPointerSizeScaleFactor() / 100f;
+            float scaledZoomFactor = zoom / 100f;
             int scaledSourceWidth = Math.round(this.source.width * scaledZoomFactor);
             int scaledSourceHeight = Math.round(this.source.height * scaledZoomFactor);
             ImageData scaledSource = this.source.scaledTo(scaledSourceWidth, scaledSourceHeight);

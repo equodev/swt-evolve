@@ -42,10 +42,17 @@ import org.eclipse.swt.widgets.*;
  * The way they version webkitGTK is different from webkit.
  *   WebkitGTK:
  *    2.5 is webkit2.                    [2.4-..)  is Gtk3.
+ *  The WebKitGTK has a release version number and an API version.
+ *    GTK3: API Version 4
+ *    GTK4: API Version 6
+ *    (there used to be API Version 5, but it is discontinued and no need to support)
  *  Further, linux distributions might refer to webkit2 bindings linked against gtk3 differently.
  *  E.g on Fedora:
  *     webkitgtk4 = webkit2 / Gtk3
  *     webkit2gtk3 = WebKit2/ Gtk3
+ *  E.g on Ubuntu:
+ *     webkit2gtk = webkit2 / Gtk3 API Version 4
+ *     webkitgtk = WebKit2 / Gtk4 API Version 6
  *
  * Webkit2 loading:
  * - Dynamic bindings are auto generated and linked when the @dynamic keyword is used in WebKitGTK.java
@@ -65,7 +72,8 @@ import org.eclipse.swt.widgets.*;
  * It's the best that could be done at the time, but it could result in strange behavior like some webpages loading in funky ways if post-data is used.
  *
  * Some good resources that I found are as following:
- * - Webkit2 reference: https://webkitgtk.org/reference/webkit2gtk/stable/
+ * - GTK3: Webkit2 reference: https://webkitgtk.org/reference/webkit2gtk/stable/
+ * - GTK4: Webkit2 reference: https://webkitgtk.org/reference/webkitgtk/stable/
  *
  * - To understand GDBus, consider reading this guide:
  *   http://www.cs.grinnell.edu/~rebelsky/Courses/CSC195/2013S/Outlines/
@@ -635,7 +643,8 @@ class WebKit extends WebBrowser {
 
     /**
      * gboolean user_function (WebKitWebView *web_view, WebKitAuthenticationRequest *request, gpointer user_data)
-     * - https://webkitgtk.org/reference/webkit2gtk/stable/WebKitWebView.html#WebKitWebView-authenticate
+     * - GTK3: https://webkitgtk.org/reference/webkit2gtk/stable/signal.WebView.authenticate.html
+     * - GTK4: https://webkitgtk.org/reference/webkitgtk/stable/signal.WebView.authenticate.html
      */
     long webkit_authenticate(long web_view, long request) {
         /* authentication challenges are currently the only notification received from the session */
@@ -744,6 +753,16 @@ class WebKit extends WebBrowser {
             FirstCreate = false;
             // Register the swt:// custom protocol for BrowserFunction calls via XMLHttpRequest
             long context = WebKitGTK.webkit_web_context_get_default();
+            if (GTK.GTK4) {
+                String xdgRuntimeDir = System.getenv("XDG_RUNTIME_DIR");
+                if (xdgRuntimeDir != null && !xdgRuntimeDir.isEmpty()) {
+                    byte[] path = Converter.wcsToMbcs(xdgRuntimeDir, true);
+                    WebKitGTK.webkit_web_context_add_path_to_sandbox(context, path, false);
+                }
+                // Add /tmp to sandbox for temporary files
+                byte[] tmpPath = Converter.wcsToMbcs("/tmp", true);
+                WebKitGTK.webkit_web_context_add_path_to_sandbox(context, tmpPath, false);
+            }
             WebKitGTK.webkit_web_context_register_uri_scheme(context, SWT_PROTOCOL, RequestProc.getAddress(), 0, 0);
             long security = WebKitGTK.webkit_web_context_get_security_manager(context);
             WebKitGTK.webkit_security_manager_register_uri_scheme_as_secure(security, SWT_PROTOCOL);
@@ -779,7 +798,9 @@ class WebKit extends WebBrowser {
             System.out.println("***WARNING: WebKitGTK is configured to ignore TLS errors via -Dorg.eclipse.swt.internal.webkitgtk.ignoretlserrors=true .");
             System.out.println("***WARNING: Please use for development purposes only!");
         }
-        // Webkit2 Signal Documentation: https://webkitgtk.org/reference/webkit2gtk/stable/WebKitWebView.html#WebKitWebView--title
+        // Webkit2 Signal Documentation:
+        // GTK3: https://webkitgtk.org/reference/webkit2gtk/stable/class.WebView.html#signals
+        // GTK3: https://webkitgtk.org/reference/webkitgtk/stable/class.WebView.html#signals
         if (GTK.GTK4) {
             OS.swt_fixed_add(browser.handle, webView);
         } else {
@@ -799,11 +820,13 @@ class WebKit extends WebBrowser {
         OS.g_signal_connect(webView, WebKitGTK.notify_estimated_load_progress, Proc3.getAddress(), NOTIFY_PROGRESS);
         // gboolean user_function (WebKitWebView *web_view,  WebKitAuthenticationRequest *request,  gpointer user_data)
         OS.g_signal_connect(webView, WebKitGTK.authenticate, Proc3.getAddress(), AUTHENTICATE);
-        // (!) Note this one's a 'webContext' signal, not webview. See:
-        // https://webkitgtk.org/reference/webkit2gtk/stable/WebKitWebContext.html#WebKitWebContext-download-started
         if (GTK.GTK4) {
+            // (!) Note this one's a 'NetworkSession' signal, not WebView. See:
+            // https://webkitgtk.org/reference/webkitgtk/stable/signal.NetworkSession.download-started.html
             OS.g_signal_connect(WebKitGTK.webkit_network_session_get_default(), WebKitGTK.download_started, Proc3.getAddress(), DOWNLOAD_STARTED);
         } else {
+            // (!) Note this one's a 'webContext' signal, not WebView. See:
+            // https://webkitgtk.org/reference/webkit2gtk/stable/signal.WebContext.download-started.html
             OS.g_signal_connect(WebKitGTK.webkit_web_context_get_default(), WebKitGTK.download_started, Proc3.getAddress(), DOWNLOAD_STARTED);
         }
         if (GTK.GTK4) {
@@ -837,7 +860,11 @@ class WebKit extends WebBrowser {
         OS.g_object_set(settings, WebKitGTK.enable_developer_extras, 1, 0);
         //disable hardware acceleration due to  https://bugs.webkit.org/show_bug.cgi?id=239429#c11
         //even evolution ended up doing the same https://gitlab.gnome.org/GNOME/evolution/-/commit/eb62ccaa28bbbca7668913ce7d8056a6d75f9b05
-        if (!GTK.GTK4) {
+        if (GTK.GTK4) {
+            // "1" is "never" in webkitgtk6 https://webkitgtk.org/reference/webkitgtk/stable/enum.HardwareAccelerationPolicy.html#never
+            OS.g_object_set(settings, WebKitGTK.hardware_acceleration_policy, 1, 0);
+        } else {
+            // "2" is "never" in webkitgtk4 https://webkitgtk.org/reference/webkit2gtk/stable/enum.HardwareAccelerationPolicy.html#never
             OS.g_object_set(settings, WebKitGTK.hardware_acceleration_policy, 2, 0);
         }
         OS.g_object_set(settings, WebKitGTK.default_charset, utfBytes, 0);
@@ -1956,7 +1983,8 @@ class WebKit extends WebBrowser {
      * This method is reached by:
      * Webkit2: WebKitWebView load-changed signal
      * 	- void user_function (WebKitWebView  *web_view, WebKitLoadEvent load_event, gpointer user_data)
-     *  - https://webkitgtk.org/reference/webkit2gtk/stable/WebKitWebView.html#WebKitWebView-load-changed
+     *  - GTK3: https://webkitgtk.org/reference/webkit2gtk/stable/signal.WebView.load-changed.html
+     *  - GTK4: https://webkitgtk.org/reference/webkitgtk/stable/signal.WebView.load-changed.html
      *  - Note: As there is no return value, safe to fire asynchronously.
      */
     private void fireProgressCompletedEvent() {
@@ -2148,21 +2176,23 @@ class WebKit extends WebBrowser {
 	* invalid URL string and try to fix it by prepending an appropriate protocol.
 	*/
         try {
-            new URL(url);
-        } catch (MalformedURLException e) {
-            String testUrl = null;
-            if (url.charAt(0) == SEPARATOR_FILE) {
-                /* appears to be a local file */
-                testUrl = PROTOCOL_FILE + url;
-            } else {
-                testUrl = PROTOCOL_HTTP + url;
-            }
-            try {
-                new URL(testUrl);
-                url = testUrl;
-                /* adding the protocol made the url valid */
-            } catch (MalformedURLException e2) {
-                /* adding the protocol did not make the url valid, so do nothing */
+            new URI(url).toURL();
+        } catch (URISyntaxException | IllegalArgumentException | MalformedURLException e) {
+            if (!url.isEmpty()) {
+                String testUrl = null;
+                if (url.charAt(0) == SEPARATOR_FILE) {
+                    /* appears to be a local file */
+                    testUrl = PROTOCOL_FILE + url;
+                } else {
+                    testUrl = PROTOCOL_HTTP + url;
+                }
+                try {
+                    new URI(testUrl).toURL();
+                    url = testUrl;
+                    /* adding the protocol made the url valid */
+                } catch (URISyntaxException | IllegalArgumentException | MalformedURLException e2) {
+                    /* adding the protocol did not make the url valid, so do nothing */
+                }
             }
         }
         /*
@@ -2219,7 +2249,7 @@ class WebKit extends WebBrowser {
                 String mime_type = null;
                 String encoding_type = null;
                 try {
-                    URL base = new URL(base_url);
+                    URL base = new URI(base_url).toURL();
                     URLConnection url_conn = base.openConnection();
                     if (url_conn instanceof HttpURLConnection) {
                         HttpURLConnection conn = (HttpURLConnection) url_conn;
@@ -2265,27 +2295,32 @@ class WebKit extends WebBrowser {
                             // Extract result meta data
                             // Get Media Type from Content-Type
                             String content_type = conn.getContentType();
-                            int parameterSeparatorIndex = content_type.indexOf(';');
-                            mime_type = parameterSeparatorIndex > 0 ? content_type.substring(0, parameterSeparatorIndex) : content_type;
-                            // Get Encoding if defined
-                            if (content_type.indexOf(';') > 0) {
-                                String[] attrs = content_type.split(";");
-                                for (String attr : attrs) {
-                                    int i = attr.indexOf('=');
-                                    if (i > 0) {
-                                        String key = attr.substring(0, i).trim();
-                                        String value = attr.substring(i + 1).trim();
-                                        if ("charset".equalsIgnoreCase(key)) {
-                                            //$NON-NLS-1$
-                                            encoding_type = value;
+                            if (content_type != null) {
+                                int parameterSeparatorIndex = content_type.indexOf(';');
+                                mime_type = parameterSeparatorIndex > 0 ? content_type.substring(0, parameterSeparatorIndex) : content_type;
+                                // Get Encoding if defined
+                                if (content_type.indexOf(';') > 0) {
+                                    String[] attrs = content_type.split(";");
+                                    for (String attr : attrs) {
+                                        int i = attr.indexOf('=');
+                                        if (i > 0) {
+                                            String key = attr.substring(0, i).trim();
+                                            String value = attr.substring(i + 1).trim();
+                                            if ("charset".equalsIgnoreCase(key)) {
+                                                //$NON-NLS-1$
+                                                encoding_type = value;
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
+                    } else {
+                        html = "Unsupported connection type: " + url_conn;
                     }
+                } catch (URISyntaxException | IllegalArgumentException | MalformedURLException e) {
+                    html = "URL is invalid: " + e.getMessage();
                 } catch (IOException e) {
-                    // MalformedURLException is an IOException also.
                     html = e.getMessage();
                 } finally {
                     if (html != null && lastRequest == w2_bug527738LastRequestCounter.get()) {
@@ -2323,7 +2358,8 @@ class WebKit extends WebBrowser {
     /**
      * WebKitWebView 'close' signal
      * void user_function (WebKitWebView *web_view, gpointer user_data); // observe *no* return value.
-     * https://webkitgtk.org/reference/webkit2gtk/stable/WebKitWebView.html#WebKitWebView-close
+     * GTK4: https://webkitgtk.org/reference/webkit2gtk/stable/signal.WebView.close.html
+     * GTK4: https://webkitgtk.org/reference/webkitgtk/stable/signal.WebView.close.html
      */
     long webkit_close_web_view(long web_view) {
         WindowEvent newEvent = new WindowEvent(browser);
@@ -2430,7 +2466,8 @@ class WebKit extends WebBrowser {
     /**
      * WebkitWebView mouse-target-changed
      * - void user_function (WebKitWebView *web_view, WebKitHitTestResult *hit_test_result, guint modifiers, gpointer user_data)
-     * - https://webkitgtk.org/reference/webkit2gtk/stable/WebKitWebView.html#WebKitWebView-mouse-target-changed
+     * - GTK4: https://webkitgtk.org/reference/webkit2gtk/stable/signal.WebView.mouse-target-changed.html
+     * - GTK4: https://webkitgtk.org/reference/webkitgtk/stable/signal.WebView.mouse-target-changed.html
      */
     long webkit_mouse_target_changed(long web_view, long hit_test_result, long modifiers) {
         if (WebKitGTK.webkit_hit_test_result_context_is_link(hit_test_result)) {
@@ -2688,7 +2725,8 @@ class WebKit extends WebBrowser {
     /**
      * Triggered by a change in property. (both gdouble[0,1])
      * Webkit2: WebkitWebview notify::estimated-load-progress
-     *  https://webkitgtk.org/reference/webkit2gtk/stable/WebKitWebView.html#WebKitWebView--estimated-load-progress
+     *  GTK3: https://webkitgtk.org/reference/webkit2gtk/stable/property.WebView.estimated-load-progress.html
+     *  GTK4: https://webkitgtk.org/reference/webkitgtk/stable/property.WebView.estimated-load-progress.html
      *
      *  No return value required. Thus safe to run asynchronously.
      */
@@ -2714,7 +2752,8 @@ class WebKit extends WebBrowser {
     /**
      * Triggerd by webkit's 'notify::title' signal and forwarded to this function.
      * The signal doesn't have documentation (2.15.4), but is mentioned here:
-     * https://webkitgtk.org/reference/webkit2gtk/stable/WebKitWebView.html#webkit-web-view-get-title
+     * GTK3: https://webkitgtk.org/reference/webkit2gtk/stable/method.WebView.get_title.html
+     * GTK4: https://webkitgtk.org/reference/webkitgtk/stable/method.WebView.get_title.html
      *
      * It doesn't look it would require a return value, so running in asyncExec should be fine.
      */
@@ -2787,7 +2826,8 @@ class WebKit extends WebBrowser {
     /**
      * Emitted after "create" on the newly created WebKitWebView when it should be displayed to the user.
      * Webkit2 signal: ready-to-show
-     *   https://webkitgtk.org/reference/webkitgtk/unstable/webkitgtk-webkitwebview.html#WebKitWebView-web-view-ready
+     *  GTK3: https://webkitgtk.org/reference/webkit2gtk/stable/vfunc.WebView.ready_to_show.html
+     *  GTK4: https://webkitgtk.org/reference/webkitgtk/stable/vfunc.WebView.ready_to_show.html
      * Note in webkit2, no return value has to be provided in callback.
      */
     long webkit_web_view_ready(long web_view) {

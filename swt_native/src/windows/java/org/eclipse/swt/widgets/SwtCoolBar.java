@@ -427,7 +427,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         }
         if ((getApi().style & SWT.FLAT) == 0) {
             if (!isLastItemOfRow(index)) {
-                margin += DPIUtil.pointToPixel(SEPARATOR_WIDTH, getZoom());
+                margin += DPIUtil.pointToPixel(SEPARATOR_WIDTH, getAutoscalingZoom());
             }
         }
         return margin;
@@ -567,7 +567,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         Point[] sizes = getItemSizesInPixels();
         if (sizes != null) {
             for (int i = 0; i < sizes.length; i++) {
-                sizes[i] = Win32DPIUtils.pixelToPointAsSize(sizes[i], getZoom());
+                sizes[i] = Win32DPIUtils.pixelToPointAsSize(sizes[i], getAutoscalingZoom());
             }
         }
         return sizes;
@@ -839,7 +839,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
             error(SWT.ERROR_NULL_ARGUMENT);
         Point[] sizesInPoints = new Point[sizes.length];
         for (int i = 0; i < sizes.length; i++) {
-            sizesInPoints[i] = Win32DPIUtils.pointToPixelAsSize(sizes[i], getZoom());
+            sizesInPoints[i] = Win32DPIUtils.pointToPixelAsSize(sizes[i], getAutoscalingZoom());
         }
         setItemLayoutInPixels(itemOrder, wrapIndices, sizesInPoints);
     }
@@ -1216,7 +1216,7 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
                     if (item != null) {
                         Event event = new Event();
                         event.detail = SWT.ARROW;
-                        int zoom = getZoom();
+                        int zoom = getAutoscalingZoom();
                         if ((getApi().style & SWT.VERTICAL) != 0) {
                             event.setLocation(DPIUtil.pixelToPoint(lpnm.right, zoom), DPIUtil.pixelToPoint(lpnm.top, zoom));
                         } else {
@@ -1262,11 +1262,11 @@ public class SwtCoolBar extends SwtComposite implements ICoolBar {
         for (int index = 0; index < sizes.length; index++) {
             CoolItem item = items[index];
             Control control = ((SwtCoolItem) item.getImpl()).control;
-            if (control != null) {
+            if (control != null && !control.isDisposed()) {
                 control.notifyListeners(SWT.ZoomChanged, event);
                 item.setControl(control);
             }
-            Point preferredControlSize = ((SwtControl) item.getControl().getImpl()).computeSizeInPixels(new Point(SWT.DEFAULT, SWT.DEFAULT), getZoom(), true);
+            Point preferredControlSize = ((SwtControl) item.getControl().getImpl()).computeSizeInPixels(new Point(SWT.DEFAULT, SWT.DEFAULT), computeBoundsZoom(), true);
             int controlWidth = preferredControlSize.x;
             int controlHeight = preferredControlSize.y;
             if (((getApi().style & SWT.VERTICAL) != 0)) {

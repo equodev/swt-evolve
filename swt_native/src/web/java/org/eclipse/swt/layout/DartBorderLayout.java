@@ -104,20 +104,20 @@ public class DartBorderLayout extends DartLayout implements IBorderLayout {
      * @param regionMap the map of regions
      * @return the total W/H including the {@link #controlSpacing}
      */
-    private int getTotal(ToIntFunction<Point> extractor, int region, Map<Integer, List<Entry<Control, BorderData>>> regionMap) {
-        List<Entry<Control, BorderData>> list = regionMap.getOrDefault(region, Collections.emptyList());
+    private int getTotal(ToIntFunction<Point> extractor, int region, Map<Integer, java.util.List<Entry<Control, BorderData>>> regionMap) {
+        java.util.List<Entry<Control, BorderData>> list = regionMap.getOrDefault(region, Collections.emptyList());
         if (list.isEmpty()) {
             return 0;
         }
         return list.stream().mapToInt(entry -> extractor.applyAsInt(entry.getValue().getSize(entry.getKey()))).sum() + ((list.size() - 1) * getApi().controlSpacing);
     }
 
-    private static int getMax(ToIntFunction<Point> extractor, int region, Map<Integer, List<Entry<Control, BorderData>>> regionMap) {
-        List<Entry<Control, BorderData>> list = regionMap.getOrDefault(region, Collections.emptyList());
+    private static int getMax(ToIntFunction<Point> extractor, int region, Map<Integer, java.util.List<Entry<Control, BorderData>>> regionMap) {
+        java.util.List<Entry<Control, BorderData>> list = regionMap.getOrDefault(region, Collections.emptyList());
         return getMax(extractor, list, SWT.DEFAULT, SWT.DEFAULT, false);
     }
 
-    private static int getMax(ToIntFunction<Point> extractor, List<Entry<Control, BorderData>> list, int maxW, int maxH, boolean flushCache) {
+    private static int getMax(ToIntFunction<Point> extractor, java.util.List<Entry<Control, BorderData>> list, int maxW, int maxH, boolean flushCache) {
         if (list.isEmpty()) {
             return 0;
         }

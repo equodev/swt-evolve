@@ -2048,6 +2048,10 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         return false;
     }
 
+    boolean isBundledIconSet() {
+        return false;
+    }
+
     static boolean isValidClass(Class<?> clazz) {
         String name = clazz.getName();
         int index = name.lastIndexOf('.');
@@ -3506,6 +3510,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * @exception SWTException <ul>
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_NO_HANDLES if a handle could not be obtained for timer creation</li>
      * </ul>
      *
      * @see #asyncExec

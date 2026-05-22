@@ -550,7 +550,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
         this.image = image;
         if (parent != null)
             return;
-        if (((SwtDisplay) display.getImpl()).dockImage == null) {
+        if (((SwtDisplay) display.getImpl()).dockImage == null && !((SwtDisplay) display.getImpl()).isBundledIconSet()) {
             ((SwtDisplay) display.getImpl()).application.setApplicationIconImage(image != null ? image.handle : null);
         }
     }
@@ -590,7 +590,7 @@ public class SwtDecorations extends SwtCanvas implements IDecorations {
         this.images = images;
         if (parent != null)
             return;
-        if (((SwtDisplay) display.getImpl()).dockImage == null) {
+        if (((SwtDisplay) display.getImpl()).dockImage == null && !((SwtDisplay) display.getImpl()).isBundledIconSet()) {
             if (images != null && images.length > 1) {
                 Image[] bestImages = new Image[images.length];
                 System.arraycopy(images, 0, bestImages, 0, images.length);

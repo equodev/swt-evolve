@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.stream.*;
@@ -1528,6 +1529,24 @@ public interface IControl extends IWidget, ImplControl {
      * </ul>
      */
     void setBounds(Rectangle rect);
+
+    /**
+     * Sets the autoscaling mode for this widget. The capability is not supported on
+     * every platform, such that calling this method may not have an effect on
+     * unsupported platforms. The return value indicates if the autoscale mode was
+     * set properly. With {@link #isAutoScalable()}, the autoscale enablement can
+     * also be evaluated at any later point in time.
+     * <p>
+     * Currently, this is only supported on Windows.
+     * </p>
+     *
+     * @param autoscalingMode the autoscaling mode to set
+     *
+     * @return {@code false} if the operation was called on an unsupported platform
+     *
+     * @since 3.133
+     */
+    boolean setAutoscalingMode(AutoscalingMode autoscalingMode);
 
     /**
      * If the argument is <code>true</code>, causes the receiver to have

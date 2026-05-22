@@ -415,7 +415,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
      */
     public int getSpacing() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getSpacingInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getSpacingInPixels(), getAutoscalingZoom());
     }
 
     int getSpacingInPixels() {
@@ -544,7 +544,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
     @Override
     public void setFont(Font font) {
         super.setFont(font);
-        hFont = font != null ? SWTFontProvider.getFontHandle(font, getNativeZoom()) : 0;
+        hFont = font != null ? SWTFontProvider.getFontHandle(font, getApi().nativeZoom) : 0;
         layoutItems(0, true);
     }
 
@@ -598,7 +598,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
      */
     public void setSpacing(int spacing) {
         checkWidget();
-        setSpacingInPixels(DPIUtil.pointToPixel(spacing, getZoom()));
+        setSpacingInPixels(DPIUtil.pointToPixel(spacing, getAutoscalingZoom()));
     }
 
     void setSpacingInPixels(int spacing) {
@@ -841,7 +841,7 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
                 if (hooks(SWT.Paint) || filters(SWT.Paint)) {
                     Event event = new Event();
                     event.gc = gc;
-                    event.setBounds(Win32DPIUtils.pixelToPoint(new Rectangle(rect.left, rect.top, width, height), getZoom()));
+                    event.setBounds(Win32DPIUtils.pixelToPoint(new Rectangle(rect.left, rect.top, width, height), getAutoscalingZoom()));
                     sendEvent(SWT.Paint, event);
                     event.gc = null;
                 }
@@ -930,7 +930,9 @@ public class SwtExpandBar extends SwtComposite implements IExpandBar {
     void handleDPIChange(Event event, float scalingFactor) {
         super.handleDPIChange(event, scalingFactor);
         for (ExpandItem item : getItems()) {
-            item.notifyListeners(SWT.ZoomChanged, event);
+            if (item != null && !item.isDisposed()) {
+                item.notifyListeners(SWT.ZoomChanged, event);
+            }
         }
         layoutItems(0, true);
         redraw();

@@ -667,7 +667,7 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public int getItemHeight() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getItemHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getItemHeightInPixels(), getAutoscalingZoom());
     }
 
     int getItemHeightInPixels() {
@@ -922,7 +922,7 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public int getTextHeight() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getTextHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getTextHeightInPixels(), getAutoscalingZoom());
     }
 
     int getTextHeightInPixels() {

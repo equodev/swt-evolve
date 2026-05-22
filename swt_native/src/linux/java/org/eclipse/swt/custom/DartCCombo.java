@@ -2300,14 +2300,14 @@ public class DartCCombo extends DartComposite implements ICCombo {
     }
 
     private void handleDPIChange(Event event) {
-        if (text != null) {
-            text.notifyListeners(SWT.ZoomChanged, event);
-        }
-        if (list != null) {
-            list.notifyListeners(SWT.ZoomChanged, event);
-        }
-        if (arrow != null) {
-            arrow.notifyListeners(SWT.ZoomChanged, event);
+        forwardDPIChange(event, text);
+        forwardDPIChange(event, list);
+        forwardDPIChange(event, arrow);
+    }
+
+    private void forwardDPIChange(Event event, Widget widget) {
+        if (widget != null && !widget.isDisposed()) {
+            widget.notifyListeners(SWT.ZoomChanged, event);
         }
     }
 

@@ -35,11 +35,37 @@ import org.eclipse.swt.widgets.*;
  */
 public class Win32DPIUtils {
 
-    static {
-        DPIUtil.setUseSmoothScalingByDefaultProvider(() -> DPIUtil.isMonitorSpecificScalingActive());
+    /**
+     * This property allows to customize the DPI awareness of the application's UI
+     * thread, such that different DPI awareness modes are supported via
+     * configuration and not only via the application's executable manifest.
+     * Supported modes are "System", "PerMonitor", and "PerMonitorV2".
+     */
+    public static final String CUSTOM_DPI_AWARENESS_PROPERTY = "org.eclipse.swt.internal.win32.dpiAwareness";
+
+    private static long customDpiAwareness = -1;
+
+    public static boolean initializeCustomDpiAwareness() {
+        String customDpiAwareness = System.getProperty(CUSTOM_DPI_AWARENESS_PROPERTY);
+        if (customDpiAwareness != null) {
+            switch(customDpiAwareness.toLowerCase()) {
+                case "permonitorv2":
+                    setDPIAwareness(OS.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+                    return true;
+                case "permonitor":
+                    setDPIAwareness(OS.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE);
+                    return true;
+                case "system":
+                    setDPIAwareness(OS.DPI_AWARENESS_CONTEXT_SYSTEM_AWARE);
+                    return true;
+                default:
+                    System.err.println("Invalid DPI awareness specified: " + customDpiAwareness);
+            }
+        }
+        return false;
     }
 
-    public static boolean setDPIAwareness(int desiredDpiAwareness) {
+    public static boolean setDPIAwareness(long desiredDpiAwareness) {
         if (desiredDpiAwareness == OS.GetThreadDpiAwarenessContext()) {
             return true;
         }
@@ -56,17 +82,21 @@ public class Win32DPIUtils {
             System.err.println("***WARNING: setting DPI awareness failed.");
             return false;
         }
+        customDpiAwareness = desiredDpiAwareness;
         return true;
     }
 
+    public static boolean hasProperDpiAwarenessForMonitorSpecificScaling() {
+        return OS.AreDpiAwarenessContextsEqual(OS.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2, OS.GetThreadDpiAwarenessContext());
+    }
+
     public static <T> T runWithProperDPIAwareness(Display display, Supplier<T> operation) {
-        // only with monitor-specific scaling enabled, the main thread's DPI awareness may be adapted
-        if (!display.isRescalingAtRuntime()) {
+        if (customDpiAwareness == -1) {
             return operation.get();
         }
         long previousDPIAwareness = OS.GetThreadDpiAwarenessContext();
         try {
-            if (!setDPIAwareness(OS.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)) {
+            if (!setDPIAwareness(customDpiAwareness)) {
                 // awareness was not changed, so no need to reset it
                 previousDPIAwareness = 0;
             }
@@ -251,12 +281,17 @@ public class Win32DPIUtils {
         return pointToPixel(new Point.OfFloat(floatPoint.getX(), floatPoint.getY(), mode), zoom);
     }
 
-    private static Point.OfFloat pointToPixel(Point.OfFloat point, int zoom) {
+    private static Point.OfFloat pointToPixelOfFloat(Point.OfFloat point, int zoom) {
         Point.OfFloat scaledPoint = point.clone();
         float scaleFactor = DPIUtil.getScalingFactor(zoom);
         scaledPoint.setX(point.getX() * scaleFactor);
         scaledPoint.setY(point.getY() * scaleFactor);
         return scaledPoint;
+    }
+
+    private static Point pointToPixel(Point.OfFloat point, int zoom) {
+        Point scaledPoint = pointToPixelOfFloat(point, zoom);
+        return new Point(scaledPoint.x, scaledPoint.y);
     }
 
     public static Point pointToPixelAsSize(Drawable drawable, Point point, int zoom) {
@@ -298,32 +333,20 @@ public class Win32DPIUtils {
             return scaleBounds(rect, zoom, 100);
         }
         Rectangle.OfFloat floatRect = Rectangle.OfFloat.from(rect);
-        Point.OfFloat scaledTopLeft = pointToPixel(floatRect.getTopLeft(), zoom);
-        Point.OfFloat scaledBottomRight = pointToPixel(floatRect.getBottomRight(), zoom);
+        Point.OfFloat scaledTopLeft = pointToPixelOfFloat(floatRect.getTopLeft(), zoom);
+        Point.OfFloat scaledBottomRight = pointToPixelOfFloat(floatRect.getBottomRight(), zoom);
         float scaledX = scaledTopLeft.x;
         float scaleyY = scaledTopLeft.y;
         float scaledWidth = scaledBottomRight.x - scaledTopLeft.x;
         float scaledHeight = scaledBottomRight.y - scaledTopLeft.y;
-        return new Rectangle.OfFloat(scaledX, scaleyY, scaledWidth, scaledHeight, RoundingMode.ROUND, sizeRounding);
+        Rectangle scaledRectangle = new Rectangle.OfFloat(scaledX, scaleyY, scaledWidth, scaledHeight, RoundingMode.ROUND, sizeRounding);
+        return new Rectangle(scaledRectangle.x, scaledRectangle.y, scaledRectangle.width, scaledRectangle.height);
     }
 
     public static Rectangle pointToPixel(Drawable drawable, Rectangle rect, int zoom) {
         if (drawable != null && !drawable.isAutoScalable())
             return rect;
         return pointToPixel(rect, zoom);
-    }
-
-    public static void setMonitorSpecificScaling(boolean activate) {
-        System.setProperty(DPIUtil.SWT_AUTOSCALE_UPDATE_ON_RUNTIME, Boolean.toString(activate));
-    }
-
-    public static void setAutoScaleForMonitorSpecificScaling() {
-        boolean isDefaultAutoScale = DPIUtil.getAutoScaleValue() == null;
-        if (isDefaultAutoScale) {
-            DPIUtil.setAutoScaleValue("quarter");
-        } else if (!DPIUtil.isSetupCompatibleToMonitorSpecificScaling()) {
-            throw new SWTError(SWT.ERROR_NOT_IMPLEMENTED, "monitor-specific scaling is only implemented for auto-scale values \"quarter\", \"exact\", \"false\" or a concrete zoom value, but \"" + DPIUtil.getAutoScaleValue() + "\" has been specified");
-        }
     }
 
     public static int getPrimaryMonitorZoomAtStartup() {

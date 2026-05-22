@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -181,7 +181,7 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
         if ((getApi().state & OBSCURED) != 0)
             return 0;
         long result = super.gtk_draw(widget, cairo);
-        drawCaretInFocus(widget, cairo);
+        drawCaretInFocus(cairo);
         return result;
     }
 
@@ -190,10 +190,10 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
         if ((getApi().state & OBSCURED) != 0)
             return;
         super.gtk4_draw(widget, cairo, bounds);
-        drawCaretInFocus(widget, cairo);
+        drawCaretInFocus(cairo);
     }
 
-    void drawCaretInFocus(long widget, long cairo) {
+    void drawCaretInFocus(long cairo) {
         /*
 	 *  blink is needed to be checked as gtk_draw() signals sent from other parts of the canvas
 	 *  can interfere with the blinking state. This will ensure that we are only draw/redrawing the
@@ -202,12 +202,12 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
 	 *  Additionally, only draw the caret if it has focus. See bug 528819.
 	 */
         if (caret != null && blink == true && ((SwtCaret) caret.getImpl()).isFocusCaret()) {
-            drawCaret(widget, cairo);
+            drawCaret(cairo);
             blink = false;
         }
     }
 
-    private void drawCaret(long widget, long cairo) {
+    private void drawCaret(long cairo) {
         if (this.isDisposed())
             return;
         if (cairo == 0)
@@ -481,7 +481,7 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
             for (Control child : _getChildren()) {
                 Rectangle rect = ((SwtControl) child.getImpl()).getBoundsInPixels();
                 if (Math.min(x + width, rect.x + rect.width) >= Math.max(x, rect.x) && Math.min(y + height, rect.y + rect.height) >= Math.max(y, rect.y)) {
-                    ((SwtControl) child.getImpl()).setLocationInPixels(rect.x + deltaX, rect.y + deltaY);
+                    child.setLocation(rect.x + deltaX, rect.y + deltaY);
                 }
             }
         }
@@ -581,6 +581,16 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
         rect.width = caret.getImpl()._width();
         rect.height = caret.getImpl()._height();
         GTK.gtk_im_context_set_cursor_location(imHandle, rect);
+    }
+
+    @Override
+    void snapshotToDraw(long handle, long snapshot) {
+        // Skip drawing if this is being called on fixedHandle to prevent double draws
+        // making carret not visible at all
+        if (fixedHandle != 0 && handle == fixedHandle) {
+            return;
+        }
+        super.snapshotToDraw(handle, snapshot);
     }
 
     public Caret _caret() {

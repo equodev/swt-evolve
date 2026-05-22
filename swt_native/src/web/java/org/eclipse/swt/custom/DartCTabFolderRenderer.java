@@ -16,6 +16,7 @@
  */
 package org.eclipse.swt.custom;
 
+import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
@@ -123,9 +124,9 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
 
     static final int BORDER1_COLOR = SWT.COLOR_WIDGET_NORMAL_SHADOW;
 
-    static final int ITEM_TOP_MARGIN = 2;
+    static final int ITEM_TOP_MARGIN = 3;
 
-    static final int ITEM_BOTTOM_MARGIN = 2;
+    static final int ITEM_BOTTOM_MARGIN = 3;
 
     static final int ITEM_LEFT_MARGIN = 4;
 
@@ -1240,8 +1241,14 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
                 if (((DartCTabFolder) getApi().parent.getImpl()).selectionHighlightBarThickness > 0 && ((DartCTabFolder) getApi().parent.getImpl()).simple) {
                     Color previousColor = gc.getBackground();
                     gc.setBackground(item.getDisplay().getSystemColor(((DartCTabFolder) getApi().parent.getImpl()).shouldHighlight() ? SWT.COLOR_LIST_SELECTION : SWT.COLOR_WIDGET_DISABLED_FOREGROUND));
-                    gc.fillRectangle(x + 1, /* outline */
-                    ((DartCTabFolder) getApi().parent.getImpl()).onBottom ? y + height - 1 - ((DartCTabFolder) getApi().parent.getImpl()).selectionHighlightBarThickness : y + 1, width - 2, ((DartCTabFolder) getApi().parent.getImpl()).selectionHighlightBarThickness);
+                    int[] highlightShape = Arrays.copyOf(shape, shape.length);
+                    // Update Y coordinates in shape to apply highlight thickness
+                    int thickness = ((DartCTabFolder) getApi().parent.getImpl()).selectionHighlightBarThickness;
+                    boolean onBottom = ((DartCTabFolder) getApi().parent.getImpl()).onBottom;
+                    int bottomY = y + height - 1;
+                    int highlightY = onBottom ? bottomY - thickness : thickness + 1;
+                    highlightShape[1] = highlightShape[3] = highlightShape[highlightShape.length - 1] = highlightShape[highlightShape.length - 3] = highlightY;
+                    gc.fillPolygon(highlightShape);
                     gc.setBackground(previousColor);
                 }
                 // draw outline

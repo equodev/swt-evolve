@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -15,6 +15,7 @@
  */
 package org.eclipse.swt.graphics;
 
+import static org.eclipse.swt.internal.DPIUtil.pixelToPoint;
 import static org.eclipse.swt.internal.DPIUtil.pointToPixel;
 import static org.eclipse.swt.internal.image.ImageColorTransformer.DEFAULT_DISABLED_IMAGE_TRANSFORMER;
 import java.io.*;
@@ -370,12 +371,12 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             getApi().handle = getApi().handle.initWithSize(size);
             getApi().handle.setCacheMode(OS.NSImageCacheNever);
             /* Create the 100% representation for the new image from source image & apply flag */
-            createRepFromSourceAndApplyFlag(((SwtImage) srcImage.getImpl()).getRepresentation(100), srcWidth, srcHeight, flag);
+            createRepFromSourceAndApplyFlag(((SwtImage) srcImage.getImpl()).getOrCreateRepresentation(100), srcWidth, srcHeight, flag);
             imageFileNameProvider = ((SwtImage) srcImage.getImpl()).imageFileNameProvider;
             imageDataProvider = ((SwtImage) srcImage.getImpl()).imageDataProvider;
             imageGcDrawer = ((SwtImage) srcImage.getImpl()).imageGcDrawer;
             this.styleFlag = ((SwtImage) srcImage.getImpl()).styleFlag | flag;
-            if (imageFileNameProvider != null || imageDataProvider != null || ((SwtImage) srcImage.getImpl()).imageGcDrawer != null) {
+            if (imageFileNameProvider != null || imageDataProvider != null || imageGcDrawer != null) {
                 /* If source image has 200% representation then create the 200% representation for the new image & apply flag */
                 NSBitmapImageRep rep200 = ((SwtImage) srcImage.getImpl()).getRepresentation(200);
                 if (rep200 != null)
@@ -681,11 +682,11 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
         try {
-            byte[] input = stream.readAllBytes();
-            initWithSupplier(zoom -> ImageDataLoader.canLoadAtZoom(new ByteArrayInputStream(input), FileFormat.DEFAULT_ZOOM, zoom), zoom -> ImageDataLoader.loadByZoom(new ByteArrayInputStream(input), FileFormat.DEFAULT_ZOOM, zoom).element());
+            ImageDataProvider imageDataProvider = createImageDataProvider(stream);
+            initUsingImageDataProvider(imageDataProvider);
             init();
         } catch (IOException e) {
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT, e);
+            SWT.error(SWT.ERROR_IO, e);
         } finally {
             if (pool != null)
                 pool.release();
@@ -733,10 +734,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         try {
             if (filename == null)
                 SWT.error(SWT.ERROR_NULL_ARGUMENT);
-            initNative(filename);
-            if (this.getApi().handle == null) {
-                initWithSupplier(zoom -> ImageDataLoader.canLoadAtZoom(filename, FileFormat.DEFAULT_ZOOM, zoom), zoom -> ImageDataLoader.loadByZoom(filename, FileFormat.DEFAULT_ZOOM, zoom).element());
-            }
+            initUsingFileNameProvider(zoom -> zoom == 100 ? filename : null);
             init();
         } finally {
             if (pool != null)
@@ -778,35 +776,41 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         this.filename = GraphicsUtils.getFilename(imageFileNameProvider.getImagePath(100));
         if (imageFileNameProvider == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        this.imageFileNameProvider = imageFileNameProvider;
-        String filename = imageFileNameProvider.getImagePath(100);
-        if (filename == null)
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         NSAutoreleasePool pool = null;
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
         try {
-            initNative(filename);
-            if (this.getApi().handle == null)
-                init(ImageDataLoader.loadByZoom(filename, 100, 100).element(), 100);
+            initUsingFileNameProvider(imageFileNameProvider);
             init();
-            String filename2x = imageFileNameProvider.getImagePath(200);
-            if (filename2x != null) {
-                alphaInfo_200 = new AlphaInfo();
-                id id = NSImageRep.imageRepWithContentsOfFile(NSString.stringWith(filename2x));
-                NSImageRep rep = new NSImageRep(id);
-                getApi().handle.addRepresentation(rep);
-            } else if (ImageDataLoader.canLoadAtZoom(filename, 100, 200)) {
-                // Try to natively scale up the image (e.g. possible if it's an SVG)
-                ImageData imageData2x = ImageDataLoader.loadByZoom(filename, 100, 200).element();
-                alphaInfo_200 = new AlphaInfo();
-                NSBitmapImageRep rep = createRepresentation(imageData2x, alphaInfo_200);
-                getApi().handle.addRepresentation(rep);
-                rep.release();
-            }
         } finally {
             if (pool != null)
                 pool.release();
+        }
+    }
+
+    private void initUsingFileNameProvider(ImageFileNameProvider imageFileNameProvider) {
+        this.imageFileNameProvider = imageFileNameProvider;
+        String filename = imageFileNameProvider.getImagePath(100);
+        if (filename == null) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        initNative(filename);
+        if (this.getApi().handle == null) {
+            init(ImageDataLoader.loadByZoom(filename, 100, 100).element(), 100);
+        }
+        String filename2x = imageFileNameProvider.getImagePath(200);
+        if (filename2x != null) {
+            alphaInfo_200 = new AlphaInfo();
+            id id = NSImageRep.imageRepWithContentsOfFile(NSString.stringWith(filename2x));
+            NSImageRep rep = new NSImageRep(id);
+            getApi().handle.addRepresentation(rep);
+        } else if (ImageDataLoader.canLoadAtZoom(filename, 100, 200)) {
+            // Try to natively scale up the image (e.g. possible if it's an SVG)
+            ImageData imageData2x = ImageDataLoader.loadByZoom(filename, 100, 200).element();
+            alphaInfo_200 = new AlphaInfo();
+            NSBitmapImageRep rep = createRepresentation(imageData2x, alphaInfo_200);
+            getApi().handle.addRepresentation(rep);
+            rep.release();
         }
     }
 
@@ -843,26 +847,15 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         super(device, api);
         if (imageDataProvider == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        this.imageDataProvider = imageDataProvider;
-        ImageData data = imageDataProvider.getImageData(100);
-        if (data == null)
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         NSAutoreleasePool pool = null;
         if (!NSThread.isMainThread())
             pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
         try {
-            init(data, 100);
+            initUsingImageDataProvider(imageDataProvider);
             init();
             StrictChecks.runIfStrictChecksEnabled(() -> {
                 DPIUtil.validateLinearScaling(imageDataProvider);
             });
-            ImageData data2x = imageDataProvider.getImageData(200);
-            if (data2x != null) {
-                alphaInfo_200 = new AlphaInfo();
-                NSBitmapImageRep rep = createRepresentation(data2x, alphaInfo_200);
-                getApi().handle.addRepresentation(rep);
-                rep.release();
-            }
         } finally {
             if (pool != null)
                 pool.release();
@@ -1217,28 +1210,44 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
     /**
      * Returns the image representation at scale factor as percentage. Creates the representation if necessary.
      */
+    NSBitmapImageRep getOrCreateRepresentation(int scaleFactor) {
+        NSBitmapImageRep existingRep = getRepresentation(scaleFactor);
+        if (existingRep != null) {
+            return existingRep;
+        }
+        long repCount = getApi().handle.representations().count();
+        NSSize targetSize = getTargetSize(scaleFactor);
+        NSBitmapImageRep newRep = createImageRep(targetSize);
+        for (int i = 0; i < repCount; i++) {
+            getApi().handle.removeRepresentation(new NSImageRep(getApi().handle.representations().objectAtIndex(0)));
+        }
+        getApi().handle.addRepresentation(newRep);
+        return newRep;
+    }
+
+    /**
+     * Returns the image representation at scale factor as percentage or null if there is none.
+     */
     NSBitmapImageRep getRepresentation(int scaleFactor) {
         NSArray reps = getApi().handle.representations();
-        NSSize size = getApi().handle.size();
-        long count = reps.count();
-        NSSize targetSize = new NSSize();
-        targetSize.width = (int) size.width * scaleFactor / 100;
-        targetSize.height = (int) size.height * scaleFactor / 100;
-        NSBitmapImageRep rep;
-        for (int i = 0; i < count; i++) {
-            rep = new NSBitmapImageRep(reps.objectAtIndex(i));
+        NSSize targetSize = getTargetSize(scaleFactor);
+        for (int i = 0; i < reps.count(); i++) {
+            NSBitmapImageRep rep = new NSBitmapImageRep(reps.objectAtIndex(i));
             if ((targetSize.width == rep.pixelsWide() && targetSize.height == rep.pixelsHigh())) {
                 if (rep.isKindOfClass(OS.class_NSBitmapImageRep)) {
                     return rep;
                 }
             }
         }
-        NSBitmapImageRep newRep = createImageRep(targetSize);
-        for (int i = 0; i < count; i++) {
-            getApi().handle.removeRepresentation(new NSImageRep(getApi().handle.representations().objectAtIndex(0)));
-        }
-        getApi().handle.addRepresentation(newRep);
-        return newRep;
+        return null;
+    }
+
+    private NSSize getTargetSize(int scaleFactor) {
+        NSSize size = getApi().handle.size();
+        NSSize targetSize = new NSSize();
+        targetSize.width = (int) size.width * scaleFactor / 100;
+        targetSize.height = (int) size.height * scaleFactor / 100;
+        return targetSize;
     }
 
     /**
@@ -1407,11 +1416,11 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         try {
             if (zoom == 100) {
                 NSBitmapImageRep imageRep;
-                imageRep = getRepresentation(100);
+                imageRep = getOrCreateRepresentation(100);
                 return _getImageData(imageRep, alphaInfo_100);
             }
             if (zoom == 200) {
-                NSBitmapImageRep imageRep200 = getRepresentation(200);
+                NSBitmapImageRep imageRep200 = getOrCreateRepresentation(200);
                 if (alphaInfo_100.alphaData != null && alphaInfo_200 != null) {
                     if (alphaInfo_200.alphaData == null)
                         initAlpha_200(imageRep200);
@@ -1432,7 +1441,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      * Returns the best available representation. May be 100% or 200% iff there is an image provider.
      */
     NSBitmapImageRep getRepresentation() {
-        return getRepresentation(DPIUtil.getDeviceZoom());
+        return getOrCreateRepresentation(DPIUtil.getDeviceZoom());
     }
 
     NSBitmapImageRep createImageRep(NSSize targetSize) {
@@ -1504,16 +1513,41 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         getApi().handle.setCacheMode(OS.NSImageCacheNever);
     }
 
-    private void initWithSupplier(Function<Integer, Boolean> canLoadAtZoom, Function<Integer, ImageData> zoomToImageData) {
-        ImageData imageData = zoomToImageData.apply(100);
+    private void initUsingImageDataProvider(ImageDataProvider imageDataProvider) {
+        this.imageDataProvider = imageDataProvider;
+        ImageData imageData = imageDataProvider.getImageData(100);
+        if (imageData == null) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
         init(imageData, 100);
-        if (canLoadAtZoom.apply(200)) {
-            ImageData imageData2x = zoomToImageData.apply(200);
+        ImageData imageData2x = imageDataProvider.getImageData(200);
+        if (imageData2x != null) {
             alphaInfo_200 = new AlphaInfo();
             NSBitmapImageRep rep = createRepresentation(imageData2x, alphaInfo_200);
             getApi().handle.addRepresentation(rep);
             rep.release();
         }
+    }
+
+    private static ImageDataProvider createImageDataProvider(InputStream stream) throws IOException {
+        byte[] streamData = stream.readAllBytes();
+        if (ImageDataLoader.isDynamicallySizable(new ByteArrayInputStream(streamData))) {
+            ImageDataAtSizeProvider imageDataAtSizeProvider = new ImageDataAtSizeProvider() {
+
+                @Override
+                public ImageData getImageData(int zoom) {
+                    return ImageDataLoader.loadByZoom(new ByteArrayInputStream(streamData), FileFormat.DEFAULT_ZOOM, zoom).element();
+                }
+
+                @Override
+                public ImageData getImageData(int width, int height) {
+                    return ImageDataLoader.loadBySize(new ByteArrayInputStream(streamData), width, height);
+                }
+            };
+            return imageDataAtSizeProvider;
+        }
+        ImageData imageData = ImageDataLoader.loadByZoom(new ByteArrayInputStream(streamData), FileFormat.DEFAULT_ZOOM, 100).element();
+        return zoom -> zoom == 100 ? imageData : null;
     }
 
     void initAlpha_200(NSBitmapImageRep nativeRep) {
@@ -1849,18 +1883,18 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
     public static void drawAtSize(GC gc, ImageData imageData, int width, int height) {
         StrictChecks.runWithStrictChecksDisabled(() -> {
             Image imageToDraw = new Image(gc.getImpl()._device(), (ImageDataProvider) zoom -> imageData);
-            gc.drawImage(imageToDraw, 0, 0, CocoaDPIUtil.pixelToPoint(imageData.width), CocoaDPIUtil.pixelToPoint(imageData.height), /*
+            gc.drawImage(imageToDraw, 0, 0, pixelToPoint(imageData.width, DPIUtil.getDeviceZoom()), pixelToPoint(imageData.height, DPIUtil.getDeviceZoom()), /*
 				 * E.g. destWidth here is effectively DPIUtil.autoScaleDown (scaledWidth), but
 				 * avoiding rounding errors. Nevertheless, we still have some rounding errors
 				 * due to the point-based API GC#drawImage(..).
 				 */
-            0, 0, Math.round(CocoaDPIUtil.pixelToPoint(width)), Math.round(CocoaDPIUtil.pixelToPoint(height)));
+            0, 0, pixelToPoint(width, DPIUtil.getDeviceZoom()), pixelToPoint(height, DPIUtil.getDeviceZoom()));
             imageToDraw.dispose();
         });
     }
 
     void executeOnImageAtSizeBestFittingSize(Consumer<Image> imageAtBestFittingSizeConsumer, int destWidth, int destHeight) {
-        Optional<Image> imageAtSize = cachedImageAtSize.refresh(destWidth, destHeight);
+        Optional<Image> imageAtSize = cachedImageAtSize.refresh(Math.max(1, destWidth), Math.max(1, destHeight));
         imageAtBestFittingSizeConsumer.accept(imageAtSize.orElse(this.getApi()));
     }
 
@@ -1901,7 +1935,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             }
             Image image = new Image(device, imageData.get());
             if (styleFlag != SWT.IMAGE_COPY) {
-                NSBitmapImageRep representation = ((SwtImage) image.getImpl()).getRepresentation(100);
+                NSBitmapImageRep representation = ((SwtImage) image.getImpl()).getOrCreateRepresentation(100);
                 ((SwtImage) image.getImpl()).createRepFromSourceAndApplyFlag(representation, destWidth, destHeight, styleFlag);
                 image.handle.removeRepresentation(representation);
             }

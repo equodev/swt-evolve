@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -476,6 +476,10 @@ public class Shell extends Decorations {
         return getImpl().getFullScreen();
     }
 
+    public Point getLocation() {
+        return getImpl().getLocation();
+    }
+
     public boolean getMaximized() {
         return getImpl().getMaximized();
     }
@@ -855,6 +859,21 @@ public class Shell extends Decorations {
      */
     public void setModified(boolean modified) {
         getImpl().setModified(modified);
+    }
+
+    /**
+     * Returns the zoom of the shell.
+     * <p>
+     * Hint: The returned value is the zoom of the shell as originally considered by
+     * the OS and not an adjusted zoom value as considered by SWT autoscaling capabilities.
+     * </p>
+     *
+     * @return the zoom for this shell
+     *
+     * @since 3.133
+     */
+    public int getZoom() {
+        return getImpl().getZoom();
     }
 
     /**

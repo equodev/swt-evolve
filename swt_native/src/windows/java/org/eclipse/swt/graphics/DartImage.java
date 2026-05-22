@@ -18,8 +18,10 @@ package org.eclipse.swt.graphics;
 import static org.eclipse.swt.internal.image.ImageColorTransformer.DEFAULT_DISABLED_IMAGE_TRANSFORMER;
 import java.io.*;
 import java.util.*;
-import java.util.Map.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 import java.util.function.*;
+import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.DPIUtil.*;
@@ -113,21 +115,85 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     static final int DEFAULT_SCANLINE_PAD = 4;
 
-    private Map<Integer, ImageHandle> zoomLevelToImageHandle = new HashMap<>();
-
     private List<Consumer<Image>> onDisposeListeners;
+
+    private final ImageHandleManager imageHandleManager = new ImageHandleManager();
+
+    private class ImageHandleManager {
+
+        private Map<Integer, DestroyableImageHandle> zoomLevelToImageHandle = new ConcurrentHashMap<>();
+
+        InternalImageHandle get(int zoom) {
+            final DestroyableImageHandle imageHandle = zoomLevelToImageHandle.get(zoom);
+            if (imageHandle == null) {
+                return null;
+            }
+            return imageHandle;
+        }
+
+        InternalImageHandle getOrCreate(int zoom, Supplier<DestroyableImageHandle> creator) {
+            if (zoom == -1) {
+                return null;
+            }
+            return zoomLevelToImageHandle.computeIfAbsent(zoom, __ -> creator.get());
+        }
+
+        boolean contains(int zoom) {
+            return zoomLevelToImageHandle.containsKey(zoom);
+        }
+
+        boolean isEmpty() {
+            return zoomLevelToImageHandle.isEmpty();
+        }
+
+        List<InternalImageHandle> getAllImageHandles() {
+            return zoomLevelToImageHandle.values().stream().collect(Collectors.toList());
+        }
+
+        Set<Integer> getAllZooms() {
+            return zoomLevelToImageHandle.keySet();
+        }
+
+        void destroyHandles(Predicate<Integer> filter) {
+            zoomLevelToImageHandle.entrySet().removeIf(entry -> {
+                if (filter.test(entry.getKey())) {
+                    entry.getValue().destroy();
+                    return true;
+                }
+                return false;
+            });
+        }
+
+        <R> R executeOnHandle(int zoom, Function<AtomicReference<DestroyableImageHandle>, R> executable) {
+            AtomicReference<R> computedValue = new AtomicReference<>();
+            zoomLevelToImageHandle.compute(zoom, (key, value) -> {
+                AtomicReference<DestroyableImageHandle> handleReference = new AtomicReference<>(value);
+                computedValue.set(executable.apply(handleReference));
+                return handleReference.get();
+            });
+            return computedValue.get();
+        }
+
+        @Override
+        public String toString() {
+            return zoomLevelToImageHandle.toString();
+        }
+    }
 
     private class HandleAtSize {
 
-        private ImageHandle handleContainer = null;
+        private InternalImageHandle handleContainer = null;
+
+        private DestroyableImageHandle temporaryHandleContainer = null;
 
         private int requestedWidth = -1;
 
         private int requestedHeight = -1;
 
         public void destroy() {
-            if (handleContainer != null && !zoomLevelToImageHandle.containsValue(handleContainer)) {
-                handleContainer.destroy();
+            if (temporaryHandleContainer != null) {
+                temporaryHandleContainer.destroy();
+                temporaryHandleContainer = null;
             }
             handleContainer = null;
             requestedWidth = -1;
@@ -148,19 +214,19 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             if (handleContainer == null || handleContainer.isDisposed()) {
                 return false;
             }
-            return (requestedHeight == height && requestedWidth == width) || (handleContainer.height == height && handleContainer.width == width);
+            return (requestedHeight == height && requestedWidth == width) || (handleContainer.height() == height && handleContainer.height() == width);
         }
 
-        private Optional<ImageHandle> createHandleAtExactSize(int width, int height) {
+        private Optional<InternalImageHandle> createHandleAtExactSize(int width, int height) {
             return Optional.empty();
         }
 
-        private ImageHandle getOrCreateImageHandleAtClosestSize(int widthHint, int heightHint) {
+        private InternalImageHandle getOrCreateImageHandleAtClosestSize(int widthHint, int heightHint) {
             Rectangle bounds = getBounds(100);
             int imageZoomForWidth = 100 * widthHint / bounds.width;
             int imageZoomForHeight = 100 * heightHint / bounds.height;
             int imageZoom = DPIUtil.getZoomForAutoscaleProperty(Math.max(imageZoomForWidth, imageZoomForHeight));
-            ImageHandle bestFittingHandle = zoomLevelToImageHandle.get(imageZoom);
+            InternalImageHandle bestFittingHandle = imageHandleManager.get(imageZoom);
             if (bestFittingHandle == null) {
             }
             return bestFittingHandle;
@@ -268,8 +334,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                 {
                     switch(getApi().type) {
                         case SWT.BITMAP:
-                            for (ImageHandle imageHandle : ((DartImage) srcImage.getImpl()).zoomLevelToImageHandle.values()) {
-                                Rectangle rect = imageHandle.getBounds();
+                            for (InternalImageHandle imageHandle : ((DartImage) srcImage.getImpl()).imageHandleManager.getAllImageHandles()) {
+                                Rectangle rect = imageHandle.bounds();
                                 /* Get the HDC for the device */
                                 long hDC = device.internal_new_GC(null);
                                 /* Release the HDC for the device */
@@ -277,7 +343,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                             }
                             break;
                         case SWT.ICON:
-                            for (ImageHandle imageHandle : ((DartImage) srcImage.getImpl()).zoomLevelToImageHandle.values()) {
+                            for (InternalImageHandle imageHandle : ((DartImage) srcImage.getImpl()).imageHandleManager.getAllImageHandles()) {
+                                Rectangle rect = imageHandle.bounds();
                             }
                             break;
                         default:
@@ -287,21 +354,21 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                 }
             case SWT.IMAGE_DISABLE:
                 {
-                    for (ImageHandle imageHandle : ((DartImage) srcImage.getImpl()).zoomLevelToImageHandle.values()) {
-                        Rectangle rect = imageHandle.getBounds();
-                        ImageData data = srcImage.getImageData(imageHandle.zoom);
+                    for (InternalImageHandle imageHandle : ((DartImage) srcImage.getImpl()).imageHandleManager.getAllImageHandles()) {
+                        Rectangle rect = imageHandle.bounds();
+                        ImageData data = srcImage.getImageData(imageHandle.zoom());
                         ImageData newData = applyDisableImageData(data, rect.height, rect.width);
-                        init(newData, imageHandle.zoom);
+                        imageHandleManager.getOrCreate(imageHandle.zoom(), () -> init(newData, imageHandle.zoom()));
                     }
                     break;
                 }
             case SWT.IMAGE_GRAY:
                 {
-                    for (ImageHandle imageHandle : ((DartImage) srcImage.getImpl()).zoomLevelToImageHandle.values()) {
-                        Rectangle rect = imageHandle.getBounds();
-                        ImageData data = srcImage.getImageData(imageHandle.zoom);
+                    for (InternalImageHandle imageHandle : ((DartImage) srcImage.getImpl()).imageHandleManager.getAllImageHandles()) {
+                        Rectangle rect = imageHandle.bounds();
+                        ImageData data = srcImage.getImageData(imageHandle.zoom());
                         ImageData newData = applyGrayImageData(data, rect.height, rect.width);
-                        init(newData, imageHandle.zoom);
+                        imageHandleManager.getOrCreate(imageHandle.zoom(), () -> init(newData, imageHandle.zoom()));
                     }
                     break;
                 }
@@ -652,6 +719,10 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         gc.dispose();
     }
 
+    private ElementAtZoom<ImageData> adaptImageDataIfDisabledOrGray(ElementAtZoom<ImageData> dataAtZoom) {
+        return new ElementAtZoom<>(adaptImageDataIfDisabledOrGray(dataAtZoom.element()), dataAtZoom.zoom());
+    }
+
     private ImageData adaptImageDataIfDisabledOrGray(ImageData data) {
         ImageData returnImageData = null;
         switch(this.styleFlag) {
@@ -795,23 +866,12 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         return newData;
     }
 
-    private ImageHandle getImageMetadata(ZoomContext zoomContext) {
-        int targetZoom = zoomContext.targetZoom();
-        if (zoomLevelToImageHandle.get(targetZoom) != null) {
-            return zoomLevelToImageHandle.get(targetZoom);
-        }
-        return null;
-    }
-
     ImageHandle getHandle(int targetZoom, int nativeZoom) {
-        if (isDisposed()) {
-            return null;
-        }
         return null;
     }
 
-    void executeOnImageHandleAtBestFittingSize(Consumer<ImageHandle> handleAtSizeConsumer, int widthHint, int heightHint) {
-        ImageHandle imageHandle = lastRequestedHandle.refresh(widthHint, heightHint);
+    void executeOnImageHandleAtBestFittingSize(Consumer<ImageHandle> handleAtSizeConsumer, int destWidth, int destHeight) {
+        ImageHandle imageHandle = lastRequestedHandle.refresh(Math.max(1, destWidth), Math.max(1, destHeight));
         handleAtSizeConsumer.accept(imageHandle);
     }
 
@@ -867,24 +927,12 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     private void destroyHandles() {
         lastRequestedHandle.destroy();
-        destroyHandles(__ -> true);
+        imageHandleManager.destroyHandles(__ -> true);
     }
 
     @Override
     void destroyHandlesExcept(Set<Integer> zoomLevels) {
-        destroyHandles(zoom -> !zoomLevels.contains(zoom));
-    }
-
-    private void destroyHandles(Predicate<Integer> filter) {
-        Iterator<Entry<Integer, ImageHandle>> it = zoomLevelToImageHandle.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<Integer, ImageHandle> zoomToHandle = it.next();
-            if (filter.test(zoomToHandle.getKey())) {
-                ImageHandle imageHandle = zoomToHandle.getValue();
-                it.remove();
-                imageHandle.destroy();
-            }
-        }
+        imageHandleManager.destroyHandles(zoom -> !zoomLevels.contains(zoom));
     }
 
     /**
@@ -941,12 +989,12 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             return SwtColor.win32_new(device, (backgroundColor.blue << 16) | (backgroundColor.green << 8) | backgroundColor.red);
         }
         ImageHandle imageHandle = this.getHandle(100, 100);
-        if (imageHandle.transparentPixel == -1) {
+        if (imageHandle.transparentPixel() == -1) {
             return null;
         }
         /* Get the HDC for the device */
         long hDC = device.internal_new_GC(null);
-        int transparentPixel = imageHandle.transparentPixel;
+        int transparentPixel = imageHandle.transparentPixel();
         int red = 0, green = 0, blue = 0;
         {
         }
@@ -976,9 +1024,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     Rectangle getBounds(int zoom) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (zoomLevelToImageHandle.containsKey(zoom)) {
-        }
-        return new Rectangle(0, 0, 0, 0);
+        return new Rectangle(0, 0, this.imageData.width, this.imageData.height);
     }
 
     /**
@@ -998,7 +1044,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     @Deprecated(since = "2025-09", forRemoval = true)
     public Rectangle getBoundsInPixels() {
-        return applyUsingAnyHandle(ImageHandle::getBounds);
+        return applyUsingAnyHandle(InternalImageHandle::bounds);
     }
 
     /**
@@ -1085,7 +1131,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     @Deprecated(since = "2025-09", forRemoval = true)
     public ImageData getImageDataAtCurrentZoom() {
-        return applyUsingAnyHandle(ImageHandle::getImageData);
+        return applyUsingAnyHandle(InternalImageHandle::getImageData);
     }
 
     /**
@@ -1299,29 +1345,20 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         }
     }
 
-    private void setImageMetadataForHandle(ImageHandle imageMetadata, int zoom) {
-        if (zoom == -1)
-            return;
-        if (zoomLevelToImageHandle.containsKey(zoom)) {
-            SWT.error(SWT.ERROR_ITEM_NOT_ADDED);
-        }
-        zoomLevelToImageHandle.put(zoom, imageMetadata);
-    }
-
-    private ImageHandle initIconHandle(Device device, ImageData source, ImageData mask, Integer zoom) {
+    private DestroyableImageHandle initIconHandle(Device device, ImageData source, ImageData mask, Integer zoom) {
         ImageData imageData = applyMask(source, mask);
         HandleForImageDataContainer imageDataHandle = init(device, imageData);
         return initIconHandle(imageDataHandle.handles, zoom);
     }
 
-    private ImageHandle initIconHandle(long[] handles, int zoom) {
+    private DestroyableImageHandle initIconHandle(long[] handles, int zoom) {
         getApi().type = SWT.ICON;
         return null;
     }
 
-    private ImageHandle initBitmapHandle(ImageData imageData, long handle, Integer zoom) {
+    private DestroyableImageHandle initBitmapHandle(ImageData imageData, long handle, Integer zoom) {
         getApi().type = SWT.BITMAP;
-        return new ImageHandle(handle, zoom, imageData.transparentPixel);
+        return new DestroyableImageHandle(handle, zoom, imageData.transparentPixel);
     }
 
     static long[] initIcon(Device device, ImageData source, ImageData mask) {
@@ -1405,7 +1442,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         return imageData;
     }
 
-    private ImageHandle init(ImageData i, int zoom) {
+    private DestroyableImageHandle init(ImageData i, int zoom) {
         if (i == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         HandleForImageDataContainer imageDataHandle = init(device, i);
@@ -1554,7 +1591,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         backgroundColor = color.getRGB();
         this.background = newValue;
-        zoomLevelToImageHandle.values().forEach(imageHandle -> imageHandle.setBackground(backgroundColor));
+        imageHandleManager.getAllImageHandles().forEach(imageHandle -> imageHandle.setBackground(backgroundColor));
     }
 
     /**
@@ -1567,16 +1604,16 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     public String toString() {
         if (isDisposed())
             return "Image {*DISPOSED*}";
-        return "Image {" + zoomLevelToImageHandle + "}";
+        return "Image {" + imageHandleManager + "}";
     }
 
-    <T> T applyUsingAnyHandle(Function<ImageHandle, T> function) {
-        if (zoomLevelToImageHandle.isEmpty()) {
+    <T> T applyUsingAnyHandle(Function<InternalImageHandle, T> function) {
+        if (imageHandleManager.isEmpty()) {
             try {
             } finally {
             }
         }
-        return function.apply(zoomLevelToImageHandle.values().iterator().next());
+        return function.apply(imageHandleManager.getAllImageHandles().get(0));
     }
 
     /**
@@ -1610,34 +1647,39 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             return Collections.emptySet();
         }
 
+        protected boolean isPersistentImageHandleRequriedForImageData() {
+            return false;
+        }
+
+        /**
+         * Returns image data at the best-fitting available zoom for the given zoom.
+         * The returned data will have a potential gray/disable style applied.
+         */
         protected abstract ElementAtZoom<ImageData> loadImageData(int zoom);
 
-        abstract ImageData newImageData(ZoomContext zoomContext);
+        abstract ImageData newImageData(int zoom);
 
         abstract AbstractImageProviderWrapper createCopy(Image image);
 
-        ImageData getScaledImageData(int zoom) {
-            ElementAtZoom<ImageData> closestAvailableImageData = getClosestAvailableImageData(zoom);
-            return DPIUtil.scaleImageData(device, closestAvailableImageData.element(), zoom, closestAvailableImageData.zoom());
-        }
-
         ElementAtZoom<ImageData> getClosestAvailableImageData(int zoom) {
-            TreeSet<Integer> availableZooms = new TreeSet<>(zoomLevelToImageHandle.keySet());
+            TreeSet<Integer> availableZooms = new TreeSet<>(imageHandleManager.getAllZooms());
             int closestZoom = Optional.ofNullable(availableZooms.higher(zoom)).orElse(availableZooms.lower(zoom));
-            return new ElementAtZoom<>(getImageMetadata(new ZoomContext(closestZoom)).getImageData(), closestZoom);
+            ImageData imageData = imageHandleManager.get(closestZoom).getImageData();
+            return new ElementAtZoom<>(imageData, closestZoom);
         }
 
+        /**
+         * Returns image data at the exact requested size if available.
+         * The returned data will have a potential gray/disable style applied.
+         */
         protected Optional<ImageData> loadImageDataAtExactSize(int width, int height) {
             // exact size not available
             return Optional.empty();
         }
 
-        protected ImageHandle newImageHandle(ZoomContext zoomContext) {
-            ImageData resizedData = getImageData(zoomContext.targetZoom());
-            return newImageHandle(resizedData, zoomContext);
-        }
+        abstract DestroyableImageHandle newImageHandle(ZoomContext zoomContext);
 
-        protected final ImageHandle newImageHandle(ImageData data, ZoomContext zoomContext) {
+        protected final DestroyableImageHandle newImageHandle(ImageData data, ZoomContext zoomContext) {
             if (getApi().type == SWT.ICON && data.getTransparencyType() != SWT.TRANSPARENCY_MASK) {
                 // If the original type was an icon with transparency mask and re-scaling leads
                 // to image data without transparency mask, this will create invalid images
@@ -1663,7 +1705,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         public ExistingImageHandleProviderWrapper(long handle, int zoomForHandle) {
             this.handle = handle;
             this.zoomForHandle = zoomForHandle;
-            ImageHandle imageHandle = new ImageHandle(handle, zoomForHandle, -1);
+            InternalImageHandle imageHandle = imageHandleManager.getOrCreate(zoomForHandle, () -> new DestroyableImageHandle(handle, zoomForHandle, -1));
             ImageData baseData = imageHandle.getImageData();
             this.width = DPIUtil.pixelToPoint(baseData.width, zoomForHandle);
             this.height = DPIUtil.pixelToPoint(baseData.height, zoomForHandle);
@@ -1675,8 +1717,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         }
 
         @Override
-        ImageData newImageData(ZoomContext zoomContext) {
-            return getScaledImageData(zoomContext.targetZoom());
+        ImageData newImageData(int zoom) {
+            ElementAtZoom<ImageData> closestAvailableImageData = loadImageData(zoom);
+            return DPIUtil.scaleImageData(device, closestAvailableImageData.element(), zoom, closestAvailableImageData.zoom());
         }
 
         @Override
@@ -1693,6 +1736,12 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         protected ElementAtZoom<ImageData> loadImageData(int zoom) {
             return getClosestAvailableImageData(zoom);
         }
+
+        @Override
+        protected DestroyableImageHandle newImageHandle(ZoomContext zoomContext) {
+            ImageData resizedData = newImageData(zoomContext.targetZoom());
+            return newImageHandle(resizedData, zoomContext);
+        }
     }
 
     private abstract class ImageFromImageDataProviderWrapper extends AbstractImageProviderWrapper {
@@ -1702,22 +1751,22 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         void initImage() {
             // As the init call configured some Image attributes (e.g. type)
             // it must be called
-            newImageData(new ZoomContext(100));
+            newImageData(100);
         }
 
         @Override
-        ImageData newImageData(ZoomContext zoomContext) {
+        ImageData newImageData(int zoom) {
             Function<Integer, ImageData> imageDataRetrieval = zoomToRetrieve -> {
-                ImageHandle handle = initializeHandleFromSource(zoomContext);
+                DestroyableImageHandle handle = initializeHandleFromSource(new ZoomContext(zoomToRetrieve));
                 ImageData data = handle.getImageData();
                 handle.destroy();
                 return data;
             };
-            return (ImageData) cachedImageData.computeIfAbsent(zoomContext.targetZoom(), imageDataRetrieval).clone();
+            return (ImageData) cachedImageData.computeIfAbsent(zoom, imageDataRetrieval).clone();
         }
 
         @Override
-        protected ImageHandle newImageHandle(ZoomContext zoomContext) {
+        protected DestroyableImageHandle newImageHandle(ZoomContext zoomContext) {
             ImageData cachedData = cachedImageData.remove(zoomContext.targetZoom());
             if (cachedData != null) {
                 return newImageHandle(cachedData, zoomContext);
@@ -1725,10 +1774,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             return initializeHandleFromSource(zoomContext);
         }
 
-        private ImageHandle initializeHandleFromSource(ZoomContext zoomContext) {
+        private DestroyableImageHandle initializeHandleFromSource(ZoomContext zoomContext) {
             ElementAtZoom<ImageData> imageDataAtZoom = loadImageData(zoomContext.targetZoom());
             ImageData imageData = DPIUtil.scaleImageData(device, imageDataAtZoom.element(), zoomContext.targetZoom(), imageDataAtZoom.zoom());
-            imageData = adaptImageDataIfDisabledOrGray(imageData);
             return newImageHandle(imageData, zoomContext);
         }
     }
@@ -1756,7 +1804,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
         @Override
         protected ElementAtZoom<ImageData> loadImageData(int zoom) {
-            return new ElementAtZoom<>(imageDataAtBaseZoom, baseZoom);
+            ImageData adaptedImageData = adaptImageDataIfDisabledOrGray(imageDataAtBaseZoom);
+            return new ElementAtZoom<>(adaptedImageData, baseZoom);
         }
 
         @Override
@@ -1788,7 +1837,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             ImageData scaledMask = DPIUtil.scaleImageData(device, maskAt100, zoom, 100);
             scaledMask = ImageData.convertMask(scaledMask);
             ImageData mergedData = applyMask(scaledSource, scaledMask);
-            return new ElementAtZoom<>(mergedData, zoom);
+            ImageData adaptedData = adaptImageDataIfDisabledOrGray(mergedData);
+            return new ElementAtZoom<>(adaptedData, zoom);
         }
 
         @Override
@@ -1806,7 +1856,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                 this.inputStreamData = inputStream.readAllBytes();
                 initImage();
             } catch (IOException e) {
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT, e);
+                SWT.error(SWT.ERROR_IO, e);
             }
         }
 
@@ -1821,7 +1871,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
         @Override
         protected Rectangle getBounds(int zoom) {
-            ImageData scaledImageData = getImageData(zoom);
+            ImageData scaledImageData = newImageData(zoom);
             return new Rectangle(0, 0, scaledImageData.width, scaledImageData.height);
         }
 
@@ -1834,7 +1884,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         protected Optional<ImageData> loadImageDataAtExactSize(int targetWidth, int targetHeight) {
             if (ImageDataLoader.isDynamicallySizable(new ByteArrayInputStream(this.inputStreamData))) {
                 ImageData imageDataAtSize = ImageDataLoader.loadBySize(new ByteArrayInputStream(this.inputStreamData), targetWidth, targetHeight);
-                return Optional.of(imageDataAtSize);
+                ImageData adaptedImageDataAtSize = adaptImageDataIfDisabledOrGray(imageDataAtSize);
+                return Optional.of(adaptedImageDataAtSize);
             }
             return Optional.empty();
         }
@@ -1881,17 +1932,20 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         }
 
         @Override
-        ImageData newImageData(ZoomContext zoomContext) {
-            int targetZoom = zoomContext.targetZoom();
-            if (zoomLevelToImageHandle.isEmpty()) {
-                return createBaseHandle(targetZoom).getImageData();
-            }
-            // if a GC is initialized with an Image (memGC != null), the image data must not be resized, because it would
-            // be a destructive operation. Therefor, a new handle is created for the requested zoom
-            if (memGC != null) {
-                return newImageHandle(zoomContext).getImageData();
-            }
-            return getScaledImageData(targetZoom);
+        protected boolean isPersistentImageHandleRequriedForImageData() {
+            // when requesting image data for a not-yet-calculated zoom on an image
+            // with a GC initialized on it (memGC != null), this data must not be
+            // acquired by resizing from another zoom but by creating a handle for
+            // the zoom and making the GC reapply its operations on it. For that reason,
+            // this methods returns true if there is a memGC and in case there is no
+            // handle yet, such that a handle must be created anyway.
+            return imageHandleManager.isEmpty() || memGC != null;
+        }
+
+        @Override
+        ImageData newImageData(int zoom) {
+            ElementAtZoom<ImageData> closestAvailableImageData = loadImageData(zoom);
+            return DPIUtil.scaleImageData(device, closestAvailableImageData.element(), zoom, closestAvailableImageData.zoom());
         }
 
         @Override
@@ -1900,32 +1954,30 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         }
 
         @Override
-        protected ImageHandle newImageHandle(ZoomContext zoomContext) {
+        protected DestroyableImageHandle newImageHandle(ZoomContext zoomContext) {
             int targetZoom = zoomContext.targetZoom();
-            if (zoomLevelToImageHandle.isEmpty()) {
+            if (imageHandleManager.isEmpty()) {
                 return createBaseHandle(targetZoom);
             }
             if (memGC != null) {
-                if (memGC.getImpl().getZoom() != targetZoom) {
-                    GC currentGC = memGC;
-                    memGC = null;
-                    createHandle(targetZoom);
-                    ((DartGC) currentGC.getImpl()).refreshFor(new DrawableWrapper(DartImage.this.getApi(), zoomContext));
-                }
-                return zoomLevelToImageHandle.get(targetZoom);
+                GC currentGC = memGC;
+                memGC = null;
+                DestroyableImageHandle imageHandle = createHandle(targetZoom);
+                ((DartGC) currentGC.getImpl()).refreshFor(new DrawableWrapper(DartImage.this.getApi(), zoomContext), imageHandle);
+                return imageHandle;
             }
-            return super.newImageHandle(zoomContext);
+            ImageData resizedData = newImageData(targetZoom);
+            return newImageHandle(resizedData, zoomContext);
         }
 
-        private ImageHandle createBaseHandle(int zoom) {
+        private DestroyableImageHandle createBaseHandle(int zoom) {
             baseZoom = zoom;
             return createHandle(zoom);
         }
 
-        private ImageHandle createHandle(int zoom) {
+        private DestroyableImageHandle createHandle(int zoom) {
             long handle = initHandle(zoom);
-            ImageHandle imageHandle = new ImageHandle(handle, zoom, -1);
-            zoomLevelToImageHandle.put(zoom, imageHandle);
+            DestroyableImageHandle imageHandle = new DestroyableImageHandle(handle, zoom, -1);
             return imageHandle;
         }
 
@@ -1982,18 +2034,18 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         }
 
         @Override
-        ImageData newImageData(ZoomContext zoomContext) {
+        ImageData newImageData(int zoom) {
             Function<Integer, ImageData> imageDataRetrival = zoomToRetrieve -> {
-                ImageHandle handle = initializeHandleFromSource(zoomToRetrieve);
+                DestroyableImageHandle handle = initializeHandleFromSource(zoomToRetrieve);
                 ImageData data = handle.getImageData();
                 handle.destroy();
                 return data;
             };
-            return (ImageData) cachedImageData.computeIfAbsent(zoomContext.targetZoom(), imageDataRetrival).clone();
+            return (ImageData) cachedImageData.computeIfAbsent(zoom, imageDataRetrival).clone();
         }
 
         @Override
-        protected ImageHandle newImageHandle(ZoomContext zoomContext) {
+        protected DestroyableImageHandle newImageHandle(ZoomContext zoomContext) {
             int targetZoom = zoomContext.targetZoom();
             ImageData cachedData = cachedImageData.remove(targetZoom);
             if (cachedData != null) {
@@ -2002,16 +2054,15 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             return initializeHandleFromSource(targetZoom);
         }
 
-        private ImageHandle initializeHandleFromSource(int zoom) {
+        private DestroyableImageHandle initializeHandleFromSource(int zoom) {
             ElementAtZoom<ImageData> imageDataAtZoom = loadImageData(zoom);
             ImageData imageData = DPIUtil.scaleImageData(device, imageDataAtZoom.element(), zoom, imageDataAtZoom.zoom());
-            imageData = adaptImageDataIfDisabledOrGray(imageData);
             return init(imageData, zoom);
         }
 
         @Override
         protected Rectangle getBounds(int zoom) {
-            ImageData imageData = getImageData(zoom);
+            ImageData imageData = newImageData(zoom);
             return new Rectangle(0, 0, imageData.width, imageData.height);
         }
     }
@@ -2022,7 +2073,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             super(provider, ImageFileNameProvider.class);
             // Checks for the contract of the passed provider require
             // checking for valid image data creation
-            newImageData(new ZoomContext(DPIUtil.getDeviceZoom()));
+            newImageData(DPIUtil.getDeviceZoom());
         }
 
         @Override
@@ -2031,23 +2082,27 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             // Load at appropriate zoom via loader
             if (fileForZoom.zoom() != zoom && ImageDataLoader.canLoadAtZoom(fileForZoom.element(), fileForZoom.zoom(), zoom)) {
                 ElementAtZoom<ImageData> imageDataAtZoom = ImageDataLoader.loadByZoom(fileForZoom.element(), fileForZoom.zoom(), zoom);
-                return new ElementAtZoom<>(imageDataAtZoom.element(), zoom);
+                ImageData adaptedImageData = adaptImageDataIfDisabledOrGray(imageDataAtZoom.element());
+                return new ElementAtZoom<>(adaptedImageData, zoom);
             }
             // Load at file zoom (native or via loader) and rescale
-            ImageHandle nativeInitializedImage;
-            if (zoomLevelToImageHandle.containsKey(fileForZoom.zoom())) {
-                nativeInitializedImage = zoomLevelToImageHandle.get(fileForZoom.zoom());
+            InternalImageHandle nativeInitializedImage;
+            DestroyableImageHandle temporaryImageHandle = null;
+            if (imageHandleManager.contains(fileForZoom.zoom())) {
+                nativeInitializedImage = imageHandleManager.get(fileForZoom.zoom());
             } else {
-                nativeInitializedImage = initNative(fileForZoom.element(), fileForZoom.zoom());
+                nativeInitializedImage = temporaryImageHandle = initNative(fileForZoom.element(), fileForZoom.zoom());
             }
             ElementAtZoom<ImageData> imageDataAtZoom;
             if (nativeInitializedImage == null) {
                 imageDataAtZoom = ImageDataLoader.loadByZoom(fileForZoom.element(), fileForZoom.zoom(), zoom);
             } else {
                 imageDataAtZoom = new ElementAtZoom<>(nativeInitializedImage.getImageData(), fileForZoom.zoom());
-                nativeInitializedImage.destroy();
+                if (temporaryImageHandle != null) {
+                    temporaryImageHandle.destroy();
+                }
             }
-            return imageDataAtZoom;
+            return adaptImageDataIfDisabledOrGray(imageDataAtZoom);
         }
 
         @Override
@@ -2060,8 +2115,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             return ((DartImage) image.getImpl()).new ImageFileNameProviderWrapper(provider);
         }
 
-        ImageHandle initNative(String filename, int zoom) {
-            ImageHandle imageMetadata = null;
+        DestroyableImageHandle initNative(String filename, int zoom) {
+            DestroyableImageHandle imageMetadata = null;
             boolean gdip = true;
             /*
 		* Bug in GDI+. Bitmap.LockBits() fails to load GIF files in
@@ -2088,7 +2143,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             String fileName = DPIUtil.validateAndGetImagePathAtZoom(this.provider, 100).element();
             if (ImageDataLoader.isDynamicallySizable(fileName)) {
                 ImageData imageDataAtSize = ImageDataLoader.loadBySize(fileName, targetWidth, targetHeight);
-                return Optional.of(imageDataAtSize);
+                ImageData adaptedImageDataAtSize = adaptImageDataIfDisabledOrGray(imageDataAtSize);
+                return Optional.of(adaptedImageDataAtSize);
             }
             return Optional.empty();
         }
@@ -2102,7 +2158,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
         @Override
         protected ElementAtZoom<ImageData> loadImageData(int zoom) {
-            return DPIUtil.validateAndGetImageDataAtZoom(provider, zoom);
+            ElementAtZoom<ImageData> imageDataAtZoom = DPIUtil.validateAndGetImageDataAtZoom(provider, zoom);
+            return adaptImageDataIfDisabledOrGray(imageDataAtZoom);
         }
 
         @Override
@@ -2117,7 +2174,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                 if (imageData == null) {
                     SWT.error(SWT.ERROR_INVALID_ARGUMENT, null, " ImageDataAtSizeProvider returned null for width=" + targetWidth + ", height=" + targetHeight);
                 }
-                return Optional.of(imageData);
+                ImageData adaptedImageData = adaptImageDataIfDisabledOrGray(imageData);
+                return Optional.of(adaptedImageData);
             }
             return Optional.empty();
         }
@@ -2156,17 +2214,16 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         }
 
         @Override
-        ImageData newImageData(ZoomContext zoomContext) {
-            return loadImageData(zoomContext.targetZoom).element();
+        ImageData newImageData(int zoom) {
+            return loadImageData(zoom).element();
         }
 
         @Override
         protected ElementAtZoom<ImageData> loadImageData(int zoom) {
-            return new ElementAtZoom<>(getImageMetadata(new ZoomContext(zoom)).getImageData(), zoom);
+            return new ElementAtZoom<>(loadImageData(new ZoomContext(zoom)), zoom);
         }
 
-        @Override
-        protected ImageHandle newImageHandle(ZoomContext zoomContext) {
+        private ImageData loadImageData(ZoomContext zoomContext) {
             currentZoom = zoomContext;
             int targetZoom = zoomContext.targetZoom();
             int gcStyle = drawer.getGcStyle();
@@ -2186,12 +2243,15 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                 drawer.drawOn(gc, width, height);
                 ImageData imageData = image.getImageData(targetZoom);
                 drawer.postProcess(imageData);
-                ImageData newData = adaptImageDataIfDisabledOrGray(imageData);
-                return init(newData, targetZoom);
+                return adaptImageDataIfDisabledOrGray(imageData);
             } finally {
-                gc.dispose();
                 image.dispose();
             }
+        }
+
+        @Override
+        protected DestroyableImageHandle newImageHandle(ZoomContext zoomContext) {
+            return init(loadImageData(zoomContext), zoomContext.targetZoom);
         }
 
         @Override
@@ -2237,9 +2297,37 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         }
     }
 
-    class ImageHandle {
+    interface ImageHandle {
 
-        private long handle;
+        long handle();
+
+        int width();
+
+        int height();
+
+        int transparentPixel();
+
+        int transparentColor();
+
+        void setTransparentColor(int transparentColor);
+    }
+
+    private interface InternalImageHandle extends ImageHandle {
+
+        int zoom();
+
+        Rectangle bounds();
+
+        void setBackground(RGB rgb);
+
+        ImageData getImageData();
+
+        boolean isDisposed();
+    }
+
+    private class DestroyableImageHandle implements InternalImageHandle {
+
+        private final long handle;
 
         private final int zoom;
 
@@ -2247,14 +2335,13 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
         private final int width;
 
-        /**
-         * specifies the transparent pixel
-         */
-        final int transparentPixel;
+        private final int transparentPixel;
 
-        int transparentColor = -1;
+        private int transparentColor = -1;
 
-        ImageHandle(long handle, int zoom, int transparentPixel) {
+        private boolean isDisposed;
+
+        DestroyableImageHandle(long handle, int zoom, int transparentPixel) {
             this.handle = handle;
             this.zoom = zoom;
             Point bounds = getBoundsInPixelsFromNative();
@@ -2264,32 +2351,46 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             if (backgroundColor != null) {
                 setBackground(backgroundColor);
             }
-            setImageMetadataForHandle(this, zoom);
         }
 
-        long getHandle() {
-            return handle;
+        @Override
+        public long handle() {
+            return isDisposed() ? 0 : handle;
         }
 
-        int getWidth() {
+        @Override
+        public int width() {
             return width;
         }
 
-        int getHeight() {
+        @Override
+        public int height() {
             return height;
         }
 
-        Rectangle getBounds() {
+        @Override
+        public Rectangle bounds() {
             return new Rectangle(0, 0, width, height);
         }
 
-        private void setBackground(RGB color) {
-            if (transparentPixel == -1)
-                return;
-            /* Get the HDC for the device */
-            long hDC = device.internal_new_GC(null);
-            /* Release the HDC for the device */
-            device.internal_dispose_GC(hDC, null);
+        @Override
+        public int zoom() {
+            return zoom;
+        }
+
+        @Override
+        public int transparentPixel() {
+            return transparentPixel;
+        }
+
+        @Override
+        public int transparentColor() {
+            return transparentColor;
+        }
+
+        @Override
+        public void setTransparentColor(int transparentColor) {
+            this.transparentColor = transparentColor;
         }
 
         private Point getBoundsInPixelsFromNative() {
@@ -2302,7 +2403,18 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             }
         }
 
-        private ImageData getImageData() {
+        @Override
+        public void setBackground(RGB color) {
+            if (transparentPixel() == -1)
+                return;
+            /* Get the HDC for the device */
+            long hDC = device.internal_new_GC(null);
+            /* Release the HDC for the device */
+            device.internal_dispose_GC(hDC, null);
+        }
+
+        @Override
+        public ImageData getImageData() {
             if (isDisposed())
                 SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
             switch(getApi().type) {
@@ -2333,16 +2445,16 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             }
         }
 
-        private boolean isDisposed() {
-            return this.handle == 0;
+        @Override
+        public boolean isDisposed() {
+            return isDisposed;
         }
 
-        private void destroy() {
-            zoomLevelToImageHandle.remove(zoom, this);
+        void destroy() {
             if (getApi().type == SWT.ICON) {
             } else {
             }
-            handle = 0;
+            isDisposed = true;
         }
     }
 
@@ -2389,7 +2501,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     void updateImageData(ImageData newData) {
         this.imageData = newData;
-        zoomLevelToImageHandle.clear();
+        imageHandleManager.destroyHandles(__ -> true);
         pendingRenderFuture = null;
     }
 

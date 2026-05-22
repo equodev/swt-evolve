@@ -93,21 +93,23 @@ public class WebKitGTK extends C {
 
     public static final int WEBKIT_TLS_ERRORS_POLICY_IGNORE = 0;
 
-    public static final int G_TLS_CERTIFICATE_UNKNOWN_CA = 0;
+    public static final int G_TLS_CERTIFICATE_NO_FLAGS = 0;
 
-    public static final int G_TLS_CERTIFICATE_BAD_IDENTITY = 1;
+    public static final int G_TLS_CERTIFICATE_UNKNOWN_CA = 1 << 0;
 
-    public static final int G_TLS_CERTIFICATE_NOT_ACTIVATED = 2;
+    public static final int G_TLS_CERTIFICATE_BAD_IDENTITY = 1 << 1;
 
-    public static final int G_TLS_CERTIFICATE_EXPIRED = 3;
+    public static final int G_TLS_CERTIFICATE_NOT_ACTIVATED = 1 << 2;
 
-    public static final int G_TLS_CERTIFICATE_REVOKED = 4;
+    public static final int G_TLS_CERTIFICATE_EXPIRED = 1 << 3;
 
-    public static final int G_TLS_CERTIFICATE_INSECURE = 5;
+    public static final int G_TLS_CERTIFICATE_REVOKED = 1 << 4;
 
-    public static final int G_TLS_CERTIFICATE_GENERIC_ERROR = 6;
+    public static final int G_TLS_CERTIFICATE_INSECURE = 1 << 5;
 
-    public static final int G_TLS_CERTIFICATE_VALIDATE_ALL = 7;
+    public static final int G_TLS_CERTIFICATE_GENERIC_ERROR = 1 << 6;
+
+    public static final int G_TLS_CERTIFICATE_VALIDATE_ALL = 0x7f;
 
     public static final int WEBKIT_WEBSITE_DATA_COOKIES = GTK.GTK4 ? 64 : 1 << 8;
 
@@ -182,7 +184,8 @@ public class WebKitGTK extends C {
     /**
      * Properties:
      */
-    // Webkit2: https://webkitgtk.org/reference/webkit2gtk/unstable/WebKitSettings.html#WebKitSettings.properties
+    // GTK3: https://webkitgtk.org/reference/webkit2gtk/stable/class.Settings.html#properties
+    // GTK4: https://webkitgtk.org/reference/webkitgtk/stable/class.Settings.html#properties
     //
     // Developer Note:
     // - Webkit2 documentation doesn't explicitly say if g_object_(set|get) is safe to use, but
@@ -582,6 +585,11 @@ public class WebKitGTK extends C {
      * @method flags=dynamic
      */
     public static final native void webkit_web_context_register_uri_scheme(long context, byte[] scheme, long callback, long user_data, long user_data_destroy_func);
+
+    /**
+     * @method flags=dynamic
+     */
+    public static final native void webkit_web_context_add_path_to_sandbox(long context, byte[] path, boolean read_only);
 
     /**
      * @method flags=dynamic

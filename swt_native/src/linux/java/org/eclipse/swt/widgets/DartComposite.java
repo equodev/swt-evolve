@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -343,7 +343,7 @@ public class DartComposite extends DartScrollable implements IComposite {
         if (control != null) {
             GCData data = gc.getGCData();
             if (control.getImpl()._backgroundImage() != null) {
-                Point pt = ((SwtDisplay) display.getImpl()).mapInPixels(this.getApi(), control, 0, 0);
+                Point pt = display.map(this.getApi(), control, 0, 0);
                 x += pt.x + offsetX;
                 y += pt.y + offsetY;
                 long surface = control.getImpl()._backgroundImage().surface;
@@ -354,7 +354,7 @@ public class DartComposite extends DartScrollable implements IComposite {
             } else {
             }
         } else {
-            gc.fillRectangle(new Rectangle(x, y, width, height));
+            gc.fillRectangle(x, y, width, height);
         }
     }
 
@@ -978,7 +978,7 @@ public class DartComposite extends DartScrollable implements IComposite {
         gc.setClipping(newClip);
         super.printWidget(gc, drawable, depth, x, y);
         Rectangle clientRect = getClientAreaInPixels();
-        Point pt = ((SwtDisplay) display.getImpl()).mapInPixels(this.getApi(), parent, clientRect.x, clientRect.y);
+        Point pt = display.map(this.getApi(), parent, clientRect.x, clientRect.y);
         clientRect.x = x + pt.x - rect.x;
         clientRect.y = y + pt.y - rect.y;
         newClip.intersect(clientRect);
@@ -987,7 +987,7 @@ public class DartComposite extends DartScrollable implements IComposite {
         for (int i = children.length - 1; i >= 0; --i) {
             Control child = children[i];
             if (child.getVisible()) {
-                Point location = ((DartControl) child.getImpl()).getLocationInPixels();
+                Point location = child.getLocation();
                 ((DartControl) child.getImpl()).printWidget(gc, drawable, depth, x + location.x, y + location.y);
             }
         }

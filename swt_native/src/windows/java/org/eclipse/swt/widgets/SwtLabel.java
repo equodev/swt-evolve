@@ -164,7 +164,7 @@ public class SwtLabel extends SwtControl implements ILabel {
             return new Point(width, height);
         }
         if (isImageMode) {
-            Rectangle rect = Win32DPIUtils.scaleBounds(image.getBounds(), this.getZoom(), 100);
+            Rectangle rect = Win32DPIUtils.scaleBounds(image.getBounds(), this.getAutoscalingZoom(), 100);
             width += rect.width;
             height += rect.height;
         } else {
@@ -595,7 +595,7 @@ public class SwtLabel extends SwtControl implements ILabel {
         int height = struct.bottom - struct.top;
         if (width == 0 || height == 0)
             return;
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         Rectangle imageRect = Win32DPIUtils.scaleBounds(image.getBounds(), zoom, 100);
         int x = 0;
         if ((getApi().style & SWT.CENTER) != 0) {

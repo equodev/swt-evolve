@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.stream.*;
@@ -19,6 +20,15 @@ public class VControl extends VWidget {
 
     protected VControl(IControl impl) {
         super(impl);
+    }
+
+    @JsonAttribute(ignore = true)
+    public AutoscalingMode getAutoscalingMode() {
+        return ((DartControl) impl).autoscalingMode;
+    }
+
+    public void setAutoscalingMode(AutoscalingMode value) {
+        ((DartControl) impl).autoscalingMode = value;
     }
 
     public Color getBackground() {

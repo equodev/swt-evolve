@@ -129,12 +129,12 @@ public class SwtCaret extends SwtWidget implements ICaret {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getBoundsInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPoint(getBoundsInPixels(), getAutoscalingZoom());
     }
 
     Rectangle getBoundsInPixels() {
         if (image != null) {
-            Rectangle rect = Win32DPIUtils.pointToPixel(image.getBounds(), getZoom());
+            Rectangle rect = Win32DPIUtils.pointToPixel(image.getBounds(), getAutoscalingZoom());
             return new Rectangle(getXInPixels(), getYInPixels(), rect.width, rect.height);
         }
         if (width == 0) {
@@ -150,7 +150,7 @@ public class SwtCaret extends SwtWidget implements ICaret {
         int[] buffer = new int[1];
         if (OS.SystemParametersInfo(OS.SPI_GETCARETWIDTH, 0, buffer, 0)) {
             int width = DPIUtil.pixelToPoint(buffer[0], Win32DPIUtils.getPrimaryMonitorZoomAtStartup());
-            int widthInPixels = DPIUtil.pointToPixel(width, getNativeZoom());
+            int widthInPixels = DPIUtil.pointToPixel(width, getApi().nativeZoom);
             return OptionalInt.of(widthInPixels);
         }
         return OptionalInt.empty();
@@ -170,7 +170,7 @@ public class SwtCaret extends SwtWidget implements ICaret {
         checkWidget();
         if (font == null) {
             long hFont = defaultFont();
-            return SwtFont.win32_new(display, hFont, getNativeZoom());
+            return SwtFont.win32_new(display, hFont, getApi().nativeZoom);
         }
         return font;
     }
@@ -233,12 +233,12 @@ public class SwtCaret extends SwtWidget implements ICaret {
      */
     public Point getSize() {
         checkWidget();
-        return Win32DPIUtils.pixelToPointAsSize(getSizeInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPointAsSize(getSizeInPixels(), getAutoscalingZoom());
     }
 
     public Point getSizeInPixels() {
         if (image != null) {
-            Rectangle rect = Win32DPIUtils.pointToPixel(image.getBounds(), getZoom());
+            Rectangle rect = Win32DPIUtils.pointToPixel(image.getBounds(), getAutoscalingZoom());
             return new Point(rect.width, rect.height);
         }
         if (width == 0) {
@@ -251,19 +251,19 @@ public class SwtCaret extends SwtWidget implements ICaret {
     }
 
     private int getWidthInPixels() {
-        return DPIUtil.pointToPixel(width, getZoom());
+        return DPIUtil.pointToPixel(width, getAutoscalingZoom());
     }
 
     private int getHeightInPixels() {
-        return DPIUtil.pointToPixel(height, getZoom());
+        return DPIUtil.pointToPixel(height, getAutoscalingZoom());
     }
 
     private int getXInPixels() {
-        return DPIUtil.pointToPixel(x, getZoom());
+        return DPIUtil.pointToPixel(x, getAutoscalingZoom());
     }
 
     private int getYInPixels() {
-        return DPIUtil.pointToPixel(y, getZoom());
+        return DPIUtil.pointToPixel(y, getAutoscalingZoom());
     }
 
     /**
@@ -394,7 +394,7 @@ public class SwtCaret extends SwtWidget implements ICaret {
         resized = false;
         long hwnd = parent.handle;
         OS.DestroyCaret();
-        long hBitmap = image != null ? SwtImage.win32_getHandle(image, getZoom()) : 0;
+        long hBitmap = image != null ? SwtImage.win32_getHandle(image, getAutoscalingZoom()) : 0;
         int widthInPixels = this.getWidthInPixels();
         if (image == null && widthInPixels == 0) {
             OptionalInt systemCaretWidthInPixelsForCurrentMonitor = getSystemCaretWidthInPixelsForCurrentMonitor();
@@ -480,7 +480,7 @@ public class SwtCaret extends SwtWidget implements ICaret {
         long hwnd = parent.handle;
         long hBitmap = 0;
         if (image != null)
-            hBitmap = SwtImage.win32_getHandle(image, getZoom());
+            hBitmap = SwtImage.win32_getHandle(image, getAutoscalingZoom());
         int widthInPixels = this.getWidthInPixels();
         if (image == null && widthInPixels == 0) {
             OptionalInt systemCaretWidthInPixelsForCurrentMonitor = getSystemCaretWidthInPixelsForCurrentMonitor();
@@ -515,7 +515,7 @@ public class SwtCaret extends SwtWidget implements ICaret {
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        this.font = font == null ? null : SwtFont.win32_new(font, getNativeZoom());
+        this.font = font == null ? null : SwtFont.win32_new(font, getApi().nativeZoom);
         if (hasFocus())
             setIMEFont();
     }
@@ -550,7 +550,7 @@ public class SwtCaret extends SwtWidget implements ICaret {
             return;
         long hFont = 0;
         if (font != null)
-            hFont = SWTFontProvider.getFontHandle(font, getNativeZoom());
+            hFont = SWTFontProvider.getFontHandle(font, getApi().nativeZoom);
         if (hFont == 0)
             hFont = defaultFont();
         long hwnd = parent.handle;
@@ -709,8 +709,9 @@ public class SwtCaret extends SwtWidget implements ICaret {
         if (font != null) {
             setFont(font);
         }
-        if (isVisible && hasFocus())
-            resize();
+        if (isFocusCaret()) {
+            setFocus();
+        }
     }
 
     public Canvas _parent() {

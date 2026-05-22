@@ -1039,7 +1039,7 @@ public class DartTree extends DartComposite implements ITree {
     }
 
     int getGridLineWidthInPixels() {
-        return DPIUtil.pointToPixel(GRID_WIDTH, getZoom());
+        return DPIUtil.pointToPixel(GRID_WIDTH, getAutoscalingZoom());
     }
 
     /**
@@ -1096,7 +1096,7 @@ public class DartTree extends DartComposite implements ITree {
      */
     public int getHeaderHeight() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getHeaderHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getHeaderHeightInPixels(), getAutoscalingZoom());
     }
 
     int getHeaderHeightInPixels() {
@@ -1392,7 +1392,7 @@ public class DartTree extends DartComposite implements ITree {
      */
     public int getItemHeight() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getItemHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getItemHeightInPixels(), getAutoscalingZoom());
     }
 
     int getItemHeightInPixels() {
@@ -2400,7 +2400,7 @@ public class DartTree extends DartComposite implements ITree {
             }
         }
         if (horizontalBar != null) {
-            horizontalBar.setIncrement(DPIUtil.pointToPixel(INCREMENT, getZoom()));
+            horizontalBar.setIncrement(DPIUtil.pointToPixel(INCREMENT, getAutoscalingZoom()));
         }
         boolean oldIgnore = ignoreResize;
         ignoreResize = true;
@@ -2835,7 +2835,7 @@ public class DartTree extends DartComposite implements ITree {
             y = Math.min(y, clientArea.y + clientArea.height);
         }
         Point pt = toDisplayInPixels(x, y);
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         event.setLocation(DPIUtil.pixelToPoint(pt.x, zoom), DPIUtil.pixelToPoint(pt.y, zoom));
     }
 
@@ -2883,10 +2883,14 @@ public class DartTree extends DartComposite implements ITree {
         // Resetting it will re-enable the default behavior again
         setItemHeight(-1);
         for (TreeColumn treeColumn : getColumns()) {
-            treeColumn.notifyListeners(SWT.ZoomChanged, event);
+            if (treeColumn != null && !treeColumn.isDisposed()) {
+                treeColumn.notifyListeners(SWT.ZoomChanged, event);
+            }
         }
         for (TreeItem item : getItems()) {
-            item.notifyListeners(SWT.ZoomChanged, event);
+            if (item != null && !item.isDisposed()) {
+                item.notifyListeners(SWT.ZoomChanged, event);
+            }
         }
         calculateAndApplyIndentSize();
         updateOrientation();

@@ -49,13 +49,13 @@ class MultiZoomCoordinateSystemMapper implements CoordinateSystemMapper {
         Point mappedPointInPoints;
         if (from == null) {
             Point mappedPointInpixels = ((SwtDisplay) display.getImpl()).mapInPixels(from, to, getPixelsFromPoint(to.getShell().getMonitor(), x, y));
-            mappedPointInPoints = Win32DPIUtils.pixelToPointAsLocation(mappedPointInpixels, to.getImpl().getZoom());
+            mappedPointInPoints = Win32DPIUtils.pixelToPointAsLocation(mappedPointInpixels, ((SwtControl) to.getImpl()).getAutoscalingZoom());
         } else if (to == null) {
-            Point mappedPointInpixels = ((SwtDisplay) display.getImpl()).mapInPixels(from, to, Win32DPIUtils.pointToPixelAsLocation(new Point(x, y), from.getImpl().getZoom()));
+            Point mappedPointInpixels = ((SwtDisplay) display.getImpl()).mapInPixels(from, to, Win32DPIUtils.pointToPixelAsLocation(new Point(x, y), ((SwtControl) from.getImpl()).getAutoscalingZoom()));
             mappedPointInPoints = getPointFromPixels(from.getShell().getMonitor(), mappedPointInpixels.x, mappedPointInpixels.y);
         } else {
-            Point mappedPointInpixels = ((SwtDisplay) display.getImpl()).mapInPixels(from, to, Win32DPIUtils.pointToPixelAsLocation(new Point(x, y), from.getImpl().getZoom()));
-            mappedPointInPoints = Win32DPIUtils.pixelToPointAsLocation(mappedPointInpixels, to.getImpl().getZoom());
+            Point mappedPointInpixels = ((SwtDisplay) display.getImpl()).mapInPixels(from, to, Win32DPIUtils.pointToPixelAsLocation(new Point(x, y), ((SwtControl) from.getImpl()).getAutoscalingZoom()));
+            mappedPointInPoints = Win32DPIUtils.pixelToPointAsLocation(mappedPointInpixels, ((SwtControl) to.getImpl()).getAutoscalingZoom());
         }
         return mappedPointInPoints;
     }
@@ -65,13 +65,13 @@ class MultiZoomCoordinateSystemMapper implements CoordinateSystemMapper {
         Rectangle mappedRectangleInPoints;
         if (from == null) {
             Rectangle mappedRectangleInPixels = ((SwtDisplay) display.getImpl()).mapInPixels(from, to, translateRectangleInPointsToPixels(x, y, width, height, to.getShell().getMonitor()));
-            mappedRectangleInPoints = Win32DPIUtils.pixelToPoint(mappedRectangleInPixels, to.getImpl().getZoom());
+            mappedRectangleInPoints = Win32DPIUtils.pixelToPoint(mappedRectangleInPixels, ((SwtControl) to.getImpl()).getAutoscalingZoom());
         } else if (to == null) {
-            Rectangle mappedRectangleInPixels = ((SwtDisplay) display.getImpl()).mapInPixels(from, to, Win32DPIUtils.pointToPixel(new Rectangle(x, y, width, height), from.getImpl().getZoom()));
+            Rectangle mappedRectangleInPixels = ((SwtDisplay) display.getImpl()).mapInPixels(from, to, Win32DPIUtils.pointToPixel(new Rectangle(x, y, width, height), ((SwtControl) from.getImpl()).getAutoscalingZoom()));
             mappedRectangleInPoints = translateRectangleInPixelsToPoints(mappedRectangleInPixels.x, mappedRectangleInPixels.y, mappedRectangleInPixels.width, mappedRectangleInPixels.height, from.getShell().getMonitor());
         } else {
-            Rectangle mappedRectangleInPixels = ((SwtDisplay) display.getImpl()).mapInPixels(from, to, Win32DPIUtils.pointToPixel(new Rectangle(x, y, width, height), from.getImpl().getZoom()));
-            mappedRectangleInPoints = Win32DPIUtils.pixelToPoint(mappedRectangleInPixels, to.getImpl().getZoom());
+            Rectangle mappedRectangleInPixels = ((SwtDisplay) display.getImpl()).mapInPixels(from, to, Win32DPIUtils.pointToPixel(new Rectangle(x, y, width, height), ((SwtControl) from.getImpl()).getAutoscalingZoom()));
+            mappedRectangleInPoints = Win32DPIUtils.pixelToPoint(mappedRectangleInPixels, ((SwtControl) to.getImpl()).getAutoscalingZoom());
         }
         return mappedRectangleInPoints;
     }

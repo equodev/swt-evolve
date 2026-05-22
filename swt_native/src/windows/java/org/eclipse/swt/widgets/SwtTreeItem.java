@@ -323,9 +323,9 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
 
     long fontHandle(int index) {
         if (cellFont != null && cellFont[index] != null)
-            return SWTFontProvider.getFontHandle(cellFont[index], getNativeZoom());
+            return SWTFontProvider.getFontHandle(cellFont[index], getApi().nativeZoom);
         if (font != null)
-            return SWTFontProvider.getFontHandle(font, getNativeZoom());
+            return SWTFontProvider.getFontHandle(font, getApi().nativeZoom);
         return -1;
     }
 
@@ -387,7 +387,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getBoundsInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPoint(getBoundsInPixels(), getAutoscalingZoom());
     }
 
     Rectangle getBoundsInPixels() {
@@ -414,7 +414,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public Rectangle getBounds(int index) {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getBoundsInPixels(index), getZoom());
+        return Win32DPIUtils.pixelToPoint(getBoundsInPixels(index), getAutoscalingZoom());
     }
 
     Rectangle getBoundsInPixels(int index) {
@@ -863,7 +863,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public Rectangle getImageBounds(int index) {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getImageBoundsInPixels(index), getZoom());
+        return Win32DPIUtils.pixelToPoint(getImageBoundsInPixels(index), getAutoscalingZoom());
     }
 
     Rectangle getImageBoundsInPixels(int index) {
@@ -962,7 +962,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
      */
     public Rectangle getTextBounds(int index) {
         checkWidget();
-        return Win32DPIUtils.pixelToPoint(getTextBoundsInPixels(index), getZoom());
+        return Win32DPIUtils.pixelToPoint(getTextBoundsInPixels(index), getAutoscalingZoom());
     }
 
     Rectangle getTextBoundsInPixels(int index) {
@@ -1452,7 +1452,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         Font oldFont = this.font;
-        Font newFont = (font == null ? font : SwtFont.win32_new(font, getNativeZoom()));
+        Font newFont = (font == null ? font : SwtFont.win32_new(font, getApi().nativeZoom));
         if (oldFont == newFont)
             return;
         this.font = newFont;
@@ -1514,7 +1514,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         Font oldFont = cellFont[index];
         if (oldFont == font)
             return;
-        cellFont[index] = font == null ? font : SwtFont.win32_new(font, getNativeZoom());
+        cellFont[index] = font == null ? font : SwtFont.win32_new(font, getApi().nativeZoom);
         if (oldFont != null && oldFont.equals(font))
             return;
         if (font != null)
@@ -1916,6 +1916,11 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
     @Override
     void handleDPIChange(Event event, float scalingFactor) {
         super.handleDPIChange(event, scalingFactor);
+        if (images != null) {
+            for (int i = 1; i < images.length; i++) {
+                setImage(i, images[i]);
+            }
+        }
         if (font != null) {
             setFont(font);
         }
@@ -1923,11 +1928,13 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         if (cellFonts != null) {
             for (int index = 0; index < cellFonts.length; index++) {
                 Font cellFont = cellFonts[index];
-                cellFonts[index] = cellFont == null ? null : SwtFont.win32_new(cellFont, getNativeZoom());
+                cellFonts[index] = cellFont == null ? null : SwtFont.win32_new(cellFont, getApi().nativeZoom);
             }
         }
         for (TreeItem item : getItems()) {
-            item.notifyListeners(SWT.ZoomChanged, event);
+            if (item != null && !item.isDisposed()) {
+                item.notifyListeners(SWT.ZoomChanged, event);
+            }
         }
     }
 

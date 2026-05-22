@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -15,6 +15,7 @@
  */
 package org.eclipse.swt.graphics;
 
+import static org.eclipse.swt.internal.DPIUtil.pixelToPoint;
 import static org.eclipse.swt.internal.DPIUtil.pointToPixel;
 import static org.eclipse.swt.internal.image.ImageColorTransformer.DEFAULT_DISABLED_IMAGE_TRANSFORMER;
 import java.io.*;

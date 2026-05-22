@@ -244,7 +244,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
         }
         if ((getApi().style & SWT.FLAT) == 0) {
             if (!isLastItemOfRow(index)) {
-                margin += DPIUtil.pointToPixel(SEPARATOR_WIDTH, getZoom());
+                margin += DPIUtil.pointToPixel(SEPARATOR_WIDTH, getAutoscalingZoom());
             }
         }
         return margin;
@@ -694,11 +694,11 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
         for (int index = 0; index < sizes.length; index++) {
             CoolItem item = items[index];
             Control control = ((DartCoolItem) item.getImpl()).control;
-            if (control != null) {
+            if (control != null && !control.isDisposed()) {
                 control.notifyListeners(SWT.ZoomChanged, event);
                 item.setControl(control);
             }
-            Point preferredControlSize = ((DartControl) item.getControl().getImpl()).computeSizeInPixels(new Point(SWT.DEFAULT, SWT.DEFAULT), getZoom(), true);
+            Point preferredControlSize = ((DartControl) item.getControl().getImpl()).computeSizeInPixels(new Point(SWT.DEFAULT, SWT.DEFAULT), computeBoundsZoom(), true);
             int controlWidth = preferredControlSize.x;
             int controlHeight = preferredControlSize.y;
             if (((getApi().style & SWT.VERTICAL) != 0)) {

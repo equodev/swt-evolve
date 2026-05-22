@@ -1111,7 +1111,7 @@ public class SwtShell extends SwtDecorations implements IShell {
      */
     public Point getMaximumSize() {
         checkWidget();
-        return Win32DPIUtils.pixelToPointAsSize(getMaximumSizeInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPointAsSize(getMaximumSizeInPixels(), getAutoscalingZoom());
     }
 
     Point getMaximumSizeInPixels() {
@@ -1152,7 +1152,7 @@ public class SwtShell extends SwtDecorations implements IShell {
      */
     public Point getMinimumSize() {
         checkWidget();
-        return Win32DPIUtils.pixelToPointAsSize(getMinimumSizeInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPointAsSize(getMinimumSizeInPixels(), getAutoscalingZoom());
     }
 
     Point getMinimumSizeInPixels() {
@@ -1287,6 +1287,21 @@ public class SwtShell extends SwtDecorations implements IShell {
         return null;
     }
 
+    /**
+     * Returns the zoom of the shell.
+     * <p>
+     * Hint: The returned value is the zoom of the shell as originally considered by
+     * the OS and not an adjusted zoom value as considered by SWT autoscaling capabilities.
+     * </p>
+     *
+     * @return the zoom for this shell
+     *
+     * @since 3.133
+     */
+    public int getZoom() {
+        return DPIUtil.mapDPIToZoom(OS.GetDpiForWindow(getApi().handle));
+    }
+
     @Override
     public Composite findDeferredControl() {
         return layoutCount > 0 ? this.getApi() : null;
@@ -1400,7 +1415,29 @@ public class SwtShell extends SwtDecorations implements IShell {
             error(SWT.ERROR_NULL_ARGUMENT);
         if (gc.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
-        return false;
+        // Print only the client area (children) without shell decorations
+        forceResize();
+        Control[] children = _getChildren();
+        long gdipGraphics = gc.getGCData().gdipGraphics;
+        for (Control child : children) {
+            Rectangle bounds = child.getBounds();
+            if (gdipGraphics != 0) {
+                // For GDI+, translate the graphics object
+                org.eclipse.swt.internal.gdip.Gdip.Graphics_TranslateTransform(gdipGraphics, bounds.x, bounds.y, org.eclipse.swt.internal.gdip.Gdip.MatrixOrderPrepend);
+                child.print(gc);
+                org.eclipse.swt.internal.gdip.Gdip.Graphics_TranslateTransform(gdipGraphics, -bounds.x, -bounds.y, org.eclipse.swt.internal.gdip.Gdip.MatrixOrderPrepend);
+            } else {
+                // For GDI, modify the world transform to add translation
+                int state = OS.SaveDC(gc.handle);
+                // Create a translation transform matrix
+                float[] translateMatrix = new float[] { 1, 0, 0, 1, bounds.x, bounds.y };
+                // Multiply (prepend) the translation to the existing transform
+                OS.ModifyWorldTransform(gc.handle, translateMatrix, OS.MWT_LEFTMULTIPLY);
+                child.print(gc);
+                OS.RestoreDC(gc.handle, state);
+            }
+        }
+        return true;
     }
 
     @Override
@@ -1674,7 +1711,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         // the WM_DPICHANGED event processing. So to avoid duplicate scaling, we always
         // have to scale width and height with the zoom of the original monitor (still
         // returned by getZoom()) here.
-        setBoundsInPixels(boundsInPixels.x, boundsInPixels.y, DPIUtil.pointToPixel(rect.width, getZoom()), DPIUtil.pointToPixel(rect.height, getZoom()));
+        setBoundsInPixels(boundsInPixels.x, boundsInPixels.y, DPIUtil.pointToPixel(rect.width, getAutoscalingZoom()), DPIUtil.pointToPixel(rect.height, getAutoscalingZoom()));
     }
 
     @Override
@@ -1859,7 +1896,7 @@ public class SwtShell extends SwtDecorations implements IShell {
      */
     public void setMaximumSize(int width, int height) {
         checkWidget();
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         setMaximumSizeInPixels(DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom));
     }
 
@@ -1889,7 +1926,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        size = Win32DPIUtils.pointToPixelAsSize(size, getZoom());
+        size = Win32DPIUtils.pointToPixelAsSize(size, getAutoscalingZoom());
         setMaximumSizeInPixels(size.x, size.y);
     }
 
@@ -1938,7 +1975,7 @@ public class SwtShell extends SwtDecorations implements IShell {
      */
     public void setMinimumSize(int width, int height) {
         checkWidget();
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         setMinimumSizeInPixels(DPIUtil.pointToPixel(width, zoom), DPIUtil.pointToPixel(height, zoom));
     }
 
@@ -1991,7 +2028,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        size = Win32DPIUtils.pointToPixelAsSize(size, getZoom());
+        size = Win32DPIUtils.pointToPixelAsSize(size, getAutoscalingZoom());
         setMinimumSizeInPixels(size.x, size.y);
     }
 
@@ -2902,6 +2939,16 @@ public class SwtShell extends SwtDecorations implements IShell {
             OS.MoveMemory(lParam, lpwp, WINDOWPOS.sizeof);
         }
         return result;
+    }
+
+    @Override
+    int computeBoundsZoom() {
+        return getAutoscalingZoom();
+    }
+
+    @Override
+    int computeGetBoundsZoom() {
+        return getAutoscalingZoom();
     }
 
     public Shell getApi() {

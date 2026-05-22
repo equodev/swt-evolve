@@ -2,10 +2,8 @@ package org.eclipse.swt.graphics;
 
 import java.util.*;
 import java.util.function.*;
-import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.Image.*;
-import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
 

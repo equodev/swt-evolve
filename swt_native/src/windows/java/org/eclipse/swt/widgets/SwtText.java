@@ -998,7 +998,7 @@ public class SwtText extends SwtScrollable implements IText {
      */
     public Point getCaretLocation() {
         checkWidget();
-        return Win32DPIUtils.pixelToPointAsLocation(getCaretLocationInPixels(), getZoom());
+        return Win32DPIUtils.pixelToPointAsLocation(getCaretLocationInPixels(), getAutoscalingZoom());
     }
 
     Point getCaretLocationInPixels() {
@@ -1226,7 +1226,7 @@ public class SwtText extends SwtScrollable implements IText {
      */
     public int getLineHeight() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getLineHeightInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getLineHeightInPixels(), getAutoscalingZoom());
     }
 
     int getLineHeightInPixels() {
@@ -1584,7 +1584,7 @@ public class SwtText extends SwtScrollable implements IText {
      */
     public int getTopPixel() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getTopPixelInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getTopPixelInPixels(), getAutoscalingZoom());
     }
 
     int getTopPixelInPixels() {
@@ -2569,7 +2569,7 @@ public class SwtText extends SwtScrollable implements IText {
     @Override
     void updateMenuLocation(Event event) {
         Point pointInPixels = ((SwtDisplay) display.getImpl()).mapInPixels(this.getApi(), null, getCaretLocationInPixels());
-        int zoom = getZoom();
+        int zoom = getAutoscalingZoom();
         event.setLocation(DPIUtil.pixelToPoint(pointInPixels.x, zoom), DPIUtil.pixelToPoint(pointInPixels.y + getLineHeightInPixels(), zoom));
     }
 

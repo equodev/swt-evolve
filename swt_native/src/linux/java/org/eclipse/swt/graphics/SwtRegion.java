@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -466,10 +466,6 @@ public final class SwtRegion extends SwtResource implements IRegion {
     public boolean intersects(int x, int y, int width, int height) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return intersects(new Rectangle(x, y, width, height));
-    }
-
-    boolean intersectsInPixels(int x, int y, int width, int height) {
         cairo_rectangle_int_t rect = new cairo_rectangle_int_t();
         rect.x = x;
         rect.y = y;
@@ -498,13 +494,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
     public boolean intersects(Rectangle rect) {
         if (rect == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (isDisposed())
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return intersectsInPixels(rect);
-    }
-
-    boolean intersectsInPixels(Rectangle rect) {
-        return intersectsInPixels(rect.x, rect.y, rect.width, rect.height);
+        return intersects(rect.x, rect.y, rect.width, rect.height);
     }
 
     /**

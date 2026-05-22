@@ -267,7 +267,6 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
                 GdkRGBA bgRGBA = background.handle;
                 String css = "window {background-color: " + ((SwtDisplay) display.getImpl()).gtk_rgba_to_css_string(bgRGBA) + ";}";
                 gtk_css_provider_load_from_css(context, css);
-                GTK3.gtk_style_context_invalidate(context);
                 GTK3.gtk_window_set_type_hint(getApi().handle, GDK.GDK_WINDOW_TYPE_HINT_TOOLTIP);
             }
         }

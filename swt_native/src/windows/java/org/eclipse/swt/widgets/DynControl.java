@@ -16,6 +16,7 @@
  */
 package org.eclipse.swt.widgets;
 
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.stream.*;
@@ -2061,6 +2062,30 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
     }
 
     /**
+     * Sets the autoscaling mode for this widget. The capability is not supported on
+     * every platform, such that calling this method may not have an effect on
+     * unsupported platforms. The return value indicates if the autoscale mode was
+     * set properly. With {@link #isAutoScalable()}, the autoscale enablement can
+     * also be evaluated at any later point in time.
+     * <p>
+     * Currently, this is only supported on Windows.
+     * </p>
+     *
+     * @param autoscalingMode the autoscaling mode to set
+     *
+     * @return {@code false} if the operation was called on an unsupported platform
+     *
+     * @since 3.133
+     */
+    public boolean setAutoscalingMode(AutoscalingMode autoscalingMode) {
+        if (Config.isDebug())
+            System.out.println("++ Called Control#setAutoscalingMode(AutoscalingMode) on DynControl" + " #" + getApi().hashCode());
+        autoscalingModeSet = true;
+        this.autoscalingMode = autoscalingMode;
+        return true;
+    }
+
+    /**
      * If the argument is <code>true</code>, causes the receiver to have
      * all mouse events delivered to it until the method is called with
      * <code>false</code> as the argument.  Note that on some platforms,
@@ -2868,13 +2893,6 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
         return true;
     }
 
-    @Override
-    public int getZoom() {
-        System.out.println("+++ CONVERTING DynComposite from Control#getZoom() #" + getApi().hashCode());
-        IControl newImpl = (IControl) convert();
-        return newImpl.getZoom();
-    }
-
     public Composite _parent() {
         return parent;
     }
@@ -2919,9 +2937,13 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
         return drawCount;
     }
 
-    public boolean _autoScaleDisabled() {
-        return autoScaleDisabled;
+    public AutoscalingMode _autoscalingMode() {
+        return autoscalingMode;
     }
+
+    AutoscalingMode autoscalingMode;
+
+    boolean autoscalingModeSet;
 
     Color _background;
 
@@ -3015,14 +3037,14 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
 
     int drawCount;
 
-    boolean autoScaleDisabled;
-
     public Control getApi() {
         return (Control) api;
     }
 
     protected IControl convert(IControl newImpl) {
         super.convert(newImpl);
+        if (autoscalingModeSet)
+            newImpl.setAutoscalingMode(autoscalingMode);
         if (backgroundSet)
             newImpl.setBackground(getBackground());
         if (backgroundImageSet)

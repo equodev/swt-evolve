@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -403,6 +403,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         source = GraphicsUtils.copyImageData(source);
         this.imageData = source;
         currentDeviceZoom = DPIUtil.getDeviceZoom();
+        source = DPIUtil.autoScaleImageData(device, source, 100);
+        mask = DPIUtil.autoScaleImageData(device, mask, 100);
         mask = GraphicsUtils.copyImageData(mask);
         mask = ImageData.convertMask(mask);
         ImageData image = new ImageData(source.width, source.height, source.depth, source.palette, source.scanlinePad, source.data);
@@ -469,7 +471,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         super(device, api);
         ImageData data = new ImageData(stream);
         this.imageData = data;
-        currentDeviceZoom = DPIUtil.getDeviceZoom();
+        getApi().surface = 1;
         init(data);
         init();
     }
@@ -513,7 +515,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         this.filename = GraphicsUtils.getFilename(filename);
         ImageData data = new ImageData(filename);
         this.imageData = data;
+        this.imageFileNameProvider = zoom -> zoom == 100 ? filename : null;
         currentDeviceZoom = DPIUtil.getDeviceZoom();
+        initFromFileNameProvider(currentDeviceZoom);
         init(data);
         init();
     }
@@ -810,7 +814,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     }
 
     void executeOnImageAtSize(Consumer<Image> imageAtBestFittingSizeConsumer, int destWidth, int destHeight) {
-        Optional<Image> imageAtSize = cachedImageAtSize.refresh(destWidth, destHeight);
+        Optional<Image> imageAtSize = cachedImageAtSize.refresh(Math.max(1, destWidth), Math.max(1, destHeight));
         imageAtBestFittingSizeConsumer.accept(imageAtSize.orElse(this.getApi()));
     }
 

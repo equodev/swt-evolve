@@ -654,6 +654,18 @@ public class SwtLink extends SwtControl implements ILink {
     }
 
     @Override
+    LRESULT WM_ERASEBKGND(long wParam, long lParam) {
+        LRESULT result = super.WM_ERASEBKGND(wParam, lParam);
+        if (result != null)
+            return result;
+        /*
+	* Feature in Windows.  The SysLink control flashes when resized.
+	* The fix is to prevent the background from being erased.
+	*/
+        return LRESULT.ONE;
+    }
+
+    @Override
     LRESULT WM_GETDLGCODE(long wParam, long lParam) {
         long code = callWindowProc(getApi().handle, OS.WM_GETDLGCODE, wParam, lParam);
         int count = ids.length;

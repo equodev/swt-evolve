@@ -473,9 +473,9 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
             return -1;
         if (imageList == null) {
             Rectangle boundsInPoints = image.getBounds();
-            imageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, boundsInPoints.width, boundsInPoints.height, getZoom());
+            imageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, boundsInPoints.width, boundsInPoints.height, getAutoscalingZoom());
             int index = imageList.add(image);
-            long hImageList = imageList.getHandle(getZoom());
+            long hImageList = imageList.getHandle(getAutoscalingZoom());
             OS.SendMessage(getApi().handle, OS.TCM_SETIMAGELIST, 0, hImageList);
             return index;
         }
@@ -871,8 +871,8 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
         if (imageList != null) {
             Point sizeInPoints = imageList.getImageSize();
             ((SwtDisplay) display.getImpl()).releaseImageList(imageList);
-            imageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, sizeInPoints.x, sizeInPoints.y, this.getZoom());
-            long hImageList = imageList.getHandle(getZoom());
+            imageList = ((SwtDisplay) display.getImpl()).getImageList(getApi().style & SWT.RIGHT_TO_LEFT, sizeInPoints.x, sizeInPoints.y, this.getAutoscalingZoom());
+            long hImageList = imageList.getHandle(getAutoscalingZoom());
             OS.SendMessage(getApi().handle, OS.TCM_SETIMAGELIST, 0, hImageList);
             TCITEM tcItem = new TCITEM();
             tcItem.mask = OS.TCIF_IMAGE;
@@ -1187,7 +1187,9 @@ public class SwtTabFolder extends SwtComposite implements ITabFolder {
             imageList = null;
         }
         for (int i = 0; i < getItemCount(); i++) {
-            items[i].notifyListeners(SWT.ZoomChanged, event);
+            if (items[i] != null && !items[i].isDisposed()) {
+                items[i].notifyListeners(SWT.ZoomChanged, event);
+            }
         }
     }
 

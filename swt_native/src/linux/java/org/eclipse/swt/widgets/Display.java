@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -1725,6 +1725,7 @@ public class Display extends Device implements Executor {
      * @exception SWTException <ul>
      *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
      *    <li>ERROR_DEVICE_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_NO_HANDLES if a handle could not be obtained for timer creation</li>
      * </ul>
      *
      * @see #asyncExec

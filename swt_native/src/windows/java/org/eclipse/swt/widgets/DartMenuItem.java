@@ -1060,7 +1060,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
 
     private int getMenuZoom() {
         if (getDisplay().isRescalingAtRuntime()) {
-            return super.getZoom();
+            return super.getAutoscalingZoom();
         } else {
             return DPIUtil.getZoomForAutoscaleProperty(getMonitorZoom());
         }
@@ -1098,7 +1098,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
         }
         // Refresh the sub menu
         Menu subMenu = getMenu();
-        if (subMenu != null) {
+        if (subMenu != null && !subMenu.isDisposed()) {
             subMenu.notifyListeners(SWT.ZoomChanged, event);
         }
     }

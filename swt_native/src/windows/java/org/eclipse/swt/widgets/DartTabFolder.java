@@ -593,7 +593,9 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
     void handleDPIChange(Event event, float scalingFactor) {
         super.handleDPIChange(event, scalingFactor);
         for (int i = 0; i < getItemCount(); i++) {
-            items[i].notifyListeners(SWT.ZoomChanged, event);
+            if (items[i] != null && !items[i].isDisposed()) {
+                items[i].notifyListeners(SWT.ZoomChanged, event);
+            }
         }
     }
 

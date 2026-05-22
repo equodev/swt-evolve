@@ -557,7 +557,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         final boolean drawBackBeforeFore = (fixedLineMetrics != null);
         if (drawBackBeforeFore) {
             // Cache drawing information
-            final List<LineDrawInfo> drawInfos = new ArrayList<>();
+            final java.util.List<LineDrawInfo> drawInfos = new ArrayList<>();
             int y = begY;
             for (int iLine = startLine; y < endY && iLine < endLine; iLine++) {
                 LineDrawInfo lineInfo = makeLineDrawInfo(iLine);
@@ -685,7 +685,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
     private Point[] intersectingRelativeNonEmptySelections(int fromOffset, int toOffset) {
         int[] selectionRanges = styledText.getSelectionRanges();
         int lineLength = toOffset - fromOffset;
-        List<Point> res = new ArrayList<>();
+        java.util.List<Point> res = new ArrayList<>();
         for (int i = 0; i < selectionRanges.length; i += 2) {
             // ranges are assumed to be sorted by start offset, then (positive)length or higher end offset
             Point relativeSelection = new Point(selectionRanges[i] - fromOffset, selectionRanges[i] + selectionRanges[i + 1] - fromOffset);
@@ -1336,7 +1336,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         // The root cause is that TextLayout doesn't return the right value for the bounds when
         // GlyphMetrics are applied on \t. A better fix could be implemented directly in (all 3)
         // TextLayout classes.
-        List<StyleEntry> styleEntries = new ArrayList<>();
+        java.util.List<StyleEntry> styleEntries = new ArrayList<>();
         int lastOffset = 0;
         int length = line.length();
         if (styles != null) {

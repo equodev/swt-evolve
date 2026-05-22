@@ -316,7 +316,7 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
      */
     public int getWidth() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getWidthInPixels(), getZoom());
+        return DPIUtil.pixelToPoint(getWidthInPixels(), getAutoscalingZoom());
     }
 
     int getWidthInPixels() {
@@ -369,7 +369,7 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
                     if (isDisposed() || parent.isDisposed())
                         break;
                     Rectangle bounds = event.getBounds();
-                    itemRight = DPIUtil.pointToPixel(bounds.x + bounds.width, getZoom());
+                    itemRight = DPIUtil.pointToPixel(bounds.x + bounds.width, getAutoscalingZoom());
                 } else {
                     long hFont = ((SwtTreeItem) item.getImpl()).fontHandle(index);
                     if (hFont != -1)
@@ -389,11 +389,11 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
         int flags = OS.DT_CALCRECT | OS.DT_NOPREFIX;
         char[] buffer = text.toCharArray();
         OS.DrawText(hDC, buffer, buffer.length, rect, flags);
-        int headerWidth = rect.right - rect.left + DPIUtil.pointToPixel(SwtTree.HEADER_MARGIN, getZoom());
+        int headerWidth = rect.right - rect.left + DPIUtil.pointToPixel(SwtTree.HEADER_MARGIN, getAutoscalingZoom());
         if (OS.IsAppThemed())
-            headerWidth += DPIUtil.pointToPixel(SwtTree.HEADER_EXTRA, getZoom());
+            headerWidth += DPIUtil.pointToPixel(SwtTree.HEADER_EXTRA, getAutoscalingZoom());
         if (image != null) {
-            Rectangle bounds = Win32DPIUtils.pointToPixel(image.getBounds(), getZoom());
+            Rectangle bounds = Win32DPIUtils.pointToPixel(image.getBounds(), getAutoscalingZoom());
             headerWidth += bounds.width;
             int margin = 0;
             if (hwndHeader != 0) {
@@ -556,7 +556,7 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
                 hdItem.mask &= ~OS.HDI_IMAGE;
                 hdItem.fmt &= ~OS.HDF_IMAGE;
                 hdItem.fmt |= OS.HDF_BITMAP;
-                hdItem.hbm = SwtImage.win32_getHandle(image, getZoom());
+                hdItem.hbm = SwtImage.win32_getHandle(image, getAutoscalingZoom());
             } else {
                 hdItem.mask &= ~OS.HDI_BITMAP;
                 hdItem.fmt &= ~OS.HDF_BITMAP;
@@ -747,7 +747,7 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
      */
     public void setWidth(int width) {
         checkWidget();
-        setWidthInPixels(DPIUtil.pointToPixel(width, getZoom()));
+        setWidthInPixels(DPIUtil.pointToPixel(width, getAutoscalingZoom()));
     }
 
     void setWidthInPixels(int width) {
@@ -805,6 +805,15 @@ public class SwtTreeColumn extends SwtItem implements ITreeColumn {
         if (image != null) {
             setImage(image);
         }
+    }
+
+    @Override
+    int getSystemMetrics(int nIndex) {
+        // Control#getSystemMetrics should be used if possible,
+        // as it considers if autoscaling of a Control is
+        // disabled which would affect the TreeColumn as well,
+        // therefore the value is fetched via the parent
+        return ((SwtControl) parent.getImpl()).getSystemMetrics(nIndex);
     }
 
     public Tree _parent() {

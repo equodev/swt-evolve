@@ -19,6 +19,7 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
 
 /**
@@ -905,6 +906,21 @@ public class Shell extends Decorations {
      */
     public void setModified(boolean modified) {
         getImpl().setModified(modified);
+    }
+
+    /**
+     * Returns the zoom of the shell.
+     * <p>
+     * Hint: The returned value is the zoom of the shell as originally considered by
+     * the OS and not an adjusted zoom value as considered by SWT autoscaling capabilities.
+     * </p>
+     *
+     * @return the zoom for this shell
+     *
+     * @since 3.133
+     */
+    public int getZoom() {
+        return getImpl().getZoom();
     }
 
     /**
