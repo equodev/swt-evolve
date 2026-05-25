@@ -12,12 +12,14 @@ repositories {
 
 val arch = System.getProperty("os.arch")
 
-val oss = listOf("windows", "linux", "macos", "web")
+val oss = listOf("windows", "linux", "macos", "webWindows", "webLinux", "webMacos")
 val platforms = listOf(
     "windows-x86_64", "windows-aarch64",
     "linux-x86_64", "linux-aarch64",
     "macos-x86_64", "macos-aarch64",
-    "web-wasm"
+    "web-windows-x86_64", "web-windows-aarch64",
+    "web-linux-x86_64", "web-linux-aarch64",
+    "web-macos-x86_64", "web-macos-aarch64",
 )
 
 val currentOs = when {
@@ -30,14 +32,14 @@ fun getSwtWs(os: String): String = when (os) {
     "macos" -> "cocoa"
     "windows" -> "win32"
     "linux" -> "gtk"
-    else -> "cocoa"
+    else -> error("Unknown WS OS $os")
 }
 
 fun getSwtOs(os: String): String = when (os) {
     "macos" -> "macosx"
     "windows" -> "win32"
     "linux" -> "linux"
-    else -> "macosx"
+    else -> error("Unknown OS $os")
 }
 
 fun getSwtArch(arch: String): String =
@@ -124,14 +126,13 @@ sourceSets {
     // Create source sets for all platform combinations
     oss.forEach { os ->
         create(os) {
-            val nativeSrc = "src/${os}/java"
             java {
-                setSrcDirs(listOf(
-                    "src/main/java",
-                    nativeSrc
-                ))
-                if (os == "web") {
-                    exclude("dev/equo/swt/ConfigDyn.java")
+                when {
+                    os.startsWith("web") -> setSrcDirs(listOf("src/main/java", "src/webMain/java", "src/${os}/java"))
+                    else -> setSrcDirs(listOf("src/main/java", "src/${os}/java"))
+                }
+                if (os.startsWith("web")) {
+                    exclude("dev/equo/swt/ConfigDyn.java", "**/GraphicsUtilsSwt.java")
                 }
             }
             annotationProcessorPath += sourceSets.main.get().annotationProcessorPath
@@ -140,7 +141,7 @@ sourceSets {
 
             test {
                 resources {
-                    srcDirs(nativeSrc)
+                    srcDirs("src/${os}/java")
                     include("**/*.css", "**/*.png", "**/*.bmp", "**/*.gif", "**/*.svg", "**/*.jpg", "**/SWTMessages*.properties", "**/SWTMessages.properties")
                 }
             }
@@ -223,127 +224,157 @@ val dart = tasks.register<Exec>("dartRunner") {
         exclude("**/*.g.dart")
         exclude("**/*.tailor.dart")
     })
-    outputs.files(fileTree("../flutter-lib/lib/src") { 
-        include("**/*.g.dart") 
-        include("**/*.tailor.dart") 
+    outputs.files(fileTree("../flutter-lib/lib/src") {
+        include("**/*.g.dart")
+        include("**/*.tailor.dart")
     })
     commandLine = listOf(dartExe(), "run", "build_runner", "build", "--delete-conflicting-outputs")
 }
 
-// Create tasks for each platform JAR
-platforms.forEach { platform ->
-    val osArch = platform.split("-")
-    val swtWs = getSwtWs(osArch[0])
-    val swtOs = getSwtOs(osArch[0])
-    val targetArch = if (osArch[1] == "wasm") "aarch64" else osArch[1]
+data class WebPlatformMeta(
+    val os: String,
+    val arch: String,
+    val isWeb: Boolean,
+) {
+    val desktopPlatform: String get() = "$os-$arch"
+    val sourceSet: String get() = if (isWeb) "web${os.replaceFirstChar { it.titlecase() }}" else os
+    val swtWs: String get() = getSwtWs(os)
+    val swtOs: String get() = getSwtOs(os)
+}
 
-    configurations.create("${platform}SwtImpl") {
-        exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
-    }
+fun parsePlatform(platform: String): WebPlatformMeta {
+    val isWeb = platform.startsWith("web")
+    var parts = platform.split("-")
+    if (isWeb) parts = parts.drop(1)
+    return WebPlatformMeta(parts[0], parts[1], isWeb)
+}
 
-    dependencies {
-        configurations["${platform}SwtImpl"]("org.eclipse.platform:org.eclipse.swt.$swtWs.$swtOs.${targetArch}:$swtVersion")
-    }
-
-    tasks.register<Exec>("${platform}FlutterLib") {
-        group = "build"
-        description = "Builds Flutter lib for $platform"
-        dependsOn(dart, pub)
-        workingDir = file("../flutter-lib")
-        inputs.dir("../flutter-lib/lib")
-        inputs.dir("../flutter-lib/${osArch[0]}")
-        outputs.dir("../flutter-lib/build/${osArch[0]}")
-        when (osArch[0]) {
-            "macos" -> {
-                val arch = when (osArch[1]) {
-                    "x86_64" -> "x86_64"
-                    "aarch64" -> "arm64"
-                    else -> throw GradleException("Unsupported macOS architecture: ${osArch[1]}")
-                }
-                commandLine = listOf("bash", "-c", "./set-arch.sh $arch && flutter build macos")
-            }
-            else -> {
-                val flutterCmd = flutterExe()
-                commandLine = listOf(flutterCmd, "build", osArch[0])
-            }
+fun CopySpec.copyFlutterNatives(os: String, flutterArch: String) {
+    when (os) {
+        "macos" -> from("../flutter-lib/build/macos/Build/Products/Release/swtflutter.app") {
+            into("swtflutter.app")
         }
-    }
-
-    tasks.register<Copy>("${platform}CopyFlutterBinaries") {
-        group = "build"
-        description = "Copies Flutter binaries for $platform"
-        if ((currentPlatform == platform || platform == "web-wasm") && System.getProperty("skipFlutterLib") == null)
-            dependsOn("${platform}FlutterLib")
-
-        // For macOS, both architectures share the same output directory, so we need to
-        // ensure proper ordering to avoid Gradle's implicit dependency validation error
-        if (osArch[0] == "macos") {
-            mustRunAfter("macos-aarch64FlutterLib", "macos-x86_64FlutterLib")
-        }
-        if (osArch[0] == "web") {
-            mustRunAfter("macos-aarch64FlutterLib", "macos-x86_64FlutterLib")
-        }
-
-        val flutterArch = if (osArch[1] == "aarch64") "arm64" else "x64"
-        when (osArch[0]) {
-            "macos" -> from("../flutter-lib/build/macos/Build/Products/Release/swtflutter.app") {
-                into("swtflutter.app")
-            }
-            "linux" -> {
-                from("../flutter-lib/build/linux/$flutterArch/release/runner") {
-                    include("libflutter_library.so")
-                    into("runner")
-                }
-                from("../flutter-lib/build/linux/$flutterArch/release/bundle/lib") {
-                    include("libapp.so", "libflutter_linux_gtk.so")
-                    into("bundle/lib")
-                }
-                from("../flutter-lib/build/linux/$flutterArch/release/bundle/data") {
-                    include("icudtl.dat", "flutter_assets/**")
-                    into("bundle/data")
-                }
-            }
-            "windows" -> from("../flutter-lib/build/windows/$flutterArch/runner/Release/") {
-                include("*.dll", "data/")
+        "linux" -> {
+            from("../flutter-lib/build/linux/$flutterArch/release/runner") {
+                include("libflutter_library.so")
                 into("runner")
             }
-            "web" -> {
-                from("../flutter-lib/build/web") {
-                    into("web")
+            from("../flutter-lib/build/linux/$flutterArch/release/bundle/lib") {
+                include("libapp.so", "libflutter_linux_gtk.so")
+                into("bundle/lib")
+            }
+            from("../flutter-lib/build/linux/$flutterArch/release/bundle/data") {
+                include("icudtl.dat", "flutter_assets/**")
+                into("bundle/data")
+            }
+        }
+        "windows" -> from("../flutter-lib/build/windows/$flutterArch/runner/Release/") {
+            include("*.dll", "data/")
+            into("runner")
+        }
+    }
+}
+
+// Single shared Flutter web build — all web platform JARs depend on this one task.
+val webFlutterLib = tasks.register<Exec>("webFlutterLib") {
+    group = "build"
+    description = "Builds Flutter web app (shared by all web platform JARs)"
+    dependsOn(dart, pub)
+    workingDir = file("../flutter-lib")
+    inputs.dir("../flutter-lib/lib")
+    inputs.dir("../flutter-lib/web")
+    outputs.dir("../flutter-lib/build/web")
+    commandLine = listOf(flutterExe(), "build", "web")
+}
+
+val copyWebBinaries = tasks.register<Copy>("webCopyFlutterBinaries") {
+    group = "build"
+    description = "Copies Flutter binaries for web"
+    if (System.getProperty("skipFlutterLib") == null)
+        dependsOn(webFlutterLib)
+    from("../flutter-lib/build/web")
+    into(layout.buildDirectory.dir("natives/web"))
+}
+
+// Create tasks for each platform JAR
+platforms.forEach { platform ->
+    val info = parsePlatform(platform)
+
+    if (!info.isWeb) {
+        configurations.create("${platform}SwtImpl") {
+            exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
+        }
+
+        dependencies {
+            configurations["${platform}SwtImpl"]("org.eclipse.platform:org.eclipse.swt.${info.swtWs}.${info.swtOs}.${info.arch}:$swtVersion")
+        }
+
+        tasks.register<Exec>("${platform}FlutterLib") {
+            group = "build"
+            description = "Builds Flutter lib for $platform"
+            dependsOn(dart, pub)
+            workingDir = file("../flutter-lib")
+            inputs.dir("../flutter-lib/lib")
+            inputs.files(fileTree("../flutter-lib/${info.os}") {
+                exclude("Flutter/ephemeral/**", "Pods/**", "**/*.bak")
+            })
+            outputs.dir("../flutter-lib/build/${info.os}")
+            when (info.os) {
+                "macos" -> {
+                    val flutterArch = if (info.arch == "aarch64") "arm64" else "x86_64"
+                    commandLine = listOf("bash", "-c", "./set-arch.sh $flutterArch && flutter build macos")
                 }
-                from("../flutter-lib/build/macos/Build/Products/Release/swtflutter.app") {
-                    into("swtflutter.app")
-                }
+                else -> commandLine = listOf(flutterExe(), "build", info.os)
             }
         }
 
-        into(layout.buildDirectory.dir("natives/$platform"))
-    }
+        tasks.register<Copy>("${platform}CopyFlutterBinaries") {
+            group = "build"
+            description = "Copies Flutter binaries for $platform"
 
-    tasks.register<Copy>("${platform}ExtractNatives") {
-        from(configurations["${platform}SwtImpl"].map { zipTree(it) })
-        into(layout.buildDirectory.dir("natives/$platform"))
-        include("*.so", "*.dll", "*.dylib", "*.jnilib", "**/*.css", "**/SWTMessages*.properties", "**/SWTMessages.properties")
-        includeEmptyDirs = false
+            if (currentPlatform == platform && System.getProperty("skipFlutterLib") == null)
+                dependsOn("${info.desktopPlatform}FlutterLib")
+            if (info.os == "macos")
+                mustRunAfter("macos-aarch64FlutterLib", "macos-x86_64FlutterLib")
+
+            val flutterArch = if (info.arch == "aarch64") "arm64" else "x64"
+            copyFlutterNatives(info.os, flutterArch)
+
+            into(layout.buildDirectory.dir("natives/$platform"))
+        }
+
+        tasks.register<Copy>("${platform}ExtractNatives") {
+            from(configurations["${platform}SwtImpl"].map { zipTree(it) })
+            into(layout.buildDirectory.dir("natives/$platform"))
+            include("*.so", "*.dll", "*.dylib", "*.jnilib", "**/*.css", "**/SWTMessages*.properties", "**/SWTMessages.properties")
+            includeEmptyDirs = false
+        }
     }
 
     tasks.register<Jar>("${platform}Jar") {
         group = "build"
         description = "Assembles a jar archive for $platform"
         archiveBaseName.set("swt_evolve-$platform")
-        from(sourceSets[osArch[0]].output)
-        from(layout.buildDirectory.dir("natives/$platform"))
+        from(sourceSets[info.sourceSet].output)
+        from(layout.buildDirectory.dir("natives/${info.desktopPlatform}"))
+        if (info.isWeb) {
+            dependsOn(copyWebBinaries)
+            from(layout.buildDirectory.dir("natives/web")) {
+                into("web")
+            }
+        }
 
         // Add all dependencies to the JAR
-        from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
-        exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "OSGI-OPT/")
+        from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }) {
+            exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "OSGI-OPT/", "equo-comm.js")
+        }
 
         manifest {
             attributes(
                 "Fragment-Host" to provider { "org.eclipse.swt;bundle-version=\"[${swtVersionProvider.get().substring(0..6)},4.0.0)\"" },
-                "Bundle-Name" to "SWT Evolve for ${osArch[0]} on $targetArch",
+                "Bundle-Name" to "SWT Evolve for ${info.swtOs} on ${info.arch}",
                 "Bundle-Vendor" to "Equo Tech, Inc.",
-                "Bundle-SymbolicName" to "org.eclipse.swt.$swtWs.$swtOs.$targetArch; singleton:=true",
+                "Bundle-SymbolicName" to "org.eclipse.swt.${info.swtWs}.${info.swtOs}.${info.arch}; singleton:=true",
                 "Bundle-Version" to swtVersionProvider,
                 "Bundle-ManifestVersion" to 2,
                 "Export-Package" to "org.eclipse.swt,org.eclipse.swt.accessibility,"+
@@ -351,20 +382,18 @@ platforms.forEach { platform ->
                         "org.eclipse.swt.dnd,org.eclipse.swt.events,org.eclipse.swt.graphics,"+
                         "org.eclipse.swt.layout,org.eclipse.swt.opengl,org.eclipse.swt.printing,"+
                         "org.eclipse.swt.program,org.eclipse.swt.widgets,org.eclipse.swt.internal; x-friends:=\"org.eclipse.ui\","+
-                        "org.eclipse.swt.internal.image; x-internal:=true,org.eclipse.swt.internal.$swtWs; x-friends:=\"org.eclipse.ui\"," +
+                        "org.eclipse.swt.internal.image; x-internal:=true,org.eclipse.swt.internal.${info.swtWs}; x-friends:=\"org.eclipse.ui\"," +
                         "com.equo.chromium.swt",
-                *(if (osArch[0] != "web") arrayOf(
-                    "Eclipse-PlatformFilter" to "(& (osgi.ws=$swtWs) (osgi.os=$swtOs) (osgi.arch=$targetArch) )",
-                    "SWT-WS" to swtWs,
-                    "SWT-OS" to swtOs,
-                    "SWT-Arch" to targetArch,
-                ) else emptyArray()),
-                "Automatic-Module-Name" to "org.eclipse.swt.$swtWs.$swtOs.$targetArch",
+                "Eclipse-PlatformFilter" to "(& (osgi.ws=${info.swtWs}) (osgi.os=${info.swtOs}) (osgi.arch=${info.arch}) )",
+                "SWT-WS" to info.swtWs,
+                "SWT-OS" to info.swtOs,
+                "SWT-Arch" to info.arch,
+                "Automatic-Module-Name" to "org.eclipse.swt.${info.swtWs}.${info.swtOs}.${info.arch}",
                 "Evolve-Version" to (gradle.parent?.rootProject?.version ?: project.version),
             )
         }
-        dependsOn("${platform}ExtractNatives")
-        dependsOn("${platform}CopyFlutterBinaries")
+        dependsOn("${info.desktopPlatform}ExtractNatives")
+        dependsOn("${info.desktopPlatform}CopyFlutterBinaries")
     }
 }
 

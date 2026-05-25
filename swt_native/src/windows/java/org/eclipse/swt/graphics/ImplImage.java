@@ -11,4 +11,14 @@ import org.eclipse.swt.*;
 public interface ImplImage extends ImplResource {
 
     GC _memGC();
+
+    String _filename();
+
+    void _filename(String filename);
+
+    void _updateImageData(ImageData updateImageData);
+
+    void _memGC(GC memGC);
+
+    void _pendingRenderFuture(java.util.concurrent.CompletableFuture<Void> pendingRenderFuture);
 }

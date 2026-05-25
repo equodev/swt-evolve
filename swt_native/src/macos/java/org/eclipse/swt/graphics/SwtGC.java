@@ -3908,7 +3908,7 @@ public final class SwtGC extends SwtResource implements IGC {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (font != null && font.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        Font newFont = GraphicsUtils.copyFontToSwt(font);
+        Font newFont = GraphicsUtilsSwt.copyFontToSwt(font);
         data.font = newFont != null ? newFont : ((SwtDevice) data.device.getImpl()).systemFont;
         data.state &= ~FONT;
     }

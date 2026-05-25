@@ -97,7 +97,7 @@ tasks.register<JavaExec>("runWebExample") {
     group = "examples"
     description = "Run an example class for web. Usage: ./gradlew :examples:runWebExample -PmainClass=dev.equo.StyledTextSnippet1"
 
-    val webJar = project(":swt_native").tasks.named<Jar>("web-wasmJar")
+    val webJar = project(":swt_native").tasks.named<Jar>("web-${currentPlatform}Jar")
     dependsOn(webJar)
     classpath = files(webJar.map { it.archiveFile }) +
             sourceSets["main"].output +

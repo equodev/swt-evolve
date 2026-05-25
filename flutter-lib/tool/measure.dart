@@ -13,7 +13,8 @@ import 'measure_data.dart';
 
 // Configuration
 const bool ENABLE_SCREENSHOTS = true;
-const bool ENABLE_INTERACTIVITY = true; // When true, starts paused with controls
+const bool ENABLE_INTERACTIVITY =
+    true; // When true, starts paused with controls
 const FromTheme = -1;
 
 /// Supported font weights for theme extraction and font metrics IDs (align with FontList.kt / FontMetricsUtil).
@@ -53,7 +54,8 @@ String widgetName(String fqn) => fqn.split('.').last;
 class MeasurementCase {
   final String fqn;
   String name;
-  final String style; // Style name like "LEFT", "READ_ONLY", "HORIZONTAL|SEPARATOR"
+  final String
+  style; // Style name like "LEFT", "READ_ONLY", "HORIZONTAL|SEPARATOR"
   final Map<String, dynamic> expectedComponents;
   final Widget Function(GlobalKey key) widgetBuilder;
   final bool useFontTheme;
@@ -76,7 +78,8 @@ class MeasurementCase {
 class MeasurementResult {
   final String fqn;
   final String name;
-  final String style; // Style name like "LEFT", "READ_ONLY", "HORIZONTAL|SEPARATOR"
+  final String
+  style; // Style name like "LEFT", "READ_ONLY", "HORIZONTAL|SEPARATOR"
   final Size finalSize;
   final Map<String, dynamic> expectedComponents;
   final Map<String, dynamic> discoveredComponents;
@@ -147,10 +150,18 @@ class RenderBoxInfo {
         },
       if (padding != null)
         'padding': {
-          'left': (padding is EdgeInsetsDirectional) ? (padding as EdgeInsetsDirectional)!.start : (padding as EdgeInsets)!.left,
-          'top': (padding is EdgeInsetsDirectional) ? (padding as EdgeInsetsDirectional)!.top : (padding as EdgeInsets)!.top,
-          'right': (padding is EdgeInsetsDirectional) ? (padding as EdgeInsetsDirectional)!.end : (padding as EdgeInsets)!.right,
-          'bottom': (padding is EdgeInsetsDirectional) ? (padding as EdgeInsetsDirectional)!.bottom : (padding as EdgeInsets)!.bottom,
+          'left': (padding is EdgeInsetsDirectional)
+              ? (padding as EdgeInsetsDirectional)!.start
+              : (padding as EdgeInsets)!.left,
+          'top': (padding is EdgeInsetsDirectional)
+              ? (padding as EdgeInsetsDirectional)!.top
+              : (padding as EdgeInsets)!.top,
+          'right': (padding is EdgeInsetsDirectional)
+              ? (padding as EdgeInsetsDirectional)!.end
+              : (padding as EdgeInsets)!.right,
+          'bottom': (padding is EdgeInsetsDirectional)
+              ? (padding as EdgeInsetsDirectional)!.bottom
+              : (padding as EdgeInsets)!.bottom,
         },
       if (border != null)
         'border': {
@@ -243,20 +254,23 @@ class WidgetMeasurer {
         return Container();
       }
       var tCase = themeSamplingCases[currentCaseIndex];
-      tCase.name = "${widgetName(tCase.fqn)}_${tCase.style}_theme${getCurrentThemeName()}";
+      tCase.name =
+          "${widgetName(tCase.fqn)}_${tCase.style}_theme${getCurrentThemeName()}";
       return tCase.buildWidget(key);
     }
   }
 
   ThemeData getCurrentTheme() {
-    if (themesToMeasure.isEmpty || currentThemeIndex >= themesToMeasure.length) {
+    if (themesToMeasure.isEmpty ||
+        currentThemeIndex >= themesToMeasure.length) {
       return ThemeData();
     }
     return themesToMeasure[currentThemeIndex].themeFactory();
   }
 
   String getCurrentThemeName() {
-    if (themesToMeasure.isEmpty || currentThemeIndex >= themesToMeasure.length) {
+    if (themesToMeasure.isEmpty ||
+        currentThemeIndex >= themesToMeasure.length) {
       return '';
     }
     return themesToMeasure[currentThemeIndex].name;
@@ -339,7 +353,8 @@ class WidgetMeasurer {
               ? ((textStyleMap['fontWeight'] as int).clamp(0, 8) + 1) * 100
               : 400;
           final fontWeight = snapToSupportedWeight(rawWeight);
-          final fontItalic = textStyleMap['fontStyle'] != null &&
+          final fontItalic =
+              textStyleMap['fontStyle'] != null &&
               (textStyleMap['fontStyle'] as int) == FontStyle.italic.index;
           extractedThemes[themeName]![key] = {
             'fontFamily': textStyleMap['fontFamily'] ?? 'System',
@@ -410,7 +425,8 @@ class WidgetMeasurer {
 
   // Get total case count across all phases
   int get totalAllCases {
-    return testCases.length + (themeSamplingCases.length * themesToMeasure.length);
+    return testCases.length +
+        (themeSamplingCases.length * themesToMeasure.length);
   }
 
   // Get current global index (across all phases)
@@ -418,14 +434,17 @@ class WidgetMeasurer {
     if (currentPhase == 1) {
       return currentCaseIndex;
     } else {
-      return testCases.length + (currentThemeIndex * themeSamplingCases.length) + currentCaseIndex;
+      return testCases.length +
+          (currentThemeIndex * themeSamplingCases.length) +
+          currentCaseIndex;
     }
   }
 
   // Navigate to previous case (across phases)
   void goToPrevious() {
     // Handle finished state - go to last valid case
-    if (isFinished || (currentPhase == 2 && currentThemeIndex >= themesToMeasure.length)) {
+    if (isFinished ||
+        (currentPhase == 2 && currentThemeIndex >= themesToMeasure.length)) {
       currentPhase = 2;
       currentThemeIndex = themesToMeasure.length - 1;
       currentCaseIndex = themeSamplingCases.length - 1;
@@ -580,7 +599,9 @@ class WidgetMeasurer {
       final widgetType = widgetName(fqn).toLowerCase();
 
       // Write per-widget JSON file
-      final widgetJson = {'analyses': widgetAnalyses.map((a) => a.toJson()).toList()};
+      final widgetJson = {
+        'analyses': widgetAnalyses.map((a) => a.toJson()).toList(),
+      };
       final json = JsonEncoder.withIndent('  ').convert(widgetJson);
       final file = File('./build/measurements_$widgetType.json');
       file.writeAsStringSync(json);
@@ -868,7 +889,8 @@ class WidgetMeasurer {
             ? ((textStyleMap['fontWeight'] as int).clamp(0, 8) + 1) * 100
             : 400;
         final fontWeight = snapToSupportedWeight(rawWeight);
-        final fontItalic = textStyleMap['fontStyle'] != null &&
+        final fontItalic =
+            textStyleMap['fontStyle'] != null &&
             (textStyleMap['fontStyle'] as int) == FontStyle.italic.index;
         constants['textStyle'] = {
           'fontFamily': textStyleMap['fontFamily'] ?? 'System',
@@ -1299,7 +1321,8 @@ class WidgetMeasurer {
 
       // Generate EMPTY_TEXT_AFFECTS_SIZING constant for text-based widgets
       if (!isConstantSize) {
-        final emptyTextAffectsSizing = constants['emptyTextAffectsSizing'] as bool;
+        final emptyTextAffectsSizing =
+            constants['emptyTextAffectsSizing'] as bool;
         buffer.writeln(
           '        static final boolean EMPTY_TEXT_AFFECTS_SIZING = $emptyTextAffectsSizing;',
         );
@@ -1357,11 +1380,14 @@ class WidgetMeasurer {
         buffer.writeln('${indent}height = hHint != SWT.DEFAULT ? hHint : $styleName.MIN_HEIGHT;');
       } else {
         // Make padding conditional on text/image existence when empty text doesn't affect sizing
-        final emptyTextAffectsSizing = constants['emptyTextAffectsSizing'] as bool;
+        final emptyTextAffectsSizing =
+            constants['emptyTextAffectsSizing'] as bool;
 
         // Text-based widget - calculate size based on text, image, spacing, and padding
         if (hasAnyTextBasedWidget) {
-          buffer.writeln('${indent}m.text = computeText(widget, m, $styleName.EMPTY_TEXT_AFFECTS_SIZING);');
+          buffer.writeln(
+            '${indent}m.text = computeText(widget, m, $styleName.EMPTY_TEXT_AFFECTS_SIZING);',
+          );
         }
         if (hasAnyImageSupport) {
           buffer.writeln('${indent}m.image = computeImage(widget);');
@@ -1613,13 +1639,17 @@ class WidgetMeasurer {
       buffer.writeln('        String text = widget.getText();');
       // PASSWORD style only applies to Text widget
       if (widgetType == 'Text') {
-        buffer.writeln('        if (text != null && hasFlags(widget.getStyle(), SWT.PASSWORD)) {');
+        buffer.writeln(
+          '        if (text != null && hasFlags(widget.getStyle(), SWT.PASSWORD)) {',
+        );
         buffer.writeln('            text = "*".repeat(text.length());');
         buffer.writeln('        }');
       }
 
       // Use parameter to decide whether empty text should be measured
-      buffer.writeln('        if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {');
+      buffer.writeln(
+        '        if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {',
+      );
 
       buffer.writeln(
         '            if (!Config.getConfigFlags().use_swt_fonts) {',
@@ -1786,9 +1816,7 @@ class WidgetMeasurer {
         buffer.writeln(
           '    public static ${widgetClass}Theme get${themeName}Theme() {',
         );
-        buffer.writeln(
-          '        return new ${widgetClass}Theme(Map.of(',
-        );
+        buffer.writeln('        return new ${widgetClass}Theme(Map.of(');
 
         final entries = <String>[];
         for (var styleEntry in stylesMap.entries) {
@@ -1821,7 +1849,8 @@ class WidgetMeasurer {
     print('Generated: ${themeFile.path}');
   }
 
-  String widgetField(String widgetType) => widgetType[0].toLowerCase() + widgetType.substring(1);
+  String widgetField(String widgetType) =>
+      widgetType[0].toLowerCase() + widgetType.substring(1);
 }
 
 // Test app that runs measurements
@@ -1866,7 +1895,8 @@ class _MeasurementAppState extends State<MeasurementApp> {
 
     // Continue if we transitioned phases OR if there are more cases in current phase
     final phaseChanged = widget.measurer.currentPhase != previousPhase;
-    if ((phaseChanged || widget.measurer.hasMoreCases()) && !widget.measurer.isPaused) {
+    if ((phaseChanged || widget.measurer.hasMoreCases()) &&
+        !widget.measurer.isPaused) {
       setState(() {
         _key = GlobalKey();
       });
@@ -1994,37 +2024,44 @@ class _MeasurementAppState extends State<MeasurementApp> {
               // ),
               // Buttons (truly centered)
               Positioned.fill(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.skip_previous),
-                        onPressed: globalIdx > 0 ? _onPrevious : null,
-                        tooltip: 'Previous',
-                        iconSize: 20,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.skip_previous),
+                      onPressed: globalIdx > 0 ? _onPrevious : null,
+                      tooltip: 'Previous',
+                      iconSize: 20,
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        measurer.isPaused ? Icons.play_arrow : Icons.pause,
                       ),
-                      IconButton(
-                        icon: Icon(measurer.isPaused ? Icons.play_arrow : Icons.pause),
-                        onPressed: _onPlayPause,
-                        tooltip: measurer.isPaused ? 'Play' : 'Pause',
-                        iconSize: 20,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.skip_next),
-                        onPressed: globalIdx < totalCases - 1 ? _onNext : null,
-                        tooltip: 'Next',
-                        iconSize: 20,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.refresh),
-                        onPressed: _onRunCurrent,
-                        tooltip: 'Run current',
-                        iconSize: 20,
-                      ),
-                      SizedBox(width: 8),
-                      Text(measurer.isFinished ? phaseText : '$phaseText ${globalIdx + 1}/$totalCases', style: const TextStyle(fontSize: 14))
-                    ],
-                  ),
+                      onPressed: _onPlayPause,
+                      tooltip: measurer.isPaused ? 'Play' : 'Pause',
+                      iconSize: 20,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.skip_next),
+                      onPressed: globalIdx < totalCases - 1 ? _onNext : null,
+                      tooltip: 'Next',
+                      iconSize: 20,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.refresh),
+                      onPressed: _onRunCurrent,
+                      tooltip: 'Run current',
+                      iconSize: 20,
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      measurer.isFinished
+                          ? phaseText
+                          : '$phaseText ${globalIdx + 1}/$totalCases',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ],
+                ),
               ),
               // Dropdown (right-aligned)
               Align(
@@ -2046,7 +2083,8 @@ class _MeasurementAppState extends State<MeasurementApp> {
                       if (phase == 1) {
                         prefix = 'P1';
                       } else {
-                        final themeName = measurer.themesToMeasure[themeIdx].name;
+                        final themeName =
+                            measurer.themesToMeasure[themeIdx].name;
                         prefix = 'P2:$themeName';
                       }
                       return DropdownMenuItem<int>(
@@ -2057,7 +2095,9 @@ class _MeasurementAppState extends State<MeasurementApp> {
                           style: TextStyle(
                             fontSize: 11,
                             color: isSelected ? Colors.indigo : null,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                           ),
                         ),
                       );

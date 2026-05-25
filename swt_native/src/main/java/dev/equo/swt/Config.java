@@ -7,6 +7,7 @@ import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.*;
 
 import java.util.ArrayList;
@@ -329,7 +330,7 @@ public class Config {
         if (parent != null && clazz == Caret.class && parent.getImpl().getClass().getSimpleName().startsWith(DART))
             return true;
         boolean isDesk = "true".equals(System.getProperty("dev.equo.swt.desktop", "true"));
-        if (!isDesk && (clazz == DirectoryDialog.class || clazz == FileDialog.class))
+        if (!isDesk && (clazz == DirectoryDialog.class || clazz == FileDialog.class || clazz == Program.class))
             return false;
         if (parent != null && parent.getImpl().getClass().getSimpleName().startsWith(DART) && !isSwtCTabFolderBody(clazz, parent))
             return true;

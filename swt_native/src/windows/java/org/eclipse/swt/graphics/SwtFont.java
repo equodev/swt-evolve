@@ -394,7 +394,7 @@ public final class SwtFont extends SwtResource implements IFont {
      * @since 3.126
      */
     public static Font win32_new(Device device, FontData fontData, int zoom) {
-        FontData swtFontData = GraphicsUtils.copyFontDataToSwt(fontData);
+        FontData swtFontData = GraphicsUtilsSwt.copyFontDataToSwt(fontData);
         return new Font(device, swtFontData, zoom);
     }
 

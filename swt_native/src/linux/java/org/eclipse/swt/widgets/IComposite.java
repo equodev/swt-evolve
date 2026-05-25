@@ -4,7 +4,6 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.cairo.*;
 
 public interface IComposite extends IScrollable, ImplComposite {
 

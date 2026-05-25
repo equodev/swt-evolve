@@ -56,7 +56,7 @@ public class FileDialog extends Dialog {
      * </ul>
      */
     public FileDialog(Shell parent) {
-        this((IFileDialog) null);
+        this((IIFileDialog) null);
         setImpl(new SwtFileDialog(parent, this));
     }
 
@@ -89,7 +89,7 @@ public class FileDialog extends Dialog {
      * @see SWT#MULTI
      */
     public FileDialog(Shell parent, int style) {
-        this((IFileDialog) null);
+        this((IIFileDialog) null);
         setImpl(new SwtFileDialog(parent, style, this));
     }
 
@@ -333,15 +333,15 @@ public class FileDialog extends Dialog {
         getImpl().setOverwrite(overwrite);
     }
 
-    protected FileDialog(IFileDialog impl) {
+    protected FileDialog(IIFileDialog impl) {
         super(impl);
     }
 
-    static FileDialog createApi(IFileDialog impl) {
+    static FileDialog createApi(IIFileDialog impl) {
         return new FileDialog(impl);
     }
 
-    public IFileDialog getImpl() {
-        return (IFileDialog) super.getImpl();
+    public IIFileDialog getImpl() {
+        return (IIFileDialog) super.getImpl();
     }
 }

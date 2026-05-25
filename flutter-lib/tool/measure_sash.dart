@@ -9,58 +9,52 @@ import 'package:swtflutter/src/theme/theme.dart';
 import './measure.dart';
 import './measure_data.dart';
 
+void main() {
+  final measurer = WidgetMeasurer();
+  setupCases(measurer);
+  runApp(MeasurementApp(measurer: measurer));
+}
 
+void setupCases(WidgetMeasurer measurer) {
+  final styles = [
+    ('HORIZONTAL', SWT.HORIZONTAL),
+    ('HORIZONTAL|SMOOTH', SWT.HORIZONTAL | SWT.SMOOTH),
+    ('VERTICAL', SWT.VERTICAL),
+    ('VERTICAL|SMOOTH', SWT.VERTICAL | SWT.SMOOTH),
+  ];
 
-        void main() {
-          final measurer = WidgetMeasurer();
-          setupCases(measurer);
-          runApp(MeasurementApp(measurer: measurer));
-        }
+  for (final style in styles) {
+    final caseName = '';
+    measurer.addTestCase(createCase(caseName, style, useFontTheme: false));
 
-        void setupCases(WidgetMeasurer measurer) {
-          final styles = [
-                ('HORIZONTAL', SWT.HORIZONTAL),
-                ('HORIZONTAL|SMOOTH', SWT.HORIZONTAL | SWT.SMOOTH),
-                ('VERTICAL', SWT.VERTICAL),
-                ('VERTICAL|SMOOTH', SWT.VERTICAL | SWT.SMOOTH),
-          ];
+    measurer.addThemeCase(createCase('theme', style, useFontTheme: true));
+  }
 
-          for (final style in styles) {
-                  final caseName =
-                      '';
-                  measurer.addTestCase(
-                    createCase(caseName, style, useFontTheme: false),
-                  );
+  print('Generated ${measurer.testCases.length} Sash test cases');
+}
 
-            measurer.addThemeCase(
-                createCase('theme', style, useFontTheme: true)
-            );
-          }
+MeasurementCase createCase(
+  String caseName,
+  (String, int) style, {
+  bool useFontTheme = false,
+}) {
+  final (value, expectedComponents) = createVSash(style);
+  return MeasurementCase(
+    descr: caseName,
+    style: style.$1,
+    useFontTheme: useFontTheme,
+    fqn: 'org.eclipse.swt.widgets.Sash',
+    expectedComponents: expectedComponents,
+    widgetBuilder: (key) {
+      getConfigFlags().use_swt_fonts = !useFontTheme;
+      return SashSwt(key: key, value: value);
+    },
+  );
+}
 
-          print('Generated ${measurer.testCases.length} Sash test cases');
-        }
-        
-        MeasurementCase createCase(String caseName, (String, int) style, {bool useFontTheme = false}) {
-          final (value, expectedComponents) = createVSash(style);
-          return MeasurementCase(
-            descr: caseName,
-            style: style.$1,
-            useFontTheme: useFontTheme,
-            fqn: 'org.eclipse.swt.widgets.Sash',
-            expectedComponents: expectedComponents,
-            widgetBuilder: (key) {
-              getConfigFlags().use_swt_fonts = !useFontTheme;
-              return SashSwt(key: key, value: value);
-            },
-          );
-        }
-        
-        (VSash, Map<String, dynamic>) createVSash((String, int) style, ) {
-          final value = VSash.empty()
-                  ..style = style.$2;
+(VSash, Map<String, dynamic>) createVSash((String, int) style) {
+  final value = VSash.empty()..style = style.$2;
 
-          final expectedComponents = <String, dynamic>{
-          };
-          return (value, expectedComponents);
-        }
-        
+  final expectedComponents = <String, dynamic>{};
+  return (value, expectedComponents);
+}
