@@ -316,7 +316,7 @@ platforms.forEach { platform ->
             workingDir = file("../flutter-lib")
             inputs.dir("../flutter-lib/lib")
             inputs.files(fileTree("../flutter-lib/${info.os}") {
-                exclude("Flutter/ephemeral/**", "Pods/**", "**/*.bak")
+                exclude("**/ephemeral/**", "Pods/**", "**/*.bak")
             })
             outputs.dir("../flutter-lib/build/${info.os}")
             when (info.os) {
@@ -332,7 +332,7 @@ platforms.forEach { platform ->
             group = "build"
             description = "Copies Flutter binaries for $platform"
 
-            if (currentPlatform == platform && System.getProperty("skipFlutterLib") == null)
+            if ((currentPlatform == platform || info.os == "macos") && System.getProperty("skipFlutterLib") == null)
                 dependsOn("${info.desktopPlatform}FlutterLib")
             if (info.os == "macos")
                 mustRunAfter("macos-aarch64FlutterLib", "macos-x86_64FlutterLib")
