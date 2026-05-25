@@ -8,6 +8,7 @@ public class SwtFlutterBridge extends SwtFlutterBridgeBase {
         super(widget);
     }
 
+    @Override
     protected long getHandle(Control control) {
         return control.handle;
     }

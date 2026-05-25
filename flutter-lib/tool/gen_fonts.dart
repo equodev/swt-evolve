@@ -100,8 +100,9 @@ Future<void> main(List<String> args) async {
       "avgWidth": avgWidth,
     };
 
-    var fontVariations =
-        fontKeysByFont[font]!.where((k) => k != fontKey).toList();
+    var fontVariations = fontKeysByFont[font]!
+        .where((k) => k != fontKey)
+        .toList();
 
     for (var variation in fontVariations) {
       if (out.containsKey(variation) &&

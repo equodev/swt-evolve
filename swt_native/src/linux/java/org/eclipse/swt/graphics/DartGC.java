@@ -18,7 +18,6 @@ package org.eclipse.swt.graphics;
 import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
-import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.widgets.*;
 import org.eclipse.swt.graphics.VGC.*;
 import dev.equo.swt.*;

@@ -14,4 +14,14 @@ public interface ImplImage extends ImplResource {
     int _width();
 
     int _height();
+
+    String _filename();
+
+    void _filename(String filename);
+
+    void _updateImageData(ImageData updateImageData);
+
+    void _memGC(GC memGC);
+
+    void _pendingRenderFuture(java.util.concurrent.CompletableFuture<Void> pendingRenderFuture);
 }

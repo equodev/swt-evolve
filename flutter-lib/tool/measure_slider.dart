@@ -9,56 +9,47 @@ import 'package:swtflutter/src/theme/theme.dart';
 import './measure.dart';
 import './measure_data.dart';
 
+void main() {
+  final measurer = WidgetMeasurer();
+  setupCases(measurer);
+  runApp(MeasurementApp(measurer: measurer));
+}
 
+void setupCases(WidgetMeasurer measurer) {
+  final styles = [('HORIZONTAL', SWT.HORIZONTAL), ('VERTICAL', SWT.VERTICAL)];
 
-        void main() {
-          final measurer = WidgetMeasurer();
-          setupCases(measurer);
-          runApp(MeasurementApp(measurer: measurer));
-        }
+  for (final style in styles) {
+    final caseName = '';
+    measurer.addTestCase(createCase(caseName, style, useFontTheme: false));
 
-        void setupCases(WidgetMeasurer measurer) {
-          final styles = [
-                ('HORIZONTAL', SWT.HORIZONTAL),
-                ('VERTICAL', SWT.VERTICAL),
-          ];
+    measurer.addThemeCase(createCase('theme', style, useFontTheme: true));
+  }
 
-          for (final style in styles) {
-                  final caseName =
-                      '';
-                  measurer.addTestCase(
-                    createCase(caseName, style, useFontTheme: false),
-                  );
+  print('Generated ${measurer.testCases.length} Slider test cases');
+}
 
-            measurer.addThemeCase(
-                createCase('theme', style, useFontTheme: true)
-            );
-          }
+MeasurementCase createCase(
+  String caseName,
+  (String, int) style, {
+  bool useFontTheme = false,
+}) {
+  final (value, expectedComponents) = createVSlider(style);
+  return MeasurementCase(
+    descr: caseName,
+    style: style.$1,
+    useFontTheme: useFontTheme,
+    fqn: 'org.eclipse.swt.widgets.Slider',
+    expectedComponents: expectedComponents,
+    widgetBuilder: (key) {
+      getConfigFlags().use_swt_fonts = !useFontTheme;
+      return SliderSwt(key: key, value: value);
+    },
+  );
+}
 
-          print('Generated ${measurer.testCases.length} Slider test cases');
-        }
-        
-        MeasurementCase createCase(String caseName, (String, int) style, {bool useFontTheme = false}) {
-          final (value, expectedComponents) = createVSlider(style);
-          return MeasurementCase(
-            descr: caseName,
-            style: style.$1,
-            useFontTheme: useFontTheme,
-            fqn: 'org.eclipse.swt.widgets.Slider',
-            expectedComponents: expectedComponents,
-            widgetBuilder: (key) {
-              getConfigFlags().use_swt_fonts = !useFontTheme;
-              return SliderSwt(key: key, value: value);
-            },
-          );
-        }
-        
-        (VSlider, Map<String, dynamic>) createVSlider((String, int) style, ) {
-          final value = VSlider.empty()
-                  ..style = style.$2;
+(VSlider, Map<String, dynamic>) createVSlider((String, int) style) {
+  final value = VSlider.empty()..style = style.$2;
 
-          final expectedComponents = <String, dynamic>{
-          };
-          return (value, expectedComponents);
-        }
-        
+  final expectedComponents = <String, dynamic>{};
+  return (value, expectedComponents);
+}

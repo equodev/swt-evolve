@@ -40,12 +40,12 @@ public class GraphicsUtils {
             return null;
         }
 
-        if (image.getImpl() instanceof SwtImage si) {
+        if (!(image.getImpl() instanceof DartImage)) {
             ImageData imageData = image.getImageData();
             DartImage dartImage = new DartImage(display, imageData, null);
-            if (!Config.getConfigFlags().image_disable_icons_replacement && si.filename != null) {
-                if (!tryApplyReplacement(si.filename, dartImage)) {
-                    dartImage.filename = si.filename;
+            if (!Config.getConfigFlags().image_disable_icons_replacement && image.getImpl()._filename() != null) {
+                if (!tryApplyReplacement(image.getImpl()._filename(), dartImage)) {
+                    dartImage.filename = image.getImpl()._filename();
                 }
             }
             return dartImage.getApi();
@@ -123,7 +123,7 @@ public class GraphicsUtils {
             return null;
         }
 
-        if (fontData.getImpl() instanceof SwtFontData) {
+        if (!(fontData.getImpl() instanceof DartFontData)) {
             FontData copy = new FontData((IFontData) null);
             copy.setImpl(new DartFontData(fontData.getName(), fontData.getHeight(), fontData.getStyle(), copy));
             return copy;
@@ -145,52 +145,13 @@ public class GraphicsUtils {
         if (font == null) {
             return null;
         }
-        if (font.getImpl() instanceof SwtFont) {
+        if (!(font.getImpl() instanceof DartFont)) {
             FontData copiedFontData = copyFontData(font.getFontData()[0]);
             DartFont dartFont = new DartFont(font.getDevice(), copiedFontData, null);
             return dartFont.getApi();
         } else {
             return font;
         }
-    }
-
-    /**
-     * Creates a SwtFont from any Font using only the basic font properties (name, height, style).
-     * If the font is already a SwtFont, it is returned as-is.
-     * If the font is a DartFont, a new SwtFont is created.
-     *
-     * @param font the font to convert (can be null)
-     * @return a SwtFont with the same name, height and style, or null if input is null
-     */
-    public static Font copyFontToSwt(Font font) {
-        if (font == null) {
-            return null;
-        }
-        if (font.getImpl() instanceof DartFont) {
-            FontData fd = font.getFontData()[0];
-            SwtFont swtFont = new SwtFont(font.getDevice(), fd.getName(), fd.getHeight(), fd.getStyle(), null);
-            return swtFont.getApi();
-        }
-        return font;
-    }
-
-    /**
-     * Creates a SwtFontData from any FontData using the basic font properties (name, height, style).
-     * If the fontData is already a SwtFontData, it is returned as-is.
-     * If the fontData is a DartFontData, a new SwtFontData is created.
-     *
-     * @param fontData the fontData to convert (can be null)
-     * @return a FontData with SwtFontData, or null if input is null
-     */
-    public static FontData copyFontDataToSwt(FontData fontData) {
-        if (fontData == null) {
-            return null;
-        }
-        if (fontData.getImpl() instanceof DartFontData) {
-            SwtFontData swtFontData = new SwtFontData(fontData.getName(), fontData.getHeight(), fontData.getStyle(), null);
-            return swtFontData.getApi();
-        }
-        return fontData;
     }
 
     /**

@@ -3382,11 +3382,27 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         return memGC;
     }
 
+    public void _filename(String filename) {
+        this.filename = filename;
+    }
+
     String filename;
+
+    public String _filename() {
+        return filename;
+    }
 
     java.util.concurrent.CompletableFuture<Void> pendingRenderFuture;
 
-    void updateImageData(ImageData newData) {
+    public void _pendingRenderFuture(java.util.concurrent.CompletableFuture<Void> future) {
+        pendingRenderFuture = future;
+    }
+
+    public void _memGC(GC gc) {
+        memGC = gc;
+    }
+
+    public void _updateImageData(ImageData newData) {
         imageHandleManager.destroyHandles(__ -> true);
         init(newData, 100);
         pendingRenderFuture = null;

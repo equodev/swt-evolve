@@ -34,7 +34,7 @@ public class ImageUtilsTest {
     @ParameterizedTest
     @MethodSource("providePaths")
     public void should_parse_filename(String inputPath) {
-        String filename = ImageUtils.getFilename(inputPath);
+        String filename = GraphicsUtils.getFilename(inputPath);
         assertThat(filename).isEqualTo(imageName);
     }
 }

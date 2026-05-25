@@ -2486,7 +2486,19 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         return svgContent;
     }
 
+    public void _filename(String filename) {
+        this.filename = filename;
+    }
+
     java.util.concurrent.CompletableFuture<Void> pendingRenderFuture;
+
+    public void _pendingRenderFuture(java.util.concurrent.CompletableFuture<Void> future) {
+        pendingRenderFuture = future;
+    }
+
+    public void _memGC(GC gc) {
+        memGC = gc;
+    }
 
     public void cancelRenderFuture() {
         java.util.concurrent.CompletableFuture<Void> f = pendingRenderFuture;
@@ -2499,7 +2511,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         }
     }
 
-    void updateImageData(ImageData newData) {
+    public void _updateImageData(ImageData newData) {
         this.imageData = newData;
         imageHandleManager.destroyHandles(__ -> true);
         pendingRenderFuture = null;

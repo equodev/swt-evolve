@@ -248,7 +248,7 @@ public final class SwtFontData implements IFontData {
         if (fontData == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
-        FontData swtFontData = GraphicsUtils.copyFontDataToSwt(fontData);
+        FontData swtFontData = GraphicsUtilsSwt.copyFontDataToSwt(fontData);
         this.getApi().height = swtFontData.height;
         this.lang = swtFontData.getImpl()._lang();
         this.country = swtFontData.getImpl()._country();
