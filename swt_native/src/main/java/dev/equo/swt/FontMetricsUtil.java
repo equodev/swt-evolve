@@ -130,6 +130,37 @@ public final class FontMetricsUtil {
         return new PointD(w, h);
     }
 
+    public static PointD getFontSizeWrapped(String text, TextStyle textStyle, double maxWidth) {
+        if (text == null || text.isEmpty()) return PointD.zero;
+        if (maxWidth <= 0) return getFontSize(text, textStyle);
+        double lineHeight = getFontSize("Ag", textStyle).y();
+        if (lineHeight <= 0) return getFontSize(text, textStyle);
+        double spaceWidth = getFontSize(" ", textStyle).x();
+        double wrapWidth = Math.max(1.0, maxWidth - 1.0);
+        String[] paragraphs = text.split("\n", -1);
+        int totalLines = 0;
+        for (String paragraph : paragraphs) {
+            if (paragraph.isEmpty()) { totalLines++; continue; }
+            String[] words = paragraph.split(" ", -1);
+            double lineWidth = 0.0;
+            boolean lineStart = true;
+            int linesInParagraph = 1;
+            for (String word : words) {
+                if (word.isEmpty()) { if (!lineStart) lineWidth += spaceWidth; continue; }
+                double wordWidth = getFontSize(word, textStyle).x();
+                if (lineStart) { lineWidth = wordWidth; lineStart = false; }
+                else {
+                    double extended = lineWidth + spaceWidth + wordWidth;
+                    if (extended > wrapWidth && wordWidth <= wrapWidth) { linesInParagraph++; lineWidth = wordWidth; }
+                    else lineWidth = extended;
+                }
+            }
+            totalLines += linesInParagraph;
+        }
+        if (totalLines == 0) totalLines = 1;
+        return new PointD(maxWidth, lineHeight * totalLines + 2.0);
+    }
+
     /**
      * Returns interpolated or extrapolated MetricsPerSize for requested font and size.
      * Uses linear interpolation between nearest stored sizes. If outside stored range,

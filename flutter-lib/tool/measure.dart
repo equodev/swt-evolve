@@ -119,6 +119,7 @@ class RenderBoxInfo {
   final String? textContent;
   final String? imageSource;
   final TextStyle? textStyle;
+  final bool? softWrap;
 
   RenderBoxInfo(
     this.type,
@@ -130,6 +131,7 @@ class RenderBoxInfo {
     this.textContent,
     this.imageSource,
     this.textStyle,
+    this.softWrap,
     this.children = const [],
   });
 
@@ -140,6 +142,7 @@ class RenderBoxInfo {
       'depth': depth,
       if (textContent != null) 'textContent': textContent,
       if (imageSource != null) 'imageSource': imageSource,
+      if (softWrap != null) 'softWrap': softWrap,
       if (textStyle != null)
         'textStyle': {
           'fontFamily': textStyle!.fontFamily,
@@ -703,6 +706,7 @@ class WidgetMeasurer {
     }
 
     TextStyle? textStyle;
+    bool? softWrap;
     if (renderBox is RenderParagraph) {
       final inlineSpan = renderBox.text;
       textContent = inlineSpan.toPlainText();
@@ -710,6 +714,7 @@ class WidgetMeasurer {
       // Extract TextStyle from the TextSpan
       if (inlineSpan is TextSpan) {
         textStyle = inlineSpan.style;
+        softWrap = renderBox.softWrap;
       }
     } else if (renderBox is RenderEditable) {
       // Handle TextField/TextFormField which use RenderEditable
@@ -743,6 +748,7 @@ class WidgetMeasurer {
       textContent: textContent,
       imageSource: imageSource,
       textStyle: textStyle,
+      softWrap: softWrap,
       children: children,
     );
   }
@@ -761,6 +767,7 @@ class WidgetMeasurer {
           'content': textBox.textContent,
           'width': textBox.size.width,
           'height': textBox.size.height,
+          'softWrap': textBox.softWrap ?? false,
           if (textBox.textStyle != null)
             'textStyle': {
               'fontFamily': textBox.textStyle!.fontFamily,
@@ -1116,6 +1123,15 @@ class WidgetMeasurer {
       constants['imageUsesMax'] = true;
     }
 
+    final softWrapCount = styleResults
+        .where((r) => r.discoveredComponents['text']?['softWrap'] == true)
+        .length;
+    constants['wrapsMode'] = softWrapCount == 0
+        ? 'none'
+        : softWrapCount == styleResults.length
+            ? 'always'
+            : 'whenWrapStyle';
+
     final algorithm = _deriveAlgorithm(widgetType, style, constants);
 
     // Capitalize widget type for display (e.g., "btn" -> "Button")
@@ -1257,7 +1273,7 @@ class WidgetMeasurer {
       return '${constants['minWidth']}_${constants['minHeight']}_'
           '${isConstantSize}_${useHorizontalPadding}_${useVerticalPadding}_'
           '${constants['horizontalPadding']}_${constants['verticalPadding']}_'
-          'vertical:$isVerticalStyle';
+          'vertical:${isVerticalStyle}_wrap:${constants['wrapsMode'] ?? 'none'}';
     }
 
     final Map<String, List<WidgetAnalysis>> groupsByConstants = {};
@@ -1450,25 +1466,70 @@ class WidgetMeasurer {
           );
         }
 
-        if (useVerticalPadding) {
-          if (emptyTextAffectsSizing) {
-            // Always add padding (for widgets like Label)
-            buffer.writeln(
-              '${indent}height = hHint != SWT.DEFAULT ? hHint : Math.max($textHeightExpr + $styleName.VERTICAL_PADDING, $styleName.MIN_HEIGHT);',
-            );
-          } else {
-            // Conditionally add padding when text or image exists (for widgets like Button)
-            final heightCondition = (hasAnyImageSupport && imageAffectsHeight)
-                ? '($textY > 0 || m.image.y() > 0)'
-                : '$textY > 0';
-            buffer.writeln(
-              '${indent}height = hHint != SWT.DEFAULT ? hHint : Math.max($textHeightExpr + ($heightCondition ? $styleName.VERTICAL_PADDING : 0), $styleName.MIN_HEIGHT);',
-            );
+        final wrapsMode = constants['wrapsMode'] as String? ?? 'none';
+        if (wrapsMode != 'none' && !isConstantSize) {
+          if (wrapsMode == 'whenWrapStyle') {
+            buffer.writeln('${indent}boolean wraps = hasFlags(style, SWT.WRAP);');
           }
+          final wrapCondition = wrapsMode == 'whenWrapStyle'
+              ? 'wHint != SWT.DEFAULT && wraps && m.textStyle != null'
+              : 'wHint != SWT.DEFAULT && m.textStyle != null';
+          buffer.writeln('${indent}if (hHint != SWT.DEFAULT) {');
+          buffer.writeln('${indent}    height = hHint;');
+          buffer.writeln('${indent}} else if ($wrapCondition) {');
+          if (wrapsMode == 'always') {
+            buffer.writeln('${indent}    String rawText = widget.getText();');
+            buffer.writeln('${indent}    String visualText = rawText != null ? rawText.replaceAll("<[^>]+>", "") : "";');
+            final aw = useHorizontalPadding ? 'wHint - $styleName.HORIZONTAL_PADDING' : '(double) wHint';
+            buffer.writeln('${indent}    double availableWidth = Math.max(1.0, $aw);');
+            buffer.writeln('${indent}    PointD wrapped = FontMetricsUtil.getFontSizeWrapped(visualText, m.textStyle, availableWidth);');
+            final hExpr = useVerticalPadding ? 'wrapped.y() + $styleName.VERTICAL_PADDING' : 'wrapped.y()';
+            buffer.writeln('${indent}    height = Math.max($hExpr, $styleName.MIN_HEIGHT);');
+          } else {
+            if (imageAffectsWidth) {
+              final sp = hasImageSpacing ? '(imageWidth > 0 && m.text.x() > 0) ? $styleName.IMAGE_SPACING : 0' : '0';
+              buffer.writeln('${indent}    double imageWidth = m.image.x();');
+              buffer.writeln('${indent}    double imageSpacing = $sp;');
+              final pad = useHorizontalPadding ? '(m.text.x() > 0 || imageWidth > 0) ? $styleName.HORIZONTAL_PADDING : 0' : '0';
+              buffer.writeln('${indent}    double availableWidth = Math.max(1.0, wHint - ($pad) - imageWidth - imageSpacing);');
+            } else {
+              final aw = useHorizontalPadding ? 'wHint - $styleName.HORIZONTAL_PADDING' : '(double) wHint';
+              buffer.writeln('${indent}    double availableWidth = Math.max(1.0, $aw);');
+            }
+            buffer.writeln('${indent}    PointD wrapped = FontMetricsUtil.getFontSizeWrapped(widget.getText(), m.textStyle, availableWidth);');
+            if (imageAffectsHeight && useVerticalPadding) {
+              buffer.writeln('${indent}    height = Math.max(Math.max(wrapped.y(), m.image.y()) + (wrapped.y() > 0 || m.image.y() > 0 ? $styleName.VERTICAL_PADDING : 0), $styleName.MIN_HEIGHT);');
+            } else if (useVerticalPadding) {
+              buffer.writeln('${indent}    height = Math.max(wrapped.y() + $styleName.VERTICAL_PADDING, $styleName.MIN_HEIGHT);');
+            } else {
+              buffer.writeln('${indent}    height = Math.max(wrapped.y(), $styleName.MIN_HEIGHT);');
+            }
+          }
+          buffer.writeln('${indent}} else {');
+          if (useVerticalPadding) {
+            if (emptyTextAffectsSizing) {
+              buffer.writeln('${indent}    height = Math.max($textHeightExpr + $styleName.VERTICAL_PADDING, $styleName.MIN_HEIGHT);');
+            } else {
+              final hc = (hasAnyImageSupport && imageAffectsHeight) ? '($textY > 0 || m.image.y() > 0)' : '$textY > 0';
+              buffer.writeln('${indent}    height = Math.max($textHeightExpr + ($hc ? $styleName.VERTICAL_PADDING : 0), $styleName.MIN_HEIGHT);');
+            }
+          } else {
+            buffer.writeln('${indent}    height = Math.max($textHeightExpr, $styleName.MIN_HEIGHT);');
+          }
+          buffer.writeln('${indent}}');
         } else {
-          buffer.writeln(
-            '${indent}height = hHint != SWT.DEFAULT ? hHint : Math.max($textHeightExpr, $styleName.MIN_HEIGHT);',
-          );
+          if (useVerticalPadding) {
+            if (emptyTextAffectsSizing) {
+              buffer.writeln('${indent}height = hHint != SWT.DEFAULT ? hHint : Math.max($textHeightExpr + $styleName.VERTICAL_PADDING, $styleName.MIN_HEIGHT);');
+            } else {
+              final heightCondition = (hasAnyImageSupport && imageAffectsHeight)
+                  ? '($textY > 0 || m.image.y() > 0)'
+                  : '$textY > 0';
+              buffer.writeln('${indent}height = hHint != SWT.DEFAULT ? hHint : Math.max($textHeightExpr + ($heightCondition ? $styleName.VERTICAL_PADDING : 0), $styleName.MIN_HEIGHT);');
+            }
+          } else {
+            buffer.writeln('${indent}height = hHint != SWT.DEFAULT ? hHint : Math.max($textHeightExpr, $styleName.MIN_HEIGHT);');
+          }
         }
       }
     }
@@ -1524,8 +1585,19 @@ class WidgetMeasurer {
         continue;
       }
 
-      // Build condition: OR all styles in the group
-      final conditions = styles.map((style) {
+      // Build condition: OR non-redundant styles in the group.
+      // A style is redundant if another style in the group has fewer flags that are
+      // all contained in it — e.g. CHECK already subsumes CHECK|FLAT and CHECK|WRAP.
+      final styleFlags = styles.map((s) => s.split('|').toSet()).toList();
+      final minimalStyles = [
+        for (int i = 0; i < styles.length; i++)
+          if (!styleFlags.any((other) =>
+              other.length < styleFlags[i].length &&
+              other.every((f) => styleFlags[i].contains(f))))
+            styles[i],
+      ];
+
+      final conditions = minimalStyles.map((style) {
         final styleCheck = style.contains('|')
             ? '(${style.split('|').map((s) => 'SWT.$s').join(' | ')})'
             : 'SWT.$style';

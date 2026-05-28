@@ -59,21 +59,54 @@ public class ButtonSizes {
 
         double width, height;
 
-        if (hasFlags(style, SWT.CHECK) || hasFlags(style, (SWT.CHECK | SWT.FLAT)) || hasFlags(style, (SWT.CHECK | SWT.WRAP)) || hasFlags(style, SWT.RADIO) || hasFlags(style, (SWT.RADIO | SWT.FLAT)) || hasFlags(style, (SWT.RADIO | SWT.WRAP))) {
+        if (hasFlags(style, SWT.CHECK) || hasFlags(style, SWT.RADIO)) {
             m.text = computeText(widget, m, CHECK.EMPTY_TEXT_AFFECTS_SIZING);
             m.image = computeImage(widget);
             width = wHint != SWT.DEFAULT ? wHint : Math.max((m.text.x() + m.image.x()) + ((m.text.x() > 0 || m.image.x() > 0) ? CHECK.HORIZONTAL_PADDING : 0), CHECK.MIN_WIDTH);
-            height = hHint != SWT.DEFAULT ? hHint : Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? CHECK.VERTICAL_PADDING : 0), CHECK.MIN_HEIGHT);
-        } else if (hasFlags(style, SWT.PUSH) || hasFlags(style, (SWT.PUSH | SWT.FLAT)) || hasFlags(style, (SWT.PUSH | SWT.WRAP))) {
+            boolean wraps = hasFlags(style, SWT.WRAP);
+            if (hHint != SWT.DEFAULT) {
+                height = hHint;
+            } else if (wHint != SWT.DEFAULT && wraps && m.textStyle != null) {
+                double imageWidth = m.image.x();
+                double imageSpacing = 0;
+                double availableWidth = Math.max(1.0, wHint - ((m.text.x() > 0 || imageWidth > 0) ? CHECK.HORIZONTAL_PADDING : 0) - imageWidth - imageSpacing);
+                PointD wrapped = FontMetricsUtil.getFontSizeWrapped(widget.getText(), m.textStyle, availableWidth);
+                height = Math.max(Math.max(wrapped.y(), m.image.y()) + (wrapped.y() > 0 || m.image.y() > 0 ? CHECK.VERTICAL_PADDING : 0), CHECK.MIN_HEIGHT);
+            } else {
+                height = Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? CHECK.VERTICAL_PADDING : 0), CHECK.MIN_HEIGHT);
+            }
+        } else if (hasFlags(style, SWT.PUSH)) {
             m.text = computeText(widget, m, PUSH.EMPTY_TEXT_AFFECTS_SIZING);
             m.image = computeImage(widget);
             width = wHint != SWT.DEFAULT ? wHint : Math.max((m.text.x() + m.image.x()) + ((m.text.x() > 0 || m.image.x() > 0) ? PUSH.HORIZONTAL_PADDING : 0), PUSH.MIN_WIDTH);
-            height = hHint != SWT.DEFAULT ? hHint : Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? PUSH.VERTICAL_PADDING : 0), PUSH.MIN_HEIGHT);
-        } else if (hasFlags(style, SWT.TOGGLE) || hasFlags(style, (SWT.TOGGLE | SWT.FLAT)) || hasFlags(style, (SWT.TOGGLE | SWT.WRAP))) {
+            boolean wraps = hasFlags(style, SWT.WRAP);
+            if (hHint != SWT.DEFAULT) {
+                height = hHint;
+            } else if (wHint != SWT.DEFAULT && wraps && m.textStyle != null) {
+                double imageWidth = m.image.x();
+                double imageSpacing = 0;
+                double availableWidth = Math.max(1.0, wHint - ((m.text.x() > 0 || imageWidth > 0) ? PUSH.HORIZONTAL_PADDING : 0) - imageWidth - imageSpacing);
+                PointD wrapped = FontMetricsUtil.getFontSizeWrapped(widget.getText(), m.textStyle, availableWidth);
+                height = Math.max(Math.max(wrapped.y(), m.image.y()) + (wrapped.y() > 0 || m.image.y() > 0 ? PUSH.VERTICAL_PADDING : 0), PUSH.MIN_HEIGHT);
+            } else {
+                height = Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? PUSH.VERTICAL_PADDING : 0), PUSH.MIN_HEIGHT);
+            }
+        } else if (hasFlags(style, SWT.TOGGLE)) {
             m.text = computeText(widget, m, TOGGLE.EMPTY_TEXT_AFFECTS_SIZING);
             m.image = computeImage(widget);
             width = wHint != SWT.DEFAULT ? wHint : Math.max((m.text.x() + m.image.x()) + ((m.text.x() > 0 || m.image.x() > 0) ? TOGGLE.HORIZONTAL_PADDING : 0), TOGGLE.MIN_WIDTH);
-            height = hHint != SWT.DEFAULT ? hHint : Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? TOGGLE.VERTICAL_PADDING : 0), TOGGLE.MIN_HEIGHT);
+            boolean wraps = hasFlags(style, SWT.WRAP);
+            if (hHint != SWT.DEFAULT) {
+                height = hHint;
+            } else if (wHint != SWT.DEFAULT && wraps && m.textStyle != null) {
+                double imageWidth = m.image.x();
+                double imageSpacing = 0;
+                double availableWidth = Math.max(1.0, wHint - ((m.text.x() > 0 || imageWidth > 0) ? TOGGLE.HORIZONTAL_PADDING : 0) - imageWidth - imageSpacing);
+                PointD wrapped = FontMetricsUtil.getFontSizeWrapped(widget.getText(), m.textStyle, availableWidth);
+                height = Math.max(Math.max(wrapped.y(), m.image.y()) + (wrapped.y() > 0 || m.image.y() > 0 ? TOGGLE.VERTICAL_PADDING : 0), TOGGLE.MIN_HEIGHT);
+            } else {
+                height = Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? TOGGLE.VERTICAL_PADDING : 0), TOGGLE.MIN_HEIGHT);
+            }
         } else { // ARROW, ARROW|FLAT, ARROW|WRAP
             width = wHint != SWT.DEFAULT ? wHint : ARROW.MIN_WIDTH;
             height = hHint != SWT.DEFAULT ? hHint : ARROW.MIN_HEIGHT;

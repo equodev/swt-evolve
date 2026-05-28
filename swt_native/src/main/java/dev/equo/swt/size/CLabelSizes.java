@@ -42,7 +42,18 @@ public class CLabelSizes {
         m.text = computeText(widget, m, LEFT.EMPTY_TEXT_AFFECTS_SIZING);
         m.image = computeImage(widget);
         width = wHint != SWT.DEFAULT ? wHint : Math.max((m.text.x() + m.image.x() + (m.image.x() > 0 && m.text.x() > 0 ? LEFT.IMAGE_SPACING : 0)) + ((m.text.x() > 0 || m.image.x() > 0) ? LEFT.HORIZONTAL_PADDING : 0), LEFT.MIN_WIDTH);
-        height = hHint != SWT.DEFAULT ? hHint : Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? LEFT.VERTICAL_PADDING : 0), LEFT.MIN_HEIGHT);
+        boolean wraps = hasFlags(style, SWT.WRAP);
+        if (hHint != SWT.DEFAULT) {
+            height = hHint;
+        } else if (wHint != SWT.DEFAULT && wraps && m.textStyle != null) {
+            double imageWidth = m.image.x();
+            double imageSpacing = (imageWidth > 0 && m.text.x() > 0) ? LEFT.IMAGE_SPACING : 0;
+            double availableWidth = Math.max(1.0, wHint - ((m.text.x() > 0 || imageWidth > 0) ? LEFT.HORIZONTAL_PADDING : 0) - imageWidth - imageSpacing);
+            PointD wrapped = FontMetricsUtil.getFontSizeWrapped(widget.getText(), m.textStyle, availableWidth);
+            height = Math.max(Math.max(wrapped.y(), m.image.y()) + (wrapped.y() > 0 || m.image.y() > 0 ? LEFT.VERTICAL_PADDING : 0), LEFT.MIN_HEIGHT);
+        } else {
+            height = Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? LEFT.VERTICAL_PADDING : 0), LEFT.MIN_HEIGHT);
+        }
 
         m.widget = new Point((int) Math.ceil(width), (int) Math.ceil(height));
         return m;
