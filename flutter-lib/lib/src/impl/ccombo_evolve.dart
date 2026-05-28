@@ -283,6 +283,10 @@ class _StyledDropdownCCombo extends StatelessWidget {
         isDense: true,
         contentPadding: effectivePadding,
         constraints: inputConstraints,
+        isCollapsed: controlHeight != null,
+        suffixIconConstraints: controlHeight != null
+            ? BoxConstraints.tightFor(height: controlHeight)
+            : null,
       ),
       menuStyle: MenuStyle(
         backgroundColor: WidgetStateProperty.all(widgetTheme.backgroundColor),
@@ -314,9 +318,6 @@ class _StyledDropdownCCombo extends StatelessWidget {
       }).toList(),
     );
 
-    // Overlay to absorb taps on the text area so the dropdown only opens via
-    // the arrow button. The arrow area is left transparent so its tap falls
-    // through to the underlying DropdownMenu button.
     final arrowAreaWidth = widgetTheme.iconSize + 24.0;
     return Stack(
       children: [
