@@ -38,7 +38,17 @@ public class LinkSizes {
 
         m.text = computeText(widget, m, NONE.EMPTY_TEXT_AFFECTS_SIZING);
         width = wHint != SWT.DEFAULT ? wHint : Math.max(m.text.x() + (m.text.x() > 0 ? NONE.HORIZONTAL_PADDING : 0), NONE.MIN_WIDTH);
-        height = hHint != SWT.DEFAULT ? hHint : Math.max(m.text.y() + NONE.VERTICAL_PADDING, NONE.MIN_HEIGHT);
+        if (hHint != SWT.DEFAULT) {
+            height = hHint;
+        } else if (wHint != SWT.DEFAULT && m.textStyle != null) {
+            String rawText = widget.getText();
+            String visualText = rawText != null ? rawText.replaceAll("<[^>]+>", "") : "";
+            double availableWidth = Math.max(1.0, wHint - NONE.HORIZONTAL_PADDING);
+            PointD wrapped = FontMetricsUtil.getFontSizeWrapped(visualText, m.textStyle, availableWidth);
+            height = Math.max(wrapped.y() + NONE.VERTICAL_PADDING, NONE.MIN_HEIGHT);
+        } else {
+            height = Math.max(m.text.y() + NONE.VERTICAL_PADDING, NONE.MIN_HEIGHT);
+        }
 
         m.widget = new Point((int) Math.ceil(width), (int) Math.ceil(height));
         return m;

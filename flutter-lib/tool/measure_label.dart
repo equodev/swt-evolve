@@ -23,6 +23,7 @@ void setupCases(WidgetMeasurer measurer) {
     ('HORIZONTAL|SEPARATOR', SWT.HORIZONTAL | SWT.SEPARATOR),
     ('VERTICAL', SWT.VERTICAL),
     ('VERTICAL|SEPARATOR', SWT.VERTICAL | SWT.SEPARATOR),
+    ('WRAP', SWT.WRAP),
   ];
 
   for (final style in styles) {

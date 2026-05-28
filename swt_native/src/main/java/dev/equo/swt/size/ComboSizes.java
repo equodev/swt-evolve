@@ -44,7 +44,7 @@ public class ComboSizes {
 
         double width, height;
 
-        if (hasFlags(style, SWT.SIMPLE) || hasFlags(style, (SWT.SIMPLE | SWT.READ_ONLY))) {
+        if (hasFlags(style, SWT.SIMPLE)) {
             m.text = computeText(widget, m, SIMPLE.EMPTY_TEXT_AFFECTS_SIZING);
             width = wHint != SWT.DEFAULT ? wHint : Math.max(m.text.x() + (m.text.x() > 0 ? SIMPLE.HORIZONTAL_PADDING : 0), SIMPLE.MIN_WIDTH);
             height = hHint != SWT.DEFAULT ? hHint : Math.max(m.text.y() + SIMPLE.VERTICAL_PADDING, SIMPLE.MIN_HEIGHT);

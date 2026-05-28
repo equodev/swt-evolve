@@ -114,7 +114,8 @@ class LabelSizeTest extends SizeTestBase {
         s(SWT.HORIZONTAL, "HORIZONTAL"), //
         s(SWT.HORIZONTAL | SWT.SEPARATOR, "HORIZONTAL|SEPARATOR"), //
         s(SWT.VERTICAL, "VERTICAL"), //
-        s(SWT.VERTICAL | SWT.SEPARATOR, "VERTICAL|SEPARATOR"));
+        s(SWT.VERTICAL | SWT.SEPARATOR, "VERTICAL|SEPARATOR"), //
+        s(SWT.WRAP, "WRAP"));
     }
 
     static Stream<Arguments> basicCases() {
