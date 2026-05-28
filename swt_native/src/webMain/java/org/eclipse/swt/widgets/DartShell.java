@@ -1693,6 +1693,8 @@ public class DartShell extends DartDecorations implements IShell {
 
     int alpha;
 
+    Dialog[] dialogs = new Dialog[0];
+
     int imeInputMode;
 
     Point maximumSize;
@@ -1779,6 +1781,10 @@ public class DartShell extends DartDecorations implements IShell {
         return alpha;
     }
 
+    public Dialog[] _dialogs() {
+        return dialogs;
+    }
+
     public int _imeInputMode() {
         return imeInputMode;
     }
@@ -1797,6 +1803,28 @@ public class DartShell extends DartDecorations implements IShell {
 
     public Shell[] _shells() {
         return shells;
+    }
+
+    public void addDialog(DartDialog d) {
+        Dialog[] next = new Dialog[dialogs.length + 1];
+        for (int i = 0; i < dialogs.length; i++) next[i] = dialogs[i];
+        next[dialogs.length] = (Dialog) d.getApi();
+        dialogs = next;
+        dirty();
+    }
+
+    public void removeDialog(DartDialog d) {
+        Dialog api = (Dialog) d.getApi();
+        Dialog[] next = new Dialog[dialogs.length - 1];
+        int j = 0;
+        for (Dialog x : dialogs) if (x != api)
+            next[j++] = x;
+        dialogs = next;
+        dirty();
+    }
+
+    public Dialog[] getDialogs() {
+        return dialogs.length == 0 ? null : dialogs;
     }
 
     protected void _hookEvents() {

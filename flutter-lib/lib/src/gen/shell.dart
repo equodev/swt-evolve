@@ -7,6 +7,8 @@ import '../gen/color.dart';
 import '../gen/control.dart';
 import '../gen/cursor.dart';
 import '../gen/decorations.dart';
+import '../gen/dialog.dart';
+import '../gen/dialogs.dart';
 import '../gen/font.dart';
 import '../gen/image.dart';
 import '../gen/ime.dart';
@@ -60,6 +62,8 @@ class VShell extends VDecorations {
     swt = "Shell";
   }
 
+  @JsonKey(fromJson: parseDialogs)
+  List<VDialog>? dialogs;
   int? alpha;
   bool? fullScreen;
   int? imeInputMode;

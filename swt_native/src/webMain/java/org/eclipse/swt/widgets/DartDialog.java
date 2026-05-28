@@ -294,6 +294,37 @@ public abstract class DartDialog implements IDialog {
         return title;
     }
 
+    protected int openDialogWithFlutter(Object value, int fallback) {
+        long id = System.identityHashCode(this);
+        String type = getClass().getSimpleName().substring(4);
+        VDialog val = (VDialog) value;
+        val.setSwt(type);
+        val.setId(id);
+        int[] response = { fallback };
+        boolean[] done = { false };
+        dev.equo.swt.FlutterBridge.on(type + "/" + id + "/close", p -> {
+            if (p != null && !p.isEmpty()) {
+                try {
+                    response[0] = Integer.parseInt(p.trim());
+                } catch (NumberFormatException ignored) {
+                }
+            }
+            done[0] = true;
+        });
+        DartShell shell = (parent != null && parent.getImpl() instanceof DartShell s) ? s : null;
+        if (shell != null)
+            shell.addDialog(this);
+        Display display = parent != null ? parent.getDisplay() : DartDisplay.getCurrent();
+        while (!done[0]) {
+            if (!display.readAndDispatch())
+                display.sleep();
+        }
+        dev.equo.swt.FlutterBridge.off(type + "/" + id + "/close");
+        if (shell != null)
+            shell.removeDialog(this);
+        return response[0];
+    }
+
     public Dialog getApi() {
         return (Dialog) api;
     }

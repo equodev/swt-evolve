@@ -156,47 +156,7 @@ public class DartMessageBox extends DartDialog implements IMessageBox {
      * </ul>
      */
     public int open() {
-        if ((style & SWT.ICON_ERROR) != 0) {
-        }
-        if (((style & SWT.ICON_INFORMATION) != 0) || ((style & SWT.ICON_WORKING) != 0) || ((style & SWT.ICON_QUESTION) != 0)) {
-        }
-        if ((style & SWT.ICON_WARNING) != 0) {
-        }
-        int bits = getBits();
-        switch(bits) {
-            case SWT.OK:
-                break;
-            case SWT.CANCEL:
-                break;
-            case SWT.OK | SWT.CANCEL:
-                break;
-            case SWT.YES:
-                break;
-            case SWT.NO:
-                break;
-            case SWT.YES | SWT.NO:
-                //			no.setKeyEquivalent(NSString.stringWith("\033"));
-                break;
-            case SWT.YES | SWT.NO | SWT.CANCEL:
-                break;
-            case SWT.RETRY | SWT.CANCEL:
-                break;
-            case SWT.ABORT | SWT.RETRY | SWT.IGNORE:
-                break;
-        }
-        long jniRef = 0;
-        Display display = parent != null ? parent.getDisplay() : DartDisplay.getCurrent();
-        if ((style & SWT.SHEET) != 0) {
-            if (jniRef == 0)
-                error(SWT.ERROR_NO_HANDLES);
-            if ((style & SWT.APPLICATION_MODAL) != 0) {
-            } else {
-            }
-        } else {
-        }
-        ((DartDisplay) display.getImpl()).setModalDialog(null);
-        releaseHandler();
-        return userResponse;
+        return openDialogWithFlutter(getValue(), SWT.CANCEL);
     }
 
     long _completionHandler(long result) {
