@@ -79,6 +79,7 @@ VShell _$VShellFromJson(Map<String, dynamic> json) => VShell()
       : VMenu.fromJson(json['menuBar'] as Map<String, dynamic>)
   ..minimized = json['minimized'] as bool?
   ..text = json['text'] as String?
+  ..dialogs = parseDialogs(json['dialogs'])
   ..alpha = (json['alpha'] as num?)?.toInt()
   ..fullScreen = json['fullScreen'] as bool?
   ..imeInputMode = (json['imeInputMode'] as num?)?.toInt()
@@ -130,6 +131,7 @@ Map<String, dynamic> _$VShellToJson(VShell instance) => <String, dynamic>{
   'menuBar': ?instance.menuBar,
   'minimized': ?instance.minimized,
   'text': ?instance.text,
+  'dialogs': ?instance.dialogs,
   'alpha': ?instance.alpha,
   'fullScreen': ?instance.fullScreen,
   'imeInputMode': ?instance.imeInputMode,

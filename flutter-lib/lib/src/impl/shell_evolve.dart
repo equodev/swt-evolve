@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
+import '../gen/dialog.dart';
 import '../gen/event.dart';
+import '../gen/messagebox.dart';
 import '../gen/shell.dart';
 import '../gen/swt.dart';
 import '../impl/decorations_evolve.dart';
+import '../impl/messagebox_evolve.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
 
 class FloatingShellChromeScope extends InheritedWidget {
@@ -37,12 +40,36 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
   bool _maximized = false;
   bool _interacting = false;
   bool _initialBoundsSent = false;
+  final Set<int> _openedDialogIds = {};
+
+  @override
+  void setValue(V value) {
+    final prevDialogs = state.dialogs ?? [];
+    super.setValue(value);
+    final newDialogs = value.dialogs ?? [];
+    _openedDialogIds.removeWhere((id) => !newDialogs.any((d) => d.id == id));
+    for (final d in newDialogs) {
+      if (!prevDialogs.any((old) => old.id == d.id) && !_openedDialogIds.contains(d.id)) {
+        _openedDialogIds.add(d.id);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _openDialog(d);
+        });
+      }
+    }
+  }
 
   @override
   void didUpdateWidget(covariant T oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (_interacting) return;
     _size = null;
+  }
+
+  void _openDialog(VDialog d) {
+    switch (d.swt) {
+      case 'MessageBox':
+        showMessageBoxDialog(context, d as VMessageBox, d.id);
+    }
   }
 
   int get _style => state.style;

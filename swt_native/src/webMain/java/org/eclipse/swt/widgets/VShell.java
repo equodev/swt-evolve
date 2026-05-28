@@ -25,6 +25,15 @@ public class VShell extends VDecorations {
         ((DartShell) impl).alpha = value;
     }
 
+    @JsonAttribute(nullable = true)
+    public Dialog[] getDialogs() {
+        return ((DartShell) impl).getDialogs();
+    }
+
+    public void setDialogs(Dialog[] value) {
+        ((DartShell) impl).dialogs = value;
+    }
+
     public boolean getFullScreen() {
         return ((DartShell) impl).getFullScreen();
     }

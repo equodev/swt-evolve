@@ -501,5 +501,13 @@ public abstract class FlutterBridge {
         broadcastSwtEvolveProperties();
     }
 
+    public static void on(String channel, java.util.function.Consumer<String> cb) {
+        client.getComm().on(channel, cb);
+    }
+
+    public static void off(String channel) {
+        client.getComm().remove(channel);
+    }
+
 }
 

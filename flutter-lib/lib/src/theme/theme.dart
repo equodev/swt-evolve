@@ -39,6 +39,7 @@ import 'theme_settings/styledtext_theme_settings.dart';
 import 'theme_settings/theme_color_palette_theme_settings.dart';
 import 'theme_settings/display_theme_settings.dart';
 import 'theme_settings/scaling_scale_theme_settings.dart';
+import 'theme_settings/message_box_theme_settings.dart';
 
 ColorScheme _resolveWidgetColorScheme(
   String widgetKey,
@@ -118,7 +119,7 @@ ColorScheme createLightColorScheme() {
     secondaryContainer: const Color(0xFFDEDEFD),// #DEDEFD
     onSecondaryContainer: const Color(0xFF4545BF), // #4545BF
     
-    tertiary: const Color(0x00FFFFFF), // #FFFFFF
+    tertiary: const Color(0xFFF59E0B), // #F59E0B
     onTertiary: const Color(0xFF0F1866), // #0F1866
     
     surface: const Color(0xFFFFFFFF), // #FFFFFF
@@ -713,6 +714,11 @@ ThemeData createLightDefaultTheme(int? backgroundColor, {Color? seedColor}) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final messageBoxTheme = getMessageBoxLightTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -755,6 +761,7 @@ ThemeData createLightDefaultTheme(int? backgroundColor, {Color? seedColor}) {
       themeColorPaletteTheme,
       displayTheme,
       scalingScaleTheme,
+      messageBoxTheme,
     ],
   );
 }
@@ -948,6 +955,11 @@ ThemeData createLightNonDefaultTheme(
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final messageBoxTheme = getMessageBoxLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -991,6 +1003,7 @@ ThemeData createLightNonDefaultTheme(
       themeColorPaletteTheme,
       displayTheme,
       scalingScaleTheme,
+      messageBoxTheme,
     ],
   );
 }
@@ -1183,6 +1196,11 @@ ThemeData createDarkDefaultTheme(int? backgroundColor, {Color? seedColor}) {
     textTheme: defaultTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final messageBoxTheme = getMessageBoxDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: defaultTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -1225,6 +1243,7 @@ ThemeData createDarkDefaultTheme(int? backgroundColor, {Color? seedColor}) {
       themeColorPaletteTheme,
       displayTheme,
       scalingScaleTheme,
+      messageBoxTheme,
     ],
   );
 }
@@ -1418,6 +1437,11 @@ ThemeData createDarkNonDefaultTheme(
   final scalingScaleTheme = getScalingScaleDarkTheme(
     colorScheme: colorScheme,
   );
+  final messageBoxTheme = getMessageBoxDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -1461,6 +1485,7 @@ ThemeData createDarkNonDefaultTheme(
       themeColorPaletteTheme,
       displayTheme,
       scalingScaleTheme,
+      messageBoxTheme,
     ],
   );
 }

@@ -33,6 +33,28 @@ public class VDialog {
         ((DartDialog) impl).title = value;
     }
 
+    protected String swt = "";
+
+    protected long id = 0L;
+
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
+    public String getSwt() {
+        return swt;
+    }
+
+    public void setSwt(String v) {
+        this.swt = v;
+    }
+
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long v) {
+        this.id = v;
+    }
+
     @JsonConverter(target = Dialog.class)
     public static class DialogJson implements Configuration {
 
@@ -46,6 +68,22 @@ public class VDialog {
             });
             json.registerReader(DartDialog.class, (JsonReader.ReadObject<DartDialog>) reader -> {
                 return null;
+            });
+            json.registerWriter(VDialog.class, (JsonWriter.WriteObject<VDialog>) (writer, vDialog) -> {
+                if (vDialog == null) {
+                    writer.writeNull();
+                    return;
+                }
+                if (vDialog.getClass() == VDialog.class) {
+                    writer.writeNull();
+                    return;
+                }
+                @SuppressWarnings("unchecked")
+                JsonWriter.WriteObject<VDialog> w = (JsonWriter.WriteObject<VDialog>) json.tryFindWriter(vDialog.getClass());
+                if (w != null)
+                    w.write(writer, vDialog);
+                else
+                    writer.writeNull();
             });
         }
 
