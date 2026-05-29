@@ -134,6 +134,32 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         return null;
     }
 
+    void computeRuns() {
+        if (lineOffsets != null)
+            return;
+        String segText = getSegmentsText();
+        int segLen = segText.length();
+        if (segLen == 0) {
+            lineOffsets = new int[] { 0, 0 };
+            return;
+        }
+        int count = 0;
+        for (int i = 0; i < segLen; i++) {
+            if (segText.charAt(i) == '\n')
+                count++;
+        }
+        int[] offsets = new int[count + 2];
+        offsets[0] = 0;
+        int lineIdx = 1;
+        for (int i = 0; i < segLen; i++) {
+            if (segText.charAt(i) == '\n') {
+                offsets[lineIdx++] = i + 1;
+            }
+        }
+        offsets[lineIdx] = segLen;
+        lineOffsets = offsets;
+    }
+
     @Override
     void destroy() {
         freeRuns();
@@ -224,6 +250,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         if (selectionBackground != null && selectionBackground.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         try {
+            computeRuns();
             int length = translateOffset(text.length());
             if (length == 0 && flags == 0)
                 return;
@@ -319,6 +346,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
     public Rectangle getBounds(int start, int end) {
         checkLayout();
         try {
+            computeRuns();
             int length = text.length();
             if (length == 0)
                 return new Rectangle(0, 0, 0, 0);
@@ -420,6 +448,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
     public int getLevel(int offset) {
         checkLayout();
         try {
+            computeRuns();
             int length = text.length();
             if (!(0 <= offset && offset <= length))
                 SWT.error(SWT.ERROR_INVALID_RANGE);
@@ -444,6 +473,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
     public int[] getLineOffsets() {
         checkLayout();
         try {
+            computeRuns();
             int[] offsets = new int[lineOffsets.length];
             for (int i = 0; i < offsets.length; i++) {
                 offsets[i] = untranslateOffset(lineOffsets[i]);
@@ -470,6 +500,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
     public int getLineIndex(int offset) {
         checkLayout();
         try {
+            computeRuns();
             int length = text.length();
             if (!(0 <= offset && offset <= length))
                 SWT.error(SWT.ERROR_INVALID_RANGE);
@@ -498,11 +529,18 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
      * </ul>
      */
     public Rectangle getLineBounds(int lineIndex) {
-        checkLayout();
-        try {
-        } finally {
-        }
-        return null;
+        computeRuns();
+        int lineCount = getLineCount();
+        if (!(0 <= lineIndex && lineIndex < lineCount))
+            SWT.error(SWT.ERROR_INVALID_RANGE);
+        int lineHeight = 1;
+        FontMetrics metrics = getLineMetrics(lineIndex);
+        if (metrics != null)
+            lineHeight = metrics.getHeight();
+        else if (ascent != -1 && descent != -1)
+            lineHeight = ascent + descent;
+        int lineWidth = wrapWidth != -1 ? wrapWidth : Integer.MAX_VALUE / 2;
+        return new Rectangle(0, lineIndex * lineHeight, lineWidth, lineHeight);
     }
 
     /**
@@ -518,6 +556,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
     public int getLineCount() {
         checkLayout();
         try {
+            computeRuns();
             return lineOffsets.length - 1;
         } finally {
         }
@@ -539,6 +578,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
     public FontMetrics getLineMetrics(int lineIndex) {
         checkLayout();
         try {
+            computeRuns();
             int lineCount = getLineCount();
             if (!(0 <= lineIndex && lineIndex < lineCount))
                 SWT.error(SWT.ERROR_INVALID_RANGE);
@@ -571,6 +611,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
     public Point getLocation(int offset, boolean trailing) {
         checkLayout();
         try {
+            computeRuns();
             int length = text.length();
             if (!(0 <= offset && offset <= length))
                 SWT.error(SWT.ERROR_INVALID_RANGE);
@@ -619,6 +660,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
 
     int _getOffset(int offset, int movement, boolean forward) {
         checkLayout();
+        computeRuns();
         int length = text.length();
         if (!(0 <= offset && offset <= length))
             SWT.error(SWT.ERROR_INVALID_RANGE);
@@ -733,6 +775,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
     public int getOffset(int x, int y, int[] trailing) {
         checkLayout();
         try {
+            computeRuns();
             if (trailing != null && trailing.length < 1)
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
             int length = text.length();
@@ -1810,6 +1853,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
 
     double getTabWidth() {
         try {
+            computeRuns();
         } finally {
         }
         return 0;
