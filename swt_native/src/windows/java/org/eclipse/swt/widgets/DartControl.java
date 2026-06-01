@@ -4410,6 +4410,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                org.eclipse.swt.graphics.Point displayPt = toDisplay(e.x, e.y);
+                e.x = displayPt.x;
+                e.y = displayPt.y;
                 sendEvent(SWT.MenuDetect, e);
             });
         });
