@@ -154,7 +154,7 @@ public abstract class FlutterBridge {
                 try {
                     if (isDisposed(widget)) return; // widget may have been disposed while waiting for clientReady
                     boolean isHidden = (widget instanceof org.eclipse.swt.widgets.DartControl dc) && !dc.getVisible();
-                    if (!isNew(widget) || widget instanceof DartToolTip || isHidden) { // send with the parent
+                    if (!isNew(widget) || widget instanceof DartToolTip || widget instanceof DartMenu || isHidden) { // send with the parent
                         setNotNew(widget);
                         synchronized (dirty) { // undirty if it was dirtied while waiting foe clientReady
                             dirty.remove(widget);
