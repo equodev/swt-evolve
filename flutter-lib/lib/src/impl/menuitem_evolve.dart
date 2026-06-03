@@ -336,7 +336,6 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
   final MenuController _menuController = MenuController();
   // SizedBox.shrink() placeholder ensures SubmenuButton is always interactive
   List<Widget> _menuChildren = const [SizedBox.shrink()];
-  bool _itemsLoaded = false;
   bool _isHovered = false;
 
   @override
@@ -345,11 +344,44 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
     // If items are already provided (non-lazy case), use them immediately
     final existingItems = widget.subMenu.items;
     if (existingItems != null && existingItems.isNotEmpty) {
-      _itemsLoaded = true;
       _menuChildren = existingItems
           .map((item) => MenuItemSwt(value: item))
           .toList();
     }
+  }
+
+  @override
+  void didUpdateWidget(_CascadeMenuItemRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final items = widget.subMenu.items;
+    if (items != null &&
+        items.isNotEmpty &&
+        !_sameItems(items, oldWidget.subMenu.items)) {
+      _menuChildren = items.map((item) => MenuItemSwt(value: item)).toList();
+    }
+  }
+
+  // Compares the item properties that affect rendering. Keep in sync with the
+  // render-affecting fields of VMenuItem. Image is compared by presence only
+  // (not its bytes) to avoid serializing icon data on every parent rebuild.
+  bool _sameItems(List<VMenuItem>? a, List<VMenuItem>? b) {
+    if (a == null || b == null) return a == b;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      final x = a[i], y = b[i];
+      if (x.id != y.id ||
+          x.style != y.style ||
+          x.text != y.text ||
+          x.enabled != y.enabled ||
+          x.selection != y.selection ||
+          x.accelerator != y.accelerator ||
+          x.toolTipText != y.toolTipText ||
+          x.menu?.id != y.menu?.id ||
+          (x.image == null) != (y.image == null)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @override
@@ -359,14 +391,16 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
   }
 
   void _onHover(bool hovering) {
+    final wasHovered = _isHovered;
     _isHovered = hovering;
-    if (hovering && widget.isEnabled && !_itemsLoaded) {
+    if (hovering && !wasHovered && widget.isEnabled) {
       _requestItems();
     }
   }
 
   void _requestItems() {
     final channelName = "Menu/${widget.subMenu.id}";
+    EquoCommService.remove(channelName);
     EquoCommService.on<VMenu>(channelName, (VMenu updatedMenu) {
       EquoCommService.remove(channelName);
       if (!mounted) return;
@@ -374,7 +408,6 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
           .map((item) => MenuItemSwt(value: item))
           .toList();
       setState(() {
-        _itemsLoaded = true;
         _menuChildren = items.isEmpty ? const [SizedBox.shrink()] : items;
       });
       // Open the submenu with the now-populated items if still hovered
