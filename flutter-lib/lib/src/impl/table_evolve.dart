@@ -490,6 +490,31 @@ class TableImpl<T extends TableSwt, V extends VTable>
     );
     final height = calculateHeight(items.length, theme, context, rowTextStyle);
 
+    final tableRows = items
+        .asMap()
+        .entries
+        .map(
+          (entry) => buildRow(context, entry.key, entry.value, columns.length, theme),
+        )
+        .toList();
+
+    if (columns.isEmpty) {
+      return Container(
+        color: backgroundColor,
+        height: height,
+        child: items.isEmpty
+            ? Container()
+            : SingleChildScrollView(
+                controller: _verticalScrollController,
+                child: Table(
+                  columnWidths: const {0: FlexColumnWidth()},
+                  border: buildBodyBorder(showLines, theme),
+                  children: tableRows,
+                ),
+              ),
+      );
+    }
+
     return Container(
       color: backgroundColor,
       height: height,
@@ -502,19 +527,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
                 child: Table(
                   columnWidths: columnWidths,
                   border: buildBodyBorder(showLines, theme),
-                  children: items
-                      .asMap()
-                      .entries
-                      .map(
-                        (entry) => buildRow(
-                          context,
-                          entry.key,
-                          entry.value,
-                          columns.length,
-                          theme,
-                        ),
-                      )
-                      .toList(),
+                  children: tableRows,
                 ),
               ),
             ),
