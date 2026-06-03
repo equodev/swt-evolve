@@ -10,6 +10,7 @@ import '../gen/widget.dart';
 import '../gen/widgets.dart';
 import '../impl/composite_evolve.dart';
 import 'utils/widget_utils.dart';
+import 'utils/text_utils.dart';
 
 const int _shadowIn = 1 << 2;
 const int _shadowOut = 1 << 3;
@@ -32,7 +33,7 @@ class GroupImpl<T extends GroupSwt, V extends VGroup>
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<GroupThemeExtension>()!;
     final children = state.children;
-    final text = state.text ?? '';
+    final text = stripAccelerators(state.text);
 
     return MouseRegion(
       onEnter: (_) => widget.sendMouseTrackMouseEnter(state, null),
