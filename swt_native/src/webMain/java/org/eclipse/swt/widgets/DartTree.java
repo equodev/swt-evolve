@@ -955,7 +955,7 @@ public class DartTree extends DartComposite implements ITree {
     }
 
     private Color getHeaderBackgroundColor() {
-        return this._headerBackground;
+        return _headerBackground != null ? _headerBackground : defaultBackground();
     }
 
     /**
@@ -975,7 +975,7 @@ public class DartTree extends DartComposite implements ITree {
     }
 
     Color getHeaderForegroundColor() {
-        return this._headerForeground;
+        return _headerForeground != null ? _headerForeground : defaultForeground();
     }
 
     /**

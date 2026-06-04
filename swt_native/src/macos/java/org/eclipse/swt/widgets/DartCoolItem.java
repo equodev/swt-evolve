@@ -517,7 +517,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public void setMinimumSize(int width, int height) {
         dirty();
-        Point newValue = new Point(_minimumSize.x, _minimumSize.y);
+        Point newValue = new Point(width, height);
         checkWidget();
         Point point = ((DartCoolBar) parent.getImpl()).fixPoint(width, height);
         minimumWidth = point.x;
@@ -561,7 +561,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public void setPreferredSize(int width, int height) {
         dirty();
-        Point newValue = new Point(_preferredSize.x, _preferredSize.y);
+        Point newValue = new Point(width, height);
         checkWidget();
         ideal = true;
         Point point = ((DartCoolBar) parent.getImpl()).fixPoint(width, height);

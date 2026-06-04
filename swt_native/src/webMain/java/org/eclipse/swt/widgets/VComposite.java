@@ -5,7 +5,6 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
-import java.util.ArrayList;
 
 @CompiledJson()
 public class VComposite extends VScrollable {
@@ -26,13 +25,7 @@ public class VComposite extends VScrollable {
     }
 
     public Control[] getChildren() {
-        Control[] values = ((DartComposite) impl)._getChildren();
-        if (values == null)
-            return null;
-        ArrayList<Control> result = new ArrayList<>(values.length);
-        for (Control v : values) if (v != null && v.getImpl() instanceof DartControl)
-            result.add(v);
-        return result.toArray(Control[]::new);
+        return ((DartComposite) impl)._getChildren();
     }
 
     public void setChildren(Control[] value) {
@@ -48,13 +41,7 @@ public class VComposite extends VScrollable {
     }
 
     public Control[] getTabList() {
-        Control[] values = ((DartComposite) impl).tabList;
-        if (values == null)
-            return null;
-        ArrayList<Control> result = new ArrayList<>(values.length);
-        for (Control v : values) if (v != null && v.getImpl() instanceof DartControl)
-            result.add(v);
-        return result.toArray(Control[]::new);
+        return ((DartComposite) impl).tabList;
     }
 
     public void setTabList(Control[] value) {

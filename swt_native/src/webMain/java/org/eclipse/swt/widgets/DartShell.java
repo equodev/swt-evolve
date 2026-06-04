@@ -1342,7 +1342,7 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setMaximumSize(int width, int height) {
         dirty();
-        Point newValue = new Point(maximumSize.x, maximumSize.y);
+        Point newValue = new Point(width, height);
         checkWidget();
         this.maximumSize = newValue;
     }

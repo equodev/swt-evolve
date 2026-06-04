@@ -30,8 +30,6 @@ external JSNumber _requestAnimationFrame(JSFunction callback);
 @JS('document.documentElement')
 external JSObject? get _documentElement;
 
-@JS('ResizeObserver')
-external JSObject _createResizeObserver(JSFunction callback);
 
 int? getPort(List<String> _) {
   print("Using web port: $_equoCommPort");
@@ -72,28 +70,47 @@ Size? getViewportSize() {
 }
 
 @JS('ResizeObserver')
-extension type _ResizeObserver(JSObject _) implements JSObject {
+extension type _ResizeObserver._(JSObject _) implements JSObject {
+  external _ResizeObserver(JSFunction callback);
   external void observe(JSObject target);
 }
 
 void observeViewportChanges(void Function() onChange) {
+  // CP1: window resize, ResizeObserver, and the initial post-mount tick used
+  // to each call onChange() independently. On a busy page (e.g. sash drag)
+  // ResizeObserver can fire every frame while window resize fires too,
+  // amplifying every layout change into 2-3 onChange() invocations. Coalesce
+  // them through a per-frame guard: each source sets `pending` and schedules
+  // a single requestAnimationFrame. The RAF callback flips pending back to
+  // false and invokes onChange() exactly once per frame.
+  bool pending = false;
+
+  void schedule() {
+    if (pending) return;
+    pending = true;
+    _requestAnimationFrame((JSNumber _) {
+      pending = false;
+      onChange();
+    }.toJS);
+  }
+
   final listener = (() {
-    onChange();
+    schedule();
   }).toJS;
 
   _addWindowEventListener('resize'.toJS, listener);
 
   final root = _documentElement;
   if (root != null) {
-    final observer = _ResizeObserver(_createResizeObserver((JSArray _, JSObject __) {
-      onChange();
-    }.toJS));
+    final observer = _ResizeObserver(((JSArray _, JSObject __) {
+      schedule();
+    }).toJS);
     observer.observe(root);
   }
 
-  _requestAnimationFrame((JSNumber _) {
-    onChange();
-  }.toJS);
+  // Initial post-mount tick (preserves the prior behavior of one onChange()
+  // at observer registration time).
+  schedule();
 }
 
 void close() {

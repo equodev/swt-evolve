@@ -881,7 +881,7 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     private Color getHeaderBackgroundColor() {
-        return this._headerBackground;
+        return _headerBackground != null ? _headerBackground : defaultBackground();
     }
 
     /**
@@ -901,7 +901,7 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     Color getHeaderForegroundColor() {
-        return this._headerForeground;
+        return _headerForeground != null ? _headerForeground : defaultForeground();
     }
 
     /**

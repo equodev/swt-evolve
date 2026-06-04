@@ -170,6 +170,9 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
         }
         items[index] = item;
         itemCount++;
+        if (selection == null || selection.length == 0) {
+            setSelection(index, false, false);
+        }
         ((DartWidget) item.getImpl()).createJNIRef();
         ((DartTabItem) item.getImpl()).register();
     }
@@ -580,6 +583,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
                 Control control = ((DartTabItem) item.getImpl()).control;
                 if (control != null && !control.isDisposed()) {
                     control.setVisible(true);
+                    control.setBounds(getClientArea());
                 }
                 if (notify) {
                     Event event = new Event();
@@ -626,6 +630,21 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
 
     public TabItem[] _selection() {
         return selection;
+    }
+
+    @Override
+    void resized() {
+        super.resized();
+        int index = getSelectionIndex();
+        if (index >= 0 && index < itemCount) {
+            TabItem item = items[index];
+            if (item != null) {
+                Control control = ((DartTabItem) item.getImpl()).control;
+                if (control != null && !control.isDisposed()) {
+                    control.setBounds(getClientArea());
+                }
+            }
+        }
     }
 
     protected void _hookEvents() {

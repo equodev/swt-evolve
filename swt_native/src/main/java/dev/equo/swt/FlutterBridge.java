@@ -25,6 +25,11 @@ public abstract class FlutterBridge {
     private static FlutterBridge bridge;
     private static boolean keepClient = false;
 
+    // True once the first VDisplay tree has been shipped to Flutter. Before this point,
+    // Flutter has no widgets registered, so RequestResponse.call() will always time out.
+    // Gate sync round-trips on this to avoid 100ms-per-timeout stalls during widget construction.
+    public static volatile boolean displayBootstrapped = false;
+
     static {
         client = new FlutterClient();
         client.createComm();
@@ -296,11 +301,11 @@ public abstract class FlutterBridge {
             // has registered its listeners — fixing the macOS race condition where ops
             // arrive before _registerOps() runs.
             try {
-                String stateEventName = null;
+                String stateEvent = null;
                 String stateJson = null;
                 synchronized (dirty) {
                     if (dirty.remove(resource)) {
-                        stateEventName = event(resource);
+                        stateEvent = event(resource);
                         ByteArrayOutputStream stateOut = new ByteArrayOutputStream();
                         serializer.to(getApi(resource), stateOut);
                         stateJson = stateOut.toString(StandardCharsets.UTF_8);
@@ -310,7 +315,7 @@ public abstract class FlutterBridge {
                 serializer.to(args, opOut);
                 String opJson = opOut.toString(StandardCharsets.UTF_8);
 
-                final String finalStateEvent = stateEventName;
+                final String finalStateEvent = stateEvent;
                 final String finalStateJson = stateJson;
                 final String opEvent = eventName(resource, event);
                 final String finalOpJson = opJson;
@@ -371,6 +376,7 @@ public abstract class FlutterBridge {
                 if (readyPayload != null)
                     readyPayload.complete(p);
                 clientReady.complete(true);
+                displayBootstrapped = true;
                 // Send properties AFTER Flutter is ready to receive them
                 sendSwtEvolveProperties();
             } else { // hot reload
