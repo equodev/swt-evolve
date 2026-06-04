@@ -2,6 +2,7 @@ package org.eclipse.swt.dnd;
 
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VTransferData {
@@ -31,7 +32,7 @@ public class VTransferData {
             });
         }
 
-        public static TransferData read(JsonReader<?> reader) {
+        public static TransferData read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

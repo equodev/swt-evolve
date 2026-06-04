@@ -23,7 +23,6 @@ import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
@@ -78,14 +77,11 @@ public class SerializeTestBase {
     }
 
     protected <T> String serialize(Object p) {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
-            serializer.to(p, out);
+            return new String(serializer.to(p), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-        return out.toString(StandardCharsets.UTF_8);
     }
 
     protected void setAll(Widget w) {

@@ -7,6 +7,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VAccessible {
@@ -55,7 +56,7 @@ public class VAccessible {
             });
         }
 
-        public static Accessible read(JsonReader<?> reader) {
+        public static Accessible read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

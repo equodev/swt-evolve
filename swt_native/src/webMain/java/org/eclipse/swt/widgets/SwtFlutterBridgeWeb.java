@@ -2,6 +2,7 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.WebFlutterServer;
+import dev.equo.swt.comm.CommService;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 
@@ -9,10 +10,20 @@ public class SwtFlutterBridgeWeb extends FlutterBridge {
     private DartDisplay forDisplay;
     private DartControl focused = null;
     private WebFlutterServer webServer;
+    /** One comm (and one web server) per Display, unlike desktop's shared static comm. */
+    private CommService comm;
 
     SwtFlutterBridgeWeb(DartDisplay display) {
         this.forDisplay = display;
         System.setProperty("dev.equo.swt.desktop", "false");
+    }
+
+    @Override
+    protected CommService comm() {
+        if (comm == null) {
+            comm = newComm();
+        }
+        return comm;
     }
 
     /**
@@ -54,10 +65,24 @@ public class SwtFlutterBridgeWeb extends FlutterBridge {
         return null;
     }
 
+    /**
+     * Register a raw string-channel handler on this Display's comm. Used by widget-less surfaces
+     * (Dialog/MessageBox) that have no bridge of their own but belong to a Display.
+     */
+    public void onChannel(String channel, java.util.function.Consumer<String> cb) {
+        comm().on(channel, String.class, cb);
+    }
+
+    /** Remove a handler registered via {@link #onChannel}. */
+    public void offChannel(String channel) {
+        comm().remove(channel);
+    }
+
     private void startWebServer(DartDisplay display) {
         long displayId = display.getApi().hashCode();
+        CommService comm = comm();
 
-        client.getComm().on("Display/" + displayId + "/ClientReady", Point.class, p -> {
+        comm.on("Display/" + displayId + "/ClientReady", Point.class, p -> {
             if (p != null) {
                 Point size = p;
                 Display d = display.getApi();
@@ -79,7 +104,7 @@ public class SwtFlutterBridgeWeb extends FlutterBridge {
             sendDisplayUpdate(display);
         });
 
-        int port = client.getPort();
+        int port = comm.getPort();
         webServer = new WebFlutterServer.Builder()
                 .commPort(port)
                 .widgetId(displayId)
@@ -166,6 +191,10 @@ public class SwtFlutterBridgeWeb extends FlutterBridge {
         if (webServer != null) {
             webServer.stop();
             webServer = null;
+        }
+        if (comm != null) {
+            comm.stop();
+            comm = null;
         }
     }
 

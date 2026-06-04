@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../gen/widget.dart';
 
 typedef CommCallback<V> = void Function(V payload);
@@ -14,6 +16,13 @@ class EquoCommService {
   // We want payload to be an Object or dynamic so we can pass a jsinterop later
   static Future sendPayload(String userEventActionId, Object payload) =>
       throw UnsupportedError("EquoComm.sendPayload");
+  // Bench-only raw-bytes API. Bypasses JSON encode/decode. Production code
+  // should not depend on this; it exists to measure transport floor cost.
+  static Future sendBytes(String userEventActionId, Uint8List bytes) =>
+      throw UnsupportedError("EquoComm.sendBytes");
+  static void onBytes(
+          String userEventActionId, void Function(Uint8List) callback) =>
+      throw UnsupportedError("EquoComm.onBytes");
   static Future setPort(int port) => throw UnsupportedError("EquoComm.setPort");
   static void remove(String eventName) =>
       throw UnsupportedError("EquoComm.remove");

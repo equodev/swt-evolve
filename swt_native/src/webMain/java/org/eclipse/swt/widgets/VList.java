@@ -5,6 +5,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 import java.util.ArrayList;
 
 @CompiledJson()
@@ -60,7 +61,7 @@ public class VList extends VScrollable {
             });
         }
 
-        public static List read(JsonReader<?> reader) {
+        public static List read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

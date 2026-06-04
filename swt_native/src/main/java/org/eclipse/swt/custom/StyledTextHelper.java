@@ -15,7 +15,6 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.ControlHelper;
 import org.eclipse.swt.widgets.Display;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -41,19 +40,16 @@ public class StyledTextHelper {
      */
     public static void registerStateUpdateHandler(DartStyledText styledText) {
         FlutterBridge.onPayload(styledText, "StateUpdate", payload -> {
-            styledText.getDisplay().asyncExec(() -> {
-                if (payload instanceof String) {
-                    processStateUpdate(styledText, (String) payload);
-                }
-            });
+            if (payload == null) return;
+            styledText.getDisplay().asyncExec(() ->
+                    processStateUpdate(styledText, new String(payload, StandardCharsets.UTF_8)));
         });
     }
 
     private static void processStateUpdate(DartStyledText styledText, String payload) {
         try {
-            ByteArrayInputStream in = new ByteArrayInputStream(payload.getBytes(StandardCharsets.UTF_8));
             @SuppressWarnings("unchecked")
-            Map<String, Object> stateUpdate = serializer.from(Map.class, in);
+            Map<String, Object> stateUpdate = serializer.from(Map.class, payload.getBytes(StandardCharsets.UTF_8));
 
             if (stateUpdate == null) return;
 

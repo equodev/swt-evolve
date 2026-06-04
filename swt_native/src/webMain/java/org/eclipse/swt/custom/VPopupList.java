@@ -6,6 +6,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 import java.util.ArrayList;
 
 @CompiledJson()
@@ -77,7 +78,7 @@ public class VPopupList {
             });
         }
 
-        public static PopupList read(JsonReader<?> reader) {
+        public static PopupList read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

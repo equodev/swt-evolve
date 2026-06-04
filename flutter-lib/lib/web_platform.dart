@@ -30,7 +30,6 @@ external JSNumber _requestAnimationFrame(JSFunction callback);
 @JS('document.documentElement')
 external JSObject? get _documentElement;
 
-
 int? getPort(List<String> _) {
   print("Using web port: $_equoCommPort");
   return _equoCommPort?.toDartInt;
@@ -71,7 +70,7 @@ Size? getViewportSize() {
 
 @JS('ResizeObserver')
 extension type _ResizeObserver._(JSObject _) implements JSObject {
-  external _ResizeObserver(JSFunction callback);
+  external factory _ResizeObserver(JSFunction callback);
   external void observe(JSObject target);
 }
 
@@ -102,9 +101,9 @@ void observeViewportChanges(void Function() onChange) {
 
   final root = _documentElement;
   if (root != null) {
-    final observer = _ResizeObserver(((JSArray _, JSObject __) {
-      schedule();
-    }).toJS);
+    final observer = _ResizeObserver((JSArray _, JSObject __) {
+      onChange();
+    }.toJS);
     observer.observe(root);
   }
 

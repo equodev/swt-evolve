@@ -2,6 +2,7 @@ package org.eclipse.swt.dnd;
 
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VHTMLTransfer extends VByteArrayTransfer {
@@ -29,7 +30,7 @@ public class VHTMLTransfer extends VByteArrayTransfer {
             });
         }
 
-        public static HTMLTransfer read(JsonReader<?> reader) {
+        public static HTMLTransfer read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

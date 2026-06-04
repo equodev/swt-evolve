@@ -4,6 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VProgressBar extends VControl {
@@ -52,7 +53,7 @@ public class VProgressBar extends VControl {
             });
         }
 
-        public static ProgressBar read(JsonReader<?> reader) {
+        public static ProgressBar read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

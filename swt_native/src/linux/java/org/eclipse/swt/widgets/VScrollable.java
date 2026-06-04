@@ -4,6 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 public class VScrollable extends VControl {
 
@@ -57,7 +58,7 @@ public class VScrollable extends VControl {
             });
         }
 
-        public static Scrollable read(JsonReader<?> reader) {
+        public static Scrollable read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

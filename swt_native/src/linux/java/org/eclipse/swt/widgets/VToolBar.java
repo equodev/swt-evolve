@@ -5,6 +5,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VToolBar extends VComposite {
@@ -43,7 +44,7 @@ public class VToolBar extends VComposite {
             });
         }
 
-        public static ToolBar read(JsonReader<?> reader) {
+        public static ToolBar read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

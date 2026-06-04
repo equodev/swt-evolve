@@ -14,6 +14,7 @@ public class CharConverter {
     }
 
     public static char read(JsonReader reader) throws IOException {
+        if (reader.wasNull()) return '\0';
         if (reader.last() == '"') {
             String str = reader.readString();
             return str.isEmpty() ? '\0' : str.charAt(0);

@@ -3,6 +3,7 @@ package org.eclipse.swt.graphics;
 import org.eclipse.swt.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VCursor extends VResource {
@@ -50,7 +51,7 @@ public class VCursor extends VResource {
             });
         }
 
-        public static Cursor read(JsonReader<?> reader) {
+        public static Cursor read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

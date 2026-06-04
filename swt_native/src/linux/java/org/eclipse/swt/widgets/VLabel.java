@@ -5,6 +5,7 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VLabel extends VControl {
@@ -58,7 +59,7 @@ public class VLabel extends VControl {
             });
         }
 
-        public static Label read(JsonReader<?> reader) {
+        public static Label read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

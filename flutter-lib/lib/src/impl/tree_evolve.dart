@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:swtflutter/src/styles.dart';
@@ -52,9 +51,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     EquoCommService.onRaw(eventName, (payload) {
       if (payload != null) {
         try {
-          final Map<String, dynamic> point = payload is String
-              ? (jsonDecode(payload) as Map<String, dynamic>)
-              : Map<String, dynamic>.from(payload as Map);
+          final Map<String, dynamic> point = Map<String, dynamic>.from(payload as Map);
           final x = (point['x'] as num?)?.toDouble() ?? 0.0;
           final y = (point['y'] as num?)?.toDouble() ?? 0.0;
 

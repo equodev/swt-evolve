@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/painting.dart';
 import 'package:swtflutter/src/gen/point.dart';
 
@@ -20,7 +18,7 @@ void measureRequest(String bridge, int id) {
   print("Listen on $bridge/$id/fontSizeRequest");
   EquoCommService.onRaw("$bridge/$id/fontSizeRequest", (payload) {
     print("on $bridge/$id/fontSizeRequest $payload");
-    var textRequest = jsonDecode(payload as String) as Map<String, dynamic>;
+    var textRequest = payload as Map<String, dynamic>;
     var text = textRequest["text"] as String;
     var font = textRequest["font"] as String;
     var height = textRequest["size"] as int;

@@ -1,276 +1,76 @@
-import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
-import '../gen/widgets.dart';
 import '../gen/widget.dart';
-import '../impl/widget_config.dart';
 import 'comm_api.dart';
+import 'comm_frame.dart';
 
+/// Desktop comm: a `dart:io` WebSocket speaking the binary frame protocol. All
+/// protocol logic lives in [EquoCommBase]; this class only owns the socket.
+class _DesktopComm extends EquoCommBase {
+  WebSocket? _socket;
+
+  _DesktopComm({required String host, required int port}) {
+    WebSocket.connect("ws://$host:$port").then((ws) {
+      _socket = ws;
+      markOpen();
+      ws.listen(
+        (event) {
+          if (event is List<int>) {
+            receiveBinary(event is Uint8List ? event : Uint8List.fromList(event));
+          }
+        },
+        onDone: () => print("[comm_ws] WS onDone"),
+        onError: (err, st) => print("[comm_ws] WS onError $err $st"),
+      );
+    });
+  }
+
+  @override
+  void rawSend(Uint8List frame) => _socket?.add(frame);
+}
+
+/// Static facade over the desktop transport. Construction is the only part that
+/// differs from the web facade (which builds a [_DesktopComm]'s browser counterpart);
+/// everything else delegates to [EquoCommBase].
 class EquoCommService {
   static int port = 0;
-  static final impl = _getPort() != 0 ? _EquoComm(host: "localhost", port: _getPort()) : _NoImpl();
+  static EquoCommBase? _impl;
 
-  static void onRaw(String userEventActionId, CommCallback<dynamic> onSuccess) {
-    // print("comm ws onraw: $userEventActionId");
-    void callback(dynamic payload) {
-      // print("comm ws on callback: ${payload ?? 'null'}");
-      onSuccess(payload);
-      // print("comm ws on callback after onSuccess");
-    }
+  static EquoCommBase get _comm => _impl ??= _create();
 
-    impl.on(userEventActionId, callback);
-    // print("comm chromium on after: $userEventActionId");
+  static EquoCommBase _create() {
+    final p = _getPort();
+    return p != 0 ? _DesktopComm(host: "localhost", port: p) : NoComm();
   }
+
+  static void onRaw(String userEventActionId, CommCallback<dynamic> onSuccess) =>
+      _comm.on(userEventActionId, onSuccess);
 
   static void on<V extends VWidget>(
-      String userEventActionId, CommCallback<V> onSuccess) {
-    // print("comm ws on: $userEventActionId");
-    void callback(dynamic payload) {
-      // print("comm ws on callback: ${payload ?? 'null'}");
-      var map = jsonDecode(payload);
-      // JSObject o = impl.JSON.parse(payload);
-      // print("comm chromium on jsCallback after parse: $map");
-      var widgetValue = mapWidgetValue(map);
-      // print("comm ws on callback after map: $widgetValue");
-      onSuccess(widgetValue as V);
-      // print("comm ws on callback after onSucess");
-    }
+          String userEventActionId, CommCallback<V> onSuccess) =>
+      _comm.onWidget<V>(userEventActionId, onSuccess);
 
-    impl.on(userEventActionId, callback);
-    // print("comm chromium on after: $userEventActionId");
+  static Future send(String userEventActionId) => _comm.send(userEventActionId);
+
+  static Future sendPayload(String userEventActionId, Object payload) =>
+      _comm.send(userEventActionId, payload);
+
+  static Future sendBytes(String userEventActionId, Uint8List bytes) =>
+      _comm.sendBytes(userEventActionId, bytes);
+
+  static void onBytes(
+          String userEventActionId, void Function(Uint8List) callback) =>
+      _comm.onBytes(userEventActionId, callback);
+
+  static void remove(eventName) => _comm.remove(eventName);
+
+  static Future setPort(int p) async {
+    port = p;
+    if (p != 0) _comm; // trigger connection with the configured port
   }
 
-  static Future send(String userEventActionId) {
-    return impl.send(userEventActionId);
-  }
-
-  static Future sendPayload(String userEventActionId, Object payload) {
-    // print("comm ws sendPayload");
-    final fut = impl.send(userEventActionId, payload);
-    // print("comm ws after sendPayload");
-    return fut;
-  }
-
-  static void remove(eventName) {
-    impl.remove(eventName);
-  }
-
-  static Future setPort(int port) async {
-    EquoCommService.port = port;
-    if (port != 0) {
-      await (EquoCommService.impl as _EquoComm).ws;
-    }
-  }
-
-  static int _getPort() {
-    final p = port != 0
-        ? port
-        : const int.fromEnvironment("equo.comm_port", defaultValue: 0);
-    return p;
-  }
-}
-
-typedef OnSuccessCallback<T> = void Function(T response);
-typedef OnErrorCallback = void Function(SDKCommError error);
-typedef Payload = dynamic;
-
-class SendArgs {
-  bool sequential;
-  SendArgs({required this.sequential});
-}
-
-class CallbackArgs {
-  bool once;
-  CallbackArgs({required this.once});
-}
-
-class SDKCommError {
-  int? code;
-  String message;
-  SDKCommError({this.code, required this.message});
-}
-
-class UserEvent {
-  late String actionId;
-  Payload? payload;
-  SDKCommError? error;
-  UserEvent({required this.actionId, this.payload, this.error});
-}
-
-class SDKMessage extends UserEvent {
-  String? callbackId;
-  SDKMessage(
-      {this.callbackId, required super.actionId, super.payload, super.error});
-}
-
-class UserEventCallback {
-  String? id;
-  OnSuccessCallback<dynamic> onSuccess;
-  OnErrorCallback? onError;
-  CallbackArgs? args;
-  UserEventCallback(
-      {this.id, required this.onSuccess, this.onError, this.args});
-}
-
-abstract class _EquoCommI {
-  void on(String userEventActionId, void Function(dynamic payload) callback) {}
-  Future send<T>(String userEventActionId, [Payload? payload, SendArgs? args]) async {}
-  void remove(userEventActionId) {}
-}
-
-class _NoImpl implements _EquoCommI {
-  @override
-  void on(String userEventActionId, void Function(dynamic payload) callback) {
-  }
-
-  @override
-  Future send<T>(String userEventActionId, [Payload? payload, SendArgs? args]) {
-    return Future.value();
-  }
-
-  @override
-  void remove(userEventActionId) {
-  }
-}
-
-class _EquoComm implements _EquoCommI {
-  Map<String, UserEventCallback> userEventCallbacks = {};
-  Future<WebSocket> ws;
-
-  _EquoComm({String? host, int? port})
-      : ws = WebSocket.connect("ws://$host:$port") {
-    ws.then((websocket) {
-      websocket.listen((event) {
-        //print("WS onData $event");
-        _receiveMessage(event);
-      }, onDone: () {
-        print("WS onDone");
-      }, onError: (err, st) {
-        print("WS onError $err $st");
-      });
-    });
-  }
-
-  void _receiveMessage(dynamic event) {
-    final message = _processMessage(event);
-    if (message != null) {
-      final actionId = message.actionId;
-      if (userEventCallbacks.containsKey(actionId)) {
-        final callback = userEventCallbacks[actionId];
-        if (callback!.args?.once ?? false) {
-          userEventCallbacks.remove(actionId);
-        }
-        if (message.error == null) {
-          if (message.callbackId != null) {
-            Future(() async {
-              callback.onSuccess(message.payload!);
-              _sendToJava(
-                  UserEvent(actionId: message.callbackId!, payload: null));
-            }).catchError((error) {
-              var userError = SDKCommError(code: -1, message: '');
-              if (error is String) {
-                userError.message = error;
-                _sendToJava(UserEvent(
-                    actionId: message.callbackId!,
-                    payload: userError,
-                    error: SDKCommError(code: 1, message: '')));
-              } else if (error != null) {
-                if (error is SDKCommError && error.code != null) {
-                  userError.code = error.code;
-                }
-                userError.message = jsonEncode(error);
-                _sendToJava(UserEvent(
-                    actionId: message.callbackId!,
-                    payload: userError,
-                    error: SDKCommError(code: 1, message: '')));
-              }
-            });
-          } else {
-            Future(() async {
-              callback.onSuccess(message.payload);
-            }).catchError((error) {
-              throw error; // Log it
-            });
-          }
-        } else if (message.error != null && callback.onError != null) {
-          Future(() async {
-            callback.onError!(message.error!);
-          }).catchError((error) {
-            throw error; // Log it
-          });
-        }
-      } else {
-        if (message.callbackId != null) {
-          final ERROR_CALLBACK_DOES_NOT_EXIST =
-              'An event handler does not exist for the user event \'${message.actionId}\'';
-          final error =
-              SDKCommError(code: 255, message: ERROR_CALLBACK_DOES_NOT_EXIST);
-          /*sendToJava(UserEvent(
-              actionId: message.callbackId!,
-              payload: error,
-              error: SDKCommError(code: 1, message: '')));*/
-        }
-      }
-    }
-  }
-
-  SDKMessage? _processMessage(dynamic event) {
-    if (event == null) {
-      return null;
-    }
-    try {
-      final json = jsonDecode(event);
-      if (json['error'] != null) {
-        // print(json['error']);
-        return null;
-      }
-      return SDKMessage(
-        actionId: json['actionId'],
-        payload: json['payload'],
-        error: json['error'] != null
-            ? SDKCommError(
-                code: json['error']['code'], message: json['error']['message'])
-            : null,
-        callbackId: json['callbackId'],
-      );
-    } catch (e) {
-      // not json, ignore
-      return null;
-    }
-  }
-
-  Future _sendToJava(UserEvent userEvent,
-      [UserEventCallback? callback, SendArgs? args]) {
-    final event = jsonEncode({
-      'actionId': userEvent.actionId,
-      'payload': userEvent.payload,
-      'error': userEvent.error,
-      'callbackId': callback?.id,
-    });
-    if (!userEvent.actionId.contains('MouseMove') || (getConfigFlags().print_move ?? false)) {
-      print("ws about to send: $event");
-    }
-    return ws.then((ws) {
-      // print("ws sent");
-      ws.add(event);
-    });
-  }
-
-  Future send<T>(String actionId, [Payload? payload, SendArgs? args]) {
-    final userEvent = UserEvent(actionId: actionId, payload: payload);
-    return _sendToJava(userEvent, null, args);
-  }
-
-  void on(
-      String userEventActionId, OnSuccessCallback<dynamic> onSuccessCallback,
-      [OnErrorCallback? onErrorCallback, CallbackArgs? args]) {
-    final callback = UserEventCallback(
-        onSuccess: onSuccessCallback, onError: onErrorCallback, args: args);
-    userEventCallbacks[userEventActionId] = callback;
-  }
-
-  @override
-  void remove(userEventActionId) {
-    userEventCallbacks.remove(userEventActionId);
-  }
+  static int _getPort() => port != 0
+      ? port
+      : const int.fromEnvironment("equo.comm_port", defaultValue: 0);
 }

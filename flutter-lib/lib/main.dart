@@ -29,6 +29,7 @@ import 'src/impl/display_evolve.dart';
 import 'fontSize.dart' as font_size;
 import 'imageSize.dart' as image_size;
 import 'widgetSize.dart' as widget_size;
+import 'bench.dart' as bench;
 import 'src/gen/gc.dart';
 import 'src/impl/gcdrawer_evolve.dart';
 
@@ -72,6 +73,11 @@ void main(List<String> args) async {
     // Java channels use "GC/{id}/..." prefix, not "GCImageDrawer/{id}/..."
     final state = VGC()..swt = "GC"..id = widgetId!;
     GCDrawer.standalone(state);
+    sendClientReady(widgetName, widgetId);
+    return;
+  }
+  else if (widgetName == "BenchBridge") {
+    bench.measureRequest(widgetName, widgetId);
     sendClientReady(widgetName, widgetId);
     return;
   }
@@ -172,7 +178,7 @@ Future<void> initSwtEvolveProperties() async {
     _swtEvolvePropertiesListenerRegistered = true;
     EquoCommService.onRaw("swt.evolve.properties", (dynamic data) {
       try {
-        final configFlags = ConfigFlags.fromJson(jsonDecode(data));
+        final configFlags = ConfigFlags.fromJson(data as Map<String, dynamic>);
         setConfigFlags(configFlags);
         _configFlagsVersion.value++;
       } catch (e) {

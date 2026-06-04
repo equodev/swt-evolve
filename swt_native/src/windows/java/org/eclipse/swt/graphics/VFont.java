@@ -3,6 +3,7 @@ package org.eclipse.swt.graphics;
 import org.eclipse.swt.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 import java.util.ArrayList;
 
 @CompiledJson()
@@ -45,7 +46,7 @@ public class VFont extends VResource {
             });
         }
 
-        public static Font read(JsonReader<?> reader) {
+        public static Font read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

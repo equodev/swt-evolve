@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../gen/display.dart';
 import '../gen/shell.dart';
@@ -29,10 +28,8 @@ class _DisplaySwtState extends State<DisplaySwt> {
   }
 
   void _onUpdate(dynamic raw) {
-    print('DisplaySwt update');
     try {
-      final map = jsonDecode(raw as String) as Map<String, dynamic>;
-      final updated = VDisplay.fromJson(map);
+      final updated = VDisplay.fromJson(raw as Map<String, dynamic>);
       if (mounted) setState(() => _display = updated);
     } catch (e) {
       print('DisplaySwt update error: $e');

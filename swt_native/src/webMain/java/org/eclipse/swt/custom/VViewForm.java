@@ -5,6 +5,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VViewForm extends VComposite {
@@ -89,7 +90,7 @@ public class VViewForm extends VComposite {
             });
         }
 
-        public static ViewForm read(JsonReader<?> reader) {
+        public static ViewForm read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

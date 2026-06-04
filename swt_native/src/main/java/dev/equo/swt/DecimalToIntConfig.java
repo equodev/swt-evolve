@@ -7,7 +7,7 @@ import java.io.IOException;
 @JsonConverter(target = int.class)
 public class DecimalToIntConfig {
     public static int read(JsonReader<?> reader) throws IOException {
-        if (reader.wasNull()) return 1;
+        if (reader.wasNull()) return 0;
         return (int) com.dslplatform.json.NumberConverter.deserializeDouble(reader); // ToDo: remove me with gson
     }
 

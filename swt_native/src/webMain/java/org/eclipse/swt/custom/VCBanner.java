@@ -5,6 +5,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VCBanner extends VComposite {
@@ -86,7 +87,7 @@ public class VCBanner extends VComposite {
             });
         }
 
-        public static CBanner read(JsonReader<?> reader) {
+        public static CBanner read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

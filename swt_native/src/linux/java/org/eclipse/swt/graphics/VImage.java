@@ -65,7 +65,7 @@ public class VImage extends VResource {
             });
         }
 
-        public static Image read(JsonReader<?> reader) {
+        public static Image read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

@@ -302,24 +302,31 @@ public abstract class DartDialog implements IDialog {
         val.setId(id);
         int[] response = { fallback };
         boolean[] done = { false };
-        dev.equo.swt.FlutterBridge.on(type + "/" + id + "/close", p -> {
-            if (p != null && !p.isEmpty()) {
-                try {
-                    response[0] = Integer.parseInt(p.trim());
-                } catch (NumberFormatException ignored) {
+        Display display = parent != null ? parent.getDisplay() : DartDisplay.getCurrent();
+        // Dialogs aren't DartWidgets and have no bridge of their own — register the close
+        // handler on the owning Display's comm via its bridge.
+        SwtFlutterBridgeWeb bridge = display != null ? ((DartDisplay) display.getImpl()).displayBridge : null;
+        String closeChannel = type + "/" + id + "/close";
+        if (bridge != null) {
+            bridge.onChannel(closeChannel, p -> {
+                if (p != null && !p.isEmpty()) {
+                    try {
+                        response[0] = Integer.parseInt(p.trim());
+                    } catch (NumberFormatException ignored) {
+                    }
                 }
-            }
-            done[0] = true;
-        });
+                done[0] = true;
+            });
+        }
         DartShell shell = (parent != null && parent.getImpl() instanceof DartShell s) ? s : null;
         if (shell != null)
             shell.addDialog(this);
-        Display display = parent != null ? parent.getDisplay() : DartDisplay.getCurrent();
         while (!done[0]) {
             if (!display.readAndDispatch())
                 display.sleep();
         }
-        dev.equo.swt.FlutterBridge.off(type + "/" + id + "/close");
+        if (bridge != null)
+            bridge.offChannel(closeChannel);
         if (shell != null)
             shell.removeDialog(this);
         return response[0];

@@ -3,6 +3,7 @@ package org.eclipse.swt.graphics;
 import org.eclipse.swt.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class VDevice {
@@ -71,7 +72,7 @@ public class VDevice {
             });
         }
 
-        public static Device read(JsonReader<?> reader) {
+        public static Device read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

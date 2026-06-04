@@ -27,7 +27,7 @@ public class DisposeSnippet {
         }
 
         private void initFlutterView(Shell parent) {
-            context = initializeFlutterWindow(client.getPort(), getHandle(parent), 0, "", "", 0, 0);
+            context = initializeFlutterWindow(comm().getPort(), getHandle(parent), 0, "", "", 0, 0);
         }
 
         @Override

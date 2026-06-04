@@ -9,6 +9,7 @@ import java.util.function.*;
 import org.eclipse.swt.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 public class VResource {
 
@@ -37,7 +38,7 @@ public class VResource {
             });
         }
 
-        public static Resource read(JsonReader<?> reader) {
+        public static Resource read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

@@ -5,6 +5,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 import java.util.ArrayList;
 
 @CompiledJson()
@@ -63,7 +64,7 @@ public class VTracker extends VWidget {
             });
         }
 
-        public static Tracker read(JsonReader<?> reader) {
+        public static Tracker read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

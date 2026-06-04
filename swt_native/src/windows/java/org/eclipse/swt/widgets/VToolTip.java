@@ -5,6 +5,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VToolTip extends VWidget {
@@ -70,7 +71,7 @@ public class VToolTip extends VWidget {
             });
         }
 
-        public static ToolTip read(JsonReader<?> reader) {
+        public static ToolTip read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

@@ -6,6 +6,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.Display.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VLink extends VControl {
@@ -47,7 +48,7 @@ public class VLink extends VControl {
             });
         }
 
-        public static Link read(JsonReader<?> reader) {
+        public static Link read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

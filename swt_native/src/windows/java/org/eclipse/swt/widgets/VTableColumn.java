@@ -5,6 +5,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VTableColumn extends VItem {
@@ -69,7 +70,7 @@ public class VTableColumn extends VItem {
             });
         }
 
-        public static TableColumn read(JsonReader<?> reader) {
+        public static TableColumn read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

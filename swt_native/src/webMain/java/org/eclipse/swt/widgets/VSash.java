@@ -6,6 +6,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VSash extends VControl {
@@ -30,7 +31,7 @@ public class VSash extends VControl {
             });
         }
 
-        public static Sash read(JsonReader<?> reader) {
+        public static Sash read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

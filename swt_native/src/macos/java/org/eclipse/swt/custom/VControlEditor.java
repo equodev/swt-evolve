@@ -5,6 +5,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VControlEditor {
@@ -42,7 +43,7 @@ public class VControlEditor {
             });
         }
 
-        public static ControlEditor read(JsonReader<?> reader) {
+        public static ControlEditor read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

@@ -5,6 +5,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VTrayItem extends VItem {
@@ -67,7 +68,7 @@ public class VTrayItem extends VItem {
             });
         }
 
-        public static TrayItem read(JsonReader<?> reader) {
+        public static TrayItem read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

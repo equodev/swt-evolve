@@ -4,6 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 import java.util.ArrayList;
 
 @CompiledJson()
@@ -102,7 +103,7 @@ public class VDecorations extends VCanvas {
             });
         }
 
-        public static Decorations read(JsonReader<?> reader) {
+        public static Decorations read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

@@ -2,6 +2,7 @@ package org.eclipse.swt.dnd;
 
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VRTFTransfer extends VByteArrayTransfer {
@@ -29,7 +30,7 @@ public class VRTFTransfer extends VByteArrayTransfer {
             });
         }
 
-        public static RTFTransfer read(JsonReader<?> reader) {
+        public static RTFTransfer read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

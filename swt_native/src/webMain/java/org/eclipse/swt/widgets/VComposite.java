@@ -5,6 +5,7 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VComposite extends VScrollable {
@@ -61,7 +62,7 @@ public class VComposite extends VScrollable {
             });
         }
 
-        public static Composite read(JsonReader<?> reader) {
+        public static Composite read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

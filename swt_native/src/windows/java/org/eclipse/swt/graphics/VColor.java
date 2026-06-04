@@ -3,6 +3,7 @@ package org.eclipse.swt.graphics;
 import org.eclipse.swt.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson(objectFormatPolicy = CompiledJson.ObjectFormatPolicy.FULL)
 public class VColor extends VResource {
@@ -58,7 +59,7 @@ public class VColor extends VResource {
             });
         }
 
-        public static Color read(JsonReader<?> reader) {
+        public static Color read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

@@ -142,9 +142,13 @@ public class GCHelper {
         return new ImageGCContext(drawable, swtSource, (Image) data.image, renderFuture);
     }
 
-    public static void updateImageFromPng(Image dartImage, Image swtSource, String pngBase64) {
+    /**
+     * Updates an image from raw PNG bytes received over the binary comm channel — the desktop
+     * D→J image path. No base64 is involved (the bytes arrive verbatim via {@code sendBytes}).
+     */
+    public static void updateImageFromPngBytes(Image dartImage, Image swtSource, byte[] pngBytes) {
+        if (pngBytes == null) return;
         try {
-            byte[] pngBytes = java.util.Base64.getDecoder().decode(pngBase64);
             ImageData newData = new ImageData(new java.io.ByteArrayInputStream(pngBytes));
             if (dartImage.getImpl() instanceof DartImage di) {
                 di._updateImageData(newData);
@@ -153,8 +157,17 @@ public class GCHelper {
                 swtSource.getImpl()._updateImageData(newData);
             }
         } catch (Exception e) {
-            System.err.println("[GCHelper] Failed to update image from PNG: " + e.getMessage());
+            System.err.println("[GCHelper] Failed to update image from PNG bytes: " + e.getMessage());
         }
+    }
+
+    /**
+     * Base64 variant — retained for the web (Chromium) transport, whose raw-bytes channel is not
+     * yet implemented. Desktop uses {@link #updateImageFromPngBytes} instead.
+     */
+    public static void updateImageFromPng(Image dartImage, Image swtSource, String pngBase64) {
+        if (pngBase64 == null) return;
+        updateImageFromPngBytes(dartImage, swtSource, java.util.Base64.getDecoder().decode(pngBase64));
     }
 
     static final ThreadLocal<Boolean> paintItemCaptureMode = new ThreadLocal<>();

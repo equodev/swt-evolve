@@ -4,6 +4,7 @@ import java.util.*;
 import org.eclipse.swt.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VDirectoryDialog extends VDialog {
@@ -47,7 +48,7 @@ public class VDirectoryDialog extends VDialog {
             });
         }
 
-        public static DirectoryDialog read(JsonReader<?> reader) {
+        public static DirectoryDialog read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

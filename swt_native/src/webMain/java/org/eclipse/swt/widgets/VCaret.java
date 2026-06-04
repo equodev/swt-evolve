@@ -4,6 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VCaret extends VWidget {
@@ -59,7 +60,7 @@ public class VCaret extends VWidget {
             });
         }
 
-        public static Caret read(JsonReader<?> reader) {
+        public static Caret read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

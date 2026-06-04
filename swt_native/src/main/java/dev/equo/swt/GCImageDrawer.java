@@ -62,7 +62,7 @@ public class GCImageDrawer extends SwtFlutterBridgeBase {
         pendingOps.clear();
     }
 
-    public void initFlutterView(long gcId, Image dartImage, Consumer<String> onImageResult) {
+    public void initFlutterView(long gcId, Image dartImage, Consumer<byte[]> onImageResult) {
         if (!nativeWindowAvailable) {
             cancelAndWake(dartImage);
             return;
@@ -74,8 +74,9 @@ public class GCImageDrawer extends SwtFlutterBridgeBase {
             } catch (Exception e) {
                 System.err.println("[GCImageDrawer] Failed to send imageInit: " + e.getMessage());
             }
-            client.getComm().on("GC/" + gcId + "/imageResult", String.class, json -> {
-                onImageResult.accept(json);
+            // Desktop binary path: the rendered PNG arrives as raw bytes via sendBytes — no base64.
+            comm().on("GC/" + gcId + "/imageResult", byte[].class, bytes -> {
+                onImageResult.accept(bytes);
                 disposeView();
             });
             // Flush buffered GC ops (drawLine, drawRect, etc.) now that Flutter's
@@ -83,7 +84,7 @@ public class GCImageDrawer extends SwtFlutterBridgeBase {
             flushOps();
         });
         try {
-            ctx = initializeFlutterWindow(client.getPort(), 0, gcId, widgetName(this), "", 0, 0);
+            ctx = initializeFlutterWindow(comm().getPort(), 0, gcId, widgetName(this), "", 0, 0);
         } catch (Error e) {
             nativeWindowAvailable = false;
             System.err.println("[GCImageDrawer] Native Flutter window unavailable — off-screen GC will be a no-op: " + e.getMessage());
@@ -102,7 +103,7 @@ public class GCImageDrawer extends SwtFlutterBridgeBase {
      * Queued so it is sent after all other buffered ops have been flushed.
      */
     public void sendGcDispose() {
-        queueOp(() -> client.getComm().send("GC/" + gcId + "/gcDispose"));
+        queueOp(() -> comm().send("GC/" + gcId + "/gcDispose"));
     }
 
     public void disposeView() {
