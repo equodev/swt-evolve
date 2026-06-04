@@ -173,17 +173,19 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
           incomingIds.any((id) => !pendingIds.contains(id));
     }
 
-    if ((incomingSelection.isEmpty || selectionsDiffer) && hasLocalSelection) {
-      value.selection = List<VTreeItem>.from(_pendingSelection!);
-      _pendingSelection = null;
-      super.setValue(value);
-      setState(() {});
-    } else {
-      if (incomingSelection.isNotEmpty) {
+    if (_pendingSelection != null && _pendingSelection!.isNotEmpty) {
+      final pendingIds = Set.from(_pendingSelection!.map((item) => item.id));
+      final incomingIds = Set.from(incomingSelection.map((item) => item.id));
+      final confirmed = pendingIds.length == incomingIds.length &&
+          pendingIds.every((id) => incomingIds.contains(id));
+      if (!confirmed) {
+        // Java sent stale state — override with our pending selection to avoid flicker
+        value.selection = List<VTreeItem>.from(_pendingSelection!);
+      } else {
         _pendingSelection = null;
       }
-      super.setValue(value);
     }
+    super.setValue(value);
 
     if (_pendingCheckboxStates.isNotEmpty && value.items != null) {
       _preserveCheckboxStates(value.items!);

@@ -158,12 +158,9 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
 
     return MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: enabled ? onTap : null,
-          onDoubleTap: enabled ? () => _handleDefaultSelection(index) : null,
-          child: Container(
+      child: Listener(
+        onPointerUp: enabled ? (_) => onTap() : null,
+        child: Container(
             padding: EdgeInsets.symmetric(horizontal: widgetTheme.tabPadding),
             margin: isSelected && enabled
                 ? EdgeInsets.only(bottom: -widgetTheme.tabSelectedBorderWidth)
@@ -206,7 +203,6 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
             ),
           ),
         ),
-      ),
     );
   }
 

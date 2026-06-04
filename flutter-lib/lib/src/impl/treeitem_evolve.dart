@@ -24,6 +24,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   bool _isHovered = false;
   bool _hasCheckedForChildren = false;
   Offset? _lastTapPosition;
+  bool _skipNextRowSelect = false;
+  DateTime? _lastPointerUpTime;
 
   void _sendStartEditing() {
     if (_context?.parentTree != null && _context?.parentTreeValue != null) {
@@ -618,9 +620,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         ? theme.expandIconColor
         : theme.expandIconDisabledColor;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () {
+    return Listener(
+      onPointerUp: (_) {
         if (!enabled) return;
         if (_context?.treeImpl == null) return;
         final e = _createEvent();
@@ -650,9 +651,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   }) {
     if (!isCheckMode) return null;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () {},
+    return Listener(
+      onPointerDown: (_) => _skipNextRowSelect = true,
       child: Container(
         margin: EdgeInsets.only(right: theme.checkboxSpacing),
         child: _CheckboxButtonWrapper(
@@ -823,27 +823,42 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           setState(() {
             _isHovered = true;
           });
-          _context?.parentTree.sendMouseTrackMouseEnter(
-            _context!.parentTreeValue,
-            null,
-          );
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            _context?.parentTree.sendMouseTrackMouseEnter(
+              _context!.parentTreeValue,
+              null,
+            );
+          });
         },
         onExit: (_) {
           setState(() {
             _isHovered = false;
           });
-          _context?.parentTree.sendMouseTrackMouseExit(
-            _context!.parentTreeValue,
-            null,
-          );
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            _context?.parentTree.sendMouseTrackMouseExit(
+              _context!.parentTreeValue,
+              null,
+            );
+          });
         },
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTapDown: (TapDownDetails details) {
-            _lastTapPosition = details.localPosition;
-          },
-          onTap: () {
+        child: Listener(
+          onPointerDown: (event) => _lastTapPosition = event.localPosition,
+          onPointerUp: (_) {
+            if (_skipNextRowSelect) {
+              _skipNextRowSelect = false;
+              return;
+            }
             if (!enabled) return;
+
+            final now = DateTime.now();
+            final lastTime = _lastPointerUpTime;
+            _lastPointerUpTime = now;
+            if (lastTime != null &&
+                now.difference(lastTime) < const Duration(milliseconds: 300)) {
+              return;
+            }
 
             if (_lastTapPosition != null &&
                 _lastTapPosition!.dx < expanderAreaWidth &&
@@ -887,64 +902,64 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               _sendStartEditing();
             }
           },
-          onDoubleTapDown: (TapDownDetails details) {
-            _lastTapPosition = details.localPosition;
-          },
-          onDoubleTap: () {
-            if (!enabled) return;
-            _sendStartEditing();
-            final e = _createEvent();
-            e.count = 2;
-            e.button = 1;
-            _context?.parentTree.sendSelectionDefaultSelection(
-              _context!.parentTreeValue,
-              e,
-            );
-          },
-          child: Container(
-            width: double.infinity,
-            constraints: BoxConstraints(minHeight: effectiveItemHeight),
-            margin: selected
-                ? EdgeInsets.only(
-                    left: -widgetTheme.itemSelectedBorderWidth,
-                    right: -widgetTheme.itemSelectedBorderWidth,
-                    top: -widgetTheme.itemSelectedBorderWidth,
-                    bottom: nextItemSelected
-                        ? 0.0
-                        : -widgetTheme.itemSelectedBorderWidth,
-                  )
-                : null,
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: hasMultiColumn
-                  ? null
-                  : BorderRadius.circular(widgetTheme.borderRadius),
-              border: _buildItemRowBorder(
-                widgetTheme: widgetTheme,
-                selected: selected,
-                nextItemSelected: nextItemSelected,
-                hasMultiColumn: hasMultiColumn,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onDoubleTap: () {
+              if (!enabled) return;
+              _sendStartEditing();
+              final e = _createEvent();
+              e.count = 2;
+              e.button = 1;
+              _context?.parentTree.sendSelectionDefaultSelection(
+                _context!.parentTreeValue,
+                e,
+              );
+            },
+            child: Container(
+              width: double.infinity,
+              constraints: BoxConstraints(minHeight: effectiveItemHeight),
+              margin: selected
+                  ? EdgeInsets.only(
+                      left: -widgetTheme.itemSelectedBorderWidth,
+                      right: -widgetTheme.itemSelectedBorderWidth,
+                      top: -widgetTheme.itemSelectedBorderWidth,
+                      bottom: nextItemSelected
+                          ? 0.0
+                          : -widgetTheme.itemSelectedBorderWidth,
+                    )
+                  : null,
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: hasMultiColumn
+                    ? null
+                    : BorderRadius.circular(widgetTheme.borderRadius),
+                border: _buildItemRowBorder(
+                  widgetTheme: widgetTheme,
+                  selected: selected,
+                  nextItemSelected: nextItemSelected,
+                  hasMultiColumn: hasMultiColumn,
+                ),
               ),
-            ),
-            padding: hasMultiColumn
-                ? widgetTheme.itemPaddingWithCols
-                : widgetTheme.itemPadding,
-            child: _buildRowWithColumns(
-              context,
-              texts,
-              text,
-              textColor,
-              widgetTheme,
-              level,
-              hasChildren,
-              expanded,
-              isCheckMode,
-              checked,
-              grayed,
-              enabled,
-              selected,
-              image,
-              hasMultiColumn,
+              padding: hasMultiColumn
+                  ? widgetTheme.itemPaddingWithCols
+                  : widgetTheme.itemPadding,
+              child: _buildRowWithColumns(
+                context,
+                texts,
+                text,
+                textColor,
+                widgetTheme,
+                level,
+                hasChildren,
+                expanded,
+                isCheckMode,
+                checked,
+                grayed,
+                enabled,
+                selected,
+                image,
+                hasMultiColumn,
+              ),
             ),
           ),
         ),
