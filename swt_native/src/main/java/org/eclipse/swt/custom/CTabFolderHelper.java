@@ -30,6 +30,27 @@ public class CTabFolderHelper {
     private static final String ELLIPSIS = "...";
     private static final String CHEVRON_ELLIPSIS = "99+";
 
+    public static void handleReorderItems(DartCTabFolder obj, Event e) {
+        if (obj.isDisposed()) return;
+        int from = e.index;
+        int to = e.detail;
+        int count = obj.items.length;
+        if (from < 0 || from >= count || to < 0 || to > count || from == to) return;
+        int[] indices = new int[count];
+        int dst = 0;
+        for (int src = 0; src < count; src++) {
+            if (dst == to) {
+                indices[dst++] = from;
+            }
+            if (src == from) continue;
+            indices[dst++] = src;
+        }
+        if (dst == to) {
+            indices[dst] = from;
+        }
+        obj.setItemOrder(indices);
+    }
+
     public static void handleClose(DartCTabFolder obj, Event e) {
         if (obj.isDisposed()) return;
         if (e.index >= 0 && e.index < obj.items.length) {

@@ -104,6 +104,9 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
   
   // Scrollbar hide delay
   final Duration scrollbarHideDelay;
+
+  // Drag threshold
+  final double tabDragThreshold;
   
   const CTabFolderThemeExtension({
     required this.tabBarBackgroundColor,
@@ -157,6 +160,7 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
     required this.topRightControlsShadowOffset,
     required this.topRightControlsPadding,
     required this.scrollbarHideDelay,
+    required this.tabDragThreshold,
   });
 
   factory CTabFolderThemeExtension.fromJson(Map<String, dynamic> json) =>

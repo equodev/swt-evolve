@@ -62,6 +62,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
   Offset get topRightControlsShadowOffset;
   EdgeInsets get topRightControlsPadding;
   Duration get scrollbarHideDelay;
+  double get tabDragThreshold;
 
   @override
   CTabFolderThemeExtension copyWith({
@@ -116,6 +117,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
     Offset? topRightControlsShadowOffset,
     EdgeInsets? topRightControlsPadding,
     Duration? scrollbarHideDelay,
+    double? tabDragThreshold,
   }) {
     return CTabFolderThemeExtension(
       tabBarBackgroundColor:
@@ -194,6 +196,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
       topRightControlsPadding:
           topRightControlsPadding ?? this.topRightControlsPadding,
       scrollbarHideDelay: scrollbarHideDelay ?? this.scrollbarHideDelay,
+      tabDragThreshold: tabDragThreshold ?? this.tabDragThreshold,
     );
   }
 
@@ -380,6 +383,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
       scrollbarHideDelay: t < 0.5
           ? scrollbarHideDelay
           : other.scrollbarHideDelay,
+      tabDragThreshold: t < 0.5 ? tabDragThreshold : other.tabDragThreshold,
     );
   }
 
@@ -591,6 +595,10 @@ mixin _$CTabFolderThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               scrollbarHideDelay,
               other.scrollbarHideDelay,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabDragThreshold,
+              other.tabDragThreshold,
             ));
   }
 
@@ -649,6 +657,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(topRightControlsShadowOffset),
       const DeepCollectionEquality().hash(topRightControlsPadding),
       const DeepCollectionEquality().hash(scrollbarHideDelay),
+      const DeepCollectionEquality().hash(tabDragThreshold),
     ]);
   }
 }
@@ -739,4 +748,5 @@ extension CTabFolderThemeExtensionBuildContextProps on BuildContext {
       cTabFolderThemeExtension.topRightControlsPadding;
   Duration get scrollbarHideDelay =>
       cTabFolderThemeExtension.scrollbarHideDelay;
+  double get tabDragThreshold => cTabFolderThemeExtension.tabDragThreshold;
 }
