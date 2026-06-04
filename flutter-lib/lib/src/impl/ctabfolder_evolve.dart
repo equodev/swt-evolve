@@ -65,6 +65,15 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     }
   }
 
+  void _handleTabSecondaryTap(Offset globalPosition) {
+    final box = context.findRenderObject() as RenderBox?;
+    final localPos = box != null ? box.globalToLocal(globalPosition) : globalPosition;
+    final e = VEvent()
+      ..x = localPos.dx.round()
+      ..y = localPos.dy.round();
+    widget.sendMenuDetectMenuDetect(state, e);
+  }
+
   @override
   Widget build(BuildContext context) {
     final tabItems = getTabItems();
@@ -91,6 +100,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onTabClose: _handleTabClose,
             onMinimize: _toggleMinimize,
             onMaximize: _toggleMaximize,
+            onSecondaryTap: _handleTabSecondaryTap,
+            onTabReorder: _handleTabReorder,
           ),
         if (!isMinimized)
           Expanded(
@@ -111,6 +122,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onTabClose: _handleTabClose,
             onMinimize: _toggleMinimize,
             onMaximize: _toggleMaximize,
+            onSecondaryTap: _handleTabSecondaryTap,
+            onTabReorder: _handleTabReorder,
           ),
       ],
     );
@@ -210,6 +223,15 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     widget.sendCTabFolder2close(state, e);
     widget.sendCTabFolderitemClosed(state, e);
   }
+
+  void _handleTabReorder(int fromIndex, int toIndex) {
+    if (state.enabled != true) return;
+    if (fromIndex == toIndex) return;
+    final e = VEvent()
+      ..index = fromIndex
+      ..detail = toIndex;
+    widget.sendCTabFolderreorderItems(state, e);
+  }
 }
 
 class _CTabBar extends StatefulWidget {
@@ -223,6 +245,8 @@ class _CTabBar extends StatefulWidget {
   final ValueChanged<int> onTabClose;
   final VoidCallback onMinimize;
   final VoidCallback onMaximize;
+  final void Function(Offset globalPosition)? onSecondaryTap;
+  final void Function(int fromIndex, int toIndex)? onTabReorder;
 
   const _CTabBar({
     required this.state,
@@ -235,6 +259,8 @@ class _CTabBar extends StatefulWidget {
     required this.onTabClose,
     required this.onMinimize,
     required this.onMaximize,
+    this.onSecondaryTap,
+    this.onTabReorder,
   });
 
   @override
@@ -245,10 +271,13 @@ class _CTabBarState extends State<_CTabBar> {
   bool _hoveringTopBar = false;
   bool _scrollbarVisible = false;
   Timer? _scrollbarHideTimer;
-  final GlobalKey _tabBarKey = GlobalKey();
   late final ScrollController _horizontalScrollController;
   bool _isMinimizeHovered = false;
   bool _isMaximizeHovered = false;
+  int? _hoveredTabIndex;
+  int? _pendingFrom;
+  int? _pendingTo;
+
 
   @override
   void initState() {
@@ -257,10 +286,37 @@ class _CTabBarState extends State<_CTabBar> {
   }
 
   @override
+  void didUpdateWidget(_CTabBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_pendingFrom != null) {
+      _pendingFrom = null;
+      _pendingTo = null;
+    }
+  }
+
+  @override
   void dispose() {
     _scrollbarHideTimer?.cancel();
     _horizontalScrollController.dispose();
     super.dispose();
+  }
+
+  List<CTabItem> _applyPendingReorder(List<CTabItem> tabs) {
+    if (_pendingFrom == null || _pendingTo == null) return tabs;
+    if (_pendingFrom! >= tabs.length || _pendingTo! >= tabs.length) return tabs;
+    final result = List<CTabItem>.from(tabs);
+    result.insert(_pendingTo!, result.removeAt(_pendingFrom!));
+    return result;
+  }
+
+  int _computeEffectiveSelected(int selected) {
+    if (_pendingFrom == null || _pendingTo == null) return selected;
+    final from = _pendingFrom!;
+    final to = _pendingTo!;
+    if (selected == from) return to;
+    if (from < to && selected > from && selected <= to) return selected - 1;
+    if (from > to && selected >= to && selected < from) return selected + 1;
+    return selected;
   }
 
   @override
@@ -311,12 +367,17 @@ class _CTabBarState extends State<_CTabBar> {
                     context: context,
                     widgetTheme: widgetTheme,
                     isSelected: index == widget.selectedIndex,
+                    isHovered: index == _hoveredTabIndex,
                     tab: tab,
                     onTap: () => widget.onTabSelected(index),
                     onClose: tab.showCloseButton
                         ? () => widget.onTabClose(index)
                         : null,
                     isTabBottom: isTabBottom,
+                    onHoverEnter: () => setState(() => _hoveredTabIndex = index),
+                    onHoverExit: () => setState(() {
+                      if (_hoveredTabIndex == index) _hoveredTabIndex = null;
+                    }),
                   ),
                 );
               }).toList(),
@@ -348,32 +409,59 @@ class _CTabBarState extends State<_CTabBar> {
     final isMaximized = widget.state.maximized ?? false;
     final topRightAlignment = widget.state.topRightAlignment ?? SWT.RIGHT;
 
+    final displayTabs = _applyPendingReorder(tabs);
+    final effectiveSelected = _computeEffectiveSelected(widget.selectedIndex);
+
+    final tabChildren = displayTabs.asMap().entries.map((entry) {
+      final index = entry.key;
+      final tab = entry.value;
+      return _buildAdvancedTab(
+        context: context,
+        widgetTheme: widgetTheme,
+        isSelected: index == effectiveSelected,
+        isHovered: index == _hoveredTabIndex,
+        tab: tab,
+        onTap: () => widget.onTabSelected(index),
+        onClose: tab.showCloseButton ? () => widget.onTabClose(index) : null,
+        isTabBottom: isTabBottom,
+        onHoverEnter: () => setState(() => _hoveredTabIndex = index),
+        onHoverExit: () => setState(() {
+          if (_hoveredTabIndex == index) _hoveredTabIndex = null;
+        }),
+      );
+    }).toList();
+
+    final tabRowWithDrag = DragReorderRow(
+      children: tabChildren,
+      overlayBuilder: (index) => _buildAdvancedTab(
+        context: context,
+        widgetTheme: widgetTheme,
+        isSelected: index == effectiveSelected,
+        isHovered: false,
+        tab: displayTabs[index],
+        onTap: () {},
+        onClose: null,
+        isTabBottom: isTabBottom,
+        onHoverEnter: () {},
+        onHoverExit: () {},
+      ),
+      onReorder: (from, to) {
+        setState(() {
+          _pendingFrom = from;
+          _pendingTo = to;
+        });
+        widget.onTabReorder?.call(from, to);
+      },
+      onDragStart: () => setState(() => _hoveredTabIndex = null),
+      dragThreshold: widgetTheme.tabDragThreshold,
+    );
+
     Widget tabBarContent = Row(
-      key: _tabBarKey,
       children: [
         Expanded(
           child: _buildHorizontalScrollableTabs(
             widgetTheme: widgetTheme,
-            child: Row(
-              children: tabs.asMap().entries.map((entry) {
-                final int index = entry.key;
-                final CTabItem tab = entry.value;
-
-                return Expanded(
-                  child: _buildAdvancedTab(
-                    context: context,
-                    widgetTheme: widgetTheme,
-                    isSelected: index == widget.selectedIndex,
-                    tab: tab,
-                    onTap: () => widget.onTabSelected(index),
-                    onClose: tab.showCloseButton
-                        ? () => widget.onTabClose(index)
-                        : null,
-                    isTabBottom: isTabBottom,
-                  ),
-                );
-              }).toList(),
-            ),
+            child: tabRowWithDrag,
           ),
         ),
       ],
@@ -411,10 +499,13 @@ class _CTabBarState extends State<_CTabBar> {
     required BuildContext context,
     required CTabFolderThemeExtension widgetTheme,
     required bool isSelected,
+    required bool isHovered,
     required CTabItem tab,
     required VoidCallback onTap,
     VoidCallback? onClose,
     required bool isTabBottom,
+    required VoidCallback onHoverEnter,
+    required VoidCallback onHoverExit,
   }) {
     final enabled = widget.state.enabled ?? false;
 
@@ -432,21 +523,29 @@ class _CTabBarState extends State<_CTabBar> {
       isSelected,
       enabled,
       resolvedSelectionForeground: resolvedSelectionForeground,
+      isHovered: isHovered,
     );
     final backgroundColor = getCTabBackgroundColor(
       widgetTheme,
       isSelected,
       enabled,
       resolvedSelectionBackground: resolvedSelectionBackground,
+      isHovered: isHovered,
     );
-    final borderColor = getCTabBorderColor(widgetTheme, enabled);
+    final borderColor = getCTabBorderColor(widgetTheme, enabled, isHovered: isHovered);
     final textStyle = getCTabTextStyle(widgetTheme, isSelected, enabled);
 
     return MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      onEnter: (_) => onHoverEnter(),
+      onExit: (_) => onHoverExit(),
       child: GestureDetector(
         onTap: onTap,
-        child: Container(
+        onSecondaryTapDown: (details) =>
+            widget.onSecondaryTap?.call(details.globalPosition),
+        child: AnimatedContainer(
+          duration: widgetTheme.hoverRevealDuration,
+          curve: Curves.easeOut,
           height: double.infinity,
           padding: EdgeInsets.symmetric(
             horizontal: widgetTheme.tabHorizontalPadding,
@@ -532,10 +631,13 @@ class _CTabBarState extends State<_CTabBar> {
     required BuildContext context,
     required CTabFolderThemeExtension widgetTheme,
     required bool isSelected,
+    required bool isHovered,
     required CTabItem tab,
     required VoidCallback onTap,
     VoidCallback? onClose,
     required bool isTabBottom,
+    required VoidCallback onHoverEnter,
+    required VoidCallback onHoverExit,
   }) {
     final showUnselectedClose = widget.state.unselectedCloseVisible ?? false;
     final shouldShowClose =
@@ -565,6 +667,7 @@ class _CTabBarState extends State<_CTabBar> {
       isSelected,
       enabled,
       resolvedSelectionForeground: resolvedSelectionForeground,
+      isHovered: isHovered,
     );
     final backgroundColor = getCTabBackgroundColor(
       widgetTheme,
@@ -572,15 +675,22 @@ class _CTabBarState extends State<_CTabBar> {
       enabled,
       resolvedSelectionBackground: resolvedSelectionBackground,
       useDefaultTheme: useDefaultTheme,
+      isHovered: isHovered,
     );
-    final borderColor = getCTabBorderColor(widgetTheme, enabled);
+    final borderColor = getCTabBorderColor(widgetTheme, enabled, isHovered: isHovered);
     final textStyle = getCTabTextStyle(widgetTheme, isSelected, enabled);
 
     return MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      onEnter: (_) => onHoverEnter(),
+      onExit: (_) => onHoverExit(),
       child: GestureDetector(
         onTap: onTap,
-        child: Container(
+        onSecondaryTapDown: (details) =>
+            widget.onSecondaryTap?.call(details.globalPosition),
+        child: AnimatedContainer(
+          duration: widgetTheme.hoverRevealDuration,
+          curve: Curves.easeOut,
           height: double.infinity,
           padding: EdgeInsets.symmetric(
             horizontal: widgetTheme.tabHorizontalPadding,
@@ -1011,6 +1121,245 @@ class _CTabBarState extends State<_CTabBar> {
     } else {
       return scaledWidget;
     }
+  }
+}
+
+class DragReorderRow extends StatefulWidget {
+  final List<Widget> children;
+  final Widget Function(int index)? overlayBuilder;
+  final void Function(int from, int to)? onReorder;
+  final VoidCallback? onDragStart;
+  final double dragThreshold;
+
+  const DragReorderRow({
+    super.key,
+    required this.children,
+    this.overlayBuilder,
+    this.onReorder,
+    this.onDragStart,
+    this.dragThreshold = 8.0,
+  });
+
+  @override
+  State<DragReorderRow> createState() => _DragReorderRowState();
+}
+
+class _DragReorderRowState extends State<DragReorderRow> {
+  final GlobalKey _rowKey = GlobalKey();
+  final List<GlobalKey> _itemKeys = [];
+  List<GlobalKey> _orderedItemKeys = [];
+
+  int? _draggingIndex;
+  int? _draggedToIndex;
+  double? _dragStartX;
+  bool _dragActive = false;
+  List<double>? _cachedItemRights;
+  double? _dragCurrentX;
+  double? _dragOffsetX;
+
+  @override
+  void didUpdateWidget(DragReorderRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.children.length != oldWidget.children.length &&
+        _draggingIndex != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _resetDrag();
+      });
+    }
+  }
+
+  void _ensureItemKeys(int count) {
+    while (_itemKeys.length < count) {
+      _itemKeys.add(GlobalKey());
+    }
+  }
+
+  RenderBox? _itemBox(int displayIndex) {
+    if (displayIndex >= _orderedItemKeys.length) return null;
+    return _orderedItemKeys[displayIndex].currentContext
+        ?.findRenderObject() as RenderBox?;
+  }
+
+  int? _hitTest(double localX, int count) {
+    final row = _rowKey.currentContext?.findRenderObject() as RenderBox?;
+    if (row == null) return null;
+    for (int i = 0; i < count; i++) {
+      final box = _itemBox(i);
+      if (box == null) continue;
+      final left = row.globalToLocal(box.localToGlobal(Offset.zero)).dx;
+      if (localX >= left && localX < left + box.size.width) return i;
+    }
+    return null;
+  }
+
+  int _destFromX(double localX, int count) {
+    if (count == 0) return 0;
+    final rights = _cachedItemRights;
+    if (rights == null || rights.length != count) return _draggedToIndex ?? 0;
+    for (int i = 0; i < count; i++) {
+      if (localX < rights[i]) return i;
+    }
+    return count - 1;
+  }
+
+  int _originalFromDisplay(int d) {
+    final from = _draggingIndex;
+    final to = _draggedToIndex;
+    if (from == null || to == null || from == to) return d;
+    if (d == to) return from;
+    if (from < to && d >= from && d < to) return d + 1;
+    if (from > to && d > to && d <= from) return d - 1;
+    return d;
+  }
+
+  void _onPointerDown(PointerDownEvent event) {
+    if (event.buttons != 1) return;
+    final count = widget.children.length;
+    final index = _hitTest(event.localPosition.dx, count);
+    if (index == null) return;
+    final row = _rowKey.currentContext?.findRenderObject() as RenderBox?;
+    if (row != null) {
+      _cachedItemRights = List.generate(count, (i) {
+        final box = _itemBox(i);
+        if (box == null) return 0.0;
+        return row.globalToLocal(box.localToGlobal(Offset.zero)).dx +
+            box.size.width;
+      });
+      final box = _itemBox(index);
+      if (box != null) {
+        _dragOffsetX = event.localPosition.dx -
+            row.globalToLocal(box.localToGlobal(Offset.zero)).dx;
+      }
+    }
+    setState(() {
+      _draggingIndex = index;
+      _draggedToIndex = index;
+      _dragStartX = event.localPosition.dx;
+      _dragActive = false;
+    });
+  }
+
+  void _onPointerMove(PointerMoveEvent event) {
+    if (_draggingIndex == null) return;
+    final count = widget.children.length;
+    final dx =
+        event.localPosition.dx - (_dragStartX ?? event.localPosition.dx);
+    if (!_dragActive && dx.abs() >= widget.dragThreshold) {
+      _dragActive = true;
+      widget.onDragStart?.call();
+    }
+    if (_dragActive) {
+      setState(() {
+        _dragCurrentX = event.localPosition.dx;
+        _draggedToIndex = _destFromX(event.localPosition.dx, count);
+      });
+    }
+  }
+
+  void _onPointerUp(PointerUpEvent event) {
+    if (_draggingIndex == null) return;
+    if (_dragActive) {
+      final from = _draggingIndex!;
+      final to = _draggedToIndex ?? from;
+      if (from != to) widget.onReorder?.call(from, to);
+    }
+    _resetDrag();
+  }
+
+  void _onPointerCancel(PointerCancelEvent event) {
+    if (_draggingIndex == null) return;
+    _resetDrag();
+  }
+
+  void _resetDrag() {
+    setState(() {
+      _draggingIndex = null;
+      _draggedToIndex = null;
+      _dragStartX = null;
+      _dragActive = false;
+      _cachedItemRights = null;
+      _dragCurrentX = null;
+      _dragOffsetX = null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final count = widget.children.length;
+    _ensureItemKeys(count);
+
+    final isDragging =
+        _dragActive && _draggingIndex != null && _draggedToIndex != null;
+
+    _orderedItemKeys = List.generate(count, (d) {
+      final original = isDragging ? _originalFromDisplay(d) : d;
+      return _itemKeys[original.clamp(0, _itemKeys.length - 1)];
+    });
+
+    final rowItems = List.generate(count, (d) {
+      if (isDragging && d == _draggedToIndex) {
+        // Invisible placeholder — preserves the tab's natural height so the
+        // Stack doesn't collapse to zero (which would hide the overlay too).
+        final original = _originalFromDisplay(d);
+        return KeyedSubtree(
+          key: _orderedItemKeys[d],
+          child: Opacity(opacity: 0, child: widget.children[original]),
+        );
+      }
+      final original = isDragging ? _originalFromDisplay(d) : d;
+      return KeyedSubtree(
+        key: _orderedItemKeys[d],
+        child: widget.children[original],
+      );
+    });
+
+    Widget? dragOverlay;
+    if (isDragging &&
+        _dragCurrentX != null &&
+        _draggingIndex! < count &&
+        widget.overlayBuilder != null) {
+      dragOverlay = Positioned(
+        left: _dragCurrentX! - (_dragOffsetX ?? 0),
+        top: 0,
+        bottom: 0,
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 6,
+                offset: Offset(2, 2),
+              ),
+            ],
+          ),
+          child: widget.overlayBuilder!(_draggingIndex!),
+        ),
+      );
+    }
+
+    return MouseRegion(
+      cursor: _dragActive
+          ? SystemMouseCursors.grabbing
+          : _draggingIndex != null
+              ? SystemMouseCursors.grab
+              : MouseCursor.defer,
+      child: Listener(
+        onPointerDown: _onPointerDown,
+        onPointerMove: _onPointerMove,
+        onPointerUp: _onPointerUp,
+        onPointerCancel: _onPointerCancel,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            AbsorbPointer(
+              absorbing: _dragActive,
+              child: Row(key: _rowKey, children: rowItems),
+            ),
+            if (dragOverlay != null) dragOverlay,
+          ],
+        ),
+      ),
+    );
   }
 }
 

@@ -47,15 +47,18 @@ CTabFolderThemeExtension _getCTabFolderTheme({
     // Tab colors
     tabBackgroundColor: unselectedColor,
     tabSelectedBackgroundColor: colorScheme.surface,
-    tabHoverBackgroundColor: colorSchemeExtension.stateDefaultHovered,
+    tabHoverBackgroundColor: Color.alphaBlend(
+      colorScheme.onSurface.withOpacity(0.08),
+      unselectedColor,
+    ),
     tabDisabledBackgroundColor: colorScheme.surfaceVariant,
-    
+
     // Tab border colors
     tabBorderColor: colorSchemeExtension.stateDefaultEnabled,
     tabSelectedBorderColor: colorScheme.primary,
     tabHoverBorderColor: colorSchemeExtension.surfaceBorderHovered,
     tabDisabledBorderColor: colorSchemeExtension.surfaceBorderDisabled,
-    
+
     // Tab text colors
     tabTextColor: colorScheme.onSurfaceVariant,
     tabSelectedTextColor: selectedTextColor,
@@ -129,6 +132,9 @@ CTabFolderThemeExtension _getCTabFolderTheme({
     
     // Scrollbar hide delay
     scrollbarHideDelay: const Duration(milliseconds: 800),
+
+    // Drag threshold
+    tabDragThreshold: 8.0,
   );
 }
 
@@ -137,9 +143,11 @@ Color getCTabTextColor(
   bool isSelected,
   bool enabled, {
   Color? resolvedSelectionForeground,
+  bool isHovered = false,
 }) {
   if (!enabled) return widgetTheme.tabDisabledTextColor;
   if (isSelected) return resolvedSelectionForeground ?? widgetTheme.tabSelectedTextColor;
+  if (isHovered) return widgetTheme.tabHoverTextColor;
   return widgetTheme.tabTextColor.withOpacity(widgetTheme.tabUnselectedTextOpacity);
 }
 
@@ -149,17 +157,25 @@ Color getCTabBackgroundColor(
   bool enabled, {
   Color? resolvedSelectionBackground,
   bool useDefaultTheme = false,
+  bool isHovered = false,
 }) {
   if (!enabled) return widgetTheme.tabDisabledBackgroundColor;
   if (isSelected) {
     if (useDefaultTheme) return widgetTheme.tabSelectedBackgroundColor;
     return resolvedSelectionBackground ?? widgetTheme.tabSelectedBackgroundColor;
   }
+  if (isHovered) return widgetTheme.tabHoverBackgroundColor;
   return widgetTheme.tabBackgroundColor;
 }
 
-Color getCTabBorderColor(CTabFolderThemeExtension widgetTheme, bool enabled) {
-  return enabled ? widgetTheme.tabBorderColor : widgetTheme.tabDisabledBorderColor;
+Color getCTabBorderColor(
+  CTabFolderThemeExtension widgetTheme,
+  bool enabled, {
+  bool isHovered = false,
+}) {
+  if (!enabled) return widgetTheme.tabDisabledBorderColor;
+  if (isHovered) return widgetTheme.tabHoverBorderColor;
+  return widgetTheme.tabBorderColor;
 }
 
 TextStyle? getCTabTextStyle(

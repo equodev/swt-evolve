@@ -121,6 +121,7 @@ CTabFolderThemeExtension _$CTabFolderThemeExtensionFromJson(
   scrollbarHideDelay: Duration(
     microseconds: (json['scrollbarHideDelay'] as num).toInt(),
   ),
+  tabDragThreshold: (json['tabDragThreshold'] as num).toDouble(),
 );
 
 Map<String, dynamic> _$CTabFolderThemeExtensionToJson(
@@ -221,4 +222,5 @@ Map<String, dynamic> _$CTabFolderThemeExtensionToJson(
     instance.topRightControlsPadding,
   ),
   'scrollbarHideDelay': instance.scrollbarHideDelay.inMicroseconds,
+  'tabDragThreshold': instance.tabDragThreshold,
 };
