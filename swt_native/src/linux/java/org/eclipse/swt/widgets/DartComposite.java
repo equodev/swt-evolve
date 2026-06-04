@@ -1014,16 +1014,22 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     @Override
     void releaseChildren(boolean destroy) {
-        try (ExceptionStash exceptions = new ExceptionStash()) {
-            for (Control child : _getChildren()) {
-                if (child == null || child.isDisposed())
-                    continue;
-                try {
-                    child.getImpl().release(false);
-                } catch (Error | RuntimeException ex) {
-                    exceptions.stash(ex);
+        Control[] snapshot = children;
+        children = null;
+        if (snapshot != null) {
+            try (ExceptionStash exceptions = new ExceptionStash()) {
+                for (Control child : snapshot) {
+                    if (child == null || child.isDisposed())
+                        continue;
+                    try {
+                        child.getImpl().release(false);
+                    } catch (Error | RuntimeException ex) {
+                        exceptions.stash(ex);
+                    }
                 }
+                super.releaseChildren(destroy);
             }
+        } else {
             super.releaseChildren(destroy);
         }
     }
