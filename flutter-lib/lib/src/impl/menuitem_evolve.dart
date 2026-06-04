@@ -143,9 +143,6 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
     bool isEnabled,
   ) {
     final textStyle = getMenuItemTextStyle(widgetTheme, isEnabled: isEnabled);
-    final acceleratorText = state.accelerator != null
-        ? formatAccelerator(state.accelerator!)
-        : '';
     final acceleratorStyle = getMenuItemAcceleratorTextStyle(
       widgetTheme,
       isEnabled: isEnabled,
@@ -154,6 +151,10 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
     final notifier = MenuChangeNotifier.of(context);
     final capturedState = state;
     final capturedWidget = widget;
+
+    final split = splitMenuItemText(capturedState.text);
+    final acceleratorText = split.shortcut ??
+        (state.accelerator != null ? formatAccelerator(state.accelerator!) : null);
 
     return _MenuItemRow(
       widgetTheme: widgetTheme,
@@ -165,10 +166,10 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
         }
       } : null,
       leading: _buildMenuIcon(widgetTheme, isEnabled),
-      trailing: acceleratorText.isNotEmpty
+      trailing: acceleratorText != null
           ? Text(acceleratorText, style: acceleratorStyle)
           : null,
-      child: Text(stripAccelerators(capturedState.text), style: textStyle),
+      child: Text(split.label, style: textStyle),
     );
   }
 
