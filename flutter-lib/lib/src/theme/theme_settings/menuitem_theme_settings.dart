@@ -100,7 +100,11 @@ MenuItemThemeExtension _getMenuItemTheme({
 
     // Font styles
     textStyle: textTheme.bodyMedium?.copyWith(fontSize: 14),
-    acceleratorTextStyle: textTheme.bodySmall?.copyWith(fontSize: 12),
+    acceleratorTextStyle: textTheme.bodySmall?.copyWith(
+      fontSize: 11,
+      fontWeight: FontWeight.w300,
+      letterSpacing: 0.3,
+    ),
   );
 }
 
@@ -130,7 +134,9 @@ TextStyle getMenuItemAcceleratorTextStyle(
   return widgetTheme.acceleratorTextStyle?.copyWith(
     color: isEnabled ? widgetTheme.acceleratorTextColor : widgetTheme.disabledTextColor,
   ) ?? TextStyle(
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: FontWeight.w300,
+    letterSpacing: 0.3,
     color: isEnabled ? widgetTheme.acceleratorTextColor : widgetTheme.disabledTextColor,
   );
 }
