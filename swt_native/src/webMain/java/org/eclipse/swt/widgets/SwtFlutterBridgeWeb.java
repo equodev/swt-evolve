@@ -98,6 +98,7 @@ public class SwtFlutterBridgeWeb extends FlutterBridge {
         try {
             VDisplay vd = VDisplay.of(display);
             serializeAndSend("Display/" + vd.id, vd);
+            FlutterBridge.displayBootstrapped = true;
         } catch (Exception e) {
             e.printStackTrace();
         }

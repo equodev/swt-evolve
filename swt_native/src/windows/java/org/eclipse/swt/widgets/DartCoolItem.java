@@ -383,7 +383,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
 
     void setPreferredSizeInPixels(int width, int height) {
         dirty();
-        Point newValue = new Point(preferredSize.x, preferredSize.y);
+        Point newValue = new Point(width, height);
         int index = parent.indexOf(this.getApi());
         if (index == -1)
             return;
@@ -575,7 +575,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
 
     void setMinimumSizeInPixels(int width, int height) {
         dirty();
-        Point newValue = new Point(minimumSize.x, minimumSize.y);
+        Point newValue = new Point(width, height);
         int index = parent.indexOf(this.getApi());
         if (index == -1)
             return;

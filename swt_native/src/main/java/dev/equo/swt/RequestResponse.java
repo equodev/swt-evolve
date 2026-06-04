@@ -35,6 +35,11 @@ public class RequestResponse {
      */
     public static <T> T call(Object widget, String eventName, Object args,
                               Class<T> cls, long timeoutMs, T fallback) {
+        // Before Flutter has the widget tree, every call here would time out (no listener
+        // exists yet). On web that's ~100ms per call × hundreds of sizing calls during
+        // initial layout — 15+ seconds of dead wait. Return fallback immediately so the
+        // SWT layout pass proceeds; real values will arrive once Flutter is bootstrapped.
+        if (!FlutterBridge.displayBootstrapped) return fallback;
         String receiveEvent = eventName + RESPONSE_SUFFIX;
         var future = new CompletableFuture<T>();
         FlutterBridge.onPayload(widget, receiveEvent, cls,
