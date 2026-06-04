@@ -15,6 +15,7 @@ public class IntArrayConverter {
     }
 
     public static int[] read(JsonReader reader) throws IOException {
+        if (reader.wasNull()) return INT_EMPTY_ARRAY;
         if (reader.last() == '[') {
             reader.getNextToken();
         }

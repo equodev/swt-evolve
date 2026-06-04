@@ -11,6 +11,7 @@ import org.eclipse.swt.printing.*;
 import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VStyledText extends VCanvas {
@@ -371,7 +372,7 @@ public class VStyledText extends VCanvas {
             });
         }
 
-        public static StyledText read(JsonReader<?> reader) {
+        public static StyledText read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

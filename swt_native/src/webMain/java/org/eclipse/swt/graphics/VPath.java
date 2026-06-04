@@ -3,6 +3,7 @@ package org.eclipse.swt.graphics;
 import org.eclipse.swt.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VPath extends VResource {
@@ -38,7 +39,7 @@ public class VPath extends VResource {
             });
         }
 
-        public static Path read(JsonReader<?> reader) {
+        public static Path read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

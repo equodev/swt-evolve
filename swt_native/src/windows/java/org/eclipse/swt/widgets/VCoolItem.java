@@ -5,6 +5,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VCoolItem extends VItem {
@@ -56,7 +57,7 @@ public class VCoolItem extends VItem {
             });
         }
 
-        public static CoolItem read(JsonReader<?> reader) {
+        public static CoolItem read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

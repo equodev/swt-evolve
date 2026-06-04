@@ -135,7 +135,7 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
      * Usage in DartGC.init() when drawable is an Image:
      *   this.bridge = SwtFlutterBridgeBase.of(this);
      */
-    public static GCImageDrawer of(long gcId, Image dartImage, Consumer<String> onImageResult) {
+    public static GCImageDrawer of(long gcId, Image dartImage, Consumer<byte[]> onImageResult) {
         GCImageDrawer drawer = new GCImageDrawer();
         drawer.initFlutterView(gcId, dartImage, onImageResult);
         return drawer;
@@ -166,7 +166,7 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
         int parentBackgroundColorInt = (parentBackgroundColor.getRed() << 16) | (parentBackgroundColor.getGreen() << 8) | parentBackgroundColor.getBlue();
 
         long parentHandle = getParentHandleForInit(parent, control);
-        context = initializeFlutterWindow(client.getPort(), parentHandle, id(control), widgetName(control), theme, backgroundColorInt, parentBackgroundColorInt);
+        context = initializeFlutterWindow(comm().getPort(), parentHandle, id(control), widgetName(control), theme, backgroundColorInt, parentBackgroundColorInt);
 
         long view = getView(context);
         setHandle(control, view);

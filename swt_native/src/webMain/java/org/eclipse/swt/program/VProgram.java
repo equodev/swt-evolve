@@ -36,7 +36,7 @@ public class VProgram {
             });
         }
 
-        public static Program read(JsonReader<?> reader) {
+        public static Program read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

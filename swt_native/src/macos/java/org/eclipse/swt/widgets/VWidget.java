@@ -6,6 +6,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 public class VWidget {
 
@@ -40,7 +41,7 @@ public class VWidget {
             });
         }
 
-        public static Widget read(JsonReader<?> reader) {
+        public static Widget read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

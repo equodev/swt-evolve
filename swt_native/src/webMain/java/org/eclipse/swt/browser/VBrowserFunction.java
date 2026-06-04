@@ -4,6 +4,7 @@ import java.util.*;
 import org.eclipse.swt.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VBrowserFunction {
@@ -52,7 +53,7 @@ public class VBrowserFunction {
             });
         }
 
-        public static BrowserFunction read(JsonReader<?> reader) {
+        public static BrowserFunction read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

@@ -3,6 +3,7 @@ package org.eclipse.swt.graphics;
 import org.eclipse.swt.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VTransform extends VResource {
@@ -40,7 +41,7 @@ public class VTransform extends VResource {
             });
         }
 
-        public static Transform read(JsonReader<?> reader) {
+        public static Transform read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

@@ -6,6 +6,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VAnimatedProgress extends VCanvas {
@@ -30,7 +31,7 @@ public class VAnimatedProgress extends VCanvas {
             });
         }
 
-        public static AnimatedProgress read(JsonReader<?> reader) {
+        public static AnimatedProgress read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

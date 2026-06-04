@@ -3,6 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 import java.util.ArrayList;
 
 @CompiledJson()
@@ -42,7 +43,7 @@ public class VTray extends VWidget {
             });
         }
 
-        public static Tray read(JsonReader<?> reader) {
+        public static Tray read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

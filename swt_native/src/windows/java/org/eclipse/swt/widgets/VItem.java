@@ -4,6 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 public class VItem extends VWidget {
 
@@ -48,7 +49,7 @@ public class VItem extends VWidget {
             });
         }
 
-        public static Item read(JsonReader<?> reader) {
+        public static Item read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

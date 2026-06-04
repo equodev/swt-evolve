@@ -4,6 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VGLCanvas extends VCanvas {
@@ -37,7 +38,7 @@ public class VGLCanvas extends VCanvas {
             });
         }
 
-        public static GLCanvas read(JsonReader<?> reader) {
+        public static GLCanvas read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

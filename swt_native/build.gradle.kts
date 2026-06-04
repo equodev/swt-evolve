@@ -97,18 +97,30 @@ val swtVersionProvider = provider {
 dependencies {
     if (gradle.parent != null)
         swtVersionConfig("dev.equo:eclipse_run")
-    implementation(libs.equo.comm.ws) {
-        exclude(group = "dev.equo", module = "com.equo.comm.common")
-    }
+    implementation(libs.java.websocket)
+    // Alternative WS impl, selectable at runtime via -Dcomm.impl=jetty (Jetty 12 core, no servlets).
+    // compileOnly so Jetty's transitive jars never ship in the platform JARs; it's a bench-only
+    // alternative (production always uses java-websocket). testRuntimeOnly puts it back on the
+    // bench JVM's classpath so -Dcomm.impl=jetty can load JettyBinaryCommService.
+    compileOnly(libs.jetty.server)
+    compileOnly(libs.jetty.websocket.server)
+    testRuntimeOnly(libs.jetty.server)
+    testRuntimeOnly(libs.jetty.websocket.server)
 
     implementation(libs.dsl.json)
     annotationProcessor(libs.dsl.json)
+    testAnnotationProcessor(libs.dsl.json)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testImplementation(libs.assertj)
     testImplementation(libs.json.unit.assertj)
+    // Gson, two test-only roles: (1) the JSON backend json-unit 4.x discovers at runtime (without one
+    // assertThatJson(...) fails to init) — its lenient parser also accepts the bare unquoted string
+    // expecteds the generated serialize tests use (e.g. isEqualTo("two")); (2) the bench code generator
+    // (WorkbenchTreeGenerator) parses workbench.json to emit the hardcoded WorkbenchTree.
+    testImplementation(libs.gson)
     testImplementation(libs.mockito.core)
     testImplementation(libs.instancio.junit)
 }
@@ -121,6 +133,19 @@ sourceSets {
                 "src/${currentOs}/java"
             ))
         }
+    }
+
+    // The web comm benchmark drives the production Flutter web build through a browser, so it
+    // reuses the production WebFlutterServer (from webMain) to serve it — rather than duplicating
+    // an HTTP server in test scope. WebFlutterServer is pure JDK + FlutterLibraryLoader (which is
+    // in main), so we expose just that one file on the test classpath via this tiny source set,
+    // instead of pulling the whole web tree (thousands of files) into every test build.
+    val webShared = create("webShared") {
+        java {
+            setSrcDirs(listOf("src/webMain/java"))
+            include("dev/equo/swt/WebFlutterServer.java")
+        }
+        compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
     }
 
     // Create source sets for all platform combinations
@@ -142,10 +167,17 @@ sourceSets {
             test {
                 resources {
                     srcDirs("src/${os}/java")
-                    include("**/*.css", "**/*.png", "**/*.bmp", "**/*.gif", "**/*.svg", "**/*.jpg", "**/SWTMessages*.properties", "**/SWTMessages.properties")
+                    include("**/*.css", "**/*.png", "**/*.bmp", "**/*.gif", "**/*.svg", "**/*.jpg", "**/SWTMessages*.properties", "**/SWTMessages.properties", "**/bench/*.json")
                 }
             }
         }
+    }
+
+    // The web bench (BenchBridge in -Dbench.client=web mode) compiles and runs against the
+    // production WebFlutterServer exposed by the webShared set above.
+    test {
+        compileClasspath += webShared.output
+        runtimeClasspath += webShared.output
     }
 }
 
@@ -157,6 +189,8 @@ tasks.withType<JavaCompile> {
 
 tasks.test {
     useJUnitPlatform {
+        // Bench tests are slow + write artifacts; always excluded from the default test run.
+        excludeTags("bench")
         val excludeTagsProp = System.getProperty("excludeTags")
         if (excludeTagsProp != null) excludeTags(*excludeTagsProp.split(",").toTypedArray())
     }
@@ -176,12 +210,62 @@ tasks.test {
         jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
 }
 
+// Config shared by both bench Test tasks (native `benchmark` + browser `webBenchmark`): the
+// 'bench'-tagged test run, full logging, and always-rerun. Per-task specifics (deps, jvmArgs,
+// system properties) are layered on by the caller.
+fun Test.configureCommBench() {
+    group = "verification"
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    useJUnitPlatform { includeTags("bench") }
+    testLogging {
+        events = setOf(TestLogEvent.PASSED, TestLogEvent.FAILED, TestLogEvent.SKIPPED, TestLogEvent.STANDARD_OUT, TestLogEvent.STANDARD_ERROR)
+        showStandardStreams = true
+    }
+    outputs.upToDateWhen { false } // always rerun benchmarks
+}
+
+// Forward each given -D system property from the Gradle CLI JVM into the test JVM (only those set).
+fun Test.forwardSystemProperties(vararg keys: String) {
+    keys.forEach { key -> System.getProperty(key)?.let { systemProperty(key, it) } }
+}
+
+tasks.register<Test>("benchmark") {
+    description = "Runs comm-protocol benchmarks (tagged 'bench'). Writes results to build/bench-results/."
+    configureCommBench()
+    dependsOn("${currentPlatform}ExtractNatives", "${currentPlatform}CopyFlutterBinaries")
+    // 1g heap headroom for LARGE-shape serialization churn (~50KB byte[] per iter × 1000+ iters).
+    // Default 512m goes into GC thrash territory; 1g is comfortable.
+    if (org.gradle.internal.os.OperatingSystem.current().isMacOsX)
+        jvmArgs = listOf("-XstartOnFirstThread", "-Xmx1g")
+    else
+        jvmArgs = listOf("-Xmx1g")
+    systemProperty("swt.library.path", layout.buildDirectory.dir("natives/$currentPlatform").get().toString())
+    forwardSystemProperties("bench.warmup", "bench.measured", "bench.timeoutMs", "comm.impl", "bench.comm.label")
+}
+
+// Web comm benchmark: drives the Flutter WEB build in a browser instead of the native engine.
+// Reuses CommBenchTest/BenchBridge; BenchBridge branches on -Dbench.client=web. Requires Stage B
+// (binary equo-comm.js) for the new comm — otherwise the browser's text frames are ignored.
+tasks.register<Test>("webBenchmark") {
+    description = "Runs the comm benchmark against the Flutter WEB build (browser client)."
+    configureCommBench()
+    if (System.getProperty("skipFlutterLib") == null)
+        dependsOn("webFlutterLib")
+    jvmArgs = listOf("-Xmx1g")
+    systemProperty("bench.client", "web")
+    systemProperty("dev.equo.swt.loadLibrary", "false")
+    systemProperty("bench.comm.label", System.getProperty("bench.comm.label", "web-json"))
+    forwardSystemProperties("bench.warmup", "bench.measured", "bench.timeoutMs", "comm.impl", "equo.swt.browser", "bench.web.headless")
+}
+
 tasks.jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from(layout.buildDirectory.dir("natives/$currentPlatform"))
 
     // Add all dependencies to the JAR
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
-    exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "OSGI-OPT/")
+    exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "META-INF/LICENSE*", "META-INF/NOTICE*", "OSGI-OPT/")
 
     manifest {
         attributes(
@@ -355,6 +439,10 @@ platforms.forEach { platform ->
         group = "build"
         description = "Assembles a jar archive for $platform"
         archiveBaseName.set("swt_evolve-$platform")
+        // Flattening many dependency jars + natives into one archive can collide on shared
+        // resource paths (e.g. duplicate META-INF/services entries). Match the main `tasks.jar`
+        // and keep the first occurrence.
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         from(sourceSets[info.sourceSet].output)
         from(layout.buildDirectory.dir("natives/${info.desktopPlatform}"))
         if (info.isWeb) {
@@ -365,9 +453,8 @@ platforms.forEach { platform ->
         }
 
         // Add all dependencies to the JAR
-        from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }) {
-            exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "OSGI-OPT/", "equo-comm.js")
-        }
+        from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+        exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "META-INF/LICENSE*", "META-INF/NOTICE*", "OSGI-OPT/")
 
         manifest {
             attributes(

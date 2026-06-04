@@ -1,10 +1,11 @@
 package dev.equo.swt;
 
+import dev.equo.swt.comm.BinaryCommService;
+import dev.equo.swt.comm.CommService;
+import dev.equo.swt.comm.JettyBinaryCommService;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -19,41 +20,90 @@ import static dev.equo.swt.Config.getConfigFlags;
 
 public abstract class FlutterBridge {
     private static final String DEV_EQU_SWT_NEW = "dev.equo.swt.new";
-    protected static final FlutterClient client;
     protected static final Serializer serializer = new Serializer();
     private static final Set<Object> dirty = new HashSet<>();
     private static FlutterBridge bridge;
     private static boolean keepClient = false;
 
-    // True once the first VDisplay tree has been shipped to Flutter. Before this point,
-    // Flutter has no widgets registered, so RequestResponse.call() will always time out.
-    // Gate sync round-trips on this to avoid 100ms-per-timeout stalls during widget construction.
+    /**
+     * True once Flutter has the widget tree (first ClientReady / Display update). Until then,
+     * blocking round-trips (e.g. {@link RequestResponse#call}) have no listener on the far side and
+     * would just time out, so callers return their fallback immediately instead of dead-waiting.
+     */
     public static volatile boolean displayBootstrapped = false;
 
-    static {
-        client = new FlutterClient();
-        client.createComm();
-        client.getComm().on("swt.evolve.property.set", FlutterBridge::handlePropertySetFromFlutter);
+    /**
+     * Desktop / default comm. Lazily created on first use and shared by every desktop bridge — there
+     * is one Flutter engine per JVM there. {@code null} until first needed, and never created on web
+     * (where {@link #comm()} is overridden per Display), so the unused desktop server isn't started.
+     */
+    private static volatile CommService desktopComm;
+
+    /**
+     * Creates a fresh comm (transport chosen by {@code -Dcomm.impl}) and wires the inbound
+     * property-set channel to it. Each comm is independent, so web Displays each get their own.
+     */
+    protected static CommService newComm() {
+        String impl = System.getProperty("comm.impl", "java-websocket");
+        CommService comm = "jetty".equals(impl) ? new JettyBinaryCommService() : new BinaryCommService();
+        comm.on("swt.evolve.property.set", ConfigFlags.class, parsed -> handlePropertySetFromFlutter(comm, parsed));
+        return comm;
     }
 
-    private static void handlePropertySetFromFlutter(String payload) {
-        if (payload == null) return;
-        String json = payload.trim();
-        if (json.isEmpty()) return;
-        try {
-            ConfigFlags parsed = serializer.from(
-                    ConfigFlags.class,
-                    new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
-            if (parsed == null) return;
+    /** The shared desktop comm, created (and started) on first access. */
+    protected static CommService desktopComm() {
+        CommService c = desktopComm;
+        if (c == null) {
+            synchronized (FlutterBridge.class) {
+                c = desktopComm;
+                if (c == null) {
+                    c = newComm();
+                    desktopComm = c;
+                }
+            }
+        }
+        return c;
+    }
 
-            boolean changed = false;
-            ConfigFlags current = getConfigFlags();
-            changed |= applyStringField("force_theme", current.force_theme, parsed.force_theme, v -> current.force_theme = v);
-            changed |= applyStringField("theme_name", current.theme_name, parsed.theme_name, v -> current.theme_name = v);
-            changed |= applyStringField("theme_color", current.theme_color, parsed.theme_color, v -> current.theme_color = v);
-            if (changed) broadcastSwtEvolveProperties();
-        } catch (IOException e) {
-            System.err.println("[FlutterBridge] swt.evolve.property.set: " + e.getMessage());
+    /**
+     * The comm this bridge talks through. Desktop bridges share {@link #desktopComm()}; the web
+     * bridge overrides this to return a comm created once per {@link Display}.
+     */
+    protected CommService comm() {
+        return desktopComm();
+    }
+
+    /**
+     * Resolves the comm a widget/resource should talk through. The comm is owned by the Display, so
+     * on web every widget under a Display resolves (via its display bridge) to that Display's comm,
+     * while desktop widgets share {@link #desktopComm()}. Tries, in order: the widget's own bridge,
+     * the globally-injected bridge (used by tests, where the per-widget bridge may be a stub whose
+     * {@code comm()} is null), then the desktop comm.
+     */
+    static CommService commFor(Object w) {
+        CommService c = commOf(getBridge(w));
+        if (c == null) c = commOf(bridge);
+        return c != null ? c : desktopComm();
+    }
+
+    private static CommService commOf(FlutterBridge b) {
+        return b != null ? b.comm() : null;
+    }
+
+    private static void handlePropertySetFromFlutter(CommService comm, ConfigFlags parsed) {
+        if (parsed == null) return;
+        boolean changed = false;
+        ConfigFlags current = getConfigFlags();
+        changed |= applyStringField("force_theme", current.force_theme, parsed.force_theme, v -> current.force_theme = v);
+        changed |= applyStringField("theme_name", current.theme_name, parsed.theme_name, v -> current.theme_name = v);
+        changed |= applyStringField("theme_color", current.theme_color, parsed.theme_color, v -> current.theme_color = v);
+        if (changed) {
+            // Echo the updated properties back on the comm they arrived on.
+            try {
+                serializeAndSend(comm, "swt.evolve.properties", getConfigFlags());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -70,8 +120,10 @@ public abstract class FlutterBridge {
     protected final CompletableFuture<Boolean> clientReady = new CompletableFuture<>();
 
     public static void disposeClient() {
-        if (!keepClient)
-            client.dispose();
+        // Desktop only: stop the shared comm if it was ever created. On web each Display stops its
+        // own comm in SwtFlutterBridgeWeb.destroyDisplay(), and desktopComm stays null here.
+        if (!keepClient && desktopComm != null)
+            desktopComm.stop();
         keepClient = false;
     }
 
@@ -166,7 +218,7 @@ public abstract class FlutterBridge {
                         }
                         String event = event(widget);
                         try {
-                            serializeAndSend(event, getApi(widget));
+                            serializeAndSend(commFor(widget), event, getApi(widget));
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -215,17 +267,21 @@ public abstract class FlutterBridge {
         return null;
     }
 
-    protected static void serializeAndSend(String eventName, Object args) throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        serializer.to(args, out);
-        String serialized = out.toString(StandardCharsets.UTF_8);
+    /** Serializes through this bridge's own {@link #comm()} — the form instance callers use. */
+    protected void serializeAndSend(String eventName, Object args) throws IOException {
+        serializeAndSend(comm(), eventName, args);
+    }
+
+    private static void serializeAndSend(CommService comm, String eventName, Object args) throws IOException {
+        byte[] bytes = serializer.to(args);
         if (Config.isDebug()) {
+            String serialized = new String(bytes, StandardCharsets.UTF_8);
             String cleaned = serialized
                     .replaceAll("\"data\"\\s*:\\s*\"[^\"]*\"", "\"data\": \"-ignore-\"")
                     .replaceAll("\"alphaData\"\\s*:\\s*\"[^\"]*\"", "\"alphaData\": \"-ignore-\"");
             System.out.println("send: " + eventName + ": " + cleaned);
         }
-        client.getComm().send(eventName, serialized);
+        comm.send(eventName, bytes);
     }
 
     private static void setNotNew(Object control) {
@@ -239,92 +295,70 @@ public abstract class FlutterBridge {
 
     public static void on(DartWidget widget, String listener, String event, Consumer<Event> cb) {
         String eventName = event(widget, listener, event);
-        client.getComm().on(eventName, p -> {
+        commFor(widget).on(eventName, Event.class, ev -> {
             if (widget.isDisposed()) return;
             if (!eventName.contains("MouseMove") || getConfigFlags().print_move)
-                System.out.println(eventName + ", payload:"+p);
-            if (p != null) {
-                ByteArrayInputStream in = new ByteArrayInputStream(p.getBytes(StandardCharsets.UTF_8));
-                try {
-                    Event ev = serializer.from(Event.class, in);
-                    cb.accept(ev);
-                    return;
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            cb.accept(null);
+                System.out.println(eventName + ", event:" + ev);
+            cb.accept(ev);
         });
     }
 
-    public static void onPayload(Object widget, String event, Consumer<Object> cb) {
+    public static void onPayload(Object widget, String event, Consumer<byte[]> cb) {
         String eventName = eventName(widget, event);
-        client.getComm().on(eventName, p -> {
+        commFor(widget).on(eventName, byte[].class, p -> {
             if (!eventName.contains("MouseMove") || getConfigFlags().print_move)
-                System.out.println(eventName + ", payload:"+p);
+                System.out.println(eventName + ", payload:" + (p == null ? "null" : p.length + "B"));
             cb.accept(p);
         });
     }
 
     public static <T> void onPayload(Object widget, String event, Class<T> cls, Consumer<T> cb) {
         String eventName = eventName(widget, event);
-        client.getComm().on(eventName, p -> {
+        commFor(widget).on(eventName, cls, p -> {
             if (!eventName.contains("MouseMove") || getConfigFlags().print_move)
-                System.out.println(eventName + ", payload:"+p);
-            if (p != null) {
-                ByteArrayInputStream in = new ByteArrayInputStream(p.getBytes(StandardCharsets.UTF_8));
-                try {
-                    cb.accept(serializer.from(cls, in));
-                    return;
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            cb.accept(null);
+                System.out.println(eventName + ", payload:" + p);
+            cb.accept(p);
         });
     }
 
     public static void removeEvent(Object widget, String event) {
         String eventName = eventName(widget, event);
-        client.getComm().remove(eventName);
+        commFor(widget).remove(eventName);
     }
 
     public static void sendEvent(Object widget, String event) {
         String name = eventName(widget, event);
-        client.getComm().send(name);
+        commFor(widget).send(name);
     }
 
     public static void send(DartResource resource, String event, Object args) {
+        CommService comm = commFor(resource);
         if (getBridge(resource) instanceof GCImageDrawer drawer) {
             // Serialize eagerly (captures current GC state: colors, font, etc.) then
             // queue the send so it is dispatched only after Flutter's GCDrawer.standalone
             // has registered its listeners — fixing the macOS race condition where ops
             // arrive before _registerOps() runs.
             try {
-                String stateEvent = null;
-                String stateJson = null;
+                String stateEventName = null;
+                byte[] stateBytes = null;
                 synchronized (dirty) {
                     if (dirty.remove(resource)) {
-                        stateEvent = event(resource);
-                        ByteArrayOutputStream stateOut = new ByteArrayOutputStream();
-                        serializer.to(getApi(resource), stateOut);
-                        stateJson = stateOut.toString(StandardCharsets.UTF_8);
+                        stateEventName = event(resource);
+                        stateBytes = serializer.to(getApi(resource));
                     }
                 }
-                ByteArrayOutputStream opOut = new ByteArrayOutputStream();
-                serializer.to(args, opOut);
-                String opJson = opOut.toString(StandardCharsets.UTF_8);
+                byte[] opBytes = serializer.to(args);
 
-                final String finalStateEvent = stateEvent;
-                final String finalStateJson = stateJson;
+                final String finalStateEvent = stateEventName;
+                final byte[] finalStateBytes = stateBytes;
                 final String opEvent = eventName(resource, event);
-                final String finalOpJson = opJson;
+                final byte[] finalOpBytes = opBytes;
 
                 drawer.queueOp(() -> {
                     if (finalStateEvent != null) {
-                        client.getComm().send(finalStateEvent, finalStateJson);
+                        comm.send(finalStateEvent, finalStateBytes);
                     }
-                    client.getComm().send(opEvent, finalOpJson);
+                    comm.send(opEvent, finalOpBytes);
                 });
             } catch (IOException e) {
                 e.printStackTrace();
@@ -334,14 +368,14 @@ public abstract class FlutterBridge {
         if (dirty.contains(resource)) {
             update().whenComplete((r, a) -> {
                 try {
-                    serializeAndSend(eventName(resource, event), args);
+                    serializeAndSend(comm, eventName(resource, event), args);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             });
         } else {
             try {
-                serializeAndSend(eventName(resource, event), args);
+                serializeAndSend(comm, eventName(resource, event), args);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -349,17 +383,18 @@ public abstract class FlutterBridge {
     }
 
     public static void send(DartWidget resource, String event, Object args) {
+        CommService comm = commFor(resource);
         if (dirty.contains(resource)) {
             update().whenComplete((r, a) -> {
                 try {
-                    serializeAndSend(eventName(resource, event), args);
+                    serializeAndSend(comm, eventName(resource, event), args);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             });
         } else {
             try {
-                serializeAndSend(eventName(resource, event), args);
+                serializeAndSend(comm, eventName(resource, event), args);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -370,7 +405,7 @@ public abstract class FlutterBridge {
         setNotNew(control);
         dirty(control);
         CompletableFuture<P> readyPayload = (payloadClass != null) ? new CompletableFuture<>() : null;
-        client.getComm().on(event(control,"ClientReady"), payloadClass, p -> {
+        comm().on(event(control,"ClientReady"), payloadClass, p -> {
             if (!clientReady.isDone()) {
                 System.out.println("ClientReady "+event(control));
                 if (readyPayload != null)
@@ -447,7 +482,7 @@ public abstract class FlutterBridge {
     public abstract void initFlutterView(Composite parent, DartControl control);
 
     public void destroy(DartWidget control) {
-        client.getComm().remove(event(control,"ClientReady"));
+        comm().remove(event(control,"ClientReady"));
     }
 
     public void setBounds(DartControl control, Rectangle bounds) {
@@ -494,7 +529,7 @@ public abstract class FlutterBridge {
         return w.hashCode();
     }
 
-    public static void broadcastSwtEvolveProperties() {
+    protected void broadcastSwtEvolveProperties() {
         try {
             serializeAndSend("swt.evolve.properties", getConfigFlags());
         } catch (Exception e) {
@@ -505,14 +540,6 @@ public abstract class FlutterBridge {
     protected void sendSwtEvolveProperties() {
         System.out.println("will send: " + getConfigFlags());
         broadcastSwtEvolveProperties();
-    }
-
-    public static void on(String channel, java.util.function.Consumer<String> cb) {
-        client.getComm().on(channel, cb);
-    }
-
-    public static void off(String channel) {
-        client.getComm().remove(channel);
     }
 
 }

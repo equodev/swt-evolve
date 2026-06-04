@@ -5,6 +5,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 import java.util.ArrayList;
 
 @CompiledJson()
@@ -85,7 +86,7 @@ public class VCombo extends VComposite {
             });
         }
 
-        public static Combo read(JsonReader<?> reader) {
+        public static Combo read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

@@ -12,6 +12,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.ole.win32.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 public class VControl extends VWidget {
 
@@ -197,7 +198,7 @@ public class VControl extends VWidget {
             });
         }
 
-        public static Control read(JsonReader<?> reader) {
+        public static Control read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

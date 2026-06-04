@@ -6,6 +6,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.Display.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VText extends VScrollable {
@@ -127,7 +128,7 @@ public class VText extends VScrollable {
             });
         }
 
-        public static Text read(JsonReader<?> reader) {
+        public static Text read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

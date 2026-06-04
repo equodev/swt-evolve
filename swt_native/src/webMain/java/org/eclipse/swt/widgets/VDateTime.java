@@ -5,6 +5,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VDateTime extends VComposite {
@@ -77,7 +78,7 @@ public class VDateTime extends VComposite {
             });
         }
 
-        public static DateTime read(JsonReader<?> reader) {
+        public static DateTime read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

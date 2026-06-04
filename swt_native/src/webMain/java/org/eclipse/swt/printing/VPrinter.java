@@ -4,6 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VPrinter extends VDevice {
@@ -40,7 +41,7 @@ public class VPrinter extends VDevice {
             });
         }
 
-        public static Printer read(JsonReader<?> reader) {
+        public static Printer read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

@@ -8,6 +8,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VBusyIndicator {
@@ -37,7 +38,7 @@ public class VBusyIndicator {
             });
         }
 
-        public static BusyIndicator read(JsonReader<?> reader) {
+        public static BusyIndicator read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

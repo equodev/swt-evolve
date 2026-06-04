@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -314,7 +313,7 @@ class GCDrawer extends GCDrawerBase {
 
   Future<void> _handleImageInit(dynamic payload) async {
     final vImage = VImage.fromJson(
-        jsonDecode(payload as String) as Map<String, dynamic>);
+        payload as Map<String, dynamic>);
     _imgWidth = vImage.imageData?.width ?? 0;
     _imgHeight = vImage.imageData?.height ?? 0;
     _baseImage = await ImageUtils.decodeVImageToUIImage(vImage);
@@ -345,8 +344,10 @@ class GCDrawer extends GCDrawerBase {
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     if (byteData == null) return;
 
-    final encoded = base64Encode(byteData.buffer.asUint8List());
-    EquoCommService.sendPayload('${state.swt}/${state.id}/imageResult', encoded);
+    // Desktop binary path: send the raw PNG bytes as-is — no base64 (the binary comm channel
+    // carries them verbatim, ~33% smaller and no encode/decode). Java reads them via onBytes.
+    EquoCommService.sendBytes(
+        '${state.swt}/${state.id}/imageResult', byteData.buffer.asUint8List());
 
     _unregisterImageListeners();
   }
@@ -699,9 +700,10 @@ class GCDrawer extends GCDrawerBase {
 
       final byteData = await result.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) return;
-      EquoCommService.sendPayload(
+      // Binary path: raw PNG bytes, no base64 (see imageResult above).
+      EquoCommService.sendBytes(
         '${state.swt}/${state.id}/copyAreaImageintintResponse',
-        jsonEncode(base64Encode(byteData.buffer.asUint8List())),
+        byteData.buffer.asUint8List(),
       );
     } catch (e, stack) {
       print('[GC copyArea] Error: $e\n$stack');

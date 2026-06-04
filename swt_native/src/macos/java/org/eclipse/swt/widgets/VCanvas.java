@@ -5,6 +5,7 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VCanvas extends VComposite {
@@ -49,7 +50,7 @@ public class VCanvas extends VComposite {
             });
         }
 
-        public static Canvas read(JsonReader<?> reader) {
+        public static Canvas read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

@@ -5,6 +5,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 import java.util.ArrayList;
 
 @CompiledJson()
@@ -72,7 +73,7 @@ public class VClipboard {
             });
         }
 
-        public static Clipboard read(JsonReader<?> reader) {
+        public static Clipboard read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

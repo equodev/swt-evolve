@@ -309,7 +309,7 @@ public final class DartGC extends DartResource implements IGC {
         drawOp.image = GraphicsUtils.copyImage(display, image);
         drawOp.x = x;
         drawOp.y = y;
-        RequestResponse.callOnDisplay(this, "copyAreaImageintint", drawOp, String.class, p -> GCHelper.updateImageFromPng(image, null, p), 10_000);
+        RequestResponse.callOnDisplayBytes(this, "copyAreaImageintint", drawOp, p -> GCHelper.updateImageFromPngBytes(image, null, p), 10_000);
     }
 
     void copyArea(Image image, int x, int y, long srcImage) {
@@ -1839,8 +1839,8 @@ public final class DartGC extends DartResource implements IGC {
             final Image capturedSwt = imageCtx.swtSource();
             final java.util.concurrent.CompletableFuture<Void> capturedFuture = imageCtx.renderFuture();
             gcImageId = System.identityHashCode(this);
-            this.bridge = SwtFlutterBridgeBase.of(gcImageId, capturedDart, pngBase64 -> {
-                GCHelper.updateImageFromPng(capturedDart, capturedSwt, pngBase64);
+            this.bridge = SwtFlutterBridgeBase.of(gcImageId, capturedDart, pngBytes -> {
+                GCHelper.updateImageFromPngBytes(capturedDart, capturedSwt, pngBytes);
                 capturedFuture.complete(null);
                 Display d = Display.getDefault();
                 if (d != null && !d.isDisposed())

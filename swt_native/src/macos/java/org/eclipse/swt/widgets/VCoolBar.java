@@ -4,6 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 import java.util.ArrayList;
 
 @CompiledJson()
@@ -81,7 +82,7 @@ public class VCoolBar extends VComposite {
             });
         }
 
-        public static CoolBar read(JsonReader<?> reader) {
+        public static CoolBar read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

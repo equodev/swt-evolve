@@ -6,6 +6,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VMenu extends VWidget {
@@ -98,7 +99,7 @@ public class VMenu extends VWidget {
             });
         }
 
-        public static Menu read(JsonReader<?> reader) {
+        public static Menu read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

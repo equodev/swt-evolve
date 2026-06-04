@@ -111,7 +111,7 @@ void measureRequest(String bridge, int id) {
   print("Listen on $bridge/$id/widgetSizeRequest");
   EquoCommService.onRaw("$bridge/$id/widgetSizeRequest", (payload) {
     print("on $bridge/$id/sizeRequest $payload");
-    final Map<String, dynamic> widgetConfig = jsonDecode(payload as String);
+    final Map<String, dynamic> widgetConfig = payload as Map<String, dynamic>;
     // final widgetValue = mapWidgetValue(widgetConfig["widget"]);
     // var widgetValue = widgetWithConfig[0];
 

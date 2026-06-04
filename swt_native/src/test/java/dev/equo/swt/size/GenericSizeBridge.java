@@ -7,9 +7,7 @@ import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -86,11 +84,10 @@ abstract class GenericSizeBridge<REQUEST, SERIALIZED, RESULT> extends SwtFlutter
             System.out.println("Received windowSize "+p);
             this.windowSize = p;
         });
-        ctx = initializeFlutterWindow(client.getPort(), 0, id(this), widgetName(this), "", 0, 0);
+        ctx = initializeFlutterWindow(comm().getPort(), 0, id(this), widgetName(this), "", 0, 0);
         onPayload(this, responseChannel, p -> {
-            ByteArrayInputStream in = new ByteArrayInputStream(((String) p).getBytes(StandardCharsets.UTF_8));
             try {
-                SERIALIZED serialized = serializer.from(serializedClass, in);
+                SERIALIZED serialized = serializer.from(serializedClass, p);
                 RESULT dartResult = convertResult(serialized);
                 windowReady.thenRun(() ->
                     result.complete(dartResult)

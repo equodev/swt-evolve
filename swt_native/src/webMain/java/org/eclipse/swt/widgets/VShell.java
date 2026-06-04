@@ -6,6 +6,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VShell extends VDecorations {
@@ -101,7 +102,7 @@ public class VShell extends VDecorations {
             });
         }
 
-        public static Shell read(JsonReader<?> reader) {
+        public static Shell read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

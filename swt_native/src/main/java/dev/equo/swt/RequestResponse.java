@@ -83,6 +83,32 @@ public class RequestResponse {
         if (!future.isDone()) FlutterBridge.removeEvent(widget, receiveEvent);
     }
 
+    /**
+     * Raw-bytes variant of {@link #callOnDisplay}: the response payload is delivered as the raw
+     * frame bytes (no JSON/base64 decode), then passed to {@code handler}. Used for the binary
+     * D→J image path where Flutter returns PNG bytes via {@code sendBytes}.
+     */
+    public static void callOnDisplayBytes(Object widget, String eventName, Object args,
+                                          Consumer<byte[]> handler, long timeoutMs) {
+        Display display = getDisplay(widget);
+        String receiveEvent = eventName + RESPONSE_SUFFIX;
+        var future = new CompletableFuture<Void>();
+        FlutterBridge.onPayload(widget, receiveEvent, p -> {
+            FlutterBridge.removeEvent(widget, receiveEvent);
+            handler.accept(p);
+            future.complete(null);
+            if (display != null && !display.isDisposed()) display.wake();
+        });
+        send(widget, eventName, args);
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        while (!future.isDone() && System.currentTimeMillis() < deadline) {
+            if (display != null && !display.isDisposed() && !display.readAndDispatch()) {
+                display.sleep();
+            }
+        }
+        if (!future.isDone()) FlutterBridge.removeEvent(widget, receiveEvent);
+    }
+
     private static Display getDisplay(Object widget) {
         if (widget instanceof DartWidget w) return w.getDisplay();
         if (widget instanceof DartGC gc) return gc.getDisplay();

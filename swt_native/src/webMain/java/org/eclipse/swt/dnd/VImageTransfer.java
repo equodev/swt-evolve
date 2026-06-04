@@ -5,6 +5,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VImageTransfer extends VByteArrayTransfer {
@@ -32,7 +33,7 @@ public class VImageTransfer extends VByteArrayTransfer {
             });
         }
 
-        public static ImageTransfer read(JsonReader<?> reader) {
+        public static ImageTransfer read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

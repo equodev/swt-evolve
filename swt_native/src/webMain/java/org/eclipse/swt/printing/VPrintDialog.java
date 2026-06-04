@@ -4,6 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VPrintDialog extends VDialog {
@@ -72,7 +73,7 @@ public class VPrintDialog extends VDialog {
             });
         }
 
-        public static PrintDialog read(JsonReader<?> reader) {
+        public static PrintDialog read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

@@ -3,6 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 public class VDialog {
 
@@ -87,7 +88,7 @@ public class VDialog {
             });
         }
 
-        public static Dialog read(JsonReader<?> reader) {
+        public static Dialog read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

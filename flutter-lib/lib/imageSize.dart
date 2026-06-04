@@ -14,7 +14,7 @@ void measureRequest(String bridge, int id) {
   print("Listen on $bridge/$id/imageSizeRequest");
   EquoCommService.onRaw("$bridge/$id/imageSizeRequest", (payload) async {
     print("on $bridge/$id/imageSizeRequest");
-    var imageRequest = jsonDecode(payload as String) as Map<String, dynamic>;
+    var imageRequest = payload as Map<String, dynamic>;
     var base64Data = imageRequest["imageData"] as String;
 
     Uint8List imageBytes = base64Decode(base64Data);

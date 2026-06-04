@@ -2,6 +2,7 @@ package org.eclipse.swt.graphics;
 
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VFontMetrics {
@@ -31,7 +32,7 @@ public class VFontMetrics {
             });
         }
 
-        public static FontMetrics read(JsonReader<?> reader) {
+        public static FontMetrics read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

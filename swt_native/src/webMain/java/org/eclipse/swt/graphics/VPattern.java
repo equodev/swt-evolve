@@ -3,6 +3,7 @@ package org.eclipse.swt.graphics;
 import org.eclipse.swt.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VPattern extends VResource {
@@ -76,7 +77,7 @@ public class VPattern extends VResource {
             });
         }
 
-        public static Pattern read(JsonReader<?> reader) {
+        public static Pattern read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

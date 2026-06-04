@@ -4,6 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 
 @CompiledJson()
 public class VTableItem extends VItem {
@@ -95,7 +96,7 @@ public class VTableItem extends VItem {
             });
         }
 
-        public static TableItem read(JsonReader<?> reader) {
+        public static TableItem read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

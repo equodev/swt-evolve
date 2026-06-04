@@ -1,6 +1,7 @@
 package dev.equo.swt;
 
 import com.dslplatform.json.DslJson;
+import com.dslplatform.json.JsonReader;
 import com.dslplatform.json.JsonWriter;
 import com.dslplatform.json.NumberConverter;
 import com.dslplatform.json.StringConverter;
@@ -9,8 +10,6 @@ import org.eclipse.swt.widgets.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.custom.*;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public class Serializer {
@@ -19,22 +18,54 @@ public class Serializer {
     private static final byte[] name_style = "style".getBytes(java.nio.charset.StandardCharsets.UTF_8);
 
     private final DslJson<Object> dsl;
+    // DSL-JSON best practice: reuse the JsonWriter instead of allocating one (or a
+    // ByteArrayOutputStream) per call. One writer per thread keeps the growing byte[]
+    // buffer alive across serializations; it is never re-entered because converters write
+    // into the writer they are handed rather than calling back into to().
+    private final ThreadLocal<JsonWriter> localWriter;
 
     public Serializer() {
-//        Settings.withAnalyzers(false, false)
-//                .with()
         DslJson.Settings<Object> settings = new DslJson.Settings<>()
                 .includeServiceLoader(Serializer.class.getClassLoader())
                 .skipDefaultValues(true);
         dsl = new DslJson<>(settings);
+        localWriter = ThreadLocal.withInitial(dsl::newWriter);
     }
 
-    public void to(Object p, ByteArrayOutputStream out) throws IOException {
-        dsl.serialize(p, out);
+    /**
+     * Serialize {@code p} to a fresh {@code byte[]} using a reused thread-local
+     * {@link JsonWriter} in byte[] mode (DSL-JSON's recommended fast path). The returned
+     * array is a defensive copy, safe to hand to the async comm layer.
+     */
+    public byte[] to(Object p) throws IOException {
+        JsonWriter writer = localWriter.get();
+        writer.reset();
+        dsl.serialize(writer, p);
+        return writer.toByteArray();
     }
 
-    public <T> T from(Class<T> type, ByteArrayInputStream in) throws IOException {
-        return dsl.deserialize(type, in);
+    public <T> T from(Class<T> type, byte[] bytes) throws IOException {
+        return from(type, bytes, 0, bytes.length);
+    }
+
+    /**
+     * Deserialize a sub-range of {@code bytes}. DSL-JSON's byte[] reader (a reused thread-local
+     * {@link JsonReader}, no per-call stream object) only reads from index 0, but every inbound
+     * frame arrives at offset>0 (the {@code [len][actionId]} header precedes the body). So for a
+     * non-zero offset we copy the body slice into a 0-based array and use that reader rather than
+     * DSL-JSON's {@link ByteArrayInputStream} path — which is up to ~4× slower on large payloads
+     * (measured: a 64 KB JSON string decodes in ~20 µs via the byte[] reader vs ~82 µs via stream)
+     * and only a couple ns slower at event sizes, so the copy never meaningfully loses. See
+     * {@code SerializerDecodePathTest}.
+     */
+    public <T> T from(Class<T> type, byte[] bytes, int offset, int length) throws IOException {
+        if (length <= 0) return null;
+        if (offset != 0) {
+            byte[] slice = new byte[length];
+            System.arraycopy(bytes, offset, slice, 0, length);
+            bytes = slice;
+        }
+        return dsl.deserialize(type, bytes, length);
     }
 
     public static <T extends DartWidget> void writeWithId(DslJson json, JsonWriter writer, T impl) {

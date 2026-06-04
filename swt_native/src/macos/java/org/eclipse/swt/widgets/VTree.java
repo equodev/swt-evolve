@@ -5,6 +5,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
+import java.io.IOException;
 import org.eclipse.swt.custom.*;
 import java.util.ArrayList;
 
@@ -151,7 +152,7 @@ public class VTree extends VComposite {
             });
         }
 
-        public static Tree read(JsonReader<?> reader) {
+        public static Tree read(JsonReader<?> reader) throws IOException {
             return null;
         }
 

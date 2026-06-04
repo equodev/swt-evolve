@@ -2,10 +2,12 @@
 kotlin = "2.1.20"
 junit = "5.11.4"
 assertj = "3.25.3"
-equo-comm = "3.1.0.202405302201"
+java-websocket = "1.5.7"
+jetty = "12.0.16"
 auto-value = "1.10.4"
 dsl-json = "2.0.2"
 json-unit = "4.1.1"
+gson = "2.11.0"
 mockito = "5.18.0"
 instancio = "5.4.0"
 
@@ -19,9 +21,15 @@ junit-jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engi
 # Testing
 assertj = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
 json-unit-assertj = { group = "net.javacrumbs.json-unit", name = "json-unit-assertj", version.ref = "json-unit" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
 instancio-junit = { group = "org.instancio", name = "instancio-junit", version.ref = "instancio" }
 
 # Core dependencies
-equo-comm-ws = { group = "dev.equo", name = "com.equo.comm.ws.provider", version.ref = "equo-comm" }
+java-websocket = { group = "org.java-websocket", name = "Java-WebSocket", version.ref = "java-websocket" }
 dsl-json = { group = "com.dslplatform", name = "dsl-json", version.ref = "dsl-json" }
+
+# Alternative WebSocket implementation for benchmarking (-Dcomm.impl=jetty).
+# Jetty 12 core flavor (no servlets) — websocket artifact renamed from websocket-jetty-server.
+jetty-server = { group = "org.eclipse.jetty", name = "jetty-server", version.ref = "jetty" }
+jetty-websocket-server = { group = "org.eclipse.jetty.websocket", name = "jetty-websocket-jetty-server", version.ref = "jetty" }
