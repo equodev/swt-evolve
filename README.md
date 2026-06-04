@@ -50,12 +50,142 @@ The easiest way to see SWT Evolve in action is to run the examples included in t
 
 ### Modernize Your Own App
 
+**Recommended: Use the Equo CLI**
+
+The easiest and recommended way to modernize an SWT or Eclipse RCP application is with the **Equo CLI**. It automatically detects and replaces the SWT JAR in your application, with support for folders, ZIP files, and DMG bundles.
+
+See the **Equo CLI** section below for installation instructions, supported platforms, and usage examples.
+
+**Manual JAR Replacement (Advanced)**
+
+If you prefer not to use the CLI, you can manually replace the SWT JAR:
+
 1.  **Get SWT Evolve:** Clone this repository and build it (see [CONTRIBUTING.md](./CONTRIBUTING.md)), or get the `swt-evolve.jar` file from:
     - [Download latest release](https://github.com/equodev/swt-evolve/releases/latest)
 2.  **Locate Your Old SWT Jar:** Find the original `swt.jar` in your SWT application.
 3.  **Replace and Run:** Rename the swt-evolve JAR to match the exact filename of the original SWT JAR you located. Then, use your renamed file to replace the original. That's it—run your application to see the modernized UI.
+---
 
-Note: For the time being, this method only works for pure SWT applications. Support for Eclipse-based applications is coming soon.
+## 🛠️ Equo CLI
+
+The Equo CLI lets you modernize any SWT, Eclipse RCP application instantly — no code changes required. Pass a folder, ZIP, or DMG and the CLI will automatically detect and replace the SWT JAR.
+
+### Install via script
+
+macOS / Linux:
+```bash
+curl -fsSL https://dl.equo.dev/evolve/cli/install.sh | bash && source ~/.equo/env
+```
+
+Windows (PowerShell):
+```powershell
+irm https://dl.equo.dev/evolve/cli/install.ps1 | iex
+```
+
+### Manual install
+
+<details>
+<summary>Windows (x86_64)</summary>
+
+```powershell
+curl.exe -fL -o equo-windows.zip https://dl.equo.dev/evolve/cli/equo-windows.zip
+Expand-Archive equo-windows.zip .\equo -Force
+.\equo\equo.exe --help
+```
+</details>
+
+<details>
+<summary>Windows (arm64)</summary>
+
+```powershell
+curl.exe -fL -o equo-windows-arm64.zip https://dl.equo.dev/evolve/cli/equo-windows-arm64.zip
+Expand-Archive equo-windows-arm64.zip .\equo -Force
+.\equo\equo.exe --help
+```
+</details>
+
+<details>
+<summary>macOS (Apple Silicon)</summary>
+
+```bash
+curl -fL -o equo-macos-arm64.zip https://dl.equo.dev/evolve/cli/equo-macos-arm64.zip
+unzip equo-macos-arm64.zip -d equo
+./equo/equo --help
+```
+</details>
+
+<details>
+<summary>macOS (Intel)</summary>
+
+```bash
+curl -fL -o equo-macos-amd64.zip https://dl.equo.dev/evolve/cli/equo-macos-amd64.zip
+unzip equo-macos-amd64.zip -d equo
+./equo/equo --help
+```
+</details>
+
+<details>
+<summary>Linux (x86_64)</summary>
+
+```bash
+curl -fL -o equo-linux.zip https://dl.equo.dev/evolve/cli/equo-linux.zip
+unzip equo-linux.zip -d equo
+./equo/equo --help
+```
+</details>
+
+<details>
+<summary>Linux (arm64)</summary>
+
+```bash
+curl -fL -o equo-linux-arm64.zip https://dl.equo.dev/evolve/cli/equo-linux-arm64.zip
+unzip equo-linux-arm64.zip -d equo
+./equo/equo --help
+```
+</details>
+
+### Usage
+
+```bash
+# Modernize an SWT application (desktop)
+equo modernize path/to/your/app
+
+# Modernize for web — run your SWT application directly in a browser
+equo modernize --web path/to/your/app
+```
+
+You can pass a folder, a ZIP file, or a DMG. Run `equo modernize --help` to see all available options and examples.
+
+---
+
+## 🏆 NatTable Example Application
+
+[NatTable](https://www.eclipse.org/nattable/) is one of the most advanced and widely-used SWT-based grid components. We ship a ready-to-run NatTable example application modernized with SWT Evolve (web), so you can immediately see it running in your browser.
+
+### Download
+
+| Platform | Download |
+|---|---|
+| Linux (x86_64) | [nattable.example.e4-linux-x86_64.zip](https://dl.equo.dev/swt/nattable.example/nattable.example.e4-linux-x86_64.zip) |
+| macOS (Apple Silicon) | [nattable.example.e4-macos-aarch64.zip](https://dl.equo.dev/swt/nattable.example/nattable.example.e4-macos-aarch64.zip) |
+| macOS (Intel) | [nattable.example.e4-macos-x86_64.zip](https://dl.equo.dev/swt/nattable.example/nattable.example.e4-macos-x86_64.zip) |
+| Windows (x86_64) | [nattable.example.e4-win-x86_64.zip](https://dl.equo.dev/swt/nattable.example/nattable.example.e4-win-x86_64.zip) |
+
+### Update to the Latest Version of SWT Evolve
+
+The downloaded bundle ships with the version of SWT Evolve available at release time. To upgrade it to the latest version, use the Equo CLI with the `--web` flag:
+
+```bash
+# From the downloaded ZIP
+equo modernize --web path/to/nattable.example.e4-linux-x86_64.zip
+
+# Or from an already-extracted folder
+equo modernize --web path/to/nattable.example.e4-linux-x86_64/
+```
+
+The CLI will replace the SWT Evolve JAR inside the bundle with the latest version and produce an updated, ready-to-run package. The same workflow applies to any other SWT or Eclipse RCP application.
+
+---
 
 ## Key Features
 
@@ -70,39 +200,7 @@ Note: For the time being, this method only works for pure SWT applications. Supp
 
 ## 📊 Project Status: Alpha
 
-SWT Evolve is currently in an **alpha** stage. This means we are actively developing the core functionalities and implementing the API. We are already working with customers on commercial prototypes, but not all widgets are complete.
-
-Here is the current status of major widgets:
-
-| Widget            | Status | Notes                                                               |
-|-------------------| -- |---------------------------------------------------------------------|
-| `StyledText`      | ✔️ Implemented |                                                                     |
-| `Tree`            | ⚠️ Partially Implemented | Key features working, more APIs to add.                             |
-| `Table`           | ⚠️ Partially Implemented | Key features working, more APIs to add.                             |
-| `CTabFolder`      | ⚠️  Partially Implemented | Basic functionality is solid.                                       |
-| `Button (Push)`   | ✔️ Implemented |                                                                     |
-| `Button (Check)`  | ✔️ Implemented |                                                                     |
-| `Button (Toggle)` | ✔️ Implemented |                                                                     |
-| `Button (Radio)`  | ⚠️ Partially Implemented |                                                                     |
-| `Button (Arrow)`  | ⚠️ Partially Implemented |                                                                     |
-| `Canvas`          | ✔️ Implemented |                                                                     |
-| `GC`              | ✔️ Implemented | Only supports Canvas. Draw2d implemented for FigureCanvas.          |
-| `Label`           | ✔️ Implemented |                                                                     |
-| `List`            | ✔️ Implemented |                                                                     |
-| `Text`            | ✔️ Implemented |                                                                     |
-| `Group`           | ✔️ Implemented |                                                                     |
-| `Link`            | ✔️ Implemented |                                                                     |
-| `Combo`           | ⚠️ Partially Implemented | SWT.READ_ONLY Combo implemented for Windows and Linux, SWT.SIMPLE and SWT.DROP_DOWN to add. |
-| `ExpandBar`       | ⚠️ Implemented for Windows |  |
-| `Scale`           |  ✔️ Implemented  |  |
-| `Spinner`         |  ✔️ Implemented  |  |
-| `Slider`          |  ✔️ Implemented  |  |
-| `ProgressBar`     |  ✔️ Implemented  |  |
-| `Menu`            |  ⚠️ Partially Implemented  | SWT.BAR Menu to add  |
-| `CCombo`          |  ✔️ Implemented  |  |
-| `SashForm`        |  ✔️ Implemented  |  |
-| `CoolBar`         |  ⚠️ Implemented for Windows  |  |
-| `ToolTip`         |  ⚠️ Implemented for Windows | ToolTip text for Controls implemented, ToolTip Widget to add  |
+SWT Evolve is currently in an **alpha** stage. While we continue refining the implementation and improving performance, all standard SWT widgets are now implemented and we are already working with customers on commercial prototypes.
 ---
 
 ## 🗺️ Roadmap
