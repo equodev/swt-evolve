@@ -153,7 +153,6 @@ public class DartCLabel extends DartCanvas implements ICLabel {
             align = SWT.RIGHT;
         if ((style & SWT.LEFT) != 0)
             align = SWT.LEFT;
-        addPaintListener(this::onPaint);
         this.background = new Color(0, 0, 0, 0);
         addTraverseListener(event -> {
             if (event.detail == SWT.TRAVERSE_MNEMONIC) {
@@ -178,18 +177,6 @@ public class DartCLabel extends DartCanvas implements ICLabel {
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
         return Sizes.computeSize(this, wHint, hHint, changed);
-    }
-
-    /**
-     * Draw a rectangle in the given colors.
-     */
-    private void drawBevelRect(GC gc, int x, int y, int w, int h, Color topleft, Color bottomright) {
-        gc.setForeground(bottomright);
-        gc.drawLine(x + w, y, x + w, y + h);
-        gc.drawLine(x, y + h, x + w, y + h);
-        gc.setForeground(topleft);
-        gc.drawLine(x, y, x + w - 1, y);
-        gc.drawLine(x, y, x, y + h - 1);
     }
 
     /*
@@ -288,32 +275,6 @@ public class DartCLabel extends DartCanvas implements ICLabel {
 	 */
         //checkWidget();
         return rightMargin;
-    }
-
-    /**
-     * Compute the minimum size.
-     */
-    private Point getTotalSize(Image image, String text) {
-        Point size = new Point(0, 0);
-        if (image != null) {
-            Rectangle r = image.getBounds();
-            size.x += r.width;
-            size.y += r.height;
-        }
-        GC gc = new GC(this.getApi());
-        if (text != null && text.length() > 0) {
-            Point e = gc.textExtent(text, DRAW_FLAGS);
-            if (e != null) {
-                size.x += e.x;
-                size.y = Math.max(size.y, e.y);
-            }
-            if (image != null)
-                size.x += GAP;
-        } else {
-            size.y = Math.max(size.y, gc.getFontMetrics().getHeight());
-        }
-        gc.dispose();
-        return size;
     }
 
     @Override
@@ -465,203 +426,6 @@ public class DartCLabel extends DartCanvas implements ICLabel {
                 }
             }
             control = control.getParent();
-        }
-    }
-
-    void onPaint(PaintEvent event) {
-        Rectangle rect = getClientArea();
-        if (rect.width == 0 || rect.height == 0)
-            return;
-        boolean shortenText = false;
-        String t = text;
-        Image img = image;
-        int availableWidth = Math.max(0, rect.width - (leftMargin + rightMargin));
-        Point extent = getTotalSize(img, t);
-        if (extent.x > availableWidth) {
-            if (t != null && !t.isEmpty()) {
-                img = null;
-                extent = getTotalSize(img, t);
-            }
-            if (extent.x > availableWidth) {
-                shortenText = true;
-            }
-        }
-        GC gc = event.gc;
-        String[] lines = t == null ? null : splitString(t);
-        // shorten the text
-        if (shortenText) {
-            extent.x = 0;
-            for (int i = 0; i < lines.length; i++) {
-                Point e = gc.textExtent(lines[i], DRAW_FLAGS);
-                if (e.x > availableWidth) {
-                    lines[i] = shortenText(gc, lines[i], availableWidth);
-                    extent.x = Math.max(extent.x, getTotalSize(null, lines[i]).x);
-                } else {
-                    extent.x = Math.max(extent.x, e.x);
-                }
-            }
-            if (appToolTipText == null) {
-                super.setToolTipText(t);
-                ;
-            }
-        } else {
-            super.setToolTipText(appToolTipText);
-        }
-        // determine horizontal position
-        int x = rect.x + leftMargin;
-        if (align == SWT.CENTER) {
-            x = (rect.width - extent.x) / 2;
-        }
-        if (align == SWT.RIGHT) {
-            x = rect.width - rightMargin - extent.x;
-        }
-        // draw a background image behind the text
-        try {
-            if (backgroundImage != null) {
-                // draw a background image behind the text
-                Rectangle imageRect = backgroundImage.getBounds();
-                // tile image to fill space
-                gc.setBackground(getBackground());
-                gc.fillRectangle(rect);
-                int xPos = 0;
-                while (xPos < rect.width) {
-                    int yPos = 0;
-                    while (yPos < rect.height) {
-                        gc.drawImage(backgroundImage, xPos, yPos);
-                        yPos += imageRect.height;
-                    }
-                    xPos += imageRect.width;
-                }
-            } else if (gradientColors != null) {
-                // draw a gradient behind the text
-                final Color oldBackground = gc.getBackground();
-                if (gradientColors.length == 1) {
-                    if (gradientColors[0] != null)
-                        gc.setBackground(gradientColors[0]);
-                    gc.fillRectangle(0, 0, rect.width, rect.height);
-                } else {
-                    final Color oldForeground = gc.getForeground();
-                    Color lastColor = gradientColors[0];
-                    if (lastColor == null)
-                        lastColor = oldBackground;
-                    int pos = 0;
-                    for (int i = 0; i < gradientPercents.length; ++i) {
-                        gc.setForeground(lastColor);
-                        lastColor = gradientColors[i + 1];
-                        if (lastColor == null)
-                            lastColor = oldBackground;
-                        gc.setBackground(lastColor);
-                        if (gradientVertical) {
-                            final int gradientHeight = (gradientPercents[i] * rect.height / 100) - pos;
-                            gc.fillGradientRectangle(0, pos, rect.width, gradientHeight, true);
-                            pos += gradientHeight;
-                        } else {
-                            final int gradientWidth = (gradientPercents[i] * rect.width / 100) - pos;
-                            gc.fillGradientRectangle(pos, 0, gradientWidth, rect.height, false);
-                            pos += gradientWidth;
-                        }
-                    }
-                    if (gradientVertical && pos < rect.height) {
-                        gc.setBackground(getBackground());
-                        gc.fillRectangle(0, pos, rect.width, rect.height - pos);
-                    }
-                    if (!gradientVertical && pos < rect.width) {
-                        gc.setBackground(getBackground());
-                        gc.fillRectangle(pos, 0, rect.width - pos, rect.height);
-                    }
-                    gc.setForeground(oldForeground);
-                }
-                gc.setBackground(oldBackground);
-            } else {
-                //if ((background != null || (getStyle() & SWT.DOUBLE_BUFFERED) == 0) && background.getAlpha() > 0) {    gc.setBackground(getBackground());    gc.fillRectangle(rect);}
-                ;
-            }
-        } catch (SWTException e) {
-            //if ((getStyle() & SWT.DOUBLE_BUFFERED) == 0) {    gc.setBackground(getBackground());    gc.fillRectangle(rect);}
-            ;
-        }
-        // draw border
-        int style = getStyle();
-        if ((style & SWT.SHADOW_IN) != 0 || (style & SWT.SHADOW_OUT) != 0) {
-            paintBorder(gc, rect);
-        }
-        /*
-	 * Compute text height and image height. If image height is more than
-	 * the text height, draw image starting from top margin. Else draw text
-	 * starting from top margin.
-	 */
-        Rectangle imageRect = null;
-        int lineHeight = 0, textHeight = 0, imageHeight = 0;
-        if (img != null) {
-            imageRect = img.getBounds();
-            imageHeight = imageRect.height;
-        }
-        if (lines != null) {
-            lineHeight = gc.getFontMetrics().getHeight();
-            textHeight = lines.length * lineHeight;
-        }
-        int imageY = 0, midPoint = 0, lineY = 0;
-        if (imageHeight > textHeight) {
-            if (topMargin == DEFAULT_MARGIN && bottomMargin == DEFAULT_MARGIN)
-                imageY = rect.y + (rect.height - imageHeight) / 2;
-            else
-                imageY = topMargin;
-            midPoint = imageY + imageHeight / 2;
-            lineY = midPoint - textHeight / 2;
-        } else {
-            if (topMargin == DEFAULT_MARGIN && bottomMargin == DEFAULT_MARGIN)
-                lineY = rect.y + (rect.height - textHeight) / 2;
-            else
-                lineY = topMargin;
-            midPoint = lineY + textHeight / 2;
-            imageY = midPoint - imageHeight / 2;
-        }
-        // draw the image
-        if (img != null) {
-            gc.drawImage(img, x, imageY, imageRect.width, imageHeight);
-            x += imageRect.width + GAP;
-            extent.x -= imageRect.width + GAP;
-        }
-        // draw the text
-        if (lines != null) {
-            gc.setForeground(getForeground());
-            for (String line : lines) {
-                int lineX = x;
-                if (lines.length > 1) {
-                    if (align == SWT.CENTER) {
-                        int lineWidth = gc.textExtent(line, DRAW_FLAGS).x;
-                        lineX = x + Math.max(0, (extent.x - lineWidth) / 2);
-                    }
-                    if (align == SWT.RIGHT) {
-                        int lineWidth = gc.textExtent(line, DRAW_FLAGS).x;
-                        lineX = Math.max(x, rect.x + rect.width - rightMargin - lineWidth);
-                    }
-                }
-                gc.drawText(line, lineX, lineY, DRAW_FLAGS);
-                lineY += lineHeight;
-            }
-        }
-    }
-
-    /**
-     * Paint the Label's border.
-     */
-    private void paintBorder(GC gc, Rectangle r) {
-        Display disp = getDisplay();
-        Color c1 = null;
-        Color c2 = null;
-        int style = getStyle();
-        if ((style & SWT.SHADOW_IN) != 0) {
-            c1 = disp.getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW);
-            c2 = disp.getSystemColor(SWT.COLOR_WIDGET_HIGHLIGHT_SHADOW);
-        }
-        if ((style & SWT.SHADOW_OUT) != 0) {
-            c1 = disp.getSystemColor(SWT.COLOR_WIDGET_LIGHT_SHADOW);
-            c2 = disp.getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW);
-        }
-        if (c1 != null && c2 != null) {
-            gc.setLineWidth(1);
-            drawBevelRect(gc, r.x, r.y, r.width - 1, r.height - 1, c1, c2);
         }
     }
 
@@ -1113,25 +877,6 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         if (nextOffset != offset)
             return layout.getPreviousOffset(nextOffset, SWT.MOVEMENT_CLUSTER);
         return offset;
-    }
-
-    private String[] splitString(String text) {
-        String[] lines = new String[1];
-        int start = 0, pos;
-        do {
-            pos = text.indexOf('\n', start);
-            if (pos == -1) {
-                lines[lines.length - 1] = text.substring(start);
-            } else {
-                boolean crlf = (pos > 0) && (text.charAt(pos - 1) == '\r');
-                lines[lines.length - 1] = text.substring(start, pos - (crlf ? 1 : 0));
-                start = pos + 1;
-                String[] newLines = new String[lines.length + 1];
-                System.arraycopy(lines, 0, newLines, 0, lines.length);
-                lines = newLines;
-            }
-        } while (pos != -1);
-        return lines;
     }
 
     protected void _hookEvents() {
