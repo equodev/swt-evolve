@@ -820,6 +820,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     void destroyDisplay() {
+        if (displayBridge != null)
+            displayBridge.destroyDisplay();
     }
 
     /**
@@ -2446,6 +2448,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         checkDevice();
         dev.equo.swt.CrashReporter.checkPendingNativeCrashesIfNeeded();
         dev.equo.swt.FlutterBridge.update();
+        if (displayBridge != null)
+            displayBridge.onUpdate();
         addPool();
         runSkin();
         runDeferredLayouts();
@@ -3396,11 +3400,10 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
             return true;
         sendPreExternalEventDispatchEvent();
         try {
-            addPool();
             allowTimers = runAsyncMessages = false;
+            Thread.sleep(16);
             allowTimers = runAsyncMessages = true;
-        } finally {
-            removePool();
+        } catch (InterruptedException e) {
         }
         sendPostExternalEventDispatchEvent();
         return true;

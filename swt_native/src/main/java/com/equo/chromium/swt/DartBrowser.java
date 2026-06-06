@@ -16,9 +16,9 @@
 package com.equo.chromium.swt;
 
 import java.util.*;
-
 import org.eclipse.swt.*;
 import org.eclipse.swt.browser.*;
+import org.eclipse.swt.events.*;
 import org.eclipse.swt.program.*;
 import org.eclipse.swt.widgets.*;
 import dev.equo.swt.*;

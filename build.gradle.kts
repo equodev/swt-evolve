@@ -25,6 +25,13 @@ allprojects {
             url = uri("https://dl.equo.dev/sdk/mvn/release")
             content {
                 excludeGroup("org.eclipse")
+                excludeGroup("com.equo")
+            }
+        }
+        maven {
+            url = uri(providers.gradleProperty("chromiumRepoUrl").getOrElse("https://dl.equo.dev/chromium-swt-ee/marketplace/mvn"))
+            content {
+                includeGroup("com.equo")
             }
         }
     }

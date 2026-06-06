@@ -4,6 +4,7 @@ junit = "5.11.4"
 assertj = "3.25.3"
 java-websocket = "1.5.7"
 jetty = "12.0.16"
+equo-chromium = "[128.0.44,129.0.0)"
 auto-value = "1.10.4"
 dsl-json = "2.0.2"
 json-unit = "4.1.1"
@@ -28,6 +29,7 @@ instancio-junit = { group = "org.instancio", name = "instancio-junit", version.r
 # Core dependencies
 java-websocket = { group = "org.java-websocket", name = "Java-WebSocket", version.ref = "java-websocket" }
 dsl-json = { group = "com.dslplatform", name = "dsl-json", version.ref = "dsl-json" }
+equo-chromium = { group = "com.equo", name = "com.equo.chromium", version.ref = "equo-chromium" }
 
 # Alternative WebSocket implementation for benchmarking (-Dcomm.impl=jetty).
 # Jetty 12 core flavor (no servlets) — websocket artifact renamed from websocket-jetty-server.

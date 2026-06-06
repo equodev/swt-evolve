@@ -1,5 +1,6 @@
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.kotlin.dsl.*
+import java.io.File
 
 plugins {
     java
@@ -45,8 +46,23 @@ fun getSwtOs(os: String): String = when (os) {
 fun getSwtArch(arch: String): String =
     if (arch.contains("aarch64") || arch.contains("arm")) "aarch64" else "x86_64"
 
-fun flutterExe(): String = if (System.getProperty("os.name").lowercase().contains("windows")) "flutter.bat" else "flutter"
-fun dartExe(): String = if (System.getProperty("os.name").lowercase().contains("windows")) "dart.bat" else "dart"
+val isWindowsOs = System.getProperty("os.name").lowercase().contains("windows")
+
+fun resolveOnPath(name: String): String {
+    val pathEnv = System.getenv("PATH") ?: ""
+    for (dir in pathEnv.split(if (isWindowsOs) ";" else ":")) {
+        if (dir.isBlank()) continue
+        val f = File(dir, name)
+        if (f.isFile && f.canExecute()) return f.absolutePath
+    }
+    return name
+}
+
+val flutterExePath: String by lazy { resolveOnPath(if (isWindowsOs) "flutter.bat" else "flutter") }
+val dartExePath: String by lazy { resolveOnPath(if (isWindowsOs) "dart.bat" else "dart") }
+
+fun flutterExe(): String = flutterExePath
+fun dartExe(): String = dartExePath
 
 fun requiredFlutterVersion(): String {
     val content = file("../flutter-lib/pubspec.yaml").readText()
@@ -106,6 +122,7 @@ dependencies {
     compileOnly(libs.jetty.websocket.server)
     testRuntimeOnly(libs.jetty.server)
     testRuntimeOnly(libs.jetty.websocket.server)
+    compileOnly(libs.equo.chromium)
 
     implementation(libs.dsl.json)
     annotationProcessor(libs.dsl.json)
@@ -406,7 +423,7 @@ platforms.forEach { platform ->
             when (info.os) {
                 "macos" -> {
                     val flutterArch = if (info.arch == "aarch64") "arm64" else "x86_64"
-                    commandLine = listOf("bash", "-c", "./set-arch.sh $flutterArch && flutter build macos")
+                    commandLine = listOf("bash", "-c", "./set-arch.sh $flutterArch && '${flutterExe()}' build macos")
                 }
                 else -> commandLine = listOf(flutterExe(), "build", info.os)
             }
@@ -478,7 +495,11 @@ platforms.forEach { platform ->
                 "Automatic-Module-Name" to "org.eclipse.swt.${info.swtWs}.${info.swtOs}.${info.arch}",
                 "Evolve-Version" to (gradle.parent?.rootProject?.version ?: project.version),
             )
-        }
+            if (info.isWeb)
+                attributes("Import-Package" to "com.equo.chromium;resolution:=optional," +
+                        "com.equo.chromium.utils;resolution:=optional," +
+                        "com.equo.chromium.events;resolution:=optional")
+            }
         dependsOn("${info.desktopPlatform}ExtractNatives")
         dependsOn("${info.desktopPlatform}CopyFlutterBinaries")
     }
