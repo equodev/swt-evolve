@@ -1266,6 +1266,8 @@ public class DartShell extends DartDecorations implements IShell {
         if (_getFullScreen() == fullScreen)
             return;
         this.fullScreen = fullScreen;
+        if (getBridge() instanceof dev.equo.swt.WindowBridge wb)
+            wb.setWindowFullScreen(this, fullScreen);
         if (fullScreen) {
             if (getMonitor().equals(display.getPrimaryMonitor())) {
                 if (menuBar != null) {
@@ -1316,6 +1318,8 @@ public class DartShell extends DartDecorations implements IShell {
         dirty();
         checkWidget();
         super.setMaximized(maximized);
+        if (getBridge() instanceof dev.equo.swt.WindowBridge wb)
+            wb.setWindowMaximized(this, maximized);
         if (maximized)
             bounds = display.getBounds();
     }
@@ -1381,6 +1385,8 @@ public class DartShell extends DartDecorations implements IShell {
         dirty();
         checkWidget();
         super.setMinimized(minimized);
+        if (getBridge() instanceof dev.equo.swt.WindowBridge wb)
+            wb.setWindowMinimized(this, minimized);
         if (!getVisible())
             return;
         if (minimized) {
@@ -1521,6 +1527,8 @@ public class DartShell extends DartDecorations implements IShell {
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         super.setText(string);
+        if (getBridge() instanceof dev.equo.swt.WindowBridge wb)
+            wb.setWindowTitle(this, string);
     }
 
     @Override

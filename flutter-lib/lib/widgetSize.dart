@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -143,7 +142,7 @@ void measureRequest(String bridge, int id) {
         };
 
         // print("send $bridge/$id/widgetSizeResponse $response");
-        EquoCommService.sendPayload("$bridge/$id/widgetSizeResponse", jsonEncode(response));
+        EquoCommService.sendPayload("$bridge/$id/widgetSizeResponse", response);
     });
   });
   runApp(SizedBox());

@@ -379,8 +379,36 @@ public class WebFlutterServer {
          * SharedArrayBuffer in the browser.
          */
         private void setCrossOriginHeaders(HttpExchange exchange) {
-            exchange.getResponseHeaders().set("Cross-Origin-Opener-Policy", "same-origin");
-            exchange.getResponseHeaders().set("Cross-Origin-Embedder-Policy", "require-corp");
+            if (isCrossOriginIsolated()) {
+                // Cross-origin isolated: enables SharedArrayBuffer (Flutter web threads),
+                // but the page can NOT be embedded in a cross-origin iframe.
+                exchange.getResponseHeaders().set("Cross-Origin-Opener-Policy", "same-origin");
+                exchange.getResponseHeaders().set("Cross-Origin-Embedder-Policy", "credentialless");
+            } else {
+                // Permissive: embeddable in a cross-origin iframe (e.g. hosted browser),
+                // but SharedArrayBuffer is unavailable.
+                exchange.getResponseHeaders().set("Cross-Origin-Opener-Policy", "unsafe-none");
+                exchange.getResponseHeaders().set("Cross-Origin-Embedder-Policy", "unsafe-none");
+            }
+        }
+
+        /**
+         * Whether to serve the app in cross-origin isolated mode (COOP {@code same-origin} +
+         * COEP {@code credentialless}), which is required for WASM SharedArrayBuffer / Flutter
+         * web multi-threading but prevents the page from being embedded in a cross-origin iframe.
+         * <p>
+         * Controlled by the {@code dev.equo.swt.web.crossOriginIsolated} system property. When the
+         * property is unset, the default is {@code true}, except under Chromium standalone mode
+         * ({@code dev.equo.swt.mode=chromium}), where the default reverts to {@code false} so the
+         * app can run embedded in the Chromium window.
+         */
+        private boolean isCrossOriginIsolated() {
+            String prop = System.getProperty("dev.equo.swt.web.crossOriginIsolated");
+            if (prop != null) {
+                return Boolean.parseBoolean(prop);
+            }
+            boolean isChromium = "chromium".equalsIgnoreCase(System.getProperty("dev.equo.swt.mode"));
+            return !isChromium;
         }
 
         /**
