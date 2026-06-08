@@ -59,6 +59,10 @@ public class Sizes {
         return ButtonSizes.computeSize(c, wHint, hHint, changed);
     }
 
+    public static Point computeSize(DartTableItem widget, int wHint, int hHint, boolean changed) {
+        return TableItemSizes.computeSize(widget, wHint, hHint, changed);
+    }
+
     public static Point computeSize(DartCCombo c, int wHint, int hHint, boolean changed) {
         return CComboSizes.computeSize(c, wHint, hHint, changed);
     }

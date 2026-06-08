@@ -87,6 +87,15 @@ Size? _findImageSize(RenderBox renderBox) {
   if (renderBox.runtimeType.toString().contains('RenderImage')) {
     return renderBox.size;
   }
+  // Detect icon placeholder: square leaf RenderConstrainedBox (SizedBox with iconSize=fontSize)
+  if (renderBox is RenderConstrainedBox && renderBox.hasSize) {
+    final s = renderBox.size;
+    if (s.width == s.height && s.width > 0) {
+      bool isLeaf = true;
+      renderBox.visitChildren((_) { isLeaf = false; });
+      if (isLeaf) return s;
+    }
+  }
   Size? result;
   renderBox.visitChildren((child) {
     if (result == null && child is RenderBox) {

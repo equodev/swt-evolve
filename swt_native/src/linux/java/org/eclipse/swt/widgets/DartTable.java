@@ -23,6 +23,7 @@ import org.eclipse.swt.internal.*;
 import java.util.Objects;
 import org.eclipse.swt.custom.*;
 import java.util.Arrays;
+import dev.equo.swt.size.TableSizes;
 import dev.equo.swt.*;
 
 /**
