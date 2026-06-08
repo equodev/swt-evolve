@@ -30,13 +30,38 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
   @override
   Widget build(BuildContext context) {
     _context = TableItemContext.of(context);
-    if (_context == null) {
-      return const SizedBox.shrink();
-    }
 
     final theme = Theme.of(context).extension<TableThemeExtension>();
     if (theme == null) {
       return const SizedBox.shrink();
+    }
+
+    if (_context == null) {
+      // Standalone mode used by the measure tool — render column 0 as a single row cell.
+      final cellText =
+          state.texts?.isNotEmpty == true ? (state.texts!.first ?? '') : '';
+      final textStyle = getTextStyle(
+        context: context,
+        font: state.font,
+        textColor: theme.rowTextStyle?.color ?? Colors.black,
+        baseTextStyle: theme.rowTextStyle,
+      );
+      final VImage? cellImage =
+          state.images?.isNotEmpty == true ? state.images!.first : state.image;
+      return SizedBox(
+        height: calculateRowHeight(textStyle, theme),
+        child: Container(
+          padding: theme.cellPadding,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (cellImage != null)
+                buildImageIcon(cellImage, true, textStyle, theme),
+              Text(cellText, style: textStyle, maxLines: 1),
+            ],
+          ),
+        ),
+      );
     }
 
     return const SizedBox.shrink();

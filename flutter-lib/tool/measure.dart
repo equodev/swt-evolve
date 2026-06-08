@@ -788,11 +788,20 @@ class WidgetMeasurer {
           'height': imageBox.size.height,
         };
       } else if (expectedComponents['image'] != null) {
-        final img = expectedComponents['image'] as (int, int);
-        discovered['image'] = {
-          'width': img.$1.toDouble(),
-          'height': img.$2.toDouble(),
-        };
+        // Try icon-sized placeholder first (FutureBuilder SizedBox for icon images)
+        final iconBox = _findIconBox(root);
+        if (iconBox != null) {
+          discovered['image'] = {
+            'width': iconBox.size.width,
+            'height': iconBox.size.height,
+          };
+        } else {
+          final img = expectedComponents['image'] as (int, int);
+          discovered['image'] = {
+            'width': img.$1.toDouble(),
+            'height': img.$2.toDouble(),
+          };
+        }
       }
     }
 
@@ -822,6 +831,21 @@ class WidgetMeasurer {
       if (found != null) return found;
     }
 
+    return null;
+  }
+
+  // Finds an icon-sized placeholder: a square leaf box (FutureBuilder SizedBox fallback for icon images).
+  RenderBoxInfo? _findIconBox(RenderBoxInfo box) {
+    if (box.imageSource == null &&
+        box.size.width == box.size.height &&
+        box.size.width > 0 &&
+        box.children.isEmpty) {
+      return box;
+    }
+    for (var child in box.children) {
+      final found = _findIconBox(child);
+      if (found != null) return found;
+    }
     return null;
   }
 
@@ -1110,6 +1134,24 @@ class WidgetMeasurer {
       constants['imageSpacing'] = imageSpacing ?? 0.0;
       constants['imageUsesMax'] = imageUsesMax ?? true; // default to MAX
 
+      // Detect icon-type image: image width ≈ text height for all cases (image renders at fontSize).
+      bool isIconImage = false;
+      final iconPairs = styleResults.where((r) =>
+        r.discoveredComponents.containsKey('image') &&
+        r.discoveredComponents.containsKey('text')
+      ).toList();
+      if (iconPairs.isNotEmpty) {
+        int iconCount = 0;
+        for (var r in iconPairs) {
+          final imgW = r.discoveredComponents['image']!['width'] as double;
+          final txtH = r.discoveredComponents['text']!['height'] as double;
+          if (txtH > 0 && (imgW / txtH - 1.0).abs() < 0.3) iconCount++;
+        }
+        isIconImage = iconCount > iconPairs.length * 0.5;
+      }
+      constants['isIconImage'] = isIconImage;
+      if (isIconImage) print('  Icon-type image detected (size ≈ fontSize)');
+
       if (imageAffectsWidth || imageAffectsHeight) {
         print(
           '  Image affects sizing: width=$imageAffectsWidth, height=$imageAffectsHeight, layout=$imageLayout, spacing=$imageSpacing, usesMax=$imageUsesMax',
@@ -1121,6 +1163,7 @@ class WidgetMeasurer {
       constants['imageLayout'] = null;
       constants['imageSpacing'] = 0.0;
       constants['imageUsesMax'] = true;
+      constants['isIconImage'] = false;
     }
 
     final softWrapCount = styleResults
@@ -1241,7 +1284,9 @@ class WidgetMeasurer {
     buffer.writeln();
     buffer.writeln('import dev.equo.swt.Config;');
     buffer.writeln('import dev.equo.swt.FontMetricsUtil;');
-    if (hasAnyImageSupport) {
+    final isIconImageWidget = hasAnyImageSupport &&
+        analyses.any((a) => a.derivedConstants['isIconImage'] == true);
+    if (hasAnyImageSupport && !isIconImageWidget) {
       buffer.writeln('import dev.equo.swt.ImageMetricUtil;');
     }
     buffer.writeln('import org.eclipse.swt.SWT;');
@@ -1406,7 +1451,11 @@ class WidgetMeasurer {
           );
         }
         if (hasAnyImageSupport) {
-          buffer.writeln('${indent}m.image = computeImage(widget);');
+          if (isIconImageWidget) {
+            buffer.writeln('${indent}m.image = computeImage(widget, m.textStyle);');
+          } else {
+            buffer.writeln('${indent}m.image = computeImage(widget);');
+          }
         }
 
         final imageUsesMax = constants['imageUsesMax'] as bool;
@@ -1689,17 +1738,28 @@ class WidgetMeasurer {
 
     // Generate computeImage helper if any style supports images
     if (hasAnyImageSupport) {
-      buffer.writeln(
-        '    private static PointD computeImage(Dart$widgetType widget) {',
-      );
-      buffer.writeln('        Image image = widget.getImage();');
-      buffer.writeln('        if (image != null) {');
-      buffer.writeln(
-        '            return ImageMetricUtil.getImageSize(image.getImageData());',
-      );
-      buffer.writeln('        }');
-      buffer.writeln('        return PointD.zero;');
-      buffer.writeln('    }');
+      if (isIconImageWidget) {
+        // Image renders as icon at fontSize — use textStyle.size() instead of pixel dimensions.
+        buffer.writeln(
+          '    private static PointD computeImage(Dart$widgetType widget, TextStyle ts) {',
+        );
+        buffer.writeln('        if (widget.getImage() == null) return PointD.zero;');
+        buffer.writeln('        double iconSize = ts != null ? (double) ts.size() : 16.0;');
+        buffer.writeln('        return new PointD(iconSize, iconSize);');
+        buffer.writeln('    }');
+      } else {
+        buffer.writeln(
+          '    private static PointD computeImage(Dart$widgetType widget) {',
+        );
+        buffer.writeln('        Image image = widget.getImage();');
+        buffer.writeln('        if (image != null) {');
+        buffer.writeln(
+          '            return ImageMetricUtil.getImageSize(image.getImageData());',
+        );
+        buffer.writeln('        }');
+        buffer.writeln('        return PointD.zero;');
+        buffer.writeln('    }');
+      }
       buffer.writeln();
     }
 

@@ -21,6 +21,7 @@ import org.eclipse.swt.graphics.*;
 import java.util.Objects;
 import org.eclipse.swt.custom.*;
 import java.util.Arrays;
+import dev.equo.swt.size.TableSizes;
 import dev.equo.swt.*;
 
 /**
@@ -1035,7 +1036,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public int getItemHeight() {
         checkWidget();
-        return RequestResponse.call(this, "GetItemHeight", null, Integer.class, 500, 20);
+        return TableSizes.getItemHeight(this);
     }
 
     /**
