@@ -582,8 +582,8 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
             if (item != null) {
                 Control control = ((DartTabItem) item.getImpl()).control;
                 if (control != null && !control.isDisposed()) {
-                    control.setVisible(true);
                     control.setBounds(getClientArea());
+                    control.setVisible(true);
                 }
                 if (notify) {
                     Event event = new Event();
@@ -642,6 +642,33 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
                 Control control = ((DartTabItem) item.getImpl()).control;
                 if (control != null && !control.isDisposed()) {
                     control.setBounds(getClientArea());
+                }
+            }
+        }
+    }
+
+    @Override
+    public void updateLayout(boolean all) {
+        Composite parent = findDeferredControl();
+        if (parent != null) {
+            parent.state |= LAYOUT_CHILD;
+            return;
+        }
+        if ((getApi().state & LAYOUT_NEEDED) != 0) {
+            boolean changed = (getApi().state & LAYOUT_CHANGED) != 0;
+            getApi().state &= ~(LAYOUT_NEEDED | LAYOUT_CHANGED);
+            ((DartDisplay) display.getImpl()).runSkin();
+            if (layout != null) {
+                layout.layout(this.getApi(), changed);
+            }
+        }
+        if (all) {
+            getApi().state &= ~LAYOUT_CHILD;
+            int idx = getSelectionIndex();
+            if (idx >= 0 && idx < itemCount && items[idx] != null) {
+                Control activeContent = ((DartTabItem) items[idx].getImpl()).control;
+                if (activeContent != null && !activeContent.isDisposed()) {
+                    activeContent.getImpl().updateLayout(true);
                 }
             }
         }
