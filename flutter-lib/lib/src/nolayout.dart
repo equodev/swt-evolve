@@ -31,6 +31,10 @@ class NoLayout extends StatelessWidget {
         children: [
           for (var child in children.reversed)
             LayoutId(
+              // Stable widget key so Flutter preserves State across parent rebuilds.
+              // Without this, a parent ONCHANGE causes child widgets to be disposed
+              // and remounted, briefly producing an empty subtree and a visible flash.
+              key: ValueKey(child.id),
               id: child.id,
               child: isPanelLayout
                   ? _wrapAsPanel(_buildChild(child), theme!)
