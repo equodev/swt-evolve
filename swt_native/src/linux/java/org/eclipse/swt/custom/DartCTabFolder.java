@@ -4753,6 +4753,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         return tabPosition;
     }
 
+    int showListPopupSeq = 0;
+
     protected void _hookEvents() {
         super._hookEvents();
         FlutterBridge.on(this, "CTabFolder", "itemClosed", e -> {
@@ -4796,6 +4798,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         });
         FlutterBridge.on(this, "CTabFolder2", "showList", e -> {
             getDisplay().asyncExec(() -> {
+                if (!isDisposed()) {
+                }
+                CTabFolderHelper.handleShowList(this, e);
+                dirty();
             });
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {

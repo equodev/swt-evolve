@@ -29,6 +29,7 @@ import 'color_utils.dart';
 class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     extends CompositeImpl<T, V> {
   late int _selectedIndex;
+  int? _lastShowListPopupSeq;
   int? _pendingTabIndex;
 
   @override
@@ -75,6 +76,18 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
       }
     }
 
+    if (state.showListPopupSeq != null) {
+      final seq = state.showListPopupSeq!;
+      if (_lastShowListPopupSeq == null) {
+        _lastShowListPopupSeq = seq;
+      } else if (seq != _lastShowListPopupSeq) {
+        _lastShowListPopupSeq = seq;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _doShowChevronPopup();
+        });
+      }
+    }
+
     if (state.minimized != null || state.maximized != null) {
       setState(() {});
     }
@@ -117,6 +130,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onMaximize: _toggleMaximize,
             onSecondaryTap: _handleTabSecondaryTap,
             onTabReorder: _handleTabReorder,
+            onChevronShowList: _handleChevronShowList,
           ),
         if (!isMinimized)
           Expanded(
@@ -139,6 +153,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onMaximize: _toggleMaximize,
             onSecondaryTap: _handleTabSecondaryTap,
             onTabReorder: _handleTabReorder,
+            onChevronShowList: _handleChevronShowList,
           ),
       ],
     );
@@ -233,6 +248,69 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     return Container();
   }
 
+  Rect? _chevronButtonRect;
+
+  void _handleChevronShowList(BuildContext buttonContext, CTabFolderThemeExtension widgetTheme) {
+    final RenderBox? box = buttonContext.findRenderObject() as RenderBox?;
+    if (box != null && box.hasSize) {
+      final Offset origin = box.localToGlobal(Offset.zero);
+      _chevronButtonRect = origin & box.size;
+      final VEvent e = VEvent()
+        ..x = origin.dx.round()
+        ..y = origin.dy.round()
+        ..width = box.size.width.round()
+        ..height = box.size.height.round();
+      widget.sendCTabFolder2showList(state, e);
+    } else {
+      widget.sendCTabFolder2showList(state, VEvent());
+    }
+  }
+
+  void _doShowChevronPopup() {
+    if (!mounted) return;
+    final ctx = context;
+    final widgetTheme = Theme.of(ctx).extension<CTabFolderThemeExtension>()!;
+
+    final allItems = state.items?.whereType<VCTabItem>().toList() ?? [];
+    if (allItems.isEmpty) return;
+
+    final hasShowingInfo = allItems.any((item) => item.showing != null);
+    final hiddenEntries = allItems.asMap().entries
+        .where((e) => !hasShowingInfo || e.value.showing != true)
+        .toList();
+
+    final screenSize = MediaQuery.of(ctx).size;
+    final buttonRect = _chevronButtonRect;
+    final RelativeRect position = buttonRect != null
+        ? RelativeRect.fromLTRB(
+            buttonRect.left,
+            buttonRect.bottom,
+            screenSize.width - buttonRect.right,
+            0,
+          )
+        : RelativeRect.fromLTRB(
+            screenSize.width - 60,
+            40,
+            0,
+            0,
+          );
+
+    showMenu<int>(
+      context: ctx,
+      position: position,
+      items: hiddenEntries.map((entry) => PopupMenuItem<int>(
+        value: entry.key,
+        height: widgetTheme.chevronMenuItemHeight,
+        padding: widgetTheme.chevronMenuItemPadding,
+        child: Text(entry.value.text ?? ''),
+      )).toList(),
+    ).then((selectedIndex) {
+      if (selectedIndex != null) {
+        _handleTabSelection(selectedIndex);
+      }
+    });
+  }
+
   void _handleTabClose(int index) {
     if (state.enabled != true) return;
     var e = VEvent()..index = index;
@@ -280,6 +358,7 @@ class _CTabBar extends StatefulWidget {
   final VoidCallback onMaximize;
   final void Function(Offset globalPosition)? onSecondaryTap;
   final void Function(int fromIndex, int toIndex)? onTabReorder;
+  final void Function(BuildContext, CTabFolderThemeExtension widgetTheme)? onChevronShowList;
 
   const _CTabBar({
     required this.state,
@@ -294,6 +373,7 @@ class _CTabBar extends StatefulWidget {
     required this.onMaximize,
     this.onSecondaryTap,
     this.onTabReorder,
+    this.onChevronShowList,
   });
 
   @override
@@ -307,6 +387,7 @@ class _CTabBarState extends State<_CTabBar> {
   late final ScrollController _horizontalScrollController;
   bool _isMinimizeHovered = false;
   bool _isMaximizeHovered = false;
+  bool _isChevronHovered = false;
   int? _hoveredTabIndex;
   int? _pendingFrom;
   int? _pendingTo;
@@ -888,6 +969,39 @@ class _CTabBarState extends State<_CTabBar> {
     );
   }
 
+  Widget _buildChevronButton(CTabFolderThemeExtension widgetTheme) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isChevronHovered = true),
+      onExit: (_) => setState(() => _isChevronHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: Builder(builder: (buttonContext) => GestureDetector(
+        onTap: () => _handleChevronTap(buttonContext, widgetTheme),
+        child: Container(
+          height: double.infinity,
+          padding: EdgeInsets.symmetric(
+            horizontal: widgetTheme.controlButtonHorizontalPadding,
+          ),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: _isChevronHovered
+                ? widgetTheme.controlButtonHoverColor.withOpacity(0.1)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Icon(
+            Icons.expand_more,
+            size: widgetTheme.controlButtonSize,
+            color: widgetTheme.controlButtonColor,
+          ),
+        ),
+      )),
+    );
+  }
+
+  void _handleChevronTap(BuildContext buttonContext, CTabFolderThemeExtension widgetTheme) {
+    widget.onChevronShowList?.call(buttonContext, widgetTheme);
+  }
+
   Widget _buildTopRightComposite(VComposite composite, {Color? backgroundColor}) {
     return ToolbarComposite(value: composite, backgroundColor: backgroundColor);
   }
@@ -1067,14 +1181,18 @@ class _CTabBarState extends State<_CTabBar> {
     required bool isMaximized,
     required int alignment,
   }) {
+    final showChevron = widget.state.showChevron ?? false;
     final hasControls =
-        topRightComposite != null || showMinimizeButton || showMaximizeButton;
+        topRightComposite != null || showMinimizeButton || showMaximizeButton ||
+        showChevron;
     if (!hasControls) return const SizedBox.shrink();
 
     final controls = Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (showChevron)
+          _buildChevronButton(widgetTheme),
         if (topRightComposite != null)
           _buildTopRightComposite(
             topRightComposite,
@@ -1163,9 +1281,7 @@ class _CTabBarState extends State<_CTabBar> {
       child: revealWidget,
     );
 
-    if (alignment == SWT.LEFT) {
-      return scaledWidget;
-    } else if (alignment == SWT.CENTER) {
+    if (alignment == SWT.CENTER) {
       return Expanded(child: Center(child: scaledWidget));
     } else {
       return scaledWidget;

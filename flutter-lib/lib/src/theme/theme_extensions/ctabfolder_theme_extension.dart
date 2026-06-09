@@ -107,7 +107,11 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
 
   // Drag threshold
   final double tabDragThreshold;
-  
+
+  // Chevron overflow menu
+  final double chevronMenuItemHeight;
+  final EdgeInsets chevronMenuItemPadding;
+
   const CTabFolderThemeExtension({
     required this.tabBarBackgroundColor,
     required this.tabBarBorderColor,
@@ -161,6 +165,8 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
     required this.topRightControlsPadding,
     required this.scrollbarHideDelay,
     required this.tabDragThreshold,
+    required this.chevronMenuItemHeight,
+    required this.chevronMenuItemPadding,
   });
 
   factory CTabFolderThemeExtension.fromJson(Map<String, dynamic> json) =>

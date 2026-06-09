@@ -51,6 +51,24 @@ public class CTabFolderHelper {
         obj.setItemOrder(indices);
     }
 
+        public static void handleShowList(DartCTabFolder obj, Event e) {
+        CTabFolderEvent event = new CTabFolderEvent(obj.getApi());
+        event.x = e.x;
+        event.y = e.y;
+        event.width = e.width;
+        event.height = e.height;
+        event.doit = true;
+        for (CTabFolder2Listener listener : obj.folderListeners) {
+            try {
+                listener.showList(event);
+            } catch (Throwable ex) {
+            }
+        }
+        if (!obj.isDisposed() && event.doit) {
+            obj.showListPopupSeq++;
+        }
+    }
+
     public static void handleClose(DartCTabFolder obj, Event e) {
         if (obj.isDisposed()) return;
         if (e.index >= 0 && e.index < obj.items.length) {

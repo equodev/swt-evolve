@@ -90,6 +90,8 @@ class VCTabFolder extends VComposite {
   List<VColor>? selectionGradientColors;
   List<int>? selectionGradientPercents;
   bool? selectionGradientVertical;
+  bool? showChevron;
+  int? showListPopupSeq;
   bool? simple;
   bool? single;
   int? tabHeight;

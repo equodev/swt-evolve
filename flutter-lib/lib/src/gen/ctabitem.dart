@@ -30,6 +30,7 @@ class VCTabItem extends VItem {
   VColor? foreground;
   VColor? selectionForeground;
   bool? showClose;
+  bool? showing;
   String? toolTipText;
 
   factory VCTabItem.fromJson(Map<String, dynamic> json) =>

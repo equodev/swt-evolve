@@ -4754,6 +4754,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         return tabPosition;
     }
 
+    int showListPopupSeq = 0;
+
     private void paintChildrenRecursively(Control control) {
         if (control instanceof Composite composite) {
             Control[] children = composite.getChildren();
@@ -4811,6 +4813,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         });
         FlutterBridge.on(this, "CTabFolder2", "showList", e -> {
             getDisplay().asyncExec(() -> {
+                if (!isDisposed()) {
+                }
+                CTabFolderHelper.handleShowList(this, e);
+                dirty();
             });
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {

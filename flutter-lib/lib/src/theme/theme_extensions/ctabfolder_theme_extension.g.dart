@@ -122,6 +122,10 @@ CTabFolderThemeExtension _$CTabFolderThemeExtensionFromJson(
     microseconds: (json['scrollbarHideDelay'] as num).toInt(),
   ),
   tabDragThreshold: (json['tabDragThreshold'] as num).toDouble(),
+  chevronMenuItemHeight: (json['chevronMenuItemHeight'] as num).toDouble(),
+  chevronMenuItemPadding: const EdgeInsetsConverter().fromJson(
+    json['chevronMenuItemPadding'] as Map<String, dynamic>,
+  ),
 );
 
 Map<String, dynamic> _$CTabFolderThemeExtensionToJson(
@@ -223,4 +227,8 @@ Map<String, dynamic> _$CTabFolderThemeExtensionToJson(
   ),
   'scrollbarHideDelay': instance.scrollbarHideDelay.inMicroseconds,
   'tabDragThreshold': instance.tabDragThreshold,
+  'chevronMenuItemHeight': instance.chevronMenuItemHeight,
+  'chevronMenuItemPadding': const EdgeInsetsConverter().toJson(
+    instance.chevronMenuItemPadding,
+  ),
 };
