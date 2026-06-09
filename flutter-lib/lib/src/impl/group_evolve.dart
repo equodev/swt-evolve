@@ -209,7 +209,10 @@ class _StyledGroup extends StatelessWidget {
             if (text.isNotEmpty)
               Opacity(
                 opacity: 0,
-                child: Text(text, style: titleStyle),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: Text(text, style: titleStyle),
+                ),
               ),
             if (children != null)
               ParentBackgroundScope(
