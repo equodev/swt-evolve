@@ -482,7 +482,7 @@ public class Sizes {
             x - GROUP_BORDER,
             y - topMargin,
             width + GROUP_BORDER * 2,
-            height + topMargin + GROUP_BORDER
+            height + topMargin + GROUP_TITLE_PADDING * 2
         );
     }
 
@@ -598,7 +598,7 @@ public class Sizes {
             GROUP_BORDER,
             yOffset,
             Math.max(0, b.width - GROUP_BORDER * 2),
-            Math.max(0, b.height - topMargin - GROUP_BORDER)
+            Math.max(0, b.height - topMargin - GROUP_TITLE_PADDING * 2)
         );
     }
 
