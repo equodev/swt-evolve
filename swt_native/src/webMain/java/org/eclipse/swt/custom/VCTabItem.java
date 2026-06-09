@@ -74,6 +74,13 @@ public class VCTabItem extends VItem {
         ((DartCTabItem) impl).showClose = value;
     }
 
+    public boolean getShowing() {
+        return ((DartCTabItem) impl).showing;
+    }
+
+    public void setShowing(boolean value) {
+    }
+
     public String getToolTipText() {
         return ((DartCTabItem) impl).getToolTipText();
     }

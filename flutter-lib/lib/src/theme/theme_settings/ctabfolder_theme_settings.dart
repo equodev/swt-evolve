@@ -135,6 +135,10 @@ CTabFolderThemeExtension _getCTabFolderTheme({
 
     // Drag threshold
     tabDragThreshold: 8.0,
+
+    // Chevron overflow menu
+    chevronMenuItemHeight: 28.0,
+    chevronMenuItemPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
   );
 }
 

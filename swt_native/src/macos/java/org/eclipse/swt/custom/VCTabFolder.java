@@ -210,6 +210,20 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).selectionGradientVertical = value;
     }
 
+    public boolean getShowChevron() {
+        return ((DartCTabFolder) impl).showChevron;
+    }
+
+    public void setShowChevron(boolean value) {
+    }
+
+    public int getShowListPopupSeq() {
+        return ((DartCTabFolder) impl).showListPopupSeq;
+    }
+
+    public void setShowListPopupSeq(int value) {
+    }
+
     public boolean getSimple() {
         return ((DartCTabFolder) impl).getSimple();
     }

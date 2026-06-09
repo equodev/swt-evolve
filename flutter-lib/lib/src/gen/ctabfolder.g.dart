@@ -97,6 +97,8 @@ VCTabFolder _$VCTabFolderFromJson(Map<String, dynamic> json) => VCTabFolder()
           ?.map((e) => (e as num).toInt())
           .toList()
   ..selectionGradientVertical = json['selectionGradientVertical'] as bool?
+  ..showChevron = json['showChevron'] as bool?
+  ..showListPopupSeq = (json['showListPopupSeq'] as num?)?.toInt()
   ..simple = json['simple'] as bool?
   ..single = json['single'] as bool?
   ..tabHeight = (json['tabHeight'] as num?)?.toInt()
@@ -158,6 +160,8 @@ Map<String, dynamic> _$VCTabFolderToJson(VCTabFolder instance) =>
       'selectionGradientColors': ?instance.selectionGradientColors,
       'selectionGradientPercents': ?instance.selectionGradientPercents,
       'selectionGradientVertical': ?instance.selectionGradientVertical,
+      'showChevron': ?instance.showChevron,
+      'showListPopupSeq': ?instance.showListPopupSeq,
       'simple': ?instance.simple,
       'single': ?instance.single,
       'tabHeight': ?instance.tabHeight,

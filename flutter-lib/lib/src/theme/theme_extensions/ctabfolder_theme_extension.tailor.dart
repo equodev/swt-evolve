@@ -63,6 +63,8 @@ mixin _$CTabFolderThemeExtensionTailorMixin
   EdgeInsets get topRightControlsPadding;
   Duration get scrollbarHideDelay;
   double get tabDragThreshold;
+  double get chevronMenuItemHeight;
+  EdgeInsets get chevronMenuItemPadding;
 
   @override
   CTabFolderThemeExtension copyWith({
@@ -118,6 +120,8 @@ mixin _$CTabFolderThemeExtensionTailorMixin
     EdgeInsets? topRightControlsPadding,
     Duration? scrollbarHideDelay,
     double? tabDragThreshold,
+    double? chevronMenuItemHeight,
+    EdgeInsets? chevronMenuItemPadding,
   }) {
     return CTabFolderThemeExtension(
       tabBarBackgroundColor:
@@ -197,6 +201,10 @@ mixin _$CTabFolderThemeExtensionTailorMixin
           topRightControlsPadding ?? this.topRightControlsPadding,
       scrollbarHideDelay: scrollbarHideDelay ?? this.scrollbarHideDelay,
       tabDragThreshold: tabDragThreshold ?? this.tabDragThreshold,
+      chevronMenuItemHeight:
+          chevronMenuItemHeight ?? this.chevronMenuItemHeight,
+      chevronMenuItemPadding:
+          chevronMenuItemPadding ?? this.chevronMenuItemPadding,
     );
   }
 
@@ -384,6 +392,12 @@ mixin _$CTabFolderThemeExtensionTailorMixin
           ? scrollbarHideDelay
           : other.scrollbarHideDelay,
       tabDragThreshold: t < 0.5 ? tabDragThreshold : other.tabDragThreshold,
+      chevronMenuItemHeight: t < 0.5
+          ? chevronMenuItemHeight
+          : other.chevronMenuItemHeight,
+      chevronMenuItemPadding: t < 0.5
+          ? chevronMenuItemPadding
+          : other.chevronMenuItemPadding,
     );
   }
 
@@ -599,6 +613,14 @@ mixin _$CTabFolderThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               tabDragThreshold,
               other.tabDragThreshold,
+            ) &&
+            const DeepCollectionEquality().equals(
+              chevronMenuItemHeight,
+              other.chevronMenuItemHeight,
+            ) &&
+            const DeepCollectionEquality().equals(
+              chevronMenuItemPadding,
+              other.chevronMenuItemPadding,
             ));
   }
 
@@ -658,6 +680,8 @@ mixin _$CTabFolderThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(topRightControlsPadding),
       const DeepCollectionEquality().hash(scrollbarHideDelay),
       const DeepCollectionEquality().hash(tabDragThreshold),
+      const DeepCollectionEquality().hash(chevronMenuItemHeight),
+      const DeepCollectionEquality().hash(chevronMenuItemPadding),
     ]);
   }
 }
@@ -749,4 +773,8 @@ extension CTabFolderThemeExtensionBuildContextProps on BuildContext {
   Duration get scrollbarHideDelay =>
       cTabFolderThemeExtension.scrollbarHideDelay;
   double get tabDragThreshold => cTabFolderThemeExtension.tabDragThreshold;
+  double get chevronMenuItemHeight =>
+      cTabFolderThemeExtension.chevronMenuItemHeight;
+  EdgeInsets get chevronMenuItemPadding =>
+      cTabFolderThemeExtension.chevronMenuItemPadding;
 }
