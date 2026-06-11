@@ -6350,6 +6350,45 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      * @param event resize event
      */
     void handleResize(Event event) {
+        int oldHeight = clientAreaHeight;
+        int oldWidth = clientAreaWidth;
+        Rectangle clientArea = getClientArea();
+        clientAreaHeight = clientArea.height;
+        clientAreaWidth = clientArea.width;
+        if (!alwaysShowScroll && ignoreResize != 0)
+            return;
+        redrawMargins(oldHeight, oldWidth);
+        if (wordWrap) {
+            if (oldWidth != clientAreaWidth) {
+                ((DartStyledTextRenderer) renderer.getImpl()).reset(0, content.getLineCount());
+                verticalScrollOffset = -1;
+                ((DartStyledTextRenderer) renderer.getImpl()).calculateIdle();
+                super.redraw();
+            }
+            if (oldHeight != clientAreaHeight) {
+                if (oldHeight == 0)
+                    topIndexY = 0;
+                setScrollBars(true);
+            }
+        } else {
+            ((DartStyledTextRenderer) renderer.getImpl()).calculateClientArea();
+            setScrollBars(true);
+            claimRightFreeSpace();
+            // StyledText allows any value for horizontalScrollOffset when clientArea is zero
+            // in setHorizontalPixel() and setHorisontalOffset(). Fixes bug 168429.
+            if (clientAreaWidth != 0) {
+                ScrollBar horizontalBar = getHorizontalBar();
+                if (horizontalBar != null && horizontalBar.getVisible()) {
+                    if (horizontalScrollOffset != horizontalBar.getSelection()) {
+                        horizontalBar.setSelection(horizontalScrollOffset);
+                        horizontalScrollOffset = horizontalBar.getSelection();
+                    }
+                }
+            }
+        }
+        updateCaretVisibility();
+        claimBottomFreeSpace();
+        setAlignment();
         //TODO FIX TOP INDEX DURING RESIZE
         //	if (oldHeight != clientAreaHeight || wordWrap) {
         //		calculateTopIndex(0);
@@ -8386,6 +8425,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 child.setLocation(rect.x, rect.y + deltaY);
             }
             verticalScrollOffset += pixels;
+            topPixel = verticalScrollOffset;
             calculateTopIndex(pixels);
             super.redraw();
         } else {

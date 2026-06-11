@@ -356,11 +356,13 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             end = Math.min(Math.max(0, end), length - 1);
             start = translateOffset(start);
             end = translateOffset(end);
-            int left = 0x7FFFFFFF, right = 0;
-            int top = 0x7FFFFFFF, bottom = 0;
-            if (fixedLineMetrics != null)
-                bottom = top + ((DartFontMetrics) fixedLineMetrics.getImpl()).height;
-            return new Rectangle(left, top, right - left, bottom - top + getVerticalIndent());
+            int lineH;
+            if (fixedLineMetrics != null) {
+                lineH = ((DartFontMetrics) fixedLineMetrics.getImpl()).height;
+            } else {
+                lineH = Math.max(0, ascent) + Math.max(0, descent);
+            }
+            return new Rectangle(0, 0, 0, lineH + getVerticalIndent());
         } finally {
         }
     }
