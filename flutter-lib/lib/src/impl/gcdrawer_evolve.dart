@@ -56,6 +56,10 @@ class GCDrawer extends GCDrawerBase {
     EquoCommService.onRaw("${state.swt}/${state.id}/gcDispose", (_) async {
       if (_baseImageCompleter != null) await _baseImageCompleter!.future;
       await Future.wait(_pendingImages);
+      shapes
+        ..clear()
+        ..addAll(_staging);
+      _staging = [];
       await _renderAndSend();
     });
   }

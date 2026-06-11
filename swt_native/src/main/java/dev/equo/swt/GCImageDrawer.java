@@ -30,6 +30,7 @@ public class GCImageDrawer extends SwtFlutterBridgeBase {
 
     public GCImageDrawer() {
         super(null);
+        FlutterLibraryLoader.initialize();
     }
 
     @Override
@@ -77,7 +78,6 @@ public class GCImageDrawer extends SwtFlutterBridgeBase {
             // Desktop binary path: the rendered PNG arrives as raw bytes via sendBytes — no base64.
             comm().on("GC/" + gcId + "/imageResult", byte[].class, bytes -> {
                 onImageResult.accept(bytes);
-                disposeView();
             });
             // Flush buffered GC ops (drawLine, drawRect, etc.) now that Flutter's
             // GCDrawer.standalone has registered its listeners.
@@ -107,6 +107,7 @@ public class GCImageDrawer extends SwtFlutterBridgeBase {
     }
 
     public void disposeView() {
+        if (ctx == 0) return;
         dispose(ctx);
         ctx = 0;
     }

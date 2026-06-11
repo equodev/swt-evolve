@@ -46,6 +46,7 @@ public class FlutterLibraryLoader {
     private static final String EQUO_LIB_PATH_SUFFIX =
             EQUO_BASE_DIR_NAME + SEP + SWT_DIR_NAME + SEP + LIB_SUB_DIR_NAME + SEP + getOS() + SEP + getArch();
     private static boolean loaded;
+    private static boolean loadedWeb;
 
     /**
      * Initializes the Flutter library loader. This is the main public entry point.
@@ -121,8 +122,8 @@ public class FlutterLibraryLoader {
 
     private static File extractAndLoadWebLibraries(File targetDir, boolean isDevelopmentMode) throws IOException {
         if (!isDevelopmentMode) {
-            if (!loaded) {
-                loaded = true;
+            if (!loadedWeb) {
+                loadedWeb = true;
                 extractDirectoryFromJar("web", targetDir);
             }
             return new File(targetDir, "web");

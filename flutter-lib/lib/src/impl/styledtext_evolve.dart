@@ -153,9 +153,15 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       selectionFromState = SelectionInfo.fromRange(sr.x, sr.y);
     }
 
+    final topMargin = (state.topMargin ?? 0).toDouble();
+    final leftMargin = (state.leftMargin ?? 0).toDouble();
+    final javaAscent = state.renderer?.ascent ?? 0;
+    final javaDescent = state.renderer?.descent ?? 0;
+    final javaLineHeight = (javaAscent + javaDescent).toDouble();
+
     final textShape = TextShape(
       text,
-      const Offset(0, 0),
+      Offset(leftMargin, topMargin),
       defaultStyle,
       clipRect,
       null,
@@ -167,6 +173,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       _notifyTextChanged,
       editingState,
       selectionFromState,
+      javaLineHeight,
     );
 
     // Update shapes list - remove old shape with same id and add new one
@@ -529,7 +536,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     if (text.isEmpty) return getBounds();
     final defaultStyle = _getDefaultTextStyle();
     final fontSize = defaultStyle.fontSize ?? 12.0;
-    final lineHeight = fontSize * 1.4;
+    final javaAscent = state.renderer?.ascent ?? 0;
+    final javaDescent = state.renderer?.descent ?? 0;
+    final lineHeight = (javaAscent + javaDescent) > 0
+        ? (javaAscent + javaDescent).toDouble()
+        : fontSize * 1.4;
     final lineCount = '\n'.allMatches(text).length + 1;
     final totalHeight =
         math.max(getBounds().height, lineCount * lineHeight);
@@ -1068,6 +1079,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       _notifyTextChanged,
       _localEditingState,
       null,
+      _originalServerTextShape!.lineHeight,
     );
   }
 
@@ -1287,6 +1299,9 @@ class TextShape extends Shape {
 
   final TextEditingState? editingState;
   final SelectionInfo? selectionInfo;
+  // Java-calculated line height (ascent + descent). When > 0, used for
+  // currentY advancement so ruler positions stay in sync with Flutter rendering.
+  final double lineHeight;
 
   TextShape(
     this.text,
@@ -1302,7 +1317,13 @@ class TextShape extends Shape {
     this.onTextChanged,
     this.editingState,
     this.selectionInfo,
+    this.lineHeight = 0.0,
   ]);
+
+  // Returns lineHeight when set, otherwise falls back to the painter's measured height.
+  // Also guards against empty-text painters that return 0.
+  double _advance(double tpHeight) =>
+      lineHeight > 0 ? lineHeight : (tpHeight > 0 ? tpHeight : (style.fontSize ?? 16) * 1.2);
 
   @override
   void draw(Canvas c) {
@@ -1394,7 +1415,7 @@ class TextShape extends Shape {
       }
 
       tp.paint(c, Offset(finalX, currentY));
-      currentY += tp.height;
+      currentY += _advance(tp.height);
     }
 
     if (selectionInfo != null && selectionInfo!.hasSelection) {
@@ -1592,7 +1613,7 @@ class TextShape extends Shape {
       );
 
       prevTp.layout(maxWidth: prevMaxW);
-      currentY += prevTp.height;
+      currentY += _advance(prevTp.height);
     }
 
     final currentLine = lines[currentLineIndex];
@@ -1743,7 +1764,7 @@ class TextShape extends Shape {
         }
       }
 
-      currentY += tp.height;
+      currentY += _advance(tp.height);
     }
   }
 
@@ -1762,6 +1783,7 @@ class TextShape extends Shape {
       onTextChanged,
       editingState,
       selection,
+      lineHeight,
     );
   }
 
@@ -1804,6 +1826,7 @@ class TextShape extends Shape {
       onTextChanged,
       newEditingState ?? editingState,
       selectionInfo,
+      lineHeight,
     );
   }
 
@@ -1822,6 +1845,7 @@ class TextShape extends Shape {
       onTextChanged,
       editingState,
       selectionInfo,
+      lineHeight,
     );
   }
 
@@ -2056,8 +2080,9 @@ class TextShape extends Shape {
         }
       }
 
+      final advance = _advance(tp.height);
       if (relativePosition.dy >= currentY &&
-          relativePosition.dy < currentY + tp.height) {
+          relativePosition.dy < currentY + advance) {
         final lineRelativeX = relativePosition.dx - finalX;
         final lineRelativePosition = Offset(
           lineRelativeX,
@@ -2070,7 +2095,7 @@ class TextShape extends Shape {
         return (globalOffset + offsetInLine).clamp(0, text.length);
       }
 
-      currentY += tp.height;
+      currentY += advance;
       globalOffset += line.length;
 
       if (i < lines.length - 1) {
