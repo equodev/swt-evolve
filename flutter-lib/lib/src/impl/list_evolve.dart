@@ -7,6 +7,7 @@ import '../impl/scrollable_evolve.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/list_theme_extension.dart';
 import '../theme/theme_settings/list_theme_settings.dart';
+import 'utils/double_tap_detector.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 
@@ -236,9 +237,10 @@ class _ListItemState extends State<_ListItem> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
+      child: InstantDoubleTapDetector(
         onTap: widget.onTap,
         onDoubleTap: widget.onDoubleTap,
+        identity: widget.item,
         child: Stack(
           children: [
             Container(
