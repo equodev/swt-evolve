@@ -9,12 +9,14 @@ import '../gen/widgets.dart';
 import '../impl/composite_evolve.dart';
 import '../impl/ctabfolder_evolve.dart';
 import '../theme/theme_extensions/tabfolder_theme_extension.dart';
+import 'utils/double_tap_detector.dart';
 import 'utils/widget_utils.dart';
 import 'widget_config.dart';
 
 class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     extends CompositeImpl<T, V> {
   late int _selectedIndex;
+  final DoubleTapDetector _tabTap = DoubleTapDetector();
 
   @override
   void initState() {
@@ -158,9 +160,11 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
 
     return MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      child: Listener(
-        onPointerUp: enabled ? (_) => onTap() : null,
-        child: Container(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: enabled ? () => _handleTabTap(index, onTap) : null,
+          child: Container(
             padding: EdgeInsets.symmetric(horizontal: widgetTheme.tabPadding),
             margin: isSelected && enabled
                 ? EdgeInsets.only(bottom: -widgetTheme.tabSelectedBorderWidth)
@@ -203,6 +207,7 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
             ),
           ),
         ),
+      ),
     );
   }
 
@@ -220,6 +225,14 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     _updateSelection(index);
     var e = VEvent()..index = index;
     widget.sendSelectionSelection(state, e);
+  }
+
+  void _handleTabTap(int index, VoidCallback onSingle) {
+    if (_tabTap.registerTap(key: index)) {
+      _handleDefaultSelection(index);
+      return;
+    }
+    onSingle();
   }
 
   void _handleDefaultSelection(int index) {

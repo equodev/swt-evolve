@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:swtflutter/main.dart';
@@ -391,7 +390,7 @@ class _CTabBarState extends State<_CTabBar> {
   int? _hoveredTabIndex;
   int? _pendingFrom;
   int? _pendingTo;
-  bool _skipNextTabSelect = false;
+
 
   @override
   void initState() {
@@ -653,102 +652,91 @@ class _CTabBarState extends State<_CTabBar> {
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       onEnter: (_) => onHoverEnter(),
       onExit: (_) => onHoverExit(),
-      child: Listener(
-        onPointerDown: (event) {
-          if (event.buttons & kSecondaryMouseButton != 0) {
-            widget.onSecondaryTap?.call(event.position);
-          }
-        },
-        onPointerUp: (event) {
-          if (event.buttons & kSecondaryMouseButton != 0) return;
-          if (_skipNextTabSelect) {
-            _skipNextTabSelect = false;
-            return;
-          }
-          onTap();
-        },
-          child: AnimatedContainer(
-            duration: widgetTheme.hoverRevealDuration,
-            curve: Curves.easeOut,
-            height: double.infinity,
-            padding: EdgeInsets.symmetric(
-              horizontal: widgetTheme.tabHorizontalPadding,
-              vertical: widgetTheme.tabVerticalPadding,
-            ),
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: isTabBottom
-                  ? BorderRadius.only(
-                      bottomLeft: Radius.circular(widgetTheme.tabBorderRadius),
-                      bottomRight: Radius.circular(widgetTheme.tabBorderRadius),
-                    )
-                  : BorderRadius.only(
-                      topLeft: Radius.circular(widgetTheme.tabBorderRadius),
-                      topRight: Radius.circular(widgetTheme.tabBorderRadius),
-                    ),
-              border: Border(
-                right: BorderSide(
-                  color: borderColor,
-                  width: widgetTheme.tabBorderWidth,
-                ),
-                bottom: !isTabBottom && isSelected && enabled
-                    ? BorderSide(
-                        color: backgroundColor,
-                        width:
-                            (widget.state.selectionBarThickness != null &&
-                                widget.state.selectionBarThickness! > 0)
-                            ? widget.state.selectionBarThickness!.toDouble()
-                            : widgetTheme.tabSelectedBorderWidth,
-                      )
-                    : !isTabBottom
-                    ? BorderSide(
-                        color: borderColor,
-                        width: widgetTheme.tabBorderWidth,
-                      )
-                    : BorderSide.none,
-                top: isTabBottom && isSelected && enabled
-                    ? BorderSide(
-                        color: backgroundColor,
-                        width:
-                            (widget.state.selectionBarThickness != null &&
-                                widget.state.selectionBarThickness! > 0)
-                            ? widget.state.selectionBarThickness!.toDouble()
-                            : widgetTheme.tabSelectedBorderWidth,
-                      )
-                    : isTabBottom
-                    ? BorderSide(
-                        color: borderColor,
-                        width: widgetTheme.tabBorderWidth,
-                      )
-                    : BorderSide.none,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                tab.customContent ??
-                    Text(
-                      _getTabText(tab.label),
-                      style:
-                          textStyle?.copyWith(color: textColor) ??
-                          TextStyle(color: textColor),
-                    ),
-                if (onClose != null) ...[
-                  SizedBox(width: widgetTheme.tabCloseButtonSpacing),
-                  Listener(
-                    onPointerDown: (_) => _skipNextTabSelect = true,
-                    onPointerUp: (_) => onClose!(),
-                    child: Icon(
-                      Icons.close,
-                      size: widgetTheme.tabCloseIconSize,
-                      color: widgetTheme.tabCloseButtonColor,
-                    ),
+      child: GestureDetector(
+        onTap: onTap,
+        onSecondaryTapDown: (details) =>
+            widget.onSecondaryTap?.call(details.globalPosition),
+        child: AnimatedContainer(
+          duration: widgetTheme.hoverRevealDuration,
+          curve: Curves.easeOut,
+          height: double.infinity,
+          padding: EdgeInsets.symmetric(
+            horizontal: widgetTheme.tabHorizontalPadding,
+            vertical: widgetTheme.tabVerticalPadding,
+          ),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: isTabBottom
+                ? BorderRadius.only(
+                    bottomLeft: Radius.circular(widgetTheme.tabBorderRadius),
+                    bottomRight: Radius.circular(widgetTheme.tabBorderRadius),
+                  )
+                : BorderRadius.only(
+                    topLeft: Radius.circular(widgetTheme.tabBorderRadius),
+                    topRight: Radius.circular(widgetTheme.tabBorderRadius),
                   ),
-                ],
-              ],
+            border: Border(
+              right: BorderSide(
+                color: borderColor,
+                width: widgetTheme.tabBorderWidth,
+              ),
+              bottom: !isTabBottom && isSelected && enabled
+                  ? BorderSide(
+                      color: backgroundColor,
+                      width:
+                          (widget.state.selectionBarThickness != null &&
+                              widget.state.selectionBarThickness! > 0)
+                          ? widget.state.selectionBarThickness!.toDouble()
+                          : widgetTheme.tabSelectedBorderWidth,
+                    )
+                  : !isTabBottom
+                  ? BorderSide(
+                      color: borderColor,
+                      width: widgetTheme.tabBorderWidth,
+                    )
+                  : BorderSide.none,
+              top: isTabBottom && isSelected && enabled
+                  ? BorderSide(
+                      color: backgroundColor,
+                      width:
+                          (widget.state.selectionBarThickness != null &&
+                              widget.state.selectionBarThickness! > 0)
+                          ? widget.state.selectionBarThickness!.toDouble()
+                          : widgetTheme.tabSelectedBorderWidth,
+                    )
+                  : isTabBottom
+                  ? BorderSide(
+                      color: borderColor,
+                      width: widgetTheme.tabBorderWidth,
+                    )
+                  : BorderSide.none,
             ),
           ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              tab.customContent ??
+                  Text(
+                    _getTabText(tab.label),
+                    style:
+                        textStyle?.copyWith(color: textColor) ??
+                        TextStyle(color: textColor),
+                  ),
+              if (onClose != null) ...[
+                SizedBox(width: widgetTheme.tabCloseButtonSpacing),
+                GestureDetector(
+                  onTap: onClose,
+                  child: Icon(
+                    Icons.close,
+                    size: widgetTheme.tabCloseIconSize,
+                    color: widgetTheme.tabCloseButtonColor,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
+      ),
     );
   }
 
@@ -809,163 +797,152 @@ class _CTabBarState extends State<_CTabBar> {
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       onEnter: (_) => onHoverEnter(),
       onExit: (_) => onHoverExit(),
-      child: Listener(
-        onPointerDown: (event) {
-          if (event.buttons & kSecondaryMouseButton != 0) {
-            widget.onSecondaryTap?.call(event.position);
-          }
-        },
-        onPointerUp: (event) {
-          if (event.buttons & kSecondaryMouseButton != 0) return;
-          if (_skipNextTabSelect) {
-            _skipNextTabSelect = false;
-            return;
-          }
-          onTap();
-        },
-          child: AnimatedContainer(
-            duration: widgetTheme.hoverRevealDuration,
-            curve: Curves.easeOut,
-            height: double.infinity,
-            padding: EdgeInsets.symmetric(
-              horizontal: widgetTheme.tabHorizontalPadding,
-              vertical: widgetTheme.tabVerticalPadding,
-            ),
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: isTabBottom
-                  ? BorderRadius.only(
-                      bottomLeft: Radius.circular(widgetTheme.tabBorderRadius),
-                      bottomRight: Radius.circular(widgetTheme.tabBorderRadius),
+      child: GestureDetector(
+        onTap: onTap,
+        onSecondaryTapDown: (details) =>
+            widget.onSecondaryTap?.call(details.globalPosition),
+        child: AnimatedContainer(
+          duration: widgetTheme.hoverRevealDuration,
+          curve: Curves.easeOut,
+          height: double.infinity,
+          padding: EdgeInsets.symmetric(
+            horizontal: widgetTheme.tabHorizontalPadding,
+            vertical: widgetTheme.tabVerticalPadding,
+          ),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: isTabBottom
+                ? BorderRadius.only(
+                    bottomLeft: Radius.circular(widgetTheme.tabBorderRadius),
+                    bottomRight: Radius.circular(widgetTheme.tabBorderRadius),
+                  )
+                : BorderRadius.only(
+                    topLeft: Radius.circular(widgetTheme.tabBorderRadius),
+                    topRight: Radius.circular(widgetTheme.tabBorderRadius),
+                  ),
+            image: isSelected && enabled ? _buildSelectionBgImage() : null,
+            border: Border(
+              top: !isTabBottom && isSelected && enabled && showHighlight
+                  ? BorderSide(
+                      color: widgetTheme.tabHighlightColor,
+                      width: widgetTheme.tabHighlightBorderWidth,
                     )
-                  : BorderRadius.only(
-                      topLeft: Radius.circular(widgetTheme.tabBorderRadius),
-                      topRight: Radius.circular(widgetTheme.tabBorderRadius),
-                    ),
-              image: isSelected && enabled ? _buildSelectionBgImage() : null,
-              border: Border(
-                top: !isTabBottom && isSelected && enabled && showHighlight
-                    ? BorderSide(
-                        color: widgetTheme.tabHighlightColor,
-                        width: widgetTheme.tabHighlightBorderWidth,
-                      )
-                    : isTabBottom && isSelected && enabled
-                    ? BorderSide(
-                        color: backgroundColor,
-                        width:
-                            (widget.state.selectionBarThickness != null &&
-                                widget.state.selectionBarThickness! > 0)
-                            ? widget.state.selectionBarThickness!.toDouble()
-                            : widgetTheme.tabSelectedBorderWidth,
-                      )
-                    : isTabBottom
-                    ? BorderSide(
-                        color: borderColor,
-                        width: widgetTheme.tabBorderWidth,
-                      )
-                    : BorderSide.none,
-                right: BorderSide(
-                  color: borderColor,
-                  width: widgetTheme.tabBorderWidth,
-                ),
-                left: isSelected && enabled
-                    ? BorderSide(
-                        color: borderColor,
-                        width: widgetTheme.tabBorderWidth,
-                      )
-                    : BorderSide.none,
-                bottom: !isTabBottom && isSelected && enabled
-                    ? BorderSide(
-                        color: backgroundColor,
-                        width:
-                            (widget.state.selectionBarThickness != null &&
-                                widget.state.selectionBarThickness! > 0)
-                            ? widget.state.selectionBarThickness!.toDouble()
-                            : widgetTheme.tabSelectedBorderWidth,
-                      )
-                    : !isTabBottom
-                    ? BorderSide(
-                        color: borderColor,
-                        width: widgetTheme.tabBorderWidth,
-                      )
-                    : isTabBottom && isSelected && enabled && showHighlight
-                    ? BorderSide(
-                        color: widgetTheme.tabHighlightColor,
-                        width: widgetTheme.tabHighlightBorderWidth,
-                      )
-                    : BorderSide.none,
+                  : isTabBottom && isSelected && enabled
+                  ? BorderSide(
+                      color: backgroundColor,
+                      width:
+                          (widget.state.selectionBarThickness != null &&
+                              widget.state.selectionBarThickness! > 0)
+                          ? widget.state.selectionBarThickness!.toDouble()
+                          : widgetTheme.tabSelectedBorderWidth,
+                    )
+                  : isTabBottom
+                  ? BorderSide(
+                      color: borderColor,
+                      width: widgetTheme.tabBorderWidth,
+                    )
+                  : BorderSide.none,
+              right: BorderSide(
+                color: borderColor,
+                width: widgetTheme.tabBorderWidth,
               ),
+              left: isSelected && enabled
+                  ? BorderSide(
+                      color: borderColor,
+                      width: widgetTheme.tabBorderWidth,
+                    )
+                  : BorderSide.none,
+              bottom: !isTabBottom && isSelected && enabled
+                  ? BorderSide(
+                      color: backgroundColor,
+                      width:
+                          (widget.state.selectionBarThickness != null &&
+                              widget.state.selectionBarThickness! > 0)
+                          ? widget.state.selectionBarThickness!.toDouble()
+                          : widgetTheme.tabSelectedBorderWidth,
+                    )
+                  : !isTabBottom
+                  ? BorderSide(
+                      color: borderColor,
+                      width: widgetTheme.tabBorderWidth,
+                    )
+                  : isTabBottom && isSelected && enabled && showHighlight
+                  ? BorderSide(
+                      color: widgetTheme.tabHighlightColor,
+                      width: widgetTheme.tabHighlightBorderWidth,
+                    )
+                  : BorderSide.none,
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                tab.customContent != null
-                    ? TabItemContextProvider(
-                        isSelected: isSelected,
-                        isEnabled: enabled,
-                        child: tab.customContent!,
-                      )
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (tab.image != null && shouldShowImage)
-                            Padding(
-                              padding: EdgeInsets.only(
-                                bottom: widgetTheme.tabIconBottomPadding,
-                                right: widgetTheme.tabIconTextSpacing,
-                              ),
-                              child: !iconMap.containsKey(tab.image)
-                                  ? Image.file(
-                                      File(tab.image!),
-                                      width: widgetTheme.tabIconSize,
-                                      height: widgetTheme.tabIconSize,
-                                      fit: BoxFit.contain,
-                                    )
-                                  : Icon(
-                                      getIconByName(tab.image!),
-                                      size: widgetTheme.tabIconSize,
-                                      color: textColor,
-                                    ),
-                            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              tab.customContent != null
+                  ? TabItemContextProvider(
+                      isSelected: isSelected,
+                      isEnabled: enabled,
+                      child: tab.customContent!,
+                    )
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (tab.image != null && shouldShowImage)
                           Padding(
                             padding: EdgeInsets.only(
-                              bottom: widgetTheme.tabTextBottomPadding,
+                              bottom: widgetTheme.tabIconBottomPadding,
+                              right: widgetTheme.tabIconTextSpacing,
                             ),
-                            child: Text(
-                              _getTabText(tab.label),
-                              style:
-                                  textStyle?.copyWith(color: textColor) ??
-                                  TextStyle(color: textColor),
-                            ),
+                            child: !iconMap.containsKey(tab.image)
+                                ? Image.file(
+                                    File(tab.image!),
+                                    width: widgetTheme.tabIconSize,
+                                    height: widgetTheme.tabIconSize,
+                                    fit: BoxFit.contain,
+                                  )
+                                : Icon(
+                                    getIconByName(tab.image!),
+                                    size: widgetTheme.tabIconSize,
+                                    color: textColor,
+                                  ),
                           ),
-                        ],
+                        Padding(
+                          padding: EdgeInsets.only(
+                            bottom: widgetTheme.tabTextBottomPadding,
+                          ),
+                          child: Text(
+                            _getTabText(tab.label),
+                            style:
+                                textStyle?.copyWith(color: textColor) ??
+                                TextStyle(color: textColor),
+                          ),
+                        ),
+                      ],
+                    ),
+              if (shouldShowClose) ...[
+                SizedBox(width: widgetTheme.tabCloseButtonSpacing),
+                MouseRegion(
+                  cursor: enabled
+                      ? SystemMouseCursors.click
+                      : SystemMouseCursors.basic,
+                  child: GestureDetector(
+                    onTap: onClose,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        bottom: widgetTheme.tabCloseIconBottomPadding,
                       ),
-                if (shouldShowClose) ...[
-                  SizedBox(width: widgetTheme.tabCloseButtonSpacing),
-                  MouseRegion(
-                    cursor: enabled
-                        ? SystemMouseCursors.click
-                        : SystemMouseCursors.basic,
-                    child: Listener(
-                      onPointerDown: (_) => _skipNextTabSelect = true,
-                      onPointerUp: (_) => onClose!(),
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          bottom: widgetTheme.tabCloseIconBottomPadding,
-                        ),
-                        child: Icon(
-                          Icons.close,
-                          size: widgetTheme.tabCloseIconSize,
-                          color: getCTabCloseButtonColor(widgetTheme, isSelected),
-                        ),
+                      child: Icon(
+                        Icons.close,
+                        size: widgetTheme.tabCloseIconSize,
+                        color: getCTabCloseButtonColor(widgetTheme, isSelected),
                       ),
                     ),
                   ),
-                ],
+                ),
               ],
-            ),
+            ],
           ),
         ),
+      ),
     );
   }
 
@@ -1023,24 +1000,30 @@ class _CTabBarState extends State<_CTabBar> {
         onHoverChanged(false);
       },
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      child: Listener(
-        onPointerUp: enabled ? (_) => onTap() : null,
-        child: Container(
-          height: double.infinity,
-          padding: EdgeInsets.symmetric(
-            horizontal: widgetTheme.controlButtonHorizontalPadding,
-          ),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: isHovered
-                ? widgetTheme.controlButtonHoverColor.withOpacity(0.1)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Icon(
-            icon,
-            size: widgetTheme.controlButtonSize,
-            color: widgetTheme.controlButtonColor,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          splashColor: widgetTheme.controlButtonHoverColor.withOpacity(0.3),
+          highlightColor: widgetTheme.controlButtonHoverColor.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(4),
+          child: Container(
+            height: double.infinity,
+            padding: EdgeInsets.symmetric(
+              horizontal: widgetTheme.controlButtonHorizontalPadding,
+            ),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: isHovered
+                  ? widgetTheme.controlButtonHoverColor.withOpacity(0.1)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Icon(
+              icon,
+              size: widgetTheme.controlButtonSize,
+              color: widgetTheme.controlButtonColor,
+            ),
           ),
         ),
       ),

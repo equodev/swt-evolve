@@ -14,6 +14,7 @@ import '../nolayout.dart';
 import 'composite_evolve.dart';
 import '../custom/toolbar_composite.dart';
 import 'color_utils.dart';
+import 'utils/double_tap_detector.dart';
 import 'utils/widget_utils.dart';
 import '../theme/theme_extensions/canvas_theme_extension.dart';
 import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
@@ -43,8 +44,13 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
 
   final int _alpha = 255;
   Rect? clipRect;
-  DateTime? _lastPointerDownTime;
-  Offset? _lastPointerDownPos;
+  final DoubleTapDetector _dblTap = DoubleTapDetector();
+
+  // Canvas forwards its own MouseDoubleClick from build()'s Listener, so the
+  // shared composite interaction chrome must not also forward it.
+  @override
+  bool get forwardsCompositeDoubleClick => false;
+
   Color applyAlpha(Color color) {
     if (_alpha == 255) return color;
     return color.withOpacity(_alpha / 255.0);
@@ -115,30 +121,17 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     return Listener(
       behavior: HitTestBehavior.translucent,
       onPointerDown: (e) {
-        final now = DateTime.now();
         final pos = e.localPosition;
-        final last = _lastPointerDownTime;
-        final lastPos = _lastPointerDownPos;
-        if (last != null && lastPos != null &&
-            now.difference(last).inMilliseconds < 300) {
-          final dx = pos.dx - lastPos.dx;
-          final dy = pos.dy - lastPos.dy;
-          if (dx * dx + dy * dy <= 25) {
-            _lastPointerDownTime = null;
-            _lastPointerDownPos = null;
-            widget.sendMouseMouseDoubleClick(
-              state,
-              VEvent()
-                ..x = pos.dx.round()
-                ..y = pos.dy.round()
-                ..button = 1
-                ..count = 2,
-            );
-            return;
-          }
+        if (_dblTap.registerTap(position: pos)) {
+          widget.sendMouseMouseDoubleClick(
+            state,
+            VEvent()
+              ..x = pos.dx.round()
+              ..y = pos.dy.round()
+              ..button = 1
+              ..count = 2,
+          );
         }
-        _lastPointerDownTime = now;
-        _lastPointerDownPos = pos;
       },
       child: _wrapWithScrollbars(base),
     );

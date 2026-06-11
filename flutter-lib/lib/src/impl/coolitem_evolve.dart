@@ -4,6 +4,7 @@ import '../gen/coolitem.dart';
 import '../gen/widgets.dart';
 import '../impl/item_evolve.dart';
 import '../theme/theme_extensions/coolitem_theme_extension.dart';
+import 'utils/double_tap_detector.dart';
 
 class CoolItemImpl<T extends CoolItemSwt, V extends VCoolItem>
     extends ItemImpl<T, V> {
@@ -87,7 +88,7 @@ class _CoolItemContainer extends StatelessWidget {
       content = ConstrainedBox(constraints: constraints!, child: content);
     }
 
-    return GestureDetector(
+    return InstantDoubleTapDetector(
       onTap: onPressed,
       onDoubleTap: onDoubleClick,
       child: content,

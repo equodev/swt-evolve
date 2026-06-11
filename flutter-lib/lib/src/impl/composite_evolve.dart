@@ -8,6 +8,7 @@ import '../gen/widget.dart';
 import '../impl/gc_evolve.dart';
 import '../impl/scrollable_evolve.dart';
 import '../custom/toolbar_composite.dart';
+import 'utils/double_tap_detector.dart';
 import 'utils/widget_utils.dart';
 import '../theme/theme_extensions/composite_theme_extension.dart';
 import '../theme/theme_settings/composite_theme_settings.dart';
@@ -50,41 +51,44 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         ..y = e.localPosition.dy.round();
       impl.sendThrottledMouseMove(state, event);
     },
-    child: GestureDetector(
-      onDoubleTapDown: (e) {
+    child: Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (e) {
+        if (_hitsAnyChild(state, e.localPosition)) return;
+        final pos = e.localPosition;
+        impl.widget.sendMouseMouseDown(
+          state,
+          VEvent()
+            ..x = pos.dx.round()
+            ..y = pos.dy.round()
+            ..button = 1,
+        );
+        if (!impl.forwardsCompositeDoubleClick) return;
+        if (impl.dblTap.registerTap(position: pos)) {
+          impl.widget.sendMouseMouseDoubleClick(
+            state,
+            VEvent()
+              ..x = pos.dx.round()
+              ..y = pos.dy.round()
+              ..button = 1
+              ..count = 2,
+          );
+        }
+      },
+      onPointerUp: (e) {
         if (_hitsAnyChild(state, e.localPosition)) return;
         final event = VEvent()
           ..x = e.localPosition.dx.round()
-          ..y = e.localPosition.dy.round()
-          ..button = 1
-          ..count = 2;
-        impl.widget.sendMouseMouseDoubleClick(state, event);
+          ..y = e.localPosition.dy.round();
+        impl.widget.sendMouseMouseUp(state, event);
       },
-      child: Listener(
-        behavior: HitTestBehavior.translucent,
-        onPointerDown: (e) {
-          if (_hitsAnyChild(state, e.localPosition)) return;
-          final event = VEvent()
-            ..x = e.localPosition.dx.round()
-            ..y = e.localPosition.dy.round()
-            ..button = 1;
-          impl.widget.sendMouseMouseDown(state, event);
-        },
-        onPointerUp: (e) {
-          if (_hitsAnyChild(state, e.localPosition)) return;
-          final event = VEvent()
-            ..x = e.localPosition.dx.round()
-            ..y = e.localPosition.dy.round();
-          impl.widget.sendMouseMouseUp(state, event);
-        },
-        onPointerMove: (e) {
-          final event = VEvent()
-            ..x = e.localPosition.dx.round()
-            ..y = e.localPosition.dy.round();
-          impl.sendThrottledDragMove(state, event);
-        },
-        child: content,
-      ),
+      onPointerMove: (e) {
+        final event = VEvent()
+          ..x = e.localPosition.dx.round()
+          ..y = e.localPosition.dy.round();
+        impl.sendThrottledDragMove(state, event);
+      },
+      child: content,
     ),
   );
 
@@ -93,6 +97,13 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
 
 class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     extends ScrollableImpl<T, V> {
+  final DoubleTapDetector dblTap = DoubleTapDetector();
+
+  /// Whether this composite forwards MouseDoubleClick from the interaction
+  /// chrome. CanvasImpl overrides this to false because it forwards its own
+  /// double-click in build(); forwarding here too would double-fire.
+  bool get forwardsCompositeDoubleClick => true;
+
   @override
   Widget build(BuildContext context) {
     return buildComposite();

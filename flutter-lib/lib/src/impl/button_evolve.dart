@@ -157,39 +157,37 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     final constraints = getConstraintsFromBounds(state.bounds);
     final hasValidBounds = hasBounds(state.bounds);
 
-    Widget button = Listener(
-      onPointerUp: enabled ? (_) => _onPressed() : null,
-      child: Focus(
+    Widget button = Material(
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
+      child: InkWell(
+        onTap: enabled ? _onPressed : null,
+        onHover: _onHover,
         onFocusChange: _onFocusChange,
-        child: MouseRegion(
-          onEnter: (_) => _onHover(true),
-          onExit: (_) => _onHover(false),
-          child: Material(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
-            child: Container(
-              constraints: constraints,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(
-                  widgetTheme.pushButtonBorderRadius,
-                ),
-                border: Border.all(
-                  color: widgetTheme.toggleButtonBorderColor,
-                  width: widgetTheme.pushButtonBorderWidth,
-                ),
-              ),
-              child: _buildButtonContent(
-                context,
-                text,
-                widgetTheme,
-                enabled,
-                enabled
-                    ? widgetTheme.pushButtonTextColor
-                    : widgetTheme.disabledForegroundColor,
-                widgetTheme.pushButtonFontStyle,
-                hasBounds: hasValidBounds,
-              ),
+        borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
+        splashColor: widgetTheme.splashColor,
+        highlightColor: widgetTheme.highlightColor,
+        child: Container(
+          constraints: constraints,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(
+              widgetTheme.pushButtonBorderRadius,
             ),
+            border: Border.all(
+              color: widgetTheme.toggleButtonBorderColor,
+              width: widgetTheme.pushButtonBorderWidth,
+            ),
+          ),
+          child: _buildButtonContent(
+            context,
+            text,
+            widgetTheme,
+            enabled,
+            enabled
+                ? widgetTheme.pushButtonTextColor
+                : widgetTheme.disabledForegroundColor,
+            widgetTheme.pushButtonFontStyle,
+            hasBounds: hasValidBounds,
           ),
         ),
       ),
@@ -255,13 +253,13 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       grayedMargin: checkboxSize * widgetTheme.checkboxGrayedMarginMultiplier,
       grayedBorderRadius: widgetTheme.checkboxGrayedBorderRadius,
       duration: widgetTheme.buttonPressDelay,
-      onTap: null,
+      onTap: enabled ? _onPressed : null,
       onHover: _onHover,
       onFocusChange: _onFocusChange,
     );
 
-    Widget button = Listener(
-      onPointerUp: enabled ? (_) => _onPressed() : null,
+    Widget button = GestureDetector(
+      onTap: enabled ? _onPressed : null,
       child: Focus(
         onFocusChange: _onFocusChange,
         child: Container(
@@ -347,13 +345,13 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
           ? radioBackgroundColor
           : widgetTheme.disabledForegroundColor,
       duration: widgetTheme.buttonPressDelay,
-      onTap: null,
+      onTap: enabled ? _onPressed : null,
       onHover: _onHover,
       onFocusChange: _onFocusChange,
     );
 
-    Widget button = Listener(
-      onPointerUp: enabled ? (_) => _onPressed() : null,
+    Widget button = GestureDetector(
+      onTap: enabled ? _onPressed : null,
       child: Focus(
         onFocusChange: _onFocusChange,
         child: Container(
@@ -390,41 +388,37 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     final constraints = getConstraintsFromBounds(state.bounds);
     final hasValidBounds = hasBounds(state.bounds);
 
-    Widget button = Listener(
-      onPointerUp: enabled ? (_) => _onPressed() : null,
-      child: Focus(
+    Widget button = Material(
+      borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
+      child: InkWell(
+        onTap: enabled ? _onPressed : null,
+        onHover: _onHover,
         onFocusChange: _onFocusChange,
-        child: MouseRegion(
-          onEnter: (_) => _onHover(true),
-          onExit: (_) => _onHover(false),
-          child: Material(
-            borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
-            child: AnimatedContainer(
-              duration: widgetTheme.buttonPressDelay,
-              constraints: constraints,
-              decoration: BoxDecoration(
-                color: enabled
-                    ? widgetTheme.pushButtonColor
-                    : widgetTheme.pushButtonDisabledColor,
-                borderRadius: BorderRadius.circular(
-                  widgetTheme.pushButtonBorderRadius,
-                ),
-                border: Border.all(
-                  color: widgetTheme.pushButtonBorderColor,
-                  width: widgetTheme.pushButtonBorderWidth,
-                ),
-              ),
-              child: Icon(
-                arrowIcon,
-                size: widgetTheme.dropdownButtonIconSize,
-                color: enabled
-                    ? getForegroundColor(
-                        foreground: state.foreground,
-                        defaultColor: widgetTheme.pushButtonTextColor,
-                      )
-                    : widgetTheme.disabledForegroundColor,
-              ),
+        borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
+        child: AnimatedContainer(
+          duration: widgetTheme.buttonPressDelay,
+          constraints: constraints,
+          decoration: BoxDecoration(
+            color: enabled
+                ? widgetTheme.pushButtonColor
+                : widgetTheme.pushButtonDisabledColor,
+            borderRadius: BorderRadius.circular(
+              widgetTheme.pushButtonBorderRadius,
             ),
+            border: Border.all(
+              color: widgetTheme.pushButtonBorderColor,
+              width: widgetTheme.pushButtonBorderWidth,
+            ),
+          ),
+          child: Icon(
+            arrowIcon,
+            size: widgetTheme.dropdownButtonIconSize,
+            color: enabled
+                ? getForegroundColor(
+                    foreground: state.foreground,
+                    defaultColor: widgetTheme.pushButtonTextColor,
+                  )
+                : widgetTheme.disabledForegroundColor,
           ),
         ),
       ),
@@ -627,30 +621,33 @@ class _HoverableButtonState extends State<_HoverableButton> {
         setState(() => _isHovering = false);
         widget.onHover(false);
       },
-      child: Listener(
-        onPointerUp: widget.onPressed != null ? (_) => widget.onPressed!() : null,
-        child: Focus(
+      child: Material(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(
+          widget.widgetTheme.pushButtonBorderRadius,
+        ),
+        child: InkWell(
+          onTap: widget.onPressed,
           onFocusChange: widget.onFocusChange,
-          child: Material(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(
-              widget.widgetTheme.pushButtonBorderRadius,
-            ),
-            child: AnimatedContainer(
-              duration: widget.widgetTheme.buttonPressDelay,
-              constraints: widget.constraints,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(
-                  widget.widgetTheme.pushButtonBorderRadius,
-                ),
-                border: Border.all(
-                  color: widget.borderColor,
-                  width: widget.widgetTheme.pushButtonBorderWidth,
-                ),
+          borderRadius: BorderRadius.circular(
+            widget.widgetTheme.pushButtonBorderRadius,
+          ),
+          splashColor: widget.widgetTheme.splashColor,
+          highlightColor: widget.widgetTheme.highlightColor,
+          child: AnimatedContainer(
+            duration: widget.widgetTheme.buttonPressDelay,
+            constraints: widget.constraints,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(
+                widget.widgetTheme.pushButtonBorderRadius,
               ),
-              padding: widget.widgetTheme.pushButtonPadding,
-              child: widget.child,
+              border: Border.all(
+                color: widget.borderColor,
+                width: widget.widgetTheme.pushButtonBorderWidth,
+              ),
             ),
+            padding: widget.widgetTheme.pushButtonPadding,
+            child: widget.child,
           ),
         ),
       ),
@@ -800,8 +797,8 @@ class _HoverableCheckboxRadioState extends State<_HoverableCheckboxRadio> {
         setState(() => _isHovering = false);
         widget.onHover(false);
       },
-      child: Listener(
-        onPointerUp: widget.onTap != null ? (_) => widget.onTap!() : null,
+      child: GestureDetector(
+        onTap: widget.onTap,
         child: Focus(onFocusChange: widget.onFocusChange, child: content),
       ),
     );
