@@ -530,7 +530,6 @@ final class WorkbenchTree {
         ((CTabFolder) w[2]).setBorderVisible(true);
         ((CTabFolder) w[2]).setMRUVisible(true);
         ((CTabFolder) w[2]).setDragDetect(true);
-        ((CTabFolder) w[2]).setSelectedImageVisible(true);
         ((CTabFolder) w[2]).setForeground(color(187, 187, 187, 255));
         ((CTabFolder) w[2]).setSimple(true);
         ((CTabFolder) w[2]).setTabHeight(24);
@@ -709,7 +708,6 @@ final class WorkbenchTree {
         ((CTabFolder) w[41]).setBorderVisible(true);
         ((CTabFolder) w[41]).setMRUVisible(true);
         ((CTabFolder) w[41]).setDragDetect(true);
-        ((CTabFolder) w[41]).setSelectedImageVisible(true);
         ((CTabFolder) w[41]).setForeground(color(187, 187, 187, 255));
         ((CTabFolder) w[41]).setSimple(true);
         ((CTabFolder) w[41]).setTabHeight(24);
@@ -886,7 +884,6 @@ final class WorkbenchTree {
         ((CTabFolder) w[60]).setBorderVisible(true);
         ((CTabFolder) w[60]).setMRUVisible(true);
         ((CTabFolder) w[60]).setDragDetect(true);
-        ((CTabFolder) w[60]).setSelectedImageVisible(true);
         ((CTabFolder) w[60]).setForeground(color(187, 187, 187, 255));
         ((CTabFolder) w[60]).setSimple(true);
         ((CTabFolder) w[60]).setTabHeight(24);
@@ -1113,7 +1110,6 @@ final class WorkbenchTree {
     }
 
     private static void s27(Widget[] w) {
-        ((CTabFolder) w[79]).setSelectedImageVisible(true);
         ((CTabFolder) w[79]).setForeground(color(187, 187, 187, 255));
         ((CTabFolder) w[79]).setSimple(true);
         ((CTabFolder) w[79]).setTabHeight(24);
@@ -1285,7 +1281,6 @@ final class WorkbenchTree {
         ((CTabFolder) w[107]).setBorderVisible(true);
         ((CTabFolder) w[107]).setMRUVisible(true);
         ((CTabFolder) w[107]).setDragDetect(true);
-        ((CTabFolder) w[107]).setSelectedImageVisible(true);
         ((CTabFolder) w[107]).setForeground(color(221, 221, 221, 255));
         ((CTabFolder) w[107]).setSimple(true);
         ((CTabFolder) w[107]).setTabHeight(24);
