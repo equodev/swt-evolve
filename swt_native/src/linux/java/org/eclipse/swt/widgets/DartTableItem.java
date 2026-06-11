@@ -1275,11 +1275,6 @@ public class DartTableItem extends DartItem implements ITableItem {
         TableHelper.setImages(value, this);
     }
 
-    void firePaintItemForAllColumns() {
-        //workaround #496
-        TableItemHelper.firePaintItemForAllColumns(this);
-    }
-
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;
