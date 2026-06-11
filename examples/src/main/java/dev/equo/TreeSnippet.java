@@ -19,7 +19,7 @@ public static void main (String [] args) {
 	final Tree tree = new Tree (shell, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
 	for (int i=0; i<4; i++) {
 		TreeItem item0 = new TreeItem (tree, 0);
-		item0.setText ("Item " + i);
+		item0.setText ("AdditionalFunctions" + i);
 		for (int j=0; j<4; j++) {
 			TreeItem item1 = new TreeItem (item0, 0);
 			item1.setText ("SubItem " + i + " " + j);
