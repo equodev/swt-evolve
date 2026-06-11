@@ -182,16 +182,6 @@ TreeThemeExtension _getTreeTheme({
   );
 }
 
-String toTitleCase(String s) {
-  if (s.isEmpty) return s;
-  return s.split(' ').map((w) {
-    if (w.isEmpty) return w;
-    return w.length > 1
-        ? w[0].toUpperCase() + w.substring(1).toLowerCase()
-        : w.toUpperCase();
-  }).join(' ');
-}
-
 Color getTreeBackgroundColor(
   VTree state,
   TreeThemeExtension widgetTheme,

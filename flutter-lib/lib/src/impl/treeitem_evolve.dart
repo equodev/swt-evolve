@@ -991,10 +991,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       baseTextStyle: baseStyle,
     );
 
-    final displayText = hasMultiColumn ? text : toTitleCase(text);
-
     Widget textWidget = Text(
-      displayText,
+      text,
       style: cellTextStyle,
       textAlign: getTextAlignFromStyle(columnAlignment ?? 0, TextAlign.left),
       maxLines: 1,
