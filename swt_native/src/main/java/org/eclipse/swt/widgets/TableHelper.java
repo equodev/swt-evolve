@@ -1,7 +1,9 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.DartGC;
 import org.eclipse.swt.graphics.DartImage;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.GraphicsUtils;
 import org.eclipse.swt.graphics.Image;
 
@@ -400,7 +402,34 @@ public class TableHelper {
         } else {
             result[0] = dartImageOrNull(item.image);
         }
+        if (((DartWidget) item.parent.getImpl()).hooks(SWT.PaintItem)) {
+            firePaintItemForEmptyCells(item, result, count);
+        }
         return result;
+    }
+
+    private static void firePaintItemForEmptyCells(DartTableItem item, Image[] result, int count) {
+        GC gc = new GC(item.parent);
+        DartGC dartGc = (DartGC) gc.getImpl();
+        int itemHeight = ((DartTable) item.parent.getImpl()).getItemHeight();
+        try {
+            for (int columnIndex = 0; columnIndex < count; columnIndex++) {
+                if (result[columnIndex] != null)
+                    continue;
+                Image[] captured = new Image[1];
+                dartGc.imageCapture = drawnImage -> captured[0] = drawnImage;
+                Event event = new Event();
+                event.item = item.getApi();
+                event.index = columnIndex;
+                event.gc = gc;
+                event.height = itemHeight;
+                ((DartWidget) item.parent.getImpl()).sendEvent(SWT.PaintItem, event);
+                result[columnIndex] = dartImageOrNull(captured[0]);
+            }
+        } finally {
+            dartGc.imageCapture = null;
+            gc.dispose();
+        }
     }
 
     public static void setImages(Image[] value, DartTableItem item) {
@@ -464,25 +493,6 @@ public class TableHelper {
         } finally {
             table.loadingVirtualData = false;
         }
-        if (table.hooks(SWT.PaintItem)) {
-            for (int i = 0; i < table.getItemCount(); i++) {
-                TableItem item = table._getItem(i);
-                if (item != null && item.getData() != null) {
-                    ((DartTableItem) item.getImpl()).firePaintItemForAllColumns();
-                }
-            }
-        }
         table.dirty();
-    }
-
-    public static void onAddListener(DartTable table, int eventType) {
-        if (eventType == SWT.PaintItem && table.items != null) {
-            for (TableItem tableItem : table.items) {
-                if (tableItem != null) {
-                    ((DartTableItem) tableItem.getImpl()).firePaintItemForAllColumns();
-                }
-            }
-            table.dirty();
-        }
     }
 }

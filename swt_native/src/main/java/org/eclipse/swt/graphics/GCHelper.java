@@ -169,19 +169,4 @@ public class GCHelper {
         if (pngBase64 == null) return;
         updateImageFromPngBytes(dartImage, swtSource, java.util.Base64.getDecoder().decode(pngBase64));
     }
-
-    static final ThreadLocal<Boolean> paintItemCaptureMode = new ThreadLocal<>();
-    static final ThreadLocal<Image> paintItemCapturedImage = new ThreadLocal<>();
-
-    public static void startPaintCapture() {
-        paintItemCaptureMode.set(Boolean.TRUE);
-        paintItemCapturedImage.set(null);
-    }
-
-    public static Image stopPaintCapture() {
-        paintItemCaptureMode.remove();
-        Image img = paintItemCapturedImage.get();
-        paintItemCapturedImage.remove();
-        return img;
-    }
 }
