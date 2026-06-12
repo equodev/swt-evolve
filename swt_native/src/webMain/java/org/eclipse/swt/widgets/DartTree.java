@@ -1283,7 +1283,9 @@ public class DartTree extends DartComposite implements ITree {
      */
     public TreeItem getTopItem() {
         checkWidget();
-        return this.topItem;
+        if (topItem != null)
+            return topItem;
+        return itemCount > 0 ? _getItem(null, 0, false) : null;
     }
 
     /**
