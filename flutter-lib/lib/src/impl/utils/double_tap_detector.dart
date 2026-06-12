@@ -1,7 +1,7 @@
 import 'package:flutter/gestures.dart' show kDoubleTapTimeout;
 import 'package:flutter/widgets.dart';
 
-/// Arena-free double-click/tap detection.
+/// Arena-free multi-click detection (single / double / triple).
 ///
 /// Flutter's [DoubleTapGestureRecognizer] -- created by any `GestureDetector`
 /// or `InkWell` that sets `onDoubleTap` -- holds the gesture arena for
@@ -23,52 +23,66 @@ class DoubleTapDetector {
   /// given a [position]. Ignored when no position is supplied.
   final double slop;
 
+  int _tapCount = 0;
   DateTime? _lastTime;
   Object? _lastKey;
   Offset? _lastPos;
 
-  /// Records a tap and returns `true` when it forms a double-click with the
-  /// previous tap: same [key] (when given), within [timeout], and within [slop]
-  /// pixels (when both taps supply a [position]). After a positive result the
-  /// internal state is cleared so a third tap starts a fresh sequence.
-  bool registerTap({Object? key, Offset? position}) {
+  /// Records a tap and returns the consecutive tap count: 1 for a fresh tap,
+  /// 2 for a double-click, 3 for a triple-click. Each tap must be within
+  /// [timeout] and [slop] of the previous one to continue the sequence.
+  /// After a triple (count == 3) the internal state is cleared so the next
+  /// tap starts a fresh sequence.
+  int registerTap({Object? key, Offset? position}) {
     final now = DateTime.now();
-    final lastTime = _lastTime;
-    final lastKey = _lastKey;
-    final lastPos = _lastPos;
+    final prevTime = _lastTime;
+    final prevKey = _lastKey;
+    final prevPos = _lastPos;
 
     _lastTime = now;
     _lastKey = key;
     _lastPos = position;
 
-    if (lastTime == null || now.difference(lastTime) >= timeout) return false;
-    if (lastKey != key) return false;
-    if (position != null && lastPos != null) {
-      final dx = position.dx - lastPos.dx;
-      final dy = position.dy - lastPos.dy;
-      if (dx * dx + dy * dy > slop * slop) return false;
+    bool consecutive = prevTime != null &&
+        now.difference(prevTime) < timeout &&
+        prevKey == key;
+    if (consecutive && position != null && prevPos != null) {
+      final dx = position.dx - prevPos.dx;
+      final dy = position.dy - prevPos.dy;
+      consecutive = dx * dx + dy * dy <= slop * slop;
     }
 
-    reset();
-    return true;
+    if (!consecutive) {
+      _tapCount = 1;
+      return 1;
+    }
+
+    _tapCount++;
+    if (_tapCount >= 3) {
+      reset();
+      return 3;
+    }
+    return _tapCount;
   }
 
   /// Forgets the previous tap so the next [registerTap] cannot pair with it.
   void reset() {
+    _tapCount = 0;
     _lastTime = null;
     _lastKey = null;
     _lastPos = null;
   }
 }
 
-/// Drop-in replacement for a `GestureDetector` that has both `onTap` and
-/// `onDoubleTap`, without the [kDoubleTapTimeout] (300ms) arena hold that delays
-/// every single tap.
+/// Drop-in replacement for a `GestureDetector` that has `onTap`, `onDoubleTap`,
+/// and optionally `onTripleTap`, without the [kDoubleTapTimeout] (300ms) arena
+/// hold that delays every single tap.
 ///
 /// Internally it wires only a single-tap recognizer (which resolves the arena
-/// immediately) and uses a [DoubleTapDetector] to route a quick second tap to
-/// [onDoubleTap]. The first tap of a double still fires [onTap] -- matching SWT,
-/// which sends a Selection per physical click before DefaultSelection.
+/// immediately) and uses a [DoubleTapDetector] to route quick successive taps
+/// to [onDoubleTap] or [onTripleTap]. The first tap of a double/triple still
+/// fires [onTap] -- matching SWT, which sends a Selection per physical click
+/// before DefaultSelection.
 ///
 /// For widgets rebuilt across logical rows (e.g. inside `ListView.builder`),
 /// pass an [identity] (the item or index): when the slot is recycled to a
@@ -79,6 +93,7 @@ class InstantDoubleTapDetector extends StatefulWidget {
     super.key,
     this.onTap,
     this.onDoubleTap,
+    this.onTripleTap,
     this.behavior,
     this.identity,
     required this.child,
@@ -86,6 +101,7 @@ class InstantDoubleTapDetector extends StatefulWidget {
 
   final VoidCallback? onTap;
   final VoidCallback? onDoubleTap;
+  final VoidCallback? onTripleTap;
   final HitTestBehavior? behavior;
   final Object? identity;
   final Widget child;
@@ -107,7 +123,10 @@ class _InstantDoubleTapDetectorState extends State<InstantDoubleTapDetector> {
   }
 
   void _handleTap() {
-    if (widget.onDoubleTap != null && _detector.registerTap()) {
+    final count = _detector.registerTap();
+    if (count == 3 && widget.onTripleTap != null) {
+      widget.onTripleTap!();
+    } else if (count == 2 && widget.onDoubleTap != null) {
       widget.onDoubleTap!();
     } else {
       widget.onTap?.call();
@@ -119,7 +138,7 @@ class _InstantDoubleTapDetectorState extends State<InstantDoubleTapDetector> {
     return GestureDetector(
       behavior: widget.behavior,
       // Always wire onTap so the detector sees every tap, even when the caller
-      // only supplied onDoubleTap.
+      // only supplied onDoubleTap or onTripleTap.
       onTap: _handleTap,
       child: widget.child,
     );

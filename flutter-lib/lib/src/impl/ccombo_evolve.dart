@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../gen/ccombo.dart';
 import '../gen/event.dart';
+import '../gen/point.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../impl/composite_evolve.dart';
@@ -149,11 +150,28 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
       );
     }
 
+    final wrapped = DoubleClickWordSelector(
+      controller: _controller,
+      focusNode: _focusNode,
+      text: _controller.text,
+      onWordSelected: (start, end) {
+        state.selection = VPoint()
+          ..x = start
+          ..y = end;
+        widget.sendMouseMouseDoubleClick(
+          state,
+          VEvent()..button = 1..count = 2..start = start..end = end,
+        );
+        _focusNode?.requestFocus();
+      },
+      child: result,
+    );
+
     if (hasConstraints) {
-      return SizedBox(width: width, height: height, child: result);
+      return SizedBox(width: width, height: height, child: wrapped);
     }
 
-    return result;
+    return wrapped;
   }
 
   void onChanged(String? value) {
@@ -327,8 +345,10 @@ class _StyledDropdownCCombo extends StatelessWidget {
             children: [
               Expanded(
                 child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () {},
+                  behavior: isReadOnly
+                      ? HitTestBehavior.translucent
+                      : HitTestBehavior.opaque,
+                  onTap: isReadOnly ? null : () => focusNode?.requestFocus(),
                 ),
               ),
               GestureDetector(

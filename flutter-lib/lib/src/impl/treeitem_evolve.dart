@@ -859,7 +859,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               return;
             }
 
-            if (_rowTap.registerTap()) {
+            if (_rowTap.registerTap() == 2) {
               _sendStartEditing();
               final de = _createEvent();
               de.count = 2;

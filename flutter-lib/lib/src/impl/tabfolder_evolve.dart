@@ -228,7 +228,7 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
   }
 
   void _handleTabTap(int index, VoidCallback onSingle) {
-    if (_tabTap.registerTap(key: index)) {
+    if (_tabTap.registerTap(key: index) == 2) {
       _handleDefaultSelection(index);
       return;
     }

@@ -7,6 +7,7 @@ import '../gen/widget.dart';
 import '../impl/scrollable_evolve.dart';
 import '../theme/theme_extensions/text_theme_extension.dart';
 import '../theme/theme_settings/text_theme_settings.dart';
+import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 
 class TextImpl<T extends TextSwt, V extends VText>
@@ -121,7 +122,7 @@ class TextImpl<T extends TextSwt, V extends VText>
 
     final shouldExpand = hasValidBounds;
 
-    return TextField(
+    final textField = TextField(
       controller: _controller,
       focusNode: _focusNode,
       enabled: enabled,
@@ -141,6 +142,25 @@ class TextImpl<T extends TextSwt, V extends VText>
       onChanged: _handleTextChanged,
       onSubmitted: _handleSubmitted,
       cursorColor: cursorColor,
+    );
+    return DoubleClickWordSelector(
+      controller: _controller,
+      focusNode: _focusNode,
+      text: state.text ?? '',
+      onWordSelected: (start, end) {
+        state.selection = VPoint()
+          ..x = start
+          ..y = end;
+        widget.sendMouseMouseDoubleClick(
+          state,
+          VEvent()
+            ..button = 1
+            ..count = 2
+            ..start = start
+            ..end = end,
+        );
+      },
+      child: textField,
     );
   }
 

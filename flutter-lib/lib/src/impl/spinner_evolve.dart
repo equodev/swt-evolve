@@ -8,6 +8,7 @@ import '../gen/widget.dart';
 import '../impl/composite_evolve.dart';
 import '../theme/theme_extensions/spinner_theme_extension.dart';
 import '../theme/theme_settings/spinner_theme_settings.dart';
+import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 
 class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
@@ -217,7 +218,15 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
         ),
         child: Row(
           children: [
-            Expanded(child: _buildTextField(isInteractive)),
+            Expanded(
+              child: DoubleClickWordSelector(
+                controller: _controller,
+                focusNode: _focusNode,
+                text: _controller.text,
+                onWordSelected: (_, __) {},
+                child: _buildTextField(isInteractive),
+              ),
+            ),
             _buildButtonColumn(isInteractive),
           ],
         ),
