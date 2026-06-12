@@ -75,7 +75,28 @@ public class Sizes {
         return ComboSizes.computeSize(c, wHint, hHint, changed);
     }
 
+    private static boolean inInfoPopup(Control c) {
+        try {
+            Shell s = c == null ? null : c.getShell();
+            return s != null && (s.getStyle() & SWT.ON_TOP) != 0 && (s.getStyle() & SWT.NO_TRIM) != 0;
+        } catch (Throwable ignore) {
+            return false;
+        }
+    }
+
     public static Point computeSize(DartComposite composite, int wHint, int hHint, boolean changed) {
+        if (wHint != SWT.DEFAULT && hHint == SWT.DEFAULT && inInfoPopup(composite.getApi())) {
+            try {
+                for (Control child : composite.getApi().getChildren()) {
+                    if (child instanceof org.eclipse.swt.custom.StyledText && (child.getStyle() & SWT.WRAP) != 0) {
+                        Point cPref = computeSize(composite, SWT.DEFAULT, SWT.DEFAULT, changed);
+                        Point stPref = child.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+                        int avail = Math.max(1, wHint - Math.max(0, cPref.x - stPref.x));
+                        return new Point(wHint, child.computeSize(avail, SWT.DEFAULT).y + Math.max(0, cPref.y - stPref.y));
+                    }
+                }
+            } catch (Throwable ignore) {}
+        }
         Point size;
         if (composite.layout != null) {
             if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
@@ -100,28 +121,89 @@ public class Sizes {
         return new Point(trim.width, trim.height);
     }
 
+    /**
+     * Counts how many visual lines a single logical line wraps into when laid out at
+     * {@code maxWidth} (greedy word-wrap, matching SWT.WRAP). Uses the same
+     * {@link GCHelper#textExtent} measurement as the rest of computeSize so the wrap
+     * point stays consistent with rendering.
+     */
+    private static int wrapLineCount(String line, int maxWidth, Font font) {
+        if (line == null || line.isEmpty()) return 1;
+        if (GCHelper.textExtent(line, SWT.DRAW_TAB, font).x <= maxWidth) return 1;
+        int spaceW = GCHelper.textExtent(" ", SWT.DRAW_TAB, font).x;
+        String[] words = line.split(" ", -1);
+        int lines = 1;
+        int cur = 0;
+        boolean lineStart = true;
+        for (String word : words) {
+            if (word.isEmpty()) {
+                if (!lineStart) cur += spaceW;
+                continue;
+            }
+            int wW = GCHelper.textExtent(word, SWT.DRAW_TAB, font).x;
+            if (lineStart) {
+                cur = wW;
+                lineStart = false;
+            } else {
+                int extended = cur + spaceW + wW;
+                if (extended > maxWidth) {
+                    lines++;
+                    cur = wW;
+                } else {
+                    cur = extended;
+                }
+            }
+        }
+        return lines;
+    }
+
     public static Point computeSize(DartStyledText c, int wHint, int hHint, boolean changed) {
         StyledTextContent content = c._content();
         int lc = (c.getApi().getStyle() & SWT.SINGLE) != 0 ? 1 : content.getLineCount();
+        Font font = c.getFont();
+        boolean wrap = c.getWordWrap();
+        int wTrim = c._leftMargin() + c._rightMargin();
+        Caret caret = c.getCaret();
+        if (caret != null) wTrim += caret.getSize().x;
+        int hTrim = c._topMargin() + c._bottomMargin();
         int width = 0;
         int height = 0;
         if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
-            Font font = c.getFont();
+            // When the widget wraps (SWT.WRAP) and the width is constrained, lay each
+            // logical line out to the available width so the height accounts for the
+            // extra visual lines (otherwise a long line is clipped, not wrapped).
+            int wrapWidth = -1;
+            if (wrap && wHint != SWT.DEFAULT) {
+                wrapWidth = Math.max(1, wHint - wTrim);
+            } else if (wrap && inInfoPopup(c.getApi())) {
+                try {
+                    Composite parent = c.getApi().getParent();
+                    int w = parent == null ? -1 : parent.getClientArea().width;
+                    if (parent != null && parent.getLayout() instanceof org.eclipse.swt.layout.GridLayout) {
+                        org.eclipse.swt.layout.GridLayout gl = (org.eclipse.swt.layout.GridLayout) parent.getLayout();
+                        w -= gl.marginLeft + gl.marginRight + gl.marginWidth * 2;
+                    }
+                    wrapWidth = w > 0 ? Math.max(1, w - wTrim) : -1;
+                } catch (Throwable ignore) {}
+            }
+            int lineH = c.getLineHeight();
             for (int lineIndex = 0; lineIndex < lc; lineIndex++) {
                 String line = content.getLine(lineIndex);
-                Point extent = GCHelper.textExtent(line != null ? line : "", SWT.DRAW_TAB, font);
-                width = Math.max(width, extent.x);
-                height += extent.y;
+                if (line == null) line = "";
+                Point extent = GCHelper.textExtent(line, SWT.DRAW_TAB, font);
+                if (wrapWidth > 0) {
+                    height += lineH * wrapLineCount(line, wrapWidth, font);
+                    width = Math.max(width, Math.min(extent.x, wrapWidth));
+                } else {
+                    width = Math.max(width, extent.x);
+                    height += lineH;
+                }
             }
         }
         if (width == 0) width = DartWidget.DEFAULT_WIDTH;
         if (height == 0) height = DartWidget.DEFAULT_HEIGHT;
         if (wHint != SWT.DEFAULT) width = wHint;
         if (hHint != SWT.DEFAULT) height = hHint;
-        int wTrim = c._leftMargin() + c._rightMargin();
-        Caret caret = c.getCaret();
-        if (caret != null) wTrim += caret.getSize().x;
-        int hTrim = c._topMargin() + c._bottomMargin();
         Rectangle rect = c.computeTrim(0, 0, width + wTrim, height + hTrim);
         return new Point(rect.width, rect.height);
     }

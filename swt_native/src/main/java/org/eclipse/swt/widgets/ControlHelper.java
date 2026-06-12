@@ -14,9 +14,32 @@ public class ControlHelper {
             Rectangle bounds = current.getBounds();
             offset[0] += bounds.x;
             offset[1] += bounds.y;
+            if (current instanceof Shell) {
+                int st = current.getStyle();
+                boolean showsTitleBar = (st & SWT.NO_TRIM) == 0
+                    && ((st & SWT.TITLE) != 0 || (st & SWT.CLOSE) != 0);
+                if (showsTitleBar && !isMainShell((Shell) current)) {
+                    offset[1] += (st & SWT.TOOL) != 0 ? 22 : 30;
+                }
+                return null;
+            }
             current = current.getParent();
         }
         return current;
+    }
+
+    private static boolean isMainShell(Shell shell) {
+        Rectangle b = shell.getBounds();
+        if (b.x != 0 || b.y != 0)
+            return false;
+        int modal = SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL | SWT.PRIMARY_MODAL;
+        if ((shell.getStyle() & modal) != 0)
+            return false;
+        if (b.width == 1024 && b.height == 768)
+            return true;
+        Rectangle view = shell.getMonitor().getClientArea();
+        return b.width >= Math.round(view.width * 0.8f)
+            && b.height >= Math.round(view.height * 0.8f);
     }
 
     static Point toDisplay(DartControl dartControl, int x, int y) {

@@ -1465,10 +1465,14 @@ class TextShape extends Shape {
     this.lineHeight = 0.0,
   ]);
 
-  // Returns lineHeight when set, otherwise falls back to the painter's measured height.
-  // Also guards against empty-text painters that return 0.
-  double _advance(double tpHeight) =>
-      lineHeight > 0 ? lineHeight : (tpHeight > 0 ? tpHeight : (style.fontSize ?? 16) * 1.2);
+  // Vertical advance for one logical line. Each logical line is painted by a single
+  // TextPainter that may wrap into several visual lines (tpHeight is the wrapped total),
+  // so advance by tpHeight; fall back to lineHeight as a floor (empty lines whose painter
+  // measures ~0, or to keep a consistent single-line height).
+  double _advance(double tpHeight) {
+    final lh = lineHeight > 0 ? lineHeight : (style.fontSize ?? 16) * 1.2;
+    return tpHeight > lh ? tpHeight : lh;
+  }
 
   @override
   void draw(Canvas c) {
