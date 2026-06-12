@@ -1055,7 +1055,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     @Override
     public Rectangle getClientArea() {
         checkDevice();
-        return null;
+        return new Rectangle(bounds.x, bounds.y, bounds.width, bounds.height);
     }
 
     /**
