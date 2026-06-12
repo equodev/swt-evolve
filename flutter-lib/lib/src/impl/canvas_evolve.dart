@@ -122,7 +122,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       behavior: HitTestBehavior.translucent,
       onPointerDown: (e) {
         final pos = e.localPosition;
-        if (_dblTap.registerTap(position: pos)) {
+        if (_dblTap.registerTap(position: pos) == 2) {
           widget.sendMouseMouseDoubleClick(
             state,
             VEvent()

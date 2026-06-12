@@ -155,7 +155,23 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
             width: width,
           );
 
-    return SizedBox(width: width, height: height, child: content);
+    return DoubleClickWordSelector(
+      controller: _controller,
+      focusNode: _focusNode,
+      text: _controller.text,
+      onWordSelected: (start, end) {
+        widget.sendMouseMouseDoubleClick(
+          state,
+          VEvent()
+            ..button = 1
+            ..count = 2
+            ..start = start
+            ..end = end,
+        );
+        _focusNode.requestFocus();
+      },
+      child: SizedBox(width: width, height: height, child: content),
+    );
   }
 
   void _onItemSelected(String? value) {
@@ -212,22 +228,24 @@ class _DropdownComboLayout extends StatelessWidget {
       overlayChildBuilder: (_) => _buildOverlay(),
       child: CompositedTransformTarget(
         link: layerLink,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: isEnabled ? overlayController.toggle : null,
-          child: Container(
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(theme.borderRadius),
-              border: Border.all(color: borderColor, width: theme.borderWidth),
-            ),
-            child: Row(
-              children: [
-                Expanded(
+        child: Container(
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(theme.borderRadius),
+            border: Border.all(color: borderColor, width: theme.borderWidth),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: isEnabled && !isReadOnly
+                      ? () => focusNode.requestFocus()
+                      : (isEnabled ? overlayController.toggle : null),
                   child: Padding(
                     padding: theme.textFieldPadding,
                     child: IgnorePointer(
-                      ignoring: true,
+                      ignoring: isReadOnly,
                       child: EditableText(
                         controller: controller,
                         focusNode: focusNode,
@@ -235,18 +253,26 @@ class _DropdownComboLayout extends StatelessWidget {
                         style: textStyle,
                         cursorColor: textStyle.color ?? theme.textColor,
                         backgroundCursorColor: bgColor,
+                        selectionColor: DefaultSelectionStyle.of(context).selectionColor ??
+                            Theme.of(context).colorScheme.primary.withOpacity(0.4),
                       ),
                     ),
                   ),
                 ),
-                SizedBox(width: theme.iconSpacing),
-                Icon(
-                  Icons.arrow_drop_down,
-                  color: iconColor,
-                  size: theme.iconSize,
+              ),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: isEnabled ? overlayController.toggle : null,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: theme.iconSpacing),
+                  child: Icon(
+                    Icons.arrow_drop_down,
+                    color: iconColor,
+                    size: theme.iconSize,
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -341,6 +367,8 @@ class _SimpleComboLayout extends StatelessWidget {
               style: textStyle,
               cursorColor: textStyle.color ?? theme.textColor,
               backgroundCursorColor: bgColor,
+              selectionColor: DefaultSelectionStyle.of(context).selectionColor ??
+                  Theme.of(context).colorScheme.primary.withOpacity(0.4),
             ),
           ),
           Divider(

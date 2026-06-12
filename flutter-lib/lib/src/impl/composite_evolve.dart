@@ -64,7 +64,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
             ..button = 1,
         );
         if (!impl.forwardsCompositeDoubleClick) return;
-        if (impl.dblTap.registerTap(position: pos)) {
+        if (impl.dblTap.registerTap(position: pos) == 2) {
           impl.widget.sendMouseMouseDoubleClick(
             state,
             VEvent()

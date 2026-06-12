@@ -16,7 +16,9 @@ import '../impl/canvas_evolve.dart';
 import '../impl/gcdrawer_evolve.dart';
 import 'widget_config.dart';
 import 'key_mapping.dart';
+import 'utils/double_tap_detector.dart';
 import 'utils/font_utils.dart';
+import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 import 'color_utils.dart';
 import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
@@ -36,6 +38,10 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   bool _isSelecting = false;
   int? _selectionStartOffset;
+  Offset? _doubleTapPosition;
+  Offset? _tripleTapPosition;
+  final _tapDetector = DoubleTapDetector(slop: 20.0, timeout: const Duration(milliseconds: 500));
+  int _lastTapCount = 1;
 
   bool _editable = true;
   bool _wordWrap = true;
@@ -459,21 +465,16 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
           right: hasVScroll ? trackSize : 0,
           bottom: hasHScroll ? trackSize : 0,
         ),
-        child: GestureDetector(
-          onTapDown: (details) => _handleTapDown(details.localPosition),
-          onTapUp: (details) => _handleTapUp(details.localPosition),
-          onPanStart: (details) => _handlePanStart(details.localPosition),
-          onPanUpdate: (details) => _handlePanUpdate(details.localPosition),
-          onPanEnd: (details) => _handlePanEnd(),
-          behavior: HitTestBehavior.translucent,
-          child: Container(),
-        ),
+        child: Container(),
       ),
     );
 
     return wrap(
       Listener(
         onPointerSignal: _handlePointerSignal,
+        onPointerDown: (e) => _handlePointerDown(e.localPosition),
+        onPointerMove: (e) => _handlePointerMove(e.localPosition),
+        onPointerUp: (e) => _handlePointerUp(e.localPosition),
         child: SizedBox(
           width: bounds.width,
           height: bounds.height,
@@ -709,6 +710,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     widget.sendVerifyKeyverifyKey(state, mapKeyEventToSwt(event));
 
     final isShiftPressed = event.data.isShiftPressed;
+    final bool hadSelection = _editableTextShape?.selectionInfo?.hasSelection == true;
 
     setState(() {
       final currentShape = _editableTextShape!;
@@ -716,10 +718,18 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
       if (event.logicalKey == LogicalKeyboardKey.backspace) {
         if (!_editable) return;
-        newShape = currentShape.backspace();
+        if (currentShape.selectionInfo?.hasSelection == true) {
+          newShape = currentShape.deleteSelection();
+        } else {
+          newShape = currentShape.backspace();
+        }
       } else if (event.logicalKey == LogicalKeyboardKey.delete) {
         if (!_editable) return;
-        newShape = currentShape.delete();
+        if (currentShape.selectionInfo?.hasSelection == true) {
+          newShape = currentShape.deleteSelection();
+        } else {
+          newShape = currentShape.delete();
+        }
       } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
         final newOffset = (currentShape.caretInfo?.offset ?? 0) - 1;
         if (isShiftPressed) {
@@ -814,20 +824,18 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       } else if (event.logicalKey == LogicalKeyboardKey.enter) {
         if (!_editable) return;
         if ((state.style & SWT.SINGLE) == 0) {
-          newShape = currentShape.insertText(
-            '\n',
-            currentShape.caretInfo?.offset ?? 0,
-          );
+          var shape = currentShape;
+          if (shape.selectionInfo?.hasSelection == true) shape = shape.deleteSelection();
+          newShape = shape.insertText('\n', shape.caretInfo?.offset ?? 0);
         }
       } else if (event.character != null && event.character!.isNotEmpty) {
         if (!_editable) return;
         if (event.data.isMetaPressed || event.data.isControlPressed) return;
         final char = event.character!;
         if (char.codeUnitAt(0) >= 32) {
-          newShape = currentShape.insertText(
-            char,
-            currentShape.caretInfo?.offset ?? 0,
-          );
+          var shape = currentShape;
+          if (shape.selectionInfo?.hasSelection == true) shape = shape.deleteSelection();
+          newShape = shape.insertText(char, shape.caretInfo?.offset ?? 0);
         }
       }
 
@@ -839,6 +847,16 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         }
       }
     });
+
+    final bool isDestructiveKey = event.logicalKey == LogicalKeyboardKey.backspace ||
+        event.logicalKey == LogicalKeyboardKey.delete ||
+        (event.character != null &&
+         event.character!.isNotEmpty &&
+         !event.data.isMetaPressed &&
+         !event.data.isControlPressed);
+    if (hadSelection && isDestructiveKey) {
+      _sendSelectionCleared(_editableTextShape?.caretInfo?.offset ?? 0);
+    }
   }
 
   void _handlePaste() async {
@@ -863,13 +881,39 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     }
   }
 
-  void _handleTapDown(Offset position) {
+  Offset? _pointerDownPos;
+  static const _panSlop = 4.0;
+
+  void _handlePointerDown(Offset position) {
     _isSelecting = false;
+    _pointerDownPos = position;
+    _lastTapCount = _tapDetector.registerTap(position: position);
+    if (_lastTapCount == 2) _doubleTapPosition = position;
+    if (_lastTapCount == 3) _tripleTapPosition = position;
   }
 
-  void _handleTapUp(Offset position) {
+  void _handlePointerMove(Offset position) {
+    if (_pointerDownPos == null) return;
     if (!_isSelecting) {
-      _handleTap(position);
+      final d = position - _pointerDownPos!;
+      if (d.dx * d.dx + d.dy * d.dy < _panSlop * _panSlop) return;
+      _handlePanStart(_pointerDownPos!);
+    }
+    _handlePanUpdate(position);
+  }
+
+  void _handlePointerUp(Offset position) {
+    _pointerDownPos = null;
+    if (_isSelecting) {
+      _handlePanEnd();
+    } else {
+      if (_lastTapCount == 3) {
+        _handleTripleTap();
+      } else if (_lastTapCount == 2) {
+        _handleDoubleTap();
+      } else {
+        _handleTap(position);
+      }
     }
     _isSelecting = false;
     _selectionStartOffset = null;
@@ -950,6 +994,107 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   void _handlePanEnd() {
     _isSelecting = false;
     _selectionStartOffset = null;
+    _sendSelectionChange();
+  }
+
+  void _handleDoubleTap() {
+    final pos = _doubleTapPosition;
+    if (pos == null) return;
+    final RenderBox? rb = context.findRenderObject() as RenderBox?;
+    if (rb == null) return;
+
+    if (!_isEditingText || _editableTextShape == null) {
+      final contentPos = _toContentPosition(pos);
+      TextShape? textShape;
+      int shapeIndex = -1;
+      for (int i = shapes.length - 1; i >= 0; i--) {
+        final s = shapes[i];
+        if (s is TextShape && s.editable && s.containsPoint(contentPos, rb.size)) {
+          textShape = s;
+          shapeIndex = i;
+          break;
+        }
+      }
+      if (textShape == null && _editable) {
+        shapeIndex = shapes.lastIndexWhere((s) => s is TextShape && s.editable);
+        if (shapeIndex != -1) textShape = shapes[shapeIndex] as TextShape?;
+      }
+      if (textShape == null) return;
+      if (_isEditingText) _stopEditing();
+      _startEditing(textShape, shapeIndex);
+      _focusNode.requestFocus();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _applyDoubleClickWordSelection(pos, rb.size);
+      });
+      return;
+    }
+
+    _applyDoubleClickWordSelection(pos, rb.size);
+  }
+
+  void _applyDoubleClickWordSelection(Offset pos, Size canvasSize) {
+    if (_editableTextShape == null) return;
+    final contentPos = _toContentPosition(pos);
+    final charOffset = _editableTextShape!.getOffsetFromPosition(contentPos, canvasSize);
+    final text = _editableTextShape!.text;
+    final (wordStart, wordEnd) = getWordBoundaries(text, charOffset);
+    if (wordStart == wordEnd) return;
+    setState(() {
+      _editableTextShape = _editableTextShape!
+          .updateCaretOffset(charOffset)
+          .copyWithSelection(SelectionInfo.fromRange(wordStart, wordEnd));
+    });
+    _sendSelectionChange();
+    widget.sendMouseMouseDoubleClick(
+      state,
+      VEvent()
+        ..button = 1
+        ..count = 2
+        ..start = wordStart
+        ..end = wordEnd,
+    );
+  }
+
+  void _handleTripleTap() {
+    final pos = _tripleTapPosition;
+    if (pos == null) return;
+    final RenderBox? rb = context.findRenderObject() as RenderBox?;
+    if (rb == null) return;
+
+    if (!_isEditingText || _editableTextShape == null) {
+      final contentPos = _toContentPosition(pos);
+      TextShape? textShape;
+      int shapeIndex = -1;
+      for (int i = shapes.length - 1; i >= 0; i--) {
+        final s = shapes[i];
+        if (s is TextShape && s.editable && s.containsPoint(contentPos, rb.size)) {
+          textShape = s;
+          shapeIndex = i;
+          break;
+        }
+      }
+      if (textShape == null && _editable) {
+        shapeIndex = shapes.lastIndexWhere((s) => s is TextShape && s.editable);
+        if (shapeIndex != -1) textShape = shapes[shapeIndex] as TextShape?;
+      }
+      if (textShape == null) return;
+      if (_isEditingText) _stopEditing();
+      _startEditing(textShape, shapeIndex);
+      _focusNode.requestFocus();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _applyTripleClickSelectAll();
+      });
+      return;
+    }
+
+    _applyTripleClickSelectAll();
+  }
+
+  void _applyTripleClickSelectAll() {
+    if (_editableTextShape == null) return;
+    setState(() {
+      _editableTextShape = _editableTextShape!.selectAll();
+    });
     _sendSelectionChange();
   }
 
