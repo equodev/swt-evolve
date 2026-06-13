@@ -332,7 +332,8 @@ public class DartComposite extends DartScrollable implements IComposite {
      */
     public Control[] getChildren() {
         checkWidget();
-        return _getChildren();
+        Control[] result = _getChildren();
+        return result.length == 0 ? result : result.clone();
     }
 
     /**
