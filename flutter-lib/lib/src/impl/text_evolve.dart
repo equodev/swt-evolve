@@ -108,11 +108,23 @@ class TextImpl<T extends TextSwt, V extends VText>
       decoration = decoration.copyWith(filled: true, fillColor: parentBg);
     }
 
+    final isPassword = hasStyle(state.style, SWT.PASSWORD);
+    final singleLine = !isMultiLine || isPassword;
+    final shouldExpand = hasValidBounds && !singleLine;
+
     if (hasValidBounds) {
       final hPadding = widgetTheme.contentPadding.left;
       decoration = decoration.copyWith(
         contentPadding: EdgeInsets.symmetric(horizontal: hPadding),
       );
+      if (singleLine) {
+        decoration = decoration.copyWith(
+          isDense: false,
+          constraints: BoxConstraints.tightFor(
+            height: state.bounds!.height.toDouble(),
+          ),
+        );
+      }
     }
 
     final cursorColor = getForegroundColor(
@@ -120,18 +132,14 @@ class TextImpl<T extends TextSwt, V extends VText>
       defaultColor: widgetTheme.textColor,
     );
 
-    final shouldExpand = hasValidBounds;
-
     final textField = TextField(
       controller: _controller,
       focusNode: _focusNode,
       enabled: enabled,
-      obscureText: hasStyle(state.style, SWT.PASSWORD),
+      obscureText: isPassword,
       readOnly:
           !(state.editable ?? true) || hasStyle(state.style, SWT.READ_ONLY),
-      maxLines: shouldExpand
-          ? null
-          : (isMultiLine && !hasStyle(state.style, SWT.PASSWORD) ? null : 1),
+      maxLines: singleLine ? 1 : null,
       expands: shouldExpand,
       textAlignVertical: TextAlignVertical.center,
       textAlign: textAlign,
