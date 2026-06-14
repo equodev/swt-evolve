@@ -199,6 +199,9 @@ public class Config {
         if ((defaultImpl == Impl.equo && equoEnabled.containsKey(clazz)))
             return true;
 
+        if (isWebHybridClass(clazz))
+            return false;
+
         if (isCreatedInsideDart())
             return true;
 
@@ -207,6 +210,11 @@ public class Config {
         }
 
         return false;
+    }
+
+    private static boolean isWebHybridClass(Class<?> clazz) {
+        boolean isDesk = "true".equals(System.getProperty("dev.equo.swt.desktop", "true"));
+        return !isDesk && (clazz == DirectoryDialog.class || clazz == FileDialog.class || clazz == Program.class);
     }
 
     private static boolean isCreatedInsideDart() {
@@ -329,8 +337,7 @@ public class Config {
         }
         if (parent != null && clazz == Caret.class && parent.getImpl().getClass().getSimpleName().startsWith(DART))
             return true;
-        boolean isDesk = "true".equals(System.getProperty("dev.equo.swt.desktop", "true"));
-        if (!isDesk && (clazz == DirectoryDialog.class || clazz == FileDialog.class || clazz == Program.class))
+        if (isWebHybridClass(clazz))
             return false;
         if (parent != null && parent.getImpl().getClass().getSimpleName().startsWith(DART) && !isSwtCTabFolderBody(clazz, parent))
             return true;
