@@ -21,11 +21,9 @@ public class Platform {
     public static final String PLATFORM = "web";
 
     public static boolean isLoadable() {
-        // Pure-web build has no native libraries to load.
         return true;
     }
 
     public static void exitIfNotLoadable() {
-        // Pure-web build has no native libraries; nothing to check.
     }
 }
