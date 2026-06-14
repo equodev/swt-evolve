@@ -18,7 +18,6 @@ package org.eclipse.swt.widgets;
 import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
-import dev.equo.swt.Config;
 
 /**
  * Instances of this class allow the user to navigate
@@ -57,7 +56,7 @@ public class FileDialog extends Dialog {
      */
     public FileDialog(Shell parent) {
         this((IIFileDialog) null);
-        setImpl(Config.isEquo(FileDialog.class, parent) ? new DartFileDialog(parent, this) : new SwtFileDialog(parent, this));
+        setImpl(Impls.newFileDialog(parent, this));
     }
 
     /**
@@ -90,7 +89,7 @@ public class FileDialog extends Dialog {
      */
     public FileDialog(Shell parent, int style) {
         this((IIFileDialog) null);
-        setImpl(Config.isEquo(FileDialog.class, parent) ? new DartFileDialog(parent, style, this) : new SwtFileDialog(parent, style, this));
+        setImpl(Impls.newFileDialog(parent, style, this));
     }
 
     /**

@@ -21,7 +21,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.widgets.*;
-import dev.equo.swt.Config;
 
 /**
  * Instances of this class represent programs and
@@ -38,7 +37,7 @@ public final class Program {
      */
     Program() {
         this((IProgram) null);
-        setImpl(Config.isEquo(Program.class) ? new DartProgram(this) : new SwtProgram(this));
+        setImpl(Impls.newProgram(this));
     }
 
     /**
@@ -55,7 +54,7 @@ public final class Program {
      * 	</ul>
      */
     public static Program findProgram(String extension) {
-        return SwtProgram.findProgram(extension);
+        return Impls.Program.findProgram(extension);
     }
 
     /**
@@ -66,7 +65,7 @@ public final class Program {
      * @return an array of extensions
      */
     public static String[] getExtensions() {
-        return SwtProgram.getExtensions();
+        return Impls.Program.getExtensions();
     }
 
     /**
@@ -77,7 +76,7 @@ public final class Program {
      * @return an array of programs
      */
     public static Program[] getPrograms() {
-        return SwtProgram.getPrograms();
+        return Impls.Program.getPrograms();
     }
 
     /**
@@ -94,7 +93,7 @@ public final class Program {
      * </ul>
      */
     public static boolean launch(String fileName) {
-        return SwtProgram.launch(fileName);
+        return Impls.Program.launch(fileName);
     }
 
     /**
@@ -117,7 +116,7 @@ public final class Program {
      * @since 3.6
      */
     public static boolean launch(String fileName, String workingDir) {
-        return SwtProgram.launch(fileName, workingDir);
+        return Impls.Program.launch(fileName, workingDir);
     }
 
     /**

@@ -13,7 +13,7 @@ repositories {
 
 val arch = System.getProperty("os.arch")
 
-val oss = listOf("windows", "linux", "macos", "webWindows", "webLinux", "webMacos")
+val oss = listOf("windows", "linux", "macos", "webWindows", "webLinux", "webMacos", "web")
 val platforms = listOf(
     "windows-x86_64", "windows-aarch64",
     "linux-x86_64", "linux-aarch64",
@@ -21,6 +21,7 @@ val platforms = listOf(
     "web-windows-x86_64", "web-windows-aarch64",
     "web-linux-x86_64", "web-linux-aarch64",
     "web-macos-x86_64", "web-macos-aarch64",
+    "web",
 )
 
 val currentOs = when {
@@ -335,15 +336,17 @@ val dart = tasks.register<Exec>("dartRunner") {
 data class WebPlatformMeta(
     val os: String,
     val arch: String,
-    val isWeb: Boolean,
+    val isHybrid: Boolean,
+    val isWeb: Boolean = false,
 ) {
     val desktopPlatform: String get() = "$os-$arch"
-    val sourceSet: String get() = if (isWeb) "web${os.replaceFirstChar { it.titlecase() }}" else os
+    val sourceSet: String get() = when { isWeb -> "web"; isHybrid -> "web${os.replaceFirstChar { it.titlecase() }}"; else -> os }
     val swtWs: String get() = getSwtWs(os)
     val swtOs: String get() = getSwtOs(os)
 }
 
 fun parsePlatform(platform: String): WebPlatformMeta {
+    if (platform == "web") return WebPlatformMeta("web", "", isHybrid = true, isWeb = true)
     val isWeb = platform.startsWith("web")
     var parts = platform.split("-")
     if (isWeb) parts = parts.drop(1)
@@ -397,11 +400,35 @@ val copyWebBinaries = tasks.register<Copy>("webCopyFlutterBinaries") {
     into(layout.buildDirectory.dir("natives/web"))
 }
 
-// Create tasks for each platform JAR
+val bundleVendor = "Equo Tech, Inc."
+val chromiumImportPackage = "com.equo.chromium;resolution:=optional," +
+        "com.equo.chromium.utils;resolution:=optional," +
+        "com.equo.chromium.events;resolution:=optional"
+fun fragmentHostHeader() =
+    provider { "org.eclipse.swt;bundle-version=\"[${swtVersionProvider.get().substring(0..6)},4.0.0)\"" }
+fun evolveVersion(): Any = gradle.parent?.rootProject?.version ?: project.version
+fun hostVersion(suffix: String) = swtVersionProvider.map {
+    "${it.substringBefore(".v")}.v${evolveVersion().toString().replace('.', '_')}-$suffix"
+}
+fun swtExportPackage(swtWs: String?): String = (
+    listOf(
+        "org.eclipse.swt", "org.eclipse.swt.accessibility", "org.eclipse.swt.awt",
+        "org.eclipse.swt.browser", "org.eclipse.swt.custom", "org.eclipse.swt.dnd",
+        "org.eclipse.swt.events", "org.eclipse.swt.graphics", "org.eclipse.swt.layout",
+        "org.eclipse.swt.opengl", "org.eclipse.swt.printing", "org.eclipse.swt.program",
+        "org.eclipse.swt.widgets",
+        "org.eclipse.swt.internal; x-friends:=\"org.eclipse.ui\"",
+        "org.eclipse.swt.internal.image; x-internal:=true",
+    )
+        + (swtWs?.let { listOf("org.eclipse.swt.internal.$it; x-friends:=\"org.eclipse.ui\"") } ?: emptyList())
+        + "com.equo.chromium.swt"
+    ).joinToString(",")
+val webExportPackage = swtExportPackage(null)
+
 platforms.forEach { platform ->
     val info = parsePlatform(platform)
 
-    if (!info.isWeb) {
+    if (!info.isHybrid) {
         configurations.create("${platform}SwtImpl") {
             exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
         }
@@ -461,8 +488,9 @@ platforms.forEach { platform ->
         // and keep the first occurrence.
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         from(sourceSets[info.sourceSet].output)
-        from(layout.buildDirectory.dir("natives/${info.desktopPlatform}"))
-        if (info.isWeb) {
+        if (!info.isWeb)
+            from(layout.buildDirectory.dir("natives/${info.desktopPlatform}"))
+        if (info.isHybrid) {
             dependsOn(copyWebBinaries)
             from(layout.buildDirectory.dir("natives/web")) {
                 into("web")
@@ -473,37 +501,85 @@ platforms.forEach { platform ->
         from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
         exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "META-INF/LICENSE*", "META-INF/NOTICE*", "OSGI-OPT/")
 
+        val bsn = if (info.isWeb) "dev.equo.swt_evolve.web"
+                  else "org.eclipse.swt.${info.swtWs}.${info.swtOs}.${info.arch}"
         manifest {
             attributes(
-                "Fragment-Host" to provider { "org.eclipse.swt;bundle-version=\"[${swtVersionProvider.get().substring(0..6)},4.0.0)\"" },
-                "Bundle-Name" to "SWT Evolve for ${info.swtOs} on ${info.arch}",
-                "Bundle-Vendor" to "Equo Tech, Inc.",
-                "Bundle-SymbolicName" to "org.eclipse.swt.${info.swtWs}.${info.swtOs}.${info.arch}; singleton:=true",
-                "Bundle-Version" to swtVersionProvider,
+                "Fragment-Host" to fragmentHostHeader(),
+                "Bundle-Name" to (if (info.isWeb) "SWT Evolve for Web" else "SWT Evolve for ${info.swtOs} on ${info.arch}"),
+                "Bundle-Vendor" to bundleVendor,
+                "Bundle-SymbolicName" to "$bsn; singleton:=true",
+                "Bundle-Version" to when {
+                    info.isWeb -> evolveVersion()
+                    info.isHybrid -> hostVersion("hyb")
+                    else -> swtVersionProvider
+                },
                 "Bundle-ManifestVersion" to 2,
-                "Export-Package" to "org.eclipse.swt,org.eclipse.swt.accessibility,"+
-                        "org.eclipse.swt.awt,org.eclipse.swt.browser,org.eclipse.swt.custom,"+
-                        "org.eclipse.swt.dnd,org.eclipse.swt.events,org.eclipse.swt.graphics,"+
-                        "org.eclipse.swt.layout,org.eclipse.swt.opengl,org.eclipse.swt.printing,"+
-                        "org.eclipse.swt.program,org.eclipse.swt.widgets,org.eclipse.swt.internal; x-friends:=\"org.eclipse.ui\","+
-                        "org.eclipse.swt.internal.image; x-internal:=true,org.eclipse.swt.internal.${info.swtWs}; x-friends:=\"org.eclipse.ui\"," +
-                        "com.equo.chromium.swt",
-                "Eclipse-PlatformFilter" to "(& (osgi.ws=${info.swtWs}) (osgi.os=${info.swtOs}) (osgi.arch=${info.arch}) )",
-                "SWT-WS" to info.swtWs,
-                "SWT-OS" to info.swtOs,
-                "SWT-Arch" to info.arch,
-                "Automatic-Module-Name" to "org.eclipse.swt.${info.swtWs}.${info.swtOs}.${info.arch}",
-                "Evolve-Version" to (gradle.parent?.rootProject?.version ?: project.version),
+                "Export-Package" to (if (info.isWeb) webExportPackage else swtExportPackage(info.swtWs)),
+                "SWT-WS" to (if (info.isWeb) "web" else info.swtWs),
+                "Automatic-Module-Name" to bsn,
+                "Evolve-Version" to evolveVersion(),
             )
-            if (info.isWeb)
-                attributes("Import-Package" to "com.equo.chromium;resolution:=optional," +
-                        "com.equo.chromium.utils;resolution:=optional," +
-                        "com.equo.chromium.events;resolution:=optional")
-            }
-        dependsOn("${info.desktopPlatform}ExtractNatives")
-        dependsOn("${info.desktopPlatform}CopyFlutterBinaries")
+            if (!info.isWeb)
+                attributes(
+                    "Eclipse-PlatformFilter" to "(& (osgi.ws=${info.swtWs}) (osgi.os=${info.swtOs}) (osgi.arch=${info.arch}) )",
+                    "SWT-OS" to info.swtOs,
+                    "SWT-Arch" to info.arch,
+                )
+            if (info.isHybrid)
+                attributes("Import-Package" to chromiumImportPackage)
+        }
+        if (!info.isWeb) {
+            dependsOn("${info.desktopPlatform}ExtractNatives")
+            dependsOn("${info.desktopPlatform}CopyFlutterBinaries")
+        }
     }
 }
+
+val hybridHostP2Inf = layout.buildDirectory.file("host-hybrid/p2.inf")
+val genHybridHostP2Inf = tasks.register("genHybridHostP2Inf") {
+    val outFile = hybridHostP2Inf
+    val verProvider = hostVersion("hyb")
+    inputs.property("hybVersion", verProvider)
+    outputs.file(outFile)
+    doLast {
+        val v = verProvider.get()
+        val frags = platforms.filter { it.startsWith("web-") }.map { parsePlatform(it) }
+        outFile.get().asFile.apply { parentFile.mkdirs() }.writeText(buildString {
+            frags.forEachIndexed { i, info ->
+                val n = i + 1
+                appendLine("requires.$n.namespace = org.eclipse.equinox.p2.iu")
+                appendLine("requires.$n.name = org.eclipse.swt.${info.swtWs}.${info.swtOs}.${info.arch}")
+                appendLine("requires.$n.range = [$v,$v]")
+                appendLine("requires.$n.filter = (&(osgi.os=${info.swtOs})(osgi.ws=${info.swtWs})(osgi.arch=${info.arch})(!(org.eclipse.swt.buildtime=true)))")
+            }
+        })
+    }
+}
+
+fun registerHostJar(taskName: String, archiveName: String, p2infFrom: Any, version: Provider<String>) = tasks.register<Jar>(taskName) {
+    group = "build"
+    description = "Assembles the metadata org.eclipse.swt host bundle ($archiveName)"
+    archiveBaseName.set(archiveName)
+
+    from(p2infFrom) { into("META-INF") }
+
+    manifest {
+        attributes(
+            "Bundle-Name" to "SWT Evolve",
+            "Bundle-Vendor" to bundleVendor,
+            "Bundle-SymbolicName" to "org.eclipse.swt; singleton:=true",
+            "Bundle-Version" to version,
+            "Bundle-ManifestVersion" to 2,
+            "Export-Package" to webExportPackage,
+            "Eclipse-ExtensibleAPI" to "true",
+            "Automatic-Module-Name" to "org.eclipse.swt",
+            "Evolve-Version" to evolveVersion(),
+        )
+    }
+}
+registerHostJar("swtHostJar", "org.eclipse.swt", "metadata/host/p2.inf", hostVersion("web"))
+registerHostJar("swtHostHybridJar", "org.eclipse.swt-hybrid", files(hybridHostP2Inf).builtBy(genHybridHostP2Inf), hostVersion("hyb"))
 
 tasks.register("buildAllPlatforms") {
     group = "build"
@@ -513,5 +589,5 @@ tasks.register("buildAllPlatforms") {
 
 // Configure the default build task to include all platform JARs
 tasks.build {
-    dependsOn("buildAllPlatforms")
+    dependsOn("buildAllPlatforms", "swtHostJar", "swtHostHybridJar")
 }

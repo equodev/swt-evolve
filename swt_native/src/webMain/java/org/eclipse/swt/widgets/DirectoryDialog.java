@@ -18,7 +18,6 @@ package org.eclipse.swt.widgets;
 import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
-import dev.equo.swt.Config;
 
 /**
  * Instances of this class allow the user to navigate
@@ -55,7 +54,7 @@ public class DirectoryDialog extends Dialog {
      */
     public DirectoryDialog(Shell parent) {
         this((IDirectoryDialog) null);
-        setImpl(Config.isEquo(DirectoryDialog.class, parent) ? new DartDirectoryDialog(parent, this) : new SwtDirectoryDialog(parent, this));
+        setImpl(Impls.newDirectoryDialog(parent, this));
     }
 
     /**
@@ -84,7 +83,7 @@ public class DirectoryDialog extends Dialog {
      */
     public DirectoryDialog(Shell parent, int style) {
         this((IDirectoryDialog) null);
-        setImpl(Config.isEquo(DirectoryDialog.class, parent) ? new DartDirectoryDialog(parent, style, this) : new SwtDirectoryDialog(parent, style, this));
+        setImpl(Impls.newDirectoryDialog(parent, style, this));
     }
 
     /**

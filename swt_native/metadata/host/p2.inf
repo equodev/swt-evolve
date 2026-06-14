@@ -1,0 +1,14 @@
+# p2 advice for the pure-metadata org.eclipse.swt host bundle.
+#
+# Mirrors upstream org.eclipse.swt/META-INF/p2.inf, which adds a p2.iu requirement on each native
+# platform fragment (guarded by an osgi.os/ws/arch filter) so that p2/Tycho installs the fragment
+# matching the running platform. Our implementation lives in a single OS-agnostic fragment
+# (org.eclipse.swt.web), so the host requires it UNCONDITIONALLY (no platform filter). This forces
+# the fragment to be installed/available alongside the host when resolving with p2 director, Tycho,
+# a target platform, etc. — the host alone has no classes.
+#
+# The fragment is versioned independently of the host (by the Equo release), so we require any
+# version of it (0.0.0) rather than an exact-version match.
+requires.1.namespace = org.eclipse.equinox.p2.iu
+requires.1.name = dev.equo.swt_evolve.web
+requires.1.range = 0.0.0
