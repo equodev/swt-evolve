@@ -271,28 +271,13 @@ public class DartCoolItem extends DartItem implements ICoolItem {
         ImageData imageData = new ImageData(width, height, 4, palette);
         imageData.transparentPixel = 1;
         Image image = new Image(display, imageData);
-        GC gc = new GC(image, parent.getStyle() & SWT.RIGHT_TO_LEFT);
-        gc.setBackground(background);
-        gc.fillRectangle(0, 0, width, height);
-        gc.setForeground(black);
         int startX = 0;
         if ((parent.style & SWT.VERTICAL) != 0) {
             startX = width - CHEVRON_IMAGE_WIDTH;
         }
-        int startY = height / 6;
-        int step = 2;
-        gc.drawLine(startX, startY, startX + step, startY + step);
-        gc.drawLine(startX, startY + (2 * step), startX + step, startY + step);
         startX++;
-        gc.drawLine(startX, startY, startX + step, startY + step);
-        gc.drawLine(startX, startY + (2 * step), startX + step, startY + step);
         startX += 3;
-        gc.drawLine(startX, startY, startX + step, startY + step);
-        gc.drawLine(startX, startY + (2 * step), startX + step, startY + step);
         startX++;
-        gc.drawLine(startX, startY, startX + step, startY + step);
-        gc.drawLine(startX, startY + (2 * step), startX + step, startY + step);
-        gc.dispose();
         return image;
     }
 

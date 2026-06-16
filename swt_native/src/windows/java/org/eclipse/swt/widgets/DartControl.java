@@ -1954,20 +1954,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if (gc.isDisposed())
-            error(SWT.ERROR_INVALID_ARGUMENT);
-        long gdipGraphics = gc.getGCData().gdipGraphics;
-        if (gdipGraphics != 0) {
-            long clipRgn = 0;
-            float[] lpXform = null;
-            if (lpXform != null) {
-            }
-            if (clipRgn != 0) {
-            }
-        } else {
-        }
-        if (gdipGraphics != 0) {
-        }
         return true;
     }
 

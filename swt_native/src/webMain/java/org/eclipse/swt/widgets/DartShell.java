@@ -971,8 +971,6 @@ public class DartShell extends DartDecorations implements IShell {
         checkWidget();
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if (gc.isDisposed())
-            error(SWT.ERROR_INVALID_ARGUMENT);
         // Print only the client area (children) without shell decorations
         Control[] children = _getChildren();
         for (Control child : children) {

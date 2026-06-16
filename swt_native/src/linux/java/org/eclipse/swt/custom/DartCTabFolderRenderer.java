@@ -194,8 +194,6 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
                 outer[index] = shape[index++] + (left ? -1 : +1);
                 outer[index] = shape[index++];
             }
-            gc.setForeground(outerColor);
-            gc.drawPolyline(outer);
         }
         if (innerColor != null) {
             int[] inner = new int[shape.length];
@@ -210,8 +208,6 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
                 inner[index] = shape[index++] + (left ? +1 : -1);
                 inner[index] = shape[index++];
             }
-            gc.setForeground(innerColor);
-            gc.drawPolyline(inner);
         }
     }
 
@@ -567,44 +563,30 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
         Region clipping = null, region = null;
         if (shape != null) {
             clipping = new Region();
-            gc.getClipping(clipping);
             region = new Region();
             region.add(shape);
             region.intersect(clipping);
-            gc.setClipping(region);
         }
         if (image != null) {
-            // draw the background image in shape
-            gc.setBackground(defaultBackground);
-            gc.fillRectangle(x, y, width, height);
-            gc.drawImage(image, x, y, width, height);
         } else if (colors != null) {
             // draw gradient
             if (colors.length == 1) {
-                Color background = colors[0] != null ? colors[0] : defaultBackground;
-                gc.setBackground(background);
-                gc.fillRectangle(x, y, width, height);
             } else {
                 if (vertical) {
                     if (((DartCTabFolder) getApi().parent.getImpl()).onBottom) {
                         int pos = 0;
                         if (percents[percents.length - 1] < 100) {
                             pos = (100 - percents[percents.length - 1]) * height / 100;
-                            gc.setBackground(defaultBackground);
-                            gc.fillRectangle(x, y, width, pos);
                         }
                         Color lastColor = colors[colors.length - 1];
                         if (lastColor == null)
                             lastColor = defaultBackground;
                         for (int i = percents.length - 1; i >= 0; i--) {
-                            gc.setForeground(lastColor);
                             lastColor = colors[i];
                             if (lastColor == null)
                                 lastColor = defaultBackground;
-                            gc.setBackground(lastColor);
                             int percentage = i > 0 ? percents[i] - percents[i - 1] : percents[i];
                             int gradientHeight = percentage * height / 100;
-                            gc.fillGradientRectangle(x, y + pos, width, gradientHeight, true);
                             pos += gradientHeight;
                         }
                     } else {
@@ -613,19 +595,14 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
                             lastColor = defaultBackground;
                         int pos = 0;
                         for (int i = 0; i < percents.length; i++) {
-                            gc.setForeground(lastColor);
                             lastColor = colors[i + 1];
                             if (lastColor == null)
                                 lastColor = defaultBackground;
-                            gc.setBackground(lastColor);
                             int percentage = i > 0 ? percents[i] - percents[i - 1] : percents[i];
                             int gradientHeight = percentage * height / 100;
-                            gc.fillGradientRectangle(x, y + pos, width, gradientHeight, true);
                             pos += gradientHeight;
                         }
                         if (pos < height) {
-                            gc.setBackground(defaultBackground);
-                            gc.fillRectangle(x, pos, width, height - pos + 1);
                         }
                     }
                 } else {
@@ -637,30 +614,22 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
                         lastColor = defaultBackground;
                     int pos = 0;
                     for (int i = 0; i < percents.length; ++i) {
-                        gc.setForeground(lastColor);
                         lastColor = colors[i + 1];
                         if (lastColor == null)
                             lastColor = defaultBackground;
-                        gc.setBackground(lastColor);
                         int gradientWidth = (percents[i] * width / 100) - pos;
-                        gc.fillGradientRectangle(x + pos, y, gradientWidth, height, false);
                         pos += gradientWidth;
                     }
                     if (pos < width) {
-                        gc.setBackground(defaultBackground);
-                        gc.fillRectangle(x + pos, y, width - pos, height);
                     }
                 }
             }
         } else {
             // draw a solid background using default background in shape
             if ((getApi().parent.getStyle() & SWT.NO_BACKGROUND) != 0 || !defaultBackground.equals(getApi().parent.getBackground())) {
-                gc.setBackground(defaultBackground);
-                gc.fillRectangle(x, y, width, height);
             }
         }
         if (shape != null) {
-            gc.setClipping(clipping);
             clipping.dispose();
             region.dispose();
         }
@@ -670,8 +639,6 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
 	 * Draw the border of the tab
 	 */
     void drawBorder(GC gc, int[] shape) {
-        gc.setForeground(getApi().parent.getDisplay().getSystemColor(BORDER1_COLOR));
-        gc.drawPolyline(shape);
     }
 
     void drawBody(GC gc, Rectangle bounds, int state) {
@@ -711,49 +678,34 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
                 } else if (selectedIndex == -1 && ((DartCTabFolder) getApi().parent.getImpl()).gradientColors != null && ((DartCTabFolder) getApi().parent.getImpl()).gradientColors.length > 1 && !((DartCTabFolder) getApi().parent.getImpl()).gradientVertical) {
                     drawBackground(gc, shape, false);
                 } else {
-                    gc.setBackground(selectedIndex != -1 && ((DartCTabFolder) getApi().parent.getImpl()).shouldHighlight() ? ((DartCTabFolder) getApi().parent.getImpl()).selectionBackground : getApi().parent.getBackground());
-                    gc.fillPolygon(shape);
                 }
             }
             //Draw client area
             if ((getApi().parent.getStyle() & SWT.NO_BACKGROUND) != 0) {
-                gc.setBackground(getApi().parent.getBackground());
                 int marginWidth = getApi().parent.marginWidth;
                 int marginHeight = getApi().parent.marginHeight;
-                int xClient = borderLeft + marginWidth + highlight_margin, yClient;
+                int yClient;
                 if (((DartCTabFolder) getApi().parent.getImpl()).onBottom) {
                     yClient = borderTop + highlight_margin + marginHeight;
                 } else {
                     yClient = borderTop + tabHeight + highlight_header + marginHeight;
                 }
-                gc.fillRectangle(xClient - marginWidth, yClient - marginHeight, width, height);
             }
         } else {
             if ((getApi().parent.getStyle() & SWT.NO_BACKGROUND) != 0) {
                 int height = borderTop + tabHeight + highlight_header + borderBottom;
                 if (size.y > height) {
-                    gc.setBackground(getApi().parent.getParent().getBackground());
-                    gc.fillRectangle(0, height, size.x, size.y - height);
                 }
             }
         }
         //draw 1 pixel border around outside
         if (borderLeft > 0) {
-            gc.setForeground(getApi().parent.getDisplay().getSystemColor(BORDER1_COLOR));
             int x1 = borderLeft - 1;
             int x2 = size.x - borderRight;
             int y1 = ((DartCTabFolder) getApi().parent.getImpl()).onBottom ? borderTop - 1 : borderTop + tabHeight;
             int y2 = ((DartCTabFolder) getApi().parent.getImpl()).onBottom ? size.y - tabHeight - borderBottom - 1 : size.y - borderBottom;
-            // left
-            gc.drawLine(x1, y1, x1, y2);
-            // right
-            gc.drawLine(x2, y1, x2, y2);
             if (((DartCTabFolder) getApi().parent.getImpl()).onBottom) {
-                // top
-                gc.drawLine(x1, y1, x2, y1);
             } else {
-                // bottom
-                gc.drawLine(x1, y2, x2, y2);
             }
         }
     }
@@ -766,8 +718,6 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
         int x = closeRect.x + Math.max(1, (closeRect.width - lineLength) / 2);
         int y = closeRect.y + Math.max(1, (closeRect.height - lineLength) / 2);
         y += ((DartCTabFolder) getApi().parent.getImpl()).onBottom ? -1 : 1;
-        int originalLineWidth = gc.getLineWidth();
-        Color originalForeground = gc.getForeground();
         switch(closeImageState & (SWT.HOT | SWT.SELECTED | SWT.BACKGROUND)) {
             case SWT.NONE:
                 {
@@ -791,18 +741,11 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
                     break;
                 }
         }
-        gc.setLineWidth(originalLineWidth);
-        gc.setForeground(originalForeground);
     }
 
     private void drawCloseLines(GC gc, int x, int y, int lineLength, boolean hot) {
         if (hot) {
-            gc.setLineWidth(gc.getLineWidth() + 2);
-            gc.setForeground(getFillColor());
         }
-        gc.setLineCap(SWT.CAP_ROUND);
-        gc.drawLine(x, y, x + lineLength, y + lineLength);
-        gc.drawLine(x, y + lineLength, x + lineLength, y);
     }
 
     void drawChevron(GC gc, Rectangle chevronRect, int chevronImageState) {
@@ -820,26 +763,17 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
         switch(chevronImageState & (SWT.HOT | SWT.SELECTED)) {
             case SWT.NONE:
                 {
-                    Color chevronBorder = ((DartCTabFolder) getApi().parent.getImpl()).single ? getApi().parent.getSelectionForeground() : getApi().parent.getForeground();
-                    gc.setForeground(chevronBorder);
-                    gc.setFont(font);
                     drawChevronContent(gc, x, y, chevronString);
                     break;
                 }
             case SWT.HOT:
                 {
-                    gc.setForeground(display.getSystemColor(BUTTON_BORDER));
-                    gc.setBackground(display.getSystemColor(BUTTON_FILL));
-                    gc.setFont(font);
                     drawRoundRectangle(gc, chevronRect);
                     drawChevronContent(gc, x, y, chevronString);
                     break;
                 }
             case SWT.SELECTED:
                 {
-                    gc.setForeground(display.getSystemColor(BUTTON_BORDER));
-                    gc.setBackground(display.getSystemColor(BUTTON_FILL));
-                    gc.setFont(font);
                     drawRoundRectangle(gc, chevronRect);
                     drawChevronContent(gc, x + 1, y + 1, chevronString);
                     break;
@@ -848,20 +782,9 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
     }
 
     private void drawRoundRectangle(GC gc, Rectangle chevronRect) {
-        gc.fillRoundRectangle(chevronRect.x, chevronRect.y, chevronRect.width, chevronRect.height, 6, 6);
-        gc.drawRoundRectangle(chevronRect.x, chevronRect.y, chevronRect.width - 1, chevronRect.height - 1, 6, 6);
     }
 
     private void drawChevronContent(GC gc, int x, int y, String chevronString) {
-        gc.drawLine(x, y, x + 2, y + 2);
-        gc.drawLine(x + 2, y + 2, x, y + 4);
-        gc.drawLine(x + 1, y, x + 3, y + 2);
-        gc.drawLine(x + 3, y + 2, x + 1, y + 4);
-        gc.drawLine(x + 4, y, x + 6, y + 2);
-        gc.drawLine(x + 6, y + 2, x + 4, y + 4);
-        gc.drawLine(x + 5, y, x + 7, y + 2);
-        gc.drawLine(x + 7, y + 2, x + 5, y + 4);
-        gc.drawString(chevronString, x + 7, y + 3, true);
     }
 
     /*
@@ -884,10 +807,6 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
             return;
         int x = bounds.x;
         int y = bounds.y;
-        gc.setForeground(gradients[0]);
-        //draw top horizontal line
-        gc.drawLine(//rely on fact that first pair is top/right of curve
-        TOP_LEFT_CORNER_HILITE[0] + x + 1, 1 + y, rightEdge - curveIndent, 1 + y);
         int[] leftHighlightCurve = TOP_LEFT_CORNER_HILITE;
         int d = ((DartCTabFolder) getApi().parent.getImpl()).tabHeight - topCurveHighlightEnd.length / 2;
         int lastX = 0;
@@ -900,13 +819,9 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
             lastX = rawX + x;
             lastY = rawY + y;
             lastColorIndex = rawY - 1;
-            gc.setForeground(gradients[lastColorIndex]);
-            gc.drawPoint(lastX, lastY);
         }
         //draw left vertical line highlight
         for (int i = lastColorIndex; i < gradientsSize; i++) {
-            gc.setForeground(gradients[i]);
-            gc.drawPoint(lastX, 1 + lastY++);
         }
         int rightEdgeOffset = rightEdge - curveIndent;
         //draw right swoop highlight up to diagonal portion
@@ -919,16 +834,12 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
             if (lastColorIndex >= gradientsSize)
                 //can happen if tabs are unusually short and cut off the curve
                 break;
-            gc.setForeground(gradients[lastColorIndex]);
-            gc.drawPoint(lastX, lastY);
         }
         //draw right diagonal line highlight
         for (int i = lastColorIndex; i < lastColorIndex + d; i++) {
             if (i >= gradientsSize)
                 //can happen if tabs are unusually short and cut off the curve
                 break;
-            gc.setForeground(gradients[i]);
-            gc.drawPoint(1 + lastX++, 1 + lastY++);
         }
         //draw right swoop highlight from diagonal portion to end
         for (int i = 0; i < topCurveHighlightEnd.length / 2; i++) {
@@ -942,8 +853,6 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
             if (lastColorIndex >= gradientsSize)
                 //can happen if tabs are unusually short and cut off the curve
                 break;
-            gc.setForeground(gradients[lastColorIndex]);
-            gc.drawPoint(lastX, lastY);
         }
     }
 
@@ -982,21 +891,11 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
     void drawMaximize(GC gc, Rectangle maxRect, int maxImageState) {
         if (maxRect.width == 0 || maxRect.height == 0)
             return;
-        // 5x4 or 7x9
-        int x = maxRect.x + (maxRect.width - 10) / 2;
-        int y = maxRect.y + 3;
-        gc.setForeground(getApi().parent.getForeground());
         switch(maxImageState & (SWT.HOT | SWT.SELECTED)) {
             case SWT.NONE:
                 {
                     if (!getApi().parent.getMaximized()) {
-                        gc.drawRectangle(x, y, 9, 9);
-                        gc.drawLine(x, y + 2, x + 9, y + 2);
                     } else {
-                        gc.drawRectangle(x, y + 3, 5, 4);
-                        gc.drawRectangle(x + 2, y, 5, 4);
-                        gc.drawLine(x + 2, y + 1, x + 7, y + 1);
-                        gc.drawLine(x, y + 4, x + 5, y + 4);
                     }
                     break;
                 }
@@ -1004,13 +903,7 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
                 {
                     drawRoundRectangle(gc, maxRect);
                     if (!getApi().parent.getMaximized()) {
-                        gc.drawRectangle(x, y, 9, 9);
-                        gc.drawLine(x, y + 2, x + 9, y + 2);
                     } else {
-                        gc.drawRectangle(x, y + 3, 5, 4);
-                        gc.drawRectangle(x + 2, y, 5, 4);
-                        gc.drawLine(x + 2, y + 1, x + 7, y + 1);
-                        gc.drawLine(x, y + 4, x + 5, y + 4);
                     }
                     break;
                 }
@@ -1018,13 +911,7 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
                 {
                     drawRoundRectangle(gc, maxRect);
                     if (!getApi().parent.getMaximized()) {
-                        gc.drawRectangle(x + 1, y + 1, 9, 9);
-                        gc.drawLine(x + 1, y + 3, x + 10, y + 3);
                     } else {
-                        gc.drawRectangle(x + 1, y + 4, 5, 4);
-                        gc.drawRectangle(x + 3, y + 1, 5, 4);
-                        gc.drawLine(x + 3, y + 2, x + 8, y + 2);
-                        gc.drawLine(x + 1, y + 5, x + 6, y + 5);
                     }
                     break;
                 }
@@ -1034,20 +921,11 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
     void drawMinimize(GC gc, Rectangle minRect, int minImageState) {
         if (minRect.width == 0 || minRect.height == 0)
             return;
-        // 5x4 or 9x3
-        int x = minRect.x + (minRect.width - 10) / 2;
-        int y = minRect.y + 3;
-        gc.setForeground(getApi().parent.getForeground());
         switch(minImageState & (SWT.HOT | SWT.SELECTED)) {
             case SWT.NONE:
                 {
                     if (!getApi().parent.getMinimized()) {
-                        gc.drawRectangle(x, y, 9, 3);
                     } else {
-                        gc.drawRectangle(x, y + 3, 5, 4);
-                        gc.drawRectangle(x + 2, y, 5, 4);
-                        gc.drawLine(x + 3, y + 1, x + 6, y + 1);
-                        gc.drawLine(x + 1, y + 4, x + 4, y + 4);
                     }
                     break;
                 }
@@ -1055,12 +933,7 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
                 {
                     drawRoundRectangle(gc, minRect);
                     if (!getApi().parent.getMinimized()) {
-                        gc.drawRectangle(x, y, 9, 3);
                     } else {
-                        gc.drawRectangle(x, y + 3, 5, 4);
-                        gc.drawRectangle(x + 2, y, 5, 4);
-                        gc.drawLine(x + 3, y + 1, x + 6, y + 1);
-                        gc.drawLine(x + 1, y + 4, x + 4, y + 4);
                     }
                     break;
                 }
@@ -1068,12 +941,7 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
                 {
                     drawRoundRectangle(gc, minRect);
                     if (!getApi().parent.getMinimized()) {
-                        gc.drawRectangle(x + 1, y + 1, 9, 3);
                     } else {
-                        gc.drawRectangle(x + 1, y + 4, 5, 4);
-                        gc.drawRectangle(x + 3, y + 1, 5, 4);
-                        gc.drawLine(x + 4, y + 2, x + 7, y + 2);
-                        gc.drawLine(x + 2, y + 5, x + 5, y + 5);
                     }
                     break;
                 }
@@ -1139,8 +1007,6 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
             if (((DartCTabFolder) getApi().parent.getImpl()).selectionGradientColors != null && !((DartCTabFolder) getApi().parent.getImpl()).selectionGradientVertical) {
                 drawBackground(gc, shape, ((DartCTabFolder) getApi().parent.getImpl()).shouldHighlight());
             } else {
-                gc.setBackground(((DartCTabFolder) getApi().parent.getImpl()).shouldHighlight() ? ((DartCTabFolder) getApi().parent.getImpl()).selectionBackground : getApi().parent.getBackground());
-                gc.fillRectangle(xx, yy, ww, hh);
             }
             if (((DartCTabFolder) getApi().parent.getImpl()).single) {
                 if (!((DartCTabItem) item.getImpl()).showing)
@@ -1149,11 +1015,6 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
                 // if selected tab scrolled out of view or partially out of view
                 // just draw bottom line
                 if (!((DartCTabItem) item.getImpl()).showing) {
-                    int x1 = Math.max(0, borderLeft - 1);
-                    int y1 = (((DartCTabFolder) getApi().parent.getImpl()).onBottom) ? y - 1 : y + height;
-                    int x2 = size.x - borderRight;
-                    gc.setForeground(getApi().parent.getDisplay().getSystemColor(BORDER1_COLOR));
-                    gc.drawLine(x1, y1, x2, y1);
                     return;
                 }
                 // draw selected tab background and outline
@@ -1209,38 +1070,15 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
                     shape[index++] = ((DartCTabFolder) getApi().parent.getImpl()).simple ? rightEdge - 1 : rightEdge + curveWidth - curveIndent;
                     shape[index++] = y + height + 1;
                 }
-                Rectangle clipping = gc.getClipping();
                 Rectangle clipBounds = item.getBounds();
                 clipBounds.height += 1;
                 if (((DartCTabFolder) getApi().parent.getImpl()).onBottom)
                     clipBounds.y -= 1;
-                boolean tabInPaint = clipping.intersects(clipBounds);
-                if (tabInPaint) {
-                    // fill in tab background
-                    if (((DartCTabFolder) getApi().parent.getImpl()).selectionGradientColors != null && !((DartCTabFolder) getApi().parent.getImpl()).selectionGradientVertical) {
-                        drawBackground(gc, shape, true);
-                    } else {
-                        Color defaultBackground = ((DartCTabFolder) getApi().parent.getImpl()).shouldHighlight() ? ((DartCTabFolder) getApi().parent.getImpl()).selectionBackground : getApi().parent.getBackground();
-                        Image image = ((DartCTabFolder) getApi().parent.getImpl()).selectionBgImage;
-                        Color[] colors = ((DartCTabFolder) getApi().parent.getImpl()).selectionGradientColors;
-                        int[] percents = ((DartCTabFolder) getApi().parent.getImpl()).selectionGradientPercents;
-                        boolean vertical = ((DartCTabFolder) getApi().parent.getImpl()).selectionGradientVertical;
-                        xx = x;
-                        yy = ((DartCTabFolder) getApi().parent.getImpl()).onBottom ? y - 1 : y + 1;
-                        ww = width;
-                        hh = height;
-                        if (!((DartCTabFolder) getApi().parent.getImpl()).single && !((DartCTabFolder) getApi().parent.getImpl()).simple)
-                            ww += curveWidth - curveIndent;
-                        drawBackground(gc, shape, xx, yy, ww, hh, defaultBackground, image, colors, percents, vertical);
-                    }
-                }
                 //Highlight colors MUST be drawn before the outline so that outline can cover it in the right spots (start of swoop)
                 //otherwise the curve looks jagged
                 drawHighlight(gc, bounds, state, rightEdge);
                 // draw highlight marker of selected tab
                 if (((DartCTabFolder) getApi().parent.getImpl()).selectionHighlightBarThickness > 0 && ((DartCTabFolder) getApi().parent.getImpl()).simple) {
-                    Color previousColor = gc.getBackground();
-                    gc.setBackground(item.getDisplay().getSystemColor(((DartCTabFolder) getApi().parent.getImpl()).shouldHighlight() ? SWT.COLOR_LIST_SELECTION : SWT.COLOR_WIDGET_DISABLED_FOREGROUND));
                     int[] highlightShape = Arrays.copyOf(shape, shape.length);
                     // Update Y coordinates in shape to apply highlight thickness
                     int thickness = ((DartCTabFolder) getApi().parent.getImpl()).selectionHighlightBarThickness;
@@ -1248,8 +1086,6 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
                     int bottomY = y + height - 1;
                     int highlightY = onBottom ? bottomY - thickness : thickness + 1;
                     highlightShape[1] = highlightShape[3] = highlightShape[highlightShape.length - 1] = highlightShape[highlightShape.length - 3] = highlightY;
-                    gc.fillPolygon(highlightShape);
-                    gc.setBackground(previousColor);
                 }
                 // draw outline
                 shape[0] = Math.max(0, borderLeft - 1);
@@ -1266,10 +1102,6 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
                 if (!borderColor.equals(lastBorderColor))
                     createAntialiasColors();
                 antialias(shape, selectedInnerColor, selectedOuterColor, gc);
-                gc.setForeground(borderColor);
-                gc.drawPolyline(shape);
-                if (!tabInPaint)
-                    return;
             }
         }
         if ((state & SWT.FOREGROUND) != 0) {
@@ -1286,10 +1118,8 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
                 if (!((DartCTabFolder) getApi().parent.getImpl()).single && ((DartCTabItem) item.getImpl()).closeRect.width > 0)
                     maxImageWidth -= ((DartCTabItem) item.getImpl()).closeRect.width + INTERNAL_SPACING;
                 if (imageBounds.width < maxImageWidth) {
-                    int imageX = xDraw;
                     int imageY = y + (height - imageBounds.height) / 2;
                     imageY += ((DartCTabFolder) getApi().parent.getImpl()).onBottom ? -1 : 1;
-                    gc.drawImage(image, imageX, imageY);
                     xDraw += imageBounds.width + INTERNAL_SPACING;
                 }
             }
@@ -1299,33 +1129,15 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
             if (!((DartCTabFolder) getApi().parent.getImpl()).single && ((DartCTabItem) item.getImpl()).closeRect.width > 0)
                 textWidth -= ((DartCTabItem) item.getImpl()).closeRect.width + INTERNAL_SPACING;
             if (textWidth > 0) {
-                Font gcFont = gc.getFont();
-                gc.setFont(((DartCTabItem) item.getImpl()).font == null ? getApi().parent.getFont() : ((DartCTabItem) item.getImpl()).font);
                 if (((DartCTabItem) item.getImpl()).shortenedText == null || ((DartCTabItem) item.getImpl()).shortenedTextWidth != textWidth) {
                     ((DartCTabItem) item.getImpl()).shortenedText = shortenText(gc, item.getText(), textWidth);
                     ((DartCTabItem) item.getImpl()).shortenedTextWidth = textWidth;
                 }
-                Point extent = gc.textExtent(((DartCTabItem) item.getImpl()).shortenedText, FLAGS);
-                int textY = y + (height - extent.y) / 2;
-                textY += ((DartCTabFolder) getApi().parent.getImpl()).onBottom ? -1 : 1;
-                gc.setForeground(((DartCTabItem) item.getImpl()).selectionForeground == null ? getApi().parent.getSelectionForeground() : ((DartCTabItem) item.getImpl()).selectionForeground);
-                gc.drawText(((DartCTabItem) item.getImpl()).shortenedText, xDraw, textY, FLAGS);
-                gc.setFont(gcFont);
                 // draw a Focus rectangle
                 if (getApi().parent.isFocusControl()) {
-                    Color orginalForeground = gc.getForeground();
-                    Color orginalBackground = gc.getBackground();
-                    Display display = getApi().parent.getDisplay();
                     if (((DartCTabFolder) getApi().parent.getImpl()).simple || ((DartCTabFolder) getApi().parent.getImpl()).single) {
-                        gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
-                        gc.setForeground(display.getSystemColor(SWT.COLOR_WHITE));
-                        gc.drawFocus(xDraw - 1, textY - 1, extent.x + 2, extent.y + 2);
                     } else {
-                        gc.setForeground(display.getSystemColor(BUTTON_BORDER));
-                        gc.drawLine(xDraw, textY + extent.y + 1, xDraw + extent.x + 1, textY + extent.y + 1);
                     }
-                    gc.setForeground(orginalForeground);
-                    gc.setBackground(orginalBackground);
                 }
             }
             if (shouldDrawCloseIcon(item))
@@ -1372,13 +1184,9 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
             } else if (selectedIndex == -1 && ((DartCTabFolder) getApi().parent.getImpl()).gradientColors != null && ((DartCTabFolder) getApi().parent.getImpl()).gradientColors.length > 1 && !((DartCTabFolder) getApi().parent.getImpl()).gradientVertical) {
                 drawBackground(gc, shape, false);
             } else {
-                gc.setBackground(selectedIndex != -1 && ((DartCTabFolder) getApi().parent.getImpl()).shouldHighlight() ? ((DartCTabFolder) getApi().parent.getImpl()).selectionBackground : getApi().parent.getBackground());
-                gc.fillPolygon(shape);
             }
             //draw 1 pixel border
             if (borderLeft > 0) {
-                gc.setForeground(borderColor);
-                gc.drawPolyline(shape);
             }
             return;
         }
@@ -1447,25 +1255,16 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
         Region r = new Region();
         r.add(new Rectangle(x, y, width + 1, height + 1));
         r.subtract(shape);
-        gc.setBackground(getApi().parent.getParent().getBackground());
         fillRegion(gc, r);
         r.dispose();
         // Draw selected tab
         if (selectedIndex == -1) {
-            // if no selected tab - draw line across bottom of all tabs
-            int x1 = borderLeft;
-            int y1 = (((DartCTabFolder) getApi().parent.getImpl()).onBottom) ? size.y - borderBottom - tabHeight - 1 : borderTop + tabHeight;
-            int x2 = size.x - borderRight;
-            gc.setForeground(borderColor);
-            gc.drawLine(x1, y1, x2, y1);
         }
         // Draw border line
         if (borderLeft > 0) {
             if (!borderColor.equals(lastBorderColor))
                 createAntialiasColors();
             antialias(shape, null, tabAreaColor, gc);
-            gc.setForeground(borderColor);
-            gc.drawPolyline(shape);
         }
     }
 
@@ -1477,9 +1276,6 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
         int width = bounds.width;
         // Do not draw partial items
         if (!((DartCTabItem) item.getImpl()).showing)
-            return;
-        Rectangle clipping = gc.getClipping();
-        if (!clipping.intersects(bounds))
             return;
         if ((state & SWT.BACKGROUND) != 0) {
             if (index > 0 && index < ((DartCTabFolder) getApi().parent.getImpl()).selectedIndex)
@@ -1501,12 +1297,10 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
                     maxImageWidth -= ((DartCTabItem) item.getImpl()).closeRect.width + INTERNAL_SPACING;
                 }
                 if (imageBounds.width < maxImageWidth) {
-                    int imageX = xDraw;
                     int imageHeight = imageBounds.height;
                     int imageY = y + (height - imageHeight) / 2;
                     imageY += ((DartCTabFolder) getApi().parent.getImpl()).onBottom ? -1 : 1;
                     int imageWidth = imageBounds.width * imageHeight / imageBounds.height;
-                    gc.drawImage(image, imageX, imageY, imageWidth, imageHeight);
                     xDraw += imageWidth + INTERNAL_SPACING;
                 }
             }
@@ -1517,18 +1311,10 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
                 textWidth -= ((DartCTabItem) item.getImpl()).closeRect.width + INTERNAL_SPACING;
             }
             if (textWidth > 0) {
-                Font gcFont = gc.getFont();
-                gc.setFont(((DartCTabItem) item.getImpl()).font == null ? getApi().parent.getFont() : ((DartCTabItem) item.getImpl()).font);
                 if (((DartCTabItem) item.getImpl()).shortenedText == null || ((DartCTabItem) item.getImpl()).shortenedTextWidth != textWidth) {
                     ((DartCTabItem) item.getImpl()).shortenedText = shortenText(gc, item.getText(), textWidth);
                     ((DartCTabItem) item.getImpl()).shortenedTextWidth = textWidth;
                 }
-                Point extent = gc.textExtent(((DartCTabItem) item.getImpl()).shortenedText, FLAGS);
-                int textY = y + (height - extent.y) / 2;
-                textY += ((DartCTabFolder) getApi().parent.getImpl()).onBottom ? -1 : 1;
-                gc.setForeground(((DartCTabItem) item.getImpl()).foreground == null ? getApi().parent.getForeground() : ((DartCTabItem) item.getImpl()).foreground);
-                gc.drawText(((DartCTabItem) item.getImpl()).shortenedText, xDraw, textY, FLAGS);
-                gc.setFont(gcFont);
             }
             // draw close
             if (shouldDrawCloseIcon(item))
@@ -1539,11 +1325,7 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
     void fillRegion(GC gc, Region region) {
         // NOTE: region passed in to this function will be modified
         Region clipping = new Region();
-        gc.getClipping(clipping);
         region.intersect(clipping);
-        gc.setClipping(region);
-        gc.fillRectangle(region.getBounds());
-        gc.setClipping(clipping);
         clipping.dispose();
     }
 
@@ -1620,19 +1402,12 @@ public class DartCTabFolderRenderer implements ICTabFolderRenderer {
     }
 
     String shortenText(GC gc, String text, int width, String ellipses) {
-        if (gc.textExtent(text, FLAGS).x <= width)
-            return text;
-        int ellipseWidth = gc.textExtent(ellipses, FLAGS).x;
         int length = text.length();
         TextLayout layout = new TextLayout(getApi().parent.getDisplay());
         layout.setText(text);
         int end = layout.getPreviousOffset(length, SWT.MOVEMENT_CLUSTER);
         while (end > 0) {
             text = text.substring(0, end);
-            int l = gc.textExtent(text, FLAGS).x;
-            if (l + ellipseWidth <= width) {
-                break;
-            }
             end = layout.getPreviousOffset(end, SWT.MOVEMENT_CLUSTER);
         }
         layout.dispose();

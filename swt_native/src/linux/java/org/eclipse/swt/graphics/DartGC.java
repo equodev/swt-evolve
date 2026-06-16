@@ -1125,9 +1125,7 @@ public final class DartGC extends DartResource implements IGC {
     public boolean equals(Object object) {
         if (object == this.getApi())
             return true;
-        if (!(object instanceof GC))
-            return false;
-        return getApi().handle == ((GC) object).handle;
+        return false;
     }
 
     /**

@@ -337,11 +337,6 @@ public class DartTableColumn extends DartItem implements ITableColumn {
         }
         if (((DartTable) parent.getImpl()).sortColumn == this.getApi() && ((DartTable) parent.getImpl()).sortDirection != SWT.NONE) {
         }
-        /* compute item widths down column */
-        GC gc = new GC(parent);
-        int index = parent.indexOf(this.getApi());
-        width = Math.max(width, ((DartTable) parent.getImpl()).calculateWidth(((DartTable) parent.getImpl()).items, index, gc));
-        gc.dispose();
         setWidth(width);
     }
 

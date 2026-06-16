@@ -578,7 +578,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
          */
         void dispose() {
             if (gc != null) {
-                gc.dispose();
                 gc = null;
             }
             if (resources != null) {
@@ -608,9 +607,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             clientArea.y = dpi.y + trim.y;
             clientArea.width -= (clientArea.x + trim.width);
             clientArea.height -= (clientArea.y + trim.height);
-            int style = mirrored ? SWT.RIGHT_TO_LEFT : SWT.LEFT_TO_RIGHT;
-            gc = new GC(printer, style);
-            gc.setFont(printerFont);
             ((DartStyledTextRenderer) printerRenderer.getImpl()).setFont(printerFont, tabLength);
             int lineHeight = ((DartStyledTextRenderer) printerRenderer.getImpl()).getLineHeight();
             if (printOptions.header != null) {
@@ -642,14 +638,10 @@ public class DartStyledText extends DartCanvas implements IStyledText {
          * Prints the lines in the specified page range.
          */
         void print() {
-            Color background = gc.getBackground();
-            Color foreground = gc.getForeground();
             int paintY = clientArea.y;
             int paintX = clientArea.x;
             int width = clientArea.width;
             int page = startPage;
-            int pageBottom = clientArea.y + clientArea.height;
-            int orientation = gc.getStyle() & (SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT);
             TextLayout printLayout = null;
             if (printOptions.printLineNumbers || printOptions.header != null || printOptions.footer != null) {
                 printLayout = new TextLayout(printer);
@@ -684,53 +676,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                     printer.startPage();
                     printDecoration(page, true, printLayout);
                 }
-                TextLayout layout = ((DartStyledTextRenderer) printerRenderer.getImpl()).getTextLayout(i, orientation, width, lineSpacing);
-                Color lineBackground = printerRenderer.getImpl().getLineBackground(i, background);
-                int paragraphBottom = paintY + layout.getBounds().height;
-                if (paragraphBottom <= pageBottom) {
-                    //normal case, the whole paragraph fits in the current page
-                    printLine(paintX, paintY, gc, foreground, lineBackground, layout, printLayout, i);
-                    paintY = paragraphBottom;
-                } else {
-                    int lineCount = layout.getLineCount();
-                    while (paragraphBottom > pageBottom && lineCount > 0) {
-                        lineCount--;
-                        paragraphBottom -= layout.getLineBounds(lineCount).height + layout.getSpacing();
-                    }
-                    if (lineCount == 0) {
-                        //the whole paragraph goes to the next page
-                        printDecoration(page, false, printLayout);
-                        printer.endPage();
-                        page++;
-                        if (page <= endPage) {
-                            printer.startPage();
-                            printDecoration(page, true, printLayout);
-                            paintY = clientArea.y;
-                            printLine(paintX, paintY, gc, foreground, lineBackground, layout, printLayout, i);
-                            paintY += layout.getBounds().height;
-                        }
-                    } else {
-                        //draw paragraph top in the current page and paragraph bottom in the next
-                        int height = paragraphBottom - paintY;
-                        gc.setClipping(clientArea.x, paintY, clientArea.width, height);
-                        printLine(paintX, paintY, gc, foreground, lineBackground, layout, printLayout, i);
-                        gc.setClipping((Rectangle) null);
-                        printDecoration(page, false, printLayout);
-                        printer.endPage();
-                        page++;
-                        if (page <= endPage) {
-                            printer.startPage();
-                            printDecoration(page, true, printLayout);
-                            paintY = clientArea.y - height;
-                            int layoutHeight = layout.getBounds().height;
-                            gc.setClipping(clientArea.x, clientArea.y, clientArea.width, layoutHeight - height);
-                            printLine(paintX, paintY, gc, foreground, lineBackground, layout, printLayout, i);
-                            gc.setClipping((Rectangle) null);
-                            paintY += layoutHeight;
-                        }
-                    }
-                }
-                ((DartStyledTextRenderer) printerRenderer.getImpl()).disposeTextLayout(layout);
             }
             if (page <= endPage && paintY > clientArea.y) {
                 // close partial page
@@ -809,9 +754,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
 
         void printLine(int x, int y, GC gc, Color foreground, Color background, TextLayout layout, TextLayout printLayout, int index) {
             if (background != null) {
-                Rectangle rect = layout.getBounds();
-                gc.setBackground(background);
-                gc.fillRectangle(x, y, rect.width, rect.height);
                 //			int lineCount = layout.getLineCount();
                 //			for (int i = 0; i < lineCount; i++) {
                 //				Rectangle rect = layout.getLineBounds(i);
@@ -840,7 +782,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 printLayout.setAscent(-1);
                 printLayout.setDescent(-1);
             }
-            gc.setForeground(foreground);
             layout.draw(gc, x, y);
         }
 
@@ -1781,7 +1722,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      * font changes (the caret bitmap height needs to match font height).
      */
     void createCaretBitmaps() {
-        int caretWidth = BIDI_CARET_WIDTH;
         Display display = getDisplay();
         if (leftCaretBitmap != null) {
             if (defaultCaret != null && leftCaretBitmap.equals(defaultCaret.getImage())) {
@@ -1789,31 +1729,12 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             }
             leftCaretBitmap.dispose();
         }
-        int lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
-        final ImageGcDrawer leftCaretDrawer = (gc, width, height) -> {
-            gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
-            gc.fillRectangle(0, 0, width, height);
-            gc.setForeground(display.getSystemColor(SWT.COLOR_WHITE));
-            gc.drawLine(0, 0, 0, height);
-            gc.drawLine(0, 0, width - 1, 0);
-            gc.drawLine(0, 1, 1, 1);
-        };
-        leftCaretBitmap = new Image(display, leftCaretDrawer, caretWidth, lineHeight);
         if (rightCaretBitmap != null) {
             if (defaultCaret != null && rightCaretBitmap.equals(defaultCaret.getImage())) {
                 defaultCaret.setImage(null);
             }
             rightCaretBitmap.dispose();
         }
-        final ImageGcDrawer rightCaretDrawer = (gc, width, height) -> {
-            gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
-            gc.fillRectangle(0, 0, width, height);
-            gc.setForeground(display.getSystemColor(SWT.COLOR_WHITE));
-            gc.drawLine(width - 1, 0, width - 1, height);
-            gc.drawLine(0, 0, width - 1, 0);
-            gc.drawLine(width - 1, 1, 1, 1);
-        };
-        rightCaretBitmap = new Image(display, rightCaretDrawer, caretWidth, lineHeight);
     }
 
     /**
@@ -6289,30 +6210,13 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         if (clientAreaWidth == 0 || clientAreaHeight == 0)
             return;
         final int endY = event.y + event.height;
-        GC gc = event.gc;
-        Color background = getBackground();
-        Color foreground = getForeground();
         if (endY > 0) {
             final int startLine = getLineIndex(event.y);
-            final int endLine = isSingleLine() ? 1 : content.getLineCount();
-            final int x = leftMargin - horizontalScrollOffset;
             int y = getLinePixel(startLine);
-            y += ((DartStyledTextRenderer) renderer.getImpl()).drawLines(startLine, endLine, x, y, endY, gc, background, foreground);
             if (y < endY) {
-                gc.setBackground(background);
-                drawBackground(gc, 0, y, clientAreaWidth, endY - y);
             }
         }
         if (blockSelection && blockXLocation != -1) {
-            gc.setBackground(getSelectionBackground());
-            Rectangle rect = getBlockSelectionRectangle();
-            gc.drawRectangle(rect.x, rect.y, Math.max(1, rect.width - 1), Math.max(1, rect.height - 1));
-            gc.setAdvanced(true);
-            if (gc.getAdvanced()) {
-                gc.setAlpha(100);
-                gc.fillRectangle(rect);
-                gc.setAdvanced(false);
-            }
         }
         if (carets != null) {
             for (int i = 1; i < carets.length; i++) {
@@ -6320,26 +6224,18 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 Caret caret = carets[i];
                 if (caret.isVisible()) {
                     if (caret.getImage() != null) {
-                        gc.drawImage(caret.getImage(), caret.getBounds().x, caret.getBounds().y);
                     } else {
-                        gc.drawRectangle(caret.getBounds().x, caret.getBounds().y, caret.getBounds().width, getLineHeight(caretOffsets[i]));
                     }
                 }
             }
         }
-        // fill the margin background
-        gc.setBackground(marginColor != null ? marginColor : background);
         if (topMargin > 0) {
-            drawBackground(gc, 0, 0, clientAreaWidth, topMargin);
         }
         if (bottomMargin > 0) {
-            drawBackground(gc, 0, clientAreaHeight - bottomMargin, clientAreaWidth, bottomMargin);
         }
         if (leftMargin - alignmentMargin > 0) {
-            drawBackground(gc, 0, 0, leftMargin - alignmentMargin, clientAreaHeight);
         }
         if (rightMargin > 0) {
-            drawBackground(gc, clientAreaWidth - rightMargin, 0, rightMargin, clientAreaHeight);
         }
     }
 

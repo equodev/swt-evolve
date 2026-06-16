@@ -217,16 +217,9 @@ public class DartComposite extends DartScrollable implements IComposite {
         checkWidget();
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if (gc.isDisposed())
-            error(SWT.ERROR_INVALID_ARGUMENT);
         Control control = findBackgroundControl();
         if (control != null) {
-            int imgHeight = -1;
-            GCData data = gc.getGCData();
-            if (data.image != null)
-                imgHeight = data.image.getBounds().height;
         } else {
-            gc.fillRectangle(x, y, width, height);
         }
     }
 

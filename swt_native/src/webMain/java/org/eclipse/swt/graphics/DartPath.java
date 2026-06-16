@@ -329,8 +329,6 @@ public class DartPath extends DartResource implements IPath {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (gc == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (gc.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         try {
             //TODO - see windows
             if (outline) {

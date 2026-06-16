@@ -156,43 +156,26 @@ public class DartExpandItem extends DartItem implements IExpandItem {
             py += 4;
             polyline2 = new int[] { px, py, px + 1, py, px + 1, py + 1, px + 2, py + 1, px + 2, py + 2, px + 3, py + 2, px + 3, py + 3, px + 3, py + 2, px + 4, py + 2, px + 4, py + 1, px + 5, py + 1, px + 5, py, px + 6, py };
         }
-        gc.setForeground(display.getSystemColor(SWT.COLOR_TITLE_FOREGROUND));
-        gc.drawPolyline(polyline1);
-        gc.drawPolyline(polyline2);
     }
 
     void drawItem(GC gc, boolean drawFocus) {
         int headerHeight = ((DartExpandBar) parent.getImpl()).getBandHeight();
-        Display display = getDisplay();
-        gc.setForeground(display.getSystemColor(SWT.COLOR_TITLE_BACKGROUND));
-        gc.setBackground(display.getSystemColor(SWT.COLOR_TITLE_BACKGROUND_GRADIENT));
-        gc.fillGradientRectangle(x, y, width, headerHeight, true);
         if (expanded) {
-            gc.setForeground(display.getSystemColor(SWT.COLOR_TITLE_BACKGROUND_GRADIENT));
-            gc.drawLine(x, y + headerHeight, x, y + headerHeight + height - 1);
-            gc.drawLine(x, y + headerHeight + height - 1, x + width - 1, y + headerHeight + height - 1);
-            gc.drawLine(x + width - 1, y + headerHeight + height - 1, x + width - 1, y + headerHeight);
         }
         int drawX = x;
         if (image != null) {
             drawX += DartExpandItem.TEXT_INSET;
             if (imageHeight > headerHeight) {
-                gc.drawImage(image, drawX, y + headerHeight - imageHeight);
             } else {
-                gc.drawImage(image, drawX, y + (headerHeight - imageHeight) / 2);
             }
             drawX += imageWidth;
         }
         if (text.length() > 0) {
             drawX += DartExpandItem.TEXT_INSET;
-            Point size = gc.stringExtent(text);
-            gc.setForeground(parent.getForeground());
-            gc.drawString(text, drawX, y + (headerHeight - size.y) / 2, true);
         }
         int chevronSize = DartExpandItem.CHEVRON_SIZE;
         drawChevron(gc, x + width - chevronSize, y + (headerHeight - chevronSize) / 2);
         if (drawFocus) {
-            gc.drawFocus(x + 1, y + 1, width - 2, headerHeight - 2);
         }
     }
 
@@ -279,7 +262,6 @@ public class DartExpandItem extends DartItem implements IExpandItem {
             width += DartExpandItem.TEXT_INSET + imageWidth;
         }
         if (text.length() > 0) {
-            width += gc.stringExtent(text).x;
         }
         return width;
     }

@@ -328,11 +328,8 @@ public class DartComposite extends DartScrollable implements IComposite {
         checkWidget();
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if (gc.isDisposed())
-            error(SWT.ERROR_INVALID_ARGUMENT);
         Control control = findBackgroundControl();
         if (control != null) {
-            GCData data = gc.getGCData();
             if (control.getImpl()._backgroundImage() != null) {
                 Point pt = display.map(this.getApi(), control, 0, 0);
                 x += pt.x + offsetX;
@@ -340,12 +337,9 @@ public class DartComposite extends DartScrollable implements IComposite {
                 long surface = control.getImpl()._backgroundImage().surface;
                 if (surface == 0)
                     error(SWT.ERROR_NO_HANDLES);
-                if ((data.style & SWT.MIRRORED) != 0) {
-                }
             } else {
             }
         } else {
-            gc.fillRectangle(x, y, width, height);
         }
     }
 
@@ -959,21 +953,12 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     @Override
     void printWidget(GC gc, long drawable, int depth, int x, int y) {
-        Region oldClip = new Region(gc.getDevice());
-        Region newClip = new Region(gc.getDevice());
-        Point loc = new Point(x, y);
-        gc.getClipping(oldClip);
         Rectangle rect = getBounds();
-        newClip.add(oldClip);
-        newClip.intersect(loc.x, loc.y, rect.width, rect.height);
-        gc.setClipping(newClip);
         super.printWidget(gc, drawable, depth, x, y);
         Rectangle clientRect = getClientAreaInPixels();
         Point pt = display.map(this.getApi(), parent, clientRect.x, clientRect.y);
         clientRect.x = x + pt.x - rect.x;
         clientRect.y = y + pt.y - rect.y;
-        newClip.intersect(clientRect);
-        gc.setClipping(newClip);
         Control[] children = _getChildren();
         for (int i = children.length - 1; i >= 0; --i) {
             Control child = children[i];
@@ -982,9 +967,6 @@ public class DartComposite extends DartScrollable implements IComposite {
                 ((DartControl) child.getImpl()).printWidget(gc, drawable, depth, x + location.x, y + location.y);
             }
         }
-        gc.setClipping(oldClip);
-        oldClip.dispose();
-        newClip.dispose();
     }
 
     /**

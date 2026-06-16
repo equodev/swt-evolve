@@ -1848,8 +1848,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if (gc.isDisposed())
-            error(SWT.ERROR_INVALID_ARGUMENT);
         return true;
     }
 

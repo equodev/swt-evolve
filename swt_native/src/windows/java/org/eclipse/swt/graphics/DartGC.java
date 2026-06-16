@@ -455,11 +455,6 @@ public final class DartGC extends DartResource implements IGC {
         }
 
         private void setCopyOfImage(Image image) {
-            if (!DartGC.this.getApi().isDisposed()) {
-                Image copiedImage = new Image(image.getImpl()._device(), image, SWT.IMAGE_COPY);
-                setImage(copiedImage);
-                registerForDisposal(copiedImage);
-            }
         }
 
         protected Image getImage() {
@@ -1119,15 +1114,6 @@ public final class DartGC extends DartResource implements IGC {
         } else {
         }
         boolean mustRestore = false;
-        GC memGC = srcImage.getImpl()._memGC();
-        if (memGC != null && !memGC.isDisposed()) {
-            ((DartGC) memGC.getImpl()).flush();
-            mustRestore = true;
-            GCData data = memGC.getImpl()._data();
-            if (data.hNullBitmap != 0) {
-                data.hNullBitmap = 0;
-            }
-        }
         if (mustRestore) {
         }
     }
@@ -1923,7 +1909,7 @@ public final class DartGC extends DartResource implements IGC {
      */
     @Override
     public boolean equals(Object object) {
-        return (object == this.getApi()) || ((object instanceof GC) && (getApi().handle == ((GC) object).handle));
+        return false;
     }
 
     /**

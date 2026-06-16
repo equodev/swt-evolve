@@ -227,28 +227,12 @@ public class DartViewForm extends DartComposite implements IViewForm {
     }
 
     void onPaint(GC gc) {
-        Color gcForeground = gc.getForeground();
-        Point size = getSize();
-        Color border = getDisplay().getSystemColor(BORDER1_COLOR);
         if (showBorder) {
-            gc.setForeground(border);
-            gc.drawRectangle(0, 0, size.x - 1, size.y - 1);
             if (highlight > 0) {
-                int x1 = 1;
-                int y1 = 1;
-                int x2 = size.x - 1;
-                int y2 = size.y - 1;
-                int[] shape = new int[] { x1, y1, x2, y1, x2, y2, x1, y2, x1, y1 + highlight, x1 + highlight, y1 + highlight, x1 + highlight, y2 - highlight, x2 - highlight, y2 - highlight, x2 - highlight, y1 + highlight, x1, y1 + highlight };
-                Color highlightColor = getDisplay().getSystemColor(SWT.COLOR_LIST_SELECTION);
-                gc.setBackground(highlightColor);
-                gc.fillPolygon(shape);
             }
         }
         if (separator > -1) {
-            gc.setForeground(border);
-            gc.drawLine(borderLeft + highlight, separator, size.x - borderLeft - borderRight - highlight, separator);
         }
-        gc.setForeground(gcForeground);
     }
 
     void onResize() {

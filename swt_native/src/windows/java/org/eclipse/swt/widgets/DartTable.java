@@ -1904,17 +1904,14 @@ public class DartTable extends DartComposite implements ITable {
         GCData data = new GCData();
         data.device = display;
         data.font = item.getFont(column);
-        GC gc = createNewGC(hDC, data);
         Event event = new Event();
         event.item = item;
-        event.gc = gc;
         event.index = column;
         boolean drawSelected = false;
         if (drawSelected)
             event.detail |= SWT.SELECTED;
         sendEvent(SWT.MeasureItem, event);
         event.gc = null;
-        gc.dispose();
         if (!isDisposed() && !item.isDisposed()) {
             if (columnCount == 0) {
             }

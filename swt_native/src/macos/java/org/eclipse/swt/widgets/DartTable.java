@@ -1959,8 +1959,6 @@ public class DartTable extends DartComposite implements ITable {
                 fixScrollWidth = true;
             return false;
         }
-        GC gc = new GC(this.getApi());
-        gc.dispose();
         return false;
     }
 
@@ -1975,13 +1973,11 @@ public class DartTable extends DartComposite implements ITable {
             fixScrollWidth = true;
             return false;
         }
-        GC gc = new GC(this.getApi());
         for (int i = 0; i < items.length; i++) {
             TableItem item = items[i];
             if (item != null) {
             }
         }
-        gc.dispose();
         if (!set) {
         }
         return true;

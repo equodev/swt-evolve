@@ -492,12 +492,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
     void drawBullet(Bullet bullet, GC gc, int paintX, int paintY, int index, int lineAscent, int lineDescent) {
         StyleRange style = bullet.style;
         GlyphMetrics metrics = style.metrics;
-        Color color = style.foreground;
-        if (color != null)
-            gc.setForeground(color);
         Font font = style.font;
-        if (font != null)
-            gc.setFont(font);
         String string = "";
         int type = bullet.type & (ST.BULLET_DOT | ST.BULLET_NUMBER | ST.BULLET_LETTER_LOWER | ST.BULLET_LETTER_UPPER);
         switch(type) {
@@ -602,20 +597,14 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         int verticalIndent = lineInfo.layout.getVerticalIndent();
         if (lineBackground != null) {
             if (verticalIndent > 0) {
-                gc.setBackground(widgetBackground);
-                gc.fillRectangle(client.x, paintY, client.width, verticalIndent);
             }
-            gc.setBackground(lineBackground);
-            gc.fillRectangle(client.x, paintY + verticalIndent, client.width, lineInfo.height - verticalIndent);
         } else {
-            gc.setBackground(widgetBackground);
             styledText.drawBackground(gc, client.x, paintY, client.width, lineInfo.height);
         }
     }
 
     private void drawLineForeground(LineDrawInfo lineInfo, int paintX, int paintY, GC gc, Color widgetForeground) {
         int lineLength = lineInfo.text.length();
-        gc.setForeground(widgetForeground);
         Point[] selection = intersectingRelativeNonEmptySelections(lineInfo.offset, lineInfo.offset + lineLength);
         if (styledText.getBlockSelection() || selection.length == 0) {
             lineInfo.layout.draw(gc, paintX, paintY);

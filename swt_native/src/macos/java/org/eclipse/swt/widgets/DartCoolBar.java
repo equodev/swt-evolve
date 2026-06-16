@@ -737,61 +737,39 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
     }
 
     void onPaint(Event event) {
-        GC gc = event.gc;
         if (items.length == 0)
             return;
-        Color shadowColor = display.getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW);
-        Color highlightColor = display.getSystemColor(SWT.COLOR_WIDGET_HIGHLIGHT_SHADOW);
-        boolean vertical = (getApi().style & SWT.VERTICAL) != 0;
         boolean flat = (getApi().style & SWT.FLAT) != 0;
         int stopX = getWidth();
         Rectangle rect;
-        Rectangle clipping = gc.getClipping();
         for (int row = 0; row < items.length; row++) {
             Rectangle bounds = new Rectangle(0, 0, 0, 0);
             for (int i = 0; i < items[row].length; i++) {
                 bounds = ((DartCoolItem) items[row][i].getImpl()).internalGetBounds();
                 rect = fixRectangle(bounds.x, bounds.y, bounds.width, bounds.height);
-                if (!clipping.intersects(rect))
-                    continue;
                 boolean nativeGripper = false;
                 /* Draw gripper. */
                 if (!isLocked) {
                     rect = fixRectangle(bounds.x, bounds.y, DartCoolItem.MINIMUM_WIDTH, bounds.height);
-                    if (!flat)
-                        nativeGripper = drawGripper(gc, rect.x, rect.y, rect.width, rect.height, vertical);
                     if (!nativeGripper) {
                         int grabberTrim = 2;
                         int grabberHeight = bounds.height - (2 * grabberTrim) - 1;
-                        gc.setForeground(shadowColor);
                         rect = fixRectangle(bounds.x + DartCoolItem.MARGIN_WIDTH, bounds.y + grabberTrim, 2, grabberHeight);
-                        gc.drawRectangle(rect);
-                        gc.setForeground(highlightColor);
                         rect = fixRectangle(bounds.x + DartCoolItem.MARGIN_WIDTH, bounds.y + grabberTrim + 1, bounds.x + DartCoolItem.MARGIN_WIDTH, bounds.y + grabberTrim + grabberHeight - 1);
-                        gc.drawLine(rect.x, rect.y, rect.width, rect.height);
                         rect = fixRectangle(bounds.x + DartCoolItem.MARGIN_WIDTH, bounds.y + grabberTrim, bounds.x + DartCoolItem.MARGIN_WIDTH + 1, bounds.y + grabberTrim);
-                        gc.drawLine(rect.x, rect.y, rect.width, rect.height);
                     }
                 }
                 /* Draw separator. */
                 if (!flat && !nativeGripper && i != 0) {
-                    gc.setForeground(shadowColor);
                     rect = fixRectangle(bounds.x, bounds.y, bounds.x, bounds.y + bounds.height - 1);
-                    gc.drawLine(rect.x, rect.y, rect.width, rect.height);
-                    gc.setForeground(highlightColor);
                     rect = fixRectangle(bounds.x + 1, bounds.y, bounds.x + 1, bounds.y + bounds.height - 1);
-                    gc.drawLine(rect.x, rect.y, rect.width, rect.height);
                 }
             }
             if (!flat && row + 1 < items.length) {
                 /* Draw row separator. */
                 int separatorY = bounds.y + bounds.height;
-                gc.setForeground(shadowColor);
                 rect = fixRectangle(0, separatorY, stopX, separatorY);
-                gc.drawLine(rect.x, rect.y, rect.width, rect.height);
-                gc.setForeground(highlightColor);
                 rect = fixRectangle(0, separatorY + 1, stopX, separatorY + 1);
-                gc.drawLine(rect.x, rect.y, rect.width, rect.height);
             }
         }
     }

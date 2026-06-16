@@ -129,24 +129,12 @@ public class DartAnimatedProgress extends DartCanvas implements IAnimatedProgres
     }
 
     private void drawBevelRect(GC gc, int x, int y, int w, int h, Color topleft, Color bottomright) {
-        gc.setForeground(topleft);
-        gc.drawLine(x, y, x + w - 1, y);
-        gc.drawLine(x, y, x, y + h - 1);
-        gc.setForeground(bottomright);
-        gc.drawLine(x + w, y, x + w, y + h);
-        gc.drawLine(x, y + h, x + w, y + h);
     }
 
     @Deprecated
     void paint(PaintEvent event) {
-        GC gc = event.gc;
-        Display disp = getDisplay();
-        Rectangle rect = getClientArea();
-        gc.fillRectangle(rect);
         if (showBorder) {
-            drawBevelRect(gc, rect.x, rect.y, rect.width - 1, rect.height - 1, disp.getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW), disp.getSystemColor(SWT.COLOR_WIDGET_HIGHLIGHT_SHADOW));
         }
-        paintStripes(gc);
     }
 
     @Deprecated
@@ -156,29 +144,18 @@ public class DartAnimatedProgress extends DartCanvas implements IAnimatedProgres
         Rectangle rect = getClientArea();
         // Subtracted border painted by paint.
         rect = new Rectangle(rect.x + 2, rect.y + 2, rect.width - 4, rect.height - 4);
-        gc.setLineWidth(2);
-        gc.setClipping(rect);
-        Color color = getDisplay().getSystemColor(SWT.COLOR_LIST_SELECTION);
-        gc.setBackground(color);
-        gc.fillRectangle(rect);
-        gc.setForeground(this.getBackground());
         int step = 12;
-        int foregroundValue = value == 0 ? step - 2 : value - 2;
         if (orientation == SWT.HORIZONTAL) {
             int y = rect.y - 1;
             int w = rect.width;
             int h = rect.height + 2;
             for (int i = 0; i < w; i += step) {
-                int x = i + foregroundValue;
-                gc.drawLine(x, y, x, h);
             }
         } else {
             int x = rect.x - 1;
             int w = rect.width + 2;
             int h = rect.height;
             for (int i = 0; i < h; i += step) {
-                int y = i + foregroundValue;
-                gc.drawLine(x, y, w, y);
             }
         }
         if (active) {
@@ -206,9 +183,6 @@ public class DartAnimatedProgress extends DartCanvas implements IAnimatedProgres
         timer[0] = () -> {
             if (!active)
                 return;
-            GC gc = new GC(DartAnimatedProgress.this.getApi());
-            paintStripes(gc);
-            gc.dispose();
             display.timerExec(SLEEP, timer[0]);
         };
         display.timerExec(SLEEP, timer[0]);

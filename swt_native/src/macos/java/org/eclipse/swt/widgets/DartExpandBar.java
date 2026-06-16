@@ -230,10 +230,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
     int getBandHeight() {
         if (font == null)
             return DartExpandItem.CHEVRON_SIZE;
-        GC gc = new GC(this.getApi());
-        FontMetrics metrics = gc.getFontMetrics();
-        gc.dispose();
-        return Math.max(DartExpandItem.CHEVRON_SIZE, metrics.getHeight());
+        return 0;
     }
 
     @Override

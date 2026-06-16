@@ -95,11 +95,9 @@ class DartScrolledCompositeLayout extends DartLayout implements IScrolledComposi
         if (((DartScrolledComposite) sc.getImpl()).expandVertical) {
             contentRect.height = Math.max(((DartScrolledComposite) sc.getImpl()).minHeight, hostRect.height);
         }
-        GC gc = new GC(sc);
         if (hBar != null) {
             hBar.setMaximum(contentRect.width);
             hBar.setThumb(Math.min(contentRect.width, hostRect.width));
-            hBar.setIncrement((int) gc.getFontMetrics().getAverageCharacterWidth());
             hBar.setPageIncrement(hostRect.width);
             int hPage = contentRect.width - hostRect.width;
             int hSelection = hBar.getSelection();
@@ -114,7 +112,6 @@ class DartScrolledCompositeLayout extends DartLayout implements IScrolledComposi
         if (vBar != null) {
             vBar.setMaximum(contentRect.height);
             vBar.setThumb(Math.min(contentRect.height, hostRect.height));
-            vBar.setIncrement(gc.getFontMetrics().getHeight());
             vBar.setPageIncrement(hostRect.height);
             int vPage = contentRect.height - hostRect.height;
             int vSelection = vBar.getSelection();
@@ -126,7 +123,6 @@ class DartScrolledCompositeLayout extends DartLayout implements IScrolledComposi
                 contentRect.y = -vSelection;
             }
         }
-        gc.dispose();
         ((DartScrolledComposite) sc.getImpl()).content.setBounds(contentRect);
         inLayout = false;
     }

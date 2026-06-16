@@ -243,8 +243,6 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         checkLayout();
         if (gc == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (gc.isDisposed())
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         if (selectionForeground != null && selectionForeground.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         if (selectionBackground != null && selectionBackground.isDisposed())
@@ -356,12 +354,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             end = Math.min(Math.max(0, end), length - 1);
             start = translateOffset(start);
             end = translateOffset(end);
-            int lineH;
-            if (fixedLineMetrics != null) {
-                lineH = ((DartFontMetrics) fixedLineMetrics.getImpl()).height;
-            } else {
-                lineH = Math.max(0, ascent) + Math.max(0, descent);
-            }
+            int lineH = Math.max(0, ascent) + Math.max(0, descent);
             return new Rectangle(0, 0, 0, lineH + getVerticalIndent());
         } finally {
         }

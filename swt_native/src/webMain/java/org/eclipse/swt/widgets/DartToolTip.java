@@ -317,23 +317,19 @@ public class DartToolTip extends DartWidget implements IToolTip {
     }
 
     void onPaint(Event event) {
-        GC gc = event.gc;
         int x = BORDER + PADDING;
         int y = BORDER + PADDING;
         if ((getApi().style & SWT.BALLOON) != 0) {
             if (spikeAbove)
                 y += TIP_HEIGHT;
-            gc.drawPolygon(borderPolygon);
         } else {
         }
         if (layoutText != null) {
             x += INSET;
-            layoutText.draw(gc, x, y);
             y += 2 * PADDING + Math.max(IMAGE_SIZE, layoutText.getBounds().height);
         }
         if (layoutMessage != null) {
             x = BORDER + PADDING + INSET;
-            layoutMessage.draw(gc, x, y);
         }
     }
 

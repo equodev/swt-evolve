@@ -840,9 +840,6 @@ public class DartCLabel extends DartCanvas implements ICLabel {
     public String shortenText(GC gc, String t, int width) {
         if (t == null)
             return null;
-        int w = gc.textExtent(ELLIPSIS, DRAW_FLAGS).x;
-        if (width <= w)
-            return t;
         int l = t.length();
         int max = l / 2;
         int min = 0;
@@ -853,19 +850,6 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         layout.setText(t);
         mid = validateOffset(layout, mid);
         while (min < mid && mid < max) {
-            String s1 = t.substring(0, mid);
-            String s2 = t.substring(validateOffset(layout, l - mid), l);
-            int l1 = gc.textExtent(s1, DRAW_FLAGS).x;
-            int l2 = gc.textExtent(s2, DRAW_FLAGS).x;
-            if (l1 + w + l2 > width) {
-                max = mid;
-                mid = validateOffset(layout, (max + min) / 2);
-            } else if (l1 + w + l2 < width) {
-                min = mid;
-                mid = validateOffset(layout, (max + min) / 2);
-            } else {
-                min = max;
-            }
         }
         String result = mid == 0 ? t : t.substring(0, mid) + ELLIPSIS + t.substring(validateOffset(layout, l - mid), l);
         layout.dispose();
