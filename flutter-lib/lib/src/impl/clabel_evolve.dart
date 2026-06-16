@@ -25,8 +25,7 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
 
   @override
   Widget wrapWithGCOverlay(Widget child) {
-    if (_isChipMode) return child;
-    return super.wrapWithGCOverlay(child);
+    return child;
   }
 
   @override
@@ -215,6 +214,7 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
                     child: Text(
                       text,
                       textAlign: textAlign,
+                      softWrap: false,
                       overflow: TextOverflow.ellipsis,
                       style: textStyle,
                     ),
@@ -222,6 +222,7 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
                 : Text(
                     text,
                     textAlign: textAlign,
+                    softWrap: false,
                     overflow: TextOverflow.ellipsis,
                     style: textStyle,
                   ),
@@ -242,6 +243,7 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
               child: Text(
                 text,
                 textAlign: textAlign,
+                softWrap: false,
                 overflow: TextOverflow.ellipsis,
                 style: textStyle,
               ),
@@ -249,6 +251,7 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
           : Text(
               text,
               textAlign: textAlign,
+              softWrap: false,
               overflow: TextOverflow.ellipsis,
               style: textStyle,
             );
