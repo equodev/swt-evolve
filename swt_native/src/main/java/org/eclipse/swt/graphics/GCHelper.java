@@ -115,6 +115,7 @@ public class GCHelper {
      *         if {@code drawable} is not image-backed.
      */
     public static ImageGCContext setupImageGC(Drawable drawable, GCData data, GC gcApi) {
+        if (!dev.equo.swt.FlutterBridge.displayBootstrapped) return null;
         Image image = drawable instanceof Image img ? img : data.image;
         if (image == null) return null;
 

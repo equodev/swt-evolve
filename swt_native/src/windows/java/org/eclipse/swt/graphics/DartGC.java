@@ -1781,6 +1781,9 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawText(String string, int x, int y) {
+        if (imageCapture != null) {
+            return;
+        }
         VGCDrawTextStringintint drawOp = new VGCDrawTextStringintint();
         drawOp.string = string;
         drawOp.x = x;
@@ -1813,6 +1816,9 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawText(String string, int x, int y, boolean isTransparent) {
+        if (imageCapture != null) {
+            return;
+        }
         VGCDrawTextStringintintboolean drawOp = new VGCDrawTextStringintintboolean();
         drawOp.string = string;
         drawOp.x = x;
@@ -1861,6 +1867,9 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawText(String string, int x, int y, int flags) {
+        if (imageCapture != null) {
+            return;
+        }
         VGCDrawTextStringintintint drawOp = new VGCDrawTextStringintintint();
         drawOp.string = string;
         drawOp.x = x;

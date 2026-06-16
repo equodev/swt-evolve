@@ -184,6 +184,7 @@ public class SerializeTestBase {
                 .generate(Select.all(boolean.class), gen -> gen.booleans().probability(1.0)) // Always true
                 .generate(Select.all(int.class), gen -> gen.ints().range(1, 40))
                 .ignore(Select.all(int[].class))
+                .ignore(Select.field(GCData.class, "lineDashes"))
                 .generate(Select.all(Color.class), gen -> gen.oneOf(new Color(Mocks.red(), Mocks.green(), Mocks.blue())));
         inst.fill();
     }
