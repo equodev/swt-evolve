@@ -633,10 +633,6 @@ public class DartTreeCursor extends DartCanvas implements ITreeCursor {
                 break;
             }
         }
-        GC gc = event.gc;
-        gc.setBackground(getBackground());
-        gc.setForeground(getForeground());
-        gc.fillRectangle(event.x, event.y, event.width, event.height);
         Image image = row.getImage(columnIndex);
         int x = 0;
         // Temporary code - need a better way to determine trim
@@ -654,14 +650,10 @@ public class DartTreeCursor extends DartCanvas implements ITreeCursor {
         Point size = getSize();
         if (image != null) {
             Rectangle imageSize = image.getBounds();
-            int imageY = (size.y - imageSize.height) / 2;
-            gc.drawImage(image, x, imageY);
             x += imageSize.width;
         }
         String text = row.getText(columnIndex);
         if (text.length() > 0) {
-            Rectangle bounds = row.getBounds(columnIndex);
-            Point extent = gc.stringExtent(text);
             // Temporary code - need a better way to determine trim
             if ("win32".equals(platform)) {
                 //$NON-NLS-1$
@@ -674,10 +666,8 @@ public class DartTreeCursor extends DartCanvas implements ITreeCursor {
                             x += image == null ? 5 : 3;
                             break;
                         case SWT.RIGHT:
-                            x = bounds.width - extent.x - 2;
                             break;
                         case SWT.CENTER:
-                            x += Math.ceil((bounds.width - x - extent.x) / 2.0);
                             break;
                     }
                 }
@@ -691,22 +681,14 @@ public class DartTreeCursor extends DartCanvas implements ITreeCursor {
                             x += image == null ? 5 : 3;
                             break;
                         case SWT.RIGHT:
-                            x = bounds.width - extent.x - 2;
                             break;
                         case SWT.CENTER:
-                            x += (bounds.width - x - extent.x) / 2 + 2;
                             break;
                     }
                 }
             }
-            int textY = (size.y - extent.y) / 2;
-            gc.drawString(text, x, textY);
         }
         if (isFocusControl()) {
-            Display display = getDisplay();
-            gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
-            gc.setForeground(display.getSystemColor(SWT.COLOR_WHITE));
-            gc.drawFocus(0, 0, size.x, size.y);
         }
     }
 

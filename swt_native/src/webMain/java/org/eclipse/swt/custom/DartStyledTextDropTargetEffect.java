@@ -78,11 +78,6 @@ public class DartStyledTextDropTargetEffect extends DartDropTargetEffect impleme
         super(styledText, api);
         paintListener = event -> {
             if (currentOffset != -1) {
-                StyledText text = (StyledText) getControl();
-                Point position = text.getLocationAtOffset(currentOffset);
-                int height = text.getLineHeight(currentOffset);
-                event.gc.setBackground(event.display.getSystemColor(SWT.COLOR_BLACK));
-                event.gc.fillRectangle(position.x, position.y, CARET_WIDTH, height);
             }
         };
     }
@@ -169,19 +164,6 @@ public class DartStyledTextDropTargetEffect extends DartDropTargetEffect impleme
                 if (scrollX != -1 && scrollY != -1 && scrollBeginTime != 0 && (pt.x >= scrollX && pt.x <= (scrollX + SCROLL_TOLERANCE) || pt.y >= scrollY && pt.y <= (scrollY + SCROLL_TOLERANCE))) {
                     if (System.currentTimeMillis() >= scrollBeginTime) {
                         Rectangle area = text.getClientArea();
-                        GC gc = new GC(text);
-                        FontMetrics fm = gc.getFontMetrics();
-                        gc.dispose();
-                        double charWidth = fm.getAverageCharacterWidth();
-                        int scrollAmount = (int) (10 * charWidth);
-                        if (pt.x < area.x + 3 * charWidth) {
-                            int leftPixel = text.getHorizontalPixel();
-                            text.setHorizontalPixel(leftPixel - scrollAmount);
-                        }
-                        if (pt.x > area.width - 3 * charWidth) {
-                            int leftPixel = text.getHorizontalPixel();
-                            text.setHorizontalPixel(leftPixel + scrollAmount);
-                        }
                         int lineHeight = text.getLineHeight();
                         if (pt.y < area.y + lineHeight) {
                             int topPixel = text.getTopPixel();

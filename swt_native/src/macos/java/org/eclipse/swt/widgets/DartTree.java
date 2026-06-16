@@ -1925,8 +1925,6 @@ public class DartTree extends DartComposite implements ITree {
             return false;
         if (columnCount != 0)
             return false;
-        GC gc = new GC(this.getApi());
-        gc.dispose();
         if (!set) {
         }
         return true;
@@ -1940,8 +1938,6 @@ public class DartTree extends DartComposite implements ITree {
         TreeItem parentItem = ((DartTreeItem) item.getImpl()).parentItem;
         if (parentItem != null && !parentItem.getExpanded())
             return false;
-        GC gc = new GC(this.getApi());
-        gc.dispose();
         return false;
     }
 

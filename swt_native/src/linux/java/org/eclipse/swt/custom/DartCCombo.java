@@ -1446,11 +1446,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
     void popupEvent(Event event) {
         switch(event.type) {
             case SWT.Paint:
-                // draw black rectangle around list
-                Rectangle listRect = list.getBounds();
-                Color black = getDisplay().getSystemColor(SWT.COLOR_BLACK);
-                event.gc.setForeground(black);
-                event.gc.drawRectangle(0, 0, listRect.width + 1, listRect.height + 1);
                 break;
             case SWT.Close:
                 event.doit = false;

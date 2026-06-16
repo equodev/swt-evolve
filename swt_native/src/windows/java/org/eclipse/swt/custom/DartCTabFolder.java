@@ -2141,10 +2141,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                 return;
             }
         }
-        GC gc = event.gc;
-        Font gcFont = gc.getFont();
-        Color gcBackground = gc.getBackground();
-        Color gcForeground = gc.getForeground();
         // Useful for debugging paint problems
         //{
         //Point size = getSize();
@@ -2152,49 +2148,21 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         //gc.fillRectangle(-10, -10, size.x + 20, size.y+20);
         //}
         Point size = getSize();
-        Rectangle bodyRect = new Rectangle(0, 0, size.x, size.y);
-        renderer.draw(CTabFolderRenderer.PART_BODY, SWT.BACKGROUND | SWT.FOREGROUND, bodyRect, gc);
-        gc.setFont(gcFont);
-        gc.setForeground(gcForeground);
-        gc.setBackground(gcBackground);
-        renderer.draw(CTabFolderRenderer.PART_HEADER, SWT.BACKGROUND | SWT.FOREGROUND, bodyRect, gc);
-        gc.setFont(gcFont);
-        gc.setForeground(gcForeground);
-        gc.setBackground(gcBackground);
         if (!single) {
             for (int i = 0; i < items.length; i++) {
                 Rectangle itemBounds = items[i].getBounds();
                 if (i != selectedIndex && event.getBounds().intersects(itemBounds)) {
-                    renderer.draw(i, SWT.BACKGROUND | SWT.FOREGROUND | items[i].state, itemBounds, gc);
                 }
             }
         }
-        gc.setFont(gcFont);
-        gc.setForeground(gcForeground);
-        gc.setBackground(gcBackground);
         if (selectedIndex != -1) {
-            renderer.draw(selectedIndex, items[selectedIndex].state | SWT.BACKGROUND | SWT.FOREGROUND, items[selectedIndex].getBounds(), gc);
         }
-        gc.setFont(gcFont);
-        gc.setForeground(gcForeground);
-        gc.setBackground(gcBackground);
         if (hoverTb) {
             Rectangle trim = renderer.computeTrim(CTabFolderRenderer.PART_BORDER, SWT.NONE, 0, 0, 0, 0);
             int x = getSize().x - (trim.width + trim.x);
             hoverRect = new Rectangle(x - 16 - SPACING, 2, 16, getTabHeight() - 2);
-            gc.setForeground(gc.getDevice().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
             x = hoverRect.x;
-            int y = hoverRect.y;
-            gc.setBackground(gc.getDevice().getSystemColor(SWT.COLOR_WHITE));
-            gc.fillRectangle(x + hoverRect.width - 6, y, 5, 5);
-            gc.drawRectangle(x + hoverRect.width - 6, y, 5, 5);
-            gc.drawLine(x + hoverRect.width - 6, y + 2, x + hoverRect.width - 6 + 5, y + 2);
-            gc.fillRectangle(x, y, 5, 2);
-            gc.drawRectangle(x, y, 5, 2);
         }
-        gc.setFont(gcFont);
-        gc.setForeground(gcForeground);
-        gc.setBackground(gcBackground);
     }
 
     void onResize(Event event) {

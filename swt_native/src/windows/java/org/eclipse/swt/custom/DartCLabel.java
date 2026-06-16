@@ -184,12 +184,6 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      * Draw a rectangle in the given colors.
      */
     private void drawBevelRect(GC gc, int x, int y, int w, int h, Color topleft, Color bottomright) {
-        gc.setForeground(bottomright);
-        gc.drawLine(x + w, y, x + w, y + h);
-        gc.drawLine(x, y + h, x + w, y + h);
-        gc.setForeground(topleft);
-        gc.drawLine(x, y, x + w - 1, y);
-        gc.drawLine(x, y, x, y + h - 1);
     }
 
     /*
@@ -300,19 +294,11 @@ public class DartCLabel extends DartCanvas implements ICLabel {
             size.x += r.width;
             size.y += r.height;
         }
-        GC gc = new GC(this.getApi());
         if (text != null && text.length() > 0) {
-            Point e = gc.textExtent(text, DRAW_FLAGS);
-            if (e != null) {
-                size.x += e.x;
-                size.y = Math.max(size.y, e.y);
-            }
             if (image != null)
                 size.x += GAP;
         } else {
-            size.y = Math.max(size.y, gc.getFontMetrics().getHeight());
         }
-        gc.dispose();
         return size;
     }
 
@@ -486,18 +472,12 @@ public class DartCLabel extends DartCanvas implements ICLabel {
                 shortenText = true;
             }
         }
-        GC gc = event.gc;
         String[] lines = text == null ? null : splitString(text);
         // shorten the text
         if (shortenText) {
             extent.x = 0;
             for (int i = 0; i < lines.length; i++) {
-                Point e = gc.textExtent(lines[i], DRAW_FLAGS);
-                if (e.x > availableWidth) {
-                    lines[i] = shortenText(gc, lines[i], availableWidth);
-                    extent.x = Math.max(extent.x, getTotalSize(null, lines[i]).x);
-                } else {
-                    extent.x = Math.max(extent.x, e.x);
+                {
                 }
             }
             if (appToolTipText == null) {
@@ -519,58 +499,34 @@ public class DartCLabel extends DartCanvas implements ICLabel {
             if (backgroundImage != null) {
                 // draw a background image behind the text
                 Rectangle imageRect = backgroundImage.getBounds();
-                // tile image to fill space
-                gc.setBackground(getBackground());
-                gc.fillRectangle(rect);
                 int xPos = 0;
                 while (xPos < rect.width) {
                     int yPos = 0;
                     while (yPos < rect.height) {
-                        gc.drawImage(backgroundImage, xPos, yPos);
                         yPos += imageRect.height;
                     }
                     xPos += imageRect.width;
                 }
             } else if (gradientColors != null) {
-                // draw a gradient behind the text
-                final Color oldBackground = gc.getBackground();
                 if (gradientColors.length == 1) {
-                    if (gradientColors[0] != null)
-                        gc.setBackground(gradientColors[0]);
-                    gc.fillRectangle(0, 0, rect.width, rect.height);
                 } else {
-                    final Color oldForeground = gc.getForeground();
                     Color lastColor = gradientColors[0];
-                    if (lastColor == null)
-                        lastColor = oldBackground;
                     int pos = 0;
                     for (int i = 0; i < gradientPercents.length; ++i) {
-                        gc.setForeground(lastColor);
                         lastColor = gradientColors[i + 1];
-                        if (lastColor == null)
-                            lastColor = oldBackground;
-                        gc.setBackground(lastColor);
                         if (gradientVertical) {
                             final int gradientHeight = (gradientPercents[i] * rect.height / 100) - pos;
-                            gc.fillGradientRectangle(0, pos, rect.width, gradientHeight, true);
                             pos += gradientHeight;
                         } else {
                             final int gradientWidth = (gradientPercents[i] * rect.width / 100) - pos;
-                            gc.fillGradientRectangle(pos, 0, gradientWidth, rect.height, false);
                             pos += gradientWidth;
                         }
                     }
                     if (gradientVertical && pos < rect.height) {
-                        gc.setBackground(getBackground());
-                        gc.fillRectangle(0, pos, rect.width, rect.height - pos);
                     }
                     if (!gradientVertical && pos < rect.width) {
-                        gc.setBackground(getBackground());
-                        gc.fillRectangle(pos, 0, rect.width - pos, rect.height);
                     }
-                    gc.setForeground(oldForeground);
                 }
-                gc.setBackground(oldBackground);
             } else {
                 //if ((background != null || (getStyle() & SWT.DOUBLE_BUFFERED) == 0) && background.getAlpha() > 0) {    gc.setBackground(getBackground());    gc.fillRectangle(rect);}
                 ;
@@ -582,7 +538,6 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         // draw border
         int style = getStyle();
         if ((style & SWT.SHADOW_IN) != 0 || (style & SWT.SHADOW_OUT) != 0) {
-            paintBorder(gc, rect);
         }
         /*
 	 * Compute text height and image height. If image height is more than
@@ -596,7 +551,6 @@ public class DartCLabel extends DartCanvas implements ICLabel {
             imageHeight = imageRect.height;
         }
         if (lines != null) {
-            lineHeight = gc.getFontMetrics().getHeight();
             textHeight = lines.length * lineHeight;
         }
         int imageY = 0, midPoint = 0, lineY = 0;
@@ -617,28 +571,11 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         }
         // draw the image
         if (img != null) {
-            gc.drawImage(img, x, imageY, imageRect.width, imageHeight);
             x += imageRect.width + GAP;
             extent.x -= imageRect.width + GAP;
         }
         // draw the text
         if (lines != null) {
-            gc.setForeground(getForeground());
-            for (String line : lines) {
-                int lineX = x;
-                if (lines.length > 1) {
-                    if (align == SWT.CENTER) {
-                        int lineWidth = gc.textExtent(line, DRAW_FLAGS).x;
-                        lineX = x + Math.max(0, (extent.x - lineWidth) / 2);
-                    }
-                    if (align == SWT.RIGHT) {
-                        int lineWidth = gc.textExtent(line, DRAW_FLAGS).x;
-                        lineX = Math.max(x, rect.x + rect.width - rightMargin - lineWidth);
-                    }
-                }
-                gc.drawText(line, lineX, lineY, DRAW_FLAGS);
-                lineY += lineHeight;
-            }
         }
     }
 
@@ -659,7 +596,6 @@ public class DartCLabel extends DartCanvas implements ICLabel {
             c2 = disp.getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW);
         }
         if (c1 != null && c2 != null) {
-            gc.setLineWidth(1);
             drawBevelRect(gc, r.x, r.y, r.width - 1, r.height - 1, c1, c2);
         }
     }
@@ -1075,9 +1011,6 @@ public class DartCLabel extends DartCanvas implements ICLabel {
     public String shortenText(GC gc, String t, int width) {
         if (t == null)
             return null;
-        int w = gc.textExtent(ELLIPSIS, DRAW_FLAGS).x;
-        if (width <= w)
-            return t;
         int l = t.length();
         int max = l / 2;
         int min = 0;
@@ -1088,19 +1021,6 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         layout.setText(t);
         mid = validateOffset(layout, mid);
         while (min < mid && mid < max) {
-            String s1 = t.substring(0, mid);
-            String s2 = t.substring(validateOffset(layout, l - mid), l);
-            int l1 = gc.textExtent(s1, DRAW_FLAGS).x;
-            int l2 = gc.textExtent(s2, DRAW_FLAGS).x;
-            if (l1 + w + l2 > width) {
-                max = mid;
-                mid = validateOffset(layout, (max + min) / 2);
-            } else if (l1 + w + l2 < width) {
-                min = mid;
-                mid = validateOffset(layout, (max + min) / 2);
-            } else {
-                min = max;
-            }
         }
         String result = mid == 0 ? t : t.substring(0, mid) + ELLIPSIS + t.substring(validateOffset(layout, l - mid), l);
         layout.dispose();

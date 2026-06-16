@@ -656,8 +656,6 @@ public abstract class DartDevice implements Drawable, IDevice {
                             cursors++;
                         if (object instanceof Font)
                             fonts++;
-                        if (object instanceof GC)
-                            gcs++;
                         if (object instanceof Image)
                             images++;
                         if (object instanceof Path)

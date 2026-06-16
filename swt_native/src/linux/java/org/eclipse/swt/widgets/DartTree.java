@@ -1665,7 +1665,6 @@ public class DartTree extends DartComposite implements ITree {
 
     void rendererRender(long cell, long cr, long snapshot, long widget, long background_area, long cell_area, long expose_area, long flags) {
         TreeItem item = null;
-        int columnIndex = 0;
         if (columnCount > 0) {
             for (int i = 0; i < columnCount; i++) {
             }
@@ -1675,9 +1674,6 @@ public class DartTree extends DartComposite implements ITree {
         if (item != null) {
         }
         if ((drawState & SWT.BACKGROUND) != 0 && (drawState & SWT.SELECTED) == 0) {
-            GC gc = getGC(cr);
-            gc.setBackground(item.getBackground(columnIndex));
-            gc.dispose();
         }
         if (item != null) {
         }

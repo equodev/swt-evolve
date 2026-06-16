@@ -350,11 +350,7 @@ public class DartCBanner extends DartComposite implements ICBanner {
         if (left == null && right == null)
             return;
         Point size = getSize();
-        Color border1 = getDisplay().getSystemColor(BORDER1);
         if (bottom != null) {
-            int y = bottom.getBounds().y - BORDER_STRIPE - 1;
-            gc.setForeground(border1);
-            gc.drawLine(0, y, size.x, y);
         }
         if (left == null || right == null)
             return;
@@ -371,7 +367,6 @@ public class DartCBanner extends DartComposite implements ICBanner {
         line1[index++] = 0;
         line1[index++] = size.x;
         line1[index++] = 0;
-        Color background = getBackground();
         if (getDisplay().getDepth() >= 15) {
             // Anti- aliasing
             int[] line2 = new int[line1.length];
@@ -386,29 +381,8 @@ public class DartCBanner extends DartComposite implements ICBanner {
                 line3[index] = line1[index++] + 1;
                 line3[index] = line1[index++];
             }
-            RGB from = border1.getRGB();
-            RGB to = background.getRGB();
-            int red = from.red + 3 * (to.red - from.red) / 4;
-            int green = from.green + 3 * (to.green - from.green) / 4;
-            int blue = from.blue + 3 * (to.blue - from.blue) / 4;
-            Color color = new Color(red, green, blue);
-            gc.setForeground(color);
-            gc.drawPolyline(line2);
-            gc.drawPolyline(line3);
-            // draw tail fading to background
-            int x1 = Math.max(0, curveStart - CURVE_TAIL);
-            gc.setForeground(background);
-            gc.setBackground(border1);
-            gc.fillGradientRectangle(x1, size.y - BORDER_STRIPE, curveStart - x1 + 1, 1, false);
         } else {
-            // draw solid tail
-            int x1 = Math.max(0, curveStart - CURVE_TAIL);
-            gc.setForeground(border1);
-            gc.drawLine(x1, size.y - BORDER_STRIPE, curveStart + 1, size.y - BORDER_STRIPE);
         }
-        // draw border
-        gc.setForeground(border1);
-        gc.drawPolyline(line1);
     }
 
     void onResize() {

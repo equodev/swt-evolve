@@ -267,11 +267,7 @@ public class DartDragSource extends DartWidget implements IDragSource {
             if (image == null) {
                 int width = 20, height = 20;
                 Image newDragImage = new Image(SwtDisplay.getCurrent(), width, height);
-                GC imageGC = new GC(newDragImage);
                 Color grayColor = new Color(SwtDisplay.getCurrent(), 50, 50, 50);
-                imageGC.setForeground(grayColor);
-                imageGC.drawRectangle(0, 0, 19, 19);
-                imageGC.dispose();
                 ImageData newImageData = newDragImage.getImageData();
                 newImageData.alpha = (int) (255 * .4);
                 defaultDragImage = new Image(SwtDisplay.getCurrent(), newImageData);

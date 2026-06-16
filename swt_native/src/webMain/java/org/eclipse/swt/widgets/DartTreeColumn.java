@@ -339,10 +339,6 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
         }
         if (((DartTree) parent.getImpl()).sortColumn == this.getApi() && ((DartTree) parent.getImpl()).sortDirection != SWT.NONE) {
         }
-        /* compute item widths down column */
-        GC gc = new GC(parent);
-        width = Math.max(width, ((DartTree) parent.getImpl()).calculateWidth(((DartTree) parent.getImpl()).items, parent.indexOf(this.getApi()), gc, true));
-        gc.dispose();
         setWidth(width);
     }
 

@@ -152,13 +152,8 @@ public class DartLink extends DartControl implements ILink {
         }
         // temporary code to disable text selection
         selStart = selEnd = -1;
-        if ((getApi().state & DISABLED) != 0)
-            gc.setForeground(disabledColor);
         if (hasFocus() && focusIndex != -1) {
             Rectangle[] rects = getRectanglesInPixels(focusIndex);
-            for (Rectangle rect : rects) {
-                gc.drawFocus(rect.x, rect.y, rect.width, rect.height);
-            }
         }
     }
 

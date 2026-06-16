@@ -187,7 +187,6 @@ public class DartTreeDropTargetEffect extends DartDropTargetEffect implements IT
             }
         }
         if ((effect & DND.FEEDBACK_INSERT_BEFORE) != 0 || (effect & DND.FEEDBACK_INSERT_AFTER) != 0) {
-            boolean before = (effect & DND.FEEDBACK_INSERT_BEFORE) != 0;
             {
                 if (insertItem != null) {
                     tree.setInsertMark(null, false);

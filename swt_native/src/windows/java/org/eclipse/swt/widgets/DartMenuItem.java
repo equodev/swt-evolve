@@ -730,60 +730,12 @@ public class DartMenuItem extends DartItem implements IMenuItem {
         if (image == null) {
             return;
         }
-        Rectangle imageBounds = image.getBounds();
-        Color foregroundColor = increaseContrast((((SwtDisplay) display.getImpl()).menuBarForegroundPixel != -1) ? SwtColor.win32_new(this.display, ((SwtDisplay) display.getImpl()).menuBarForegroundPixel) : ((DartMenu) parent.getImpl()).getForeground());
-        Color backgroundColor = increaseContrast((((SwtDisplay) display.getImpl()).menuBarBackgroundPixel != -1) ? SwtColor.win32_new(this.display, ((SwtDisplay) display.getImpl()).menuBarBackgroundPixel) : ((DartMenu) parent.getImpl()).getBackground());
-        ImageGcDrawer drawer = new ImageGcDrawer() {
-
-            @Override
-            public int getGcStyle() {
-                return SWT.TRANSPARENT;
-            }
-
-            @Override
-            public void drawOn(GC gc, int imageWidth, int imageHeight) {
-                gc.setAdvanced(true);
-                gc.drawImage(image, imageWidth - imageBounds.width, (imageHeight - imageBounds.height) / 2);
-                gc.setAntialias(SWT.ON);
-                int x = imageWidth - 16;
-                int y = imageHeight / 2 - 8;
-                if ((getApi().style & SWT.CHECK) != 0) {
-                    drawCheck(gc, foregroundColor, backgroundColor, x, y);
-                } else {
-                    drawRadio(gc, foregroundColor, backgroundColor, x, y);
-                }
-            }
-        };
-        imageSelected = new Image(image.getDevice(), drawer, Math.max(imageBounds.width, 16), Math.max(imageBounds.height, 16));
     }
 
     private void drawCheck(GC gc, Color foregroundColor, Color backgroundColor, int x, int y) {
-        int[] points = new int[] { x + 4, y + 10, x + 6, y + 12, x + 12, y + 6 };
-        gc.setLineStyle(SWT.LINE_SOLID);
-        gc.setForeground(backgroundColor);
-        gc.setLineCap(SWT.CAP_ROUND);
-        gc.setLineJoin(SWT.JOIN_ROUND);
-        gc.setAlpha(127);
-        gc.setLineWidth(6);
-        gc.drawPolyline(points);
-        gc.setLineJoin(SWT.JOIN_MITER);
-        gc.setAlpha(255);
-        gc.setLineWidth(3);
-        gc.drawPolyline(points);
-        gc.setForeground(foregroundColor);
-        gc.setLineWidth(1);
-        gc.setLineCap(SWT.CAP_FLAT);
-        gc.drawPolyline(points);
     }
 
     private void drawRadio(GC gc, Color foregroundColor, Color backgroundColor, int x, int y) {
-        gc.setBackground(backgroundColor);
-        gc.setAlpha(127);
-        gc.fillOval(x + 4, y + 5, 8, 8);
-        gc.setAlpha(255);
-        gc.fillOval(x + 5, y + 6, 6, 6);
-        gc.setBackground(foregroundColor);
-        gc.fillOval(x + 6, y + 7, 4, 4);
     }
 
     private Color increaseContrast(Color color) {
@@ -1067,10 +1019,6 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     }
 
     private Point calculateRenderedTextSize() {
-        GC gc = new GC(this.getParent().getShell());
-        String textWithoutMnemonicCharacter = getText().replace("&", "");
-        Point points = gc.textExtent(textWithoutMnemonicCharacter);
-        gc.dispose();
         if (!getDisplay().isRescalingAtRuntime()) {
             int primaryMonitorZoom = this.getDisplay().getDeviceZoom();
             int adjustedPrimaryMonitorZoom = DPIUtil.getZoomForAutoscaleProperty(primaryMonitorZoom);
@@ -1086,7 +1034,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
                 // this calculation is corrected by the following line
             }
         }
-        return points;
+        return null;
     }
 
     @Override

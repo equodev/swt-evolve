@@ -220,8 +220,6 @@ public class DartComposite extends DartScrollable implements IComposite {
         checkWidget();
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if (gc.isDisposed())
-            error(SWT.ERROR_INVALID_ARGUMENT);
         //XP only, no GDI+
         //#define PW_CLIENTONLY 0x00000001
         //DCOrg() wrong
@@ -285,8 +283,6 @@ public class DartComposite extends DartScrollable implements IComposite {
     void drawBackgroundInPixels(GC gc, int x, int y, int width, int height, int offsetX, int offsetY) {
         if (gc == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if (gc.isDisposed())
-            error(SWT.ERROR_INVALID_ARGUMENT);
     }
 
     public Composite findDeferredControl() {

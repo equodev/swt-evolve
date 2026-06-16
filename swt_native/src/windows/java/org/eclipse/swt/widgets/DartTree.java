@@ -2080,15 +2080,12 @@ public class DartTree extends DartComposite implements ITree {
         GCData data = new GCData();
         data.device = display;
         data.font = item.getFont(index);
-        GC gc = createNewGC(hDC, data);
         Event event = new Event();
         event.item = item;
-        event.gc = gc;
         event.index = index;
         event.detail = detail;
         sendEvent(SWT.MeasureItem, event);
         event.gc = null;
-        gc.dispose();
         if (isDisposed() || item.isDisposed())
             return null;
         return event;

@@ -742,8 +742,6 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     @Override
     void destroy() {
-        if (memGC != null)
-            memGC.dispose();
         getApi().surface = getApi().mask = 0;
         memGC = null;
         cachedImageAtSize.destroy();
@@ -1031,14 +1029,11 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         } else {
             image = new Image(device, width, height);
         }
-        GC gc = new GC(image, gcStyle);
         try {
-            imageGcDrawer.drawOn(gc, width, height);
             ImageData imageData = image.getImageData(zoom);
             imageGcDrawer.postProcess(imageData);
             return imageData;
         } finally {
-            gc.dispose();
             image.dispose();
         }
     }

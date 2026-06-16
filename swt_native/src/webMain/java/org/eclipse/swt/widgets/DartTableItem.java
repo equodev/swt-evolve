@@ -166,7 +166,6 @@ public class DartTableItem extends DartItem implements ITableItem {
             sendMeasure = cached;
         }
         if (sendMeasure && ((DartWidget) parent.getImpl()).hooks(SWT.MeasureItem)) {
-            gc.setFont(font);
             Event event = new Event();
             event.item = this.getApi();
             event.index = index;

@@ -918,8 +918,6 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     @Override
     void destroy() {
         ((SwtDevice) device.getImpl()).deregisterResourceWithZoomSupport(this.getApi());
-        if (memGC != null)
-            memGC.dispose();
         this.isDestroyed = true;
         destroyHandles();
         memGC = null;
@@ -1960,10 +1958,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                 return createBaseHandle(targetZoom);
             }
             if (memGC != null) {
-                GC currentGC = memGC;
                 memGC = null;
                 DestroyableImageHandle imageHandle = createHandle(targetZoom);
-                ((DartGC) currentGC.getImpl()).refreshFor(new DrawableWrapper(DartImage.this.getApi(), zoomContext), imageHandle);
                 return imageHandle;
             }
             ImageData resizedData = newImageData(targetZoom);
@@ -2238,9 +2234,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             } else {
                 image = new Image(device, width, height);
             }
-            GC gc = new GC(new DrawableWrapper(image, zoomContext), gcStyle);
             try {
-                drawer.drawOn(gc, width, height);
                 ImageData imageData = image.getImageData(targetZoom);
                 drawer.postProcess(imageData);
                 return adaptImageDataIfDisabledOrGray(imageData);
