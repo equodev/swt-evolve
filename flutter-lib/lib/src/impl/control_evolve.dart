@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -22,6 +24,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   int _lastDragMoveMs = 0;
   static const int _mouseMoveThrottleMs = 15;
   static const int _dragMoveThrottleMs = 15;
+  // Matches DartDisplay.getToolTipTime() — fires SWT.MouseHover after stillness
+  static const int _hoverDelayMs = 560;
+  Timer? _hoverTimer;
 
   void sendThrottledMouseMove(V state, VEvent event) {
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -29,6 +34,19 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       _lastMouseMoveMs = now;
       widget.sendMouseMoveMouseMove(state, event);
     }
+  }
+
+  void _resetHoverTimer(V state, VEvent event) {
+    _hoverTimer?.cancel();
+    _hoverTimer = Timer(const Duration(milliseconds: _hoverDelayMs), () {
+      if (mounted) widget.sendMouseTrackMouseHover(state, event);
+    });
+  }
+
+  @override
+  void dispose() {
+    _hoverTimer?.cancel();
+    super.dispose();
   }
 
   void sendThrottledDragMove(V state, VEvent event) {
@@ -192,12 +210,16 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       },
       child: MouseRegion(
         onEnter: (_) => this.widget.sendMouseTrackMouseEnter(state, null),
-        onExit: (_) => this.widget.sendMouseTrackMouseExit(state, null),
+        onExit: (_) {
+          _hoverTimer?.cancel();
+          this.widget.sendMouseTrackMouseExit(state, null);
+        },
         onHover: (e) {
           final event = VEvent()
             ..x = e.localPosition.dx.round()
             ..y = e.localPosition.dy.round();
           sendThrottledMouseMove(state, event);
+          _resetHoverTimer(state, event);
         },
         child: widget,
       ),

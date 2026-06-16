@@ -535,172 +535,173 @@ ThemeData createLightDefaultTheme(int? backgroundColor, {Color? seedColor}) {
     brightness: Brightness.light,
   );
 
-  final defaultTextTheme = ThemeData(useMaterial3: true, colorScheme: colorScheme).textTheme;
+  // Use custom Material 3 text theme with proper line-height calculations
+  final materialTextTheme = createMaterialTextTheme(colorScheme);
   final colorSchemeExtension = createColorSchemeExtension(colorScheme);
   
   final textThemeExtension = getTextLightTheme(
     colorScheme: _resolveWidgetColorScheme('text', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('text', colorScheme, Brightness.light),
   );
   final buttonTheme = getButtonLightTheme(
     colorScheme: _resolveWidgetColorScheme('button', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('button', colorScheme, Brightness.light),
   );
   final labelTheme = getLabelLightTheme(
     colorScheme: _resolveWidgetColorScheme('label', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('label', colorScheme, Brightness.light),
   );
   final tabFolderTheme = getTabFolderLightTheme(
     colorScheme: _resolveWidgetColorScheme('tabfolder', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('tabfolder', colorScheme, Brightness.light),
   );
   final tabItemTheme = getTabItemLightTheme(
     colorScheme: _resolveWidgetColorScheme('tabitem', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('tabitem', colorScheme, Brightness.light),
   );
   final treeTheme = getTreeLightTheme(
     colorScheme: _resolveWidgetColorScheme('tree', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('tree', colorScheme, Brightness.light),
   );
   final ctabFolderTheme = getCTabFolderLightTheme(
     colorScheme: _resolveWidgetColorScheme('ctabfolder', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('ctabfolder', colorScheme, Brightness.light),
   );
   final ctabItemTheme = getCTabItemLightTheme(
     colorScheme: _resolveWidgetColorScheme('ctabitem', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('ctabitem', colorScheme, Brightness.light),
   );
   final toolbarTheme = getToolBarLightTheme(
     colorScheme: _resolveWidgetColorScheme('toolbar', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('toolbar', colorScheme, Brightness.light),
   );
   final toolItemTheme = getToolItemLightTheme(
     colorScheme: _resolveWidgetColorScheme('toolitem', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('toolitem', colorScheme, Brightness.light),
   );
   final tableTheme = getTableLightTheme(
     colorScheme: _resolveWidgetColorScheme('table', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('table', colorScheme, Brightness.light),
   );
   final comboTheme = getComboLightTheme(
     colorScheme: _resolveWidgetColorScheme('combo', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('combo', colorScheme, Brightness.light),
   );
   final ccomboTheme = getCComboLightTheme(
     colorScheme: _resolveWidgetColorScheme('ccombo', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('ccombo', colorScheme, Brightness.light),
   );
   final progressBarTheme = getProgressBarLightTheme(
     colorScheme: _resolveWidgetColorScheme('progressbar', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('progressbar', colorScheme, Brightness.light),
   );
   final listTheme = getListLightTheme(
     colorScheme: _resolveWidgetColorScheme('list', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('list', colorScheme, Brightness.light),
   );
   final clabelTheme = getCLabelLightTheme(
     colorScheme: _resolveWidgetColorScheme('clabel', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('clabel', colorScheme, Brightness.light),
   );
   final linkTheme = getLinkLightTheme(
     colorScheme: _resolveWidgetColorScheme('link', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('link', colorScheme, Brightness.light),
   );
   final groupTheme = getGroupLightTheme(
     colorScheme: _resolveWidgetColorScheme('group', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('group', colorScheme, Brightness.light),
   );
   final expandBarTheme = getExpandBarLightTheme(
     colorScheme: _resolveWidgetColorScheme('expandbar', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('expandbar', colorScheme, Brightness.light),
   );
   final expandItemTheme = getExpandItemLightTheme(
     colorScheme: _resolveWidgetColorScheme('expanditem', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('expanditem', colorScheme, Brightness.light),
   );
   final sliderTheme = getSliderLightTheme(
     colorScheme: _resolveWidgetColorScheme('slider', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('slider', colorScheme, Brightness.light),
   );
   final spinnerTheme = getSpinnerLightTheme(
     colorScheme: _resolveWidgetColorScheme('spinner', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('spinner', colorScheme, Brightness.light),
   );
   final scrolledCompositeTheme = getScrolledCompositeLightTheme(
     colorScheme: _resolveWidgetColorScheme('scrolledcomposite', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('scrolledcomposite', colorScheme, Brightness.light),
   );
   final compositeTheme = getCompositeLightTheme(
     colorScheme: _resolveWidgetColorScheme('composite', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('composite', colorScheme, Brightness.light),
   );
   final scaleTheme = getScaleLightTheme(
     colorScheme: _resolveWidgetColorScheme('scale', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('scale', colorScheme, Brightness.light),
   );
   final menuTheme = getMenuLightTheme(
     colorScheme: _resolveWidgetColorScheme('menu', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('menu', colorScheme, Brightness.light),
   );
   final menuItemTheme = getMenuItemLightTheme(
     colorScheme: _resolveWidgetColorScheme('menuitem', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('menuitem', colorScheme, Brightness.light),
   );
   final coolBarTheme = getCoolBarLightTheme(
     colorScheme: _resolveWidgetColorScheme('coolbar', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('coolbar', colorScheme, Brightness.light),
   );
   final coolItemTheme = getCoolItemLightTheme(
     colorScheme: _resolveWidgetColorScheme('coolitem', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('coolitem', colorScheme, Brightness.light),
   );
   final tooltipTheme = getTooltipLightTheme(
     colorScheme: _resolveWidgetColorScheme('tooltip', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('tooltip', colorScheme, Brightness.light),
   );
   final sashTheme = getSashLightTheme(
     colorScheme: _resolveWidgetColorScheme('sash', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('sash', colorScheme, Brightness.light),
   );
   final canvasTheme = getCanvasLightTheme(
     colorScheme: _resolveWidgetColorScheme('canvas', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('canvas', colorScheme, Brightness.light),
   );
   final styledTextTheme = getStyledTextLightTheme(
     colorScheme: _resolveWidgetColorScheme('styledtext', colorScheme, Brightness.light),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('styledtext', colorScheme, Brightness.light),
   );
   final themeColorPaletteTheme = getThemeColorPaletteLightTheme(
@@ -711,12 +712,12 @@ ThemeData createLightDefaultTheme(int? backgroundColor, {Color? seedColor}) {
   );
   final displayTheme = getDisplayLightTheme(
     colorScheme: colorScheme,
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
   final messageBoxTheme = getMessageBoxLightTheme(
     colorScheme: colorScheme,
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
   return ThemeData(
@@ -1017,172 +1018,173 @@ ThemeData createDarkDefaultTheme(int? backgroundColor, {Color? seedColor}) {
     brightness: Brightness.dark,
   );
 
-  final defaultTextTheme = ThemeData(useMaterial3: true, colorScheme: colorScheme).textTheme;
+  // Use custom Material 3 text theme with proper line-height calculations
+  final materialTextTheme = createMaterialTextTheme(colorScheme);
   final colorSchemeExtension = createColorSchemeExtension(colorScheme);
   
   final textThemeExtension = getTextDarkTheme(
     colorScheme: _resolveWidgetColorScheme('text', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('text', colorScheme, Brightness.dark),
   );
   final buttonTheme = getButtonDarkTheme(
     colorScheme: _resolveWidgetColorScheme('button', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('button', colorScheme, Brightness.dark),
   );
   final labelTheme = getLabelDarkTheme(
     colorScheme: _resolveWidgetColorScheme('label', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('label', colorScheme, Brightness.dark),
   );
   final tabFolderTheme = getTabFolderDarkTheme(
     colorScheme: _resolveWidgetColorScheme('tabfolder', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('tabfolder', colorScheme, Brightness.dark),
   );
   final tabItemTheme = getTabItemDarkTheme(
     colorScheme: _resolveWidgetColorScheme('tabitem', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('tabitem', colorScheme, Brightness.dark),
   );
   final treeTheme = getTreeDarkTheme(
     colorScheme: _resolveWidgetColorScheme('tree', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('tree', colorScheme, Brightness.dark),
   );
   final ctabFolderTheme = getCTabFolderDarkTheme(
     colorScheme: _resolveWidgetColorScheme('ctabfolder', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('ctabfolder', colorScheme, Brightness.dark),
   );
   final ctabItemTheme = getCTabItemDarkTheme(
     colorScheme: _resolveWidgetColorScheme('ctabitem', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('ctabitem', colorScheme, Brightness.dark),
   );
   final toolbarTheme = getToolBarDarkTheme(
     colorScheme: _resolveWidgetColorScheme('toolbar', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('toolbar', colorScheme, Brightness.dark),
   );
   final toolItemTheme = getToolItemDarkTheme(
     colorScheme: _resolveWidgetColorScheme('toolitem', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('toolitem', colorScheme, Brightness.dark),
   );
   final tableTheme = getTableDarkTheme(
     colorScheme: _resolveWidgetColorScheme('table', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('table', colorScheme, Brightness.dark),
   );
   final comboTheme = getComboDarkTheme(
     colorScheme: _resolveWidgetColorScheme('combo', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('combo', colorScheme, Brightness.dark),
   );
   final ccomboTheme = getCComboDarkTheme(
     colorScheme: _resolveWidgetColorScheme('ccombo', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('ccombo', colorScheme, Brightness.dark),
   );
   final progressBarTheme = getProgressBarDarkTheme(
     colorScheme: _resolveWidgetColorScheme('progressbar', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('progressbar', colorScheme, Brightness.dark),
   );
   final listTheme = getListDarkTheme(
     colorScheme: _resolveWidgetColorScheme('list', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('list', colorScheme, Brightness.dark),
   );
   final clabelTheme = getCLabelDarkTheme(
     colorScheme: _resolveWidgetColorScheme('clabel', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('clabel', colorScheme, Brightness.dark),
   );
   final linkTheme = getLinkDarkTheme(
     colorScheme: _resolveWidgetColorScheme('link', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('link', colorScheme, Brightness.dark),
   );
   final groupTheme = getGroupDarkTheme(
     colorScheme: _resolveWidgetColorScheme('group', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('group', colorScheme, Brightness.dark),
   );
   final expandBarTheme = getExpandBarDarkTheme(
     colorScheme: _resolveWidgetColorScheme('expandbar', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('expandbar', colorScheme, Brightness.dark),
   );
   final expandItemTheme = getExpandItemDarkTheme(
     colorScheme: _resolveWidgetColorScheme('expanditem', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('expanditem', colorScheme, Brightness.dark),
   );
   final sliderTheme = getSliderDarkTheme(
     colorScheme: _resolveWidgetColorScheme('slider', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('slider', colorScheme, Brightness.dark),
   );
   final spinnerTheme = getSpinnerDarkTheme(
     colorScheme: _resolveWidgetColorScheme('spinner', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('spinner', colorScheme, Brightness.dark),
   );
   final scrolledCompositeTheme = getScrolledCompositeDarkTheme(
     colorScheme: _resolveWidgetColorScheme('scrolledcomposite', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('scrolledcomposite', colorScheme, Brightness.dark),
   );
   final compositeTheme = getCompositeDarkTheme(
     colorScheme: _resolveWidgetColorScheme('composite', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('composite', colorScheme, Brightness.dark),
   );
   final scaleTheme = getScaleDarkTheme(
     colorScheme: _resolveWidgetColorScheme('scale', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('scale', colorScheme, Brightness.dark),
   );
   final menuTheme = getMenuDarkTheme(
     colorScheme: _resolveWidgetColorScheme('menu', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('menu', colorScheme, Brightness.dark),
   );
   final menuItemTheme = getMenuItemDarkTheme(
     colorScheme: _resolveWidgetColorScheme('menuitem', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('menuitem', colorScheme, Brightness.dark),
   );
   final coolBarTheme = getCoolBarDarkTheme(
     colorScheme: _resolveWidgetColorScheme('coolbar', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('coolbar', colorScheme, Brightness.dark),
   );
   final coolItemTheme = getCoolItemDarkTheme(
     colorScheme: _resolveWidgetColorScheme('coolitem', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('coolitem', colorScheme, Brightness.dark),
   );
   final tooltipTheme = getTooltipDarkTheme(
     colorScheme: _resolveWidgetColorScheme('tooltip', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('tooltip', colorScheme, Brightness.dark),
   );
   final sashTheme = getSashDarkTheme(
     colorScheme: _resolveWidgetColorScheme('sash', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('sash', colorScheme, Brightness.dark),
   );
   final canvasTheme = getCanvasDarkTheme(
     colorScheme: _resolveWidgetColorScheme('canvas', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('canvas', colorScheme, Brightness.dark),
   );
   final styledTextTheme = getStyledTextDarkTheme(
     colorScheme: _resolveWidgetColorScheme('styledtext', colorScheme, Brightness.dark),
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('styledtext', colorScheme, Brightness.dark),
   );
   final themeColorPaletteTheme = getThemeColorPaletteDarkTheme(
@@ -1193,12 +1195,12 @@ ThemeData createDarkDefaultTheme(int? backgroundColor, {Color? seedColor}) {
   );
   final displayTheme = getDisplayDarkTheme(
     colorScheme: colorScheme,
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
   final messageBoxTheme = getMessageBoxDarkTheme(
     colorScheme: colorScheme,
-    textTheme: defaultTextTheme,
+    textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
   return ThemeData(

@@ -82,8 +82,24 @@ public final class FontMetricsUtil {
     }
 
     /**
+     * Returns width/height for the given text at the requested size, with wrapping support.
+     * If wrapWidth > 0 and text would exceed that width, calculates height for wrapped text.
+     *
+     * @param text text to measure
+     * @param fontId font identifier
+     * @param fontSize font size
+     * @param wrapWidth maximum width before wrapping (0 = no wrapping)
+     * @return PointD(width, height) where height accounts for wrapping if applicable
+     */
+    public static PointD getFontSize(String text, String fontId, int fontSize, int wrapWidth) {
+        return getFontSize(text, fontId, fontSize, 0, wrapWidth);
+    }
+
+    /**
      * Returns width/height for the given text and fontId at the requested size (height).
      * Uses per-glyph widths if available; falls back to avgCharWidth when glyph missing.
+     * Multi-line text (containing \n) returns the widest line width and total height,
+     * matching SWT's GC.textExtent behaviour with DRAW_DELIMITER.
      *
      * @param text font text
      * @param fontId font family name (must exist in GeneratedFontMetrics.DATA)
@@ -91,12 +107,73 @@ public final class FontMetricsUtil {
      * @return Point2D.Double(width, height)
      */
     public static PointD getFontSize(String text, String fontId, int fontSize, double fontHeight) {
-//        GeneratedFontMetrics.Metrics metrics = getMetrics(fontId, height);
+        return getFontSize(text, fontId, fontSize, fontHeight, 0);
+    }
+
+    /**
+     * Returns width/height for the given text and fontId at the requested size (height).
+     * Uses per-glyph widths if available; falls back to avgCharWidth when glyph missing.
+     * Multi-line text (containing \n) returns the widest line width and total height.
+     * If wrapWidth > 0 and text exceeds that width, simulates wrapping and returns wrapped height.
+     *
+     * @param text font text
+     * @param fontId font family name (must exist in GeneratedFontMetrics.DATA)
+     * @param fontSize requested size
+     * @param fontHeight line-height multiplier (0 = use metrics.height())
+     * @param wrapWidth max width before wrapping (0 = no wrapping)
+     * @return PointD(width, height)
+     */
+    public static PointD getFontSize(String text, String fontId, int fontSize, double fontHeight, double wrapWidth) {
+        if (text.contains("\n") || text.contains("\r")) {
+            String[] lines = text.split("\r\n|\r|\n", -1);
+            double maxW = 0;
+            double totalH = 0;
+            double lineH = lineHeight(fontId, fontSize, fontHeight);
+            for (String line : lines) {
+                double lineWidth = measureLine(line, fontId, fontSize);
+                if (wrapWidth > 0 && lineWidth > wrapWidth) {
+                    // Text wraps - estimate number of lines needed
+                    double avgCharWidth = measureLine("M", fontId, fontSize);
+                    if (avgCharWidth > 0) {
+                        int estimatedLines = (int) Math.ceil(lineWidth / wrapWidth);
+                        totalH += lineH * estimatedLines;
+                    } else {
+                        totalH += lineH;
+                    }
+                } else {
+                    maxW = Math.max(maxW, lineWidth);
+                    totalH += lineH;
+                }
+            }
+            return new PointD(maxW > 0 ? maxW : wrapWidth, totalH);
+        }
+        double w = measureLine(text, fontId, fontSize);
+        double h = lineHeight(fontId, fontSize, fontHeight);
+        if (wrapWidth > 0 && w > wrapWidth) {
+            // Single line text wraps
+            double avgCharWidth = measureLine("M", fontId, fontSize);
+            if (avgCharWidth > 0) {
+                int estimatedLines = (int) Math.ceil(w / wrapWidth);
+                h *= estimatedLines;
+            }
+            w = wrapWidth;
+        }
+        return new PointD(w, h);
+    }
+
+    private static double lineHeight(String fontId, int fontSize, double fontHeight) {
+        Metrics metrics = GenFontMetrics.DATA.get(fontId);
+        if (metrics == null) metrics = GenFontMetrics.DATA.get("System-0-3");
+        if (metrics == null) return fontSize;
+        return fontHeight != 0 ? fontHeight * fontSize : metrics.height() * fontSize;
+    }
+
+    private static double measureLine(String text, String fontId, int fontSize) {
         Metrics metrics = GenFontMetrics.DATA.get(fontId);
         if (metrics == null)
             metrics = GenFontMetrics.DATA.get("System-0-3");
         if (metrics == null)
-            return new PointD(0, 0);
+            return 0;
 
         double scale = (double) fontSize / GenFontMetrics.BASE;
 
@@ -107,27 +184,16 @@ public final class FontMetricsUtil {
 
             double glyphWidth;
             if (metrics.glyphWidths() != null) {
-                // Array is indexed from 0, representing codepoints starting from GLYPH_START (32)
                 int index = cp - GenFontMetrics.GLYPH_START;
-                if (index >= 0 && index < metrics.glyphWidths().length) {
-                    glyphWidth = metrics.glyphWidths()[index];
-                } else {
-                    glyphWidth = metrics.avgCharWidth(); // fallback for out of range
-                }
+                glyphWidth = (index >= 0 && index < metrics.glyphWidths().length)
+                        ? metrics.glyphWidths()[index]
+                        : metrics.avgCharWidth();
             } else {
-                glyphWidth = metrics.avgCharWidth(); // fallback for monospace fonts
+                glyphWidth = metrics.avgCharWidth();
             }
             w += glyphWidth * scale;
         }
-
-        double height = metrics.height() * fontSize;
-
-        if (fontHeight != 0){
-            height = fontHeight*fontSize;
-        }
-
-        double h = height;
-        return new PointD(w, h);
+        return w;
     }
 
     public static PointD getFontSizeWrapped(String text, TextStyle textStyle, double maxWidth) {
