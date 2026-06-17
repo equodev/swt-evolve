@@ -150,7 +150,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       visible: _isEditingText,
       blinking: _isEditingText,
       styledTextId: styledTextId,
-      blinkRate: 500,
+      blinkRate: 560,
     );
 
     SelectionInfo? selectionFromState;
@@ -657,7 +657,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       });
       _sendSelectionCleared(caretOffset);
 
-      _startCaretBlinking();
+      _onCaretMoved();
       _focusNode.requestFocus();
     } else {
       bool clickedInEditableText = false;
@@ -681,7 +681,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
           });
           _sendSelectionCleared(caretOffset);
 
-          _startCaretBlinking();
+          _onCaretMoved();
         }
       }
 
@@ -711,6 +711,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
     final isShiftPressed = event.data.isShiftPressed;
     final bool hadSelection = _editableTextShape?.selectionInfo?.hasSelection == true;
+    final oldCaretOffset = _editableTextShape!.caretInfo?.offset;
 
     setState(() {
       final currentShape = _editableTextShape!;
@@ -857,6 +858,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     if (hadSelection && isDestructiveKey) {
       _sendSelectionCleared(_editableTextShape?.caretInfo?.offset ?? 0);
     }
+
+    final newCaretOffset = _editableTextShape?.caretInfo?.offset;
+    if (newCaretOffset != null && newCaretOffset != oldCaretOffset) {
+      _onCaretMoved();
+    }
   }
 
   void _handlePaste() async {
@@ -875,6 +881,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
             _localEditingState = _editableTextShape!.editingState;
           }
         });
+        _onCaretMoved();
       }
     } catch (e) {
       // Error pasting
@@ -989,6 +996,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       final caretPos = currentOffset;
       _editableTextShape = _editableTextShape!.updateCaretOffset(caretPos);
     });
+    _onCaretMoved();
   }
 
   void _handlePanEnd() {
@@ -1044,6 +1052,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
           .updateCaretOffset(charOffset)
           .copyWithSelection(SelectionInfo.fromRange(wordStart, wordEnd));
     });
+    _onCaretMoved();
     _sendSelectionChange();
     widget.sendMouseMouseDoubleClick(
       state,
@@ -1098,19 +1107,34 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     _sendSelectionChange();
   }
 
-  void _startCaretBlinking() {
+  void _onCaretMoved() => _resetCaretBlink();
+
+  void _resetCaretBlink() {
     _caretBlinkTimer?.cancel();
-    _caretBlinkTimer = Timer.periodic(const Duration(milliseconds: 500), (
-      timer,
-    ) {
+    _caretBlinkTimer = null;
+    if (!_isEditingText || _editableTextShape?.caretInfo == null) return;
+
+    final rate = _editableTextShape!.caretInfo!.blinkRate;
+    if (rate == 0) return;
+
+    final caret = _editableTextShape!.caretInfo!;
+    if (!caret.visible) {
+      setState(() {
+        _editableTextShape = _editableTextShape!.copyWithCaret(
+          caret.copyWith(visible: true),
+        );
+      });
+    }
+
+    _caretBlinkTimer = Timer.periodic(Duration(milliseconds: rate), (timer) {
       if (_editableTextShape?.caretInfo != null) {
         setState(() {
-          final caret = _editableTextShape!.caretInfo!;
-          final newCaret = caret.copyWith(visible: !caret.visible);
+          final currentCaret = _editableTextShape!.caretInfo!;
+          final newCaret = currentCaret.copyWith(visible: !currentCaret.visible);
           _editableTextShape = _editableTextShape!.copyWithCaret(newCaret);
 
           final index = shapes.indexWhere(
-            (s) => s is TextShape && s.styledTextId == caret.styledTextId,
+            (s) => s is TextShape && s.styledTextId == currentCaret.styledTextId,
           );
           if (index != -1) {
             shapes[index] = (shapes[index] as TextShape).copyWithCaret(
@@ -1131,6 +1155,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         shapes.removeAt(shapeIndex);
       }
     });
+    _onCaretMoved();
   }
 
   void _enterLocalEditMode(TextShape textShape) {
@@ -1721,7 +1746,7 @@ class TextShape extends Shape {
     final effectiveAlign = justify ? TextAlign.justify : align;
 
     double maxW = double.infinity;
-    if (canvasSize != null) {
+    if (wordWrap == true && canvasSize != null) {
       maxW = canvasSize!.width - off.dx - indent.toDouble();
       if (maxW <= 0) maxW = double.infinity;
     }
@@ -1750,7 +1775,7 @@ class TextShape extends Shape {
       final prevEffectiveAlign = prevJustify ? TextAlign.justify : prevAlign;
 
       double prevMaxW = double.infinity;
-      if (canvasSize != null) {
+      if (wordWrap == true && canvasSize != null) {
         prevMaxW = canvasSize!.width - off.dx - prevIndent.toDouble();
         if (prevMaxW <= 0) prevMaxW = double.infinity;
       }
@@ -1782,8 +1807,32 @@ class TextShape extends Shape {
 
     double finalX = off.dx + indent.toDouble();
 
+    if (canvasSize != null && maxW != double.infinity) {
+      switch (effectiveAlign) {
+        case TextAlign.center:
+          final textWidth = tp.width;
+          if (textWidth < maxW) {
+            finalX = off.dx + indent.toDouble() + (maxW - textWidth) / 2;
+          }
+          break;
+        case TextAlign.right:
+          final textWidth = tp.width;
+          if (textWidth < maxW) {
+            finalX = off.dx + indent.toDouble() + (maxW - textWidth);
+          }
+          break;
+        default:
+          break;
+      }
+    }
+
+    final posInLine = caretPositionInLine.clamp(0, currentLine.length);
+    final affinity = posInLine >= currentLine.length && currentLine.isNotEmpty
+        ? TextAffinity.upstream
+        : TextAffinity.downstream;
+
     final caretPosition = tp.getOffsetForCaret(
-      TextPosition(offset: caretPositionInLine.clamp(0, currentLine.length)),
+      TextPosition(offset: posInLine, affinity: affinity),
       Rect.fromLTWH(0, 0, tp.width, tp.height),
     );
 
@@ -2000,7 +2049,7 @@ class TextShape extends Shape {
 
   TextShape updateCaretOffset(int offset) {
     if (caretInfo == null) return this;
-    return copyWithCaret(caretInfo!.copyWith(offset: offset));
+    return copyWithCaret(caretInfo!.copyWith(offset: offset, visible: true));
   }
 
   TextShape insertText(String insertText, int position) {
@@ -2367,7 +2416,7 @@ class CaretInfo {
     this.visible = true,
     this.blinking = true,
     required this.styledTextId,
-    this.blinkRate = 500,
+    this.blinkRate = 560,
   });
 
   CaretInfo copyWith({
