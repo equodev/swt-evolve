@@ -60,6 +60,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   @override
   Color get bg =>
+      ParentBackgroundScope.backgroundOf(context) ??
       getBackgroundColor(
         background: state.background,
         defaultColor: _styledTextTheme.backgroundColor,
