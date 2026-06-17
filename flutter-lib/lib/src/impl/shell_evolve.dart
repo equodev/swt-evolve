@@ -6,8 +6,10 @@ import '../gen/event.dart';
 import '../gen/messagebox.dart';
 import '../gen/shell.dart';
 import '../gen/swt.dart';
+import '../impl/color_utils.dart';
 import '../impl/decorations_evolve.dart';
 import '../impl/messagebox_evolve.dart';
+import '../impl/utils/widget_utils.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
 
 class FloatingShellChromeScope extends InheritedWidget {
@@ -277,10 +279,17 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       );
     }
 
+    final shellBg = state.background != null
+        ? colorFromVColor(state.background, defaultColor: theme.dialogBackgroundColor)
+        : null;
+    if (shellBg != null) {
+      framed = ParentBackgroundScope(background: shellBg, child: framed);
+    }
+
     Widget dialog = Container(
       clipBehavior: Clip.none,
       decoration: BoxDecoration(
-        color: theme.dialogBackgroundColor,
+        color: shellBg ?? theme.dialogBackgroundColor,
         borderRadius: BorderRadius.circular(borderRadius),
         border: _showBorder
             ? Border.all(color: theme.dialogBorderColor, width: theme.dialogBorderWidth)
