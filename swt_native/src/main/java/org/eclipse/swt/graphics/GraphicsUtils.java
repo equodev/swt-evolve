@@ -168,10 +168,14 @@ public class GraphicsUtils {
     /**
      * Extracts the filename (without extension) from a given file path.
      *
-     * @param path the full file path
-     * @return the filename without extension, or the original filename if no extension is found
+     * @param path the full file path (can be null)
+     * @return the filename without extension, the original filename if no extension is found,
+     *     or null if path is null
      */
     static String getFilename(String path) {
+        if (path == null) {
+            return null;
+        }
         String fileName = new java.io.File(path).getName();
         int dotIndex = fileName.lastIndexOf('.');
         return (dotIndex > 0) ? fileName.substring(0, dotIndex) : fileName;
