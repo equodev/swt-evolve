@@ -88,7 +88,7 @@ final Map<String, IconData> iconMap = {
   'collapseall': Icons.unfold_less,
   'synced': Icons.sync_alt,
   'filter_ps': Icons.filter_alt,
-  'focus-disabled': Icons.adjust,
+  'focus_disabled': Icons.adjust,
   'alphab_sort_co': Icons.sort_by_alpha,
   'rem_co': Icons.clear,
   'rem_all_co': Icons.clear_all,
@@ -249,23 +249,60 @@ final Map<String, IconData> iconMap = {
   'connection': FontAwesomeIcons.plug,
   'remove_connection': FontAwesomeIcons.plugCircleXmark,
   'dashboard': FontAwesomeIcons.tableColumns,
+  'play_24': Icons.play_arrow,
+  'stop_24': Icons.stop,
+  'stop_24_disabled': Icons.stop,
+  'bug_24': Icons.bug_report,
+  'new_24': Icons.add,
+  'new_wiz': Icons.add,
+  'newclass_wiz': Icons.add,
+  'newpack_wiz': Icons.create_new_folder,
+  'folder_16': Icons.folder,
+  'project_16': Icons.folder_open,
+  'search_16': Icons.search,
+  'highlight_16': Icons.highlight,
+  'all_16': Icons.layers,
+  'config_16': Icons.tune,
+  'log_16': Icons.receipt_long,
+  'progress_16': Icons.hourglass_top,
+  'progress_none': Icons.hourglass_empty,
+  'chevron_down_16': Icons.expand_more,
+  'advanced_search_16': Icons.manage_search,
+  'profile_16': Icons.account_circle,
+  'profile_highlight_16': Icons.account_circle,
+  'tab_migrate_16': Icons.tab,
+  'terminal_24': Icons.terminal,
+  'runcoverage': Icons.area_chart,
+  'workingsets_view': Icons.workspaces,
+  'breakpoint_view': Icons.fiber_manual_record,
+  'sample': Icons.find_in_page,
+  'plugin_depend': Icons.extension_outlined,
+  'package': Icons.inventory_2,
+  'outline_co': Icons.format_list_bulleted,
+  'fastview_restore': Icons.restore,
+  'last_edit_pos': Icons.history,
+  'next_edit_pos': Icons.update,
+  'link_to_editor': Icons.link,
+  'open_task': Icons.task_alt,
+  'task_list': Icons.checklist,
+  'target_profile_xml_obj': Icons.account_tree,
+  'save_disabled_24': Icons.save,
+  'save_all_disabled_24': Icons.save,
 };
 
 IconData? getIconByName(String name) {
-  // First try direct lookup
-  var icon = iconMap[name];
+  final normalized = _normalizeKey(name);
+
+  var icon = iconMap[normalized];
   if (icon != null) return icon;
 
-  // If not found, try removing _enabled or _disabled suffixes
-  String baseName = name;
-  if (name.endsWith('_enabled') || name.endsWith('_disabled')) {
-    if (name.endsWith('_enabled')) {
-      baseName = name.substring(0, name.length - '_enabled'.length);
+  String baseName = normalized;
+  if (normalized.endsWith('_enabled') || normalized.endsWith('_disabled')) {
+    if (normalized.endsWith('_enabled')) {
+      baseName = normalized.substring(0, normalized.length - '_enabled'.length);
     } else {
-      baseName = name.substring(0, name.length - '_disabled'.length);
+      baseName = normalized.substring(0, normalized.length - '_disabled'.length);
     }
-
-    // Try lookup with base name
     icon = iconMap[baseName];
     if (icon != null) return icon;
   }

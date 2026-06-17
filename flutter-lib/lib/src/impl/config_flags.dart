@@ -9,6 +9,7 @@ class ConfigFlags {
   bool? ctabfolder_visible_controls;
   bool? image_disable_icons_replacement;
   String? assets_path;
+  bool? use_default_icons;
   bool? use_swt_colors;
   bool? use_swt_fonts;
   String? theme_name;
