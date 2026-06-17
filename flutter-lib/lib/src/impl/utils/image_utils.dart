@@ -527,16 +527,39 @@ class ImageUtils {
 
     // Try binary image data (encoded PNG/JPG bytes sent from Java)
     if (useBinaryImage && image.imageData?.data != null) {
+      final bytes = Uint8List.fromList(image.imageData!.data!);
+      if (getConfigFlags().use_default_icons == true && (image.filename?.isNotEmpty ?? false)) {
+        final fallback = _buildBinaryImage(
+          bytes: bytes,
+          file: image.filename,
+          size: size, width: width, height: height,
+          color: color, enabled: enabled,
+          constraints: constraints, renderAsIcon: renderAsIcon,
+        ) ?? const SizedBox.shrink();
+        return FutureBuilder<Object?>(
+          future: AssetsManager.loadReplacement(image.filename!),
+          builder: (context, snapshot) {
+            final data = snapshot.data;
+            if (data != null) {
+              return _buildReplacementWidget(
+                data,
+                filename: image.filename!,
+                size: size, width: width, height: height,
+                color: color, enabled: enabled,
+                constraints: constraints, renderAsIcon: renderAsIcon,
+              ) ?? fallback;
+            }
+            return fallback;
+          },
+        );
+      }
+
       return _buildBinaryImage(
-        bytes: Uint8List.fromList(image.imageData!.data!),
-        file: (image.filename != null) ? image.filename : null,
-        size: size,
-        width: width,
-        height: height,
-        color: color,
-        enabled: enabled,
-        constraints: constraints,
-        renderAsIcon: renderAsIcon,
+        bytes: bytes,
+        file: image.filename,
+        size: size, width: width, height: height,
+        color: color, enabled: enabled,
+        constraints: constraints, renderAsIcon: renderAsIcon,
       );
     }
 

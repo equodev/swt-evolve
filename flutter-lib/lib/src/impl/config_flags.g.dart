@@ -11,6 +11,7 @@ ConfigFlags _$ConfigFlagsFromJson(Map<String, dynamic> json) => ConfigFlags()
   ..image_disable_icons_replacement =
       json['image_disable_icons_replacement'] as bool?
   ..assets_path = json['assets_path'] as String?
+  ..use_default_icons = json['use_default_icons'] as bool?
   ..use_swt_colors = json['use_swt_colors'] as bool?
   ..use_swt_fonts = json['use_swt_fonts'] as bool?
   ..theme_name = json['theme_name'] as String?
@@ -33,6 +34,7 @@ Map<String, dynamic> _$ConfigFlagsToJson(
   'ctabfolder_visible_controls': ?instance.ctabfolder_visible_controls,
   'image_disable_icons_replacement': ?instance.image_disable_icons_replacement,
   'assets_path': ?instance.assets_path,
+  'use_default_icons': ?instance.use_default_icons,
   'use_swt_colors': ?instance.use_swt_colors,
   'use_swt_fonts': ?instance.use_swt_fonts,
   'theme_name': ?instance.theme_name,

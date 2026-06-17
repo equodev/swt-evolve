@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:swtflutter/src/impl/config_flags.dart';
@@ -46,7 +47,39 @@ class AssetsManager {
   static Future<Object?> loadReplacement(String filename) async {
     final assetsPath = await _resolveAssetsPath();
     if (assetsPath != null) {
-      return await _loadFromExternalPath(filename, assetsPath);
+      final result = await _loadFromExternalPath(filename, assetsPath);
+      if (result != null) return result;
+    }
+
+    if (getConfigFlags().use_default_icons == true) {
+      return await _loadFromBundleAssets(filename);
+    }
+
+    return null;
+  }
+
+  static Future<Object?> _loadFromBundleAssets(String filename) async {
+    String filenameOnly = filename;
+    if (filename.contains('/')) {
+      filenameOnly = filename.split('/').last;
+    }
+    final base = filenameOnly.split('.').first;
+    final formats = ['svg', 'png', 'jpg', 'jpeg'];
+
+    for (final format in formats) {
+      try {
+        final assetPath = 'assets/icons/$base.$format';
+        if (format == 'svg') {
+          return await rootBundle.loadString(assetPath);
+        } else {
+          final bytes = await rootBundle.load(assetPath);
+          final codec = await ui.instantiateImageCodec(bytes.buffer.asUint8List());
+          final frame = await codec.getNextFrame();
+          return frame.image as Object;
+        }
+      } catch (_) {
+        // asset not found, try next format
+      }
     }
     return null;
   }

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 
 import '../comm/comm.dart';
@@ -14,7 +12,7 @@ void _syncThemeColor(String hex6or8) {
   if (trimmed.isEmpty) return;
   EquoCommService.sendPayload(
     _kEvolvePropertySetChannel,
-    jsonEncode(<String, String>{'theme_color': trimmed}),
+    <String, String>{'theme_color': trimmed},
   );
 }
 
@@ -23,7 +21,7 @@ void _syncThemeName(String themeName, {String? forceTheme}) {
   if (forceTheme != null) payload['force_theme'] = forceTheme;
   EquoCommService.sendPayload(
     _kEvolvePropertySetChannel,
-    jsonEncode(payload),
+    payload,
   );
 }
 

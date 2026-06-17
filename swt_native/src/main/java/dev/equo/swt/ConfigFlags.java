@@ -13,6 +13,8 @@ public class ConfigFlags {
 
     public String assets_path;
 
+    public boolean use_default_icons;
+
     public boolean use_swt_colors;
 
     public boolean use_swt_fonts;
@@ -44,6 +46,7 @@ public class ConfigFlags {
                 "ctabfolder_visible_controls=" + ctabfolder_visible_controls +
                 ", image_disable_icons_replacement=" + image_disable_icons_replacement +
                 ", assets_path=" + assets_path +
+                ", use_default_icons=" + use_default_icons +
                 ", use_swt_colors=" + use_swt_colors +
                 ", use_swt_fonts=" + use_swt_fonts +
                 ", force_theme='" + force_theme + '\'' +
