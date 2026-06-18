@@ -5,6 +5,9 @@ import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/widget.dart';
 import 'package:swtflutter/src/custom/toolbar_composite.dart';
 import 'package:swtflutter/src/custom/main_composite.dart';
+import 'package:swtflutter/src/custom/csd/csd_scaffold.dart';
+import 'package:swtflutter/src/custom/csd/csd_state.dart';
+import 'package:swtflutter/src/custom/csd/equo_window.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 import 'src/styles.dart';
 import 'src/theme/theme.dart'
@@ -93,13 +96,24 @@ void main(List<String> args) async {
   setParentBackgroundColor(parentBackgroundColor);
   unawaited(initSwtEvolveProperties());
 
+  if (widgetName == "Display") {
+    csdMainWindowId = widgetId;
+    // Track window focus so the macOS controls grey out when the window is inactive.
+    EquoWindow.installWindowStateListeners(
+      (active) => csdWindowActive.value = active,
+    );
+  }
+
   Widget contentWidget = createContentWidget(widgetName!, widgetId!);
 
-  runApp(EvolveApp(
-    contentWidget: contentWidget,
-    theme: theme,
-    backgroundColor: backgroundColor,
-  ));
+  runApp(
+    EvolveApp(
+      contentWidget: contentWidget,
+      theme: theme,
+      backgroundColor: backgroundColor,
+      isMainWindow: widgetName == "Display",
+    ),
+  );
 
   sendClientReady(widgetName, widgetId, sendWindowSize: (widgetName == "Display"));
   if (widgetName == "Display") {
@@ -250,12 +264,22 @@ class EvolveApp extends StatelessWidget {
   final ThemeMode theme;
   final int? backgroundColor;
 
+  /// Only the top-level window (widgetName == "Display") gets CSD window chrome; other
+  /// Flutter clients (size bridges, child browser views) must not grow resize edges.
+  final bool isMainWindow;
+
   const EvolveApp({
     Key? key,
     required this.contentWidget,
     required this.theme,
     this.backgroundColor,
+    this.isMainWindow = false,
   }) : super(key: key);
+
+  /// Wraps the main window's body with CSD chrome (resize edges, optional title strip /
+  /// floating controls). Sub-view clients pass through unchanged.
+  Widget _maybeWrapCsd(Widget body) =>
+      isMainWindow ? CsdShell(child: body) : body;
 
   @override
   Widget build(BuildContext context) {
@@ -310,15 +334,17 @@ class EvolveApp extends StatelessWidget {
             backgroundColor: effectiveThemeMode == ThemeMode.dark
                 ? darkTheme.scaffoldBackgroundColor
                 : lightTheme.scaffoldBackgroundColor,
-            body: ValueListenableBuilder<double>(
-              valueListenable: appScaleNotifier,
-              builder: (ctx, scale, _) {
-                return Transform.scale(
-                  scale: scale,
-                  alignment: Alignment.topLeft,
-                  child: contentWidget,
-                );
-              },
+            body: _maybeWrapCsd(
+              ValueListenableBuilder<double>(
+                valueListenable: appScaleNotifier,
+                builder: (ctx, scale, _) {
+                  return Transform.scale(
+                    scale: scale,
+                    alignment: Alignment.topLeft,
+                    child: contentWidget,
+                  );
+                },
+              ),
             ),
           ),
         );

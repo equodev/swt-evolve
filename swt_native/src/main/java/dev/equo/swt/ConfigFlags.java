@@ -34,6 +34,15 @@ public class ConfigFlags {
 
     public boolean print_move;
 
+    /** Client-Side Decorations placement and on/off in one value: "toolbar" (default),
+     *  "overlay", "floating", or "false" (disabled). */
+    public String csd_placement;
+    /** Host OS for picking native control styling: "mac", "windows", or "linux". */
+    public String csd_os;
+    /** Maximize behavior: "direct" (default, Dart calls window.equo.maximize()), "bounds",
+     *  "native", or "fullscreen" (the last three delegate to the SWT bridge). */
+    public String csd_maximize;
+
     public static ConfigFlags use_swt_fonts(boolean v) {
         ConfigFlags configFlags = new ConfigFlags();
         configFlags.use_swt_fonts = v;
@@ -57,6 +66,9 @@ public class ConfigFlags {
                 ", preserve_icon_colors=" + preserve_icon_colors +
                 ", show_scaling_control=" + show_scaling_control +
                 ", decorations_align='" + decorations_align + '\'' +
+                ", csd_placement='" + csd_placement + '\'' +
+                ", csd_os='" + csd_os + '\'' +
+                ", csd_maximize='" + csd_maximize + '\'' +
                 '}';
     }
 }

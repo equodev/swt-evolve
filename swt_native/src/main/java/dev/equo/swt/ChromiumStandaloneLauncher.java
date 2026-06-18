@@ -79,7 +79,9 @@ public class ChromiumStandaloneLauncher {
         System.setProperty("chromium.disable-frame-restrictions", "true");
         System.setProperty("chromium.external_message_pump", "false");
         System.setProperty("chromium.multi_threaded_message_loop", Boolean.toString(!isMac));
-        boolean csd = "true".equalsIgnoreCase(System.getProperty("dev.equo.chromium.csd", "false"));
+        // CSD is opt-out: frameless window by default; restore the native frame with
+        // -Ddev.equo.swt.csd=false. Kept in sync with Config.getConfigFlags().csd.
+        boolean csd = !"false".equalsIgnoreCase(System.getProperty("dev.equo.swt.csd", "toolbar"));
         browser = ChromiumBrowser.standalone(url, 0, 0, 1280, 1024, csd);
         current = this;
         sub = browser.subscribe();

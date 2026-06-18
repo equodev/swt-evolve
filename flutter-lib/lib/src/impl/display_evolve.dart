@@ -5,6 +5,7 @@ import '../gen/swt.dart';
 import '../gen/tooltip.dart';
 import '../gen/widgets.dart' as gen;
 import '../comm/comm.dart';
+import '../custom/csd/csd_state.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
 import 'shell_evolve.dart';
 
@@ -100,6 +101,15 @@ class _DisplaySwtState extends State<DisplaySwt> {
         s.bounds!.y = 0;
         s.bounds!.width = constraints.maxWidth.toInt();
         s.bounds!.height = constraints.maxHeight.toInt();
+      }
+
+      // Feed the main shell's title to the CSD overlay strip (it's already in the Display
+      // state, so no separate event is needed). Deferred so we don't notify during build.
+      final title = mainShells.isNotEmpty ? (mainShells.first.text ?? '') : '';
+      if (csdWindowTitle.value != title) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          csdWindowTitle.value = title;
+        });
       }
 
       return Stack(children: [
