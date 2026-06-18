@@ -23,7 +23,6 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   TreeItemContext? _context;
 
   bool _isHovered = false;
-  bool _hasCheckedForChildren = false;
   Offset? _lastTapPosition;
   final DoubleTapDetector _rowTap = DoubleTapDetector();
 
@@ -122,27 +121,6 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     final bool enabled = _context?.parentTreeValue.enabled ?? true;
     final bool nextItemSelected =
         _context?.treeImpl?.isNextItemSelected(state.id) ?? false;
-
-    if (expanded || hasChildren || _hasCheckedForChildren) {
-      _hasCheckedForChildren = true;
-    }
-
-    final bool mightHaveChildren =
-        !hasChildren && !expanded && !_hasCheckedForChildren;
-
-    if (mightHaveChildren &&
-        _context?.treeImpl != null &&
-        _context?.parentTree != null) {
-      _hasCheckedForChildren = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted &&
-            _context?.treeImpl != null &&
-            _context?.parentTree != null) {
-          final e = _createEvent();
-          _context!.parentTree.sendTreeExpand(_context!.parentTreeValue, e);
-        }
-      });
-    }
 
     final textColor = getTreeItemTextColor(
       state,
