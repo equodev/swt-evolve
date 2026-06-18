@@ -451,15 +451,15 @@ class GCDrawer extends GCDrawerBase {
 
   @override
   void onDrawArcintintintintintint(VGCDrawArcintintintintintint o) =>
-      _addArcShape(x: o.x ?? 0, y: o.y ?? 0, width: o.width ?? 0,
-          height: o.height ?? 0, startAngle: o.startAngle ?? 0,
-          arcAngle: o.arcAngle ?? 0, isFilled: false);
+      _addArcShape(x: o.x, y: o.y, width: o.width,
+          height: o.height, startAngle: o.startAngle,
+          arcAngle: o.arcAngle, isFilled: false);
 
   @override
   void onFillArcintintintintintint(VGCFillArcintintintintintint o) =>
-      _addArcShape(x: o.x ?? 0, y: o.y ?? 0, width: o.width ?? 0,
-          height: o.height ?? 0, startAngle: o.startAngle ?? 0,
-          arcAngle: o.arcAngle ?? 0, isFilled: true);
+      _addArcShape(x: o.x, y: o.y, width: o.width,
+          height: o.height, startAngle: o.startAngle,
+          arcAngle: o.arcAngle, isFilled: true);
 
   @override
   void onDrawFocusintintintint(VGCDrawFocusintintintint o) {
@@ -523,25 +523,25 @@ class GCDrawer extends GCDrawerBase {
   @override
   void onDrawLineintintintint(VGCDrawLineintintintint o) {
     _addShape(LineShape(
-        Offset((o.x1 ?? 0).toDouble(), (o.y1 ?? 0).toDouble()),
-        Offset((o.x2 ?? 0).toDouble(), (o.y2 ?? 0).toDouble()),
+        Offset(o.x1.toDouble(), o.y1.toDouble()),
+        Offset(o.x2.toDouble(), o.y2.toDouble()),
         applyAlpha(fg), lineWidth, lineCap, lineJoin, clipping));
   }
 
   @override
   void onDrawOvalintintintint(VGCDrawOvalintintintint o) =>
-      _addOvalShape(x: o.x ?? 0, y: o.y ?? 0, width: o.width ?? 0,
-          height: o.height ?? 0, isFilled: false);
+      _addOvalShape(x: o.x, y: o.y, width: o.width,
+          height: o.height, isFilled: false);
 
   @override
   void onFillOvalintintintint(VGCFillOvalintintintint o) =>
-      _addOvalShape(x: o.x ?? 0, y: o.y ?? 0, width: o.width ?? 0,
-          height: o.height ?? 0, isFilled: true);
+      _addOvalShape(x: o.x, y: o.y, width: o.width,
+          height: o.height, isFilled: true);
 
   @override
   void onDrawPointintint(VGCDrawPointintint o) {
     _addShape(PointShape(
-        Offset((o.x ?? 0).toDouble(), (o.y ?? 0).toDouble()),
+        Offset(o.x.toDouble(), o.y.toDouble()),
         applyAlpha(fg), clipping));
   }
 
@@ -566,13 +566,13 @@ class GCDrawer extends GCDrawerBase {
 
   @override
   void onDrawRectangleintintintint(VGCDrawRectangleintintintint o) =>
-      _addRectShape(x: o.x ?? 0, y: o.y ?? 0, width: o.width ?? 0,
-          height: o.height ?? 0, isFilled: false);
+      _addRectShape(x: o.x, y: o.y, width: o.width,
+          height: o.height, isFilled: false);
 
   @override
   void onFillRectangleintintintint(VGCFillRectangleintintintint o) =>
-      _addRectShape(x: o.x ?? 0, y: o.y ?? 0, width: o.width ?? 0,
-          height: o.height ?? 0, isFilled: true);
+      _addRectShape(x: o.x, y: o.y, width: o.width,
+          height: o.height, isFilled: true);
 
   @override
   void onFillRectangleRectangle(VGCFillRectangleRectangle o) {
@@ -584,48 +584,48 @@ class GCDrawer extends GCDrawerBase {
   @override
   void onDrawRoundRectangleintintintintintint(
       VGCDrawRoundRectangleintintintintintint o) =>
-      _addRoundRectShape(x: o.x ?? 0, y: o.y ?? 0, width: o.width ?? 0,
-          height: o.height ?? 0, arcWidth: o.arcWidth ?? 0,
-          arcHeight: o.arcHeight ?? 0, isFilled: false);
+      _addRoundRectShape(x: o.x, y: o.y, width: o.width,
+          height: o.height, arcWidth: o.arcWidth,
+          arcHeight: o.arcHeight, isFilled: false);
 
   @override
   void onFillRoundRectangleintintintintintint(
       VGCFillRoundRectangleintintintintintint o) =>
-      _addRoundRectShape(x: o.x ?? 0, y: o.y ?? 0, width: o.width ?? 0,
-          height: o.height ?? 0, arcWidth: o.arcWidth ?? 0,
-          arcHeight: o.arcHeight ?? 0, isFilled: true);
+      _addRoundRectShape(x: o.x, y: o.y, width: o.width,
+          height: o.height, arcWidth: o.arcWidth,
+          arcHeight: o.arcHeight, isFilled: true);
 
   @override
   void onDrawStringStringintint(VGCDrawStringStringintint o) =>
-      _drawText(text: o.string ?? '', x: (o.x ?? 0).toDouble(),
-          y: (o.y ?? 0).toDouble());
+      _drawText(text: o.string, x: o.x.toDouble(),
+          y: o.y.toDouble());
 
   @override
   void onDrawStringStringintintboolean(VGCDrawStringStringintintboolean o) =>
-      _drawText(text: o.string ?? '', x: (o.x ?? 0).toDouble(),
-          y: (o.y ?? 0).toDouble(), isTransparent: o.isTransparent ?? false);
+      _drawText(text: o.string, x: o.x.toDouble(),
+          y: o.y.toDouble(), isTransparent: o.isTransparent);
 
   @override
   void onDrawTextStringintint(VGCDrawTextStringintint o) =>
-      _drawText(text: o.string ?? '', x: (o.x ?? 0).toDouble(),
-          y: (o.y ?? 0).toDouble());
+      _drawText(text: o.string, x: o.x.toDouble(),
+          y: o.y.toDouble());
 
   @override
   void onDrawTextStringintintboolean(VGCDrawTextStringintintboolean o) =>
-      _drawText(text: o.string ?? '', x: (o.x ?? 0).toDouble(),
-          y: (o.y ?? 0).toDouble(), isTransparent: o.isTransparent ?? false);
+      _drawText(text: o.string, x: o.x.toDouble(),
+          y: o.y.toDouble(), isTransparent: o.isTransparent);
 
   @override
   void onDrawTextStringintintint(VGCDrawTextStringintintint o) =>
-      _drawText(text: o.string ?? '', x: (o.x ?? 0).toDouble(),
-          y: (o.y ?? 0).toDouble(), flags: o.flags ?? 0);
+      _drawText(text: o.string, x: o.x.toDouble(),
+          y: o.y.toDouble(), flags: o.flags);
 
   @override
   void onFillGradientRectangleintintintintboolean(
       VGCFillGradientRectangleintintintintboolean o) {
     final rect = _getRectFromArgs(o.x, o.y, o.width, o.height);
     _addShape(GradientRectShape(
-        rect, applyAlpha(fg), applyAlpha(bg), o.vertical ?? false, clipping));
+        rect, applyAlpha(fg), applyAlpha(bg), o.vertical, clipping));
   }
 
   @override
@@ -633,8 +633,8 @@ class GCDrawer extends GCDrawerBase {
       VGCCopyAreaintintintintintintboolean o) {
     final srcRect = _getRectFromArgs(o.srcX, o.srcY, o.width, o.height);
     final destOffset = Offset(
-      (o.destX ?? 0) - (o.srcX ?? 0).toDouble(),
-      (o.destY ?? 0) - (o.srcY ?? 0).toDouble(),
+      o.destX.toDouble() - o.srcX.toDouble(),
+      o.destY.toDouble() - o.srcY.toDouble(),
     );
     final copiedShapes = _staging
         .where((shape) => _shapeIntersects(shape, srcRect))
@@ -651,8 +651,8 @@ class GCDrawer extends GCDrawerBase {
       final imgW = o.image?.imageData?.width ?? 0;
       final imgH = o.image?.imageData?.height ?? 0;
       if (imgW <= 0 || imgH <= 0) return;
-      final x = (o.x ?? 0).toDouble();
-      final y = (o.y ?? 0).toDouble();
+      final x = o.x.toDouble();
+      final y = o.y.toDouble();
 
       // Determine the canvas size needed to include the area being captured.
       if (_baseImageCompleter != null) await _baseImageCompleter!.future;
@@ -1196,10 +1196,10 @@ class ImageShape extends Shape {
     if (replacement is String) {
       final pictureInfo = await vg.loadPicture(SvgStringLoader(replacement), null);
       final destRect = Rect.fromLTWH(
-        (opArgs.destX ?? 0).toDouble(),
-        (opArgs.destY ?? 0).toDouble(),
-        opArgs.destWidth == -1 ? pictureInfo.size.width : (opArgs.destWidth ?? 0).toDouble(),
-        opArgs.destHeight == -1 ? pictureInfo.size.height : (opArgs.destHeight ?? 0).toDouble(),
+        (opArgs.destX).toDouble(),
+        (opArgs.destY).toDouble(),
+        opArgs.destWidth == -1 ? pictureInfo.size.width : (opArgs.destWidth).toDouble(),
+        opArgs.destHeight == -1 ? pictureInfo.size.height : (opArgs.destHeight).toDouble(),
       );
       return ImageShape.svg(pictureInfo, destRect, clipRect: clipRect);
     }
@@ -1209,19 +1209,19 @@ class ImageShape extends Shape {
     if (uiImage == null) throw Exception('Failed to load image');
 
     final destRect = Rect.fromLTWH(
-      (opArgs.destX ?? 0).toDouble(),
-      (opArgs.destY ?? 0).toDouble(),
-      opArgs.destWidth == -1 ? uiImage.width.toDouble() : (opArgs.destWidth ?? 0).toDouble(),
-      opArgs.destHeight == -1 ? uiImage.height.toDouble() : (opArgs.destHeight ?? 0).toDouble(),
+      (opArgs.destX).toDouble(),
+      (opArgs.destY).toDouble(),
+      opArgs.destWidth == -1 ? uiImage.width.toDouble() : (opArgs.destWidth).toDouble(),
+      opArgs.destHeight == -1 ? uiImage.height.toDouble() : (opArgs.destHeight).toDouble(),
     );
 
     final srcRect = replacement != null
         ? Rect.fromLTWH(0, 0, uiImage.width.toDouble(), uiImage.height.toDouble())
         : Rect.fromLTWH(
-            (opArgs.srcX ?? 0).toDouble(),
-            (opArgs.srcY ?? 0).toDouble(),
-            opArgs.srcWidth == -1 ? uiImage.width.toDouble() : (opArgs.srcWidth ?? 0).toDouble(),
-            opArgs.srcHeight == -1 ? uiImage.height.toDouble() : (opArgs.srcHeight ?? 0).toDouble(),
+            (opArgs.srcX).toDouble(),
+            (opArgs.srcY).toDouble(),
+            opArgs.srcWidth == -1 ? uiImage.width.toDouble() : (opArgs.srcWidth).toDouble(),
+            opArgs.srcHeight == -1 ? uiImage.height.toDouble() : (opArgs.srcHeight).toDouble(),
           );
 
     return ImageShape.raster(uiImage, srcRect, destRect, clipRect: clipRect);

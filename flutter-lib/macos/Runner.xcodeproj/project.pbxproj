@@ -27,6 +27,8 @@
 		33CC10F32044A3C60003C045 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F22044A3C60003C045 /* Assets.xcassets */; };
 		33CC10F62044A3C60003C045 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F42044A3C60003C045 /* MainMenu.xib */; };
 		33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC11122044BFA00003C045 /* MainFlutterWindow.swift */; };
+		78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */; };
+		BB10000000000000000000A1 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = BB10000000000000000000A2 /* FlutterGeneratedPluginSwiftPackage */; };
 		DFEEAE182D5C2C7E0019684D /* bridge.h in Headers */ = {isa = PBXBuildFile; fileRef = DFEEAE162D5C2C7E0019684D /* bridge.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		DFEEAE192D5C2C7E0019684D /* bridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = DFEEAE172D5C2C7E0019684D /* bridge.mm */; };
 		DFEEAE1B2D5C2E210019684D /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DFEEAE1A2D5C2E210019684D /* Cocoa.framework */; };
@@ -34,7 +36,7 @@
 		DFEEAE252D5ED55B0019684D /* bridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFEEAE232D5ED55B0019684D /* bridge.swift */; };
 		DFEEAE2D2D5F22C20019684D /* FlutterBridge-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = DFEEAE222D5ED55A0019684D /* FlutterBridge-Bridging-Header.h */; };
 		DFEEAE2E2D60EE820019684D /* GeneratedPluginRegistrant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 335BBD1A22A9A15E00E9071D /* GeneratedPluginRegistrant.swift */; };
-		DFEEAE2F2D61000000000001 /* libFlutterBridge.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = DFEEAE112D5C2B770019684D /* libFlutterBridge.dylib */; };
+		DFEEAE2F2D61000000000001 /* libFlutterBridge.dylib in Copy FlutterBridge Library */ = {isa = PBXBuildFile; fileRef = DFEEAE112D5C2B770019684D /* libFlutterBridge.dylib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -92,10 +94,10 @@
 		DFEEAE302D61000000000002 /* Copy FlutterBridge Library */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
-			dstPath = "Contents";
+			dstPath = Contents;
 			dstSubfolderSpec = 1;
 			files = (
-				DFEEAE2F2D61000000000001 /* libFlutterBridge.dylib in CopyFiles */,
+				DFEEAE2F2D61000000000001 /* libFlutterBridge.dylib in Copy FlutterBridge Library */,
 			);
 			name = "Copy FlutterBridge Library";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -119,6 +121,7 @@
 		33E51913231747F40026EE4D /* DebugProfile.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DebugProfile.entitlements; sourceTree = "<group>"; };
 		33E51914231749380026EE4D /* Release.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = Release.entitlements; sourceTree = "<group>"; };
 		33E5194F232828860026EE4D /* AppInfo.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = AppInfo.xcconfig; sourceTree = "<group>"; };
+		78E0A7A72DC9AD7400C4905E /* FlutterGeneratedPluginSwiftPackage */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = FlutterGeneratedPluginSwiftPackage; path = ephemeral/Packages/FlutterGeneratedPluginSwiftPackage; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		DFEEAE112D5C2B770019684D /* libFlutterBridge.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libFlutterBridge.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -141,6 +144,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -149,12 +153,20 @@
 			buildActionMask = 2147483647;
 			files = (
 				DFEEAE1B2D5C2E210019684D /* Cocoa.framework in Frameworks */,
+				BB10000000000000000000A1 /* FlutterGeneratedPluginSwiftPackage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		305F2684E2AF80E073455473 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
 		331C80D6294CF71000263BE5 /* RunnerTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -182,6 +194,7 @@
 				331C80D6294CF71000263BE5 /* RunnerTests */,
 				33CC10EE2044A3C60003C045 /* Products */,
 				D73912EC22F37F3D000D13A0 /* Frameworks */,
+				305F2684E2AF80E073455473 /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -209,6 +222,7 @@
 		33CEB47122A05771004F2AC0 /* Flutter */ = {
 			isa = PBXGroup;
 			children = (
+				78E0A7A72DC9AD7400C4905E /* FlutterGeneratedPluginSwiftPackage */,
 				335BBD1A22A9A15E00E9071D /* GeneratedPluginRegistrant.swift */,
 				33CEB47222A05771004F2AC0 /* Flutter-Debug.xcconfig */,
 				33CEB47422A05771004F2AC0 /* Flutter-Release.xcconfig */,
@@ -293,6 +307,9 @@
 				33CC11202044C79F0003C045 /* PBXTargetDependency */,
 			);
 			name = Runner;
+			packageProductDependencies = (
+				78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */,
+			);
 			productName = Runner;
 			productReference = 33CC10ED2044A3C60003C045 /* swtflutter.app */;
 			productType = "com.apple.product-type.application";
@@ -311,9 +328,10 @@
 			dependencies = (
 				DFEEAE1F2D5C2F4B0019684D /* PBXTargetDependency */,
 			);
-			name = FlutterBridge;
 			packageProductDependencies = (
+				BB10000000000000000000A2 /* FlutterGeneratedPluginSwiftPackage */,
 			);
+			name = FlutterBridge;
 			productName = FlutterBridge;
 			productReference = DFEEAE112D5C2B770019684D /* libFlutterBridge.dylib */;
 			productType = "com.apple.product-type.library.dynamic";
@@ -362,6 +380,9 @@
 				Base,
 			);
 			mainGroup = 33CC10E42044A3C60003C045;
+			packageReferences = (
+				781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "FlutterGeneratedPluginSwiftPackage" */,
+			);
 			productRefGroup = 33CC10EE2044A3C60003C045 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -584,7 +605,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = 11.5;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -666,7 +687,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = 11.5;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = NO;
 				SDKROOT = macosx;
@@ -716,7 +737,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = 11.5;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -803,9 +824,7 @@
 				EXECUTABLE_PREFIX = lib;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				HEADER_SEARCH_PATHS = (
-					"$(JAVA_HEADER_SEARCH_PATHS)",
-				);
+				HEADER_SEARCH_PATHS = "$(JAVA_HEADER_SEARCH_PATHS)";
 				INSTALL_PATH = "@rpath";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
@@ -844,9 +863,7 @@
 				EXECUTABLE_PREFIX = lib;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				HEADER_SEARCH_PATHS = (
-					"$(JAVA_HEADER_SEARCH_PATHS)",
-				);
+				HEADER_SEARCH_PATHS = "$(JAVA_HEADER_SEARCH_PATHS)";
 				INSTALL_PATH = "@rpath";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
@@ -882,9 +899,7 @@
 				EXECUTABLE_PREFIX = lib;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				HEADER_SEARCH_PATHS = (
-					"$(JAVA_HEADER_SEARCH_PATHS)",
-				);
+				HEADER_SEARCH_PATHS = "$(JAVA_HEADER_SEARCH_PATHS)";
 				INSTALL_PATH = "@rpath";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
@@ -952,6 +967,24 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "FlutterGeneratedPluginSwiftPackage" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FlutterGeneratedPluginSwiftPackage;
+		};
+		BB10000000000000000000A2 /* FlutterGeneratedPluginSwiftPackage */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FlutterGeneratedPluginSwiftPackage;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 33CC10E52044A3C60003C045 /* Project object */;
 }

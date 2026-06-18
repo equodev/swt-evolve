@@ -80,9 +80,7 @@ TextStyle getTextStyle({
   final useSwtFonts = getConfigFlags().use_swt_fonts ?? false;
 
   if (useSwtFonts && font != null) {
-    return FontUtils.textStyleFromVFont(font, context, color: textColor, inherit: false) ??
-        baseTextStyle?.copyWith(color: textColor) ??
-        TextStyle(color: textColor);
+    return FontUtils.textStyleFromVFont(font, context, color: textColor, inherit: false);
   }
 
   TextStyle result =
@@ -90,9 +88,9 @@ TextStyle getTextStyle({
   if (font != null &&
       font.fontData != null &&
       font.fontData!.isNotEmpty &&
-      (font.fontData!.first.style ?? 0) != 0) {
+      (font.fontData!.first.style) != 0) {
     final (fontWeight, fontStyle) = FontUtils.convertSwtFontStyle(
-      font.fontData!.first.style ?? 0,
+      font.fontData!.first.style,
     );
     result = result.copyWith(fontWeight: fontWeight, fontStyle: fontStyle);
   }

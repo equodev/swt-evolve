@@ -8,9 +8,28 @@
 
 #include <dlfcn.h>    // dladdr
 #include <filesystem> // std::filesystem
+#include <stdlib.h>   // setenv
 #include <string>     // std::string
 
 #include "flutter/generated_plugin_registrant.h"
+
+// The webview_all Browser backend on Linux is WebKitGTK, which defaults to a
+// hardware GL renderer (accelerated compositing / DMABUF). Now that the FlView
+// is no longer destructively reparented (see the GtkOverlay note in
+// InitializeFlutterWindow), WebKit's GL renderer normally works and composites
+// correctly as an overlay child, so it is left enabled by default. Some
+// embedded/X11 environments without DRI3 may still need it forced onto the
+// software renderer — opt in at runtime with EQUO_WEBKIT_SOFTWARE=1 (no rebuild
+// needed). Forced software rendering can itself make the overlaid webview paint
+// black, which is why it is NOT the default. Runs at .so load, before any
+// GTK/WebKit use.
+__attribute__((constructor)) static void EquoConfigureWebKit() {
+  const char* software = getenv("EQUO_WEBKIT_SOFTWARE");
+  if (software != nullptr && software[0] == '1') {
+    setenv("WEBKIT_DISABLE_COMPOSITING_MODE", "1", 1);
+    setenv("WEBKIT_DISABLE_DMABUF_RENDERER", "1", 1);
+  }
+}
 
 struct FlutterWindow {
   GtkWidget *view;
@@ -116,14 +135,31 @@ uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
   FlView *view = fl_view_new(project);
   GtkWidget *view_widget = GTK_WIDGET(view);
 
-  // Store references - we'll create the SWT container from Java side
-  widget_context->view = view_widget;
+  // Pre-wrap the FlView in a GtkOverlay and embed THAT into the SWT composite.
+  // The webview_all (WebKitGTK) plugin's ensure_overlay() needs the FlView to
+  // live inside a GtkOverlay; when it doesn't, the plugin destructively
+  // reparents the already-realized FlView (gtk_container_remove + re-add),
+  // which recreates its GdkWindow and invalidates Flutter's live GL context —
+  // the X server then aborts the process with GLX BadAccess on
+  // glXMakeContextCurrent (request_code 151, minor_code 26). By providing the
+  // overlay up front, the plugin takes its non-destructive "parent is already
+  // an overlay" path and the context survives.
+  GtkWidget *overlay = gtk_overlay_new();
+  gtk_widget_set_hexpand(view_widget, TRUE);
+  gtk_widget_set_vexpand(view_widget, TRUE);
+  gtk_container_add(GTK_CONTAINER(overlay), view_widget);
+  gtk_widget_show(view_widget);
+  gtk_widget_show(overlay);
 
-  g_print("Flutter initialized with parent: %p, view: %p\n", parent_widget, view_widget);
-  
+  // The overlay is the widget the Java side reparents into the SWT container.
+  widget_context->view = overlay;
+
+  g_print("Flutter initialized with parent: %p, overlay: %p, view: %p\n",
+          parent_widget, overlay, view_widget);
+
   // Register plugins
   fl_register_plugins(FL_PLUGIN_REGISTRY(view));
-  
+
   return (uintptr_t)widget_context;
 }
 

@@ -339,7 +339,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     if (vRange.font?.fontData != null && vRange.font!.fontData!.isNotEmpty) {
       final fontData = vRange.font!.fontData!.first;
       fontSize = fontData.height?.toDouble() ?? fontSize;
-      fontFamily = fontData.name ?? fontFamily;
+      fontFamily = fontData.name;
     }
 
     // Build decoration
@@ -739,7 +739,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         } else {
           newShape = currentShape.clearSelection();
         }
-        newShape = (newShape ?? currentShape).moveCaret(newOffset);
+        newShape = (newShape).moveCaret(newOffset);
       } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
         final newOffset = (currentShape.caretInfo?.offset ?? 0) + 1;
         if (isShiftPressed) {
@@ -747,7 +747,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         } else {
           newShape = currentShape.clearSelection();
         }
-        newShape = (newShape ?? currentShape).moveCaret(newOffset);
+        newShape = (newShape).moveCaret(newOffset);
       } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
         final newOffset = _calculateLineBasedVerticalNavigation(
           currentShape,
@@ -758,7 +758,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         } else {
           newShape = currentShape.clearSelection();
         }
-        newShape = (newShape ?? currentShape).moveCaret(newOffset);
+        newShape = (newShape).moveCaret(newOffset);
       } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
         final newOffset = _calculateLineBasedVerticalNavigation(
           currentShape,
@@ -769,7 +769,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         } else {
           newShape = currentShape.clearSelection();
         }
-        newShape = (newShape ?? currentShape).moveCaret(newOffset);
+        newShape = (newShape).moveCaret(newOffset);
       } else if (event.logicalKey == LogicalKeyboardKey.home) {
         int newOffset;
         if (currentShape.wordWrap == true) {
@@ -782,7 +782,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         } else {
           newShape = currentShape.clearSelection();
         }
-        newShape = (newShape ?? currentShape).moveCaret(newOffset);
+        newShape = (newShape).moveCaret(newOffset);
       } else if (event.logicalKey == LogicalKeyboardKey.end) {
         int newOffset;
         if (currentShape.wordWrap == true) {
@@ -795,7 +795,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         } else {
           newShape = currentShape.clearSelection();
         }
-        newShape = (newShape ?? currentShape).moveCaret(newOffset);
+        newShape = (newShape).moveCaret(newOffset);
       } else if (event.logicalKey == LogicalKeyboardKey.keyA &&
           (event.data.isControlPressed || event.data.isMetaPressed)) {
         newShape = currentShape.selectAll();

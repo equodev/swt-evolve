@@ -9,8 +9,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URLDecoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -83,6 +91,7 @@ public class WebFlutterServer {
     private final int backgroundColor;
     private final int parentBackgroundColor;
     private final String browserCommand;
+    private final boolean serveServiceWorker;
 
     private HttpServer httpServer;
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -97,6 +106,7 @@ public class WebFlutterServer {
         this.backgroundColor = builder.backgroundColor;
         this.parentBackgroundColor = builder.parentBackgroundColor;
         this.browserCommand = builder.browserCommand;
+        this.serveServiceWorker = builder.serveServiceWorker;
     }
 
     /**
@@ -118,7 +128,9 @@ public class WebFlutterServer {
         }
 
         httpServer = HttpServer.create(new InetSocketAddress("localhost", httpPort), 0);
-        httpServer.createContext("/", new StaticFileHandler(webDirectory, commPort, widgetId, widgetName));
+        httpServer.createContext("/", new StaticFileHandler(webDirectory, commPort, widgetId, widgetName, serveServiceWorker));
+        httpServer.createContext("/proxy", new ProxyHandler());
+        httpServer.createContext("/equo-browser-function", new BrowserFunctionHandler());
         httpServer.setExecutor(Executors.newFixedThreadPool(4, r -> {
             Thread t = new Thread(r, "WebFlutterServer-worker");
             t.setDaemon(true);
@@ -269,12 +281,14 @@ public class WebFlutterServer {
         private final int commPort;
         private final long widgetId;
         private final String widgetName;
+        private final boolean serveServiceWorker;
 
-        StaticFileHandler(File rootDir, int commPort, long widgetId, String widgetName) {
+        StaticFileHandler(File rootDir, int commPort, long widgetId, String widgetName, boolean serveServiceWorker) {
             this.rootDir = rootDir.toPath().toAbsolutePath().normalize();
             this.commPort = commPort;
             this.widgetId = widgetId;
             this.widgetName = widgetName;
+            this.serveServiceWorker = serveServiceWorker;
         }
 
         @Override
@@ -300,6 +314,16 @@ public class WebFlutterServer {
                     if (requestPath.startsWith("/")) {
                         requestPath = requestPath.substring(1);
                     }
+                }
+
+                // Optionally refuse the Flutter service worker so the page loads directly. Its
+                // first-load install/activate races (a cold install on a fresh browser profile can
+                // hang before the app connects); a deterministic boot matters for the test harness.
+                // 404 (not the index.html SPA fallback) so registration cleanly fails and the loader
+                // falls back to fetching the app directly.
+                if (!serveServiceWorker && requestPath.endsWith("flutter_service_worker.js")) {
+                    sendError(exchange, 404, "service worker disabled");
+                    return;
                 }
 
                 // Prevent directory traversal
@@ -345,7 +369,8 @@ public class WebFlutterServer {
                     content = content
                             .replace("{{EQUO_COMM_PORT}}", String.valueOf(commPort))
                             .replace("{{EQUO_WIDGETID}}", String.valueOf(widgetId))
-                            .replace("{{EQUO_WIDGETNAME}}", widgetName != null ? widgetName : "");
+                            .replace("{{EQUO_WIDGETNAME}}", widgetName != null ? widgetName : "")
+                            .replace("{{EQUO_BROWSER_PROXY}}", String.valueOf(proxyEnabled()));
                     byte[] bytes = content.getBytes(java.nio.charset.StandardCharsets.UTF_8);
                     exchange.sendResponseHeaders(200, bytes.length);
                     try (OutputStream os = exchange.getResponseBody()) {
@@ -463,6 +488,159 @@ public class WebFlutterServer {
     }
 
     // -------------------------------------------------------------------------
+    // Same-origin proxy (opt-in)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Whether the same-origin Browser proxy is enabled, via the system property
+     * {@code dev.equo.swt.web.proxy} set to {@code all} or a comma-separated host whitelist.
+     * Off by default — it is a real reverse proxy (SSRF surface), so keep it opt-in.
+     */
+    static boolean proxyEnabled() {
+        String p = System.getProperty("dev.equo.swt.web.proxy");
+        return p != null && !p.isBlank();
+    }
+
+    /** Whether {@code url}'s host is permitted by the proxy property ({@code all} or whitelist). */
+    static boolean proxyAllowed(String url) {
+        String p = System.getProperty("dev.equo.swt.web.proxy");
+        if (p == null || p.isBlank()) return false;
+        if ("all".equalsIgnoreCase(p.trim())) return true;
+        String host;
+        try {
+            host = URI.create(url).getHost();
+        } catch (Exception e) {
+            return false;
+        }
+        if (host == null) return false;
+        for (String allowed : p.split(",")) {
+            allowed = allowed.trim();
+            if (!allowed.isEmpty() && (host.equals(allowed) || host.endsWith("." + allowed))) return true;
+        }
+        return false;
+    }
+
+    /** Extracts a single URL-decoded query parameter from a raw query string. */
+    private static String queryParam(String rawQuery, String name) {
+        if (rawQuery == null) return null;
+        for (String pair : rawQuery.split("&")) {
+            int eq = pair.indexOf('=');
+            if (eq > 0 && pair.substring(0, eq).equals(name)) {
+                return URLDecoder.decode(pair.substring(eq + 1), StandardCharsets.UTF_8);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Fetches an external URL server-side and re-serves it from this origin, so the Browser's iframe
+     * content becomes same-origin (enabling eval/execute/BrowserFunction). Strips framing-blocking
+     * headers and injects a {@code <base href>} so the page's relative sub-resources still resolve
+     * against the original site.
+     */
+    private static class ProxyHandler implements HttpHandler {
+
+        private final HttpClient client =
+                HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            try {
+                if (!proxyEnabled()) { sendPlain(exchange, 403, "proxy disabled"); return; }
+                String target = queryParam(exchange.getRequestURI().getRawQuery(), "url");
+                if (target == null || !proxyAllowed(target)) { sendPlain(exchange, 403, "url not allowed"); return; }
+
+                HttpRequest req = HttpRequest.newBuilder(URI.create(target)).GET().build();
+                HttpResponse<byte[]> resp = client.send(req, HttpResponse.BodyHandlers.ofByteArray());
+                String contentType = resp.headers().firstValue("content-type").orElse("text/html; charset=utf-8");
+                byte[] body = resp.body();
+                if (contentType.toLowerCase().contains("html")) {
+                    body = injectBaseHref(new String(body, StandardCharsets.UTF_8), resp.uri().toString())
+                            .getBytes(StandardCharsets.UTF_8);
+                }
+                // Serve from this origin; deliberately do NOT copy X-Frame-Options / CSP frame-ancestors.
+                exchange.getResponseHeaders().set("Content-Type", contentType);
+                exchange.getResponseHeaders().set("Cache-Control", "no-store");
+                exchange.sendResponseHeaders(200, body.length);
+                try (OutputStream os = exchange.getResponseBody()) { os.write(body); }
+            } catch (Exception e) {
+                LOG.log(Level.WARNING, "proxy error for " + exchange.getRequestURI(), e);
+                try { sendPlain(exchange, 502, "proxy error"); } catch (IOException ignored) { }
+            } finally {
+                exchange.close();
+            }
+        }
+
+        private static String injectBaseHref(String html, String finalUrl) {
+            String baseTag = "<base href=\"" + finalUrl.replace("\"", "%22") + "\">";
+            Matcher m = Pattern.compile("<head[^>]*>", Pattern.CASE_INSENSITIVE).matcher(html);
+            return m.find() ? html.substring(0, m.end()) + baseTag + html.substring(m.end())
+                            : baseTag + html;
+        }
+
+        private static void sendPlain(HttpExchange exchange, int code, String msg) throws IOException {
+            byte[] b = msg.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=utf-8");
+            exchange.sendResponseHeaders(code, b.length);
+            try (OutputStream os = exchange.getResponseBody()) { os.write(b); }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // BrowserFunction bridge (same-origin, synchronous)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Backs the JS shim injected into a same-origin Browser iframe for each
+     * registered {@code BrowserFunction} (see {@code EvolveBrowser.createFunction}).
+     * The shim does a blocking XHR here with {@code {browserId, name, args}};
+     * this handler dispatches to the Java callback via
+     * {@link BrowserFunctionRegistry} (which runs it on the SWT display thread)
+     * and returns {@code {"value": <json>}} or {@code {"error": <message>}}. The
+     * iframe is served from this origin (via the proxy), so no CORS is needed.
+     */
+    private static class BrowserFunctionHandler implements HttpHandler {
+
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            try {
+                if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                    sendJson(exchange, 405, "{\"error\":\"method not allowed\"}");
+                    return;
+                }
+                String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                Object parsed = EvalJson.parse(body);
+                if (!(parsed instanceof Map)) {
+                    sendJson(exchange, 400, "{\"error\":\"bad request\"}");
+                    return;
+                }
+                Map<?, ?> m = (Map<?, ?>) parsed;
+                long browserId = m.get("browserId") instanceof Number
+                        ? ((Number) m.get("browserId")).longValue() : -1;
+                String name = String.valueOf(m.get("name"));
+                Object argsObj = m.get("args");
+                Object[] args = (argsObj instanceof Object[]) ? (Object[]) argsObj : new Object[0];
+
+                Object value = BrowserFunctionRegistry.invoke(browserId, name, args);
+                sendJson(exchange, 200, "{\"value\":" + EvalJson.encode(value) + "}");
+            } catch (Exception e) {
+                String msg = e.getMessage() != null ? e.getMessage() : e.toString();
+                sendJson(exchange, 200, "{\"error\":" + EvalJson.encode(msg) + "}");
+            } finally {
+                exchange.close();
+            }
+        }
+
+        private static void sendJson(HttpExchange exchange, int code, String json) throws IOException {
+            byte[] b = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
+            exchange.getResponseHeaders().set("Cache-Control", "no-store");
+            exchange.sendResponseHeaders(code, b.length);
+            try (OutputStream os = exchange.getResponseBody()) { os.write(b); }
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Builder
     // -------------------------------------------------------------------------
 
@@ -480,6 +658,7 @@ public class WebFlutterServer {
         private int backgroundColor = 0xFFFFFF;
         private int parentBackgroundColor = 0xFFFFFF;
         private String browserCommand;
+        private boolean serveServiceWorker = true;
 
         public Builder() {
         }
@@ -554,6 +733,17 @@ public class WebFlutterServer {
          */
         public Builder browserCommand(String command) {
             this.browserCommand = command;
+            return this;
+        }
+
+        /**
+         * When {@code false}, the server refuses {@code flutter_service_worker.js} so the page loads
+         * directly without registering the Flutter service worker. Defaults to {@code true}
+         * (production keeps the SW for offline caching). Tests/automation set this {@code false} for a
+         * deterministic boot — a cold SW install on a fresh browser profile can race and hang.
+         */
+        public Builder serveServiceWorker(boolean serve) {
+            this.serveServiceWorker = serve;
             return this;
         }
 

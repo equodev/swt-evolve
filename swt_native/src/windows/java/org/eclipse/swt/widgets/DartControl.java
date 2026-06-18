@@ -4128,7 +4128,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     @Override
-    int getAutoscalingZoom() {
+    public int getAutoscalingZoom() {
         if (isAutoscalingDisabled()) {
             return 100;
         }
@@ -4144,14 +4144,14 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     int computeGetBoundsZoom() {
         if (parent != null && !isAutoscalingDisabled()) {
-            return ((DartControl) parent.getImpl()).getAutoscalingZoom();
+            return parent.getImpl().getAutoscalingZoom();
         }
         return getAutoscalingZoom();
     }
 
     int computeBoundsZoom() {
         if (parent != null) {
-            return ((DartControl) parent.getImpl()).getAutoscalingZoom();
+            return parent.getImpl().getAutoscalingZoom();
         }
         return getAutoscalingZoom();
     }

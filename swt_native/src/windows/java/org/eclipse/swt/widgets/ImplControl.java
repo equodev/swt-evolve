@@ -88,4 +88,6 @@ public interface ImplControl extends ImplWidget {
     void updateBackgroundMode();
 
     void updateLayout(boolean resize, boolean all);
+
+    int getAutoscalingZoom();
 }

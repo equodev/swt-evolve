@@ -79,7 +79,7 @@ public class BrowserFunction {
      */
     public BrowserFunction(Browser browser, String name) {
         this((IBrowserFunction) null);
-//        setImpl(new SwtBrowserFunction(browser, name, this));
+        setImpl(new DartBrowserFunction(browser, name, this));
     }
 
     /**
@@ -121,12 +121,12 @@ public class BrowserFunction {
      */
     public BrowserFunction(Browser browser, String name, boolean top, String[] frameNames) {
         this((IBrowserFunction) null);
-//        setImpl(new SwtBrowserFunction(browser, name, top, frameNames, this));
+        setImpl(new DartBrowserFunction(browser, name, top, frameNames, this));
     }
 
     BrowserFunction(Browser browser, String name, boolean top, String[] frameNames, boolean create) {
         this((IBrowserFunction) null);
-//        setImpl(new SwtBrowserFunction(browser, name, top, frameNames, create, this));
+        setImpl(new DartBrowserFunction(browser, name, top, frameNames, create, this));
     }
 
     /**

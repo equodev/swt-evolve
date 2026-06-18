@@ -4,6 +4,7 @@ import '../gen/messagebox.dart';
 import '../gen/swt.dart';
 import '../theme/theme_extensions/button_theme_extension.dart';
 import '../theme/theme_extensions/message_box_theme_extension.dart';
+import 'utils/pointer.dart';
 
 void showMessageBoxDialog(
   BuildContext context,
@@ -13,12 +14,12 @@ void showMessageBoxDialog(
   showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (ctx) => _MessageBoxDialog(
+    builder: (ctx) => pointerInterceptor(_MessageBoxDialog(
       style: value.style ?? 0,
       title: value.text ?? '',
       message: value.message ?? '',
       dialogId: dialogId,
-    ),
+    )),
   );
 }
 

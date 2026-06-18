@@ -75,7 +75,7 @@ class FontUtils {
     final fontSize = needsDpiScaling
         ? fontHeightPoints * (96 / 72)
         : fontHeightPoints;
-    final swtStyle = fontData.style ?? 0;
+    final swtStyle = fontData.style;
 
     final (fontWeight, fontStyle) = convertSwtFontStyle(swtStyle);
     return TextStyle(

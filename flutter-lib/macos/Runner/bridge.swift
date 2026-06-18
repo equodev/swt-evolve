@@ -29,7 +29,7 @@ class FlutterBridgeController {
         let project = FlutterDartProject(precompiledDartBundle: Bundle(path: frameworkPath))
         project.dartEntrypointArguments = arguments
         flutterViewController = FlutterViewController.init(project: project)
-//         print("FlutterBridgeController.initialize 2")
+        RegisterGeneratedPlugins(registry: flutterViewController!)
 
         // If parent view is provided, add Flutter view as a subview
         if let parent = parentView {
@@ -86,7 +86,6 @@ class FlutterBridgeController {
 
             self.window = window
         }
-        RegisterGeneratedPlugins(registry: flutterViewController!)
         return nil
     }
 
@@ -174,9 +173,17 @@ public func SetBounds(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: 
     controller!.setFrame(x: x, y: y, w: width, h: height, vx: vx, vy: vy, vw: vwidth, vh: vheight)
 }
 
-// No-op on macOS - message pumping not needed (run loop handles it automatically)
+// Spin the main run loop briefly so the Flutter engine can make progress while a
+// caller busy-waits for a response (e.g. the size-test harness's assertCompletes
+// loop). Under Flutter 3.35's merged platform/UI thread the engine's UI work runs
+// on the platform (main) run loop, so a thread that blocks without servicing that
+// run loop never lets a frame render — unlike the pre-3.35 separate-UI-thread
+// engine, where rendering progressed independently and this was a no-op. In the
+// real product the SWT event loop already drives the run loop; this matters for
+// callers that block the main thread themselves.
 @_cdecl("Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_PumpMessages")
 public func PumpMessages(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, maxMessages: jint) -> jint {
+    RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.002))
     return 0
 }
 

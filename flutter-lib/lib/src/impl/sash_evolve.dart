@@ -201,8 +201,8 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
     if (bounds != null) {
       _enterLocalEditMode();
 
-      _lastX = _localX ?? bounds.x ?? 0;
-      _lastY = _localY ?? bounds.y ?? 0;
+      _lastX = _localX ?? bounds.x;
+      _lastY = _localY ?? bounds.y;
 
       _startX = details.globalPosition.dx.round() - _lastX;
       _startY = details.globalPosition.dy.round() - _lastY;

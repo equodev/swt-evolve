@@ -104,7 +104,10 @@ public class Browser extends Composite {
      * @since 3.2
      */
     public static void clearSessions() {
-        CHROMIUM.invokeStatic("clearSessions", new Class<?>[0]);
+        if (Config.isEquo(Browser.class))
+            DartBrowser.clearSessions();
+        else
+            CHROMIUM.invokeStatic("clearSessions", new Class<?>[0]);
     }
 
     /**
@@ -123,8 +126,10 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public static String getCookie(String name, String url) {
-//        return SwtBrowser.getCookie(name, url);
-        return (String) CHROMIUM.invokeStatic("getCookie", new Class<?>[]{ String.class, String.class }, name, url);
+        if (Config.isEquo(Browser.class))
+            return DartBrowser.getCookie(name, url);
+        else
+            return (String) CHROMIUM.invokeStatic("getCookie", new Class<?>[]{ String.class, String.class }, name, url);
     }
 
     /**
@@ -152,8 +157,10 @@ public class Browser extends Composite {
      * @since 3.5
      */
     public static boolean setCookie(String value, String url) {
-//        return SwtBrowser.setCookie(value, url);
-        return (boolean) CHROMIUM.invokeStatic("setCookie", new Class<?>[]{ String.class, String.class }, value, url);
+        if (Config.isEquo(Browser.class))
+            return DartBrowser.setCookie(value, url);
+        else
+            return (boolean) CHROMIUM.invokeStatic("setCookie", new Class<?>[]{ String.class, String.class }, value, url);
     }
 
     /**
@@ -254,7 +261,7 @@ public class Browser extends Composite {
      * @since 3.0
      */
     public void addOpenWindowListener(OpenWindowListener listener) {
-//        getImpl().addOpenWindowListener(listener);
+        getImpl().addOpenWindowListener(listener);
     }
 
     /**

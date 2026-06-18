@@ -293,6 +293,15 @@ public abstract class FlutterBridge {
         bridge = staticBridge;
     }
 
+    /**
+     * The globally-injected bridge, or {@code null} in production. A test/bench harness injects one
+     * (via {@link #set}) before any Display is created; when present it owns the comm + client and
+     * every widget routes through it (see {@link #of}), so per-Display bridges must not be created.
+     */
+    public static FlutterBridge injected() {
+        return bridge;
+    }
+
     public static void on(DartWidget widget, String listener, String event, Consumer<Event> cb) {
         String eventName = event(widget, listener, event);
         commFor(widget).on(eventName, Event.class, ev -> {

@@ -106,7 +106,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     final tabItems = getTabItems();
     final tabBodies = getTabBodies();
 
-    final isTabBottom = state.tabPosition == SWT.BOTTOM ?? false;
+    final isTabBottom = state.tabPosition == SWT.BOTTOM;
     final isMinimized = state.minimized ?? false;
 
     final double? tabHeight = 32;
@@ -464,7 +464,7 @@ class _CTabBarState extends State<_CTabBar> {
     List<CTabItem> tabs,
     double? height,
   ) {
-    final isTabBottom = widget.state.tabPosition == SWT.BOTTOM ?? false;
+    final isTabBottom = widget.state.tabPosition == SWT.BOTTOM;
     Widget tabBarContent = Row(
       children: [
         Expanded(
@@ -515,7 +515,7 @@ class _CTabBarState extends State<_CTabBar> {
     double? height,
     VComposite? topRightComposite,
   ) {
-    final isTabBottom = widget.state.tabPosition == SWT.BOTTOM ?? false;
+    final isTabBottom = widget.state.tabPosition == SWT.BOTTOM;
     final showMinimizeButton = widget.state.minimizeVisible ?? false;
     final showMaximizeButton = widget.state.maximizeVisible ?? false;
     final isMinimized = widget.state.minimized ?? false;

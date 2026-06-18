@@ -169,13 +169,19 @@ public class FlutterLibraryLoader {
 
             File lib1File = new File(targetDir, RUNNER_DIR_NAME + SEP + WIN_LIB1_NAME);
             File libFile = new File(targetDir, RUNNER_DIR_NAME + SEP + WIN_LIB_NAME);
+            File libWebFile1 = new File(targetDir, RUNNER_DIR_NAME + SEP + "WebView2Loader.dll");
+            File libWebFile = new File(targetDir, RUNNER_DIR_NAME + SEP + "webview_all_windows_plugin.dll");
             if (!libFile.exists() || !lib1File.exists()) {
                 throw new IOException("Essential Windows library not found after extraction: " + libFile.getAbsolutePath() + ", "+lib1File.getAbsolutePath());
             }
             loadLibrary(lib1File.getAbsolutePath());
+            loadLibrary(libWebFile1.getAbsolutePath());
+            loadLibrary(libWebFile.getAbsolutePath());
             loadLibrary(libFile.getAbsolutePath());
         } else {
             loadOSLibraries(WIN_X64_RELEASE, SEP + WIN_LIB1_NAME);
+            loadOSLibraries(WIN_X64_RELEASE, SEP + "WebView2Loader.dll");
+            loadOSLibraries(WIN_X64_RELEASE, SEP + "webview_all_windows_plugin.dll");
             loadOSLibraries(WIN_X64_RELEASE, SEP + WIN_LIB_NAME);
         }
     }
