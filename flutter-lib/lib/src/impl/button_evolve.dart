@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../gen/button.dart';
 import '../gen/swt.dart';
+import '../impl/composite_evolve.dart';
 import '../impl/control_evolve.dart';
 import '../theme/theme_extensions/button_theme_extension.dart';
 import '../theme/theme_settings/button_theme_settings.dart';
@@ -535,14 +536,62 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
   }
 
   void _onPressed() {
-    if (hasStyle(state.style, SWT.CHECK) ||
-        hasStyle(state.style, SWT.RADIO) ||
+    final isRadio = hasStyle(state.style, SWT.RADIO);
+    if (isRadio ||
+        hasStyle(state.style, SWT.CHECK) ||
         hasStyle(state.style, SWT.TOGGLE)) {
       setState(() {
         state.selection = !(state.selection ?? false);
       });
     }
+    // A radio selecting itself must immediately deselect the other radios in its
+    // group, so the UI never shows more than one selected even before Java's
+    // selectRadio round-trip lands (issue #597). Java remains the source of
+    // truth and confirms the same result.
+    if (isRadio && (state.selection ?? false)) {
+      _deselectSiblingRadios();
+    }
     widget.sendSelectionSelection(state, null);
+  }
+
+  /// Deselect the other RADIO buttons in the same group. The group is the
+  /// nearest enclosing Composite subtree (SWT groups radios by parent); nested
+  /// composites are independent groups. Falls back to the whole tree if no
+  /// composite ancestor is found.
+  void _deselectSiblingRadios() {
+    Element? scope;
+    context.visitAncestorElements((el) {
+      if (el is StatefulElement && el.state is CompositeImpl) {
+        scope = el;
+        return false; // stop at the nearest enclosing composite
+      }
+      return true;
+    });
+    final Element? root = scope ?? WidgetsBinding.instance.rootElement;
+    if (root == null) return;
+
+    void visit(Element el) {
+      if (el is StatefulElement) {
+        final st = el.state;
+        // Don't descend into a nested composite — that's a separate group.
+        if (st is CompositeImpl && !identical(el, root)) return;
+        if (st is ButtonImpl &&
+            !identical(st, this) &&
+            hasStyle(st.state.style, SWT.RADIO)) {
+          st._deselectByRadioGroup();
+          return;
+        }
+      }
+      el.visitChildren(visit);
+    }
+
+    root.visitChildren(visit);
+  }
+
+  void _deselectByRadioGroup() {
+    if (mounted && (state.selection ?? false)) {
+      setState(() => state.selection = false);
+    }
   }
 
   void _onHover(bool isHovering) {

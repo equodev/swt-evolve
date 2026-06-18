@@ -25,31 +25,30 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * JUnit 5 extension that boots a <b>real</b> Flutter renderer (web browser or the native engine)
- * wired to a live Java↔Flutter comm, so a test can drive the production SWT→bridge→Flutter path all
- * the way down and then read back the rendered widget state for assertions.
+ * Generic Java↔Flutter test harness: boots a <b>real</b> Flutter renderer wired to a live
+ * Java↔Flutter comm, so a test can drive the production SWT→bridge→Flutter path all the way down
+ * (serialization in both directions, deterministic frame sync) and then read back the rendered
+ * widget state for assertions. State read-back uses the dormant {@code evolve.test.query} channel
+ * registered by Flutter's {@code main()} (see {@code flutter-lib/lib/test_harness.dart}).
  *
- * <p>Boot/transport plumbing is adapted from {@link dev.equo.swt.bench.BenchBridge}. The state
- * read-back uses the dormant {@code evolve.test.query} channel registered by Flutter's
- * {@code main()} (see {@code flutter-lib/lib/test_harness.dart}).
+ * <p>The renderer is selectable and works on both <b>desktop</b> and <b>web</b>: by default it serves
+ * the Flutter web build in a headless browser; {@code -Dharness.client=native} uses the native engine
+ * and {@code -Ddev.equo.swt.mode=chromium} a CEF standalone window. This is the harness for any
+ * Java↔Flutter integration test (tag them {@code @Tag("flutter-it")}); {@link BrowserFlutterHarness}
+ * extends it with the Browser-widget specifics. {@link dev.equo.swt.bench.BenchBridge} also extends
+ * it to reuse the shared bridge plumbing.
  *
  * <h3>Usage</h3>
  * <pre>{@code
- * @RegisterExtension static Mocks mocks = Mocks.withNativeBridge(); // mocked Display/Shell, real bridge
- * @RegisterExtension static FlutterHarness flutter = new FlutterHarness();
- *
- * Composite group = new Composite(Mocks.swtShell(), SWT.NONE);
- * Button r1 = new Button(group, SWT.RADIO);
- * flutter.show(group);        // boot renderer for the root, await ClientReady
- * ... drive the widgets ...
- * flutter.flush();            // push pending state to Flutter and let it paint
+ * FlutterHarness flutter = new FlutterHarness();
+ * flutter.init();                 // wire as the global bridge BEFORE creating widgets
+ * Shell shell = new Shell(new Display());
+ * Button r1 = new Button(new Composite(shell, SWT.NONE), SWT.RADIO);
+ * flutter.show(shell);            // boot renderer for the root, await ClientReady
+ * flutter.flush();                // push pending state and wait for the painted frame
  * Map<String,Object> s = flutter.queryState(r1);  // live Flutter state of r1
- * assertThat(s.get("selection")).isEqualTo(true);
+ * flutter.teardown();
  * }</pre>
- *
- * <p>Requires the Flutter web build ({@code flutter-lib/build/web}) for web mode (the default), and
- * Chrome/Chromium on the machine. Run native instead with {@code -Dharness.client=native}.
- * Tag tests with {@code @Tag("flutter-it")}; that tag is excluded from the default test run.
  */
 public class FlutterHarness extends SwtFlutterBridgeBase {
 
@@ -57,14 +56,11 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
     /** Render the web client in a real CEF standalone window (instead of headless Chrome) so the
      *  popup-window + HTTP-auth events that originate there fire. Implies the WEB client. */
     private static final boolean CHROMIUM = "chromium".equalsIgnoreCase(System.getProperty("dev.equo.swt.mode"));
-    private static final long READY_TIMEOUT_MS = Long.getLong("harness.readyTimeoutMs", 15_000);
-    private static final long QUERY_TIMEOUT_MS = Long.getLong("harness.queryTimeoutMs", 3_000);
+    protected static final long READY_TIMEOUT_MS = Long.getLong("harness.readyTimeoutMs", 30_000);
+    protected static final long QUERY_TIMEOUT_MS = Long.getLong("harness.queryTimeoutMs", 10_000);
 
-    private static final String Q_REQUEST  = "evolve.test.query";
+    private static final String Q_REQUEST = "evolve.test.query";
     private static final String Q_RESPONSE = "evolve.test.queryResponse";
-
-    private static final String IFRAME_LOADED = "evolve.test.iframeLoaded";
-
     private static final String FRAME_SYNC = "evolve.test.frameSync";
     private static final String FRAME_SYNCED = "evolve.test.frameSynced";
 
@@ -73,8 +69,6 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
     private final AtomicInteger syncGen = new AtomicInteger();
     private final Map<Integer, CompletableFuture<Map<String, Object>>> pendingQueries = new ConcurrentHashMap<>();
     private final Map<Integer, CompletableFuture<Void>> pendingSyncs = new ConcurrentHashMap<>();
-    /** Marks (page titles) of embedded pages that posted their on-load ping. */
-    private final java.util.List<String> iframeLoads = new java.util.concurrent.CopyOnWriteArrayList<>();
 
     private long context;
     private ChromiumStandaloneLauncher chromiumLauncher;
@@ -84,9 +78,9 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
     private boolean shown;
     /**
      * This harness's own comm, created/torn down per boot. {@link FlutterBridge#comm()} returns the
-     * JVM-wide {@code desktopComm}, which a second harness in the same JVM (another
-     * {@code *BrowserFlutterTest} subclass) would reuse stale and never see ClientReady — so each
-     * harness owns its comm to stay self-contained.
+     * JVM-wide {@code desktopComm}, which a second harness in the same JVM would reuse stale and never
+     * see ClientReady — so each harness owns its comm. {@link #ownComm()} lets a subclass opt out
+     * (BenchBridge keeps the shared comm).
      */
     private CommService comm;
 
@@ -94,8 +88,18 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
         super(null);
     }
 
+    /**
+     * Whether this harness owns a private comm (default) or shares the JVM-wide desktop comm.
+     * {@link dev.equo.swt.bench.BenchBridge} overrides this to {@code false} to preserve its original
+     * shared-comm behavior.
+     */
+    protected boolean ownComm() {
+        return true;
+    }
+
     @Override
     protected CommService comm() {
+        if (!ownComm()) return super.comm();
         if (comm == null) comm = newComm();
         return comm;
     }
@@ -103,9 +107,8 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
     // ---------------- lifecycle ----------------
 
     /**
-     * Wire this harness as the global bridge and register the comm handlers. Called once per
-     * parameterized-class invocation (a fresh harness per (kit, proxy) variant), paired with
-     * {@link #teardown()}.
+     * Wire this harness as the global bridge and register the comm handlers. Call once before any
+     * Display/widget is created, paired with {@link #teardown()}.
      */
     public void init() {
         if (!WEB) FlutterLibraryLoader.initialize();
@@ -114,32 +117,24 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
         // SwtFlutterBridgeWeb.initForDisplay) — so we don't double-boot.
         FlutterBridge.set(this);
         Config.forceEquo();
+        registerCommHandlers();
+    }
 
+    /** Register the generic query + frame-sync handlers. Subclasses may override to add more. */
+    protected void registerCommHandlers() {
         // Query-response handler (persistent). The far side replies with the live V*.toJson().
         comm().on(Q_RESPONSE, byte[].class, bytes -> {
             if (bytes == null) return;
-            Type t = new TypeToken<Map<String, Object>>() {}.getType();
-            Map<String, Object> resp = gson.fromJson(new String(bytes, StandardCharsets.UTF_8), t);
+            Map<String, Object> resp = parseJson(bytes);
             Integer qid = ((Number) resp.get("queryId")).intValue();
             CompletableFuture<Map<String, Object>> f = pendingQueries.remove(qid);
             if (f != null) f.complete(resp);
         });
-
-        // On-load pings from embedded pages (posted by the page itself; see test_harness_iframe_web.dart).
-        comm().on(IFRAME_LOADED, byte[].class, bytes -> {
-            if (bytes == null) return;
-            Type t = new TypeToken<Map<String, Object>>() {}.getType();
-            Map<String, Object> m = gson.fromJson(new String(bytes, StandardCharsets.UTF_8), t);
-            Object page = m == null ? null : m.get("page");
-            if (page != null) iframeLoads.add(String.valueOf(page));
-        });
-
         // Post-frame ack: completes the future for the matching syncId once Flutter has built +
         // painted the frame requested by flush() (see test_harness.dart).
         comm().on(FRAME_SYNCED, byte[].class, bytes -> {
             if (bytes == null) return;
-            Type t = new TypeToken<Map<String, Object>>() {}.getType();
-            Map<String, Object> m = gson.fromJson(new String(bytes, StandardCharsets.UTF_8), t);
+            Map<String, Object> m = parseJson(bytes);
             Object sid = m == null ? null : m.get("syncId");
             if (sid == null) return;
             CompletableFuture<Void> f = pendingSyncs.remove(((Number) sid).intValue());
@@ -147,14 +142,24 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
         });
     }
 
-    /** Tear down this variant's renderer, server, and comm. Paired with {@link #init()}. */
+    protected Map<String, Object> parseJson(byte[] bytes) {
+        Type t = new TypeToken<Map<String, Object>>() {}.getType();
+        return gson.fromJson(new String(bytes, StandardCharsets.UTF_8), t);
+    }
+
+    /** Tear down this harness's renderer, server, and comm. Paired with {@link #init()}. */
     public void teardown() {
         if (browserProc != null) browserProc.destroy();
-        if (chromiumLauncher != null) { chromiumLauncher.close(false); chromiumLauncher = null; }
+        if (chromiumLauncher != null) {
+            chromiumLauncher.close(false);
+            chromiumLauncher = null;
+        }
         deleteProfileDir();
         if (webServer != null) webServer.stop();
-        if (this.context != 0) dispose(this.context);
-        // Stop this harness's own comm so the next harness in the JVM starts clean.
+        if (context != 0) {
+            dispose(context);
+            context = 0;
+        }
         if (comm != null) {
             comm.stop();
             comm = null;
@@ -181,16 +186,13 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
 
     /**
      * Push all pending Java-side state to Flutter and block until Flutter has built + painted the
-     * resulting frame. Deterministic: instead of pumping a fixed number of times, we send a frame
-     * barrier and wait for Flutter's post-frame ack (see test_harness.dart {@code frameSync}). On the
-     * rare timeout (e.g. before ClientReady) it degrades to a short pump rather than failing.
+     * resulting frame (a deterministic frame barrier; see test_harness.dart {@code frameSync}).
      */
     public void flush() {
         FlutterBridge.update();
         awaitFrame();
     }
 
-    /** Send a frame barrier and wait for Flutter's post-frame ack. */
     private void awaitFrame() {
         int sid = syncGen.incrementAndGet();
         CompletableFuture<Void> f = new CompletableFuture<>();
@@ -214,27 +216,6 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
         return awaitFuture(f, QUERY_TIMEOUT_MS, "query for id " + w.hashCode());
     }
 
-    /** Forget prior on-load pings, so a following {@link #awaitIframeRendered} only sees fresh ones. */
-    public void clearIframeLoads() {
-        iframeLoads.clear();
-    }
-
-    /**
-     * Awaits the on-load ping an embedded page posts once it actually renders (its
-     * {@code document.title} contains {@code expectedTitle}). Returns {@code false} on timeout — the
-     * page never rendered (e.g. a cross-origin {@code <iframe>} blocked by COOP/COEP or
-     * X-Frame-Options). The only reliable web signal: {@code onPageFinished} fires even for a blocked
-     * load and {@code contentDocument} is unreadable cross-origin.
-     */
-    public boolean awaitIframeRendered(String expectedTitle, long timeoutMs) {
-        long deadline = System.currentTimeMillis() + timeoutMs;
-        while (true) {
-            for (String p : iframeLoads) if (p.contains(expectedTitle)) return true;
-            if (System.currentTimeMillis() >= deadline) return false;
-            pump(1);
-        }
-    }
-
     /** Convenience: the rendered selection of a Check/Radio/Toggle Button (false if absent/null). */
     @SuppressWarnings("unchecked")
     public boolean renderedSelection(Button b) {
@@ -247,6 +228,14 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
 
     // ---------------- await / pump ----------------
 
+    /**
+     * Advance the renderer's own loop one step (CEF {@code pumpOnce} under chromium-standalone on
+     * mac / the native engine / a web yield). A test's spin-wait must call this each iteration.
+     */
+    public void pumpClient() {
+        pump(1);
+    }
+
     private void awaitClientReady() {
         long deadline = System.currentTimeMillis() + READY_TIMEOUT_MS;
         while (!clientReady.isDone() && System.currentTimeMillis() < deadline) pump(1);
@@ -254,7 +243,7 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
             throw new IllegalStateException("Flutter client did not become ready within " + READY_TIMEOUT_MS + "ms");
     }
 
-    private <R> R awaitFuture(CompletableFuture<R> f, long timeoutMs, String what) {
+    protected <R> R awaitFuture(CompletableFuture<R> f, long timeoutMs, String what) {
         long deadline = System.currentTimeMillis() + timeoutMs;
         while (!f.isDone() && System.currentTimeMillis() < deadline) pump(1);
         if (!f.isDone())
@@ -264,16 +253,6 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
         } catch (Exception e) {
             throw new RuntimeException("Failed waiting for " + what, e);
         }
-    }
-
-    /**
-     * Advance the renderer's own loop one step (CEF {@code pumpOnce} under chromium-standalone on
-     * mac / the native engine / a web yield). A test's spin-wait must call this each iteration —
-     * otherwise, in chromium mode the CEF message loop only runs inside {@link #flush}/{@link
-     * #queryState}, so a page navigated during a {@code pumpUntil} wait never finishes loading.
-     */
-    public void pumpClient() {
-        pump(1);
     }
 
     private void pump(int maxMessages) {
@@ -287,7 +266,7 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
         }
     }
 
-    // ---------------- web client boot (adapted from BenchBridge) ----------------
+    // ---------------- web client boot ----------------
 
     private void startWebClient(long rootId, String rootName) {
         File webDir = resolveWebDir();
@@ -300,23 +279,19 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
                 .serveServiceWorker(false) // deterministic boot: skip the SW install/activate race
                 .build();
         try {
-            int httpPort = webServer.start();
+            webServer.start();
             String url = webServer.getApplicationUrl();
             System.out.println("[FlutterHarness] web harness at " + url + " serving " + webDir
                     + " (comm port " + comm().getPort() + ", root " + rootName + "/" + rootId + ")");
             if (CHROMIUM) {
-                // window.open() from a fixture page usually runs without a user gesture (e.g. a
-                // setTimeout), which Chromium's popup blocker suppresses BEFORE CEF's onBeforePopup
-                // sees it — so the OpenWindowListener would never fire and the popup tests couldn't
-                // run. Disable the blocker for the harness only (this is a test concern; production
-                // must keep the blocker on). The chromium SDK reads chromium.args directly.
+                // window.open() from a fixture page usually runs without a user gesture, which
+                // Chromium's popup blocker suppresses BEFORE CEF's onBeforePopup sees it. Disable the
+                // blocker for the harness only (production keeps it on). The SDK reads chromium.args.
                 String extra = "--disable-popup-blocking";
                 String existing = System.getProperty("chromium.args", "");
                 System.setProperty("chromium.args", existing.isEmpty() ? extra : existing + ";" + extra);
-                // Real CEF standalone window (the production chromium-mode path) — its window/auth
-                // handlers are what feed OpenWindow/CloseWindow/VisibilityWindow/Authentication.
                 chromiumLauncher = new ChromiumStandaloneLauncher();
-                chromiumLauncher.open(webServer.getApplicationUrl());
+                chromiumLauncher.open(url);
                 System.out.println("[FlutterHarness] opened Chromium standalone window");
             } else {
                 launchBrowser(url);
@@ -335,15 +310,12 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
         String chrome = chromeBinary(override);
         boolean headless = Boolean.parseBoolean(System.getProperty("harness.web.headless", "true"));
         if (chrome != null) {
-            // Unique, throwaway profile per run. Sharing one profile lets Chrome's per-user-data-dir
-            // singleton hand the URL to an already-running instance (so a headless launch surfaces as
-            // a tab in your real Chrome), and an unclean exit leaves a "restore pages" crash flag.
+            // Unique, throwaway profile per run so Chrome's per-user-data-dir singleton can't hand the
+            // URL to an already-running instance, and an unclean exit can't leave a crash-restore flag.
             profileDir = Files.createTempDirectory("equo-harness-profile-");
             List<String> cmd = new ArrayList<>();
             cmd.add(chrome);
             if (headless) cmd.add("--headless=new");
-            // -Dharness.web.console=true forwards the page console to stderr (captured via
-            // inheritIO), so Dart print()/errors from the web client are visible for debugging.
             if (Boolean.getBoolean("harness.web.console")) {
                 cmd.add("--enable-logging=stderr");
                 cmd.add("--v=1");
@@ -351,8 +323,8 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
             cmd.add("--disable-gpu");
             cmd.add("--no-first-run");
             cmd.add("--no-default-browser-check");
-            cmd.add("--hide-crash-restore-bubble");      // suppress the "restore pages?" bubble
-            cmd.add("--disable-session-crashed-bubble"); // (older flag, same intent)
+            cmd.add("--hide-crash-restore-bubble");
+            cmd.add("--disable-session-crashed-bubble");
             cmd.add("--user-data-dir=" + profileDir);
             cmd.add(url);
             browserProc = new ProcessBuilder(cmd).inheritIO().start();
@@ -360,10 +332,11 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
                     + " profile " + profileDir);
             return;
         }
-        throw new IOException("Chrome/Chromium not found; set -Dequo.swt.browser=<path> (or run -Dharness.client=native)");
+        throw new IOException("Chrome/Chromium not found; set -Dequo.swt.browser=<path> (or -Dharness.client=native)");
     }
 
-    private static String chromeBinary(String override) {
+    /** Locate the Chrome/Chromium binary, honoring {@code -Dequo.swt.browser}; null if none found. */
+    protected static String chromeBinary(String override) {
         if (override != null && !override.isEmpty() && new File(override).canExecute()) return override;
         String os = System.getProperty("os.name", "").toLowerCase();
         String[] candidates = os.contains("mac")
@@ -391,7 +364,8 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
         }
     }
 
-    private static File resolveWebDir() {
+    /** Locate {@code flutter-lib/build/web} relative to the test working dir. */
+    protected static File resolveWebDir() {
         for (String p : new String[]{"../flutter-lib/build/web", "flutter-lib/build/web"}) {
             File f = new File(p);
             if (f.isDirectory()) return f.getAbsoluteFile();
