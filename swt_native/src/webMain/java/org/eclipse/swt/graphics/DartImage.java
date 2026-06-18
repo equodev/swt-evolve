@@ -933,12 +933,22 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     private void initUsingImageDataProvider(ImageDataProvider imageDataProvider) {
         this.imageDataProvider = imageDataProvider;
-        ImageData imageData = imageDataProvider.getImageData(100);
+        ImageData imageData;
+        try {
+            imageData = imageDataProvider.getImageData(100);
+        } catch (SWTException e) {
+            imageData = null;
+        }
         if (imageData == null) {
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            imageData = new ImageData(1, 1, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF));
         }
         init(imageData, 100);
-        ImageData imageData2x = imageDataProvider.getImageData(200);
+        ImageData imageData2x;
+        try {
+            imageData2x = imageDataProvider.getImageData(200);
+        } catch (SWTException e) {
+            imageData2x = null;
+        }
         if (imageData2x != null) {
             alphaInfo_200 = new AlphaInfo();
         }
