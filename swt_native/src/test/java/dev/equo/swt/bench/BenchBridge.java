@@ -31,7 +31,17 @@ import java.util.concurrent.atomic.AtomicReference;
  * any register/remove race between iterations — at high iteration counts the previous
  * "register, send, await, remove" pattern occasionally raced with WS-thread callbacks and hung.
  */
-public class BenchBridge extends SwtFlutterBridgeBase implements BeforeAllCallback, AfterAllCallback {
+public class BenchBridge extends dev.equo.swt.harness.FlutterHarness implements BeforeAllCallback, AfterAllCallback {
+
+    /**
+     * Bench uses the JVM-wide desktop comm (one Flutter engine per JVM), not a per-instance comm —
+     * preserving the original behavior now that {@link dev.equo.swt.harness.FlutterHarness} owns a
+     * private comm by default.
+     */
+    @Override
+    protected boolean ownComm() {
+        return false;
+    }
 
     // J→D
     static final String C_J2D_JSON_ECHO        = "bench/j2d/json/echo";
@@ -67,7 +77,7 @@ public class BenchBridge extends SwtFlutterBridgeBase implements BeforeAllCallba
     }
 
     public BenchBridge() {
-        super(null);
+        super();
     }
 
     @Override
@@ -207,27 +217,7 @@ public class BenchBridge extends SwtFlutterBridgeBase implements BeforeAllCallba
                 + url + " — background-tab throttling may inflate results. Set -Dequo.swt.browser=<chrome path>.");
     }
 
-    private static String chromeBinary(String override) {
-        if (override != null && !override.isEmpty() && new File(override).canExecute()) return override;
-        String os = System.getProperty("os.name", "").toLowerCase();
-        String[] candidates = os.contains("mac")
-                ? new String[]{"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-                               "/Applications/Chromium.app/Contents/MacOS/Chromium"}
-                : os.contains("win")
-                ? new String[]{System.getenv("ProgramFiles") + "\\Google\\Chrome\\Application\\chrome.exe"}
-                : new String[]{"/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"};
-        for (String c : candidates) if (c != null && new File(c).canExecute()) return c;
-        return null;
-    }
-
-    /** Locate flutter-lib/build/web relative to the test working dir (swt_native or repo root). */
-    private static File resolveWebDir() {
-        for (String p : new String[]{"../flutter-lib/build/web", "flutter-lib/build/web"}) {
-            File f = new File(p);
-            if (f.isDirectory()) return f.getAbsoluteFile();
-        }
-        return new File("../flutter-lib/build/web").getAbsoluteFile();
-    }
+    // chromeBinary() and resolveWebDir() are inherited from FlutterHarness.
 
     private void handleD2jResult(AtomicReference<PendingD2j> slot, byte[] bytes) {
         if (bytes == null || bytes.length < 12) return;
@@ -297,26 +287,6 @@ public class BenchBridge extends SwtFlutterBridgeBase implements BeforeAllCallba
         }
     }
 
-    // -- Unused SwtFlutterBridgeBase overrides --
-
-    @Override
-    protected long getHandle(Control control) { return 0; }
-
-    @Override
-    protected void setHandle(DartControl control, long view) { }
-
-    @Override
-    public void destroy(DartWidget control) { }
-
-    @Override
-    protected void destroyHandle(DartControl dartControl) { }
-
-    @Override
-    public Object container(DartComposite parent) { return null; }
-
-    @Override
-    public void reparent(DartControl control, Composite newParent) { }
-
-    @Override
-    protected void sendSwtEvolveProperties() { }
+    // The unused SwtFlutterBridgeBase overrides (getHandle/setHandle/destroy/destroyHandle/
+    // container/reparent/sendSwtEvolveProperties) are inherited from FlutterHarness.
 }

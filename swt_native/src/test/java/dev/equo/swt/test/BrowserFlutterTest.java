@@ -19,6 +19,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
 import dev.equo.swt.harness.BrowserKit;
+import dev.equo.swt.harness.BrowserFlutterHarness;
 import dev.equo.swt.harness.FlutterHarness;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.CloseWindowListener;
@@ -100,7 +101,7 @@ class BrowserFlutterTest {
                 arguments(Named.of("chromium", BrowserKit.chromium()), false));
     }
 
-    FlutterHarness flutter;
+    BrowserFlutterHarness flutter;
     /** Saved {@code dev.equo.swt.web.proxy} so each variant can override it and restore afterwards. */
     private String savedProxyProp;
 
@@ -146,7 +147,7 @@ class BrowserFlutterTest {
         startServer();
         // init() wires this harness as the global bridge + Config.forceEquo() BEFORE any widget is
         // created, so the widgets below are Dart-backed and route through the harness.
-        flutter = new FlutterHarness();
+        flutter = new BrowserFlutterHarness();
         flutter.init();
         display = new Display();
         shell = new Shell(display);
@@ -276,6 +277,9 @@ class BrowserFlutterTest {
         @Test
         void setUrl_getUrl() {
             load(browser, url("/a"));
+            // getUrl() tracks navigationState pushes, which settle asynchronously; a trailing push
+            // from the previous test's navigation can briefly leave a stale url, so poll until /a.
+            pumpUntil(() -> browser.getUrl() != null && browser.getUrl().contains("/a"), ACTION_TIMEOUT);
             assertThat(browser.getUrl()).contains("/a");
         }
 
@@ -608,8 +612,14 @@ class BrowserFlutterTest {
             browser.addProgressListener(ProgressListener.completedAdapter(e -> done.countDown()));
             browser.setUrl(url("/b"));
             flutter.flush();
-            assertThat(awaitLatch(done, ACTION_TIMEOUT)).as("navigation completes when allowed").isTrue();
-            assertThat(fired).isTrue();
+            // changing and completed arrive as independent asyncExec callbacks; on the shared
+            // browser a stale/extra completed from a prior navigation can trip `done` before the
+            // /b changing callback is dispatched, so awaitLatch(done) would return with fired still
+            // false. Poll the assertion target (fired) directly, alongside completion.
+            boolean ok = pumpUntil(() -> fired.get() && done.getCount() == 0, ACTION_TIMEOUT);
+            assertThat(fired.get()).as("changing listener fired when navigation allowed").isTrue();
+            assertThat(done.getCount()).as("navigation completes when allowed").isEqualTo(0L);
+            assertThat(ok).as("changing fired and navigation completed within timeout").isTrue();
         }
 
         @Test
@@ -956,7 +966,7 @@ class BrowserFlutterTest {
     /**
      * The setText analogue of the served {@link #page} pages: wraps {@code inner} with the given
      * title, the current-test banner (so setText content also shows which test set it — to spot
-     * stale renders), and the on-load ping (so {@link FlutterHarness#awaitIframeRendered} works).
+     * stale renders), and the on-load ping (so {@link BrowserFlutterHarness#awaitIframeRendered} works).
      */
     protected String taggedHtml(String title, String inner) {
         String banner = "<div style='position:fixed;top:0;left:0;right:0;background:#0ff;color:#000;"
@@ -1063,7 +1073,7 @@ class BrowserFlutterTest {
     /**
      * Posted by every fixture page once it actually runs in the webview. The harness relays it to
      * Java (see test_harness_iframe_web.dart); a page blocked from loading (e.g. cross-origin iframe
-     * refused) never executes this, so {@link FlutterHarness#awaitIframeRendered} times out.
+     * refused) never executes this, so {@link BrowserFlutterHarness#awaitIframeRendered} times out.
      */
     private static final String LOAD_PING =
             "<script>try{parent.postMessage('equo-iframe-loaded:'+document.title,'*')}catch(e){}</script>";
