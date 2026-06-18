@@ -1389,6 +1389,10 @@ class WidgetMeasurer {
         );
       }
 
+      if (!isConstantSize && widgetType == 'Button' && javaClassName == 'CHECK') {
+        buffer.writeln('        static final double TEXT_SLACK = 1.0;');
+      }
+
       buffer.writeln('    }');
       buffer.writeln();
     }
@@ -1505,13 +1509,32 @@ class WidgetMeasurer {
             ? '($textX > 0 || m.image.x() > 0)'
             : '$textX > 0';
 
+        final slackTerm = (widgetType == 'Button' && styleName == 'CHECK')
+            ? ' + ($textX > 0 ? $styleName.TEXT_SLACK : 0)'
+            : '';
+        final String naturalExpr;
         if (useHorizontalPadding) {
+          naturalExpr =
+              'Math.max($textWidthExpr + ($widthCondition ? $styleName.HORIZONTAL_PADDING : 0)$slackTerm, $styleName.MIN_WIDTH)';
+        } else {
+          naturalExpr = 'Math.max($textWidthExpr$slackTerm, $styleName.MIN_WIDTH)';
+        }
+
+        if (widgetType == 'Text') {
+          buffer.writeln('${indent}double naturalWidth = $naturalExpr;');
           buffer.writeln(
-            '${indent}width = wHint != SWT.DEFAULT ? wHint : Math.max($textWidthExpr + ($widthCondition ? $styleName.HORIZONTAL_PADDING : 0), $styleName.MIN_WIDTH);',
+            '${indent}boolean singleLine = !hasFlags(style, SWT.MULTI) && !hasFlags(style, SWT.WRAP);',
           );
+          buffer.writeln('${indent}if (wHint != SWT.DEFAULT) {');
+          buffer.writeln(
+            '${indent}    width = singleLine ? Math.max(wHint, naturalWidth) : wHint;',
+          );
+          buffer.writeln('${indent}} else {');
+          buffer.writeln('${indent}    width = naturalWidth;');
+          buffer.writeln('${indent}}');
         } else {
           buffer.writeln(
-            '${indent}width = wHint != SWT.DEFAULT ? wHint : Math.max($textWidthExpr, $styleName.MIN_WIDTH);',
+            '${indent}width = wHint != SWT.DEFAULT ? wHint : $naturalExpr;',
           );
         }
 

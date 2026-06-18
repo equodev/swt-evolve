@@ -1,3 +1,5 @@
+// Force the stub (blank box) on every platform so the Flutter iframe browser
+// implementation is never used, including on web.
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';

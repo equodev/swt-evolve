@@ -30,6 +30,7 @@ public class ButtonSizes {
         static final double HORIZONTAL_PADDING = 24.800000000000004;
         static final double VERTICAL_PADDING = 1.9000000000000004;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = false;
+        static final double TEXT_SLACK = 1.0;
     }
 
     static class PUSH {
@@ -62,7 +63,7 @@ public class ButtonSizes {
         if (hasFlags(style, SWT.CHECK) || hasFlags(style, SWT.RADIO)) {
             m.text = computeText(widget, m, CHECK.EMPTY_TEXT_AFFECTS_SIZING);
             m.image = computeImage(widget);
-            width = wHint != SWT.DEFAULT ? wHint : Math.max((m.text.x() + m.image.x()) + ((m.text.x() > 0 || m.image.x() > 0) ? CHECK.HORIZONTAL_PADDING : 0), CHECK.MIN_WIDTH);
+            width = wHint != SWT.DEFAULT ? wHint : Math.max((m.text.x() + m.image.x()) + ((m.text.x() > 0 || m.image.x() > 0) ? CHECK.HORIZONTAL_PADDING : 0) + (m.text.x() > 0 ? CHECK.TEXT_SLACK : 0), CHECK.MIN_WIDTH);
             boolean wraps = hasFlags(style, SWT.WRAP);
             if (hHint != SWT.DEFAULT) {
                 height = hHint;
