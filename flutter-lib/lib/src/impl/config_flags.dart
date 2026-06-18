@@ -22,6 +22,9 @@ class ConfigFlags {
   bool? show_scaling_control;
   String? decorations_align;
   bool? print_move;
+  String? csd_placement;
+  String? csd_os;
+  String? csd_maximize;
 
   factory ConfigFlags.fromJson(Map<String, dynamic> json) =>
       _$ConfigFlagsFromJson(json);

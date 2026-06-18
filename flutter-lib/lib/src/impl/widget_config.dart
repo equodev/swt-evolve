@@ -39,6 +39,10 @@ void setConfigFlags(ConfigFlags newFlags) {
 
   newFlags.theme_name = mergeString(newFlags.theme_name, prev.theme_name);
   newFlags.force_theme = mergeString(newFlags.force_theme, prev.force_theme);
+  // CSD flags arrive in the first broadcast and change rarely; preserve them across any
+  // later partial re-broadcast so the controls don't flicker off/restyle mid-session.
+  newFlags.csd_placement = mergeString(newFlags.csd_placement, prev.csd_placement);
+  newFlags.csd_os = mergeString(newFlags.csd_os, prev.csd_os);
   configFlags = newFlags;
 }
 

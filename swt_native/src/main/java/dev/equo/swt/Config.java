@@ -532,10 +532,34 @@ public class Config {
             configFlags.force_theme = System.getProperty("swt.evolve.force_theme");
             configFlags.theme_name = System.getProperty("swt.evolve.theme_name");
             configFlags.theme_color = System.getProperty("swt.evolve.theme_color");
+            // Client-Side Decorations: a single property selects placement and on/off
+            //   -Ddev.equo.swt.csd=toolbar|overlay|floating  or =false to disable.
+            // Defaults to "toolbar" ONLY under the Chromium standalone (the only mode with a
+            // frameless window to decorate); off everywhere else. Drives both the frameless
+            // native window (launcher) and the Flutter controls.
+            boolean chromiumMode = "chromium".equalsIgnoreCase(System.getProperty("dev.equo.swt.mode"));
+            configFlags.csd_placement = System.getProperty(
+                    "dev.equo.swt.csd", chromiumMode ? "toolbar" : "false").toLowerCase();
+            // OS picks the native control styling; override to test other platforms:
+            //   -Ddev.equo.swt.csd.os=mac|windows|linux
+            configFlags.csd_os = normalizeOs(System.getProperty("dev.equo.swt.csd.os", os));
+            // Maximize behavior. "direct" (default) calls window.equo.maximize() from Dart —
+            // the pure-Flutter demo proved the engine keeps input through it. "bounds" resizes
+            // to the screen via setWindowBounds; "native"/"fullscreen" use host ops.
+            //   -Ddev.equo.swt.csd.maximize=direct|bounds|native|fullscreen
+            configFlags.csd_maximize = System.getProperty("dev.equo.swt.csd.maximize", "direct");
             applyThemeColorsByWidgetFromProperties(configFlags);
             applyThemePresets(configFlags);
         }
         return configFlags;
+    }
+
+    /** Maps a raw {@code os.name} to the CSD styling key the Flutter side understands. */
+    private static String normalizeOs(String osName) {
+        String n = osName == null ? "" : osName.toLowerCase();
+        if (n.startsWith("mac") || n.contains("darwin")) return "mac";
+        if (n.startsWith("win")) return "windows";
+        return "linux";
     }
 
     private static void applyThemePresets(ConfigFlags flags) {

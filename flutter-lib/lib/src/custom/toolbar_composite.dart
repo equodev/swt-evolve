@@ -15,7 +15,10 @@ import '../gen/toolitem.dart';
 import '../gen/widgets.dart';
 import '../impl/composite_evolve.dart';
 import '../impl/utils/widget_utils.dart';
+import '../impl/widget_config.dart';
 import '../impl/decorations_evolve.dart';
+import 'csd/csd_drag_view.dart';
+import 'csd/window_controls.dart';
 import '../nolayout.dart';
 import '../theme/theme_extensions/clabel_theme_extension.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
@@ -91,6 +94,14 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
     final visibleChildren = children.where((child) => child.visible != false).toList();
     final isRootToolbar = widget.value.swt == "MainToolbar";
 
+    // Client-Side-Decoration window controls live in the MainToolbar when placement is
+    // "toolbar": leading (macOS traffic lights) or trailing (Windows/Linux).
+    final csdFlags = getConfigFlags();
+    final csdInToolbar =
+        isRootToolbar && (csdFlags.csd_placement ?? 'toolbar') == 'toolbar';
+    final csdLeading = csdInToolbar && (csdFlags.csd_os ?? 'linux') == 'mac';
+    final csdTrailing = csdInToolbar && !csdLeading;
+
     final menuData = isRootToolbar ? DecorationsMenuData.of(context) : null;
     final hasHorizontalMenu = menuData?.isHorizontal == true && menuData?.menuBar != null;
 
@@ -134,6 +145,7 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
       final toolbarRow = Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (csdLeading) const WindowControls(),
           if (isRootToolbar) const VerticalMenuButton(atStart: true),
           Expanded(
             child: LayoutBuilder(
@@ -217,6 +229,7 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
           ),
           if (isRootToolbar) ToolbarOptionalControlsRow(useBoundsLayout: true),
           if (isRootToolbar) const VerticalMenuButton(atStart: false),
+          if (csdTrailing) const WindowControls(),
         ],
       );
 
@@ -225,14 +238,17 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
         decoration: BoxDecoration(color: backgroundColor),
         child: ToolbarAreaMarker(
           active: true,
-          child: hasHorizontalMenu
-              ? Column(
-                  children: [
-                    const HorizontalMenuBar(),
-                    Expanded(child: toolbarRow),
-                  ],
-                )
-              : toolbarRow,
+          child: _withCsdMove(
+            csdInToolbar,
+            hasHorizontalMenu
+                ? Column(
+                    children: [
+                      const HorizontalMenuBar(),
+                      Expanded(child: toolbarRow),
+                    ],
+                  )
+                : toolbarRow,
+          ),
         ),
       );
     }
@@ -241,6 +257,7 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
     final nonBoundsRow = Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        if (csdLeading) const WindowControls(),
         if (isRootToolbar) const VerticalMenuButton(atStart: true),
         Expanded(
           child: ClipRect(
@@ -256,6 +273,7 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
         ),
         if (isRootToolbar) ToolbarOptionalControlsRow(useBoundsLayout: false),
         if (isRootToolbar) const VerticalMenuButton(atStart: false),
+        if (csdTrailing) const WindowControls(),
       ],
     );
 
@@ -263,16 +281,34 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
       decoration: BoxDecoration(color: backgroundColor),
       child: ToolbarAreaMarker(
         active: true,
-        child: hasHorizontalMenu
-            ? Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const HorizontalMenuBar(),
-                  nonBoundsRow,
-                ],
-              )
-            : nonBoundsRow,
+        child: _withCsdMove(
+          csdInToolbar,
+          hasHorizontalMenu
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const HorizontalMenuBar(),
+                    nonBoundsRow,
+                  ],
+                )
+              : nonBoundsRow,
+        ),
       ),
+    );
+  }
+
+  /// Puts a DOM window-drag surface behind the toolbar so pressing bare toolbar
+  /// background/labels drags the frameless window, while toolbar buttons (painted on top)
+  /// keep their own clicks. Uses a real DOM mousedown ([CsdDragView]) because CEF ignores
+  /// beginMove from Flutter-synthesized events.
+  Widget _withCsdMove(bool active, Widget content) {
+    if (!active) return content;
+    return Stack(
+      fit: StackFit.passthrough,
+      children: [
+        const Positioned.fill(child: CsdDragView()),
+        content,
+      ],
     );
   }
 

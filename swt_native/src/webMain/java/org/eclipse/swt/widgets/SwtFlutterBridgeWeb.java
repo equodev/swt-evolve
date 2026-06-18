@@ -15,6 +15,8 @@ public class SwtFlutterBridgeWeb extends FlutterBridge implements WindowBridge {
     /** One comm (and one web server) per Display, unlike desktop's shared static comm. */
     private CommService comm;
     private ChromiumStandaloneLauncher chromiumLauncher;
+    /** CSD maximize strategy: "bounds" (default), "native", or "fullscreen". */
+    private String csdMaxStrategy = "bounds";
 
     boolean isChromium = "chromium".equalsIgnoreCase(System.getProperty("dev.equo.swt.mode"));
 
@@ -114,6 +116,26 @@ public class SwtFlutterBridgeWeb extends FlutterBridge implements WindowBridge {
 
             sendDisplayUpdate(display);
         });
+
+        // Client-Side-Decoration window controls. The Flutter overlay sends these instead of
+        // calling window.equo.* directly: on mac the native maximize/zoom and close spin a
+        // nested run loop while the single-threaded message pump is blocked, freezing the
+        // window. Minimize and a plain setWindowBounds don't, so we "maximize" by sizing the
+        // window to the monitor work area (like a resize) and close via the existing teardown.
+        String win = "Display/" + displayId + "/";
+        Display winApi = display.getApi();
+        comm.on(win + "WinMinimize", String.class, s -> winApi.asyncExec(() -> {
+            if (chromiumLauncher != null) chromiumLauncher.minimizeWindow();
+        }));
+        // Maximize strategy. "bounds" (default) applies the window rect computed on the Dart
+        // side (which has the real screen + window geometry — the Java DartDisplay monitor is
+        // zero-sized) via setWindowBounds; it doesn't animate, so it doesn't freeze the mac
+        // pump. "native"/"fullscreen" use the host window ops (which freeze on mac).
+        //   -Ddev.equo.swt.csd.maximize=bounds|native|fullscreen
+        csdMaxStrategy = System.getProperty("dev.equo.swt.csd.maximize", "direct");
+        comm.on(win + "WinMaximize", Rectangle.class, rect -> applyCsdMaximize(winApi, rect, true));
+        comm.on(win + "WinRestore", Rectangle.class, rect -> applyCsdMaximize(winApi, rect, false));
+        comm.on(win + "WinClose", String.class, s -> onChromiumWindowClosed());
 
         int port = comm.getPort();
         webServer = new WebFlutterServer.Builder()
@@ -340,6 +362,26 @@ public class SwtFlutterBridgeWeb extends FlutterBridge implements WindowBridge {
                 && bounds.height == displayBounds.height)
             return;
         chromiumLauncher.setWindowBounds(bounds.x, bounds.y, bounds.width, bounds.height);
+    }
+
+    /** Applies a CSD maximize/restore. "bounds" sets the Dart-computed window rect (reliable,
+     *  non-animating); "native"/"fullscreen" use the host ops (which can freeze the mac pump). */
+    private void applyCsdMaximize(Display winApi, Rectangle rect, boolean maximize) {
+        winApi.asyncExec(() -> {
+            if (chromiumLauncher == null) return;
+            switch (csdMaxStrategy) {
+                case "native":
+                    if (maximize) chromiumLauncher.maximizeWindow();
+                    else chromiumLauncher.restoreWindow();
+                    break;
+                case "fullscreen":
+                    chromiumLauncher.setFullscreen(maximize);
+                    break;
+                default: // bounds
+                    if (rect != null && rect.width > 0 && rect.height > 0)
+                        chromiumLauncher.setWindowBounds(rect.x, rect.y, rect.width, rect.height);
+            }
+        });
     }
 
     @Override

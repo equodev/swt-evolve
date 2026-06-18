@@ -26,7 +26,10 @@ ConfigFlags _$ConfigFlagsFromJson(Map<String, dynamic> json) => ConfigFlags()
   ..preserve_icon_colors = json['preserve_icon_colors'] as bool?
   ..show_scaling_control = json['show_scaling_control'] as bool?
   ..decorations_align = json['decorations_align'] as String?
-  ..print_move = json['print_move'] as bool?;
+  ..print_move = json['print_move'] as bool?
+  ..csd_placement = json['csd_placement'] as String?
+  ..csd_os = json['csd_os'] as String?
+  ..csd_maximize = json['csd_maximize'] as String?;
 
 Map<String, dynamic> _$ConfigFlagsToJson(
   ConfigFlags instance,
@@ -47,4 +50,7 @@ Map<String, dynamic> _$ConfigFlagsToJson(
   'show_scaling_control': ?instance.show_scaling_control,
   'decorations_align': ?instance.decorations_align,
   'print_move': ?instance.print_move,
+  'csd_placement': ?instance.csd_placement,
+  'csd_os': ?instance.csd_os,
+  'csd_maximize': ?instance.csd_maximize,
 };
