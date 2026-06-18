@@ -50,6 +50,14 @@ class TextImpl<T extends TextSwt, V extends VText>
         _controller.selection = newSelection;
       }
     }
+
+    final sel = state.selection;
+    if (sel != null && sel.x != sel.y && sel.y <= _controller.text.length) {
+      final desired = TextSelection(baseOffset: sel.x, extentOffset: sel.y);
+      if (_controller.selection != desired) {
+        _controller.selection = desired;
+      }
+    }
   }
 
   @override
