@@ -1950,8 +1950,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     @Override
     void register() {
-        _hookEvents();
         bridge = FlutterBridge.of(this);
+        _hookEvents();
     }
 
     @Override
@@ -4125,7 +4125,12 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             return bridge;
         Composite p = parent;
         while (p != null && !(p.getImpl() instanceof DartWidget)) p = p.getImpl()._parent();
-        return p != null ? ((DartWidget) p.getImpl()).getBridge() : null;
+        if (p != null)
+            return ((DartWidget) p.getImpl()).getBridge();
+        Display display = getDisplay();
+        if (display != null && display.getImpl() instanceof DartDisplay dd)
+            return dd.getDisplayBridge();
+        return null;
     }
 
     protected void _hookEvents() {

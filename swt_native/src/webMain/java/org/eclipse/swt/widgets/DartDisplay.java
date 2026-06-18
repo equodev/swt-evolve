@@ -3967,6 +3967,10 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
 
     SwtFlutterBridgeWeb displayBridge;
 
+    public FlutterBridge getDisplayBridge() {
+        return displayBridge;
+    }
+
     void setBridge(SwtFlutterBridgeWeb bridge) {
         this.displayBridge = bridge;
     }

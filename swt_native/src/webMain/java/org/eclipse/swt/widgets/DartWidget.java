@@ -821,8 +821,8 @@ public abstract class DartWidget implements IWidget {
     }
 
     void register() {
-        _hookEvents();
         bridge = FlutterBridge.of(this);
+        _hookEvents();
     }
 
     public void release(boolean destroy) {
