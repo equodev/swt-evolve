@@ -1386,6 +1386,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     public Monitor getPrimaryMonitor() {
         checkDevice();
         Monitor monitor = new Monitor();
+        monitor.setBounds(bounds);
+        monitor.setClientArea(bounds);
         return monitor;
     }
 
