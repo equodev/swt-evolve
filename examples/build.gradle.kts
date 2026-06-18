@@ -36,7 +36,8 @@ val currentOs = when {
     else -> "linux"
 }
 val arch = System.getProperty("os.arch")
-val currentPlatform = "$currentOs-${if (arch.contains("aarch64") || arch.contains("arm")) "aarch64" else "x86_64"}"
+val currentArch = if (arch.contains("aarch64") || arch.contains("arm")) "aarch64" else "x86_64"
+val currentPlatform = "$currentOs-$currentArch"
 
 tasks.compileJava {
     options.encoding = "UTF-8"
@@ -50,6 +51,7 @@ val jfaceTextVersion: String by project
 val eclipseTextVersion: String by project
 val nattableVersion: String by project
 
+val chromiumMode = System.getProperty("mode.chromium", "false") == "true"
 dependencies {
     if (gradle.parent != null)
         implementation(project(":swt_native"))
@@ -73,6 +75,16 @@ dependencies {
         exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
     }
     runtimeOnly("org.slf4j:slf4j-simple:2.0.13")
+
+    if (chromiumMode) {
+        runtimeOnly(libs.equo.chromium)
+        val cefArtifact = when (currentOs) {
+            "windows" -> "win32.win32"
+            "macos" -> "cocoa.macosx"
+            else -> "gtk.linux"
+        }
+        runtimeOnly("com.equo:com.equo.chromium.cef.$cefArtifact.$currentArch:${libs.versions.equo.chromium.cef.get()}")
+    }
 }
 
 tasks.withType<JavaExec>().configureEach {
@@ -85,7 +97,7 @@ tasks.register<JavaExec>("runExample") {
     group = "examples"
     description = "Run an example class. Usage: ./gradlew :examples:runExample -PmainClass=dev.equo.StyledTextSnippet1"
     classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set(project.findProperty("mainClass")?.toString() ?: "dev.equo.StyledTextSnippet3")
+    mainClass.set(project.findProperty("mainClass")?.toString() ?: "dev.equo.GCCopyAreaImageSnippet")
 
     if (currentOs == "macos")
         jvmArgs("-XstartOnFirstThread")
@@ -103,6 +115,9 @@ tasks.register<JavaExec>("runWebExample") {
             sourceSets["main"].output +
             configurations["runtimeClasspath"].filter { !it.path.contains("swt_native") }
     mainClass.set(project.findProperty("mainClass")?.toString() ?: "dev.equo.GCFillOvalSnippet")
+    systemProperty("dev.equo.swt.crashReport.disabled", "true")
+    systemProperty("dev.equo.swt.web.crossOriginIsolated", "false")
+    systemProperty("dev.equo.swt.mode", if (chromiumMode) "chromium" else "web")
 
     if (System.getProperty("test.debug") != null)
         jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")

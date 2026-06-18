@@ -1384,46 +1384,100 @@ public class DartBrowser extends DartComposite implements IBrowser {
         super._hookEvents();
         FlutterBridge.on(this, "Authentication", "authenticate", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                AuthenticationEvent event = new AuthenticationEvent(getApi());
+                event.location = e != null ? e.text : "";
+                for (AuthenticationListener l : webBrowser.authenticationListeners) l.authenticate(event);
             });
         });
         FlutterBridge.on(this, "CloseWindow", "close", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                WindowEvent event = new WindowEvent(getApi());
+                for (CloseWindowListener l : webBrowser.closeWindowListeners) l.close(event);
             });
         });
         FlutterBridge.on(this, "Location", "changed", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                LocationEvent event = new LocationEvent(getApi());
+                event.location = e != null ? e.text : "";
+                for (LocationListener l : webBrowser.locationListeners) l.changed(event);
             });
         });
         FlutterBridge.on(this, "Location", "changing", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                LocationEvent event = new LocationEvent(getApi());
+                event.location = e != null ? e.text : "";
+                event.doit = true;
+                for (LocationListener l : webBrowser.locationListeners) l.changing(event);
+                FlutterBridge.send(this, "locationchanging/result", java.util.Map.of("doit", event.doit));
             });
         });
         FlutterBridge.on(this, "OpenWindow", "open", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                WindowEvent event = new WindowEvent(getApi());
+                for (OpenWindowListener l : webBrowser.openWindowListeners) l.open(event);
             });
         });
         FlutterBridge.on(this, "Progress", "changed", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                ProgressEvent event = new ProgressEvent(getApi());
+                event.current = e != null ? e.x : 0;
+                event.total = e != null ? e.y : 100;
+                for (ProgressListener l : webBrowser.progressListeners) l.changed(event);
             });
         });
         FlutterBridge.on(this, "Progress", "completed", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                ProgressEvent event = new ProgressEvent(getApi());
+                event.current = event.total = 100;
+                for (ProgressListener l : webBrowser.progressListeners) l.completed(event);
             });
         });
         FlutterBridge.on(this, "StatusText", "changed", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                StatusTextEvent event = new StatusTextEvent(getApi());
+                event.text = e != null ? e.text : "";
+                for (StatusTextListener l : webBrowser.statusTextListeners) l.changed(event);
             });
         });
         FlutterBridge.on(this, "Title", "changed", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                TitleEvent event = new TitleEvent(getApi());
+                event.title = e != null ? e.text : "";
+                for (TitleListener l : webBrowser.titleListeners) l.changed(event);
             });
         });
         FlutterBridge.on(this, "VisibilityWindow", "hide", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                WindowEvent event = new WindowEvent(getApi());
+                for (VisibilityWindowListener l : webBrowser.visibilityWindowListeners) l.hide(event);
             });
         });
         FlutterBridge.on(this, "VisibilityWindow", "show", e -> {
             getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                WindowEvent event = new WindowEvent(getApi());
+                for (VisibilityWindowListener l : webBrowser.visibilityWindowListeners) l.show(event);
             });
         });
     }

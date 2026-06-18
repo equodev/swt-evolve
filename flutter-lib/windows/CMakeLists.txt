@@ -57,6 +57,12 @@ add_subdirectory("runner")
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
+# flutter_library (the custom DLL) also compiles generated_plugin_registrant.cc
+# and needs the same plugin include dirs that generated_plugins.cmake wires to BINARY_NAME.
+foreach(plugin ${FLUTTER_PLUGIN_LIST})
+  target_link_libraries(flutter_library PRIVATE ${plugin}_plugin)
+endforeach(plugin)
+
 
 # === Installation ===
 # Support files are copied into place next to the executable, so that it can

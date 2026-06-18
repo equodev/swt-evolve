@@ -5138,7 +5138,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     @Override
-    int getAutoscalingZoom() {
+    public int getAutoscalingZoom() {
         if (isAutoscalingDisabled()) {
             return 100;
         }
@@ -5154,14 +5154,14 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
 
     int computeGetBoundsZoom() {
         if (parent != null && !isAutoscalingDisabled()) {
-            return ((SwtControl) parent.getImpl()).getAutoscalingZoom();
+            return parent.getImpl().getAutoscalingZoom();
         }
         return getAutoscalingZoom();
     }
 
     int computeBoundsZoom() {
         if (parent != null) {
-            return ((SwtControl) parent.getImpl()).getAutoscalingZoom();
+            return parent.getImpl().getAutoscalingZoom();
         }
         return getAutoscalingZoom();
     }

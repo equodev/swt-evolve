@@ -8,6 +8,7 @@ import '../styles.dart';
 import '../theme/theme_extensions/menu_theme_extension.dart';
 import 'widget_config.dart';
 import 'utils/text_utils.dart';
+import 'utils/pointer.dart';
 
 class MenuState {
   final Map<VMenuItem, void Function(bool)> radioItemCallbacks = {};
@@ -206,7 +207,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
         }
       },
       menuChildren: [
-        MenuChangeNotifier(
+        pointerInterceptor(MenuChangeNotifier(
           registerPendingChange: _registerPendingChange,
           menuState: _menuState,
           closeMenu: _menuController.close,
@@ -216,7 +217,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
                 .map((item) => MenuItemSwt(value: item))
                 .toList(),
           ),
-        ),
+        )),
       ],
       builder: (context, controller, child) => const SizedBox.shrink(),
     );
@@ -350,7 +351,7 @@ class _MenuBarItemState extends State<_MenuBarItem> {
         onOpen: widget.onMenuShow,
         onClose: widget.onMenuHide,
         menuChildren: [
-          MenuChangeNotifier(
+          pointerInterceptor(MenuChangeNotifier(
             registerPendingChange: widget.registerPendingChange,
             menuState: widget.menuState,
             closeMenu: _subMenuController.close,
@@ -358,7 +359,7 @@ class _MenuBarItemState extends State<_MenuBarItem> {
               mainAxisSize: MainAxisSize.min,
               children: _menuChildren,
             ),
-          ),
+          )),
         ],
         builder: (context, controller, child) {
           return MouseRegion(

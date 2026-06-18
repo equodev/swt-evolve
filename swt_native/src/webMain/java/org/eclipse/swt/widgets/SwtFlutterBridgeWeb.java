@@ -44,6 +44,12 @@ public class SwtFlutterBridgeWeb extends FlutterBridge implements WindowBridge {
      * Creates and starts a bridge for the given Display. Called once during Display.init().
      */
     public static SwtFlutterBridgeWeb initForDisplay(DartDisplay display) {
+        // A test/bench harness may inject its own bridge (FlutterBridge.set) before the Display is
+        // created; it then owns the comm, HTTP server and browser for a specific root, and every
+        // widget already routes through it (see FlutterBridge.of). Creating a per-Display bridge here
+        // would double-boot a second server + browser (the latter popping a tab in the dev's real
+        // browser). Skip it; leaving displayBridge null is safe — all its uses are null-guarded.
+        if (FlutterBridge.injected() != null) return null;
         SwtFlutterBridgeWeb bridge = new SwtFlutterBridge(display);
         display.setBridge(bridge);
         bridge.startWebServer(display);
@@ -242,7 +248,7 @@ public class SwtFlutterBridgeWeb extends FlutterBridge implements WindowBridge {
 
     public void destroyDisplay() {
         if (chromiumLauncher != null) {
-            chromiumLauncher.close();
+            chromiumLauncher.close(true);
             chromiumLauncher = null;
         }
         if (webServer != null) {

@@ -2893,6 +2893,13 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
         return true;
     }
 
+    @Override
+    public int getAutoscalingZoom() {
+        System.out.println("+++ CONVERTING DynComposite from Control#getAutoscalingZoom() #" + getApi().hashCode());
+        IControl newImpl = (IControl) convert();
+        return newImpl.getAutoscalingZoom();
+    }
+
     public Composite _parent() {
         return parent;
     }

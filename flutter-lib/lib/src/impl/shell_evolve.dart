@@ -11,6 +11,7 @@ import '../impl/decorations_evolve.dart';
 import '../impl/messagebox_evolve.dart';
 import '../impl/utils/widget_utils.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
+import 'utils/pointer.dart';
 
 class FloatingShellChromeScope extends InheritedWidget {
   final BoxConstraints viewportConstraints;
@@ -310,7 +311,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
     if (opacity < 1.0) dialog = Opacity(opacity: opacity, child: dialog);
 
-    return Positioned(left: offset.dx, top: offset.dy, child: dialog);
+    return Positioned(left: offset.dx, top: offset.dy, child: pointerInterceptor(dialog));
   }
 }
 

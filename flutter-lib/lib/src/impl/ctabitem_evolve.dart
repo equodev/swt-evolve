@@ -61,7 +61,7 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     CTabItemThemeExtension itemTheme,
     CTabFolderThemeExtension folderTheme,
   ) {
-    final text = stripAccelerators(state.text) ?? "";
+    final text = stripAccelerators(state.text);
     final tabItemContext = TabItemContext.of(context);
     final isSelected = tabItemContext?.isSelected ?? false;
     final isEnabled = tabItemContext?.isEnabled ?? true;

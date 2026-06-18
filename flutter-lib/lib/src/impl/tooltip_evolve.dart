@@ -5,6 +5,7 @@ import '../gen/widget.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/tooltip_theme_extension.dart';
 import 'widget_config.dart';
+import 'utils/pointer.dart';
 
 class ToolTipImpl<T extends ToolTipSwt, V extends VToolTip>
     extends WidgetSwtState<T, V> {
@@ -78,12 +79,12 @@ class ToolTipImpl<T extends ToolTipSwt, V extends VToolTip>
               ignoring: !_animVisible,
               child: Material(
                 color: Colors.transparent,
-                child: _TooltipContent(
+                child: pointerInterceptor(_TooltipContent(
                   message: state.message,
                   text: state.text,
-                  style: state.style ?? 0,
+                  style: state.style,
                   onTap: _onTap,
-                ),
+                )),
               ),
             ),
           ),

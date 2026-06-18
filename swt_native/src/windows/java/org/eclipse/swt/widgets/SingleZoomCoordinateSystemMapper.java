@@ -35,9 +35,9 @@ class SingleZoomCoordinateSystemMapper implements CoordinateSystemMapper {
             ((SwtDisplay) display.getImpl()).error(SWT.ERROR_INVALID_ARGUMENT);
         }
         if (to != null) {
-            return ((SwtControl) to.getImpl()).getAutoscalingZoom();
+            return to.getImpl().getAutoscalingZoom();
         }
-        return ((SwtControl) from.getImpl()).getAutoscalingZoom();
+        return from.getImpl().getAutoscalingZoom();
     }
 
     @Override

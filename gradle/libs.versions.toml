@@ -1,10 +1,11 @@
 [versions]
 kotlin = "2.1.20"
-junit = "5.11.4"
+junit = "5.13.1"
 assertj = "3.25.3"
 java-websocket = "1.5.7"
 jetty = "12.0.16"
 equo-chromium = "[128.0.44,129.0.0)"
+equo-chromium-cef = "[128.0.39,129.0.0)"
 auto-value = "1.10.4"
 dsl-json = "2.0.2"
 json-unit = "4.1.1"
@@ -18,6 +19,7 @@ junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit" }
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter" }
 junit-jupiter-params = { group = "org.junit.jupiter", name = "junit-jupiter-params" }
 junit-jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine" }
+junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher" }
 
 # Testing
 assertj = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }

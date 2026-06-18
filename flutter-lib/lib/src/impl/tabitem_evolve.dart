@@ -55,7 +55,7 @@ class TabItemImpl<T extends TabItemSwt, V extends VTabItem>
             Padding(padding: widgetTheme.imagePadding, child: imageWidget),
           Padding(
             padding: widgetTheme.textPadding,
-            child: Text(stripAccelerators(state.text) ?? "", style: textStyle),
+            child: Text(stripAccelerators(state.text), style: textStyle),
           ),
         ],
       ),

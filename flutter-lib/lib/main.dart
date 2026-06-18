@@ -30,6 +30,7 @@ import 'fontSize.dart' as font_size;
 import 'imageSize.dart' as image_size;
 import 'widgetSize.dart' as widget_size;
 import 'bench.dart' as bench;
+import 'test_harness.dart' as test_harness;
 import 'src/gen/gc.dart';
 import 'src/impl/gcdrawer_evolve.dart';
 
@@ -45,6 +46,9 @@ void main(List<String> args) async {
     print("Using port $port");
     EquoCommService.setPort(port);
   }
+
+  // Dormant test-support channel (no-op in production; see test_harness.dart).
+  test_harness.registerTestQueryChannel();
 
   int? widgetId = getWidgetId(args);
   String? widgetName = getWidgetName(args);

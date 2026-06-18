@@ -9,6 +9,7 @@ plugins {
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 val arch = System.getProperty("os.arch")
@@ -49,21 +50,33 @@ fun getSwtArch(arch: String): String =
 
 val isWindowsOs = System.getProperty("os.name").lowercase().contains("windows")
 
-fun resolveOnPath(name: String): String {
+fun findOnPath(name: String): String? {
     val pathEnv = System.getenv("PATH") ?: ""
     for (dir in pathEnv.split(if (isWindowsOs) ";" else ":")) {
         if (dir.isBlank()) continue
         val f = File(dir, name)
         if (f.isFile && f.canExecute()) return f.absolutePath
     }
-    return name
+    return null
 }
 
+fun resolveOnPath(name: String): String = findOnPath(name) ?: name
+
+// Prefer the project's FVM-pinned Flutter SDK when available: when flutter-lib
+// has a .fvmrc *and* `fvm` is on PATH, drive the toolchain through `fvm flutter`
+// / `fvm dart` (fvm reads .fvmrc to pick the version; the Exec tasks run from
+// flutter-lib so it resolves correctly). Otherwise fall back to the global
+// flutter/dart on PATH — which is what CI uses, since fvm isn't installed there.
+val fvmExe: String? by lazy {
+    if (file("../flutter-lib/.fvmrc").exists())
+        findOnPath(if (isWindowsOs) "fvm.bat" else "fvm")
+    else null
+}
 val flutterExePath: String by lazy { resolveOnPath(if (isWindowsOs) "flutter.bat" else "flutter") }
 val dartExePath: String by lazy { resolveOnPath(if (isWindowsOs) "dart.bat" else "dart") }
 
-fun flutterExe(): String = flutterExePath
-fun dartExe(): String = dartExePath
+fun flutterCmd(): List<String> = fvmExe?.let { listOf(it, "flutter") } ?: listOf(flutterExePath)
+fun dartCmd(): List<String> = fvmExe?.let { listOf(it, "dart") } ?: listOf(dartExePath)
 
 fun requiredFlutterVersion(): String {
     val content = file("../flutter-lib/pubspec.yaml").readText()
@@ -81,7 +94,9 @@ val checkFlutterVersion by tasks.registering {
     outputs.upToDateWhen { true }
     doFirst {
         val required = requiredFlutterVersion()
-        val process = ProcessBuilder(flutterExe(), "--version").redirectErrorStream(true).start()
+        val process = ProcessBuilder(flutterCmd() + "--version")
+            .directory(file("../flutter-lib"))
+            .redirectErrorStream(true).start()
         val output = process.inputStream.bufferedReader().readText()
         process.waitFor()
         val installed = Regex("""Flutter (\d+\.\d+\.\d+)""").find(output)?.groupValues?.get(1)
@@ -132,6 +147,7 @@ dependencies {
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.assertj)
     testImplementation(libs.json.unit.assertj)
     // Gson, two test-only roles: (1) the JSON backend json-unit 4.x discovers at runtime (without one
@@ -197,6 +213,35 @@ sourceSets {
         compileClasspath += webShared.output
         runtimeClasspath += webShared.output
     }
+
+    // Web-backed integration test source set: the SAME test code (src/test/java), but compiled
+    // against the WEB Java backend (src/main + src/webMain + src/web<currentOs>) instead of the
+    // native one — so 'flutter-it' tests exercise web-specific server logic. Driven by the `webTest` task.
+    val webBackend = getByName("web${currentOs.replaceFirstChar { it.titlecase() }}")
+    create("webTest") {
+        java {
+            setSrcDirs(listOf("src/test/java"))
+            // Only the harness + flutter-it tests (named *FlutterTest by convention): the rest of
+            // src/test/java (Mocks, SerializeTestBase, …) imports native-only Swt* classes absent
+            // from the web backend.
+            include("dev/equo/swt/harness/**", "**/*FlutterTest.java")
+        }
+        compileClasspath += webBackend.output + webBackend.compileClasspath
+        runtimeClasspath += output + webBackend.output + webBackend.runtimeClasspath
+    }
+}
+
+// webTest reuses the test dependencies (JUnit, AssertJ, Mockito, Gson, …) and annotation processor.
+configurations["webTestImplementation"].extendsFrom(configurations["testImplementation"])
+configurations["webTestRuntimeOnly"].extendsFrom(configurations["testRuntimeOnly"])
+configurations["webTestAnnotationProcessor"].extendsFrom(configurations["testAnnotationProcessor"])
+
+val chromiumMode = System.getProperty("mode.chromium", "false") == "true"
+if (chromiumMode) {
+    dependencies {
+        "webTestRuntimeOnly"(libs.equo.chromium)
+        "webTestRuntimeOnly"("com.equo:com.equo.chromium.cef.${getSwtWs(currentOs)}.${getSwtOs(currentOs)}.${getSwtArch(arch)}:${libs.versions.equo.chromium.cef.get()}")
+    }
 }
 
 // Configure Java compilation
@@ -209,23 +254,44 @@ tasks.test {
     useJUnitPlatform {
         // Bench tests are slow + write artifacts; always excluded from the default test run.
         excludeTags("bench")
+        // Flutter integration tests need a Flutter web build + Chrome; not run by default.
+        excludeTags("flutter-it")
         val excludeTagsProp = System.getProperty("excludeTags")
         if (excludeTagsProp != null) excludeTags(*excludeTagsProp.split(",").toTypedArray())
     }
-    testLogging {
-        if (System.getProperty("quietTests") != null) {
-            events = setOf(TestLogEvent.FAILED)
-            showStandardStreams = false
-        } else {
-            events = setOf(TestLogEvent.PASSED, TestLogEvent.FAILED, TestLogEvent.SKIPPED, TestLogEvent.STANDARD_OUT, TestLogEvent.STANDARD_ERROR)
-        }
-    }
+    configureTestLogging()
     dependsOn("${currentPlatform}ExtractNatives", "${currentPlatform}CopyFlutterBinaries")
     if (org.gradle.internal.os.OperatingSystem.current().isMacOsX)
         jvmArgs = listOf("-XstartOnFirstThread")
     systemProperty("swt.library.path", layout.buildDirectory.dir("natives/$currentPlatform").get().toString())
     if (System.getProperty("test.debug") != null)
         jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
+}
+
+tasks.register<Test>("webTest") {
+    group = "verification"
+    description = "Runs Flutter integration tests (tagged 'flutter-it') against the WEB Java backend + Flutter WEB build."
+    testClassesDirs = sourceSets["webTest"].output.classesDirs
+    classpath = if (chromiumMode)
+        sourceSets["web${currentOs.replaceFirstChar { it.titlecase() }}"].output + sourceSets["webTest"].runtimeClasspath
+    else
+        sourceSets["webTest"].runtimeClasspath
+    useJUnitPlatform { includeTags("flutter-it") }
+    configureTestLogging()
+    if (System.getProperty("skipFlutterLib") == null)
+        dependsOn("webFlutterLib")
+    systemProperty("harness.client", "web")
+    systemProperty("dev.equo.swt.loadLibrary", "false")
+    systemProperty("dev.equo.swt.mode", if (chromiumMode) "chromium" else "web")
+    // The Browser scripting / same-origin cases (evaluate, BrowserFunction,
+    // Title/StatusText, redirect) need the iframe content to be same-origin,
+    // which the opt-in reverse proxy provides. Default it ON for tests so the
+    // suite reflects the supported feature set; override with
+    // -Ddev.equo.swt.web.proxy=<all|host,host> or = (empty) to disable.
+    systemProperty("dev.equo.swt.web.proxy", System.getProperty("dev.equo.swt.web.proxy") ?: "all")
+    if (chromiumMode && org.gradle.internal.os.OperatingSystem.current().isMacOsX)
+        jvmArgs = listOf("-XstartOnFirstThread")
+    forwardSystemProperties("harness.client", "harness.web.headless", "harness.web.console", "harness.readyTimeoutMs", "harness.queryTimeoutMs", "harness.holdMs", "equo.swt.browser", "dev.equo.swt.mode")
 }
 
 // Config shared by both bench Test tasks (native `benchmark` + browser `webBenchmark`): the
@@ -236,11 +302,20 @@ fun Test.configureCommBench() {
     testClassesDirs = sourceSets["test"].output.classesDirs
     classpath = sourceSets["test"].runtimeClasspath
     useJUnitPlatform { includeTags("bench") }
-    testLogging {
-        events = setOf(TestLogEvent.PASSED, TestLogEvent.FAILED, TestLogEvent.SKIPPED, TestLogEvent.STANDARD_OUT, TestLogEvent.STANDARD_ERROR)
-        showStandardStreams = true
-    }
+    configureTestLogging()
     outputs.upToDateWhen { false } // always rerun benchmarks
+}
+
+fun Test.configureTestLogging() {
+    testLogging {
+        if (System.getProperty("quietTests") != null) {
+            events = setOf(TestLogEvent.FAILED)
+            showStandardStreams = false
+        } else {
+            events = setOf(TestLogEvent.PASSED, TestLogEvent.FAILED, TestLogEvent.SKIPPED, TestLogEvent.STANDARD_OUT, TestLogEvent.STANDARD_ERROR)
+            showStandardStreams = true
+        }
+    }
 }
 
 // Forward each given -D system property from the Gradle CLI JVM into the test JVM (only those set).
@@ -304,14 +379,14 @@ val pub = tasks.register<Exec>("pubGet") {
     workingDir = file("../flutter-lib")
     inputs.file("../flutter-lib/pubspec.yaml")
     outputs.file("../flutter-lib/pubspec.lock")
-    commandLine = listOf(flutterExe(), "pub", "get")
+    commandLine = flutterCmd() + listOf("pub", "get")
 }
 
 tasks.register<Exec>("analyze") {
     group = "build"
     description = "Flutter analyze"
     workingDir = file("../flutter-lib")
-    commandLine = listOf(flutterExe(), "analyze")
+    commandLine = flutterCmd() + listOf("analyze")
 }
 
 val dart = tasks.register<Exec>("dartRunner") {
@@ -330,7 +405,7 @@ val dart = tasks.register<Exec>("dartRunner") {
         include("**/*.g.dart")
         include("**/*.tailor.dart")
     })
-    commandLine = listOf(dartExe(), "run", "build_runner", "build", "--delete-conflicting-outputs")
+    commandLine = dartCmd() + listOf("run", "build_runner", "build", "--delete-conflicting-outputs")
 }
 
 data class WebPlatformMeta(
@@ -388,7 +463,7 @@ val webFlutterLib = tasks.register<Exec>("webFlutterLib") {
     inputs.dir("../flutter-lib/lib")
     inputs.dir("../flutter-lib/web")
     outputs.dir("../flutter-lib/build/web")
-    commandLine = listOf(flutterExe(), "build", "web")
+    commandLine = flutterCmd() + listOf("build", "web")
 }
 
 val copyWebBinaries = tasks.register<Copy>("webCopyFlutterBinaries") {
@@ -450,9 +525,9 @@ platforms.forEach { platform ->
             when (info.os) {
                 "macos" -> {
                     val flutterArch = if (info.arch == "aarch64") "arm64" else "x86_64"
-                    commandLine = listOf("bash", "-c", "./set-arch.sh $flutterArch && '${flutterExe()}' build macos")
+                    commandLine = listOf("bash", "-c", "./set-arch.sh $flutterArch && ${flutterCmd().joinToString(" ")} build macos")
                 }
-                else -> commandLine = listOf(flutterExe(), "build", info.os)
+                else -> commandLine = flutterCmd() + listOf("build", info.os)
             }
         }
 

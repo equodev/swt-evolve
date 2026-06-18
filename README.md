@@ -171,20 +171,6 @@ You can pass a folder, a ZIP file, or a DMG. Run `equo modernize --help` to see 
 | macOS (Intel) | [nattable.example.e4-macos-x86_64.zip](https://dl.equo.dev/swt/nattable.example/nattable.example.e4-macos-x86_64.zip) |
 | Windows (x86_64) | [nattable.example.e4-win-x86_64.zip](https://dl.equo.dev/swt/nattable.example/nattable.example.e4-win-x86_64.zip) |
 
-### Update to the Latest Version of SWT Evolve
-
-The downloaded bundle ships with the version of SWT Evolve available at release time. To upgrade it to the latest version, use the Equo CLI with the `--web` flag:
-
-```bash
-# From the downloaded ZIP
-equo modernize --web path/to/nattable.example.e4-linux-x86_64.zip
-
-# Or from an already-extracted folder
-equo modernize --web path/to/nattable.example.e4-linux-x86_64/
-```
-
-The CLI will replace the SWT Evolve JAR inside the bundle with the latest version and produce an updated, ready-to-run package. The same workflow applies to any other SWT or Eclipse RCP application.
-
 ---
 
 ## Key Features

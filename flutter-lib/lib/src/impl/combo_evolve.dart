@@ -11,6 +11,7 @@ import '../theme/theme_extensions/combo_theme_extension.dart';
 import '../theme/theme_settings/combo_theme_settings.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
+import 'utils/pointer.dart';
 
 class ComboImpl<T extends ComboSwt, V extends VCombo>
     extends CompositeImpl<T, V> {
@@ -286,7 +287,7 @@ class _DropdownComboLayout extends StatelessWidget {
         link: layerLink,
         targetAnchor: Alignment.bottomLeft,
         followerAnchor: Alignment.topLeft,
-        child: TapRegion(
+        child: pointerInterceptor(TapRegion(
           onTapOutside: (_) => overlayController.hide(),
           child: Container(
             width: width,
@@ -316,7 +317,7 @@ class _DropdownComboLayout extends StatelessWidget {
               ),
             ),
           ),
-        ),
+        )),
       ),
     );
   }
