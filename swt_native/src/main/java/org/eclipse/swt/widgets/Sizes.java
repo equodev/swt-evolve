@@ -4,6 +4,7 @@ import dev.equo.swt.size.*;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.DartCCombo;
 import org.eclipse.swt.custom.DartCLabel;
+import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.custom.DartCTabFolder;
 import org.eclipse.swt.custom.DartStyledText;
 import org.eclipse.swt.custom.StyledTextContent;
@@ -18,7 +19,23 @@ public class Sizes {
     private static final double HORIZONTAL_PADDING = 12.0;
 
     public static Point compute(DartCTabFolder impl) {
-        return new Point(impl.getItems().length * 80, 32);
+        final int TAB_BAR_HEIGHT = 32;
+        int tabsWidth = impl.getItems().length * 80;
+        int contentWidth = 0;
+        int contentHeight = 0;
+        int selectedIndex = impl.getSelectionIndex();
+        if (selectedIndex != -1) {
+            CTabItem item = impl.getItem(selectedIndex);
+            Control control = item != null ? item.getControl() : null;
+            if (control != null && !control.isDisposed()) {
+                Point size = control.computeSize(SWT.DEFAULT, SWT.DEFAULT, true);
+                contentWidth = size.x;
+                contentHeight = size.y;
+            }
+        }
+        int width = Math.max(tabsWidth, contentWidth);
+        int height = TAB_BAR_HEIGHT + contentHeight;
+        return new Point(width, height);
     }
 
     public static Point compute(DartMenu c) {
