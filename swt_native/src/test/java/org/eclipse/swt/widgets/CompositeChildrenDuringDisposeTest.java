@@ -62,4 +62,31 @@ class CompositeChildrenDuringDisposeTest extends SerializeTestBase {
                 .as("disposing a nested composite tree must not NPE on a zombie sibling/child")
                 .isThrownBy(outer::dispose);
     }
+
+    /**
+     * Regression test for #706: disposing a single child (while its parent stays
+     * alive) must remove it from the parent's children array via
+     * Composite.removeControl. If it doesn't, the disposed child lingers as a
+     * zombie and later _getChildren() walks (reskinChildren,
+     * CTabFolder.paintChildrenRecursively) hit it and throw "Widget is disposed".
+     *
+     * The macOS manifestation was a generator bug: the removeControl children-array
+     * removal insert was version-gated AtLeast("3.130.0"), so SWT < 3.130 (e.g. the
+     * downgraded 3.122 web build) generated a gutted removeControl that only called
+     * fixTabList — never pruning the array.
+     */
+    @Test
+    void disposeSingleChild_removedFromParentChildren() throws Exception {
+        Composite parent = new Composite(swtShell(), SWT.NONE);
+        Button keep = new Button(parent, SWT.PUSH);
+        Button remove = new Button(parent, SWT.PUSH);
+
+        assertThat(childrenOf(parent)).as("precondition: both children present").hasSize(2);
+
+        remove.dispose();
+
+        assertThat(childrenOf(parent))
+                .as("disposed child must be pruned from parent.children, leaving only the live one")
+                .containsExactly(keep);
+    }
 }

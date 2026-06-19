@@ -329,6 +329,6 @@ public class NSView extends NSResponder {
 
     public NSWindow window() {
         long result = OS.objc_msgSend(this.id, OS.sel_window);
-        return result != 0 ? new NSWindow(result) : null;
+        return result != 0 ? new NSWindow(result) : new NSWindow();
     }
 }

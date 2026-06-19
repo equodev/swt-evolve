@@ -147,7 +147,7 @@ public class SWT_AWT {
         if ((parent.getStyle() & SWT.EMBEDDED) == 0) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        final long handle = (long) parent.view;
+        final long handle = 0L;
         final String className = embeddedFrameClass != null ? embeddedFrameClass : JDK17_FRAME;
         try {
             if (embeddedFrameClass != null) {
