@@ -1032,7 +1032,18 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     public void removeControl(Control control) {
         fixTabList(control);
-        dirty();
+        if (children != null) {
+            for (int i = 0; i < children.length; i++) {
+                if (children[i] == control) {
+                    Control[] newChildren = new Control[children.length - 1];
+                    System.arraycopy(children, 0, newChildren, 0, i);
+                    System.arraycopy(children, i + 1, newChildren, i, children.length - i - 1);
+                    children = newChildren;
+                    dirty();
+                    break;
+                }
+            }
+        }
     }
 
     @Override
