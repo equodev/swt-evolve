@@ -44,6 +44,11 @@ public class GraphicsUtilsTest extends SerializeTestBase {
     }
 
     @Test
+    public void should_return_null_when_path_is_null() {
+        assertThat(GraphicsUtils.getFilename(null)).isNull();
+    }
+
+    @Test
     public void should_copy_fontdata() {
         // Create a FontData
         FontData original = new FontData("Arial", 12, SWT.BOLD);
