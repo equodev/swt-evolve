@@ -5,7 +5,6 @@ import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.WebFlutterServer;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.WindowBridge;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 
 public class SwtFlutterBridgeWeb extends FlutterBridge implements WindowBridge {
@@ -95,24 +94,28 @@ public class SwtFlutterBridgeWeb extends FlutterBridge implements WindowBridge {
         long displayId = display.getApi().hashCode();
         CommService comm = comm();
 
-        comm.on("Display/" + displayId + "/ClientReady", Point.class, p -> {
-            if (p != null) {
-                Point size = p;
-                Display d = display.getApi();
-                d.syncExec(() -> {
-                    Rectangle previousBounds = display.bounds;
-                    Rectangle nextBounds = new Rectangle(0, 0, size.x, size.y);
-                    if (!previousBounds.equals(nextBounds)) {
-                        display.bounds = nextBounds;
-                        resizeMainShells(display, previousBounds, nextBounds);
-                    }
-                });
-            }
+        comm.on("Display/" + displayId + "/ClientReady", ClientReadyPayload.class, p -> {
+            if (p == null) return;
 
-            if (!clientReady.isDone()) {
+            boolean[] boundsChanged = {false};
+            display.getApi().syncExec(() -> {
+                Rectangle nextBounds = new Rectangle(0, 0, p.width, p.height);
+                if (p.isFirst) {
+                    display.bounds = nextBounds;
+                    boundsChanged[0] = true;
+                } else if (!display.bounds.equals(nextBounds)) {
+                    resizeMainShells(display, display.bounds, nextBounds);
+                    display.bounds = nextBounds;
+                    boundsChanged[0] = true;
+                }
+            });
+
+            if (!boundsChanged[0]) return;
+
+            if (p.isFirst) {
                 clientReady.complete(true);
+                sendSwtEvolveProperties();
             }
-            sendSwtEvolveProperties();
 
             sendDisplayUpdate(display);
         });

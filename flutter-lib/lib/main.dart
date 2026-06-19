@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:swtflutter/src/gen/point.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/widget.dart';
@@ -115,9 +114,10 @@ void main(List<String> args) async {
     ),
   );
 
-  sendClientReady(widgetName, widgetId, sendWindowSize: (widgetName == "Display"));
   if (widgetName == "Display") {
     _displayMetricsReporter ??= _DisplayMetricsReporter(widgetId);
+  } else {
+    sendClientReady(widgetName, widgetId);
   }
 }
 
@@ -131,32 +131,16 @@ void sendClientReady(String widgetName, int widgetId, {bool sendWindowSize = fal
   }
 }
 
-class _DisplayMetricsReporter with WidgetsBindingObserver {
+class _DisplayMetricsReporter {
   _DisplayMetricsReporter(this.widgetId) {
-    WidgetsBinding.instance.addObserver(this);
     observeViewportChanges(_sendCurrentSize);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _sendCurrentSize();
-    });
   }
 
   final int widgetId;
-  Size? _lastSentSize;
-
-  @override
-  void didChangeMetrics() {
-    _sendCurrentSize();
-  }
 
   void _sendCurrentSize() {
     final rounded = _currentLogicalViewSize();
-    if (rounded == null) {
-      return;
-    }
-    if (_lastSentSize == rounded) {
-      return;
-    }
-    _lastSentSize = rounded;
+    if (rounded == null) return;
     _sendWindowSizedClientReady("Display", widgetId, sizeOverride: rounded);
   }
 }
@@ -181,12 +165,20 @@ Size? _currentLogicalViewSize() {
   return Size(size.width.roundToDouble(), size.height.roundToDouble());
 }
 
+bool _displayClientReadySent = false;
+
 void _sendWindowSizedClientReady(String widgetName, int widgetId, {Size? sizeOverride}) {
   final size = sizeOverride ?? _currentLogicalViewSize();
-  final point = VPoint()
-    ..x = size?.width.toInt() ?? 1280
-    ..y = size?.height.toInt() ?? 720;
-  EquoCommService.sendPayload("$widgetName/$widgetId/ClientReady", point);
+  final bool isFirst = !_displayClientReadySent;
+  _displayClientReadySent = true;
+  final int w = size?.width.toInt() ?? 1280;
+  final int h = size?.height.toInt() ?? 720;
+  print('[ClientReady] Display/$widgetId isFirst=$isFirst size=${w}x${h}');
+  EquoCommService.sendPayload("$widgetName/$widgetId/ClientReady", {
+    'width': w,
+    'height': h,
+    'isFirst': isFirst,
+  });
 }
 
 Future<void> initSwtEvolveProperties() async {
