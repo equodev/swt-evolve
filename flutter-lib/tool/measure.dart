@@ -1792,6 +1792,11 @@ class WidgetMeasurer {
         '    private static PointD computeText(Dart$widgetType widget, Measure m, boolean emptyTextAffectsSizing) {',
       );
       buffer.writeln('        String text = widget.getText();');
+      if (widgetType == 'Link') {
+        buffer.writeln('        if (text != null) {');
+        buffer.writeln('            text = text.replaceAll("<[^>]+>", "");');
+        buffer.writeln('        }');
+      }
       // PASSWORD style only applies to Text widget
       if (widgetType == 'Text') {
         buffer.writeln(
