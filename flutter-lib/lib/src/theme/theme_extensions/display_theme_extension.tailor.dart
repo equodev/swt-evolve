@@ -36,6 +36,7 @@ mixin _$DisplayThemeExtensionTailorMixin
   double get dialogShadowOffsetX;
   double get dialogShadowOffsetY;
   Color get dialogBackgroundColor;
+  Color get tooltipShellBackgroundColor;
   Color get modalOverlayColor;
   TextStyle? get titleTextStyle;
   TextStyle? get toolWindowTitleTextStyle;
@@ -67,6 +68,7 @@ mixin _$DisplayThemeExtensionTailorMixin
     double? dialogShadowOffsetX,
     double? dialogShadowOffsetY,
     Color? dialogBackgroundColor,
+    Color? tooltipShellBackgroundColor,
     Color? modalOverlayColor,
     TextStyle? titleTextStyle,
     TextStyle? toolWindowTitleTextStyle,
@@ -108,6 +110,8 @@ mixin _$DisplayThemeExtensionTailorMixin
       dialogShadowOffsetY: dialogShadowOffsetY ?? this.dialogShadowOffsetY,
       dialogBackgroundColor:
           dialogBackgroundColor ?? this.dialogBackgroundColor,
+      tooltipShellBackgroundColor:
+          tooltipShellBackgroundColor ?? this.tooltipShellBackgroundColor,
       modalOverlayColor: modalOverlayColor ?? this.modalOverlayColor,
       titleTextStyle: titleTextStyle ?? this.titleTextStyle,
       toolWindowTitleTextStyle:
@@ -213,6 +217,11 @@ mixin _$DisplayThemeExtensionTailorMixin
       dialogBackgroundColor: Color.lerp(
         dialogBackgroundColor,
         other.dialogBackgroundColor,
+        t,
+      )!,
+      tooltipShellBackgroundColor: Color.lerp(
+        tooltipShellBackgroundColor,
+        other.tooltipShellBackgroundColor,
         t,
       )!,
       modalOverlayColor: Color.lerp(
@@ -335,6 +344,10 @@ mixin _$DisplayThemeExtensionTailorMixin
               other.dialogBackgroundColor,
             ) &&
             const DeepCollectionEquality().equals(
+              tooltipShellBackgroundColor,
+              other.tooltipShellBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
               modalOverlayColor,
               other.modalOverlayColor,
             ) &&
@@ -377,6 +390,7 @@ mixin _$DisplayThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(dialogShadowOffsetX),
       const DeepCollectionEquality().hash(dialogShadowOffsetY),
       const DeepCollectionEquality().hash(dialogBackgroundColor),
+      const DeepCollectionEquality().hash(tooltipShellBackgroundColor),
       const DeepCollectionEquality().hash(modalOverlayColor),
       const DeepCollectionEquality().hash(titleTextStyle),
       const DeepCollectionEquality().hash(toolWindowTitleTextStyle),
@@ -422,6 +436,8 @@ extension DisplayThemeExtensionBuildContextProps on BuildContext {
   double get dialogShadowOffsetY => displayThemeExtension.dialogShadowOffsetY;
   Color get dialogBackgroundColor =>
       displayThemeExtension.dialogBackgroundColor;
+  Color get tooltipShellBackgroundColor =>
+      displayThemeExtension.tooltipShellBackgroundColor;
   Color get modalOverlayColor => displayThemeExtension.modalOverlayColor;
   TextStyle? get titleTextStyle => displayThemeExtension.titleTextStyle;
   TextStyle? get toolWindowTitleTextStyle =>

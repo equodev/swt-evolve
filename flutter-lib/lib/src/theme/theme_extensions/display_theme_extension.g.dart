@@ -65,6 +65,9 @@ DisplayThemeExtension _$DisplayThemeExtensionFromJson(
   dialogBackgroundColor: const ColorConverter().fromJson(
     json['dialogBackgroundColor'] as String,
   ),
+  tooltipShellBackgroundColor: const ColorConverter().fromJson(
+    json['tooltipShellBackgroundColor'] as String,
+  ),
   modalOverlayColor: const ColorConverter().fromJson(
     json['modalOverlayColor'] as String,
   ),
@@ -126,6 +129,9 @@ Map<String, dynamic> _$DisplayThemeExtensionToJson(
   'dialogShadowOffsetY': instance.dialogShadowOffsetY,
   'dialogBackgroundColor': const ColorConverter().toJson(
     instance.dialogBackgroundColor,
+  ),
+  'tooltipShellBackgroundColor': const ColorConverter().toJson(
+    instance.tooltipShellBackgroundColor,
   ),
   'modalOverlayColor': const ColorConverter().toJson(
     instance.modalOverlayColor,

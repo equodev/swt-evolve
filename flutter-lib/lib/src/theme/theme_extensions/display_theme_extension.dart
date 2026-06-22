@@ -40,6 +40,7 @@ class DisplayThemeExtension extends ThemeExtension<DisplayThemeExtension>
   final double dialogShadowOffsetX;
   final double dialogShadowOffsetY;
   final Color dialogBackgroundColor;
+  final Color tooltipShellBackgroundColor;
 
   final Color modalOverlayColor;
 
@@ -72,6 +73,7 @@ class DisplayThemeExtension extends ThemeExtension<DisplayThemeExtension>
     required this.dialogShadowOffsetX,
     required this.dialogShadowOffsetY,
     required this.dialogBackgroundColor,
+    required this.tooltipShellBackgroundColor,
     required this.modalOverlayColor,
     this.titleTextStyle,
     this.toolWindowTitleTextStyle,

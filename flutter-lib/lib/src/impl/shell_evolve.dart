@@ -280,9 +280,8 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       );
     }
 
-    final shellBg = state.background != null
-        ? colorFromVColor(state.background, defaultColor: theme.dialogBackgroundColor)
-        : null;
+    final isTooltipLike = _noTrim || (_style & SWT.ON_TOP) != 0;
+    final shellBg = isTooltipLike ? theme.tooltipShellBackgroundColor : null;
     if (shellBg != null) {
       framed = ParentBackgroundScope(background: shellBg, child: framed);
     }
