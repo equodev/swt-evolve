@@ -4,6 +4,7 @@ import '../gen/gc.dart';
 import '../gen/widget.dart';
 import 'utils/widget_utils.dart';
 import '../theme/theme_extensions/canvas_theme_extension.dart';
+import '../theme/theme_extensions/composite_theme_extension.dart';
 import 'canvas_evolve.dart';
 import 'gcdrawer_evolve.dart';
 
@@ -86,7 +87,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
       final forced = ParentBackgroundScope.backgroundOf(context);
       if (forced != null) return forced;
       if (state.background != null) return _drawer.bg;
-      return _canvasTheme.backgroundColor;
+      return Theme.of(context).extension<CompositeThemeExtension>()!.backgroundColor;
     }
     return Colors.transparent;
   }

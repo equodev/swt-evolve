@@ -386,6 +386,17 @@ public class DartCanvas extends DartComposite implements ICanvas {
         }
     }
 
+    @Override
+    public Color getBackground() {
+        checkWidget();
+        return _background != null ? _background : defaultBackground();
+    }
+
+    @Override
+    Color defaultBackground() {
+        return ((DartDisplay) display.getImpl()).getWidgetColor(SWT.COLOR_LIST_BACKGROUND);
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
     }

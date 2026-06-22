@@ -62,6 +62,7 @@ DisplayThemeExtension _getDisplayTheme({
     dialogShadowOffsetX: 0.0,
     dialogShadowOffsetY: 4.0,
     dialogBackgroundColor: colorScheme.surface,
+    tooltipShellBackgroundColor: isDark ? const Color(0xFF3D3A00) : const Color(0xFFFFFFCC),
 
     modalOverlayColor: colorScheme.scrim.withOpacity(0.32),
 
