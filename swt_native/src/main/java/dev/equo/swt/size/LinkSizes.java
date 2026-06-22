@@ -56,6 +56,9 @@ public class LinkSizes {
 
     private static PointD computeText(DartLink widget, Measure m, boolean emptyTextAffectsSizing) {
         String text = widget.getText();
+        if (text != null) {
+            text = text.replaceAll("<[^>]+>", "");
+        }
         if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
             if (!Config.getConfigFlags().use_swt_fonts) {
                 m.textStyle = LinkTheme.get().textStyle().withStyleFrom(widget.getFont());
