@@ -173,9 +173,7 @@ public class GraphicsUtils {
      *     or null if path is null
      */
     static String getFilename(String path) {
-        if (path == null) {
-            return null;
-        }
+        if (path == null) return null;
         String fileName = new java.io.File(path).getName();
         int dotIndex = fileName.lastIndexOf('.');
         return (dotIndex > 0) ? fileName.substring(0, dotIndex) : fileName;
