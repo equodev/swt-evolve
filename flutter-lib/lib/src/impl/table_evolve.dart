@@ -444,7 +444,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
         e.y = ((_cachedHeaderOffset ?? 20.0) / 2).round();
         widget.sendMenuDetectMenuDetect(state, e);
       },
-      child: cell,
+      child: ClipRect(child: cell),
     );
   }
 
@@ -889,7 +889,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
         }
         widths[i] = FixedColumnWidth(width);
       } else {
-        widths[i] = const IntrinsicColumnWidth();
+        widths[i] = const FixedColumnWidth(0.0);
       }
     }
     return widths;
