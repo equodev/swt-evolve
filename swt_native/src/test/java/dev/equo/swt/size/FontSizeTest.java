@@ -74,7 +74,7 @@ public class FontSizeTest extends SizeAssert {
 
     @AfterAll
     static void dispose() {
-        FlutterBridge.disposeDisplayAndContinue(display);
+        display.dispose();
     }
 
     public static Stream<Arguments> sizesTextsAndFonts() {

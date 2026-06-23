@@ -3,6 +3,7 @@ package dev.equo.swt;
 import dev.equo.swt.comm.BinaryCommService;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.comm.JettyBinaryCommService;
+import dev.equo.swt.spi.FlutterBridgeSpi;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
@@ -80,7 +81,7 @@ public abstract class FlutterBridge {
      * the globally-injected bridge (used by tests, where the per-widget bridge may be a stub whose
      * {@code comm()} is null), then the desktop comm.
      */
-    static CommService commFor(Object w) {
+    public static CommService commFor(Object w) {
         CommService c = commOf(getBridge(w));
         if (c == null) c = commOf(bridge);
         return c != null ? c : desktopComm();
@@ -196,7 +197,10 @@ public abstract class FlutterBridge {
 
         List<CompletableFuture<Void>> futures = new ArrayList<>();
 
-        Set<Object> dirtySnapshot = new HashSet<>(dirty);
+        Set<Object> dirtySnapshot;
+        synchronized (dirty) {
+            dirtySnapshot = new HashSet<>(dirty);
+        }
         Set<Object> filteredDirty = filterWidgetsWithDirtyAncestors(dirtySnapshot);
 
         for (Object widget : dirtySnapshot) {

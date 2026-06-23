@@ -468,7 +468,7 @@ public class ConfigTest {
             @AfterEach
             void stop() {
                 tracker.stopTracking();
-                FlutterBridge.disposeDisplayAndContinue(display);
+                display.dispose();
             }
 
             @ParameterizedTest

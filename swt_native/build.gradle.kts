@@ -498,7 +498,8 @@ fun swtExportPackage(swtWs: String?): String = (
         + (swtWs?.let { listOf("org.eclipse.swt.internal.$it; x-friends:=\"org.eclipse.ui\"") } ?: emptyList())
         + "com.equo.chromium.swt"
     ).joinToString(",")
-val webExportPackage = swtExportPackage(null)
+val webExportPackage = swtExportPackage(null) +
+    ",org.eclipse.swt.internal.cloudready,dev.equo.swt.spi"
 
 platforms.forEach { platform ->
     val info = parsePlatform(platform)

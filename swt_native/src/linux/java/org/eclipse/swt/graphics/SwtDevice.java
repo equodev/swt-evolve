@@ -331,7 +331,6 @@ public abstract class SwtDevice implements Drawable, IDevice {
             }
         }
         dev.equo.swt.CrashReporter.writeCleanShutdownMarker();
-        dev.equo.swt.FlutterBridge.disposeClient();
     }
 
     public void dispose_Object(Object object) {
