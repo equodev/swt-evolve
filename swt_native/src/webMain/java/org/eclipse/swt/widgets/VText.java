@@ -34,12 +34,12 @@ public class VText extends VScrollable {
         ((DartText) impl).doubleClick = value;
     }
 
-    public char getEchoCharacter() {
+    public int getEchoCharacter() {
         return ((DartText) impl).getEchoChar();
     }
 
-    public void setEchoCharacter(char value) {
-        ((DartText) impl).echoCharacter = value;
+    public void setEchoCharacter(int value) {
+        ((DartText) impl).echoCharacter = (char) value;
     }
 
     public boolean getEditable() {
