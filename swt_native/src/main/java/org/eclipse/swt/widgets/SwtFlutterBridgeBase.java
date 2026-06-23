@@ -38,6 +38,11 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
     }
 
     public static SwtFlutterBridge of(DartWidget widget) {
+        // Idempotent: now that getBridge(widget) falls back to of() during
+        // _hookEvents (before register() runs), this can be invoked twice per
+        // widget. Returning the cached bridge avoids creating a duplicate
+        // SwtFlutterBridge + duplicate addSelectionListener side effects.
+        if (widget.bridge instanceof SwtFlutterBridge cached) return cached;
         if (widget instanceof DartControl dartControl && !(dartControl.parent.getImpl() instanceof DartComposite)) {
             FlutterBridge bridge = new SwtFlutterBridge(widget);
             widget.bridge = bridge;
@@ -52,6 +57,9 @@ public abstract class SwtFlutterBridgeBase extends FlutterBridge {
         }
         if (widget instanceof DartControl dartControl && dartControl.parent.getImpl() instanceof DartComposite c) {
             FlutterBridge bridge = c.getBridge();
+            // Cache the parent's bridge on the child so future getBridge(widget)
+            // lookups short-circuit instead of walking the parent chain again.
+            if (bridge != null) widget.bridge = bridge;
             return (SwtFlutterBridge) bridge;
         }
         return null;

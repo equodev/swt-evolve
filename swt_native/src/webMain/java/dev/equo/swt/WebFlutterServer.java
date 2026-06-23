@@ -197,6 +197,10 @@ public class WebFlutterServer {
     public void launchBrowser() throws IOException {
         String url = getApplicationUrl();
 
+        // Server-side auto-launch is gated by the equo.swt.browser system property:
+        // "none" disables it. A host that serves a remote browser (where the
+        // browser is on the user's machine, not the server) sets
+        // equo.swt.browser=none so this never opens a tab server-side.
         if ("none".equalsIgnoreCase(browserCommand)) {
             System.out.println("Browser launch disabled. Open manually: " + url);
             return;
@@ -368,6 +372,7 @@ public class WebFlutterServer {
                     String content = Files.readString(file.toPath(), java.nio.charset.StandardCharsets.UTF_8);
                     content = content
                             .replace("{{EQUO_COMM_PORT}}", String.valueOf(commPort))
+                            .replace("{{EQUO_COMM_URL}}", "")
                             .replace("{{EQUO_WIDGETID}}", String.valueOf(widgetId))
                             .replace("{{EQUO_WIDGETNAME}}", widgetName != null ? widgetName : "")
                             .replace("{{EQUO_BROWSER_PROXY}}", String.valueOf(proxyEnabled()));

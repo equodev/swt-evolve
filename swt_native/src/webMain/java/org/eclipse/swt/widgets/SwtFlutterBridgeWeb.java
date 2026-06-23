@@ -5,6 +5,8 @@ import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.WebFlutterServer;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.WindowBridge;
+import dev.equo.swt.spi.FlutterBridgeSpi;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 
 public class SwtFlutterBridgeWeb extends FlutterBridge implements WindowBridge {
@@ -54,7 +56,38 @@ public class SwtFlutterBridgeWeb extends FlutterBridge implements WindowBridge {
         SwtFlutterBridgeWeb bridge = new SwtFlutterBridge(display);
         display.setBridge(bridge);
         bridge.startWebServer(display);
+        FlutterBridgeSpi.registerWebServerUrlLookup(SwtFlutterBridgeWeb::lookupWebServerUrl);
+        FlutterBridgeSpi.registerCommPortLookup(SwtFlutterBridgeWeb::lookupCommPort);
+        FlutterBridgeSpi.notifyDisplayCreated(display.getApi());
         return bridge;
+    }
+
+    /**
+     * SPI implementation backing {@link FlutterBridgeSpi#getWebServerUrl(Object)}.
+     * Returns null when the display is null, has no web impl, or no web server yet.
+     */
+    static String lookupWebServerUrl(Object displayObj) {
+        if (!(displayObj instanceof Display display)) return null;
+        if (!(display.getImpl() instanceof DartDisplay dartDisplay)) return null;
+        SwtFlutterBridgeWeb bridge = dartDisplay.displayBridge;
+        if (bridge == null || bridge.webServer == null) return null;
+        return bridge.webServer.getApplicationUrl();
+    }
+
+    /**
+     * SPI implementation backing {@link FlutterBridgeSpi#getCommPort(Object)}.
+     * Resolves the Display's own per-session comm port so an embedding host's WS
+     * proxy dials the right comm. Returns -1 when unavailable. This is the
+     * Display-aware path {@code FlutterBridge.commFor(Object)} cannot provide from
+     * the shared module (it can't reach the web-only display bridge).
+     */
+    static int lookupCommPort(Object displayObj) {
+        if (!(displayObj instanceof Display display)) return -1;
+        if (!(display.getImpl() instanceof DartDisplay dartDisplay)) return -1;
+        SwtFlutterBridgeWeb bridge = dartDisplay.displayBridge;
+        if (bridge == null) return -1;
+        CommService c = bridge.comm();
+        return c != null ? c.getPort() : -1;
     }
 
     /**

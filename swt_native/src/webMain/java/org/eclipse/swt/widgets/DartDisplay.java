@@ -670,6 +670,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     static void checkDisplay(Thread thread, boolean multiple) {
+        multiple = true;
         synchronized (DartDisplay.class) {
             for (int i = 0; i < Displays.length; i++) {
                 if (Displays[i] != null) {
@@ -1116,6 +1117,12 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * @return the default display
      */
     public static Display getDefault() {
+        Object resolved = org.eclipse.swt.internal.cloudready.DefaultDisplayResolver.get();
+        if (resolved instanceof Display)
+            return (Display) resolved;
+        if (org.eclipse.swt.internal.cloudready.DefaultDisplayResolver.isSet()) {
+            return new Display();
+        }
         synchronized (DartDisplay.class) {
             if (Default == null)
                 Default = new Display();
