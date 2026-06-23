@@ -110,9 +110,6 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
       final toolbarHeight = (boundsHeight != null && boundsHeight > 0)
           ? boundsHeight.toDouble()
           : 70.0;
-      final toolItemTheme = Theme.of(context).extension<ToolItemThemeExtension>();
-      final keywordTextLower = toolItemTheme!.segmentKeywordText.toLowerCase();
-      final keywordLeftOffset = widgetTheme!.keywordLeftOffset;
       final dividerColor = widgetTheme!.borderColor;
       final dividerThickness = widgetTheme!.separatorThickness;
       final dividerVerticalPadding = widgetTheme!.dividerVerticalPadding;
@@ -154,61 +151,24 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
                 final effectiveH =
                     box.maxHeight.isFinite ? box.maxHeight : toolbarHeight;
 
-                double currentRightNatural = 0.0;
-                final reflowItems = <({
-                  double effectiveLeft,
-                  double effectiveW,
-                  Widget widget,
-                })>[];
-
-                for (final entry in builtChildren) {
-                  final rawLeft = (entry.child.bounds?.x ?? 0).toDouble();
-                  final javaChildW =
-                      (entry.child.bounds?.width ?? 0).toDouble();
-                  final isKeyword = isRootToolbar &&
-                      _containsKeyword(entry.child, keywordTextLower);
-                  final isVCLabelItem = _containsVCLabel(entry.child);
-
-                  final effectiveLeft = (isKeyword || isVCLabelItem)
-                      ? currentRightNatural
-                      : math.max(rawLeft, currentRightNatural);
-
-                  final naturalW = _estimateChildNaturalWidth(entry.child, toolItemTheme!);
-                  final double effectiveW;
-                  if (isVCLabelItem && entry.child is VCLabel) {
-                    final vcl = entry.child as VCLabel;
-                    effectiveW = _isVCLabelChip(vcl) ? _measureChipW(vcl) : javaChildW;
-                  } else if (isVCLabelItem && entry.child is VComposite) {
-                    effectiveW = _getVCLabelCompositeW(entry.child as VComposite);
-                  } else if (isVCLabelItem) {
-                    effectiveW = javaChildW;
-                  } else {
-                    effectiveW = math.max(javaChildW, naturalW);
-                  }
-                  reflowItems.add((effectiveLeft: effectiveLeft, effectiveW: effectiveW, widget: entry.widget));
-                  currentRightNatural = math.max(currentRightNatural, effectiveLeft + effectiveW);
-                }
-
-                final totalRight = currentRightNatural;
-                final finalScaleX = (totalRight > availW && totalRight > 0)
-                    ? availW / totalRight
-                    : 1.0;
-
                 final stackChildren = <Widget>[];
 
-                for (final item in reflowItems) {
+                for (final entry in builtChildren) {
+                  final left = (entry.child.bounds?.x ?? 0).toDouble();
+                  final width = (entry.child.bounds?.width ?? 0).toDouble();
+                  if (width <= 0) continue;
                   stackChildren.add(Positioned(
-                    left: item.effectiveLeft * finalScaleX,
+                    left: left,
                     top: 0,
                     bottom: 0,
-                    width: item.effectiveW * finalScaleX,
-                    child: item.widget,
+                    width: width,
+                    child: entry.widget,
                   ));
                 }
 
                 for (final dividerX in computedDividers) {
                   stackChildren.add(Positioned(
-                    left: dividerX * finalScaleX - dividerThickness / 2,
+                    left: dividerX - dividerThickness / 2,
                     top: dividerVerticalPadding,
                     bottom: dividerVerticalPadding,
                     width: dividerThickness,
