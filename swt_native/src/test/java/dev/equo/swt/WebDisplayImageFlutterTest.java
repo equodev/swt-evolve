@@ -14,12 +14,13 @@ import org.junit.jupiter.api.*;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Regression tests for the three web-mode fixes described in CHANGES.md.
+ * Regression tests for web-mode behavior: monitor bounds consistency,
+ * image provider null-path handling, and image provider exception recovery.
  * Compiled against the web backend (webMain) via the webTest source set.
  * Run with: ./gradlew :swt_native:webTest
  */
 @Tag("flutter-it")
-class WebFixesFlutterTest {
+class WebDisplayImageFlutterTest {
 
     private static FlutterHarness flutter;
     private static Display display;
@@ -39,9 +40,6 @@ class WebFixesFlutterTest {
         if (flutter != null) flutter.teardown();
     }
 
-    // Fix 1: DartDisplay.getPrimaryMonitor() was returning a Monitor with zeroed
-    // bounds because it omitted the monitor.setBounds(bounds) / setClientArea(bounds)
-    // calls that getMonitors() already had. After the fix both must agree.
     @Test
     void getPrimaryMonitor_bounds_consistent_with_getMonitors() {
         Monitor primary = display.getPrimaryMonitor();
@@ -52,10 +50,6 @@ class WebFixesFlutterTest {
         assertThat(primary.getClientArea()).isEqualTo(primaryBounds);
     }
 
-    // Fix 2 (web): When ImageFileNameProvider.getImagePath(100) returns null (as it
-    // does for JFace bundle-URL resources in web mode), DartImage must throw a
-    // SWTException so JFace can catch it and fall back to InputStream loading —
-    // not a NullPointerException which JFace does not catch.
     @Test
     void imageFileNameProvider_null_path_throws_SWTException_not_NPE() {
         ImageFileNameProvider nullPathProvider = zoom -> null;
@@ -64,10 +58,6 @@ class WebFixesFlutterTest {
                 .isNotInstanceOf(NullPointerException.class);
     }
 
-    // Fix 3: When ImageDataProvider.getImageData(100) throws SWTException (e.g.
-    // "No SVG rasterizer found"), DartImage must absorb the exception and use a
-    // 1x1 placeholder instead of propagating it — which would crash the caller
-    // (ProgressMonitorPart) since it does not wrap new Image() in a try-catch.
     @Test
     void imageDataProvider_swt_exception_falls_back_to_placeholder() {
         ImageDataProvider throwingProvider = zoom -> {
