@@ -70,7 +70,13 @@ class AssetsManager {
       try {
         final assetPath = 'assets/icons/$base.$format';
         if (format == 'svg') {
-          return await rootBundle.loadString(assetPath);
+          try {
+            return await rootBundle.loadString(assetPath);
+          } on UnsupportedError {
+            continue;
+          } catch (e) {
+            continue;
+          }
         } else {
           final bytes = await rootBundle.load(assetPath);
           final codec = await ui.instantiateImageCodec(bytes.buffer.asUint8List());
