@@ -25,6 +25,8 @@ class GCDrawer extends GCDrawerBase {
   final List<Shape> shapes = [];
   final void Function(List<Shape>)? onShapesUpdated;
 
+  final List<ImageShape> _lateLoadedImages = [];
+
 
   // BuildContext for text style resolution (widget mode only, null in image mode).
   // Updated by GCImpl before each build via syncContext().
@@ -75,12 +77,21 @@ class GCDrawer extends GCDrawerBase {
 
       final pending = List<Future<ImageShape>>.from(_pendingImages);
       _pendingImages.clear();
-      if (pending.isNotEmpty) await Future.wait(pending);
+
+      if (pending.isNotEmpty) {
+        try {
+          await Future.wait(pending);
+        } catch (e) {
+          // Failed images will be replaced with fallback shapes
+        }
+      }
 
       cycleStaging.removeWhere((s) => s is _PlaceholderShape);
 
       shapes.clear();
       shapes.addAll(cycleStaging);
+      shapes.addAll(_lateLoadedImages);
+      _lateLoadedImages.clear();
 
       if (shapes.isNotEmpty) onGCDispose?.call(List.from(shapes));
       onShapesUpdated?.call(shapes);
@@ -495,13 +506,12 @@ class GCDrawer extends GCDrawerBase {
       VGCDrawImageImageintintintintintintintint o) {
     if (o.image == null) return;
     final capturedClipping = clipping;
-    final targetStaging = _staging;
-    final idx = targetStaging.length;
-    targetStaging.add(_PlaceholderShape());
+    final idx = _staging.length;
+    _staging.add(_PlaceholderShape());
     final f = ImageShape.fromVImageDetailed(o.image!, o, capturedClipping);
     _pendingImages.add(f);
     f.then((s) {
-      if (idx < targetStaging.length) targetStaging[idx] = s;
+      _onImageLoaded(idx, s);
     });
   }
 
@@ -510,14 +520,21 @@ class GCDrawer extends GCDrawerBase {
     VGCDrawImageImageintintintintintintintint opArgs,
     Rect? capturedClipping,
   ) {
-    final targetStaging = _staging;
-    final idx = targetStaging.length;
-    targetStaging.add(_PlaceholderShape());
+    final idx = _staging.length;
+    _staging.add(_PlaceholderShape());
     final f = ImageShape.fromVImageDetailed(vImage, opArgs, capturedClipping);
     _pendingImages.add(f);
     f.then((imageShape) {
-      if (idx < targetStaging.length) targetStaging[idx] = imageShape;
+      _onImageLoaded(idx, imageShape);
     });
+  }
+
+  void _onImageLoaded(int idx, ImageShape shape) {
+    if (idx < _staging.length) {
+      _staging[idx] = shape;
+    } else {
+      _lateLoadedImages.add(shape);
+    }
   }
 
   @override
@@ -1186,45 +1203,76 @@ class ImageShape extends Shape {
 
   static Future<ImageShape> fromVImageDetailed(VImage vImage,
       VGCDrawImageImageintintintintintintintint opArgs, Rect? clipRect) async {
-    Object? replacement;
-    if (vImage.svgContent?.isNotEmpty ?? false) {
-      replacement = vImage.svgContent!;
-    } else if (vImage.filename != null && vImage.filename!.isNotEmpty) {
-      replacement = await AssetsManager.loadReplacement(vImage.filename!);
-    }
+    try {
+      Object? replacement;
+      if (vImage.svgContent?.isNotEmpty ?? false) {
+        replacement = vImage.svgContent!;
+      } else if (vImage.filename != null && vImage.filename!.isNotEmpty) {
+        try {
+          replacement = await AssetsManager.loadReplacement(vImage.filename!);
+        } catch (e) {
+          // Asset not found or failed to load
+        }
+      }
 
-    if (replacement is String) {
-      final pictureInfo = await vg.loadPicture(SvgStringLoader(replacement), null);
+      if (replacement is String) {
+        try {
+          final pictureInfo = await vg.loadPicture(SvgStringLoader(replacement), null);
+          final destRect = Rect.fromLTWH(
+            (opArgs.destX).toDouble(),
+            (opArgs.destY).toDouble(),
+            opArgs.destWidth == -1 ? pictureInfo.size.width : (opArgs.destWidth).toDouble(),
+            opArgs.destHeight == -1 ? pictureInfo.size.height : (opArgs.destHeight).toDouble(),
+          );
+          return ImageShape.svg(pictureInfo, destRect, clipRect: clipRect);
+        } catch (e) {
+          // SVG failed to load, fall through to raster
+        }
+      }
+
+      ui.Image? uiImage;
+      try {
+        uiImage = replacement as ui.Image? ?? await ImageUtils.decodeVImageToUIImage(vImage);
+      } catch (e) {
+        uiImage = null;
+      }
+
+      if (uiImage == null) {
+        return ImageShape._(
+          type: ImageType.raster,
+          destRect: Rect.fromLTWH(opArgs.destX.toDouble(), opArgs.destY.toDouble(), 16, 16),
+          image: null,
+          srcRect: null,
+          clipRect: clipRect,
+        );
+      }
+
       final destRect = Rect.fromLTWH(
         (opArgs.destX).toDouble(),
         (opArgs.destY).toDouble(),
-        opArgs.destWidth == -1 ? pictureInfo.size.width : (opArgs.destWidth).toDouble(),
-        opArgs.destHeight == -1 ? pictureInfo.size.height : (opArgs.destHeight).toDouble(),
+        opArgs.destWidth == -1 ? uiImage.width.toDouble() : (opArgs.destWidth).toDouble(),
+        opArgs.destHeight == -1 ? uiImage.height.toDouble() : (opArgs.destHeight).toDouble(),
       );
-      return ImageShape.svg(pictureInfo, destRect, clipRect: clipRect);
+
+      final srcRect = replacement != null
+          ? Rect.fromLTWH(0, 0, uiImage.width.toDouble(), uiImage.height.toDouble())
+          : Rect.fromLTWH(
+              (opArgs.srcX).toDouble(),
+              (opArgs.srcY).toDouble(),
+              opArgs.srcWidth == -1 ? uiImage.width.toDouble() : (opArgs.srcWidth).toDouble(),
+              opArgs.srcHeight == -1 ? uiImage.height.toDouble() : (opArgs.srcHeight).toDouble(),
+            );
+
+      return ImageShape.raster(uiImage, srcRect, destRect, clipRect: clipRect);
+    } catch (e) {
+      return ImageShape._(
+        type: ImageType.raster,
+        destRect: Rect.fromLTWH(opArgs.destX.toDouble(), opArgs.destY.toDouble(), 16, 16),
+        image: null,
+        srcRect: null,
+        clipRect: clipRect,
+      );
     }
-
-    ui.Image? uiImage =
-        replacement as ui.Image? ?? await ImageUtils.decodeVImageToUIImage(vImage);
-    if (uiImage == null) throw Exception('Failed to load image');
-
-    final destRect = Rect.fromLTWH(
-      (opArgs.destX).toDouble(),
-      (opArgs.destY).toDouble(),
-      opArgs.destWidth == -1 ? uiImage.width.toDouble() : (opArgs.destWidth).toDouble(),
-      opArgs.destHeight == -1 ? uiImage.height.toDouble() : (opArgs.destHeight).toDouble(),
-    );
-
-    final srcRect = replacement != null
-        ? Rect.fromLTWH(0, 0, uiImage.width.toDouble(), uiImage.height.toDouble())
-        : Rect.fromLTWH(
-            (opArgs.srcX).toDouble(),
-            (opArgs.srcY).toDouble(),
-            opArgs.srcWidth == -1 ? uiImage.width.toDouble() : (opArgs.srcWidth).toDouble(),
-            opArgs.srcHeight == -1 ? uiImage.height.toDouble() : (opArgs.srcHeight).toDouble(),
-          );
-
-    return ImageShape.raster(uiImage, srcRect, destRect, clipRect: clipRect);
   }
 
   final ImageType type;
