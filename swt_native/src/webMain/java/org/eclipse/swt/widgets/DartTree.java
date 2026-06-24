@@ -1071,11 +1071,17 @@ public class DartTree extends DartComposite implements ITree {
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        // checkItems();
-        int itemId = ControlEditorHelper.getItemIdFromPosition(this, point);
-        if (itemId == -1)
+        int itemHeight = getItemHeight();
+        if (itemHeight <= 0)
             return null;
-        return ControlEditorHelper.getItemFromId(items, itemId);
+        int y = point.y;
+        if (y < 0)
+            return null;
+        int index = y / itemHeight;
+        java.util.List<TreeItem> flat = Sizes.flattenVisibleTreeItems(this);
+        if (index >= 0 && index < flat.size())
+            return flat.get(index);
+        return null;
     }
 
     /**

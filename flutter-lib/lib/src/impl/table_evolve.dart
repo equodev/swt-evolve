@@ -24,11 +24,6 @@ import '../gen/rectangle.dart';
 class TableImpl<T extends TableSwt, V extends VTable>
     extends CompositeImpl<T, V> {
   int _selectedRowIndex = -1;
-  int? _editingRowIndex;
-  int? _editingColumnIndex;
-  TextEditingController? _editingController;
-  FocusNode? _editingFocusNode;
-  VoidCallback? _editingFocusListener;
 
   // Cached layout values updated each build, used by Flutter→Java listeners
   double? _cachedRowHeight;
@@ -36,6 +31,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
   Map<int, TableColumnWidth>? _cachedColumnWidths;
   final List<String> _eventNames = [];
   final ScrollController _verticalScrollController = ScrollController();
+
+  // Each cell has its own GestureDetector that sends MouseDown; suppress both
+  // the ControlImpl.wrap() Listener and wrapCompositeInteractionChrome to
+  // avoid a second event with different coordinates.
+  @override
+  bool get forwardsControlMouseDown => false;
 
   @override
   void initState() {
@@ -166,9 +167,11 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final columns = state.columns;
     final editors = state.editors;
     super.didUpdateWidget(oldWidget);
-    state.items = items;
-    state.columns = columns;
-    state.editors = editors;
+    // Use new data from Java if present; fall back to preserved ones only when
+    // the serializer omitted the field (null) due to an unrelated dirty() flush.
+    state.items = state.items ?? items;
+    state.columns = state.columns ?? columns;
+    state.editors = state.editors ?? editors;
   }
 
   @override
@@ -243,72 +246,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
   @override
   void dispose() {
-    // Clean up editing resources
-    if (_editingFocusNode != null) {
-      _editingFocusNode!.removeListener(_editingFocusListener ?? () {});
-      _editingFocusNode!.dispose();
-      _editingFocusNode = null;
-    }
-    _editingController?.dispose();
-    _editingController = null;
-    _editingFocusListener = null;
     _verticalScrollController.dispose();
     // Remove Flutter event listeners
     for (final eventName in _eventNames) {
       EquoCommService.remove(eventName);
     }
     super.dispose();
-  }
-
-  Widget buildTable(BuildContext context, TableThemeExtension theme) {
-    final columns = getColumns();
-    final items = getItems();
-    final showHeader = state.headerVisible ?? false;
-    final showLines = state.linesVisible ?? false;
-    final columnWidths = calculateColumnWidths(context, columns, theme);
-
-    // Cache layout values for use by Flutter→Java event listeners
-    _cachedColumnWidths = columnWidths;
-    final rowTextStyle = getTextStyle(
-      context: context,
-      font: state.font,
-      textColor: theme.rowTextColor,
-      baseTextStyle: theme.rowTextStyle,
-    );
-    _cachedRowHeight = calculateRowHeight(rowTextStyle, theme);
-    double headerOff = theme.borderWidth;
-    if (showHeader && columns.isNotEmpty) {
-      final headerTextStyle = getTextStyle(
-        context: context,
-        font: state.font,
-        textColor: getTableHeaderTextColor(state, theme),
-        baseTextStyle: theme.headerTextStyle,
-      );
-      headerOff +=
-          calculateHeaderHeight(headerTextStyle, theme) + theme.headerBorderWidth;
-    }
-    _cachedHeaderOffset = headerOff;
-
-    return Container(
-      decoration: buildBorder(theme),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          if (showHeader && columns.isNotEmpty)
-            buildHeader(context, columns, showLines, theme, columnWidths),
-          Expanded(
-            child: buildBody(
-              context,
-              items,
-              columns,
-              showLines,
-              theme,
-              columnWidths,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget buildHeader(
@@ -560,10 +503,6 @@ class TableImpl<T extends TableSwt, V extends VTable>
         parentTable: widget,
         parentTableValue: state,
         tableFont: state.font,
-        editingRowIndex: _editingRowIndex,
-        editingColumnIndex: _editingColumnIndex,
-        editingController: _editingController,
-        editingFocusNode: _editingFocusNode,
       ).buildCells(context, theme),
     );
   }
@@ -594,83 +533,6 @@ class TableImpl<T extends TableSwt, V extends VTable>
     });
   }
 
-  void startEditing(int rowIndex, int columnIndex, String initialText) {
-    // Only allow editing if the table has editors
-    if (state.editors == null || state.editors!.isEmpty) {
-      return;
-    }
-
-    // Clean up any existing editing state first
-    if (_editingFocusNode != null) {
-      _editingFocusNode!.removeListener(_editingFocusListener!);
-      _editingFocusNode!.dispose();
-    }
-    if (_editingController != null) {
-      _editingController!.dispose();
-    }
-
-    // Create new editing state
-    _editingController = TextEditingController(text: initialText);
-    _editingFocusNode = FocusNode();
-
-    // Create and add listener (outside setState to avoid concurrent modification)
-    _editingFocusListener = () {
-      if (_editingFocusNode != null && !_editingFocusNode!.hasFocus) {
-        // Use post frame callback to avoid concurrent modification
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            finishEditing();
-          }
-        });
-      }
-    };
-    _editingFocusNode!.addListener(_editingFocusListener!);
-
-    setState(() {
-      _editingRowIndex = rowIndex;
-      _editingColumnIndex = columnIndex;
-    });
-
-    // Request focus after the frame is built
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _editingFocusNode?.requestFocus();
-    });
-  }
-
-  void finishEditing() {
-    final rowIndex = _editingRowIndex;
-    final columnIndex = _editingColumnIndex;
-    final controller = _editingController;
-    final focusNode = _editingFocusNode;
-    final listener = _editingFocusListener;
-
-    // Remove listener before disposing
-    if (focusNode != null && listener != null) {
-      focusNode.removeListener(listener);
-    }
-
-    if (rowIndex != null && columnIndex != null && controller != null) {
-      final newText = controller.text;
-
-      final event = VEvent()
-        ..text = newText
-        ..index = rowIndex
-        ..start = columnIndex;
-
-      widget.sendModifyModify(widget.value, event);
-    }
-
-    setState(() {
-      controller?.dispose();
-      focusNode?.dispose();
-      _editingRowIndex = null;
-      _editingColumnIndex = null;
-      _editingController = null;
-      _editingFocusNode = null;
-      _editingFocusListener = null;
-    });
-  }
-
   /// Builds editor overlay widgets for all active editors.
   List<Widget> _buildEditorOverlays(
     BuildContext context,
@@ -679,7 +541,11 @@ class TableImpl<T extends TableSwt, V extends VTable>
     Map<int, TableColumnWidth>? columnWidths,
   ) {
     final editors = state.editors;
+    print('[DEBUG AGUS][TableOverlay] editors=${editors?.length ?? 0}');
     if (editors == null || editors.isEmpty) return [];
+    for (final ed in editors) {
+      print('[DEBUG AGUS][TableOverlay]  ed: editor=${ed.editor != null} item=${ed.item?.id} col=${ed.column}');
+    }
 
     final rowTextStyle = getTextStyle(
       context: context,
@@ -712,6 +578,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
       final columnIndex = editable.column ?? 0;
 
       final itemIndex = findItemIndex(editingItemId);
+      print('[DEBUG AGUS][TableOverlay] itemIndex=$itemIndex for id=$editingItemId col=$columnIndex');
       if (itemIndex < 0) continue;
 
       final scrollOffset = _verticalScrollController.hasClients
@@ -739,6 +606,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
       final editorWidget = mapWidgetFromValue(editable.editor!);
 
+      print('[DEBUG AGUS][TableOverlay] RENDERED at x=$editorX y=$editorY w=$editorWidth h=$rowHeight');
       overlays.add(
         Positioned(
           left: editorX,
@@ -1054,10 +922,6 @@ class TableItemSwtWrapper {
   final TableSwt parentTable;
   final VTable parentTableValue;
   final VFont? tableFont;
-  final int? editingRowIndex;
-  final int? editingColumnIndex;
-  final TextEditingController? editingController;
-  final FocusNode? editingFocusNode;
 
   TableItemSwtWrapper({
     required this.item,
@@ -1066,10 +930,6 @@ class TableItemSwtWrapper {
     required this.parentTable,
     required this.parentTableValue,
     this.tableFont,
-    this.editingRowIndex,
-    this.editingColumnIndex,
-    this.editingController,
-    this.editingFocusNode,
   });
 
   List<Widget> buildCells(BuildContext context, TableThemeExtension theme) {
@@ -1082,10 +942,6 @@ class TableItemSwtWrapper {
         parentTableValue: parentTableValue,
         tableImpl: tableImpl,
         tableFont: tableFont,
-        editingRowIndex: editingRowIndex,
-        editingColumnIndex: editingColumnIndex,
-        editingController: editingController,
-        editingFocusNode: editingFocusNode,
       ),
     );
     return tableItemImpl.buildCells(context, theme);
@@ -1098,10 +954,6 @@ class TableItemContext {
   final VTable parentTableValue;
   final TableImpl? tableImpl;
   final VFont? tableFont;
-  final int? editingRowIndex;
-  final int? editingColumnIndex;
-  final TextEditingController? editingController;
-  final FocusNode? editingFocusNode;
 
   TableItemContext({
     required this.rowIndex,
@@ -1109,10 +961,6 @@ class TableItemContext {
     required this.parentTableValue,
     this.tableImpl,
     this.tableFont,
-    this.editingRowIndex,
-    this.editingColumnIndex,
-    this.editingController,
-    this.editingFocusNode,
   });
 
   static TableItemContext? of(BuildContext context) {

@@ -28,7 +28,7 @@ public abstract class FlutterBridge {
 
     /**
      * True once Flutter has the widget tree (first ClientReady / Display update). Until then,
-     * blocking round-trips (e.g. {@link RequestResponse#call}) have no listener on the far side and
+     * blocking round-trips (e.g. {@code GCHelper.callOnDisplayBytes}) have no listener on the far side and
      * would just time out, so callers return their fallback immediately instead of dead-waiting.
      */
     public static volatile boolean displayBootstrapped = false;

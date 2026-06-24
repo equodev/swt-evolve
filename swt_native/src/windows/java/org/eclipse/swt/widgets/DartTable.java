@@ -1167,14 +1167,15 @@ public class DartTable extends DartComposite implements ITable {
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        int itemId = ControlEditorHelper.getItemIdFromPosition(this, point);
-        if (itemId == -1)
+        int itemHeight = getItemHeight();
+        if (itemHeight <= 0)
             return null;
-        for (int i = 0; i < getItemCount(); i++) {
-            if (items[i] != null && items[i].hashCode() == itemId) {
-                return items[i];
-            }
-        }
+        int y = point.y - getHeaderHeight();
+        if (y < 0)
+            return null;
+        int index = topIndex + (y / itemHeight);
+        if (index >= 0 && index < getItemCount() && items[index] != null)
+            return items[index];
         return null;
     }
 

@@ -3302,6 +3302,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         boolean newValue = visible;
         if (!java.util.Objects.equals(this.visible, newValue)) {
             dirty();
+            if (parent != null && parent.getImpl() instanceof DartTable table)
+                table.dirty();
         }
         checkWidget();
         if (visible) {

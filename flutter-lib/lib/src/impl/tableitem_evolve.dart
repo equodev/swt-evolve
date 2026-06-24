@@ -131,20 +131,27 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     final enabled = _context?.parentTableValue.enabled ?? true;
     final cellBackgroundColor = getCellBackgroundColor(columnIndex, theme);
     final rowHeight = calculateRowHeight(textStyle, theme);
-    final isEditing =
-        _context?.editingRowIndex == rowIndex &&
-        _context?.editingColumnIndex == columnIndex;
 
     void sendMouseDown(int button) {
-      if (enabled && _context != null && !isEditing) {
+      if (enabled && _context != null) {
         if ((button == 1 || button == 3) && _context!.tableImpl != null) {
           _context!.tableImpl!.handleRowTap(rowIndex, state);
         }
+        final e = VEvent();
+        e.x = _computeCellCenterX(columnIndex, theme);
+        e.y = _computeCellCenterY(rowIndex, textStyle, theme);
+        e.button = button;
+        e.count = 1;
+        _context!.parentTable.sendEvent(
+          _context!.parentTableValue,
+          "Mouse/MouseDown",
+          e,
+        );
       }
     }
 
     void sendMouseDoubleClick(int button) {
-      if (!isEditing && enabled && _context?.tableImpl != null) {
+      if (enabled && _context?.tableImpl != null) {
         _context!.tableImpl!.handleRowTap(rowIndex, state);
         final e = VEvent();
         e.x = _computeCellCenterX(columnIndex, theme);
@@ -160,8 +167,8 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     }
 
     return GestureDetector(
-      onTapDown: isEditing ? null : (_) => sendMouseDown(1),
-      onSecondaryTapDown: isEditing ? null : (details) {
+      onTapDown: (_) => sendMouseDown(1),
+      onSecondaryTapDown: (details) {
         sendMouseDown(3);
         if (_context?.tableImpl != null) {
           _context!.tableImpl!.openContextMenu(details.globalPosition);
@@ -174,13 +181,13 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
           );
         }
       },
-      onTertiaryTapDown: isEditing ? null : (_) => sendMouseDown(2),
-      onTap: isEditing ? null : () {
-        if (!isEditing && enabled && _context?.tableImpl != null) {
+      onTertiaryTapDown: (_) => sendMouseDown(2),
+      onTap: () {
+        if (enabled && _context?.tableImpl != null) {
           _context!.tableImpl!.handleRowTap(rowIndex, state);
         }
       },
-      onDoubleTap: isEditing ? null : () => sendMouseDoubleClick(1),
+      onDoubleTap: () => sendMouseDoubleClick(1),
       child: SizedBox(
         height: rowHeight,
         child: Container(
@@ -193,37 +200,11 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
               if (cellImage != null)
                 buildImageIcon(cellImage, enabled, textStyle, theme),
               Expanded(
-                child:
-                    isEditing &&
-                        _context?.editingController != null &&
-                        _context?.editingFocusNode != null
-                    ? TextField(
-                        controller: _context!.editingController!,
-                        focusNode: _context!.editingFocusNode!,
-                        style: textStyle,
-                        decoration: InputDecoration(
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
-                          border: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                        ),
-                        onSubmitted: (value) {
-                          if (_context?.tableImpl != null) {
-                            _context!.tableImpl!.finishEditing();
-                          }
-                        },
-                        onEditingComplete: () {
-                          if (_context?.tableImpl != null) {
-                            _context!.tableImpl!.finishEditing();
-                          }
-                        },
-                      )
-                    : Text(
-                        cellText,
-                        style: textStyle,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                child: Text(
+                  cellText,
+                  style: textStyle,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -261,7 +242,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     TableThemeExtension theme,
   ) {
     final rowHeight = _context?.tableImpl?.cachedRowHeight ?? 20.0;
-    final headerOffset = _context?.tableImpl?.cachedHeaderOffset ?? 0.0;
+    final headerOffset = 0; // _context?.tableImpl?.cachedHeaderOffset ?? 0.0;
     return (headerOffset + rowIndex * rowHeight + rowHeight / 2).round();
   }
 

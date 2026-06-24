@@ -55,6 +55,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
       behavior: HitTestBehavior.translucent,
       onPointerDown: (e) {
         if (_hitsAnyChild(state, e.localPosition)) return;
+        if (!impl.forwardsControlMouseDown) return;
         final pos = e.localPosition;
         impl.widget.sendMouseMouseDown(
           state,
