@@ -566,8 +566,11 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         if (imageFileNameProvider == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         try {
-            this.filename = GraphicsUtils.getFilename(imageFileNameProvider.getImagePath(100));
-            imageData = new ImageData(imageFileNameProvider.getImagePath(100));
+            String path100 = imageFileNameProvider.getImagePath(100);
+            if (path100 == null)
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            this.filename = GraphicsUtils.getFilename(path100);
+            imageData = new ImageData(path100);
             initUsingFileNameProvider(imageFileNameProvider);
             init(imageData, 100);
             init();
@@ -945,12 +948,22 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     private void initUsingImageDataProvider(ImageDataProvider imageDataProvider) {
         this.imageDataProvider = imageDataProvider;
-        ImageData imageData = imageDataProvider.getImageData(100);
+        ImageData imageData;
+        try {
+            imageData = imageDataProvider.getImageData(100);
+        } catch (SWTException e) {
+            imageData = null;
+        }
         if (imageData == null) {
-            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            imageData = new ImageData(1, 1, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF));
         }
         init(imageData, 100);
-        ImageData imageData2x = imageDataProvider.getImageData(200);
+        ImageData imageData2x;
+        try {
+            imageData2x = imageDataProvider.getImageData(200);
+        } catch (SWTException e) {
+            imageData2x = null;
+        }
         if (imageData2x != null) {
             alphaInfo_200 = new AlphaInfo();
         }
