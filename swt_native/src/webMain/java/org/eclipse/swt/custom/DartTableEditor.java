@@ -257,6 +257,7 @@ public class DartTableEditor extends DartControlEditor implements ITableEditor {
     public void setEditor(Control editor) {
         super.setEditor(editor);
         resize();
+        dirtyTable();
     }
 
     /**
@@ -307,6 +308,12 @@ public class DartTableEditor extends DartControlEditor implements ITableEditor {
 
     public Runnable _timer() {
         return timer;
+    }
+
+    private void dirtyTable() {
+        if (table != null && !table.isDisposed() && table.getImpl() instanceof DartTable) {
+            ((DartTable) table.getImpl())._dirty();
+        }
     }
 
     public TableEditor getApi() {

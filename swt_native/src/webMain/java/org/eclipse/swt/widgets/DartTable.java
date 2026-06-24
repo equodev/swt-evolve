@@ -993,15 +993,16 @@ public class DartTable extends DartComposite implements ITable {
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        int itemId = ControlEditorHelper.getItemIdFromPosition(this, point);
-        if (itemId == -1)
+        int itemHeight = getItemHeight();
+        if (itemHeight <= 0)
             return null;
-        for (int i = 0; i < getItemCount(); i++) {
-            if (items[i] != null && items[i].hashCode() == itemId) {
-                return items[i];
-            }
-        }
-        return null;
+        int headerH = getHeaderHeight();
+        int y = point.y - headerH;
+        int index = topIndex + (y >= 0 ? y / itemHeight : -1);
+        boolean valid = y >= 0 && index >= 0 && index < getItemCount() && items[index] != null;
+        if (!valid)
+            return null;
+        return items[index];
     }
 
     /**
@@ -2523,6 +2524,10 @@ public class DartTable extends DartComposite implements ITable {
 
     public int _topIndex() {
         return topIndex;
+    }
+
+    public void _dirty() {
+        dirty();
     }
 
     boolean loadingVirtualData = false;

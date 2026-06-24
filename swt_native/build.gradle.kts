@@ -483,7 +483,13 @@ fun fragmentHostHeader() =
     provider { "org.eclipse.swt;bundle-version=\"[${swtVersionProvider.get().substring(0..6)},4.0.0)\"" }
 fun evolveVersion(): Any = gradle.parent?.rootProject?.version ?: project.version
 fun hostVersion(suffix: String) = swtVersionProvider.map {
-    "${it.substringBefore(".v")}.v${evolveVersion().toString().replace('.', '_')}-$suffix"
+    // When eclipse_run provided the SWT version file, swtVersionProvider already holds the
+    // product's version: use it as-is (no evolve/suffix). Otherwise compose from the
+    // swtVersion property + evolve version + suffix.
+    val versionFiles = swtVersionConfig.files
+    val fromEclipseRun = versionFiles.isNotEmpty() && versionFiles.first().exists()
+    if (fromEclipseRun) it
+    else "${it.substringBefore(".v")}.v${evolveVersion().toString().replace('.', '_')}-$suffix"
 }
 fun swtExportPackage(swtWs: String?): String = (
     listOf(

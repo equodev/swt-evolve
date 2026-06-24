@@ -4,6 +4,8 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FontMetricsUtil;
 import dev.equo.swt.size.*;
 import org.eclipse.swt.SWT;
+import java.util.ArrayList;
+import java.util.List;
 import org.eclipse.swt.custom.DartCCombo;
 import org.eclipse.swt.custom.DartCLabel;
 import org.eclipse.swt.custom.CTabItem;
@@ -704,6 +706,49 @@ public class Sizes {
             imageWidth = imageBounds.width + 4;
         }
         return new Rectangle(cellBounds.x + imageWidth, cellBounds.y, Math.max(0, cellBounds.width - imageWidth), cellBounds.height);
+    }
+
+    public static List<TreeItem> flattenVisibleTreeItems(DartTree tree) {
+        List<TreeItem> result = new ArrayList<>();
+        for (TreeItem root : tree.getApi().getItems()) {
+            addVisible(result, root);
+        }
+        return result;
+    }
+
+    private static void addVisible(List<TreeItem> result, TreeItem item) {
+        result.add(item);
+        if (item.getExpanded()) {
+            for (TreeItem child : item.getItems()) {
+                addVisible(result, child);
+            }
+        }
+    }
+
+    public static Rectangle getBounds(DartTreeItem item, int index) {
+        Tree parent = item._parent();
+        DartTree dartTree = (DartTree) parent.getImpl();
+        int columnCount = dartTree.columnCount;
+        if (!(0 <= index && index < Math.max(1, columnCount)))
+            return new Rectangle(0, 0, 0, 0);
+        int itemHeight = dartTree.getItemHeight();
+        if (itemHeight <= 0) itemHeight = 20;
+        List<TreeItem> flat = flattenVisibleTreeItems(dartTree);
+        int rowIndex = flat.indexOf(item.getApi());
+        if (rowIndex == -1) return new Rectangle(0, 0, 0, 0);
+        int y = rowIndex * itemHeight;
+        int x = 0, width = 100;
+        if (columnCount > 0) {
+            TreeColumn[] columns = dartTree.columns;
+            for (int i = 0; i < index && i < columns.length; i++)
+                x += columns[i].getWidth();
+            if (index < columns.length)
+                width = columns[index].getWidth();
+        } else {
+            Rectangle parentBounds = parent.getBounds();
+            width = parentBounds != null ? parentBounds.width : 100;
+        }
+        return new Rectangle(x, y, width, itemHeight);
     }
 
     public static Rectangle getBounds(DartToolItem item) {

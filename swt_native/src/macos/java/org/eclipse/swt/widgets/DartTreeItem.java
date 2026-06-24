@@ -431,12 +431,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public Rectangle getBounds(int index) {
         checkWidget();
-        // if (!((DartTree) parent.getImpl()).checkData(this.getApi()))
-        //     error(SWT.ERROR_WIDGET_DISPOSED);
-        if (!(0 <= index && index < Math.max(1, ((DartTree) parent.getImpl()).columnCount)))
-            return new Rectangle(0, 0, 0, 0);
-        // ((DartTree) parent.getImpl()).checkItems();
-        return ControlEditorHelper.getItemBounds((DartTree) parent.getImpl(), this.getApi().hashCode(), index);
+        return Sizes.getBounds(this, index);
     }
 
     /**

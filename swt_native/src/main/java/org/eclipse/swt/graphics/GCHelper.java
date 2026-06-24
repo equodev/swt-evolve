@@ -170,4 +170,44 @@ public class GCHelper {
         if (pngBase64 == null) return;
         updateImageFromPngBytes(dartImage, swtSource, java.util.Base64.getDecoder().decode(pngBase64));
     }
+
+    private static final String RESPONSE_SUFFIX = "Response";
+
+    /**
+     * Blocking request/response over the Flutter bridge, safe to call from the SWT UI thread.
+     * Sends {@code eventName} with {@code args}, then pumps the SWT event loop until the
+     * {@code eventName + "Response"} payload (raw frame bytes) arrives or {@code timeoutMs} elapses,
+     * handing the bytes to {@code handler}. Pumping (instead of {@code future.get()}) keeps the UI
+     * responsive and lets the inbound WebSocket frame be dispatched. Used by the binary D→J image
+     * path where Flutter returns PNG bytes via {@code sendBytes} (e.g. {@code GC.copyArea(Image,…)}).
+     */
+    public static void callOnDisplayBytes(Object widget, String eventName, Object args,
+                                          java.util.function.Consumer<byte[]> handler, long timeoutMs) {
+        Display display = displayOf(widget);
+        String receiveEvent = eventName + RESPONSE_SUFFIX;
+        var future = new java.util.concurrent.CompletableFuture<Void>();
+        dev.equo.swt.FlutterBridge.onPayload(widget, receiveEvent, p -> {
+            dev.equo.swt.FlutterBridge.removeEvent(widget, receiveEvent);
+            handler.accept(p);
+            future.complete(null);
+            if (display != null && !display.isDisposed()) display.wake();
+        });
+        if (widget instanceof org.eclipse.swt.widgets.DartWidget w)
+            dev.equo.swt.FlutterBridge.send(w, eventName, args);
+        else if (widget instanceof DartResource r)
+            dev.equo.swt.FlutterBridge.send(r, eventName, args);
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        while (!future.isDone() && System.currentTimeMillis() < deadline) {
+            if (display != null && !display.isDisposed() && !display.readAndDispatch()) {
+                display.sleep();
+            }
+        }
+        if (!future.isDone()) dev.equo.swt.FlutterBridge.removeEvent(widget, receiveEvent);
+    }
+
+    private static Display displayOf(Object widget) {
+        if (widget instanceof org.eclipse.swt.widgets.DartWidget w) return w.getDisplay();
+        if (widget instanceof DartGC gc) return gc.getDisplay();
+        return null;
+    }
 }

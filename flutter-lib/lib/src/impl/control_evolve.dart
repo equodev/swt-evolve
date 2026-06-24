@@ -123,6 +123,13 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     }
   }
 
+  /// Whether this control forwards MouseDown from the interaction chrome
+  /// (the Listener added in wrap() and wrapCompositeInteractionChrome).
+  /// TableImpl overrides this to false because each cell has its own
+  /// GestureDetector that already sends MouseDown with cell-center coordinates;
+  /// the chrome Listener would fire a second event with different coordinates.
+  bool get forwardsControlMouseDown => true;
+
   Widget wrap(Widget widget) {
     if (state.cursor?.cursorStyle != null) {
       widget = MouseRegion(
@@ -187,12 +194,14 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     widget = Listener(
       onPointerDown: (e) {
         _lastButton = e.buttons == kSecondaryMouseButton ? 3 : e.buttons == kMiddleMouseButton ? 2 : 1;
-        final event = VEvent()
-          ..button = _lastButton
-          ..x = e.localPosition.dx.round()
-          ..y = e.localPosition.dy.round()
-          ..count = 2;
-        this.widget.sendMouseMouseDown(state, event);
+        if (forwardsControlMouseDown) {
+          final event = VEvent()
+            ..button = _lastButton
+            ..x = e.localPosition.dx.round()
+            ..y = e.localPosition.dy.round()
+            ..count = 2;
+          this.widget.sendMouseMouseDown(state, event);
+        }
       },
       onPointerUp: (e) {
         final event = VEvent()
