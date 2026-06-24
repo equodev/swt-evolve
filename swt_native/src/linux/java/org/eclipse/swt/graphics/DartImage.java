@@ -1009,9 +1009,24 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         java.util.concurrent.CompletableFuture<Void> f = pendingRenderFuture;
         if (f != null && !f.isDone()) {
             Display display = Display.getCurrent();
-            if (display != null) {
-                while (!f.isDone()) {
-                    display.sleep();
+            if (display != null && !display.isDisposed()) {
+                long deadline = System.nanoTime() + 2_000_000_000L;
+                Runnable wakeOnTimeout = () -> {
+                };
+                display.timerExec(2000, wakeOnTimeout);
+                try {
+                    while (!f.isDone() && !display.isDisposed() && System.nanoTime() < deadline) {
+                        // GC(Image) uses an off-screen Flutter engine whose startup and
+                        // rendering require SWT's event loop on every desktop platform.
+                        // Sleeping without dispatching can prevent ClientReady from running.
+                        if (!display.readAndDispatch()) {
+                            display.sleep();
+                        }
+                    }
+                } finally {
+                    if (!display.isDisposed()) {
+                        display.timerExec(-1, wakeOnTimeout);
+                    }
                 }
             }
         }
