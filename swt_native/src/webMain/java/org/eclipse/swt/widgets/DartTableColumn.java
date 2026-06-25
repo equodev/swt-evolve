@@ -332,12 +332,7 @@ public class DartTableColumn extends DartItem implements ITableColumn {
      */
     public void pack() {
         checkWidget();
-        int width = 0;
-        if (image != null) {
-        }
-        if (((DartTable) parent.getImpl()).sortColumn == this.getApi() && ((DartTable) parent.getImpl()).sortDirection != SWT.NONE) {
-        }
-        setWidth(width);
+        setWidth(Sizes.packWidth(this));
     }
 
     @Override

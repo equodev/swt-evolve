@@ -1,5 +1,7 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.Config;
+import dev.equo.swt.FontMetricsUtil;
 import dev.equo.swt.size.*;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.DartCCombo;
@@ -78,6 +80,55 @@ public class Sizes {
 
     public static Point computeSize(DartTableItem widget, int wHint, int hHint, boolean changed) {
         return TableItemSizes.computeSize(widget, wHint, hHint, changed);
+    }
+
+    private static final int TABLE_CELL_PADDING = 16;
+    private static final int TABLE_CELL_MARGIN = 2;
+
+    public static int packWidth(DartTableColumn column) {
+        DartTable table = (DartTable) column.parent.getImpl();
+        int index = table.indexOf(column.getApi());
+        if (index < 0)
+            return 0;
+        int width = 0;
+        String headerText = column.getText();
+        if (headerText != null && !headerText.isEmpty()) {
+            width = Math.max(width, measureCellText(headerText, column.parent.getFont()));
+        }
+        Image headerImage = column.getImage();
+        if (headerImage != null) {
+            width += headerImage.getBounds().width;
+        }
+        if (table.sortColumn == column.getApi() && table.sortDirection != SWT.NONE) {
+            width += TableItemTheme.get().textStyle().size() + TABLE_CELL_MARGIN;
+        }
+        TableItem[] items = table.getItems();
+        for (TableItem item : items) {
+            if (item == null)
+                continue;
+            DartTableItem di = (DartTableItem) item.getImpl();
+            int cellWidth = 0;
+            String text = di.getText(index);
+            if (text != null && !text.isEmpty()) {
+                cellWidth += measureCellText(text, di.getFont(index));
+            }
+            Image cellImage = di.getImage(index);
+            if (cellImage != null) {
+                cellWidth += cellImage.getBounds().width;
+            }
+            width = Math.max(width, cellWidth);
+        }
+        if (width > 0) {
+            width += TABLE_CELL_PADDING + TABLE_CELL_MARGIN;
+        }
+        return width;
+    }
+
+    private static int measureCellText(String text, Font font) {
+        TextStyle style = Config.getConfigFlags().use_swt_fonts
+            ? TextStyle.from(font)
+            : TableItemTheme.get().textStyle().withStyleFrom(font);
+        return (int) Math.ceil(FontMetricsUtil.getFontSize(text, style).x());
     }
 
     public static Point computeSize(DartCCombo c, int wHint, int hHint, boolean changed) {
