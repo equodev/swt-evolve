@@ -226,6 +226,17 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
         return Boolean.TRUE.equals(sel);
     }
 
+    /** Convenience: the rendered enabled state of a Control (false if absent/null — the
+     *  serializer's {@code skipDefaultValues} omits booleans equal to the Java default, false). */
+    @SuppressWarnings("unchecked")
+    public boolean renderedEnabled(Control c) {
+        Map<String, Object> resp = queryState(c);
+        if (!Boolean.TRUE.equals(resp.get("found"))) return false;
+        Map<String, Object> state = (Map<String, Object>) resp.get("state");
+        Object enabled = state == null ? null : state.get("enabled");
+        return Boolean.TRUE.equals(enabled);
+    }
+
     // ---------------- await / pump ----------------
 
     /**

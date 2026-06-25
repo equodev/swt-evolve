@@ -385,8 +385,10 @@ public class DartButton extends DartControl implements IButton {
         //	while (j < children.length && children [j].setRadioSelection (false)) j++;
         setSelection(true);
         if (parent.getImpl() instanceof DartWidget dartParent) {
-            if (!isDisposed())
-                getBridge().dirty(dartParent);
+            getDisplay().asyncExec(() -> {
+                if (!isDisposed())
+                    getBridge().dirty(dartParent);
+            });
         }
     }
 
