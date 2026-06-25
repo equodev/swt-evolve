@@ -504,9 +504,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
           leadingWidget,
           if (hasText || imageWidget != null) SizedBox(width: leadingSpacing),
         ],
-
-        if (imageWidget != null)
-          hasBounds ? Flexible(child: imageWidget) : imageWidget,
+        if (imageWidget != null) imageWidget,
 
         if (hasText)
           Flexible(
