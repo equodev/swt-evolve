@@ -448,6 +448,7 @@ public abstract class FlutterBridge {
         synchronized (dirty) {
             dirty.add(resource);
         }
+        wakeForDirty();
     }
 
     public void dirty(DartWidget widget) {
@@ -456,6 +457,19 @@ public abstract class FlutterBridge {
         synchronized (dirty) {
             dirty.add(widget);
         }
+        wakeForDirty();
+    }
+
+    /**
+     * Invoked right after a widget/resource is marked dirty. The dirty set is flushed to Dart only at
+     * the top of the next {@code readAndDispatch()}, so on a platform whose UI thread parks while idle
+     * (web {@code DartDisplay.sleep()}), a dirty produced off the UI thread would otherwise wait for
+     * the {@code sleep()} safety-net cap (~50ms) before reaching Dart. The web bridge overrides this to
+     * wake its Display so the flush is prompt; a dirty on the UI thread releases a permit that the same
+     * thread's next {@code sleep()} drains, so it costs nothing there. No-op where the event loop
+     * already flushes itself (desktop natives).
+     */
+    protected void wakeForDirty() {
     }
 
     // Package-private methods for testing
