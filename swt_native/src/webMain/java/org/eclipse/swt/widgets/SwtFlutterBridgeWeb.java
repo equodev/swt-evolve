@@ -35,6 +35,31 @@ public class SwtFlutterBridgeWeb extends FlutterBridge implements WindowBridge {
     }
 
     /**
+     * Wake this Display's UI thread when a widget/resource is marked dirty, so a parked {@code sleep()}
+     * returns and flushes the dirty set to Dart promptly. A dirty on the UI thread releases a permit
+     * the same thread's next {@code sleep()} drains, so it's free there; an off-thread dirty unparks
+     * the loop. See {@link FlutterBridge#wakeForDirty()}.
+     */
+    @Override
+    protected void wakeForDirty() {
+        DartDisplay display = forDisplay;
+        if (display != null)
+            display.wakeThread();
+    }
+
+    /**
+     * Whether the event loop must keep iterating rather than parking indefinitely in {@code sleep()}.
+     * True only while a CEF standalone window is open: its message loop is pull-driven from
+     * {@link #onUpdate()} ({@code chromiumLauncher.pump()}), so the loop has to tick to stay
+     * responsive — {@code sleep()} caps its wait at 16ms (~60fps) in that case. In pure web mode
+     * (websocket comm) everything is event-driven — every wake source releases the Display's wake
+     * permit — so {@code sleep()} can block until woken.
+     */
+    public boolean needsPump() {
+        return chromiumLauncher != null;
+    }
+
+    /**
      * Compatibility constructor required so that {@link SwtFlutterBridgeBase#of(DartWidget)}
      * compiles when the web class is on the classpath. This constructor is not
      * called at runtime in the web context.

@@ -2,15 +2,11 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.comm.CommService;
+import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.RecordingComm;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
-
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -23,28 +19,6 @@ import static org.assertj.core.api.Assertions.*;
  */
 @ExtendWith(Mocks.class)
 class RadioGroupDeliveryTest {
-
-    static class Frame { final String event; final String json; Frame(String e, String j){event=e;json=j;} }
-
-    static class RecordingComm implements CommService {
-        final List<Frame> sent = new ArrayList<>();
-        public void send(String eventName) { sent.add(new Frame(eventName, "")); }
-        public void send(String eventName, byte[] payload) {
-            sent.add(new Frame(eventName, new String(payload, StandardCharsets.UTF_8)));
-        }
-        public <T> void on(String eventName, Class<T> cls, Consumer<T> callback) { }
-        public void remove(String eventName) { }
-        public int getPort() { return 0; }
-        public void stop() { }
-    }
-
-    static class RecordingBridge extends FlutterBridge {
-        final RecordingComm comm = new RecordingComm();
-        RecordingBridge() { clientReady.complete(true); }
-        @Override protected CommService comm() { return comm; }
-        @Override public void initFlutterView(Composite parent, DartControl control) { }
-        @Override public void destroy(DartWidget control) { }
-    }
 
     private RecordingBridge bridge;
 
@@ -81,7 +55,7 @@ class RadioGroupDeliveryTest {
         FlutterBridge.update();
 
         System.out.println("=== frames sent after selecting r2 (web path) ===");
-        for (Frame f : bridge.comm.sent) System.out.println(f.event + " -> " + f.json);
+        for (RecordingComm.Frame f : bridge.comm.sent) System.out.println(f.event + " -> " + f.json);
 
         assertThat(r1.getSelection()).as("r1 deselected in Java").isFalse();
 
@@ -91,7 +65,7 @@ class RadioGroupDeliveryTest {
         // r1's deselection reaches Flutter iff either r1 is sent on its own channel,
         // or the parent payload carries r1 (and r1 is NOT marked selected there).
         boolean r1OwnChannel = bridge.comm.sent.stream().anyMatch(f -> f.event.contains("/" + r1Id));
-        Frame parentFrame = bridge.comm.sent.stream()
+        RecordingComm.Frame parentFrame = bridge.comm.sent.stream()
                 .filter(f -> f.event.startsWith("Composite/" + group.hashCode()))
                 .reduce((a, b) -> b).orElse(null);
 

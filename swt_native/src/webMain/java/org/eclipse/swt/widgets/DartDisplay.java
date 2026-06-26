@@ -3407,10 +3407,16 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
             return true;
         sendPreExternalEventDispatchEvent();
         try {
-            allowTimers = runAsyncMessages = false;
-            Thread.sleep(16);
-            allowTimers = runAsyncMessages = true;
+            _wakeSignal.drainPermits();
+            if (((DartSynchronizer) synchronizer.getImpl()).isMessagesEmpty()) {
+                if (displayBridge != null && displayBridge.needsPump()) {
+                    _wakeSignal.tryAcquire(16, java.util.concurrent.TimeUnit.MILLISECONDS);
+                } else {
+                    _wakeSignal.acquire();
+                }
+            }
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
         sendPostExternalEventDispatchEvent();
         return true;
@@ -3608,6 +3614,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     void wakeThread() {
+        _wakeSignal.release();
     }
 
     Control findControl(boolean checkTrim) {
@@ -4007,6 +4014,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     Map<Runnable, TimerTask> _timerExecTasks = new HashMap<>();
 
     Timer _timerExecTimer = new Timer(true);
+
+    final java.util.concurrent.Semaphore _wakeSignal = new java.util.concurrent.Semaphore(0);
 
     ArrayList<ToolTip> activeTooltips = new ArrayList<>();
 
