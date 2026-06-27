@@ -76,6 +76,10 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
     private Process browserProc;
     private Path profileDir;
     private boolean shown;
+    /** Boot-resilience self-test knob: number of upcoming browser launches to force to fail (load a
+     *  blank page that never connects), so {@link #awaitClientReadyResilient}'s relaunch path is
+     *  exercised deterministically. 0 (default) in CI/production. */
+    private int bootFailuresToInject = Integer.getInteger("harness.web.failBoots", 0);
     /**
      * This harness's own comm, created/torn down per boot. {@link FlutterBridge#comm()} returns the
      * JVM-wide {@code desktopComm}, which a second harness in the same JVM would reuse stale and never
@@ -180,7 +184,7 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
         onReady(impl, Void.class); // registers the ClientReady handler + dirties the root
         if (WEB) startWebClient(rootId, rootName);
         else context = initializeFlutterWindow(comm().getPort(), 0, rootId, rootName, "", 0, 0);
-        awaitClientReady();
+        awaitClientReadyResilient();
         flush();
     }
 
@@ -252,6 +256,70 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
         while (!clientReady.isDone() && System.currentTimeMillis() < deadline) pump(1);
         if (!clientReady.isDone())
             throw new IllegalStateException("Flutter client did not become ready within " + READY_TIMEOUT_MS + "ms");
+    }
+
+    /**
+     * Await ClientReady, but for the headless-web client relaunch a fresh Chrome if it hasn't
+     * reported ready within {@code harness.bootAttemptMs}. Headless Chrome intermittently wedges
+     * during startup in the CI container — it hangs right after its dbus/GCM/optimization-guide init
+     * and never loads the Flutter app, so the comm never even opens and the whole boot times out.
+     * A one-off hang clears on a clean relaunch (the other boots in the same run prove it's
+     * intermittent), so we kill the wedged Chrome and try again. This is boot resilience, not a
+     * longer timeout: each attempt is short and we make a few. Only the headless path can relaunch;
+     * native / Chromium-standalone / browser-disabled fall back to the single {@link #awaitClientReady}.
+     */
+    private void awaitClientReadyResilient() {
+        boolean canRelaunch = WEB && !CHROMIUM
+                && !"none".equalsIgnoreCase(System.getProperty("equo.swt.browser", ""));
+        if (!canRelaunch) {
+            awaitClientReady();
+            return;
+        }
+        int attempts = Integer.getInteger("harness.bootAttempts", 3);
+        long perAttemptMs = Long.getLong("harness.bootAttemptMs", 12_000);
+        for (int attempt = 1; attempt <= attempts; attempt++) {
+            if (awaitReadyFor(perAttemptMs)) return;
+            if (attempt < attempts) {
+                System.out.println("[FlutterHarness] Flutter client not ready in " + perAttemptMs
+                        + "ms (attempt " + attempt + "/" + attempts + "); relaunching Chrome");
+                relaunchBrowser();
+            }
+        }
+        if (!clientReady.isDone())
+            throw new IllegalStateException("Flutter client did not become ready after " + attempts
+                    + " boot attempts of " + perAttemptMs + "ms each");
+    }
+
+    /** Pump the loop until ClientReady arrives or {@code ms} elapses; returns whether it is ready. */
+    private boolean awaitReadyFor(long ms) {
+        long deadline = System.currentTimeMillis() + ms;
+        while (!clientReady.isDone() && System.currentTimeMillis() < deadline) pump(1);
+        return clientReady.isDone();
+    }
+
+    /** Kill a wedged Chrome and launch a fresh one against the still-running server + comm. */
+    private void relaunchBrowser() {
+        destroyBrowserProcess();
+        deleteProfileDir();
+        try {
+            launchBrowser(webServer.getApplicationUrl());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to relaunch web harness client", e);
+        }
+    }
+
+    /** Forcibly terminate the launched browser <em>and its descendants</em> — headless Chrome
+     *  spawns a zygote + renderer processes that a plain {@code destroy()} would orphan. */
+    private void destroyBrowserProcess() {
+        if (browserProc == null) return;
+        browserProc.descendants().forEach(ProcessHandle::destroyForcibly);
+        browserProc.destroyForcibly();
+        try {
+            browserProc.waitFor(3, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        browserProc = null;
     }
 
     protected <R> R awaitFuture(CompletableFuture<R> f, long timeoutMs, String what) {
@@ -336,10 +404,37 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
             cmd.add("--no-default-browser-check");
             cmd.add("--hide-crash-restore-bubble");
             cmd.add("--disable-session-crashed-bubble");
+            // Container hardening: the boot the harness waits on occasionally wedges right after
+            // Chrome's background-service init (a tiny /dev/shm starves the renderer; the GCM
+            // registration and optimization-guide on-device model — the "TensorFlow Lite XNNPACK
+            // delegate" line — are slow, hang-prone, and useless here). Disable that startup work so
+            // Chrome goes straight to loading the app.
+            cmd.add("--disable-dev-shm-usage");
+            cmd.add("--disable-background-networking");
+            cmd.add("--disable-component-update");
+            cmd.add("--disable-sync");
+            cmd.add("--disable-default-apps");
+            cmd.add("--no-pings");
+            cmd.add("--metrics-recording-only");
+            cmd.add("--disable-renderer-backgrounding");
+            cmd.add("--disable-backgrounding-occluded-windows");
+            cmd.add("--disable-features=OptimizationGuideModelDownloading,OptimizationHints,"
+                    + "OptimizationHintsFetching,OptimizationTargetPrediction,Translate,MediaRouter,"
+                    + "InterestFeedContentSuggestions,CalculateNativeWinOcclusion");
             cmd.add("--user-data-dir=" + profileDir);
-            cmd.add(url);
+            // Boot-resilience self-test: when harness.web.failBoots>0, the first N launches load a
+            // blank page that never connects, forcing awaitClientReadyResilient() to relaunch — so
+            // the retry path can be exercised deterministically (off by default).
+            String openUrl = url;
+            if (bootFailuresToInject > 0) {
+                bootFailuresToInject--;
+                openUrl = "data:text/html,harness-forced-boot-failure";
+                System.out.println("[FlutterHarness] injecting boot failure (blank page); "
+                        + bootFailuresToInject + " more to inject");
+            }
+            cmd.add(openUrl);
             browserProc = new ProcessBuilder(cmd).inheritIO().start();
-            System.out.println("[FlutterHarness] launched Chrome (headless=" + headless + ") at " + url
+            System.out.println("[FlutterHarness] launched Chrome (headless=" + headless + ") at " + openUrl
                     + " profile " + profileDir);
             return;
         }
