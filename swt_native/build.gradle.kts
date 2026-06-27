@@ -291,7 +291,7 @@ tasks.register<Test>("webTest") {
     systemProperty("dev.equo.swt.web.proxy", System.getProperty("dev.equo.swt.web.proxy") ?: "all")
     if (chromiumMode && org.gradle.internal.os.OperatingSystem.current().isMacOsX)
         jvmArgs = listOf("-XstartOnFirstThread")
-    forwardSystemProperties("harness.client", "harness.web.headless", "harness.web.console", "harness.readyTimeoutMs", "harness.queryTimeoutMs", "harness.holdMs", "equo.swt.browser", "dev.equo.swt.mode")
+    forwardSystemProperties("harness.client", "harness.web.headless", "harness.web.console", "harness.readyTimeoutMs", "harness.queryTimeoutMs", "harness.holdMs", "equo.swt.browser", "dev.equo.swt.mode", "harness.bootAttempts", "harness.bootAttemptMs", "harness.web.failBoots")
 }
 
 // Config shared by both bench Test tasks (native `benchmark` + browser `webBenchmark`): the
