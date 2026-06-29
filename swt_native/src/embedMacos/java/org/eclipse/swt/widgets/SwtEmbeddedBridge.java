@@ -1,0 +1,135 @@
+package org.eclipse.swt.widgets;
+
+import dev.equo.swt.FlutterBridge;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.internal.cocoa.NSView;
+import org.eclipse.swt.internal.cocoa.NSWindow;
+import org.eclipse.swt.internal.cocoa.OS;
+
+public class SwtEmbeddedBridge extends EmbeddedBridge {
+    private DartControl focused = null;
+
+    public SwtEmbeddedBridge(DartWidget widget) {
+        super(widget);
+    }
+
+    /** Per-OS embedded factory for {@code DartWidget.register()}; see {@link EmbeddedBridge#create}. */
+    public static FlutterBridge of(DartWidget widget) {
+        // A test/bench harness may inject a global bridge (FlutterBridge.set) that owns the comm;
+        // every widget routes through it instead of getting its own embedded bridge.
+        FlutterBridge injected = injected();
+        if (injected != null) {
+            widget.bridge = injected;
+            return injected;
+        }
+        return create(widget, () -> new SwtEmbeddedBridge(widget));
+    }
+
+    protected long getHandle(Control control) {
+        if (control.getImpl() instanceof SwtComposite composite) {
+            if (composite.contentView() != null)
+                return composite.contentView().id;
+            return 0;
+        }
+        return control.view.id;
+    }
+
+    @Override
+    protected void setHandle(DartControl control, long view) {
+        control.getApi().view = new NSView(view);
+        control.jniRef = OS.NewGlobalRef(control.getApi());
+        if (control.jniRef == 0)
+            SWT.error(SWT.ERROR_NO_HANDLES);
+        ((SwtDisplay) control.display.getImpl()).addWidget(control.getApi().view, control.getApi());
+    }
+
+    @Override
+    public Object container(DartComposite parent) {
+        return parent.getApi().view;
+    }
+
+    @Override
+    public boolean setFocus(DartControl widget) {
+        NSView focusView = widget.getApi().view;
+        if (focusView == null)
+            return false;
+        return forceFocus(widget, focusView);
+    }
+
+    @Override
+    public boolean hasFocus(DartControl widget) {
+        if (widget != focused) {
+            return false;
+        }
+        Control widget2 = widget.getApi();
+
+        Display display = widget.display;
+        while (widget2 != null) {
+            if (display.getFocusControl() == widget2)
+                return true;
+
+             widget2 = widget2.getParent();
+        }
+        return false;
+    }
+
+    boolean forceFocus(DartControl widget, NSView focusView) {
+        NSWindow window = focusView.window();
+        if (window == null) {
+            return false;
+        }
+        return window.makeFirstResponder(focusView);
+    }
+
+    @Override
+    public void setVisible(DartControl control, boolean visible) {
+        NSView topView = control.getApi().view;
+        if (topView != null) {
+            topView.setHidden(!visible);
+        }
+    }
+
+    @Override
+    protected void destroyHandle(DartControl control) {
+        ((SwtDisplay) control.display.getImpl()).removeWidget(control.getApi().view);
+        if (control.jniRef != 0)
+            OS.DeleteGlobalRef(control.jniRef);
+        control.jniRef = 0;
+        control.getApi().view = null;
+    }
+
+    @Override
+    public void reparent(DartControl control, Composite parent) {
+        NSView topView = control.getApi().view;
+        if (topView != null) {
+            topView.retain();
+            topView.removeFromSuperview();
+            if (!(parent.getImpl() instanceof DartComposite) && parent.getImpl() instanceof SwtControl) {
+                ((SwtControl) parent.getImpl()).contentView().addSubview(topView, OS.NSWindowBelow, null);
+            }
+            topView.release();
+        }
+    }
+
+    @Override
+    public void setZOrder(DartControl control, Control sibling, boolean above) {
+        Control api = control.getApi();
+        if (api.view != null && (sibling == null || sibling.getImpl() instanceof SwtControl)) {
+            org.eclipse.swt.internal.cocoa.NSView otherView = sibling == null ? null : ((SwtControl) sibling.getImpl()).topView();
+            org.eclipse.swt.internal.cocoa.NSView topView = api.view;
+            topView.retain();
+            topView.removeFromSuperview();
+            Composite parent = control.getParent();
+            if (parent.getImpl() instanceof SwtComposite) {
+                ((SwtComposite) parent.getImpl()).contentView().addSubview(topView, above ? org.eclipse.swt.internal.cocoa.OS.NSWindowAbove : org.eclipse.swt.internal.cocoa.OS.NSWindowBelow, otherView);
+            } else if (parent.getImpl() instanceof DartComposite) {
+                Object cv = ((DartComposite) parent.getImpl()).contentView();
+                if (cv instanceof org.eclipse.swt.internal.cocoa.NSView nsView) {
+                    nsView.addSubview(topView, above ? org.eclipse.swt.internal.cocoa.OS.NSWindowAbove : org.eclipse.swt.internal.cocoa.OS.NSWindowBelow, otherView);
+                }
+                // else: Flutter-backed composite has no native NSView; z-order is managed by Flutter
+            }
+            topView.release();
+        }
+    }
+}

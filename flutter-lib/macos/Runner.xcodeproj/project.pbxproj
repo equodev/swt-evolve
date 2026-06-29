@@ -29,12 +29,10 @@
 		33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC11122044BFA00003C045 /* MainFlutterWindow.swift */; };
 		78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */; };
 		BB10000000000000000000A1 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = BB10000000000000000000A2 /* FlutterGeneratedPluginSwiftPackage */; };
-		DFEEAE182D5C2C7E0019684D /* bridge.h in Headers */ = {isa = PBXBuildFile; fileRef = DFEEAE162D5C2C7E0019684D /* bridge.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		DFEEAE192D5C2C7E0019684D /* bridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = DFEEAE172D5C2C7E0019684D /* bridge.mm */; };
 		DFEEAE1B2D5C2E210019684D /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DFEEAE1A2D5C2E210019684D /* Cocoa.framework */; };
 		DFEEAE1D2D5C2E430019684D /* libFlutterBridge.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = DFEEAE112D5C2B770019684D /* libFlutterBridge.dylib */; };
-		DFEEAE252D5ED55B0019684D /* bridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFEEAE232D5ED55B0019684D /* bridge.swift */; };
-		DFEEAE2D2D5F22C20019684D /* FlutterBridge-Bridging-Header.h in Headers */ = {isa = PBXBuildFile; fileRef = DFEEAE222D5ED55A0019684D /* FlutterBridge-Bridging-Header.h */; };
+		DFEEAE252D5ED55B0019684D /* flutter_bridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFEEAE232D5ED55B0019684D /* flutter_bridge.swift */; };
+		DFEEAE2D2D5F22C20019684D /* flutter_bridge.h in Headers */ = {isa = PBXBuildFile; fileRef = DFEEAE222D5ED55A0019684D /* flutter_bridge.h */; };
 		DFEEAE2E2D60EE820019684D /* GeneratedPluginRegistrant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 335BBD1A22A9A15E00E9071D /* GeneratedPluginRegistrant.swift */; };
 		DFEEAE2F2D61000000000001 /* libFlutterBridge.dylib in Copy FlutterBridge Library */ = {isa = PBXBuildFile; fileRef = DFEEAE112D5C2B770019684D /* libFlutterBridge.dylib */; };
 /* End PBXBuildFile section */
@@ -124,12 +122,10 @@
 		78E0A7A72DC9AD7400C4905E /* FlutterGeneratedPluginSwiftPackage */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = FlutterGeneratedPluginSwiftPackage; path = ephemeral/Packages/FlutterGeneratedPluginSwiftPackage; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
-		DFEEAE112D5C2B770019684D /* libFlutterBridge.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libFlutterBridge.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
-		DFEEAE162D5C2C7E0019684D /* bridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bridge.h; sourceTree = "<group>"; };
-		DFEEAE172D5C2C7E0019684D /* bridge.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = bridge.mm; sourceTree = "<group>"; };
+		DFEEAE112D5C2B770019684D /* libFlutterBridge.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libflutter_bridge.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		DFEEAE1A2D5C2E210019684D /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
-		DFEEAE222D5ED55A0019684D /* FlutterBridge-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FlutterBridge-Bridging-Header.h"; sourceTree = "<group>"; };
-		DFEEAE232D5ED55B0019684D /* bridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = bridge.swift; sourceTree = "<group>"; };
+		DFEEAE222D5ED55A0019684D /* flutter_bridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = flutter_bridge.h; sourceTree = "<group>"; };
+		DFEEAE232D5ED55B0019684D /* flutter_bridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = flutter_bridge.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -240,10 +236,8 @@
 				33E51914231749380026EE4D /* Release.entitlements */,
 				33CC11242044D66E0003C045 /* Resources */,
 				33BA886A226E78AF003329D5 /* Configs */,
-				DFEEAE162D5C2C7E0019684D /* bridge.h */,
-				DFEEAE172D5C2C7E0019684D /* bridge.mm */,
-				DFEEAE232D5ED55B0019684D /* bridge.swift */,
-				DFEEAE222D5ED55A0019684D /* FlutterBridge-Bridging-Header.h */,
+				DFEEAE232D5ED55B0019684D /* flutter_bridge.swift */,
+				DFEEAE222D5ED55A0019684D /* flutter_bridge.h */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -263,8 +257,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DFEEAE182D5C2C7E0019684D /* bridge.h in Headers */,
-				DFEEAE2D2D5F22C20019684D /* FlutterBridge-Bridging-Header.h in Headers */,
+				DFEEAE2D2D5F22C20019684D /* flutter_bridge.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -478,9 +471,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DFEEAE252D5ED55B0019684D /* bridge.swift in Sources */,
+				DFEEAE252D5ED55B0019684D /* flutter_bridge.swift in Sources */,
 				DFEEAE2E2D60EE820019684D /* GeneratedPluginRegistrant.swift in Sources */,
-				DFEEAE192D5C2C7E0019684D /* bridge.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -833,9 +825,9 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.equo.flutterbridge;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = flutter_bridge;
 				SKIP_INSTALL = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "Runner/FlutterBridge-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "Runner/flutter_bridge.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 			};
@@ -870,9 +862,9 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.equo.flutterbridge;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = flutter_bridge;
 				SKIP_INSTALL = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "Runner/FlutterBridge-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "Runner/flutter_bridge.h";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
@@ -906,9 +898,9 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.equo.flutterbridge;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = flutter_bridge;
 				SKIP_INSTALL = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "Runner/FlutterBridge-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "Runner/flutter_bridge.h";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Profile;

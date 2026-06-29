@@ -75,6 +75,7 @@ final class WorkbenchTree {
         s30(w);
         s31(w);
         s32(w);
+        s33(w);
         k0(w);
         return (DartControl) w[0].getImpl();
     }
@@ -522,6 +523,7 @@ final class WorkbenchTree {
         ((CTabFolder) w[2]).setEnabled(true);
         ((CTabFolder) w[2]).setHighlightEnabled(true);
         ((CTabFolder) w[2]).setTabPosition(128);
+        ((CTabFolder) w[2]).setSelectionBackground(color(72, 72, 76, 255));
         ((CTabFolder) w[2]).setMaximizeVisible(true);
         ((CTabFolder) w[2]).setBounds(new Rectangle(0, 0, 180, 809));
         ((CTabFolder) w[2]).setBackground(color(72, 72, 76, 255));
@@ -547,10 +549,10 @@ final class WorkbenchTree {
         ((ToolBar) w[42]).setEnabled(true);
         ((ToolBar) w[42]).setForeground(color(0, 0, 0, 255));
         ((ToolItem) w[46]).setToolTipText("View Menu");
-        ((ToolItem) w[46]).setEnabled(true);
     }
 
     private static void s10(Widget[] w) {
+        ((ToolItem) w[46]).setEnabled(true);
         ((ToolItem) w[46]).setForeground(color(238, 238, 238, 255));
         ((ToolItem) w[46]).setBackground(color(72, 72, 76, 255));
         ((ToolItem) w[46]).setImage(img(16, 16, 32, true, "view_menu"));
@@ -580,10 +582,10 @@ final class WorkbenchTree {
         ((ToolBar) w[47]).setBounds(new Rectangle(350, 2, 48, 24));
         ((ToolBar) w[47]).setBackground(color(72, 72, 76, 255));
         ((ToolBar) w[47]).setVisible(true);
-        ((ToolBar) w[47]).setBackgroundMode(1);
     }
 
     private static void s11(Widget[] w) {
+        ((ToolBar) w[47]).setBackgroundMode(1);
         ((ToolBar) w[47]).setOrientation(33554432);
         ((ToolBar) w[47]).setDragDetect(true);
         ((ToolBar) w[47]).setTextDirection(33554432);
@@ -613,10 +615,10 @@ final class WorkbenchTree {
         ((Label) w[54]).setDragDetect(true);
         ((Label) w[54]).setText("Find Actions");
         ((Label) w[54]).setBounds(new Rectangle(89, 317, 90, 20));
-        ((Label) w[54]).setBackground(color(72, 72, 76, 255));
     }
 
     private static void s12(Widget[] w) {
+        ((Label) w[54]).setBackground(color(72, 72, 76, 255));
         ((Label) w[54]).setTextDirection(33554432);
         ((Label) w[54]).setEnabled(true);
         ((Label) w[54]).setForeground(color(238, 238, 238, 255));
@@ -646,10 +648,10 @@ final class WorkbenchTree {
         ((Label) w[57]).setDragDetect(true);
         ((Label) w[57]).setText("⇧⌘T");
         ((Label) w[57]).setBounds(new Rectangle(188, 335, 33, 19));
-        ((Label) w[57]).setBackground(color(72, 72, 76, 255));
     }
 
     private static void s13(Widget[] w) {
+        ((Label) w[57]).setBackground(color(72, 72, 76, 255));
         ((Label) w[57]).setTextDirection(33554432);
         ((Label) w[57]).setEnabled(true);
         ((Label) w[57]).setForeground(color(238, 238, 238, 255));
@@ -679,10 +681,10 @@ final class WorkbenchTree {
         ((Label) w[59]).setEnabled(true);
         ((Label) w[59]).setForeground(color(238, 238, 238, 255));
         ((Label) w[59]).setVisible(true);
-        ((Label) w[59]).setOrientation(33554432);
     }
 
     private static void s14(Widget[] w) {
+        ((Label) w[59]).setOrientation(33554432);
         ((Composite) w[58]).setBounds(new Rectangle(0, 0, 0, 0));
         ((Composite) w[58]).setBackground(color(72, 72, 76, 255));
         ((Composite) w[58]).setVisible(true);
@@ -700,6 +702,7 @@ final class WorkbenchTree {
         ((CTabFolder) w[41]).setEnabled(true);
         ((CTabFolder) w[41]).setHighlightEnabled(true);
         ((CTabFolder) w[41]).setTabPosition(128);
+        ((CTabFolder) w[41]).setSelectionBackground(color(255, 255, 255, 255));
         ((CTabFolder) w[41]).setMaximizeVisible(true);
         ((CTabFolder) w[41]).setBounds(new Rectangle(0, 0, 402, 604));
         ((CTabFolder) w[41]).setBackground(color(72, 72, 76, 255));
@@ -710,11 +713,11 @@ final class WorkbenchTree {
         ((CTabFolder) w[41]).setDragDetect(true);
         ((CTabFolder) w[41]).setForeground(color(187, 187, 187, 255));
         ((CTabFolder) w[41]).setSimple(true);
-        ((CTabFolder) w[41]).setTabHeight(24);
-        ((CTabFolder) w[41]).setSelectionBarThickness(2);
     }
 
     private static void s15(Widget[] w) {
+        ((CTabFolder) w[41]).setTabHeight(24);
+        ((CTabFolder) w[41]).setSelectionBarThickness(2);
         ((Composite) w[40]).setBounds(new Rectangle(0, 0, 402, 604));
         ((Composite) w[40]).setBackground(color(72, 72, 76, 255));
         ((Composite) w[40]).setVisible(true);
@@ -743,11 +746,11 @@ final class WorkbenchTree {
         ((ToolBar) w[61]).setTextDirection(33554432);
         ((ToolBar) w[61]).setEnabled(true);
         ((ToolBar) w[61]).setForeground(color(0, 0, 0, 255));
-        ((ToolItem) w[64]).setToolTipText("Minimize");
-        ((ToolItem) w[64]).setEnabled(true);
     }
 
     private static void s16(Widget[] w) {
+        ((ToolItem) w[64]).setToolTipText("Minimize");
+        ((ToolItem) w[64]).setEnabled(true);
         ((ToolItem) w[64]).setImage(img(18, 18, 24, false, null));
         ((ToolItem) w[65]).setToolTipText("Maximize");
         ((ToolItem) w[65]).setEnabled(true);
@@ -776,11 +779,11 @@ final class WorkbenchTree {
         ((ToolBar) w[67]).setEnabled(true);
         ((ToolBar) w[67]).setForeground(color(238, 238, 238, 255));
         ((ToolItem) w[70]).setToolTipText("View Menu");
-        ((ToolItem) w[70]).setEnabled(true);
-        ((ToolItem) w[70]).setForeground(color(238, 238, 238, 255));
     }
 
     private static void s17(Widget[] w) {
+        ((ToolItem) w[70]).setEnabled(true);
+        ((ToolItem) w[70]).setForeground(color(238, 238, 238, 255));
         ((ToolItem) w[70]).setBackground(color(72, 72, 76, 255));
         ((ToolItem) w[70]).setImage(img(16, 16, 32, true, "view_menu"));
         ((ToolBar) w[69]).setBounds(new Rectangle(24, 0, 24, 22));
@@ -809,11 +812,11 @@ final class WorkbenchTree {
         ((Label) w[76]).setTextDirection(33554432);
         ((Label) w[76]).setEnabled(true);
         ((Label) w[76]).setForeground(color(170, 170, 170, 255));
-        ((Label) w[76]).setVisible(true);
-        ((Label) w[76]).setOrientation(33554432);
     }
 
     private static void s18(Widget[] w) {
+        ((Label) w[76]).setVisible(true);
+        ((Label) w[76]).setOrientation(33554432);
         ((Composite) w[75]).setBounds(new Rectangle(0, 0, 134, 572));
         ((Composite) w[75]).setBackground(color(47, 47, 47, 255));
         ((Composite) w[75]).setVisible(true);
@@ -842,11 +845,11 @@ final class WorkbenchTree {
         ((Composite) w[72]).setBackground(color(41, 41, 41, 255));
         ((Composite) w[72]).setRedraw(true);
         ((Composite) w[72]).setVisible(true);
-        ((Composite) w[72]).setOrientation(33554432);
-        ((Composite) w[72]).setDragDetect(true);
     }
 
     private static void s19(Widget[] w) {
+        ((Composite) w[72]).setOrientation(33554432);
+        ((Composite) w[72]).setDragDetect(true);
         ((Composite) w[72]).setTextDirection(33554432);
         ((Composite) w[72]).setEnabled(true);
         ((Composite) w[72]).setForeground(color(221, 221, 221, 255));
@@ -873,13 +876,14 @@ final class WorkbenchTree {
         ((CTabFolder) w[60]).setEnabled(true);
         ((CTabFolder) w[60]).setHighlightEnabled(true);
         ((CTabFolder) w[60]).setTabPosition(128);
+        ((CTabFolder) w[60]).setSelectionBackground(color(72, 72, 76, 255));
         ((CTabFolder) w[60]).setMaximizeVisible(true);
-        ((CTabFolder) w[60]).setBounds(new Rectangle(590, 0, 134, 604));
-        ((CTabFolder) w[60]).setBackground(color(72, 72, 76, 255));
-        ((CTabFolder) w[60]).setSelectionForeground(color(255, 255, 255, 255));
     }
 
     private static void s20(Widget[] w) {
+        ((CTabFolder) w[60]).setBounds(new Rectangle(590, 0, 134, 604));
+        ((CTabFolder) w[60]).setBackground(color(72, 72, 76, 255));
+        ((CTabFolder) w[60]).setSelectionForeground(color(255, 255, 255, 255));
         ((CTabFolder) w[60]).setVisible(true);
         ((CTabFolder) w[60]).setBorderVisible(true);
         ((CTabFolder) w[60]).setMRUVisible(true);
@@ -906,12 +910,12 @@ final class WorkbenchTree {
         ((ToolItem) w[84]).setBackground(color(72, 72, 76, 255));
         ((ToolItem) w[84]).setImage(img(16, 16, 32, true, "filter_ps"));
         ((ToolItem) w[84]).setDisabledImage(img(16, 16, 32, true, "filter_ps"));
-        ((ToolItem) w[85]).setEnabled(true);
-        ((ToolItem) w[85]).setForeground(color(238, 238, 238, 255));
-        ((ToolItem) w[85]).setBackground(color(72, 72, 76, 255));
     }
 
     private static void s21(Widget[] w) {
+        ((ToolItem) w[85]).setEnabled(true);
+        ((ToolItem) w[85]).setForeground(color(238, 238, 238, 255));
+        ((ToolItem) w[85]).setBackground(color(72, 72, 76, 255));
         ((ToolItem) w[86]).setToolTipText("Focus on Active Task");
         ((ToolItem) w[86]).setForeground(color(238, 238, 238, 255));
         ((ToolItem) w[86]).setBackground(color(72, 72, 76, 255));
@@ -939,12 +943,12 @@ final class WorkbenchTree {
         ((ToolBar) w[87]).setTextDirection(33554432);
         ((ToolBar) w[87]).setEnabled(true);
         ((ToolBar) w[87]).setForeground(color(238, 238, 238, 255));
-        ((Composite) w[82]).setBounds(new Rectangle(410, 2, 78, 24));
-        ((Composite) w[82]).setBackground(color(72, 72, 76, 255));
-        ((Composite) w[82]).setRedraw(true);
     }
 
     private static void s22(Widget[] w) {
+        ((Composite) w[82]).setBounds(new Rectangle(410, 2, 78, 24));
+        ((Composite) w[82]).setBackground(color(72, 72, 76, 255));
+        ((Composite) w[82]).setRedraw(true);
         ((Composite) w[82]).setVisible(true);
         ((Composite) w[82]).setBackgroundMode(1);
         ((Composite) w[82]).setOrientation(33554432);
@@ -972,12 +976,12 @@ final class WorkbenchTree {
         ((Label) w[94]).setDragDetect(true);
         ((Label) w[94]).setText("0 items");
         ((Label) w[94]).setBounds(new Rectangle(0, 0, 540, 20));
-        ((Label) w[94]).setBackground(color(47, 47, 47, 255));
-        ((Label) w[94]).setTextDirection(33554432);
-        ((Label) w[94]).setEnabled(true);
     }
 
     private static void s23(Widget[] w) {
+        ((Label) w[94]).setBackground(color(47, 47, 47, 255));
+        ((Label) w[94]).setTextDirection(33554432);
+        ((Label) w[94]).setEnabled(true);
         ((Label) w[94]).setForeground(color(170, 170, 170, 255));
         ((Label) w[94]).setVisible(true);
         ((Label) w[94]).setOrientation(33554432);
@@ -1005,12 +1009,12 @@ final class WorkbenchTree {
         ((TreeColumn) w[100]).setToolTipText("Path");
         ((TreeColumn) w[100]).setAlignment(16384);
         ((TreeColumn) w[100]).setText("Path");
-        ((TreeColumn) w[100]).setWidth(120);
-        ((TreeColumn) w[100]).setMoveable(true);
-        ((TreeColumn) w[100]).setResizable(true);
     }
 
     private static void s24(Widget[] w) {
+        ((TreeColumn) w[100]).setWidth(120);
+        ((TreeColumn) w[100]).setMoveable(true);
+        ((TreeColumn) w[100]).setResizable(true);
         ((TreeColumn) w[101]).setToolTipText("Location");
         ((TreeColumn) w[101]).setAlignment(16384);
         ((TreeColumn) w[101]).setText("Location");
@@ -1038,12 +1042,12 @@ final class WorkbenchTree {
         ((Text) w[104]).setDoubleClickEnabled(true);
         ((Text) w[104]).setEnabled(true);
         ((Text) w[104]).setForeground(color(170, 170, 170, 255));
-        ((Text) w[104]).setTabs(8);
-        ((Tree) w[97]).setBounds(new Rectangle(0, 0, 540, 66));
-        ((Tree) w[97]).setHeaderBackground(color(0, 0, 0, 0));
     }
 
     private static void s25(Widget[] w) {
+        ((Text) w[104]).setTabs(8);
+        ((Tree) w[97]).setBounds(new Rectangle(0, 0, 540, 66));
+        ((Tree) w[97]).setHeaderBackground(color(0, 0, 0, 0));
         ((Tree) w[97]).setBackground(color(72, 72, 76, 255));
         ((Tree) w[97]).setRedraw(true);
         ((Tree) w[97]).setVisible(true);
@@ -1071,12 +1075,12 @@ final class WorkbenchTree {
         ((Composite) w[93]).setOrientation(33554432);
         ((Composite) w[93]).setDragDetect(true);
         ((Composite) w[93]).setTextDirection(33554432);
-        ((Composite) w[93]).setEnabled(true);
-        ((Composite) w[93]).setForeground(color(221, 221, 221, 255));
-        ((Composite) w[92]).setBounds(new Rectangle(0, 32, 540, 86));
     }
 
     private static void s26(Widget[] w) {
+        ((Composite) w[93]).setEnabled(true);
+        ((Composite) w[93]).setForeground(color(221, 221, 221, 255));
+        ((Composite) w[92]).setBounds(new Rectangle(0, 32, 540, 86));
         ((Composite) w[92]).setBackground(color(72, 72, 76, 255));
         ((Composite) w[92]).setVisible(true);
         ((Composite) w[92]).setOrientation(33554432);
@@ -1099,17 +1103,18 @@ final class WorkbenchTree {
         ((CTabFolder) w[79]).setEnabled(true);
         ((CTabFolder) w[79]).setHighlightEnabled(true);
         ((CTabFolder) w[79]).setTabPosition(128);
+        ((CTabFolder) w[79]).setSelectionBackground(color(41, 41, 41, 255));
         ((CTabFolder) w[79]).setMaximizeVisible(true);
         ((CTabFolder) w[79]).setBounds(new Rectangle(184, 608, 540, 118));
         ((CTabFolder) w[79]).setBackground(color(72, 72, 76, 255));
         ((CTabFolder) w[79]).setSelectionForeground(color(255, 255, 255, 255));
+    }
+
+    private static void s27(Widget[] w) {
         ((CTabFolder) w[79]).setVisible(true);
         ((CTabFolder) w[79]).setBorderVisible(true);
         ((CTabFolder) w[79]).setMRUVisible(true);
         ((CTabFolder) w[79]).setDragDetect(true);
-    }
-
-    private static void s27(Widget[] w) {
         ((CTabFolder) w[79]).setForeground(color(187, 187, 187, 255));
         ((CTabFolder) w[79]).setSimple(true);
         ((CTabFolder) w[79]).setTabHeight(24);
@@ -1135,13 +1140,13 @@ final class WorkbenchTree {
         ((ToolBar) w[111]).setTextDirection(33554432);
         ((ToolBar) w[111]).setEnabled(true);
         ((ToolBar) w[111]).setForeground(color(238, 238, 238, 255));
+    }
+
+    private static void s28(Widget[] w) {
         ((ToolItem) w[113]).setToolTipText("View Menu");
         ((ToolItem) w[113]).setEnabled(true);
         ((ToolItem) w[113]).setForeground(color(238, 238, 238, 255));
         ((ToolItem) w[113]).setBackground(color(72, 72, 76, 255));
-    }
-
-    private static void s28(Widget[] w) {
         ((ToolItem) w[113]).setImage(img(16, 16, 32, true, "view_menu"));
         ((ToolBar) w[112]).setBounds(new Rectangle(0, 0, 0, 0));
         ((ToolBar) w[112]).setBackground(color(72, 72, 76, 255));
@@ -1168,13 +1173,13 @@ final class WorkbenchTree {
         ((ToolItem) w[116]).setEnabled(true);
         ((ToolItem) w[116]).setImage(img(18, 18, 24, false, null));
         ((ToolBar) w[114]).setBounds(new Rectangle(488, 2, 48, 24));
+    }
+
+    private static void s29(Widget[] w) {
         ((ToolBar) w[114]).setBackground(color(72, 72, 76, 255));
         ((ToolBar) w[114]).setVisible(true);
         ((ToolBar) w[114]).setBackgroundMode(1);
         ((ToolBar) w[114]).setOrientation(33554432);
-    }
-
-    private static void s29(Widget[] w) {
         ((ToolBar) w[114]).setDragDetect(true);
         ((ToolBar) w[114]).setTextDirection(33554432);
         ((ToolBar) w[114]).setEnabled(true);
@@ -1201,13 +1206,13 @@ final class WorkbenchTree {
         ((Composite) w[118]).setBackground(color(41, 41, 41, 255));
         ((Composite) w[118]).setRedraw(true);
         ((Composite) w[118]).setVisible(true);
+    }
+
+    private static void s30(Widget[] w) {
         ((Composite) w[118]).setOrientation(33554432);
         ((Composite) w[118]).setDragDetect(true);
         ((Composite) w[118]).setTextDirection(33554432);
         ((Composite) w[118]).setEnabled(true);
-    }
-
-    private static void s30(Widget[] w) {
         ((Composite) w[118]).setForeground(color(221, 221, 221, 255));
         ((Composite) w[117]).setBounds(new Rectangle(0, 32, 0, 0));
         ((Composite) w[117]).setBackground(color(72, 72, 76, 255));
@@ -1234,13 +1239,13 @@ final class WorkbenchTree {
         ((Composite) w[123]).setDragDetect(true);
         ((Composite) w[123]).setTextDirection(33554432);
         ((Composite) w[123]).setEnabled(true);
+    }
+
+    private static void s31(Widget[] w) {
         ((Composite) w[123]).setForeground(color(170, 170, 170, 255));
         ((Composite) w[122]).setBounds(new Rectangle(0, 0, 540, 47));
         ((Composite) w[122]).setBackground(color(41, 41, 41, 255));
         ((Composite) w[122]).setRedraw(true);
-    }
-
-    private static void s31(Widget[] w) {
         ((Composite) w[122]).setVisible(true);
         ((Composite) w[122]).setOrientation(33554432);
         ((Composite) w[122]).setDragDetect(true);
@@ -1267,13 +1272,14 @@ final class WorkbenchTree {
         ((CTabFolder) w[107]).setMinimumCharacters(1);
         ((CTabFolder) w[107]).setTextDirection(33554432);
         ((CTabFolder) w[107]).setEnabled(true);
-        ((CTabFolder) w[107]).setHighlightEnabled(true);
-        ((CTabFolder) w[107]).setTabPosition(128);
-        ((CTabFolder) w[107]).setMaximizeVisible(true);
-        ((CTabFolder) w[107]).setBounds(new Rectangle(184, 730, 540, 79));
     }
 
     private static void s32(Widget[] w) {
+        ((CTabFolder) w[107]).setHighlightEnabled(true);
+        ((CTabFolder) w[107]).setTabPosition(128);
+        ((CTabFolder) w[107]).setSelectionBackground(color(41, 41, 41, 255));
+        ((CTabFolder) w[107]).setMaximizeVisible(true);
+        ((CTabFolder) w[107]).setBounds(new Rectangle(184, 730, 540, 79));
         ((CTabFolder) w[107]).setBackground(color(41, 41, 41, 255));
         ((CTabFolder) w[107]).setRedraw(true);
         ((CTabFolder) w[107]).setSelectionForeground(color(255, 255, 255, 255));
@@ -1298,6 +1304,9 @@ final class WorkbenchTree {
         ((Composite) w[0]).setVisible(true);
         ((Composite) w[0]).setOrientation(33554432);
         ((Composite) w[0]).setDragDetect(true);
+    }
+
+    private static void s33(Widget[] w) {
         ((Composite) w[0]).setTextDirection(33554432);
         ((Composite) w[0]).setEnabled(true);
         ((Composite) w[0]).setForeground(color(238, 238, 238, 255));

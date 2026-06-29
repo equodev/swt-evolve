@@ -77,6 +77,16 @@ void observeViewportChanges(void Function() onChange) {
   _requestAnimationFrame((JSNumber _) { onChange(); }.toJS);
 }
 
+/// Fires [onClose] when the browser tab/window is being torn down, so Java can run the SWT shell
+/// close — mirroring the desktop-native window-close path. We listen on both `pagehide` (the
+/// reliable teardown signal: tab close, navigation, bfcache) and `beforeunload`; a socket drop is
+/// deliberately NOT used as the signal, since a dropped socket may just be a transient disconnect
+/// that reconnects. Double delivery is harmless — the Java side closes the shells idempotently.
+void observeWindowClose(void Function() onClose) {
+  _addWindowEventListener('pagehide'.toJS, (() { onClose(); }).toJS);
+  _addWindowEventListener('beforeunload'.toJS, (() { onClose(); }).toJS);
+}
+
 void close() {
   //if (listener != null) {
   //  windowManager.removeListener(listener!);

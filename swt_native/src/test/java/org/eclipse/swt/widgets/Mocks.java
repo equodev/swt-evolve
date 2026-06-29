@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.FlutterNative;
 import dev.equo.swt.MockFlutterBridge;
 import org.eclipse.swt.accessibility.Accessible;
 import org.eclipse.swt.accessibility.DartAccessible;
@@ -27,7 +28,8 @@ public class Mocks implements BeforeEachCallback, AfterEachCallback {
 
     private static Display display;
     private final boolean nativeBridge;
-    public MockedStatic<SwtFlutterBridgeBase> bridge;
+    public MockedStatic<SwtEmbeddedBridge> bridge;
+    public MockedStatic<FlutterNative> flutterNative;
 
     private Mocks() {
         this(false);
@@ -49,8 +51,9 @@ public class Mocks implements BeforeEachCallback, AfterEachCallback {
     public void beforeEach(ExtensionContext context) throws Exception {
         if (!nativeBridge) {
             System.setProperty("dev.equo.swt.loadLibrary", "false");
-            bridge = Mockito.mockStatic(SwtFlutterBridgeBase.class);
-            bridge.when(() -> SwtFlutterBridgeBase.of(any())).thenCallRealMethod();
+            bridge = Mockito.mockStatic(SwtEmbeddedBridge.class);
+            bridge.when(() -> SwtEmbeddedBridge.of(any())).thenCallRealMethod();
+            flutterNative = Mockito.mockStatic(FlutterNative.class);
         }
     }
 
@@ -58,6 +61,10 @@ public class Mocks implements BeforeEachCallback, AfterEachCallback {
     public void afterEach(ExtensionContext context) throws Exception {
         if (bridge != null) {
             bridge.close();
+            if (flutterNative != null) {
+                flutterNative.close();
+                flutterNative = null;
+            }
             System.clearProperty("dev.equo.swt.loadLibrary");
         }
         if (display != null) {
@@ -66,12 +73,12 @@ public class Mocks implements BeforeEachCallback, AfterEachCallback {
         }
     }
 
-    public static void verifySetBounds(MockedStatic<SwtFlutterBridgeBase> bridge, int x, int y, int w, int h, int vx, int vy, int vw, int vh) {
-        bridge.verify(() -> SwtFlutterBridgeBase.setBounds(anyLong(), eq(y), eq(y), eq(w), eq(h), eq(vx), eq(vy), eq(vw), eq(vh)));
+    public static void verifySetBounds(MockedStatic<FlutterNative> flutterNative, int x, int y, int w, int h, int vx, int vy, int vw, int vh) {
+        flutterNative.verify(() -> FlutterNative.setBounds(anyLong(), eq(y), eq(y), eq(w), eq(h), eq(vx), eq(vy), eq(vw), eq(vh)));
     }
 
-    public static void verifyNoSetBounds(MockedStatic<SwtFlutterBridgeBase> bridge) {
-        bridge.verify(() -> SwtFlutterBridgeBase.setBounds(anyLong(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt()), never());
+    public static void verifyNoSetBounds(MockedStatic<FlutterNative> flutterNative) {
+        flutterNative.verify(() -> FlutterNative.setBounds(anyLong(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt()), never());
     }
 
     public static Shell swtShell() {

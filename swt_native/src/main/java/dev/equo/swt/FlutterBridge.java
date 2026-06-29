@@ -122,7 +122,7 @@ public abstract class FlutterBridge {
 
     public static void disposeClient() {
         // Desktop only: stop the shared comm if it was ever created. On web each Display stops its
-        // own comm in SwtFlutterBridgeWeb.destroyDisplay(), and desktopComm stays null here.
+        // own comm in WebDisplayBridge.destroyDisplay(), and desktopComm stays null here.
         if (!keepClient && desktopComm != null)
             desktopComm.stop();
         keepClient = false;
@@ -131,14 +131,6 @@ public abstract class FlutterBridge {
     public static void disposeDisplayAndContinue(Display display) {
         keepClient = true;
         display.dispose();
-    }
-
-    public static FlutterBridge of(DartWidget control) {
-        if (bridge != null)
-            return bridge;
-        //if (isWeb) {}
-//        if (isSwt)
-        return SwtFlutterBridge.of(control);
     }
 
     protected FlutterBridge() {
@@ -414,19 +406,36 @@ public abstract class FlutterBridge {
         }
     }
 
+    /**
+     * The one ClientReady handler, shared by the embedded ({@link #onReady}) and Display-level
+     * ({@code DisplayBridge.registerDisplayClientReady}) bridges — every ClientReady comes from the
+     * same Flutter {@code main.dart}, for a widget or a Display, with some payload. The first time the
+     * client signals ready on {@code channel}, mark {@link #clientReady} complete and push the
+     * swt.evolve properties (Flutter can only receive them once ready). {@code each} then runs with
+     * the payload for surface-specific work (resolve the ready payload, hot-reload re-render, sync
+     * Display bounds, push the first/next update); its {@code Boolean} arg is whether this was the
+     * first (completing) ClientReady.
+     */
+    protected <P> void onClientReady(String channel, Class<P> type, java.util.function.BiConsumer<P, Boolean> each) {
+        comm().on(channel, type, p -> {
+            boolean first = !clientReady.isDone();
+            if (first) {
+                System.out.println("ClientReady " + channel);
+                clientReady.complete(true);
+                displayBootstrapped = true;
+                sendSwtEvolveProperties();
+            }
+            if (each != null) each.accept(p, first);
+        });
+    }
+
     protected <P> CompletableFuture<P> onReady(Object control, Class<P> payloadClass) {
         setNotNew(control);
         dirty(control);
         CompletableFuture<P> readyPayload = (payloadClass != null) ? new CompletableFuture<>() : null;
-        comm().on(event(control,"ClientReady"), payloadClass, p -> {
-            if (!clientReady.isDone()) {
-                System.out.println("ClientReady "+event(control));
-                if (readyPayload != null)
-                    readyPayload.complete(p);
-                clientReady.complete(true);
-                displayBootstrapped = true;
-                // Send properties AFTER Flutter is ready to receive them
-                sendSwtEvolveProperties();
+        onClientReady(event(control, "ClientReady"), payloadClass, (p, first) -> {
+            if (first) {
+                if (readyPayload != null) readyPayload.complete(p);
             } else { // hot reload
                 dirty(control);
                 update();

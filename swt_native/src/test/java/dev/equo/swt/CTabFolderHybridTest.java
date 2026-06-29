@@ -101,7 +101,7 @@ class CTabFolderHybridTest {
     }
 
     private static FlutterBridge mockBridge(Composite parent) {
-        FlutterBridge parentBridge = mock(SwtFlutterBridge.class);
+        FlutterBridge parentBridge = mock(SwtEmbeddedBridge.class);
         DartComposite impl = (DartComposite) parent.getImpl();
         when(parentBridge.forWidget()).thenReturn(impl);
         when(impl.getBridge()).thenReturn(parentBridge);
@@ -133,7 +133,7 @@ class CTabFolderHybridTest {
 
             tabs.setBounds(10, 10, 200, 300);
 
-            verifySetBounds(mock.bridge, 10, 10, 200, 300, 0, 0, 200, 300);
+            verifySetBounds(mock.flutterNative, 10, 10, 200, 300, 0, 0, 200, 300);
         }
 
         @Test
@@ -151,7 +151,7 @@ class CTabFolderHybridTest {
             tabs.setSelection(0);
             tabs.setBounds(10, 10, 200, 300);
 
-            verifySetBounds(mock.bridge, 10, 10, 200, 300, 0, 0, 200, 300);
+            verifySetBounds(mock.flutterNative, 10, 10, 200, 300, 0, 0, 200, 300);
         }
 
         @Test
@@ -169,7 +169,7 @@ class CTabFolderHybridTest {
             tabs.setSelection(1);
             tabs.setBounds(10, 10, 200, 300);
 
-            verifySetBounds(mock.bridge, 10, 10, 200, 300, 0, 0, 200, 32);
+            verifySetBounds(mock.flutterNative, 10, 10, 200, 300, 0, 0, 200, 32);
         }
 
         @Test
@@ -186,9 +186,9 @@ class CTabFolderHybridTest {
 
             tabs.setSelection(1);
             tabs.setBounds(10, 10, 200, 300);
-            verifySetBounds(mock.bridge, 10, 10, 200, 300, 0, 0, 200, 32);
+            verifySetBounds(mock.flutterNative, 10, 10, 200, 300, 0, 0, 200, 32);
             tabs.setSelection(0);
-            verifySetBounds(mock.bridge, 10, 10, 200, 300, 0, 0, 200, 300);
+            verifySetBounds(mock.flutterNative, 10, 10, 200, 300, 0, 0, 200, 300);
         }
 
         @Test
@@ -205,9 +205,9 @@ class CTabFolderHybridTest {
 
             tabs.setSelection(0);
             tabs.setBounds(10, 10, 200, 300);
-            verifySetBounds(mock.bridge, 10, 10, 200, 300, 0, 0, 200, 300);
+            verifySetBounds(mock.flutterNative, 10, 10, 200, 300, 0, 0, 200, 300);
             tabs.setSelection(1);
-            verifySetBounds(mock.bridge, 10, 10, 200, 300, 0, 0, 200, 32);
+            verifySetBounds(mock.flutterNative, 10, 10, 200, 300, 0, 0, 200, 32);
         }
 
         @Test
@@ -217,7 +217,7 @@ class CTabFolderHybridTest {
 
             nested.setBounds(10, 10, 200, 300);
 
-            verifyNoSetBounds(mock.bridge);
+            verifyNoSetBounds(mock.flutterNative);
         }
     }
 
