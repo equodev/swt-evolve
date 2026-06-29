@@ -5,7 +5,7 @@ project(runner LANGUAGES CXX)
 find_package(Java REQUIRED)
 find_package(JNI REQUIRED)
 
-set(FLUTTER_LIBRARY_NAME "flutter_library")
+set(FLUTTER_LIBRARY_NAME "flutter_bridge")
 add_library(${FLUTTER_LIBRARY_NAME} SHARED
   "flutter_bridge.cc"
   "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"

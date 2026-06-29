@@ -14,14 +14,14 @@ repositories {
 
 val arch = System.getProperty("os.arch")
 
-val oss = listOf("windows", "linux", "macos", "webWindows", "webLinux", "webMacos", "web")
+val oss = listOf("embedWindows", "embedLinux", "embedMacos", "nativeWindows", "nativeLinux", "nativeMacos", "web")
 val platforms = listOf(
+    "embed-windows-x86_64", "embed-windows-aarch64",
+    "embed-linux-x86_64", "embed-linux-aarch64",
+    "embed-macos-x86_64", "embed-macos-aarch64",
     "windows-x86_64", "windows-aarch64",
     "linux-x86_64", "linux-aarch64",
     "macos-x86_64", "macos-aarch64",
-    "web-windows-x86_64", "web-windows-aarch64",
-    "web-linux-x86_64", "web-linux-aarch64",
-    "web-macos-x86_64", "web-macos-aarch64",
     "web",
 )
 
@@ -159,24 +159,28 @@ dependencies {
     testImplementation(libs.instancio.junit)
 }
 
+val nativeFlutterExcludes = listOf("dev/equo/swt/ConfigDyn.java", "**/GraphicsUtilsSwt.java")
+
 sourceSets {
     main {
         java {
             setSrcDirs(listOf(
                 "src/main/java",
-                "src/${currentOs}/java"
+                "src/native/java",
+                "src/native${currentOs.replaceFirstChar { it.titlecase() }}/java"
             ))
+            exclude(nativeFlutterExcludes)
         }
     }
 
     // The web comm benchmark drives the production Flutter web build through a browser, so it
-    // reuses the production WebFlutterServer (from webMain) to serve it — rather than duplicating
+    // reuses the production WebFlutterServer (from src/native) to serve it — rather than duplicating
     // an HTTP server in test scope. WebFlutterServer is pure JDK + FlutterLibraryLoader (which is
     // in main), so we expose just that one file on the test classpath via this tiny source set,
     // instead of pulling the whole web tree (thousands of files) into every test build.
     val webShared = create("webShared") {
         java {
-            setSrcDirs(listOf("src/webMain/java"))
+            setSrcDirs(listOf("src/native/java"))
             include("dev/equo/swt/WebFlutterServer.java")
         }
         compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
@@ -187,11 +191,11 @@ sourceSets {
         create(os) {
             java {
                 when {
-                    os.startsWith("web") -> setSrcDirs(listOf("src/main/java", "src/webMain/java", "src/${os}/java"))
+                    os.startsWith("native") || os == "web" -> setSrcDirs(listOf("src/main/java", "src/native/java", "src/${os}/java"))
                     else -> setSrcDirs(listOf("src/main/java", "src/${os}/java"))
                 }
-                if (os.startsWith("web")) {
-                    exclude("dev/equo/swt/ConfigDyn.java", "**/GraphicsUtilsSwt.java")
+                if (os.startsWith("native") || os == "web") {
+                    exclude(nativeFlutterExcludes)
                 }
             }
             annotationProcessorPath += sourceSets.main.get().annotationProcessorPath
@@ -207,20 +211,31 @@ sourceSets {
         }
     }
 
-    // The web bench (BenchBridge in -Dbench.client=web mode) compiles and runs against the
-    // production WebFlutterServer exposed by the webShared set above.
+    // The default `main` backend is whole-tree Flutter (desk/web), but the unit-test suite
+    // (serialize round-trips + Mocks) is written against the EMBEDDED Swt* classes. So compile and
+    // run `test` against the embedded backend for the current OS (src/main + src/embed<OS>) rather
+    // than against `main`. Dependencies come from the test* configurations; webShared adds
+    // the production WebFlutterServer the web comm benchmark drives.
+    val embedBackend = getByName("embed${currentOs.replaceFirstChar { it.titlecase() }}")
     test {
-        compileClasspath += webShared.output
-        runtimeClasspath += webShared.output
+        compileClasspath = configurations["testCompileClasspath"] + embedBackend.output + webShared.output
+        runtimeClasspath = output + configurations["testRuntimeClasspath"] + embedBackend.output + webShared.output
     }
 
     // Web-backed integration test source set: the SAME test code (src/test/java), but compiled
-    // against the WEB Java backend (src/main + src/webMain + src/web<currentOs>) instead of the
-    // native one — so 'flutter-it' tests exercise web-specific server logic. Driven by the `webTest` task.
-    val webBackend = getByName("web${currentOs.replaceFirstChar { it.titlecase() }}")
+    // against the whole-tree-Flutter Java backend (src/main + src/native + src/native<currentOs>)
+    // instead of the embedded one — so 'flutter-it' tests exercise web-specific server logic.
+    // Driven by the `webTest` task.
+    val webBackend = getByName("native${currentOs.replaceFirstChar { it.titlecase() }}")
     create("webTest") {
         java {
-            setSrcDirs(listOf("src/test/java"))
+            // src/test/java: the shared suite — flutter-it tests there (named *FlutterTest by
+            // convention) must also compile against the EMBEDDED backend the default `test` task
+            // uses, so they reach web-only classes by reflection (see DisplayWakeFlutterTest).
+            // src/webTest/java: flutter-it tests that CANNOT compile against embedded — they
+            // sub-class the native-only Display bridges (DeskDisplayBridge/WebDisplayBridge) for
+            // their test seams. Compiled only here, never by the default `test` source set.
+            setSrcDirs(listOf("src/test/java", "src/webTest/java"))
             // Only the harness + flutter-it tests (named *FlutterTest by convention): the rest of
             // src/test/java (Mocks, SerializeTestBase, …) imports native-only Swt* classes absent
             // from the web backend.
@@ -273,7 +288,7 @@ tasks.register<Test>("webTest") {
     description = "Runs Flutter integration tests (tagged 'flutter-it') against the WEB Java backend + Flutter WEB build."
     testClassesDirs = sourceSets["webTest"].output.classesDirs
     classpath = if (chromiumMode)
-        sourceSets["web${currentOs.replaceFirstChar { it.titlecase() }}"].output + sourceSets["webTest"].runtimeClasspath
+        sourceSets["native${currentOs.replaceFirstChar { it.titlecase() }}"].output + sourceSets["webTest"].runtimeClasspath
     else
         sourceSets["webTest"].runtimeClasspath
     useJUnitPlatform { includeTags("flutter-it") }
@@ -356,6 +371,11 @@ tasks.jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from(layout.buildDirectory.dir("natives/$currentPlatform"))
 
+    dependsOn(copyWebBinaries)
+    from(layout.buildDirectory.dir("natives/web")) {
+        into("web")
+    }
+
     // Add all dependencies to the JAR
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
     exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "META-INF/LICENSE*", "META-INF/NOTICE*", "OSGI-OPT/")
@@ -415,17 +435,17 @@ data class WebPlatformMeta(
     val isWeb: Boolean = false,
 ) {
     val desktopPlatform: String get() = "$os-$arch"
-    val sourceSet: String get() = when { isWeb -> "web"; isHybrid -> "web${os.replaceFirstChar { it.titlecase() }}"; else -> os }
+    val sourceSet: String get() = when { isWeb -> "web"; isHybrid -> "native${os.replaceFirstChar { it.titlecase() }}"; else -> "embed${os.replaceFirstChar { it.titlecase() }}" }
     val swtWs: String get() = getSwtWs(os)
     val swtOs: String get() = getSwtOs(os)
 }
 
 fun parsePlatform(platform: String): WebPlatformMeta {
     if (platform == "web") return WebPlatformMeta("web", "", isHybrid = true, isWeb = true)
-    val isWeb = platform.startsWith("web")
+    val isEmbed = platform.startsWith("embed-")
     var parts = platform.split("-")
-    if (isWeb) parts = parts.drop(1)
-    return WebPlatformMeta(parts[0], parts[1], isWeb)
+    if (isEmbed) parts = parts.drop(1)
+    return WebPlatformMeta(parts[0], parts[1], isHybrid = !isEmbed)
 }
 
 fun CopySpec.copyFlutterNatives(os: String, flutterArch: String) {
@@ -435,7 +455,7 @@ fun CopySpec.copyFlutterNatives(os: String, flutterArch: String) {
         }
         "linux" -> {
             from("../flutter-lib/build/linux/$flutterArch/release/runner") {
-                include("libflutter_library.so")
+                include("libflutter_bridge.so")
                 into("runner")
             }
             from("../flutter-lib/build/linux/$flutterArch/release/bundle/lib") {
@@ -511,17 +531,17 @@ platforms.forEach { platform ->
     val info = parsePlatform(platform)
 
     if (!info.isHybrid) {
-        configurations.create("${platform}SwtImpl") {
+        configurations.create("${info.desktopPlatform}SwtImpl") {
             exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
         }
 
         dependencies {
-            configurations["${platform}SwtImpl"]("org.eclipse.platform:org.eclipse.swt.${info.swtWs}.${info.swtOs}.${info.arch}:$swtVersion")
+            configurations["${info.desktopPlatform}SwtImpl"]("org.eclipse.platform:org.eclipse.swt.${info.swtWs}.${info.swtOs}.${info.arch}:$swtVersion")
         }
 
-        tasks.register<Exec>("${platform}FlutterLib") {
+        tasks.register<Exec>("${info.desktopPlatform}FlutterLib") {
             group = "build"
-            description = "Builds Flutter lib for $platform"
+            description = "Builds Flutter lib for ${info.desktopPlatform}"
             dependsOn(dart, pub)
             workingDir = file("../flutter-lib")
             inputs.dir("../flutter-lib/lib")
@@ -538,11 +558,11 @@ platforms.forEach { platform ->
             }
         }
 
-        tasks.register<Copy>("${platform}CopyFlutterBinaries") {
+        tasks.register<Copy>("${info.desktopPlatform}CopyFlutterBinaries") {
             group = "build"
-            description = "Copies Flutter binaries for $platform"
+            description = "Copies Flutter binaries for ${info.desktopPlatform}"
 
-            if ((currentPlatform == platform || info.os == "macos") && System.getProperty("skipFlutterLib") == null)
+            if ((currentPlatform == info.desktopPlatform || info.os == "macos") && System.getProperty("skipFlutterLib") == null)
                 dependsOn("${info.desktopPlatform}FlutterLib")
             if (info.os == "macos")
                 mustRunAfter("macos-aarch64FlutterLib", "macos-x86_64FlutterLib")
@@ -550,12 +570,12 @@ platforms.forEach { platform ->
             val flutterArch = if (info.arch == "aarch64") "arm64" else "x64"
             copyFlutterNatives(info.os, flutterArch)
 
-            into(layout.buildDirectory.dir("natives/$platform"))
+            into(layout.buildDirectory.dir("natives/${info.desktopPlatform}"))
         }
 
-        tasks.register<Copy>("${platform}ExtractNatives") {
-            from(configurations["${platform}SwtImpl"].map { zipTree(it) })
-            into(layout.buildDirectory.dir("natives/$platform"))
+        tasks.register<Copy>("${info.desktopPlatform}ExtractNatives") {
+            from(configurations["${info.desktopPlatform}SwtImpl"].map { zipTree(it) })
+            into(layout.buildDirectory.dir("natives/${info.desktopPlatform}"))
             include("*.so", "*.dll", "*.dylib", "*.jnilib", "**/*.css", "**/SWTMessages*.properties", "**/SWTMessages.properties")
             includeEmptyDirs = false
         }
@@ -594,7 +614,7 @@ platforms.forEach { platform ->
                 "Bundle-Version" to when {
                     info.isWeb -> evolveVersion()
                     info.isHybrid -> hostVersion("hyb")
-                    else -> swtVersionProvider
+                    else -> hostVersion("embed")
                 },
                 "Bundle-ManifestVersion" to 2,
                 "Export-Package" to (if (info.isWeb) webExportPackage else swtExportPackage(info.swtWs)),
@@ -618,25 +638,32 @@ platforms.forEach { platform ->
     }
 }
 
-val hybridHostP2Inf = layout.buildDirectory.file("host-hybrid/p2.inf")
-val genHybridHostP2Inf = tasks.register("genHybridHostP2Inf") {
-    val outFile = hybridHostP2Inf
-    val verProvider = hostVersion("hyb")
-    inputs.property("hybVersion", verProvider)
-    outputs.file(outFile)
-    doLast {
-        val v = verProvider.get()
-        val frags = platforms.filter { it.startsWith("web-") }.map { parsePlatform(it) }
-        outFile.get().asFile.apply { parentFile.mkdirs() }.writeText(buildString {
-            frags.forEachIndexed { i, info ->
-                val n = i + 1
-                appendLine("requires.$n.namespace = org.eclipse.equinox.p2.iu")
-                appendLine("requires.$n.name = org.eclipse.swt.${info.swtWs}.${info.swtOs}.${info.arch}")
-                appendLine("requires.$n.range = [$v,$v]")
-                appendLine("requires.$n.filter = (&(osgi.os=${info.swtOs})(osgi.ws=${info.swtWs})(osgi.arch=${info.arch})(!(org.eclipse.swt.buildtime=true)))")
-            }
-        })
+fun genHostP2Inf(taskName: String, outFile: Provider<RegularFile>, suffix: String, frags: () -> List<WebPlatformMeta>) =
+    tasks.register(taskName) {
+        val verProvider = hostVersion(suffix)
+        inputs.property("${suffix}HostVersion", verProvider)
+        outputs.file(outFile)
+        doLast {
+            val v = verProvider.get()
+            outFile.get().asFile.apply { parentFile.mkdirs() }.writeText(buildString {
+                frags().forEachIndexed { i, info ->
+                    val n = i + 1
+                    appendLine("requires.$n.namespace = org.eclipse.equinox.p2.iu")
+                    appendLine("requires.$n.name = org.eclipse.swt.${info.swtWs}.${info.swtOs}.${info.arch}")
+                    appendLine("requires.$n.range = [$v,$v]")
+                    appendLine("requires.$n.filter = (&(osgi.os=${info.swtOs})(osgi.ws=${info.swtWs})(osgi.arch=${info.arch})(!(org.eclipse.swt.buildtime=true)))")
+                }
+            })
+        }
     }
+
+val hybridHostP2Inf = layout.buildDirectory.file("host-hybrid/p2.inf")
+val genHybridHostP2Inf = genHostP2Inf("genHybridHostP2Inf", hybridHostP2Inf, "hyb") {
+    platforms.map { parsePlatform(it) }.filter { it.isHybrid && !it.isWeb }
+}
+val embedHostP2Inf = layout.buildDirectory.file("host-embed/p2.inf")
+val genEmbedHostP2Inf = genHostP2Inf("genEmbedHostP2Inf", embedHostP2Inf, "embed") {
+    platforms.map { parsePlatform(it) }.filter { !it.isHybrid }
 }
 
 fun registerHostJar(taskName: String, archiveName: String, p2infFrom: Any, version: Provider<String>) = tasks.register<Jar>(taskName) {
@@ -662,6 +689,7 @@ fun registerHostJar(taskName: String, archiveName: String, p2infFrom: Any, versi
 }
 registerHostJar("swtHostJar", "org.eclipse.swt", "metadata/host/p2.inf", hostVersion("web"))
 registerHostJar("swtHostHybridJar", "org.eclipse.swt-hybrid", files(hybridHostP2Inf).builtBy(genHybridHostP2Inf), hostVersion("hyb"))
+registerHostJar("swtHostEmbedJar", "org.eclipse.swt-embed", files(embedHostP2Inf).builtBy(genEmbedHostP2Inf), hostVersion("embed"))
 
 tasks.register("buildAllPlatforms") {
     group = "build"
@@ -671,5 +699,5 @@ tasks.register("buildAllPlatforms") {
 
 // Configure the default build task to include all platform JARs
 tasks.build {
-    dependsOn("buildAllPlatforms", "swtHostJar", "swtHostHybridJar")
+    dependsOn("buildAllPlatforms", "swtHostJar", "swtHostHybridJar", "swtHostEmbedJar")
 }

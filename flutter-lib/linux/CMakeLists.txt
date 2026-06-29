@@ -76,10 +76,10 @@ set_target_properties(${BINARY_NAME}
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
-# flutter_library (the custom .so) also compiles generated_plugin_registrant.cc
+# flutter_bridge (the custom .so) also compiles generated_plugin_registrant.cc
 # and needs the same plugin include dirs that generated_plugins.cmake wires to BINARY_NAME.
 foreach(plugin ${FLUTTER_PLUGIN_LIST})
-  target_link_libraries(flutter_library PRIVATE ${plugin}_plugin)
+  target_link_libraries(flutter_bridge PRIVATE ${plugin}_plugin)
 endforeach(plugin)
 
 

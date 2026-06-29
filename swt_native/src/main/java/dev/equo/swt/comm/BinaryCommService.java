@@ -70,6 +70,12 @@ public class BinaryCommService extends AbstractBinaryCommService {
         WsServer() {
             super(new InetSocketAddress("localhost", 0));
             setTcpNoDelay(true);
+            // The selector + WebSocketWorker decoder threads are non-daemon by default, so a worker
+            // that stop() can't unwind (e.g. wedged mid-decode on an active session) keeps the whole
+            // JVM alive after the SWT app has closed. Mark them daemon — matching WebFlutterServer's
+            // HTTP pool — so they never pin the process; comm.stop() still shuts them down gracefully
+            // in the normal close path.
+            setDaemon(true);
         }
 
         @Override

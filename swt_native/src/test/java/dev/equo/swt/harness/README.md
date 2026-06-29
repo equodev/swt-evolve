@@ -62,7 +62,7 @@ Native engine instead of a browser (no web build / Chrome needed):
 ## Backend
 
 `webTest` compiles the harness + `flutter-it` tests against the **web Java backend**
-(`src/main + src/webMain + src/web<currentOs>`) via its own source set — so the real `webMain`
+(`src/main + src/native + src/native<currentOs>`) via its own source set — so the real `native` tree
 server code runs, not the native impl. (The rest of `src/test/java` can't compile against the web
 backend: `Mocks`/`SerializeTestBase` import native-only `Swt*` classes; hence the `include` filter.)
 

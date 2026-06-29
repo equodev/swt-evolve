@@ -20,19 +20,19 @@ public class DisposeSnippet {
         display.dispose();
     }
 
-    static class TestSwtFlutterBridge extends SwtFlutterBridge {
+    static class TestSwtFlutterBridge extends SwtEmbeddedBridge {
         public TestSwtFlutterBridge(Shell parent) {
             super(null);
             initFlutterView(parent);
         }
 
         private void initFlutterView(Shell parent) {
-            context = initializeFlutterWindow(comm().getPort(), getHandle(parent), 0, "", "", 0, 0);
+            context = dev.equo.swt.FlutterNative.initialize(comm().getPort(), getHandle(parent), 0, "", "", 0, 0, 0, 0);
         }
 
         @Override
         public void destroy(DartWidget wid) {
-            dispose(context);
+            dev.equo.swt.FlutterNative.dispose(context);
         }
     }
 

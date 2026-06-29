@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.*;
  * <em>rendered</em> selection from a live Flutter web client for each radio.
  *
  * <p>Run via the {@code webTest} task, which compiles this against the WEB Java backend
- * ({@code src/main + src/webMain + src/web<currentOs>}) — so the real {@code webMain}
+ * ({@code src/main + src/native + src/native<currentOs>}) — so the real {@code native} tree
  * {@code DartButton.selectRadio()} runs. Widgets are real Dart-backed SWT widgets (web
  * {@code Display}/{@code Shell} construct headlessly, no native handles).
  *

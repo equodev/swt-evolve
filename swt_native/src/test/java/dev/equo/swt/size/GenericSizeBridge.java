@@ -1,5 +1,6 @@
 package dev.equo.swt.size;
 
+import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.FlutterLibraryLoader;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.*;
@@ -18,7 +19,7 @@ import java.util.concurrent.CompletableFuture;
  * @param <SERIALIZED> The type used for deserialization from Flutter
  * @param <RESULT> The final result type (may be same as SERIALIZED or converted)
  */
-abstract class GenericSizeBridge<REQUEST, SERIALIZED, RESULT> extends SwtFlutterBridgeBase implements BeforeAllCallback, AfterAllCallback {
+abstract class GenericSizeBridge<REQUEST, SERIALIZED, RESULT> extends EmbeddedBridge implements BeforeAllCallback, AfterAllCallback {
 
     private CompletableFuture<RESULT> result;
     private final String requestChannel;
@@ -37,14 +38,14 @@ abstract class GenericSizeBridge<REQUEST, SERIALIZED, RESULT> extends SwtFlutter
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
         FlutterLibraryLoader.initialize();
-        SwtFlutterBridge.set(this);
+        FlutterBridge.set(this);
         initFlutterView();
     }
 
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
-        dispose(ctx);
-        SwtFlutterBridge.set(null);
+        dev.equo.swt.FlutterNative.dispose(ctx);
+        FlutterBridge.set(null);
     }
 
     /**
@@ -52,7 +53,7 @@ abstract class GenericSizeBridge<REQUEST, SERIALIZED, RESULT> extends SwtFlutter
      * Must be called from the same thread that created the Flutter window.
      */
     static void pump(int maxMessages) {
-        pumpMessages(maxMessages);
+        dev.equo.swt.FlutterNative.pumpMessages(maxMessages);
     }
 
     /**
@@ -84,7 +85,7 @@ abstract class GenericSizeBridge<REQUEST, SERIALIZED, RESULT> extends SwtFlutter
             System.out.println("Received windowSize "+p);
             this.windowSize = p;
         });
-        ctx = initializeFlutterWindow(comm().getPort(), 0, id(this), widgetName(this), "", 0, 0);
+        ctx = dev.equo.swt.FlutterNative.initialize(comm().getPort(), 0, id(this), widgetName(this), "", 0, 0, 0, 0);
         onPayload(this, responseChannel, p -> {
             try {
                 SERIALIZED serialized = serializer.from(serializedClass, p);

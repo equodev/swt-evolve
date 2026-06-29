@@ -6,6 +6,7 @@ import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.websocket.api.Callback;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.server.WebSocketUpgradeHandler;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
@@ -33,7 +34,10 @@ public class JettyBinaryCommService extends AbstractBinaryCommService {
     private final Set<Session> sessions = ConcurrentHashMap.newKeySet();
 
     public JettyBinaryCommService() {
-        server = new Server();
+        // Daemon thread pool so the comm never pins the JVM after the app closes (see BinaryCommService).
+        QueuedThreadPool pool = new QueuedThreadPool();
+        pool.setDaemon(true);
+        server = new Server(pool);
         connector = new ServerConnector(server);
         connector.setHost("localhost");
         connector.setPort(0); // ephemeral

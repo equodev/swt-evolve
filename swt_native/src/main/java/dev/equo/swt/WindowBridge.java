@@ -6,7 +6,7 @@ import org.eclipse.swt.widgets.DartControl;
  * Optional capability a {@link FlutterBridge} may implement when it is backed by a
  * real OS window — e.g. the Equo Chromium standalone window hosting the Flutter web app.
  * <p>
- * The web bridge ({@code SwtFlutterBridgeWeb}) implements this so that window operations on
+ * The web bridge ({@code WebDisplayBridge}) implements this so that window operations on
  * the main {@code DartShell} (maximize/minimize/fullscreen/title) can be forwarded to the
  * hosting Chromium window. Bridges that have no OS window (normal browsers, native desktop)
  * simply do not implement it, so the generated shell code is a no-op there.

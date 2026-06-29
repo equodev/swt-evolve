@@ -23,6 +23,10 @@ public class ConfigTest {
 
     @BeforeEach
     void defaults_swt() {
+        // Reset the global default too (not just the per-widget map): its static initial value is
+        // `equo`, so a default-reliant test that runs first (order varies by JVM/OS) would otherwise
+        // see `equo` instead of `eclipse` and fail. Symmetric with @AfterEach.
+        Config.defaultImpl = Config.Impl.eclipse;
         Config.reset();
     }
 

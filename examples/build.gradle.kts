@@ -87,6 +87,14 @@ dependencies {
     }
 }
 
+sourceSets {
+    main {
+        java {
+            exclude("dev/equo/internal/DisposeSnippet.java")
+        }
+    }
+}
+
 tasks.withType<JavaExec>().configureEach {
     if (currentOs == "macos") {
         jvmArgs("-XstartOnFirstThread")
@@ -105,20 +113,27 @@ tasks.register<JavaExec>("runExample") {
         jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
 }
 
-tasks.register<JavaExec>("runWebExample") {
-    group = "examples"
-    description = "Run an example class for web. Usage: ./gradlew :examples:runWebExample -PmainClass=dev.equo.StyledTextSnippet1"
+fun registerFlutterExample(name: String, mode: String) =
+    tasks.register<JavaExec>(name) {
+        group = "examples"
+        description = "Run an example in '$mode' render mode. Usage: ./gradlew :examples:$name -PmainClass=dev.equo.ButtonSnippet"
 
-    val webJar = project(":swt_native").tasks.named<Jar>("web-${currentPlatform}Jar")
-    dependsOn(webJar)
-    classpath = files(webJar.map { it.archiveFile }) +
-            sourceSets["main"].output +
-            configurations["runtimeClasspath"].filter { !it.path.contains("swt_native") }
-    mainClass.set(project.findProperty("mainClass")?.toString() ?: "dev.equo.GCFillOvalSnippet")
-    systemProperty("dev.equo.swt.crashReport.disabled", "true")
-    systemProperty("dev.equo.swt.web.crossOriginIsolated", "false")
-    systemProperty("dev.equo.swt.mode", if (chromiumMode) "chromium" else "web")
+        // The desk/web hybrid jar is the default (bare os-arch) name now; both web and desktop
+        // render modes run against it (the embedded variant is "embed-<os>-<arch>Jar").
+        val hybridJar = project(":swt_native").tasks.named<Jar>("${currentPlatform}Jar")
+        dependsOn(hybridJar)
+        classpath = files(hybridJar.map { it.archiveFile }) +
+                sourceSets["main"].output +
+                configurations["runtimeClasspath"].filter { !it.path.contains("swt_native") }
+        mainClass.set(project.findProperty("mainClass")?.toString() ?: "dev.equo.ButtonSnippet")
+        systemProperty("dev.equo.swt.crashReport.disabled", "true")
+        systemProperty("dev.equo.swt.web.crossOriginIsolated", "false")
+        systemProperty("dev.equo.swt.mode", mode)
+        System.getProperty("dev.equo.swt.debug")?.let { systemProperty("dev.equo.swt.debug", it) }
 
-    if (System.getProperty("test.debug") != null)
-        jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
-}
+        if (System.getProperty("test.debug") != null)
+            jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
+    }
+
+registerFlutterExample("runWebExample", if (chromiumMode) "chromium" else "web")
+registerFlutterExample("runDeskExample", "desktop")

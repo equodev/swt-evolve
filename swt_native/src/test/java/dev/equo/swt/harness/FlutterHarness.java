@@ -50,7 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * flutter.teardown();
  * }</pre>
  */
-public class FlutterHarness extends SwtFlutterBridgeBase {
+public class FlutterHarness extends EmbeddedBridge {
 
     private static final boolean WEB = !"native".equals(System.getProperty("harness.client", "web"));
     /** Render the web client in a real CEF standalone window (instead of headless Chrome) so the
@@ -118,7 +118,7 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
         if (!WEB) FlutterLibraryLoader.initialize();
         // Injecting the bridge before any Display is created makes every widget route through the
         // harness, and makes the web Display skip standing up its own server + browser (see
-        // SwtFlutterBridgeWeb.initForDisplay) — so we don't double-boot.
+        // WebDisplayBridge.initForDisplay) — so we don't double-boot.
         FlutterBridge.set(this);
         Config.forceEquo();
         registerCommHandlers();
@@ -161,7 +161,7 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
         deleteProfileDir();
         if (webServer != null) webServer.stop();
         if (context != 0) {
-            dispose(context);
+            dev.equo.swt.FlutterNative.dispose(context);
             context = 0;
         }
         if (comm != null) {
@@ -183,7 +183,7 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
         String rootName = widgetName(impl);
         onReady(impl, Void.class); // registers the ClientReady handler + dirties the root
         if (WEB) startWebClient(rootId, rootName);
-        else context = initializeFlutterWindow(comm().getPort(), 0, rootId, rootName, "", 0, 0);
+        else context = dev.equo.swt.FlutterNative.initialize(comm().getPort(), 0, rootId, rootName, "", 0, 0, 0, 0);
         awaitClientReadyResilient();
         flush();
     }
@@ -341,7 +341,7 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
         if (WEB) {
             try { Thread.sleep(2); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
         } else {
-            pumpMessages(maxMessages);
+            dev.equo.swt.FlutterNative.pumpMessages(maxMessages);
         }
     }
 
@@ -479,7 +479,7 @@ public class FlutterHarness extends SwtFlutterBridgeBase {
         return new File("../flutter-lib/build/web").getAbsoluteFile();
     }
 
-    // ---------------- unused SwtFlutterBridgeBase overrides ----------------
+    // ---------------- unused EmbeddedBridge overrides ----------------
 
     /** No-op: creating Shells must not boot a native window — {@link #show} boots the client. */
     @Override public void initFlutterView(Composite parent, DartControl control) { }

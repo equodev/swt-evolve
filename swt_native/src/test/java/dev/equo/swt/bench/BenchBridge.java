@@ -83,7 +83,7 @@ public class BenchBridge extends dev.equo.swt.harness.FlutterHarness implements 
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
         if (!WEB) FlutterLibraryLoader.initialize();
-        SwtFlutterBridge.set(this);
+        FlutterBridge.set(this);
         initFlutterView();
         // Touch BenchPayloads — its static initializer flips to MockFlutterBridge while it
         // builds real widget trees, so widget setters' dirty() calls don't leak through the
@@ -97,8 +97,8 @@ public class BenchBridge extends dev.equo.swt.harness.FlutterHarness implements 
     public void afterAll(ExtensionContext context) throws Exception {
         if (browserProc != null) browserProc.destroy();
         if (webServer != null) webServer.stop();
-        if (ctx != 0) dispose(ctx);
-        SwtFlutterBridge.set(null);
+        if (ctx != 0) dev.equo.swt.FlutterNative.dispose(ctx);
+        FlutterBridge.set(null);
         Config.defaultToEclipse();
     }
 
@@ -108,7 +108,7 @@ public class BenchBridge extends dev.equo.swt.harness.FlutterHarness implements 
         if (WEB) {
             try { Thread.sleep(1); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
         } else {
-            pumpMessages(maxMessages);
+            dev.equo.swt.FlutterNative.pumpMessages(maxMessages);
         }
     }
 
@@ -118,7 +118,7 @@ public class BenchBridge extends dev.equo.swt.harness.FlutterHarness implements 
         if (WEB) {
             startWebClient();
         } else {
-            ctx = initializeFlutterWindow(comm().getPort(), 0, id(this), widgetName(this), "", 0, 0);
+            ctx = dev.equo.swt.FlutterNative.initialize(comm().getPort(), 0, id(this), widgetName(this), "", 0, 0, 0, 0);
         }
 
         // ---------- J→D echo response handler (persistent) ----------
@@ -287,6 +287,6 @@ public class BenchBridge extends dev.equo.swt.harness.FlutterHarness implements 
         }
     }
 
-    // The unused SwtFlutterBridgeBase overrides (getHandle/setHandle/destroy/destroyHandle/
+    // The unused EmbeddedBridge overrides (getHandle/setHandle/destroy/destroyHandle/
     // container/reparent/sendSwtEvolveProperties) are inherited from FlutterHarness.
 }

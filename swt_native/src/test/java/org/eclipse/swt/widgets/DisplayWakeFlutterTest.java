@@ -41,10 +41,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Dart (MouseMove), marking a widget dirty, and that an idle loop parks indefinitely (no timeout cap
  * in pure web mode) until woken. Like {@link RadioGroupFlutterTest} this is a {@code @Tag("flutter-it")}
  * test run by the {@code webTest} task against the WEB backend; it reaches its one web-only class
- * ({@code SwtFlutterBridgeWeb}, see the dirty test) by reflection, so the file still compiles against
+ * ({@code WebDisplayBridge}, see the dirty test) by reflection, so the file still compiles against
  * every backend even though it only runs on web. It needs no renderer, so it injects a no-op
  * {@link RecordingBridge} before the Display is created — {@code Display.init()}
- * then skips starting a real {@code WebFlutterServer} (see {@code SwtFlutterBridgeWeb.initForDisplay})
+ * then skips starting a real {@code WebFlutterServer} (see {@code DisplayBridge.initForDisplay})
  * and its {@code RecordingComm} captures the {@code comm().on(...)} handlers widgets register, so a
  * Dart&rarr;Java event can be fired by invoking the captured callback.
  */
@@ -239,7 +239,7 @@ class DisplayWakeFlutterTest {
         // Marking a widget dirty must wake the loop so the dirty set flushes to Dart at the next
         // readAndDispatch; without it an off-thread dirty would never flush while the loop is parked.
         // Unlike the other sources, "dirty" has no public API surface and no dispatched event to
-        // observe: it is the web bridge override SwtFlutterBridgeWeb.wakeForDirty() that does the
+        // observe: it is the web bridge override WebDisplayBridge.wakeForDirty() that does the
         // wake. That class lives only in the web backend, so the test reaches it by reflection (so
         // this file still compiles against every backend) and observes the loop leaving sleep().
         AtomicReference<Object> widgetImpl = new AtomicReference<>();
@@ -253,10 +253,10 @@ class DisplayWakeFlutterTest {
         awaitWoken(wokenBefore);
     }
 
-    /** Construct the web-only {@code SwtFlutterBridgeWeb} for this Display by reflection. */
+    /** Construct the web-only {@code WebDisplayBridge} for this Display by reflection. */
     private Object newWebBridge() throws Exception {
         Class<?> dartDisplay = Class.forName("org.eclipse.swt.widgets.DartDisplay");
-        Class<?> webBridge = Class.forName("org.eclipse.swt.widgets.SwtFlutterBridgeWeb");
+        Class<?> webBridge = Class.forName("org.eclipse.swt.widgets.WebDisplayBridge");
         Constructor<?> ctor = webBridge.getDeclaredConstructor(dartDisplay);
         ctor.setAccessible(true);
         return ctor.newInstance(display.getImpl());

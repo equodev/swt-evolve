@@ -34,6 +34,8 @@ __attribute__((constructor)) static void EquoConfigureWebKit() {
 struct FlutterWindow {
   GtkWidget *view;
   GtkWidget *headless_window;  // Only used in headless mode
+  GtkWidget *top_window;       // Desktop-native (100% Flutter) top-level window
+  bool closed;                 // Set when the desktop-native window is closed by the user
 };
 
 extern "C" void DummyExportedFunction() {
@@ -92,6 +94,8 @@ uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
 
   FlutterWindow *widget_context = new FlutterWindow;
   widget_context->headless_window = nullptr;
+  widget_context->top_window = nullptr;
+  widget_context->closed = false;
 
   // Headless mode: create a hidden window to host Flutter
   if (!parentWnd) {
@@ -163,67 +167,225 @@ uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
   return (uintptr_t)widget_context;
 }
 
+// =================================================================================================
+// Desktop-native (100% Flutter) display window + the unified FlutterNative JNI surface.
+//
+// Hosts the ENTIRE Dart-backed SWT tree in one native top-level GTK window: a single FlView fills a
+// GtkWindow and connects back over the comm port, rendering the whole Display like the web client.
+// The same JNI entry points serve both an embedded view and this top-level window; the context is a
+// FlutterWindow* either way, and top_window != null selects the window behaviour.
+// =================================================================================================
+
+// "destroy" handler: the user closed the top-level window. Flag it so pump() reports back.
+static void on_display_window_destroy(GtkWidget * /*widget*/, gpointer data) {
+  FlutterWindow *ctx = static_cast<FlutterWindow *>(data);
+  if (ctx) {
+    ctx->closed = true;
+    // The GTK widgets are gone now; avoid dangling pointers from later calls.
+    ctx->top_window = nullptr;
+    ctx->view = nullptr;
+  }
+}
+
+// Creates a visible top-level GtkWindow hosting one FlView for the whole Display.
+FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widget_name,
+                                   const char *theme, int backgroundColor, int width, int height) {
+  FlDartProject *project = fl_dart_project_new();
+  std::string base_path = GetSharedLibraryPath();
+  fl_dart_project_set_aot_library_path(project, (base_path + "/bundle/lib/libapp.so").c_str());
+  fl_dart_project_set_assets_path(project, (gchar *)(base_path + "/bundle/data/flutter_assets/").c_str());
+  fl_dart_project_set_icu_data_path(project, (gchar *)(base_path + "/bundle/data/icudtl.dat").c_str());
+
+  char port_c[256];
+  sprintf(port_c, "%d", port);
+  char id_c[256];
+  sprintf(id_c, "%ld", (long)displayId);
+  char bg_c[256];
+  sprintf(bg_c, "%d", backgroundColor);
+
+  // Same arg layout as the embedded path: [port, id, name, theme, bg, parentBg].
+  char *args[7];
+  args[0] = port_c;
+  args[1] = id_c;
+  args[2] = (char *)widget_name;
+  args[3] = (char *)theme;
+  args[4] = bg_c;
+  args[5] = bg_c;
+  args[6] = 0;
+  fl_dart_project_set_dart_entrypoint_arguments(project, args);
+
+  if (!gtk_init_check(nullptr, nullptr)) {
+    g_printerr("Failed to initialize GTK\n");
+    return nullptr;
+  }
+
+  FlutterWindow *ctx = new FlutterWindow;
+  ctx->headless_window = nullptr;
+  ctx->top_window = nullptr;
+  ctx->view = nullptr;
+  ctx->closed = false;
+
+  GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  gtk_window_set_title(GTK_WINDOW(window), widget_name);
+  gtk_window_set_default_size(GTK_WINDOW(window), width, height);
+  g_signal_connect(window, "destroy", G_CALLBACK(on_display_window_destroy), ctx);
+
+  FlView *view = fl_view_new(project);
+  GtkWidget *view_widget = GTK_WIDGET(view);
+  gtk_container_add(GTK_CONTAINER(window), view_widget);
+  gtk_widget_show_all(window);
+
+  ctx->view = view_widget;
+  ctx->top_window = window;
+
+  fl_register_plugins(FL_PLUGIN_REGISTRY(view));
+  g_print("FlutterNative.createDisplayWindow port:%d id:%ld name:%s %dx%d\n",
+          port, (long)displayId, widget_name, width, height);
+  return ctx;
+}
+
+// =================================================================================================
+// JNI entry points (dev.equo.swt.FlutterNative). One set of functions for both surface kinds.
+// =================================================================================================
+
 JNIEXPORT jlong JNICALL
-Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_InitializeFlutterWindow(
-    JNIEnv *env, jclass cls, jint port, jlong parent, jlong widget_id,
-    jstring widget_name, jstring theme, jint background_color, jint parent_background_color) {
-  const char *widget_name_cstr = env->GetStringUTFChars(widget_name, NULL);
-  const char *theme_cstr = env->GetStringUTFChars(theme, NULL);
-  jlong result = (jlong)InitializeFlutterWindow(port, (void *)parent, widget_id,
-                                                widget_name_cstr, theme_cstr, background_color, parent_background_color);
-  env->ReleaseStringUTFChars(widget_name, widget_name_cstr);
-  env->ReleaseStringUTFChars(theme, theme_cstr);
-  return result;
+Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv *env, jclass cls, jint port, jlong parent,
+                                           jlong widget_id, jstring widget_name, jstring theme,
+                                           jint background_color, jint parent_background_color,
+                                           jint width, jint height) {
+  const char *name = env->GetStringUTFChars(widget_name, NULL);
+  const char *th = env->GetStringUTFChars(theme, NULL);
+  FlutterWindow *w;
+  if (width > 0 && height > 0) {
+    w = createDisplayWindow(port, widget_id, name, th, background_color, width, height);
+  } else {
+    w = reinterpret_cast<FlutterWindow *>(
+        InitializeFlutterWindow(port, (void *)parent, widget_id, name, th, background_color, parent_background_color));
+  }
+  env->ReleaseStringUTFChars(widget_name, name);
+  env->ReleaseStringUTFChars(theme, th);
+  return (jlong)w;
 }
 
 JNIEXPORT jlong JNICALL
-Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_GetView(JNIEnv *env,
-                                                          jclass cls,
-                                                          jlong context) {
-  FlutterWindow *window = reinterpret_cast<FlutterWindow *>(context);
-  // Return the Flutter view widget, not the parent
-  return (jlong)window->view;
+Java_dev_equo_swt_FlutterNative_GetView(JNIEnv *env, jclass cls, jlong context) {
+  FlutterWindow *w = reinterpret_cast<FlutterWindow *>(context);
+  return (jlong)(w ? w->view : nullptr);
 }
 
 JNIEXPORT void JNICALL
-Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_Dispose(JNIEnv *env,
-                                                          jclass cls,
-                                                          jlong context) {
-  FlutterWindow *window = reinterpret_cast<FlutterWindow *>(context);
-  if (window) {
-    if (window->headless_window && GTK_IS_WIDGET(window->headless_window)) {
-    } else if (window->view && GTK_IS_WIDGET(window->view)) {
-      GtkWidget* parent = gtk_widget_get_parent(window->view);
-      if (parent && GTK_IS_CONTAINER(parent)) {
-        g_object_ref(window->view); // Add a reference to prevent destruction
-        gtk_container_remove(GTK_CONTAINER(parent), window->view);
+Java_dev_equo_swt_FlutterNative_Dispose(JNIEnv *env, jclass cls, jlong context) {
+  FlutterWindow *w = reinterpret_cast<FlutterWindow *>(context);
+  if (!w) return;
+  if (w->top_window) {
+    // window surface: destroying the toplevel destroys the FlView and shuts the engine down. Our
+    // "destroy" handler nulls top_window/view, so the drain below won't touch freed widgets.
+    if (GTK_IS_WIDGET(w->top_window)) {
+      gtk_widget_destroy(w->top_window);
+      while (gtk_events_pending()) {
+        gtk_main_iteration_do(FALSE);
       }
     }
-    delete window;
+  } else {
+    // embedded surface: detach the view from its SWT parent (keeping it alive).
+    if (w->headless_window && GTK_IS_WIDGET(w->headless_window)) {
+    } else if (w->view && GTK_IS_WIDGET(w->view)) {
+      GtkWidget *parent = gtk_widget_get_parent(w->view);
+      if (parent && GTK_IS_CONTAINER(parent)) {
+        g_object_ref(w->view);
+        gtk_container_remove(GTK_CONTAINER(parent), w->view);
+      }
+    }
   }
+  delete w;
 }
 
 JNIEXPORT void JNICALL
-Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_SetBounds(
-    JNIEnv *env, jclass cls, jlong context, jint x, jint y, jint width,
-    jint height, jint vx, jint vy, jint vwidth, jint vheight) {
-  FlutterWindow *window = reinterpret_cast<FlutterWindow *>(context);
-  g_print("Setting bounds to flutter view: %d, %d, %d, %d\n", vx, vy, vwidth, vheight);
-
-  if (!window->view) {
-    return;
+Java_dev_equo_swt_FlutterNative_SetBounds(JNIEnv *env, jclass cls, jlong context, jint x, jint y,
+                                          jint width, jint height, jint vx, jint vy, jint vwidth,
+                                          jint vheight) {
+  FlutterWindow *w = reinterpret_cast<FlutterWindow *>(context);
+  if (!w) return;
+  if (w->top_window && GTK_IS_WINDOW(w->top_window)) {
+    gtk_window_move(GTK_WINDOW(w->top_window), x, y);
+    gtk_window_resize(GTK_WINDOW(w->top_window), width, height);
+  } else if (w->view) {
+    gtk_widget_set_size_request(w->view, vwidth, vheight);
   }
-  gtk_widget_set_size_request(window->view, vwidth, vheight);
 }
 
-// Process GTK events for headless mode
+// Headless measurement pump (kept as a no-op, matching prior behaviour).
 JNIEXPORT jint JNICALL
-Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_PumpMessages(
-    JNIEnv *env, jclass cls, jint maxMessages) {
+Java_dev_equo_swt_FlutterNative_PumpMessages(JNIEnv *env, jclass cls, jint maxMessages) {
+  return 0;
+}
+
+// Pumps a window surface's event loop; returns -1 once the window has been closed by the user.
+JNIEXPORT jint JNICALL
+Java_dev_equo_swt_FlutterNative_Pump(JNIEnv *env, jclass cls, jlong context) {
+  FlutterWindow *ctx = reinterpret_cast<FlutterWindow *>(context);
   int count = 0;
-//  while (count < maxMessages && gtk_events_pending()) {
-//    gtk_main_iteration();
-//    count++;
-//  }
+  while (gtk_events_pending()) {
+    gtk_main_iteration_do(FALSE);
+    count++;
+    if (ctx && ctx->closed) {
+      break;
+    }
+  }
+  if (ctx && ctx->closed) {
+    delete ctx;  // safe: Java zeroes windowContext after a -1 and makes no further calls with it
+    return -1;
+  }
   return count;
+}
+
+// Blocks until an event is available or up to |millis| ms, then dispatches what's ready (idle sleep).
+JNIEXPORT void JNICALL
+Java_dev_equo_swt_FlutterNative_WaitEvents(JNIEnv *env, jclass cls, jlong context, jint millis) {
+  FlutterWindow *ctx = reinterpret_cast<FlutterWindow *>(context);
+  if (ctx && ctx->closed) {
+    return;
+  }
+  GMainContext *mc = g_main_context_default();
+  GSource *timeout = g_timeout_source_new(millis < 0 ? 0 : (guint)millis);
+  g_source_set_callback(
+      timeout, [](gpointer) -> gboolean { return G_SOURCE_REMOVE; }, nullptr, nullptr);
+  g_source_attach(timeout, mc);
+  g_main_context_iteration(mc, TRUE);
+  g_source_destroy(timeout);
+  g_source_unref(timeout);
+}
+
+JNIEXPORT void JNICALL
+Java_dev_equo_swt_FlutterNative_SetTitle(JNIEnv *env, jclass cls, jlong context, jstring title) {
+  FlutterWindow *w = reinterpret_cast<FlutterWindow *>(context);
+  const char *t = env->GetStringUTFChars(title, NULL);
+  if (w && w->top_window && GTK_IS_WINDOW(w->top_window)) {
+    gtk_window_set_title(GTK_WINDOW(w->top_window), t ? t : "");
+  }
+  env->ReleaseStringUTFChars(title, t);
+}
+
+// state: 0 = restore/normal, 1 = maximized, 2 = minimized, 3 = fullscreen.
+JNIEXPORT void JNICALL
+Java_dev_equo_swt_FlutterNative_SetState(JNIEnv *env, jclass cls, jlong context, jint state) {
+  FlutterWindow *w = reinterpret_cast<FlutterWindow *>(context);
+  if (!w || !w->top_window || !GTK_IS_WINDOW(w->top_window)) return;
+  GtkWindow *win = GTK_WINDOW(w->top_window);
+  switch (state) {
+    case 1:
+      gtk_window_maximize(win);
+      break;
+    case 2:
+      gtk_window_iconify(win);
+      break;
+    case 3:
+      gtk_window_fullscreen(win);
+      break;
+    default:
+      gtk_window_unfullscreen(win);
+      gtk_window_unmaximize(win);
+      gtk_window_deiconify(win);
+      break;
+  }
 }

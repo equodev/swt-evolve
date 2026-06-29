@@ -18,19 +18,31 @@ class DisplaySwt extends StatefulWidget {
   State<DisplaySwt> createState() => _DisplaySwtState();
 }
 
+/// Last Display state received per Display id. A [DisplaySwt] state can be
+/// recreated mid-session — e.g. when a global config/theme change rebuilds the
+/// subtree the Display sits in — which drops the previous State (and its
+/// `_display`). The `Display/{id}` update that populated the shells may have
+/// already been delivered to that now-discarded State, and Java has no reason to
+/// re-send it, so the fresh State would render empty forever. Seeding new States
+/// from this cache makes a recreated Display immediately reflect the latest known
+/// tree instead of an empty one. (Surfaced on the desktop-native window, where
+/// the post-ClientReady properties update races the first Display update.)
+final Map<int?, VDisplay> _lastDisplayState = <int?, VDisplay>{};
+
 class _DisplaySwtState extends State<DisplaySwt> {
   late VDisplay _display;
 
   @override
   void initState() {
     super.initState();
-    _display = widget.value;
+    _display = _lastDisplayState[widget.value.id] ?? widget.value;
     EquoCommService.onRaw('Display/${widget.value.id}', _onUpdate);
   }
 
   void _onUpdate(dynamic raw) {
     try {
       final updated = VDisplay.fromJson(raw as Map<String, dynamic>);
+      _lastDisplayState[widget.value.id] = updated;
       if (mounted) setState(() => _display = updated);
     } catch (e) {
       print('DisplaySwt update error: $e');

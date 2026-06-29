@@ -31,15 +31,15 @@ public class FlutterLibraryLoader {
     private static final String EQUO_BASE_DIR_NAME = ".equo";
     private static final String LIB_SUB_DIR_NAME = "lib";
     private static final String SWT_DIR_NAME = "swt";
-    private static final String MACOS_LIB_NAME = "libFlutterBridge.dylib";
+    private static final String MACOS_LIB_NAME = "libflutter_bridge.dylib";
     public static final String CONTENTS = "Contents";
     public static final String SWTFLUTTER_APP = "swtflutter.app";
     public static final String SWTFLUTTER_APP_CONTENTS = "macos/Build/Products/Release/" + SWTFLUTTER_APP + SEP + CONTENTS;
     private static final String RUNNER_DIR_NAME = "runner";
     private static final String LINUX_BUNDLE_DIR_NAME = "bundle";
-    private static final String LINUX_LIB_NAME = "libflutter_library.so";
+    private static final String LINUX_LIB_NAME = "libflutter_bridge.so";
     private static final String WIN_LIB1_NAME = "flutter_windows.dll";
-    private static final String WIN_LIB_NAME = "flutter_library.dll";
+    private static final String WIN_LIB_NAME = "flutter_bridge.dll";
     public static final String LINUX_X64_RELEASE = "linux/x64/release";
     public static final String WIN_X64_RELEASE = "windows/x64/runner/Release";
 

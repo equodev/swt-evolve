@@ -12,7 +12,7 @@ find_package(JNI REQUIRED)
 #     "${JAVA_HOME}/include/win32"
 # )
 
-set(FLUTTER_LIBRARY_NAME "flutter_library")
+set(FLUTTER_LIBRARY_NAME "flutter_bridge")
 add_library(${FLUTTER_LIBRARY_NAME} SHARED
   "flutter_bridge.cpp"
   "flutter_bridge.h"
@@ -20,7 +20,7 @@ add_library(${FLUTTER_LIBRARY_NAME} SHARED
   "utils.cpp"
   "win32_window.cpp"
   "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
-#  "${flutter_library_BINARY_DIR}/flutter_assemble"
+#  "${flutter_bridge_BINARY_DIR}/flutter_assemble"
 )
 
 # Add JNI include directories

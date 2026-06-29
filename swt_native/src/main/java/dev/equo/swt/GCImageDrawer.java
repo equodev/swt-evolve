@@ -17,7 +17,7 @@ import java.util.function.Consumer;
  * its listeners.  We queue them here and flush in order after imageInit is sent,
  * guaranteeing they reach the GCDrawer.standalone after _registerOps() ran.
  */
-public class GCImageDrawer extends SwtFlutterBridgeBase {
+public class GCImageDrawer extends EmbeddedBridge {
 
     private static volatile boolean nativeWindowAvailable = true;
 
@@ -84,7 +84,7 @@ public class GCImageDrawer extends SwtFlutterBridgeBase {
             flushOps();
         });
         try {
-            ctx = initializeFlutterWindow(comm().getPort(), 0, gcId, widgetName(this), "", 0, 0);
+            ctx = FlutterNative.initialize(comm().getPort(), 0, gcId, widgetName(this), "", 0, 0, 0, 0);
         } catch (Error e) {
             nativeWindowAvailable = false;
             System.err.println("[GCImageDrawer] Native Flutter window unavailable — off-screen GC will be a no-op: " + e.getMessage());
@@ -108,7 +108,7 @@ public class GCImageDrawer extends SwtFlutterBridgeBase {
 
     public void disposeView() {
         if (ctx == 0) return;
-        dispose(ctx);
+        FlutterNative.dispose(ctx);
         ctx = 0;
     }
 

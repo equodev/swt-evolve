@@ -101,7 +101,7 @@ public class ChromiumStandaloneLauncher {
         // single subscription, so the two distinct concerns ride together here:
         //   1. CloseWindowListener — a page called window.close() (only meaningful for a real popup
         //      window; an embedded iframe can't self-close, so this is usually a no-op).
-        //   2. onWindowClosed — the host (e.g. SwtFlutterBridgeWeb) disposes the SWT side so the app
+        //   2. onWindowClosed — the host (e.g. WebDisplayBridge) disposes the SWT side so the app
         //      exits cleanly; without it the SWT event loop spins on with no visible window.
         // Both must run, so don't drop either. browser is nulled last since it's being destroyed —
         // that makes pump()/close() no-op instead of touching freed native resources.

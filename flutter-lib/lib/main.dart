@@ -134,9 +134,22 @@ void sendClientReady(String widgetName, int widgetId, {bool sendWindowSize = fal
 class _DisplayMetricsReporter {
   _DisplayMetricsReporter(this.widgetId) {
     observeViewportChanges(_sendCurrentSize);
+    observeWindowClose(_sendWindowClose);
   }
 
   final int widgetId;
+  bool _windowCloseSent = false;
+
+  // The window/tab is closing: ask Java to fire the SWT shell close (no-op on desktop-native, where
+  // the close is detected natively). Same channel the CSD close button uses. Sent at most once —
+  // pagehide and beforeunload both fire during one teardown, and a duplicate WinClose would arrive
+  // after the first close already disposed the Display (racing it on the Java comm thread).
+  void _sendWindowClose() {
+    if (_windowCloseSent) return;
+    _windowCloseSent = true;
+    print('[WinClose] Display/$widgetId');
+    EquoCommService.send("Display/$widgetId/WinClose");
+  }
 
   void _sendCurrentSize() {
     final rounded = _currentLogicalViewSize();
@@ -165,6 +178,25 @@ Size? _currentLogicalViewSize() {
   return Size(size.width.roundToDouble(), size.height.roundToDouble());
 }
 
+/// The logical size of the monitor the window is currently on. Drives the SWT
+/// `Display`/`Monitor` bounds on desktop (where the Display is the screen, not the
+/// window). Uses the window's own [FlutterView.display] — not `displays.first` —
+/// so it stays correct on multi-monitor setups. On web this is the (synthetic)
+/// browser display, which the Java web bridge ignores (there the viewport IS the
+/// Display). Returns null when no plausible display size is available.
+Size? _currentLogicalMonitorSize() {
+  final dispatcher = WidgetsBinding.instance.platformDispatcher;
+  if (dispatcher.views.isEmpty) {
+    return null;
+  }
+  final display = dispatcher.views.first.display;
+  final size = display.size / display.devicePixelRatio;
+  if (size.width <= 0 || size.height <= 0) {
+    return null;
+  }
+  return Size(size.width.roundToDouble(), size.height.roundToDouble());
+}
+
 bool _displayClientReadySent = false;
 
 void _sendWindowSizedClientReady(String widgetName, int widgetId, {Size? sizeOverride}) {
@@ -173,11 +205,17 @@ void _sendWindowSizedClientReady(String widgetName, int widgetId, {Size? sizeOve
   _displayClientReadySent = true;
   final int w = size?.width.toInt() ?? 1280;
   final int h = size?.height.toInt() ?? 720;
-  print('[ClientReady] Display/$widgetId isFirst=$isFirst size=${w}x${h}');
+  // The monitor the window is on (0 when unknown → Java keeps its default/viewport).
+  final monitor = _currentLogicalMonitorSize();
+  final int mw = monitor?.width.toInt() ?? 0;
+  final int mh = monitor?.height.toInt() ?? 0;
+  print('[ClientReady] Display/$widgetId isFirst=$isFirst size=${w}x${h} monitor=${mw}x${mh}');
   EquoCommService.sendPayload("$widgetName/$widgetId/ClientReady", {
     'width': w,
     'height': h,
     'isFirst': isFirst,
+    'displayWidth': mw,
+    'displayHeight': mh,
   });
 }
 

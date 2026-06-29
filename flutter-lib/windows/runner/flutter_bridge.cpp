@@ -19,6 +19,20 @@ extern "C" __declspec(dllexport) void DummyExportedFunction()
 
 static FlutterWindow* s_first_engine = nullptr;
 
+// Converts a UTF-8 std::string to a UTF-16 std::wstring for the Win32 *W APIs.
+static std::wstring Utf16FromUtf8(const std::string& utf8) {
+    if (utf8.empty()) {
+        return std::wstring();
+    }
+    int len = ::MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), (int)utf8.size(), nullptr, 0);
+    if (len <= 0) {
+        return std::wstring();
+    }
+    std::wstring wstr(len, L'\0');
+    ::MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), (int)utf8.size(), &wstr[0], len);
+    return wstr;
+}
+
 std::wstring GetDllPath() {
     HMODULE hModule = NULL;
 
@@ -117,49 +131,158 @@ void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::
   return window;
 }
 
-JNIEXPORT jlong JNICALL Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_InitializeFlutterWindow(JNIEnv* env, jclass cls, jint port, jlong parent, jlong widget_id, jstring widget_name, jstring theme, jint background_color, jint parent_background_color) {
-    const char* cstr = env->GetStringUTFChars(widget_name, nullptr);
-    std::string widgetNameStr(cstr);
-    env->ReleaseStringUTFChars(widget_name, cstr);
-    
-    const char* theme_cstr = env->GetStringUTFChars(theme, nullptr);
-    std::string themeStr(theme_cstr);
-    env->ReleaseStringUTFChars(theme, theme_cstr);
-    
-    return (jlong) initializeFlutterWindow(port, (void*)parent, widget_id, widgetNameStr, themeStr, background_color, parent_background_color);
-}
+// Creates a visible top-level window hosting the whole Display (desktop-native, 100% Flutter).
+FlutterWindow* createDisplayWindow(int port, int64_t displayId, std::string widgetName, std::string theme, int backgroundColor, int width, int height) {
+    std::cout << "FlutterNative.createDisplayWindow port:" << port << " id:" << displayId
+              << " name:" << widgetName << " " << width << "x" << height << std::endl;
 
-JNIEXPORT jlong JNICALL Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_GetView(JNIEnv* env, jclass cls, jlong context) {
-    FlutterWindow* window = reinterpret_cast<FlutterWindow*>(context);
-    return (jlong) window->GetHandle();
-}
-
-JNIEXPORT void JNICALL Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_Dispose(JNIEnv* env, jclass cls, jlong context) {
-    FlutterWindow* window = reinterpret_cast<FlutterWindow*>(context);
-
-    if (window == s_first_engine) {
-        // NOTE(elias): Never destroy the first engine: Destroying it while
-        // any other engine is alive causes PostMessage failures and a CFG crash.
-        // Hide it and reparent to HWND_MESSAGE so the SWT parent's
-        // DestroyWindow does not cascade into this window.
-        window->Leak();
-    } else {
-        window->Destroy();
+    if (!::AttachConsole(ATTACH_PARENT_PROCESS) && ::IsDebuggerPresent()) {
+        CreateAndAttachConsole();
     }
-}
+    // COM is required by the Flutter Windows embedder/plugins. Harmless if already initialized.
+    ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
-JNIEXPORT void JNICALL Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_SetBounds(JNIEnv* env, jclass cls, jlong context, jint x, jint y, jint width, jint height, jint vx, jint vy, jint vwidth, jint vheight) {
-    FlutterWindow* window = reinterpret_cast<FlutterWindow*>(context);
-    Win32Window::Point origin(x, y);
+    flutter::DartProject project(GetDllPath() + L"\\data");
+
+    // Same arg layout as the embedded path: [port, id, name, theme, bg, parentBg]. Passing the real
+    // widget background (not 0) avoids the Flutter theme rendering a pure-black Display background.
+    std::string bg = std::to_string(backgroundColor);
+    std::vector<std::string> arguments = {std::to_string(port), std::to_string(displayId), widgetName, theme, bg, bg};
+    project.set_dart_entrypoint_arguments(std::move(arguments));
+
+    FlutterWindow* window = new FlutterWindow(project);
+    if (!s_first_engine) {
+        s_first_engine = window;
+    }
+
+    Win32Window::Point origin(10, 10);
     Win32Window::Size size(width, height);
-    Win32Window::Point vorigin(vx, vy);
-    Win32Window::Size vsize(vwidth, vheight);
-    window->Move(origin, size, vorigin, vsize);
+    // parentWnd = nullptr, headless = false -> a visible top-level window (WS_OVERLAPPEDWINDOW). The
+    // window shows itself once Flutter's first frame is ready (FlutterWindow::OnCreate -> Show()).
+    if (!window->Create(Utf16FromUtf8(widgetName), origin, size, nullptr, false)) {
+        std::cout << "createDisplayWindow - failed to create window" << std::endl;
+        return nullptr;
+    }
+    // Closing the window posts WM_QUIT, which the pump reports back as -1 so the SWT side can match.
+    window->SetQuitOnClose(true);
+    return window;
 }
 
-// Pump Windows messages to allow Flutter/Dart async operations to progress
-// Java should call this periodically in headless mode
-JNIEXPORT jint JNICALL Java_org_eclipse_swt_widgets_SwtFlutterBridgeBase_PumpMessages(JNIEnv* env, jclass cls, jint maxMessages) {
+// A Flutter "surface": either an embedded view (isWindow=false) or a standalone top-level window.
+// On Windows both are a FlutterWindow; the tag selects the right disposal behaviour.
+struct Surface {
+    FlutterWindow* window;
+    bool isWindow;
+};
+
+// =================================================================================================
+// JNI entry points (dev.equo.swt.FlutterNative). One set of functions for both surface kinds.
+// =================================================================================================
+
+JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv* env, jclass cls, jint port, jlong parent, jlong widget_id, jstring widget_name, jstring theme, jint background_color, jint parent_background_color, jint width, jint height) {
+    const char* name_c = env->GetStringUTFChars(widget_name, nullptr);
+    std::string nameStr(name_c);
+    env->ReleaseStringUTFChars(widget_name, name_c);
+
+    const char* theme_c = env->GetStringUTFChars(theme, nullptr);
+    std::string themeStr(theme_c);
+    env->ReleaseStringUTFChars(theme, theme_c);
+
+    FlutterWindow* window;
+    bool isWindow;
+    if (width > 0 && height > 0) {
+        window = createDisplayWindow(port, widget_id, nameStr, themeStr, background_color, width, height);
+        isWindow = true;
+    } else {
+        window = reinterpret_cast<FlutterWindow*>(initializeFlutterWindow(port, (void*)parent, widget_id, nameStr, themeStr, background_color, parent_background_color));
+        isWindow = false;
+    }
+    if (!window) {
+        return 0;
+    }
+    return (jlong) new Surface{window, isWindow};
+}
+
+JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_GetView(JNIEnv* env, jclass cls, jlong context) {
+    Surface* s = reinterpret_cast<Surface*>(context);
+    return (jlong)((s && s->window) ? s->window->GetHandle() : nullptr);
+}
+
+JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_Dispose(JNIEnv* env, jclass cls, jlong context) {
+    Surface* s = reinterpret_cast<Surface*>(context);
+    if (!s) return;
+    FlutterWindow* window = s->window;
+    if (window) {
+        if (!s->isWindow && window == s_first_engine) {
+            // NOTE(elias): never destroy the first embedded engine — destroying it while another
+            // engine is alive causes PostMessage failures and a CFG crash. Hide + reparent instead.
+            window->Leak();
+        } else {
+            if (window == s_first_engine) {
+                s_first_engine = nullptr;
+            }
+            window->Destroy();
+        }
+    }
+    delete s;
+}
+
+JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetBounds(JNIEnv* env, jclass cls, jlong context, jint x, jint y, jint width, jint height, jint vx, jint vy, jint vwidth, jint vheight) {
+    Surface* s = reinterpret_cast<Surface*>(context);
+    if (!s || !s->window) return;
+    // For a window surface Java passes the window rect as both rects, so Win32Window::Move moves the
+    // window and lets WM_SIZE resize the Flutter child. For an embedded surface the two rects differ.
+    s->window->Move(Win32Window::Point(x, y), Win32Window::Size(width, height),
+                    Win32Window::Point(vx, vy), Win32Window::Size(vwidth, vheight));
+}
+
+// Pumps up to maxMessages from the thread queue (headless measurement path).
+JNIEXPORT jint JNICALL Java_dev_equo_swt_FlutterNative_PumpMessages(JNIEnv* env, jclass cls, jint maxMessages) {
     return pumpMessages(maxMessages);
 }
 
+// Pumps a window surface's event loop; returns -1 once the window has been closed (WM_QUIT seen).
+JNIEXPORT jint JNICALL Java_dev_equo_swt_FlutterNative_Pump(JNIEnv* env, jclass cls, jlong context) {
+    MSG msg;
+    int count = 0;
+    while (::PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+        if (msg.message == WM_QUIT) {
+            return -1;
+        }
+        ::TranslateMessage(&msg);
+        ::DispatchMessage(&msg);
+        count++;
+    }
+    return count;
+}
+
+// Blocks until a message/input is available or up to |millis| ms, WITHOUT removing it (the idle sleep).
+JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_WaitEvents(JNIEnv* env, jclass cls, jlong context, jint millis) {
+    DWORD timeout = millis < 0 ? 0 : (DWORD)millis;
+    ::MsgWaitForMultipleObjectsEx(0, nullptr, timeout, QS_ALLINPUT, MWMO_INPUTAVAILABLE);
+}
+
+JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetTitle(JNIEnv* env, jclass cls, jlong context, jstring title) {
+    Surface* s = reinterpret_cast<Surface*>(context);
+    const char* t = env->GetStringUTFChars(title, nullptr);
+    std::string ts(t);
+    env->ReleaseStringUTFChars(title, t);
+    if (s && s->window) {
+        HWND hwnd = s->window->GetHandle();
+        if (hwnd) ::SetWindowTextW(hwnd, Utf16FromUtf8(ts).c_str());
+    }
+}
+
+// state: 0 = restore/normal, 1 = maximized, 2 = minimized, 3 = fullscreen (approximated as maximized).
+JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetState(JNIEnv* env, jclass cls, jlong context, jint state) {
+    Surface* s = reinterpret_cast<Surface*>(context);
+    if (!s || !s->window) return;
+    HWND hwnd = s->window->GetHandle();
+    if (!hwnd) return;
+    switch (state) {
+        case 1: ::ShowWindow(hwnd, SW_MAXIMIZE); break;
+        case 2: ::ShowWindow(hwnd, SW_MINIMIZE); break;
+        case 3: ::ShowWindow(hwnd, SW_MAXIMIZE); break;
+        default: ::ShowWindow(hwnd, SW_RESTORE); break;
+    }
+}
