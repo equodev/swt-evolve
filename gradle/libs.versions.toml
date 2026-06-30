@@ -12,6 +12,9 @@ json-unit = "4.1.1"
 gson = "2.11.0"
 mockito = "5.18.0"
 instancio = "5.4.0"
+# JavaFX (FXCanvas embedded-scene bridge + snippets). monocle pins a separate patch.
+javafx = "21.0.4"
+openjfx-monocle = "21.0.2"
 
 [libraries]
 # JUnit 5
