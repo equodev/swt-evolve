@@ -140,15 +140,17 @@ class _DisplayMetricsReporter {
   final int widgetId;
   bool _windowCloseSent = false;
 
-  // The window/tab is closing: ask Java to fire the SWT shell close (no-op on desktop-native, where
-  // the close is detected natively). Same channel the CSD close button uses. Sent at most once —
-  // pagehide and beforeunload both fire during one teardown, and a duplicate WinClose would arrive
-  // after the first close already disposed the Display (racing it on the Java comm thread).
+  // The window/tab is tearing down (pagehide/beforeunload): ask Java to close the SWT shells (no-op on
+  // desktop-native, where the close is detected natively). This fires for a *refresh* exactly as it does
+  // for a real close — the browser can't tell them apart here — so it is sent on the dedicated WinUnload
+  // channel, which Java defers by a grace period and cancels if the refreshed page reconnects (vs the
+  // CSD close button, which uses WinClose for an immediate, unambiguous close). Sent at most once —
+  // pagehide and beforeunload both fire during one teardown, and a duplicate would race the Java side.
   void _sendWindowClose() {
     if (_windowCloseSent) return;
     _windowCloseSent = true;
-    print('[WinClose] Display/$widgetId');
-    EquoCommService.send("Display/$widgetId/WinClose");
+    print('[WinUnload] Display/$widgetId');
+    EquoCommService.send("Display/$widgetId/WinUnload");
   }
 
   void _sendCurrentSize() {
