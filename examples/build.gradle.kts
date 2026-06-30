@@ -76,6 +76,21 @@ dependencies {
     }
     runtimeOnly("org.slf4j:slf4j-simple:2.0.13")
 
+    // JavaFX (for FXCanvas / embedded-scene snippets). Classifier pulls the
+    // platform-specific classes + native libraries. JavaFX 21 targets JDK 21.
+    val javafxVersion = libs.versions.javafx.get()
+    val javafxClassifier = when {
+        currentOs == "macos" && currentArch == "aarch64" -> "mac-aarch64"
+        currentOs == "macos" -> "mac"
+        currentOs == "windows" -> "win"
+        currentArch == "aarch64" -> "linux-aarch64"
+        else -> "linux"
+    }
+    implementation("org.openjfx:javafx-base:$javafxVersion:$javafxClassifier")
+    implementation("org.openjfx:javafx-graphics:$javafxVersion:$javafxClassifier")
+    implementation("org.openjfx:javafx-controls:$javafxVersion:$javafxClassifier")
+    implementation("org.testfx:openjfx-monocle:${libs.versions.openjfx.monocle.get()}") { isTransitive = false }
+
     if (chromiumMode) {
         runtimeOnly(libs.equo.chromium)
         val cefArtifact = when (currentOs) {

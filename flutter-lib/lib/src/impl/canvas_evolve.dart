@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../comm/comm.dart';
+import 'key_mapping.dart';
 import '../gen/canvas.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
@@ -45,6 +47,17 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   final int _alpha = 255;
   Rect? clipRect;
   final DoubleTapDetector _dblTap = DoubleTapDetector();
+
+  // Keyboard focus for a childless Canvas so it can be typed into (e.g. an FXCanvas
+  // hosting a JavaFX TextField). A bare Focus doesn't grab focus on tap, so we take
+  // it on pointer-down and forward keystrokes to SWT below.
+  final FocusNode _keyboardFocus = FocusNode(debugLabel: 'CanvasKeyboard');
+
+  @override
+  void dispose() {
+    _keyboardFocus.dispose();
+    super.dispose();
+  }
 
   // Canvas forwards its own MouseDoubleClick from build()'s Listener, so the
   // shared composite interaction chrome must not also forward it.
@@ -118,9 +131,15 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       );
     }
 
-    return Listener(
+    final hasActiveChildren = children != null && children.isNotEmpty;
+
+    final content = Listener(
       behavior: HitTestBehavior.translucent,
       onPointerDown: (e) {
+        // Take keyboard focus so a childless Canvas receives keystrokes. Skip when
+        // the Canvas hosts child widgets — they manage their own focus and stealing
+        // it on every click would break them.
+        if (!hasActiveChildren) _keyboardFocus.requestFocus();
         final pos = e.localPosition;
         if (_dblTap.registerTap(position: pos) == 2) {
           widget.sendMouseMouseDoubleClick(
@@ -134,6 +153,30 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
         }
       },
       child: _wrapWithScrollbars(base),
+    );
+
+    if (hasActiveChildren) return content;
+
+    // Forward keystrokes to SWT (Key/KeyDown|KeyUp); DartControl already turns those
+    // into SWT.KeyDown/KeyUp events for the application's listeners.
+    return Focus(
+      focusNode: _keyboardFocus,
+      onKeyEvent: (node, event) {
+        final vEvent = mapNewKeyEventToSwt(event);
+        if (vEvent.keyCode != 0 || vEvent.character != 0) {
+          if (event is KeyDownEvent || event is KeyRepeatEvent) {
+            widget.sendKeyKeyDown(state, vEvent);
+          } else if (event is KeyUpEvent) {
+            widget.sendKeyKeyUp(state, vEvent);
+          }
+          // Consume it: the key is handled by the (SWT/embedded) widget. Letting it
+          // bubble to the native window makes macOS ring the unhandled-key beep on
+          // every keystroke.
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: content,
     );
   }
 

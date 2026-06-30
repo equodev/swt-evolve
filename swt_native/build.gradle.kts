@@ -157,6 +157,25 @@ dependencies {
     testImplementation(libs.gson)
     testImplementation(libs.mockito.core)
     testImplementation(libs.instancio.junit)
+
+    // JavaFX — required to COMPILE the FXCanvas embedded-scene bridge
+    // (javafx.embed.swt + com.sun.javafx.embed internals). compileOnly so the FX
+    // jars + native libs are NOT flattened into the Evolve platform jars (that
+    // breaks JavaFX's NativeLibLoader); the FX runtime is provided as separate
+    // jars on the application classpath instead. JavaFX is on the classpath
+    // (unnamed module) so com.sun.* embed packages need no --add-exports.
+    run {
+        val javafxVersion = libs.versions.javafx.get()
+        val fxArch = getSwtArch(arch)
+        val javafxClassifier = when (currentOs) {
+            "macos" -> if (fxArch == "aarch64") "mac-aarch64" else "mac"
+            "windows" -> "win"
+            else -> if (fxArch == "aarch64") "linux-aarch64" else "linux"
+        }
+        compileOnly("org.openjfx:javafx-base:$javafxVersion:$javafxClassifier")
+        compileOnly("org.openjfx:javafx-graphics:$javafxVersion:$javafxClassifier")
+        compileOnly("org.openjfx:javafx-controls:$javafxVersion:$javafxClassifier")
+    }
 }
 
 val nativeFlutterExcludes = listOf("dev/equo/swt/ConfigDyn.java", "**/GraphicsUtilsSwt.java")
