@@ -125,6 +125,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         onClientReady("Display/" + displayId + "/ClientReady", ClientReadyPayload.class, (p, first) -> {
             if (p == null) return;
 
+            // A reconnecting client (e.g. a browser refresh re-establishing the socket and re-sending
+            // ClientReady) cancels any pending tab-close — see WebDisplayBridge.onDisplayClientReady.
+            onDisplayClientReady(first);
+
             boolean[] changed = {false};
             display.getApi().syncExec(() ->
                     changed[0] = applyClientViewport(display,
@@ -135,6 +139,13 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             if (changed[0] || first) sendDisplayUpdate(display);
         });
     }
+
+    /**
+     * Hook fired on every {@code Display/{id}/ClientReady}, before the viewport sync. No-op here; the
+     * web surface overrides it to cancel a deferred tab-close when a refreshed client reconnects.
+     * {@code first} is whether this was the first (bridge-completing) ClientReady.
+     */
+    protected void onDisplayClientReady(boolean first) {}
 
     /** The reported monitor rectangle (origin 0,0), or {@code null} when the client didn't report one. */
     private static Rectangle monitorOf(ClientReadyPayload p) {

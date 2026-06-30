@@ -6,6 +6,11 @@ import dev.equo.swt.comm.CommService;
 import dev.equo.swt.spi.FlutterBridgeSpi;
 import org.eclipse.swt.graphics.Rectangle;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Web surface for a Display-level bridge: the whole Dart-backed SWT tree is rendered by a Flutter
  * web app in a browser (or an Equo Chromium standalone window) talking to a {@link WebFlutterServer}
@@ -20,6 +25,22 @@ public class WebDisplayBridge extends DisplayBridge {
     private ChromiumStandaloneLauncher chromiumLauncher;
     /** CSD maximize strategy: "bounds" (default), "native", or "fullscreen". */
     private String csdMaxStrategy = "bounds";
+
+    /**
+     * Grace period for a browser tab teardown ({@code WinUnload}) before the SWT shells are actually
+     * closed. A refresh (F5) and a real tab close are indistinguishable at {@code pagehide}/
+     * {@code beforeunload} time, so instead of closing immediately we wait this long: if the page was
+     * merely refreshing, the reloaded client reconnects and re-sends {@code ClientReady} within the
+     * window (see {@link #onDisplayClientReady}) and the close is cancelled; a genuine close lets the
+     * timer elapse and tears the shells down. Tuned to comfortably cover a Flutter-web reboot; override
+     * with {@code -Ddev.equo.swt.web.refreshGraceMs} (0 disables deferral — close immediately again).
+     */
+    private static final long REFRESH_GRACE_MS = Long.getLong("dev.equo.swt.web.refreshGraceMs", 3000);
+
+    /** Single daemon thread that fires deferred tab-closes; created lazily, shut down with the Display. */
+    private ScheduledExecutorService closeScheduler;
+    /** The currently-armed deferred close (a pending {@code WinUnload}), or null. Guarded by {@code this}. */
+    private ScheduledFuture<?> pendingClose;
 
     boolean isChromium = "chromium".equalsIgnoreCase(System.getProperty("dev.equo.swt.mode"));
 
@@ -99,9 +120,13 @@ public class WebDisplayBridge extends DisplayBridge {
      * tab/window close ({@code WinClose}) all arrive here: on mac the native maximize/zoom and close
      * spin a nested run loop while the single-threaded message pump is blocked, freezing the window;
      * minimize and a plain setWindowBounds don't, so we "maximize" by sizing the window to the monitor
-     * work area (like a resize) and close via the existing shell teardown. {@code WinClose} also fires
-     * when the browser tab/window is closed (the Dart client sends it on pagehide/beforeunload), so the
-     * SWT shells close just as they do when the desktop-native window is closed.
+     * work area (like a resize) and close via the existing shell teardown.
+     *
+     * <p>Two distinct close signals arrive here. {@code WinClose} is an <em>explicit</em> close (the CSD
+     * close button) and tears the shells down immediately. {@code WinUnload} is the browser tab/window
+     * teardown the Dart client sends on pagehide/beforeunload — which fires for a refresh just as it does
+     * for a real close, so it is deferred by a grace period rather than closing at once (see
+     * {@link #scheduleDeferredClose} / {@link #onDisplayClientReady}).</p>
      */
     protected void registerWindowControls(DartDisplay display) {
         long displayId = display.getApi().hashCode();
@@ -115,6 +140,7 @@ public class WebDisplayBridge extends DisplayBridge {
         comm.on(win + "WinMaximize", Rectangle.class, rect -> applyCsdMaximize(winApi, rect, true));
         comm.on(win + "WinRestore", Rectangle.class, rect -> applyCsdMaximize(winApi, rect, false));
         comm.on(win + "WinClose", String.class, s -> onClientWindowClosed());
+        comm.on(win + "WinUnload", String.class, s -> scheduleDeferredClose());
     }
 
     @Override
@@ -151,6 +177,47 @@ public class WebDisplayBridge extends DisplayBridge {
      * spinning with no visible window. Fired from the CEF thread (or the SWT thread during pump()
      * on mac), so marshal onto the UI thread with asyncExec and close the top-level shells.
      */
+    /**
+     * A browser tab/window teardown ({@code WinUnload}) arrived — ambiguous between a refresh and a real
+     * close. Arm a deferred close after {@link #REFRESH_GRACE_MS}; if the page was refreshing, the
+     * reloaded client reconnects and {@link #onDisplayClientReady} cancels this before it fires. Any
+     * previously-armed close is replaced. With the grace set to 0 (or a Chromium standalone window,
+     * where the real OS-window close is the authority) the close is immediate.
+     */
+    private synchronized void scheduleDeferredClose() {
+        if (REFRESH_GRACE_MS <= 0 || hasNativeWindow()) {
+            onClientWindowClosed();
+            return;
+        }
+        if (closeScheduler == null) {
+            closeScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "equo-web-close-grace");
+                t.setDaemon(true);
+                return t;
+            });
+        }
+        if (pendingClose != null)
+            pendingClose.cancel(false);
+        pendingClose = closeScheduler.schedule(this::onClientWindowClosed, REFRESH_GRACE_MS, TimeUnit.MILLISECONDS);
+    }
+
+    /** Cancels a pending deferred close, if any — the tab was refreshing, not closing. */
+    private synchronized void cancelDeferredClose() {
+        if (pendingClose != null) {
+            pendingClose.cancel(false);
+            pendingClose = null;
+        }
+    }
+
+    /**
+     * A refreshed browser client has reconnected and re-sent ClientReady within the grace window: it was
+     * a refresh, not a close, so cancel the deferred tab-close armed by {@link #scheduleDeferredClose}.
+     */
+    @Override
+    protected void onDisplayClientReady(boolean first) {
+        cancelDeferredClose();
+    }
+
     private void onClientWindowClosed() {
         DartDisplay display = forDisplay;
         if (display == null)
@@ -171,6 +238,11 @@ public class WebDisplayBridge extends DisplayBridge {
 
     @Override
     public void destroyDisplay() {
+        cancelDeferredClose();
+        if (closeScheduler != null) {
+            closeScheduler.shutdownNow();
+            closeScheduler = null;
+        }
         if (chromiumLauncher != null) {
             chromiumLauncher.close(true);
             chromiumLauncher = null;

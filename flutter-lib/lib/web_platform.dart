@@ -82,6 +82,11 @@ void observeViewportChanges(void Function() onChange) {
 /// reliable teardown signal: tab close, navigation, bfcache) and `beforeunload`; a socket drop is
 /// deliberately NOT used as the signal, since a dropped socket may just be a transient disconnect
 /// that reconnects. Double delivery is harmless — the Java side closes the shells idempotently.
+///
+/// NOTE: this fires for a *refresh* too — the browser exposes no way to tell a reload from a real
+/// close at unload time. Disambiguation is deferred to Java: the teardown is sent on `WinUnload`
+/// (see main.dart), which Java closes only after a grace period, cancelling it if the reloaded page
+/// reconnects and re-sends ClientReady. So a refresh keeps the shells alive; a real close ends them.
 void observeWindowClose(void Function() onClose) {
   _addWindowEventListener('pagehide'.toJS, (() { onClose(); }).toJS);
   _addWindowEventListener('beforeunload'.toJS, (() { onClose(); }).toJS);
