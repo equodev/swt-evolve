@@ -54,6 +54,8 @@ class ToolbarComposite extends CompositeSwt<VComposite> {
 }
 
 class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposite> {
+  final _vmBtnAtStartKey = GlobalKey();
+
   @override
   Widget buildComposite() {
     final children = state.children;
@@ -143,7 +145,7 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (csdLeading) const WindowControls(),
-          if (isRootToolbar) const VerticalMenuButton(atStart: true),
+          if (isRootToolbar) VerticalMenuButton(key: _vmBtnAtStartKey, atStart: true),
           Expanded(
             child: LayoutBuilder(
               builder: (_, box) {
@@ -153,8 +155,15 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
 
                 final stackChildren = <Widget>[];
 
+                final vmBtnRb = _vmBtnAtStartKey.currentContext?.findRenderObject() as RenderBox?;
+                final vmBtnW = (isRootToolbar &&
+                        menuData?.isHorizontal == false &&
+                        menuData?.isAtStart == true)
+                    ? (vmBtnRb?.size.width ?? 0.0)
+                    : 0.0;
+
                 for (final entry in builtChildren) {
-                  final left = (entry.child.bounds?.x ?? 0).toDouble();
+                  final left = (entry.child.bounds?.x ?? 0).toDouble() - vmBtnW;
                   final width = (entry.child.bounds?.width ?? 0).toDouble();
                   if (width <= 0) continue;
                   stackChildren.add(Positioned(

@@ -6,6 +6,7 @@ import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/menu_theme_extension.dart';
+import 'decorations_align.dart';
 import 'widget_config.dart';
 import 'utils/text_utils.dart';
 import 'utils/pointer.dart';
@@ -109,8 +110,8 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
     bool visible,
   ) {
     final menuItems = _getMenuItems();
-    final mode = (getConfigFlags().decorations_align ?? "hleft").toLowerCase();
-    final alignRight = mode == "hright";
+    final align = getConfigFlags().decorations_align ?? DecorationsAlign.hleft;
+    final alignRight = align == DecorationsAlign.hright;
     final backgroundColor = enabled
         ? widgetTheme.menuBarBackgroundColor
         : widgetTheme.disabledBackgroundColor;
