@@ -280,7 +280,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       );
     }
 
-    final isTooltipLike = _noTrim || (_style & SWT.ON_TOP) != 0;
+    final isTooltipLike = (_style & SWT.ON_TOP) != 0 && (_style & SWT.TOOL) != 0;
     final shellBg = isTooltipLike ? theme.tooltipShellBackgroundColor : null;
     if (shellBg != null) {
       framed = ParentBackgroundScope(background: shellBg, child: framed);

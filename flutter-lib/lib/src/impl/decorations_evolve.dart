@@ -5,6 +5,7 @@ import '../gen/menuitem.dart';
 import '../gen/widget.dart';
 import '../impl/canvas_evolve.dart';
 import '../impl/menu_evolve.dart';
+import '../impl/decorations_align.dart';
 import '../impl/widget_config.dart';
 import '../theme/theme_extensions/menu_theme_extension.dart';
 
@@ -27,6 +28,21 @@ class DecorationsMenuData extends InheritedWidget {
   @override
   bool updateShouldNotify(DecorationsMenuData old) =>
       menuBar != old.menuBar || isAtStart != old.isAtStart || isHorizontal != old.isHorizontal;
+}
+
+class VerticalMenuIcon extends StatelessWidget {
+  const VerticalMenuIcon({super.key, this.onPressed});
+
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: 'Menu',
+      icon: const Icon(Icons.menu),
+      onPressed: onPressed,
+    );
+  }
 }
 
 class VerticalMenuButton extends StatefulWidget {
@@ -88,9 +104,7 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
         ),
       ],
       builder: (context, controller, child) {
-        return IconButton(
-          tooltip: 'Menu',
-          icon: const Icon(Icons.menu),
+        return VerticalMenuIcon(
           onPressed: () {
             if (controller.isOpen) {
               controller.close();
@@ -108,14 +122,12 @@ class DecorationsImpl<T extends DecorationsSwt, V extends VDecorations>
     extends CanvasImpl<T, V> {
   @override
   Widget build(BuildContext context) {
-    final menuMode = (getConfigFlags().decorations_align ?? "hleft").toLowerCase();
-    final isVertical = menuMode == "vleft" || menuMode == "vright";
-    final isAtStart = menuMode == "vleft";
+    final align = getConfigFlags().decorations_align ?? DecorationsAlign.hleft;
 
     return DecorationsMenuData(
       menuBar: state.menuBar,
-      isAtStart: isAtStart,
-      isHorizontal: !isVertical,
+      isAtStart: align.isAtStart,
+      isHorizontal: !align.isVertical,
       child: super.build(context),
     );
   }

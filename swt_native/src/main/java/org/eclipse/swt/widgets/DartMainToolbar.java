@@ -2,12 +2,13 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
+import dev.equo.swt.DecorationsAlign;
+import dev.equo.swt.size.CsdSizes;
+import dev.equo.swt.size.MenuSizes;
 import org.eclipse.swt.graphics.Point;
 
 public class DartMainToolbar extends DartComposite {
-    private static final int HEIGHT_HORIZONTAL_MENU = 70;
-    private static final int HEIGHT_VERTICAL_MENU = 36;
-    private static final int WIDTH_VERTICAL_MENU_BUTTON = 48;
+    private int appliedXReserve = 0;
 
     public DartMainToolbar(Composite parent, int style, Composite composite) {
         super(parent, style, composite);
@@ -20,35 +21,54 @@ public class DartMainToolbar extends DartComposite {
 
     @Override
     public void updateLayout(boolean all) {
-        if (layout == null) {
-            super.updateLayout(all);
-            return;
-        }
+        if (layout == null) { super.updateLayout(all); return; }
         getApi().state |= LAYOUT_CHANGED;
 
-        int reserve = verticalMenuReservedWidth();
-        if (reserve > 0 && bounds.width > reserve) {
-            bounds.width -= reserve;
-            super.updateLayout(all);
-            bounds.width += reserve;
-        } else {
-            super.updateLayout(all);
+        DecorationsAlign align = decorationsAlign();
+        int xOffset      = align == DecorationsAlign.VLEFT ? MenuSizes.VERTICAL_MENU_BUTTON_WIDTH : 0;
+        int widthReserve = (align.isVertical() ? MenuSizes.VERTICAL_MENU_BUTTON_WIDTH : 0) + csdToolbarWidth();
+
+        if (appliedXReserve > 0) {
+            for (Control child : _getChildren()) {
+                if (child == null) continue;
+                org.eclipse.swt.graphics.Rectangle cb = child.getBounds();
+                child.setBounds(cb.x - appliedXReserve, cb.y, cb.width, cb.height);
+            }
+            appliedXReserve = 0;
         }
+
+        if (widthReserve > 0 && bounds.width > widthReserve) bounds.width -= widthReserve;
+        super.updateLayout(all);
+        if (widthReserve > 0) bounds.width += widthReserve;
+
+        for (Control child : _getChildren()) {
+            if (child == null) continue;
+            org.eclipse.swt.graphics.Rectangle cb = child.getBounds();
+            if (cb.x + xOffset != cb.x) child.setBounds(cb.x + xOffset, cb.y, cb.width, cb.height);
+            if (cb.y != 0)              child.setBounds(cb.x + xOffset, 0,     cb.width, cb.height);
+        }
+        appliedXReserve = xOffset;
     }
 
-    private static int verticalMenuReservedWidth() {
+    private static DecorationsAlign decorationsAlign() {
         ConfigFlags flags = Config.getConfigFlags();
-        String align = flags != null ? flags.decorations_align : null;
-        if (align == null) return 0;
-        String mode = align.trim().toLowerCase();
-        return ("vleft".equals(mode) || "vright".equals(mode)) ? WIDTH_VERTICAL_MENU_BUTTON : 0;
+        return flags != null && flags.decorations_align != null ? flags.decorations_align : DecorationsAlign.HLEFT;
+    }
+
+    private static int csdToolbarWidth() {
+        ConfigFlags flags = Config.getConfigFlags();
+        if (flags == null) return 0;
+        String placement = flags.csd_placement;
+        if (placement != null && !"toolbar".equals(placement.trim().toLowerCase())) return 0;
+        String os = flags.csd_os != null ? flags.csd_os.trim().toLowerCase() : "linux";
+        switch (os) {
+            case "mac":     return CsdSizes.CSD_WIDTH_MAC;
+            case "windows": return CsdSizes.CSD_WIDTH_WINDOWS;
+            default:        return CsdSizes.CSD_WIDTH_LINUX;
+        }
     }
 
     private static int getMainToolbarHeight() {
-        ConfigFlags flags = Config.getConfigFlags();
-        String align = flags != null ? flags.decorations_align : null;
-        if (align == null) return HEIGHT_HORIZONTAL_MENU;
-        String mode = align.trim().toLowerCase();
-        return ("vleft".equals(mode) || "vright".equals(mode)) ? HEIGHT_VERTICAL_MENU : HEIGHT_HORIZONTAL_MENU;
+        return decorationsAlign().isVertical() ? MenuSizes.HEIGHT_VERTICAL_MENU : MenuSizes.HEIGHT_HORIZONTAL_MENU;
     }
 }

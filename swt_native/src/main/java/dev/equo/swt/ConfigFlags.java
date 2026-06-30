@@ -3,6 +3,7 @@ package dev.equo.swt;
 import com.dslplatform.json.CompiledJson;
 
 import java.util.Map;
+import dev.equo.swt.DecorationsAlign;
 
 @CompiledJson(objectFormatPolicy = CompiledJson.ObjectFormatPolicy.FULL)
 public class ConfigFlags {
@@ -30,7 +31,7 @@ public class ConfigFlags {
     public boolean show_theme_color_palette;
 
     public boolean show_scaling_control;
-    public String decorations_align;
+    public DecorationsAlign decorations_align;
 
     public boolean print_move;
 

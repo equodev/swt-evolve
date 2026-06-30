@@ -527,7 +527,7 @@ public class Config {
             configFlags.preserve_icon_colors = Boolean.getBoolean("swt.evolve.preserve_icon_colors");
             configFlags.show_theme_color_palette = Boolean.getBoolean("swt.evolve.show_theme_color_palette");
             configFlags.show_scaling_control = Boolean.getBoolean("swt.evolve.show_scaling_control");
-            configFlags.decorations_align = System.getProperty("swt.evolve.decorations_align");
+            configFlags.decorations_align = DecorationsAlign.fromString(System.getProperty("swt.evolve.decorations_align"));
             configFlags.print_move = Boolean.getBoolean("dev.equo.swt.printMove");
             configFlags.force_theme = System.getProperty("swt.evolve.force_theme");
             configFlags.theme_name = System.getProperty("swt.evolve.theme_name");
@@ -569,7 +569,7 @@ public class Config {
         flags.use_swt_colors = false;
         flags.use_swt_fonts = false;
         flags.force_theme = "dark";
-        flags.decorations_align = "vleft";
+        flags.decorations_align = DecorationsAlign.VLEFT;
     }
 
     private static void applyThemeColorsByWidgetFromProperties(ConfigFlags flags) {

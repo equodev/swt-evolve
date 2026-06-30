@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'decorations_align.dart';
 
 part 'config_flags.g.dart';
 
@@ -20,7 +21,8 @@ class ConfigFlags {
   bool? use_special_dropdown_button;
   bool? preserve_icon_colors;
   bool? show_scaling_control;
-  String? decorations_align;
+  @JsonKey(fromJson: DecorationsAlign.fromJson, toJson: DecorationsAlign.toJson)
+  DecorationsAlign? decorations_align;
   bool? print_move;
   String? csd_placement;
   String? csd_os;
