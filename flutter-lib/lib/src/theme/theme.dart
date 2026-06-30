@@ -319,7 +319,7 @@ ColorSchemeExtension createColorSchemeExtension([ColorScheme? colorScheme]) {
 
 ColorSchemeExtension _createColorSchemeExtensionFromColorScheme(ColorScheme colorScheme) {
   return ColorSchemeExtension(
-    primaryHovered: colorScheme.primary,
+    primaryHovered: const Color(0xFF002DAD),
     primaryBorder: colorScheme.primary,
     primaryBorderDisabled: colorScheme.outlineVariant,
     onPrimaryVariantDisabled: colorScheme.onSurface.withOpacity(0.5),
