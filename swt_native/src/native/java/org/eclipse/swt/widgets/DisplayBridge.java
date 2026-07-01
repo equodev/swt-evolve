@@ -124,21 +124,33 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         // work: sync Display bounds to the reported viewport and push the (first/next) update.
         onClientReady("Display/" + displayId + "/ClientReady", ClientReadyPayload.class, (p, first) -> {
             if (p == null) return;
-
+            // A client that reconnects reporting p.isFirst=true — a fresh Flutter instance re-established
+            // the socket (e.g. a browser refresh) but is NOT the bridge's first ClientReady — needs the
+            // swt.evolve properties re-pushed, or its theme/config init is lost on refresh.
             if (!first && p.isFirst) broadcastSwtEvolveProperties();
 
             // A reconnecting client (e.g. a browser refresh re-establishing the socket and re-sending
             // ClientReady) cancels any pending tab-close — see WebDisplayBridge.onDisplayClientReady.
             onDisplayClientReady(first);
 
-            boolean[] changed = {false};
-            display.getApi().syncExec(() ->
-                    changed[0] = applyClientViewport(display,
-                            new Rectangle(0, 0, p.width, p.height), monitorOf(p), p.isFirst));
-
-            // Always push on the very first ClientReady (it bootstraps the Flutter tree); otherwise only
-            // when something actually changed, so a repeated identical viewport doesn't feed a loop.
-            if (changed[0] || first) sendDisplayUpdate(display);
+            Display api = display.getApi();
+            Runnable apply = () -> {
+                boolean changed = applyClientViewport(display,
+                        new Rectangle(0, 0, p.width, p.height), monitorOf(p), p.isFirst);
+                // Push on the very first ClientReady (it bootstraps the Flutter tree); otherwise only
+                // when something actually changed, so a repeated identical viewport doesn't feed a loop.
+                if (changed || first) sendDisplayUpdate(display);
+            };
+            // applyClientViewport touches shells (setBounds/layout) so it must run on the Display thread.
+            // In production this handler runs on the comm (WebSocket) thread: a syncExec would block it
+            // until the Display thread services the runnable, but the idle E4 workbench parks the Display
+            // thread inside the native event pump, so it would block forever (a leaked comm thread, and
+            // the shell never sized to the viewport). Post async instead — the buffered pre-connect
+            // Display state has already given Flutter its first frame, so the loop is live and drains it
+            // promptly. When ALREADY on the Display thread (unit tests drive ClientReady inline), run it
+            // synchronously so the resize is observable immediately.
+            if (api.getThread() == Thread.currentThread()) apply.run();
+            else api.asyncExec(apply);
         });
     }
 
@@ -186,7 +198,14 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     }
 
     public void sendDisplayUpdate(DartDisplay display) {
-        if (!clientReady.isDone()) return;
+        // NOTE: no `clientReady` gate here. A Display update produced before the Flutter client has
+        // connected (e.g. the E4 workbench shows its top-level Shell during startup, long before the
+        // native window's Flutter engine connects) must still be serialized and sent — the comm layer
+        // BUFFERS pre-connect frames and flushes them on connect (AbstractBinaryCommService). Skipping
+        // it here left the client with no shells until a post-connect re-push, but that re-push runs on
+        // the comm thread and needs the UI thread, which the idle E4 workbench traps inside the native
+        // event pump — so the window stayed blank. Buffering the pre-connect state avoids that race and
+        // gives Flutter content the moment it connects (which also keeps its runloop live).
         try {
             VDisplay vd = VDisplay.of(display);
             serializeAndSend("Display/" + vd.id, vd);
