@@ -521,16 +521,16 @@ public class Config {
             configFlags.ctabfolder_visible_controls = Boolean.getBoolean("swt.evolve.ctabfolder_visible_controls");
             configFlags.image_disable_icons_replacement = Boolean.getBoolean("swt.evolve.image_disable_icons_replacement");
             configFlags.assets_path = System.getProperty("swt.evolve.assets_path");
-            configFlags.use_default_icons = Boolean.getBoolean("swt.evolve.use_default_icons");
+            configFlags.use_default_icons = Boolean.parseBoolean(System.getProperty("swt.evolve.use_default_icons", "true"));
             configFlags.use_swt_colors = Boolean.getBoolean("swt.use_swt_colors");
             configFlags.use_swt_fonts = Boolean.getBoolean("swt.use_swt_fonts");
-            configFlags.preserve_icon_colors = Boolean.getBoolean("swt.evolve.preserve_icon_colors");
+            configFlags.preserve_icon_colors = Boolean.parseBoolean(System.getProperty("swt.evolve.preserve_icon_colors", "true"));
             configFlags.show_theme_color_palette = Boolean.getBoolean("swt.evolve.show_theme_color_palette");
             configFlags.show_scaling_control = Boolean.getBoolean("swt.evolve.show_scaling_control");
-            configFlags.decorations_align = DecorationsAlign.fromString(System.getProperty("swt.evolve.decorations_align"));
+            configFlags.decorations_align = DecorationsAlign.fromString(System.getProperty("swt.evolve.decorations_align", "vleft"));
             configFlags.print_move = Boolean.getBoolean("dev.equo.swt.printMove");
-            configFlags.force_theme = System.getProperty("swt.evolve.force_theme");
-            configFlags.theme_name = System.getProperty("swt.evolve.theme_name");
+            configFlags.force_theme = System.getProperty("swt.evolve.force_theme", "light");
+            configFlags.theme_name = System.getProperty("swt.evolve.theme_name", "equo");
             configFlags.theme_color = System.getProperty("swt.evolve.theme_color");
             // Client-Side Decorations: a single property selects placement and on/off
             //   -Ddev.equo.swt.csd=toolbar|overlay|floating  or =false to disable.
