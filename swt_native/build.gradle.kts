@@ -575,6 +575,12 @@ platforms.forEach { platform ->
                 }
                 else -> commandLine = flutterCmd() + listOf("build", info.os)
             }
+            // macOS aarch64 + x86_64 both build into flutter's single build/macos dir (set-arch.sh
+            // switches the arch in place), so a second build overwrites the first arch's app. Serialize
+            // the two so each arch's app is copied out before the next arch's build clobbers build/macos:
+            // aarch64FlutterLib -> aarch64CopyFlutterBinaries -> x86_64FlutterLib -> x86_64CopyFlutterBinaries.
+            if (info.desktopPlatform == "macos-x86_64")
+                mustRunAfter("macos-aarch64CopyFlutterBinaries")
         }
 
         tasks.register<Copy>("${info.desktopPlatform}CopyFlutterBinaries") {
@@ -583,8 +589,10 @@ platforms.forEach { platform ->
 
             if ((currentPlatform == info.desktopPlatform || info.os == "macos") && System.getProperty("skipFlutterLib") == null)
                 dependsOn("${info.desktopPlatform}FlutterLib")
-            if (info.os == "macos")
-                mustRunAfter("macos-aarch64FlutterLib", "macos-x86_64FlutterLib")
+            // NOTE: the copy runs right after ITS OWN FlutterLib (dependsOn above). It must NOT wait for
+            // the other arch's FlutterLib — that build overwrites the shared build/macos dir and would
+            // make this copy pick up the wrong arch. The x86_64 build is instead ordered to run after
+            // this (aarch64) copy completes; see macos-x86_64FlutterLib's mustRunAfter above.
 
             val flutterArch = if (info.arch == "aarch64") "arm64" else "x64"
             copyFlutterNatives(info.os, flutterArch)
