@@ -125,6 +125,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         onClientReady("Display/" + displayId + "/ClientReady", ClientReadyPayload.class, (p, first) -> {
             if (p == null) return;
 
+            if (!first && p.isFirst) broadcastSwtEvolveProperties();
+
             // A reconnecting client (e.g. a browser refresh re-establishing the socket and re-sending
             // ClientReady) cancels any pending tab-close — see WebDisplayBridge.onDisplayClientReady.
             onDisplayClientReady(first);
