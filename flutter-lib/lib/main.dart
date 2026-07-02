@@ -58,6 +58,17 @@ void main(List<String> args) async {
     return;
   }
 
+  // Self-embed guard (web): refuse to boot when this document is running inside
+  // an SWT Browser widget's own <iframe>. That happens when the iframe's src
+  // resolved back to the app origin (empty src -> parent URL, then the server's
+  // SPA fallback serves index.html), which would otherwise start a second full
+  // copy of the app *inside* the Browser widget. A legitimate host embed is not
+  // named `equo-browser-*`, so it is unaffected. See isSelfEmbeddedBrowserWidget.
+  if (isSelfEmbeddedBrowserWidget()) {
+    print("Refusing to boot: running inside an SWT Browser widget iframe");
+    return;
+  }
+
   WidgetsFlutterBinding.ensureInitialized();
 
   if (widgetName == "FontSizeBridge") {

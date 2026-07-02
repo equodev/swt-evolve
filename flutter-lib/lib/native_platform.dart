@@ -49,6 +49,10 @@ int? getParentBackgroundColor(List<String> args) {
   return null;
 }
 
+/// Native builds are never embedded in a web iframe. Present to satisfy the
+/// shared platform interface with web_platform.dart.
+bool isSelfEmbeddedBrowserWidget() => false;
+
 Size? getViewportSize() {
   // No window.innerWidth on native; main.dart falls back to the Flutter view's
   // physicalSize / devicePixelRatio when this returns null.
