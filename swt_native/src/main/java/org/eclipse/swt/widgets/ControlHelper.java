@@ -85,6 +85,14 @@ public class ControlHelper {
             parent = parent.getParent();
         }
         Rectangle bounds = c.getBounds();
+        // Native SWT never delivers a Paint event for an empty area. Some controls
+        // (e.g. FormText) allocate a back-buffer Image of the paint size and would
+        // throw ERROR_INVALID_ARGUMENT (ImageData with width/height <= 0) when asked
+        // to paint a 0-sized region. This happens here because a Paint can be
+        // dispatched re-entrantly while bounds are still 0 (e.g. event loop pumped
+        // from DartImage.getImageData during serialization).
+        if (bounds.width <= 0 || bounds.height <= 0)
+            return;
         try {
             if (!Class.forName("org.eclipse.draw2d.FigureCanvas").isInstance(c.getApi())) {
                 Event event = new Event();
