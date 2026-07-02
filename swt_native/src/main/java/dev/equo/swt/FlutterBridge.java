@@ -274,7 +274,8 @@ public abstract class FlutterBridge {
             String serialized = new String(bytes, StandardCharsets.UTF_8);
             String cleaned = serialized
                     .replaceAll("\"data\"\\s*:\\s*\"[^\"]*\"", "\"data\": \"-ignore-\"")
-                    .replaceAll("\"alphaData\"\\s*:\\s*\"[^\"]*\"", "\"alphaData\": \"-ignore-\"");
+                    .replaceAll("\"alphaData\"\\s*:\\s*\"[^\"]*\"", "\"alphaData\": \"-ignore-\"")
+                    .replaceAll("\"svgContent\"\\s*:\\s*\"[^\"\\\\]*(?:\\\\.[^\"\\\\]*)*\"", "\"svgContent\": \"-ignore-\"");
             System.out.println("send: " + eventName + ": " + cleaned);
         }
         comm.send(eventName, bytes);
