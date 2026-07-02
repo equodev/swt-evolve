@@ -171,9 +171,18 @@ class _DisplayMetricsReporter {
   }
 }
 
+/// True only for real, usable dimensions. Guards the `.toInt()` in
+/// [_sendWindowSizedClientReady]: on Windows early init the view's
+/// devicePixelRatio can be 0, so `physicalSize / dpr` yields Infinity/NaN — and
+/// `Infinity <= 0` / `NaN <= 0` are both false, so a bare `<= 0` check lets them
+/// through and `.toInt()` then throws "Unsupported operation: Infinity or NaN toInt".
+bool _isFinitePositiveSize(double w, double h) =>
+    w.isFinite && h.isFinite && w > 0 && h > 0;
+
 Size? _currentLogicalViewSize() {
   final viewportSize = getViewportSize();
-  if (viewportSize != null) {
+  if (viewportSize != null &&
+      _isFinitePositiveSize(viewportSize.width, viewportSize.height)) {
     return Size(
       viewportSize.width.roundToDouble(),
       viewportSize.height.roundToDouble(),
@@ -184,8 +193,11 @@ Size? _currentLogicalViewSize() {
     return null;
   }
   final view = dispatcher.views.first;
+  if (view.devicePixelRatio <= 0) {
+    return null;
+  }
   final size = view.physicalSize / view.devicePixelRatio;
-  if (size.width <= 0 || size.height <= 0) {
+  if (!_isFinitePositiveSize(size.width, size.height)) {
     return null;
   }
   return Size(size.width.roundToDouble(), size.height.roundToDouble());
@@ -203,8 +215,11 @@ Size? _currentLogicalMonitorSize() {
     return null;
   }
   final display = dispatcher.views.first.display;
+  if (display.devicePixelRatio <= 0) {
+    return null;
+  }
   final size = display.size / display.devicePixelRatio;
-  if (size.width <= 0 || size.height <= 0) {
+  if (!_isFinitePositiveSize(size.width, size.height)) {
     return null;
   }
   return Size(size.width.roundToDouble(), size.height.roundToDouble());
