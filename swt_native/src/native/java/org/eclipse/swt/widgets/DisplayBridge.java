@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.WindowBridge;
@@ -51,7 +52,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     /** True when the tree should be rendered in a native top-level window instead of a browser. */
     static boolean isDesktopMode() {
-        return "desktop".equalsIgnoreCase(System.getProperty("dev.equo.swt.mode"));
+        return ConfigFlags.isDesktopMode();
     }
 
     /**

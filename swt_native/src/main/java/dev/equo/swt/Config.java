@@ -537,7 +537,7 @@ public class Config {
             // Defaults to "toolbar" ONLY under the Chromium standalone (the only mode with a
             // frameless window to decorate); off everywhere else. Drives both the frameless
             // native window (launcher) and the Flutter controls.
-            boolean chromiumMode = "chromium".equalsIgnoreCase(System.getProperty("dev.equo.swt.mode"));
+            boolean chromiumMode = ConfigFlags.isChromiumMode();
             configFlags.csd_placement = System.getProperty(
                     "dev.equo.swt.csd", chromiumMode ? "toolbar" : "false").toLowerCase();
             // OS picks the native control styling; override to test other platforms:

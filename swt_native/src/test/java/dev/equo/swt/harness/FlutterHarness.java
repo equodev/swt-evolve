@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import dev.equo.swt.ChromiumStandaloneLauncher;
 import dev.equo.swt.Config;
+import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.FlutterLibraryLoader;
 import dev.equo.swt.WebFlutterServer;
@@ -55,7 +56,7 @@ public class FlutterHarness extends EmbeddedBridge {
     private static final boolean WEB = !"native".equals(System.getProperty("harness.client", "web"));
     /** Render the web client in a real CEF standalone window (instead of headless Chrome) so the
      *  popup-window + HTTP-auth events that originate there fire. Implies the WEB client. */
-    private static final boolean CHROMIUM = "chromium".equalsIgnoreCase(System.getProperty("dev.equo.swt.mode"));
+    private static final boolean CHROMIUM = ConfigFlags.isChromiumMode();
     protected static final long READY_TIMEOUT_MS = Long.getLong("harness.readyTimeoutMs", 30_000);
     protected static final long QUERY_TIMEOUT_MS = Long.getLong("harness.queryTimeoutMs", 10_000);
 

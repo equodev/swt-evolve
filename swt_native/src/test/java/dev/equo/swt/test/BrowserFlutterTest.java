@@ -18,6 +18,7 @@ import java.util.stream.Stream;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
+import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.harness.BrowserKit;
 import dev.equo.swt.harness.BrowserFlutterHarness;
 import dev.equo.swt.harness.FlutterHarness;
@@ -205,7 +206,7 @@ class BrowserFlutterTest {
      * ({@code isChromium=false}) there is no such window, so those tests can't run.
      */
     protected static boolean isChromium() {
-        return "chromium".equalsIgnoreCase(System.getProperty("dev.equo.swt.mode"));
+        return ConfigFlags.isChromiumMode();
     }
 
     private static void assumeChromium() {

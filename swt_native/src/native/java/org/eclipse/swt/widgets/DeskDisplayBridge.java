@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterNative;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
@@ -39,7 +40,7 @@ public class DeskDisplayBridge extends DisplayBridge {
     DeskDisplayBridge(DartDisplay display) {
         super(display);
         // The native window is the client; never fall back to a browser/chromium launch.
-        System.setProperty("dev.equo.swt.mode", "desktop");
+        ConfigFlags.setMode(ConfigFlags.MODE_DESKTOP);
         DisplayBridgePlatform.init();
     }
 

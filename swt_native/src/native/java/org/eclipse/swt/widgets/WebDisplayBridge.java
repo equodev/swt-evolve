@@ -1,6 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.ChromiumStandaloneLauncher;
+import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.WebFlutterServer;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.spi.FlutterBridgeSpi;
@@ -42,7 +43,7 @@ public class WebDisplayBridge extends DisplayBridge {
     /** The currently-armed deferred close (a pending {@code WinUnload}), or null. Guarded by {@code this}. */
     private ScheduledFuture<?> pendingClose;
 
-    boolean isChromium = "chromium".equalsIgnoreCase(System.getProperty("dev.equo.swt.mode"));
+    boolean isChromium = ConfigFlags.isChromiumMode();
 
     WebDisplayBridge(DartDisplay display) {
         super(display);
