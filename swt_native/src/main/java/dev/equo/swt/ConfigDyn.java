@@ -1,5 +1,6 @@
 package dev.equo.swt;
 
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.*;
 
 import java.util.regex.Pattern;
@@ -15,12 +16,13 @@ public class ConfigDyn {
     public static IWidget getCompositeImpl(Composite parent, int style, Composite composite) {
         if (dynEnabled && ("dyn".equals(parent != null ? parent.getData(Config.getKey(Composite.class)) : null) || mustBeDynComposite(composite)))
             return new DynComposite(parent, style, composite);
-        if (mainToolbarImpl == Impl.equo && isMainToolbarComposite(Composite.class, parent))
+        int side = Config.classifyTrimSide(parent);
+        if (side == SWT.TOP && mainToolbarImpl == Impl.equo)
             return new DartMainToolbar(parent, style, composite);
-        if (sideBarImpl == Impl.equo && isSideToolbarComposite(Composite.class, parent))
-            return new DartSideBar(parent, style, composite);
-        if (statusBarImpl == Impl.equo && isStatusToolbarComposite(Composite.class, parent))
+        if (side == SWT.BOTTOM && statusBarImpl == Impl.equo)
             return new DartStatusBar(parent, style, composite);
+        if ((side == SWT.LEFT || side == SWT.RIGHT) && sideBarImpl == Impl.equo)
+            return new DartSideBar(parent, style, composite);
         if (mainCompositeImpl == Impl.equo && isMainComposite(Composite.class, parent))
             return new DartMainComposite(parent, style, composite);
         if (defaultImpl == Impl.eclipse || forceEclipse)
