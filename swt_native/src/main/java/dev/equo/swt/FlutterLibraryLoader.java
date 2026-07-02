@@ -38,6 +38,9 @@ public class FlutterLibraryLoader {
     private static final String RUNNER_DIR_NAME = "runner";
     private static final String LINUX_BUNDLE_DIR_NAME = "bundle";
     private static final String LINUX_LIB_NAME = "libflutter_bridge.so";
+    private static final String LINUX_ENGINE_LIB_NAME = "libflutter_linux_gtk.so";
+    // Flutter plugin that libflutter_bridge.so links against; must be pre-loaded (see below).
+    private static final String LINUX_WEBVIEW_PLUGIN_NAME = "libwebview_all_linux_plugin.so";
     private static final String WIN_LIB1_NAME = "flutter_windows.dll";
     private static final String WIN_LIB_NAME = "flutter_bridge.dll";
     public static final String LINUX_X64_RELEASE = "linux/x64/release";
@@ -147,18 +150,26 @@ public class FlutterLibraryLoader {
             extractDirectoryFromJar(RUNNER_DIR_NAME, targetDir);
             extractDirectoryFromJar(LINUX_BUNDLE_DIR_NAME, targetDir);
 
-            File flutFile = new File(targetDir, LINUX_BUNDLE_DIR_NAME + SEP + LIB_SUB_DIR_NAME + SEP + "libflutter_linux_gtk.so");
+            File bundleLibDir = new File(targetDir, LINUX_BUNDLE_DIR_NAME + SEP + LIB_SUB_DIR_NAME);
+            File flutFile = new File(bundleLibDir, LINUX_ENGINE_LIB_NAME);
+            File webviewFile = new File(bundleLibDir, LINUX_WEBVIEW_PLUGIN_NAME);
             File libFile = new File(targetDir, RUNNER_DIR_NAME + SEP + LINUX_LIB_NAME);
-            if (!flutFile.exists())
-                throw new IOException("Essential Linux library not found after extraction: " + flutFile.getAbsolutePath());
-            if (!libFile.exists())
-                throw new IOException("Essential Linux library not found after extraction: " + libFile.getAbsolutePath());
-            setExecutablePermission(flutFile);
-            setExecutablePermission(libFile);
+            for (File required : new File[] { flutFile, webviewFile, libFile }) {
+                if (!required.exists())
+                    throw new IOException("Essential Linux library not found after extraction: " + required.getAbsolutePath());
+                setExecutablePermission(required);
+            }
+            // Load order matters. libflutter_bridge.so links against the engine and the webview plugin,
+            // both of which live in bundle/lib (off the runner's library path), so the linker can't resolve
+            // its NEEDED entries on its own. Pre-load them, in dependency order, so they resolve by soname:
+            //   1) the engine, 2) the webview plugin (needs the engine), 3) the bridge (needs both).
             loadLibrary(flutFile.getAbsolutePath());
+            loadLibrary(webviewFile.getAbsolutePath());
             loadLibrary(libFile.getAbsolutePath());
         } else {
-            loadOSLibraries(LINUX_X64_RELEASE, LINUX_BUNDLE_DIR_NAME + SEP + LIB_SUB_DIR_NAME + SEP + "libflutter_linux_gtk.so");
+            String bundleLib = LINUX_BUNDLE_DIR_NAME + SEP + LIB_SUB_DIR_NAME + SEP;
+            loadOSLibraries(LINUX_X64_RELEASE, bundleLib + LINUX_ENGINE_LIB_NAME);
+            loadOSLibraries(LINUX_X64_RELEASE, bundleLib + LINUX_WEBVIEW_PLUGIN_NAME);
             loadOSLibraries(LINUX_X64_RELEASE, RUNNER_DIR_NAME + SEP + LINUX_LIB_NAME);
         }
     }
