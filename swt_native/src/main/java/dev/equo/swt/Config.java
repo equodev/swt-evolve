@@ -1,5 +1,6 @@
 package dev.equo.swt;
 
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.accessibility.Accessible;
 import org.eclipse.swt.accessibility.DartAccessible;
 import org.eclipse.swt.custom.*;
@@ -368,33 +369,108 @@ public class Config {
     private static final String E4_TOOLBAR_CLASS = "org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout";
     private static final String E4_TOOLBAR_METHOD = "getTrimComposite";
 
-    static boolean isMainToolbarComposite(Class<?> clazz, Composite parent) {
-        String id = getId(clazz, parent);
-        return id.equals("/Shell/0/Composite/2") && isInStackTrace(E4_TOOLBAR_CLASS, E4_TOOLBAR_METHOD);
+    /** Lazily reflected+cached [top, bottom, left, right] fields of TrimmedPartLayout. */
+    private static volatile java.lang.reflect.Field[] TRIM_FIELDS;
+    private static final String[] TRIM_FIELD_NAMES = {"top", "bottom", "left", "right"};
+    private static final int[] TRIM_SIDES = {SWT.TOP, SWT.BOTTOM, SWT.LEFT, SWT.RIGHT};
+
+    /** Returns the e4 TrimmedPartLayout instance if {@code parent} is the main Shell, else null. */
+    private static Object trimLayout(Composite parent) {
+        if (!(parent instanceof Shell shell)) return null;
+        Layout layout = shell.getLayout();
+        if (layout == null) return null;
+        return E4_TOOLBAR_CLASS.equals(layout.getClass().getName()) ? layout : null;
     }
 
-    static boolean isSideToolbarComposite(Class<?> clazz, Composite parent) {
-        String id = getId(clazz, parent);
-        return (id.equals("/Shell/0/Composite/4") || id.equals("/Shell/0/Composite/5")) && isInStackTrace(E4_TOOLBAR_CLASS, E4_TOOLBAR_METHOD);
+    private static java.lang.reflect.Field[] trimFields(Object layout) {
+        java.lang.reflect.Field[] f = TRIM_FIELDS;
+        if (f != null) return f;
+        try {
+            Class<?> c = layout.getClass();
+            java.lang.reflect.Field[] arr = new java.lang.reflect.Field[4];
+            for (int i = 0; i < 4; i++) {
+                arr[i] = c.getField(TRIM_FIELD_NAMES[i]); // public fields on TrimmedPartLayout
+                arr[i].setAccessible(true);
+            }
+            TRIM_FIELDS = arr;
+            return arr;
+        } catch (Throwable t) {
+            return null;
+        }
     }
 
-    static boolean isStatusToolbarComposite(Class<Composite> clazz, Composite parent) {
-        String id = getId(clazz, parent);
-        return id.equals("/Shell/0/Composite/3") && isInStackTrace(E4_TOOLBAR_CLASS, E4_TOOLBAR_METHOD);
+    /**
+     * Side (SWT.TOP/BOTTOM/LEFT/RIGHT) that {@code trim} occupies in the e4 TrimmedPartLayout of
+     * {@code parent}, or -1 if it is not a resolved trim composite. Returns -1 while the trim is still
+     * under construction (its field is assigned only after the constructor returns), so callers that
+     * need the side must read it at use-time (computeSize/layout/ancestor checks), not during
+     * Composite construction.
+     */
+    public static int trimSide(Composite parent, Control trim) {
+        Object layout = trimLayout(parent);
+        if (layout == null) return -1;
+        java.lang.reflect.Field[] f = trimFields(layout);
+        if (f == null) return -1;
+        try {
+            for (int i = 0; i < 4; i++) {
+                if (f[i].get(layout) == trim) return TRIM_SIDES[i];
+            }
+        } catch (Throwable ignored) {}
+        return -1;
+    }
+
+    /**
+     * Classifies the trim composite currently being constructed under {@code parent} by elimination
+     * over the sibling trim fields already assigned. Returns SWT.TOP/BOTTOM/LEFT/RIGHT, or -1 when it
+     * is not an e4 trim composite. Deterministic for the 2nd horizontal trim and the verticals; the
+     * first horizontal is inherently ambiguous (both horizontals still null) and is provisionally
+     * reported TOP — {@link DartMainToolbar} is side-aware and corrects its own sizing at layout time.
+     */
+    static int classifyTrimSide(Composite parent) {
+        if (!isInStackTrace(E4_TOOLBAR_CLASS, E4_TOOLBAR_METHOD)) return -1;
+        Object layout = trimLayout(parent);
+        if (layout == null) return -1;
+        java.lang.reflect.Field[] f = trimFields(layout);
+        if (f == null) return -1;
+        try {
+            boolean top    = f[0].get(layout) != null;
+            boolean bottom = f[1].get(layout) != null;
+            boolean left   = f[2].get(layout) != null;
+
+            if (!top && bottom) return SWT.TOP;     // bottom already exists -> self is top
+            if (top && !bottom) return SWT.BOTTOM;  // top already exists    -> self is bottom
+            if (top && bottom)                      // both horizontals done -> self is a side bar
+                return !left ? SWT.LEFT : SWT.RIGHT;
+            return SWT.TOP;                          // first horizontal: provisional (see javadoc)
+        } catch (Throwable t) {
+            return -1;
+        }
     }
 
     static boolean isMainComposite(Class<?> clazz, Composite parent) {
         String id = getId(clazz, parent);
         return id.equals("/Shell/0/Composite/1/Composite/1/Composite/1/Composite/1");
+        // eclipse
+        //return id.equals("/Shell/0/Composite/1/Composite/1/Composite/1/Composite/1/Composite/1");
     }
 
     public static boolean isSwtCTabFolderBody(Class<?> clazz, Widget parent) {
         return Composite.class.isAssignableFrom(clazz) && parent instanceof CTabFolder ct && !(ct.getParent().getImpl() instanceof DartWidget);
     }
 
-    static boolean isCustomAncestor(Widget parent) {
-        Class<DartMainToolbar> dartMainToolbarClass = DartMainToolbar.class;
-        return isAncestorOf(parent, dartMainToolbarClass);
+    static boolean isCustomAncestor(Widget parentWidget) {
+        // Common path stays pure instanceof (no reflection). Only a DartMainToolbar impl can be the top
+        // trim, or the ambiguous first-horizontal that may actually be the bottom (status) trim — so we
+        // confirm the real side via reflection only in that rare case, not for every ancestor.
+        if (parentWidget instanceof Scrollable parent) {
+            while (parent != null) {
+                if (parent.getImpl() instanceof DartMainToolbar
+                        && trimSide(parent.getParent(), parent) == SWT.TOP)
+                    return true; // descendant of the real main toolbar
+                parent = parent.getImpl()._parent();
+            }
+        }
+        return false;
     }
 
     private static boolean isAncestorOf(Widget parentWidget, Class<?> classType) {
@@ -409,12 +485,13 @@ public class Config {
     }
 
     public static IWidget getCompositeImpl(Composite parent, int style, Composite composite) {
-        if (mainToolbarImpl == Impl.equo && isMainToolbarComposite(Composite.class, parent))
+        int side = classifyTrimSide(parent);
+        if (side == SWT.TOP && mainToolbarImpl == Impl.equo)
             return new DartMainToolbar(parent, style, composite);
-        if (sideBarImpl == Impl.equo && isSideToolbarComposite(Composite.class, parent))
-            return new DartSideBar(parent, style, composite);
-        if (statusBarImpl == Impl.equo && isStatusToolbarComposite(Composite.class, parent))
+        if (side == SWT.BOTTOM && statusBarImpl == Impl.equo)
             return new DartStatusBar(parent, style, composite);
+        if ((side == SWT.LEFT || side == SWT.RIGHT) && sideBarImpl == Impl.equo)
+            return new DartSideBar(parent, style, composite);
         if (mainCompositeImpl == Impl.equo && isMainComposite(Composite.class, parent)){
             return new DartMainComposite(parent, style, composite);
         }

@@ -5,6 +5,7 @@ import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.DecorationsAlign;
 import dev.equo.swt.size.CsdSizes;
 import dev.equo.swt.size.MenuSizes;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 
 public class DartMainToolbar extends DartComposite {
@@ -14,14 +15,26 @@ public class DartMainToolbar extends DartComposite {
         super(parent, style, composite);
     }
 
+    /**
+     * The first horizontal trim is ambiguous at construction, so this class can land on the BOTTOM
+     * (status) trim. Its real side is authoritative here (the layout field is populated by layout time).
+     */
+    private boolean isStatusSide() {
+        return Config.trimSide(getApi().getParent(), getApi()) == SWT.BOTTOM;
+    }
+
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        if (isStatusSide()) return new Point(1650, 36); // behave as status bar
         return new Point(1650, getMainToolbarHeight());
     }
 
     @Override
     public void updateLayout(boolean all) {
-        if (layout == null) { super.updateLayout(all); return; }
+        if (layout == null || isStatusSide()) {
+            super.updateLayout(all);
+            return;
+        }
         getApi().state |= LAYOUT_CHANGED;
 
         DecorationsAlign align = decorationsAlign();
