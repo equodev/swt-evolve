@@ -518,6 +518,12 @@ val bundleVendor = "Equo Tech, Inc."
 val chromiumImportPackage = "com.equo.chromium;resolution:=optional," +
         "com.equo.chromium.utils;resolution:=optional," +
         "com.equo.chromium.events;resolution:=optional"
+val fxImportPackges = "javafx.application;resolution:=optional," +
+        "javafx.scene;resolution:=optional," +
+        "javafx.scene.image;resolution:=optional," +
+        "com.sun.javafx.cursor;resolution:=optional," +
+        "com.sun.javafx.embed;resolution:=optional," +
+        "com.sun.javafx.stage;resolution:=optional"
 fun fragmentHostHeader() =
     provider { "org.eclipse.swt;bundle-version=\"[${swtVersionProvider.get().substring(0..6)},4.0.0)\"" }
 fun evolveVersion(): Any = gradle.parent?.rootProject?.version ?: project.version
@@ -539,6 +545,7 @@ fun swtExportPackage(swtWs: String?): String = (
         "org.eclipse.swt.widgets",
         "org.eclipse.swt.internal; x-friends:=\"org.eclipse.ui\"",
         "org.eclipse.swt.internal.image; x-internal:=true",
+        "javafx.embed.swt",
     )
         + (swtWs?.let { listOf("org.eclipse.swt.internal.$it; x-friends:=\"org.eclipse.ui\"") } ?: emptyList())
         + "com.equo.chromium.swt"
@@ -656,7 +663,9 @@ platforms.forEach { platform ->
                     "SWT-Arch" to info.arch,
                 )
             if (info.isHybrid)
-                attributes("Import-Package" to chromiumImportPackage)
+                attributes("Import-Package" to "$chromiumImportPackage,$fxImportPackges")
+            else
+                attributes("Import-Package" to fxImportPackges)
         }
         if (!info.isWeb) {
             dependsOn("${info.desktopPlatform}ExtractNatives")
