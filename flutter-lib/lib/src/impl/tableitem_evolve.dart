@@ -79,6 +79,8 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         _context?.parentTableValue.columns?.length ?? cellTexts.length;
     final effectiveColumnCount = columnCount > 0 ? columnCount : 1;
 
+    final columns = _context?.parentTableValue.columns ?? [];
+
     return List.generate(effectiveColumnCount, (columnIndex) {
       final cellText = columnIndex < cellTexts.length
           ? (cellTexts[columnIndex] ?? "")
@@ -95,6 +97,9 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         textColor: cellTextColor,
         baseTextStyle: theme.rowTextStyle,
       );
+      final columnAlignment = columnIndex < columns.length
+          ? (columns[columnIndex].alignment ?? SWT.LEFT)
+          : SWT.LEFT;
       return buildCell(
         context,
         columnIndex,
@@ -103,6 +108,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         theme,
         rowIndex,
         hasCheckStyle && columnIndex == 0,
+        columnAlignment,
       );
     });
   }
@@ -125,12 +131,16 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     TextStyle textStyle,
     TableThemeExtension theme,
     int rowIndex,
-    bool showCheckbox,
-  ) {
+    bool showCheckbox, [
+    int columnAlignment = SWT.LEFT,
+  ]) {
     final cellImage = _cellImageForColumn(columnIndex);
     final enabled = _context?.parentTableValue.enabled ?? true;
     final cellBackgroundColor = getCellBackgroundColor(columnIndex, theme);
     final rowHeight = calculateRowHeight(textStyle, theme);
+    final checkboxOnly = showCheckbox && cellText.isEmpty && cellImage == null;
+    final imageOnly = !showCheckbox && cellText.isEmpty && cellImage != null;
+    final cellAlignment = _swtToAlignment(columnAlignment);
 
     void sendMouseDown(int button) {
       if (enabled && _context != null) {
@@ -192,25 +202,40 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         height: rowHeight,
         child: Container(
           padding: theme.cellPadding,
-          alignment: Alignment.centerLeft,
+          alignment: checkboxOnly || imageOnly ? cellAlignment : Alignment.centerLeft,
           color: cellBackgroundColor,
-          child: Row(
-            children: [
-              if (showCheckbox) buildCheckbox(theme, enabled),
-              if (cellImage != null)
-                buildImageIcon(cellImage, enabled, textStyle, theme),
-              Expanded(
-                child: Text(
-                  cellText,
-                  style: textStyle,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
+          child: checkboxOnly
+              ? buildCheckbox(theme, enabled)
+              : imageOnly
+                  ? buildImageIcon(cellImage!, enabled, textStyle, theme)
+                  : Row(
+                      children: [
+                        if (showCheckbox) buildCheckbox(theme, enabled),
+                        if (cellImage != null)
+                          buildImageIcon(cellImage, enabled, textStyle, theme),
+                        Expanded(
+                          child: Text(
+                            cellText,
+                            style: textStyle,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: columnAlignment == SWT.CENTER
+                                ? TextAlign.center
+                                : columnAlignment == SWT.RIGHT
+                                    ? TextAlign.right
+                                    : TextAlign.left,
+                          ),
+                        ),
+                      ],
+                    ),
         ),
       ),
     );
+  }
+
+  static Alignment _swtToAlignment(int swtAlignment) {
+    if (swtAlignment == SWT.CENTER) return Alignment.center;
+    if (swtAlignment == SWT.RIGHT) return Alignment.centerRight;
+    return Alignment.centerLeft;
   }
 
   int _computeCellCenterX(int columnIndex, TableThemeExtension theme) {

@@ -181,6 +181,7 @@ class _ThemedScrolledComposite extends StatelessWidget {
             child: SingleChildScrollView(
               controller: horizontalController,
               scrollDirection: Axis.horizontal,
+              physics: const ClampingScrollPhysics(),
               child: content,
             ),
           ),
@@ -213,6 +214,7 @@ class _ThemedScrolledComposite extends StatelessWidget {
         child: SingleChildScrollView(
           controller: horizontalController,
           scrollDirection: Axis.horizontal,
+          physics: const ClampingScrollPhysics(),
           child: content,
         ),
       ),

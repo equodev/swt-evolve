@@ -269,33 +269,9 @@ class TableImpl<T extends TableSwt, V extends VTable>
       textColor: textColor,
       baseTextStyle: theme.headerTextStyle,
     );
-    final totalWidth = calculateTotalWidth(columns, columnWidths);
-
     return Container(
       color: backgroundColor,
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: totalWidth != null
-            ? SizedBox(
-                width: totalWidth,
-                child: _buildHeaderTable(
-                  columns,
-                  columnWidths,
-                  showLines,
-                  textStyle,
-                  theme,
-                ),
-              )
-            : IntrinsicWidth(
-                child: _buildHeaderTable(
-                  columns,
-                  columnWidths,
-                  showLines,
-                  textStyle,
-                  theme,
-                ),
-              ),
-      ),
+      child: _buildHeaderTable(columns, columnWidths, showLines, textStyle, theme),
     );
   }
 
@@ -311,14 +287,16 @@ class TableImpl<T extends TableSwt, V extends VTable>
       border: buildHeaderBorder(showLines, theme),
       children: <TableRow>[
         TableRow(
-          children: columns
-              .asMap()
-              .entries
-              .map(
-                (entry) =>
-                    buildHeaderCell(entry.value, textStyle, theme, entry.key),
-              )
-              .toList(),
+          children: [
+            ...columns
+                .asMap()
+                .entries
+                .map(
+                  (entry) =>
+                      buildHeaderCell(entry.value, textStyle, theme, entry.key),
+                ),
+            const SizedBox.shrink(),
+          ],
         ),
       ],
     );
@@ -461,14 +439,11 @@ class TableImpl<T extends TableSwt, V extends VTable>
       child: items.isEmpty
           ? Container()
           : SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: SingleChildScrollView(
-                controller: _verticalScrollController,
-                child: Table(
-                  columnWidths: columnWidths,
-                  border: buildBodyBorder(showLines, theme),
-                  children: tableRows,
-                ),
+              controller: _verticalScrollController,
+              child: Table(
+                columnWidths: columnWidths,
+                border: buildBodyBorder(showLines, theme),
+                children: tableRows,
               ),
             ),
     );
@@ -496,14 +471,17 @@ class TableImpl<T extends TableSwt, V extends VTable>
         color: backgroundColor,
         border: getTableRowBorder(isSelected, theme),
       ),
-      children: TableItemSwtWrapper(
-        item: item,
-        rowIndex: rowIndex,
-        tableImpl: this,
-        parentTable: widget,
-        parentTableValue: state,
-        tableFont: state.font,
-      ).buildCells(context, theme),
+      children: [
+        ...TableItemSwtWrapper(
+          item: item,
+          rowIndex: rowIndex,
+          tableImpl: this,
+          parentTable: widget,
+          parentTableValue: state,
+          tableFont: state.font,
+        ).buildCells(context, theme),
+        const SizedBox.shrink(),
+      ],
     );
   }
 
@@ -541,11 +519,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     Map<int, TableColumnWidth>? columnWidths,
   ) {
     final editors = state.editors;
-    print('[DEBUG AGUS][TableOverlay] editors=${editors?.length ?? 0}');
     if (editors == null || editors.isEmpty) return [];
-    for (final ed in editors) {
-      print('[DEBUG AGUS][TableOverlay]  ed: editor=${ed.editor != null} item=${ed.item?.id} col=${ed.column}');
-    }
 
     final rowTextStyle = getTextStyle(
       context: context,
@@ -578,7 +552,6 @@ class TableImpl<T extends TableSwt, V extends VTable>
       final columnIndex = editable.column ?? 0;
 
       final itemIndex = findItemIndex(editingItemId);
-      print('[DEBUG AGUS][TableOverlay] itemIndex=$itemIndex for id=$editingItemId col=$columnIndex');
       if (itemIndex < 0) continue;
 
       final scrollOffset = _verticalScrollController.hasClients
@@ -606,7 +579,6 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
       final editorWidget = mapWidgetFromValue(editable.editor!);
 
-      print('[DEBUG AGUS][TableOverlay] RENDERED at x=$editorX y=$editorY w=$editorWidth h=$rowHeight');
       overlays.add(
         Positioned(
           left: editorX,
@@ -728,16 +700,19 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final hasExplicitWidths = columns.any((col) => col.width != null);
     final hasCheckStyle = hasStyle(SWT.CHECK);
 
+    final Map<int, TableColumnWidth> widths;
     if (hasExplicitWidths) {
-      return _calculateExplicitColumnWidths(columns, theme, hasCheckStyle);
+      widths = _calculateExplicitColumnWidths(columns, theme, hasCheckStyle);
     } else {
-      return _calculateIntrinsicColumnWidths(
+      widths = _calculateIntrinsicColumnWidths(
         context,
         columns,
         theme,
         hasCheckStyle,
       );
     }
+    widths[columns.length] = const FlexColumnWidth(1);
+    return widths;
   }
 
   Map<int, TableColumnWidth> _calculateExplicitColumnWidths(
@@ -750,15 +725,11 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
     for (int i = 0; i < columns.length; i++) {
       final column = columns[i];
-      if (column.width != null) {
-        double width = column.width!.toDouble();
-        if (hasCheckStyle && i == 0) {
-          width += checkboxWidth + theme.cellPadding.left;
-        }
-        widths[i] = FixedColumnWidth(width);
-      } else {
-        widths[i] = const FixedColumnWidth(0.0);
+      double width = (column.width ?? 0).toDouble();
+      if (hasCheckStyle && i == 0) {
+        width += checkboxWidth + theme.cellPadding.left;
       }
+      widths[i] = FixedColumnWidth(width);
     }
     return widths;
   }
