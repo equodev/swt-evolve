@@ -8,6 +8,37 @@ import dev.equo.swt.DecorationsAlign;
 @CompiledJson(objectFormatPolicy = CompiledJson.ObjectFormatPolicy.FULL)
 public class ConfigFlags {
 
+    /**
+     * System property selecting the rendering surface: {@link #MODE_DESKTOP} (a native top-level
+     * window), {@link #MODE_CHROMIUM} (the Equo Chromium standalone window), or unset for the
+     * default web surface (a browser). Read live via {@link #mode()} / {@link #isDesktopMode()} /
+     * {@link #isChromiumMode()} — it can be set at runtime (e.g. by the desktop bridge), so it is
+     * intentionally not cached with the rest of the flags below.
+     */
+    public static final String MODE_PROPERTY = "dev.equo.swt.mode";
+    public static final String MODE_DESKTOP = "desktop";
+    public static final String MODE_CHROMIUM = "chromium";
+
+    /** The current rendering mode, or {@code null} when unset (the default web surface). */
+    public static String mode() {
+        return System.getProperty(MODE_PROPERTY);
+    }
+
+    /** True under the desktop-native surface ({@code -Ddev.equo.swt.mode=desktop}). */
+    public static boolean isDesktopMode() {
+        return MODE_DESKTOP.equalsIgnoreCase(mode());
+    }
+
+    /** True under the Equo Chromium standalone surface ({@code -Ddev.equo.swt.mode=chromium}). */
+    public static boolean isChromiumMode() {
+        return MODE_CHROMIUM.equalsIgnoreCase(mode());
+    }
+
+    /** Sets the rendering mode. Centralizes the write the way {@link #mode()} centralizes the read. */
+    public static void setMode(String mode) {
+        System.setProperty(MODE_PROPERTY, mode);
+    }
+
     public boolean ctabfolder_visible_controls;
 
     public boolean image_disable_icons_replacement;
@@ -53,7 +84,8 @@ public class ConfigFlags {
     @Override
     public String toString() {
         return "ConfigFlags{" +
-                "ctabfolder_visible_controls=" + ctabfolder_visible_controls +
+                "mode=" + mode() +
+                ", ctabfolder_visible_controls=" + ctabfolder_visible_controls +
                 ", image_disable_icons_replacement=" + image_disable_icons_replacement +
                 ", assets_path=" + assets_path +
                 ", use_default_icons=" + use_default_icons +

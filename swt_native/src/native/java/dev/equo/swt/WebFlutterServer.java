@@ -437,8 +437,7 @@ public class WebFlutterServer {
             if (prop != null) {
                 return Boolean.parseBoolean(prop);
             }
-            boolean isChromium = "chromium".equalsIgnoreCase(System.getProperty("dev.equo.swt.mode"));
-            return !isChromium;
+            return !ConfigFlags.isChromiumMode();
         }
 
         /**
