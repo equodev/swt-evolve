@@ -16,6 +16,12 @@ PlatformWebViewControllerCreationParams? browserWebViewParams(int id) {
   final params = WebWebViewControllerCreationParams();
   // ignore: invalid_use_of_visible_for_testing_member
   params.iFrame.name = 'equo-browser-$id';
+  // Explicit initial src so that if the webview controller is attached before
+  // the first navigation applies its URL, an empty `src` never resolves to the
+  // parent document URL (the app origin) — which the server would answer with
+  // index.html (SPA fallback), self-embedding a second app instance.
+  // ignore: invalid_use_of_visible_for_testing_member
+  params.iFrame.src = 'about:blank';
   return params;
 }
 

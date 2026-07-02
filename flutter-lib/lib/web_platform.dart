@@ -16,6 +16,9 @@ external JSString? get _widgetName;
 @JS('window.evolve.theme')
 external JSString? get _theme;
 
+@JS('window.name')
+external JSString? get _windowName;
+
 @JS('window.innerWidth')
 external JSNumber? get _innerWidth;
 
@@ -55,6 +58,20 @@ int? getBackgroundColor(List<String> args) {
 
 int? getParentBackgroundColor(List<String> args) {
   return null;
+}
+
+/// Whether this document is running inside an SWT Browser widget's own
+/// `<iframe>`. The Browser widget stamps its iframe's browsing-context name as
+/// `equo-browser-<id>` (see browser_frame_params_web.dart), and that name
+/// persists on `window.name` for whatever document loads in the frame. If the
+/// app itself ends up loaded there — because the iframe's `src` resolved back to
+/// the app origin (an empty `src` resolves to the parent document URL, and the
+/// server's SPA fallback then serves index.html) — booting would paint a second
+/// copy of the whole app inside the Browser widget. A legitimate host embed
+/// (chromium/remote) does not use this frame name, so it is unaffected.
+bool isSelfEmbeddedBrowserWidget() {
+  final n = _windowName?.toDart;
+  return n != null && n.startsWith('equo-browser-');
 }
 
 Size? getViewportSize() {
