@@ -66,6 +66,26 @@ class ComboSizeTest extends SizeTestBase {
     }
 
     @ParameterizedTest
+    @MethodSource("itemCases")
+    void java_size_should_equals_flutter_with_items(int style, String text, int size, String[] items) {
+        DartCombo w = createCombo(style, text, size, items);
+        ConfigFlags config = ConfigFlags.use_swt_fonts(size != FromTheme);
+        //
+        Measure javaSize = ComboSizes.computeSizes(w, SWT.DEFAULT, SWT.DEFAULT, true);;
+        //
+        CompletableFuture<Measure> result = flutter.measure(w, config);;
+        Measure measure = assertCompletes(result);
+        assertSoftly(soft -> {
+            soft.assertThat(javaSize)
+                .as("widget size")
+                .satisfies(similarSize(measure));
+            soft.assertThat(javaSize.textStyle)
+                .as("text style")
+                .isEqualTo(measure.textStyle);
+        });
+    }
+
+    @ParameterizedTest
     @MethodSource("basicCases")
     void flutter_size_should_be_minimal(int style, String text, int size) {
         DartCombo w = createCombo(style, text, size);
@@ -96,7 +116,17 @@ class ComboSizeTest extends SizeTestBase {
     }
 
     static DartCombo createCombo(int style, String text, int size, int fontStyle) {
+        return createCombo(style, text, size, fontStyle, null);
+    }
+
+    static DartCombo createCombo(int style, String text, int size, String[] items) {
+        return createCombo(style, text, size, SWT.NORMAL, items);
+    }
+
+    static DartCombo createCombo(int style, String text, int size, int fontStyle, String[] items) {
         DartCombo w = new DartCombo(swtShell(), style, null);
+        if (items != null)
+            w.setItems(items);
         if (!NoTxt.equals(text))
             w.setText(text);
         if (size != FromTheme)
@@ -122,5 +152,9 @@ class ComboSizeTest extends SizeTestBase {
 
     static Stream<Arguments> boldCases() {
         return buildBoldCases(getStyles());
+    }
+
+    static Stream<Arguments> itemCases() {
+        return Stream.of(Arguments.of(Named.of("DROP_DOWN", SWT.DROP_DOWN), "Sample", Named.of("font18", 18), Named.of("items", Items)));
     }
 }

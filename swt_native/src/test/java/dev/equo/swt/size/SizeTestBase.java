@@ -38,6 +38,10 @@ public abstract class SizeTestBase extends SizeAssert {
     protected static final String BoldCaseText = "This is a long widget text";
     protected static final int FromTheme = -1;
 
+    protected static final String[] Items = {
+            "An item", "Another item", "A longer sample item", "The widest sample item here", "Short"
+    };
+
     @BeforeAll
     static void config() {
         Config.defaultToEquo();

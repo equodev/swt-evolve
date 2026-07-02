@@ -39,6 +39,21 @@ void setupCases(WidgetMeasurer measurer) {
       }
     }
 
+    if (!style.$1.contains('SIMPLE')) {
+      for (final fontSize in Fonts) {
+        measurer.addTestCase(
+          createCase(
+            'items_font${fontSize}',
+            style,
+            'Sample',
+            fontSize: fontSize,
+            items: Items,
+            useFontTheme: false,
+          ),
+        );
+      }
+    }
+
     measurer.addThemeCase(
       createCase('theme', style, "Sample", useFontTheme: true),
     );
@@ -52,12 +67,14 @@ MeasurementCase createCase(
   (String, int) style,
   String text, {
   int? fontSize,
+  List<String>? items,
   bool useFontTheme = false,
 }) {
   final (value, expectedComponents) = createVCombo(
     style,
     text,
     fontSize: fontSize,
+    items: items,
   );
   return MeasurementCase(
     descr: caseName,
@@ -65,6 +82,7 @@ MeasurementCase createCase(
     useFontTheme: useFontTheme,
     fqn: 'org.eclipse.swt.widgets.Combo',
     expectedComponents: expectedComponents,
+    itemsAccessor: 'getItems()',
     widgetBuilder: (key) {
       getConfigFlags().use_swt_fonts = !useFontTheme;
       return ComboSwt(key: key, value: value);
@@ -76,14 +94,18 @@ MeasurementCase createCase(
   (String, int) style,
   String text, {
   int? fontSize,
+  List<String>? items,
 }) {
   final value = VCombo.empty()
     ..style = style.$2
     ..text = text
+    ..items = items
     ..font = fontSize != null
         ? (VFont.empty()..fontData = [VFontData.empty()..height = fontSize])
         : null;
 
-  final expectedComponents = <String, dynamic>{'text': text};
+  final expectedComponents = <String, dynamic>{
+    if (items != null) 'items': items else 'text': text,
+  };
   return (value, expectedComponents);
 }

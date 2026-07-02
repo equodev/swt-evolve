@@ -64,7 +64,18 @@ public class CComboSizes {
             } else {
                 m.textStyle = TextStyle.from(widget.getFont());
             }
-            return FontMetricsUtil.getFontSize(text, m.textStyle);
+            PointD widest = FontMetricsUtil.getFontSize(text, m.textStyle);
+            String[] items = widget.getItems();
+            if (items != null) {
+                for (String item : items) {
+                    if (item == null) continue;
+                    PointD size = FontMetricsUtil.getFontSize(item, m.textStyle);
+                    if (size.x() > widest.x()) {
+                        widest = size;
+                    }
+                }
+            }
+            return widest;
         }
         return PointD.zero;
     }
