@@ -24,7 +24,13 @@ class CsdShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final flags = getConfigFlags();
     final placement = flags.csd_placement ?? 'toolbar';
-    if (placement == 'false') return child;
+    // Do NOT early-return a bare `child` when CSD is off. Config flags arrive asynchronously
+    // *after* the first frame (csd_placement is null -> 'toolbar' initially, then e.g. 'false'
+    // in desk mode). Switching between a bare `child` and the Stack-wrapped form changes the
+    // child's depth in the tree, so Flutter discards and recreates every descendant State on
+    // that rebuild — which silently drops each widget's update subscription and leaves the whole
+    // tree deaf. Keep `child` at a stable tree position and only gate the CSD affordances.
+    final csdEnabled = placement != 'false';
 
     final os = flags.csd_os ?? 'linux';
     final controlsLeading = os == 'mac';
@@ -43,15 +49,16 @@ class CsdShell extends StatelessWidget {
     return Stack(
       children: [
         Positioned.fill(child: content),
-        if (placement == 'floating')
+        if (csdEnabled && placement == 'floating')
           Positioned(
             top: 4,
             left: controlsLeading ? 4 : null,
             right: controlsLeading ? null : 4,
             child: const WindowControls(),
           ),
-        const CsdResizeEdges(),
-        const Positioned.fill(child: IgnorePointer(child: _CsdWindowBorder())),
+        if (csdEnabled) const CsdResizeEdges(),
+        if (csdEnabled)
+          const Positioned.fill(child: IgnorePointer(child: _CsdWindowBorder())),
       ],
     );
   }
