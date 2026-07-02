@@ -66,6 +66,26 @@ class CComboSizeTest extends SizeTestBase {
     }
 
     @ParameterizedTest
+    @MethodSource("itemCases")
+    void java_size_should_equals_flutter_with_items(int style, String text, int size, String[] items) {
+        DartCCombo w = createCCombo(style, text, size, items);
+        ConfigFlags config = ConfigFlags.use_swt_fonts(size != FromTheme);
+        //
+        Measure javaSize = CComboSizes.computeSizes(w, SWT.DEFAULT, SWT.DEFAULT, true);;
+        //
+        CompletableFuture<Measure> result = flutter.measure(w, config);;
+        Measure measure = assertCompletes(result);
+        assertSoftly(soft -> {
+            soft.assertThat(javaSize)
+                .as("widget size")
+                .satisfies(similarSize(measure));
+            soft.assertThat(javaSize.textStyle)
+                .as("text style")
+                .isEqualTo(measure.textStyle);
+        });
+    }
+
+    @ParameterizedTest
     @MethodSource("basicCases")
     void flutter_size_should_be_minimal(int style, String text, int size) {
         DartCCombo w = createCCombo(style, text, size);
@@ -96,7 +116,17 @@ class CComboSizeTest extends SizeTestBase {
     }
 
     static DartCCombo createCCombo(int style, String text, int size, int fontStyle) {
+        return createCCombo(style, text, size, fontStyle, null);
+    }
+
+    static DartCCombo createCCombo(int style, String text, int size, String[] items) {
+        return createCCombo(style, text, size, SWT.NORMAL, items);
+    }
+
+    static DartCCombo createCCombo(int style, String text, int size, int fontStyle, String[] items) {
         DartCCombo w = new DartCCombo(swtShell(), style, null);
+        if (items != null)
+            w.setItems(items);
         if (!NoTxt.equals(text))
             w.setText(text);
         if (size != FromTheme)
@@ -126,5 +156,9 @@ class CComboSizeTest extends SizeTestBase {
 
     static Stream<Arguments> boldCases() {
         return buildBoldCases(getStyles());
+    }
+
+    static Stream<Arguments> itemCases() {
+        return Stream.of(Arguments.of(Named.of("BORDER", SWT.BORDER), "Sample", Named.of("font18", 18), Named.of("items", Items)));
     }
 }

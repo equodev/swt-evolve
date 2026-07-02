@@ -59,6 +59,7 @@ class MeasurementCase {
   final Map<String, dynamic> expectedComponents;
   final Widget Function(GlobalKey key) widgetBuilder;
   final bool useFontTheme;
+  final String? itemsAccessor;
 
   MeasurementCase({
     required String descr,
@@ -67,6 +68,7 @@ class MeasurementCase {
     required this.expectedComponents,
     required this.widgetBuilder,
     this.useFontTheme = false,
+    this.itemsAccessor,
   }) : name = "${widgetName(fqn)}_${style}_$descr";
 
   Widget buildWidget(GlobalKey key) {
@@ -1822,9 +1824,35 @@ class WidgetMeasurer {
         '                m.textStyle = TextStyle.from(widget.getFont());',
       );
       buffer.writeln('            }');
-      buffer.writeln(
-        '            return FontMetricsUtil.getFontSize(text, m.textStyle);',
-      );
+      String? itemsExpr;
+      for (final c in testCases) {
+        if (c.fqn == fqn && c.itemsAccessor != null) {
+          itemsExpr = c.itemsAccessor;
+          break;
+        }
+      }
+      if (itemsExpr == null) {
+        buffer.writeln(
+          '            return FontMetricsUtil.getFontSize(text, m.textStyle);',
+        );
+      } else {
+        buffer.writeln(
+          '            PointD widest = FontMetricsUtil.getFontSize(text, m.textStyle);',
+        );
+        buffer.writeln('            String[] items = widget.$itemsExpr;');
+        buffer.writeln('            if (items != null) {');
+        buffer.writeln('                for (String item : items) {');
+        buffer.writeln('                    if (item == null) continue;');
+        buffer.writeln(
+          '                    PointD size = FontMetricsUtil.getFontSize(item, m.textStyle);',
+        );
+        buffer.writeln('                    if (size.x() > widest.x()) {');
+        buffer.writeln('                        widest = size;');
+        buffer.writeln('                    }');
+        buffer.writeln('                }');
+        buffer.writeln('            }');
+        buffer.writeln('            return widest;');
+      }
       buffer.writeln('        }');
       buffer.writeln('        return PointD.zero;');
       buffer.writeln('    }');

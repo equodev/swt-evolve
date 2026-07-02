@@ -9,3 +9,11 @@ const Texts = [
 const Fonts = [10, 18];
 
 const Images = [null, (16, 16), (48, 48)];
+
+const Items = [
+  'An item',
+  'Another item',
+  'A longer sample item',
+  'The widest sample item here',
+  'Short',
+];
