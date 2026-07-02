@@ -478,7 +478,7 @@ fun CopySpec.copyFlutterNatives(os: String, flutterArch: String) {
                 into("runner")
             }
             from("../flutter-lib/build/linux/$flutterArch/release/bundle/lib") {
-                include("libapp.so", "libflutter_linux_gtk.so")
+                include("*.so")
                 into("bundle/lib")
             }
             from("../flutter-lib/build/linux/$flutterArch/release/bundle/data") {
