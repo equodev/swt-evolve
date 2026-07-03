@@ -495,6 +495,13 @@ public abstract class FlutterBridge {
         }
     }
 
+    /** Whether any widget/resource is awaiting a flush to Dart — a pending-work condition for sleep(). */
+    public boolean hasDirty() {
+        synchronized (dirty) {
+            return !dirty.isEmpty();
+        }
+    }
+
     public static String widgetName(Object w) {
         if (w instanceof DartWidget) {
             return w.getClass().getSimpleName().substring(4);

@@ -12,6 +12,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -267,6 +268,164 @@ class DisplayWakeFlutterTest {
         Class<?> dartWidget = Class.forName("org.eclipse.swt.widgets.DartWidget");
         Method dirty = webBridge.getClass().getMethod("dirty", dartWidget);
         dirty.invoke(webBridge, widgetImpl);
+    }
+
+    /** Install {@code webBridge} as this Display's {@code displayBridge} via reflection (native-only type). */
+    private void setDisplayBridge(Object webBridge) {
+        try {
+            Class<?> dartDisplay = Class.forName("org.eclipse.swt.widgets.DartDisplay");
+            Class<?> displayBridge = Class.forName("org.eclipse.swt.widgets.DisplayBridge");
+            Method m = dartDisplay.getDeclaredMethod("setBridge", displayBridge);
+            m.setAccessible(true);
+            m.invoke(display.getImpl(), webBridge);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Regression for #758: a runnable posted while the queue is <b>non-empty</b> must still wake the
+     * UI thread. The other tests here only ever post <em>one</em> runnable to a freshly-parked,
+     * <em>empty</em> queue — the empty&rarr;non-empty transition, which even the old
+     * {@code addLast} (that woke <em>only</em> on that transition) handled. The bug lived in the path
+     * they never exercised: a second post landing on a non-empty queue. There the old code computed
+     * {@code wake = messages.isEmpty()} as {@code false} and skipped {@code wakeThread()}; racing the
+     * consumer draining and re-parking (with {@code drainPermits()} in {@code sleep()}), that wake was
+     * lost and a parked nested modal loop hung — the actual JFace-dialog button failure.
+     *
+     * <p>Reproduced deterministically without relying on the race window: the UI thread is pinned
+     * inside a blocking runnable, so it is <b>not</b> in {@code sleep()} and never consumes wake
+     * permits. Each posted runnable's {@code wakeThread()} therefore accumulates as an observable
+     * permit on {@code _wakeSignal}. We post one runnable to the (empty) queue, then a second while the
+     * first is still queued (non-empty), and assert <b>both</b> posts released a permit. The old code
+     * released only the first; the fix releases both.
+     */
+    @Test
+    void postToNonEmptyQueue_stillWakesUiThread() throws Exception {
+        CountDownLatch pinned = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        // GATE pins the UI thread mid-dispatch: popped off the queue (queue empty again) but not
+        // returning, so the loop is busy — not parked — and touches no permits.
+        display.asyncExec(() -> {
+            pinned.countDown();
+            try {
+                release.await(WAKE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        assertThat(awaitLatch(pinned)).as("UI thread should be pinned inside the runnable").isTrue();
+
+        try {
+            int base = wakePermits();
+
+            display.asyncExec(() -> {}); // post #1 → empty queue → wakes (both old and new)
+            int afterEmpty = wakePermits();
+            assertThat(afterEmpty)
+                    .as("a post to an empty queue must issue a wake")
+                    .isEqualTo(base + 1);
+
+            display.asyncExec(() -> {}); // post #2 → queue now non-empty → the previously-dropped wake
+            int afterNonEmpty = wakePermits();
+            assertThat(afterNonEmpty)
+                    .as("a post to a NON-EMPTY queue must also wake (regression #758)")
+                    .isEqualTo(afterEmpty + 1);
+        } finally {
+            release.countDown(); // let the loop drain and re-park so tearDown is clean
+        }
+    }
+
+    /** Read the current permit count of the UI thread's wake semaphore ({@code _wakeSignal}). */
+    private int wakePermits() throws Exception {
+        Object dartDisplay = display.getImpl();
+        java.lang.reflect.Field f = dartDisplay.getClass().getDeclaredField("_wakeSignal");
+        f.setAccessible(true);
+        return ((java.util.concurrent.Semaphore) f.get(dartDisplay)).availablePermits();
+    }
+
+    /**
+     * Regression for the <em>other</em> half of the wake invariant — the consumer side. The
+     * {@code addLast} fix restores "every producer signals" for the message queue, but a second
+     * lost-wakeup lurks on the <b>dirty</b> condition: {@code sleep()} decides whether to park by
+     * re-checking only {@code isMessagesEmpty()} — it never re-checks the dirty set. A dirty produced
+     * off the UI thread <em>does</em> signal ({@code dirty(w)} adds to the set then calls
+     * {@code wakeForDirty()}), but if that permit lands in the window before {@code sleep()}'s
+     * {@code drainPermits()}, the permit is discarded and the loop parks with the widget still dirty.
+     * In pure web there is no cap (see {@link #idleLoop_parksIndefinitely_untilWoken}), so the frame
+     * never flushes until some unrelated event happens to wake the loop. The {@code addLast} fix does
+     * nothing for this — it is a different condition, broken on the consumer side.
+     *
+     * <p>The window is hit deterministically through the public {@link SWT#PreExternalEventDispatch}
+     * hook, which {@code sleep()} fires on the UI thread <b>after</b> its fast-path check and
+     * <b>before</b> {@code drainPermits()}. Inside it we mark a widget dirty from a worker thread and
+     * block until that dirty's {@code wakeForDirty()} has run — so the permit provably exists when
+     * {@code drainPermits()} then throws it away. We then assert the loop is still serviced: with the
+     * current consumer it parks and {@code sleep()} never returns, so this test <b>fails</b>; once the
+     * park guard also consults the dirty set, {@code sleep()} sees the pending dirty and returns.
+     */
+    @Test
+    void dirtyArrivingInParkWindow_isNotLost() throws Exception {
+        Object webBridge = newWebBridge();
+        AtomicReference<Object> widgetImpl = new AtomicReference<>();
+        // Install the WebDisplayBridge as this Display's bridge — the production web shape sleep()
+        // consults (displayBridge.hasDirty()). The harness normally leaves displayBridge null.
+        onUiThread(() -> {
+            widgetImpl.set(new Button(new Shell(display), SWT.PUSH).getImpl());
+            setDisplayBridge(webBridge);
+        });
+
+        AtomicBoolean armed = new AtomicBoolean(false);
+        AtomicBoolean injectedOnce = new AtomicBoolean(false);
+        AtomicInteger wakesAtInjection = new AtomicInteger();
+        CountDownLatch injected = new CountDownLatch(1);
+        // Fires on the UI thread inside sleep(), after the fast-path check and before drainPermits().
+        Listener prePark = e -> {
+            if (armed.get() && injectedOnce.compareAndSet(false, true)) {
+                wakesAtInjection.set(wakes.get());
+                CountDownLatch released = new CountDownLatch(1);
+                // Mark dirty off the UI thread; wakeForDirty() releases a wake permit for this Display.
+                Thread w = new Thread(() -> {
+                    try {
+                        markDirty(webBridge, widgetImpl.get());
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    } finally {
+                        released.countDown();
+                    }
+                }, "dirty-injector");
+                w.start();
+                try {
+                    // Return (→ drainPermits) only once the permit is guaranteed to exist, so the bug's
+                    // drainPermits() actually discards it — a real interleaving, not a staged one.
+                    released.await(WAKE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
+                injected.countDown();
+            }
+        };
+        onUiThread(() -> display.addListener(SWT.PreExternalEventDispatch, prePark));
+        awaitLoopParked();
+
+        armed.set(true);
+        display.asyncExec(() -> {}); // consumed → empty queue again → next sleep() enters the window
+
+        try {
+            assertThat(awaitLatch(injected)).as("dirty should be injected in the park window").isTrue();
+            assertThat(awaitCount(wakes, wakesAtInjection.get()))
+                    .as("a dirty landing in the drainPermits() window must still be serviced, not lost "
+                            + "— sleep() must re-check the dirty set, not only the message queue")
+                    .isTrue();
+        } finally {
+            clearDirtyState(); // stop the fixed-path loop from spinning on the still-dirty widget
+        }
+    }
+
+    /** Clear {@code FlutterBridge}'s static dirty set by reflection (package-private helper). */
+    private static void clearDirtyState() throws Exception {
+        Method m = Class.forName("dev.equo.swt.FlutterBridge").getDeclaredMethod("clearDirty");
+        m.setAccessible(true);
+        m.invoke(null);
     }
 
     @Test

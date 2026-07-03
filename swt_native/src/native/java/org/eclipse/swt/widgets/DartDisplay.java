@@ -3410,7 +3410,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         sendPreExternalEventDispatchEvent();
         try {
             _wakeSignal.drainPermits();
-            if (((DartSynchronizer) synchronizer.getImpl()).isMessagesEmpty()) {
+            if (!hasPendingWork()) {
                 if (displayBridge != null && displayBridge.needsPump()) {
                     displayBridge.sleep(16);
                 } else {
@@ -3989,6 +3989,10 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
 
     void setBridge(DisplayBridge bridge) {
         this.displayBridge = bridge;
+    }
+
+    private boolean hasPendingWork() {
+        return !((DartSynchronizer) synchronizer.getImpl()).isMessagesEmpty() || (displayBridge != null && displayBridge.hasDirty());
     }
 
     void addShell(Shell shell) {
