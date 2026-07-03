@@ -98,7 +98,7 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: (menuBar.items ?? [])
-                .map((item) => MenuItemSwt(value: item))
+                .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
                 .toList(),
           ),
         ),
