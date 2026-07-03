@@ -82,10 +82,8 @@ public class DartSynchronizer implements ISynchronizer {
     }
 
     void addLast(RunnableLock lock) {
-        boolean wake = messages.isEmpty();
         messages.add(lock);
-        if (wake)
-            ((DartDisplay) display.getImpl()).wakeThread();
+        ((DartDisplay) display.getImpl()).wakeThread();
     }
 
     /**
