@@ -346,7 +346,7 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
     final existingItems = widget.subMenu.items;
     if (existingItems != null && existingItems.isNotEmpty) {
       _menuChildren = existingItems
-          .map((item) => MenuItemSwt(value: item))
+          .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
           .toList();
     }
   }
@@ -358,7 +358,9 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
     if (items != null &&
         items.isNotEmpty &&
         !_sameItems(items, oldWidget.subMenu.items)) {
-      _menuChildren = items.map((item) => MenuItemSwt(value: item)).toList();
+      _menuChildren = items
+          .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
+          .toList();
     }
   }
 
@@ -406,7 +408,7 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
       EquoCommService.remove(channelName);
       if (!mounted) return;
       final items = (updatedMenu.items ?? [])
-          .map((item) => MenuItemSwt(value: item))
+          .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
           .toList();
       setState(() {
         _menuChildren = items.isEmpty ? const [SizedBox.shrink()] : items;

@@ -215,7 +215,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: menuItems
-                .map((item) => MenuItemSwt(value: item))
+                .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
                 .toList(),
           ),
         )),
@@ -280,8 +280,9 @@ class _MenuBarItemState extends State<_MenuBarItem> {
     final preItems = widget.item.menu?.items;
     if (preItems != null && preItems.isNotEmpty) {
       _itemsLoaded = true;
-      _menuChildren =
-          preItems.map((item) => MenuItemSwt(value: item)).toList();
+      _menuChildren = preItems
+          .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
+          .toList();
     }
   }
 
@@ -301,7 +302,7 @@ class _MenuBarItemState extends State<_MenuBarItem> {
       EquoCommService.remove(channelName);
       if (!mounted) return;
       final items = (updatedMenu.items ?? [])
-          .map((item) => MenuItemSwt(value: item))
+          .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
           .toList();
       setState(() {
         _itemsLoaded = true;

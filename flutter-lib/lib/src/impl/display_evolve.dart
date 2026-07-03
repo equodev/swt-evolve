@@ -125,9 +125,16 @@ class _DisplaySwtState extends State<DisplaySwt> {
       }
 
       return Stack(children: [
-        for (final s in mainShells) Positioned.fill(child: gen.mapWidgetFromValue(s)),
+        for (final s in mainShells)
+          KeyedSubtree(
+            key: ValueKey(s.id),
+            child: Positioned.fill(child: gen.mapWidgetFromValue(s)),
+          ),
         for (final popup in (_display.popups ?? []))
-          Positioned.fill(child: gen.mapWidgetFromValue(popup)),
+          KeyedSubtree(
+            key: ValueKey(popup.id),
+            child: Positioned.fill(child: gen.mapWidgetFromValue(popup)),
+          ),
         for (final tooltip in (_display.tooltips ?? []))
           KeyedSubtree(
             key: ValueKey('tooltip_${tooltip.id}'),
