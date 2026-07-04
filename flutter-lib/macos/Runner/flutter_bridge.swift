@@ -8,6 +8,39 @@
 import Foundation
 import Cocoa
 import FlutterMacOS
+import ObjectiveC
+
+// =================================================================================================
+// Embedded-AWT coexistence (SWT_AWT / Swing embedding).
+//
+// The desk window drives the AppKit run loop itself via pump()/waitForEvent() and deliberately
+// never calls [NSApp run] (so the JNI Initialize call can return to Java). That leaves
+// -[NSApplication isRunning] == false. When an app then embeds AWT/Swing (Evolve's SWT_AWT bridge),
+// AWT inspects that flag and, seeing a not-running app, starts its OWN modal loop
+// (+[NSApplicationAWT runAWTLoopWithApp:] → -[NSApplication run]) on the main thread — which hijacks
+// it from pump() and deadlocks the whole SWT/Flutter event loop. Native SWT never hits this because
+// its event loop already has the app "running", so AWT embeds instead of taking over.
+//
+// Once we've finishLaunching'd we ARE effectively running (we just pump the loop by hand), so report
+// isRunning = true. AWT then treats the app as an already-running host and embeds. The override only
+// flips the return value once the desk window has launched; it changes nothing else about the loop.
+// =================================================================================================
+private var deskAppConsideredRunning = false
+private var isRunningOverrideInstalled = false
+
+@MainActor
+private func installIsRunningOverride() {
+    if isRunningOverrideInstalled { return }
+    isRunningOverrideInstalled = true
+    let sel = #selector(getter: NSApplication.isRunning)
+    guard let method = class_getInstanceMethod(NSApplication.self, sel) else { return }
+    typealias IsRunningFn = @convention(c) (AnyObject, Selector) -> Bool
+    let original = unsafeBitCast(method_getImplementation(method), to: IsRunningFn.self)
+    let override: @convention(block) (AnyObject) -> Bool = { app in
+        deskAppConsideredRunning || original(app, sel)
+    }
+    method_setImplementation(method, imp_implementationWithBlock(override))
+}
 
 /// A Flutter "surface" hosted by the native bridge. Two kinds exist — an embedded view inside a
 /// native SWT parent ({@code FlutterBridgeController}) and a standalone top-level window hosting the
@@ -129,6 +162,9 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         let app = NSApplication.shared
         app.setActivationPolicy(.regular)
         setupMainMenuIfNeeded(app)
+        // Report the app as "running" (see the note at the top) so embedded AWT/Swing coexists with
+        // our hand-driven pump() instead of hijacking the main thread with its own [NSApp run].
+        installIsRunningOverride()
 
         // Same Flutter bootstrap as the embedded path: load the precompiled Dart bundle next to the
         // dylib and pass [port, id, name, theme, bg, parentBg] so main() connects to the comm port.
@@ -164,6 +200,8 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         // Bootstrap the app without entering the modal run loop (so this JNI call returns to Java).
         // The SWT event loop then services Cocoa via pump().
         app.finishLaunching()
+        // From here we service the AppKit loop ourselves via pump(); treat the app as running.
+        deskAppConsideredRunning = true
         win.makeKeyAndOrderFront(nil)
         app.activate(ignoringOtherApps: true)
     }

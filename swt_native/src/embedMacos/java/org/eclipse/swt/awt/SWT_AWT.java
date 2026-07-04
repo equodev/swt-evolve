@@ -148,6 +148,8 @@ public class SWT_AWT {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         final long handle = parent.view.id;
+        if (dev.equo.swt.Config.isEquo(Composite.class, parent))
+            return dev.equo.swt.awt.EvolveSwingHost.newFrame(parent);
         final String className = embeddedFrameClass != null ? embeddedFrameClass : JDK17_FRAME;
         try {
             if (embeddedFrameClass != null) {

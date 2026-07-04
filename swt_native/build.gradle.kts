@@ -282,6 +282,13 @@ if (chromiumMode) {
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
     options.compilerArgs.add("-parameters")
+    // The Evolve SWT_AWT bridge (dev.equo.swt.awt.*) hosts Swing off-screen through
+    // sun.swing.JLightweightFrame / LightweightContent — the same internal contract
+    // JavaFX's SwingNode uses. These packages are not exported by default.
+    options.compilerArgs.addAll(listOf(
+        "--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
+        "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED"
+    ))
 }
 
 tasks.test {
