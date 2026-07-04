@@ -111,9 +111,11 @@ sourceSets {
 }
 
 tasks.withType<JavaExec>().configureEach {
-    if (currentOs == "macos") {
+    if (currentOs == "macos" && name != "runWebExample") {
         jvmArgs("-XstartOnFirstThread")
     }
+    jvmArgs("--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
+            "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED")
 }
 
 tasks.register<JavaExec>("runExample") {

@@ -145,6 +145,8 @@ public class SWT_AWT {
         final long handle = parent.handle;
         final Frame[] result = new Frame[1];
         final Throwable[] exception = new Throwable[1];
+        if (dev.equo.swt.Config.isEquo(Composite.class, parent))
+            return dev.equo.swt.awt.EvolveSwingHost.newFrame(parent);
         Runnable runnable = () -> {
             try {
                 /*
