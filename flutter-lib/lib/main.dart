@@ -71,7 +71,7 @@ void main(List<String> args) async {
 
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (widgetName == "FontSizeBridge") {
+  if (widgetName == "FontMeasureBridge") {
     font_size.measureRequest(widgetName, widgetId);
     sendClientReady(widgetName, widgetId);
     return;

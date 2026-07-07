@@ -1,6 +1,6 @@
 package org.eclipse.swt.widgets;
 
-import dev.equo.swt.harness.FlutterHarness;
+import dev.equo.swt.harness.WidgetFlutterHarness;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
 import org.junit.jupiter.api.*;
@@ -9,29 +9,29 @@ import static org.assertj.core.api.Assertions.*;
 
 /**
  * Full-stack reproduction of issue #597 (a radio group must keep one selection): drives the real
- * SWT → bridge → Flutter path through {@link FlutterHarness} and reads back the
+ * SWT → bridge → Flutter path through {@link WidgetFlutterHarness} and reads back the
  * <em>rendered</em> selection from a live Flutter web client for each radio.
  *
- * <p>Run via the {@code webTest} task, which compiles this against the WEB Java backend
- * ({@code src/main + src/native + src/native<currentOs>}) — so the real {@code native} tree
+ * <p>Run via the {@code nativeTest} task, which compiles this against the whole-tree-Flutter Java
+ * backend ({@code src/main + src/native + src/native<currentOs>}) — so the real {@code native} tree
  * {@code DartButton.selectRadio()} runs. Widgets are real Dart-backed SWT widgets (web
  * {@code Display}/{@code Shell} construct headlessly, no native handles).
  *
  * <p>In {@code org.eclipse.swt.widgets} so it can call the package-private {@code selectRadio()} —
  * the group logic a radio Selection event triggers on every platform.
  *
- * <pre>./gradlew :swt-evolve:swt_native:webTest</pre>
+ * <pre>./gradlew :swt-evolve:swt_native:nativeTest</pre>
  */
 @Tag("flutter-it")
 class RadioGroupFlutterTest {
 
-    private FlutterHarness flutter;
+    private WidgetFlutterHarness flutter;
     private Display display;
     private Shell shell;
 
     @BeforeEach
     void setUp() {
-        flutter = new FlutterHarness();
+        flutter = new WidgetFlutterHarness();
         flutter.init(); // wire the harness as the global bridge BEFORE creating widgets
         display = new Display();
         shell = new Shell(display);

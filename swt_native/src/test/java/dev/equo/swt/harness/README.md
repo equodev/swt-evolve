@@ -1,9 +1,14 @@
 # Flutter integration harness
 
-`FlutterHarness` is a JUnit 5 extension that boots a **real Flutter renderer** (web browser, or the
-native engine) wired to a live Java↔Flutter comm, so a test can drive the production
-SWT → bridge → Flutter path end to end and then read back the **rendered** widget state for
-assertions.
+`FlutterHarness` boots a **real Flutter renderer** (web browser, or the native engine) wired to a
+live Java↔Flutter comm — the boot/transport plumbing only, no assumption of a widget tree. It's
+abstract; subclasses either drive a real widget tree via `WidgetFlutterHarness` (below), or exchange
+a custom request/response protocol directly (e.g. a size-measurement bridge with no widget tree at
+all — `GenericSizeBridge`, `FontMeasureBridge`).
+
+`WidgetFlutterHarness` is the JUnit 5 extension that adds the widget-tree half: it drives the
+production SWT → bridge → Flutter path end to end for a real `Control` tree and reads back the
+**rendered** widget state for assertions.
 
 Boot/transport plumbing is adapted from `dev.equo.swt.bench.BenchBridge`. State read-back uses a
 dormant `evolve.test.query` channel registered by Flutter's `main()`
@@ -14,7 +19,7 @@ dormant `evolve.test.query` channel registered by Flutter's `main()`
 ```
 JUnit test ──creates──▶ Dart-backed SWT widgets (mocked Display/Shell)
    │                              │ getValue()/dirty
-   │ FlutterHarness (the bridge)  ▼
+   │ WidgetFlutterHarness (the bridge) ▼
    │   show(root) ── boots ──▶ Flutter web build (Chrome) / native engine
    │   flush()   ── FlutterBridge.update() pushes the tree ──▶ Flutter paints
    │   queryState(w) ──▶ "evolve.test.query" ──▶ walk element tree ──▶
@@ -28,7 +33,7 @@ can assert that state pushed from Java actually reached and updated the rendered
 
 ```java
 @RegisterExtension static Mocks mocks = Mocks.withNativeBridge(); // mocked Display/Shell, real bridge
-@RegisterExtension static FlutterHarness flutter = new FlutterHarness();
+@RegisterExtension static WidgetFlutterHarness flutter = new WidgetFlutterHarness();
 
 Composite group = new Composite(Mocks.swtShell(), SWT.NONE);
 Button r1 = new Button(group, SWT.RADIO);
@@ -42,13 +47,14 @@ Tag such tests `@Tag("flutter-it")` — that tag is excluded from the default te
 
 ## Running
 
-The `webTest` Gradle task (modelled on `webBenchmark`) builds the Flutter web app and runs the
-`flutter-it`-tagged tests against it in a headless browser:
+The `nativeTest` Gradle task (modelled on `webBenchmark`) builds the Flutter web app and runs the
+`flutter-it`-tagged tests against it in a headless browser by default:
 
 ```bash
-./gradlew :swt-evolve:swt_native:webTest          # builds webFlutterLib first
+./gradlew :swt-evolve:swt_native:nativeTest          # builds webFlutterLib first
 # headful: -Dharness.web.headless=false ; custom chrome: -Dequo.swt.browser=/path/to/chrome
 # skip the web rebuild if already built: -DskipFlutterLib
+# desktop Flutter engine instead of a browser: -Dharness.client=native
 ```
 
 Native engine instead of a browser (no web build / Chrome needed):
@@ -61,10 +67,11 @@ Native engine instead of a browser (no web build / Chrome needed):
 
 ## Backend
 
-`webTest` compiles the harness + `flutter-it` tests against the **web Java backend**
-(`src/main + src/native + src/native<currentOs>`) via its own source set — so the real `native` tree
-server code runs, not the native impl. (The rest of `src/test/java` can't compile against the web
-backend: `Mocks`/`SerializeTestBase` import native-only `Swt*` classes; hence the `include` filter.)
+`nativeTest` compiles the harness + `flutter-it` tests against the **whole-tree-Flutter (native/web)
+Java backend** (`src/main + src/native + src/native<currentOs>`) via its own source set — so the real
+`native` tree server code runs, not the embedded impl. (The rest of `src/test/java` can't compile
+against this backend: `Mocks`/`SerializeTestBase` import embedded-only `Swt*` classes; hence the
+`include` filter.)
 
 ## Does it reproduce issue #597?
 

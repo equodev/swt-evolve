@@ -41,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>Covers: {@code asyncExec}, {@code syncExec}, events from Dart (Selection), input events from
  * Dart (MouseMove), marking a widget dirty, and that an idle loop parks indefinitely (no timeout cap
  * in pure web mode) until woken. Like {@link RadioGroupFlutterTest} this is a {@code @Tag("flutter-it")}
- * test run by the {@code webTest} task against the WEB backend; it reaches its one web-only class
+ * test run by the {@code nativeTest} task against the whole-tree-Flutter backend; it reaches its one web-only class
  * ({@code WebDisplayBridge}, see the dirty test) by reflection, so the file still compiles against
  * every backend even though it only runs on web. It needs no renderer, so it injects a no-op
  * {@link RecordingBridge} before the Display is created — {@code Display.init()}

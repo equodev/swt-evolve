@@ -51,6 +51,12 @@ import java.util.logging.Logger;
  */
 public class WebFlutterServer {
 
+    static {
+        // Trigger WebFontSubstitutions' static init so FontMetricsUtil maps system font names
+        // (Arial, Courier, etc.) to their bundled Liberation equivalents on the web backend.
+        WebFontSubstitutions.ensureRegistered();
+    }
+
     private static final Logger LOG = Logger.getLogger(WebFlutterServer.class.getName());
 
     // Default MIME types for Flutter web files

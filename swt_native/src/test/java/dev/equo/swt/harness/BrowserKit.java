@@ -22,7 +22,7 @@ import org.eclipse.swt.widgets.Widget;
  * {@code org.eclipse.swt.browser} type and is used directly.
  *
  * <p>Each concrete {@code *BrowserFlutterTest} subclass supplies one of these via
- * {@link #chromium()} / {@link #swt()}, so a single {@code webTest} run exercises
+ * {@link #chromium()} / {@link #swt()}, so a single {@code nativeTest} run exercises
  * both packages. The facade methods mirror the Browser API names so the test
  * bodies need no rewrite.
  */

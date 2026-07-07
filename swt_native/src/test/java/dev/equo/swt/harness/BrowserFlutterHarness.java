@@ -4,15 +4,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * {@link FlutterHarness} specialized for the SWT {@code Browser} widget tests
- * ({@code BrowserFlutterTest}). It adds only what those tests need on top of the generic harness:
+ * {@link WidgetFlutterHarness} specialized for the SWT {@code Browser} widget tests
+ * ({@code BrowserFlutterTest}). It adds only what those tests need on top of the widget-tree harness:
  * the {@code evolve.test.iframeLoaded} on-load probe, which lets a test wait until an embedded page
  * the Browser widget loaded has actually rendered.
  *
  * <p>Like its base, it runs on both desktop and web (it does not change the rendering mode); it just
  * carries the Browser-widget-specific test affordances.
  */
-public class BrowserFlutterHarness extends FlutterHarness {
+public class BrowserFlutterHarness extends WidgetFlutterHarness {
 
     private static final String IFRAME_LOADED = "evolve.test.iframeLoaded";
 

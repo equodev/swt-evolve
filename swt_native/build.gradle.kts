@@ -200,7 +200,7 @@ sourceSets {
     val webShared = create("webShared") {
         java {
             setSrcDirs(listOf("src/native/java"))
-            include("dev/equo/swt/WebFlutterServer.java")
+            include("dev/equo/swt/WebFlutterServer.java", "dev/equo/swt/WebFontSubstitutions.java")
         }
         compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
     }
@@ -241,40 +241,52 @@ sourceSets {
         runtimeClasspath = output + configurations["testRuntimeClasspath"] + embedBackend.output + webShared.output
     }
 
-    // Web-backed integration test source set: the SAME test code (src/test/java), but compiled
+    // Native-family integration test source set: the SAME test code (src/test/java), but compiled
     // against the whole-tree-Flutter Java backend (src/main + src/native + src/native<currentOs>)
-    // instead of the embedded one — so 'flutter-it' tests exercise web-specific server logic.
-    // Driven by the `webTest` task.
-    val webBackend = getByName("native${currentOs.replaceFirstChar { it.titlecase() }}")
-    create("webTest") {
+    // instead of the embedded one — so 'flutter-it' tests exercise the native/web server logic,
+    // under EITHER render client (-Dharness.client=native|web, see `nativeTest` below).
+    // Driven by the `nativeTest` task.
+    val nativeBackend = getByName("native${currentOs.replaceFirstChar { it.titlecase() }}")
+    create("nativeTest") {
         java {
             // src/test/java: the shared suite — flutter-it tests there (named *FlutterTest by
             // convention) must also compile against the EMBEDDED backend the default `test` task
             // uses, so they reach web-only classes by reflection (see DisplayWakeFlutterTest).
-            // src/webTest/java: flutter-it tests that CANNOT compile against embedded — they
-            // sub-class the native-only Display bridges (DeskDisplayBridge/WebDisplayBridge) for
-            // their test seams. Compiled only here, never by the default `test` source set.
-            setSrcDirs(listOf("src/test/java", "src/webTest/java"))
-            // Only the harness + flutter-it tests (named *FlutterTest by convention): the rest of
-            // src/test/java (Mocks, SerializeTestBase, …) imports native-only Swt* classes absent
-            // from the web backend.
-            include("dev/equo/swt/harness/**", "**/*FlutterTest.java")
+            // Plus MockFlutterBridge, a portable no-op FlutterBridge DartMocks.dartTable() reuses.
+            // src/nativeTest/java: tests that CANNOT compile against embedded — the whole
+            // dev/equo/swt/size package (needs a pure-Flutter Display/Shell/Table that only exists
+            // in this backend, see DartMocks) plus tests that sub-class the native-only Display
+            // bridges (DeskDisplayBridge/WebDisplayBridge) for their test seams. Compiled only
+            // here, never by the default `test` source set.
+            setSrcDirs(listOf("src/test/java", "src/nativeTest/java"))
+            // Only the harness + flutter-it tests (named *FlutterTest by convention) plus
+            // MockFlutterBridge from src/test/java, and everything under dev/equo/swt/size: the
+            // rest of src/test/java (Mocks, SerializeTestBase, …) imports native-only Swt*
+            // classes absent from this backend.
+            include("dev/equo/swt/harness/**", "**/*FlutterTest.java",
+                    "dev/equo/swt/MockFlutterBridge.java",
+                    "dev/equo/swt/size/**",
+                    "org/eclipse/swt/widgets/DartMocks.java")
         }
-        compileClasspath += webBackend.output + webBackend.compileClasspath
-        runtimeClasspath += output + webBackend.output + webBackend.runtimeClasspath
+        resources {
+            srcDirs("src/test/resources")
+            include("images/**")
+        }
+        compileClasspath += nativeBackend.output + nativeBackend.compileClasspath
+        runtimeClasspath += output + nativeBackend.output + nativeBackend.runtimeClasspath
     }
 }
 
-// webTest reuses the test dependencies (JUnit, AssertJ, Mockito, Gson, …) and annotation processor.
-configurations["webTestImplementation"].extendsFrom(configurations["testImplementation"])
-configurations["webTestRuntimeOnly"].extendsFrom(configurations["testRuntimeOnly"])
-configurations["webTestAnnotationProcessor"].extendsFrom(configurations["testAnnotationProcessor"])
+// nativeTest reuses the test dependencies (JUnit, AssertJ, Mockito, Gson, …) and annotation processor.
+configurations["nativeTestImplementation"].extendsFrom(configurations["testImplementation"])
+configurations["nativeTestRuntimeOnly"].extendsFrom(configurations["testRuntimeOnly"])
+configurations["nativeTestAnnotationProcessor"].extendsFrom(configurations["testAnnotationProcessor"])
 
 val chromiumMode = System.getProperty("mode.chromium", "false") == "true"
 if (chromiumMode) {
     dependencies {
-        "webTestRuntimeOnly"(libs.equo.chromium)
-        "webTestRuntimeOnly"("com.equo:com.equo.chromium.cef.${getSwtWs(currentOs)}.${getSwtOs(currentOs)}.${getSwtArch(arch)}:${libs.versions.equo.chromium.cef.get()}")
+        "nativeTestRuntimeOnly"(libs.equo.chromium)
+        "nativeTestRuntimeOnly"("com.equo:com.equo.chromium.cef.${getSwtWs(currentOs)}.${getSwtOs(currentOs)}.${getSwtArch(arch)}:${libs.versions.equo.chromium.cef.get()}")
     }
 }
 
@@ -304,20 +316,28 @@ tasks.test {
     dependsOn("${currentPlatform}ExtractNatives", "${currentPlatform}CopyFlutterBinaries")
     if (org.gradle.internal.os.OperatingSystem.current().isMacOsX)
         jvmArgs = listOf("-XstartOnFirstThread")
+    systemProperty("harness.client", "native")
     systemProperty("swt.library.path", layout.buildDirectory.dir("natives/$currentPlatform").get().toString())
     if (System.getProperty("test.debug") != null)
         jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
 }
 
-tasks.register<Test>("webTest") {
+tasks.register<Test>("nativeTest") {
     group = "verification"
-    description = "Runs Flutter integration tests (tagged 'flutter-it') against the WEB Java backend + Flutter WEB build."
-    testClassesDirs = sourceSets["webTest"].output.classesDirs
+    description = "Runs Flutter integration tests (tagged 'flutter-it') against the whole-tree-Flutter " +
+            "(native/web) Java backend — every widget, including Display/Shell, is Dart-backed, no " +
+            "Swt* classes involved. Defaults to the WEB render client (headless Chrome + CanvasKit); " +
+            "pass -Dharness.client=native to run the same suite against the desktop Flutter engine instead."
+    testClassesDirs = sourceSets["nativeTest"].output.classesDirs
     classpath = if (chromiumMode)
-        sourceSets["native${currentOs.replaceFirstChar { it.titlecase() }}"].output + sourceSets["webTest"].runtimeClasspath
+        sourceSets["native${currentOs.replaceFirstChar { it.titlecase() }}"].output + sourceSets["nativeTest"].runtimeClasspath
     else
-        sourceSets["webTest"].runtimeClasspath
-    useJUnitPlatform { includeTags("flutter-it") }
+        sourceSets["nativeTest"].runtimeClasspath
+    useJUnitPlatform {
+        includeTags("flutter-it")
+        val excludeTagsProp = System.getProperty("excludeTags")
+        if (excludeTagsProp != null) excludeTags(*excludeTagsProp.split(",").toTypedArray())
+    }
     configureTestLogging()
     if (System.getProperty("skipFlutterLib") == null)
         dependsOn("webFlutterLib")
@@ -330,7 +350,9 @@ tasks.register<Test>("webTest") {
     // suite reflects the supported feature set; override with
     // -Ddev.equo.swt.web.proxy=<all|host,host> or = (empty) to disable.
     systemProperty("dev.equo.swt.web.proxy", System.getProperty("dev.equo.swt.web.proxy") ?: "all")
-    if (chromiumMode && org.gradle.internal.os.OperatingSystem.current().isMacOsX)
+    // Needed on macOS for the desktop Flutter engine (-Dharness.client=native) and for chromium
+    // mode; harmless (unused) for the default headless-browser web client.
+    if (org.gradle.internal.os.OperatingSystem.current().isMacOsX)
         jvmArgs = listOf("-XstartOnFirstThread")
     forwardSystemProperties("harness.client", "harness.web.headless", "harness.web.console", "harness.readyTimeoutMs", "harness.queryTimeoutMs", "harness.holdMs", "equo.swt.browser", "dev.equo.swt.mode", "harness.bootAttempts", "harness.bootAttemptMs", "harness.web.failBoots")
 }
@@ -474,10 +496,16 @@ fun parsePlatform(platform: String): WebPlatformMeta {
     return WebPlatformMeta(parts[0], parts[1], isHybrid = !isEmbed)
 }
 
+// Liberation fonts substitute system fonts for CanvasKit's web renderer, which can't reach
+// OS-installed fonts. Desktop builds never trigger the substitution (WebFontSubstitutions is
+// only loaded by WebFlutterServer), so they'd carry the ~9MB of TTFs for nothing.
+val libertyFontExclude = "**/flutter_assets/assets/fonts/Liberation*.ttf"
+
 fun CopySpec.copyFlutterNatives(os: String, flutterArch: String) {
     when (os) {
         "macos" -> from("../flutter-lib/build/macos/Build/Products/Release/swtflutter.app") {
             into("swtflutter.app")
+            exclude(libertyFontExclude)
         }
         "linux" -> {
             from("../flutter-lib/build/linux/$flutterArch/release/runner") {
@@ -490,11 +518,13 @@ fun CopySpec.copyFlutterNatives(os: String, flutterArch: String) {
             }
             from("../flutter-lib/build/linux/$flutterArch/release/bundle/data") {
                 include("icudtl.dat", "flutter_assets/**")
+                exclude(libertyFontExclude)
                 into("bundle/data")
             }
         }
         "windows" -> from("../flutter-lib/build/windows/$flutterArch/runner/Release/") {
             include("*.dll", "data/")
+            exclude(libertyFontExclude)
             into("runner")
         }
     }
@@ -532,16 +562,10 @@ val fxImportPackges = "javafx.application;resolution:=optional," +
         "com.sun.javafx.embed;resolution:=optional," +
         "com.sun.javafx.stage;resolution:=optional"
 fun fragmentHostHeader() =
-    provider { "org.eclipse.swt;bundle-version=\"[${swtVersionProvider.get().substring(0..6)},4.0.0)\"" }
+    provider { "org.eclipse.swt;bundle-version=\"[${swtVersionProvider.get().substringBefore(".v")},4.0.0)\"" }
 fun evolveVersion(): Any = gradle.parent?.rootProject?.version ?: project.version
 fun hostVersion(suffix: String) = swtVersionProvider.map {
-    // When eclipse_run provided the SWT version file, swtVersionProvider already holds the
-    // product's version: use it as-is (no evolve/suffix). Otherwise compose from the
-    // swtVersion property + evolve version + suffix.
-    val versionFiles = swtVersionConfig.files
-    val fromEclipseRun = versionFiles.isNotEmpty() && versionFiles.first().exists()
-    if (fromEclipseRun) it
-    else "${it.substringBefore(".v")}.v${evolveVersion().toString().replace('.', '_')}-$suffix"
+    "${it.substringBefore(".v")}.v${evolveVersion().toString().replace('.', '_')}-$suffix"
 }
 fun swtExportPackage(swtWs: String?): String = (
     listOf(
