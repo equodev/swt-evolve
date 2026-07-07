@@ -8,7 +8,6 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -270,14 +269,7 @@ public abstract class FlutterBridge {
 
     private static void serializeAndSend(CommService comm, String eventName, Object args) throws IOException {
         byte[] bytes = serializer.to(args);
-        if (Config.isDebug()) {
-            String serialized = new String(bytes, StandardCharsets.UTF_8);
-            String cleaned = serialized
-                    .replaceAll("\"data\"\\s*:\\s*\"[^\"]*\"", "\"data\": \"-ignore-\"")
-                    .replaceAll("\"alphaData\"\\s*:\\s*\"[^\"]*\"", "\"alphaData\": \"-ignore-\"")
-                    .replaceAll("\"svgContent\"\\s*:\\s*\"[^\"\\\\]*(?:\\\\.[^\"\\\\]*)*\"", "\"svgContent\": \"-ignore-\"");
-            System.out.println("send: " + eventName + ": " + cleaned);
-        }
+        DebugLog.logSend(eventName, bytes);
         comm.send(eventName, bytes);
     }
 
@@ -494,7 +486,7 @@ public abstract class FlutterBridge {
             return dirty.contains(widget);
         }
     }
-
+    
     /** Whether any widget/resource is awaiting a flush to Dart — a pending-work condition for sleep(). */
     public boolean hasDirty() {
         synchronized (dirty) {
