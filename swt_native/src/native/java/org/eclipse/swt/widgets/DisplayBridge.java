@@ -216,8 +216,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         }
     }
 
-    /** Slave every display-tracking main shell to {@code viewport}. Caller wraps this in
-     *  {@link #applyClientBounds} so the resulting setBounds isn't echoed to the window. */
+    /** Slave every display-tracking main shell to {@code viewport} (wrapped by the caller in
+     *  {@link #applyClientBounds} so the setBounds isn't echoed to the window). Slaved regardless of
+     *  origin — the Eclipse workbench opens non-origin, which an earlier atOrigin-only guard skipped.
+     *  Only touch it when the geometry differs, so a no-op repeat doesn't feed the resize loop. */
     protected void resizeMainShells(DartDisplay display, Rectangle viewport) {
         for (Shell shell : display._shells()) {
             if (shell == null || shell.isDisposed()) {
@@ -227,13 +229,13 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 continue;
             }
             Rectangle shellBounds = shell.getBounds();
-            boolean atOrigin =
+            boolean matchesViewport =
                     shellBounds != null
                             && shellBounds.x == 0
                             && shellBounds.y == 0
-                            && shellBounds.width > 0
-                            && shellBounds.height > 0;
-            if (atOrigin || shell.getMaximized() || shell.getFullScreen()) {
+                            && shellBounds.width == viewport.width
+                            && shellBounds.height == viewport.height;
+            if (!matchesViewport) {
                 shell.setBounds(0, 0, viewport.width, viewport.height);
             }
         }
@@ -342,15 +344,9 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             Shell shell = (Shell) dartShell.getApi();
             if (visible && forDisplay != null) {
                 if (shouldTrackDisplayBounds(shell)) {
-                    Rectangle displayBounds = forDisplay.bounds;
-                    Rectangle shellBounds = shell.getBounds();
-                    if (shellBounds != null
-                            && shellBounds.x == 0
-                            && shellBounds.y == 0
-                            && shellBounds.width < displayBounds.width
-                            && shellBounds.height < displayBounds.height) {
-                        applyClientBounds(() -> shell.setBounds(0, 0, displayBounds.width, displayBounds.height));
-                    }
+                    // Fill the viewport on show even if the shell opened at a stale, non-origin
+                    // geometry persisted from a previous run (a maximized browser fires no resize).
+                    applyClientBounds(() -> resizeMainShells(forDisplay, forDisplay.bounds));
                 }
             }
             if (visible) {
