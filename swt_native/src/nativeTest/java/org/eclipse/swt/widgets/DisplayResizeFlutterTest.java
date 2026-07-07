@@ -141,6 +141,22 @@ class DisplayResizeFlutterTest {
     }
 
     @Test
+    void desk_nonOriginMainShell_isSlavedToViewport() {
+        TestDeskBridge desk = install(TestDeskBridge::new);
+        Shell shell = newMainShell();
+        // The Eclipse workbench opens its main shell at a saved, non-origin geometry — it is NOT at
+        // (0,0) and NOT maximized. The resize must still slave it to the window viewport.
+        shell.setBounds(200, 100, 1024, 768);
+        desk.forwarded.clear();
+
+        clientReady(desk.comm, 1600, 1000, false);
+
+        assertThat(shell.getBounds())
+                .as("a non-origin main shell is still slaved to the window viewport on resize")
+                .isEqualTo(new Rectangle(0, 0, 1600, 1000));
+    }
+
+    @Test
     void desk_appDrivenResize_isForwardedToWindow() {
         TestDeskBridge desk = install(TestDeskBridge::new);
         Shell shell = newMainShell();
@@ -213,6 +229,39 @@ class DisplayResizeFlutterTest {
         assertThat(web.comm.sent.size())
                 .as("a repeated identical viewport must not re-push (that would feed a resize loop)")
                 .isEqualTo(framesAfterFirst);
+    }
+
+    @Test
+    void web_nonOriginMainShell_isSlavedToViewport() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = newMainShell();
+        // Regression: the workbench main shell sitting at a non-origin geometry (not maximized) must
+        // still follow the browser viewport — the old atOrigin-only guard skipped it and its content
+        // never relaid out on resize.
+        shell.setBounds(200, 100, 1024, 768);
+
+        clientReady(web.comm, 1600, 1000, true);
+
+        assertThat(shell.getBounds())
+                .as("a non-origin main shell is still slaved to the browser viewport")
+                .isEqualTo(new Rectangle(0, 0, 1600, 1000));
+    }
+
+    @Test
+    void web_shellShownAtStaleSize_fillsCurrentViewport() {
+        TestWebBridge web = install(TestWebBridge::new);
+        clientReady(web.comm, 2560, 1440, true); // browser maximized: the current viewport
+        Shell shell = newMainShell();
+        // A smaller, non-origin geometry left over from a previous run (the workbench persists its
+        // window bounds). A maximized browser fires no resize, so without the on-show fix it would
+        // stay this stale size until the user manually resized.
+        shell.setBounds(100, 50, 1200, 800);
+
+        shell.setVisible(true);
+
+        assertThat(shell.getBounds())
+                .as("a main shell shown at a stale non-origin size fills the current viewport")
+                .isEqualTo(new Rectangle(0, 0, 2560, 1440));
     }
 
     @Test
