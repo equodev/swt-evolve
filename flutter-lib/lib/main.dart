@@ -347,6 +347,7 @@ class EvolveApp extends StatelessWidget {
         final flags = getConfigFlags();
         final forcedThemeMode = parseForcedThemeMode(flags.force_theme);
         final effectiveThemeMode = forcedThemeMode ?? theme;
+        setCurrentTheme(effectiveThemeMode == ThemeMode.dark);
         final themeName = flags.theme_name?.trim();
         final namedTheme = (themeName != null && themeName.isNotEmpty)
             ? kNamedThemes[themeName]

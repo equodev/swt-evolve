@@ -88,10 +88,10 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
   }
 
   Widget _buildCheckMenuItem(
-    BuildContext context,
-    MenuItemThemeExtension widgetTheme,
-    bool isEnabled,
-  ) {
+      BuildContext context,
+      MenuItemThemeExtension widgetTheme,
+      bool isEnabled,
+      ) {
     final textStyle = getMenuItemTextStyle(widgetTheme, isEnabled: isEnabled);
     final isChecked = _localSelection ?? false;
 
@@ -113,10 +113,10 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
   }
 
   Widget _buildRadioMenuItem(
-    BuildContext context,
-    MenuItemThemeExtension widgetTheme,
-    bool isEnabled,
-  ) {
+      BuildContext context,
+      MenuItemThemeExtension widgetTheme,
+      bool isEnabled,
+      ) {
     final textStyle = getMenuItemTextStyle(widgetTheme, isEnabled: isEnabled);
     final isSelected = _localSelection ?? false;
 
@@ -138,10 +138,10 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
   }
 
   Widget _buildPushMenuItem(
-    BuildContext context,
-    MenuItemThemeExtension widgetTheme,
-    bool isEnabled,
-  ) {
+      BuildContext context,
+      MenuItemThemeExtension widgetTheme,
+      bool isEnabled,
+      ) {
     final textStyle = getMenuItemTextStyle(widgetTheme, isEnabled: isEnabled);
     final acceleratorStyle = getMenuItemAcceleratorTextStyle(
       widgetTheme,
@@ -279,33 +279,33 @@ class _MenuItemRowState extends State<_MenuItemRow> {
             }
           },
           child: GestureDetector(
-          child: AnimatedContainer(
-            duration: widget.widgetTheme.animationDuration,
-            constraints: BoxConstraints(
-              minHeight: widget.widgetTheme.itemHeight,
-            ),
-            padding: widget.widgetTheme.itemPadding,
-            decoration: BoxDecoration(
-              color: getMenuItemRowBackgroundColor(widget.widgetTheme, widget.isEnabled, _isHovered),
-              borderRadius: BorderRadius.circular(
-                widget.widgetTheme.borderRadius,
+            child: AnimatedContainer(
+              duration: widget.widgetTheme.animationDuration,
+              constraints: BoxConstraints(
+                minHeight: widget.widgetTheme.itemHeight,
+              ),
+              padding: widget.widgetTheme.itemPadding,
+              decoration: BoxDecoration(
+                color: getMenuItemRowBackgroundColor(widget.widgetTheme, widget.isEnabled, _isHovered),
+                borderRadius: BorderRadius.circular(
+                  widget.widgetTheme.borderRadius,
+                ),
+              ),
+              child: Row(
+                children: [
+                  if (widget.leading != null) ...[
+                    widget.leading!,
+                    SizedBox(width: widget.widgetTheme.iconTextSpacing),
+                  ],
+                  Expanded(child: widget.child),
+                  if (widget.trailing != null) ...[
+                    SizedBox(width: widget.widgetTheme.textAcceleratorSpacing),
+                    widget.trailing!,
+                  ],
+                ],
               ),
             ),
-            child: Row(
-              children: [
-                if (widget.leading != null) ...[
-                  widget.leading!,
-                  SizedBox(width: widget.widgetTheme.iconTextSpacing),
-                ],
-                Expanded(child: widget.child),
-                if (widget.trailing != null) ...[
-                  SizedBox(width: widget.widgetTheme.textAcceleratorSpacing),
-                  widget.trailing!,
-                ],
-              ],
-            ),
           ),
-        ),
         ),
       ),
     );
@@ -436,52 +436,52 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
           minHeight: widget.widgetTheme.itemHeight,
         ),
         child: SubmenuButton(
-        controller: _menuController,
-        onHover: _onHover,
-        style: ButtonStyle(
-          backgroundColor: WidgetStateProperty.resolveWith((states) {
-            if (!widget.isEnabled) return widget.widgetTheme.backgroundColor;
-            if (states.contains(WidgetState.hovered)) {
-              return widget.widgetTheme.hoverBackgroundColor;
-            }
-            return widget.widgetTheme.backgroundColor;
-          }),
-          overlayColor: WidgetStateProperty.all(Colors.transparent),
-          padding: WidgetStateProperty.all(widget.widgetTheme.itemPadding),
-          minimumSize: WidgetStateProperty.all(
-            Size(widget.widgetTheme.minItemWidth, widget.widgetTheme.itemHeight),
+          controller: _menuController,
+          onHover: _onHover,
+          style: ButtonStyle(
+            backgroundColor: WidgetStateProperty.resolveWith((states) {
+              if (!widget.isEnabled) return widget.widgetTheme.backgroundColor;
+              if (states.contains(WidgetState.hovered)) {
+                return widget.widgetTheme.hoverBackgroundColor;
+              }
+              return widget.widgetTheme.backgroundColor;
+            }),
+            overlayColor: WidgetStateProperty.all(Colors.transparent),
+            padding: WidgetStateProperty.all(widget.widgetTheme.itemPadding),
+            minimumSize: WidgetStateProperty.all(
+              Size(widget.widgetTheme.minItemWidth, widget.widgetTheme.itemHeight),
+            ),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            shape: WidgetStateProperty.all(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(widget.widgetTheme.borderRadius),
+              ),
+            ),
+            animationDuration: widget.widgetTheme.animationDuration,
           ),
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          shape: WidgetStateProperty.all(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(widget.widgetTheme.borderRadius),
+          menuStyle: MenuStyle(
+            backgroundColor: WidgetStateProperty.all(widget.menuTheme.popupBackgroundColor),
+            elevation: WidgetStateProperty.all(widget.menuTheme.popupElevation),
+            padding: WidgetStateProperty.all(widget.menuTheme.popupPadding),
+            shape: WidgetStateProperty.all(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(widget.menuTheme.borderRadius),
+              ),
             ),
           ),
-          animationDuration: widget.widgetTheme.animationDuration,
-        ),
-        menuStyle: MenuStyle(
-          backgroundColor: WidgetStateProperty.all(widget.menuTheme.popupBackgroundColor),
-          elevation: WidgetStateProperty.all(widget.menuTheme.popupElevation),
-          padding: WidgetStateProperty.all(widget.menuTheme.popupPadding),
-          shape: WidgetStateProperty.all(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(widget.menuTheme.borderRadius),
-            ),
-          ),
-        ),
-        menuChildren: _menuChildren,
-        child: Row(
-          children: [
-            if (widget.leading != null) ...[
-              widget.leading!,
-              SizedBox(width: widget.widgetTheme.iconTextSpacing),
+          menuChildren: _menuChildren,
+          child: Row(
+            children: [
+              if (widget.leading != null) ...[
+                widget.leading!,
+                SizedBox(width: widget.widgetTheme.iconTextSpacing),
+              ],
+              Expanded(
+                child: Text(stripAccelerators(widget.text), style: textStyle),
+              ),
             ],
-            Expanded(
-              child: Text(stripAccelerators(widget.text), style: textStyle),
-            ),
-          ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -534,10 +534,10 @@ class _MenuCheckboxState extends State<_MenuCheckbox> {
         ),
         child: widget.isSelected
             ? Icon(
-                Icons.check,
-                size: widget.widgetTheme.checkboxCheckmarkSize,
-                color: widget.widgetTheme.checkboxCheckmarkColor,
-              )
+          Icons.check,
+          size: widget.widgetTheme.checkboxCheckmarkSize,
+          color: widget.widgetTheme.checkboxCheckmarkColor,
+        )
             : null,
       ),
     );
@@ -589,15 +589,15 @@ class _MenuRadioButtonState extends State<_MenuRadioButton> {
         ),
         child: widget.isSelected
             ? Center(
-                child: Container(
-                  width: widget.widgetTheme.radioButtonInnerSize,
-                  height: widget.widgetTheme.radioButtonInnerSize,
-                  decoration: BoxDecoration(
-                    color: widget.widgetTheme.radioButtonInnerColor,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              )
+          child: Container(
+            width: widget.widgetTheme.radioButtonInnerSize,
+            height: widget.widgetTheme.radioButtonInnerSize,
+            decoration: BoxDecoration(
+              color: widget.widgetTheme.radioButtonInnerColor,
+              shape: BoxShape.circle,
+            ),
+          ),
+        )
             : null,
       ),
     );

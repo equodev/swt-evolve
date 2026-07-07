@@ -17,7 +17,6 @@ import '../gen/color.dart';
 import '../gen/image.dart';
 import '../custom/toolbar_composite.dart';
 import 'composite_evolve.dart';
-import 'icons_map.dart';
 import 'widget_config.dart';
 import '../theme/theme_extensions/ctabfolder_theme_extension.dart';
 import '../theme/theme_settings/ctabfolder_theme_settings.dart';
@@ -892,18 +891,30 @@ class _CTabBarState extends State<_CTabBar> {
                               bottom: widgetTheme.tabIconBottomPadding,
                               right: widgetTheme.tabIconTextSpacing,
                             ),
-                            child: !iconMap.containsKey(tab.image)
-                                ? Image.file(
-                                    File(tab.image!),
+                            child: FutureBuilder<Widget?>(
+                              future: ImageUtils.buildVImageAsync(
+                                VImage()..filename = tab.image,
+                                size: widgetTheme.tabIconSize,
+                                color: textColor,
+                              ),
+                              builder: (context, snapshot) {
+                                final resolved = snapshot.data;
+                                if (resolved != null) return resolved;
+                                if (snapshot.connectionState !=
+                                    ConnectionState.done) {
+                                  return SizedBox(
                                     width: widgetTheme.tabIconSize,
                                     height: widgetTheme.tabIconSize,
-                                    fit: BoxFit.contain,
-                                  )
-                                : Icon(
-                                    getIconByName(tab.image!),
-                                    size: widgetTheme.tabIconSize,
-                                    color: textColor,
-                                  ),
+                                  );
+                                }
+                                return Image.file(
+                                  File(tab.image!),
+                                  width: widgetTheme.tabIconSize,
+                                  height: widgetTheme.tabIconSize,
+                                  fit: BoxFit.contain,
+                                );
+                              },
+                            ),
                           ),
                         Padding(
                           padding: EdgeInsets.only(

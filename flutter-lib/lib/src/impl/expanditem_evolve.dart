@@ -105,7 +105,7 @@ class ExpandItemImpl<T extends ExpandItemSwt, V extends VExpandItem>
       enabled: true,
       constraints: null,
       useBinaryImage: true,
-      renderAsIcon: false,
+      renderAsIcon: true,
     );
 
     if (builtImage != null) {

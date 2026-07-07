@@ -201,7 +201,7 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
           enabled: enabled,
           constraints: null,
           useBinaryImage: true,
-          renderAsIcon: false,
+          renderAsIcon: true,
         ),
       );
     }

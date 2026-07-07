@@ -16,6 +16,7 @@ import 'assets_manager.dart';
 import 'color_utils.dart';
 import 'utils/font_utils.dart';
 import 'utils/image_utils.dart';
+import 'widget_config.dart';
 
 // ─────────────────────────────────────────────
 // GCDrawer — concrete shape engine
@@ -429,10 +430,10 @@ class GCDrawer extends GCDrawerBase {
           s.rect.translate(offset.dx, offset.dy), s.color, clipArea),
       ImageShape s when s.type == ImageType.raster => ImageShape.raster(
           s.image!, s.srcRect!, s.destRect.translate(offset.dx, offset.dy),
-          clipRect: clipArea),
+          clipRect: clipArea, colorFilter: s.colorFilter),
       ImageShape s when s.type == ImageType.svg => ImageShape.svg(
           s.pictureInfo!, s.destRect.translate(offset.dx, offset.dy),
-          clipRect: clipArea),
+          clipRect: clipArea, colorFilter: s.colorFilter),
       _ => shape,
     };
   }
@@ -1185,24 +1186,29 @@ class ImageShape extends Shape {
     this.srcRect,
     this.pictureInfo,
     this.clipRect,
+    this.colorFilter,
   });
 
   factory ImageShape.raster(ui.Image image, Rect srcRect, Rect destRect,
-      {Rect? clipRect}) {
+      {Rect? clipRect, ColorFilter? colorFilter}) {
     return ImageShape._(
         type: ImageType.raster, image: image, srcRect: srcRect,
-        destRect: destRect, clipRect: clipRect);
+        destRect: destRect, clipRect: clipRect, colorFilter: colorFilter);
   }
 
   factory ImageShape.svg(PictureInfo pictureInfo, Rect destRect,
-      {Rect? clipRect}) {
+      {Rect? clipRect, ColorFilter? colorFilter}) {
     return ImageShape._(
         type: ImageType.svg, pictureInfo: pictureInfo,
-        destRect: destRect, clipRect: clipRect);
+        destRect: destRect, clipRect: clipRect, colorFilter: colorFilter);
   }
 
   static Future<ImageShape> fromVImageDetailed(VImage vImage,
       VGCDrawImageImageintintintintintintintint opArgs, Rect? clipRect) async {
+    final preserveColors = getConfigFlags().preserve_icon_colors ?? true;
+    final colorFilter = preserveColors
+        ? null
+        : ColorFilter.mode(AppColors.getColor(true), BlendMode.srcIn);
     try {
       Object? replacement;
       if (vImage.svgContent?.isNotEmpty ?? false) {
@@ -1224,7 +1230,8 @@ class ImageShape extends Shape {
             opArgs.destWidth == -1 ? pictureInfo.size.width : (opArgs.destWidth).toDouble(),
             opArgs.destHeight == -1 ? pictureInfo.size.height : (opArgs.destHeight).toDouble(),
           );
-          return ImageShape.svg(pictureInfo, destRect, clipRect: clipRect);
+          return ImageShape.svg(pictureInfo, destRect,
+              clipRect: clipRect, colorFilter: colorFilter);
         } catch (e) {
           // SVG failed to load, fall through to raster
         }
@@ -1263,7 +1270,8 @@ class ImageShape extends Shape {
               opArgs.srcHeight == -1 ? uiImage.height.toDouble() : (opArgs.srcHeight).toDouble(),
             );
 
-      return ImageShape.raster(uiImage, srcRect, destRect, clipRect: clipRect);
+      return ImageShape.raster(uiImage, srcRect, destRect,
+          clipRect: clipRect, colorFilter: colorFilter);
     } catch (e) {
       return ImageShape._(
         type: ImageType.raster,
@@ -1280,6 +1288,7 @@ class ImageShape extends Shape {
   final ui.Image? image;
   final Rect? srcRect;
   final PictureInfo? pictureInfo;
+  final ColorFilter? colorFilter;
   @override
   final Rect? clipRect;
 
@@ -1296,7 +1305,10 @@ class ImageShape extends Shape {
   void _drawRaster(ui.Canvas c) {
     if (image == null || srcRect == null) return;
     c.drawImageRect(image!, srcRect!, destRect,
-        Paint()..filterQuality = FilterQuality.high..isAntiAlias = true);
+        Paint()
+          ..filterQuality = FilterQuality.high
+          ..isAntiAlias = true
+          ..colorFilter = colorFilter);
   }
 
   void _drawSvg(ui.Canvas c) {
@@ -1304,9 +1316,13 @@ class ImageShape extends Shape {
     final scaleX = destRect.width / pictureInfo!.size.width;
     final scaleY = destRect.height / pictureInfo!.size.height;
     c.save();
+    if (colorFilter != null) {
+      c.saveLayer(destRect, Paint()..colorFilter = colorFilter);
+    }
     c.translate(destRect.left, destRect.top);
     c.scale(scaleX, scaleY);
     c.drawPicture(pictureInfo!.picture);
+    if (colorFilter != null) c.restore();
     c.restore();
   }
 
