@@ -21,7 +21,7 @@ class ImageUtils {
     Color? color,
     bool enabled = true,
   }) {
-    final preserveColors = getConfigFlags().preserve_icon_colors ?? false;
+    final preserveColors = getConfigFlags().preserve_icon_colors ?? true;
     final cacheKey =
         '$filename-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled-$preserveColors';
 
@@ -69,7 +69,7 @@ class ImageUtils {
     BoxConstraints? constraints,
     bool renderAsIcon = true,
   }) {
-    final preserveColors = getConfigFlags().preserve_icon_colors ?? false;
+    final preserveColors = getConfigFlags().preserve_icon_colors ?? true;
     final cacheKey = renderAsIcon
         ? 'icon-${bytes?.length ?? file ?? 'none'}-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled-$preserveColors'
         : (file != null)
@@ -196,7 +196,7 @@ class ImageUtils {
     BoxConstraints? constraints,
     bool renderAsIcon = true,
   }) {
-    final preserveColors = getConfigFlags().preserve_icon_colors ?? false;
+    final preserveColors = getConfigFlags().preserve_icon_colors ?? true;
     final Color? effectiveTint = preserveColors
         ? null
         : (color ?? AppColors.getColor(enabled));
@@ -376,7 +376,7 @@ class ImageUtils {
     }
 
     // Generate cache key based on all parameters that affect the result
-    final preserveColors = getConfigFlags().preserve_icon_colors ?? false;
+    final preserveColors = getConfigFlags().preserve_icon_colors ?? true;
     final cacheKey =
         'future-${stableImageKey(image)}-'
         '${size ?? width ?? height ?? 'default'}-${color?.value ?? 'default'}-'
@@ -514,36 +514,36 @@ class ImageUtils {
       );
     }
 
-    // Try icon filename first
     if (image.filename?.isNotEmpty ?? false) {
-      final iconWidget = buildIconWidget(
-        image.filename!,
+      final filename = image.filename!;
+
+      Widget? syncFallback;
+      if (useBinaryImage && image.imageData?.data != null) {
+        syncFallback = _buildBinaryImage(
+          bytes: Uint8List.fromList(image.imageData!.data!),
+          file: filename,
+          size: size, width: width, height: height,
+          color: color, enabled: enabled,
+          constraints: constraints, renderAsIcon: renderAsIcon,
+        );
+      }
+      syncFallback ??= buildIconWidget(
+        filename,
         size: size ?? width ?? height,
         color: color,
         enabled: enabled,
       );
-      if (iconWidget != null) return iconWidget;
-    }
 
-    // Try binary image data (encoded PNG/JPG bytes sent from Java)
-    if (useBinaryImage && image.imageData?.data != null) {
-      final bytes = Uint8List.fromList(image.imageData!.data!);
-      if (getConfigFlags().use_default_icons == true && (image.filename?.isNotEmpty ?? false)) {
-        final fallback = _buildBinaryImage(
-          bytes: bytes,
-          file: image.filename,
-          size: size, width: width, height: height,
-          color: color, enabled: enabled,
-          constraints: constraints, renderAsIcon: renderAsIcon,
-        ) ?? const SizedBox.shrink();
+      if (getConfigFlags().use_default_icons == true) {
+        final fallback = syncFallback ?? const SizedBox.shrink();
         return FutureBuilder<Object?>(
-          future: AssetsManager.loadReplacement(image.filename!),
+          future: AssetsManager.loadReplacement(filename),
           builder: (context, snapshot) {
             final data = snapshot.data;
             if (data != null) {
               return _buildReplacementWidget(
                 data,
-                filename: image.filename!,
+                filename: filename,
                 size: size, width: width, height: height,
                 color: color, enabled: enabled,
                 constraints: constraints, renderAsIcon: renderAsIcon,
@@ -554,8 +554,12 @@ class ImageUtils {
         );
       }
 
+      if (syncFallback != null) return syncFallback;
+    }
+
+    if (useBinaryImage && image.imageData?.data != null) {
       return _buildBinaryImage(
-        bytes: bytes,
+        bytes: Uint8List.fromList(image.imageData!.data!),
         file: image.filename,
         size: size, width: width, height: height,
         color: color, enabled: enabled,

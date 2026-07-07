@@ -458,7 +458,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
           enabled: enabled,
           constraints: null,
           useBinaryImage: true,
-          renderAsIcon: false,
+          renderAsIcon: true,
         );
 
         imageWidget = SizedBox(

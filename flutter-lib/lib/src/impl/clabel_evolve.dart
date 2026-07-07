@@ -276,7 +276,7 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
           height: validH,
           enabled: enabled,
           useBinaryImage: true,
-          renderAsIcon: false,
+          renderAsIcon: true,
         ) ??
         SizedBox(width: validW ?? 0, height: validH ?? 0);
     return FutureBuilder<Widget?>(
@@ -287,7 +287,7 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
         height: validH,
         enabled: enabled,
         useBinaryImage: true,
-        renderAsIcon: false,
+        renderAsIcon: true,
       ),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {

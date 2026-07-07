@@ -11,6 +11,25 @@ class AssetsManager {
   static String? _cachedAssetsPath;
   static bool _hasAttemptedResolve = false;
 
+  /// Strips a leading UTF-8 BOM (U+FEFF) from an SVG string. flutter_svg's XML
+  /// parser fails on a BOM before the root element, leaving the icon blank
+  /// (which reads as "white" on a light theme). Most bundled icons carry one.
+  static String _stripBom(String svg) =>
+      svg.isNotEmpty && svg.codeUnitAt(0) == 0xFEFF ? svg.substring(1) : svg;
+
+  /// True when [content] actually looks like an SVG document. On Flutter web,
+  /// `rootBundle.loadString` for a MISSING asset does not throw — the app is
+  /// served by a server whose SPA fallback returns index.html (HTTP 200) for
+  /// unknown paths. That HTML would otherwise be handed to SvgPicture.string,
+  /// which fails to parse it and renders a blank icon. Guard against it so a
+  /// missing bundled icon falls through to the real image instead.
+  static bool _looksLikeSvg(String content) {
+    final t = content.trimLeft();
+    if (t.startsWith('<svg')) return true;
+    // Allow a leading XML prolog / comment before the root <svg> element.
+    return t.startsWith('<?xml') && t.contains('<svg');
+  }
+
   static Future<String?> _resolveAssetsPath() async {
     // Return cached value if we've already resolved it successfully
     if (_cachedAssetsPath != null) {
@@ -71,7 +90,10 @@ class AssetsManager {
         final assetPath = 'assets/icons/$base.$format';
         if (format == 'svg') {
           try {
-            return await rootBundle.loadString(assetPath);
+            final content = _stripBom(await rootBundle.loadString(assetPath));
+            // On web a missing asset yields the SPA fallback HTML, not a 404.
+            if (!_looksLikeSvg(content)) continue;
+            return content;
           } on UnsupportedError {
             continue;
           } catch (e) {
@@ -107,7 +129,9 @@ class AssetsManager {
         final file = File('$assetsPath/$base.$format');
         if (await file.exists()) {
           if (format == 'svg') {
-            return await file.readAsString();
+            final content = _stripBom(await file.readAsString());
+            if (!_looksLikeSvg(content)) continue;
+            return content;
           } else {
             final bytes = await file.readAsBytes();
             final codec = await ui.instantiateImageCodec(bytes);

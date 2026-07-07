@@ -59,7 +59,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
     super.initState();
     EquoCommService.onRaw(
       "${state.swt}/${state.id}/closeMenu",
-      (_) {
+          (_) {
         if (_menuController.isOpen) {
           _menuController.close();
         }
@@ -104,11 +104,11 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   }
 
   Widget _buildMenuBar(
-    BuildContext context,
-    MenuThemeExtension widgetTheme,
-    bool enabled,
-    bool visible,
-  ) {
+      BuildContext context,
+      MenuThemeExtension widgetTheme,
+      bool enabled,
+      bool visible,
+      ) {
     final menuItems = _getMenuItems();
     final align = getConfigFlags().decorations_align ?? DecorationsAlign.hleft;
     final alignRight = align == DecorationsAlign.hright;
@@ -124,7 +124,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
 
     final textStyle =
         widgetTheme.textStyle?.copyWith(color: textColor) ??
-        TextStyle(color: textColor);
+            TextStyle(color: textColor);
 
     Widget menuBar = AnimatedContainer(
       duration: widgetTheme.animationDuration,
@@ -140,21 +140,21 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       ),
       child: Row(
         mainAxisAlignment:
-            alignRight ? MainAxisAlignment.end : MainAxisAlignment.start,
+        alignRight ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: menuItems
             .map(
               (item) => _MenuBarItem(
-                item: item,
-                widgetTheme: widgetTheme,
-                textStyle: textStyle,
-                textColor: textColor,
-                borderColor: borderColor,
-                onMenuShow: () => widget.sendMenuShow(state, null),
-                onMenuHide: () => _sendPendingChanges(),
-                registerPendingChange: _registerPendingChange,
-                menuState: _menuState,
-              ),
-            )
+            item: item,
+            widgetTheme: widgetTheme,
+            textStyle: textStyle,
+            textColor: textColor,
+            borderColor: borderColor,
+            onMenuShow: () => widget.sendMenuShow(state, null),
+            onMenuHide: () => _sendPendingChanges(),
+            registerPendingChange: _registerPendingChange,
+            menuState: _menuState,
+          ),
+        )
             .toList(),
       ),
     );
@@ -163,11 +163,11 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   }
 
   Widget _buildPopupMenu(
-    BuildContext context,
-    MenuThemeExtension widgetTheme,
-    bool enabled,
-    bool visible,
-  ) {
+      BuildContext context,
+      MenuThemeExtension widgetTheme,
+      bool enabled,
+      bool visible,
+      ) {
     final menuItems = _getMenuItems();
     final backgroundColor = enabled
         ? widgetTheme.popupBackgroundColor

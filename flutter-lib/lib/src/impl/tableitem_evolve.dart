@@ -311,6 +311,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     return FutureBuilder<Widget?>(
       future: ImageUtils.buildVImageAsync(
         image,
+        size: iconSize,
         enabled: enabled,
         constraints: BoxConstraints(
           minWidth: iconSize,

@@ -395,7 +395,7 @@ class _ExpandItemWidgetState extends State<_ExpandItemWidget>
       enabled: true,
       constraints: null,
       useBinaryImage: true,
-      renderAsIcon: false,
+      renderAsIcon: true,
     );
 
     if (builtImage != null) {

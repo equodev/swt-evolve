@@ -76,7 +76,7 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     final textStyle = baseStyle?.copyWith(color: textColor) ??
         itemTheme.tabItemTextStyle?.copyWith(color: textColor) ??
         TextStyle(color: textColor);
-    final preserveIconColors = getConfigFlags().preserve_icon_colors ?? false;
+    final preserveIconColors = getConfigFlags().preserve_icon_colors ?? true;
     final imageWidget = _buildImageWidget(
       context,
       itemTheme,
