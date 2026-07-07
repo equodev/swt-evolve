@@ -72,8 +72,8 @@ import org.junit.jupiter.params.provider.MethodSource;
  * every nested test. {@code Open/Close window} runs last ({@code @Order}) because
  * {@code window.close()} can tear down the shared window.
  *
- * <pre>./gradlew :swt-evolve:swt_native:webTest                          # Flutter web build + headless Chrome
- * ./gradlew :swt-evolve:swt_native:webTest -Dharness.client=native  # native engine instead</pre>
+ * <pre>./gradlew :swt-evolve:swt_native:nativeTest                          # Flutter web build + headless Chrome
+ * ./gradlew :swt-evolve:swt_native:nativeTest -Dharness.client=native  # native engine instead</pre>
  */
 @Tag("flutter-it")
 @TestClassOrder(ClassOrderer.OrderAnnotation.class)

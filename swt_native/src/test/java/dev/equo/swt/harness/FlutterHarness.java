@@ -1,7 +1,5 @@
 package dev.equo.swt.harness;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import dev.equo.swt.ChromiumStandaloneLauncher;
 import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
@@ -13,70 +11,46 @@ import org.eclipse.swt.widgets.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Generic Java↔Flutter test harness: boots a <b>real</b> Flutter renderer wired to a live
- * Java↔Flutter comm, so a test can drive the production SWT→bridge→Flutter path all the way down
- * (serialization in both directions, deterministic frame sync) and then read back the rendered
- * widget state for assertions. State read-back uses the dormant {@code evolve.test.query} channel
- * registered by Flutter's {@code main()} (see {@code flutter-lib/lib/test_harness.dart}).
+ * Boot/comm-only Java↔Flutter test harness: boots a <b>real</b> Flutter renderer wired to a live
+ * Java↔Flutter comm (headless-Chrome + {@link WebFlutterServer} on web, the native engine on
+ * desktop, or a CEF standalone window), and exposes the primitives ({@link #startWebClient},
+ * {@link #initNativeRenderer}, {@link #awaitClientReadyResilient}, {@link #teardown}) needed to
+ * drive that boot sequence. It does not assume a real widget tree — subclasses that need one
+ * (running a widget snippet and reading back its rendered state) should extend
+ * {@link WidgetFlutterHarness} instead; subclasses that only need to boot a renderer and speak a
+ * custom request/response protocol over the comm (e.g. a size-measurement bridge) extend this
+ * class directly.
  *
  * <p>The renderer is selectable and works on both <b>desktop</b> and <b>web</b>: by default it serves
  * the Flutter web build in a headless browser; {@code -Dharness.client=native} uses the native engine
- * and {@code -Ddev.equo.swt.mode=chromium} a CEF standalone window. This is the harness for any
- * Java↔Flutter integration test (tag them {@code @Tag("flutter-it")}); {@link BrowserFlutterHarness}
- * extends it with the Browser-widget specifics. {@link dev.equo.swt.bench.BenchBridge} also extends
- * it to reuse the shared bridge plumbing.
+ * and {@code -Ddev.equo.swt.mode=chromium} a CEF standalone window.
  *
- * <h3>Usage</h3>
- * <pre>{@code
- * FlutterHarness flutter = new FlutterHarness();
- * flutter.init();                 // wire as the global bridge BEFORE creating widgets
- * Shell shell = new Shell(new Display());
- * Button r1 = new Button(new Composite(shell, SWT.NONE), SWT.RADIO);
- * flutter.show(shell);            // boot renderer for the root, await ClientReady
- * flutter.flush();                // push pending state and wait for the painted frame
- * Map<String,Object> s = flutter.queryState(r1);  // live Flutter state of r1
- * flutter.teardown();
- * }</pre>
+ * <p>Known subclasses: {@link WidgetFlutterHarness} (widget-tree tests), {@code GenericSizeBridge} /
+ * {@code FontMeasureBridge} (size-measurement bridges with no widget tree), and
+ * {@link dev.equo.swt.bench.BenchBridge} (reuses the shared bridge plumbing).
  */
-public class FlutterHarness extends EmbeddedBridge {
+public abstract class FlutterHarness extends EmbeddedBridge {
 
-    private static final boolean WEB = !"native".equals(System.getProperty("harness.client", "web"));
+    protected static final boolean WEB = !"native".equals(System.getProperty("harness.client", "web"));
     /** Render the web client in a real CEF standalone window (instead of headless Chrome) so the
      *  popup-window + HTTP-auth events that originate there fire. Implies the WEB client. */
     private static final boolean CHROMIUM = ConfigFlags.isChromiumMode();
     protected static final long READY_TIMEOUT_MS = Long.getLong("harness.readyTimeoutMs", 30_000);
     protected static final long QUERY_TIMEOUT_MS = Long.getLong("harness.queryTimeoutMs", 10_000);
 
-    private static final String Q_REQUEST = "evolve.test.query";
-    private static final String Q_RESPONSE = "evolve.test.queryResponse";
-    private static final String FRAME_SYNC = "evolve.test.frameSync";
-    private static final String FRAME_SYNCED = "evolve.test.frameSynced";
-
-    private final Gson gson = new Gson();
-    private final AtomicInteger queryGen = new AtomicInteger();
-    private final AtomicInteger syncGen = new AtomicInteger();
-    private final Map<Integer, CompletableFuture<Map<String, Object>>> pendingQueries = new ConcurrentHashMap<>();
-    private final Map<Integer, CompletableFuture<Void>> pendingSyncs = new ConcurrentHashMap<>();
-
     private long context;
     private ChromiumStandaloneLauncher chromiumLauncher;
     private WebFlutterServer webServer;
     private Process browserProc;
     private Path profileDir;
-    private boolean shown;
     /** Boot-resilience self-test knob: number of upcoming browser launches to force to fail (load a
      *  blank page that never connects), so {@link #awaitClientReadyResilient}'s relaunch path is
      *  exercised deterministically. 0 (default) in CI/production. */
@@ -89,7 +63,7 @@ public class FlutterHarness extends EmbeddedBridge {
      */
     private CommService comm;
 
-    public FlutterHarness() {
+    protected FlutterHarness() {
         super(null);
     }
 
@@ -111,50 +85,11 @@ public class FlutterHarness extends EmbeddedBridge {
 
     // ---------------- lifecycle ----------------
 
-    /**
-     * Wire this harness as the global bridge and register the comm handlers. Call once before any
-     * Display/widget is created, paired with {@link #teardown()}.
-     */
-    public void init() {
-        if (!WEB) FlutterLibraryLoader.initialize();
-        // Injecting the bridge before any Display is created makes every widget route through the
-        // harness, and makes the web Display skip standing up its own server + browser (see
-        // WebDisplayBridge.initForDisplay) — so we don't double-boot.
-        FlutterBridge.set(this);
-        Config.forceEquo();
-        registerCommHandlers();
-    }
-
-    /** Register the generic query + frame-sync handlers. Subclasses may override to add more. */
-    protected void registerCommHandlers() {
-        // Query-response handler (persistent). The far side replies with the live V*.toJson().
-        comm().on(Q_RESPONSE, byte[].class, bytes -> {
-            if (bytes == null) return;
-            Map<String, Object> resp = parseJson(bytes);
-            Integer qid = ((Number) resp.get("queryId")).intValue();
-            CompletableFuture<Map<String, Object>> f = pendingQueries.remove(qid);
-            if (f != null) f.complete(resp);
-        });
-        // Post-frame ack: completes the future for the matching syncId once Flutter has built +
-        // painted the frame requested by flush() (see test_harness.dart).
-        comm().on(FRAME_SYNCED, byte[].class, bytes -> {
-            if (bytes == null) return;
-            Map<String, Object> m = parseJson(bytes);
-            Object sid = m == null ? null : m.get("syncId");
-            if (sid == null) return;
-            CompletableFuture<Void> f = pendingSyncs.remove(((Number) sid).intValue());
-            if (f != null) f.complete(null);
-        });
-    }
-
-    protected Map<String, Object> parseJson(byte[] bytes) {
-        Type t = new TypeToken<Map<String, Object>>() {}.getType();
-        return gson.fromJson(new String(bytes, StandardCharsets.UTF_8), t);
-    }
-
-    /** Tear down this harness's renderer, server, and comm. Paired with {@link #init()}. */
+    /** Tear down this harness's renderer, server, and comm. */
     public void teardown() {
-        if (browserProc != null) browserProc.destroy();
+        // Plain browserProc.destroy() only signals the launched Chrome process itself and leaves
+        // its zygote/GPU/network/storage helper processes orphaned (see destroyBrowserProcess()).
+        destroyBrowserProcess();
         if (chromiumLauncher != null) {
             chromiumLauncher.close(false);
             chromiumLauncher = null;
@@ -173,73 +108,29 @@ public class FlutterHarness extends EmbeddedBridge {
         Config.defaultToEclipse();
     }
 
-    // ---------------- public API ----------------
+    /** Boots the native (desktop) Flutter engine for {@code rootId}/{@code rootName}. Exposed
+     *  (alongside {@link #startWebClient}) so subclasses without a real widget tree — e.g. a
+     *  measurement bridge — can drive the same boot sequence a widget-tree harness uses, instead of
+     *  reimplementing it. */
+    protected void initNativeRenderer(long rootId, String rootName) {
+        context = dev.equo.swt.FlutterNative.initialize(comm().getPort(), 0, rootId, rootName, "", 0, 0, 0, 0);
+    }
 
-    /** Boot the renderer for {@code root}, then block until Flutter signals ClientReady. */
-    public void show(Control root) {
-        if (shown) throw new IllegalStateException("show() already called");
-        shown = true;
-        DartControl impl = (DartControl) root.getImpl();
-        long rootId = id(impl);
-        String rootName = widgetName(impl);
-        onReady(impl, Void.class); // registers the ClientReady handler + dirties the root
+    /** Initializes the native Flutter libraries (desktop client only) and wires this harness as the
+     *  active {@link FlutterBridge}. Every subclass's boot sequence starts with this, before
+     *  creating any Display/widget. */
+    protected void registerBridge() {
+        if (!WEB) FlutterLibraryLoader.initialize();
+        FlutterBridge.set(this);
+    }
+
+    /** Boots the renderer (web or native, per {@code -Dharness.client}) for {@code rootId}/
+     *  {@code rootName}, then blocks until Flutter reports ClientReady. Shared boot sequence for
+     *  every subclass, whether it drives a real widget tree or a bare comm channel. */
+    protected void bootRenderer(long rootId, String rootName) {
         if (WEB) startWebClient(rootId, rootName);
-        else context = dev.equo.swt.FlutterNative.initialize(comm().getPort(), 0, rootId, rootName, "", 0, 0, 0, 0);
+        else initNativeRenderer(rootId, rootName);
         awaitClientReadyResilient();
-        flush();
-    }
-
-    /**
-     * Push all pending Java-side state to Flutter and block until Flutter has built + painted the
-     * resulting frame (a deterministic frame barrier; see test_harness.dart {@code frameSync}).
-     */
-    public void flush() {
-        FlutterBridge.update();
-        awaitFrame();
-    }
-
-    private void awaitFrame() {
-        int sid = syncGen.incrementAndGet();
-        CompletableFuture<Void> f = new CompletableFuture<>();
-        pendingSyncs.put(sid, f);
-        comm().send(FRAME_SYNC, ("{\"syncId\":" + sid + "}").getBytes(StandardCharsets.UTF_8));
-        long deadline = System.currentTimeMillis() + QUERY_TIMEOUT_MS;
-        while (!f.isDone() && System.currentTimeMillis() < deadline) pump(1);
-        pendingSyncs.remove(sid);
-    }
-
-    /**
-     * Returns the live Flutter state (the widget's {@code V*.toJson()}) of {@code w}, by id. The map
-     * contains {@code found} plus the serialized fields under {@code state} (e.g. {@code selection}).
-     */
-    public Map<String, Object> queryState(Widget w) {
-        int qid = queryGen.incrementAndGet();
-        CompletableFuture<Map<String, Object>> f = new CompletableFuture<>();
-        pendingQueries.put(qid, f);
-        String json = "{\"queryId\":" + qid + ",\"targetId\":" + w.hashCode() + "}";
-        comm().send(Q_REQUEST, json.getBytes(StandardCharsets.UTF_8));
-        return awaitFuture(f, QUERY_TIMEOUT_MS, "query for id " + w.hashCode());
-    }
-
-    /** Convenience: the rendered selection of a Check/Radio/Toggle Button (false if absent/null). */
-    @SuppressWarnings("unchecked")
-    public boolean renderedSelection(Button b) {
-        Map<String, Object> resp = queryState(b);
-        if (!Boolean.TRUE.equals(resp.get("found"))) return false;
-        Map<String, Object> state = (Map<String, Object>) resp.get("state");
-        Object sel = state == null ? null : state.get("selection");
-        return Boolean.TRUE.equals(sel);
-    }
-
-    /** Convenience: the rendered enabled state of a Control (false if absent/null — the
-     *  serializer's {@code skipDefaultValues} omits booleans equal to the Java default, false). */
-    @SuppressWarnings("unchecked")
-    public boolean renderedEnabled(Control c) {
-        Map<String, Object> resp = queryState(c);
-        if (!Boolean.TRUE.equals(resp.get("found"))) return false;
-        Map<String, Object> state = (Map<String, Object>) resp.get("state");
-        Object enabled = state == null ? null : state.get("enabled");
-        return Boolean.TRUE.equals(enabled);
     }
 
     // ---------------- await / pump ----------------
@@ -269,7 +160,7 @@ public class FlutterHarness extends EmbeddedBridge {
      * longer timeout: each attempt is short and we make a few. Only the headless path can relaunch;
      * native / Chromium-standalone / browser-disabled fall back to the single {@link #awaitClientReady}.
      */
-    private void awaitClientReadyResilient() {
+    protected void awaitClientReadyResilient() {
         boolean canRelaunch = WEB && !CHROMIUM
                 && !"none".equalsIgnoreCase(System.getProperty("equo.swt.browser", ""));
         if (!canRelaunch) {
@@ -323,9 +214,16 @@ public class FlutterHarness extends EmbeddedBridge {
         browserProc = null;
     }
 
-    protected <R> R awaitFuture(CompletableFuture<R> f, long timeoutMs, String what) {
+    /** Spin the pump loop until {@code f} completes or {@code timeoutMs} elapses. Does not throw
+     *  on timeout; callers that need a hard failure should check {@code f.isDone()} themselves
+     *  (see {@link #awaitFuture}) or decide their own fallback. */
+    protected void awaitQuiet(CompletableFuture<?> f, long timeoutMs) {
         long deadline = System.currentTimeMillis() + timeoutMs;
         while (!f.isDone() && System.currentTimeMillis() < deadline) pump(1);
+    }
+
+    protected <R> R awaitFuture(CompletableFuture<R> f, long timeoutMs, String what) {
+        awaitQuiet(f, timeoutMs);
         if (!f.isDone())
             throw new RuntimeException("Timed out waiting for " + what + " (" + timeoutMs + "ms)");
         try {
@@ -335,7 +233,7 @@ public class FlutterHarness extends EmbeddedBridge {
         }
     }
 
-    private void pump(int maxMessages) {
+    void pump(int maxMessages) {
         if (CHROMIUM && chromiumLauncher != null) {
             chromiumLauncher.pump();
         }
@@ -348,7 +246,7 @@ public class FlutterHarness extends EmbeddedBridge {
 
     // ---------------- web client boot ----------------
 
-    private void startWebClient(long rootId, String rootName) {
+    protected void startWebClient(long rootId, String rootName) {
         File webDir = resolveWebDir();
         webServer = new WebFlutterServer.Builder()
                 .webDirectory(webDir)
@@ -482,7 +380,8 @@ public class FlutterHarness extends EmbeddedBridge {
 
     // ---------------- unused EmbeddedBridge overrides ----------------
 
-    /** No-op: creating Shells must not boot a native window — {@link #show} boots the client. */
+    /** No-op: creating Shells must not boot a native window — a widget-tree subclass's {@code show}
+     *  boots the client. */
     @Override public void initFlutterView(Composite parent, DartControl control) { }
     @Override protected long getHandle(Control control) { return 0; }
     @Override protected void setHandle(DartControl control, long view) { }

@@ -10,6 +10,23 @@ public final class FontMetricsUtil {
 
     private FontMetricsUtil() {}
 
+    private static final java.util.Map<String, String> fontNameSubstitutions = new java.util.HashMap<>();
+
+    /** Register a font-name substitution for metrics lookup (called by webMain during static init). */
+    public static void registerFontSubstitution(String from, String to) {
+        fontNameSubstitutions.put(from, to);
+    }
+
+    /** Return the substituted font name, or the original if no substitution is registered. */
+    public static String substituteFontName(String name) {
+        return fontNameSubstitutions.getOrDefault(name, name);
+    }
+
+    /** Returns the set of font names that have substitutions registered (e.g. for web testing). */
+    public static java.util.Set<String> fontSubstitutionKeys() {
+        return java.util.Collections.unmodifiableSet(fontNameSubstitutions.keySet());
+    }
+
     /**
      * Computes scaled font metric values for the given font.
      * Returns int[] {ascent, descent, height, avgCharWidth}, or null if the
@@ -46,6 +63,7 @@ public final class FontMetricsUtil {
     public static String getId(String name, boolean italic, int weight) {
         if (name == null || name.isBlank())
             name = "System";
+        name = substituteFontName(name);
         int key = (weight >= 100 && weight <= 900) ? ((weight - 100) / 100) : (weight >= 600 ? 6 : 3);
         return name + "-" + (italic ? 1 : 0) + "-" + key;
     }

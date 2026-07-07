@@ -1,6 +1,6 @@
 package org.eclipse.swt.widgets;
 
-import dev.equo.swt.harness.FlutterHarness;
+import dev.equo.swt.harness.WidgetFlutterHarness;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -19,15 +19,15 @@ import static org.assertj.core.api.Assertions.*;
  * flips a sibling control's enabled state in the same tick. The fix defers that parent dirty
  * mark via {@code Display.asyncExec(...)}.
  *
- * <p>Run via the {@code webTest} task, which compiles this against the WEB Java backend so the
- * real {@code webMain} {@code DartButton.selectRadio()} runs.
+ * <p>Run via the {@code nativeTest} task, which compiles this against the whole-tree-Flutter Java
+ * backend so the real {@code webMain} {@code DartButton.selectRadio()} runs.
  *
- * <pre>./gradlew :swt-evolve:swt_native:webTest</pre>
+ * <pre>./gradlew :swt-evolve:swt_native:nativeTest</pre>
  */
 @Tag("flutter-it")
 class RadioGroupListenerRaceFlutterTest {
 
-    private FlutterHarness flutter;
+    private WidgetFlutterHarness flutter;
     private Display display;
     private Shell shell;
 
@@ -36,7 +36,7 @@ class RadioGroupListenerRaceFlutterTest {
 
     @BeforeEach
     void setUp() {
-        flutter = new FlutterHarness();
+        flutter = new WidgetFlutterHarness();
         flutter.init();
         display = new Display();
         shell = new Shell(display);
