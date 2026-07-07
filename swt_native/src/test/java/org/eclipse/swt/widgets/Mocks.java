@@ -93,6 +93,7 @@ public class Mocks implements BeforeEachCallback, AfterEachCallback {
         swtShell.display = display;
         when(shell.getDisplay()).thenReturn(display);
         when(shell.getShell()).thenReturn(shell);
+        when(shell.isEnabled()).thenReturn(true);
         Color bg = new Color(red(), green(), blue());
         when(shell.getBackground()).thenReturn(bg);
         whenInvokedReturn(SwtControl.class, "getBackgroundColor", shell.getImpl(), bg); // Windows and macOS
@@ -199,6 +200,7 @@ public class Mocks implements BeforeEachCallback, AfterEachCallback {
         ToolBar w = mock(ToolBar.class);
         DartToolBar impl = mock(DartToolBar.class);
         when(w.getImpl()).thenReturn(impl);
+        when(w.isEnabled()).thenReturn(true);
         when(impl.getBridge()).thenReturn(new MockFlutterBridge());
         Display display = swtDisplay();
         //when(w.getDisplay()).thenReturn(display);

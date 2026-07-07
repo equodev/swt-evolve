@@ -84,7 +84,7 @@ public class VControl extends VWidget {
     }
 
     public boolean getEnabled() {
-        return ((DartControl) impl).getEnabled();
+        return ((DartControl) impl).isEnabled();
     }
 
     public void setEnabled(boolean value) {

@@ -18,7 +18,7 @@ public class VScrollBar extends VWidget {
     }
 
     public boolean getEnabled() {
-        return ((DartScrollBar) impl).getEnabled();
+        return ((DartScrollBar) impl).isEnabled();
     }
 
     public void setEnabled(boolean value) {
