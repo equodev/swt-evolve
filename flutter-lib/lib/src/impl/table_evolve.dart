@@ -20,6 +20,7 @@ import '../theme/theme_extensions/table_theme_extension.dart';
 import '../theme/theme_settings/table_theme_settings.dart';
 import '../gen/widgets.dart';
 import '../gen/rectangle.dart';
+import 'utils/double_tap_detector.dart';
 
 class TableImpl<T extends TableSwt, V extends VTable>
     extends CompositeImpl<T, V> {
@@ -31,6 +32,10 @@ class TableImpl<T extends TableSwt, V extends VTable>
   Map<int, TableColumnWidth>? _cachedColumnWidths;
   final List<String> _eventNames = [];
   final ScrollController _verticalScrollController = ScrollController();
+
+  final DoubleTapDetector _rowTapDetector = DoubleTapDetector();
+
+  int registerRowTap(int rowIndex) => _rowTapDetector.registerTap(key: rowIndex);
 
   // Each cell has its own GestureDetector that sends MouseDown; suppress both
   // the ControlImpl.wrap() Listener and wrapCompositeInteractionChrome to

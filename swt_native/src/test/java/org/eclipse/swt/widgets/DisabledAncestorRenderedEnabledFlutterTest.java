@@ -1,6 +1,6 @@
 package org.eclipse.swt.widgets;
 
-import dev.equo.swt.harness.FlutterHarness;
+import dev.equo.swt.harness.WidgetFlutterHarness;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.*;
 
@@ -31,13 +31,13 @@ import static org.assertj.core.api.Assertions.*;
 @Tag("flutter-it")
 class DisabledAncestorRenderedEnabledFlutterTest {
 
-    private FlutterHarness flutter;
+    private WidgetFlutterHarness flutter;
     private Display display;
     private Shell shell;
 
     @BeforeEach
     void setUp() {
-        flutter = new FlutterHarness();
+        flutter = new WidgetFlutterHarness();
         flutter.init();
         display = new Display();
         shell = new Shell(display);

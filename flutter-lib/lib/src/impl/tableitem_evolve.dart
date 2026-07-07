@@ -194,10 +194,11 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       onTertiaryTapDown: (_) => sendMouseDown(2),
       onTap: () {
         if (enabled && _context?.tableImpl != null) {
-          _context!.tableImpl!.handleRowTap(rowIndex, state);
+          if (_context!.tableImpl!.registerRowTap(rowIndex) == 2) {
+            sendMouseDoubleClick(1);
+          }
         }
       },
-      onDoubleTap: () => sendMouseDoubleClick(1),
       child: SizedBox(
         height: rowHeight,
         child: Container(
