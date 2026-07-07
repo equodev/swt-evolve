@@ -447,11 +447,16 @@ public class Config {
         }
     }
 
+    /** True when running as the Eclipse IDE workbench (vs. other e4/RCP hosts that nest one level less). */
+    private static final boolean isEclipseIde =
+            "org.eclipse.ui.ide.workbench".equals(System.getProperty("eclipse.application"));
+
     static boolean isMainComposite(Class<?> clazz, Composite parent) {
         String id = getId(clazz, parent);
-        return id.equals("/Shell/0/Composite/1/Composite/1/Composite/1/Composite/1");
-        // eclipse
-        //return id.equals("/Shell/0/Composite/1/Composite/1/Composite/1/Composite/1/Composite/1");
+        // The Eclipse IDE wraps the main composite one Composite level deeper than other RCP hosts.
+        return id.equals(isEclipseIde
+                ? "/Shell/0/Composite/1/Composite/1/Composite/1/Composite/1/Composite/1"
+                : "/Shell/0/Composite/1/Composite/1/Composite/1/Composite/1");
     }
 
     public static boolean isSwtCTabFolderBody(Class<?> clazz, Widget parent) {
@@ -601,12 +606,12 @@ public class Config {
             configFlags.use_default_icons = Boolean.parseBoolean(System.getProperty("swt.evolve.use_default_icons", "true"));
             configFlags.use_swt_colors = Boolean.getBoolean("swt.use_swt_colors");
             configFlags.use_swt_fonts = Boolean.getBoolean("swt.use_swt_fonts");
-            configFlags.preserve_icon_colors = Boolean.parseBoolean(System.getProperty("swt.evolve.preserve_icon_colors", "true"));
+            configFlags.preserve_icon_colors = Boolean.parseBoolean(System.getProperty("swt.evolve.preserve_icon_colors", "false"));
             configFlags.show_theme_color_palette = Boolean.getBoolean("swt.evolve.show_theme_color_palette");
             configFlags.show_scaling_control = Boolean.getBoolean("swt.evolve.show_scaling_control");
             configFlags.decorations_align = DecorationsAlign.fromString(System.getProperty("swt.evolve.decorations_align", "vleft"));
             configFlags.print_move = Boolean.getBoolean("dev.equo.swt.printMove");
-            configFlags.force_theme = System.getProperty("swt.evolve.force_theme", "light");
+            configFlags.force_theme = System.getProperty("swt.evolve.force_theme", "dark");
             configFlags.theme_name = System.getProperty("swt.evolve.theme_name", "equo");
             configFlags.theme_color = System.getProperty("swt.evolve.theme_color");
             // Client-Side Decorations: a single property selects placement and on/off
