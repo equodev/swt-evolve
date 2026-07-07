@@ -538,6 +538,7 @@ val webFlutterLib = tasks.register<Exec>("webFlutterLib") {
     workingDir = file("../flutter-lib")
     inputs.dir("../flutter-lib/lib")
     inputs.dir("../flutter-lib/web")
+    inputs.dir("../flutter-lib/assets")
     outputs.dir("../flutter-lib/build/web")
     commandLine = flutterCmd() + listOf("build", "web")
 }
@@ -602,6 +603,7 @@ platforms.forEach { platform ->
             dependsOn(dart, pub)
             workingDir = file("../flutter-lib")
             inputs.dir("../flutter-lib/lib")
+            inputs.dir("../flutter-lib/assets")
             inputs.files(fileTree("../flutter-lib/${info.os}") {
                 exclude("**/ephemeral/**", "Pods/**", "**/*.bak")
             })
