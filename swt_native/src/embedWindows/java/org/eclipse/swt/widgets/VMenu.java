@@ -30,7 +30,7 @@ public class VMenu extends VWidget {
     }
 
     public boolean getEnabled() {
-        return ((DartMenu) impl).getEnabled();
+        return ((DartMenu) impl).isEnabled();
     }
 
     public void setEnabled(boolean value) {
