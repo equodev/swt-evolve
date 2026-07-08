@@ -855,8 +855,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             result |= RESIZED;
         }
         getBridge().setBounds(this, bounds);
-        if (parent != null && parent.getImpl() instanceof DartWidget pw)
-            pw.dirty();
         return result;
     }
 
