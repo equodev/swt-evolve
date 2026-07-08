@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
@@ -28,16 +27,6 @@ abstract class WidgetSwt<V extends VWidget> extends StatefulWidget {
   }
 }
 
-// Global map: widget id → latest value received from Java via onChange.
-// Used in didUpdateWidget to avoid a stale parent value overwriting a fresher
-// child state that already arrived from Java.
-final Map<int, VWidget> _latestKnownValues = {};
-
-@visibleForTesting
-void injectLatestKnownValue(int id, VWidget value) {
-  _latestKnownValues[id] = value;
-}
-
 abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
     extends State<T> {
   late V state;
@@ -51,6 +40,7 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   void initState() {
     super.initState();
     state = widget.value as V;
+    // print("${state.swt} ${state.id} initState");
     EquoCommService.on("${state.swt}/${state.id}", _onChange);
   }
 
@@ -95,15 +85,13 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   @override
   void didUpdateWidget(covariant T oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final incoming = widget.value as V;
-    final latest = _latestKnownValues[incoming.id];
-    state = (latest is V) ? latest : incoming;
+    // print("${state.swt} ${state.id} didUpdateWidget");
+    state = widget.value as V;
     extraSetState();
   }
 
   @override
   void dispose() {
-    _latestKnownValues.remove(state.id);
     EquoCommService.remove("${state.swt}/${state.id}");
     super.dispose();
   }
@@ -119,7 +107,7 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   }
 
   void _onChange(V payload) {
-    _latestKnownValues[payload.id] = payload;
+    // print('On Widget Change, payload: $payload');
     setValue(payload);
   }
 
