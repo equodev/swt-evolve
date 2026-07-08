@@ -656,6 +656,11 @@ platforms.forEach { platform ->
         // resource paths (e.g. duplicate META-INF/services entries). Match the main `tasks.jar`
         // and keep the first occurrence.
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        // Force findSwt (which writes the app's SWT version to swtVersionConfig) to run before this
+        // jar's manifest is generated; otherwise the jar can build first and swtVersionProvider falls
+        // back to swtVersionFull, stamping a Bundle-Version that doesn't match the app's bundles.info.
+        if (gradle.parent != null)
+            inputs.files(swtVersionConfig).withPropertyName("swtVersionFile").optional(true)
         from(sourceSets[info.sourceSet].output)
         if (!info.isWeb)
             from(layout.buildDirectory.dir("natives/${info.desktopPlatform}"))
@@ -680,8 +685,12 @@ platforms.forEach { platform ->
                 "Bundle-SymbolicName" to "$bsn; singleton:=true",
                 "Bundle-Version" to when {
                     info.isWeb -> evolveVersion()
-                    info.isHybrid -> hostVersion("hyb")
-                    else -> hostVersion("embed")
+                    // Desktop/hybrid fragments overwrite the app's existing SWT bundle in place (the run
+                    // tasks copy this jar over it and leave bundles.info untouched), so the Bundle-Version
+                    // must match what bundles.info already records — the version findSwt read from the app
+                    // (swtVersionProvider) — not the evolve release. Otherwise the simpleconfigurator can't
+                    // locate the fragment and the empty host stays without SWT classes (NoClassDefFoundError: SWTError).
+                    else -> swtVersionProvider
                 },
                 "Bundle-ManifestVersion" to 2,
                 "Export-Package" to (if (info.isWeb) webExportPackage else swtExportPackage(info.swtWs)),
