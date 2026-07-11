@@ -472,6 +472,8 @@ public class DartDateTime extends DartComposite implements IDateTime {
         checkWidget();
         if (year < MIN_YEAR || year > MAX_YEAR)
             return;
+        if (!org.eclipse.swt.widgets.DateTimeHelper.isValidDate(year, month, day))
+            return;
         if (this.year != year || this.month != month || this.day != day) {
             dirty();
         }
@@ -497,12 +499,12 @@ public class DartDateTime extends DartComposite implements IDateTime {
      * @see #setDate
      */
     public void setDay(int day) {
-        int newValue = day;
-        if (!java.util.Objects.equals(this.day, newValue)) {
-            dirty();
-        }
         checkWidget();
-        this.day = newValue;
+        if (!org.eclipse.swt.widgets.DateTimeHelper.isValidDate(this.year, this.month, day))
+            return;
+        if (this.day != day)
+            dirty();
+        this.day = day;
     }
 
     @Override
@@ -580,12 +582,12 @@ public class DartDateTime extends DartComposite implements IDateTime {
      * @see #setDate
      */
     public void setMonth(int month) {
-        int newValue = month;
-        if (!java.util.Objects.equals(this.month, newValue)) {
-            dirty();
-        }
         checkWidget();
-        this.month = newValue;
+        if (!org.eclipse.swt.widgets.DateTimeHelper.isValidDate(this.year, month, this.day))
+            return;
+        if (this.month != month)
+            dirty();
+        this.month = month;
     }
 
     /**
@@ -659,14 +661,14 @@ public class DartDateTime extends DartComposite implements IDateTime {
      * @see #setDate
      */
     public void setYear(int year) {
-        int newValue = year;
-        if (!java.util.Objects.equals(this.year, newValue)) {
-            dirty();
-        }
         checkWidget();
         if (year < MIN_YEAR || year > MAX_YEAR)
             return;
-        this.year = newValue;
+        if (!org.eclipse.swt.widgets.DateTimeHelper.isValidDate(year, this.month, this.day))
+            return;
+        if (this.year != year)
+            dirty();
+        this.year = year;
     }
 
     int day;
