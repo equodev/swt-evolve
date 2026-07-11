@@ -130,7 +130,133 @@ public class DartBorderLayout extends DartLayout implements IBorderLayout {
 
     @Override
     public void layout(Composite composite, boolean flushCache) {
-        // remaining height for WEST and EAST, preferred width for WEST and EAST if
+        Rectangle clientArea = composite.getClientArea();
+        int clientX = clientArea.x + getApi().marginWidth;
+        int clientY = clientArea.y + getApi().marginHeight;
+        int clientWidth = clientArea.width - 2 * getApi().marginWidth;
+        int clientHeight = clientArea.height - 2 * getApi().marginHeight;
+        java.util.stream.Stream<java.util.Map.Entry<Control, BorderData>> children = Arrays.stream(composite.getChildren()).map(control -> borderDataControl(control, flushCache));
+        Map<Integer, java.util.List<java.util.Map.Entry<Control, BorderData>>> regionMap = children.collect(Collectors.groupingBy(DartBorderLayout::region));
+        regionMap.getOrDefault(SWT.NONE, Collections.emptyList()).forEach(entry -> entry.getKey().setBounds(clientX, clientY, 0, 0));
+        java.util.List<java.util.Map.Entry<Control, BorderData>> northList = regionMap.getOrDefault(TOP, Collections.emptyList());
+        java.util.List<java.util.Map.Entry<Control, BorderData>> southList = regionMap.getOrDefault(BOTTOM, Collections.emptyList());
+        java.util.List<java.util.Map.Entry<Control, BorderData>> westList = regionMap.getOrDefault(LEFT, Collections.emptyList());
+        java.util.List<java.util.Map.Entry<Control, BorderData>> eastList = regionMap.getOrDefault(RIGHT, Collections.emptyList());
+        java.util.List<java.util.Map.Entry<Control, BorderData>> centerList = regionMap.getOrDefault(CENTER, Collections.emptyList());
+        int northControlCount = northList.size();
+        int northPerControlWidth = northControlCount > 0 ? (clientWidth - (northControlCount - 1) * getApi().controlSpacing) / northControlCount : 0;
+        int northControlHeight = getMax(HEIGHT, northList, northPerControlWidth, SWT.DEFAULT, flushCache);
+        int southControlCount = southList.size();
+        int southPerControlWidth = southControlCount > 0 ? (clientWidth - (southControlCount - 1) * getApi().controlSpacing) / southControlCount : 0;
+        int southControlHeight = getMax(HEIGHT, southList, southPerControlWidth, SWT.DEFAULT, flushCache);
+        if (northControlHeight + southControlHeight > clientHeight) {
+            int distributionSize = (int) (clientHeight * getApi().heightDistributionFactor);
+            if (northControlHeight > distributionSize) {
+                northControlHeight = distributionSize;
+            }
+            southControlHeight = clientHeight - northControlHeight;
+        }
+        int centerControlHeight = clientHeight - northControlHeight - southControlHeight;
+        int westControlCount = westList.size();
+        int westControlWidth = getMax(WIDTH, westList, -1, -1, flushCache);
+        int eastControlCount = eastList.size();
+        int eastControlWidth = getMax(WIDTH, eastList, -1, -1, flushCache);
+        if (westControlWidth + eastControlWidth > clientWidth) {
+            int distributionSize = (int) (clientWidth * getApi().widthDistributionFactor);
+            if (westControlWidth > distributionSize) {
+                westControlWidth = distributionSize;
+            }
+            eastControlWidth = clientWidth - westControlWidth;
+        }
+        int centerControlWidth = clientWidth - westControlWidth - eastControlWidth;
+        int centerControlCount = centerList.size();
+        if (northControlCount > 0) {
+            int x = clientX;
+            int y = clientY;
+            for (java.util.Map.Entry<Control, BorderData> entry : northList) {
+                entry.getKey().setBounds(x, y, northPerControlWidth, northControlHeight);
+                x += northPerControlWidth + getApi().controlSpacing;
+            }
+        }
+        if (southControlCount > 0) {
+            int x = clientX;
+            int y = clientY + centerControlHeight + northControlHeight;
+            for (java.util.Map.Entry<Control, BorderData> entry : southList) {
+                entry.getKey().setBounds(x, y, southPerControlWidth, southControlHeight);
+                x += southPerControlWidth + getApi().controlSpacing;
+            }
+        }
+        if (westControlCount > 0) {
+            int x = clientX;
+            int y = clientY + northControlHeight;
+            int h = clientHeight - northControlHeight - southControlHeight;
+            if (northControlCount > 0) {
+                y += getApi().spacing;
+                h -= getApi().spacing;
+            }
+            if (southControlCount > 0) {
+                h -= getApi().spacing;
+            }
+            int controlHeight = (h - (westControlCount - 1) * getApi().controlSpacing) / westControlCount;
+            for (java.util.Map.Entry<Control, BorderData> entry : westList) {
+                entry.getKey().setBounds(x, y, westControlWidth, controlHeight);
+                y += controlHeight + getApi().controlSpacing;
+            }
+        }
+        if (eastControlCount > 0) {
+            int x = clientX + centerControlWidth + westControlWidth;
+            int y = clientY + northControlHeight;
+            int h = clientHeight - northControlHeight - southControlHeight;
+            if (northControlCount > 0) {
+                y += getApi().spacing;
+                h -= getApi().spacing;
+            }
+            if (southControlCount > 0) {
+                h -= getApi().spacing;
+            }
+            int controlHeight = (h - (eastControlCount - 1) * getApi().controlSpacing) / eastControlCount;
+            for (java.util.Map.Entry<Control, BorderData> entry : eastList) {
+                entry.getKey().setBounds(x, y, eastControlWidth, controlHeight);
+                y += controlHeight + getApi().controlSpacing;
+            }
+        }
+        if (centerControlCount > 0) {
+            int x = clientX + westControlWidth;
+            int y = clientY + northControlHeight;
+            int h = centerControlHeight;
+            int w = centerControlWidth;
+            if (westControlCount > 0) {
+                x += getApi().spacing;
+                w -= getApi().spacing;
+            }
+            if (eastControlCount > 0) {
+                w -= getApi().spacing;
+            }
+            if (northControlCount > 0) {
+                y += getApi().spacing;
+                h -= getApi().spacing;
+            }
+            if (southControlCount > 0) {
+                h -= getApi().spacing;
+            }
+            int controlHeight;
+            int controlWidth;
+            if (getApi().type == SWT.HORIZONTAL) {
+                controlHeight = h;
+                controlWidth = (w - (centerControlCount - 1) * getApi().controlSpacing) / centerControlCount;
+            } else {
+                controlWidth = w;
+                controlHeight = (h - (centerControlCount - 1) * getApi().controlSpacing) / centerControlCount;
+            }
+            for (java.util.Map.Entry<Control, BorderData> entry : centerList) {
+                entry.getKey().setBounds(x, y, controlWidth, controlHeight);
+                if (getApi().type == SWT.HORIZONTAL) {
+                    x += controlWidth + getApi().controlSpacing;
+                } else {
+                    y += controlHeight + getApi().controlSpacing;
+                }
+            }
+        }
     }
 
     private static int region(Entry<Control, BorderData> entry) {
@@ -147,6 +273,22 @@ public class DartBorderLayout extends DartLayout implements IBorderLayout {
         return //
         "BorderLayout [" + "type=" + //
         ((getApi().type == SWT.HORIZONTAL) ? "SWT.HORIZONTAL" : "SWT.VERTICAL") + ", marginWidth=" + getApi().marginWidth + ", marginHeight=" + getApi().marginHeight + ", spacing=" + getApi().spacing + ", controlSpacing=" + getApi().controlSpacing + ", widthDistributionFactor=" + getApi().widthDistributionFactor + ", heightDistributionFactor=" + getApi().heightDistributionFactor + "]";
+    }
+
+    private <C extends org.eclipse.swt.widgets.Control> java.util.Map.Entry<C, org.eclipse.swt.layout.BorderData> borderDataControl(C control, boolean flushCache) {
+        Object layoutData = control.getLayoutData();
+        if (layoutData instanceof org.eclipse.swt.layout.BorderData borderData) {
+            if (flushCache) {
+                borderData.flushCache(control);
+            }
+            return new java.util.AbstractMap.SimpleEntry<>(control, borderData);
+        } else {
+            org.eclipse.swt.layout.BorderData borderData = flushCache ? null : (org.eclipse.swt.layout.BorderData) control.getData(LAYOUT_KEY);
+            if (borderData == null) {
+                control.setData(LAYOUT_KEY, borderData = new org.eclipse.swt.layout.BorderData());
+            }
+            return new java.util.AbstractMap.SimpleEntry<>(control, borderData);
+        }
     }
 
     public BorderLayout getApi() {
