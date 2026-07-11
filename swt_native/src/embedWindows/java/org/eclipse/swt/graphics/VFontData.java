@@ -34,7 +34,7 @@ public class VFontData {
     }
 
     public String getName() {
-        return ((DartFontData) impl).getName();
+        return dev.equo.swt.FontMetricsUtil.substituteFontName(((DartFontData) impl).getName());
     }
 
     public void setName(String value) {

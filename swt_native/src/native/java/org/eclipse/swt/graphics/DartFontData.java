@@ -277,7 +277,7 @@ public final class DartFontData implements IFontData {
      * @see #setName
      */
     public String getName() {
-        return dev.equo.swt.FontMetricsUtil.substituteFontName(getApi().name);
+        return getApi().name;
     }
 
     /**
