@@ -478,6 +478,18 @@ public class DartCoolItem extends DartItem implements ICoolItem {
         }
         this.control = control;
         if (control != null) {
+            Point __cs = control.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+            preferredWidth = __cs.x + MINIMUM_WIDTH;
+            preferredHeight = __cs.y;
+            minimumHeight = __cs.y;
+            if (itemBounds.width < preferredWidth) {
+                itemBounds.width = requestedWidth = preferredWidth;
+            }
+            if (itemBounds.height < preferredHeight) {
+                itemBounds.height = preferredHeight;
+            }
+        }
+        if (control != null) {
             int controlWidth = itemBounds.width - MINIMUM_WIDTH;
             if ((getApi().style & SWT.DROP_DOWN) != 0 && itemBounds.width < preferredWidth) {
                 controlWidth -= CHEVRON_IMAGE_WIDTH + CHEVRON_HORIZONTAL_TRIM + CHEVRON_LEFT_MARGIN;
@@ -597,6 +609,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
         Point point = ((DartCoolBar) parent.getImpl()).fixPoint(width, height);
         width = Math.max(point.x, minimumWidth + MINIMUM_WIDTH);
         height = point.y;
+        height = Math.max(height, minimumHeight);
         if (!ideal) {
             preferredWidth = width;
             preferredHeight = height;
