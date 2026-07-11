@@ -1232,7 +1232,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     public int getDoubleClickTime() {
         checkDevice();
-        return 0;
+        return 500;
     }
 
     /**
