@@ -323,10 +323,13 @@ public class Sizes {
         int height = hHint == org.eclipse.swt.SWT.DEFAULT ? 32 : hHint;
         CoolBar parent = dartCoolItem.getApi().getParent();
         boolean isVertical = parent != null && (parent.style & org.eclipse.swt.SWT.VERTICAL) != 0;
+        // CoolItem trim on the layout axis: (2 * MARGIN_WIDTH) + GRABBER_WIDTH = (2*4)+2 = 10.
+        // Hardcoded because DartCoolItem.MINIMUM_WIDTH is not defined on every backend (e.g. Win32).
+        final int MINIMUM_WIDTH = 10;
         if (isVertical) {
-            height += DartCoolItem.MINIMUM_WIDTH;
+            height += MINIMUM_WIDTH;
         } else {
-            width += DartCoolItem.MINIMUM_WIDTH;
+            width += MINIMUM_WIDTH;
         }
         return new Point(width, height);
     }

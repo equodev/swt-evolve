@@ -1253,6 +1253,11 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         if (focusControl != null && !focusControl.isDisposed()) {
             return focusControl;
         }
+        if (displayBridge != null) {
+            org.eclipse.swt.widgets.Control f = displayBridge.getFocused();
+            if (f != null && !f.isDisposed())
+                return f;
+        }
         return null;
     }
 

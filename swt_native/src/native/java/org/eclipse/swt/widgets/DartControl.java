@@ -1630,21 +1630,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     boolean isShowing() {
-        /*
-	* This is not complete.  Need to check if the
-	* widget is obscurred by a parent or sibling.
-	*/
-        if (!isVisible())
-            return false;
-        Control control = this.getApi();
-        while (control != null) {
-            Point size = control.getSize();
-            if (size.x == 0 || size.y == 0) {
-                return false;
-            }
-            control = ((DartControl) control.getImpl()).parent;
-        }
-        return true;
+        return isVisible();
     }
 
     public boolean isTabGroup() {

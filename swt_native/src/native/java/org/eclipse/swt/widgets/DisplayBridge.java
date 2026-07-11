@@ -338,6 +338,18 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return widget == focused;
     }
 
+    /** The control that currently holds focus (Java-tracked; there is no OS focus on the web). */
+    public org.eclipse.swt.widgets.Control getFocused() {
+        return (focused != null && !focused.getApi().isDisposed()) ? focused.getApi() : null;
+    }
+
+    /** Clear the tracked focus if it points at the given control (used on focus loss/dispose). */
+    public void clearFocus(DartControl widget) {
+        if (focused == widget) {
+            focused = null;
+        }
+    }
+
     @Override
     public void setVisible(DartControl control, boolean visible) {
         if (control instanceof DartShell dartShell) {

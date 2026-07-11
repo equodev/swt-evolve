@@ -912,16 +912,20 @@ public class DartShell extends DartDecorations implements IShell {
     }
 
     void makeKeyAndOrderFront() {
-        /*
-	* Bug in Cocoa.  If a child window becomes the key window when its
-	* parent window is miniaturized, the parent window appears as if
-	* restored to its full size without actually being restored. In this
-	* case the parent window does become active when its child is closed
-	* and the user is forced to restore the window from the dock.
-	* The fix is to be sure that the parent window is deminiaturized before
-	* making the child a key window.
-	*/
-        if (parent != null) {
+        if (savedFocus != null && savedFocus.isDisposed()) {
+            savedFocus = null;
+        }
+        if (getBridge() instanceof org.eclipse.swt.widgets.DisplayBridge db) {
+            if (savedFocus != null) {
+                db.setFocus((DartControl) savedFocus.getImpl());
+            } else if (!focusFirstFocusable()) {
+                // Nothing focusable yet: mark the shell itself as focus so getActiveShell()
+                // (derived from the focus control's shell) still points at this shell.
+                db.setFocus(this);
+            }
+        }
+        if (!isDisposed()) {
+            sendEvent(SWT.Activate);
         }
     }
 
@@ -1831,6 +1835,33 @@ public class DartShell extends DartDecorations implements IShell {
 
     public Dialog[] getDialogs() {
         return dialogs.length == 0 ? null : dialogs;
+    }
+
+    boolean focusFirstFocusable() {
+        if (!(getBridge() instanceof org.eclipse.swt.widgets.DisplayBridge db))
+            return false;
+        java.util.List<org.eclipse.swt.widgets.Control> stack = new java.util.ArrayList<>();
+        for (org.eclipse.swt.widgets.Control c : _getChildren()) stack.add(c);
+        while (!stack.isEmpty()) {
+            org.eclipse.swt.widgets.Control c = stack.remove(0);
+            if (c == null || c.isDisposed())
+                continue;
+            if (c instanceof org.eclipse.swt.widgets.Composite comp && !(comp.getImpl() instanceof DartCanvas)) {
+                org.eclipse.swt.widgets.Control[] kids = ((DartComposite) comp.getImpl())._getChildren();
+                for (int i = kids.length - 1; i >= 0; i--) stack.add(0, kids[i]);
+            } else if (c.getVisible() && c.isEnabled() && (c.getStyle() & SWT.NO_FOCUS) == 0) {
+                db.setFocus((DartControl) c.getImpl());
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    boolean traverseGroup(boolean next) {
+        if (next && focusFirstFocusable())
+            return true;
+        return super.traverseGroup(next);
     }
 
     protected void _hookEvents() {
