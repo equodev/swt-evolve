@@ -5,17 +5,13 @@ import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.FlutterLibraryLoader;
+import dev.equo.swt.HeadlessChrome;
 import dev.equo.swt.WebFlutterServer;
 import dev.equo.swt.comm.CommService;
 import org.eclipse.swt.widgets.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -49,8 +45,8 @@ public abstract class FlutterHarness extends EmbeddedBridge {
     private long context;
     private ChromiumStandaloneLauncher chromiumLauncher;
     private WebFlutterServer webServer;
-    private Process browserProc;
-    private Path profileDir;
+    /** The headless Chrome we launched (see {@link #launchBrowser}); reaped in {@link #teardown}. */
+    private HeadlessChrome harnessChrome;
     /** Boot-resilience self-test knob: number of upcoming browser launches to force to fail (load a
      *  blank page that never connects), so {@link #awaitClientReadyResilient}'s relaunch path is
      *  exercised deterministically. 0 (default) in CI/production. */
@@ -87,14 +83,16 @@ public abstract class FlutterHarness extends EmbeddedBridge {
 
     /** Tear down this harness's renderer, server, and comm. */
     public void teardown() {
-        // Plain browserProc.destroy() only signals the launched Chrome process itself and leaves
-        // its zygote/GPU/network/storage helper processes orphaned (see destroyBrowserProcess()).
-        destroyBrowserProcess();
+        // Reaps the launched Chrome — its whole process tree (zygote/GPU/renderer helpers a plain
+        // destroy() would orphan) — and deletes its throwaway profile.
+        if (harnessChrome != null) {
+            harnessChrome.close();
+            harnessChrome = null;
+        }
         if (chromiumLauncher != null) {
             chromiumLauncher.close(false);
             chromiumLauncher = null;
         }
-        deleteProfileDir();
         if (webServer != null) webServer.stop();
         if (context != 0) {
             dev.equo.swt.FlutterNative.dispose(context);
@@ -191,27 +189,15 @@ public abstract class FlutterHarness extends EmbeddedBridge {
 
     /** Kill a wedged Chrome and launch a fresh one against the still-running server + comm. */
     private void relaunchBrowser() {
-        destroyBrowserProcess();
-        deleteProfileDir();
+        if (harnessChrome != null) {
+            harnessChrome.close();
+            harnessChrome = null;
+        }
         try {
             launchBrowser(webServer.getApplicationUrl());
         } catch (IOException e) {
             throw new RuntimeException("Failed to relaunch web harness client", e);
         }
-    }
-
-    /** Forcibly terminate the launched browser <em>and its descendants</em> — headless Chrome
-     *  spawns a zygote + renderer processes that a plain {@code destroy()} would orphan. */
-    private void destroyBrowserProcess() {
-        if (browserProc == null) return;
-        browserProc.descendants().forEach(ProcessHandle::destroyForcibly);
-        browserProc.destroyForcibly();
-        try {
-            browserProc.waitFor(3, java.util.concurrent.TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        browserProc = null;
     }
 
     /** Spin the pump loop until {@code f} completes or {@code timeoutMs} elapses. Does not throw
@@ -285,88 +271,25 @@ public abstract class FlutterHarness extends EmbeddedBridge {
             System.out.println("[FlutterHarness] browser launch disabled — open: " + url);
             return;
         }
-        String chrome = chromeBinary(override);
+        String chrome = HeadlessChrome.resolveBinary(override);
+        if (chrome == null) {
+            throw new IOException("Chrome/Chromium not found; set -Dequo.swt.browser=<path> (or -Dharness.client=native)");
+        }
         boolean headless = Boolean.parseBoolean(System.getProperty("harness.web.headless", "true"));
-        if (chrome != null) {
-            // Unique, throwaway profile per run so Chrome's per-user-data-dir singleton can't hand the
-            // URL to an already-running instance, and an unclean exit can't leave a crash-restore flag.
-            profileDir = Files.createTempDirectory("equo-harness-profile-");
-            List<String> cmd = new ArrayList<>();
-            cmd.add(chrome);
-            if (headless) cmd.add("--headless=new");
-            if (Boolean.getBoolean("harness.web.console")) {
-                cmd.add("--enable-logging=stderr");
-                cmd.add("--v=1");
-            }
-            cmd.add("--disable-gpu");
-            cmd.add("--no-first-run");
-            cmd.add("--no-default-browser-check");
-            cmd.add("--hide-crash-restore-bubble");
-            cmd.add("--disable-session-crashed-bubble");
-            // Container hardening: the boot the harness waits on occasionally wedges right after
-            // Chrome's background-service init (a tiny /dev/shm starves the renderer; the GCM
-            // registration and optimization-guide on-device model — the "TensorFlow Lite XNNPACK
-            // delegate" line — are slow, hang-prone, and useless here). Disable that startup work so
-            // Chrome goes straight to loading the app.
-            cmd.add("--disable-dev-shm-usage");
-            cmd.add("--disable-background-networking");
-            cmd.add("--disable-component-update");
-            cmd.add("--disable-sync");
-            cmd.add("--disable-default-apps");
-            cmd.add("--no-pings");
-            cmd.add("--metrics-recording-only");
-            cmd.add("--disable-renderer-backgrounding");
-            cmd.add("--disable-backgrounding-occluded-windows");
-            cmd.add("--disable-features=OptimizationGuideModelDownloading,OptimizationHints,"
-                    + "OptimizationHintsFetching,OptimizationTargetPrediction,Translate,MediaRouter,"
-                    + "InterestFeedContentSuggestions,CalculateNativeWinOcclusion");
-            cmd.add("--user-data-dir=" + profileDir);
-            // Boot-resilience self-test: when harness.web.failBoots>0, the first N launches load a
-            // blank page that never connects, forcing awaitClientReadyResilient() to relaunch — so
-            // the retry path can be exercised deterministically (off by default).
-            String openUrl = url;
-            if (bootFailuresToInject > 0) {
-                bootFailuresToInject--;
-                openUrl = "data:text/html,harness-forced-boot-failure";
-                System.out.println("[FlutterHarness] injecting boot failure (blank page); "
-                        + bootFailuresToInject + " more to inject");
-            }
-            cmd.add(openUrl);
-            browserProc = new ProcessBuilder(cmd).inheritIO().start();
-            System.out.println("[FlutterHarness] launched Chrome (headless=" + headless + ") at " + openUrl
-                    + " profile " + profileDir);
-            return;
+        boolean console = Boolean.getBoolean("harness.web.console");
+        // Boot-resilience self-test: when harness.web.failBoots>0, the first N launches load a blank
+        // page that never connects, forcing awaitClientReadyResilient() to relaunch — so the retry path
+        // can be exercised deterministically (off by default).
+        String openUrl = url;
+        if (bootFailuresToInject > 0) {
+            bootFailuresToInject--;
+            openUrl = "data:text/html,harness-forced-boot-failure";
+            System.out.println("[FlutterHarness] injecting boot failure (blank page); "
+                    + bootFailuresToInject + " more to inject");
         }
-        throw new IOException("Chrome/Chromium not found; set -Dequo.swt.browser=<path> (or -Dharness.client=native)");
-    }
-
-    /** Locate the Chrome/Chromium binary, honoring {@code -Dequo.swt.browser}; null if none found. */
-    protected static String chromeBinary(String override) {
-        if (override != null && !override.isEmpty() && new File(override).canExecute()) return override;
-        String os = System.getProperty("os.name", "").toLowerCase();
-        String[] candidates = os.contains("mac")
-                ? new String[]{"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-                               "/Applications/Chromium.app/Contents/MacOS/Chromium"}
-                : os.contains("win")
-                ? new String[]{System.getenv("ProgramFiles") + "\\Google\\Chrome\\Application\\chrome.exe"}
-                : new String[]{"/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"};
-        for (String c : candidates) if (c != null && new File(c).canExecute()) return c;
-        return null;
-    }
-
-    /** Best-effort: wait for Chrome to exit (so it releases the profile), then recursively delete it. */
-    private void deleteProfileDir() {
-        if (profileDir == null) return;
-        try {
-            if (browserProc != null) browserProc.waitFor(3, java.util.concurrent.TimeUnit.SECONDS);
-            try (var paths = Files.walk(profileDir)) {
-                paths.sorted(Comparator.reverseOrder()).forEach(p -> p.toFile().delete());
-            }
-        } catch (Exception ignored) {
-            // temp dir; the OS will reap it if we couldn't.
-        } finally {
-            profileDir = null;
-        }
+        // The harness inherits Chrome's stdio so -Dharness.web.console output is visible.
+        harnessChrome = HeadlessChrome.launch(chrome, openUrl, headless, console, HeadlessChrome.Io.INHERIT);
+        System.out.println("[FlutterHarness] launched Chrome (headless=" + headless + ") at " + openUrl);
     }
 
     /** Locate {@code flutter-lib/build/web} relative to the test working dir. */

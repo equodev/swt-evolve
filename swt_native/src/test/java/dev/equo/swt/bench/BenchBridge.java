@@ -3,6 +3,7 @@ package dev.equo.swt.bench;
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.FlutterLibraryLoader;
+import dev.equo.swt.HeadlessChrome;
 import dev.equo.swt.WebFlutterServer;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.*;
@@ -190,7 +191,7 @@ public class BenchBridge extends dev.equo.swt.harness.FlutterHarness implements 
             System.out.println("[BenchBridge] browser launch disabled — open: " + url);
             return;
         }
-        String chrome = chromeBinary(override);
+        String chrome = HeadlessChrome.resolveBinary(override);
         if (chrome != null) {
             boolean headless = Boolean.getBoolean("bench.web.headless");
             List<String> cmd = new ArrayList<>();
@@ -217,7 +218,7 @@ public class BenchBridge extends dev.equo.swt.harness.FlutterHarness implements 
                 + url + " — background-tab throttling may inflate results. Set -Dequo.swt.browser=<chrome path>.");
     }
 
-    // chromeBinary() and resolveWebDir() are inherited from FlutterHarness.
+    // Chrome discovery is HeadlessChrome.resolveBinary(); resolveWebDir() is inherited from FlutterHarness.
 
     private void handleD2jResult(AtomicReference<PendingD2j> slot, byte[] bytes) {
         if (bytes == null || bytes.length < 12) return;

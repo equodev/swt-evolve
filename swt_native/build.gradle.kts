@@ -200,7 +200,8 @@ sourceSets {
     val webShared = create("webShared") {
         java {
             setSrcDirs(listOf("src/native/java"))
-            include("dev/equo/swt/WebFlutterServer.java", "dev/equo/swt/WebFontSubstitutions.java")
+            include("dev/equo/swt/WebFlutterServer.java", "dev/equo/swt/WebFontSubstitutions.java",
+                    "dev/equo/swt/HeadlessChrome.java")
         }
         compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
     }
