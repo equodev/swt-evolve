@@ -493,12 +493,18 @@ public class DartText extends DartScrollable implements IText {
      */
     public Point getCaretLocation() {
         checkWidget();
-        if ((getApi().style & SWT.SINGLE) != 0) {
-            if (this.hasFocus()) {
-            }
-        } else {
-        }
-        return null;
+        Point sel = getSelection();
+        String content = getText();
+        int caret = Math.max(0, Math.min(sel.x, content.length()));
+        String before = content.substring(0, caret);
+        int nl = Math.max(before.lastIndexOf('\n'), before.lastIndexOf('\r'));
+        String lineBefore = nl >= 0 ? before.substring(nl + 1) : before;
+        int line = 0;
+        for (int i = 0; i < before.length(); i++) if (before.charAt(i) == '\n')
+            line++;
+        int lh = (int) Math.ceil(dev.equo.swt.FontMetricsUtil.getFontSize("Ag", getFont()).y());
+        int x = lineBefore.isEmpty() ? 0 : (int) Math.ceil(dev.equo.swt.FontMetricsUtil.getFontSize(lineBefore, getFont()).x());
+        return new Point(x, line * (lh > 0 ? lh : 1));
     }
 
     /**
@@ -692,10 +698,8 @@ public class DartText extends DartScrollable implements IText {
      */
     public int getLineHeight() {
         checkWidget();
-        if ((getApi().style & SWT.SINGLE) != 0) {
-        } else {
-        }
-        return 0;
+        int h = (int) Math.ceil(dev.equo.swt.FontMetricsUtil.getFontSize("Ag", getFont()).y());
+        return h > 0 ? h : 1;
     }
 
     /**
