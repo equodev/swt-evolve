@@ -5996,7 +5996,13 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 }
             }
         }
-        if (action != SWT.NULL && action != ST.DELETE_PREVIOUS && action != ST.DELETE_NEXT) {
+        if (action == SWT.NULL) {
+            boolean ignore = (event.stateMask & (SWT.ALT | SWT.CTRL | SWT.COMMAND)) != 0;
+            if ((!ignore && event.character > 31 && event.character != SWT.DEL) || event.character == SWT.CR || event.character == SWT.LF || event.character == TAB) {
+                doContent(event.character);
+                update();
+            }
+        } else if (action != ST.DELETE_PREVIOUS && action != ST.DELETE_NEXT) {
             invokeAction(action);
         }
     }
@@ -6019,6 +6025,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         verifyEvent.keyLocation = event.keyLocation;
         verifyEvent.stateMask = event.stateMask;
         verifyEvent.doit = event.doit;
+        verifyEvent.doit = true;
         notifyListeners(ST.VerifyKey, verifyEvent);
         if (verifyEvent.doit) {
             if ((event.stateMask & SWT.MODIFIER_MASK) == SWT.CTRL && event.keyCode == SWT.SHIFT && isBidiCaret()) {
