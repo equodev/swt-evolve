@@ -94,6 +94,8 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public DartSpinner(Composite parent, int style, Spinner api) {
         super(parent, checkStyle(style), api);
+        maximum = 100;
+        increment = 1;
     }
 
     /**
@@ -782,10 +784,13 @@ public class DartSpinner extends DartComposite implements ISpinner {
             return;
         if (pageIncrement < 1)
             return;
+        this.minimum = minimum;
+        this.maximum = maximum;
+        this.increment = increment;
+        this.pageIncrement = pageIncrement;
+        this.digits = digits;
         selection = Math.min(Math.max(minimum, selection), maximum);
-        double factor = 1;
-        for (int i = 0; i < digits; i++) factor *= 10;
-        climbRate = 1.0 / factor;
+        setSelection(selection, true, true, false);
     }
 
     @Override

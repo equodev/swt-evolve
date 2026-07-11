@@ -87,6 +87,8 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public DartSpinner(Composite parent, int style, Spinner api) {
         super(parent, checkStyle(style), api);
+        maximum = 100;
+        increment = 1;
     }
 
     /**
@@ -742,12 +744,6 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public void setValues(int selection, int minimum, int maximum, int digits, int increment, int pageIncrement) {
         checkWidget();
-        if (!java.util.Objects.equals(this.pageIncrement, pageIncrement)) {
-            dirty();
-        }
-        if (!java.util.Objects.equals(this.digits, digits)) {
-            dirty();
-        }
         if (maximum < minimum)
             return;
         if (digits < 0)
@@ -756,9 +752,12 @@ public class DartSpinner extends DartComposite implements ISpinner {
             return;
         if (pageIncrement < 1)
             return;
-        selection = Math.min(Math.max(minimum, selection), maximum);
+        this.minimum = minimum;
+        this.maximum = maximum;
+        this.increment = increment;
         this.pageIncrement = pageIncrement;
         this.digits = digits;
+        selection = Math.min(Math.max(minimum, selection), maximum);
         setSelection(selection, true, true, false);
     }
 

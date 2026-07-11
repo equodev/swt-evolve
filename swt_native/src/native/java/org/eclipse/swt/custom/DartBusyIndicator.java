@@ -267,11 +267,24 @@ public class DartBusyIndicator implements IBusyIndicator {
             return;
         }
         Shell[] shells = display.getShells();
+        for (Shell shell : shells) {
+            Integer id = (Integer) shell.getData(BUSYID_NAME);
+            if (java.util.Objects.equals(id, busyId)) {
+                setCursorAndId(shell, null, null);
+            }
+        }
     }
 
     private static Integer setBusyCursor(Display display) {
         Integer busyId = nextBusyId.getAndIncrement();
+        Cursor cursor = display.getSystemCursor(SWT.CURSOR_WAIT);
         Shell[] shells = display.getShells();
+        for (Shell shell : shells) {
+            Integer id = (Integer) shell.getData(BUSYID_NAME);
+            if (id == null) {
+                setCursorAndId(shell, cursor, busyId);
+            }
+        }
         return busyId;
     }
 
