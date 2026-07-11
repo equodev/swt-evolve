@@ -642,12 +642,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      * </ul>
      */
     public void setSelection(int selection) {
-        int newValue = selection;
-        if (!java.util.Objects.equals(this.selection, newValue)) {
-            dirty();
-        }
         checkWidget();
-        this.selection = newValue;
         updateBar(selection, minimum, maximum, thumb);
     }
 
@@ -763,7 +758,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     }
 
     void updateBar(int selection, int minimum, int maximum, int thumb) {
-        selection = Math.max(minimum, Math.min(maximum - thumb, selection));
+        int clamped = Math.max(minimum, Math.min(maximum - thumb, selection));
+        if (this.selection != clamped)
+            dirty();
+        this.selection = clamped;
     }
 
     boolean enabled = true;

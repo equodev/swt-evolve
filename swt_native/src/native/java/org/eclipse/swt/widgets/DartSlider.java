@@ -431,12 +431,7 @@ public class DartSlider extends DartControl implements ISlider {
      * </ul>
      */
     public void setSelection(int value) {
-        int newValue = value;
-        if (!java.util.Objects.equals(this.selection, newValue)) {
-            dirty();
-        }
         checkWidget();
-        this.selection = newValue;
         updateBar(value, minimum, maximum, thumb);
     }
 
@@ -447,7 +442,10 @@ public class DartSlider extends DartControl implements ISlider {
     }
 
     void updateBar(int selection, int minimum, int maximum, int thumb) {
-        selection = Math.max(minimum, Math.min(maximum - thumb, selection));
+        int clamped = Math.max(minimum, Math.min(maximum - thumb, selection));
+        if (this.selection != clamped)
+            dirty();
+        this.selection = clamped;
     }
 
     /**
