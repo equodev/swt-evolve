@@ -498,7 +498,7 @@ public class DartPath extends DartResource implements IPath {
      */
     @Override
     public boolean isDisposed() {
-        return false;
+        return device == null;
     }
 
     /**
@@ -573,7 +573,7 @@ public class DartPath extends DartResource implements IPath {
     public String toString() {
         if (isDisposed())
             return "Path {*DISPOSED*}";
-        return null;
+        return "Path {}";
     }
 
     PathData pathData;
