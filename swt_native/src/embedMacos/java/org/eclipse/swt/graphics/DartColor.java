@@ -300,7 +300,7 @@ public final class DartColor extends DartResource implements IColor {
      */
     @Override
     public Device getDevice() {
-        if (this.device == null && this.getApi().handle != null)
+        if (this.device == null && !isDisposed())
             return SwtDevice.getDevice();
         return super.getDevice();
     }
