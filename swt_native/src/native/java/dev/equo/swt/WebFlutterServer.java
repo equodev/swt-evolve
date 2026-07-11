@@ -101,6 +101,8 @@ public class WebFlutterServer {
 
     private HttpServer httpServer;
     private final AtomicBoolean running = new AtomicBoolean(false);
+    /** The headless Chrome we launched (see {@link #launchHeadless}); reaped in {@link #stop}. */
+    private HeadlessChrome headlessChrome;
 
     private WebFlutterServer(Builder builder) {
         this.webDirectory = builder.webDirectory;
@@ -154,6 +156,7 @@ public class WebFlutterServer {
      * Stops the HTTP server, allowing in-flight requests up to 2 seconds to complete.
      */
     public void stop() {
+        reapHeadlessBrowser();
         if (running.getAndSet(false) && httpServer != null) {
             httpServer.stop(2);
             LOG.info("WebFlutterServer stopped");
@@ -212,10 +215,34 @@ public class WebFlutterServer {
             return;
         }
 
+        if (Boolean.getBoolean("dev.equo.swt.web.headless")) {
+            launchHeadless(url);
+            return;
+        }
+
         if (browserCommand != null && !browserCommand.isEmpty()) {
             launchBrowserWithCommand(browserCommand, url);
         } else {
             launchDefaultBrowser(url);
+        }
+    }
+
+    private void launchHeadless(String url) throws IOException {
+        String chrome = HeadlessChrome.resolveBinary(browserCommand);
+        if (chrome == null) {
+            throw new IOException("Headless web mode requested but Chrome/Chromium not found; "
+                    + "set -Dequo.swt.browser=<path to chrome>");
+        }
+        boolean console = Boolean.getBoolean("dev.equo.swt.web.console");
+        headlessChrome = HeadlessChrome.launch(chrome, url, true, console,
+                console ? HeadlessChrome.Io.INHERIT : HeadlessChrome.Io.DISCARD);
+        LOG.info("Launched headless Chrome: " + chrome + " -> " + url);
+    }
+
+    private void reapHeadlessBrowser() {
+        if (headlessChrome != null) {
+            headlessChrome.close();
+            headlessChrome = null;
         }
     }
 
@@ -764,7 +791,14 @@ public class WebFlutterServer {
          */
         public WebFlutterServer build() {
             if (webDirectory == null) {
-                webDirectory = FlutterLibraryLoader.initializeWeb();
+                // Explicit override (used by the Eclipse-test web run, whose working dir isn't next to
+                // flutter-lib): -Ddev.equo.swt.web.dir=<abs path to flutter-lib/build/web>.
+                String dirProp = System.getProperty("dev.equo.swt.web.dir");
+                if (dirProp != null && !dirProp.isEmpty()) {
+                    webDirectory = new File(dirProp);
+                } else {
+                    webDirectory = FlutterLibraryLoader.initializeWeb();
+                }
             }
             if (webDirectory == null || !webDirectory.isDirectory()) {
                 throw new IllegalStateException(
