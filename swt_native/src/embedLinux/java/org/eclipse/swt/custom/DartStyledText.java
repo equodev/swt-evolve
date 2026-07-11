@@ -3878,7 +3878,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public int getLineCount() {
         checkWidget();
-        return content.getLineCount();
+        return Math.max(1, content.getLineCount());
     }
 
     /**
@@ -4830,6 +4830,8 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             return null;
         int lineLength = line.length();
         int[] segments = event.segments;
+        if (segments[0] != 0)
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         if (segments[0] > lineLength) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -7307,7 +7309,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     }
 
     boolean isBidiCaret() {
-        return false;
+        return true;
     }
 
     boolean isFixedLineHeight() {
