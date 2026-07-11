@@ -163,12 +163,7 @@ public final class DartRegion extends DartResource implements IRegion {
     }
 
     void add(int[] pointArray, int count) {
-        count = count / 2 * 2;
-        if (count <= 2)
-            return;
-        try {
-        } finally {
-        }
+        RegionHelper.addPolygon(rects, pointArray, count);
     }
 
     /**
@@ -246,9 +241,8 @@ public final class DartRegion extends DartResource implements IRegion {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (region.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        try {
-        } finally {
-        }
+        if (region.getImpl() instanceof DartRegion dr)
+            RegionHelper.addRegion(rects, dr.rects);
     }
 
     /**
@@ -267,10 +261,7 @@ public final class DartRegion extends DartResource implements IRegion {
     public boolean contains(int x, int y) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        try {
-        } finally {
-        }
-        return false;
+        return RegionHelper.contains(rects, x, y);
     }
 
     /**
@@ -313,7 +304,9 @@ public final class DartRegion extends DartResource implements IRegion {
      */
     @Override
     public boolean equals(Object object) {
-        return super.equals(object);
+        if (!(object instanceof Region))
+            return false;
+        return getApi().handle == ((Region) object).handle;
     }
 
     /**
@@ -353,7 +346,7 @@ public final class DartRegion extends DartResource implements IRegion {
      */
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return (int) getApi().handle;
     }
 
     /**
@@ -403,9 +396,7 @@ public final class DartRegion extends DartResource implements IRegion {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (width < 0 || height < 0)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        try {
-        } finally {
-        }
+        RegionHelper.intersect(rects, x, y, width, height);
     }
 
     /**
@@ -432,9 +423,8 @@ public final class DartRegion extends DartResource implements IRegion {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (region.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        try {
-        } finally {
-        }
+        if (region.getImpl() instanceof DartRegion dr)
+            RegionHelper.intersectRegion(rects, dr.rects);
     }
 
     /**
@@ -457,10 +447,7 @@ public final class DartRegion extends DartResource implements IRegion {
     public boolean intersects(int x, int y, int width, int height) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        try {
-        } finally {
-        }
-        return false;
+        return RegionHelper.intersects(rects, x, y, width, height);
     }
 
     /**
@@ -515,10 +502,7 @@ public final class DartRegion extends DartResource implements IRegion {
     public boolean isEmpty() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        try {
-        } finally {
-        }
-        return false;
+        return RegionHelper.isEmpty(rects);
     }
 
     /**
@@ -541,11 +525,7 @@ public final class DartRegion extends DartResource implements IRegion {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (pointArray == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (pointArray.length < 2)
-            return;
-        try {
-        } finally {
-        }
+        RegionHelper.subtractPolygon(rects, pointArray, pointArray.length);
     }
 
     /**
@@ -622,9 +602,8 @@ public final class DartRegion extends DartResource implements IRegion {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (region.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        try {
-        } finally {
-        }
+        if (region.getImpl() instanceof DartRegion dr)
+            RegionHelper.subtractRegion(rects, dr.rects);
     }
 
     /**
@@ -643,9 +622,7 @@ public final class DartRegion extends DartResource implements IRegion {
     public void translate(int x, int y) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        try {
-        } finally {
-        }
+        RegionHelper.translate(rects, x, y);
     }
 
     /**
