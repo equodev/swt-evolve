@@ -846,6 +846,14 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
         } else {
             width = getClientArea().width;
         }
+        if (width <= 0) {
+            int __total = 0;
+            for (CoolItem __it : originalItems) {
+                if (__it != null)
+                    __total += Math.max(((DartCoolItem) __it.getImpl()).requestedWidth, ((DartCoolItem) __it.getImpl()).internalGetMinimumWidth());
+            }
+            width = __total;
+        }
         wrapItems(width);
         int rowSpacing = (getApi().style & SWT.FLAT) != 0 ? 0 : ROW_SPACING;
         for (int row = 0; row < items.length; row++) {

@@ -317,37 +317,18 @@ public class Sizes {
     }
 
     public static Point computeSize(DartCoolItem dartCoolItem, int wHint, int hHint) {
-        int defaultHeight = 25;
-
-        // Try to get the preferred size first
-        Point preferredSize = dartCoolItem.getApi().getPreferredSize();
-        if (preferredSize != null && (preferredSize.x > 0 || preferredSize.y > 0)) {
-            return new Point(
-                    preferredSize.x > 0 ? preferredSize.x : 50,
-                    preferredSize.y > 0 ? preferredSize.y : defaultHeight
-            );
+        // Match SWT's CoolItem.computeSize contract: honor the hints and add the item trim
+        // (MINIMUM_WIDTH: gripper + margins) on the layout axis. DEFAULT hint -> 32 like upstream.
+        int width = wHint == org.eclipse.swt.SWT.DEFAULT ? 32 : wHint;
+        int height = hHint == org.eclipse.swt.SWT.DEFAULT ? 32 : hHint;
+        CoolBar parent = dartCoolItem.getApi().getParent();
+        boolean isVertical = parent != null && (parent.style & org.eclipse.swt.SWT.VERTICAL) != 0;
+        if (isVertical) {
+            height += DartCoolItem.MINIMUM_WIDTH;
+        } else {
+            width += DartCoolItem.MINIMUM_WIDTH;
         }
-
-        // Fall back to computing from control size
-        Control control = dartCoolItem.getApi().getControl();
-        if (control != null && !control.isDisposed()) {
-            Point controlSize = control.getSize();
-            if (controlSize.x > 0 && controlSize.y > 0) {
-                int gripperWidth = 12;
-                int padding = 8;
-
-                CoolBar parent = dartCoolItem.getApi().getParent();
-                boolean isVertical = parent != null && (parent.style & org.eclipse.swt.SWT.VERTICAL) != 0;
-
-                if (isVertical) {
-                    return new Point(controlSize.x + padding, controlSize.y + gripperWidth);
-                } else {
-                    return new Point(controlSize.x + gripperWidth + padding, controlSize.y + padding);
-                }
-            }
-        }
-
-        return new Point(50, defaultHeight);
+        return new Point(width, height);
     }
 
     public static Point computeSize(DartExpandBar dartExpandBar, int wHint, int hHint, boolean changed) {
