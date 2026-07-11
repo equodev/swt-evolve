@@ -194,14 +194,12 @@ public class DartProgressBar extends DartControl implements IProgressBar {
      */
     public void setMaximum(int value) {
         checkWidget();
-        if (!java.util.Objects.equals(this.maximum, value)) {
+        if (minimum < value) {
+            maximum = value;
+            if (selection > maximum)
+                selection = maximum;
             dirty();
         }
-        if (value <= minimum)
-            return;
-        maximum = value;
-        selection = Math.min(selection, maximum);
-        updateBar();
     }
 
     /**
@@ -219,14 +217,12 @@ public class DartProgressBar extends DartControl implements IProgressBar {
      */
     public void setMinimum(int value) {
         checkWidget();
-        if (!java.util.Objects.equals(this.minimum, value)) {
+        if (0 <= value && value < maximum) {
+            minimum = value;
+            if (selection < minimum)
+                selection = minimum;
             dirty();
         }
-        if (value < 0 || value >= maximum)
-            return;
-        minimum = value;
-        selection = Math.max(selection, minimum);
-        updateBar();
     }
 
     /**
@@ -243,11 +239,10 @@ public class DartProgressBar extends DartControl implements IProgressBar {
      */
     public void setSelection(int value) {
         checkWidget();
-        if (!java.util.Objects.equals(this.selection, value)) {
+        int clamped = Math.max(minimum, Math.min(maximum, value));
+        if (this.selection != clamped)
             dirty();
-        }
-        selection = Math.max(minimum, Math.min(maximum, value));
-        updateBar();
+        this.selection = clamped;
     }
 
     /**
