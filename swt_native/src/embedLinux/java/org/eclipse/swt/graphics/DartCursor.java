@@ -100,6 +100,8 @@ public final class DartCursor extends DartResource implements ICursor {
      */
     public DartCursor(Device device, int style, Cursor api) {
         super(device, api);
+        if (style < 0 || style > SWT.CURSOR_HAND)
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         this.cursorStyle = style;
         getApi().handle = style + 1;
         init();
@@ -357,7 +359,7 @@ public final class DartCursor extends DartResource implements ICursor {
      */
     @Override
     public boolean isDisposed() {
-        return getApi().handle == 0;
+        return device == null;
     }
 
     /**
@@ -370,7 +372,7 @@ public final class DartCursor extends DartResource implements ICursor {
     public String toString() {
         if (isDisposed())
             return "Cursor {*DISPOSED*}";
-        return "Cursor {" + getApi().handle + "}";
+        return "Cursor {}";
     }
 
     int cursorStyle = -1;
