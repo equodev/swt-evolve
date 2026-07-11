@@ -421,12 +421,8 @@ public class DartSlider extends DartControl implements ISlider {
      * </ul>
      */
     public void setSelection(int value) {
-        int newValue = value;
-        if (!java.util.Objects.equals(this.selection, newValue)) {
-            dirty();
-        }
         checkWidget();
-        this.selection = newValue;
+        updateBar(value, minimum, maximum, thumb);
     }
 
     /**

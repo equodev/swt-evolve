@@ -658,12 +658,8 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      * </ul>
      */
     public void setSelection(int selection) {
-        int newValue = selection;
-        if (!java.util.Objects.equals(this.selection, newValue)) {
-            dirty();
-        }
         checkWidget();
-        this.selection = newValue;
+        updateBar(selection, minimum, maximum, thumb);
     }
 
     /**
