@@ -370,7 +370,7 @@ public abstract class DartDevice implements Drawable, IDevice {
      */
     public int getDepth() {
         checkDevice();
-        return 0;
+        return 24;
     }
 
     /**
