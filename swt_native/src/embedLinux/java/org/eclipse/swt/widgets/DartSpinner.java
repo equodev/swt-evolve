@@ -789,8 +789,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
         this.increment = increment;
         this.pageIncrement = pageIncrement;
         this.digits = digits;
-        selection = Math.min(Math.max(minimum, selection), maximum);
-        setSelection(selection, true, true, false);
+        setSelection(selection);
     }
 
     @Override
