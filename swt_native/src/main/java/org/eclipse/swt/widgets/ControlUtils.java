@@ -31,6 +31,13 @@ public class ControlUtils {
             return;
         }
 
+        // Moving a control above/below itself is a no-op (matches SWT). It must be handled here because
+        // otherwise movedControl is its own reference: it is removed from the children array yet the
+        // reference index still points past the shortened array, overflowing the reindex arraycopy below.
+        if (movedControl == referenceControl) {
+            return;
+        }
+
         Composite parent = movedControl.getParent();
         if (parent == null) {
             return;
