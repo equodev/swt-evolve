@@ -643,7 +643,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setSelection(int selection) {
         checkWidget();
-        updateBar(selection, minimum, maximum, thumb);
+        int clamped = Math.max(minimum, Math.min(maximum - thumb, selection));
+        if (this.selection != clamped)
+            dirty();
+        this.selection = clamped;
     }
 
     /**
