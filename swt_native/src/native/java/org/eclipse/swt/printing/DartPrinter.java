@@ -57,10 +57,7 @@ public final class DartPrinter extends DartDevice implements IPrinter {
      * @return an array of PrinterData objects representing the available printers
      */
     public static PrinterData[] getPrinterList() {
-        try {
-        } finally {
-        }
-        return null;
+        return new PrinterData[0];
     }
 
     /**
