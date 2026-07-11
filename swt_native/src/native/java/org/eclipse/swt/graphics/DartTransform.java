@@ -239,7 +239,7 @@ public class DartTransform extends DartResource implements ITransform {
      */
     @Override
     public boolean isDisposed() {
-        return false;
+        return device == null;
     }
 
     /**
