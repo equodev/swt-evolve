@@ -557,6 +557,8 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawImage(Image image, int x, int y) {
+        if (image == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (imageCapture != null) {
             imageCapture.accept(image);
             return;
@@ -601,17 +603,20 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight) {
-        VGCDrawImageImageintintintintintintintint drawOp = new VGCDrawImageImageintintintintintintintint();
-        drawOp.image = GraphicsUtils.copyImage(display, image);
-        drawOp.srcX = srcX;
-        drawOp.srcY = srcY;
-        drawOp.srcWidth = srcWidth;
-        drawOp.srcHeight = srcHeight;
-        drawOp.destX = destX;
-        drawOp.destY = destY;
-        drawOp.destWidth = destWidth;
-        drawOp.destHeight = destHeight;
-        FlutterBridge.send(this, "drawImageImageintintintintintintintint", drawOp);
+        if (image == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        if (srcWidth == 0 || srcHeight == 0 || destWidth == 0 || destHeight == 0)
+            return;
+        if (srcX < 0 || srcY < 0 || srcWidth < 0 || srcHeight < 0 || destWidth < 0 || destHeight < 0) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        if (image == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (image.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        drawImage(image, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, false);
     }
 
     /**
@@ -1764,8 +1769,6 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int getLineCap() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return data.lineCap;
     }
 
@@ -1807,8 +1810,6 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public int getLineJoin() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return data.lineJoin;
     }
 
@@ -2081,9 +2082,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public boolean isClipped() {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return data.clipRgn != 0;
+        return clipping != null && (clipping.width > 0 || clipping.height > 0);
     }
 
     /**
@@ -3324,7 +3323,7 @@ public final class DartGC extends DartResource implements IGC {
     public String toString() {
         if (isDisposed())
             return "GC {*DISPOSED*}";
-        return "GC {" + getApi().handle + "}";
+        return "GC {" + System.identityHashCode(this) + "}";
     }
 
     boolean XORMode;
