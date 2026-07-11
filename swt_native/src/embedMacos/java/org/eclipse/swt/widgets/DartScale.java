@@ -279,12 +279,13 @@ public class DartScale extends DartControl implements IScale {
      * </ul>
      */
     public void setMaximum(int value) {
-        int newValue = value;
-        if (!java.util.Objects.equals(this.maximum, newValue)) {
+        checkWidget();
+        if (minimum < value) {
+            maximum = value;
+            if (selection > maximum)
+                selection = maximum;
             dirty();
         }
-        checkWidget();
-        this.maximum = newValue;
     }
 
     /**
@@ -301,12 +302,13 @@ public class DartScale extends DartControl implements IScale {
      * </ul>
      */
     public void setMinimum(int value) {
-        int newValue = value;
-        if (!java.util.Objects.equals(this.minimum, newValue)) {
+        checkWidget();
+        if (0 <= value && value < maximum) {
+            minimum = value;
+            if (selection < minimum)
+                selection = minimum;
             dirty();
         }
-        checkWidget();
-        this.minimum = newValue;
     }
 
     /**
@@ -344,12 +346,11 @@ public class DartScale extends DartControl implements IScale {
      * </ul>
      */
     public void setSelection(int value) {
-        int newValue = value;
-        if (!java.util.Objects.equals(this.selection, newValue)) {
-            dirty();
-        }
         checkWidget();
-        this.selection = newValue;
+        int clamped = Math.max(minimum, Math.min(maximum, value));
+        if (this.selection != clamped)
+            dirty();
+        this.selection = clamped;
     }
 
     int maximum;
