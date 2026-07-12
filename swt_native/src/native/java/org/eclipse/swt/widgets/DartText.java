@@ -668,7 +668,12 @@ public class DartText extends DartScrollable implements IText {
      */
     public String getLineDelimiter() {
         checkWidget();
-        return Text.DELIMITER;
+        String p = SWT.getPlatform();
+        if ("win32".equals(p))
+            return "\r\n";
+        if ("cocoa".equals(p))
+            return "\r";
+        return "\n";
     }
 
     /**
@@ -1691,13 +1696,12 @@ public class DartText extends DartScrollable implements IText {
      * </ul>
      */
     public void setTopIndex(int index) {
-        int newValue = index;
-        if (!java.util.Objects.equals(this.topIndex, newValue)) {
-            dirty();
-        }
         checkWidget();
         if ((getApi().style & SWT.SINGLE) != 0)
             return;
+        int newValue = Math.max(0, Math.min(index, Math.max(0, getLineCount() - 1)));
+        if (!java.util.Objects.equals(this.topIndex, newValue))
+            dirty();
         this.topIndex = newValue;
     }
 
