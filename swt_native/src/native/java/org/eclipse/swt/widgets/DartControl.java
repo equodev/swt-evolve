@@ -2959,12 +2959,14 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @since 3.7
      */
     public void setOrientation(int orientation) {
-        int newValue = orientation;
-        if (!java.util.Objects.equals(this.orientation, newValue)) {
-            dirty();
-        }
-        this.orientation = newValue;
         checkWidget();
+        int flags = SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT;
+        if ((orientation & flags) == 0 || (orientation & flags) == flags)
+            return;
+        getApi().style &= ~flags;
+        getApi().style |= orientation & flags;
+        this.orientation = orientation;
+        dirty();
     }
 
     /**
