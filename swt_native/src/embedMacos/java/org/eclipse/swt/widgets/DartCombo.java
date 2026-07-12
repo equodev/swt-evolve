@@ -969,20 +969,6 @@ public class DartCombo extends DartComposite implements ICombo {
         if ((getApi().style & SWT.READ_ONLY) != 0) {
         } else {
         }
-        dirty();
-        String[] newItems = new String[items.length - 1];
-        System.arraycopy(items, 0, newItems, 0, index);
-        System.arraycopy(items, index + 1, newItems, index, items.length - index - 1);
-        items = newItems;
-        if (index == selectedIndex) {
-            if (index < items.length) {
-                selectedIndex = index;
-            } else {
-                selectedIndex = -1;
-            }
-        } else if (index < selectedIndex) {
-            selectedIndex--;
-        }
     }
 
     /**

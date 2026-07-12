@@ -682,6 +682,11 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
                     // ERROR_THREAD_INVALID_ACCESS. Supersede it: deregister the stale same-thread
                     // (or already-disposed) Display so the new one becomes the thread's Display.
                     if (Displays[i].isDisposed() || ((DartDisplay) Displays[i].getImpl()).thread == thread) {
+                        // Keep Displays[] and the static Default consistent: if we drop the
+                        // Display that Default still points at, clear Default too so getDefault()
+                        // (Default field) and getCurrent() (Displays[] scan) don't diverge.
+                        if (Displays[i] == Default)
+                            Default = null;
                         Displays[i] = null;
                     } else if (!multiple) {
                         SWT.error(SWT.ERROR_NOT_IMPLEMENTED, null, " [multiple displays]");

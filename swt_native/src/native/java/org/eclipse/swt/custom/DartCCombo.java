@@ -611,6 +611,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
     public void cut() {
         checkWidget();
         text.cut();
+        _text = text.getText();
     }
 
     /**
@@ -1449,6 +1450,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
     public void paste() {
         checkWidget();
         text.paste();
+        _text = text.getText();
     }
 
     @Override
