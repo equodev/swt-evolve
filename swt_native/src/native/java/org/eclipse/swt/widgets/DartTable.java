@@ -917,7 +917,9 @@ public class DartTable extends DartComposite implements ITable {
      */
     public int getHeaderHeight() {
         checkWidget();
-        return 0;
+        if (!getHeaderVisible())
+            return 0;
+        return (int) Math.ceil(dev.equo.swt.FontMetricsUtil.getFontSize("Ag", getFont()).y()) + 8;
     }
 
     /**
@@ -1033,7 +1035,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public int getItemHeight() {
         checkWidget();
-        if (itemCount == 0) {
+        if (itemCount == 0 || items == null || items[0] == null) {
             return TableSizes.getItemHeight(this);
         }
         return Sizes.computeSize((DartTableItem) items[0].getImpl(), SWT.DEFAULT, SWT.DEFAULT, true).y;
@@ -1883,6 +1885,17 @@ public class DartTable extends DartComposite implements ITable {
         this.items = newItems;
         this.itemCount = count;
         updateRowCount();
+        if ((getApi().style & SWT.VIRTUAL) != 0 && this.itemCount > 0) {
+            // Eagerly populate an initial page of virtual rows so SWT.SetData fires like a
+            // native table. Flutter drives further loading as the user scrolls; the client
+            // area is not reliably laid out yet here, so use a fixed initial page size.
+            int limit = Math.min(this.itemCount, 16);
+            for (int i = 0; i < limit; i++) {
+                TableItem it = _getItem(i);
+                if (it != null)
+                    checkData(it, i);
+            }
+        }
     }
 
     /*public*/

@@ -2375,6 +2375,24 @@ public class DartTree extends DartComposite implements ITree {
         return topItem;
     }
 
+    void loadVirtualPage(TreeItem parentItem) {
+        if ((getApi().style & SWT.VIRTUAL) == 0)
+            return;
+        int cnt = getItemCount(parentItem);
+        int limit = Math.min(cnt, 16);
+        for (int i = 0; i < limit; i++) {
+            TreeItem it = _getItem(parentItem, i, true);
+            if (it != null)
+                checkData(it);
+        }
+    }
+
+    void onItemExpanded(TreeItem item, boolean expanded) {
+        dirty();
+        if (expanded)
+            loadVirtualPage(item);
+    }
+
     public void _addEditor(TreeEditor value) {
         TreeEditor[] result = ControlEditorHelper.addEditor(editors, value, TreeEditor.class);
         if (result != editors) {

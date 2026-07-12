@@ -1079,7 +1079,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         ((DartTree) parent.getImpl()).checkItems();
         ((DartTree) parent.getImpl()).ignoreExpand = true;
         this.expanded = expanded;
-        ((DartTree) parent.getImpl()).dirty();
+        ((DartTree) parent.getImpl()).onItemExpanded(this.getApi(), expanded);
         if (expanded) {
         } else {
         }
