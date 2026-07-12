@@ -674,6 +674,15 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         synchronized (DartDisplay.class) {
             for (int i = 0; i < Displays.length; i++) {
                 if (Displays[i] != null) {
+                    // A disposed Display that was never deregistered (its destroy()/deregister()
+                    // didn't complete) must not block a new Display on the same thread. The
+                    // headless test runner creates and disposes one Display per class in sequence
+                    // on the shared test thread; a leaked disposed entry would otherwise fail every
+                    // subsequent `new Display()` with ERROR_THREAD_INVALID_ACCESS. Reap it here.
+                    if (Displays[i].isDisposed()) {
+                        Displays[i] = null;
+                        continue;
+                    }
                     if (!multiple)
                         SWT.error(SWT.ERROR_NOT_IMPLEMENTED, null, " [multiple displays]");
                     if (((DartDisplay) Displays[i].getImpl()).thread == thread)
