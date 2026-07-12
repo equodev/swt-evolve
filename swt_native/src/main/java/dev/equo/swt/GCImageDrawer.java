@@ -30,7 +30,15 @@ public class GCImageDrawer extends EmbeddedBridge {
 
     public GCImageDrawer() {
         super(null);
-        FlutterLibraryLoader.initialize();
+        try {
+            FlutterLibraryLoader.initialize();
+        } catch (Throwable t) {
+            // The native Flutter GC library isn't available (e.g. the headless CI container). Degrade
+            // gracefully so GC-to-Image operations cancel instead of throwing; results that depend on
+            // actual off-screen rendering (pixel readback) simply won't be produced. No effect in desk
+            // mode, where initialize() succeeds.
+            nativeWindowAvailable = false;
+        }
     }
 
     @Override
