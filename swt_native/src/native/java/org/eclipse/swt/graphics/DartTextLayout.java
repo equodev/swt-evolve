@@ -324,7 +324,19 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
      * @see #getLineBounds(int)
      */
     public Rectangle getBounds() {
-        return getBounds(0, text.length());
+        checkLayout();
+        computeRuns();
+        int lineH = _effLineHeight();
+        int lineCount = getLineCount();
+        int[] offs = getLineOffsets();
+        double maxW = 0;
+        for (int i = 0; i < lineCount; i++) {
+            int ls = offs[i], le = offs[i + 1];
+            while (le > ls && (text.charAt(le - 1) == '\n' || text.charAt(le - 1) == '\r')) le--;
+            maxW = Math.max(maxW, _measureRange(ls, le));
+        }
+        int w = wrapWidth != -1 ? wrapWidth : (int) Math.ceil(maxW);
+        return new Rectangle(0, 0, w, lineH * lineCount + getVerticalIndent());
     }
 
     /**
@@ -343,27 +355,22 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
      */
     public Rectangle getBounds(int start, int end) {
         checkLayout();
-        try {
-            computeRuns();
-            int length = text.length();
-            if (length == 0)
-                return new Rectangle(0, 0, 0, 0);
-            if (start > end)
-                return new Rectangle(0, 0, 0, 0);
-            start = Math.min(Math.max(0, start), length - 1);
-            end = Math.min(Math.max(0, end), length - 1);
-            start = translateOffset(start);
-            end = translateOffset(end);
-            // The stubbed ascent/descent (reset to -1 by setFont/setText) don't reflect the
-            // layout's font. Derive the line height from the font metrics so getBounds().height
-            // matches the renderer's per-font line height (fixes variable-line-height parity).
-            int fontH = org.eclipse.swt.custom.StyledTextHelper.computeLineHeight(font);
-            int lineH = fontH;
-            if (ascent >= 0 && descent >= 0)
-                lineH = Math.max(lineH, ascent + descent);
-            return new Rectangle(0, 0, 0, lineH + getVerticalIndent());
-        } finally {
-        }
+        computeRuns();
+        int length = text.length();
+        if (length == 0)
+            return new Rectangle(0, 0, 0, 0);
+        if (start > end)
+            return new Rectangle(0, 0, 0, 0);
+        start = Math.min(Math.max(0, start), length - 1);
+        end = Math.min(Math.max(0, end), length - 1);
+        int ts = translateOffset(start);
+        int te = translateOffset(end);
+        int lineH = _effLineHeight();
+        int lineIndex = _lineOf(ts);
+        int ls = getLineOffsets()[lineIndex];
+        int x = (int) Math.round(_measureRange(ls, ts));
+        int width = (int) Math.ceil(_measureRange(ts, te + 1));
+        return new Rectangle(x, lineIndex * lineH, width, lineH + getVerticalIndent());
     }
 
     /**
@@ -535,15 +542,11 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         if (!(0 <= lineIndex && lineIndex < lineCount))
             SWT.error(SWT.ERROR_INVALID_RANGE);
         FontMetrics metrics = getLineMetrics(lineIndex);
-        int lineHeight;
-        if (metrics != null) {
-            lineHeight = metrics.getHeight();
-        } else {
-            lineHeight = org.eclipse.swt.custom.StyledTextHelper.computeLineHeight(font);
-            if (ascent != -1 && descent != -1)
-                lineHeight = Math.max(lineHeight, ascent + descent);
-        }
-        int lineWidth = wrapWidth != -1 ? wrapWidth : Integer.MAX_VALUE / 2;
+        int lineHeight = metrics != null ? metrics.getHeight() : _effLineHeight();
+        int[] offs = getLineOffsets();
+        int ls = offs[lineIndex], le = offs[lineIndex + 1];
+        while (le > ls && (text.charAt(le - 1) == '\n' || text.charAt(le - 1) == '\r')) le--;
+        int lineWidth = wrapWidth != -1 ? wrapWidth : (int) Math.ceil(_measureRange(ls, le));
         return new Rectangle(0, lineIndex * lineHeight, lineWidth, lineHeight);
     }
 
@@ -614,26 +617,20 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
      */
     public Point getLocation(int offset, boolean trailing) {
         checkLayout();
-        try {
-            computeRuns();
-            int length = text.length();
-            if (!(0 <= offset && offset <= length))
-                SWT.error(SWT.ERROR_INVALID_RANGE);
-            if (length == 0)
-                return new Point(0, 0);
-            if (offset == length) {
-            } else {
-                offset = translateOffset(offset);
-                boolean rtl = false;
-                if (trailing != rtl) {
-                    long[] rectCount = new long[1];
-                    if (rectCount[0] > 0) {
-                    }
-                }
-            }
-        } finally {
-        }
-        return new Point(0, 0);
+        computeRuns();
+        int length = text.length();
+        if (!(0 <= offset && offset <= length))
+            SWT.error(SWT.ERROR_INVALID_RANGE);
+        if (length == 0)
+            return new Point(0, 0);
+        int t = translateOffset(offset);
+        int lineIndex = _lineOf(offset < length ? t : translateOffset(length - 1));
+        int ls = getLineOffsets()[lineIndex];
+        int measureTo = t;
+        if (trailing && offset < length)
+            measureTo = translateOffset(offset + 1);
+        int x = (int) Math.round(_measureRange(ls, measureTo));
+        return new Point(x, lineIndex * _effLineHeight());
     }
 
     /**
@@ -677,48 +674,26 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             return offset + step;
         switch(movement) {
             case SWT.MOVEMENT_CLUSTER:
-                //TODO cluster
-                offset += step;
-                if (0 <= offset && offset < length) {
-                    char ch = text.charAt(offset);
-                    if (0xDC00 <= ch && ch <= 0xDFFF) {
-                        if (offset > 0) {
-                            ch = text.charAt(offset - 1);
-                            if (0xD800 <= ch && ch <= 0xDBFF) {
-                                offset += step;
+                {
+                    offset += step;
+                    if (0 <= offset && offset < length) {
+                        char ch = text.charAt(offset);
+                        if (0xDC00 <= ch && ch <= 0xDFFF) {
+                            if (offset > 0) {
+                                ch = text.charAt(offset - 1);
+                                if (0xD800 <= ch && ch <= 0xDBFF)
+                                    offset += step;
                             }
                         }
                     }
+                    return offset;
                 }
-                break;
             case SWT.MOVEMENT_WORD:
-                {
-                    offset = translateOffset(offset);
-                    return untranslateOffset(offset);
-                }
+                return untranslateOffset(forward ? _fwdWordEnd(translateOffset(offset)) : _bwdWordStart(translateOffset(offset)));
             case SWT.MOVEMENT_WORD_END:
-                {
-                    offset = translateOffset(offset);
-                    if (forward) {
-                    } else {
-                        length = translateOffset(length);
-                        int result = 0;
-                        while (result < length) {
-                        }
-                    }
-                    return untranslateOffset(offset);
-                }
+                return untranslateOffset(forward ? _fwdWordEnd(translateOffset(offset)) : _bwdWordEnd(translateOffset(offset)));
             case SWT.MOVEMENT_WORD_START:
-                {
-                    offset = translateOffset(offset);
-                    if (forward) {
-                        int result = translateOffset(length);
-                        while (result > 0) {
-                        }
-                    } else {
-                    }
-                    return untranslateOffset(offset);
-                }
+                return untranslateOffset(forward ? _fwdWordStart(translateOffset(offset)) : _bwdWordStart(translateOffset(offset)));
         }
         return offset;
     }
@@ -778,22 +753,31 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
      */
     public int getOffset(int x, int y, int[] trailing) {
         checkLayout();
-        try {
-            computeRuns();
-            if (trailing != null && trailing.length < 1)
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-            int length = text.length();
-            if (length == 0)
-                return 0;
-            double[] partialFraction = new double[1];
-            if (trailing != null) {
-                trailing[0] = Math.round((float) partialFraction[0]);
-                if (partialFraction[0] >= 0.5) {
-                }
+        computeRuns();
+        if (trailing != null && trailing.length < 1)
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        int length = text.length();
+        if (trailing != null)
+            trailing[0] = 0;
+        if (length == 0)
+            return 0;
+        int lineH = _effLineHeight();
+        int lineCount = getLineCount();
+        int lineIndex = (y > 0 && lineH > 0) ? Math.min(lineCount - 1, y / lineH) : 0;
+        int[] offs = getLineOffsets();
+        int ls = offs[lineIndex], le = offs[lineIndex + 1];
+        while (le > ls && (text.charAt(le - 1) == '\n' || text.charAt(le - 1) == '\r')) le--;
+        double acc = 0;
+        for (int o = ls; o < le; o++) {
+            double cw = _measureRange(o, o + 1);
+            if (x < acc + cw) {
+                if (trailing != null && x >= acc + cw / 2)
+                    trailing[0] = 1;
+                return untranslateOffset(o);
             }
-        } finally {
+            acc += cw;
         }
-        return 0;
+        return untranslateOffset(le);
     }
 
     /**
@@ -1939,6 +1923,88 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
 
     public TextStyle[] __styles() {
         return _styles;
+    }
+
+    static boolean _isWordChar(char c) {
+        return Character.isLetterOrDigit(c) || c == '_';
+    }
+
+    int _fwdWordEnd(int o) {
+        int len = text.length();
+        while (o < len && !_isWordChar(text.charAt(o))) o++;
+        while (o < len && _isWordChar(text.charAt(o))) o++;
+        return o;
+    }
+
+    int _fwdWordStart(int o) {
+        int len = text.length();
+        while (o < len && _isWordChar(text.charAt(o))) o++;
+        while (o < len && !_isWordChar(text.charAt(o))) o++;
+        return o;
+    }
+
+    int _bwdWordStart(int o) {
+        while (o > 0 && !_isWordChar(text.charAt(o - 1))) o--;
+        while (o > 0 && _isWordChar(text.charAt(o - 1))) o--;
+        return o;
+    }
+
+    int _bwdWordEnd(int o) {
+        while (o > 0 && _isWordChar(text.charAt(o - 1))) o--;
+        while (o > 0 && !_isWordChar(text.charAt(o - 1))) o--;
+        return o;
+    }
+
+    org.eclipse.swt.graphics.Font _fontFor(int offset) {
+        if (styles != null) {
+            for (int i = 0; i < stylesCount - 1; i++) {
+                if (styles[i] != null && offset >= styles[i].start && offset < styles[i + 1].start) {
+                    if (styles[i].style != null && styles[i].style.font != null && !styles[i].style.font.isDisposed())
+                        return styles[i].style.font;
+                    break;
+                }
+            }
+        }
+        if (font != null && !font.isDisposed())
+            return font;
+        org.eclipse.swt.widgets.Display d = org.eclipse.swt.widgets.Display.getCurrent();
+        return d != null ? d.getSystemFont() : null;
+    }
+
+    double _measureRange(int start, int end) {
+        if (text == null)
+            return 0;
+        int len = text.length();
+        start = Math.max(0, Math.min(start, len));
+        end = Math.max(0, Math.min(end, len));
+        if (end <= start)
+            return 0;
+        double w = 0;
+        int i = start;
+        while (i < end) {
+            org.eclipse.swt.graphics.Font f = _fontFor(i);
+            int j = i + 1;
+            while (j < end && _fontFor(j) == f) j++;
+            if (f != null) {
+                w += dev.equo.swt.FontMetricsUtil.getFontSize(text.substring(i, j), f).x();
+            }
+            i = j;
+        }
+        return w;
+    }
+
+    int _effLineHeight() {
+        int fontH = org.eclipse.swt.custom.StyledTextHelper.computeLineHeight(font);
+        if (ascent >= 0 && descent >= 0)
+            fontH = Math.max(fontH, ascent + descent);
+        return Math.max(1, fontH);
+    }
+
+    int _lineOf(int o) {
+        int[] offs = getLineOffsets();
+        for (int i = 0; i < offs.length - 1; i++) if (offs[i + 1] > o)
+            return i;
+        return Math.max(0, offs.length - 2);
     }
 
     public TextLayout getApi() {
