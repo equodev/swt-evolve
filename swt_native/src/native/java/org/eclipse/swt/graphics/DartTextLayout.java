@@ -143,20 +143,36 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             lineOffsets = new int[] { 0, 0 };
             return;
         }
-        int count = 0;
-        for (int i = 0; i < segLen; i++) {
-            if (segText.charAt(i) == '\n')
-                count++;
-        }
-        int[] offsets = new int[count + 2];
-        offsets[0] = 0;
-        int lineIdx = 1;
-        for (int i = 0; i < segLen; i++) {
-            if (segText.charAt(i) == '\n') {
-                offsets[lineIdx++] = i + 1;
+        // Split on '\n' into paragraphs; within each, break into visual lines that fit wrapWidth
+        // (greedy word wrap: break at the last space, or mid-word when a single run overflows).
+        java.util.List<Integer> offs = new java.util.ArrayList<>();
+        offs.add(0);
+        int paraStart = 0;
+        for (int i = 0; i <= segLen; i++) {
+            boolean nl = i < segLen && segText.charAt(i) == '\n';
+            if (nl || i == segLen) {
+                if (wrapWidth > 0) {
+                    int lineStart = paraStart, lastSpace = -1;
+                    for (int j = paraStart; j < i; j++) {
+                        if (j > lineStart && _measureRange(lineStart, j + 1) > wrapWidth) {
+                            int brk = (lastSpace > lineStart) ? lastSpace + 1 : j;
+                            offs.add(brk);
+                            lineStart = brk;
+                            lastSpace = -1;
+                        }
+                        if (segText.charAt(j) == ' ')
+                            lastSpace = j;
+                    }
+                }
+                if (nl) {
+                    offs.add(i + 1);
+                    paraStart = i + 1;
+                }
             }
         }
-        offsets[lineIdx] = segLen;
+        offs.add(segLen);
+        int[] offsets = new int[offs.size()];
+        for (int k = 0; k < offsets.length; k++) offsets[k] = offs.get(k);
         lineOffsets = offsets;
     }
 
@@ -455,16 +471,17 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
      */
     public int getLevel(int offset) {
         checkLayout();
-        try {
-            computeRuns();
-            int length = text.length();
-            if (!(0 <= offset && offset <= length))
-                SWT.error(SWT.ERROR_INVALID_RANGE);
-            offset = translateOffset(offset);
-            byte[] bidiLevels = new byte[1];
-            return bidiLevels[0];
-        } finally {
-        }
+        computeRuns();
+        int length = text.length();
+        if (!(0 <= offset && offset <= length))
+            SWT.error(SWT.ERROR_INVALID_RANGE);
+        String seg = getSegmentsText();
+        int t = translateOffset(offset);
+        boolean rtl = (orientation & SWT.RIGHT_TO_LEFT) != 0;
+        if (seg.length() == 0 || t >= seg.length())
+            return rtl ? 1 : 0;
+        java.text.Bidi bidi = new java.text.Bidi(seg, rtl ? java.text.Bidi.DIRECTION_RIGHT_TO_LEFT : java.text.Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
+        return bidi.getLevelAt(t);
     }
 
     /**
@@ -507,20 +524,17 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
      */
     public int getLineIndex(int offset) {
         checkLayout();
-        try {
-            computeRuns();
-            int length = text.length();
-            if (!(0 <= offset && offset <= length))
-                SWT.error(SWT.ERROR_INVALID_RANGE);
-            offset = translateOffset(offset);
-            for (int line = 0; line < lineOffsets.length - 1; line++) {
-                if (lineOffsets[line + 1] > offset) {
-                    return line;
-                }
-            }
-        } finally {
+        computeRuns();
+        int length = text.length();
+        if (!(0 <= offset && offset <= length))
+            SWT.error(SWT.ERROR_INVALID_RANGE);
+        int t = translateOffset(offset);
+        int[] offs = getLineOffsets();
+        for (int line = 0; line < offs.length - 1; line++) {
+            if (offs[line + 1] > t)
+                return line;
         }
-        return 0;
+        return Math.max(0, offs.length - 2);
     }
 
     /**
@@ -546,8 +560,19 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         int[] offs = getLineOffsets();
         int ls = offs[lineIndex], le = offs[lineIndex + 1];
         while (le > ls && (text.charAt(le - 1) == '\n' || text.charAt(le - 1) == '\r')) le--;
-        int lineWidth = wrapWidth != -1 ? wrapWidth : (int) Math.ceil(_measureRange(ls, le));
-        return new Rectangle(0, lineIndex * lineHeight, lineWidth, lineHeight);
+        int lineWidth = (int) Math.ceil(_measureRange(ls, le));
+        // Horizontal alignment shifts the line within the layout width when wrapWidth exceeds it.
+        int x = 0;
+        if (wrapWidth != -1) {
+            int extra = wrapWidth - lineWidth;
+            if (extra > 0) {
+                if ((alignment & SWT.CENTER) != 0)
+                    x = extra / 2;
+                else if ((alignment & SWT.RIGHT) != 0)
+                    x = extra;
+            }
+        }
+        return new Rectangle(x, lineIndex * lineHeight, lineWidth, lineHeight);
     }
 
     /**
@@ -1938,15 +1963,25 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
 
     int _fwdWordStart(int o) {
         int len = text.length();
-        while (o < len && _isWordChar(text.charAt(o))) o++;
-        while (o < len && !_isWordChar(text.charAt(o))) o++;
-        return o;
+        for (int p = o + 1; p < len; p++) {
+            char c = text.charAt(p);
+            if (c == '\n')
+                return p;
+            if (_isWordChar(c) && !_isWordChar(text.charAt(p - 1)))
+                return p;
+        }
+        return len;
     }
 
     int _bwdWordStart(int o) {
-        while (o > 0 && !_isWordChar(text.charAt(o - 1))) o--;
-        while (o > 0 && _isWordChar(text.charAt(o - 1))) o--;
-        return o;
+        for (int p = o - 1; p >= 1; p--) {
+            char c = text.charAt(p);
+            if (c == '\n')
+                return p;
+            if (_isWordChar(c) && !_isWordChar(text.charAt(p - 1)))
+                return p;
+        }
+        return 0;
     }
 
     int _bwdWordEnd(int o) {
