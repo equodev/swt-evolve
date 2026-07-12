@@ -182,7 +182,7 @@ public abstract class DartWidget implements IWidget {
     }
 
     String getClipboardText() {
-        return null;
+        return _webClipboard;
     }
 
     /**
@@ -438,8 +438,8 @@ public abstract class DartWidget implements IWidget {
     }
 
     void copyToClipboard(char[] buffer) {
-        if (buffer.length == 0)
-            return;
+        if (buffer != null && buffer.length > 0)
+            _webClipboard = new String(buffer);
     }
 
     void createHandle() {
@@ -1295,6 +1295,8 @@ public abstract class DartWidget implements IWidget {
     public long _jniRef() {
         return jniRef;
     }
+
+    static String _webClipboard = null;
 
     protected FlutterBridge bridge;
 

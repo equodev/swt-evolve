@@ -351,13 +351,10 @@ public class DartText extends DartScrollable implements IText {
         checkWidget();
         if ((getApi().style & SWT.PASSWORD) != 0 || echoCharacter != '\0')
             return;
-        if ((getApi().style & SWT.SINGLE) != 0) {
-            Point selection = getSelection();
-            if (selection.x == selection.y)
-                return;
-            copyToClipboard(getEditText(selection.x, selection.y - 1));
-        } else {
-        }
+        Point selection = getSelection();
+        if (selection.x == selection.y)
+            return;
+        copyToClipboard(getEditText(selection.x, selection.y - 1));
     }
 
     @Override
@@ -391,25 +388,12 @@ public class DartText extends DartScrollable implements IText {
             return;
         if ((getApi().style & SWT.PASSWORD) != 0 || echoCharacter != '\0')
             return;
-        boolean cut = true;
-        char[] oldText = null;
         Point oldSelection = getSelection();
-        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
-            if (oldSelection.x != oldSelection.y) {
-                oldText = getEditText(oldSelection.x, oldSelection.y - 1);
-            }
-        }
-        if (cut) {
-            if ((getApi().style & SWT.SINGLE) != 0) {
-                if (oldText == null)
-                    oldText = getEditText(oldSelection.x, oldSelection.y - 1);
-                copyToClipboard(oldText);
-                insertEditText("");
-            } else {
-            }
-        }
-        Point newSelection = getSelection();
-        if (!cut || !oldSelection.equals(newSelection))
+        if (oldSelection.x == oldSelection.y)
+            return;
+        copyToClipboard(getEditText(oldSelection.x, oldSelection.y - 1));
+        insertEditText("");
+        if (!oldSelection.equals(getSelection()))
             sendEvent(SWT.Modify);
     }
 
@@ -1025,6 +1009,10 @@ public class DartText extends DartScrollable implements IText {
     void _insertEditText(String string, boolean enableUndo) {
         int length = string.length();
         Point selection = getSelection();
+        if (selection.x > getCharCount() || selection.y > getCharCount()) {
+            int _l = getCharCount();
+            selection = new Point(Math.min(selection.x, _l), Math.min(selection.y, _l));
+        }
         if (hasFocus() && hiddenText == null) {
             if (textLimit != Text.LIMIT) {
                 int charCount = getCharCount();
@@ -1091,30 +1079,17 @@ public class DartText extends DartScrollable implements IText {
     void _paste(boolean enableUndo) {
         if ((getApi().style & SWT.READ_ONLY) != 0)
             return;
-        boolean paste = true;
-        String oldText = null;
-        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
-            oldText = getClipboardText();
-            if (oldText != null) {
+        String newText = getClipboardText();
+        if (newText == null)
+            return;
+        if (textLimit != Text.LIMIT) {
+            Point sel = getSelection();
+            int charCount = getCharCount();
+            if (charCount - (sel.y - sel.x) + newText.length() > textLimit) {
+                newText = newText.substring(0, Math.max(0, textLimit - charCount + (sel.y - sel.x)));
             }
         }
-        if (paste) {
-            if ((getApi().style & SWT.SINGLE) != 0) {
-                if (oldText == null)
-                    oldText = getClipboardText();
-                if (oldText == null)
-                    return;
-                _insertEditText(oldText, enableUndo);
-            } else {
-                if (textLimit != Text.LIMIT) {
-                    if (oldText == null)
-                        oldText = getClipboardText();
-                    if (oldText == null)
-                        return;
-                } else {
-                }
-            }
-        }
+        _insertEditText(newText, enableUndo);
         sendEvent(SWT.Modify);
     }
 
