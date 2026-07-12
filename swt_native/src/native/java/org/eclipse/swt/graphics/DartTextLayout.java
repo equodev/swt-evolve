@@ -354,7 +354,13 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             end = Math.min(Math.max(0, end), length - 1);
             start = translateOffset(start);
             end = translateOffset(end);
-            int lineH = Math.max(0, ascent) + Math.max(0, descent);
+            // The stubbed ascent/descent (reset to -1 by setFont/setText) don't reflect the
+            // layout's font. Derive the line height from the font metrics so getBounds().height
+            // matches the renderer's per-font line height (fixes variable-line-height parity).
+            int fontH = org.eclipse.swt.custom.StyledTextHelper.computeLineHeight(font);
+            int lineH = fontH;
+            if (ascent >= 0 && descent >= 0)
+                lineH = Math.max(lineH, ascent + descent);
             return new Rectangle(0, 0, 0, lineH + getVerticalIndent());
         } finally {
         }
@@ -528,12 +534,15 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         int lineCount = getLineCount();
         if (!(0 <= lineIndex && lineIndex < lineCount))
             SWT.error(SWT.ERROR_INVALID_RANGE);
-        int lineHeight = 1;
         FontMetrics metrics = getLineMetrics(lineIndex);
-        if (metrics != null)
+        int lineHeight;
+        if (metrics != null) {
             lineHeight = metrics.getHeight();
-        else if (ascent != -1 && descent != -1)
-            lineHeight = ascent + descent;
+        } else {
+            lineHeight = org.eclipse.swt.custom.StyledTextHelper.computeLineHeight(font);
+            if (ascent != -1 && descent != -1)
+                lineHeight = Math.max(lineHeight, ascent + descent);
+        }
         int lineWidth = wrapWidth != -1 ? wrapWidth : Integer.MAX_VALUE / 2;
         return new Rectangle(0, lineIndex * lineHeight, lineWidth, lineHeight);
     }
