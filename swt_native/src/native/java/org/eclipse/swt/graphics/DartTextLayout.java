@@ -650,12 +650,24 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             return new Point(0, 0);
         int t = translateOffset(offset);
         int lineIndex = _lineOf(offset < length ? t : translateOffset(length - 1));
-        int ls = getLineOffsets()[lineIndex];
-        int measureTo = t;
-        if (trailing && offset < length)
-            measureTo = translateOffset(offset + 1);
-        int x = (int) Math.round(_measureRange(ls, measureTo));
-        return new Point(x, lineIndex * _effLineHeight());
+        int[] offs = getLineOffsets();
+        int ls = offs[lineIndex], le = offs[lineIndex + 1];
+        String seg = getSegmentsText();
+        while (le > ls && (seg.charAt(le - 1) == '\n' || seg.charAt(le - 1) == '\r')) le--;
+        int lineLen = le - ls;
+        double totalWidth = _measureRange(ls, le);
+        boolean baseRtl = (orientation & SWT.RIGHT_TO_LEFT) != 0;
+        int idx = t - ls;
+        double x;
+        if (idx < 0 || idx >= lineLen) {
+            x = baseRtl ? 0 : totalWidth;
+        } else {
+            double[] left = new double[lineLen], right = new double[lineLen];
+            boolean[] rtl = new boolean[lineLen];
+            _bidiVisual(ls, le, left, right, rtl);
+            x = rtl[idx] ? (trailing ? left[idx] : right[idx]) : (trailing ? right[idx] : left[idx]);
+        }
+        return new Point((int) Math.round(x), lineIndex * _effLineHeight());
     }
 
     /**
@@ -791,18 +803,26 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         int lineIndex = (y > 0 && lineH > 0) ? Math.min(lineCount - 1, y / lineH) : 0;
         int[] offs = getLineOffsets();
         int ls = offs[lineIndex], le = offs[lineIndex + 1];
-        while (le > ls && (text.charAt(le - 1) == '\n' || text.charAt(le - 1) == '\r')) le--;
-        double acc = 0;
-        for (int o = ls; o < le; o++) {
-            double cw = _measureRange(o, o + 1);
-            if (x < acc + cw) {
-                if (trailing != null && x >= acc + cw / 2)
-                    trailing[0] = 1;
-                return untranslateOffset(o);
+        String seg = getSegmentsText();
+        while (le > ls && (seg.charAt(le - 1) == '\n' || seg.charAt(le - 1) == '\r')) le--;
+        int lineLen = le - ls;
+        if (lineLen == 0)
+            return untranslateOffset(ls);
+        double[] left = new double[lineLen], right = new double[lineLen];
+        boolean[] rtl = new boolean[lineLen];
+        _bidiVisual(ls, le, left, right, rtl);
+        for (int c = 0; c < lineLen; c++) {
+            if (x >= left[c] && x < right[c]) {
+                double mid = (left[c] + right[c]) / 2;
+                boolean isTrailing = rtl[c] ? (x < mid) : (x >= mid);
+                if (trailing != null)
+                    trailing[0] = isTrailing ? 1 : 0;
+                return untranslateOffset(ls + c);
             }
-            acc += cw;
         }
-        return untranslateOffset(le);
+        // Beyond every glyph box: snap to the visual edge (line end for LTR base, start for RTL).
+        boolean baseRtl = (orientation & SWT.RIGHT_TO_LEFT) != 0;
+        return untranslateOffset(baseRtl ? ls : le);
     }
 
     /**
@@ -2033,6 +2053,60 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         if (ascent >= 0 && descent >= 0)
             fontH = Math.max(fontH, ascent + descent);
         return Math.max(1, fontH);
+    }
+
+    void _bidiVisual(int ls, int le, double[] left, double[] right, boolean[] rtl) {
+        int lineLen = le - ls;
+        boolean baseRtl = (orientation & SWT.RIGHT_TO_LEFT) != 0;
+        String lineText = getSegmentsText().substring(ls, le);
+        java.text.Bidi bidi = new java.text.Bidi(lineText, baseRtl ? java.text.Bidi.DIRECTION_RIGHT_TO_LEFT : java.text.Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
+        if (bidi.isLeftToRight()) {
+            double x = 0;
+            for (int c = 0; c < lineLen; c++) {
+                double cw = _measureRange(ls + c, ls + c + 1);
+                left[c] = x;
+                right[c] = x + cw;
+                rtl[c] = false;
+                x += cw;
+            }
+            return;
+        }
+        int n = bidi.getRunCount();
+        byte[] levels = new byte[n];
+        int[] rstart = new int[n], rlimit = new int[n];
+        for (int i = 0; i < n; i++) {
+            levels[i] = (byte) bidi.getRunLevel(i);
+            rstart[i] = bidi.getRunStart(i);
+            rlimit[i] = bidi.getRunLimit(i);
+        }
+        Integer[] order = new Integer[n];
+        for (int i = 0; i < n; i++) order[i] = i;
+        java.text.Bidi.reorderVisually(levels, 0, order, 0, n);
+        double x = 0;
+        for (int v = 0; v < n; v++) {
+            int r = order[v];
+            boolean isRtl = (levels[r] & 1) != 0;
+            double runWidth = _measureRange(ls + rstart[r], ls + rlimit[r]);
+            double cx = x;
+            if (isRtl) {
+                for (int c = rlimit[r] - 1; c >= rstart[r]; c--) {
+                    double cw = _measureRange(ls + c, ls + c + 1);
+                    left[c] = cx;
+                    right[c] = cx + cw;
+                    rtl[c] = true;
+                    cx += cw;
+                }
+            } else {
+                for (int c = rstart[r]; c < rlimit[r]; c++) {
+                    double cw = _measureRange(ls + c, ls + c + 1);
+                    left[c] = cx;
+                    right[c] = cx + cw;
+                    rtl[c] = false;
+                    cx += cw;
+                }
+            }
+            x += runWidth;
+        }
     }
 
     int _lineOf(int o) {
