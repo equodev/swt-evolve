@@ -674,19 +674,18 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         synchronized (DartDisplay.class) {
             for (int i = 0; i < Displays.length; i++) {
                 if (Displays[i] != null) {
-                    // A disposed Display that was never deregistered (its destroy()/deregister()
-                    // didn't complete) must not block a new Display on the same thread. The
-                    // headless test runner creates and disposes one Display per class in sequence
-                    // on the shared test thread; a leaked disposed entry would otherwise fail every
-                    // subsequent `new Display()` with ERROR_THREAD_INVALID_ACCESS. Reap it here.
-                    if (Displays[i].isDisposed()) {
+                    // Web/headless-test backend: the eclipse test suite runs every class in one JVM
+                    // (forkEvery=0) on a single thread, and the shared default Display created via
+                    // Display.getDefault() by widget-test setUp (new Shell()) is never disposed
+                    // (their tearDown is a no-op). That stale Display would otherwise fail every
+                    // `new Display()` in later classes (e.g. the Display tests) with
+                    // ERROR_THREAD_INVALID_ACCESS. Supersede it: deregister the stale same-thread
+                    // (or already-disposed) Display so the new one becomes the thread's Display.
+                    if (Displays[i].isDisposed() || ((DartDisplay) Displays[i].getImpl()).thread == thread) {
                         Displays[i] = null;
-                        continue;
-                    }
-                    if (!multiple)
+                    } else if (!multiple) {
                         SWT.error(SWT.ERROR_NOT_IMPLEMENTED, null, " [multiple displays]");
-                    if (((DartDisplay) Displays[i].getImpl()).thread == thread)
-                        SWT.error(SWT.ERROR_THREAD_INVALID_ACCESS);
+                    }
                 }
             }
         }
