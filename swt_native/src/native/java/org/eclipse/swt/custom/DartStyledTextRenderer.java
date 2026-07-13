@@ -373,6 +373,9 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
     }
 
     DartStyledTextRenderer.LineSizeInfo getLineSize(int i) {
+        if (lineSizes == null || i < 0 || i >= lineSizes.length) {
+            return new LineSizeInfo();
+        }
         if (lineSizes[i] == null) {
             lineSizes[i] = new LineSizeInfo();
         }

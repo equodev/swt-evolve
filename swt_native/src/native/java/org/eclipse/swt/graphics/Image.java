@@ -150,9 +150,6 @@ public final class Image extends Resource implements Drawable {
      */
     public Image(Device device, int width, int height) {
         this((IImage) null);
-        if (device == null) {
-            throw new SWTError(SWT.ERROR_NULL_ARGUMENT);
-        }
         setImpl(new DartImage(device, width, height, this));
     }
 

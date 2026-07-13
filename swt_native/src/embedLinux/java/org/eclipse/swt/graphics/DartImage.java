@@ -616,6 +616,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, ImageGcDrawer imageGcDrawer, int width, int height, Image api) {
         super(device, api);
+        if (imageGcDrawer == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
         init();
         this.imageData = new ImageData(width, height, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF));
         GC gc = new GC(getApi());
@@ -868,12 +870,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     public Color getBackground() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (background != null)
-            return background;
-        if (transparentPixel == -1)
+        if (imageData == null || imageData.transparentPixel == -1)
             return null;
-        //NOT DONE
-        return null;
+        return this.background;
     }
 
     /**
@@ -1006,6 +1005,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * @since 3.106
      */
     public ImageData getImageData(int zoom) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         java.util.concurrent.CompletableFuture<Void> f = pendingRenderFuture;
         if (f != null && !f.isDone()) {
             Display display = Display.getCurrent();
@@ -1030,7 +1031,14 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                 }
             }
         }
-        return this.imageData;
+        // Return a defensive copy: getImageData() must not hand out the backing store, so a
+        // caller mutating the returned data can't alter the image (changingImageDataDoesNotAffectImage).
+        if (zoom == 100)
+            return GraphicsUtils.copyImageData(this.imageData);
+        // The image is stored at 100%; scale to the requested zoom (matches upstream, which
+        // falls back to DPIUtil.scaleImageData(device, getImageData(100), zoom, 100)). scaleImageData
+        // already returns a fresh ImageData.
+        return org.eclipse.swt.internal.DPIUtil.scaleImageData(device, this.imageData, zoom, 100);
     }
 
     private ImageData drawWithImageGcDrawer(int width, int height, int zoom) {
@@ -1306,17 +1314,15 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * </ul>
      */
     public void setBackground(Color color) {
-        Color newValue = color;
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (color == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        this.background = newValue;
-        if (transparentPixel == -1)
+        if (imageData == null || imageData.transparentPixel == -1)
             return;
-        //NOT DONE
+        this.background = color;
     }
 
     /**
@@ -1329,10 +1335,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     public String toString() {
         if (isDisposed())
             return "Image {*DISPOSED*}";
-        if (imageFileNameProvider != null) {
-            return "Image {" + imageFileNameProvider.getImagePath(100) + "}";
-        }
-        return "Image {" + getApi().surface + "}";
+        return "Image {" + System.identityHashCode(this) + "}";
     }
 
     /**
