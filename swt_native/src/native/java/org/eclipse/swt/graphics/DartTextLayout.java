@@ -475,13 +475,15 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         int length = text.length();
         if (!(0 <= offset && offset <= length))
             SWT.error(SWT.ERROR_INVALID_RANGE);
+        boolean rtl = (orientation & SWT.RIGHT_TO_LEFT) != 0;
         String seg = getSegmentsText();
         int t = translateOffset(offset);
-        boolean rtl = (orientation & SWT.RIGHT_TO_LEFT) != 0;
         if (seg.length() == 0 || t >= seg.length())
             return rtl ? 1 : 0;
-        java.text.Bidi bidi = new java.text.Bidi(seg, rtl ? java.text.Bidi.DIRECTION_RIGHT_TO_LEFT : java.text.Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
-        return bidi.getLevelAt(t);
+        // Full UBA (not java.text.Bidi, which collapses explicit even-level overrides): honors the
+        // bidi control chars injected via setSegmentsChars so getLevel matches GTK/pango.
+        byte[] levels = _bidiLevels(seg, rtl ? 1 : 0);
+        return levels[t];
     }
 
     /**
@@ -562,16 +564,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         while (le > ls && (text.charAt(le - 1) == '\n' || text.charAt(le - 1) == '\r')) le--;
         int lineWidth = (int) Math.ceil(_measureRange(ls, le));
         // Horizontal alignment shifts the line within the layout width when wrapWidth exceeds it.
-        int x = 0;
-        if (wrapWidth != -1) {
-            int extra = wrapWidth - lineWidth;
-            if (extra > 0) {
-                if ((alignment & SWT.CENTER) != 0)
-                    x = extra / 2;
-                else if ((alignment & SWT.RIGHT) != 0)
-                    x = extra;
-            }
-        }
+        int x = _alignShift(ls, le);
         return new Rectangle(x, lineIndex * lineHeight, lineWidth, lineHeight);
     }
 
@@ -648,16 +641,14 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             SWT.error(SWT.ERROR_INVALID_RANGE);
         if (length == 0)
             return new Point(0, 0);
-        int t = translateOffset(offset);
-        int lineIndex = _lineOf(offset < length ? t : translateOffset(length - 1));
+        int lineIndex = _lineOf(translateOffset(offset < length ? offset : length - 1));
         int[] offs = getLineOffsets();
         int ls = offs[lineIndex], le = offs[lineIndex + 1];
-        String seg = getSegmentsText();
-        while (le > ls && (seg.charAt(le - 1) == '\n' || seg.charAt(le - 1) == '\r')) le--;
+        while (le > ls && (text.charAt(le - 1) == '\n' || text.charAt(le - 1) == '\r')) le--;
         int lineLen = le - ls;
         double totalWidth = _measureRange(ls, le);
         boolean baseRtl = (orientation & SWT.RIGHT_TO_LEFT) != 0;
-        int idx = t - ls;
+        int idx = offset - ls;
         double x;
         if (idx < 0 || idx >= lineLen) {
             x = baseRtl ? 0 : totalWidth;
@@ -667,7 +658,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             _bidiVisual(ls, le, left, right, rtl);
             x = rtl[idx] ? (trailing ? left[idx] : right[idx]) : (trailing ? right[idx] : left[idx]);
         }
-        return new Point((int) Math.round(x), lineIndex * _effLineHeight());
+        return new Point((int) Math.round(x) + _alignShift(ls, le), lineIndex * _effLineHeight());
     }
 
     /**
@@ -726,11 +717,11 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
                     return offset;
                 }
             case SWT.MOVEMENT_WORD:
-                return untranslateOffset(forward ? _fwdWordEnd(translateOffset(offset)) : _bwdWordStart(translateOffset(offset)));
+                return forward ? _fwdWordEnd(offset) : _bwdWordStart(offset);
             case SWT.MOVEMENT_WORD_END:
-                return untranslateOffset(forward ? _fwdWordEnd(translateOffset(offset)) : _bwdWordEnd(translateOffset(offset)));
+                return forward ? _fwdWordEnd(offset) : _bwdWordEnd(offset);
             case SWT.MOVEMENT_WORD_START:
-                return untranslateOffset(forward ? _fwdWordStart(translateOffset(offset)) : _bwdWordStart(translateOffset(offset)));
+                return forward ? _fwdWordStart(offset) : _bwdWordStart(offset);
         }
         return offset;
     }
@@ -803,11 +794,12 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         int lineIndex = (y > 0 && lineH > 0) ? Math.min(lineCount - 1, y / lineH) : 0;
         int[] offs = getLineOffsets();
         int ls = offs[lineIndex], le = offs[lineIndex + 1];
-        String seg = getSegmentsText();
-        while (le > ls && (seg.charAt(le - 1) == '\n' || seg.charAt(le - 1) == '\r')) le--;
+        while (le > ls && (text.charAt(le - 1) == '\n' || text.charAt(le - 1) == '\r')) le--;
         int lineLen = le - ls;
         if (lineLen == 0)
-            return untranslateOffset(ls);
+            return ls;
+        // Undo the horizontal alignment shift so the hit test runs in unaligned line coordinates.
+        x -= _alignShift(ls, le);
         double[] left = new double[lineLen], right = new double[lineLen];
         boolean[] rtl = new boolean[lineLen];
         _bidiVisual(ls, le, left, right, rtl);
@@ -817,12 +809,24 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
                 boolean isTrailing = rtl[c] ? (x < mid) : (x >= mid);
                 if (trailing != null)
                     trailing[0] = isTrailing ? 1 : 0;
-                return untranslateOffset(ls + c);
+                return ls + c;
             }
         }
-        // Beyond every glyph box: snap to the visual edge (line end for LTR base, start for RTL).
+        // Beyond every glyph box: snap to the edge character. Past the visual right edge returns the
+        // rightmost glyph with trailing set (last logical char for LTR base, first for RTL); past the
+        // left edge returns the leftmost glyph leading. This matches SWT hit-testing past a line end.
         boolean baseRtl = (orientation & SWT.RIGHT_TO_LEFT) != 0;
-        return untranslateOffset(baseRtl ? ls : le);
+        double maxRight = 0;
+        for (int c = 0; c < lineLen; c++) maxRight = Math.max(maxRight, right[c]);
+        boolean pastRight = x >= maxRight;
+        if (pastRight) {
+            if (trailing != null)
+                trailing[0] = baseRtl ? 0 : 1;
+            return baseRtl ? ls : le - 1;
+        }
+        if (trailing != null)
+            trailing[0] = baseRtl ? 1 : 0;
+        return baseRtl ? le - 1 : ls;
     }
 
     /**
@@ -2055,10 +2059,186 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         return Math.max(1, fontH);
     }
 
+    byte[] _bidiLevels(String s, int paraLevel) {
+        int n = s.length();
+        byte[] types = new byte[n];
+        for (int i = 0; i < n; i++) types[i] = Character.getDirectionality(s.charAt(i));
+        byte[] lv = new byte[n];
+        boolean[] removed = new boolean[n];
+        final int MAX = 125;
+        int[] stackLvl = new int[MAX + 2];
+        int[] stackOvr = new int[MAX + 2];
+        int sp = 0;
+        stackLvl[0] = paraLevel;
+        stackOvr[0] = 0;
+        for (int i = 0; i < n; i++) {
+            byte tp = types[i];
+            switch(tp) {
+                case Character.DIRECTIONALITY_RIGHT_TO_LEFT_EMBEDDING:
+                case Character.DIRECTIONALITY_RIGHT_TO_LEFT_OVERRIDE:
+                case Character.DIRECTIONALITY_LEFT_TO_RIGHT_EMBEDDING:
+                case Character.DIRECTIONALITY_LEFT_TO_RIGHT_OVERRIDE:
+                    {
+                        boolean rtl = (tp == Character.DIRECTIONALITY_RIGHT_TO_LEFT_EMBEDDING || tp == Character.DIRECTIONALITY_RIGHT_TO_LEFT_OVERRIDE);
+                        int cur = stackLvl[sp];
+                        int newLvl = rtl ? ((cur + 1) | 1) : ((cur + 2) & ~1);
+                        lv[i] = (byte) cur;
+                        removed[i] = true;
+                        if (newLvl <= MAX && sp < MAX) {
+                            sp++;
+                            stackLvl[sp] = newLvl;
+                            stackOvr[sp] = (tp == Character.DIRECTIONALITY_LEFT_TO_RIGHT_OVERRIDE) ? 1 : (tp == Character.DIRECTIONALITY_RIGHT_TO_LEFT_OVERRIDE) ? 2 : 0;
+                        }
+                        break;
+                    }
+                case Character.DIRECTIONALITY_POP_DIRECTIONAL_FORMAT:
+                    lv[i] = (byte) stackLvl[sp];
+                    removed[i] = true;
+                    if (sp > 0)
+                        sp--;
+                    break;
+                case Character.DIRECTIONALITY_BOUNDARY_NEUTRAL:
+                    lv[i] = (byte) stackLvl[sp];
+                    removed[i] = true;
+                    break;
+                default:
+                    lv[i] = (byte) stackLvl[sp];
+                    if (stackOvr[sp] == 1)
+                        types[i] = Character.DIRECTIONALITY_LEFT_TO_RIGHT;
+                    else if (stackOvr[sp] == 2)
+                        types[i] = Character.DIRECTIONALITY_RIGHT_TO_LEFT;
+            }
+        }
+        int i = 0;
+        while (i < n) {
+            if (removed[i]) {
+                i++;
+                continue;
+            }
+            int lvl = lv[i];
+            int j = i + 1;
+            while (j < n && (removed[j] || lv[j] == lvl)) j++;
+            java.util.List<Integer> idx = new java.util.ArrayList<>();
+            for (int k = i; k < j; k++) if (!removed[k])
+                idx.add(k);
+            _bidiResolveRun(types, lv, idx, lvl, paraLevel);
+            i = j;
+        }
+        return lv;
+    }
+
+    void _bidiResolveRun(byte[] types, byte[] lv, java.util.List<Integer> idx, int lvl, int paraLevel) {
+        int m = idx.size();
+        if (m == 0)
+            return;
+        byte L = Character.DIRECTIONALITY_LEFT_TO_RIGHT, R = Character.DIRECTIONALITY_RIGHT_TO_LEFT, AL = Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC;
+        byte EN = Character.DIRECTIONALITY_EUROPEAN_NUMBER, AN = Character.DIRECTIONALITY_ARABIC_NUMBER;
+        byte ES = Character.DIRECTIONALITY_EUROPEAN_NUMBER_SEPARATOR, ET = Character.DIRECTIONALITY_EUROPEAN_NUMBER_TERMINATOR, CS = Character.DIRECTIONALITY_COMMON_NUMBER_SEPARATOR, NSM = Character.DIRECTIONALITY_NONSPACING_MARK;
+        byte ON = Character.DIRECTIONALITY_OTHER_NEUTRALS;
+        byte B = Character.DIRECTIONALITY_PARAGRAPH_SEPARATOR, Sg = Character.DIRECTIONALITY_SEGMENT_SEPARATOR, WS = Character.DIRECTIONALITY_WHITESPACE;
+        byte[] t = new byte[m];
+        for (int k = 0; k < m; k++) t[k] = types[idx.get(k)];
+        int hi = Math.max(lvl, paraLevel);
+        byte sor = ((hi & 1) != 0) ? R : L;
+        byte eor = ((hi & 1) != 0) ? R : L;
+        for (int k = 0; k < m; k++) if (t[k] == NSM)
+            t[k] = (k == 0) ? sor : t[k - 1];
+        byte strong = sor;
+        for (int k = 0; k < m; k++) {
+            byte c = t[k];
+            if (c == L || c == R || c == AL)
+                strong = c;
+            if (c == EN && strong == AL)
+                t[k] = AN;
+        }
+        for (int k = 0; k < m; k++) if (t[k] == AL)
+            t[k] = R;
+        for (int k = 1; k < m - 1; k++) {
+            if (t[k] == ES && t[k - 1] == EN && t[k + 1] == EN)
+                t[k] = EN;
+            if (t[k] == CS && t[k - 1] == EN && t[k + 1] == EN)
+                t[k] = EN;
+            if (t[k] == CS && t[k - 1] == AN && t[k + 1] == AN)
+                t[k] = AN;
+        }
+        for (int k = 0; k < m; k++) if (t[k] == ET) {
+            int a = k;
+            while (a < m && t[a] == ET) a++;
+            boolean en = (k > 0 && t[k - 1] == EN) || (a < m && t[a] == EN);
+            if (en)
+                for (int q = k; q < a; q++) t[q] = EN;
+            k = a - 1;
+        }
+        for (int k = 0; k < m; k++) if (t[k] == ES || t[k] == ET || t[k] == CS)
+            t[k] = ON;
+        strong = sor;
+        for (int k = 0; k < m; k++) {
+            byte c = t[k];
+            if (c == L || c == R)
+                strong = c;
+            if (c == EN && strong == L)
+                t[k] = L;
+        }
+        for (int k = 0; k < m; k++) {
+            byte c = t[k];
+            if (!(c == ON || c == B || c == Sg || c == WS))
+                continue;
+            int a = k;
+            while (a < m) {
+                byte cc = t[a];
+                if (!(cc == ON || cc == B || cc == Sg || cc == WS))
+                    break;
+                a++;
+            }
+            byte prev = (k > 0) ? _bidiNType(t[k - 1]) : sor;
+            byte next = (a < m) ? _bidiNType(t[a]) : eor;
+            byte res = (prev == next && (prev == L || prev == R)) ? prev : (((lvl & 1) != 0) ? R : L);
+            for (int q = k; q < a; q++) t[q] = res;
+            k = a - 1;
+        }
+        for (int k = 0; k < m; k++) {
+            byte c = t[k];
+            int L2 = lv[idx.get(k)];
+            if ((L2 & 1) == 0) {
+                if (c == R)
+                    L2 += 1;
+                else if (c == EN || c == AN)
+                    L2 += 2;
+            } else {
+                if (c == L || c == EN || c == AN)
+                    L2 += 1;
+            }
+            lv[idx.get(k)] = (byte) L2;
+        }
+    }
+
+    byte _bidiNType(byte c) {
+        if (c == Character.DIRECTIONALITY_EUROPEAN_NUMBER || c == Character.DIRECTIONALITY_ARABIC_NUMBER)
+            return Character.DIRECTIONALITY_RIGHT_TO_LEFT;
+        return c;
+    }
+
+    int _alignShift(int ls, int le) {
+        if (wrapWidth == -1)
+            return 0;
+        int lineWidth = (int) Math.ceil(_measureRange(ls, le));
+        int extra = wrapWidth - lineWidth;
+        if (extra <= 0)
+            return 0;
+        if ((alignment & SWT.CENTER) != 0)
+            return extra / 2;
+        if ((alignment & SWT.RIGHT) != 0)
+            return extra;
+        return 0;
+    }
+
     void _bidiVisual(int ls, int le, double[] left, double[] right, boolean[] rtl) {
         int lineLen = le - ls;
         boolean baseRtl = (orientation & SWT.RIGHT_TO_LEFT) != 0;
-        String lineText = getSegmentsText().substring(ls, le);
+        // Hit-test/caret geometry works in the original (client) text coordinates: ls/le come from
+        // getLineOffsets() and _measureRange indexes text, so run detection must too. Segment
+        // separators are zero-width bidi controls and do not move visible glyph positions.
+        String lineText = text.substring(ls, le);
         java.text.Bidi bidi = new java.text.Bidi(lineText, baseRtl ? java.text.Bidi.DIRECTION_RIGHT_TO_LEFT : java.text.Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT);
         if (bidi.isLeftToRight()) {
             double x = 0;
