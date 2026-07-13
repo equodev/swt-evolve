@@ -295,10 +295,14 @@ public class DartClipboard implements IClipboard {
         checkWidget();
         if (transfer == null)
             DND.error(SWT.ERROR_NULL_ARGUMENT);
-        if ((clipboards & DND.CLIPBOARD) == 0)
+        int type = (clipboards & DND.CLIPBOARD) != 0 ? DND.CLIPBOARD : DND.SELECTION_CLIPBOARD;
+        Object[] data = _webClipboardData.get(type);
+        Transfer[] transfers = _webClipboardTransfers.get(type);
+        if (data == null || transfers == null)
             return null;
-        String[] typeNames = transfer.getTypeNames();
-        for (int i = 0; i < typeNames.length; i++) {
+        for (int i = 0; i < transfers.length; i++) {
+            if (_transferMatches(transfer, transfers[i]))
+                return data[i];
         }
         return null;
     }
@@ -515,26 +519,20 @@ public class DartClipboard implements IClipboard {
      *  @since 3.1
      */
     public void setContents(Object[] data, Transfer[] dataTypes, int clipboards) {
-        Object newValue = new Object();
         checkWidget();
-        if (data == null || dataTypes == null || data.length != dataTypes.length || data.length == 0) {
+        if (data == null || dataTypes == null || data.length != dataTypes.length || data.length == 0)
             DND.error(SWT.ERROR_INVALID_ARGUMENT);
-        }
         for (int i = 0; i < data.length; i++) {
-            if (data[i] == null || dataTypes[i] == null || !dataTypes[i].validate(data[i])) {
+            if (data[i] == null || dataTypes[i] == null || !dataTypes[i].validate(data[i]))
                 DND.error(SWT.ERROR_INVALID_ARGUMENT);
-            }
         }
-        if ((clipboards & DND.CLIPBOARD) == 0)
-            return;
-        this.contents = newValue;
-        for (int i = 0; i < dataTypes.length; i++) {
-            String[] typeNames = dataTypes[i].getTypeNames();
-            for (int j = 0; j < typeNames.length; j++) {
-                TransferData transferData = new TransferData();
-                transferData.type = DartTransfer.registerType(typeNames[j]);
-                dataTypes[i].javaToNative(data[i], transferData);
-            }
+        if ((clipboards & DND.CLIPBOARD) != 0) {
+            _webClipboardData.put(DND.CLIPBOARD, data);
+            _webClipboardTransfers.put(DND.CLIPBOARD, dataTypes);
+        }
+        if ((clipboards & DND.SELECTION_CLIPBOARD) != 0) {
+            _webClipboardData.put(DND.SELECTION_CLIPBOARD, data);
+            _webClipboardTransfers.put(DND.SELECTION_CLIPBOARD, dataTypes);
         }
     }
 
@@ -628,6 +626,19 @@ public class DartClipboard implements IClipboard {
 
     public Object _contents() {
         return contents;
+    }
+
+    static final java.util.Map<Integer, Object[]> _webClipboardData = new java.util.HashMap<>();
+
+    static final java.util.Map<Integer, org.eclipse.swt.dnd.Transfer[]> _webClipboardTransfers = new java.util.HashMap<>();
+
+    static boolean _transferMatches(org.eclipse.swt.dnd.Transfer a, org.eclipse.swt.dnd.Transfer b) {
+        if (a == b)
+            return true;
+        String[] an = a.getTypeNames(), bn = b.getTypeNames();
+        for (String x : an) for (String y : bn) if (x.equals(y))
+            return true;
+        return false;
     }
 
     public Clipboard getApi() {
