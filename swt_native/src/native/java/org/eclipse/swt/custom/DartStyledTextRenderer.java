@@ -809,6 +809,9 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
     }
 
     int getLineHeight() {
+        if (regularFont != null && !regularFont.isDisposed()) {
+            return org.eclipse.swt.custom.StyledTextHelper.computeLineHeight(regularFont);
+        }
         return ascent + descent;
     }
 
