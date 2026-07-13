@@ -6006,6 +6006,11 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             }
         } else if (action != ST.DELETE_PREVIOUS && action != ST.DELETE_NEXT) {
             invokeAction(action);
+        } else if (getSelectionRanges().length > 2) {
+            // Multi-caret delete/backspace has no single-caret Flutter text-input equivalent
+            // (Flutter's field is single-caret), so it must be applied on the Java side.
+            // Single-caret deletes stay deferred to the Flutter input to avoid a double delete.
+            invokeAction(action);
         }
     }
 
