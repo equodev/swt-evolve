@@ -560,7 +560,13 @@ public class StyledTextHelper {
         String lineText = content.getLine(lineIndex);
         int lineLength = lineText.length();
 
-        int baseHeight = renderer.ascent + renderer.descent;
+        // Baseline height of the widget's own font. Use computeLineHeight (the same function used for
+        // styled fonts below and by TextLayout.getBounds) rather than the cached renderer.ascent/descent,
+        // which can be stale relative to the current font — otherwise a style whose font is no larger than
+        // the widget font still inflates the line height. Falls back to ascent+descent when no font is set.
+        int baseHeight = renderer.regularFont != null
+                ? computeLineHeight(renderer.regularFont)
+                : renderer.ascent + renderer.descent;
 
         StyleRange[] styles = renderer.getStyleRanges(lineOffset, lineLength, true);
         if (styles == null || styles.length == 0) {
@@ -586,7 +592,6 @@ public class StyledTextHelper {
 
             maxHeight = Math.max(maxHeight, styleHeight);
         }
-
         return maxHeight;
     }
 

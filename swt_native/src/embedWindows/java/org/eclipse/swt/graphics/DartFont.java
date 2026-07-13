@@ -237,7 +237,7 @@ public final class DartFont extends DartResource implements IFont {
     public FontData[] getFontData() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return this._fontData;
+        return new FontData[] { new FontData(fontData.getName(), fontData.getHeight(), fontData.getStyle()) };
     }
 
     /**
