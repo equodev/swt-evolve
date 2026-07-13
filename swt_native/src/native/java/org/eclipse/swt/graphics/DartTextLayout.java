@@ -170,7 +170,12 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
                 }
             }
         }
-        offs.add(segLen);
+        // Cocoa doesn't count a trailing '\n' as an extra empty line, so it omits the final
+        // segLen offset when the text ends in a newline (the last offset already == segLen).
+        // GTK/others keep it (see TextLayout.test_getLineOffsets, which branches on isCocoa).
+        if (!("cocoa".equals(SWT.getPlatform()) && !offs.isEmpty() && offs.get(offs.size() - 1) == segLen)) {
+            offs.add(segLen);
+        }
         int[] offsets = new int[offs.size()];
         for (int k = 0; k < offsets.length; k++) offsets[k] = offs.get(k);
         lineOffsets = offsets;
@@ -2014,6 +2019,17 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         return o;
     }
 
+    TextStyle _styleFor(int offset) {
+        if (styles != null) {
+            for (int i = 0; i < stylesCount - 1; i++) {
+                if (styles[i] != null && offset >= styles[i].start && offset < styles[i + 1].start) {
+                    return styles[i].style;
+                }
+            }
+        }
+        return null;
+    }
+
     org.eclipse.swt.graphics.Font _fontFor(int offset) {
         if (styles != null) {
             for (int i = 0; i < stylesCount - 1; i++) {
@@ -2041,9 +2057,20 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         double w = 0;
         int i = start;
         while (i < end) {
+            TextStyle st = _styleFor(i);
+            if (st != null && st.metrics != null) {
+                w += st.metrics.width;
+                i++;
+                continue;
+            }
             org.eclipse.swt.graphics.Font f = _fontFor(i);
             int j = i + 1;
-            while (j < end && _fontFor(j) == f) j++;
+            while (j < end && _fontFor(j) == f) {
+                TextStyle sj = _styleFor(j);
+                if (sj != null && sj.metrics != null)
+                    break;
+                j++;
+            }
             if (f != null) {
                 w += dev.equo.swt.FontMetricsUtil.getFontSize(text.substring(i, j), f).x();
             }

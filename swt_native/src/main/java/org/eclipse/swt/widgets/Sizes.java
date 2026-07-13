@@ -232,7 +232,9 @@ public class Sizes {
         int lc = (c.getApi().getStyle() & SWT.SINGLE) != 0 ? 1 : content.getLineCount();
         Font font = c.getFont();
         boolean wrap = c.getWordWrap();
-        int wTrim = c._leftMargin() + c._rightMargin();
+        // getLeftMargin() subtracts the SINGLE-line alignmentMargin (a right/center render offset that
+        // isn't real trim); using the raw leftMargin field inflated computeSize after setAlignment(RIGHT).
+        int wTrim = c.getLeftMargin() + c._rightMargin();
         Caret caret = c.getCaret();
         if (caret != null) wTrim += caret.getSize().x;
         int hTrim = c._topMargin() + c._bottomMargin();

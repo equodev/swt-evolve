@@ -30,6 +30,16 @@ public class GCImageDrawer extends EmbeddedBridge {
 
     public GCImageDrawer() {
         super(null);
+        // Headless web/test mode (-Ddev.equo.swt.loadLibrary=false): do NOT spin up the native off-screen
+        // Flutter engine. On the Linux CI container the library is simply absent (initialize() throws), but
+        // on a macOS dev machine it IS present and its IOSurface init intermittently hard-aborts the JVM
+        // (SIGABRT "_iosConnectInitalize unable to open IOSurface kernel service"), making the web suite
+        // flaky. Skip it and degrade gracefully — GC-to-Image pixel readback just won't be produced (those
+        // tests are method-blacklisted). Desk mode leaves loadLibrary unset, so it still loads normally.
+        if ("false".equals(System.getProperty("dev.equo.swt.loadLibrary"))) {
+            nativeWindowAvailable = false;
+            return;
+        }
         try {
             FlutterLibraryLoader.initialize();
         } catch (Throwable t) {

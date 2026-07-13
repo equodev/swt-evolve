@@ -712,6 +712,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, ImageGcDrawer imageGcDrawer, int width, int height, Image api) {
         super(device, api);
+        if (imageGcDrawer == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
         init();
         this.imageData = new ImageData(width, height, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF));
         GC gc = new GC(getApi());
@@ -978,27 +980,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     public Color getBackground() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (background != null)
-            return background;
-        if (this.getImageData().transparentPixel == -1)
+        if (imageData == null || imageData.transparentPixel == -1)
             return null;
-        if (backgroundColor != null) {
-            // if a background color was set explicitly, we use the cached color directly
-            return SwtColor.win32_new(device, (backgroundColor.blue << 16) | (backgroundColor.green << 8) | backgroundColor.red);
-        }
-        ImageHandle imageHandle = this.getHandle(100, 100);
-        if (imageHandle.transparentPixel() == -1) {
-            return null;
-        }
-        /* Get the HDC for the device */
-        long hDC = device.internal_new_GC(null);
-        int transparentPixel = imageHandle.transparentPixel();
-        int red = 0, green = 0, blue = 0;
-        {
-        }
-        /* Release the HDC for the device */
-        device.internal_dispose_GC(hDC, null);
-        return SwtColor.win32_new(device, (blue << 16) | (green << 8) | red);
+        return this.background;
     }
 
     /**
@@ -1096,6 +1080,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * @since 3.106
      */
     public ImageData getImageData(int zoom) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         java.util.concurrent.CompletableFuture<Void> f = pendingRenderFuture;
         if (f != null && !f.isDone()) {
             Display display = Display.getCurrent();
@@ -1120,7 +1106,14 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                 }
             }
         }
-        return this.imageData;
+        // Return a defensive copy: getImageData() must not hand out the backing store, so a
+        // caller mutating the returned data can't alter the image (changingImageDataDoesNotAffectImage).
+        if (zoom == 100)
+            return GraphicsUtils.copyImageData(this.imageData);
+        // The image is stored at 100%; scale to the requested zoom (matches upstream, which
+        // falls back to DPIUtil.scaleImageData(device, getImageData(100), zoom, 100)). scaleImageData
+        // already returns a fresh ImageData.
+        return org.eclipse.swt.internal.DPIUtil.scaleImageData(device, this.imageData, zoom, 100);
     }
 
     /**
@@ -1595,16 +1588,15 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      * </ul>
      */
     public void setBackground(Color color) {
-        Color newValue = color;
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (color == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        backgroundColor = color.getRGB();
-        this.background = newValue;
-        imageHandleManager.getAllImageHandles().forEach(imageHandle -> imageHandle.setBackground(backgroundColor));
+        if (imageData == null || imageData.transparentPixel == -1)
+            return;
+        this.background = color;
     }
 
     /**
@@ -1617,7 +1609,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     public String toString() {
         if (isDisposed())
             return "Image {*DISPOSED*}";
-        return "Image {" + imageHandleManager + "}";
+        return "Image {" + System.identityHashCode(this) + "}";
     }
 
     <T> T applyUsingAnyHandle(Function<InternalImageHandle, T> function) {

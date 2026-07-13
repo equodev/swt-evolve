@@ -936,6 +936,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         addListener(ST.LineGetSegments, new StyledTextListener(listener));
         resetCache(0, content.getLineCount());
+        setCaretLocations();
         super.redraw();
     }
 
@@ -1005,6 +1006,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             ((DartStyledTextRenderer) renderer.getImpl()).clearLineStyle(0, content.getLineCount());
         }
         addListener(ST.LineGetStyle, new StyledTextListener(listener));
+        setCaretLocations();
     }
 
     /**
@@ -1181,6 +1183,8 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         int oldTopIndexY = topIndexY;
         if (isFixedLineHeight()) {
             int verticalIncrement = getVerticalIncrement();
+            if (verticalIncrement != 0)
+                topIndex = org.eclipse.swt.internal.Compatibility.ceil(getVerticalScrollOffset(), verticalIncrement);
             if (verticalIncrement == 0) {
                 return;
             }
@@ -2118,6 +2122,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             selection[0].y = selectionAnchors[0];
         }
         updateCaretVisibility();
+        setCaretLocations();
         super.redraw();
         if (sendEvent) {
             sendSelectionEvent();
@@ -2751,6 +2756,8 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 doSelection(ST.COLUMN_NEXT);
             height = getAvailableHeightBellow(height);
             scrollVertical(height, true);
+            if (height == 0)
+                setCaretLocations();
         }
         showCaret();
         int hScrollChange = oldHScrollOffset - horizontalScrollOffset;
@@ -2938,6 +2945,8 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 doSelection(ST.COLUMN_PREVIOUS);
             height = getAvailableHeightAbove(height);
             scrollVertical(-height, true);
+            if (height == 0)
+                setCaretLocations();
         }
         showCaret();
         int hScrollChange = oldHScrollOffset - horizontalScrollOffset;
@@ -4504,7 +4513,9 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      * @return index of the last partially visible line.
      */
     private int getPartialBottomIndexFixedLineHeight() {
-        return 0;
+        int lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
+        int partialLineCount = org.eclipse.swt.internal.Compatibility.ceil(clientAreaHeight, lineHeight);
+        return Math.max(0, Math.min(content.getLineCount(), topIndex + partialLineCount) - 1);
     }
 
     /**
@@ -4830,7 +4841,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         if (event == null || event.segments == null || event.segments.length == 0)
             return null;
         int lineLength = line.length();
-        int[] segments = event.segments;
+        int[] segments = event.segments = event.segments.clone();
         if (segments[0] != 0)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         if (segments[0] > lineLength) {
@@ -5502,7 +5513,56 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      * @return location of the character at the given offset in the line.
      */
     Point getPointAtOffset(int offset) {
-        return StyledTextHelper.getPointAtOffset((DartStyledTextRenderer) renderer.getImpl(), content, offset, leftMargin, horizontalScrollOffset, this::getLinePixel);
+        int lineIndex = content.getLineAtOffset(offset);
+        String line = content.getLine(lineIndex);
+        int lineOffset = content.getOffsetAtLine(lineIndex);
+        int offsetInLine = Math.max(0, offset - lineOffset);
+        int lineLength = line.length();
+        if (lineIndex < content.getLineCount() - 1) {
+            int endLineOffset = content.getOffsetAtLine(lineIndex + 1) - 1;
+            if (lineLength < offsetInLine && offsetInLine <= endLineOffset) {
+                offsetInLine = lineLength;
+            }
+        }
+        Point point;
+        TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
+        if (lineLength != 0 && offsetInLine <= lineLength) {
+            if (offsetInLine == lineLength) {
+                offsetInLine = layout.getPreviousOffset(offsetInLine, SWT.MOVEMENT_CLUSTER);
+                point = layout.getLocation(offsetInLine, true);
+            } else {
+                switch(caretAlignment) {
+                    case OFFSET_LEADING:
+                        point = layout.getLocation(offsetInLine, false);
+                        break;
+                    case PREVIOUS_OFFSET_TRAILING:
+                    default:
+                        boolean lineBegin = offsetInLine == 0;
+                        if (wordWrap && !lineBegin && (Arrays.binarySearch(caretOffsets, offset) < 0 || Arrays.stream(selection).allMatch(p -> p.x == p.y))) {
+                            int[] offsets = layout.getLineOffsets();
+                            for (int i : offsets) {
+                                if (i == offsetInLine) {
+                                    lineBegin = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (lineBegin) {
+                            point = layout.getLocation(offsetInLine, false);
+                        } else {
+                            offsetInLine = layout.getPreviousOffset(offsetInLine, SWT.MOVEMENT_CLUSTER);
+                            point = layout.getLocation(offsetInLine, true);
+                        }
+                        break;
+                }
+            }
+        } else {
+            point = new Point(layout.getIndent(), layout.getVerticalIndent());
+        }
+        ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
+        point.x += leftMargin - horizontalScrollOffset;
+        point.y += getLinePixel(lineIndex);
+        return point;
     }
 
     /**
@@ -6280,6 +6340,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                     topIndexY = 0;
                 setScrollBars(true);
             }
+            setCaretLocations();
         } else {
             ((DartStyledTextRenderer) renderer.getImpl()).calculateClientArea();
             setScrollBars(true);
@@ -6425,8 +6486,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      * @param event text change event.
      */
     void handleTextSet(TextChangedEvent event) {
-        //reset();
-        ;
+        reset();
         int newCharCount = getCharCount();
         sendAccessibleTextChanged(0, newCharCount, lastCharCount);
         lastCharCount = newCharCount;
@@ -7354,7 +7414,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     }
 
     boolean isBidiCaret() {
-        return true;
+        return org.eclipse.swt.internal.BidiUtil.isBidiPlatform();
     }
 
     boolean isFixedLineHeight() {
@@ -7528,10 +7588,12 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 int offset = insertBlockSelectionText(text, fillWithSpaces);
                 setCaretOffsets(new int[] { offset }, SWT.DEFAULT);
                 clearBlockSelection(true, true);
+                setCaretLocations();
                 return;
             } else if (getSelectionRanges().length / 2 > 1) {
                 // multi selection
                 insertMultiSelectionText(text);
+                setCaretLocations();
                 return;
             }
             Event event = new Event();
@@ -7854,6 +7916,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         removeTypedListener(ST.LineGetSegments, listener);
         resetCache(0, content.getLineCount());
+        setCaretLocations();
         super.redraw();
     }
 
@@ -7937,6 +8000,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         if (listener == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         removeTypedListener(ST.LineGetStyle, listener);
+        setCaretLocations();
     }
 
     /**
@@ -8184,12 +8248,14 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             horizontalBar.setSelection(0);
         }
         resetCache(0, 0);
+        setCaretLocations();
         super.redraw();
     }
 
     void resetBidiData() {
         caretDirection = SWT.NULL;
         resetCache(0, content.getLineCount());
+        setCaretLocations();
         keyActionMap.clear();
         createKeyBindings();
         super.redraw();
@@ -8292,6 +8358,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             }
         }
         horizontalScrollOffset += pixels;
+        setCaretLocations();
         return true;
     }
 
@@ -8342,6 +8409,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             calculateTopIndex(pixels);
             super.redraw();
         }
+        setCaretLocations();
         return true;
     }
 
@@ -8549,6 +8617,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             leftMargin += newAlignmentMargin;
             alignmentMargin = newAlignmentMargin;
             resetCache(0, 1);
+            setCaretLocations();
             super.redraw();
         }
     }
@@ -8582,6 +8651,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             return;
         this.alignment = alignment;
         resetCache(0, content.getLineCount());
+        setCaretLocations();
         setAlignment();
         super.redraw();
     }
@@ -8636,6 +8706,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         background = color;
         super.setBackground(color);
         resetCache(0, content.getLineCount());
+        setCaretLocations();
         super.redraw();
     }
 
@@ -8725,6 +8796,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             int start = getOffsetAtPoint(x, y, null);
             int end = getOffsetAtPoint(x + width - 1, y + height - 1, null);
             setSelection(new int[] { start, end - start }, false, false);
+            setCaretLocations();
             return;
         }
         int minY = topMargin;
@@ -8807,8 +8879,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         super.setCaret(caret);
         caretDirection = SWT.NULL;
         if (caret != null) {
-            //setCaretLocations();
-            ;
+            setCaretLocations();
             if (carets != null) {
                 for (int i = 1; i < carets.length; i++) {
                     carets[i].dispose();
@@ -8861,6 +8932,14 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         setMargins(getLeftMargin(), topMargin, rightMargin, bottomMargin);
     }
 
+    /**
+     * Moves the Caret to the current caret offset.
+     */
+    void setCaretLocations() {
+        Point[] newCaretPos = Arrays.stream(caretOffsets).mapToObj(this::getPointAtOffset).toArray(Point[]::new);
+        setCaretLocations(newCaretPos, getCaretDirection());
+    }
+
     void setCaretLocations(final Point[] locations, int direction) {
         Caret firstCaret = getCaret();
         if (firstCaret != null) {
@@ -8908,6 +8987,8 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 }
                 int caretHeight = getLineHeight();
                 boolean isTextAlignedAtBottom = true;
+                graphicalLineFirstOffset = Math.max(0, Math.min(graphicalLineFirstOffset, getCharCount()));
+                graphicalLineLastOffset = Math.max(graphicalLineFirstOffset, Math.min(graphicalLineLastOffset, getCharCount()));
                 if (graphicalLineFirstOffset >= 0) {
                     for (StyleRange style : getStyleRanges(graphicalLineFirstOffset, graphicalLineLastOffset - graphicalLineFirstOffset)) {
                         isTextAlignedAtBottom &= ((style.font == null || Objects.equals(style.font, getFont())) && style.rise >= 0 && (style.metrics == null || style.metrics.descent <= 0));
@@ -8999,8 +9080,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 clearSelection(false);
             }
         }
-        //setCaretLocations();
-        ;
+        setCaretLocations();
     }
 
     void setCaretOffsets(int[] newOffsets, int alignment) {
@@ -9196,6 +9276,8 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     public boolean setFocus() {
         boolean focusGained = super.setFocus();
         if (focusGained && hasMultipleCarets()) {
+            // Multiple carets need to update their drawing. See bug 579179
+            setCaretLocations();
         }
         return focusGained;
     }
@@ -9253,6 +9335,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         if (isBidiCaret())
             createCaretBitmaps();
         caretDirection = SWT.NULL;
+        setCaretLocations();
         super.redraw();
     }
 
@@ -9276,6 +9359,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         foreground = color;
         super.setForeground(color);
         resetCache(0, content.getLineCount());
+        setCaretLocations();
         super.redraw();
     }
 
@@ -9395,6 +9479,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             return;
         this.indent = indent;
         resetCache(0, content.getLineCount());
+        setCaretLocations();
         super.redraw();
     }
 
@@ -9422,6 +9507,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         this.justify = justify;
         //resetCache(0, content.getLineCount());
         ;
+        setCaretLocations();
         super.redraw();
     }
 
@@ -9546,6 +9632,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         resetCache(startLine, lineCount);
         redrawLines(startLine, lineCount, false);
         if (Arrays.stream(caretOffsets).map(content::getLineAtOffset).anyMatch(caretLine -> startLine <= caretLine && caretLine < startLine + lineCount)) {
+            setCaretLocations();
         }
         setAlignment();
     }
@@ -9645,6 +9732,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         int newBottom = getLinePixel(startLine + lineCount);
         redrawLines(startLine, lineCount, oldBottom != newBottom);
         if (Arrays.stream(caretOffsets).map(content::getLineAtOffset).anyMatch(caretLine -> startLine <= caretLine && caretLine < startLine + lineCount)) {
+            setCaretLocations();
         }
     }
 
@@ -9779,6 +9867,8 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         } else {
             resetCache(lineIndex, 1);
             if ((initialTopIndex == 0) && (initialBottomIndex == (content.getLineCount() - 1))) {
+                // not scrollable editor
+                setCaretLocations();
                 redrawLines(lineIndex, getBottomIndex() - lineIndex + 1, true);
             } else if (getFirstCaretLine() >= initialTopIndex && getFirstCaretLine() <= initialBottomIndex) {
                 // caret line with caret mustn't move
@@ -9844,6 +9934,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         resetCache(startLine, lineCount);
         redrawLines(startLine, lineCount, false);
         if (Arrays.stream(caretOffsets).map(content::getLineAtOffset).anyMatch(caretLine -> startLine <= caretLine && caretLine < startLine + lineCount)) {
+            setCaretLocations();
         }
     }
 
@@ -9869,6 +9960,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             return;
         this.lineSpacing = lineSpacing;
         resetCache(0, content.getLineCount());
+        setCaretLocations();
         super.redraw();
     }
 
@@ -9915,6 +10007,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 }
             }
         }
+        setCaretLocations();
         super.redraw();
     }
 
@@ -9973,6 +10066,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         resetCache(startLine, lineCount);
         redrawLines(startLine, lineCount, false);
         if (Arrays.stream(caretOffsets).map(content::getLineAtOffset).anyMatch(caretLine -> startLine <= caretLine && caretLine < startLine + lineCount)) {
+            setCaretLocations();
         }
     }
 
@@ -10022,6 +10116,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         int newBottom = getLinePixel(startLine + lineCount);
         redrawLines(startLine, lineCount, oldBottom != newBottom);
         if (Arrays.stream(caretOffsets).map(content::getLineAtOffset).anyMatch(caretLine -> startLine <= caretLine && caretLine < startLine + lineCount)) {
+            setCaretLocations();
         }
     }
 
@@ -10086,6 +10181,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         ;
         //setScrollBars(true);
         ;
+        setCaretLocations();
         setAlignment();
         super.redraw();
     }
@@ -10300,6 +10396,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         }
         selectionBackground = color;
         resetCache(0, content.getLineCount());
+        setCaretLocations();
         super.redraw();
     }
 
@@ -10333,6 +10430,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         }
         selectionForeground = color;
         resetCache(0, content.getLineCount());
+        setCaretLocations();
         super.redraw();
     }
 
@@ -10489,6 +10587,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 selectionAnchors = Arrays.stream(selection).mapToInt(p -> p.x).toArray();
                 setCaretOffsets(Arrays.stream(selection).mapToInt(p -> p.y).toArray(), PREVIOUS_OFFSET_TRAILING);
             }
+            setCaretLocations();
             if (sendEvent && !Arrays.equals(formerSelection, selection)) {
                 sendSelectionEvent();
             }
@@ -10573,6 +10672,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             fixedRanges[i + 1] = length;
         }
         setSelection(fixedRanges, false, true);
+        setCaretLocations();
     }
 
     /**
@@ -10964,6 +11064,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         ((DartStyledTextRenderer) renderer.getImpl()).setFont(null, tabs);
         //resetCache(0, content.getLineCount());
         ;
+        setCaretLocations();
         super.redraw();
     }
 
@@ -11004,6 +11105,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             this.tabs = null;
         }
         resetCache(0, content.getLineCount());
+        setCaretLocations();
         super.redraw();
     }
 
@@ -11267,8 +11369,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         }
         //setScrollBars(true);
         ;
-        //setCaretLocations();
-        ;
+        setCaretLocations();
         super.redraw();
     }
 
@@ -11300,6 +11401,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             return;
         this.wrapIndent = wrapIndent;
         resetCache(0, content.getLineCount());
+        setCaretLocations();
         super.redraw();
     }
 
@@ -11336,6 +11438,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     void showCaret() {
         Rectangle bounds = getBoundsAtOffset(caretOffsets[0]);
         if (!showLocation(bounds, true) || (carets != null && caretOffsets.length != carets.length)) {
+            setCaretLocations();
         }
     }
 
@@ -11421,6 +11524,9 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     void updateSelection(int startOffset, int replacedLength, int newLength) {
         if (selection[selection.length - 1].y <= startOffset) {
+            // selection ends before text change
+            if (isWordWrap())
+                setCaretLocations();
             return;
         }
         // clear selection fragment before text change
@@ -11448,10 +11554,12 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 return new Point(x < 0 ? 0 : x, y < 0 ? 0 : y);
             }
         }).flatMapToInt(p -> IntStream.of(p.x, p.y - p.x)).toArray(), true, false);
+        setCaretLocations();
     }
 
     private void handleDPIChange(Event event) {
         updateCaretVisibility();
+        setCaretLocations();
         Set<Caret> caretSet = new LinkedHashSet<>();
         caretSet.add(defaultCaret);
         caretSet.add(getCaret());
