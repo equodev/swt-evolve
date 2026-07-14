@@ -98,7 +98,7 @@ public class MenuItemTypesSnippet {
 
         // CASCADE item (submenu)
         MenuItem cascadeItem = new MenuItem(contextMenu, SWT.CASCADE);
-        cascadeItem.setText("More Options");
+        cascadeItem.setText("More Options\tAlt+Shift+N");
 
         Menu submenu = new Menu(shell, SWT.DROP_DOWN);
         cascadeItem.setMenu(submenu);
