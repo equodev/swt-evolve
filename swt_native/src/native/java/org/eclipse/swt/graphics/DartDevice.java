@@ -879,6 +879,9 @@ public abstract class DartDevice implements Drawable, IDevice {
         return fontList;
     }
 
+    void bootFailureCleanup() {
+    }
+
     public Device getApi() {
         return (Device) api;
     }

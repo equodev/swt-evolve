@@ -56,7 +56,11 @@ public final class HeadlessChrome implements AutoCloseable {
                 ? new String[]{"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
                                "/Applications/Chromium.app/Contents/MacOS/Chromium"}
                 : os.contains("win")
-                ? new String[]{System.getenv("ProgramFiles") + "\\Google\\Chrome\\Application\\chrome.exe"}
+                ? new String[]{System.getenv("ProgramFiles") + "\\Google\\Chrome\\Application\\chrome.exe",
+                               System.getenv("ProgramFiles(x86)") + "\\Google\\Chrome\\Application\\chrome.exe",
+                               System.getenv("LOCALAPPDATA") + "\\Google\\Chrome\\Application\\chrome.exe",
+                               System.getenv("ProgramFiles(x86)") + "\\Microsoft\\Edge\\Application\\msedge.exe",
+                               System.getenv("ProgramFiles") + "\\Microsoft\\Edge\\Application\\msedge.exe"}
                 : new String[]{"/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"};
         for (String c : candidates) if (c != null && new File(c).canExecute()) return c;
         return null;

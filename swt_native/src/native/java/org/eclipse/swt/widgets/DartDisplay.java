@@ -3990,6 +3990,14 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         return shells;
     }
 
+    void bootFailureCleanup() {
+        synchronized (DartDisplay.class) {
+            if (Default == this.getApi())
+                Default = null;
+            deregister(this.getApi());
+        }
+    }
+
     Rectangle bounds = new Rectangle(0, 0, 1920, 1080);
 
     boolean performKeyEquivalent(Object window, Object nsEvent) {
