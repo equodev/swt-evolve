@@ -3432,7 +3432,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
                 if (displayBridge != null && displayBridge.needsPump()) {
                     displayBridge.sleep(16);
                 } else {
-                    _wakeSignal.acquire();
+                    _wakeSignal.tryAcquire(16, java.util.concurrent.TimeUnit.MILLISECONDS);
                 }
             }
         } catch (InterruptedException e) {

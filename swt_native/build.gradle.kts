@@ -5,6 +5,7 @@ import java.io.File
 plugins {
     java
     `java-library`
+    jacoco
 }
 
 repositories {

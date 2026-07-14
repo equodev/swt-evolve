@@ -923,7 +923,7 @@ public final class DartGC extends DartResource implements IGC {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (image.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        storeAndApplyOperationForExistingHandle(new DrawScalingImageToImageOperation(image, new Rectangle(srcX, srcY, srcWidth, srcHeight), new Rectangle(destX, destY, destWidth, destHeight)));
+        drawImage(image, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, false);
     }
 
     /**
@@ -970,7 +970,17 @@ public final class DartGC extends DartResource implements IGC {
     }
 
     void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
-        storeAndApplyOperationForExistingHandle(new DrawImageToImageOperation(srcImage, new Rectangle(srcX, srcY, srcWidth, srcHeight), new Rectangle(destX, destY, destWidth, destHeight), simple));
+        VGCDrawImageImageintintintintintintintint drawOp = new VGCDrawImageImageintintintintintintintint();
+        drawOp.image = GraphicsUtils.copyImage(display, srcImage);
+        drawOp.srcX = srcX;
+        drawOp.srcY = srcY;
+        drawOp.srcWidth = srcWidth;
+        drawOp.srcHeight = srcHeight;
+        drawOp.destX = destX;
+        drawOp.destY = destY;
+        drawOp.destWidth = destWidth;
+        drawOp.destHeight = destHeight;
+        FlutterBridge.send(this, "drawImageImageintintintintintintintint", drawOp);
     }
 
     private class DrawScalingImageToImageOperation extends ImageOperation {
