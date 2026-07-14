@@ -656,11 +656,6 @@ platforms.forEach { platform ->
         // resource paths (e.g. duplicate META-INF/services entries). Match the main `tasks.jar`
         // and keep the first occurrence.
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        // Force findSwt (which writes the app's SWT version to swtVersionConfig) to run before this
-        // jar's manifest is generated; otherwise the jar can build first and swtVersionProvider falls
-        // back to swtVersionFull, stamping a Bundle-Version that doesn't match the app's bundles.info.
-        if (gradle.parent != null)
-            inputs.files(swtVersionConfig).withPropertyName("swtVersionFile").optional(true)
         from(sourceSets[info.sourceSet].output)
         if (!info.isWeb)
             from(layout.buildDirectory.dir("natives/${info.desktopPlatform}"))
@@ -683,14 +678,13 @@ platforms.forEach { platform ->
                 "Bundle-Name" to (if (info.isWeb) "SWT Evolve for Web" else "SWT Evolve for ${info.swtOs} on ${info.arch}"),
                 "Bundle-Vendor" to bundleVendor,
                 "Bundle-SymbolicName" to "$bsn; singleton:=true",
+                // Published (p2/mvn) version: distinct host version per variant (`-embed`/`-hyb`). The
+                // eclipse_run in-place swap re-stamps this to the target app's SWT version at swap time
+                // (reading the jar it replaces), so the build no longer needs the app's version here.
                 "Bundle-Version" to when {
                     info.isWeb -> evolveVersion()
-                    // Desktop/hybrid fragments overwrite the app's existing SWT bundle in place (the run
-                    // tasks copy this jar over it and leave bundles.info untouched), so the Bundle-Version
-                    // must match what bundles.info already records — the version findSwt read from the app
-                    // (swtVersionProvider) — not the evolve release. Otherwise the simpleconfigurator can't
-                    // locate the fragment and the empty host stays without SWT classes (NoClassDefFoundError: SWTError).
-                    else -> swtVersionProvider
+                    info.isHybrid -> hostVersion("hyb")
+                    else -> hostVersion("embed")
                 },
                 "Bundle-ManifestVersion" to 2,
                 "Export-Package" to (if (info.isWeb) webExportPackage else swtExportPackage(info.swtWs)),
