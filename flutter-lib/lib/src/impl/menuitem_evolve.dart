@@ -55,12 +55,14 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
     }
 
     if (style.has(SWT.CASCADE) && state.menu != null) {
+      final split = splitMenuItemText(state.text);
       return _CascadeMenuItemRow(
         widgetTheme: widgetTheme,
         menuTheme: menuTheme,
         isEnabled: isEnabled,
-        text: state.text,
+        text: split.label,
         leading: _buildMenuIcon(widgetTheme, isEnabled),
+        trailing: _buildAcceleratorText(widgetTheme, isEnabled, split.shortcut),
         subMenu: state.menu!,
       );
     }
@@ -94,6 +96,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
       ) {
     final textStyle = getMenuItemTextStyle(widgetTheme, isEnabled: isEnabled);
     final isChecked = _localSelection ?? false;
+    final split = splitMenuItemText(state.text);
 
     return _MenuItemRow(
       widgetTheme: widgetTheme,
@@ -108,7 +111,22 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
         widgetTheme: widgetTheme,
         isEnabled: isEnabled,
       ),
-      child: Text(stripAccelerators(state.text), style: textStyle),
+      trailing: _buildAcceleratorText(widgetTheme, isEnabled, split.shortcut),
+      child: Text(split.label, style: textStyle),
+    );
+  }
+
+  Widget? _buildAcceleratorText(
+    MenuItemThemeExtension widgetTheme,
+    bool isEnabled,
+    String? shortcut,
+  ) {
+    final text = shortcut ??
+        (state.accelerator != null ? formatAccelerator(state.accelerator!) : null);
+    if (text == null) return null;
+    return Text(
+      text,
+      style: getMenuItemAcceleratorTextStyle(widgetTheme, isEnabled: isEnabled),
     );
   }
 
@@ -119,6 +137,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
       ) {
     final textStyle = getMenuItemTextStyle(widgetTheme, isEnabled: isEnabled);
     final isSelected = _localSelection ?? false;
+    final split = splitMenuItemText(state.text);
 
     return _MenuItemRow(
       widgetTheme: widgetTheme,
@@ -133,7 +152,8 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
         widgetTheme: widgetTheme,
         isEnabled: isEnabled,
       ),
-      child: Text(stripAccelerators(state.text), style: textStyle),
+      trailing: _buildAcceleratorText(widgetTheme, isEnabled, split.shortcut),
+      child: Text(split.label, style: textStyle),
     );
   }
 
@@ -143,18 +163,12 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
       bool isEnabled,
       ) {
     final textStyle = getMenuItemTextStyle(widgetTheme, isEnabled: isEnabled);
-    final acceleratorStyle = getMenuItemAcceleratorTextStyle(
-      widgetTheme,
-      isEnabled: isEnabled,
-    );
 
     final notifier = MenuChangeNotifier.of(context);
     final capturedState = state;
     final capturedWidget = widget;
 
     final split = splitMenuItemText(capturedState.text);
-    final acceleratorText = split.shortcut ??
-        (state.accelerator != null ? formatAccelerator(state.accelerator!) : null);
 
     return _MenuItemRow(
       widgetTheme: widgetTheme,
@@ -166,9 +180,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
         }
       } : null,
       leading: _buildMenuIcon(widgetTheme, isEnabled),
-      trailing: acceleratorText != null
-          ? Text(acceleratorText, style: acceleratorStyle)
-          : null,
+      trailing: _buildAcceleratorText(widgetTheme, isEnabled, split.shortcut),
       child: Text(split.label, style: textStyle),
     );
   }
@@ -316,8 +328,9 @@ class _CascadeMenuItemRow extends StatefulWidget {
   final MenuItemThemeExtension widgetTheme;
   final MenuThemeExtension menuTheme;
   final bool isEnabled;
-  final String? text;
+  final String text;
   final Widget? leading;
+  final Widget? trailing;
   final VMenu subMenu;
 
   const _CascadeMenuItemRow({
@@ -326,6 +339,7 @@ class _CascadeMenuItemRow extends StatefulWidget {
     required this.isEnabled,
     required this.text,
     this.leading,
+    this.trailing,
     required this.subMenu,
   });
 
@@ -477,8 +491,12 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
                 SizedBox(width: widget.widgetTheme.iconTextSpacing),
               ],
               Expanded(
-                child: Text(stripAccelerators(widget.text), style: textStyle),
+                child: Text(widget.text, style: textStyle),
               ),
+              if (widget.trailing != null) ...[
+                SizedBox(width: widget.widgetTheme.textAcceleratorSpacing),
+                widget.trailing!,
+              ],
             ],
           ),
         ),
