@@ -593,17 +593,17 @@ public final class DartGC extends DartResource implements IGC {
     }
 
     void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
-        if (srcWidth == 0 && srcHeight == 0) {
-        }
-        if (simple) {
-        } else {
-        }
-        try {
-            if (srcImage.getImpl()._memGC() != null) {
-                srcImage.getImpl().createAlpha();
-            }
-        } finally {
-        }
+        VGCDrawImageImageintintintintintintintint drawOp = new VGCDrawImageImageintintintintintintintint();
+        drawOp.image = GraphicsUtils.copyImage(display, srcImage);
+        drawOp.srcX = srcX;
+        drawOp.srcY = srcY;
+        drawOp.srcWidth = srcWidth;
+        drawOp.srcHeight = srcHeight;
+        drawOp.destX = destX;
+        drawOp.destY = destY;
+        drawOp.destWidth = destWidth;
+        drawOp.destHeight = destHeight;
+        FlutterBridge.send(this, "drawImageImageintintintintintintintint", drawOp);
     }
 
     /**

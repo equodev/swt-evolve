@@ -663,47 +663,17 @@ public final class DartGC extends DartResource implements IGC {
     }
 
     void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
-        /* Refresh Image as per zoom level, if required. */
-        ((DartImage) srcImage.getImpl()).refreshImageForZoom();
-        ImageData srcImageData = srcImage.getImageData();
-        int imgWidth = srcImageData.width;
-        int imgHeight = srcImageData.height;
-        if (srcWidth == 0 && srcHeight == 0) {
-            srcWidth = imgWidth;
-            srcHeight = imgHeight;
-        }
-        if (simple) {
-            srcWidth = destWidth = imgWidth;
-            srcHeight = destHeight = imgHeight;
-        } else {
-            simple = srcX == 0 && srcY == 0 && srcWidth == destWidth && destWidth == imgWidth && srcHeight == destHeight && destHeight == imgHeight;
-            if (srcX + srcWidth > imgWidth + 1 || srcY + srcHeight > imgHeight + 1) {
-                //rounding error correction for hidpi
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-            }
-        }
-        if (data.alpha != 0) {
-            if ((data.style & SWT.MIRRORED) != 0) {
-            }
-            if (srcWidth != destWidth || srcHeight != destHeight) {
-            } else {
-            }
-            switch(data.interpolation) {
-                case SWT.DEFAULT:
-                    break;
-                case SWT.NONE:
-                    break;
-                case SWT.LOW:
-                    break;
-                case SWT.HIGH:
-                    break;
-            }
-            if (srcWidth != destWidth || srcHeight != destHeight) {
-            }
-            if (data.alpha != 0xFF) {
-            } else {
-            }
-        }
+        VGCDrawImageImageintintintintintintintint drawOp = new VGCDrawImageImageintintintintintintintint();
+        drawOp.image = GraphicsUtils.copyImage(display, srcImage);
+        drawOp.srcX = srcX;
+        drawOp.srcY = srcY;
+        drawOp.srcWidth = srcWidth;
+        drawOp.srcHeight = srcHeight;
+        drawOp.destX = destX;
+        drawOp.destY = destY;
+        drawOp.destWidth = destWidth;
+        drawOp.destHeight = destHeight;
+        FlutterBridge.send(this, "drawImageImageintintintintintintintint", drawOp);
     }
 
     /**

@@ -1098,7 +1098,32 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public void remove(int index) {
         checkWidget();
-        remove(index, true);
+        if (index == -1)
+            error(SWT.ERROR_INVALID_RANGE);
+        int count = getItemCount();
+        if (0 > index || index >= count)
+            error(SWT.ERROR_INVALID_RANGE);
+        dirty();
+        String[] newItems = new String[items.length - 1];
+        System.arraycopy(items, 0, newItems, 0, index);
+        System.arraycopy(items, index + 1, newItems, index, items.length - index - 1);
+        items = newItems;
+        if (index == selectedIndex) {
+            // GTK/Win32 clear the selection when the selected item is removed; Cocoa reselects the
+            // item now at that index. getPlatform() reflects the host, matching the parity tests.
+            if ("cocoa".equals(SWT.getPlatform()) && index < items.length) {
+                selectedIndex = index;
+            } else {
+                selectedIndex = -1;
+                // Clearing the selection clears the shown text and fires Modify.
+                if (text != null && !text.isEmpty()) {
+                    text = "";
+                    sendEvent(SWT.Modify);
+                }
+            }
+        } else if (index < selectedIndex) {
+            selectedIndex--;
+        }
     }
 
     void remove(int index, boolean notify) {

@@ -791,14 +791,7 @@ public class WebFlutterServer {
          */
         public WebFlutterServer build() {
             if (webDirectory == null) {
-                // Explicit override (used by the Eclipse-test web run, whose working dir isn't next to
-                // flutter-lib): -Ddev.equo.swt.web.dir=<abs path to flutter-lib/build/web>.
-                String dirProp = System.getProperty("dev.equo.swt.web.dir");
-                if (dirProp != null && !dirProp.isEmpty()) {
-                    webDirectory = new File(dirProp);
-                } else {
-                    webDirectory = FlutterLibraryLoader.initializeWeb();
-                }
+                webDirectory = FlutterLibraryLoader.initializeWeb();
             }
             if (webDirectory == null || !webDirectory.isDirectory()) {
                 throw new IllegalStateException(
