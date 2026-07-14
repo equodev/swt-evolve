@@ -305,6 +305,15 @@ tasks.withType<JavaCompile> {
     ))
 }
 
+// Coverage is only consumed from nativeTest (the web backend, merged into swt_eclipse_tests' combined
+// report). Instrumenting the embedded `test` task is unnecessary and perturbs its shared static state
+// (Config routing), causing order-dependent failures — keep JaCoCo off everywhere except nativeTest.
+tasks.withType<Test>().configureEach {
+    extensions.configure(org.gradle.testing.jacoco.plugins.JacocoTaskExtension::class) {
+        isEnabled = name == "nativeTest"
+    }
+}
+
 tasks.test {
     useJUnitPlatform {
         // Bench tests are slow + write artifacts; always excluded from the default test run.

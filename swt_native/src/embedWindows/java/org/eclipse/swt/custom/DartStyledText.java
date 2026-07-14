@@ -5524,8 +5524,8 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             }
         }
         Point point;
-        TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
         if (lineLength != 0 && offsetInLine <= lineLength) {
+            TextLayout layout = ((DartStyledTextRenderer) renderer.getImpl()).getTextLayout(lineIndex);
             if (offsetInLine == lineLength) {
                 offsetInLine = layout.getPreviousOffset(offsetInLine, SWT.MOVEMENT_CLUSTER);
                 point = layout.getLocation(offsetInLine, true);
@@ -5555,10 +5555,16 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                         break;
                 }
             }
+            ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
         } else {
-            point = new Point(layout.getIndent(), layout.getVerticalIndent());
+            // Empty/blank line: the caret sits at the line indent (exactly what layout.getIndent()/
+            // getVerticalIndent() reflected). Read it from the renderer directly instead of building
+            // a native TextLayout — a headless GTK backend can't allocate the native handle, so
+            // `new StyledText` (setCaret -> setCaretLocations) would otherwise throw ERROR_NO_HANDLES
+            // on the Linux CI runner (Cocoa tolerates it, hence macOS passing). The renderer accessors
+            // (unlike the public getLineIndent/getLineVerticalIndent) skip checkWidget/index-validation.
+            point = new Point(((DartStyledTextRenderer) renderer.getImpl()).getLineIndent(lineIndex, indent), ((DartStyledTextRenderer) renderer.getImpl()).getLineVerticalIndent(lineIndex));
         }
-        ((DartStyledTextRenderer) renderer.getImpl()).disposeTextLayout(layout);
         point.x += leftMargin - horizontalScrollOffset;
         point.y += getLinePixel(lineIndex);
         return point;
