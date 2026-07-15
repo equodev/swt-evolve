@@ -912,8 +912,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         if (zoom == 100)
             return GraphicsUtils.copyImageData(this.imageData);
         // The image is stored at 100%; scale to the requested zoom (matches upstream, which
-        // falls back to DPIUtil.scaleImageData(device, getImageData(100), zoom, 100)). scaleImageData
-        // already returns a fresh ImageData.
+        // falls back to DPIUtil.scaleImageData(device, getImageData(100), zoom, 100)). It already
+        // returns a fresh ImageData. DPIUtil renamed autoScaleImageData -> scaleImageData in 3.127.
         return org.eclipse.swt.internal.DPIUtil.scaleImageData(device, this.imageData, zoom, 100);
     }
 
