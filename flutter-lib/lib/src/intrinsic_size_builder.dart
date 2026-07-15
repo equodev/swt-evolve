@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
 
-typedef WithSizeBuilder = Widget Function(
-    BuildContext context, Size subjectSize, Widget subject);
+typedef WithSizeBuilder =
+    Widget Function(BuildContext context, Size subjectSize, Widget subject);
 
 class IntrinsicSizeBuilder extends StatefulWidget {
-  const IntrinsicSizeBuilder(
-      {super.key,
-      required this.subject,
-      required this.builder,
-      this.listener,
-      this.constrainedAxis = Axis.horizontal,
-      this.firstFrameWidget});
+  const IntrinsicSizeBuilder({
+    super.key,
+    required this.subject,
+    required this.builder,
+    this.listener,
+    this.constrainedAxis = Axis.horizontal,
+    this.firstFrameWidget,
+  });
 
   final Widget subject;
   final WithSizeBuilder builder;
-  final void Function(
-    BuildContext context,
-    Size size,
-  )? listener;
+  final void Function(BuildContext context, Size size)? listener;
 
   /// The axis to retain constraints on, if any, when determining subject size.
   ///
@@ -50,21 +48,15 @@ class _IntrinsicSizeBuilderState extends State<IntrinsicSizeBuilder> {
   Size? _size;
   BoxConstraints? _previousConstraints;
 
-  _IntrinsicSizeBuilderState() {
-    // print("_IntrinsicSizeBuilderState");
-  }
-
   @override
   void initState() {
     super.initState();
-    // print("_evaluate from initState");
     _evaluate();
   }
 
   @override
   void didUpdateWidget(covariant IntrinsicSizeBuilder oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // print("didUpdateWidget");
     _size = null;
     _evaluate();
   }
@@ -82,26 +74,18 @@ class _IntrinsicSizeBuilderState extends State<IntrinsicSizeBuilder> {
 
   @override
   Widget build(BuildContext context) {
-    // print("_IntrinsicSizeBuilderState build ${_size ?? 'nosize'}");
     if (_size != null) {
       return const SizedBox();
     }
     final subject = UnconstrainedBox(
       constrainedAxis: widget.constrainedAxis,
-      child: KeyedSubtree(
-        key: _evaluationKey,
-        child: widget.subject,
-      ),
+      child: KeyedSubtree(key: _evaluationKey, child: widget.subject),
     );
     final child = _size == null
         ? null
         : KeyedSubtree(
             key: _evaluatedKey,
-            child: widget.builder(
-              context,
-              _size!,
-              widget.subject,
-            ),
+            child: widget.builder(context, _size!, widget.subject),
           );
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -119,10 +103,7 @@ class _IntrinsicSizeBuilderState extends State<IntrinsicSizeBuilder> {
           },
           child: Stack(
             children: [
-              Opacity(
-                opacity: 0,
-                child: subject,
-              ),
+              Opacity(opacity: 0, child: subject),
               child ?? widget.firstFrameWidget ?? const SizedBox(),
             ],
           ),

@@ -75,10 +75,10 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     );
 
     if (hasValidBounds) {
-      return ConstrainedBox(constraints: constraints!, child: content);
+      return tagSemantics(ConstrainedBox(constraints: constraints!, child: content));
     }
 
-    return content;
+    return tagSemantics(content);
   }
 
   Widget _buildTabContent(List<Widget> tabBodies) {
@@ -119,6 +119,7 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
               widgetTheme: widgetTheme,
               isSelected: index == _selectedIndex,
               tab: tab,
+              vItem: state.items![index],
               onTap: () => _handleTabSelection(index),
               index: index,
             );
@@ -133,6 +134,7 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     required TabFolderThemeExtension widgetTheme,
     required bool isSelected,
     required TabItem tab,
+    required VTabItem vItem,
     required VoidCallback onTap,
     required int index,
   }) {
@@ -158,7 +160,7 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
               ? widgetTheme.tabSelectedTextColor
               : widgetTheme.tabTextColor);
 
-    return MouseRegion(
+    return tagItemSemantics(vItem, MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: Material(
         color: Colors.transparent,
@@ -208,7 +210,7 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
           ),
         ),
       ),
-    );
+    ));
   }
 
   void _updateSelection(int index) {

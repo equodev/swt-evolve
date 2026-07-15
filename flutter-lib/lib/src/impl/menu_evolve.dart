@@ -31,12 +31,24 @@ class MenuChangeNotifier extends InheritedWidget {
   final void Function(void Function()) registerPendingChange;
   final MenuState menuState;
   final VoidCallback closeMenu;
+  // The item MenuItemImpl should build with this FocusNode (and autofocus: true) -- the menu's
+  // content FocusScope is built with skipTraversal: true (Flutter's own
+  // material/menu_anchor.dart), so arrow keys never auto-enter it on their own. Without one item
+  // actively claiming focus, nothing inside the menu is ever focusable at all (see
+  // _MenuItemRow), so neither arrow-key navigation nor Enter-to-activate has anything to act on.
+  // MenuImpl also explicitly re-requests focus on this exact node a frame after opening (see
+  // MenuImpl._focusFirstItemNextFrame) rather than relying on Focus(autofocus:)'s own timing,
+  // which was observed to lose a race against the menu's anchor focus node.
+  final VMenuItem? autofocusItem;
+  final FocusNode? autofocusItemFocusNode;
 
   const MenuChangeNotifier({
     Key? key,
     required this.registerPendingChange,
     required this.menuState,
     required this.closeMenu,
+    this.autofocusItem,
+    this.autofocusItemFocusNode,
     required Widget child,
   }) : super(key: key, child: child);
 
@@ -53,6 +65,16 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   final MenuController _menuController = MenuController();
   final List<void Function()> _pendingChanges = [];
   final MenuState _menuState = MenuState();
+  // Fallback target if the menu has no focusable item at all (e.g. every item disabled) --
+  // RawMenuAnchor.open() only requests focus for an anchor when a childFocusNode is supplied
+  // (widgets/raw_menu_anchor.dart: `if (_isRootOverlayAnchor) { widget.childFocusNode?.requestFocus(); }`),
+  // but this is deliberately NOT wired up as that childFocusNode: doing so raced against
+  // _firstItemFocusNode's own autofocus (whichever requested focus later won, nondeterministically),
+  // so instead nothing auto-requests it and _focusFirstItemNextFrame() below is the only thing
+  // that ever calls requestFocus() on either node, after the frame settles.
+  final FocusNode _popupAnchorFocusNode = FocusNode(debugLabel: 'MenuAnchor.popup');
+  // The actual keyboard-entry point into the menu: see MenuChangeNotifier.autofocusItemFocusNode.
+  final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'MenuItem.autofocus');
 
   @override
   void initState() {
@@ -67,10 +89,32 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
     );
   }
 
+  @override
+  void dispose() {
+    _popupAnchorFocusNode.dispose();
+    _firstItemFocusNode.dispose();
+    super.dispose();
+  }
+
   void openContextMenuAt(BuildContext context, Offset position) {
     if (!_menuController.isOpen) {
       _menuController.open(position: position);
+      _focusFirstItemNextFrame();
     }
+  }
+
+  // Runs after the overlay's first frame (build + layout + paint) so it always has the final
+  // word over both RawMenuAnchor's own (now-unused) anchor-focus logic and _MenuItemRow's
+  // Focus(autofocus:) -- relying on either of those alone was a race with no guaranteed winner.
+  void _focusFirstItemNextFrame() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_menuController.isOpen) return;
+      if (_firstItemFocusNode.context != null) {
+        _firstItemFocusNode.requestFocus();
+      } else {
+        _popupAnchorFocusNode.requestFocus();
+      }
+    });
   }
 
   @override
@@ -159,7 +203,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       ),
     );
 
-    return menuBar;
+    return tagSemantics(menuBar);
   }
 
   Widget _buildPopupMenu(
@@ -181,11 +225,12 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
               ? Offset(location.x.toDouble(), location.y.toDouble())
               : const Offset(100, 100);
           _menuController.open(position: menuPosition);
+          _focusFirstItemNextFrame();
         }
       });
     }
 
-    return MenuAnchor(
+    return tagSemantics(MenuAnchor(
       controller: _menuController,
       style: MenuStyle(
         backgroundColor: WidgetStateProperty.all(backgroundColor),
@@ -212,6 +257,8 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
           registerPendingChange: _registerPendingChange,
           menuState: _menuState,
           closeMenu: _menuController.close,
+          autofocusItem: _firstFocusableMenuItem(menuItems),
+          autofocusItemFocusNode: _firstItemFocusNode,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: menuItems
@@ -220,12 +267,33 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
           ),
         )),
       ],
-      builder: (context, controller, child) => const SizedBox.shrink(),
-    );
+      // _popupAnchorFocusNode only needs to be attached (not auto-requested -- see
+      // _focusFirstItemNextFrame) so it is a valid fallback target if the menu ends up with no
+      // focusable item at all.
+      builder: (context, controller, child) =>
+          Focus(focusNode: _popupAnchorFocusNode, child: const SizedBox.shrink()),
+    ));
   }
 
   void _registerPendingChange(void Function() callback) {
     _pendingChanges.add(callback);
+  }
+
+  /// The item MenuChangeNotifier.autofocusItem should point at: the first enabled, non-separator,
+  /// non-cascade item, so a freshly-opened menu always has something keyboard-focused to
+  /// navigate from. Cascade (SWT.CASCADE, has a submenu) items render through
+  /// _CascadeMenuItemRow, a separate widget that uses Flutter's own SubmenuButton -- already
+  /// natively focusable -- rather than our custom _MenuItemRow, so it would never honor
+  /// autofocusItemFocusNode at all if picked here.
+  VMenuItem? _firstFocusableMenuItem(List<VMenuItem> menuItems) {
+    for (final item in menuItems) {
+      final style = StyleBits(item.style);
+      if (style.has(SWT.SEPARATOR)) continue;
+      if (style.has(SWT.CASCADE) && item.menu != null) continue;
+      if (item.enabled == false) continue;
+      return item;
+    }
+    return null;
   }
 
   void _sendPendingChanges() {

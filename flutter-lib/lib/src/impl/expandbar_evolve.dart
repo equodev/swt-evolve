@@ -99,7 +99,7 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
       result = IntrinsicHeight(child: result);
     }
 
-    return result;
+    return tagSemantics(result);
   }
 
   List<Widget> getExpandItems(
@@ -328,51 +328,54 @@ class _ExpandItemWidgetState extends State<_ExpandItemWidget>
       ],
     );
 
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: borderColor, width: itemTheme.borderWidth),
-        borderRadius: BorderRadius.circular(itemTheme.borderRadius),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Header
-          MouseRegion(
-            onEnter: (_) => setState(() => _isHovering = true),
-            onExit: (_) => setState(() => _isHovering = false),
-            child: GestureDetector(
-              onTap: _handleTap,
-              child: AnimatedContainer(
-                duration: itemTheme.animationDuration,
-                curve: itemTheme.animationCurve,
-                color: headerBackgroundColor,
-                padding: itemTheme.headerPadding,
-                child: headerContent,
+    return Semantics(
+      identifier: '${expandItem.swt}/${expandItem.id}',
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: borderColor, width: itemTheme.borderWidth),
+          borderRadius: BorderRadius.circular(itemTheme.borderRadius),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header
+            MouseRegion(
+              onEnter: (_) => setState(() => _isHovering = true),
+              onExit: (_) => setState(() => _isHovering = false),
+              child: GestureDetector(
+                onTap: _handleTap,
+                child: AnimatedContainer(
+                  duration: itemTheme.animationDuration,
+                  curve: itemTheme.animationCurve,
+                  color: headerBackgroundColor,
+                  padding: itemTheme.headerPadding,
+                  child: headerContent,
+                ),
               ),
             ),
-          ),
-          // Content
-          SizeTransition(
-            sizeFactor: _expandAnimation,
-            axisAlignment: -1.0,
-            child: contentWidget != null
-                ? Container(
-                    color: contentBackgroundColor,
-                    padding: itemTheme.contentPadding,
-                    constraints:
-                        (expandItem.height != null && expandItem.height! > 0)
-                        ? BoxConstraints(
-                            minHeight: expandItem.height!.toDouble(),
-                            maxHeight: expandItem.height!.toDouble(),
-                          )
-                        : null,
-                    child: contentWidget,
-                  )
-                : const SizedBox.shrink(),
-          ),
-        ],
+            // Content
+            SizeTransition(
+              sizeFactor: _expandAnimation,
+              axisAlignment: -1.0,
+              child: contentWidget != null
+                  ? Container(
+                      color: contentBackgroundColor,
+                      padding: itemTheme.contentPadding,
+                      constraints:
+                          (expandItem.height != null && expandItem.height! > 0)
+                          ? BoxConstraints(
+                              minHeight: expandItem.height!.toDouble(),
+                              maxHeight: expandItem.height!.toDouble(),
+                            )
+                          : null,
+                      child: contentWidget,
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
       ),
     );
   }

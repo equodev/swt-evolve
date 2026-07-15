@@ -65,7 +65,6 @@ import '../gen/widget.dart';
 
 VWidget mapWidgetValue(Map<String, dynamic> child) {
   var type = child['swt'];
-  // print("value: $type");
   return switch (type) {
     "Shell" => VShell.fromJson(child),
     "AnimatedProgress" => VAnimatedProgress.fromJson(child),

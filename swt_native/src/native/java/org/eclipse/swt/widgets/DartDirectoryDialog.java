@@ -175,6 +175,15 @@ public class DartDirectoryDialog extends DartDialog implements IDirectoryDialog 
      */
     public Optional<String> openDialog() {
         directoryPath = null;
+        String configuredPath = System.getProperty("dev.equo.swt.test.directoryDialog.path");
+        String configuredUri = System.getProperty("dev.equo.swt.test.directoryDialog.path.uri");
+        if (configuredPath == null && configuredUri != null) {
+            configuredPath = new java.io.File(java.net.URI.create(configuredUri)).getPath();
+        }
+        if (configuredPath != null) {
+            directoryPath = configuredPath.isBlank() ? null : configuredPath;
+            return Optional.ofNullable(directoryPath);
+        }
         if (method_performKeyEquivalent != 0) {
         }
         /*

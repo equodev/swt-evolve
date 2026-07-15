@@ -35,7 +35,7 @@ class GroupImpl<T extends GroupSwt, V extends VGroup>
     final children = state.children;
     final text = stripAccelerators(state.text);
 
-    return MouseRegion(
+    return tagSemantics(MouseRegion(
       onEnter: (_) => widget.sendMouseTrackMouseEnter(state, null),
       onExit: (_) => widget.sendMouseTrackMouseExit(state, null),
       child: Focus(
@@ -51,7 +51,7 @@ class GroupImpl<T extends GroupSwt, V extends VGroup>
           style: state.style,
         ),
       ),
-    );
+    ));
   }
 
   void _handleFocusChange() {

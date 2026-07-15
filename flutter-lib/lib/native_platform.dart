@@ -42,6 +42,9 @@ int? getBackgroundColor(List<String> args) {
   return null;
 }
 
+// Desktop renders real native widgets, not a canvas — there's no DOM bridge to switch on.
+bool getEnableTestSemantics(List<String> args) => false;
+
 int? getParentBackgroundColor(List<String> args) {
   if (args.length >= 6) {
     return int.parse(args[5]);
@@ -109,17 +112,4 @@ void observeViewportChanges(void Function() onChange) {
 /// for Dart to observe here. Present to satisfy the shared platform interface with web_platform.dart.
 void observeWindowClose(void Function() onClose) {}
 
-void close() {
-  //if (listener != null) {
-  //  windowManager.removeListener(listener!);
-  //}
-  //windowManager.close();
-}
-
-//class ShellListener extends WindowListener {
-//  @override
-//  void onWindowClose() {
-//    print("onWindowClose");
-//    EquoCommService.send("close");
-//  }
-//}
+void close() {}

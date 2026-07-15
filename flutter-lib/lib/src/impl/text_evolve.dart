@@ -82,12 +82,12 @@ class TextImpl<T extends TextSwt, V extends VText>
       hasValidBounds,
     );
 
-    return _buildTextFieldWrapper(
+    return tagSemantics(_buildTextFieldWrapper(
       textField,
       widgetTheme,
       isMultiLine,
       hasValidBounds,
-    );
+    ));
   }
 
   Widget _buildTextField(

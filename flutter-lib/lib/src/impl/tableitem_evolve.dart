@@ -176,7 +176,9 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       }
     }
 
-    return GestureDetector(
+    // Tag only the first cell as the row's anchor for E2E tooling (Playwright etc.) —
+    // tagging every cell would give the row's id to several DOM nodes at once.
+    final cell = GestureDetector(
       onTapDown: (_) => sendMouseDown(1),
       onSecondaryTapDown: (details) {
         sendMouseDown(3);
@@ -231,6 +233,8 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         ),
       ),
     );
+
+    return columnIndex == 0 ? tagSemantics(cell) : cell;
   }
 
   static Alignment _swtToAlignment(int swtAlignment) {

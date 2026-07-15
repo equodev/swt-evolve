@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../comm/comm.dart';
 import '../gen/menu.dart';
 import '../gen/menuitem.dart';
@@ -56,7 +57,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
 
     if (style.has(SWT.CASCADE) && state.menu != null) {
       final split = splitMenuItemText(state.text);
-      return _CascadeMenuItemRow(
+      return tagSemantics(_CascadeMenuItemRow(
         widgetTheme: widgetTheme,
         menuTheme: menuTheme,
         isEnabled: isEnabled,
@@ -64,18 +65,18 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
         leading: _buildMenuIcon(widgetTheme, isEnabled),
         trailing: _buildAcceleratorText(widgetTheme, isEnabled, split.shortcut),
         subMenu: state.menu!,
-      );
+      ));
     }
 
     if (style.has(SWT.CHECK)) {
-      return _buildCheckMenuItem(context, widgetTheme, isEnabled);
+      return tagSemantics(_buildCheckMenuItem(context, widgetTheme, isEnabled));
     }
 
     if (style.has(SWT.RADIO)) {
-      return _buildRadioMenuItem(context, widgetTheme, isEnabled);
+      return tagSemantics(_buildRadioMenuItem(context, widgetTheme, isEnabled));
     }
 
-    return _buildPushMenuItem(context, widgetTheme, isEnabled);
+    return tagSemantics(_buildPushMenuItem(context, widgetTheme, isEnabled));
   }
 
   Widget _buildSeparator(MenuItemThemeExtension widgetTheme) {
@@ -96,11 +97,15 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
       ) {
     final textStyle = getMenuItemTextStyle(widgetTheme, isEnabled: isEnabled);
     final isChecked = _localSelection ?? false;
+    final notifier = MenuChangeNotifier.of(context);
+    final isAutofocusTarget = notifier?.autofocusItem == state;
     final split = splitMenuItemText(state.text);
 
     return _MenuItemRow(
       widgetTheme: widgetTheme,
       isEnabled: isEnabled,
+      autofocus: isAutofocusTarget,
+      focusNode: isAutofocusTarget ? notifier?.autofocusItemFocusNode : null,
       onTap: isEnabled ? _onCheckPressed : null,
       leading: _buildToggleLeading(
         indicator: _MenuCheckbox(
@@ -137,11 +142,15 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
       ) {
     final textStyle = getMenuItemTextStyle(widgetTheme, isEnabled: isEnabled);
     final isSelected = _localSelection ?? false;
+    final notifier = MenuChangeNotifier.of(context);
+    final isAutofocusTarget = notifier?.autofocusItem == state;
     final split = splitMenuItemText(state.text);
 
     return _MenuItemRow(
       widgetTheme: widgetTheme,
       isEnabled: isEnabled,
+      autofocus: isAutofocusTarget,
+      focusNode: isAutofocusTarget ? notifier?.autofocusItemFocusNode : null,
       onTap: isEnabled ? _onRadioPressed : null,
       leading: _buildToggleLeading(
         indicator: _MenuRadioButton(
@@ -169,10 +178,13 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
     final capturedWidget = widget;
 
     final split = splitMenuItemText(capturedState.text);
+    final isAutofocusTarget = notifier?.autofocusItem == capturedState;
 
     return _MenuItemRow(
       widgetTheme: widgetTheme,
       isEnabled: isEnabled,
+      autofocus: isAutofocusTarget,
+      focusNode: isAutofocusTarget ? notifier?.autofocusItemFocusNode : null,
       onTap: isEnabled ? () {
         capturedWidget.sendSelectionSelection(capturedState, null);
         if (notifier != null) {
@@ -260,6 +272,11 @@ class _MenuItemRow extends StatefulWidget {
   final Widget? leading;
   final Widget child;
   final Widget? trailing;
+  final bool autofocus;
+  // Externally-supplied so the owning MenuImpl can explicitly requestFocus() on this exact item
+  // a frame after the menu opens (see MenuImpl._focusFirstItemNextFrame) instead of relying
+  // solely on Focus(autofocus:)'s own timing. Null means "use an internal, unmanaged FocusNode".
+  final FocusNode? focusNode;
 
   const _MenuItemRow({
     required this.widgetTheme,
@@ -268,6 +285,8 @@ class _MenuItemRow extends StatefulWidget {
     this.leading,
     required this.child,
     this.trailing,
+    this.autofocus = false,
+    this.focusNode,
   });
 
   @override
@@ -276,21 +295,46 @@ class _MenuItemRow extends StatefulWidget {
 
 class _MenuItemRowState extends State<_MenuItemRow> {
   bool _isHovered = false;
+  bool _isFocused = false;
+
+  // Without this, _MenuItemRow is mouse-only: it has no FocusNode at all, so a freshly-opened
+  // menu has nothing for arrow-key navigation to move between and nothing for Enter/Space to
+  // activate -- unlike Flutter's stock MenuItemButton, this is a fully custom row widget.
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) {
+      return KeyEventResult.ignored;
+    }
+    final key = event.logicalKey;
+    if (widget.onTap != null &&
+        (key == LogicalKeyboardKey.enter ||
+            key == LogicalKeyboardKey.numpadEnter ||
+            key == LogicalKeyboardKey.space)) {
+      widget.onTap!();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Opacity(
       opacity: widget.isEnabled ? 1.0 : widget.widgetTheme.disabledOpacity,
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
-        child: Listener(
-          onPointerUp: (e) {
-            if (e.buttons == 0 && widget.onTap != null) {
-              widget.onTap!();
-            }
-          },
-          child: GestureDetector(
+      child: Focus(
+        focusNode: widget.focusNode,
+        autofocus: widget.isEnabled && widget.autofocus,
+        canRequestFocus: widget.isEnabled,
+        onKeyEvent: _handleKeyEvent,
+        onFocusChange: (focused) => setState(() => _isFocused = focused),
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _isHovered = true),
+          onExit: (_) => setState(() => _isHovered = false),
+          child: Listener(
+            onPointerUp: (e) {
+              if (e.buttons == 0 && widget.onTap != null) {
+                widget.onTap!();
+              }
+            },
+            child: GestureDetector(
             child: AnimatedContainer(
               duration: widget.widgetTheme.animationDuration,
               constraints: BoxConstraints(
@@ -298,7 +342,7 @@ class _MenuItemRowState extends State<_MenuItemRow> {
               ),
               padding: widget.widgetTheme.itemPadding,
               decoration: BoxDecoration(
-                color: getMenuItemRowBackgroundColor(widget.widgetTheme, widget.isEnabled, _isHovered),
+                color: getMenuItemRowBackgroundColor(widget.widgetTheme, widget.isEnabled, _isHovered || _isFocused),
                 borderRadius: BorderRadius.circular(
                   widget.widgetTheme.borderRadius,
                 ),
@@ -317,6 +361,7 @@ class _MenuItemRowState extends State<_MenuItemRow> {
                 ],
               ),
             ),
+          ),
           ),
         ),
       ),

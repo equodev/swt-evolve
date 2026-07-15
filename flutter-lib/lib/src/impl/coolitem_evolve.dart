@@ -16,12 +16,12 @@ class CoolItemImpl<T extends CoolItemSwt, V extends VCoolItem>
     final width = _getWidth();
     final constraints = _getConstraints(width);
 
-    return _CoolItemContainer(
+    return tagSemantics(_CoolItemContainer(
       constraints: constraints,
       onPressed: _onPressed,
       onDoubleClick: _onDoubleClick,
       child: _buildContent(context, theme, control, text),
-    );
+    ));
   }
 
   Widget _buildContent(

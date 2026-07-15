@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/widget.dart';
@@ -70,6 +71,16 @@ void main(List<String> args) async {
   }
 
   WidgetsFlutterBinding.ensureInitialized();
+  // Forces the semantics tree on so Flutter Web emits real <flt-semantics> DOM nodes (with our
+  // Semantics identifiers, see ControlImpl.wrap) for E2E tools like Playwright to find and click.
+  // Off by default: building the semantics tree has a real runtime cost, so production must not pay
+  // for it. This is a pure runtime toggle (no separate build): the embedding app sets
+  // -Ddev.equo.swt.web.enableTestSemantics=true on its own JVM and WebFlutterServer forwards it into
+  // the served index.html as window.evolve.enableTestSemantics (read by getEnableTestSemantics),
+  // so an already-shipped jar can be flipped into E2E-testable mode without recompiling.
+  if (getEnableTestSemantics(args)) {
+    SemanticsBinding.instance.ensureSemantics();
+  }
 
   if (widgetName == "FontMeasureBridge") {
     font_size.measureRequest(widgetName, widgetId);
