@@ -622,7 +622,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      */
     public SwtImage(Device device, ImageFileNameProvider imageFileNameProvider, Image api) {
         super(device, api);
-        this.filename = GraphicsUtils.getFilename(imageFileNameProvider.getImagePath(100));
+        this.filename = imageFileNameProvider == null ? null : GraphicsUtils.getFilename(imageFileNameProvider.getImagePath(100));
         this.imageFileNameProvider = imageFileNameProvider;
         currentDeviceZoom = DPIUtil.getDeviceZoom();
         initFromFileNameProvider(currentDeviceZoom);

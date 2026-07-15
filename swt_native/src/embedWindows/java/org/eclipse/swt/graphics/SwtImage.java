@@ -694,7 +694,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      */
     public SwtImage(Device device, ImageFileNameProvider imageFileNameProvider, Image api) {
         super(device, api);
-        this.filename = GraphicsUtils.getFilename(imageFileNameProvider.getImagePath(100));
+        this.filename = imageFileNameProvider == null ? null : GraphicsUtils.getFilename(imageFileNameProvider.getImagePath(100));
         this.imageProvider = new ImageFileNameProviderWrapper(imageFileNameProvider);
         if (imageFileNameProvider.getImagePath(100) == null) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT, null, ": ImageFileNameProvider [" + imageFileNameProvider + "] returns null fileName at 100% zoom.");
