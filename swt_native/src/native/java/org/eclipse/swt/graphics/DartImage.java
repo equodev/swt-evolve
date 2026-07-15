@@ -937,6 +937,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         if (image == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         this.imageData = image;
+        pickUpPendingSvgContent();
         this.width = image.width * 100 / imageZoom;
         this.height = image.height * 100 / imageZoom;
         if (alphaInfo_100 == null)
@@ -1261,6 +1262,14 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     public void _updateImageData(ImageData newData) {
         this.imageData = newData;
         pendingRenderFuture = null;
+    }
+
+    private void pickUpPendingSvgContent() {
+        String svg = org.eclipse.swt.internal.image.SVGFileFormatHelper.pendingSvgContent.get();
+        if (svg != null) {
+            org.eclipse.swt.internal.image.SVGFileFormatHelper.pendingSvgContent.remove();
+            this.svgContent = svg;
+        }
     }
 
     public Image getApi() {
