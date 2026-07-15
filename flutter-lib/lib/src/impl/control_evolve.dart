@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -245,11 +247,20 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       return child;
     }
 
+    void openMenuAt(Offset localPosition) {
+      final menuState = _menuKey.currentState;
+      if (menuState != null && menuState is MenuImpl) {
+        menuState.openContextMenuAt(context, localPosition);
+      }
+    }
+
     return GestureDetector(
-      onSecondaryTapUp: (details) {
-        final menuState = _menuKey.currentState;
-        if (menuState != null && menuState is MenuImpl) {
-          menuState.openContextMenuAt(context, details.localPosition);
+      onSecondaryTapUp: (details) => openMenuAt(details.localPosition),
+      onTapUp: (details) {
+        // macOS treats Ctrl+Click as a secondary click.
+        if (defaultTargetPlatform == TargetPlatform.macOS &&
+            HardwareKeyboard.instance.isControlPressed) {
+          openMenuAt(details.localPosition);
         }
       },
       child: Stack(

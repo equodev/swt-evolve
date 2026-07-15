@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:swtflutter/src/impl/tree_evolve.dart';
@@ -21,6 +23,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
   bool _isHovered = false;
   Offset? _lastTapPosition;
+  Offset? _lastTapGlobalPosition;
   final DoubleTapDetector _rowTap = DoubleTapDetector();
 
   void _sendStartEditing() {
@@ -825,6 +828,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           behavior: HitTestBehavior.opaque,
           onTapDown: (TapDownDetails details) {
             _lastTapPosition = details.localPosition;
+            _lastTapGlobalPosition = details.globalPosition;
           },
           onTap: () {
             if (!enabled) return;
@@ -832,6 +836,33 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             if (_lastTapPosition != null &&
                 _lastTapPosition!.dx < expanderAreaWidth &&
                 hasChildren) {
+              return;
+            }
+
+            final pressedKeys = RawKeyboard.instance.keysPressed;
+            final isControlPressed =
+                pressedKeys.contains(LogicalKeyboardKey.controlLeft) ||
+                pressedKeys.contains(LogicalKeyboardKey.controlRight);
+
+            if (defaultTargetPlatform == TargetPlatform.macOS &&
+                isControlPressed) {
+              // macOS treats Ctrl+Click as a secondary click (it neither
+              // toggles multi-selection — that's Cmd — nor counts toward a
+              // double-click): select the item, keeping an existing
+              // multi-selection it belongs to, and open the context menu.
+              if (!selected) {
+                _context?.treeImpl?.handleTreeItemSelection(state.id);
+                final e = _createEvent();
+                e.count = 1;
+                e.button = 1;
+                _context?.parentTree.sendSelectionSelection(
+                  _context!.parentTreeValue,
+                  e,
+                );
+              }
+              if (_lastTapGlobalPosition != null) {
+                _context?.treeImpl?.openContextMenu(_lastTapGlobalPosition!);
+              }
               return;
             }
 
@@ -847,10 +878,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               return;
             }
 
-            final pressedKeys = RawKeyboard.instance.keysPressed;
             final isCtrlPressed =
-                pressedKeys.contains(LogicalKeyboardKey.controlLeft) ||
-                pressedKeys.contains(LogicalKeyboardKey.controlRight) ||
+                isControlPressed ||
                 pressedKeys.contains(LogicalKeyboardKey.metaLeft) ||
                 pressedKeys.contains(LogicalKeyboardKey.metaRight);
             final isShiftPressed =
