@@ -168,10 +168,10 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     );
 
     if (hasConstraints) {
-      return SizedBox(width: width, height: height, child: wrapped);
+      return tagSemantics(SizedBox(width: width, height: height, child: wrapped));
     }
 
-    return wrapped;
+    return tagSemantics(wrapped);
   }
 
   void onChanged(String? value) {

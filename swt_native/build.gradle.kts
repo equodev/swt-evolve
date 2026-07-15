@@ -542,6 +542,9 @@ fun CopySpec.copyFlutterNatives(os: String, flutterArch: String) {
 }
 
 // Single shared Flutter web build — all web platform JARs depend on this one task.
+// Test semantics are NOT a build-time concern: the semantics tree is toggled purely at runtime via
+// -Ddev.equo.swt.web.enableTestSemantics=true on the embedding app's JVM (see WebFlutterServer and
+// main.dart's getEnableTestSemantics), so one bundle serves both production and E2E — no separate build.
 val webFlutterLib = tasks.register<Exec>("webFlutterLib") {
     group = "build"
     description = "Builds Flutter web app (shared by all web platform JARs)"

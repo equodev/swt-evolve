@@ -98,6 +98,7 @@ public class WebFlutterServer {
     private final int parentBackgroundColor;
     private final String browserCommand;
     private final boolean serveServiceWorker;
+    private final boolean enableTestSemantics;
 
     private HttpServer httpServer;
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -115,6 +116,7 @@ public class WebFlutterServer {
         this.parentBackgroundColor = builder.parentBackgroundColor;
         this.browserCommand = builder.browserCommand;
         this.serveServiceWorker = builder.serveServiceWorker;
+        this.enableTestSemantics = builder.enableTestSemantics;
     }
 
     /**
@@ -136,7 +138,7 @@ public class WebFlutterServer {
         }
 
         httpServer = HttpServer.create(new InetSocketAddress("localhost", httpPort), 0);
-        httpServer.createContext("/", new StaticFileHandler(webDirectory, commPort, widgetId, widgetName, serveServiceWorker));
+        httpServer.createContext("/", new StaticFileHandler(webDirectory, commPort, widgetId, widgetName, serveServiceWorker, enableTestSemantics));
         httpServer.createContext("/proxy", new ProxyHandler());
         httpServer.createContext("/equo-browser-function", new BrowserFunctionHandler());
         httpServer.setExecutor(Executors.newFixedThreadPool(4, r -> {
@@ -319,13 +321,16 @@ public class WebFlutterServer {
         private final long widgetId;
         private final String widgetName;
         private final boolean serveServiceWorker;
+        private final boolean enableTestSemantics;
 
-        StaticFileHandler(File rootDir, int commPort, long widgetId, String widgetName, boolean serveServiceWorker) {
+        StaticFileHandler(File rootDir, int commPort, long widgetId, String widgetName, boolean serveServiceWorker,
+                boolean enableTestSemantics) {
             this.rootDir = rootDir.toPath().toAbsolutePath().normalize();
             this.commPort = commPort;
             this.widgetId = widgetId;
             this.widgetName = widgetName;
             this.serveServiceWorker = serveServiceWorker;
+            this.enableTestSemantics = enableTestSemantics;
         }
 
         @Override
@@ -408,7 +413,8 @@ public class WebFlutterServer {
                             .replace("{{EQUO_COMM_URL}}", "")
                             .replace("{{EQUO_WIDGETID}}", String.valueOf(widgetId))
                             .replace("{{EQUO_WIDGETNAME}}", widgetName != null ? widgetName : "")
-                            .replace("{{EQUO_BROWSER_PROXY}}", String.valueOf(proxyEnabled()));
+                            .replace("{{EQUO_BROWSER_PROXY}}", String.valueOf(proxyEnabled()))
+                            .replace("{{EQUO_ENABLE_TEST_SEMANTICS}}", String.valueOf(enableTestSemantics));
                     byte[] bytes = content.getBytes(java.nio.charset.StandardCharsets.UTF_8);
                     exchange.sendResponseHeaders(200, bytes.length);
                     try (OutputStream os = exchange.getResponseBody()) {
@@ -696,6 +702,7 @@ public class WebFlutterServer {
         private int parentBackgroundColor = 0xFFFFFF;
         private String browserCommand;
         private boolean serveServiceWorker = true;
+        private Boolean enableTestSemantics;
 
         public Builder() {
         }
@@ -711,6 +718,11 @@ public class WebFlutterServer {
 
         /**
          * Sets the HTTP port. Use 0 (default) to let the OS pick an available port.
+         * <p>
+         * If never called explicitly, defaults to the system property
+         * {@code dev.equo.swt.web.httpPort} — lets an external driver (Playwright, etc.) target a
+         * known URL instead of parsing the ephemeral port out of logs, e.g.
+         * {@code -Ddev.equo.swt.web.httpPort=8765}.
          */
         public Builder httpPort(int port) {
             this.httpPort = port;
@@ -785,6 +797,25 @@ public class WebFlutterServer {
         }
 
         /**
+         * Forces the Flutter semantics tree on, so the served app emits real
+         * {@code flt-semantics-identifier} DOM nodes that tools like Playwright can find and
+         * click, even in a build that was compiled without {@code --dart-define=ENABLE_TEST_SEMANTICS=true}.
+         * <p>
+         * Unlike that dart-define (baked into the Flutter web bundle at build time), this is a
+         * genuine runtime toggle: it's read by {@code index.html} from {@code window.evolve.enableTestSemantics}
+         * on every page load, so the same already-built jar can be switched between normal and
+         * E2E-testable behavior without recompiling. If never called explicitly, defaults to the
+         * system property {@code dev.equo.swt.web.enableTestSemantics} — e.g. a client app can
+         * turn this on for QA by adding {@code -Ddev.equo.swt.web.enableTestSemantics=true} to its
+         * own launch config (such as an Eclipse-style {@code .ini}'s {@code -vmargs}), with no
+         * rebuild of the SWT jar required.
+         */
+        public Builder enableTestSemantics(boolean enable) {
+            this.enableTestSemantics = enable;
+            return this;
+        }
+
+        /**
          * Builds the {@link WebFlutterServer} instance.
          *
          * @throws IllegalStateException if the web directory cannot be resolved.
@@ -798,8 +829,18 @@ public class WebFlutterServer {
                         "Flutter web directory not found. Build the Flutter web app first, "
                                 + "or set the directory explicitly via webDirectory().");
             }
+            if (httpPort == 0) {
+                String fixedHttpPort = System.getProperty("dev.equo.swt.web.httpPort");
+                if (fixedHttpPort != null) {
+                    httpPort = Integer.parseInt(fixedHttpPort);
+                }
+            }
             if (browserCommand == null) {
                 browserCommand = System.getProperty("equo.swt.browser");
+            }
+            if (enableTestSemantics == null) {
+                enableTestSemantics = Boolean.parseBoolean(
+                        System.getProperty("dev.equo.swt.web.enableTestSemantics"));
             }
             return new WebFlutterServer(this);
         }

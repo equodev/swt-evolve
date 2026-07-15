@@ -95,7 +95,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       return Text(state.text ?? "");
     }
 
-    return buildTreeItemContent(context);
+    return tagSemantics(buildTreeItemContent(context));
   }
 
   Widget buildTreeItemContent(BuildContext context) {

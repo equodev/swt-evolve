@@ -131,6 +131,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   bool get forwardsControlMouseDown => true;
 
   Widget wrap(Widget widget) {
+    widget = tagSemantics(widget);
+
     if (state.cursor?.cursorStyle != null) {
       widget = MouseRegion(
         cursor: swtCursorToFlutter(state.cursor!.cursorStyle!),

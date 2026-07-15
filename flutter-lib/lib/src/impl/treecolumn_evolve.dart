@@ -158,7 +158,7 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
       );
     }
 
-    return MouseRegion(
+    return tagSemantics(MouseRegion(
       cursor: moveable ? SystemMouseCursors.grab : SystemMouseCursors.click,
       child: GestureDetector(
         onTap: () {
@@ -189,6 +189,6 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
           ],
         ),
       ),
-    );
+    ));
   }
 }

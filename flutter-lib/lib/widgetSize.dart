@@ -50,14 +50,18 @@ class MeasurementResult {
   final (textSize, textStyle) = _findTextSize(renderBox);
   final imageSize = _findImageSize(renderBox);
 
-  return (MeasurementResult(widgetSize, textSize, textStyle, imageSize), renderBox);
+  return (
+    MeasurementResult(widgetSize, textSize, textStyle, imageSize),
+    renderBox,
+  );
 }
 
 (Size?, TextStyle?) _findTextSize(RenderBox renderBox) {
   if (renderBox is RenderParagraph) {
     final inlineSpan = renderBox.text;
     final textContent = inlineSpan.toPlainText();
-    if (textContent.length != 1) { // discard single char texts like arrow
+    if (textContent.length != 1) {
+      // discard single char texts like arrow
       if (inlineSpan is TextSpan) {
         return (renderBox.size, inlineSpan.style);
       }
@@ -92,7 +96,9 @@ Size? _findImageSize(RenderBox renderBox) {
     final s = renderBox.size;
     if (s.width == s.height && s.width > 0) {
       bool isLeaf = true;
-      renderBox.visitChildren((_) { isLeaf = false; });
+      renderBox.visitChildren((_) {
+        isLeaf = false;
+      });
       if (isLeaf) return s;
     }
   }
@@ -106,8 +112,6 @@ Size? _findImageSize(RenderBox renderBox) {
 }
 
 void printSizes(RenderBox renderBox) {
-  var size = renderBox.size;
-  // print("flutter size for ${renderBox}: ${size.width}x${size.height}");
   renderBox.visitChildren((child) {
     if (child is RenderBox) {
       printSizes(child);
@@ -120,8 +124,6 @@ void measureRequest(String bridge, int id) {
   EquoCommService.onRaw("$bridge/$id/widgetSizeRequest", (payload) {
     print("on $bridge/$id/sizeRequest $payload");
     final Map<String, dynamic> widgetConfig = payload as Map<String, dynamic>;
-    // final widgetValue = mapWidgetValue(widgetConfig["widget"]);
-    // var widgetValue = widgetWithConfig[0];
 
     if (widgetConfig.containsKey("config")) {
       final config = ConfigFlags.fromJson(widgetConfig["config"]);
@@ -138,20 +140,34 @@ void measureRequest(String bridge, int id) {
 
     // Schedule callback after widget is run, and wait for it to be fully laid out
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-        final (result, renderBox) = _measureCurrentCase(key);
-        if (SCREENSHOT) {
-          await captureScreenshot(renderBox, widgetName, caseName);
-        }
+      final (result, renderBox) = _measureCurrentCase(key);
+      if (SCREENSHOT) {
+        await captureScreenshot(renderBox, widgetName, caseName);
+      }
 
-        final response = {
-          'widget': {'x': result.widget.width.round(), 'y': result.widget.height.round()},
-          'text': result.text != null ? {'x': result.text!.width, 'y': result.text!.height} : null,
-          'textStyle': result.textStyle != null ? {'name': result.textStyle!.fontFamily, 'size': result.textStyle!.fontSize, 'italic': result.textStyle!.fontStyle == FontStyle.italic, 'weight': result.textStyle!.fontWeight?.value ?? 400, 'height': result.textStyle!.height ?? 0.0} : null,
-          'image': result.image != null ? {'x': result.image!.width, 'y': result.image!.height} : null,
-        };
+      final response = {
+        'widget': {
+          'x': result.widget.width.round(),
+          'y': result.widget.height.round(),
+        },
+        'text': result.text != null
+            ? {'x': result.text!.width, 'y': result.text!.height}
+            : null,
+        'textStyle': result.textStyle != null
+            ? {
+                'name': result.textStyle!.fontFamily,
+                'size': result.textStyle!.fontSize,
+                'italic': result.textStyle!.fontStyle == FontStyle.italic,
+                'weight': result.textStyle!.fontWeight?.value ?? 400,
+                'height': result.textStyle!.height ?? 0.0,
+              }
+            : null,
+        'image': result.image != null
+            ? {'x': result.image!.width, 'y': result.image!.height}
+            : null,
+      };
 
-        // print("send $bridge/$id/widgetSizeResponse $response");
-        EquoCommService.sendPayload("$bridge/$id/widgetSizeResponse", response);
+      EquoCommService.sendPayload("$bridge/$id/widgetSizeResponse", response);
     });
   });
   runApp(SizedBox());
@@ -187,12 +203,7 @@ class _TestAppState extends State<_TestApp> {
       darkTheme: darkTheme,
       themeMode: ThemeMode.light,
       home: Scaffold(
-        // appBar: AppBar(
-        //   title: Text('Widget Measurement'),
-        // ),
-        body: Center(
-            child: RepaintBoundary(child: widget.swtwidget),
-        ),
+        body: Center(child: RepaintBoundary(child: widget.swtwidget)),
       ),
     );
   }

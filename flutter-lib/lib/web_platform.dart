@@ -1,9 +1,7 @@
-// import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'dart:async';
 import 'dart:js_interop';
 import 'dart:ui' show Size;
 
-//late final ShellListener? listener;
 @JS('window.equoCommPort')
 external JSNumber? get _equoCommPort;
 
@@ -15,6 +13,9 @@ external JSString? get _widgetName;
 
 @JS('window.evolve.theme')
 external JSString? get _theme;
+
+@JS('window.evolve.enableTestSemantics')
+external JSBoolean? get _enableTestSemantics;
 
 @JS('window.name')
 external JSString? get _windowName;
@@ -56,6 +57,12 @@ int? getBackgroundColor(List<String> args) {
   return null;
 }
 
+bool getEnableTestSemantics(List<String> args) {
+  final params = Uri.base.queryParameters;
+  return params['enableTestSemantics'] == 'true' ||
+      (_enableTestSemantics?.toDart ?? false);
+}
+
 int? getParentBackgroundColor(List<String> args) {
   return null;
 }
@@ -86,12 +93,19 @@ Size? getViewportSize() {
 void observeViewportChanges(void Function() onChange) {
   Timer? debounce;
 
-  _addWindowEventListener('resize'.toJS, (() {
-    debounce?.cancel();
-    debounce = Timer(const Duration(milliseconds: 200), onChange);
-  }).toJS);
+  _addWindowEventListener(
+    'resize'.toJS,
+    (() {
+      debounce?.cancel();
+      debounce = Timer(const Duration(milliseconds: 200), onChange);
+    }).toJS,
+  );
 
-  _requestAnimationFrame((JSNumber _) { onChange(); }.toJS);
+  _requestAnimationFrame(
+    (JSNumber _) {
+      onChange();
+    }.toJS,
+  );
 }
 
 /// Fires [onClose] when the browser tab/window is being torn down, so Java can run the SWT shell

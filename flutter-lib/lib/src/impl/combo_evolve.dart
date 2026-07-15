@@ -156,7 +156,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
             width: width,
           );
 
-    return DoubleClickWordSelector(
+    return tagSemantics(DoubleClickWordSelector(
       controller: _controller,
       focusNode: _focusNode,
       text: _controller.text,
@@ -172,7 +172,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
         _focusNode.requestFocus();
       },
       child: SizedBox(width: width, height: height, child: content),
-    );
+    ));
   }
 
   void _onItemSelected(String? value) {

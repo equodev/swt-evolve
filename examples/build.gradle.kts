@@ -130,27 +130,55 @@ tasks.register<JavaExec>("runExample") {
         jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
 }
 
-fun registerFlutterExample(name: String, mode: String) =
+// webOnlyAware: only "runWebExample" supports -PwebOnly=true, which swaps in the plain
+// browser-only "webJar" instead of the hybrid "${currentPlatform}Jar" -- that hybrid jar always
+// bundles the desktop Flutter build (see swt_native's `tasks.jar`), which on Windows needs the
+// matching Visual Studio toolchain / Developer Mode for symlinks. "runDeskExample" always needs
+// the desktop build, so it has no webOnly variant.
+fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = false) =
     tasks.register<JavaExec>(name) {
         group = "examples"
-        description = "Run an example in '$mode' render mode. Usage: ./gradlew :examples:$name -PmainClass=dev.equo.ButtonSnippet"
+        description = "Run an example in '$mode' render mode. Usage: ./gradlew :examples:$name -PmainClass=dev.equo.ButtonSnippet" +
+                if (webOnlyAware) " (add -PwebOnly=true to use the plain browser-only web jar, skipping the desktop Flutter build)" else ""
 
-        // The desk/web hybrid jar is the default (bare os-arch) name now; both web and desktop
-        // render modes run against it (the embedded variant is "embed-<os>-<arch>Jar").
-        val hybridJar = project(":swt_native").tasks.named<Jar>("${currentPlatform}Jar")
-        dependsOn(hybridJar)
-        classpath = files(hybridJar.map { it.archiveFile }) +
+        val jarTaskName = if (webOnlyAware && project.hasProperty("webOnly")) "webJar" else "${currentPlatform}Jar"
+        val jar = project(":swt_native").tasks.named<Jar>(jarTaskName)
+        dependsOn(jar)
+        // A plain `.filter{}` on configurations["runtimeClasspath"] still resolves (and therefore
+        // builds) swt_native's default jar before the filter removes it from the file list; excluding
+        // the swt_native project dependency from a *copy* of the configuration skips resolving (and
+        // building) it in the first place -- the jar picked above is added back explicitly.
+        val runtimeClasspathWithoutSwtNative = configurations["runtimeClasspath"].copyRecursive { dep ->
+            !(dep is ProjectDependency && dep.path == ":swt_native")
+        }
+        classpath = files(jar.map { it.archiveFile }) +
                 sourceSets["main"].output +
-                configurations["runtimeClasspath"].filter { !it.path.contains("swt_native") }
+                runtimeClasspathWithoutSwtNative
         mainClass.set(project.findProperty("mainClass")?.toString() ?: "dev.equo.ButtonSnippet")
         systemProperty("dev.equo.swt.crashReport.disabled", "true")
         systemProperty("dev.equo.swt.web.crossOriginIsolated", "false")
         systemProperty("dev.equo.swt.mode", mode)
         System.getProperty("dev.equo.swt.debug")?.let { systemProperty("dev.equo.swt.debug", it) }
+        // Forward e.g. -Dequo.swt.browser=none so an external driver (Playwright, etc.) can be
+        // the only WebSocket client instead of racing the auto-launched system browser tab.
+        System.getProperty("equo.swt.browser")?.let { systemProperty("equo.swt.browser", it) }
+        // Forward a fixed HTTP port for an external driver (Playwright, etc.) to target.
+        System.getProperty("dev.equo.swt.web.httpPort")?.let { systemProperty("dev.equo.swt.web.httpPort", it) }
+        // Forward the runtime (no-rebuild) semantics toggle — see WebFlutterServer.Builder#enableTestSemantics.
+        System.getProperty("dev.equo.swt.web.enableTestSemantics")?.let { systemProperty("dev.equo.swt.web.enableTestSemantics", it) }
+        // Attach the JaCoCo agent when a driving E2E suite asks for it: this app JVM is the thing under
+        // test, and it's an external process (the suite spawns this build), so it can't be covered by a
+        // Gradle Test task's own instrumentation — the agent has to go on directly. The .exec it writes is
+        // merged into the combined report. See e2e/build.gradle.kts in the parent repo.
+        System.getProperty("dev.equo.e2e.jacocoAgent")?.let { agentJar ->
+            val destFile = System.getProperty("dev.equo.e2e.jacocoDestFile")
+                ?: error("dev.equo.e2e.jacocoAgent was set without dev.equo.e2e.jacocoDestFile")
+            jvmArgs("-javaagent:$agentJar=destfile=$destFile,append=true")
+        }
 
         if (System.getProperty("test.debug") != null)
             jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
     }
 
-registerFlutterExample("runWebExample", if (chromiumMode) "chromium" else "web")
+registerFlutterExample("runWebExample", if (chromiumMode) "chromium" else "web", webOnlyAware = true)
 registerFlutterExample("runDeskExample", "desktop")

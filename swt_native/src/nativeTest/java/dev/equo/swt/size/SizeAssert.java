@@ -14,7 +14,12 @@ public class SizeAssert {
 
     private static final double TEXT_TOLERANCE_PERCENT = 12/100.0; // 12%
     private static final double TOLERANCE_PERCENT = 5/100.0; // 5%
-    public static final int WAIT = 1;
+    /**
+     * Seconds a measurement round-trip is given before the test gives up. Generous on purpose: this
+     * only bounds how long a genuinely stuck future takes to fail, since the wait loop exits as soon
+     * as the result lands. At 1s a merely slow response on a loaded CI runner read as a failure.
+     */
+    public static final int WAIT = 5;
     protected TestInfo info;
 
     @BeforeEach

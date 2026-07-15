@@ -401,7 +401,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
         ? _calculateIconSize(constraints, widgetTheme.defaultIconSize)
         : widgetTheme.defaultIconSize;
 
-    return Container(
+    return tagSemantics(Container(
       constraints: constraints,
       child: switch (state.style & bits) {
         SWT.CHECK => () {
@@ -612,7 +612,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
           );
         }(),
       },
-    );
+    ));
   }
 
   void onPressed() {

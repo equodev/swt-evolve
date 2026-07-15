@@ -7,7 +7,9 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * JUnit extension used by {@link FontSizeTest} that boots a real Flutter renderer and speaks the
@@ -21,7 +23,21 @@ import java.util.concurrent.CompletableFuture;
  */
 class FontMeasureBridge extends FlutterHarness implements BeforeAllCallback, AfterAllCallback {
 
-    private CompletableFuture<double[]> lineMetricsResult;
+    /**
+     * One entry per request still awaiting its {@code fontSizeResponse}, oldest first.
+     *
+     * <p>The protocol carries no request id, so a response is matched to its request by arrival
+     * order — safe because the transport is ordered and the Dart side answers one request per
+     * handler call. A queue rather than a single field is what keeps a slow response from being
+     * mistaken for the next request's: previously the field was overwritten by the following
+     * request, so a response that arrived after its own test had given up waiting would complete
+     * the *next* test's future with the wrong measurement, failing a test whose request was fine.
+     *
+     * <p>Concurrent because the two ends run on different threads: requests are queued from the
+     * test thread, while responses are delivered on the comm thread (for the web client
+     * {@code pump()} only yields, it does not dispatch onto the caller).
+     */
+    private final Queue<CompletableFuture<double[]>> pendingResults = new ConcurrentLinkedQueue<>();
 
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
@@ -40,7 +56,8 @@ class FontMeasureBridge extends FlutterHarness implements BeforeAllCallback, Aft
         onPayload(this, "fontSizeResponse", p -> {
             try {
                 double[] arr = serializer.from(double[].class, p);
-                if (lineMetricsResult != null) lineMetricsResult.complete(arr);
+                CompletableFuture<double[]> awaiting = pendingResults.poll();
+                if (awaiting != null) awaiting.complete(arr);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -49,12 +66,13 @@ class FontMeasureBridge extends FlutterHarness implements BeforeAllCallback, Aft
 
     /** [width, height] for one sample-text measurement. */
     CompletableFuture<double[]> measureLineMetrics(String font, boolean italic, int weight, int size, String text) {
-        lineMetricsResult = new CompletableFuture<>();
+        CompletableFuture<double[]> result = new CompletableFuture<>();
+        pendingResults.add(result);
         Map<String, Object> request = Map.of(
                 "font", font, "style", italic, "weight", weight,
                 "size", size, "text", text);
         clientReady.thenRun(() -> sendRequest(request));
-        return lineMetricsResult;
+        return result;
     }
 
     private void sendRequest(Map<String, Object> request) {

@@ -409,6 +409,6 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
 
   @override
   Widget build(BuildContext context) {
-    return WebViewWidget(controller: _controller);
+    return tagSemantics(WebViewWidget(controller: _controller));
   }
 }

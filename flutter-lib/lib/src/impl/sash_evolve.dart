@@ -160,7 +160,7 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
       lastAppliedY = _localY;
     }
 
-    return sashContent;
+    return tagSemantics(sashContent);
   }
 
   void _enterLocalEditMode() {

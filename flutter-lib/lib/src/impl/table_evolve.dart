@@ -353,16 +353,14 @@ class TableImpl<T extends TableSwt, V extends VTable>
         ),
       ),
     );
-    return GestureDetector(
+    return tagItemSemantics(column, GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: column.image != null
-          ? () {
-              TableColumnSwt<VTableColumn>(value: column).sendSelectionSelection(
-                column,
-                null,
-              );
-            }
-          : null,
+      onTap: () {
+        TableColumnSwt<VTableColumn>(value: column).sendSelectionSelection(
+          column,
+          null,
+        );
+      },
       onSecondaryTapDown: (details) {
         openContextMenu(details.globalPosition);
         final e = VEvent();
@@ -371,7 +369,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
         widget.sendMenuDetectMenuDetect(state, e);
       },
       child: ClipRect(child: cell),
-    );
+    ));
   }
 
   int _computeHeaderCellCenterX(int columnIndex) {

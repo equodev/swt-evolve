@@ -28,7 +28,7 @@ class ListImpl<T extends ListSwt, V extends VList>
     final width = hasConstraints ? state.bounds!.width.toDouble() : null;
     final height = hasConstraints ? state.bounds!.height.toDouble() : null;
 
-    return _StyledList(
+    return tagSemantics(_StyledList(
       widgetTheme: widgetTheme,
       state: state,
       items: state.items!,
@@ -52,7 +52,7 @@ class ListImpl<T extends ListSwt, V extends VList>
       onMouseExit: () => widget.sendMouseTrackMouseExit(state, null),
       onFocusIn: () => widget.sendFocusFocusIn(state, null),
       onFocusOut: () => widget.sendFocusFocusOut(state, null),
-    );
+    ));
   }
 
   List<String> _convertIndicesToItems(List<String> items, List<int> indices) {

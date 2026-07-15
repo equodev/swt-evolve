@@ -1,9 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter/widgets.dart';
 
 import 'src/comm/comm.dart';
 import 'src/gen/widget.dart';
+import 'src/testing/tree_test_registry.dart';
 import 'test_harness_iframe_stub.dart'
     if (dart.library.js_interop) 'test_harness_iframe_web.dart';
+import 'test_harness_jsapi_stub.dart'
+    if (dart.library.js_interop) 'test_harness_jsapi_web.dart';
 
 /// Test-only support: a dormant comm channel that lets a Java integration test
 /// read the *live* Flutter state of any rendered SWT widget by id, and send it
@@ -38,14 +43,69 @@ void registerTestQueryChannel() {
   EquoCommService.onRaw("evolve.test.frameSync", (dynamic req) {
     final map = (req as Map).cast<String, dynamic>();
     final int syncId = (map['syncId'] as num).toInt();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      EquoCommService.sendPayload("evolve.test.frameSynced", {'syncId': syncId});
+    scheduleFrameSync(() {
+      EquoCommService.sendPayload("evolve.test.frameSynced", {
+        'syncId': syncId,
+      });
     });
-    WidgetsBinding.instance.scheduleFrame();
   });
 
   // Relay embedded-iframe load pings to Java (web only; no-op elsewhere).
   registerIframeLoadProbe();
+
+  // Same query/frame-sync logic, but reachable directly from `window` (web only; no-op
+  // elsewhere) — lets a browser-side driver (Playwright etc.) assert on live Dart state
+  // without going through Java/the comm WebSocket at all. See test_harness_jsapi_web.dart.
+  registerTestQueryJsApi(
+    queryStateJson: queryStateJson,
+    queryAllStatesJson: queryAllStatesJson,
+    queryTreeItemsJson: queryTreeItemsJson,
+    expandTreeItem: expandTreeItem,
+    queryPrimaryFocus: queryPrimaryFocus,
+    scheduleFrameSync: scheduleFrameSync,
+  );
+}
+
+/// Debug description of whichever [FocusNode] currently holds primary keyboard focus --
+/// diagnostic-only, for tests narrowing down why a key press did not reach the widget they
+/// expected.
+String queryPrimaryFocus() {
+  return FocusManager.instance.primaryFocus?.toString() ?? '<none>';
+}
+
+/// The widget's live `V*.toJson()` as a JSON string, or null if not mounted. Shared by
+/// the Java-facing comm channel above and the JS-facing window API (see
+/// test_harness_jsapi_web.dart).
+String? queryStateJson(int targetId) {
+  final dynamic vstate = _findStateById(targetId);
+  if (vstate == null) return null;
+  return jsonEncode(vstate.toJson());
+}
+
+/// Every mounted SWT widget's live `V*.toJson()`, keyed by its `{swt}/{id}` semantics
+/// identifier, as a JSON-encoded object.
+String queryAllStatesJson() {
+  final root = WidgetsBinding.instance.rootElement;
+  final Map<String, dynamic> all = {};
+  if (root == null) return jsonEncode(all);
+  void visit(Element el) {
+    if (el is StatefulElement && el.state is WidgetSwtState) {
+      final dynamic vstate = (el.state as WidgetSwtState).state;
+      if (vstate != null) {
+        all['${vstate.swt}/${vstate.id}'] = vstate.toJson();
+      }
+    }
+    el.visitChildren(visit);
+  }
+
+  root.visitChildren(visit);
+  return jsonEncode(all);
+}
+
+/// Runs [onSynced] once the next frame has been built + painted (see frameSync above).
+void scheduleFrameSync(void Function() onSynced) {
+  WidgetsBinding.instance.addPostFrameCallback((_) => onSynced());
+  WidgetsBinding.instance.scheduleFrame();
 }
 
 /// Walk the live element tree and return the `V*` value object of the
@@ -65,6 +125,7 @@ dynamic _findStateById(int targetId) {
     }
     el.visitChildren(visit);
   }
+
   root.visitChildren(visit);
   return result;
 }

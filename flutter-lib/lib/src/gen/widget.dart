@@ -14,7 +14,6 @@ abstract class WidgetSwt<V extends VWidget> extends StatefulWidget {
   const WidgetSwt({super.key, required this.value});
 
   void sendEvent(V val, String ev, VEvent? payload) {
-    // print("send ${val.swt}/${val.id}/$ev");
     if (payload == null) {
       EquoCommService.send("${val.swt}/${val.id}/$ev");
     } else {
@@ -40,7 +39,6 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   void initState() {
     super.initState();
     state = widget.value as V;
-    // print("${state.swt} ${state.id} initState");
     EquoCommService.on("${state.swt}/${state.id}", _onChange);
   }
 
@@ -69,10 +67,6 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
 
     return Stack(
       children: [
-        // This causes it not to work composite widget
-        // if (gcOverlay != null)
-        //   RepaintBoundary(key: widgetBoundaryKey, child: child)
-        // else
         child,
         if (gcOverlay != null)
           Positioned.fill(child: IgnorePointer(child: gcWidget))
@@ -85,7 +79,6 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   @override
   void didUpdateWidget(covariant T oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // print("${state.swt} ${state.id} didUpdateWidget");
     state = widget.value as V;
     extraSetState();
   }
@@ -98,16 +91,35 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
 
   @protected
   void setValue(V value) {
-    if (mounted) {
-      setState(() {
-        state = value!;
-        extraSetState();
-      });
+    if (!mounted) return;
+    // Skip redundant rebuilds: identical state still regenerates Flutter Web
+    // semantics nodes and can detach E2E locators mid-action. That is purely an E2E
+    // concern, and the JSON compare in _isSameValue is too expensive to run on every
+    // update — so only pay it when the semantics tree is actually on (test mode /
+    // screen reader). Normal rendering rebuilds unconditionally, as before.
+    if (WidgetsBinding.instance.semanticsEnabled &&
+        _isSameValue(state, value)) {
+      return;
+    }
+    setState(() {
+      state = value;
+      extraSetState();
+    });
+  }
+
+  /// Structural equality between two value objects via their JSON form.
+  /// Falls back to "not equal" (i.e. rebuild) if either can't be serialized,
+  /// so we never drop a legitimate update.
+  bool _isSameValue(V a, V b) {
+    if (identical(a, b)) return true;
+    try {
+      return jsonEncode(a.toJson()) == jsonEncode(b.toJson());
+    } catch (_) {
+      return false;
     }
   }
 
   void _onChange(V payload) {
-    // print('On Widget Change, payload: $payload');
     setValue(payload);
   }
 
@@ -118,6 +130,46 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
       print('OnOp: "${state.swt}/${state.id}/$op" args: ${opArgs}');
       handler(jsonDecode(opArgs as String));
     });
+  }
+
+  /// Stable id for E2E tooling. Flutter Web exposes this as
+  /// `flt-semantics-identifier`, keyed by the same swt/id pair as the comm channel.
+  ///
+  /// Tooltip and enabled state are additive when semantics are active. We deliberately
+  /// do not set `label` here; see `_taggedSemantics`.
+  Widget tagSemantics(Widget child) => _taggedSemantics(state, child);
+
+  /// Same as [tagSemantics] but for an SWT Item (TableItem, MenuItem, etc.) rendered
+  /// inline by its parent's build() rather than via its own State — `item` is that
+  /// item's own VWidget (its swt/id), not this state's.
+  Widget tagItemSemantics(VWidget item, Widget child) =>
+      _taggedSemantics(item, child);
+
+  Widget _taggedSemantics(VWidget node, Widget child) {
+    final identifier = '${node.swt}/${node.id}';
+    // Only pay the toJson() cost when the semantics tree is actually being built
+    // (screen reader, or test mode forcing it on). Normal rendering stays cheap.
+    if (!WidgetsBinding.instance.semanticsEnabled) {
+      // No semantics tree is being built, so the identifier would never surface in the
+      // DOM anyway — skip the Semantics wrapper entirely and keep rendering cheap.
+      return child;
+    }
+    Map<String, dynamic> json;
+    try {
+      json = (node as dynamic).toJson() as Map<String, dynamic>;
+    } catch (_) {
+      json = const {};
+    }
+    final tooltip = json['toolTipText'];
+    final enabled = json['enabled'];
+    // Do not set label from json['text']: the child already contributes that text to
+    // semantics, and Flutter Web would expose duplicated DOM text.
+    return Semantics(
+      identifier: identifier,
+      tooltip: (tooltip is String && tooltip.isNotEmpty) ? tooltip : null,
+      enabled: enabled is bool ? enabled : null,
+      child: child,
+    );
   }
 }
 

@@ -42,7 +42,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     final itemCount = state.items?.length ?? 0;
 
     if (_pendingTabIndex != null) {
-      // Java confirmed our selection (null means 0 due to skipDefaultValues)
+      // Java selection caught up (null means 0 due to skipDefaultValues)
       final javaSelection = state.selection ?? 0;
       if (javaSelection == _pendingTabIndex) {
         _pendingTabIndex = null;
@@ -157,10 +157,10 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     );
 
     if (constraints != null) {
-      return ConstrainedBox(constraints: constraints, child: column);
+      return tagSemantics(ConstrainedBox(constraints: constraints, child: column));
     }
 
-    return column;
+    return tagSemantics(column);
   }
 
   void _handleTabSelection(int index) {
@@ -218,6 +218,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
       showCloseButton: tabItem.showClose ?? false,
       customContent: tabItemWidget,
       toolTipText: tabItem.toolTipText,
+      vItem: tabItem,
     );
   }
 
@@ -647,7 +648,7 @@ class _CTabBarState extends State<_CTabBar> {
     final borderColor = getCTabBorderColor(widgetTheme, enabled, isHovered: isHovered);
     final textStyle = getCTabTextStyle(widgetTheme, isSelected, enabled);
 
-    return MouseRegion(
+    return Semantics(identifier: '${tab.vItem.swt}/${tab.vItem.id}', child: MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       onEnter: (_) => onHoverEnter(),
       onExit: (_) => onHoverExit(),
@@ -736,7 +737,7 @@ class _CTabBarState extends State<_CTabBar> {
           ),
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildAdvancedTab({
@@ -792,7 +793,7 @@ class _CTabBarState extends State<_CTabBar> {
     final borderColor = getCTabBorderColor(widgetTheme, enabled, isHovered: isHovered);
     final textStyle = getCTabTextStyle(widgetTheme, isSelected, enabled);
 
-    return MouseRegion(
+    return Semantics(identifier: '${tab.vItem.swt}/${tab.vItem.id}', child: MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       onEnter: (_) => onHoverEnter(),
       onExit: (_) => onHoverExit(),
@@ -954,7 +955,7 @@ class _CTabBarState extends State<_CTabBar> {
           ),
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildChevronButton(CTabFolderThemeExtension widgetTheme) {
@@ -1530,6 +1531,7 @@ class CTabItem {
   final bool alignRight;
   final Widget? customContent;
   final String? toolTipText;
+  final VCTabItem vItem;
 
   CTabItem({
     required this.label,
@@ -1539,6 +1541,7 @@ class CTabItem {
     this.alignRight = false,
     this.customContent,
     this.toolTipText,
+    required this.vItem,
   });
 }
 

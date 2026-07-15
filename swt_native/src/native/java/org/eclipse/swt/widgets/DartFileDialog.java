@@ -274,6 +274,25 @@ public class DartFileDialog extends DartDialog implements IIFileDialog {
      */
     public Optional<String> openDialog() {
         fullPath = null;
+        String configuredPath = System.getProperty("dev.equo.swt.test.fileDialog.path");
+        String configuredUri = System.getProperty("dev.equo.swt.test.fileDialog.path.uri");
+        if (configuredPath == null && configuredUri != null) {
+            configuredPath = new java.io.File(java.net.URI.create(configuredUri)).getPath();
+        }
+        if (configuredPath != null) {
+            if (configuredPath.isBlank()) {
+                return Optional.empty();
+            }
+            java.io.File file = new java.io.File(configuredPath);
+            fullPath = file.getAbsolutePath();
+            fileName = file.getName();
+            fileNames = new String[] { fileName };
+            String parentPath = file.getParent();
+            if (parentPath != null) {
+                filterPath = parentPath;
+            }
+            return Optional.of(fullPath);
+        }
         if ((style & SWT.SAVE) != 0) {
             if (!overwrite) {
                 if (method_overwriteExistingFileCheck != 0) {

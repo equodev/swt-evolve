@@ -11,19 +11,20 @@ include: package:flutter_lints/flutter.yaml
 
 analyzer:
   errors:
-    # Original user settings (now adjusted or confirmed)
-    unused_import: ignore # Kept from original if still desired, though unnecessary_import might cover it
-    deprecated_member_use: ignore # Changed from warning to ignore as per request
+    # Project-specific analyzer suppressions. The trailing notes record which code
+    # triggers each ignore, so a future reader knows why the suppression is here.
+    unused_import: ignore
+    deprecated_member_use: ignore
 
-    # Rules identified from the 'flutter analyze' output to be ignored
+    # Identified from `flutter analyze` output on the generated + hand-written sources.
     avoid_print: ignore
     use_super_parameters: ignore
     file_names: ignore
-    non_constant_identifier_names: ignore # For variables like ERROR_CALLBACK_DOES_NOT_EXIST and constants in swt.dart
+    non_constant_identifier_names: ignore # e.g. ERROR_CALLBACK_DOES_NOT_EXIST and the constants in swt.dart
     depend_on_referenced_packages: ignore
     dead_null_aware_expression: ignore
     unused_local_variable: ignore
-    unnecessary_import: ignore # Covers flutter/material.dart and flutter/widgets.dart issues
+    unnecessary_import: ignore # covers the flutter/material.dart + flutter/widgets.dart double-import
     unnecessary_to_list_in_spreads: ignore
     sort_child_properties_last: ignore
     sized_box_for_whitespace: ignore
@@ -33,10 +34,10 @@ analyzer:
     unnecessary_overrides: ignore
     overridden_fields: ignore
     annotate_overrides: ignore
-    constant_identifier_names: ignore # For constants in griddata.dart and swt.dart
+    constant_identifier_names: ignore # for the constants in griddata.dart and swt.dart
     unnecessary_brace_in_string_interps: ignore
-    unused_element: ignore # For _$WidgetValueFromJson, _$WidgetValueToJson
-    unnecessary_nullable_for_final_variable_declarations: ignore # For SKIN_CLASS, SKIN_ID in swt.dart
+    unused_element: ignore # for the generated _$WidgetValueFromJson / _$WidgetValueToJson
+    unnecessary_nullable_for_final_variable_declarations: ignore # for SKIN_CLASS, SKIN_ID in swt.dart
     invalid_null_aware_operator: ignore
     unnecessary_non_null_assertion: ignore
     body_might_complete_normally_nullable: ignore
@@ -53,11 +54,7 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
-  # All rules that were generating messages are now set to 'ignore' in the
-  # analyzer:errors: section above.
-  # If you wanted to completely disable a lint (not just ignore its messages),
-  # you would do it here, for example:
-  # avoid_print: false
+  # Rules can also be disabled here instead of being downgraded under analyzer:errors.
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

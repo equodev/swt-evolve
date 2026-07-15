@@ -98,10 +98,32 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     final List<Shape> shapes = _drawer.shapes.isNotEmpty
         ? List.unmodifiable(_drawer.shapes)
         : List.unmodifiable(_snapshot);
-    return CustomPaint(
+    final Widget painted = CustomPaint(
       size: bounds,
       painter: ScenePainter(canvasBg, shapes),
     );
+    // Expose any text painted via the GC (drawString/drawText) as an aria-label so
+    // canvas-drawn controls (e.g. custom buttons) are identifiable in devtools / E2E,
+    // instead of showing up as an opaque `Canvas/<id>` node with no text. Only built
+    // when the semantics tree is active, so normal rendering is unaffected.
+    if (WidgetsBinding.instance.semanticsEnabled) {
+      final label = _paintedTextLabel(shapes);
+      if (label != null) {
+        return Semantics(label: label, child: painted);
+      }
+    }
+    return painted;
+  }
+
+  String? _paintedTextLabel(List<Shape> shapes) {
+    final parts = <String>[];
+    for (final shape in shapes) {
+      if (shape is TextShape) {
+        final text = shape.text.trim();
+        if (text.isNotEmpty) parts.add(text);
+      }
+    }
+    return parts.isEmpty ? null : parts.join(' ');
   }
 
 }
