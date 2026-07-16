@@ -134,7 +134,7 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
     ExpandBarThemeExtension widgetTheme,
     ExpandItemThemeExtension itemTheme,
   ) {
-    return _ExpandItemWidget(
+    return tagItemSemantics(expandItem, _ExpandItemWidget(
       expandItem: expandItem,
       widgetTheme: widgetTheme,
       itemTheme: itemTheme,
@@ -150,7 +150,7 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
       parentBackground: state.background,
       parentForeground: state.foreground,
       parentFont: state.font,
-    );
+    ));
   }
 }
 

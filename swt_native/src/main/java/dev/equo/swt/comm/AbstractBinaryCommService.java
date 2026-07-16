@@ -106,6 +106,11 @@ public abstract class AbstractBinaryCommService implements CommService {
             return;
         }
         System.err.println(logTag() + " No handler for: " + eventName);
+        // Show which same-type handlers ARE registered here: distinguishes "wrong widget id"
+        // (siblings listed) from "this widget type never registered" (nothing listed) at a glance.
+        String typePrefix = eventName.substring(0, eventName.indexOf('/') + 1);
+        typedHandlers.keySet().stream().filter(k -> k.startsWith(typePrefix)).sorted()
+                .forEach(k -> System.err.println(logTag() + "   registered: " + k));
     }
 
     /** Send an already-encoded frame to every currently-open session. */

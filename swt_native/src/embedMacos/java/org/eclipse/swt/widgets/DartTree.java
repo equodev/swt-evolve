@@ -490,6 +490,7 @@ public class DartTree extends DartComposite implements ITree {
             }
         }
         ((DartWidget) column.getImpl()).createJNIRef();
+        ((DartWidget) column.getImpl()).register();
         System.arraycopy(columns, index, columns, index + 1, columnCount++ - index);
         columns[index] = column;
         for (int i = 0; i < itemCount; i++) {
