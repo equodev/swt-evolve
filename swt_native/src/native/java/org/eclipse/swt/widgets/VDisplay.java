@@ -1,6 +1,8 @@
 package org.eclipse.swt.widgets;
 
 import com.dslplatform.json.*;
+import dev.equo.swt.Config;
+import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.Serializer;
 import java.util.ArrayList;
 
@@ -15,6 +17,7 @@ public class VDisplay {
     public Shell[] shells;
     public Menu[] popups;
     public ToolTip[] tooltips;
+    public ConfigFlags config;
 
     protected VDisplay() {
     }
@@ -23,6 +26,7 @@ public class VDisplay {
         VDisplay v = new VDisplay();
         v.id = display.getApi().hashCode();
         v.swt = "Display";
+        v.config = Config.getConfigFlags();
         Shell[] all = display._shells();
         ArrayList<Shell> visible = new ArrayList<>();
         for (Shell s : all) {
@@ -57,8 +61,11 @@ public class VDisplay {
     @JsonConverter(target = VDisplay.class)
     public static class DisplayJson implements Configuration {
 
+        private static volatile DslJson<?> dslJson;
+
         @Override
         public void configure(DslJson json) {
+            dslJson = json;
             json.registerWriter(VDisplay.class, (JsonWriter.WriteObject<VDisplay>) (writer, v) -> write(writer, v));
             json.registerReader(VDisplay.class, (JsonReader.ReadObject<VDisplay>) reader -> null);
         }
@@ -110,7 +117,22 @@ public class VDisplay {
                 }
                 writer.writeByte((byte) ']');
             }
+            writeConfig(writer, v.config);
             writer.writeByte((byte) '}');
+        }
+
+        @SuppressWarnings("unchecked")
+        private static void writeConfig(JsonWriter writer, ConfigFlags config) {
+            DslJson<?> json = dslJson;
+            if (config == null) return;
+            JsonWriter.WriteObject<ConfigFlags> converter = json == null ? null
+                    : (JsonWriter.WriteObject<ConfigFlags>) json.tryFindWriter(ConfigFlags.class);
+            if (converter == null) {
+                System.err.println("[VDisplay] no ConfigFlags converter; the client will render unthemed");
+                return;
+            }
+            writer.writeAscii(",\"config\":");
+            converter.write(writer, config);
         }
     }
 }

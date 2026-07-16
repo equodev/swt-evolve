@@ -40,7 +40,6 @@ import 'src/impl/gcdrawer_evolve.dart';
 bool _themeConfigLogged = false;
 Completer<void>? _swtEvolvePropertiesCompleter;
 bool _swtEvolvePropertiesListenerRegistered = false;
-final ValueNotifier<int> _configFlagsVersion = ValueNotifier<int>(0);
 _DisplayMetricsReporter? _displayMetricsReporter;
 
 void main(List<String> args) async {
@@ -265,9 +264,7 @@ Future<void> initSwtEvolveProperties() async {
     _swtEvolvePropertiesListenerRegistered = true;
     EquoCommService.onRaw("swt.evolve.properties", (dynamic data) {
       try {
-        final configFlags = ConfigFlags.fromJson(data as Map<String, dynamic>);
-        setConfigFlags(configFlags);
-        _configFlagsVersion.value++;
+        applyConfigFlags(ConfigFlags.fromJson(data as Map<String, dynamic>));
       } catch (e) {
         print('Error parsing properties: $e');
       } finally {
@@ -353,7 +350,7 @@ class EvolveApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _configFlagsVersion,
+      animation: configFlagsVersion,
       builder: (context, _) {
         final flags = getConfigFlags();
         final forcedThemeMode = parseForcedThemeMode(flags.force_theme);

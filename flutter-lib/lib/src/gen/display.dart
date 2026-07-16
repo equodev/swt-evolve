@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import '../impl/config_flags.dart';
 import 'menu.dart';
 import 'shell.dart';
 import 'tooltip.dart';
@@ -12,6 +13,7 @@ class VDisplay {
   List<VShell>? shells;
   List<VMenu>? popups;
   List<VToolTip>? tooltips;
+  ConfigFlags? config;
 
   VDisplay();
 
