@@ -11,10 +11,12 @@ import '../gen/tableitem.dart';
 import 'tableitem_evolve.dart';
 import '../gen/tablecolumn.dart';
 import '../gen/tableeditor.dart';
+import '../gen/droptarget.dart';
 import '../gen/font.dart';
 import 'utils/widget_utils.dart';
 import 'utils/font_utils.dart';
 import 'utils/image_utils.dart';
+import 'utils/dnd_utils.dart';
 import '../gen/image.dart';
 import '../theme/theme_extensions/table_theme_extension.dart';
 import '../theme/theme_settings/table_theme_settings.dart';
@@ -42,6 +44,9 @@ class TableImpl<T extends TableSwt, V extends VTable>
   // avoid a second event with different coordinates.
   @override
   bool get forwardsControlMouseDown => false;
+
+  @override
+  bool get wrapsWholeWidgetForDnd => false;
 
   @override
   void initState() {
@@ -221,22 +226,25 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
     final editorOverlays = _buildEditorOverlays(context, columns, widgetTheme, columnWidths);
 
-    final tableContent = Stack(
-      children: [
-        Container(
-          decoration: buildBorder(widgetTheme),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              if (showHeader && columns.isNotEmpty)
-                buildHeader(context, columns, showLines, widgetTheme, columnWidths),
-              Expanded(
-                child: buildBody(context, items, columns, showLines, widgetTheme, columnWidths),
-              ),
-            ],
+    final tableContent = wrapTableForDrop(
+      Stack(
+        children: [
+          Container(
+            decoration: buildBorder(widgetTheme),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                if (showHeader && columns.isNotEmpty)
+                  buildHeader(context, columns, showLines, widgetTheme, columnWidths),
+                Expanded(
+                  child: buildBody(context, items, columns, showLines, widgetTheme, columnWidths),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
+      items.length,
     );
 
     final wrappedTable = super.wrap(tableContent);
@@ -419,22 +427,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
         )
         .toList();
 
-    if (columns.isEmpty) {
-      return Container(
-        color: backgroundColor,
-        height: height,
-        child: items.isEmpty
-            ? Container()
-            : SingleChildScrollView(
-                controller: _verticalScrollController,
-                child: Table(
-                  columnWidths: const {0: FlexColumnWidth()},
-                  border: buildBodyBorder(showLines, theme),
-                  children: tableRows,
-                ),
-              ),
-      );
-    }
+    final trailingColumnWidths = columns.isEmpty ? const {0: FlexColumnWidth()} : columnWidths;
 
     return Container(
       color: backgroundColor,
@@ -444,7 +437,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
           : SingleChildScrollView(
               controller: _verticalScrollController,
               child: Table(
-                columnWidths: columnWidths,
+                columnWidths: trailingColumnWidths,
                 border: buildBodyBorder(showLines, theme),
                 children: tableRows,
               ),
@@ -469,22 +462,104 @@ class TableImpl<T extends TableSwt, V extends VTable>
       rowIndex % 2 == 1,
     );
 
+    final cells = TableItemSwtWrapper(
+      item: item,
+      rowIndex: rowIndex,
+      tableImpl: this,
+      parentTable: widget,
+      parentTableValue: state,
+      tableFont: state.font,
+    ).buildCells(context, theme);
+
     return TableRow(
       decoration: BoxDecoration(
         color: backgroundColor,
         border: getTableRowBorder(isSelected, theme),
       ),
       children: [
-        ...TableItemSwtWrapper(
-          item: item,
-          rowIndex: rowIndex,
-          tableImpl: this,
-          parentTable: widget,
-          parentTableValue: state,
-          tableFont: state.font,
-        ).buildCells(context, theme),
+        ...cells.map((cell) => wrapCellForRowDrag(cell, rowIndex, item)),
         const SizedBox.shrink(),
       ],
+    );
+  }
+
+  final HoverTracker<int> _dragHover = HoverTracker<int>();
+
+  int _rowIndexForLocalY(double y, int itemCount) {
+    final rowHeight = _cachedRowHeight;
+    if (rowHeight == null || rowHeight <= 0) return itemCount;
+    final headerOffset = _cachedHeaderOffset ?? 0.0;
+    final adjustedY = y - headerOffset;
+    if (adjustedY < 0) return 0;
+    return (adjustedY / rowHeight).floor().clamp(0, itemCount);
+  }
+
+  Widget wrapTableForDrop(Widget content, int itemCount) {
+    int resolveIndex(DragTargetDetails<DndDragPayload> details) {
+      final box = context.findRenderObject();
+      final index = box is RenderBox
+          ? _rowIndexForLocalY(box.globalToLocal(details.offset).dy, itemCount)
+          : itemCount;
+      _dragHover.update(index);
+      return index;
+    }
+
+    return wrapDropTarget<DndDragPayload>(
+      child: content,
+      state: state,
+      resolveIndex: resolveIndex,
+      onDrop: (_, targetIndex, __, position) => sendRowDrop(targetIndex ?? itemCount, position),
+      builder: (context, child, negotiation, isHovering) {
+        if (!isHovering) _dragHover.update(null);
+        return child;
+      },
+    );
+  }
+
+  Widget wrapCellForRowDrag(Widget cell, int rowIndex, VTableItem item) {
+    final row = ValueListenableBuilder<int?>(
+      valueListenable: _dragHover.notifier,
+      builder: (context, hoveredIndex, child) => hoveredIndex == rowIndex
+          ? DecoratedBox(
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: Colors.blue, width: 2)),
+              ),
+              child: child,
+            )
+          : child!,
+      child: cell,
+    );
+    return wrapDraggable<DndDragPayload>(
+      child: row,
+      data: DndDragPayload(sourceControlId: state.id, index: rowIndex),
+      widget: widget,
+      state: state,
+      onDragStarted: () => handleRowTap(rowIndex, item),
+      // A cell's content can include a flex Row (Expanded text/padding) — fine within the
+      // table's own bounded layout, but the feedback overlay renders inside Flutter's Overlay,
+      // which gives unbounded width. Without an explicit width here, that flex Row throws
+      // "incoming width constraints are unbounded" as soon as a drag starts.
+      feedbackBuilder: (c) => SizedBox(
+        width: state.bounds?.width?.toDouble() ?? 200,
+        child: Material(
+          elevation: 2,
+          child: Opacity(opacity: 0.85, child: cell),
+        ),
+      ),
+      childWhenDraggingBuilder: (c) => Opacity(opacity: 0.3, child: cell),
+    );
+  }
+
+  void sendRowDrop(int targetIndex, Offset position) {
+    final dropTargetId = state.dropTargetId;
+    if (dropTargetId == null) return;
+    final dropTargetValue = VDropTarget()..id = dropTargetId;
+    DropTargetSwt<VDropTarget>(value: dropTargetValue).sendDropdrop(
+      dropTargetValue,
+      VEvent()
+        ..index = targetIndex
+        ..x = position.dx.round()
+        ..y = position.dy.round(),
     );
   }
 

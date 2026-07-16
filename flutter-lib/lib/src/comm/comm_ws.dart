@@ -47,7 +47,7 @@ class EquoCommService {
   static void onRaw(String userEventActionId, CommCallback<dynamic> onSuccess) =>
       _comm.on(userEventActionId, onSuccess);
 
-  static void on<V extends VWidget>(
+  static Object on<V extends VWidget>(
           String userEventActionId, CommCallback<V> onSuccess) =>
       _comm.onWidget<V>(userEventActionId, onSuccess);
 
@@ -63,7 +63,7 @@ class EquoCommService {
           String userEventActionId, void Function(Uint8List) callback) =>
       _comm.onBytes(userEventActionId, callback);
 
-  static void remove(eventName) => _comm.remove(eventName);
+  static void remove(eventName, [Object? token]) => _comm.remove(eventName, token);
 
   static Future setPort(int p) async {
     port = p;

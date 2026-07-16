@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import '../gen/control.dart';
+import '../gen/droptarget.dart';
 import '../gen/event.dart';
 import '../gen/menu.dart';
 import '../gen/swt.dart';
@@ -15,6 +16,7 @@ import '../styles.dart';
 import '../impl/key_mapping.dart';
 import '../impl/menu_evolve.dart';
 import '../theme/theme_extensions/tooltip_theme_extension.dart';
+import 'utils/dnd_utils.dart';
 import 'widget_config.dart';
 
 abstract class ControlImpl<T extends ControlSwt, V extends VControl>
@@ -132,7 +134,45 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// the chrome Listener would fire a second event with different coordinates.
   bool get forwardsControlMouseDown => true;
 
+  bool get wrapsWholeWidgetForDnd => true;
+
+  Widget wrapDnd(Widget content) {
+    if (state.dragSource != true && state.dropTargetId == null) return content;
+    content = wrapDropTarget<DndDragPayload>(
+      child: content,
+      state: state,
+      onDrop: (_, __, ___, position) => sendControlDrop(position),
+      builder: (context, child, negotiation, isHovering) => isHovering
+          ? DecoratedBox(
+              decoration: BoxDecoration(border: Border.all(color: Colors.blue, width: 2)),
+              child: child,
+            )
+          : child,
+    );
+    return wrapDraggable<DndDragPayload>(
+      child: content,
+      data: DndDragPayload(sourceControlId: state.id),
+      widget: widget,
+      state: state,
+    );
+  }
+
+  void sendControlDrop(Offset position) {
+    final dropTargetId = state.dropTargetId;
+    if (dropTargetId == null) return;
+    final dropTargetValue = VDropTarget()..id = dropTargetId;
+    DropTargetSwt<VDropTarget>(value: dropTargetValue).sendDropdrop(
+      dropTargetValue,
+      VEvent()
+        ..x = position.dx.round()
+        ..y = position.dy.round(),
+    );
+  }
+
   Widget wrap(Widget widget) {
+    if (wrapsWholeWidgetForDnd) {
+      widget = wrapDnd(widget);
+    }
     widget = tagSemantics(widget);
 
     if (state.cursor?.cursorStyle != null) {

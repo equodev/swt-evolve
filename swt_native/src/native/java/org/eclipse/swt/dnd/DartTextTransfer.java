@@ -73,6 +73,7 @@ public class DartTextTransfer extends DartByteArrayTransfer implements ITextTran
         if (!checkText(object) || !isSupportedType(transferData)) {
             DND.error(DND.ERROR_INVALID_DATA);
         }
+        super.javaToNative(((String) object).getBytes(java.nio.charset.StandardCharsets.UTF_8), transferData);
     }
 
     /**
@@ -86,7 +87,8 @@ public class DartTextTransfer extends DartByteArrayTransfer implements ITextTran
      */
     @Override
     public Object nativeToJava(TransferData transferData) {
-        return null;
+        byte[] bytes = (byte[]) super.nativeToJava(transferData);
+        return bytes == null ? null : new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
     }
 
     @Override

@@ -5,7 +5,7 @@ import '../gen/widget.dart';
 typedef CommCallback<V> = void Function(V payload);
 
 class EquoCommService {
-  static void on<V extends VWidget>(
+  static Object on<V extends VWidget>(
           String userEventActionId, CommCallback<V> onSuccess) =>
       throw UnsupportedError("EquoComm.on");
   static void onRaw(
@@ -24,6 +24,6 @@ class EquoCommService {
           String userEventActionId, void Function(Uint8List) callback) =>
       throw UnsupportedError("EquoComm.onBytes");
   static Future setPort(int port) => throw UnsupportedError("EquoComm.setPort");
-  static void remove(String eventName) =>
+  static void remove(String eventName, [Object? token]) =>
       throw UnsupportedError("EquoComm.remove");
 }

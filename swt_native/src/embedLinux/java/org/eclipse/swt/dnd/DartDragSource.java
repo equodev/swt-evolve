@@ -153,6 +153,8 @@ public class DartDragSource extends DartWidget implements IDragSource {
     public DartDragSource(Control control, int style, DragSource api) {
         super(control, checkStyle(style), api);
         this.control = control;
+        this.bridge = ((DartWidget) control.getImpl()).getBridge();
+        _hookEvents();
     }
 
     static int checkStyle(int style) {
@@ -515,6 +517,45 @@ public class DartDragSource extends DartWidget implements IDragSource {
 
     public boolean _moveData() {
         return moveData;
+    }
+
+    static DartDragSource activeDrag;
+
+    private void sendDragStartResult(boolean doit) {
+        if (control == null)
+            return;
+        Event response = new Event();
+        response.doit = doit;
+        FlutterBridge.send((DartWidget) control.getImpl(), "DragDetect/dragStartResult", response);
+    }
+
+    Object lastDragData;
+
+    Object requestData(TransferData type) {
+        DNDEvent event = new DNDEvent();
+        event.widget = this.getApi();
+        event.dataType = type;
+        event.doit = true;
+        notifyListeners(DND.DragSetData, event);
+        lastDragData = event.data;
+        return event.data;
+    }
+
+    public void fireDragEnd(int detail) {
+        if (isDisposed())
+            return;
+        DNDEvent event = new DNDEvent();
+        event.widget = this.getApi();
+        event.detail = detail;
+        event.doit = true;
+        notifyListeners(DND.DragEnd, event);
+        lastDragData = null;
+        if (activeDrag == this)
+            activeDrag = null;
+    }
+
+    public Object _lastDragData() {
+        return lastDragData;
     }
 
     protected void _hookEvents() {

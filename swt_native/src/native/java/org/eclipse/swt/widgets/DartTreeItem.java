@@ -395,24 +395,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * </ul>
      */
     public Rectangle getBounds() {
-        checkWidget();
-        if (!((DartTree) parent.getImpl()).checkData(this.getApi()))
-            error(SWT.ERROR_WIDGET_DISPOSED);
-        ((DartTree) parent.getImpl()).checkItems();
-        if (image != null) {
-        }
-        Font font = null;
-        if (font == null)
-            font = this.font;
-        if (font == null)
-            font = ((DartControl) parent.getImpl()).font;
-        if (font == null)
-            font = ((DartControl) parent.getImpl()).defaultFont();
-        if (font.extraTraits != 0) {
-        } else {
-        }
-        // Inlined for performance.  Also prevents a NPE or potential loop, because cellSize() will
-        return null;
+        return Sizes.getBounds(this);
     }
 
     /**

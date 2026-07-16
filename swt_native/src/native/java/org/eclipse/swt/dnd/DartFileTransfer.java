@@ -81,8 +81,13 @@ public class DartFileTransfer extends DartByteArrayTransfer implements IFileTran
             DND.error(DND.ERROR_INVALID_DATA);
         }
         String[] files = (String[]) object;
-        int length = files.length;
-        for (int i = 0; i < length; i++) {
+        try (java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            java.io.DataOutputStream writeOut = new java.io.DataOutputStream(out)) {
+            writeOut.writeInt(files.length);
+            for (String file : files) writeOut.writeUTF(file);
+            super.javaToNative(out.toByteArray(), transferData);
+        } catch (java.io.IOException e) {
+            DND.error(DND.ERROR_INVALID_DATA);
         }
     }
 
@@ -99,7 +104,17 @@ public class DartFileTransfer extends DartByteArrayTransfer implements IFileTran
      */
     @Override
     public Object nativeToJava(TransferData transferData) {
-        return null;
+        byte[] bytes = (byte[]) super.nativeToJava(transferData);
+        if (bytes == null)
+            return null;
+        try (java.io.DataInputStream readIn = new java.io.DataInputStream(new java.io.ByteArrayInputStream(bytes))) {
+            int count = readIn.readInt();
+            String[] files = new String[count];
+            for (int i = 0; i < count; i++) files[i] = readIn.readUTF();
+            return files;
+        } catch (java.io.IOException e) {
+            return null;
+        }
     }
 
     @Override

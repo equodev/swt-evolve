@@ -20,6 +20,7 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import java.util.Objects;
 import org.eclipse.swt.custom.*;
+import dev.equo.swt.size.TreeSizes;
 import dev.equo.swt.*;
 
 /**
@@ -552,6 +553,7 @@ public class DartTree extends DartComposite implements ITree {
         if (parentItem != null && ((DartTreeItem) parentItem.getImpl()).itemCount == 1 && ((DartTreeItem) parentItem.getImpl()).expanded) {
         }
         ignoreExpand = false;
+        dirty();
         if (parentItem == null && this.itemCount == 1) {
             Event event = new Event();
             event.detail = 0;

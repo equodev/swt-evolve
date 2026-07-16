@@ -417,16 +417,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * </ul>
      */
     public Rectangle getBounds() {
-        checkWidget();
-        // TODO fully test on early and later versions of GTK
-        // shifted a bit too far right on later versions of GTK - however, old Tree also had this problem
-        if (!((DartTree) parent.getImpl()).checkData(this.getApi()))
-            error(SWT.ERROR_WIDGET_DISPOSED);
-        ((DartTree) parent.getImpl()).ignoreSize = true;
-        ((DartTree) parent.getImpl()).ignoreSize = false;
-        if (((DartTree) parent.getImpl()).columnCount > 0) {
-        }
-        return null;
+        return Sizes.getBounds(this);
     }
 
     /**

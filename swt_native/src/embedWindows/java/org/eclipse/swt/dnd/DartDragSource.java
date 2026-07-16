@@ -162,6 +162,8 @@ public class DartDragSource extends DartWidget implements IDragSource {
             DND.error(DND.ERROR_CANNOT_INIT_DRAG);
         }
         control.setData(DND.DRAG_SOURCE_KEY, this.getApi());
+        this.bridge = ((DartWidget) control.getImpl()).getBridge();
+        _hookEvents();
         controlListener = event -> {
             if (event.type == SWT.Dispose) {
                 if (!DartDragSource.this.getApi().isDisposed()) {
@@ -504,6 +506,45 @@ public class DartDragSource extends DartWidget implements IDragSource {
 
     public int _dataEffect() {
         return dataEffect;
+    }
+
+    static DartDragSource activeDrag;
+
+    private void sendDragStartResult(boolean doit) {
+        if (control == null)
+            return;
+        Event response = new Event();
+        response.doit = doit;
+        FlutterBridge.send((DartWidget) control.getImpl(), "DragDetect/dragStartResult", response);
+    }
+
+    Object lastDragData;
+
+    Object requestData(TransferData type) {
+        DNDEvent event = new DNDEvent();
+        event.widget = this.getApi();
+        event.dataType = type;
+        event.doit = true;
+        notifyListeners(DND.DragSetData, event);
+        lastDragData = event.data;
+        return event.data;
+    }
+
+    public void fireDragEnd(int detail) {
+        if (isDisposed())
+            return;
+        DNDEvent event = new DNDEvent();
+        event.widget = this.getApi();
+        event.detail = detail;
+        event.doit = true;
+        notifyListeners(DND.DragEnd, event);
+        lastDragData = null;
+        if (activeDrag == this)
+            activeDrag = null;
+    }
+
+    public Object _lastDragData() {
+        return lastDragData;
     }
 
     protected void _hookEvents() {

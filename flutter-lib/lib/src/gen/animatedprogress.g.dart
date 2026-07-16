@@ -25,6 +25,8 @@ VAnimatedProgress _$VAnimatedProgressFromJson(Map<String, dynamic> json) =>
           ? null
           : VCursor.fromJson(json['cursor'] as Map<String, dynamic>)
       ..dragDetect = json['dragDetect'] as bool?
+      ..dragSource = json['dragSource'] as bool?
+      ..dropTargetId = (json['dropTargetId'] as num?)?.toInt()
       ..enabled = json['enabled'] as bool?
       ..font = json['font'] == null
           ? null
@@ -77,6 +79,8 @@ Map<String, dynamic> _$VAnimatedProgressToJson(VAnimatedProgress instance) =>
       'capture': ?instance.capture,
       'cursor': ?instance.cursor,
       'dragDetect': ?instance.dragDetect,
+      'dragSource': ?instance.dragSource,
+      'dropTargetId': ?instance.dropTargetId,
       'enabled': ?instance.enabled,
       'font': ?instance.font,
       'foreground': ?instance.foreground,

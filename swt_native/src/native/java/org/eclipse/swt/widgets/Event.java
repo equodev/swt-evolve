@@ -398,4 +398,19 @@ public class Event {
         //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$
         return "Event {type=" + type + " " + widget + " time=" + time + " data=" + data + " x=" + x + " y=" + y + " width=" + width + " height=" + height + " detail=" + detail + "}";
     }
+
+    @JsonAttribute()
+    public int feedback;
+
+    @JsonAttribute()
+    public int operations;
+
+    @JsonAttribute()
+    public int currentDataTypeId;
+
+    @JsonAttribute()
+    public Image dragImage;
+
+    @JsonAttribute()
+    public long itemId;
 }

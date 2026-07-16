@@ -13,6 +13,7 @@ import './measure_scale.dart' as scale;
 import './measure_slider.dart' as slider;
 import './measure_tableitem.dart' as tableitem;
 import './measure_text.dart' as text;
+import './measure_treeitem.dart' as treeitem;
 
 void main() {
   final measurer = WidgetMeasurer();
@@ -29,6 +30,7 @@ void main() {
   slider.setupCases(measurer);
   tableitem.setupCases(measurer);
   text.setupCases(measurer);
+  treeitem.setupCases(measurer);
 
   print('Generated ${measurer.testCases.length} total test cases');
   // Run single app with all test cases

@@ -35,7 +35,14 @@ class UserEventCallback {
   OnSuccessCallback<dynamic> onSuccess;
   OnErrorCallback? onError;
   CallbackArgs? args;
-  UserEventCallback({this.id, required this.onSuccess, this.onError, this.args});
+  final Object token;
+  UserEventCallback({
+    this.id,
+    required this.onSuccess,
+    this.onError,
+    this.args,
+    required this.token,
+  });
 }
 
 /// Transport-agnostic binary comm protocol, shared by the desktop (`dart:io`) and
@@ -158,17 +165,23 @@ abstract class EquoCommBase {
     return Future.value();
   }
 
-  void on(String actionId, OnSuccessCallback<dynamic> onSuccess,
+  Object on(String actionId, OnSuccessCallback<dynamic> onSuccess,
       [OnErrorCallback? onError, CallbackArgs? args]) {
-    _handlers[actionId] =
-        UserEventCallback(onSuccess: onSuccess, onError: onError, args: args);
+    final token = Object();
+    _handlers[actionId] = UserEventCallback(
+      onSuccess: onSuccess,
+      onError: onError,
+      args: args,
+      token: token,
+    );
     final pending = _pending.remove(actionId);
     if (pending != null) _deliver(actionId, onSuccess, pending);
+    return token;
   }
 
   /// Typed handler: decodes the payload into the widget value object before delivery.
-  void onWidget<V extends VWidget>(String actionId, CommCallback<V> onSuccess) {
-    on(actionId, (payload) => onSuccess(mapWidgetValue(payload) as V));
+  Object onWidget<V extends VWidget>(String actionId, CommCallback<V> onSuccess) {
+    return on(actionId, (payload) => onSuccess(mapWidgetValue(payload) as V));
   }
 
   /// Raw-bytes receive: callback gets the raw frame body (no JSON decode).
@@ -176,7 +189,8 @@ abstract class EquoCommBase {
     _rawHandlers[actionId] = callback;
   }
 
-  void remove(String actionId) {
+  void remove(String actionId, [Object? token]) {
+    if (token != null && _handlers[actionId]?.token != token) return;
     _handlers.remove(actionId);
     _pending.remove(actionId);
     _rawHandlers.remove(actionId);

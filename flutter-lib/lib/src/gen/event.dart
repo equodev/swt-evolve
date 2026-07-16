@@ -1,5 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 import '../gen/gc.dart';
+import '../gen/image.dart';
 import '../gen/touch.dart';
 import '../gen/widget.dart';
 
@@ -13,16 +14,21 @@ class VEvent {
   int? button;
   int? character;
   int? count;
+  int? currentDataTypeId;
   int? detail;
   bool? doit;
+  VImage? dragImage;
   int? end;
+  int? feedback;
   VGC? gc;
   int? height;
   int? index;
   VWidget? item;
+  int? itemId;
   int? keyCode;
   int? keyLocation;
   double? magnification;
+  int? operations;
   double? rotation;
   List<int>? segments;
   List<int>? segmentsChars;

@@ -154,6 +154,8 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
     public DartDropTarget(Control control, int style, DropTarget api) {
         super(control, checkStyle(style), api);
         this.control = control;
+        this.bridge = ((DartWidget) control.getImpl()).getBridge();
+        _hookEvents();
     }
 
     static int checkStyle(int style) {
@@ -642,6 +644,158 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
 
     public long _dropController() {
         return dropController;
+    }
+
+    @Override
+    public void sendEvent(int eventType, Event event) {
+        if (eventType == DND.Drop) {
+            DNDEvent dropEvent = toDropEvent(event);
+            super.sendEvent(DND.Drop, dropEvent);
+            notifyDragSourceOfDragEnd(dropEvent.detail);
+            return;
+        }
+        if (eventType == DND.DragEnter || eventType == DND.DragOver || eventType == DND.DragOperationChanged || eventType == DND.DragLeave || eventType == DND.DropAccept) {
+            DNDEvent negotiationEvent = toNegotiationEvent(eventType, event);
+            super.sendEvent(eventType, negotiationEvent);
+            selectedDataType = negotiationEvent.dataType;
+            selectedOperation = negotiationEvent.detail;
+            dndFeedback = negotiationEvent.feedback;
+            sendNegotiationResult();
+            return;
+        }
+        super.sendEvent(eventType, event);
+    }
+
+    int dndFeedback = DND.FEEDBACK_NONE;
+
+    private void sendNegotiationResult() {
+        Event response = new Event();
+        response.detail = selectedOperation;
+        response.feedback = dndFeedback;
+        response.currentDataTypeId = selectedDataType != null ? (int) selectedDataType.type : 0;
+        FlutterBridge.send(this, "Drop/negotiationResult", response);
+    }
+
+    private DNDEvent toNegotiationEvent(int eventType, Event e) {
+        DNDEvent event = new DNDEvent();
+        event.widget = this.getApi();
+        event.time = e.time;
+        event.x = e.x;
+        event.y = e.y;
+        event.item = e.item != null ? e.item : resolveItem(e);
+        event.operations = getStyle();
+        event.dataTypes = computeMutualDataTypes(matchingDragSource());
+        event.dataType = selectedDataType != null ? selectedDataType : (event.dataTypes.length > 0 ? event.dataTypes[0] : null);
+        event.detail = eventType == DND.DragEnter ? DND.DROP_DEFAULT : (selectedOperation != DND.DROP_NONE ? selectedOperation : DND.DROP_DEFAULT);
+        event.feedback = dndFeedback;
+        return event;
+    }
+
+    private TransferData[] computeMutualDataTypes(DartDragSource source) {
+        if (source == null)
+            return new TransferData[0];
+        java.util.List<TransferData> mutual = new java.util.ArrayList<>();
+        for (Transfer target : transferAgents) {
+            if (target == null)
+                continue;
+            for (int targetTypeId : target.getTypeIds()) {
+                for (Transfer offered : source._transferAgents()) {
+                    if (offered == null)
+                        continue;
+                    for (int offeredTypeId : offered.getTypeIds()) {
+                        if (targetTypeId == offeredTypeId) {
+                            TransferData data = new TransferData();
+                            data.type = targetTypeId;
+                            mutual.add(data);
+                        }
+                    }
+                }
+            }
+        }
+        return mutual.toArray(new TransferData[0]);
+    }
+
+    private DNDEvent toDropEvent(Event e) {
+        DNDEvent event = new DNDEvent();
+        event.widget = this.getApi();
+        event.time = e.time;
+        event.x = e.x;
+        event.y = e.y;
+        event.doit = true;
+        int detail = e.detail != DND.DROP_NONE ? e.detail : selectedOperation;
+        event.detail = detail == DND.DROP_DEFAULT ? resolveDefaultOperation() : detail;
+        event.item = e.item != null ? e.item : resolveItem(e);
+        DartDragSource source = matchingDragSource();
+        TransferData[] mutual = computeMutualDataTypes(source);
+        TransferData type = selectedDataType != null ? selectedDataType : (mutual.length > 0 ? mutual[0] : null);
+        event.dataType = type;
+        if (source != null && type != null) {
+            event.data = source.requestData(type);
+        }
+        return event;
+    }
+
+    private int resolveDefaultOperation() {
+        int operations = getStyle();
+        if ((operations & DND.DROP_MOVE) != 0)
+            return DND.DROP_MOVE;
+        if ((operations & DND.DROP_COPY) != 0)
+            return DND.DROP_COPY;
+        if ((operations & DND.DROP_LINK) != 0)
+            return DND.DROP_LINK;
+        return DND.DROP_NONE;
+    }
+
+    private Widget resolveItem(Event e) {
+        if (e.itemId != 0) {
+            Widget found = findItemById(control, e.itemId);
+            if (found != null)
+                return found;
+        }
+        if (control instanceof Table table && e.index >= 0 && e.index < table.getItemCount()) {
+            return table.getItem(e.index);
+        } else if (control instanceof Tree tree && e.index >= 0 && e.index < tree.getItemCount()) {
+            return tree.getItem(e.index);
+        }
+        return null;
+    }
+
+    private Widget findItemById(Control control, long id) {
+        if (control instanceof Table table) {
+            for (TableItem item : table.getItems()) {
+                if (FlutterBridge.id(item) == id)
+                    return item;
+            }
+        } else if (control instanceof Tree tree) {
+            for (TreeItem item : tree.getItems()) {
+                Widget found = findTreeItemById(item, id);
+                if (found != null)
+                    return found;
+            }
+        }
+        return null;
+    }
+
+    private Widget findTreeItemById(TreeItem item, long id) {
+        if (FlutterBridge.id(item) == id)
+            return item;
+        for (TreeItem child : item.getItems()) {
+            Widget found = findTreeItemById(child, id);
+            if (found != null)
+                return found;
+        }
+        return null;
+    }
+
+    private void notifyDragSourceOfDragEnd(int detail) {
+        DartDragSource source = matchingDragSource();
+        if (source != null)
+            source.fireDragEnd(detail);
+    }
+
+    private DartDragSource matchingDragSource() {
+        DartDragSource source = DartDragSource.activeDrag;
+        return source != null && !source.isDisposed() ? source : null;
     }
 
     protected void _hookEvents() {
