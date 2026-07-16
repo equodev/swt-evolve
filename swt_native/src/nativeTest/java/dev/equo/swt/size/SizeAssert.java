@@ -17,9 +17,14 @@ public class SizeAssert {
     /**
      * Seconds a measurement round-trip is given before the test gives up. Generous on purpose: this
      * only bounds how long a genuinely stuck future takes to fail, since the wait loop exits as soon
-     * as the result lands. At 1s a merely slow response on a loaded CI runner read as a failure.
+     * as the result lands — so a bigger number costs a passing run nothing, while a small one turns a
+     * merely slow response into a false failure. It read as a failure at 1s, and still did at 5s: a
+     * CI runner starved for CPU took ~5.5s for one Futura measurement whose result was correct and
+     * arrived intact right after the deadline. 20s is ~4x the worst round-trip seen under that load.
+     *
+     * <p>Override with {@code -Dsize.wait.seconds} to debug a genuinely stuck measurement locally.
      */
-    public static final int WAIT = 5;
+    public static final int WAIT = Integer.getInteger("size.wait.seconds", 20);
     protected TestInfo info;
 
     @BeforeEach
@@ -32,7 +37,8 @@ public class SizeAssert {
         while (!result.isDone() && System.currentTimeMillis() < timeout) {
             bridge.pumpClient();
         }
-        assertThat(result).as("future did not compete in %s", WAIT).isDone();
+        assertThat(result).as("measurement did not complete within %ss — the round-trip timed out, "
+                + "which says nothing about the size being right", WAIT).isDone();
         try {
             return result.get();
         } catch (Exception e) {
