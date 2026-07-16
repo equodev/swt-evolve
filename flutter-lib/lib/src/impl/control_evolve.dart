@@ -169,6 +169,11 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     );
   }
 
+  /// Whether [wrap] forwards KeyDown events to Java. Widgets that run their own keyboard
+  /// pipeline and send Key events themselves (e.g. StyledText) override this to false —
+  /// otherwise every keystroke reaches SWT KeyDown listeners twice.
+  bool get forwardsKeysFromWrap => true;
+
   Widget wrap(Widget widget) {
     if (wrapsWholeWidgetForDnd) {
       widget = wrapDnd(widget);
@@ -222,18 +227,20 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     // Wrap with GC overlay if needed
     widget = wrapWithGCOverlay(widget);
 
-    widget = Focus(
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent) {
-          final vEvent = mapNewKeyEventToSwt(event);
-          if (vEvent.keyCode != 0 || vEvent.character != 0) {
-            this.widget.sendKeyKeyDown(state, vEvent);
+    if (forwardsKeysFromWrap) {
+      widget = Focus(
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent) {
+            final vEvent = mapNewKeyEventToSwt(event);
+            if (vEvent.keyCode != 0 || vEvent.character != 0) {
+              this.widget.sendKeyKeyDown(state, vEvent);
+            }
           }
-        }
-        return KeyEventResult.ignored;
-      },
-      child: widget,
-    );
+          return KeyEventResult.ignored;
+        },
+        child: widget,
+      );
+    }
 
     widget = Listener(
       onPointerDown: (e) {

@@ -8,6 +8,24 @@ import org.eclipse.swt.graphics.Rectangle;
 
 public class ControlHelper {
 
+    // True while a Flutter-originated KeyDown is being dispatched. Widgets that edit content on
+    // KeyDown (StyledText.handleKey) consult it to skip re-applying what the Flutter editor
+    // already inserted; Java-simulated keys (upstream tests, apps) keep the full SWT behavior.
+    private static final ThreadLocal<Boolean> FLUTTER_KEY = ThreadLocal.withInitial(() -> false);
+
+    public static void sendFlutterKeyDown(DartWidget widget, Event event) {
+        FLUTTER_KEY.set(true);
+        try {
+            widget.sendEvent(SWT.KeyDown, event);
+        } finally {
+            FLUTTER_KEY.set(false);
+        }
+    }
+
+    public static boolean isFlutterOriginatedKey() {
+        return FLUTTER_KEY.get();
+    }
+
     private static Control walkToSwtAncestor(Control control, int[] offset) {
         Control current = control;
         while (current != null && (current.getImpl() instanceof DartControl)) {

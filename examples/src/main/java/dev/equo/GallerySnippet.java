@@ -80,9 +80,11 @@ public class GallerySnippet {
         labelGroup.setLayout(new RowLayout(SWT.HORIZONTAL));
         Label label = new Label(labelGroup, SWT.NONE);
         label.setText("A plain label");
+        // The anchor spans the whole label so a click anywhere on the widget hits it (the
+        // E2E suite clicks the Semantics node's center; only the anchor span is tappable).
         Link link = new Link(labelGroup, SWT.NONE);
-        link.setText("A <a href=\"https://equo.dev\">link</a> widget");
-        link.addSelectionListener(widgetSelectedAdapter(e -> System.out.println("Link clicked: " + e.text)));
+        link.setText("<a href=\"https://equo.dev\">A link to equo.dev</a>");
+        link.addSelectionListener(widgetSelectedAdapter(e -> status.setText("Link clicked: " + e.text)));
 
         // Text / StyledText
         Group textGroup = section(root, "Text / StyledText");
@@ -210,6 +212,17 @@ public class GallerySnippet {
         expandData.heightHint = 140;
         expandGroup.setLayoutData(expandData);
         ExpandBar expandBar = new ExpandBar(expandGroup, SWT.NONE);
+        expandBar.addExpandListener(new org.eclipse.swt.events.ExpandAdapter() {
+            @Override
+            public void itemExpanded(org.eclipse.swt.events.ExpandEvent e) {
+                status.setText(((ExpandItem) e.item).getText() + " expanded");
+            }
+
+            @Override
+            public void itemCollapsed(org.eclipse.swt.events.ExpandEvent e) {
+                status.setText(((ExpandItem) e.item).getText() + " collapsed");
+            }
+        });
         for (int i = 0; i < 2; i++) {
             ExpandItem item = new ExpandItem(expandBar, SWT.NONE);
             item.setText("Expand " + i);
@@ -309,12 +322,8 @@ public class GallerySnippet {
             tree.getItem(0).setExpanded(true);
             ctab.setSelection(0);
             tabFolder.setSelection(0);
-            // Double-set to force a push: a Dart-side expand never updates the Java item's
-            // expanded field (the Expand event carries no index), so a single setExpanded to
-            // the desired value can be a Java-side no-op that pushes nothing to Flutter.
             ExpandItem[] barItems = expandBar.getItems();
             for (int i = 0; i < barItems.length; i++) {
-                barItems[i].setExpanded(i != 0);
                 barItems[i].setExpanded(i == 0);
             }
             status.setText("Status: (no interaction yet)");

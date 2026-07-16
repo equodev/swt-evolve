@@ -868,10 +868,14 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     return StyleBits(state.style).has(SWT.VIRTUAL);
   }
 
+  /// [notifyJava] defaults to true so keyboard-driven callers emit the SWT Selection
+  /// event; row-tap/checkbox sites pass false because they send their own richer event
+  /// (button, count, stateMask) — see treeitem_evolve.
   void handleTreeItemSelection(
     Object itemId, {
     bool isCtrlPressed = false,
     bool isShiftPressed = false,
+    bool notifyJava = true,
   }) {
     if (state.enabled != true) return;
     final item = _findTreeItemById(itemId);
@@ -887,6 +891,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         _handleSingleSelection(item, 0);
       }
     });
+    if (notifyJava) {
+      widget.sendSelectionSelection(state, _createDefaultEvent(itemId));
+    }
   }
 
   void _handleSingleSelection(VTreeItem item, int flatIndex) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../gen/event.dart';
 import '../gen/expandbar.dart';
 import '../gen/expanditem.dart';
 import '../gen/widget.dart';
@@ -141,10 +142,14 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
       mapWidgetFromValue: mapWidgetFromValue,
       onExpansionChanged: (expanded) {
         expandItem.expanded = expanded;
+        // The index lets Java resolve WHICH item changed (ExpandBarHelper.sendExpand
+        // updates the item's expanded state before firing the SWT event).
+        final event = VEvent()
+          ..index = state.items?.indexOf(expandItem) ?? -1;
         if (expanded) {
-          widget.sendExpandExpand(state, null);
+          widget.sendExpandExpand(state, event);
         } else {
-          widget.sendExpandCollapse(state, null);
+          widget.sendExpandCollapse(state, event);
         }
       },
       parentBackground: state.background,

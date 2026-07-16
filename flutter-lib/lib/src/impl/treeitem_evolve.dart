@@ -55,7 +55,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       widget: parentTree,
       state: parentTreeValue,
       onDragStarted: () {
-        ctx.treeImpl?.handleTreeItemSelection(state.id);
+        ctx.treeImpl?.handleTreeItemSelection(state.id, notifyJava: false);
         final e = _createEvent();
         e.count = 1;
         e.button = 1;
@@ -721,7 +721,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               state.id,
               newCheckedState,
             );
-            _context?.treeImpl?.handleTreeItemSelection(state.id);
+            _context?.treeImpl?.handleTreeItemSelection(state.id, notifyJava: false);
             final e = _createEvent(detail: SWT.CHECK);
             e.doit = newCheckedState;
             _context?.parentTree.sendSelectionSelection(
@@ -922,7 +922,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               // double-click): select the item, keeping an existing
               // multi-selection it belongs to, and open the context menu.
               if (!selected) {
-                _context?.treeImpl?.handleTreeItemSelection(state.id);
+                _context?.treeImpl?.handleTreeItemSelection(state.id, notifyJava: false);
                 final e = _createEvent();
                 e.count = 1;
                 e.button = 1;
@@ -961,6 +961,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               state.id,
               isCtrlPressed: isCtrlPressed,
               isShiftPressed: isShiftPressed,
+              notifyJava: false,
             );
 
             int stateMask = 0;
