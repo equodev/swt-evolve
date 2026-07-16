@@ -1138,6 +1138,8 @@ class WidgetMeasurer {
 
       // Detect icon-type image: image width ≈ text height for all cases (image renders at fontSize).
       bool isIconImage = false;
+      bool isFixedIconSize = false;
+      double fixedIconWidth = 16.0;
       final iconPairs = styleResults.where((r) =>
         r.discoveredComponents.containsKey('image') &&
         r.discoveredComponents.containsKey('text')
@@ -1149,10 +1151,42 @@ class WidgetMeasurer {
           final txtH = r.discoveredComponents['text']!['height'] as double;
           if (txtH > 0 && (imgW / txtH - 1.0).abs() < 0.3) iconCount++;
         }
-        isIconImage = iconCount > iconPairs.length * 0.5;
+        isIconImage = iconCount >= iconPairs.length * 0.5;
+
+        if (isIconImage) {
+          // Distinguish font-scaled icons (TableItem) from fixed-size ones (TreeItem) by checking whether image width varies across discovered font sizes.
+          final byFontSize = <int, List<double>>{};
+          for (var r in iconPairs) {
+            final imgW = r.discoveredComponents['image']!['width'] as double;
+            final fontSize = (r.discoveredComponents['text']!['textStyle']?['fontSize'] as double?)?.round();
+            if (fontSize != null) {
+              byFontSize.putIfAbsent(fontSize, () => []).add(imgW);
+            }
+          }
+          if (byFontSize.length > 1) {
+            final avgByFontSize = byFontSize.map(
+              (k, v) => MapEntry(k, v.reduce((a, b) => a + b) / v.length),
+            );
+            final widths = avgByFontSize.values.toList();
+            final maxW = widths.reduce((a, b) => a > b ? a : b);
+            final minW = widths.reduce((a, b) => a < b ? a : b);
+            if ((maxW - minW).abs() < 2.0) {
+              isFixedIconSize = true;
+              fixedIconWidth = widths.reduce((a, b) => a + b) / widths.length;
+            }
+          }
+        }
       }
       constants['isIconImage'] = isIconImage;
-      if (isIconImage) print('  Icon-type image detected (size ≈ fontSize)');
+      constants['isFixedIconSize'] = isFixedIconSize;
+      constants['fixedIconWidth'] = fixedIconWidth;
+      if (isIconImage) {
+        print(
+          isFixedIconSize
+              ? '  Icon-type image detected (fixed size ≈ $fixedIconWidth, independent of font)'
+              : '  Icon-type image detected (size ≈ fontSize)',
+        );
+      }
 
       if (imageAffectsWidth || imageAffectsHeight) {
         print(
@@ -1288,6 +1322,13 @@ class WidgetMeasurer {
     buffer.writeln('import dev.equo.swt.FontMetricsUtil;');
     final isIconImageWidget = hasAnyImageSupport &&
         analyses.any((a) => a.derivedConstants['isIconImage'] == true);
+    final isFixedIconSizeWidget = isIconImageWidget &&
+        analyses.any((a) => a.derivedConstants['isFixedIconSize'] == true);
+    final fixedIconWidthValue = isFixedIconSizeWidget
+        ? analyses
+            .firstWhere((a) => a.derivedConstants['isFixedIconSize'] == true)
+            .derivedConstants['fixedIconWidth']
+        : null;
     if (hasAnyImageSupport && !isIconImageWidget) {
       buffer.writeln('import dev.equo.swt.ImageMetricUtil;');
     }
@@ -1457,7 +1498,9 @@ class WidgetMeasurer {
           );
         }
         if (hasAnyImageSupport) {
-          if (isIconImageWidget) {
+          if (isFixedIconSizeWidget) {
+            buffer.writeln('${indent}m.image = computeImage(widget);');
+          } else if (isIconImageWidget) {
             buffer.writeln('${indent}m.image = computeImage(widget, m.textStyle);');
           } else {
             buffer.writeln('${indent}m.image = computeImage(widget);');
@@ -1472,11 +1515,11 @@ class WidgetMeasurer {
         final textX = isVertical ? 'm.text.y()' : 'm.text.x()';
         final textY = isVertical ? 'm.text.x()' : 'm.text.y()';
 
-        // Width calculation: for horizontal layout, conditionally include image spacing when BOTH image AND text exist
+        // Include image spacing whenever the image exists — it's the icon's own margin, not conditioned on sibling text.
         String textWidthExpr;
         if (imageAffectsWidth && hasImageSpacing) {
           textWidthExpr =
-              '($textX + m.image.x() + (m.image.x() > 0 && $textX > 0 ? $styleName.IMAGE_SPACING : 0))';
+              '($textX + m.image.x() + (m.image.x() > 0 ? $styleName.IMAGE_SPACING : 0))';
         } else if (imageAffectsWidth) {
           textWidthExpr = '($textX + m.image.x())';
         } else {
@@ -1490,9 +1533,9 @@ class WidgetMeasurer {
             // Horizontal layout - no spacing needed in height
             textHeightExpr = 'Math.max($textY, m.image.y())';
           } else if (hasImageSpacing) {
-            // Vertical layout with conditional spacing - only when BOTH image AND text exist
+            // Same reasoning as the width case above.
             textHeightExpr =
-                '($textY + m.image.y() + (m.image.y() > 0 && $textY > 0 ? $styleName.IMAGE_SPACING : 0))';
+                '($textY + m.image.y() + (m.image.y() > 0 ? $styleName.IMAGE_SPACING : 0))';
           } else {
             // Vertical layout without spacing
             textHeightExpr = '($textY + m.image.y())';
@@ -1501,12 +1544,7 @@ class WidgetMeasurer {
           textHeightExpr = textY;
         }
 
-        // // Make padding conditional on text/image existence when empty text doesn't affect sizing
-        // final emptyTextAffectsSizing =
-        //     constants['emptyTextAffectsSizing'] as bool;
-
-        // Width: conditionally add padding when ANY content exists (image or text)
-        // Since IMAGE_SPACING only applies when BOTH exist, HORIZONTAL_PADDING must handle image-only cases
+        // HORIZONTAL_PADDING applies whenever any content (image or text) exists.
         final widthCondition = (hasAnyImageSupport && imageAffectsWidth)
             ? '($textX > 0 || m.image.x() > 0)'
             : '$textX > 0';
@@ -1561,7 +1599,7 @@ class WidgetMeasurer {
             buffer.writeln('${indent}    height = Math.max($hExpr, $styleName.MIN_HEIGHT);');
           } else {
             if (imageAffectsWidth) {
-              final sp = hasImageSpacing ? '(imageWidth > 0 && m.text.x() > 0) ? $styleName.IMAGE_SPACING : 0' : '0';
+              final sp = hasImageSpacing ? 'imageWidth > 0 ? $styleName.IMAGE_SPACING : 0' : '0';
               buffer.writeln('${indent}    double imageWidth = m.image.x();');
               buffer.writeln('${indent}    double imageSpacing = $sp;');
               final pad = useHorizontalPadding ? '(m.text.x() > 0 || imageWidth > 0) ? $styleName.HORIZONTAL_PADDING : 0' : '0';
@@ -1763,7 +1801,17 @@ class WidgetMeasurer {
 
     // Generate computeImage helper if any style supports images
     if (hasAnyImageSupport) {
-      if (isIconImageWidget) {
+      if (isFixedIconSizeWidget) {
+        // Image renders as an icon at a fixed theme size, independent of the widget's font.
+        buffer.writeln(
+          '    private static PointD computeImage(Dart$widgetType widget) {',
+        );
+        buffer.writeln('        if (widget.getImage() == null) return PointD.zero;');
+        buffer.writeln(
+          '        return new PointD($fixedIconWidthValue, $fixedIconWidthValue);',
+        );
+        buffer.writeln('    }');
+      } else if (isIconImageWidget) {
         // Image renders as icon at fontSize — use textStyle.size() instead of pixel dimensions.
         buffer.writeln(
           '    private static PointD computeImage(Dart$widgetType widget, TextStyle ts) {',

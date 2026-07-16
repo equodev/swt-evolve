@@ -164,6 +164,7 @@ public abstract class DartByteArrayTransfer extends DartTransfer implements IByt
         if (!checkByteArray(object) && !isSupportedType(transferData)) {
             DND.error(DND.ERROR_INVALID_DATA);
         }
+        transferData.data = object;
     }
 
     /**
@@ -178,7 +179,9 @@ public abstract class DartByteArrayTransfer extends DartTransfer implements IByt
      */
     @Override
     public Object nativeToJava(TransferData transferData) {
-        return null;
+        if (!isSupportedType(transferData))
+            return null;
+        return transferData.data;
     }
 
     boolean checkByteArray(Object object) {

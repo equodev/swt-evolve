@@ -74,6 +74,7 @@ public class DartURLTransfer extends DartByteArrayTransfer implements IURLTransf
         if (!checkURL(object) || !isSupportedType(transferData)) {
             DND.error(DND.ERROR_INVALID_DATA);
         }
+        super.javaToNative(((String) object).getBytes(java.nio.charset.StandardCharsets.UTF_8), transferData);
     }
 
     /**
@@ -88,7 +89,8 @@ public class DartURLTransfer extends DartByteArrayTransfer implements IURLTransf
      */
     @Override
     public Object nativeToJava(TransferData transferData) {
-        return null;
+        byte[] bytes = (byte[]) super.nativeToJava(transferData);
+        return bytes == null ? null : new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
     }
 
     @Override

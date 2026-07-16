@@ -84,6 +84,10 @@ public class Sizes {
         return TableItemSizes.computeSize(widget, wHint, hHint, changed);
     }
 
+    public static Point computeSize(DartTreeItem widget, int wHint, int hHint, boolean changed) {
+        return TreeItemSizes.computeSize(widget, wHint, hHint, changed);
+    }
+
     private static final int TABLE_CELL_PADDING = 16;
     private static final int TABLE_CELL_MARGIN = 2;
 
@@ -709,6 +713,20 @@ public class Sizes {
                 addVisible(result, child);
             }
         }
+    }
+
+    public static Rectangle getBounds(DartTreeItem item) {
+        Tree parent = item._parent();
+        DartTree dartTree = (DartTree) parent.getImpl();
+        int itemHeight = dartTree.getItemHeight();
+        if (itemHeight <= 0) itemHeight = 20;
+        List<TreeItem> flat = flattenVisibleTreeItems(dartTree);
+        int rowIndex = flat.indexOf(item.getApi());
+        if (rowIndex == -1) return new Rectangle(0, 0, 0, 0);
+        int y = rowIndex * itemHeight;
+        Rectangle parentBounds = parent.getBounds();
+        int width = parentBounds != null ? parentBounds.width : 100;
+        return new Rectangle(0, y, width, itemHeight);
     }
 
     public static Rectangle getBounds(DartTreeItem item, int index) {

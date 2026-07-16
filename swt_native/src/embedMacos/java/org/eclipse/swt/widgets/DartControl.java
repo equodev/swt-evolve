@@ -2644,6 +2644,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         getBridge().setBounds(this, bounds);
         if (sizeChanged)
             resized();
+        if (parent != null && parent.getImpl() instanceof DartWidget pw)
+            pw.dirty();
         ((SwtDisplay) display.getImpl()).ignoreFocusControl = oldIgnoreFocusControl;
         ;
     }
@@ -4131,6 +4133,21 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (textDirection == 0)
             return false;
         return true;
+    }
+
+    public boolean getDragSource() {
+        Widget w = getApi();
+        Object ds = w.isDisposed() ? null : w.getData(org.eclipse.swt.dnd.DND.DRAG_SOURCE_KEY);
+        return (ds instanceof org.eclipse.swt.dnd.DragSource) && !((org.eclipse.swt.dnd.DragSource) ds).isDisposed();
+    }
+
+    public Long getDropTargetId() {
+        Widget w = getApi();
+        Object dt = w.isDisposed() ? null : w.getData(org.eclipse.swt.dnd.DND.DROP_TARGET_KEY);
+        if (dt instanceof org.eclipse.swt.dnd.DropTarget && !((org.eclipse.swt.dnd.DropTarget) dt).isDisposed() && ((org.eclipse.swt.dnd.DropTarget) dt).getImpl() instanceof org.eclipse.swt.dnd.DartDropTarget) {
+            return FlutterBridge.id(((org.eclipse.swt.dnd.DropTarget) dt).getImpl());
+        }
+        return null;
     }
 
     public FlutterBridge getBridge() {

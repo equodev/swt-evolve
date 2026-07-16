@@ -278,8 +278,10 @@ public class DartText extends DartScrollable implements IText {
         }
         setSelection(getCharCount());
         insertEditText(string);
-        if (string.length() != 0)
+        if (string.length() != 0) {
+            dirty();
             sendEvent(SWT.Modify);
+        }
     }
 
     static int checkStyle(int style) {
@@ -1018,29 +1020,16 @@ public class DartText extends DartScrollable implements IText {
             int _l = getCharCount();
             selection = new Point(Math.min(selection.x, _l), Math.min(selection.y, _l));
         }
-        if (hasFocus() && hiddenText == null) {
-            if (textLimit != Text.LIMIT) {
-                int charCount = getCharCount();
-                int selectionLength = selection.y - selection.x;
-                if (charCount - selectionLength + length > textLimit) {
-                    length = textLimit - charCount + selectionLength;
-                    length = Math.max(0, length);
-                }
+        String oldText = getText();
+        if (textLimit != Text.LIMIT) {
+            int charCount = oldText.length();
+            if (charCount - (selection.y - selection.x) + length > textLimit) {
+                string = string.substring(0, textLimit - charCount + (selection.y - selection.x));
             }
-            char[] buffer = new char[length];
-            string.getChars(0, buffer.length, buffer, 0);
-        } else {
-            String oldText = getText();
-            if (textLimit != Text.LIMIT) {
-                int charCount = oldText.length();
-                if (charCount - (selection.y - selection.x) + length > textLimit) {
-                    string = string.substring(0, textLimit - charCount + (selection.y - selection.x));
-                }
-            }
-            String newText = oldText.substring(0, selection.x) + string + oldText.substring(selection.y);
-            setEditText(newText);
-            setSelection(selection.x + string.length());
         }
+        String newText = oldText.substring(0, selection.x) + string + oldText.substring(selection.y);
+        setEditText(newText);
+        setSelection(selection.x + string.length());
     }
 
     @Override

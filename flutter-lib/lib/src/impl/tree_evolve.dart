@@ -5,6 +5,7 @@ import 'package:swtflutter/src/gen/treecolumn.dart';
 import 'package:swtflutter/src/gen/widget.dart';
 import 'package:swtflutter/src/gen/widgets.dart';
 import '../gen/font.dart';
+import '../gen/droptarget.dart';
 import '../impl/composite_evolve.dart';
 import '../impl/widget_config.dart';
 import '../gen/swt.dart';
@@ -13,6 +14,7 @@ import '../gen/treeitem.dart';
 import '../gen/event.dart';
 import '../comm/comm.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
+import 'utils/dnd_utils.dart';
 import 'utils/widget_utils.dart';
 import '../gen/rectangle.dart';
 import '../testing/tree_test_registry.dart';
@@ -37,6 +39,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   ScrollController? _horizontalController;
   ScrollController? _verticalController;
   final FocusNode _focusNode = FocusNode();
+
+  @override
+  bool get wrapsWholeWidgetForDnd => false;
 
   @override
   void initState() {
@@ -168,7 +173,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   @override
   Widget build(BuildContext context) {
     _cachedWidgetTheme = Theme.of(context).extension<TreeThemeExtension>();
-    return super.wrap(createTreeView());
+    return super.wrap(wrapTreeForDrop(createTreeView()));
   }
 
   @override
@@ -1150,6 +1155,53 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     // Get the item at that flat index
     final item = _getItemAtFlatIndex(itemIndex);
     return item?.id;
+  }
+
+  final HoverTracker<int> dragHover = HoverTracker<int>();
+
+  Widget wrapTreeForDrop(Widget content) {
+    Offset? localOffset(DragTargetDetails<DndDragPayload> details) {
+      final box = context.findRenderObject();
+      return box is RenderBox ? box.globalToLocal(details.offset) : null;
+    }
+
+    int resolveItemId(DragTargetDetails<DndDragPayload> details) {
+      final local = localOffset(details);
+      if (local == null) {
+        dragHover.update(null);
+        return 0;
+      }
+      final id = findItemIdAtPosition(local.dx, local.dy) as int?;
+      dragHover.update(id);
+      return id ?? 0;
+    }
+
+    Offset resolvePosition(DragTargetDetails<DndDragPayload> details) =>
+        localOffset(details) ?? details.offset;
+
+    return wrapDropTarget<DndDragPayload>(
+      child: content,
+      state: state,
+      resolveItemId: resolveItemId,
+      resolvePosition: resolvePosition,
+      onDrop: (_, __, targetItemId, position) => sendItemDrop(targetItemId, position),
+      builder: (context, child, negotiation, isHovering) {
+        if (!isHovering) dragHover.update(null);
+        return child;
+      },
+    );
+  }
+
+  void sendItemDrop(int? targetItemId, Offset position) {
+    final dropTargetId = state.dropTargetId;
+    if (dropTargetId == null) return;
+    final dropTargetValue = VDropTarget()..id = dropTargetId;
+    final event = VEvent()
+      ..x = position.dx.round()
+      ..y = position.dy.round();
+    if (targetItemId != null && targetItemId != 0) event.itemId = targetItemId;
+    DropTargetSwt<VDropTarget>(value: dropTargetValue)
+        .sendDropdrop(dropTargetValue, event);
   }
 
   /// Builds editor overlay widgets for all active editors.

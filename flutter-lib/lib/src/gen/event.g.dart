@@ -10,9 +10,14 @@ VEvent _$VEventFromJson(Map<String, dynamic> json) => VEvent()
   ..button = (json['button'] as num?)?.toInt()
   ..character = (json['character'] as num?)?.toInt()
   ..count = (json['count'] as num?)?.toInt()
+  ..currentDataTypeId = (json['currentDataTypeId'] as num?)?.toInt()
   ..detail = (json['detail'] as num?)?.toInt()
   ..doit = json['doit'] as bool?
+  ..dragImage = json['dragImage'] == null
+      ? null
+      : VImage.fromJson(json['dragImage'] as Map<String, dynamic>)
   ..end = (json['end'] as num?)?.toInt()
+  ..feedback = (json['feedback'] as num?)?.toInt()
   ..gc = json['gc'] == null
       ? null
       : VGC.fromJson(json['gc'] as Map<String, dynamic>)
@@ -21,9 +26,11 @@ VEvent _$VEventFromJson(Map<String, dynamic> json) => VEvent()
   ..item = json['item'] == null
       ? null
       : VWidget.fromJson(json['item'] as Map<String, dynamic>)
+  ..itemId = (json['itemId'] as num?)?.toInt()
   ..keyCode = (json['keyCode'] as num?)?.toInt()
   ..keyLocation = (json['keyLocation'] as num?)?.toInt()
   ..magnification = (json['magnification'] as num?)?.toDouble()
+  ..operations = (json['operations'] as num?)?.toInt()
   ..rotation = (json['rotation'] as num?)?.toDouble()
   ..segments = (json['segments'] as List<dynamic>?)
       ?.map((e) => (e as num).toInt())
@@ -52,16 +59,21 @@ Map<String, dynamic> _$VEventToJson(VEvent instance) => <String, dynamic>{
   'button': ?instance.button,
   'character': ?instance.character,
   'count': ?instance.count,
+  'currentDataTypeId': ?instance.currentDataTypeId,
   'detail': ?instance.detail,
   'doit': ?instance.doit,
+  'dragImage': ?instance.dragImage,
   'end': ?instance.end,
+  'feedback': ?instance.feedback,
   'gc': ?instance.gc,
   'height': ?instance.height,
   'index': ?instance.index,
   'item': ?instance.item,
+  'itemId': ?instance.itemId,
   'keyCode': ?instance.keyCode,
   'keyLocation': ?instance.keyLocation,
   'magnification': ?instance.magnification,
+  'operations': ?instance.operations,
   'rotation': ?instance.rotation,
   'segments': ?instance.segments,
   'segmentsChars': ?instance.segmentsChars,

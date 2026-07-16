@@ -83,6 +83,21 @@ public class VControl extends VWidget {
         ((DartControl) impl).dragDetect = value;
     }
 
+    public boolean getDragSource() {
+        return ((DartControl) impl).getDragSource();
+    }
+
+    public void setDragSource(boolean value) {
+    }
+
+    @JsonAttribute(nullable = true)
+    public Long getDropTargetId() {
+        return ((DartControl) impl).getDropTargetId();
+    }
+
+    public void setDropTargetId(Long value) {
+    }
+
     public boolean getEnabled() {
         return ((DartControl) impl).isEnabled();
     }

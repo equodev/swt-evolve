@@ -15,6 +15,7 @@ import '../theme/theme_extensions/tree_theme_extension.dart';
 import '../theme/theme_settings/tree_theme_settings.dart';
 import '../gen/button.dart';
 import 'utils/double_tap_detector.dart';
+import 'utils/dnd_utils.dart';
 import 'utils/widget_utils.dart';
 
 class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
@@ -25,6 +26,43 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   Offset? _lastTapPosition;
   Offset? _lastTapGlobalPosition;
   final DoubleTapDetector _rowTap = DoubleTapDetector();
+
+  Widget _wrapItemForDrag(Widget row) {
+    final ctx = _context;
+    if (ctx == null) return row;
+    final parentTree = ctx.parentTree;
+    final parentTreeValue = ctx.parentTreeValue;
+
+    final treeImpl = ctx.treeImpl;
+    final content = treeImpl == null
+        ? row
+        : ValueListenableBuilder<int?>(
+            valueListenable: treeImpl.dragHover.notifier,
+            builder: (context, hoveredId, child) => hoveredId == state.id
+                ? DecoratedBox(
+                    decoration: const BoxDecoration(
+                      border: Border(top: BorderSide(color: Colors.blue, width: 2)),
+                    ),
+                    child: child,
+                  )
+                : child!,
+            child: row,
+          );
+
+    return wrapDraggable<DndDragPayload>(
+      child: content,
+      data: DndDragPayload(sourceControlId: parentTreeValue.id, itemId: state.id),
+      widget: parentTree,
+      state: parentTreeValue,
+      onDragStarted: () {
+        ctx.treeImpl?.handleTreeItemSelection(state.id);
+        final e = _createEvent();
+        e.count = 1;
+        e.button = 1;
+        parentTree.sendSelectionSelection(parentTreeValue, e);
+      },
+    );
+  }
 
   void _sendStartEditing() {
     if (_context?.parentTree != null && _context?.parentTreeValue != null) {
@@ -94,8 +132,39 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   Widget build(BuildContext context) {
     _context = TreeItemContext.of(context);
 
+    final widgetTheme = Theme.of(context).extension<TreeThemeExtension>();
+    if (widgetTheme == null) {
+      return const SizedBox.shrink();
+    }
+
     if (_context == null) {
-      return Text(state.text ?? "");
+      // Standalone mode used by the measure tool — render as a single row without tree context.
+      final textColor = getTreeItemTextColor(state, widgetTheme, false, true);
+      final image = state.image;
+      return Container(
+        padding: widgetTheme.itemPadding,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (image != null)
+              Container(
+                margin: EdgeInsets.only(right: widgetTheme.itemIconSpacing),
+                child: _buildItemIcon(widgetTheme, true, false, false, false, image),
+              ),
+            Flexible(
+              child: _buildCellText(
+                context: context,
+                text: state.text ?? "",
+                textColor: textColor,
+                theme: widgetTheme,
+                columnAlignment: null,
+                cellPadding: EdgeInsets.zero,
+                columnIndex: 0,
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     return tagSemantics(buildTreeItemContent(context));
@@ -171,25 +240,27 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildItemRow(
-            context: context,
-            widgetTheme: widgetTheme,
-            texts: texts,
-            text: text,
-            textColor: textColor,
-            level: level,
-            hasChildren: hasChildren,
-            expanded: expanded,
-            isCheckMode: isCheckMode,
-            checked: checked,
-            grayed: grayed,
-            enabled: enabled,
-            selected: selected,
-            image: image,
-            bgColor: bgColor,
-            nextItemSelected: nextItemSelected,
-            hasMultiColumn: hasMultiColumn,
-            effectiveItemHeight: effectiveItemHeight,
+          _wrapItemForDrag(
+            _buildItemRow(
+              context: context,
+              widgetTheme: widgetTheme,
+              texts: texts,
+              text: text,
+              textColor: textColor,
+              level: level,
+              hasChildren: hasChildren,
+              expanded: expanded,
+              isCheckMode: isCheckMode,
+              checked: checked,
+              grayed: grayed,
+              enabled: enabled,
+              selected: selected,
+              image: image,
+              bgColor: bgColor,
+              nextItemSelected: nextItemSelected,
+              hasMultiColumn: hasMultiColumn,
+              effectiveItemHeight: effectiveItemHeight,
+            ),
           ),
           if (expanded && hasChildren && (_context?.renderChildItems ?? true))
             ...buildChildItems(),

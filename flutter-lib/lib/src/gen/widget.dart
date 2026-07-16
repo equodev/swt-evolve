@@ -35,11 +35,13 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   final GlobalKey<GCImpl> gcOverlayKey = GlobalKey<GCImpl>();
   GlobalKey? widgetBoundaryKey;
 
+  Object? _onChangeToken;
+
   @override
   void initState() {
     super.initState();
     state = widget.value as V;
-    EquoCommService.on("${state.swt}/${state.id}", _onChange);
+    _onChangeToken = EquoCommService.on("${state.swt}/${state.id}", _onChange);
   }
 
   /// Called by GCSwt when it receives state from Java.
@@ -85,7 +87,7 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
 
   @override
   void dispose() {
-    EquoCommService.remove("${state.swt}/${state.id}");
+    EquoCommService.remove("${state.swt}/${state.id}", _onChangeToken);
     super.dispose();
   }
 

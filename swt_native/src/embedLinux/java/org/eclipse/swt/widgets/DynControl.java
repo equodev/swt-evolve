@@ -3065,6 +3065,14 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
 
     boolean dragDetectSet;
 
+    boolean dragSource;
+
+    boolean dragSourceSet;
+
+    Long dropTargetId;
+
+    boolean dropTargetIdSet;
+
     boolean enabled = true;
 
     boolean enabledSet;
@@ -3191,6 +3199,10 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
             newImpl.setCursor(getCursor());
         if (dragDetectSet)
             newImpl.setDragDetect(getDragDetect());
+        //newImpl.dragSource = dragSource;
+        ;
+        //newImpl.dropTargetId = dropTargetId;
+        ;
         if (enabledSet)
             newImpl.setEnabled(getEnabled());
         if (focus)

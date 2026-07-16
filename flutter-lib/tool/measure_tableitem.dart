@@ -85,6 +85,7 @@ MeasurementCase createCase(
   final value = VTableItem.empty()
     ..style = style.$2
     ..texts = [text]
+    ..text = text
     ..font = fontSize != null
         ? (VFont.empty()..fontData = [VFontData.empty()..height = fontSize])
         : null

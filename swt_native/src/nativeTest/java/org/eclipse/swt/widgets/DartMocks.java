@@ -104,6 +104,23 @@ public class DartMocks {
         return w;
     }
 
+    /** Pure-Flutter counterpart of {@code dartTable()}, for {@code TreeItemSizeTest} (a
+     *  TreeItem needs a Tree to live in, not just a Shell). */
+    public static Tree dartTree() {
+        Tree w = mock(Tree.class);
+        DartTree impl = mock(DartTree.class);
+        when(w.getImpl()).thenReturn(impl);
+        when(impl.getBridge()).thenReturn(new MockFlutterBridge());
+        Display display = dartDisplay();
+        impl.display = display; // DartWidget's constructor reads parent.getImpl().display directly
+        when(w.getDisplay()).thenReturn(display);
+        when(impl._display()).thenReturn(display);
+        // getText()/getImage() etc. treat a false checkData() as "disposed" (see DartTreeItem);
+        // real checkData() lazily fires SWT.SetData for VIRTUAL trees, irrelevant to a plain mock.
+        when(impl.checkData(org.mockito.ArgumentMatchers.any())).thenReturn(true);
+        return w;
+    }
+
     public static int red() {
         return 10;
     }

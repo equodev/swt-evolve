@@ -290,8 +290,10 @@ public class DartText extends DartScrollable implements IText {
         clearSegments(true);
         insertEditText(string);
         applySegments();
-        if (string.length() != 0)
+        if (string.length() != 0) {
+            dirty();
             sendEvent(SWT.Modify);
+        }
     }
 
     void applySegments() {

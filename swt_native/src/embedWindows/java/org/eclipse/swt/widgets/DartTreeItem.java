@@ -348,8 +348,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * </ul>
      */
     public Rectangle getBounds() {
-        checkWidget();
-        return null;
+        return Sizes.getBounds(this);
     }
 
     Rectangle getBoundsInPixels() {

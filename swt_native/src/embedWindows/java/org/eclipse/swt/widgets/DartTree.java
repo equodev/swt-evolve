@@ -21,6 +21,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
 import java.util.Objects;
 import org.eclipse.swt.custom.*;
+import dev.equo.swt.size.TreeSizes;
 import dev.equo.swt.*;
 
 /**
