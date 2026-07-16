@@ -85,6 +85,12 @@ public class ChromiumStandaloneLauncher {
         browser = ChromiumBrowser.standalone(url, 0, 0, 1280, 1024, csd);
         current = this;
         sub = browser.subscribe();
+        // Forward page console messages (incl. Flutter print()) to stdout. Off by default.
+        if (Boolean.getBoolean("dev.equo.swt.chromium.console")) {
+            sub.onConsoleMessage(e -> System.out.println(
+                    "[chromium.console] " + e.getLevel() + ": " + e.getMessage()
+                            + "  (" + e.getSource() + ":" + e.getLine() + ")"));
+        }
         // OpenWindowListener: CEF fires onBeforePopup when a frame calls window.open(). It exposes no
         // opener-frame identity, so we broadcast to every registered handler (only a Browser with an
         // OpenWindowListener reacts). Each handler fires its listeners synchronously and reports
