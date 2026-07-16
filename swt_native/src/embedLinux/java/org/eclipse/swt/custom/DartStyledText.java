@@ -6065,7 +6065,13 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         }
         if (action == SWT.NULL) {
             boolean ignore = (event.stateMask & (SWT.ALT | SWT.CTRL | SWT.COMMAND)) != 0;
-            if ((!ignore && event.character > 31 && event.character != SWT.DEL) || event.character == SWT.CR || event.character == SWT.LF || event.character == TAB) {
+            // A Flutter-originated content key was already applied by the Flutter editor
+            // (it arrives through the Modify channel); running doContent for it too
+            // inserted every typed character twice. TAB is the exception (the Flutter
+            // editor skips control characters), and Java-simulated keys (upstream tests,
+            // apps posting events) keep the full SWT editing behavior.
+            boolean applyOnJavaSide = event.character == TAB || !ControlHelper.isFlutterOriginatedKey();
+            if (applyOnJavaSide && ((!ignore && event.character > 31 && event.character != SWT.DEL) || event.character == SWT.CR || event.character == SWT.LF || event.character == TAB)) {
                 doContent(event.character);
                 update();
             }

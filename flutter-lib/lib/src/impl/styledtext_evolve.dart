@@ -26,6 +26,10 @@ import '../theme/theme_extensions/styledtext_theme_extension.dart';
 
 class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     extends CanvasImpl<T, V> {
+  // The RawKeyboardListener below already sends Key/VerifyKey per keystroke.
+  @override
+  bool get forwardsKeysFromWrap => false;
+
   List<Shape> shapes = [];
   TextShape? _editableTextShape;
   bool _isEditingText = false;

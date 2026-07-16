@@ -814,7 +814,7 @@ public class DartTracker extends DartWidget implements ITracker {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                sendEvent(SWT.KeyDown, e);
+                ControlHelper.sendFlutterKeyDown(this, e);
             });
         });
         FlutterBridge.on(this, "Key", "KeyUp", e -> {

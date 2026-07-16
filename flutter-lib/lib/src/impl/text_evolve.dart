@@ -13,6 +13,9 @@ import 'utils/widget_utils.dart';
 class TextImpl<T extends TextSwt, V extends VText>
     extends ScrollableImpl<T, V> {
   late TextEditingController _controller;
+
+  /// Texts sent to Java (Modify) whose value-push echo hasn't come back yet — see extraSetState.
+  final List<String> _pendingEchoes = [];
   FocusNode? _focusNode;
 
   @override
@@ -29,6 +32,17 @@ class TextImpl<T extends TextSwt, V extends VText>
   @override
   void extraSetState() {
     String newText = state.text ?? "";
+    // A Java value push may be the echo of a Modify this field sent moments ago. If the user
+    // has typed further in the meantime, resetting the controller to the echoed (older) text
+    // silently drops those keystrokes (the mid-word lost character on slow machines). Locally
+    // sent texts are remembered and their echoes ignored.
+    final int echoIndex = _pendingEchoes.indexOf(newText);
+    if (echoIndex >= 0) {
+      _pendingEchoes.removeRange(0, echoIndex + 1);
+      if (_controller.text != newText) {
+        return;
+      }
+    }
     bool textChanged = _controller.text != newText;
 
     if (textChanged) {
@@ -212,8 +226,8 @@ class TextImpl<T extends TextSwt, V extends VText>
       _handleSubmitted(clean);
       return;
     }
-    print("Text ${state.id} text changed to: '$value'");
     state.text = value;
+    _pendingEchoes.add(value);
     var e = VEvent()
       ..text = value
       ..start = _controller.selection.baseOffset;
