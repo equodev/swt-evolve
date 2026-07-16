@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 
@@ -10,6 +11,30 @@ void setCurrentTheme(bool isDark) {
 
 ConfigFlags configFlags = ConfigFlags();
 final ValueNotifier<double> appScaleNotifier = ValueNotifier<double>(1.0);
+
+/// Bumped when the flags change; the root [MaterialApp] listens to it and rebuilds with the new theme.
+final ValueNotifier<int> configFlagsVersion = ValueNotifier<int>(0);
+
+Map<String, dynamic>? _lastAppliedConfig;
+
+/// Applies config flags from either source: the `config` field of a `Display/{id}` update, or the
+/// `swt.evolve.properties` message. The flags repeat in every Display update, so the dedup keeps an
+/// unchanged payload from rebuilding the whole [MaterialApp].
+void applyConfigFlags(ConfigFlags? flags) {
+  if (flags == null) return;
+  final json = flags.toJson();
+  if (mapEquals(json, _lastAppliedConfig)) return;
+  _lastAppliedConfig = json;
+  setConfigFlags(flags);
+  configFlagsVersion.value++;
+}
+
+@visibleForTesting
+void resetConfigFlags() {
+  configFlags = ConfigFlags();
+  _lastAppliedConfig = null;
+  configFlagsVersion.value = 0;
+}
 
 bool getCurrentTheme() {
   return _useDarkTheme;

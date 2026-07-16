@@ -8,6 +8,7 @@ import '../comm/comm.dart';
 import '../custom/csd/csd_state.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
 import 'shell_evolve.dart';
+import 'widget_config.dart';
 
 class DisplaySwt extends StatefulWidget {
   final VDisplay value;
@@ -42,6 +43,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
   void _onUpdate(dynamic raw) {
     try {
       final updated = VDisplay.fromJson(raw as Map<String, dynamic>);
+      applyConfigFlags(updated.config);
       _lastDisplayState[widget.value.id] = updated;
       if (mounted) setState(() => _display = updated);
     } catch (e) {
