@@ -581,6 +581,7 @@ public class DartTree extends DartComposite implements ITree {
                 }
             }
         }
+        ((DartWidget) column.getImpl()).register();
         System.arraycopy(columns, index, columns, index + 1, columnCount++ - index);
         columns[index] = column;
         int[] newOrder = new int[columnCount];

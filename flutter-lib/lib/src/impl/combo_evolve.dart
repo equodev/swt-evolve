@@ -153,6 +153,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
             overlayController: _overlayController,
             layerLink: _layerLink,
             onSelected: _onItemSelected,
+            onToggleOverlay: _toggleOverlay,
             width: width,
           );
 
@@ -175,10 +176,24 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     ));
   }
 
+  /// Toggles the dropdown keeping [VCombo.listVisible] truthful: the overlay is otherwise pure
+  /// local UI state, and a later Java-side value push carrying a stale `listVisible` could
+  /// silently reopen it (the intermittent floating-dropdown).
+  void _toggleOverlay() {
+    final bool showing = !_overlayController.isShowing;
+    setState(() {
+      state.listVisible = showing;
+      _lastSentListVisible = showing;
+    });
+    showing ? _overlayController.show() : _overlayController.hide();
+  }
+
   void _onItemSelected(String? value) {
     setState(() {
       state.text = value;
       _controller.text = value ?? "";
+      state.listVisible = false;
+      _lastSentListVisible = false;
       _overlayController.hide();
     });
     widget.sendSelectionSelection(state, VEvent()..text = value);
@@ -203,6 +218,7 @@ class _DropdownComboLayout extends StatelessWidget {
   final OverlayPortalController overlayController;
   final LayerLink layerLink;
   final ValueChanged<String?> onSelected;
+  final VoidCallback onToggleOverlay;
   final double width;
 
   const _DropdownComboLayout({
@@ -219,6 +235,7 @@ class _DropdownComboLayout extends StatelessWidget {
     required this.overlayController,
     required this.layerLink,
     required this.onSelected,
+    required this.onToggleOverlay,
     required this.width,
   });
 
@@ -242,7 +259,7 @@ class _DropdownComboLayout extends StatelessWidget {
                   behavior: HitTestBehavior.opaque,
                   onTap: isEnabled && !isReadOnly
                       ? () => focusNode.requestFocus()
-                      : (isEnabled ? overlayController.toggle : null),
+                      : (isEnabled ? onToggleOverlay : null),
                   child: Padding(
                     padding: theme.textFieldPadding,
                     child: IgnorePointer(
@@ -263,7 +280,7 @@ class _DropdownComboLayout extends StatelessWidget {
               ),
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: isEnabled ? overlayController.toggle : null,
+                onTap: isEnabled ? onToggleOverlay : null,
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: theme.iconSpacing),
                   child: Icon(

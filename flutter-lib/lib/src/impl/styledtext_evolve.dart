@@ -600,6 +600,10 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     // Clear the GC overlay to remove placeholder
     clearGCShapes();
 
+    // Keep the value object in sync with the local edit (same as text_evolve), so the live
+    // state (queryState) reflects the content without waiting for a Java-side setText.
+    state.text = newText;
+
     final event = VEvent()
       ..text = newText
       ..start = caretPos;

@@ -92,6 +92,7 @@ public class GallerySnippet {
         text.setLayoutData(fillH);
         StyledText styledText = new StyledText(textGroup, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
         styledText.setText("Multi-line\nstyled text\nwith several lines.");
+        styledText.addModifyListener(e -> status.setText("StyledText modified"));
         GridData styledTextData = new GridData(SWT.FILL, SWT.CENTER, true, false);
         styledTextData.heightHint = 60;
         styledText.setLayoutData(styledTextData);
@@ -230,6 +231,7 @@ public class GallerySnippet {
             CoolItem item = new CoolItem(coolBar, SWT.NONE);
             Button b = new Button(coolBar, SWT.PUSH);
             b.setText(toolLabel);
+            b.addSelectionListener(widgetSelectedAdapter(e -> status.setText(toolLabel + " cool button clicked")));
             Point size = b.computeSize(SWT.DEFAULT, SWT.DEFAULT);
             item.setControl(b);
             item.setPreferredSize(item.computeSize(size.x, size.y));
@@ -306,6 +308,15 @@ public class GallerySnippet {
             }
             tree.getItem(0).setExpanded(true);
             ctab.setSelection(0);
+            tabFolder.setSelection(0);
+            // Double-set to force a push: a Dart-side expand never updates the Java item's
+            // expanded field (the Expand event carries no index), so a single setExpanded to
+            // the desired value can be a Java-side no-op that pushes nothing to Flutter.
+            ExpandItem[] barItems = expandBar.getItems();
+            for (int i = 0; i < barItems.length; i++) {
+                barItems[i].setExpanded(i != 0);
+                barItems[i].setExpanded(i == 0);
+            }
             status.setText("Status: (no interaction yet)");
         }));
 
