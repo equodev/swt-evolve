@@ -106,7 +106,14 @@ class BrowserFlutterTest {
     /** Saved {@code dev.equo.swt.web.proxy} so each variant can override it and restore afterwards. */
     private String savedProxyProp;
 
-    protected static final long ACTION_TIMEOUT = 3_000;
+    /**
+     * Ceiling for waiting on something that SHOULD happen. Only a stuck action pays it in full —
+     * {@link #pumpUntil} returns the moment the condition holds — so it is set generously rather than
+     * tuned to the happy path: at 3s a CPU-starved CI runner made setUrl_reachesRenderedState time
+     * out on a navigation that was working, just slow. Do not use it to confirm something does NOT
+     * happen; that is {@link #NEGATIVE_WAIT}, which is paid in full every time.
+     */
+    protected static final long ACTION_TIMEOUT = 15_000;
     /** A pause used to confirm something did NOT happen (e.g. a blocked navigation). */
     protected static final long NEGATIVE_WAIT = 5_00;
     /**
