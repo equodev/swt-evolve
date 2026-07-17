@@ -73,6 +73,9 @@ class ScrolledCompositeImpl<
         verticalController: _verticalController!,
         hasHScroll: hasHScroll,
         hasVScroll: hasVScroll,
+        expandHorizontal: expandHorizontal,
+        expandVertical: expandVertical,
+        minContentSize: minContentSize,
         alwaysShowScrollBars: alwaysShowScrollBars,
         widgetTheme: widgetTheme,
         backgroundColor: backgroundColor,
@@ -118,6 +121,9 @@ class _ThemedScrolledComposite extends StatelessWidget {
   final ScrollController verticalController;
   final bool hasHScroll;
   final bool hasVScroll;
+  final bool expandHorizontal;
+  final bool expandVertical;
+  final Size minContentSize;
   final bool alwaysShowScrollBars;
   final ScrolledCompositeThemeExtension widgetTheme;
   final Color backgroundColor;
@@ -128,6 +134,9 @@ class _ThemedScrolledComposite extends StatelessWidget {
     required this.verticalController,
     required this.hasHScroll,
     required this.hasVScroll,
+    required this.expandHorizontal,
+    required this.expandVertical,
+    required this.minContentSize,
     required this.alwaysShowScrollBars,
     required this.widgetTheme,
     required this.backgroundColor,
@@ -136,31 +145,65 @@ class _ThemedScrolledComposite extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget result = child;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final vpW = constraints.maxWidth;
+        final vpH = constraints.maxHeight;
 
-    if (hasVScroll && hasHScroll) {
-      result = _buildBothScrollbars(context, result);
-    } else if (hasVScroll) {
-      result = _buildVerticalScrollbar(context, result);
-    } else if (hasHScroll) {
-      result = _buildHorizontalScrollbar(context, result);
-    }
+        // Honor SWT setExpand{Horizontal,Vertical}: on an expanded axis, fill the
+        // viewport (bounded) instead of wrapping in a scroll view, which would
+        // impose an infinite constraint. Only scroll when a larger minSize exceeds
+        // the viewport.
+        final bool vFill = hasVScroll &&
+            expandVertical &&
+            vpH.isFinite &&
+            minContentSize.height <= vpH;
+        final bool hFill = hasHScroll &&
+            expandHorizontal &&
+            vpW.isFinite &&
+            minContentSize.width <= vpW;
 
-    return AnimatedContainer(
-      duration: widgetTheme.animationDuration,
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: widgetTheme.borderRadius > 0
-            ? BorderRadius.circular(widgetTheme.borderRadius)
-            : null,
-        border: widgetTheme.borderWidth > 0
-            ? Border.all(
-                color: widgetTheme.borderColor,
-                width: widgetTheme.borderWidth,
-              )
-            : null,
-      ),
-      child: result,
+        final bool doVScroll = hasVScroll && !vFill;
+        final bool doHScroll = hasHScroll && !hFill;
+
+        Widget result = child;
+
+        // Stretch the filled axis to the viewport so content fills it.
+        if (vFill || hFill) {
+          result = ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: hFill ? vpW : 0,
+              minHeight: vFill ? vpH : 0,
+            ),
+            child: result,
+          );
+        }
+
+        if (doVScroll && doHScroll) {
+          result = _buildBothScrollbars(context, result);
+        } else if (doVScroll) {
+          result = _buildVerticalScrollbar(context, result);
+        } else if (doHScroll) {
+          result = _buildHorizontalScrollbar(context, result);
+        }
+
+        return AnimatedContainer(
+          duration: widgetTheme.animationDuration,
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: widgetTheme.borderRadius > 0
+                ? BorderRadius.circular(widgetTheme.borderRadius)
+                : null,
+            border: widgetTheme.borderWidth > 0
+                ? Border.all(
+                    color: widgetTheme.borderColor,
+                    width: widgetTheme.borderWidth,
+                  )
+                : null,
+          ),
+          child: result,
+        );
+      },
     );
   }
 
