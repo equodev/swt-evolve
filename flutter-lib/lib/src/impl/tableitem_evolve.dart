@@ -272,7 +272,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     TableThemeExtension theme,
   ) {
     final rowHeight = _context?.tableImpl?.cachedRowHeight ?? 20.0;
-    final headerOffset = 0; // _context?.tableImpl?.cachedHeaderOffset ?? 0.0;
+    final headerOffset = _context?.tableImpl?.cachedHeaderOffset ?? 0.0;
     return (headerOffset + rowIndex * rowHeight + rowHeight / 2).round();
   }
 
