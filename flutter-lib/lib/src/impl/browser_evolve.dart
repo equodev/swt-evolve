@@ -41,6 +41,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   // otherwise drop reloads); the seq also makes the op idempotent.
   int _lastNavSeq = 0;
   bool _opNavigated = false;
+  bool _loadedLocalFile = false;
   // Web iframe creation params (null on non-web). Kept so execute/evaluate can
   // reach the iframe's contentWindow directly — webview_all_web's runJavaScript
   // is unconditionally unsupported, so DOM-level eval is the only option, and it
@@ -145,6 +146,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       _opNavigated = true;
       final url = m["url"] as String?;
       final text = m["text"] as String?;
+      final localFilePath = m["localFilePath"] as String?;
       if (url != null && url.isNotEmpty) {
         final uri = Uri.tryParse(url);
         if (uri != null && uri.hasScheme) {
@@ -152,6 +154,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
           _loadedText = null;
           final postData = m["postData"] as String?;
           if (postData != null) {
+            _loadedLocalFile = false;
             // POST bypasses the proxy (which is GET-only); the web backend's
             // own XHR carries the body.
             _controller.loadRequest(
@@ -160,12 +163,17 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
               headers: _parseHeaders(m["headers"]),
               body: Uint8List.fromList(utf8.encode(postData)),
             );
+          } else if (localFilePath != null && localFilePath.isNotEmpty) {
+            _loadedLocalFile = true;
+            _controller.loadRequest(Uri.parse(localFileRewrite(localFilePath)));
           } else {
+            _loadedLocalFile = false;
             final resolved = _resolveLoadUri(url, uri);
             _controller.loadRequest(resolved);
           }
         }
       } else if (text != null) {
+        _loadedLocalFile = false;
         _loadedText = text;
         _loadedUrl = null;
         _controller.loadHtmlString(text);
@@ -274,6 +282,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   /// same-origin document's [baseURI] is the real address. Falls back to
   /// decoding the proxy wrapper, then to the raw URL.
   String? _resolveReportedUrl(String? rawUrl) {
+    if (_loadedLocalFile) return _loadedUrl;
     if (_params != null) {
       try {
         final b = browserEvalInFrame(_params, 'document.baseURI');
@@ -376,6 +385,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     // empty string, not null); Uri.parse('') yields a scheme-less uri that
     // loadRequest rejects, so only load once we have a real, absolute URL.
     final uri = (url != null && url.isNotEmpty) ? Uri.tryParse(url) : null;
+    if (uri != null && uri.scheme == 'file') return;
     if (uri != null && uri.hasScheme && url != _loadedUrl) {
       _loadedUrl = url;
       _loadedText = null;

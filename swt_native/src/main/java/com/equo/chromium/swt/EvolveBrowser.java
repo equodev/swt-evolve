@@ -265,6 +265,8 @@ public class EvolveBrowser extends WebBrowser {
         if (postData != null) args.put("postData", postData);
         if (headers != null && headers.length > 0)
             args.put("headers", java.util.Arrays.asList(headers));
+        dev.equo.swt.LocalFileServing.Served served = dev.equo.swt.LocalFileServing.registerIfLocalFile(url);
+        if (served != null) args.put("localFilePath", served.tokenPath());
         FlutterBridge.send(getDartWidget(), "navigate", args);
         return true;
     }

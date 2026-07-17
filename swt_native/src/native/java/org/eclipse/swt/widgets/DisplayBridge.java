@@ -92,7 +92,14 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 DartDisplay dartDisplay = (DartDisplay) display.getImpl();
                 if (widget instanceof DartShell dartShell) {
                     dartDisplay.addShell((Shell) dartShell.getApi());
-                    dartShell.bounds = dartDisplay.bounds;
+                    if (dartShell.parent == null) {
+                        dartShell.bounds = dartDisplay.bounds;
+                    } else if (dartShell.bounds.width == 0 && dartShell.bounds.height == 0) {
+                        Rectangle db = dartDisplay.bounds;
+                        int w = Math.max(400, db.width * 3 / 5);
+                        int h = Math.max(300, db.height * 3 / 5);
+                        dartShell.bounds = new Rectangle(dartShell.bounds.x, dartShell.bounds.y, w, h);
+                    }
                 }
                 return dartDisplay.displayBridge;
             }

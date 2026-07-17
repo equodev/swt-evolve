@@ -160,6 +160,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
         widget.sendShellIconify(state, null);
       } else {
         widget.sendShellDeiconify(state, null);
+        sendBoundsToJava();
       }
     }
 
@@ -179,7 +180,11 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       child: SizedBox(
         width: w,
         height: _minimized ? 0 : h,
-        child: _minimized ? null : super.build(context),
+        child: Visibility(
+          visible: !_minimized,
+          maintainState: true,
+          child: super.build(context),
+        ),
       ),
     );
 
@@ -217,68 +222,66 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       ],
     );
 
-    Widget framed = SizedBox(width: w, height: frameH, child: column);
+    final minBodyH = (state.minimumSize?.y ?? 80).toDouble();
+    final maxBodyH = state.maximumSize?.y.toDouble() ?? viewport.maxHeight * 0.95;
+    final minBodyW = (state.minimumSize?.x ?? 100).toDouble();
+    final maxBodyW = state.maximumSize?.x.toDouble() ?? viewport.maxWidth * 0.95;
+    final minFH = minBodyH + headerH;
+    final maxFH = maxBodyH + headerH;
 
-    if (!_minimized && _hasResize && !_maximized && !isFullScreen) {
-      final minBodyH = (state.minimumSize?.y ?? 80).toDouble();
-      final maxBodyH = state.maximumSize?.y.toDouble() ?? viewport.maxHeight * 0.95;
-      final minBodyW = (state.minimumSize?.x ?? 100).toDouble();
-      final maxBodyW = state.maximumSize?.x.toDouble() ?? viewport.maxWidth * 0.95;
-      final minFH = minBodyH + headerH;
-      final maxFH = maxBodyH + headerH;
-      framed = SizedBox(
+    Widget framed = SizedBox(
+      width: w,
+      height: frameH,
+      child: _ResizableWrapper(
+        enabled: !_minimized && _hasResize && !_maximized && !isFullScreen,
         width: w,
         height: frameH,
-        child: _ResizableWrapper(
-          width: w,
-          height: frameH,
-          onResizeStart: () => setState(() => _interacting = true),
-          onResize: (delta, edge) => setState(() {
-            final curW  = _size?.width ?? bodyW;
-            final curFH = (_size?.height ?? bodyH) + headerH;
+        onResizeStart: () => setState(() => _interacting = true),
+        onResize: (delta, edge) => setState(() {
+          final curW  = _size?.width ?? bodyW;
+          final curFH = (_size?.height ?? bodyH) + headerH;
 
-            double newW  = curW,  newFH = curFH;
-            double odx   = 0,     ody   = 0;
+          double newW  = curW,  newFH = curFH;
+          double odx   = 0,     ody   = 0;
 
-            switch (edge) {
-              case _ResizeEdge.right:
-                newW  = (curW + delta.dx).clamp(minBodyW, maxBodyW);
-              case _ResizeEdge.left:
-                newW  = (curW - delta.dx).clamp(minBodyW, maxBodyW);
-                odx   = -(newW - curW);
-              case _ResizeEdge.bottom:
-                newFH = (curFH + delta.dy).clamp(minFH, maxFH);
-              case _ResizeEdge.top:
-                newFH = (curFH - delta.dy).clamp(minFH, maxFH);
-                ody   = -(newFH - curFH);
-              case _ResizeEdge.se:
-                newW  = (curW + delta.dx).clamp(minBodyW, maxBodyW);
-                newFH = (curFH + delta.dy).clamp(minFH, maxFH);
-              case _ResizeEdge.sw:
-                newW  = (curW - delta.dx).clamp(minBodyW, maxBodyW);
-                newFH = (curFH + delta.dy).clamp(minFH, maxFH);
-                odx   = -(newW - curW);
-              case _ResizeEdge.ne:
-                newW  = (curW + delta.dx).clamp(minBodyW, maxBodyW);
-                newFH = (curFH - delta.dy).clamp(minFH, maxFH);
-                ody   = -(newFH - curFH);
-              case _ResizeEdge.nw:
-                newW  = (curW - delta.dx).clamp(minBodyW, maxBodyW);
-                newFH = (curFH - delta.dy).clamp(minFH, maxFH);
-                odx   = -(newW - curW);
-                ody   = -(newFH - curFH);
-            }
-            _offset = (_offset ?? offset) + Offset(odx, ody);
-            _size   = Size(newW, (newFH - headerH).clamp(minBodyH, maxBodyH));
-          }),
-          onResizeEnd: () {
-            setState(() => _interacting = false);
-            sendBoundsToJava();
-          },
-          child: framed,
-        ),
-      );
-    }
+          switch (edge) {
+            case _ResizeEdge.right:
+              newW  = (curW + delta.dx).clamp(minBodyW, maxBodyW);
+            case _ResizeEdge.left:
+              newW  = (curW - delta.dx).clamp(minBodyW, maxBodyW);
+              odx   = -(newW - curW);
+            case _ResizeEdge.bottom:
+              newFH = (curFH + delta.dy).clamp(minFH, maxFH);
+            case _ResizeEdge.top:
+              newFH = (curFH - delta.dy).clamp(minFH, maxFH);
+              ody   = -(newFH - curFH);
+            case _ResizeEdge.se:
+              newW  = (curW + delta.dx).clamp(minBodyW, maxBodyW);
+              newFH = (curFH + delta.dy).clamp(minFH, maxFH);
+            case _ResizeEdge.sw:
+              newW  = (curW - delta.dx).clamp(minBodyW, maxBodyW);
+              newFH = (curFH + delta.dy).clamp(minFH, maxFH);
+              odx   = -(newW - curW);
+            case _ResizeEdge.ne:
+              newW  = (curW + delta.dx).clamp(minBodyW, maxBodyW);
+              newFH = (curFH - delta.dy).clamp(minFH, maxFH);
+              ody   = -(newFH - curFH);
+            case _ResizeEdge.nw:
+              newW  = (curW - delta.dx).clamp(minBodyW, maxBodyW);
+              newFH = (curFH - delta.dy).clamp(minFH, maxFH);
+              odx   = -(newW - curW);
+              ody   = -(newFH - curFH);
+          }
+          _offset = (_offset ?? offset) + Offset(odx, ody);
+          _size   = Size(newW, (newFH - headerH).clamp(minBodyH, maxBodyH));
+        }),
+        onResizeEnd: () {
+          setState(() => _interacting = false);
+          sendBoundsToJava();
+        },
+        child: column,
+      ),
+    );
 
     final isTooltipLike = (_style & SWT.ON_TOP) != 0 && (_style & SWT.TOOL) != 0;
     final shellBg = isTooltipLike ? theme.tooltipShellBackgroundColor : null;
@@ -398,15 +401,13 @@ class _TitleBar extends StatelessWidget {
       ),
     );
 
-    return isDraggable
-        ? GestureDetector(
-            onPanStart: (_) => onDragStart?.call(),
-            onPanUpdate: (d) => onDrag(d.delta),
-            onPanEnd: (_) => onDragEnd?.call(),
-            onPanCancel: onDragCancel ?? onDragEnd,
-            child: bar,
-          )
-        : bar;
+    return GestureDetector(
+      onPanStart: isDraggable ? (_) => onDragStart?.call() : null,
+      onPanUpdate: isDraggable ? (d) => onDrag(d.delta) : null,
+      onPanEnd: isDraggable ? (_) => onDragEnd?.call() : null,
+      onPanCancel: isDraggable ? (onDragCancel ?? onDragEnd) : null,
+      child: bar,
+    );
   }
 }
 
@@ -463,6 +464,7 @@ class _TitleBarButtonState extends State<_TitleBarButton> {
 }
 
 class _ResizableWrapper extends StatelessWidget {
+  final bool enabled;
   final double width, height;
   final VoidCallback? onResizeStart;
   final void Function(Offset delta, _ResizeEdge edge) onResize;
@@ -472,6 +474,7 @@ class _ResizableWrapper extends StatelessWidget {
   static const double _h = 8.0;
 
   const _ResizableWrapper({
+    this.enabled = true,
     required this.width,
     required this.height,
     this.onResizeStart,
@@ -523,22 +526,24 @@ class _ResizableWrapper extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           child,
-          _handle(SystemMouseCursors.resizeUpDown, _top,
-              top: 0, left: 0, right: 0, h: _h),
-          _handle(SystemMouseCursors.resizeUpDown, _bottom,
-              bottom: 0, left: _h, right: _h, h: _h),
-          _handle(SystemMouseCursors.resizeLeftRight, _left,
-              left: 0, top: 0, bottom: 0, w: _h),
-          _handle(SystemMouseCursors.resizeLeftRight, _right,
-              right: 0, top: _h, bottom: _h, w: _h),
-          _handle(SystemMouseCursors.resizeUpLeftDownRight, _nw,
-              left: 0, top: 0, w: _h * 2, h: _h * 2),
-          _handle(SystemMouseCursors.resizeUpRightDownLeft, _ne,
-              right: 0, top: 0, w: _h * 2, h: _h * 2),
-          _handle(SystemMouseCursors.resizeUpRightDownLeft, _sw,
-              left: 0, bottom: 0, w: _h * 2, h: _h * 2),
-          _handle(SystemMouseCursors.resizeUpLeftDownRight, _se,
-              right: 0, bottom: 0, w: _h * 2, h: _h * 2),
+          if (enabled) ...[
+            _handle(SystemMouseCursors.resizeUpDown, _top,
+                top: 0, left: 0, right: 0, h: _h),
+            _handle(SystemMouseCursors.resizeUpDown, _bottom,
+                bottom: 0, left: _h, right: _h, h: _h),
+            _handle(SystemMouseCursors.resizeLeftRight, _left,
+                left: 0, top: 0, bottom: 0, w: _h),
+            _handle(SystemMouseCursors.resizeLeftRight, _right,
+                right: 0, top: _h, bottom: _h, w: _h),
+            _handle(SystemMouseCursors.resizeUpLeftDownRight, _nw,
+                left: 0, top: 0, w: _h * 2, h: _h * 2),
+            _handle(SystemMouseCursors.resizeUpRightDownLeft, _ne,
+                right: 0, top: 0, w: _h * 2, h: _h * 2),
+            _handle(SystemMouseCursors.resizeUpRightDownLeft, _sw,
+                left: 0, bottom: 0, w: _h * 2, h: _h * 2),
+            _handle(SystemMouseCursors.resizeUpLeftDownRight, _se,
+                right: 0, bottom: 0, w: _h * 2, h: _h * 2),
+          ],
         ],
       );
 }

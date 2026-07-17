@@ -11,6 +11,8 @@ bool browserProxyEnabled() => false;
 
 String browserProxyRewrite(String url) => url;
 
+String localFileRewrite(String tokenPath) => tokenPath;
+
 Object? browserEvalInFrame(
         PlatformWebViewControllerCreationParams? params, String script) =>
     null;
