@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import '../comm/comm.dart';
 import '../gen/event.dart';
 import '../gen/color.dart';
+import '../gen/gc.dart';
 import '../gen/stylerange.dart';
 import '../gen/styledtext.dart';
 import '../gen/styledtextrenderer.dart';
@@ -70,6 +71,21 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         defaultColor: _styledTextTheme.backgroundColor,
       ) ??
       _styledTextTheme.backgroundColor;
+
+  @override
+  Widget wrapWithGCOverlay(Widget child) {
+    final gc = gcOverlay ?? (VGC()..id = state.id);
+    final gcWidget = GCSwt<VGC>(key: gcOverlayKey, value: gc);
+    return Stack(
+      children: [
+        child,
+        if (gcOverlay != null)
+          Positioned.fill(child: IgnorePointer(child: gcWidget))
+        else
+          Offstage(child: gcWidget),
+      ],
+    );
+  }
 
   @override
   void initState() {
