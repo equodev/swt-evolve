@@ -490,6 +490,10 @@ public class Config {
     }
 
     public static IWidget getCompositeImpl(Composite parent, int style, Composite composite) {
+        // Route by the public class's simple name so Evolve stays EWT-agnostic:
+        // an EWT-provided `EwtWidget` (split package) renders as an "EwtWidget" node.
+        if ("EwtWidget".equals(composite.getClass().getSimpleName()))
+            return new DartEwtWidget(parent, style, composite);
         int side = classifyTrimSide(parent);
         if (side == SWT.TOP && mainToolbarImpl == Impl.equo)
             return new DartMainToolbar(parent, style, composite);

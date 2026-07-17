@@ -88,6 +88,18 @@ public final class FlutterNative {
         SetState(context, state);
     }
 
+    /**
+     * Points the native bridge at an external app-bundle directory (the EWT-owned combined
+     * bundle: {@code <dir>/lib/libapp.so} + {@code <dir>/data/flutter_assets}). Must be
+     * called before the first {@link #initialize}. Passing null/absent restores the default
+     * (bridge-relative) lookup used by standalone Evolve.
+     */
+    public static void setBundleDir(String bundleDir) {
+        SetBundleDir(bundleDir);
+    }
+
+    private static native void SetBundleDir(String bundleDir);
+
     // ---- JNI peers (symbols exported by flutter_bridge.swift / .cpp / .cc) ----
 
     private static native long Initialize(int port, long parent, long widgetId, String widgetName,

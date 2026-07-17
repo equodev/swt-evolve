@@ -19,6 +19,12 @@ extern "C" __declspec(dllexport) void DummyExportedFunction()
 
 static FlutterWindow* s_first_engine = nullptr;
 
+// External app-bundle base directory set from Java (dev.equo.ewt.bundleDir). When non-empty
+// it overrides the GetDllPath() "next to myself" lookup so the bridge can boot a bundle it
+// does not sit beside. The DartProject is created with <base>\data, so this must be the dir
+// that CONTAINS data\ (the Windows release dir). Empty selects the GetDllPath() lookup.
+static std::wstring g_bundle_override;
+
 // Converts a UTF-8 std::string to a UTF-16 std::wstring for the Win32 *W APIs.
 static std::wstring Utf16FromUtf8(const std::string& utf8) {
     if (utf8.empty()) {
@@ -51,7 +57,6 @@ std::wstring GetDllPath() {
         {
             std::filesystem::path dll_path(path);
             return dll_path.parent_path().wstring();
-            //            return path; // Returns std::wstring directly from wchar_t array
         }
         else
         {
@@ -65,6 +70,24 @@ std::wstring GetDllPath() {
         std::wcerr << L"Error getting module handle with GetModuleHandleExW: " << GetLastError() << std::endl;
     }
     return L""; // Return an empty wide string on failure
+}
+
+// Bundle base for the DartProject: the external override when set, else the DLL's own dir.
+// The caller appends "\\data" (flutter_assets + app.so + icudtl live under data\).
+static std::wstring BundleBase() {
+    return g_bundle_override.empty() ? GetDllPath() : g_bundle_override;
+}
+
+// Stores the external bundle base so BundleBase() points the engine at it.
+extern "C" JNIEXPORT void JNICALL
+Java_dev_equo_swt_FlutterNative_SetBundleDir(JNIEnv* env, jclass cls, jstring dir) {
+    if (dir == nullptr) {
+        g_bundle_override.clear();
+        return;
+    }
+    const char* c = env->GetStringUTFChars(dir, nullptr);
+    g_bundle_override = (c != nullptr) ? Utf16FromUtf8(std::string(c)) : std::wstring();
+    if (c != nullptr) env->ReleaseStringUTFChars(dir, c);
 }
 
 int pumpMessages(int maxMessages) {
@@ -90,7 +113,7 @@ void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::
     CreateAndAttachConsole();
   }
 
-  flutter::DartProject project(GetDllPath() + L"\\data");
+  flutter::DartProject project(BundleBase() + L"\\data");
 
   std::vector<std::string> arguments = {std::to_string(port), std::to_string(widgetId), widgetName, theme, std::to_string(backgroundColor), std::to_string(parentBackgroundColor)};
   project.set_dart_entrypoint_arguments(std::move(arguments));
@@ -142,7 +165,7 @@ FlutterWindow* createDisplayWindow(int port, int64_t displayId, std::string widg
     // COM is required by the Flutter Windows embedder/plugins. Harmless if already initialized.
     ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
-    flutter::DartProject project(GetDllPath() + L"\\data");
+    flutter::DartProject project(BundleBase() + L"\\data");
 
     // Same arg layout as the embedded path: [port, id, name, theme, bg, parentBg]. Passing the real
     // widget background (not 0) avoids the Flutter theme rendering a pure-black Display background.

@@ -129,6 +129,7 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
     "TreeEditor" => VTreeEditor.fromJson(child),
     "ControlEditor" => VControlEditor.fromJson(child),
     "MainComposite" => VComposite.fromJson(child),
+    "EwtWidget" => VComposite.fromJson(child),
     "SideBar" => VComposite.fromJson(child),
     "MainToolbar" => VComposite.fromJson(child),
     "StatusBar" => VComposite.fromJson(child),
