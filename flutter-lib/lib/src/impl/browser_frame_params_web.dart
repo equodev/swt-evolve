@@ -42,6 +42,11 @@ String browserProxyRewrite(String url) {
   return '$origin/proxy?url=${Uri.encodeComponent(url)}';
 }
 
+String localFileRewrite(String tokenPath) {
+  final origin = web.window.location.origin;
+  return '$origin/local-file/$tokenPath';
+}
+
 /// Evaluates [script] directly in the iframe's content window and returns the
 /// dartified result (`null`/`bool`/`double`/`String`/`List`/`Map`, recursively).
 /// Works only when the content is same-origin (e.g. served via the proxy);

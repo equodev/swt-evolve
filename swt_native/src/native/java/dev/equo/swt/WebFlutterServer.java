@@ -141,6 +141,7 @@ public class WebFlutterServer {
         httpServer.createContext("/", new StaticFileHandler(webDirectory, commPort, widgetId, widgetName, serveServiceWorker, enableTestSemantics));
         httpServer.createContext("/proxy", new ProxyHandler());
         httpServer.createContext("/equo-browser-function", new BrowserFunctionHandler());
+        httpServer.createContext("/local-file", new LocalFileHandler());
         httpServer.setExecutor(Executors.newFixedThreadPool(4, r -> {
             Thread t = new Thread(r, "WebFlutterServer-worker");
             t.setDaemon(true);
@@ -447,7 +448,7 @@ public class WebFlutterServer {
          * Flutter web with multi-threading needs these headers to enable
          * SharedArrayBuffer in the browser.
          */
-        private void setCrossOriginHeaders(HttpExchange exchange) {
+        static void setCrossOriginHeaders(HttpExchange exchange) {
             if (isCrossOriginIsolated()) {
                 // Cross-origin isolated: enables SharedArrayBuffer (Flutter web threads),
                 // but the page can NOT be embedded in a cross-origin iframe.
@@ -471,7 +472,7 @@ public class WebFlutterServer {
          * ({@code dev.equo.swt.mode=chromium}), where the default reverts to {@code false} so the
          * app can run embedded in the Chromium window.
          */
-        private boolean isCrossOriginIsolated() {
+        static boolean isCrossOriginIsolated() {
             String prop = System.getProperty("dev.equo.swt.web.crossOriginIsolated");
             if (prop != null) {
                 return Boolean.parseBoolean(prop);
@@ -482,12 +483,40 @@ public class WebFlutterServer {
         /**
          * Sets CORS headers to allow the WebSocket connection from the served page.
          */
-        private void setCorsHeaders(HttpExchange exchange) {
+        static void setCorsHeaders(HttpExchange exchange) {
             String origin = exchange.getRequestHeaders().getFirst("Origin");
             if (origin != null) {
                 exchange.getResponseHeaders().set("Access-Control-Allow-Origin", origin);
             } else {
                 exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+            }
+            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Headers",
+                    "Content-Type, Authorization, X-Requested-With");
+            exchange.getResponseHeaders().set("Access-Control-Max-Age", "86400");
+        }
+
+        /**
+         * Same as {@link #setCorsHeaders}, but only reflects the request's
+         * {@code Origin} back when it matches this very server (localhost on the
+         * port the request itself arrived on). Used for endpoints that re-serve
+         * local filesystem content ({@link LocalFileHandler}): reflecting an
+         * arbitrary {@code Origin} there would let any page open in the user's
+         * regular browser {@code fetch()} this localhost port and read back
+         * local files — the classic drive-by-localhost exfiltration pattern.
+         * Local navigations/subresource loads from the served app itself don't
+         * need permissive CORS at all, since they're same-origin.
+         */
+        static void setSameOriginCorsHeaders(HttpExchange exchange) {
+            String origin = exchange.getRequestHeaders().getFirst("Origin");
+            if (origin != null) {
+                String selfOrigin = "http://localhost:" + exchange.getLocalAddress().getPort();
+                if (origin.equals(selfOrigin)) {
+                    exchange.getResponseHeaders().set("Access-Control-Allow-Origin", origin);
+                    exchange.getResponseHeaders().set("Vary", "Origin");
+                }
+                // else: no Access-Control-Allow-Origin -- browsers block cross-origin
+                // JS from reading the response even though the request itself is sent.
             }
             exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
             exchange.getResponseHeaders().set("Access-Control-Allow-Headers",
@@ -680,6 +709,93 @@ public class WebFlutterServer {
             exchange.getResponseHeaders().set("Cache-Control", "no-store");
             exchange.sendResponseHeaders(code, b.length);
             try (OutputStream os = exchange.getResponseBody()) { os.write(b); }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Local file re-serving (for Browser.setUrl("file:...") -- see LocalFileServing)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Serves files registered by {@link LocalFileServing#registerIfLocalFile}, at
+     * {@code /local-file/<token>/<relative-path>}. Unlike {@link ProxyHandler} this
+     * isn't gated by {@code dev.equo.swt.web.proxy}: it never serves a path the
+     * embedding application didn't itself pass to {@code Browser.setUrl("file:...")},
+     * so it isn't a new capability the way proxying arbitrary remote URLs is — the
+     * app already had that same filesystem access.
+     */
+    private static class LocalFileHandler implements HttpHandler {
+
+        private static final String PREFIX = "/local-file/";
+
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            try {
+                String method = exchange.getRequestMethod();
+                if ("OPTIONS".equalsIgnoreCase(method)) {
+                    StaticFileHandler.setSameOriginCorsHeaders(exchange);
+                    StaticFileHandler.setCrossOriginHeaders(exchange);
+                    exchange.sendResponseHeaders(204, -1);
+                    return;
+                }
+                if (!"GET".equalsIgnoreCase(method) && !"HEAD".equalsIgnoreCase(method)) {
+                    sendPlain(exchange, 405, "Method Not Allowed");
+                    return;
+                }
+
+                String path = exchange.getRequestURI().getPath();
+                String rest = path.startsWith(PREFIX) ? path.substring(PREFIX.length()) : "";
+                int slash = rest.indexOf('/');
+                if (slash <= 0) {
+                    sendPlain(exchange, 404, "Not Found");
+                    return;
+                }
+                String token = rest.substring(0, slash);
+                // Decode as a path segment, not form data: escape literal '+' first so
+                // URLDecoder (which otherwise turns '+' into ' ') doesn't mangle
+                // filenames that contain a real '+' character.
+                String relative = URLDecoder.decode(
+                        rest.substring(slash + 1).replace("+", "%2B"), StandardCharsets.UTF_8);
+
+                File file = LocalFileServing.resolve(token, relative);
+                if (file == null) {
+                    sendPlain(exchange, 404, "Not Found");
+                    return;
+                }
+
+                exchange.getResponseHeaders().set("Content-Type", StaticFileHandler.getMimeType(file.getName()));
+                exchange.getResponseHeaders().set("Cache-Control", "no-store");
+                StaticFileHandler.setCrossOriginHeaders(exchange);
+                StaticFileHandler.setSameOriginCorsHeaders(exchange);
+
+                if ("HEAD".equalsIgnoreCase(method)) {
+                    exchange.sendResponseHeaders(200, -1);
+                    return;
+                }
+
+                exchange.sendResponseHeaders(200, file.length());
+                try (OutputStream os = exchange.getResponseBody();
+                     InputStream is = Files.newInputStream(file.toPath())) {
+                    is.transferTo(os);
+                }
+            } catch (Exception e) {
+                LOG.log(Level.WARNING, "local-file error for " + exchange.getRequestURI(), e);
+                try {
+                    sendPlain(exchange, 500, "error");
+                } catch (IOException ignored) {
+                }
+            } finally {
+                exchange.close();
+            }
+        }
+
+        private static void sendPlain(HttpExchange exchange, int code, String msg) throws IOException {
+            byte[] b = msg.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=utf-8");
+            exchange.sendResponseHeaders(code, b.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(b);
+            }
         }
     }
 

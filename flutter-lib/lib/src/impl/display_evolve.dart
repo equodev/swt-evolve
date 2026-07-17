@@ -51,7 +51,14 @@ class _DisplaySwtState extends State<DisplaySwt> {
     }
   }
 
+  final Map<int, bool> _shellIsMainCache = {};
+
   bool _isMainShell(VShell s, BoxConstraints constraints) {
+    return _shellIsMainCache.putIfAbsent(
+        s.id, () => _computeIsMainShell(s, constraints));
+  }
+
+  bool _computeIsMainShell(VShell s, BoxConstraints constraints) {
     final b = s.bounds;
     if (b == null || b.x != 0 || b.y != 0) return false;
     if (b.width == 1024 && b.height == 768) return true; // eclipse workbench default
@@ -83,6 +90,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
     final shells = _display.shells ?? [];
     print("Dart Display.build shells: ${shells.length}");
     if (shells.isEmpty) return const SizedBox.shrink();
+    _shellIsMainCache.removeWhere((id, _) => !shells.any((s) => s.id == id));
 
     return LayoutBuilder(builder: (context, constraints) {
       final mainShells = <VShell>[];

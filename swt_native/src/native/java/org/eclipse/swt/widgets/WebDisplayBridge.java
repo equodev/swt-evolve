@@ -275,6 +275,15 @@ public class WebDisplayBridge extends DisplayBridge {
         chromiumLauncher.setWindowBounds(bounds.x, bounds.y, bounds.width, bounds.height);
     }
 
+    /**
+     * The geometry last pushed to (or already matching) the Chromium window. An embedding app can
+     * call {@code Control.setLocation(x, y)} on the main shell with the x/y it already has (e.g.
+     * while centering an unrelated secondary dialog), which reconstructs a full, unchanged
+     * Rectangle. That's a no-op on a native OS window, but a raw CEF setWindowBounds isn't
+     * guaranteed to be — so skip re-issuing it when nothing actually changed.
+     */
+    private Rectangle lastWindowBounds;
+
     @Override
     public void setBounds(DartControl control, Rectangle bounds) {
         if (!isChromiumWindow(control) || bounds == null)
@@ -282,11 +291,16 @@ public class WebDisplayBridge extends DisplayBridge {
         // The main shell is slaved to the Chromium viewport: applyClientViewport()/setVisible() resize
         // it whenever Chromium echoes a new size. Forwarding those back to the OS window fights the
         // window manager (the resize loop), so only genuine app-driven geometry reaches the window.
-        if (applyingClientBounds)
+        if (applyingClientBounds) {
+            lastWindowBounds = bounds;
             return;
+        }
+        if (bounds.equals(lastWindowBounds))
+            return; // no-op: the window already has exactly this geometry
         Shell shell = (Shell) ((DartShell) control).getApi();
         if (shell.getMaximized() || shell.getFullScreen())
             return;
+        lastWindowBounds = bounds;
         forwardWindowBounds(bounds);
     }
 

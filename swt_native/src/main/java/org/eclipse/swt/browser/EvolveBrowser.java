@@ -206,6 +206,12 @@ public class EvolveBrowser extends WebBrowser {
         if (postData != null) args.put("postData", postData);
         if (headers != null && headers.length > 0)
             args.put("headers", java.util.Arrays.asList(headers));
+        // Browsers refuse to display file:// content framed by a non-file:// page
+        // (the web target's Browser is an <iframe>), so a plain file:// src just
+        // renders blank. Re-serve it same-origin through WebFlutterServer instead
+        // -- see LocalFileServing for why this is safe to do unconditionally.
+        dev.equo.swt.LocalFileServing.Served served = dev.equo.swt.LocalFileServing.registerIfLocalFile(url);
+        if (served != null) args.put("localFilePath", served.tokenPath());
         FlutterBridge.send(getDartWidget(), "navigate", args);
         return true;
     }
