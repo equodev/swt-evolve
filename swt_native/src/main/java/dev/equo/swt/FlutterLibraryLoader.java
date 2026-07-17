@@ -7,6 +7,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
+import java.util.ServiceLoader;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -101,6 +102,7 @@ public class FlutterLibraryLoader {
         } else {
             throw new UnsupportedOperationException("Unsupported OS: " + os + ". Equo SWT currently supports macOS, Windows and Linux.");
         }
+        applyExternalBundleOverride();
     }
 
     private static File extractWebFlutterLibraries() throws IOException {
@@ -332,6 +334,11 @@ public class FlutterLibraryLoader {
         }
     }
 
+    // NOTE: dev.equo.ewt.bundleDir is intentionally NOT consulted here. It names the
+    // EXTERNAL app-bundle dir (EWT-owned combined bundle), not where Evolve loads its own
+    // native bridge/engine from. The bundle path is handed to the bridge via setBundleDir
+    // in applyExternalBundleOverride() (called from extractAndLoadFlutterLibraries after the
+    // natives load); Evolve's own natives load from its build/jar as in standalone.
     private static File findFlutterBuildDirectory() {
         String[] possiblePaths = {
                 "flutter-lib/build",
@@ -348,6 +355,63 @@ public class FlutterLibraryLoader {
             }
         }
         return null;
+    }
+
+    // The EWT-owned combined app bundle (libapp.so + flutter_assets). Names the external
+    // bundle; Evolve loads its own native bridge/engine separately.
+    private static final String EXTERNAL_BUNDLE_DIR = "dev.equo.ewt.bundleDir";
+
+    /**
+     * Returns the first provider's non-blank bundle base, or null if none supply one.
+     * Package-private + Iterable-typed so it is unit-testable with a fixed list; the real
+     * caller passes {@code ServiceLoader.load(ExternalBundleProvider.class)}.
+     */
+    static String firstBundleBaseDir(Iterable<ExternalBundleProvider> providers) {
+        for (ExternalBundleProvider p : providers) {
+            String base = p.extractAndGetBundleBaseDir();
+            if (base != null && !base.isBlank()) {
+                return base;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * When an external combined bundle is configured, hand its path to the native bridge so
+     * the engine boots that libapp.so / flutter_assets instead of the bridge-relative one.
+     * No-op (legacy behavior) when the property is absent.
+     */
+    private static void applyExternalBundleOverride() {
+        String dir = System.getProperty(EXTERNAL_BUNDLE_DIR);
+        if (dir == null || dir.isBlank()) {
+            // Production: no dev build dir. Discover the external bundle owner (EWT) via SPI,
+            // which extracts the combined bundle and returns its base. Publish it back into the
+            // property so EWT's NativeLibLoader (which reads the same property to attach-load
+            // libwidgets) sees it too — the two consumers stay in sync without extra wiring.
+            dir = firstBundleBaseDir(ServiceLoader.load(ExternalBundleProvider.class));
+            if (dir == null) return;   // standalone Evolve — no external bundle, unchanged
+            System.setProperty(EXTERNAL_BUNDLE_DIR, dir);
+        }
+        String os = getOS();
+        // The native bridge (GetSharedLibraryPath) appends "/bundle/lib/libapp.so" and
+        // "/bundle/data/..." to whatever it is given, so we must hand it the directory that
+        // CONTAINS bundle/ (the per-OS "release" dir), NOT the bundle dir itself — otherwise
+        // the engine gets a doubled ".../bundle/bundle/lib/libapp.so" and fails with
+        // "Invalid ELF path". Only the Linux path is verified; Win/mac follow their own layout.
+        String bundleBase;
+        if (OS_LINUX.equals(os)) {
+            bundleBase = new File(dir, LINUX_X64_RELEASE).getAbsolutePath();
+        } else if (OS_WIN.equals(os)) {
+            bundleBase = new File(dir, WIN_X64_RELEASE).getAbsolutePath();
+        } else { // macOS
+            bundleBase = new File(dir, SWTFLUTTER_APP_CONTENTS).getAbsolutePath();
+        }
+        if (!new File(bundleBase).isDirectory()) {
+            System.err.println("[Equo] WARNING: " + EXTERNAL_BUNDLE_DIR + " resolved bundle base does not exist or is not a directory: " + bundleBase);
+            return;
+        }
+        System.out.println("[Equo] external app bundle base: " + bundleBase);
+        FlutterNative.setBundleDir(bundleBase);
     }
 
     /**

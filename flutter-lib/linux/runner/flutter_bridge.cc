@@ -42,11 +42,17 @@ extern "C" void DummyExportedFunction() {
   // This function exists solely to provide an address within the shared library.
 }
 
+// External app-bundle directory set from Java (dev.equo.ewt.bundleDir). When non-empty it
+// overrides the dladdr "next to myself" lookup so the bridge can boot a bundle it does not
+// sit beside. Empty selects the dladdr lookup.
+static std::string g_bundle_override;
+
 std::string GetSharedLibraryPath() {
+  if (!g_bundle_override.empty()) {
+    return g_bundle_override;
+  }
   Dl_info dl_info;
-
   void *address_in_so = reinterpret_cast<void *>(&DummyExportedFunction);
-
   if (dladdr(address_in_so, &dl_info) != 0) {
     if (dl_info.dli_fname != nullptr) {
       std::filesystem::path so_path(dl_info.dli_fname);
@@ -57,7 +63,7 @@ std::string GetSharedLibraryPath() {
   } else {
     g_printerr("Error getting shared library info with dladdr\n");
   }
-  return ""; // Return empty string on failure
+  return "";
 }
 
 uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
@@ -247,6 +253,17 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
 // =================================================================================================
 // JNI entry points (dev.equo.swt.FlutterNative). One set of functions for both surface kinds.
 // =================================================================================================
+
+extern "C" JNIEXPORT void JNICALL
+Java_dev_equo_swt_FlutterNative_SetBundleDir(JNIEnv *env, jclass cls, jstring dir) {
+  if (dir == nullptr) {
+    g_bundle_override.clear();
+    return;
+  }
+  const char *c = env->GetStringUTFChars(dir, nullptr);
+  g_bundle_override = (c != nullptr) ? std::string(c) : std::string();
+  if (c != nullptr) env->ReleaseStringUTFChars(dir, c);
+}
 
 JNIEXPORT jlong JNICALL
 Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv *env, jclass cls, jint port, jlong parent,

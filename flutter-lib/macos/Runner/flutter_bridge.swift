@@ -71,7 +71,7 @@ class FlutterBridgeController: FlutterSurface {
         print("FlutterBridgeController.initialize port:\(port) parent:\(String(describing: parentView)) id:\(widgetId) name:\(widgetName)")
 
         let arguments = [String(port), String(widgetId), widgetName, theme, String(backgroundColor), String(parentBackgroundColor)]
-        let frameworkPath = getDylibDirectory()! + "/Frameworks/App.framework"
+        let frameworkPath = bundleBase()! + "/Frameworks/App.framework"
         let project = FlutterDartProject(precompiledDartBundle: Bundle(path: frameworkPath))
         project.dartEntrypointArguments = arguments
         flutterViewController = FlutterViewController.init(project: project)
@@ -170,7 +170,7 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         // dylib and pass [port, id, name, theme, bg, parentBg] so main() connects to the comm port.
         let bg = String(backgroundColor)
         let arguments = [String(port), String(displayId), widgetName, theme, bg, bg]
-        let frameworkPath = getDylibDirectory()! + "/Frameworks/App.framework"
+        let frameworkPath = bundleBase()! + "/Frameworks/App.framework"
         let project = FlutterDartProject(precompiledDartBundle: Bundle(path: frameworkPath))
         project.dartEntrypointArguments = arguments
         let fvc = FlutterViewController(project: project)
@@ -372,6 +372,14 @@ public func FlutterNative_setState(env: UnsafeMutablePointer<JNIEnv?>, cls: jcla
     surfaceFrom(context)?.setState(state)
 }
 
+// Stores the external bundle base so bundleBase() points the engine at it.
+@_cdecl("Java_dev_equo_swt_FlutterNative_SetBundleDir")
+public func FlutterNative_setBundleDir(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, dir: jstring?) {
+    guard let dir = dir else { gBundleOverride = nil; return }
+    let s = jstringToSwift(env, dir)
+    gBundleOverride = s.isEmpty ? nil : s
+}
+
 // Spin the main run loop briefly so the Flutter engine can make progress while a caller busy-waits
 // for a response (e.g. the size-test harness). Under Flutter 3.35's merged platform/UI thread the
 // engine's UI work runs on the platform (main) run loop, so a thread that blocks without servicing
@@ -381,6 +389,17 @@ public func FlutterNative_setState(env: UnsafeMutablePointer<JNIEnv?>, cls: jcla
 public func FlutterNative_pumpMessages(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, maxMessages: jint) -> jint {
     RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.002))
     return 0
+}
+
+// External app-bundle base set from Java (dev.equo.ewt.bundleDir). When set it overrides
+// getDylibDirectory() so the bridge boots an App.framework it does not sit beside. Callers
+// append "/Frameworks/App.framework", so this must be the ".../swtflutter.app/Contents" dir.
+// nil selects getDylibDirectory().
+private var gBundleOverride: String? = nil
+
+// Bundle base for the App.framework: the external override when set, else the dylib's own dir.
+func bundleBase() -> String? {
+    return gBundleOverride ?? getDylibDirectory()
 }
 
 func getDylibDirectory() -> String? {

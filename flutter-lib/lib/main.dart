@@ -5,6 +5,7 @@ import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/widget.dart';
 import 'package:swtflutter/src/custom/toolbar_composite.dart';
 import 'package:swtflutter/src/custom/main_composite.dart';
+import 'package:swtflutter/src/custom/ewt_evolve.dart';
 import 'package:swtflutter/src/custom/csd/csd_scaffold.dart';
 import 'package:swtflutter/src/custom/csd/csd_state.dart';
 import 'package:swtflutter/src/custom/csd/equo_window.dart';
@@ -304,6 +305,7 @@ Widget? customWidget(Map<String, dynamic> child) {
     "SideBar" => SideBarComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
     "StatusBar" => StatusBarComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
     "MainComposite" => MainComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
+    "EwtWidget" => EwtWidgetSwt(key: ValueKey(id), value: VComposite.fromJson(child)),
     "Display" => DisplaySwt(key: ValueKey(id), value: VDisplay()..swt = "Display"..id = id),
     _ => null
   };
@@ -321,6 +323,7 @@ Widget? customWidgetFromValue(VWidget child) {
     "SideBar" => SideBarComposite(key: ValueKey(id), value: child as VComposite),
     "StatusBar" => StatusBarComposite(key: ValueKey(id), value: child as VComposite),
     "MainComposite" => MainComposite(key: ValueKey(id), value: child as VComposite),
+    "EwtWidget" => EwtWidgetSwt(key: ValueKey(id), value: child as VComposite),
     _ => null
   };
 }
