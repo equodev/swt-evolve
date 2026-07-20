@@ -72,6 +72,7 @@ class DisplayWakeFlutterTest {
     @BeforeEach
     void setUp() throws InterruptedException {
         running = true;
+        setWebParkCap(3_600_000L);
         CountDownLatch ready = new CountDownLatch(1);
         uiThread = new Thread(() -> {
             try {
@@ -119,6 +120,17 @@ class DisplayWakeFlutterTest {
             d.asyncExec(() -> {}); // unpark from this (non-UI) thread so the loop sees running == false
         if (uiThread != null)
             uiThread.join(5000);
+        setWebParkCap(16);
+    }
+
+    private static void setWebParkCap(long ms) {
+        try {
+            java.lang.reflect.Field f = Class.forName("org.eclipse.swt.widgets.DartDisplay").getDeclaredField("WEB_PARK_CAP_MS");
+            f.setAccessible(true);
+            f.setLong(null, ms);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /** Run {@code work} on the UI thread and wait for it (widget creation must happen there). */
@@ -136,16 +148,20 @@ class DisplayWakeFlutterTest {
     private void awaitLoopParked() throws InterruptedException {
         long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(WAKE_TIMEOUT_MS);
         while (System.nanoTime() < deadline) {
-            if (parks.get() == wakes.get() + 1 && uiThread.getState() == Thread.State.WAITING)
+            if (parks.get() == wakes.get() + 1 && isParked(uiThread.getState()))
                 return;
             Thread.sleep(1);
         }
         assertThat(parks.get() - wakes.get())
                 .as("event loop should be parked in sleep() (parks == wakes + 1)")
                 .isEqualTo(1);
-        assertThat(uiThread.getState())
+        assertThat(isParked(uiThread.getState()))
                 .as("UI thread should be blocked in sleep()")
-                .isEqualTo(Thread.State.WAITING);
+                .isTrue();
+    }
+
+    private static boolean isParked(Thread.State s) {
+        return s == Thread.State.WAITING || s == Thread.State.TIMED_WAITING;
     }
 
     /** Block until the loop has woken more than {@code baseline} times (or fail after the timeout). */
@@ -444,5 +460,37 @@ class DisplayWakeFlutterTest {
         assertThat(awaitLatch(ran))
                 .as("a parked loop must wake on demand (a missed wake would hang indefinitely)")
                 .isTrue();
+    }
+
+    @Test
+    void boundedPark_wakesWithinCap() throws Exception {
+        setWebParkCap(30);
+        onUiThread(() -> {});
+        int wokenBefore = wakes.get();
+
+        assertThat(awaitCount(wakes, wokenBefore))
+                .as("bounded park must wake the idle loop on its own within the cap (no wake source)")
+                .isTrue();
+    }
+
+    @Test
+    void moveAllEventsTo_wakesTargetDisplay() throws Exception {
+        Synchronizer source = new Synchronizer(display);
+        CountDownLatch ran = new CountDownLatch(1);
+        source.asyncExec(ran::countDown);
+        awaitLoopParked();
+
+        moveAllEventsTo(source, display.getSynchronizer());
+
+        assertThat(awaitLatch(ran))
+                .as("moveAllEventsTo must wake the target display so the moved runnable dispatches")
+                .isTrue();
+    }
+
+    private static void moveAllEventsTo(Synchronizer source, Synchronizer target) throws Exception {
+        Object impl = source.getImpl();
+        Method m = impl.getClass().getDeclaredMethod("moveAllEventsTo", Synchronizer.class);
+        m.setAccessible(true);
+        m.invoke(impl, target);
     }
 }

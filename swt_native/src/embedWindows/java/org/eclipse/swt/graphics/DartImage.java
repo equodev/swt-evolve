@@ -1086,22 +1086,28 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         if (f != null && !f.isDone()) {
             Display display = Display.getCurrent();
             if (display != null && !display.isDisposed()) {
-                long deadline = System.nanoTime() + 2_000_000_000L;
-                Runnable wakeOnTimeout = () -> {
-                };
-                display.timerExec(2000, wakeOnTimeout);
-                try {
-                    while (!f.isDone() && !display.isDisposed() && System.nanoTime() < deadline) {
-                        // GC(Image) uses an off-screen Flutter engine whose startup and
-                        // rendering require SWT's event loop on every desktop platform.
-                        // Sleeping without dispatching can prevent ClientReady from running.
-                        if (!display.readAndDispatch()) {
-                            display.sleep();
+                if (dev.equo.swt.ConfigFlags.isDesktopMode()) {
+                    long deadline = System.nanoTime() + 2_000_000_000L;
+                    Runnable wakeOnTimeout = () -> {
+                    };
+                    display.timerExec(2000, wakeOnTimeout);
+                    try {
+                        while (!f.isDone() && !display.isDisposed() && System.nanoTime() < deadline) {
+                            if (!display.readAndDispatch()) {
+                                display.sleep();
+                            }
+                        }
+                    } finally {
+                        if (!display.isDisposed()) {
+                            display.timerExec(-1, wakeOnTimeout);
                         }
                     }
-                } finally {
-                    if (!display.isDisposed()) {
-                        display.timerExec(-1, wakeOnTimeout);
+                } else {
+                    try {
+                        f.get(2000, java.util.concurrent.TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
                     }
                 }
             }
