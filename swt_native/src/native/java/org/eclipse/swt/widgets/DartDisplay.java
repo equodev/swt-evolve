@@ -3432,7 +3432,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
                 if (displayBridge != null && displayBridge.needsPump()) {
                     displayBridge.sleep(16);
                 } else {
-                    _wakeSignal.acquire();
+                    _wakeSignal.tryAcquire(WEB_PARK_CAP_MS, java.util.concurrent.TimeUnit.MILLISECONDS);
                 }
             }
         } catch (InterruptedException e) {
@@ -4048,6 +4048,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     Timer _timerExecTimer = new Timer(true);
 
     final java.util.concurrent.Semaphore _wakeSignal = new java.util.concurrent.Semaphore(0);
+
+    static volatile long WEB_PARK_CAP_MS = 16;
 
     ArrayList<ToolTip> activeTooltips = new ArrayList<>();
 

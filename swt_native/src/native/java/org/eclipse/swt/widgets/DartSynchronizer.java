@@ -73,12 +73,12 @@ public class DartSynchronizer implements ISynchronizer {
      * @param toReceiveTheEvents the synchronizer that will receive the events
      */
     void moveAllEventsTo(Synchronizer toReceiveTheEvents) {
-        // Drain target queue and add it later again to insert at the beginning of the
-        // queue for backward compatibility:
         java.util.List<RunnableLock> tail = new ArrayList<>();
         ((DartSynchronizer) toReceiveTheEvents.getImpl()).messages.removeIf(tail::add);
         messages.removeIf(((DartSynchronizer) toReceiveTheEvents.getImpl()).messages::add);
         ((DartSynchronizer) toReceiveTheEvents.getImpl()).messages.addAll(tail);
+        if (!((DartSynchronizer) toReceiveTheEvents.getImpl()).messages.isEmpty())
+            ((DartDisplay) ((DartSynchronizer) toReceiveTheEvents.getImpl()).display.getImpl()).wakeThread();
     }
 
     void addLast(RunnableLock lock) {
