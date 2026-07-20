@@ -259,11 +259,17 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
           closeMenu: _menuController.close,
           autofocusItem: _firstFocusableMenuItem(menuItems),
           autofocusItemFocusNode: _firstItemFocusNode,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: menuItems
-                .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
-                .toList(),
+          // explicitChildNodes keeps each MenuItem's tagSemantics identifier as its own DOM node
+          // instead of being merged away inside the overlay — without it an open menu exposes zero
+          // flt-semantics-identifier nodes and tests can only reach items by blind keyboard nav.
+          child: Semantics(
+            explicitChildNodes: true,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: menuItems
+                  .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
+                  .toList(),
+            ),
           ),
         )),
       ],
