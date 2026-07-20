@@ -18,30 +18,33 @@ public class Serializer {
     private static final byte[] name_style = "style".getBytes(java.nio.charset.StandardCharsets.UTF_8);
 
     private final DslJson<Object> dsl;
-    // DSL-JSON best practice: reuse the JsonWriter instead of allocating one (or a
-    // ByteArrayOutputStream) per call. One writer per thread keeps the growing byte[]
-    // buffer alive across serializations; it is never re-entered because converters write
-    // into the writer they are handed rather than calling back into to().
-    private final ThreadLocal<JsonWriter> localWriter;
+    // Pooled per thread rather than a single thread-local instance: to() can be re-entered on
+    // the same thread (some property getters pump the event loop while waiting on an async
+    // render), and a shared writer would have its buffer overwritten mid-write by the inner call.
+    private final ThreadLocal<java.util.ArrayDeque<JsonWriter>> writerPool;
 
     public Serializer() {
         DslJson.Settings<Object> settings = new DslJson.Settings<>()
                 .includeServiceLoader(Serializer.class.getClassLoader())
                 .skipDefaultValues(true);
         dsl = new DslJson<>(settings);
-        localWriter = ThreadLocal.withInitial(dsl::newWriter);
+        writerPool = ThreadLocal.withInitial(java.util.ArrayDeque::new);
     }
 
-    /**
-     * Serialize {@code p} to a fresh {@code byte[]} using a reused thread-local
-     * {@link JsonWriter} in byte[] mode (DSL-JSON's recommended fast path). The returned
-     * array is a defensive copy, safe to hand to the async comm layer.
-     */
     public byte[] to(Object p) throws IOException {
-        JsonWriter writer = localWriter.get();
-        writer.reset();
-        dsl.serialize(writer, p);
-        return writer.toByteArray();
+        java.util.ArrayDeque<JsonWriter> pool = writerPool.get();
+        JsonWriter writer = pool.pollFirst();
+        if (writer == null) {
+            writer = dsl.newWriter();
+        } else {
+            writer.reset();
+        }
+        try {
+            dsl.serialize(writer, p);
+            return writer.toByteArray();
+        } finally {
+            pool.addFirst(writer);
+        }
     }
 
     public <T> T from(Class<T> type, byte[] bytes) throws IOException {

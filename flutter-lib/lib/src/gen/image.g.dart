@@ -14,11 +14,13 @@ VImage _$VImageFromJson(Map<String, dynamic> json) => VImage()
   ..imageData = json['imageData'] == null
       ? null
       : VImageData.fromJson(json['imageData'] as Map<String, dynamic>)
+  ..remoteRef = (json['remoteRef'] as num?)?.toInt()
   ..svgContent = json['svgContent'] as String?;
 
 Map<String, dynamic> _$VImageToJson(VImage instance) => <String, dynamic>{
   'background': ?instance.background,
   'filename': ?instance.filename,
   'imageData': ?instance.imageData,
+  'remoteRef': ?instance.remoteRef,
   'svgContent': ?instance.svgContent,
 };

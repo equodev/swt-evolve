@@ -27,7 +27,20 @@ public final class ImageDataCodec {
 
             try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
                 ldr.save(out, fmt);
-                return out.toByteArray();
+                byte[] bytes = out.toByteArray();
+                if (img.width <= 12 && img.height <= 12) {
+                    int origPixel = img.getPixel(img.width - 1, img.height - 1);
+                    org.eclipse.swt.graphics.RGB origRgb = img.palette.getRGB(origPixel);
+                    ImageLoader checkLdr = new ImageLoader();
+                    ImageData[] roundTrip = checkLdr.load(new ByteArrayInputStream(bytes));
+                    ImageData rt = roundTrip[0];
+                    int rtPixel = rt.getPixel(rt.width - 1, rt.height - 1);
+                    org.eclipse.swt.graphics.RGB rtRgb = rt.palette.getRGB(rtPixel);
+                    System.out.println("[DEBUG-codec] encode " + img.width + "x" + img.height
+                            + " depth=" + img.depth + " origLastPixel=" + origRgb
+                            + " roundTripLastPixel=" + rtRgb + " rtDepth=" + rt.depth);
+                }
+                return bytes;
             }
         } catch (Exception e) {
             System.err.println("encode error: " + e.getMessage());

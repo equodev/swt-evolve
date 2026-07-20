@@ -746,6 +746,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     void destroy() {
         getApi().surface = getApi().mask = 0;
         memGC = null;
+        _releaseRemoteRefOnDart(remoteRef);
+        _releaseRemoteRefOnDart(previousRemoteRef);
         cachedImageAtSize.destroy();
     }
 
@@ -1007,32 +1009,48 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     public ImageData getImageData(int zoom) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        java.util.concurrent.CompletableFuture<Void> f = pendingRenderFuture;
-        if (f != null && !f.isDone()) {
-            Display display = Display.getCurrent();
-            if (display != null && !display.isDisposed()) {
-                if (dev.equo.swt.ConfigFlags.isDesktopMode()) {
-                    long deadline = System.nanoTime() + 2_000_000_000L;
-                    Runnable wakeOnTimeout = () -> {
-                    };
-                    display.timerExec(2000, wakeOnTimeout);
-                    try {
-                        while (!f.isDone() && !display.isDisposed() && System.nanoTime() < deadline) {
-                            if (!display.readAndDispatch()) {
-                                display.sleep();
+if (memGC != null && !memGC.isDisposed() && memGC.getImpl() instanceof DartGC dgc) {
+            // A GC is still actively drawing on this image (no dispose() yet) — this backend
+            // only renders in response to an explicit signal (see GCImageDrawer), unlike real
+            // SWT where GC draws are immediately visible, so ask it to render the current
+            // state now instead of waiting on pendingRenderFuture, which nothing would
+            // trigger until dispose().
+            dgc.requestRenderSnapshotAndWait();
+        } else {
+            java.util.concurrent.CompletableFuture<Void> f = pendingRenderFuture;
+            if (f != null && !f.isDone()) {
+                Display display = Display.getCurrent();
+                if (display != null && !display.isDisposed()) {
+                    if (dev.equo.swt.ConfigFlags.isDesktopMode()) {
+                        // The render request may share the Display's one comm channel with every other
+                        // widget/event on it instead of using an isolated per-image engine (see
+                        // DisplayBridge#sharedCommFor / GCImageDrawer#resolveSharedComm) — under CI load
+                        // it can queue behind unrelated traffic, so this bound is generous either way.
+                        long deadline = System.nanoTime() + 5_000_000_000L;
+                        Runnable wakeOnTimeout = () -> {
+                        };
+                        display.timerExec(5000, wakeOnTimeout);
+                        try {
+                            while (!f.isDone() && !display.isDisposed() && System.nanoTime() < deadline) {
+                                // GC(Image) uses an off-screen Flutter engine whose startup and
+                                // rendering require SWT's event loop on every desktop platform.
+                                // Sleeping without dispatching can prevent ClientReady from running.
+                                if (!display.readAndDispatch()) {
+                                    display.sleep();
+                                }
+                            }
+                        } finally {
+                            if (!display.isDisposed()) {
+                                display.timerExec(-1, wakeOnTimeout);
                             }
                         }
-                    } finally {
-                        if (!display.isDisposed()) {
-                            display.timerExec(-1, wakeOnTimeout);
+                    } else {
+                        try {
+                            f.get(2000, java.util.concurrent.TimeUnit.MILLISECONDS);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
                         }
-                    }
-                } else {
-                    try {
-                        f.get(2000, java.util.concurrent.TimeUnit.MILLISECONDS);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
                     }
                 }
             }
@@ -1367,6 +1385,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     ImageData imageData;
 
+    Long remoteRef;
+
     String svgContent;
 
     public int _transparentPixel() {
@@ -1397,6 +1417,10 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         return imageData;
     }
 
+    public Long _remoteRef() {
+        return remoteRef;
+    }
+
     public String _svgContent() {
         return svgContent;
     }
@@ -1413,6 +1437,31 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     public void _memGC(GC gc) {
         memGC = gc;
+    }
+
+    private void _releaseRemoteRefOnDart(Long ref) {
+        if (ref != null && device instanceof Display disp) {
+            dev.equo.swt.comm.CommService c = dev.equo.swt.FlutterBridge.resolveDisplayGcComm(disp);
+            if (c != null)
+                c.send("Image/releaseRemoteRef", java.nio.ByteBuffer.allocate(8).putLong(ref).array());
+        }
+    }
+
+    Long previousRemoteRef;
+
+    public void _setRemoteRef(Long ref) {
+        if (previousRemoteRef != null)
+            _releaseRemoteRefOnDart(previousRemoteRef);
+        previousRemoteRef = (remoteRef != null && !remoteRef.equals(ref)) ? remoteRef : null;
+        this.remoteRef = ref;
+    }
+
+    public ImageData _imageDataForWire() {
+        if (remoteRef != null)
+            return null;
+        if (memGC != null)
+            return imageData;
+        return getImageData();
     }
 
     public void cancelRenderFuture() {

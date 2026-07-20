@@ -34,11 +34,20 @@ public class VImage extends VResource {
     }
 
     public ImageData getImageData() {
-        return ((DartImage) impl).getImageData();
+        return ((DartImage) impl)._imageDataForWire();
     }
 
     public void setImageData(ImageData value) {
         ((DartImage) impl).imageData = value;
+    }
+
+    @JsonAttribute(nullable = true)
+    public Long getRemoteRef() {
+        return ((DartImage) impl).remoteRef;
+    }
+
+    public void setRemoteRef(Long value) {
+        ((DartImage) impl).remoteRef = value;
     }
 
     public String getSvgContent() {

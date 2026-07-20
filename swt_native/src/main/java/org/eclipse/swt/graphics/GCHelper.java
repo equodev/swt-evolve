@@ -115,9 +115,9 @@ public class GCHelper {
      *         if {@code drawable} is not image-backed.
      */
     public static ImageGCContext setupImageGC(Drawable drawable, GCData data, GC gcApi) {
-        if (!dev.equo.swt.FlutterBridge.displayBootstrapped) return null;
         Image image = drawable instanceof Image img ? img : data.image;
         if (image == null) return null;
+        if (!awaitDisplayBootstrap(data.device)) return null;
 
         data.image = image;
         Image swtSource = null;
@@ -141,6 +141,23 @@ public class GCHelper {
         }
 
         return new ImageGCContext(drawable, swtSource, (Image) data.image, renderFuture);
+    }
+
+    private static final long DISPLAY_BOOTSTRAP_TIMEOUT_MS = 15000;
+
+    /** Pumps the event loop until the Display's Flutter client is ready, instead of dropping ops. */
+    private static boolean awaitDisplayBootstrap(Device device) {
+        if (dev.equo.swt.FlutterBridge.displayBootstrapped) return true;
+        Display display = device instanceof Display d ? d : Display.getCurrent();
+        if (display == null || display.isDisposed() || display.getThread() != Thread.currentThread()) {
+            return dev.equo.swt.FlutterBridge.displayBootstrapped;
+        }
+        long deadline = System.currentTimeMillis() + DISPLAY_BOOTSTRAP_TIMEOUT_MS;
+        while (!dev.equo.swt.FlutterBridge.displayBootstrapped && System.currentTimeMillis() < deadline) {
+            if (display.isDisposed()) break;
+            if (!display.readAndDispatch()) display.sleep();
+        }
+        return dev.equo.swt.FlutterBridge.displayBootstrapped;
     }
 
     /**

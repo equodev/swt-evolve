@@ -3160,6 +3160,40 @@ public final class DartGC extends DartResource implements IGC {
 
     public java.util.function.Consumer<Image> imageCapture;
 
+    public void requestRenderSnapshotAndWait() {
+        if (!(bridge instanceof GCImageDrawer drawer))
+            return;
+        Image target = data != null ? data.image : null;
+        if (target == null)
+            return;
+        java.util.concurrent.CompletableFuture<Void> snapshotFuture = new java.util.concurrent.CompletableFuture<>();
+        drawer.requestRenderSnapshot(bytes -> {
+            GCHelper.updateImageFromPngBytes(target, swtImageSource, bytes);
+            snapshotFuture.complete(null);
+        });
+        Display d = Display.getCurrent();
+        if (d != null && !d.isDisposed()) {
+            // Display#sleep() blocks until an event arrives with no timeout of its own —
+            // without this timerExec, a display with nothing else happening never wakes to
+            // re-check the deadline below, and the wait hangs indefinitely instead of
+            // bailing after 5s (see DartImage#getImageData(int), which needs the same).
+            long deadline = System.nanoTime() + 5_000_000_000L;
+            Runnable wakeOnTimeout = () -> {
+            };
+            d.timerExec(5000, wakeOnTimeout);
+            try {
+                while (!snapshotFuture.isDone() && !d.isDisposed() && System.nanoTime() < deadline) {
+                    if (!d.readAndDispatch())
+                        d.sleep();
+                }
+            } finally {
+                if (!d.isDisposed()) {
+                    d.timerExec(-1, wakeOnTimeout);
+                }
+            }
+        }
+    }
+
     public GC getApi() {
         if (api == null)
             api = GC.createApi(this);

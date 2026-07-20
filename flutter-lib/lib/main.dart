@@ -22,6 +22,7 @@ import 'src/theme/theme.dart'
 import 'src/theme/named_themes.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'native_platform.dart' if (dart.library.html) 'web_platform.dart';
@@ -37,6 +38,7 @@ import 'bench.dart' as bench;
 import 'test_harness.dart' as test_harness;
 import 'src/gen/gc.dart';
 import 'src/impl/gcdrawer_evolve.dart';
+import 'src/impl/utils/image_utils.dart';
 
 bool _themeConfigLogged = false;
 Completer<void>? _swtEvolvePropertiesCompleter;
@@ -123,6 +125,8 @@ void main(List<String> args) async {
     EquoWindow.installWindowStateListeners(
       (active) => csdWindowActive.value = active,
     );
+    _registerGcCreateListener();
+    _registerImageReleaseListener();
   }
 
   Widget contentWidget = createContentWidget(widgetName!, widgetId!);
@@ -141,6 +145,38 @@ void main(List<String> args) async {
   } else {
     sendClientReady(widgetName, widgetId);
   }
+}
+
+// Keeps each standalone GCDrawer alive (it has no other strong reference) until its own
+// gcDispose handler removes it.
+final Map<int, GCDrawer> _activeGcDrawers = {};
+
+// ByteData.getInt64 throws "Int64 accessor not supported by dart2js" on web; read the hi/lo
+// uint32 halves instead (see bench.dart's _setInt64BE for the matching write-side rationale).
+int _readInt64BE(ByteData v, int offset) =>
+    (v.getUint32(offset, Endian.big) << 32) | v.getUint32(offset + 4, Endian.big);
+
+void _registerGcCreateListener() {
+  // Raw-bytes path: Java sends the gcId as 8 big-endian bytes, no JSON round-trip.
+  EquoCommService.onBytes("GC/create", (bytes) {
+    final gcId = _readInt64BE(ByteData.sublistView(bytes), 0);
+    final state = VGC()
+      ..swt = "GC"
+      ..id = gcId;
+    _activeGcDrawers[gcId] = GCDrawer.standalone(
+      state,
+      onDisposed: () => _activeGcDrawers.remove(gcId),
+    );
+    sendClientReady("GCImageDrawer", gcId);
+  });
+}
+
+void _registerImageReleaseListener() {
+  // Raw-bytes path: Java sends the remoteRef as 8 big-endian bytes when it disposes an Image
+  // whose offscreen render was cached here (see GCImageDrawer.java / DartImage#destroy()).
+  EquoCommService.onBytes("Image/releaseRemoteRef", (bytes) {
+    ImageUtils.releaseRemoteImage(_readInt64BE(ByteData.sublistView(bytes), 0));
+  });
 }
 
 void sendClientReady(String widgetName, int widgetId, {bool sendWindowSize = false}) {
