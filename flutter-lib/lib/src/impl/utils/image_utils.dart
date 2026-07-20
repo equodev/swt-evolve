@@ -15,6 +15,21 @@ class ImageUtils {
   // Cache for async image loading Futures to prevent recreation on every rebuild
   static final Map<String, Future<Widget?>> _futureCache = {};
 
+  // ui.Image instances rendered by GCDrawer.standalone, keyed by the remoteRef Java holds so a
+  // later drawImage() can reuse them instead of round-tripping PNG bytes (see GCImageDrawer.java).
+  static final Map<int, ui.Image> _remoteImageCache = {};
+  static int _nextRemoteRef = 1;
+
+  static int registerRemoteImage(ui.Image image) {
+    final ref = _nextRemoteRef++;
+    _remoteImageCache[ref] = image;
+    return ref;
+  }
+
+  static void releaseRemoteImage(int ref) {
+    _remoteImageCache.remove(ref)?.dispose();
+  }
+
   static Widget? buildIconWidget(
     String filename, {
     double? size,
@@ -633,6 +648,14 @@ class ImageUtils {
   }
 
   static Future<ui.Image?> decodeVImageToUIImage(VImage? image) async {
+    final remoteRef = image?.remoteRef;
+    if (remoteRef != null) {
+      final cached = _remoteImageCache[remoteRef];
+      // clone() avoids one reader's dispose() invalidating other concurrent readers of the same cached image.
+      if (cached != null) return cached.clone();
+      print('No cached ui.Image for remoteRef $remoteRef; falling back to decode');
+    }
+
     if (image?.imageData?.data == null) {
       return null;
     }

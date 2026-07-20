@@ -61,6 +61,7 @@ abstract class EquoCommBase {
   final Map<String, UserEventCallback> _handlers = {};
   final Map<String, dynamic> _pending = {};
   final Map<String, void Function(Uint8List)> _rawHandlers = {};
+  final Map<String, Uint8List> _rawPending = {};
   final List<Uint8List> _queue = [];
   bool _open = false;
 
@@ -116,23 +117,27 @@ abstract class EquoCommBase {
     }
 
     dynamic payload;
+    var jsonOk = true;
     if (body != null) {
       try {
         payload = _jsonBytes.decode(body);
       } catch (e) {
-        print('[comm] JSON decode failed for "$actionId": $e');
-        return;
+        jsonOk = false;
       }
     }
 
     final callback = _handlers[actionId];
-    if (callback != null) {
+    if (jsonOk && callback != null) {
       if (callback.args?.once ?? false) _handlers.remove(actionId);
       _deliver(actionId, callback.onSuccess, payload);
-    } else {
-      // Buffer so the message is delivered when its handler registers.
-      _pending[actionId] = payload;
+      return;
     }
+
+    // Neither on() nor onBytes() has registered yet for this actionId (or the body isn't valid
+    // JSON, meaning it's a raw-bytes payload). Buffer both ways so whichever registers first
+    // can claim it.
+    if (jsonOk) _pending[actionId] = payload;
+    _rawPending[actionId] = body ?? Uint8List(0);
   }
 
   /// Runs a handler off the current call stack with its errors isolated.
@@ -187,6 +192,16 @@ abstract class EquoCommBase {
   /// Raw-bytes receive: callback gets the raw frame body (no JSON decode).
   void onBytes(String actionId, void Function(Uint8List) callback) {
     _rawHandlers[actionId] = callback;
+    final pending = _rawPending.remove(actionId);
+    if (pending != null) {
+      scheduleMicrotask(() {
+        try {
+          callback(pending);
+        } catch (e, st) {
+          print('[comm] Handler error for "$actionId": $e\n$st');
+        }
+      });
+    }
   }
 
   void remove(String actionId, [Object? token]) {
@@ -194,6 +209,7 @@ abstract class EquoCommBase {
     _handlers.remove(actionId);
     _pending.remove(actionId);
     _rawHandlers.remove(actionId);
+    _rawPending.remove(actionId);
   }
 }
 

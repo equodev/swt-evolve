@@ -134,6 +134,11 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// the chrome Listener would fire a second event with different coordinates.
   bool get forwardsControlMouseDown => true;
 
+  /// Whether [wrap] forwards KeyDown events to Java. Widgets that run their own keyboard
+  /// pipeline and send Key events themselves (e.g. StyledText) override this to false —
+  /// otherwise every keystroke reaches SWT KeyDown listeners twice.
+  bool get forwardsKeysFromWrap => true;
+
   bool get wrapsWholeWidgetForDnd => true;
 
   Widget wrapDnd(Widget content) {
@@ -168,11 +173,6 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         ..y = position.dy.round(),
     );
   }
-
-  /// Whether [wrap] forwards KeyDown events to Java. Widgets that run their own keyboard
-  /// pipeline and send Key events themselves (e.g. StyledText) override this to false —
-  /// otherwise every keystroke reaches SWT KeyDown listeners twice.
-  bool get forwardsKeysFromWrap => true;
 
   Widget wrap(Widget widget) {
     if (wrapsWholeWidgetForDnd) {

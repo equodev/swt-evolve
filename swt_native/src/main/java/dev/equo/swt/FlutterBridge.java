@@ -32,6 +32,23 @@ public abstract class FlutterBridge {
      */
     public static volatile boolean displayBootstrapped = false;
 
+    /** Registered only from {@code DisplayBridge}; stays unset in embed builds. */
+    public interface DisplayGcCommResolver {
+        CommService resolve(Display display);
+    }
+
+    private static volatile DisplayGcCommResolver displayGcCommResolver;
+
+    public static void setDisplayGcCommResolver(DisplayGcCommResolver resolver) {
+        displayGcCommResolver = resolver;
+    }
+
+    /** The Display's shared GC comm, or {@code null} in embed mode or once the Display is gone. */
+    public static CommService resolveDisplayGcComm(Display display) {
+        DisplayGcCommResolver resolver = displayGcCommResolver;
+        return (resolver != null && display != null) ? resolver.resolve(display) : null;
+    }
+
     /**
      * Desktop / default comm. Lazily created on first use and shared by every desktop bridge — there
      * is one Flutter engine per JVM there. {@code null} until first needed, and never created on web
@@ -202,7 +219,7 @@ public abstract class FlutterBridge {
 
         for (Object widget : filteredDirty) {
             if (isDisposed(widget)) continue;
-            CompletableFuture<Void> future = getBridge(widget).clientReady.thenRun(() -> {
+            Runnable send = () -> {
                 try {
                     if (isDisposed(widget)) return; // widget may have been disposed while waiting for clientReady
                     boolean isHidden = (widget instanceof org.eclipse.swt.widgets.DartControl dc) && !dc.getVisible();
@@ -223,7 +240,8 @@ public abstract class FlutterBridge {
                 } catch (RuntimeException e) {
                     e.printStackTrace();
                 }
-            });
+            };
+            CompletableFuture<Void> future = getBridge(widget).clientReady.thenRun(() -> runOnDisplayThread(widget, send));
             futures.add(future);
         }
         synchronized (dirty) {
@@ -254,6 +272,23 @@ public abstract class FlutterBridge {
         if (w instanceof DartWidget) return ((DartWidget) w).getDisplay();
         if (w instanceof DartGC) return ((DartGC) w).getDisplay();
         return null;
+    }
+
+    /**
+     * Runs {@code task} on {@code widget}'s Display thread. {@link #clientReady} is completed from
+     * {@link #onClientReady}, which runs on the comm (network) thread — a callback chained onto it
+     * (e.g. {@link #update()}'s per-widget send) that touches widget state (getters like
+     * {@code Control#isEnabled()}) must hop back to the Display thread first, or it throws
+     * {@code SWTException: Invalid thread access}. No-op hop when already on the right thread or
+     * when no Display can be resolved (unchanged, synchronous behavior in both cases).
+     */
+    private static void runOnDisplayThread(Object widget, Runnable task) {
+        Display display = getDisplay(widget);
+        if (display == null || display.isDisposed() || display.getThread() == Thread.currentThread()) {
+            task.run();
+            return;
+        }
+        display.asyncExec(task);
     }
 
     private static Object getApi(Object w) {

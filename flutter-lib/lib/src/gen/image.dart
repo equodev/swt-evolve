@@ -12,6 +12,7 @@ class VImage {
   VColor? background;
   String? filename;
   VImageData? imageData;
+  int? remoteRef;
   String? svgContent;
 
   factory VImage.fromJson(Map<String, dynamic> json) => _$VImageFromJson(json);

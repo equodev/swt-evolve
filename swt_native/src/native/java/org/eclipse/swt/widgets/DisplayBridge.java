@@ -71,7 +71,19 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 : new WebDisplayBridge(display);
         display.setBridge(bridge);
         bridge.start(display);
+        FlutterBridge.setDisplayGcCommResolver(DisplayBridge::sharedCommFor);
         return bridge;
+    }
+
+    // comm() is safe to hand out before the client connects — the comm layer buffers pre-connect
+    // sends and flushes them on connect (see sendDisplayUpdate); the caller's own onReady() gates
+    // anything that actually needs the client to be listening.
+    private static CommService sharedCommFor(Display display) {
+        if (!(display.getImpl() instanceof DartDisplay dd) || dd.displayBridge == null) {
+            return null;
+        }
+        DisplayBridge db = dd.displayBridge;
+        return !display.isDisposed() ? db.comm() : null;
     }
 
     /** Starts the surface for the Display (web server + browser, or native window). */

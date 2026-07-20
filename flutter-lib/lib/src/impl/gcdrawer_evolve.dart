@@ -47,8 +47,9 @@ class GCDrawer extends GCDrawerBase {
   List<Shape> _staging = [];
 
   /// Standalone mode: registers comm listeners for state + all draw ops + imageInit/gcDispose.
-  /// Used for headless image rendering (new GC(image)).
-  GCDrawer.standalone(VGC state) : onShapesUpdated = null, onGCDispose = null, super(state) {
+  /// Used for headless image rendering (new GC(image)). [onDisposed] fires once the render is sent.
+  GCDrawer.standalone(VGC state, {void Function()? onDisposed})
+      : onShapesUpdated = null, onGCDispose = null, super(state) {
     EquoCommService.onRaw("${state.swt}/${state.id}/imageInit", (payload) {
       _baseImageCompleter = Completer<void>();
       _handleImageInit(payload).then(
@@ -64,6 +65,19 @@ class GCDrawer extends GCDrawerBase {
         ..addAll(_staging);
       _staging = [];
       await _renderAndSend();
+      onDisposed?.call();
+      // One-shot drawer: nothing reuses this gcId after this point, so tear down now.
+      dispose();
+    });
+    // Non-terminal: renders the current draw state (staged + already-committed shapes) without
+    // clearing staging or unregistering listeners, so more ops (and a later real gcDispose, or
+    // another snapshot) still work afterward. Used when Java asks for the image mid-drawing —
+    // this backend only paints in response to an explicit signal, unlike real SWT where GC draws
+    // are immediately visible in the image.
+    EquoCommService.onRaw("${state.swt}/${state.id}/renderSnapshot", (_) async {
+      if (_baseImageCompleter != null) await _baseImageCompleter!.future;
+      await Future.wait(_pendingImages);
+      await _renderSnapshotAndSend();
     });
   }
 
@@ -89,6 +103,8 @@ class GCDrawer extends GCDrawerBase {
 
       cycleStaging.removeWhere((s) => s is _PlaceholderShape);
 
+      // Outgoing cycle's image clones become unreachable here; release them now.
+      disposeShapeImages(shapes);
       shapes.clear();
       shapes.addAll(cycleStaging);
       shapes.addAll(_lateLoadedImages);
@@ -330,12 +346,15 @@ class GCDrawer extends GCDrawerBase {
   Future<void> _handleImageInit(dynamic payload) async {
     final vImage = VImage.fromJson(
         payload as Map<String, dynamic>);
-    _imgWidth = vImage.imageData?.width ?? 0;
-    _imgHeight = vImage.imageData?.height ?? 0;
     _baseImage = await ImageUtils.decodeVImageToUIImage(vImage);
+    // On a re-render of the same Image (remoteRef already set from a prior render), imageData is
+    // omitted on the wire — fall back to the resolved cached image's own dimensions.
+    _imgWidth = vImage.imageData?.width ?? _baseImage?.width ?? 0;
+    _imgHeight = vImage.imageData?.height ?? _baseImage?.height ?? 0;
   }
 
-  Future<void> _renderAndSend() async {
+  Future<(ui.Image, Uint8List)?> _paintToImageAndPngBytes(
+      List<Shape> shapesToRender) async {
     final w = _imgWidth > 0 ? _imgWidth : 1;
     final h = _imgHeight > 0 ? _imgHeight : 1;
 
@@ -351,26 +370,58 @@ class GCDrawer extends GCDrawerBase {
       );
     }
 
-    for (final shape in shapes) {
+    for (final shape in shapesToRender) {
       shape.draw(canvas);
     }
 
     final picture = recorder.endRecording();
     final image = await picture.toImage(w, h);
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    if (byteData == null) return;
+    final bytes = byteData?.buffer.asUint8List();
+    if (bytes == null) return null;
+    return (image, bytes);
+  }
 
-    // Desktop binary path: send the raw PNG bytes as-is — no base64 (the binary comm channel
-    // carries them verbatim, ~33% smaller and no encode/decode). Java reads them via onBytes.
-    EquoCommService.sendBytes(
-        '${state.swt}/${state.id}/imageResult', byteData.buffer.asUint8List());
+  Future<Uint8List?> _paintToPngBytes(List<Shape> shapesToRender) async {
+    final result = await _paintToImageAndPngBytes(shapesToRender);
+    return result?.$2;
+  }
 
+  // Big-endian int64 write, matching main.dart's _readInt64BE on the Java read side.
+  Uint8List _int64BE(int value) {
+    final v = ByteData(8);
+    v.setUint32(0, value >> 32, Endian.big);
+    v.setUint32(4, value & 0xFFFFFFFF, Endian.big);
+    return v.buffer.asUint8List();
+  }
+
+  Future<void> _renderAndSend() async {
+    final result = await _paintToImageAndPngBytes(shapes);
+    if (result == null) return;
+    final (image, pngBytes) = result;
+    final ref = ImageUtils.registerRemoteImage(image);
+    // Desktop binary path: send remoteRef + raw PNG bytes as-is — no base64 (the binary comm
+    // channel carries them verbatim). Java reads them via onBytes (see GCImageDrawer.java).
+    final payload = Uint8List(8 + pngBytes.length)
+      ..setRange(0, 8, _int64BE(ref))
+      ..setRange(8, 8 + pngBytes.length, pngBytes);
+    EquoCommService.sendBytes('${state.swt}/${state.id}/imageResult', payload);
     _unregisterImageListeners();
+  }
+
+  /// Non-terminal counterpart to [_renderAndSend]: paints the current staged + committed shapes
+  /// and sends the result on its own channel, without clearing state or unregistering listeners.
+  Future<void> _renderSnapshotAndSend() async {
+    final bytes = await _paintToPngBytes([...shapes, ..._staging]);
+    if (bytes == null) return;
+    EquoCommService.sendBytes(
+        '${state.swt}/${state.id}/imageSnapshotResult', bytes);
   }
 
   void _unregisterImageListeners() {
     EquoCommService.remove('${state.swt}/${state.id}/imageInit');
     EquoCommService.remove('${state.swt}/${state.id}/gcDispose');
+    EquoCommService.remove('${state.swt}/${state.id}/renderSnapshot');
   }
 
   // ── CopyArea helpers ────────────────────────────────────────────────────
@@ -752,6 +803,25 @@ class GCDrawer extends GCDrawerBase {
   void dispose() {
     super.dispose();
     _unregisterImageListeners();
+    _baseImage?.dispose();
+    _baseImage = null;
+    final seen = <ui.Image>{};
+    disposeShapeImages(shapes, seen);
+    disposeShapeImages(_staging, seen);
+    disposeShapeImages(_lateLoadedImages, seen);
+  }
+}
+
+// Each image is an independently disposable clone; track [seen] since copyArea can duplicate
+// a shape while reusing the same ui.Image reference, and double-disposing throws.
+void disposeShapeImages(List<Shape> shapes, [Set<ui.Image>? seen]) {
+  final disposed = seen ?? <ui.Image>{};
+  for (final s in shapes) {
+    if (s is ImageShape && s.type == ImageType.raster && s.image != null) {
+      if (disposed.add(s.image!)) {
+        s.image!.dispose();
+      }
+    }
   }
 }
 
@@ -1270,8 +1340,9 @@ class ImageShape extends Shape {
               opArgs.srcHeight == -1 ? uiImage.height.toDouble() : (opArgs.srcHeight).toDouble(),
             );
 
+      // Only tint a genuine resolved icon, never an already-rendered bitmap.
       return ImageShape.raster(uiImage, srcRect, destRect,
-          clipRect: clipRect, colorFilter: colorFilter);
+          clipRect: clipRect, colorFilter: replacement != null ? colorFilter : null);
     } catch (e) {
       return ImageShape._(
         type: ImageType.raster,
@@ -1304,10 +1375,18 @@ class ImageShape extends Shape {
 
   void _drawRaster(ui.Canvas c) {
     if (image == null || srcRect == null) return;
+    // A 1:1 blit (no real scaling) must be pixel-exact, matching real SWT's GC#drawImage
+    // contract for same-size draws (a plain blit on every native backend, no resampling).
+    // Bilinear filtering has no benefit when there's nothing to scale, and instead bleeds
+    // sharp single-pixel features into their neighbors — e.g. a single bright pixel against
+    // a dark background loses intensity and smears into adjacent pixels even though src and
+    // dest are the same size (see Test_org_eclipse_swt_graphics_Image's
+    // ImageData-constructor tests, which draw exactly that).
+    final isScaled = srcRect!.width != destRect.width || srcRect!.height != destRect.height;
     c.drawImageRect(image!, srcRect!, destRect,
         Paint()
-          ..filterQuality = FilterQuality.high
-          ..isAntiAlias = true
+          ..filterQuality = isScaled ? FilterQuality.high : FilterQuality.none
+          ..isAntiAlias = isScaled
           ..colorFilter = colorFilter);
   }
 
