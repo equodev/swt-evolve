@@ -72,9 +72,9 @@ import org.eclipse.swt.internal.cocoa.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#tree">Tree, TreeItem, TreeColumn snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#tree">Tree, TreeItem, TreeColumn snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtTree extends SwtComposite implements ITree {
@@ -631,9 +631,7 @@ public class SwtTree extends SwtComposite implements ITree {
         spacing.width = spacing.height = CELL_GAP;
         widget.setIntercellSpacing(spacing);
         widget.setDoubleAction(OS.sel_sendDoubleSelection);
-        if (OS.isBigSurOrLater()) {
-            OS.objc_msgSend(widget.id, OS.sel_setStyle, OS.NSTableViewStylePlain);
-        }
+        OS.objc_msgSend(widget.id, OS.sel_setStyle, OS.NSTableViewStylePlain);
         // This is to mirror Table's behavior, see code comment there
         widget.setFocusRingType(OS.NSFocusRingTypeNone);
         headerView = (NSTableHeaderView) new SWTTableHeaderView().alloc().init();
@@ -655,7 +653,7 @@ public class SwtTree extends SwtComposite implements ITree {
             buttonCell = new NSButtonCell(OS.class_createInstance(cls, 0));
             buttonCell.init();
             checkColumn.setDataCell(buttonCell);
-            buttonCell.setButtonType(OS.NSSwitchButton);
+            buttonCell.setButtonType(OS.NSButtonTypeSwitch);
             buttonCell.setControlSize(OS.NSSmallControlSize);
             buttonCell.setImagePosition(OS.NSImageOnly);
             buttonCell.setAllowsMixedState(true);
@@ -1199,16 +1197,12 @@ public class SwtTree extends SwtComposite implements ITree {
             if (drawSelection && ((getApi().style & SWT.HIDE_SELECTION) == 0 || hasFocus)) {
                 cellRect.height -= spacing.height;
                 /*
-			 * On BigSur, calling highlightSelectionInClipRect here draws over the full row
+			 * calling highlightSelectionInClipRect here draws over the full row
 			 * and not just the cellRect. This causes drawing over other cells content.
 			 * Workaround is to draw the highlight background ourselves and not call
 			 * highlightSelectionInClipRect to draw it.
 			 */
-                if (OS.isBigSurOrLater()) {
-                    gc.fillRectangle((int) cellRect.x, (int) cellRect.y, (int) cellRect.width, (int) cellRect.height);
-                } else {
-                    callSuper(widget.id, OS.sel_highlightSelectionInClipRect_, cellRect);
-                }
+                gc.fillRectangle((int) cellRect.x, (int) cellRect.y, (int) cellRect.width, (int) cellRect.height);
                 cellRect.height += spacing.height;
             }
             gc.dispose();
@@ -1469,20 +1463,9 @@ public class SwtTree extends SwtComposite implements ITree {
         Rectangle rect = super.getClientArea();
         /*
 	 * OSX version < 10.11 - The origin of the tree is the top-left of the rows
-	 * of the table, not the header. We adjust the y value and height of the rect
-	 * accordingly, to include the header.
-	 *
-	 * OSX 10.11 & above - The origin of the tree is the header and the header's
+	 * of the table, not the header. The origin of the tree is the header and the header's
 	 * height is already included in the rect. Hence, we return the rect as is.
 	 */
-        if (OS.VERSION < OS.VERSION(10, 11, 0)) {
-            NSTableHeaderView headerView = ((NSTableView) getApi().view).headerView();
-            if (headerView != null) {
-                int height = (int) headerView.bounds().height;
-                rect.y -= height;
-                rect.height += height;
-            }
-        }
         return rect;
     }
 
@@ -2023,15 +2006,13 @@ public class SwtTree extends SwtComposite implements ITree {
         point.x = rect.x;
         point.y = rect.y;
         /*
-	 * In OSX 10.11, the origin of the tree is the header, not the top-left of the rows.
+	 * The origin of the tree is the header, not the top-left of the rows.
 	 * Offset the point's y coordinate accordingly.
 	 */
-        if (OS.VERSION >= OS.VERSION(10, 11, 0)) {
-            NSTableHeaderView headerView = ((NSTableView) getApi().view).headerView();
-            if (headerView != null) {
-                int height = (int) headerView.bounds().height;
-                point.y += height;
-            }
+        NSTableHeaderView headerView = ((NSTableView) getApi().view).headerView();
+        if (headerView != null) {
+            int height = (int) headerView.bounds().height;
+            point.y += height;
         }
         NSOutlineView outlineView = (NSOutlineView) getApi().view;
         long index = outlineView.rowAtPoint(point);
@@ -3610,14 +3591,12 @@ public class SwtTree extends SwtComposite implements ITree {
         pt.x = scrollView.contentView().bounds().x;
         pt.y = widget.frameOfCellAtColumn(0, row).y;
         /*
-	 * In OSX 10.11, the origin of the tree is the header, not the top-left of the rows.
+	 * The origin of the tree is the header, not the top-left of the rows.
 	 * Offset the point's y coordinate accordingly.
 	 */
-        if (OS.VERSION >= OS.VERSION(10, 11, 0)) {
-            if (widget.headerView() != null) {
-                NSRect headerRect = headerView.frame();
-                pt.y -= headerRect.y + headerRect.height;
-            }
+        if (widget.headerView() != null) {
+            NSRect headerRect = headerView.frame();
+            pt.y -= headerRect.y + headerRect.height;
         }
         getApi().view.scrollPoint(pt);
     }
@@ -3697,27 +3676,24 @@ public class SwtTree extends SwtComposite implements ITree {
         }
         if (scroll) {
             NSOutlineView outlineView = (NSOutlineView) getApi().view;
-            if (OS.VERSION >= OS.VERSION(10, 15, 0)) {
-                if (outlineView.headerView() == null) {
-                    /**
-                     * On macOS 10.15, scrollRowToVisible doesn't work correctly if
-                     * contentView's bounds is not set (i.e, width or height is 0).
-                     *
-                     * The contentView's bounds is set when the Tree's header view is set.
-                     * So don't call this code if Tree has a header already.
-                     */
-                    NSClipView contentView = scrollView.contentView();
-                    if (contentView != null) {
-                        NSRect contentViewBounds = contentView.bounds();
-                        if (contentViewBounds.height == 0 || contentViewBounds.width == 0) {
-                            NSView documentView = scrollView.documentView();
-                            if (documentView != null) {
-                                NSRect documentViewBounds = documentView.bounds();
-                                NSSize size = new NSSize();
-                                size.width = contentViewBounds.width == 0 ? documentViewBounds.width : contentViewBounds.width;
-                                size.height = contentViewBounds.height == 0 ? documentViewBounds.height : contentViewBounds.height;
-                                contentView.setBoundsSize(size);
-                            }
+            if (outlineView.headerView() == null) {
+                /*
+			 * scrollRowToVisible doesn't work correctly if contentView's bounds
+			 * is not set (i.e, width or height is 0). The contentView's bounds
+			 * is set when the Tree's header view is set. So don't call this code
+			 * if Tree has a header already.
+			 */
+                NSClipView contentView = scrollView.contentView();
+                if (contentView != null) {
+                    NSRect contentViewBounds = contentView.bounds();
+                    if (contentViewBounds.height == 0 || contentViewBounds.width == 0) {
+                        NSView documentView = scrollView.documentView();
+                        if (documentView != null) {
+                            NSRect documentViewBounds = documentView.bounds();
+                            NSSize size = new NSSize();
+                            size.width = contentViewBounds.width == 0 ? documentViewBounds.width : contentViewBounds.width;
+                            size.height = contentViewBounds.height == 0 ? documentViewBounds.height : contentViewBounds.height;
+                            contentView.setBoundsSize(size);
                         }
                     }
                 }

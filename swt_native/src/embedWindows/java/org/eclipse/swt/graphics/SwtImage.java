@@ -75,9 +75,9 @@ import org.eclipse.swt.internal.win32.*;
  * @see Color
  * @see ImageData
  * @see ImageLoader
- * @see <a href="http://www.eclipse.org/swt/snippets/#image">Image snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Examples: GraphicsExample, ImageAnalyzer</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#image">Image snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Examples: GraphicsExample, ImageAnalyzer</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public final class SwtImage extends SwtResource implements Drawable, IImage {
 
@@ -218,7 +218,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
             if (handleContainer == null || handleContainer.isDisposed()) {
                 return false;
             }
-            return (requestedHeight == height && requestedWidth == width) || (handleContainer.height() == height && handleContainer.height() == width);
+            return (requestedHeight == height && requestedWidth == width) || (handleContainer.height() == height && handleContainer.width() == width);
         }
 
         private Optional<InternalImageHandle> createHandleAtExactSize(int width, int height) {
@@ -979,12 +979,23 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         });
     }
 
-    long[] createGdipImage(Integer zoom) {
+    record GdipImage(long bitmap, long pixels) {
+
+        void destroy() {
+            Gdip.Bitmap_delete(bitmap);
+            if (pixels != 0) {
+                long hHeap = OS.GetProcessHeap();
+                OS.HeapFree(hHeap, 0, pixels);
+            }
+        }
+    }
+
+    GdipImage createGdipImage(Integer zoom) {
         ImageHandle handle = this.getHandle(zoom, zoom);
         return createGdipImageFromHandle(handle);
     }
 
-    long[] createGdipImageFromHandle(ImageHandle imageHandle) {
+    GdipImage createGdipImageFromHandle(ImageHandle imageHandle) {
         long handle = imageHandle.handle();
         int transparentPixel = imageHandle.transparentPixel();
         switch(getApi().type) {
@@ -1083,9 +1094,9 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
                         OS.DeleteObject(memHdc);
                         OS.DeleteObject(memDib);
                         int pixelFormat = hasAlpha ? Gdip.PixelFormat32bppPARGB : Gdip.PixelFormat32bppARGB;
-                        return new long[] { Gdip.Bitmap_new(imgWidth, imgHeight, dibBM.bmWidthBytes, pixelFormat, pixels), pixels };
+                        return new GdipImage(Gdip.Bitmap_new(imgWidth, imgHeight, dibBM.bmWidthBytes, pixelFormat, pixels), pixels);
                     }
-                    return new long[] { Gdip.Bitmap_new(handle, 0), 0 };
+                    return new GdipImage(Gdip.Bitmap_new(handle, 0), 0);
                 }
             case SWT.ICON:
                 {
@@ -1157,7 +1168,7 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
                         OS.DeleteObject(iconInfo.hbmColor);
                     if (iconInfo.hbmMask != 0)
                         OS.DeleteObject(iconInfo.hbmMask);
-                    return new long[] { img, pixels };
+                    return new GdipImage(img, pixels);
                 }
             default:
                 SWT.error(SWT.ERROR_INVALID_IMAGE);
@@ -3369,6 +3380,8 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         }
 
         void destroy() {
+            if (isDisposed)
+                return;
             if (getApi().type == SWT.ICON) {
                 OS.DestroyIcon(handle());
             } else {

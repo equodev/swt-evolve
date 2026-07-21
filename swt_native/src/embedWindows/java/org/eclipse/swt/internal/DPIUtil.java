@@ -199,6 +199,13 @@ public class DPIUtil {
         return (size / scaleFactor);
     }
 
+    public static double pixelToPoint(double size, int zoom) {
+        if (zoom == 100 || size == SWT.DEFAULT)
+            return size;
+        double scaleFactor = getScalingFactor(zoom, 100);
+        return size / scaleFactor;
+    }
+
     /**
      * Auto-scale image with ImageData
      */

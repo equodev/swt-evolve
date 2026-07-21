@@ -58,9 +58,9 @@ import org.eclipse.swt.internal.gtk4.*;
  * </p>
  *
  * @see List
- * @see <a href="http://www.eclipse.org/swt/snippets/#combo">Combo snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#combo">Combo snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtCombo extends SwtComposite implements ICombo {
@@ -1431,23 +1431,19 @@ public class SwtCombo extends SwtComposite implements ICombo {
     }
 
     @Override
-    long gtk_button_press_event(long widget, long event) {
+    long gtk3_button_press_event(long widget, long event) {
         /*
 	* Feature in GTK. Depending on where the user clicks, GTK prevents
 	* the left mouse button event from being propagated. The fix is to
 	* send the mouse event from the event_after handler.
 	*/
         int[] eventButton = new int[1];
-        if (GTK.GTK4) {
-            eventButton[0] = GDK.gdk_button_event_get_button(event);
-        } else {
-            GDK.gdk_event_get_button(event, eventButton);
-        }
+        GDK.gdk_event_get_button(event, eventButton);
         int eventType = GDK.gdk_event_get_event_type(event);
         if (eventType == GDK.GDK_BUTTON_PRESS && eventButton[0] == 1) {
-            return gtk_button_press_event(widget, event, false);
+            return gtk3_button_press_event(widget, event, false);
         }
-        return super.gtk_button_press_event(widget, event);
+        return super.gtk3_button_press_event(widget, event);
     }
 
     @Override
@@ -1487,7 +1483,6 @@ public class SwtCombo extends SwtComposite implements ICombo {
         long eventPtr = GTK.GTK4 ? 0 : GTK3.gtk_get_current_event();
         if (eventPtr != 0) {
             int eventType = GDK.gdk_event_get_event_type(eventPtr);
-            eventType = fixGdkEventTypeValues(eventType);
             switch(eventType) {
                 case GDK.GDK_KEY_PRESS:
                     keyPress = true;
@@ -1679,7 +1674,6 @@ public class SwtCombo extends SwtComposite implements ICombo {
 	* field.
 	*/
         int eventType = GDK.gdk_event_get_event_type(gdkEvent);
-        eventType = fixGdkEventTypeValues(eventType);
         switch(eventType) {
             case GDK.GDK_BUTTON_PRESS:
                 {
@@ -2785,7 +2779,6 @@ public class SwtCombo extends SwtComposite implements ICombo {
         long eventPtr = GTK.GTK4 ? 0 : GTK3.gtk_get_current_event();
         if (eventPtr != 0) {
             int type = GDK.gdk_event_get_event_type(eventPtr);
-            type = fixGdkEventTypeValues(type);
             switch(type) {
                 case GDK.GDK_KEY_PRESS:
                     setKeyState(event, eventPtr);

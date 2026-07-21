@@ -33,8 +33,8 @@ import org.eclipse.swt.internal.cocoa.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#tree">Tree, TreeItem, TreeColumn snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#tree">Tree, TreeItem, TreeColumn snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtTreeItem extends SwtItem implements ITreeItem {
@@ -250,8 +250,7 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
         //	NSSize size = cell.cellSize ();
         int width = (int) Math.ceil(size.width);
         // To fix truncation
-        if (OS.isBigSurOrLater())
-            width += SwtTree.TEXT_GAP;
+        width += SwtTree.TEXT_GAP;
         boolean sendMeasure = true;
         if ((parent.style & SWT.VIRTUAL) != 0) {
             sendMeasure = cached;

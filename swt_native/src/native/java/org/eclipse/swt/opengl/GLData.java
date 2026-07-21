@@ -24,8 +24,8 @@ import com.dslplatform.json.JsonAttribute;
  * of the pixel format attributes of a GL drawable.
  *
  * @see GLCanvas
- * @see <a href="http://www.eclipse.org/swt/snippets/#opengl">OpenGL snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#opengl">OpenGL snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  *
  * @since 3.2
  */

@@ -58,9 +58,9 @@ import dev.equo.swt.*;
  * </p>
  *
  * @see org.eclipse.swt.events.PaintEvent
- * @see <a href="http://www.eclipse.org/swt/snippets/#gc">GC snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Examples: GraphicsExample, PaintExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#gc">GC snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Examples: GraphicsExample, PaintExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public final class DartGC extends DartResource implements IGC {
 
@@ -271,6 +271,12 @@ public final class DartGC extends DartResource implements IGC {
         if ((style & SWT.LEFT_TO_RIGHT) != 0)
             style &= ~SWT.RIGHT_TO_LEFT;
         return style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
+    }
+
+    private float calculateTransformationScale() {
+        // this calculates the effective length in x and y
+        // direction without being affected by the rotation
+        return 0;
     }
 
     long applierFunc(long info, long elementPtr) {

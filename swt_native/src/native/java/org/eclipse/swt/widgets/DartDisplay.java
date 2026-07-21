@@ -101,8 +101,8 @@ import dev.equo.swt.*;
  * @see #readAndDispatch
  * @see #sleep
  * @see Device#dispose
- * @see <a href="http://www.eclipse.org/swt/snippets/#display">Display snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#display">Display snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class DartDisplay extends DartDevice implements Executor, IDisplay {
@@ -775,6 +775,36 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     static private void configureSystemOptions() {
+        /*
+	 * Most native applications are layer backed. This means that everything
+	 * painted by the application is cached for performance reasons, such as
+	 * not having to repaint everything when scrolling.
+	 *
+	 * The condition for default layer backing is being compatible with
+	 * responsive scrolling, and SWT is not compatible because it handles
+	 * 'scrollWheel:' and 'drawRect:' in 'NSScrollView'. Making SWT compatible
+	 * is not trivial.
+	 *
+	 * Requesting layer directly is possible, but I decided that it's better to
+	 * just enable system option for older macOS, because it's what happens when
+	 * using newer Java anyway.
+	 *
+	 * The workaround is to enable root layer backing. macOS 10.14 and 10.15
+	 * already enable this option if app was linked with sdk 10.14+ and
+	 * macOS 11 always enables it regardless of sdk. The option is force
+	 * enabled here in case SWT runs with java/launcher linked with older sdk.
+	 */
+        /*
+	 * Layer backing is always enabled since macOS 11. macOS uses "automatic"
+	 * image format for it. This means that instead of actual rendering, macOS's
+	 * GC only remembers the operations performed. This causes macOS to ignore
+	 * clip rect and paint entire visible rect whenever something changes, and
+	 * that's a lot of painting. Example: Table will now repaint all visible
+	 * items when a single item is selected/deselected. In case of owner drawn
+	 * Table, this makes things a lot slower. The workaround is to disable the
+	 * "automatic" image format.
+	 */
+        configureSystemOption("NSViewUsesAutomaticLayerBackingStores", false);
     }
 
     /**
@@ -1353,6 +1383,21 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     public static boolean isSystemDarkTheme() {
         return false;
+    }
+
+    /**
+     * Informs the operating system that the application prefers a dark
+     * theme for native components such as title bars, scrollbars, and
+     * native dialogs.
+     *
+     * @param preferred true if the dark theme is preferred, false otherwise.
+     *
+     * @since 3.134
+     */
+    public void setDarkThemePreferred(boolean preferred) {
+        boolean newValue = preferred;
+        checkDevice();
+        this.darkThemePreferred = newValue;
     }
 
     int getLastEventTime() {
@@ -3684,6 +3729,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
 
     Point[] cursorSizes = new Point[0];
 
+    boolean darkThemePreferred;
+
     Point[] iconSizes = new Point[0];
 
     Monitor[] monitors = new Monitor[0];
@@ -3976,6 +4023,10 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
 
     public Point[] _cursorSizes() {
         return cursorSizes;
+    }
+
+    public boolean _darkThemePreferred() {
+        return darkThemePreferred;
     }
 
     public Point[] _iconSizes() {

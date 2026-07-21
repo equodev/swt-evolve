@@ -38,9 +38,9 @@ import org.eclipse.swt.internal.gtk4.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#sash">Sash snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#sash">Sash snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtSash extends SwtControl implements ISash {
@@ -157,9 +157,9 @@ public class SwtSash extends SwtControl implements ISash {
         if (GTK.GTK4) {
             GTK4.gtk_widget_set_focusable(getApi().handle, true);
             if ((getApi().style & SWT.VERTICAL) != 0) {
-                defaultCursor = GDK.gdk_cursor_new_from_name("sb_h_double_arrow", 0);
+                defaultCursor = GDK.gdk_cursor_new_from_name("ew-resize", 0);
             } else {
-                defaultCursor = GDK.gdk_cursor_new_from_name("sb_v_double_arrow", 0);
+                defaultCursor = GDK.gdk_cursor_new_from_name("ns-resize", 0);
             }
         } else {
             GTK3.gtk_widget_set_has_window(getApi().handle, true);
@@ -332,8 +332,8 @@ public class SwtSash extends SwtControl implements ISash {
     }
 
     @Override
-    long gtk_button_press_event(long widget, long event) {
-        long result = super.gtk_button_press_event(widget, event);
+    long gtk3_button_press_event(long widget, long event) {
+        long result = super.gtk3_button_press_event(widget, event);
         if (result != 0)
             return result;
         int[] eventButton = new int[1];
@@ -389,8 +389,8 @@ public class SwtSash extends SwtControl implements ISash {
     }
 
     @Override
-    long gtk_button_release_event(long widget, long event) {
-        long result = super.gtk_button_release_event(widget, event);
+    long gtk3_button_release_event(long widget, long event) {
+        long result = super.gtk3_button_release_event(widget, event);
         if (result != 0)
             return result;
         int[] eventButton = new int[1];
@@ -532,8 +532,8 @@ public class SwtSash extends SwtControl implements ISash {
     }
 
     @Override
-    long gtk_motion_notify_event(long widget, long eventPtr) {
-        long result = super.gtk_motion_notify_event(widget, eventPtr);
+    long gtk3_motion_notify_event(long widget, long eventPtr) {
+        long result = super.gtk3_motion_notify_event(widget, eventPtr);
         if (result != 0)
             return result;
         if (!dragging)
@@ -543,7 +543,7 @@ public class SwtSash extends SwtControl implements ISash {
         GDK.gdk_event_get_root_coords(eventPtr, fetchedX, fetchedY);
         int[] state = new int[1];
         GDK.gdk_event_get_state(eventPtr, state);
-        long gdkResource = gdk_event_get_surface_or_window(eventPtr);
+        long gdkResource = GDK.gdk_event_get_window(eventPtr);
         boolean isHint;
         GdkEventMotion gdkEvent = new GdkEventMotion();
         GTK3.memmove(gdkEvent, eventPtr, GdkEventMotion.sizeof);

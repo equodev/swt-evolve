@@ -51,8 +51,8 @@ import org.eclipse.swt.internal.gtk4.*;
  * </p>
  *
  * @see Canvas
- * @see <a href="http://www.eclipse.org/swt/snippets/#composite">Composite snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#composite">Composite snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public class SwtComposite extends SwtScrollable implements IComposite {
 
@@ -533,6 +533,56 @@ public class SwtComposite extends SwtScrollable implements IComposite {
             ((SwtDisplay) display.getImpl()).removeWidget(socketHandle);
     }
 
+    @Override
+    void snapshotBackground(long handle, long snapshot) {
+        if ((getApi().state & OBSCURED) != 0)
+            return;
+        /*
+	 * Draw the effective background before children are snapshotted.
+	 *
+	 * SWTFixed widget has no CSS background rule, thus obtain a Cairo
+	 * context from the snapshot and delegate to drawBackground(), which
+	 * paints the background image or color directly via Cairo.
+	 *
+	 * Skip when an explicit background color has been set (state & BACKGROUND):
+	 * GTK4 renders the CSS provider background automatically before calling
+	 * the snapshot vfunc.
+	 */
+        Control control = findBackgroundControl();
+        boolean draw = control != null && control.getImpl()._backgroundImage() != null;
+        if (!draw && (getApi().state & CANVAS) != 0) {
+            draw = (getApi().state & BACKGROUND) == 0;
+        }
+        if (!draw)
+            return;
+        if (control == null)
+            control = this.getApi();
+        GtkAllocation allocation = new GtkAllocation();
+        GTK.gtk_widget_get_allocation(handle, allocation);
+        int width = (getApi().state & ZERO_WIDTH) != 0 ? 0 : allocation.width;
+        int height = (getApi().state & ZERO_HEIGHT) != 0 ? 0 : allocation.height;
+        long rect = Graphene.graphene_rect_alloc();
+        Graphene.graphene_rect_init(rect, 0, 0, width, height);
+        long cairo = GTK4.gtk_snapshot_append_cairo(snapshot, rect);
+        if (cairo != 0) {
+            drawBackground(control, 0, cairo, 0, 0, width, height);
+            Cairo.cairo_destroy(cairo);
+        }
+        Graphene.graphene_rect_free(rect);
+    }
+
+    @Override
+    void snapshotToDraw(long handle, long snapshot) {
+        // Containers paint before children so SWT.Paint backgrounds appear behind child controls,
+        // matching GTK3 EXPOSE_EVENT_INVERSE (after=false) behavior.
+        snapshotPaint(handle, snapshot);
+    }
+
+    @Override
+    void snapshotToDrawAfterChildren(long handle, long snapshot) {
+        // Suppress Control's after-children paint: Composite already painted before children above.
+    }
+
     /**
      * Fills the interior of the rectangle specified by the arguments,
      * with the receiver's background.
@@ -902,8 +952,8 @@ public class SwtComposite extends SwtScrollable implements IComposite {
     }
 
     @Override
-    long gtk_button_press_event(long widget, long event) {
-        long result = super.gtk_button_press_event(widget, event);
+    long gtk3_button_press_event(long widget, long event) {
+        long result = super.gtk3_button_press_event(widget, event);
         if (result != 0)
             return result;
         if ((getApi().state & CANVAS) != 0) {

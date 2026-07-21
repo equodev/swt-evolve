@@ -19,7 +19,6 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gdip.*;
-import org.eclipse.swt.internal.win32.*;
 
 /**
  * Instances of this class represent patterns to use while drawing. Patterns
@@ -34,9 +33,9 @@ import org.eclipse.swt.internal.win32.*;
  * which may not be available on some platforms.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#path">Path, Pattern snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: GraphicsExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#path">Path, Pattern snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: GraphicsExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  *
  * @since 3.1
  */
@@ -53,7 +52,7 @@ public class SwtPattern extends SwtResource implements IPattern {
 
     private final Map<Integer, PatternHandle> zoomToHandle = new HashMap<>();
 
-    private boolean isDestroyed;
+    private boolean disposed;
 
     /**
      * Constructs a new Pattern given an image. Drawing with the resulting
@@ -175,6 +174,14 @@ public class SwtPattern extends SwtResource implements IPattern {
      */
     public SwtPattern(Device device, float x1, float y1, float x2, float y2, Color color1, int alpha1, Color color2, int alpha2, Pattern api) {
         super(device, api);
+        if (color1 == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (color1.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        if (color2 == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (color2.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         this.baseX1 = x1;
         this.baseX2 = x2;
         this.baseY1 = y1;
@@ -188,18 +195,8 @@ public class SwtPattern extends SwtResource implements IPattern {
         ((SwtDevice) this.device.getImpl()).registerResourceWithZoomSupport(this.getApi());
     }
 
-    private PatternHandle newPatternHandle(int zoom) {
-        if (image != null) {
-            return new ImagePatternHandle(zoom);
-        }
-        return new BasePatternHandle(zoom);
-    }
-
     private PatternHandle getPatternHandle(int zoom) {
-        if (!zoomToHandle.containsKey(zoom)) {
-            zoomToHandle.put(zoom, newPatternHandle(zoom));
-        }
-        return zoomToHandle.get(zoom);
+        return zoomToHandle.computeIfAbsent(zoom, z -> image != null ? new ImagePatternHandle(z) : new BasePatternHandle(z));
     }
 
     long getHandle(int zoom) {
@@ -211,7 +208,7 @@ public class SwtPattern extends SwtResource implements IPattern {
         ((SwtDevice) device.getImpl()).deregisterResourceWithZoomSupport(this.getApi());
         zoomToHandle.values().forEach(PatternHandle::destroy);
         zoomToHandle.clear();
-        this.isDestroyed = true;
+        disposed = true;
     }
 
     @Override
@@ -245,7 +242,7 @@ public class SwtPattern extends SwtResource implements IPattern {
      */
     @Override
     public boolean isDisposed() {
-        return isDestroyed;
+        return disposed;
     }
 
     /**
@@ -261,9 +258,17 @@ public class SwtPattern extends SwtResource implements IPattern {
         return "Pattern {" + zoomToHandle + "}";
     }
 
+    /**
+     * Converts a Win32 COLORREF value (0x00BBGGRR) and an alpha byte into a
+     * GDI+ ARGB color value (0xAARRGGBB).
+     */
+    private static int colorRefToArgb(int colorRef, int alpha) {
+        return ((alpha & 0xFF) << 24) | ((colorRef >> 16) & 0xFF) | (colorRef & 0xFF00) | ((colorRef & 0xFF) << 16);
+    }
+
     private class BasePatternHandle extends PatternHandle {
 
-        public BasePatternHandle(int zoom) {
+        BasePatternHandle(int zoom) {
             super(zoom);
         }
 
@@ -274,24 +279,20 @@ public class SwtPattern extends SwtResource implements IPattern {
             float y1 = Win32DPIUtils.pointToPixel(baseY1, zoom);
             float x2 = Win32DPIUtils.pointToPixel(baseX2, zoom);
             float y2 = Win32DPIUtils.pointToPixel(baseY2, zoom);
-            if (color1 == null)
-                SWT.error(SWT.ERROR_NULL_ARGUMENT);
             if (color1.isDisposed())
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-            if (color2 == null)
-                SWT.error(SWT.ERROR_NULL_ARGUMENT);
             if (color2.isDisposed())
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
             ((SwtDevice) device.getImpl()).checkGDIP();
             int colorRef1 = color1.handle;
-            int foreColor = ((alpha1 & 0xFF) << 24) | ((colorRef1 >> 16) & 0xFF) | (colorRef1 & 0xFF00) | ((colorRef1 & 0xFF) << 16);
+            int foreColor = colorRefToArgb(colorRef1, alpha1);
             if (x1 == x2 && y1 == y2) {
                 handle = Gdip.SolidBrush_new(foreColor);
                 if (handle == 0)
                     SWT.error(SWT.ERROR_NO_HANDLES);
             } else {
                 int colorRef2 = color2.handle;
-                int backColor = ((alpha2 & 0xFF) << 24) | ((colorRef2 >> 16) & 0xFF) | (colorRef2 & 0xFF00) | ((colorRef2 & 0xFF) << 16);
+                int backColor = colorRefToArgb(colorRef2, alpha2);
                 PointF p1 = new PointF();
                 p1.X = x1;
                 p1.Y = y1;
@@ -303,7 +304,7 @@ public class SwtPattern extends SwtResource implements IPattern {
                     SWT.error(SWT.ERROR_NO_HANDLES);
                 if (alpha1 != 0xFF || alpha2 != 0xFF) {
                     int a = (int) ((alpha1 & 0xFF) * 0.5f + (alpha2 & 0xFF) * 0.5f);
-                    int r = (int) (((colorRef1 & 0xFF) >> 0) * 0.5f + ((colorRef2 & 0xFF) >> 0) * 0.5f);
+                    int r = (int) ((colorRef1 & 0xFF) * 0.5f + (colorRef2 & 0xFF) * 0.5f);
                     int g = (int) (((colorRef1 & 0xFF00) >> 8) * 0.5f + ((colorRef2 & 0xFF00) >> 8) * 0.5f);
                     int b = (int) (((colorRef1 & 0xFF0000) >> 16) * 0.5f + ((colorRef2 & 0xFF0000) >> 16) * 0.5f);
                     int midColor = a << 24 | r << 16 | g << 8 | b;
@@ -316,16 +317,16 @@ public class SwtPattern extends SwtResource implements IPattern {
 
     private class ImagePatternHandle extends PatternHandle {
 
-        private long[] gdipImage;
+        private SwtImage.GdipImage gdipImage;
 
-        public ImagePatternHandle(int zoom) {
+        ImagePatternHandle(int zoom) {
             super(zoom);
         }
 
         @Override
         long createHandle(int zoom) {
             gdipImage = ((SwtImage) image.getImpl()).createGdipImage(zoom);
-            long img = gdipImage[0];
+            long img = gdipImage.bitmap();
             int width = Gdip.Image_GetWidth(img);
             int height = Gdip.Image_GetHeight(img);
             long handle = Gdip.TextureBrush_new(img, Gdip.WrapModeTile, 0, 0, width, height);
@@ -343,14 +344,11 @@ public class SwtPattern extends SwtResource implements IPattern {
         }
 
         private void cleanupBitmap() {
-            if (gdipImage.length < 2)
+            if (gdipImage == null)
                 return;
-            long img = gdipImage[0];
-            Gdip.Bitmap_delete(img);
-            if (gdipImage[1] != 0) {
-                long hHeap = OS.GetProcessHeap();
-                OS.HeapFree(hHeap, 0, gdipImage[1]);
-            }
+            SwtImage.GdipImage tempGdipImage = gdipImage;
+            gdipImage = null;
+            tempGdipImage.destroy();
         }
     }
 
@@ -358,27 +356,22 @@ public class SwtPattern extends SwtResource implements IPattern {
 
         private final long handle;
 
-        public PatternHandle(int zoom) {
+        PatternHandle(int zoom) {
             this.handle = createHandle(zoom);
         }
 
         abstract long createHandle(int zoom);
 
         protected void destroy() {
-            int type = Gdip.Brush_GetType(handle);
-            switch(type) {
-                case Gdip.BrushTypeSolidColor:
+            switch(Gdip.Brush_GetType(handle)) {
+                case Gdip.BrushTypeSolidColor ->
                     Gdip.SolidBrush_delete(handle);
-                    break;
-                case Gdip.BrushTypeHatchFill:
+                case Gdip.BrushTypeHatchFill ->
                     Gdip.HatchBrush_delete(handle);
-                    break;
-                case Gdip.BrushTypeLinearGradient:
+                case Gdip.BrushTypeLinearGradient ->
                     Gdip.LinearGradientBrush_delete(handle);
-                    break;
-                case Gdip.BrushTypeTextureFill:
+                case Gdip.BrushTypeTextureFill ->
                     Gdip.TextureBrush_delete(handle);
-                    break;
             }
         }
     }

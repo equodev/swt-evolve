@@ -369,6 +369,14 @@ public interface IDevice {
      */
     int getDeviceZoom();
 
+    /**
+     * Returns the GDK primary monitor handle, falling back to the monitor at
+     * virtual coordinate (0,0) when no primary monitor is reported (e.g. on Wayland).
+     *
+     * @noreference This method is not intended to be referenced by clients.
+     */
+    long getPrimaryMonitor(long display);
+
     Device getApi();
 
     void setApi(Device api);

@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -43,8 +43,8 @@ import org.eclipse.swt.internal.gtk4.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#tracker">Tracker snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#tracker">Tracker snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtTracker extends SwtWidget implements ITracker {
@@ -483,9 +483,9 @@ public class SwtTracker extends SwtWidget implements ITracker {
     }
 
     @Override
-    long gtk_button_release_event(long widget, long event) {
+    long gtk3_button_release_event(long widget, long event) {
         SwtControl.mouseDown = false;
-        return gtk_mouse(GTK.GTK4 ? GDK.GDK4_BUTTON_RELEASE : GDK.GDK_BUTTON_RELEASE, widget, event);
+        return gtk3_mouse(GDK.GDK_BUTTON_RELEASE, widget, event);
     }
 
     @Override
@@ -626,26 +626,19 @@ public class SwtTracker extends SwtWidget implements ITracker {
     }
 
     @Override
-    long gtk_motion_notify_event(long widget, long eventPtr) {
+    long gtk3_motion_notify_event(long widget, long eventPtr) {
         long cursor = this.cursor != null ? this.cursor.handle : 0;
         if (cursor != lastCursor) {
             ungrab();
             grabbed = grab();
             lastCursor = cursor;
         }
-        return gtk_mouse(GTK.GTK4 ? GDK.GDK4_MOTION_NOTIFY : GDK.GDK_MOTION_NOTIFY, widget, eventPtr);
+        return gtk3_mouse(GDK.GDK_MOTION_NOTIFY, widget, eventPtr);
     }
 
-    long gtk_mouse(int eventType, long widget, long eventPtr) {
+    long gtk3_mouse(int eventType, long widget, long eventPtr) {
         int[] newX = new int[1], newY = new int[1];
-        if (GTK.GTK4) {
-            double[] newXDouble = new double[1], newYDouble = new double[1];
-            ((SwtDisplay) display.getImpl()).getPointerPosition(newXDouble, newYDouble);
-            newX[0] = (int) newXDouble[0];
-            newY[0] = (int) newYDouble[0];
-        } else {
-            ((SwtDisplay) display.getImpl()).getWindowPointerPosition(window, newX, newY, null);
-        }
+        ((SwtDisplay) display.getImpl()).getWindowPointerPosition(window, newX, newY, null);
         if (oldX != newX[0] || oldY != newY[0]) {
             Rectangle[] oldRectangles = rectangles;
             Rectangle[] rectsToErase = new Rectangle[rectangles.length];
@@ -747,7 +740,6 @@ public class SwtTracker extends SwtWidget implements ITracker {
             oldX = newX[0];
             oldY = newY[0];
         }
-        eventType = SwtControl.fixGdkEventTypeValues(eventType);
         tracking = eventType != GDK.GDK_BUTTON_RELEASE;
         return 0;
     }
@@ -924,14 +916,13 @@ public class SwtTracker extends SwtWidget implements ITracker {
 
     boolean processEvent(long eventPtr) {
         int eventType = GDK.gdk_event_get_event_type(eventPtr);
-        eventType = SwtControl.fixGdkEventTypeValues(eventType);
         long widget = GTK3.gtk_get_event_widget(eventPtr);
         switch(eventType) {
             case GDK.GDK_MOTION_NOTIFY:
-                gtk_motion_notify_event(widget, eventPtr);
+                gtk3_motion_notify_event(widget, eventPtr);
                 break;
             case GDK.GDK_BUTTON_RELEASE:
-                gtk_button_release_event(widget, eventPtr);
+                gtk3_button_release_event(widget, eventPtr);
                 break;
             case GDK.GDK_KEY_PRESS:
                 gtk3_key_press_event(widget, eventPtr);

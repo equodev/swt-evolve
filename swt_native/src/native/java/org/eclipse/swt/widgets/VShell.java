@@ -26,6 +26,14 @@ public class VShell extends VDecorations {
         ((DartShell) impl).alpha = value;
     }
 
+    public boolean getDarkThemePreferred() {
+        return ((DartShell) impl).darkThemePreferred;
+    }
+
+    public void setDarkThemePreferred(boolean value) {
+        ((DartShell) impl).darkThemePreferred = value;
+    }
+
     @JsonAttribute(nullable = true)
     public Dialog[] getDialogs() {
         return ((DartShell) impl).getDialogs();

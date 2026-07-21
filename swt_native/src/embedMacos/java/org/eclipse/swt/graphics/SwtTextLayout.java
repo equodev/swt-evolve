@@ -32,9 +32,9 @@ import org.eclipse.swt.internal.cocoa.*;
  * when those instances are no longer required.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#textlayout">TextLayout, TextStyle snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: CustomControlExample, StyledText tab</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#textlayout">TextLayout, TextStyle snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: CustomControlExample, StyledText tab</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  *
  * @since 3.0
  */
@@ -1774,10 +1774,8 @@ public final class SwtTextLayout extends SwtResource implements ITextLayout {
         OS.class_addProtocol(cls, OS.protocol_NSTextAttachmentCell);
         OS.class_addMethod(cls, OS.sel_cellSize, cellSizeProc, "@:");
         OS.class_addMethod(cls, OS.sel_cellBaselineOffset, cellBaselineOffsetProc, "@:");
-        if (OS.VERSION >= OS.VERSION(10, 11, 0)) {
-            long attachmentProc = OS.CALLBACK_NSTextAttachmentCell_attachment(proc2);
-            OS.class_addMethod(cls, OS.sel_attachment, attachmentProc, "@:");
-        }
+        long attachmentProc = OS.CALLBACK_NSTextAttachmentCell_attachment(proc2);
+        OS.class_addMethod(cls, OS.sel_attachment, attachmentProc, "@:");
         OS.objc_registerClassPair(cls);
     }
 

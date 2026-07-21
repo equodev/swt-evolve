@@ -110,8 +110,8 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see #readAndDispatch
  * @see #sleep
  * @see Device#dispose
- * @see <a href="http://www.eclipse.org/swt/snippets/#display">Display snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#display">Display snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
@@ -1412,10 +1412,12 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             error(SWT.ERROR_NO_HANDLES);
         GTK.gtk_widget_realize(shellHandle);
         /* Initialize the filter and event callback */
-        //$NON-NLS-1$
-        eventCallback = new Callback(this, "eventProc", 2);
-        eventProc = eventCallback.getAddress();
-        GDK.gdk_event_handler_set(eventProc, 0, 0);
+        if (!GTK.GTK4) {
+            //$NON-NLS-1$
+            eventCallback = new Callback(this, "eventProc", 2);
+            eventProc = eventCallback.getAddress();
+            GDK.gdk_event_handler_set(eventProc, 0, 0);
+        }
         //$NON-NLS-1$
         signalCallback = new Callback(this, "signalProc", 3);
         signalProc = signalCallback.getAddress();
@@ -1680,6 +1682,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         SWT.error(code);
     }
 
+    // Used on GTK 3 only
     long eventProc(long event, long data) {
         /*
 	* Use gdk_event_get_time() rather than event.time or
@@ -1692,8 +1695,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         int time = GDK.gdk_event_get_time(event);
         if (time != 0)
             lastEventTime = time;
-        int eventType = GTK.GTK4 ? GDK.gdk_event_get_event_type(event) : GDK.GDK_EVENT_TYPE(event);
-        SwtControl.fixGdkEventTypeValues(eventType);
+        int eventType = GDK.gdk_event_get_event_type(event);
         switch(eventType) {
             case GDK.GDK_BUTTON_PRESS:
             case GDK.GDK_KEY_PRESS:
@@ -1710,12 +1712,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             }
         }
         if (!dispatch) {
-            long copiedEvent;
-            if (GTK.GTK4) {
-                copiedEvent = GDK.gdk_event_ref(event);
-            } else {
-                copiedEvent = GDK.gdk_event_copy(event);
-            }
+            long copiedEvent = GDK.gdk_event_copy(event);
             addGdkEvent(copiedEvent);
             return 0;
         }
@@ -1823,16 +1820,22 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 
     void snapshotDrawProc(long handle, long snapshot) {
         Display display = getCurrent();
+        Widget widget = ((SwtDisplay) display.getImpl()).getWidget(handle);
+        // Draw background before children so it appears behind them
+        if (widget != null)
+            ((SwtWidget) widget.getImpl()).snapshotBackground(handle, snapshot);
+        // Paint before children (used by Composite subclasses for backgrounds)
+        if (widget != null)
+            ((SwtWidget) widget.getImpl()).snapshotToDraw(handle, snapshot);
         long child = GTK4.gtk_widget_get_first_child(handle);
-        // Propagate the snapshot down the widget tree first
+        // Propagate the snapshot down the widget tree.
         while (child != 0) {
             GTK4.gtk_widget_snapshot_child(handle, child, snapshot);
             child = GTK4.gtk_widget_get_next_sibling(child);
         }
-        // Draw custom paint on top of children
-        Widget widget = ((SwtDisplay) display.getImpl()).getWidget(handle);
+        // Paint after children (used by leaf controls for overlay/on-top drawing)
         if (widget != null)
-            ((SwtWidget) widget.getImpl()).snapshotToDraw(handle, snapshot);
+            ((SwtWidget) widget.getImpl()).snapshotToDrawAfterChildren(handle, snapshot);
     }
 
     static long rendererGetPreferredWidthProc(long cell, long handle, long minimun_size, long natural_size) {
@@ -2739,6 +2742,20 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         return themeDark;
     }
 
+    /**
+     * Informs the operating system that the application prefers a dark
+     * theme for native components such as title bars, scrollbars, and
+     * native dialogs.
+     *
+     * @param preferred true if the dark theme is preferred, false otherwise.
+     *
+     * @since 3.134
+     */
+    public void setDarkThemePreferred(boolean preferred) {
+        checkDevice();
+        OS.setTheme(preferred);
+    }
+
     int getLastEventTime() {
         return lastEventTime;
     }
@@ -2818,7 +2835,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                         int scaleFactor = (int) GDK.gdk_monitor_get_scale_factor(gdkMonitor);
                         monitor.zoom = scaleFactor * 100;
                     } else {
-                        monitor.zoom = SwtDisplay._getDeviceZoom(monitor.handle);
+                        monitor.zoom = _getDeviceZoom(monitor.handle);
                     }
                     /* workarea was defined in GTK 3.4. If present, it will return the best results
 				 * since it takes into account per-monitor trim. Not available in GTK4.
@@ -3428,33 +3445,32 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     private void initializeSystemColorsLink() {
-        /*
-	 * Note: GTK has two types of link at least:
-	 *
-	 * 1) GtkLabel with HTML-like markup
-	 * 2) GtkLinkButton
-	 *
-	 * The 'HighContrast' theme has different colors for these.
-	 * GtkLabel is easier to work with, and obtained color matches color in previous SWT versions.
-	 */
-        // The 'Clearlooks-Phenix' theme sets 'color:' for 'window {' css node, so a stand-alone label is not enough
-        long window;
         if (GTK.GTK4) {
-            window = GTK4.gtk_window_new();
-        } else {
-            window = GTK3.gtk_window_new(GTK.GTK_WINDOW_TOPLEVEL);
-        }
-        long label = GTK.gtk_label_new(null);
-        if (GTK.GTK4) {
-            GTK4.gtk_window_set_child(window, label);
-        } else {
-            GTK3.gtk_container_add(window, label);
-        }
-        long styleContextLink = GTK.gtk_widget_get_style_context(label);
-        COLOR_LINK_FOREGROUND_RGBA = styleContextGetColor(styleContextLink, GTK.GTK_STATE_FLAG_LINK);
-        if (GTK.GTK4) {
+            /*
+		 * GTK 4 needs the "link" CSS class to retrieve the correct link color.
+		 */
+            long window = GTK4.gtk_window_new();
+            long button = GTK.gtk_button_new();
+            GTK4.gtk_window_set_child(window, button);
+            GTK.gtk_widget_add_css_class(button, Converter.wcsToMbcs("link", true));
+            long styleContextButton = GTK.gtk_widget_get_style_context(button);
+            COLOR_LINK_FOREGROUND_RGBA = styleContextGetColor(styleContextButton, GTK.GTK_STATE_FLAG_LINK);
             GTK4.gtk_window_destroy(window);
         } else {
+            /*
+		 * Note: GTK has two types of link at least:
+		 *
+		 * 1) GtkLabel with HTML-like markup
+		 * 2) GtkLinkButton
+		 *
+		 * GtkLabel is easier to work with, and obtained color matches color in previous SWT versions.
+		 */
+            // The 'Clearlooks-Phenix' theme sets 'color:' for 'window {' css node, so a stand-alone label is not enough
+            long window = GTK3.gtk_window_new(GTK.GTK_WINDOW_TOPLEVEL);
+            long label = GTK.gtk_label_new(null);
+            GTK3.gtk_container_add(window, label);
+            long styleContextLink = GTK.gtk_widget_get_style_context(label);
+            COLOR_LINK_FOREGROUND_RGBA = styleContextGetColor(styleContextLink, GTK.GTK_STATE_FLAG_LINK);
             GTK3.gtk_widget_destroy(window);
         }
     }
@@ -4890,9 +4906,11 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         COLOR_WIDGET_DARK_SHADOW_RGBA = COLOR_WIDGET_NORMAL_SHADOW_RGBA = COLOR_WIDGET_LIGHT_SHADOW_RGBA = COLOR_WIDGET_HIGHLIGHT_SHADOW_RGBA = COLOR_WIDGET_BACKGROUND_RGBA = COLOR_WIDGET_BORDER_RGBA = COLOR_LIST_FOREGROUND_RGBA = COLOR_LIST_BACKGROUND_RGBA = COLOR_LIST_SELECTION_RGBA = COLOR_LIST_SELECTION_TEXT_RGBA = COLOR_LIST_SELECTION_INACTIVE_RGBA = COLOR_LIST_SELECTION_TEXT_INACTIVE_RGBA = COLOR_WIDGET_FOREGROUND_RGBA = COLOR_TITLE_FOREGROUND_RGBA = COLOR_TITLE_BACKGROUND_RGBA = COLOR_TITLE_BACKGROUND_GRADIENT_RGBA = COLOR_TITLE_INACTIVE_FOREGROUND_RGBA = COLOR_TITLE_INACTIVE_BACKGROUND_RGBA = COLOR_TITLE_INACTIVE_BACKGROUND_GRADIENT_RGBA = COLOR_INFO_BACKGROUND_RGBA = COLOR_INFO_FOREGROUND_RGBA = COLOR_LINK_FOREGROUND_RGBA = COLOR_WIDGET_DISABLED_FOREGROUND_RGBA = COLOR_TEXT_DISABLED_BACKGROUND_RGBA = null;
         COLOR_TOGGLE_BUTTON_FOREGROUND_RGBA = null;
         /* Dispose the event callback */
-        GDK.gdk_event_handler_set(0, 0, 0);
-        eventCallback.dispose();
-        eventCallback = null;
+        if (!GTK.GTK4) {
+            GDK.gdk_event_handler_set(0, 0, 0);
+            eventCallback.dispose();
+            eventCallback = null;
+        }
         /* Dispose the hidden shell */
         if (shellHandle != 0) {
             if (GTK.GTK4) {
@@ -6460,16 +6478,19 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         return GDK.gdk_device_get_surface_at_position(device, win_x, win_y);
     }
 
-    static int _getDeviceZoom(long monitor_num) {
+    int _getDeviceZoom(long monitor) {
         /*
 	 * We can hard-code 96 as gdk_screen_get_resolution will always return -1
 	 * if gdk_screen_set_resolution has not been called.
 	 */
         int dpi = 96;
-        long display = GDK.gdk_display_get_default();
-        long monitor = GDK.gdk_display_get_monitor_at_point(display, 0, 0);
-        int scale = GDK.gdk_monitor_get_scale_factor(monitor);
-        dpi = dpi * scale;
+        if (monitor == 0) {
+            monitor = getPrimaryMonitor(GDK.gdk_display_get_default());
+        }
+        if (monitor != 0) {
+            int scale = GDK.gdk_monitor_get_scale_factor(monitor);
+            dpi = dpi * scale;
+        }
         return DPIUtil.mapDPIToZoom(dpi);
     }
 

@@ -192,7 +192,6 @@ class SWT {
   static const int LONG = 1 << 28;
   static const int MOZILLA = 1 << 15;
   static const int WEBKIT = 1 << 16;
-  static const int CHROMIUM = 1 << 17;
   static const int EDGE = 1 << 18;
   static const int IE = 1 << 19;
   static const int BALLOON = 1 << 12;

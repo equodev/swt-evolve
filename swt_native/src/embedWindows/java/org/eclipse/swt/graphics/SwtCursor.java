@@ -45,8 +45,8 @@ import org.eclipse.swt.internal.win32.version.*;
  * Note: Only one of the above styles may be specified.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#cursor">Cursor snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#cursor">Cursor snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public final class SwtCursor extends SwtResource implements ICursor {
 
@@ -315,28 +315,15 @@ public final class SwtCursor extends SwtResource implements ICursor {
      *
      * @noreference This method is not intended to be referenced by clients.
      */
-    public static Long win32_getHandle(Cursor cursor, int zoom) {
+    public static long win32_getHandle(Cursor cursor, int zoom) {
         if (cursor.isDisposed()) {
             return 0L;
         }
         if (cursor.getImpl() instanceof DartCursor) {
             return DartCursor.win32_getHandle(cursor, zoom);
         }
-        int zoomWithPointerSizeScaleFactor = (int) (zoom * getPointerSizeScaleFactor());
-        if (((SwtCursor) cursor.getImpl()).zoomLevelToHandle.get(zoomWithPointerSizeScaleFactor) != null) {
-            return ((SwtCursor) cursor.getImpl()).zoomLevelToHandle.get(zoomWithPointerSizeScaleFactor).getHandle();
-        }
-        CursorHandle handle = ((SwtCursor) cursor.getImpl()).cursorHandleProvider.createHandle(cursor.getImpl()._device(), zoomWithPointerSizeScaleFactor);
-        if (cursor.getImpl() instanceof SwtCursor) {
-            ((SwtCursor) cursor.getImpl()).setHandleForZoomLevel(handle, zoomWithPointerSizeScaleFactor);
-        }
-        return ((SwtCursor) cursor.getImpl()).zoomLevelToHandle.get(zoomWithPointerSizeScaleFactor).getHandle();
-    }
-
-    private void setHandleForZoomLevel(CursorHandle handle, Integer zoom) {
-        if (zoom != null && !zoomLevelToHandle.containsKey(zoom)) {
-            zoomLevelToHandle.put(zoom, handle);
-        }
+        int scaledZoom = (int) (zoom * getPointerSizeScaleFactor());
+        return ((SwtCursor) cursor.getImpl()).zoomLevelToHandle.computeIfAbsent(scaledZoom, z -> ((SwtCursor) cursor.getImpl()).cursorHandleProvider.createHandle(cursor.getImpl()._device(), z)).getHandle();
     }
 
     /**
@@ -391,9 +378,8 @@ public final class SwtCursor extends SwtResource implements ICursor {
     public boolean equals(Object object) {
         if (object == this.getApi())
             return true;
-        if (!(object instanceof Cursor))
+        if (!(object instanceof Cursor cursor))
             return false;
-        Cursor cursor = (Cursor) object;
         return device == cursor.getImpl()._device() && win32_getHandle(this.getApi(), DEFAULT_ZOOM) == win32_getHandle(cursor, DEFAULT_ZOOM);
     }
 
@@ -409,7 +395,7 @@ public final class SwtCursor extends SwtResource implements ICursor {
      */
     @Override
     public int hashCode() {
-        return win32_getHandle(this.getApi(), DEFAULT_ZOOM).intValue();
+        return (int) win32_getHandle(this.getApi(), DEFAULT_ZOOM);
     }
 
     /**
@@ -443,7 +429,7 @@ public final class SwtCursor extends SwtResource implements ICursor {
     @Override
     void destroyHandlesExcept(Set<Integer> zoomLevels) {
         zoomLevelToHandle.entrySet().removeIf(entry -> {
-            final Integer zoom = entry.getKey();
+            Integer zoom = entry.getKey();
             if (!zoomLevels.contains(zoom) && zoom != DPIUtil.getZoomForAutoscaleProperty(DEFAULT_ZOOM)) {
                 entry.getValue().destroy();
                 return true;
@@ -499,7 +485,7 @@ public final class SwtCursor extends SwtResource implements ICursor {
         }
     }
 
-    private static interface CursorHandleProvider {
+    private interface CursorHandleProvider {
 
         CursorHandle createHandle(Device device, int zoom);
     }
@@ -522,7 +508,7 @@ public final class SwtCursor extends SwtResource implements ICursor {
             return new CustomCursorHandle(handle);
         }
 
-        private static final long getOSCursorIdFromStyle(int style) {
+        private static long getOSCursorIdFromStyle(int style) {
             long lpCursorName = 0;
             switch(style) {
                 case SWT.CURSOR_HAND:
@@ -677,15 +663,15 @@ public final class SwtCursor extends SwtResource implements ICursor {
         }
 
         private void validateMask(ImageData source, ImageData mask) {
-            ImageData testMask = mask == null ? null : (ImageData) mask.clone();
-            if (testMask == null) {
+            ImageData effectiveMask = mask;
+            if (effectiveMask == null) {
                 if (source.getTransparencyType() != SWT.TRANSPARENCY_MASK) {
                     SWT.error(SWT.ERROR_NULL_ARGUMENT);
                 }
-                testMask = source.getTransparencyMask();
+                effectiveMask = source.getTransparencyMask();
             }
             /* Check the bounds. Mask must be the same size as source */
-            if (testMask.width != source.width || testMask.height != source.height) {
+            if (effectiveMask.width != source.width || effectiveMask.height != source.height) {
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
             }
         }

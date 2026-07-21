@@ -40,9 +40,9 @@ import org.eclipse.swt.internal.gtk4.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#tooltips">Tool Tips snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#tooltips">Tool Tips snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  *
  * @since 3.2
  * @noextend This class is not intended to be subclassed by clients.
@@ -468,7 +468,7 @@ public class SwtToolTip extends SwtWidget implements IToolTip {
     }
 
     @Override
-    long gtk_button_press_event(long widget, long event) {
+    long gtk3_button_press_event(long widget, long event) {
         sendSelectionEvent(SWT.Selection, null, true);
         setVisible(false);
         return 0;

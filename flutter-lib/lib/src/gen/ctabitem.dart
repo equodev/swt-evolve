@@ -30,6 +30,7 @@ class VCTabItem extends VItem {
   VColor? foreground;
   VColor? selectionForeground;
   bool? showClose;
+  bool? showDirty;
   bool? showing;
   String? toolTipText;
 

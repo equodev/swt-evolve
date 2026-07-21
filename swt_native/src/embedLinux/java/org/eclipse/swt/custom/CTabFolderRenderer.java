@@ -27,21 +27,13 @@ import dev.equo.swt.Config;
  * required by <code>CTabFolder</code>. This class can be subclassed in order to
  * customize the look of a CTabFolder.
  *
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @since 3.6
  */
 public class CTabFolderRenderer {
 
     protected CTabFolder parent;
 
-    /* Selected item appearance */
-    //Although we are given new colours all the time to show different states (active, etc),
-    //some of which may have a highlight and some not, we'd like to retain the highlight colours
-    //as a cache so that we can reuse them if we're again told to show the highlight.
-    //We are relying on the fact that only one tab state usually gets a highlight, so only
-    //a single cache is required. If that happens to not be true, cache simply becomes less effective,
-    //but we don't leak colours.
-    //TOP_LEFT_CORNER_HILITE is laid out in reverse (ie. top to bottom)
     //Part constants
     /**
      * Part constant indicating the body of the tab folder. The body is the

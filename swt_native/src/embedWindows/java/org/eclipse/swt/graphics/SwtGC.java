@@ -59,9 +59,9 @@ import org.eclipse.swt.internal.win32.*;
  * </p>
  *
  * @see org.eclipse.swt.events.PaintEvent
- * @see <a href="http://www.eclipse.org/swt/snippets/#gc">GC snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Examples: GraphicsExample, PaintExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#gc">GC snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Examples: GraphicsExample, PaintExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public final class SwtGC extends SwtResource implements IGC {
 
@@ -1451,11 +1451,22 @@ public final class SwtGC extends SwtResource implements IGC {
     }
 
     private void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, SwtImage.ImageHandle tempImageHandle) {
-        if (data.gdipGraphics != 0) {
-            if (srcImage.getImpl() instanceof SwtImage) {
-                //TODO - cache bitmap
-                long[] gdipImage = ((SwtImage) srcImage.getImpl()).createGdipImageFromHandle(tempImageHandle);
-                long img = gdipImage[0];
+        if (data.gdipGraphics == 0) {
+            switch(srcImage.type) {
+                case SWT.BITMAP:
+                    drawBitmap(srcImage, tempImageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+                    break;
+                case SWT.ICON:
+                    drawIcon(tempImageHandle.handle(), srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+                    break;
+            }
+            return;
+        }
+        if (srcImage.getImpl() instanceof SwtImage) {
+            //TODO - cache bitmap
+            SwtImage.GdipImage gdipImage = ((SwtImage) srcImage.getImpl()).createGdipImageFromHandle(tempImageHandle);
+            try {
+                long img = gdipImage.bitmap();
                 int imgWidth = Gdip.Image_GetWidth(img);
                 int imgHeight = Gdip.Image_GetHeight(img);
                 if (srcWidth == 0 && srcHeight == 0) {
@@ -1497,21 +1508,9 @@ public final class SwtGC extends SwtResource implements IGC {
                     Gdip.Graphics_Restore(data.gdipGraphics, gstate);
                 }
                 Gdip.ImageAttributes_delete(attrib);
-                Gdip.Bitmap_delete(img);
-                if (gdipImage[1] != 0) {
-                    long hHeap = OS.GetProcessHeap();
-                    OS.HeapFree(hHeap, 0, gdipImage[1]);
-                }
+            } finally {
+                gdipImage.destroy();
             }
-            return;
-        }
-        switch(srcImage.type) {
-            case SWT.BITMAP:
-                drawBitmap(srcImage, tempImageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
-                break;
-            case SWT.ICON:
-                drawIcon(tempImageHandle.handle(), srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
-                break;
         }
     }
 
@@ -3196,6 +3195,9 @@ public final class SwtGC extends SwtResource implements IGC {
     private void drawTextGDIP(long gdipGraphics, String string, int x, int y, int flags, boolean draw, Point size) {
         boolean needsBounds = !draw || (flags & SWT.DRAW_TRANSPARENT) == 0;
         char[] buffer;
+        if ((flags & SWT.DRAW_DELIMITER) == 0) {
+            string = string.replaceAll("[\\r\\n]+", "");
+        }
         int length = string.length();
         if (length != 0) {
             buffer = string.toCharArray();
@@ -4383,6 +4385,7 @@ public final class SwtGC extends SwtResource implements IGC {
         if (attributes.dash != null) {
             attributes.dash = Win32DPIUtils.pixelToPoint(drawable, attributes.dash, deviceZoom);
         }
+        attributes.dashOffset = Win32DPIUtils.pixelToPoint(drawable, attributes.dashOffset, deviceZoom);
         return attributes;
     }
 
@@ -5060,7 +5063,7 @@ public final class SwtGC extends SwtResource implements IGC {
 
         SetBackgroundOperation(Color color) {
             RGB rgb = color.getRGB();
-            this.color = new Color(color.getDevice(), rgb);
+            this.color = new Color(rgb);
             registerForDisposal(this.color);
         }
 
@@ -5429,7 +5432,7 @@ public final class SwtGC extends SwtResource implements IGC {
 
         SetForegroundOperation(Color color) {
             RGB rgb = color.getRGB();
-            this.color = new Color(color.getDevice(), rgb);
+            this.color = new Color(rgb);
             registerForDisposal(this.color);
         }
 
@@ -5604,8 +5607,16 @@ public final class SwtGC extends SwtResource implements IGC {
 
         @Override
         void apply() {
-            attributes.width = Win32DPIUtils.pointToPixel(drawable, attributes.width, getZoom());
-            setLineAttributesInPixels(attributes);
+            setLineAttributesInPixels(convertToPixels(attributes));
+        }
+
+        private LineAttributes convertToPixels(LineAttributes attributes) {
+            int zoom = getZoom();
+            float[] dashInPixels = Win32DPIUtils.pointToPixel(drawable, attributes.dash, zoom);
+            float dashOffsetInPixels = Win32DPIUtils.pointToPixel(drawable, attributes.dashOffset, zoom);
+            float widthInPixels = Win32DPIUtils.pointToPixel(drawable, attributes.width, zoom);
+            LineAttributes lineAttributesInPixels = new LineAttributes(widthInPixels, attributes.cap, attributes.join, attributes.style, dashInPixels, dashOffsetInPixels, attributes.miterLimit);
+            return lineAttributesInPixels;
         }
     }
 
@@ -5670,12 +5681,6 @@ public final class SwtGC extends SwtResource implements IGC {
                     changed = true;
             }
             if (changed) {
-                float[] newDashes = new float[dashes.length];
-                int deviceZoom = getZoom();
-                for (int i = 0; i < newDashes.length; i++) {
-                    newDashes[i] = Win32DPIUtils.pointToPixel(drawable, dashes[i], deviceZoom);
-                }
-                dashes = newDashes;
                 mask |= LINE_STYLE;
             } else {
                 dashes = lineDashes;
@@ -6143,12 +6148,12 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public Point stringExtent(String string) {
-        if (string == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return Win32DPIUtils.pixelToPointAsSize(drawable, stringExtentInPixels(string), getZoom());
+        return Win32DPIUtils.pixelToPointAsSufficientlyLargeSize(drawable, stringExtentInPixels(string), getZoom());
     }
 
     Point stringExtentInPixels(String string) {
+        if (string == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
         checkNonDisposed();
         checkGC(FONT);
         int length = string.length();
@@ -6160,7 +6165,6 @@ public final class SwtGC extends SwtResource implements IGC {
         }
         SIZE size = new SIZE();
         if (length == 0) {
-            //		OS.GetTextExtentPoint32(handle, SPACE, SPACE.length(), size);
             OS.GetTextExtentPoint32(getApi().handle, new char[] { ' ' }, 1, size);
             return new Point(0, size.cy);
         } else {
@@ -6190,7 +6194,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public Point textExtent(String string) {
-        return Win32DPIUtils.pixelToPointAsSize(drawable, textExtentInPixels(string, SWT.DRAW_DELIMITER | SWT.DRAW_TAB), getZoom());
+        return textExtent(string, SWT.DRAW_DELIMITER | SWT.DRAW_TAB);
     }
 
     /**
@@ -6225,7 +6229,7 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public Point textExtent(String string, int flags) {
-        return Win32DPIUtils.pixelToPointAsSize(drawable, textExtentInPixels(string, flags), getZoom());
+        return Win32DPIUtils.pixelToPointAsSufficientlyLargeSize(textExtentInPixels(string, flags), getZoom());
     }
 
     Point textExtentInPixels(String string, int flags) {

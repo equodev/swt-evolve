@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -77,9 +77,9 @@ import org.eclipse.swt.internal.gtk4.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#tree">Tree, TreeItem, TreeColumn snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#tree">Tree, TreeItem, TreeColumn snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtTree extends SwtComposite implements ITree {
@@ -2246,7 +2246,7 @@ public class SwtTree extends SwtComposite implements ITree {
     }
 
     @Override
-    long gtk_button_press_event(long widget, long event) {
+    long gtk3_button_press_event(long widget, long event) {
         double[] eventX = new double[1];
         double[] eventY = new double[1];
         GDK.gdk_event_get_coords(event, eventX, eventY);
@@ -2258,10 +2258,10 @@ public class SwtTree extends SwtComposite implements ITree {
         double[] eventRX = new double[1];
         double[] eventRY = new double[1];
         GDK.gdk_event_get_root_coords(event, eventRX, eventRY);
-        long eventGdkResource = gdk_event_get_surface_or_window(event);
+        long eventGdkResource = GDK.gdk_event_get_window(event);
         if (eventGdkResource != GTK3.gtk_tree_view_get_bin_window(getApi().handle))
             return 0;
-        long result = super.gtk_button_press_event(widget, event);
+        long result = super.gtk3_button_press_event(widget, event);
         if (result != 0)
             return result;
         /*
@@ -2376,7 +2376,7 @@ public class SwtTree extends SwtComposite implements ITree {
                 // When    : Enter, Shift+Enter, Ctrl+Enter are pressed.
                 // Not when: Alt+Enter, (Meta|Super|Hyper)+Enter, reason is stateMask is not provided on Gtk.
                 // Note: alt+Enter creates a selection on GTK, but we filter it out to be a bit more consistent Win32 (521387)
-                int keymask = gdk_event_get_state(event);
+                int keymask = gdk3_event_get_state(event);
                 if ((keymask & (GDK.GDK_SUPER_MASK | GDK.GDK_META_MASK | GDK.GDK_HYPER_MASK | GDK.GDK_MOD1_MASK)) == 0) {
                     sendTreeDefaultSelection();
                 }
@@ -2403,34 +2403,20 @@ public class SwtTree extends SwtComposite implements ITree {
     }
 
     @Override
-    long gtk_button_release_event(long widget, long event) {
+    long gtk3_button_release_event(long widget, long event) {
         double[] eventX = new double[1];
         double[] eventY = new double[1];
-        if (GTK.GTK4) {
-            GDK.gdk_event_get_position(event, eventX, eventY);
-        } else {
-            GDK.gdk_event_get_coords(event, eventX, eventY);
-        }
+        GDK.gdk_event_get_coords(event, eventX, eventY);
         int[] eventButton = new int[1];
         int[] eventState = new int[1];
-        if (GTK.GTK4) {
-            eventButton[0] = GDK.gdk_button_event_get_button(event);
-            eventState[0] = GDK.gdk_event_get_modifier_state(event);
-        } else {
-            GDK.gdk_event_get_button(event, eventButton);
-            GDK.gdk_event_get_state(event, eventState);
-        }
+        GDK.gdk_event_get_button(event, eventButton);
+        GDK.gdk_event_get_state(event, eventState);
         double[] eventRX = new double[1];
         double[] eventRY = new double[1];
         GDK.gdk_event_get_root_coords(event, eventRX, eventRY);
-        long eventGdkResource = gdk_event_get_surface_or_window(event);
-        if (GTK.GTK4) {
-            if (eventGdkResource != gtk_widget_get_surface(getApi().handle))
-                return 0;
-        } else {
-            if (eventGdkResource != GTK3.gtk_tree_view_get_bin_window(getApi().handle))
-                return 0;
-        }
+        long eventGdkResource = GDK.gdk_event_get_window(event);
+        if (eventGdkResource != GTK3.gtk_tree_view_get_bin_window(getApi().handle))
+            return 0;
         // Check region since super.gtk_button_release_event() isn't called
         lastInput.x = (int) eventX[0];
         lastInput.y = (int) eventY[0];
@@ -2460,7 +2446,7 @@ public class SwtTree extends SwtComposite implements ITree {
                 }
             }
         }
-        return super.gtk_button_release_event(widget, event);
+        return super.gtk3_button_release_event(widget, event);
     }
 
     @Override
@@ -2540,21 +2526,20 @@ public class SwtTree extends SwtComposite implements ITree {
             return 0;
         }
         drawInheritedBackground(cairo);
-        return super.gtk_draw(widget, cairo);
+        if (GTK.GTK4) {
+            return super.gtk_draw(widget, cairo);
+        } else {
+            // On GTK3 super.gtk_draw will be lost by items drawing thus handle explicitly in windowProc.
+            return 0;
+        }
     }
 
     @Override
-    long gtk_motion_notify_event(long widget, long event) {
-        if (GTK.GTK4) {
-            long surface = GDK.gdk_event_get_surface(event);
-            if (surface != gtk_widget_get_surface(getApi().handle))
-                return 0;
-        } else {
-            long window = GDK.GDK_EVENT_WINDOW(event);
-            if (window != GTK3.gtk_tree_view_get_bin_window(getApi().handle))
-                return 0;
-        }
-        return super.gtk_motion_notify_event(widget, event);
+    long gtk3_motion_notify_event(long widget, long event) {
+        long window = GDK.gdk_event_get_window(event);
+        if (window != GTK3.gtk_tree_view_get_bin_window(getApi().handle))
+            return 0;
+        return super.gtk3_motion_notify_event(widget, event);
     }
 
     @Override
@@ -4321,6 +4306,13 @@ public class SwtTree extends SwtComposite implements ITree {
                         }
                         propagateDraw(handle, arg0);
                     }
+                    /*
+			 * Ensure the paint listener's drawing appears on top of items rather than being
+			 * overwritten by them.
+			 */
+                    if (!GTK.GTK4) {
+                        gtk3_paintEvent(arg0);
+                    }
                     break;
                 }
             case EXPOSE_EVENT_INVERSE:
@@ -4396,6 +4388,49 @@ public class SwtTree extends SwtComposite implements ITree {
                 throwCannotRemoveItem(i);
             }
         }
+    }
+
+    /**
+     * Fire the paint event explicitly, so the paint listener's drawing is not lost.
+     */
+    private void gtk3_paintEvent(long cairo) {
+        if ((getApi().state & OBSCURED) != 0)
+            return;
+        if (drawRegion) {
+            cairoClipRegion(cairo);
+        }
+        if (!hooksPaint())
+            return;
+        GdkRectangle rect = new GdkRectangle();
+        GDK.gdk_cairo_get_clip_rectangle(cairo, rect);
+        Event event = new Event();
+        event.count = 1;
+        Rectangle eventBounds = new Rectangle(rect.x, rect.y, rect.width, rect.height);
+        if ((getApi().style & SWT.MIRRORED) != 0)
+            eventBounds.x = getClientWidth() - eventBounds.width - eventBounds.x;
+        event.setBounds(eventBounds);
+        GCData data = new GCData();
+        if (drawRegion)
+            data.regionSet = eventRegion;
+        data.cairo = cairo;
+        GC gc = event.gc = SwtGC.gtk_new(this.getApi(), data);
+        gc.setClipping(eventBounds.x, eventBounds.y, eventBounds.width, eventBounds.height);
+        drawWidget(gc);
+        sendEvent(SWT.Paint, event);
+        gc.dispose();
+        event.gc = null;
+    }
+
+    @Override
+    void snapshotToDraw(long handle, long snapshot) {
+        // Tree renders via native GTK children (GtkScrolledWindow > GtkTreeView).
+        // Like GTK3 where Tree explicitly fires paint in EXPOSE_EVENT (after=true),
+        // GTK4 must paint after children so SWT.Paint overlays appear on top.
+    }
+
+    @Override
+    void snapshotToDrawAfterChildren(long handle, long snapshot) {
+        snapshotPaint(handle, snapshot);
     }
 
     private void throwCannotRemoveItem(int i) {

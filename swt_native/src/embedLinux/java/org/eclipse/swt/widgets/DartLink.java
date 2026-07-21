@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -37,9 +37,9 @@ import dev.equo.swt.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#link">Link snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#link">Link snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  *
  * @since 3.1
  * @noextend This class is not intended to be subclassed by clients.
@@ -281,6 +281,66 @@ public class DartLink extends DartControl implements ILink {
     public String getText() {
         checkWidget();
         return text;
+    }
+
+    private void handlePress(int x, int y) {
+        if (focusIndex != -1)
+            setFocus();
+        if ((getApi().style & SWT.MIRRORED) != 0)
+            x = getClientWidth() - x;
+        int oldSelectionX = selection.x;
+        int oldSelectionY = selection.y;
+        selection.y = -1;
+        if (oldSelectionX != -1 && oldSelectionY != -1) {
+            if (oldSelectionX > oldSelectionY) {
+                int temp = oldSelectionX;
+                oldSelectionX = oldSelectionY;
+                oldSelectionY = temp;
+            }
+        }
+        for (int j = 0; j < offsets.length; j++) {
+            Rectangle[] rects = getRectanglesInPixels(j);
+            for (int i = 0; i < rects.length; i++) {
+                Rectangle rect = rects[i];
+                if (rect.contains(x, y)) {
+                    focusIndex = j;
+                    redraw();
+                    return;
+                }
+            }
+        }
+    }
+
+    private void handleRelease(int hitX, int hitY) {
+        if ((getApi().style & SWT.MIRRORED) != 0)
+            hitX = getClientWidth() - hitX;
+        Rectangle[] rects = getRectanglesInPixels(focusIndex);
+        for (Rectangle rect : rects) {
+            if (rect.contains(hitX, hitY)) {
+                Event ev = new Event();
+                ev.text = ids[focusIndex];
+                sendSelectionEvent(SWT.Selection, ev, true);
+                return;
+            }
+        }
+    }
+
+    private void handleMotion(int mask, int x, int y) {
+        if ((getApi().style & SWT.MIRRORED) != 0)
+            x = getClientWidth() - x;
+        {
+            for (int j = 0; j < offsets.length; j++) {
+                Rectangle[] rects = getRectanglesInPixels(j);
+                for (int i = 0; i < rects.length; i++) {
+                    Rectangle rect = rects[i];
+                    if (rect.contains(x, y)) {
+                        setCursor(display.getSystemCursor(SWT.CURSOR_HAND));
+                        return;
+                    }
+                }
+            }
+            setCursor(null);
+        }
     }
 
     @Override

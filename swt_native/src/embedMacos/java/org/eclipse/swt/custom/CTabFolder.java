@@ -49,9 +49,9 @@ import dev.equo.swt.Config;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#ctabfolder">CTabFolder, CTabItem snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: CustomControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#ctabfolder">CTabFolder, CTabItem snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: CustomControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class CTabFolder extends Composite {
@@ -538,7 +538,9 @@ public class CTabFolder extends Composite {
      * @return <code>true</code> if the CTabFolder is rendered with a simple shape
      *
      * @since 3.0
+     * @deprecated Curved tabs are no longer supported.
      */
+    @Deprecated(forRemoval = true, since = "2026-06")
     public boolean getSimple() {
         return getImpl().getSimple();
     }
@@ -1224,7 +1226,9 @@ public class CTabFolder extends Composite {
      * </ul>
      *
      * @since 3.0
+     * @deprecated Curved tabs are no longer supported.
      */
+    @Deprecated(forRemoval = true, since = "2026-06")
     public void setSimple(boolean simple) {
         getImpl().setSimple(simple);
     }
@@ -1345,6 +1349,53 @@ public class CTabFolder extends Composite {
      */
     public void setUnselectedCloseVisible(boolean visible) {
         getImpl().setUnselectedCloseVisible(visible);
+    }
+
+    /**
+     * Sets whether the dirty indicator style is enabled. When enabled,
+     * dirty items (marked via {@link CTabItem#setShowDirty(boolean)}) show a
+     * bullet dot at the close button location instead of the traditional
+     * <code>*</code> prefix. The bullet transforms into the close button on hover
+     * when close is enabled for the folder or the individual item.
+     * <p>
+     * Note: the dirty indicator is purely visual. Clicking the bullet does not
+     * close the tab unless close is independently enabled (via the
+     * {@link SWT#CLOSE} style or {@link CTabItem#setShowClose(boolean)}).
+     * </p>
+     * <p>
+     * The default value is <code>false</code> (traditional <code>*</code> prefix
+     * behavior).
+     * </p>
+     *
+     * @param enabled <code>true</code> to enable the dirty indicator style
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @see CTabItem#setShowDirty(boolean)
+     * @since 3.134
+     */
+    public void setDirtyIndicatorStyle(boolean enabled) {
+        getImpl().setDirtyIndicatorStyle(enabled);
+    }
+
+    /**
+     * Returns whether the dirty indicator style is enabled.
+     *
+     * @return <code>true</code> if the dirty indicator style is enabled
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @see #setDirtyIndicatorStyle(boolean)
+     * @since 3.134
+     */
+    public boolean getDirtyIndicatorStyle() {
+        return getImpl().getDirtyIndicatorStyle();
     }
 
     /**

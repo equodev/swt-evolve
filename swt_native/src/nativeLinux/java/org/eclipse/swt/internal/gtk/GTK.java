@@ -2960,6 +2960,11 @@ public class GTK extends OS {
 
     /**
      * @param tree_view cast=(GtkTreeView *)
+     */
+    public static final native void gtk_tree_view_columns_autosize(long tree_view);
+
+    /**
+     * @param tree_view cast=(GtkTreeView *)
      * @param column cast=(GtkTreeViewColumn *)
      */
     public static final native void gtk_tree_view_remove_column(long tree_view, long column);

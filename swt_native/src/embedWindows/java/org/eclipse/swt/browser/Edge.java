@@ -110,6 +110,11 @@ class Edge extends WebBrowser {
 
     HashMap<Long, LocationEvent> navigations = new HashMap<>();
 
+    /**
+     * Maps BrowserFunction index to the script ID from AddScriptToExecuteOnDocumentCreated.
+     */
+    private final Map<Integer, String> functionScriptIds = new HashMap<>();
+
     private boolean ignoreGotFocus;
 
     private boolean ignoreFocusIn;
@@ -1206,14 +1211,6 @@ class Edge extends WebBrowser {
         navigations.put(pNavId[0], event);
         if (event.doit) {
             settings.put_IsScriptEnabled(jsEnabledOnNextPage);
-            // Register browser functions in the new document.
-            if (!functions.isEmpty()) {
-                StringBuilder sb = new StringBuilder();
-                for (BrowserFunction function : functions.values()) {
-                    sb.append(((SwtBrowserFunction) function.getImpl()).functionString);
-                }
-                execute(sb.toString());
-            }
         } else {
             args.put_Cancel(true);
         }
@@ -1914,5 +1911,48 @@ class Edge extends WebBrowser {
     @Override
     public boolean setUrl(String url, String postData, String[] headers) {
         return setWebpageData(url, postData, headers, null);
+    }
+
+    /**
+     * Registers the function script persistently via AddScriptToExecuteOnDocumentCreated so it is
+     * injected on every future document creation before any page scripts run, avoiding the race
+     * condition between async function injection and navigation completion.
+     * If called while inside a WebView2 callback, the persistent registration is deferred via
+     * {@link Display#asyncExec(Runnable)} so it completes once the callback returns.
+     * See <a href="https://github.com/eclipse-platform/eclipse.platform.swt/issues/20">issue #20</a>.
+     */
+    @Override
+    public void createFunction(BrowserFunction function) {
+        super.createFunction(function);
+        int functionIndex = ((SwtBrowserFunction) function.getImpl()).index;
+        String functionString = ((SwtBrowserFunction) function.getImpl()).functionString;
+        if (inCallback > 0) {
+            // Cannot wait for a callback result while already inside a WebView2 callback;
+            // defer the persistent registration to after the callback completes.
+            browser.getDisplay().asyncExec(() -> {
+                if (browser.isDisposed() || !functions.containsKey(functionIndex))
+                    return;
+                registerFunctionScript(functionIndex, functionString);
+            });
+            return;
+        }
+        registerFunctionScript(functionIndex, functionString);
+    }
+
+    private void registerFunctionScript(int functionIndex, String functionString) {
+        String[] scriptId = new String[1];
+        callAndWait(scriptId, completion -> webViewProvider.getWebView(true).AddScriptToExecuteOnDocumentCreated(stringToWstr(functionString), completion.getAddress()));
+        if (scriptId[0] != null) {
+            functionScriptIds.put(functionIndex, scriptId[0]);
+        }
+    }
+
+    @Override
+    void deregisterFunction(BrowserFunction function) {
+        super.deregisterFunction(function);
+        String scriptId = functionScriptIds.remove(((SwtBrowserFunction) function.getImpl()).index);
+        if (scriptId != null) {
+            webViewProvider.getWebView(true).RemoveScriptToExecuteOnDocumentCreated(stringToWstr(scriptId));
+        }
     }
 }

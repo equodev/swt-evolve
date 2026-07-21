@@ -37,7 +37,7 @@ import dev.equo.swt.Config;
  *
  *  @see DropTargetListener
  *  @see DropTargetEvent
- *  @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ *  @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  *  @see <a href="https://eclipse.org/articles/Article-SWT-DND/DND-in-SWT.html"> Eclipse corner article on DND </a>
  */
 public class DropTargetAdapter implements DropTargetListener {

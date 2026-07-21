@@ -30,7 +30,7 @@ import dev.equo.swt.*;
  * <dt><b>Styles:</b><dd>VERTICAL, HORIZONTAL, BORDER
  * </dl>
  *
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 @Deprecated
 public class DartAnimatedProgress extends DartCanvas implements IAnimatedProgress {

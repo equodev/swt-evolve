@@ -117,9 +117,9 @@ import dev.equo.swt.*;
  *
  * @see Decorations
  * @see SWT
- * @see <a href="http://www.eclipse.org/swt/snippets/#shell">Shell snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#shell">Shell snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class DartShell extends DartDecorations implements IShell {
@@ -1522,6 +1522,24 @@ public class DartShell extends DartDecorations implements IShell {
         scrolling = true;
     }
 
+    /**
+     * Informs the operating system that the application prefers a dark
+     * theme for native components such as title bars, scrollbars, and
+     * native dialogs.
+     *
+     * @param preferred true if the dark theme is preferred, false otherwise.
+     *
+     * @since 3.134
+     */
+    public void setDarkThemePreferred(boolean preferred) {
+        boolean newValue = preferred;
+        if (!java.util.Objects.equals(this.darkThemePreferred, newValue)) {
+            dirty();
+        }
+        checkWidget();
+        this.darkThemePreferred = newValue;
+    }
+
     @Override
     public void setText(String string) {
         dirty();
@@ -1553,6 +1571,22 @@ public class DartShell extends DartDecorations implements IShell {
     }
 
     void preventShellActivateJvmCrash() {
+        /*
+	 * Bug 578171: There is new code in macOS 12 that remembers which
+	 * Shell was active before menu popup was shown and tries to
+	 * re-activate after menu popup is closed. Unfortunately there is a
+	 * bug in this code: if window list changes, it activates a wrong
+	 * Shell.
+	 *
+	 * This is a bug on its own, but worse yet, this causes a JVM crash
+	 * because activating a new Shell causes menu bar to reset its
+	 * internal data, which is unexpected to the macOS's menu tracking
+	 * loop.
+	 *
+	 * Both bugs are bugs of macOS itself. The workaround is to cancel
+	 * menu tracking just before showing Shell.
+	 */
+        DartDisplay.cancelRootMenuTracking();
     }
 
     void setWindowVisible(boolean visible, boolean key) {
@@ -1703,6 +1737,8 @@ public class DartShell extends DartDecorations implements IShell {
 
     int alpha;
 
+    boolean darkThemePreferred;
+
     Dialog[] dialogs = new Dialog[0];
 
     int imeInputMode;
@@ -1789,6 +1825,10 @@ public class DartShell extends DartDecorations implements IShell {
 
     public int _alpha() {
         return alpha;
+    }
+
+    public boolean _darkThemePreferred() {
+        return darkThemePreferred;
     }
 
     public Dialog[] _dialogs() {

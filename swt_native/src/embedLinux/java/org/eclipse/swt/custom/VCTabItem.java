@@ -76,6 +76,14 @@ public class VCTabItem extends VItem {
         ((DartCTabItem) impl).showClose = value;
     }
 
+    public boolean getShowDirty() {
+        return ((DartCTabItem) impl).getShowDirty();
+    }
+
+    public void setShowDirty(boolean value) {
+        ((DartCTabItem) impl).showDirty = value;
+    }
+
     public boolean getShowing() {
         return ((DartCTabItem) impl).showing;
     }

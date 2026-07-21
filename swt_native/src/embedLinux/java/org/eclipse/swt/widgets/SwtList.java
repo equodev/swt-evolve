@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -39,9 +39,9 @@ import org.eclipse.swt.internal.gtk4.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#list">List snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#list">List snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtList extends SwtScrollable implements IList {
@@ -812,8 +812,8 @@ public class SwtList extends SwtScrollable implements IList {
     }
 
     @Override
-    long gtk_button_press_event(long widget, long event) {
-        long result = super.gtk_button_press_event(widget, event);
+    long gtk3_button_press_event(long widget, long event) {
+        long result = super.gtk3_button_press_event(widget, event);
         if (result != 0)
             return result;
         /*
@@ -827,15 +827,9 @@ public class SwtList extends SwtScrollable implements IList {
         double[] eventY = new double[1];
         int[] eventState = new int[1];
         int[] eventButton = new int[1];
-        if (GTK.GTK4) {
-            eventButton[0] = GDK.gdk_button_event_get_button(event);
-            eventState[0] = GDK.gdk_event_get_modifier_state(event);
-            GDK.gdk_event_get_position(event, eventX, eventY);
-        } else {
-            GDK.gdk_event_get_button(event, eventButton);
-            GDK.gdk_event_get_state(event, eventState);
-            GDK.gdk_event_get_coords(event, eventX, eventY);
-        }
+        GDK.gdk_event_get_button(event, eventButton);
+        GDK.gdk_event_get_state(event, eventState);
+        GDK.gdk_event_get_coords(event, eventX, eventY);
         if ((getApi().state & DRAG_DETECT) != 0 && hooks(SWT.DragDetect) && OS.isWayland() && eventType == GDK.GDK_BUTTON_PRESS) {
             // check to see if there is another event coming in that is not a double/triple click, this is to prevent Bug 514531
             long nextEvent = GDK.gdk_event_peek();
@@ -943,25 +937,15 @@ public class SwtList extends SwtScrollable implements IList {
     }
 
     @Override
-    long gtk_button_release_event(long widget, long event) {
+    long gtk3_button_release_event(long widget, long event) {
         int[] eventState = new int[1];
         double[] eventX = new double[1];
         double[] eventY = new double[1];
-        if (GTK.GTK4) {
-            eventState[0] = GDK.gdk_event_get_modifier_state(event);
-            GDK.gdk_event_get_position(event, eventX, eventY);
-        } else {
-            GDK.gdk_event_get_state(event, eventState);
-            GDK.gdk_event_get_coords(event, eventX, eventY);
-        }
-        long eventGdkResource = gdk_event_get_surface_or_window(event);
-        if (GTK.GTK4) {
-            if (eventGdkResource != gtk_widget_get_surface(getApi().handle))
-                return 0;
-        } else {
-            if (eventGdkResource != GTK3.gtk_tree_view_get_bin_window(getApi().handle))
-                return 0;
-        }
+        GDK.gdk_event_get_state(event, eventState);
+        GDK.gdk_event_get_coords(event, eventX, eventY);
+        long eventGdkResource = GDK.gdk_event_get_window(event);
+        if (eventGdkResource != GTK3.gtk_tree_view_get_bin_window(getApi().handle))
+            return 0;
         /*
 	 * Feature in GTK. In multi-select tree view there is a problem with using DnD operations while also selecting multiple items.
 	 * When doing a DnD, GTK de-selects all other items except for the widget being dragged from. By disabling the selection function
@@ -986,7 +970,7 @@ public class SwtList extends SwtScrollable implements IList {
                 }
             }
         }
-        return super.gtk_button_release_event(widget, event);
+        return super.gtk3_button_release_event(widget, event);
     }
 
     /**
@@ -994,7 +978,7 @@ public class SwtList extends SwtScrollable implements IList {
      * @param event the gtk key press event that was fired.
      */
     void keyPressDefaultSelectionHandler(long event, int key) {
-        int keymask = gdk_event_get_state(event);
+        int keymask = gdk3_event_get_state(event);
         switch(key) {
             case GDK.GDK_Return:
                 // Send DefaultSelectionEvent when:

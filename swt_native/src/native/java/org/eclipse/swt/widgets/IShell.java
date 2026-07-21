@@ -508,6 +508,17 @@ public interface IShell extends IDecorations, ImplShell {
      */
     void setRegion(Region region);
 
+    /**
+     * Informs the operating system that the application prefers a dark
+     * theme for native components such as title bars, scrollbars, and
+     * native dialogs.
+     *
+     * @param preferred true if the dark theme is preferred, false otherwise.
+     *
+     * @since 3.134
+     */
+    void setDarkThemePreferred(boolean preferred);
+
     void setText(String string);
 
     void setVisible(boolean visible);

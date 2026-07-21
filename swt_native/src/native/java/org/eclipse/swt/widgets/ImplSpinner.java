@@ -12,7 +12,5 @@ public interface ImplSpinner extends ImplComposite {
 
     int _textLimit();
 
-    Cursor findCursor();
-
     void updateCursorRects(boolean enabled);
 }

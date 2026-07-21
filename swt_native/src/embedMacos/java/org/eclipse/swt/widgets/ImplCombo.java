@@ -17,6 +17,4 @@ public interface ImplCombo extends ImplComposite {
     boolean _ignoreSelection();
 
     boolean _listVisible();
-
-    Cursor findCursor();
 }

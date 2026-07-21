@@ -35,8 +35,8 @@ import dev.equo.swt.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#ctabfolder">CTabFolder, CTabItem snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#ctabfolder">CTabFolder, CTabItem snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class DartCTabItem extends DartItem implements ICTabItem {
@@ -68,6 +68,8 @@ public class DartCTabItem extends DartItem implements ICTabItem {
     int closeImageState = SWT.BACKGROUND;
 
     boolean showClose = false;
+
+    boolean showDirty = false;
 
     boolean showing = false;
 
@@ -298,6 +300,27 @@ public class DartCTabItem extends DartItem implements ICTabItem {
     public boolean getShowClose() {
         checkWidget();
         return showClose;
+    }
+
+    /**
+     * Returns <code>true</code> to indicate that the receiver is dirty
+     * (has unsaved changes). When the parent folder's dirty indicator style
+     * is enabled, dirty items show a bullet dot at the close button location
+     * instead of the default <code>*</code> prefix.
+     *
+     * @return <code>true</code> if the item is marked as dirty
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @see CTabFolder#setDirtyIndicatorStyle(boolean)
+     * @since 3.134
+     */
+    public boolean getShowDirty() {
+        checkWidget();
+        return showDirty;
     }
 
     /**
@@ -554,6 +577,34 @@ public class DartCTabItem extends DartItem implements ICTabItem {
     }
 
     /**
+     * Marks this item as dirty (having unsaved changes). When the parent
+     * folder's dirty indicator style is enabled via
+     * {@link CTabFolder#setDirtyIndicatorStyle(boolean)}, dirty items
+     * show a bullet dot at the close button location. The bullet transforms
+     * into the close button on hover.
+     *
+     * @param dirty <code>true</code> to mark the item as dirty
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @see CTabFolder#setDirtyIndicatorStyle(boolean)
+     * @since 3.134
+     */
+    public void setShowDirty(boolean dirty) {
+        checkWidget();
+        if (!java.util.Objects.equals(this.showDirty, dirty)) {
+            dirty();
+        }
+        if (showDirty == dirty)
+            return;
+        showDirty = dirty;
+        ((DartCTabFolder) parent.getImpl()).updateFolder(DartCTabFolder.REDRAW_TABS);
+    }
+
+    /**
      * Sets the text to display on the tab.
      * A carriage return '\n' allows to display multi line text.
      *
@@ -668,6 +719,10 @@ public class DartCTabItem extends DartItem implements ICTabItem {
 
     public boolean _showClose() {
         return showClose;
+    }
+
+    public boolean _showDirty() {
+        return showDirty;
     }
 
     public boolean _showing() {

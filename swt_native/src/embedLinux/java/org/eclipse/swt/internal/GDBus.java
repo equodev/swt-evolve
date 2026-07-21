@@ -332,8 +332,8 @@ public class GDBus {
      */
     public static Object[] convertGVariantToJava(long gVariant) {
         Object retVal = convertGVariantToJavaHelper(gVariant);
-        if (retVal instanceof Object[]) {
-            return (Object[]) retVal;
+        if (retVal instanceof Object[] oa) {
+            return oa;
         } else {
             System.err.println("SWT GDBus Error converting arguments : Expecting object array, received Object.");
             return null;
@@ -395,14 +395,14 @@ public class GDBus {
         if (javaObject == null) {
             return 0;
         }
-        if (javaObject instanceof String) {
-            return OS.g_variant_new_string(Converter.javaStringToCString((String) javaObject));
+        if (javaObject instanceof String s) {
+            return OS.g_variant_new_string(Converter.javaStringToCString(s));
         }
-        if (javaObject instanceof Boolean) {
-            return OS.g_variant_new_boolean((Boolean) javaObject);
+        if (javaObject instanceof Boolean b) {
+            return OS.g_variant_new_boolean(b);
         }
-        if (javaObject instanceof Integer) {
-            return OS.g_variant_new_int32((Integer) javaObject);
+        if (javaObject instanceof Integer i) {
+            return OS.g_variant_new_int32(i);
         }
         // <You can add more primitive types here>
         // Dangers:
@@ -410,8 +410,7 @@ public class GDBus {
         //   - DBus doesn't have notion of 'null'.
         //   - DBus doesn't support empty arrays.
         // If needed, see workaround implemented in WebkitGDBus.java
-        if (javaObject instanceof Object[]) {
-            Object[] arrayValue = (Object[]) javaObject;
+        if (javaObject instanceof Object[] arrayValue) {
             int length = arrayValue.length;
             long[] variants = new long[length];
             for (int i = 0; i < length; i++) {

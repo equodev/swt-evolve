@@ -30,7 +30,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * can have a graphics context (GC) created for them, and they
  * can be drawn on by sending messages to the associated GC.
  *
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public abstract class SwtDevice implements Drawable, IDevice {
 
@@ -1143,7 +1143,7 @@ public abstract class SwtDevice implements Drawable, IDevice {
             long surface = GTK4.gtk_native_get_surface(GTK4.gtk_widget_get_native(shellHandle));
             monitor = GDK.gdk_display_get_monitor_at_surface(display, surface);
         } else {
-            monitor = GDK.gdk_display_get_monitor_at_point(display, 0, 0);
+            monitor = getPrimaryMonitor(display);
         }
         // GDK can return null monitor in some cases thus play safe
         // See https://gitlab.gnome.org/GNOME/gtk/-/issues/5075 for details
@@ -1152,6 +1152,20 @@ public abstract class SwtDevice implements Drawable, IDevice {
             dpi = dpi * scale;
         }
         return DPIUtil.mapDPIToZoom(dpi);
+    }
+
+    /**
+     * Returns the GDK primary monitor handle, falling back to the monitor at
+     * virtual coordinate (0,0) when no primary monitor is reported (e.g. on Wayland).
+     *
+     * @noreference This method is not intended to be referenced by clients.
+     */
+    public long getPrimaryMonitor(long display) {
+        long monitor = GDK.gdk_display_get_primary_monitor(display);
+        if (monitor == 0) {
+            monitor = GDK.gdk_display_get_monitor_at_point(display, 0, 0);
+        }
+        return monitor;
     }
 
     public Device getApi() {

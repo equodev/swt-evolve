@@ -83,6 +83,7 @@ VShell _$VShellFromJson(Map<String, dynamic> json) => VShell()
   ..text = json['text'] as String?
   ..dialogs = parseDialogs(json['dialogs'])
   ..alpha = (json['alpha'] as num?)?.toInt()
+  ..darkThemePreferred = json['darkThemePreferred'] as bool?
   ..fullScreen = json['fullScreen'] as bool?
   ..imeInputMode = (json['imeInputMode'] as num?)?.toInt()
   ..maximumSize = json['maximumSize'] == null
@@ -137,6 +138,7 @@ Map<String, dynamic> _$VShellToJson(VShell instance) => <String, dynamic>{
   'text': ?instance.text,
   'dialogs': ?instance.dialogs,
   'alpha': ?instance.alpha,
+  'darkThemePreferred': ?instance.darkThemePreferred,
   'fullScreen': ?instance.fullScreen,
   'imeInputMode': ?instance.imeInputMode,
   'maximumSize': ?instance.maximumSize,

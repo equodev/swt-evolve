@@ -36,9 +36,9 @@ import org.eclipse.swt.internal.cocoa.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#list">List snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#list">List snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtList extends SwtScrollable implements IList {
@@ -279,9 +279,7 @@ public class SwtList extends SwtScrollable implements IList {
         spacing.width = spacing.height = CELL_GAP;
         widget.setIntercellSpacing(spacing);
         widget.setDoubleAction(OS.sel_sendDoubleSelection);
-        if (OS.isBigSurOrLater()) {
-            OS.objc_msgSend(widget.id, OS.sel_setStyle, OS.NSTableViewStylePlain);
-        }
+        OS.objc_msgSend(widget.id, OS.sel_setStyle, OS.NSTableViewStylePlain);
         if (!hasBorder())
             widget.setFocusRingType(OS.NSFocusRingTypeNone);
         column = (NSTableColumn) new NSTableColumn().alloc();

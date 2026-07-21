@@ -302,7 +302,6 @@ public class CTabFolderHelper {
                 break;
             default:
                 if (0 <= part && part < parent.getItemCount()) {
-                    renderer.updateCurves();
                     CTabItem item = parent.items[part];
                     if (item.isDisposed()) return new Point(0, 0);
                     Image image = item.getImage();
@@ -319,7 +318,9 @@ public class CTabFolderHelper {
                         int minChars = parent.minChars;
                         text = minChars == 0 ? null : item.getText();
                         if (text != null && text.length() > minChars) {
-                            if (renderer.useEllipses()) {
+                            // 3.134 upstream removed CTabFolderRenderer.useEllipses(); it returned
+                            // parent.simple, so inline that (behaviour-preserving across versions).
+                            if (parent.simple) {
                                 int end = minChars < ELLIPSIS.length() + 1 ? minChars : minChars - ELLIPSIS.length();
                                 text = text.substring(0, end);
                                 if (minChars > ELLIPSIS.length() + 1) text += ELLIPSIS;

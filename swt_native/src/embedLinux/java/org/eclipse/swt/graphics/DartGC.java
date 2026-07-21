@@ -58,9 +58,9 @@ import dev.equo.swt.*;
  * </p>
  *
  * @see org.eclipse.swt.events.PaintEvent
- * @see <a href="http://www.eclipse.org/swt/snippets/#gc">GC snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Examples: GraphicsExample, PaintExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#gc">GC snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Examples: GraphicsExample, PaintExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public final class DartGC extends DartResource implements IGC {
 
@@ -200,6 +200,18 @@ public final class DartGC extends DartResource implements IGC {
         long gdkGC = drawable.internal_new_GC(data);
         init(drawable, data, gdkGC);
         init();
+    }
+
+    private float calculateTransformationScale() {
+        if (currentTransform == null) {
+            return 1.0f;
+        }
+        // this calculates the effective length in x and y
+        // direction without being affected by the rotation
+        // of the transformation
+        float scaleWidth = (float) Math.hypot(currentTransform[0], currentTransform[2]);
+        float scaleHeight = (float) Math.hypot(currentTransform[1], currentTransform[3]);
+        return Math.max(scaleWidth, scaleHeight);
     }
 
     /**
@@ -1381,7 +1393,7 @@ public final class DartGC extends DartResource implements IGC {
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         //BOGUS
-        return stringExtentInPixels(new String(new char[] { ch })).x;
+        return textExtentInPixels(new String(new char[] { ch }), 0).x;
     }
 
     /**
@@ -1512,7 +1524,7 @@ public final class DartGC extends DartResource implements IGC {
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         //BOGUS
-        return stringExtentInPixels(new String(new char[] { ch })).x;
+        return textExtentInPixels(new String(new char[] { ch }), 0).x;
     }
 
     /**
@@ -2456,7 +2468,17 @@ public final class DartGC extends DartResource implements IGC {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (path != null && path.isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        Transform t = null;
+        if (currentTransform != null) {
+            t = new Transform(getDevice());
+            getTransform(t);
+            setTransform(null);
+        }
         resetClipping();
+        if (t != null) {
+            setTransform(t);
+            t.dispose();
+        }
         if (path != null) {
         }
     }
@@ -3208,10 +3230,6 @@ public final class DartGC extends DartResource implements IGC {
      */
     public Point stringExtent(String string) {
         return textExtent(string, 0);
-    }
-
-    Point stringExtentInPixels(String string) {
-        return textExtentInPixels(string, 0);
     }
 
     /**

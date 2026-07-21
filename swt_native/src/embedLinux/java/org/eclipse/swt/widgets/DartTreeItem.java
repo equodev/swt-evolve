@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -35,8 +35,8 @@ import dev.equo.swt.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#tree">Tree, TreeItem, TreeColumn snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#tree">Tree, TreeItem, TreeColumn snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class DartTreeItem extends DartItem implements ITreeItem {
@@ -1325,9 +1325,13 @@ public class DartTreeItem extends DartItem implements ITreeItem {
 				 * Feature in GTK: a Tree with the style SWT.VIRTUAL has
 				 * fixed-height-mode enabled. This will limit the size of
 				 * any cells, including renderers. In order to prevent
-				 * images from disappearing/being cropped, we re-create
-				 * the renderers when the first image is set. Fix for
+				 * images from disappearing/being cropped, GTK's cached
+				 * row height must be invalidated so it re-measures with
+				 * the new pixbuf renderer size (set above). Fix for
 				 * bug 480261.
+				 *
+				 * Toggle the fixed-height-mode GObject property
+				 * off, autoresize columns and back on.
 				 */
                     if ((parent.style & SWT.VIRTUAL) != 0) {
                     }

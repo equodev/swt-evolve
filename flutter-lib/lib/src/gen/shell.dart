@@ -65,6 +65,7 @@ class VShell extends VDecorations {
   @JsonKey(fromJson: parseDialogs)
   List<VDialog>? dialogs;
   int? alpha;
+  bool? darkThemePreferred;
   bool? fullScreen;
   int? imeInputMode;
   VPoint? maximumSize;

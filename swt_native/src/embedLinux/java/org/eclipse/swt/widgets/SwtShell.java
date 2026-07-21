@@ -119,9 +119,9 @@ import org.eclipse.swt.internal.gtk4.*;
  *
  * @see Decorations
  * @see SWT
- * @see <a href="http://www.eclipse.org/swt/snippets/#shell">Shell snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#shell">Shell snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtShell extends SwtDecorations implements IShell {
@@ -637,20 +637,15 @@ public class SwtShell extends SwtDecorations implements IShell {
                 OS.XSetInputFocus(xDisplay, xWindow, OS.RevertToParent, OS.CurrentTime);
                 GDK.gdk_x11_display_error_trap_pop_ignored(gdkDisplay);
             } else {
-                long gdkDisplay;
-                if (GTK.GTK4) {
-                    gdkDisplay = GDK.gdk_surface_get_display(gdkResource);
-                } else {
-                    GTK3.gtk_grab_add(shellHandle);
-                    gdkDisplay = GDK.gdk_window_get_display(gdkResource);
-                }
-                long seat = GDK.gdk_display_get_default_seat(gdkDisplay);
                 if (GTK.GTK4) {
                     GTK4.gtk_window_present(shellHandle);
                 } else {
+                    GTK3.gtk_grab_add(shellHandle);
+                    long gdkDisplay = GDK.gdk_window_get_display(gdkResource);
+                    long seat = GDK.gdk_display_get_default_seat(gdkDisplay);
                     GDK.gdk_window_show(gdkResource);
+                    GDK.gdk_seat_grab(seat, gdkResource, GDK.GDK_SEAT_CAPABILITY_ALL, true, 0, 0, 0, 0);
                 }
-                GDK.gdk_seat_grab(seat, gdkResource, GDK.GDK_SEAT_CAPABILITY_ALL, true, 0, 0, 0, 0);
                 /*
 			 * Bug 541185: Hover over to open Javadoc popup will make the popup
 			 * close instead of gaining focus due to an extra focus out signal sent
@@ -772,7 +767,6 @@ public class SwtShell extends SwtDecorations implements IShell {
                 if (isChildShell && (getApi().style & SWT.ON_TOP) != 0)
                     type = GTK.GTK_WINDOW_POPUP;
                 if (GTK.GTK4) {
-                    // TODO: GTK4 need to handle for GTK_WINDOW_POPUP type
                     shellHandle = GTK4.gtk_window_new();
                     if (OS.isWayland()) {
                         long headerbar = GTK4.gtk_window_get_titlebar(shellHandle);
@@ -782,6 +776,9 @@ public class SwtShell extends SwtDecorations implements IShell {
                             long hb = GTK4.gtk_header_bar_new();
                             GTK4.gtk_window_set_titlebar(shellHandle, hb);
                         }
+                    }
+                    if (type == GTK.GTK_WINDOW_POPUP) {
+                        GTK.gtk_window_set_decorated(shellHandle, false);
                     }
                 } else {
                     shellHandle = GTK3.gtk_window_new(type);
@@ -1540,7 +1537,7 @@ public class SwtShell extends SwtDecorations implements IShell {
     }
 
     @Override
-    long gtk_button_press_event(long widget, long event) {
+    long gtk3_button_press_event(long widget, long event) {
         if (widget == shellHandle) {
             if (isCustomResize()) {
                 if (OS.isX11() && (getApi().style & SWT.ON_TOP) != 0 && (getApi().style & SWT.NO_FOCUS) == 0) {
@@ -1575,7 +1572,7 @@ public class SwtShell extends SwtDecorations implements IShell {
             }
             return 0;
         }
-        return super.gtk_button_press_event(widget, event);
+        return super.gtk3_button_press_event(widget, event);
     }
 
     @Override
@@ -1699,28 +1696,20 @@ public class SwtShell extends SwtDecorations implements IShell {
     }
 
     @Override
-    long gtk_leave_notify_event(long widget, long event) {
+    long gtk3_leave_notify_event(long widget, long event) {
         if (widget == shellHandle) {
             if (isCustomResize()) {
                 int[] state = new int[1];
-                if (GTK.GTK4) {
-                    state[0] = GDK.gdk_event_get_modifier_state(event);
-                } else {
-                    GDK.gdk_event_get_state(event, state);
-                }
+                GDK.gdk_event_get_state(event, state);
                 if ((state[0] & GDK.GDK_BUTTON1_MASK) == 0) {
-                    if (GTK.GTK4) {
-                        GTK4.gtk_widget_set_cursor(shellHandle, 0);
-                    } else {
-                        long window = gtk_widget_get_window(shellHandle);
-                        GDK.gdk_window_set_cursor(window, 0);
-                    }
+                    long window = gtk_widget_get_window(shellHandle);
+                    GDK.gdk_window_set_cursor(window, 0);
                     ((SwtDisplay) display.getImpl()).resizeMode = 0;
                 }
             }
             return 0;
         }
-        return super.gtk_leave_notify_event(widget, event);
+        return super.gtk3_leave_notify_event(widget, event);
     }
 
     @Override
@@ -1744,15 +1733,11 @@ public class SwtShell extends SwtDecorations implements IShell {
     }
 
     @Override
-    long gtk_motion_notify_event(long widget, long event) {
+    long gtk3_motion_notify_event(long widget, long event) {
         if (widget == shellHandle) {
             if (isCustomResize()) {
                 int[] state = new int[1];
-                if (GTK.GTK4) {
-                    state[0] = GDK.gdk_event_get_modifier_state(event);
-                } else {
-                    GDK.gdk_event_get_state(event, state);
-                }
+                GDK.gdk_event_get_state(event, state);
                 double[] eventRX = new double[1];
                 double[] eventRY = new double[1];
                 GDK.gdk_event_get_root_coords(event, eventRX, eventRY);
@@ -1803,40 +1788,26 @@ public class SwtShell extends SwtDecorations implements IShell {
                             break;
                     }
                     if (x != ((SwtDisplay) display.getImpl()).resizeBoundsX || y != ((SwtDisplay) display.getImpl()).resizeBoundsY) {
-                        if (GTK.GTK4) {
-                            /* TODO: GTK4 no longer exist, will probably need to us gdk_toplevel_begin_move &
-						 * gdk_toplevel_begin_resize to provide this functionality
-						 */
-                        } else {
-                            GDK.gdk_window_move_resize(gtk_widget_get_window(shellHandle), x, y, width, height);
-                        }
+                        GDK.gdk_window_move_resize(gtk_widget_get_window(shellHandle), x, y, width, height);
                     } else {
                         GTK3.gtk_window_resize(shellHandle, width, height);
                     }
                 } else {
                     double[] eventX = new double[1];
                     double[] eventY = new double[1];
-                    if (GTK.GTK4) {
-                        GDK.gdk_event_get_position(event, eventX, eventY);
-                    } else {
-                        GDK.gdk_event_get_coords(event, eventX, eventY);
-                    }
+                    GDK.gdk_event_get_coords(event, eventX, eventY);
                     int mode = getResizeMode(eventX[0], eventY[0]);
                     if (mode != ((SwtDisplay) display.getImpl()).resizeMode) {
                         long cursor = display.getSystemCursor(mode).handle;
-                        if (GTK.GTK4) {
-                            GTK4.gtk_widget_set_cursor(shellHandle, cursor);
-                        } else {
-                            long window = gtk_widget_get_window(shellHandle);
-                            GDK.gdk_window_set_cursor(window, cursor);
-                        }
+                        long window = gtk_widget_get_window(shellHandle);
+                        GDK.gdk_window_set_cursor(window, cursor);
                         ((SwtDisplay) display.getImpl()).resizeMode = mode;
                     }
                 }
             }
             return 0;
         }
-        return super.gtk_motion_notify_event(widget, event);
+        return super.gtk3_motion_notify_event(widget, event);
     }
 
     @Override
@@ -1859,13 +1830,8 @@ public class SwtShell extends SwtDecorations implements IShell {
                         if (keyval[0] != 0) {
                             int[] key = new int[1];
                             int[] state = new int[1];
-                            if (GTK.GTK4) {
-                                key[0] = GDK.gdk_key_event_get_keyval(event);
-                                state[0] = GDK.gdk_event_get_modifier_state(event);
-                            } else {
-                                GDK.gdk_event_get_keyval(event, key);
-                                GDK.gdk_event_get_state(event, state);
-                            }
+                            GDK.gdk_event_get_keyval(event, key);
+                            GDK.gdk_event_get_state(event, state);
                             int mask = GTK.gtk_accelerator_get_default_mod_mask();
                             if (key[0] == keyval[0] && (state[0] & mask) == (mods[0] & mask)) {
                                 if (focusControl.getImpl() instanceof SwtControl) {
@@ -1892,31 +1858,29 @@ public class SwtShell extends SwtDecorations implements IShell {
 	 * In GTK4 using gtk_window_get_default_size returns the previously set size even
 	 * if the window is maximized. Due to this it cannot be used when the shell has
 	 * been maximized. To fix this, get the monitor geometry ONLY when the window is
-	 * maximized and use this as the dimensions. Furthermore, the headerBar size needs
-	 * to be taken into account,otherwise some content will be off screen.
-	 *
-	 * While this fix allows the usage of the entire horizontal space, the vertical
-	 * space is more tricky. Under Wayland, getting the work area of the display is
-	 * not possible and not supported. A "hacky" way has been used in GTK4 thus far
-	 * to get the header bar height, which is then subtracted from the display height.
-	 * This gets the height *mostly* correct, but there is about 10 pixels that
-	 * are not used.
-	 *
-	 * This should be revisited at a later time, when the GTK4 port is more mature.
-	 * TODO: Make use of the entire vertical height
+	 * maximized and use this as the dimensions.
 	 */
         if (GTK.GTK4) {
+            long header = GTK4.gtk_window_get_titlebar(shellHandle);
+            int[] headerNaturalHeight = new int[1];
+            if (header != 0) {
+                GTK4.gtk_widget_measure(header, GTK.GTK_ORIENTATION_VERTICAL, -1, null, headerNaturalHeight, null, null);
+            }
             if (!GTK4.gtk_window_is_maximized(shellHandle)) {
                 GTK.gtk_window_get_default_size(shellHandle, widthA, heightA);
+                /*
+			 * gtk_window_set_default_size() stores the total GTK window height (which
+			 * includes the header bar). Subtract the header bar height here so that
+			 * resizeBounds() receives the client-area height only, consistent with
+			 * what setBounds() passes.
+			 */
+                if (heightA[0] > 0) {
+                    heightA[0] = Math.max(1, heightA[0] - headerNaturalHeight[0]);
+                }
             } else {
                 long display = GDK.gdk_display_get_default();
                 long monitor = GDK.gdk_display_get_monitor_at_surface(display, paintSurface());
                 GDK.gdk_monitor_get_geometry(monitor, monitorSize);
-                long header = GTK4.gtk_window_get_titlebar(shellHandle);
-                int[] headerNaturalHeight = new int[1];
-                if (header != 0) {
-                    GTK4.gtk_widget_measure(header, GTK.GTK_ORIENTATION_VERTICAL, -1, null, headerNaturalHeight, null, null);
-                }
                 widthA[0] = monitorSize.width;
                 heightA[0] = monitorSize.height - headerNaturalHeight[0];
             }
@@ -2950,6 +2914,20 @@ public class SwtShell extends SwtDecorations implements IShell {
     void setRelations() {
     }
 
+    /**
+     * Informs the operating system that the application prefers a dark
+     * theme for native components such as title bars, scrollbars, and
+     * native dialogs.
+     *
+     * @param preferred true if the dark theme is preferred, false otherwise.
+     *
+     * @since 3.134
+     */
+    public void setDarkThemePreferred(boolean preferred) {
+        checkWidget();
+        display.setDarkThemePreferred(preferred);
+    }
+
     @Override
     public void setText(String string) {
         super.setText(string);
@@ -3418,17 +3396,13 @@ public class SwtShell extends SwtDecorations implements IShell {
 	 * assumes that GdkSeat are the same for parent and child, which seems to be the case.
 	 */
         if (requiresUngrab() && !isMappedToPopup() && grabbedFocus) {
-            long gdkResource, display;
-            if (GTK.GTK4) {
-                gdkResource = gtk_widget_get_surface(shellHandle);
-                display = GDK.gdk_surface_get_display(gdkResource);
-            } else {
-                gdkResource = gtk_widget_get_window(shellHandle);
-                display = GDK.gdk_window_get_display(gdkResource);
+            if (!GTK.GTK4) {
+                long gdkResource = gtk_widget_get_window(shellHandle);
+                long display = GDK.gdk_window_get_display(gdkResource);
                 GTK3.gtk_grab_remove(shellHandle);
+                long seat = GDK.gdk_display_get_default_seat(display);
+                GDK.gdk_seat_ungrab(seat);
             }
-            long seat = GDK.gdk_display_get_default_seat(display);
-            GDK.gdk_seat_ungrab(seat);
             grabbedFocus = false;
         }
     }

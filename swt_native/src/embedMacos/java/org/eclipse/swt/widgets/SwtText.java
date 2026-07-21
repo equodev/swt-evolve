@@ -56,9 +56,9 @@ import org.eclipse.swt.widgets.Display.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#text">Text snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#text">Text snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtText extends SwtScrollable implements IText {
@@ -786,15 +786,6 @@ public class SwtText extends SwtScrollable implements IText {
         if ((getApi().style & SWT.MULTI) != 0) {
             setForeground(this.foreground);
         }
-    }
-
-    @Override
-    public Cursor findCursor() {
-        Cursor cursor = super.findCursor();
-        if (cursor == null && OS.VERSION < OS.VERSION(10, 14, 0)) {
-            cursor = display.getSystemCursor(SWT.CURSOR_IBEAM);
-        }
-        return cursor;
     }
 
     @Override

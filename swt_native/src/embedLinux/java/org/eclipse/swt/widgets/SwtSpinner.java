@@ -41,9 +41,9 @@ import org.eclipse.swt.internal.gtk4.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#spinner">Spinner snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#spinner">Spinner snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  *
  * @since 3.1
  * @noextend This class is not intended to be subclassed by clients.
@@ -652,7 +652,6 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
         long eventPtr = GTK.GTK4 ? 0 : GTK3.gtk_get_current_event();
         if (eventPtr != 0) {
             int eventType = GDK.gdk_event_get_event_type(eventPtr);
-            eventType = fixGdkEventTypeValues(eventType);
             switch(eventType) {
                 case GDK.GDK_KEY_PRESS:
                     keyPress = true;
@@ -1333,7 +1332,6 @@ public class SwtSpinner extends SwtComposite implements ISpinner {
         long eventPtr = GTK3.gtk_get_current_event();
         if (eventPtr != 0) {
             int type = GDK.gdk_event_get_event_type(eventPtr);
-            type = fixGdkEventTypeValues(type);
             switch(type) {
                 case GDK.GDK_KEY_PRESS:
                     setKeyState(event, eventPtr);

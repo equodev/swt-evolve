@@ -59,9 +59,9 @@ import org.eclipse.swt.internal.gtk4.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#text">Text snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#text">Text snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtText extends SwtScrollable implements IText {
@@ -244,7 +244,7 @@ public class SwtText extends SwtScrollable implements IText {
 		 * We need to handle borders differently in GTK3.20+. GtkEntry without frame will have a blank background color.
 		 * So let's set border via css and override the background in this case to be COLOR_LIST_BACKGROUND.
 		 */
-            if ((getApi().style & SWT.BORDER) == 0) {
+            if ((getApi().style & SWT.BORDER) == 0 && !(GTK.GTK4 && (getApi().style & SWT.SEARCH) != 0)) {
                 GTK.gtk_entry_set_has_frame(getApi().handle, false);
                 long context = GTK.gtk_widget_get_style_context(getApi().handle);
                 String background = ((SwtDisplay) display.getImpl()).gtk_rgba_to_css_string(((SwtDisplay) display.getImpl()).COLOR_LIST_BACKGROUND_RGBA);
@@ -256,10 +256,16 @@ public class SwtText extends SwtScrollable implements IText {
             if ((getApi().style & SWT.RIGHT) != 0)
                 alignment = 1.0f;
             if (alignment > 0.0f) {
-                GTK.gtk_entry_set_alignment(getApi().handle, alignment);
+                if (!(GTK.GTK4 && (getApi().style & SWT.SEARCH) != 0)) {
+                    GTK.gtk_entry_set_alignment(getApi().handle, alignment);
+                } else {
+                    GTK4.gtk_editable_set_alignment(getApi().handle, alignment);
+                }
             }
             if (DISABLE_EMOJI && GTK.GTK_VERSION >= OS.VERSION(3, 22, 20)) {
-                GTK.gtk_entry_set_input_hints(getApi().handle, GTK.GTK_INPUT_HINT_NO_EMOJI);
+                if (!(GTK.GTK4 && (getApi().style & SWT.SEARCH) != 0)) {
+                    GTK.gtk_entry_set_input_hints(getApi().handle, GTK.GTK_INPUT_HINT_NO_EMOJI);
+                }
             }
         } else {
             if (GTK.GTK4) {
@@ -623,15 +629,16 @@ public class SwtText extends SwtScrollable implements IText {
             hHint = 0;
         int[] w = new int[1], h = new int[1];
         if ((getApi().style & SWT.SINGLE) != 0) {
-            long layout;
             if (GTK.GTK4) {
-                long context = GTK.gtk_widget_get_pango_context(getApi().handle);
-                layout = OS.pango_layout_new(context);
+                long ptr = GTK.gtk_entry_buffer_get_text(bufferHandle);
+                long layout = GTK.gtk_widget_create_pango_layout(getApi().handle, ptr);
+                OS.pango_layout_get_pixel_size(layout, w, h);
+                OS.g_object_unref(layout);
             } else {
                 GTK.gtk_widget_realize(getApi().handle);
-                layout = GTK3.gtk_entry_get_layout(getApi().handle);
+                long layout = GTK3.gtk_entry_get_layout(getApi().handle);
+                OS.pango_layout_get_pixel_size(layout, w, h);
             }
-            OS.pango_layout_get_pixel_size(layout, w, h);
         } else {
             byte[] start = new byte[ITER_SIZEOF], end = new byte[ITER_SIZEOF];
             GTK.gtk_text_buffer_get_bounds(bufferHandle, start, end);
@@ -683,7 +690,7 @@ public class SwtText extends SwtScrollable implements IText {
             trim.x -= tmp.left;
             trim.y -= tmp.top;
             trim.width += tmp.left + tmp.right;
-            if (tmp.bottom == 0 && tmp.top == 0) {
+            if (GTK.GTK4 || tmp.bottom == 0 && tmp.top == 0) {
                 Point widthNative = computeNativeSize(getApi().handle, trim.width, SWT.DEFAULT, true);
                 trim.height = widthNative.y;
             } else {
@@ -694,8 +701,14 @@ public class SwtText extends SwtScrollable implements IText {
                 gtk_style_context_get_border(context, state, tmp);
                 trim.x -= tmp.left;
                 trim.y -= tmp.top;
-                trim.width += tmp.left + tmp.right;
-                trim.height += tmp.top + tmp.bottom;
+                /*
+			 * In GTK4, computeNativeSize already returns the full natural height and width
+			 * including border, so avoid double-counting it here.
+			 */
+                if (!GTK.GTK4) {
+                    trim.width += tmp.left + tmp.right;
+                    trim.height += tmp.top + tmp.bottom;
+                }
             }
             if (!GTK.GTK4 || ((getApi().style & SWT.SEARCH) == 0)) {
                 GdkRectangle icon_area = new GdkRectangle();
@@ -1551,9 +1564,9 @@ public class SwtText extends SwtScrollable implements IText {
     }
 
     @Override
-    long gtk_button_press_event(long widget, long event) {
+    long gtk3_button_press_event(long widget, long event) {
         long result;
-        result = super.gtk_button_press_event(widget, event);
+        result = super.gtk3_button_press_event(widget, event);
         if (result != 0)
             return result;
         int eventType = GDK.gdk_event_get_event_type(event);
@@ -1580,7 +1593,6 @@ public class SwtText extends SwtScrollable implements IText {
         long eventPtr = GTK.GTK4 ? 0 : GTK3.gtk_get_current_event();
         if (eventPtr != 0) {
             int eventType = GDK.gdk_event_get_event_type(eventPtr);
-            eventType = fixGdkEventTypeValues(eventType);
             switch(eventType) {
                 case GDK.GDK_KEY_PRESS:
                     keyPress = true;
@@ -1745,7 +1757,6 @@ public class SwtText extends SwtScrollable implements IText {
 	*/
         if ((getApi().style & SWT.SINGLE) != 0 && ((SwtDisplay) display.getImpl()).entrySelectOnFocus) {
             int eventType = GDK.gdk_event_get_event_type(gdkEvent);
-            eventType = fixGdkEventTypeValues(eventType);
             switch(eventType) {
                 case GDK.GDK_FOCUS_CHANGE:
                     boolean[] focusIn = new boolean[1];
@@ -2949,7 +2960,6 @@ public class SwtText extends SwtScrollable implements IText {
         long eventPtr = GTK.GTK4 ? 0 : GTK3.gtk_get_current_event();
         if (eventPtr != 0) {
             int type = GDK.gdk_event_get_event_type(eventPtr);
-            type = fixGdkEventTypeValues(type);
             switch(type) {
                 case GDK.GDK_KEY_PRESS:
                     setKeyState(event, eventPtr);

@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2007, 2022 IBM Corporation and others.
+ *  Copyright (c) 2007, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -62,10 +62,6 @@ public class OS extends C {
 
     public static final int kSystemIconsCreator = ('m' << 24) + ('a' << 16) + ('c' << 8) + 's';
 
-    public static final int kAlertCautionIcon = ('c' << 24) + ('a' << 16) + ('u' << 8) + 't';
-
-    public static final int kAlertNoteIcon = ('n' << 24) + ('o' << 16) + ('t' << 8) + 'e';
-
     public static final int kAlertStopIcon = ('s' << 24) + ('t' << 16) + ('o' << 8) + 'p';
 
     public static final int cmdKey = 1 << 8;
@@ -81,12 +77,6 @@ public class OS extends C {
     public static final int kUIModeContentHidden = 2;
 
     public static final int kUIModeAllHidden = 3;
-
-    public static final int kLSUnknownType = 0;
-
-    public static final int kLSUnknownCreator = 0;
-
-    public static final int kLSRolesAll = 0xFFFFFFFF;
 
     public static final int kAXUnderlineStyleNone = 0x0;
 
@@ -282,29 +272,16 @@ public class OS extends C {
     }
 
     public static boolean isAppDarkAppearance() {
-        if (OS.VERSION >= OS.VERSION(10, 14, 0)) {
-            NSAppearance currentAppearance = NSAppearance.currentAppearance();
-            if (currentAppearance != null) {
-                return "NSAppearanceNameDarkAqua".equals(currentAppearance.name().getString());
-            }
+        NSAppearance currentAppearance = NSAppearance.currentAppearance();
+        if (currentAppearance != null) {
+            return "NSAppearanceNameDarkAqua".equals(currentAppearance.name().getString());
         }
         return false;
     }
 
     public static boolean isSystemDarkAppearance() {
-        if (OS.VERSION >= OS.VERSION(10, 14, 0)) {
-            NSString osxMode = NSUserDefaults.standardUserDefaults().stringForKey(NSString.stringWith("AppleInterfaceStyle"));
-            return osxMode != null && "Dark".equals(osxMode.getString());
-        }
-        return false;
-    }
-
-    /**
-     * @return true for macOS BigSur or later, returns false for macOS 10.15 and older
-     */
-    public static boolean isBigSurOrLater() {
-        // See comment for OS.VERSION for an explanation
-        return OS.VERSION >= OS.VERSION(10, 16, 0);
+        NSString osxMode = NSUserDefaults.standardUserDefaults().stringForKey(NSString.stringWith("AppleInterfaceStyle"));
+        return osxMode != null && "Dark".equals(osxMode.getString());
     }
 
     /**
@@ -432,16 +409,6 @@ public class OS extends C {
      * @method flags=dynamic
      */
     public static final native int CancelMenuTracking(long inRootMenu, boolean inImmediate, int inDismissalReason);
-
-    /**
-     * @param inType cast=(OSType)
-     * @param inCreator cast=(OSType)
-     * @param inExtension cast=(CFStringRef)
-     * @param inRoleMask cast=(LSRolesMask)
-     * @param outAppRef cast=(FSRef *)
-     * @param outAppURL cast=(CFURLRef *)
-     */
-    public static final native long LSGetApplicationForInfo(int inType, int inCreator, long inExtension, int inRoleMask, byte[] outAppRef, int[] outAppURL);
 
     /**
      * @method flags=dynamic
@@ -807,6 +774,10 @@ public class OS extends C {
      */
     public static final native long object_setClass(long obj, long clazz);
 
+    /**
+     * @method flags=cast
+     * @param selectorName cast=(const char*)
+     */
     public static final native long sel_registerName(String selectorName);
 
     public static final native int objc_super_sizeof();
@@ -1417,6 +1388,10 @@ public class OS extends C {
     public static final long sel_URL = Selector.sel_URL.value;
 
     public static final long sel_URLFromPasteboard_ = Selector.sel_URLFromPasteboard_.value;
+
+    public static final long sel_URLForApplicationToOpenURL_ = Selector.sel_URLForApplicationToOpenURL_.value;
+
+    public static final long sel_URLForApplicationToOpenContentType_ = Selector.sel_URLForApplicationToOpenContentType_.value;
 
     public static final long sel_URLWithString_ = Selector.sel_URLWithString_.value;
 
@@ -3832,6 +3807,8 @@ public class OS extends C {
 
     public static final long sel_typeOfFile_error_ = Selector.sel_typeOfFile_error_.value;
 
+    public static final long sel_typeWithFilenameExtension_ = Selector.sel_typeWithFilenameExtension_.value;
+
     public static final long sel_types = Selector.sel_types.value;
 
     public static final long sel_typesetter = Selector.sel_typesetter.value;
@@ -4067,9 +4044,15 @@ public class OS extends C {
 
     public static final int NSBezelBorder = 2;
 
-    public static final int NSBoldFontMask = 2;
+    public static final int NSBezelStyleFlexiblePush = 2;
 
-    public static final int NSBorderlessWindowMask = 0;
+    public static final int NSBezelStylePush = 1;
+
+    public static final int NSBezelStylePushDisclosure = 14;
+
+    public static final int NSBezelStyleSmallSquare = 6;
+
+    public static final int NSBoldFontMask = 2;
 
     public static final int NSBottomTabsBezelBorder = 2;
 
@@ -4079,13 +4062,19 @@ public class OS extends C {
 
     public static final int NSButtLineCapStyle = 0;
 
+    public static final int NSButtonTypeMomentaryLight = 0;
+
+    public static final int NSButtonTypePushOnPushOff = 1;
+
+    public static final int NSButtonTypeRadio = 4;
+
+    public static final int NSButtonTypeSwitch = 3;
+
     public static final int NSCancelButton = 0;
 
     public static final int NSCarriageReturnCharacter = 13;
 
     public static final int NSClockAndCalendarDatePickerStyle = 1;
-
-    public static final int NSClosableWindowMask = 2;
 
     public static final int NSClosePathBezierPathElement = 3;
 
@@ -4110,8 +4099,6 @@ public class OS extends C {
     public static final int NSDeleteCharacter = 127;
 
     public static final long NSDeviceIndependentModifierFlagsMask = 4294901760L;
-
-    public static final int NSDocModalWindowMask = 64;
 
     public static final int NSDragOperationCopy = 1;
 
@@ -4158,8 +4145,6 @@ public class OS extends C {
     public static final int NSFontPanelAllEffectsModeMask = 1048320;
 
     public static final int NSFontPanelAllModesMask = -1;
-
-    public static final int NSFullScreenWindowMask = 16384;
 
     public static final int NSHelpFunctionKey = 63302;
 
@@ -4227,13 +4212,9 @@ public class OS extends C {
 
     public static final int NSMiniControlSize = 2;
 
-    public static final int NSMiniaturizableWindowMask = 4;
-
     public static final int NSMiterLineJoinStyle = 0;
 
     public static final int NSMixedState = -1;
-
-    public static final int NSMomentaryLightButton = 0;
 
     public static final int NSMouseEntered = 8;
 
@@ -4252,8 +4233,6 @@ public class OS extends C {
     public static final int NSNoTitle = 0;
 
     public static final int NSNonZeroWindingRule = 0;
-
-    public static final int NSNonactivatingPanelMask = 128;
 
     public static final int NSOffState = 0;
 
@@ -4297,11 +4276,7 @@ public class OS extends C {
 
     public static final int NSProgressIndicatorPreferredThickness = 14;
 
-    public static final int NSPushOnPushOffButton = 1;
-
     public static final int NSRGBColorSpaceModel = 1;
-
-    public static final int NSRadioButton = 4;
 
     public static final int NSRegularControlSize = 0;
 
@@ -4318,10 +4293,6 @@ public class OS extends C {
     public static final int NSRoundLineCapStyle = 1;
 
     public static final int NSRoundLineJoinStyle = 1;
-
-    public static final int NSRoundedBezelStyle = 1;
-
-    public static final int NSRoundedDisclosureBezelStyle = 14;
 
     public static final int NSScaleNone = 2;
 
@@ -4345,8 +4316,6 @@ public class OS extends C {
 
     public static final int NSScrollerStyleOverlay = 1;
 
-    public static final int NSShadowlessSquareBezelStyle = 6;
-
     public static final int NSShiftKeyMask = 131072;
 
     public static final int NSSmallControlSize = 1;
@@ -4358,8 +4327,6 @@ public class OS extends C {
     public static final int NSStringDrawingUsesLineFragmentOrigin = 1;
 
     public static final int NSSubmenuWindowLevel = 3;
-
-    public static final int NSSwitchButton = 3;
 
     public static final int NSSystemDefined = 14;
 
@@ -4395,8 +4362,6 @@ public class OS extends C {
 
     public static final int NSTextFieldDatePickerStyle = 2;
 
-    public static final int NSTitledWindowMask = 1;
-
     public static final int NSToolbarDisplayModeIconOnly = 2;
 
     public static final long NSTouchPhaseAny = -1L;
@@ -4418,8 +4383,6 @@ public class OS extends C {
     public static final int NSUnderlineStyleSingle = 1;
 
     public static final int NSUnderlineStyleThick = 2;
-
-    public static final int NSUtilityWindowMask = 16;
 
     public static final int NSViewHeightSizable = 16;
 
@@ -4444,6 +4407,24 @@ public class OS extends C {
     public static final int NSWindowCollectionBehaviorFullScreenPrimary = 128;
 
     public static final int NSWindowCollectionBehaviorMoveToActiveSpace = 2;
+
+    public static final int NSWindowStyleMaskBorderless = 0;
+
+    public static final int NSWindowStyleMaskClosable = 2;
+
+    public static final int NSWindowStyleMaskDocModalWindow = 64;
+
+    public static final int NSWindowStyleMaskFullScreen = 16384;
+
+    public static final int NSWindowStyleMaskMiniaturizable = 4;
+
+    public static final int NSWindowStyleMaskNonactivatingPanel = 128;
+
+    public static final int NSWindowStyleMaskResizable = 8;
+
+    public static final int NSWindowStyleMaskTitled = 1;
+
+    public static final int NSWindowStyleMaskUtilityWindow = 16;
 
     public static final int NSWritingDirectionLeftToRight = 0;
 
@@ -5775,12 +5756,6 @@ public class OS extends C {
      * @param observer cast=(CFRunLoopObserverRef)
      */
     public static final native void CFRunLoopObserverInvalidate(long observer);
-
-    /**
-     * @param allocator cast=(CFAllocatorRef)
-     * @param fsRef cast=(FSRef*)
-     */
-    public static final native long CFURLCreateFromFSRef(long allocator, byte[] fsRef);
 
     /**
      * @param allocator cast=(CFAllocatorRef)

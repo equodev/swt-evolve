@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -36,8 +36,8 @@ import org.eclipse.swt.internal.gtk3.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#tree">Tree, TreeItem, TreeColumn snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#tree">Tree, TreeItem, TreeColumn snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtTreeItem extends SwtItem implements ITreeItem {
@@ -1585,18 +1585,18 @@ public class SwtTreeItem extends SwtItem implements ITreeItem {
 				 * Feature in GTK: a Tree with the style SWT.VIRTUAL has
 				 * fixed-height-mode enabled. This will limit the size of
 				 * any cells, including renderers. In order to prevent
-				 * images from disappearing/being cropped, we re-create
-				 * the renderers when the first image is set. Fix for
+				 * images from disappearing/being cropped, GTK's cached
+				 * row height must be invalidated so it re-measures with
+				 * the new pixbuf renderer size (set above). Fix for
 				 * bug 480261.
+				 *
+				 * Toggle the fixed-height-mode GObject property
+				 * off, autoresize columns and back on.
 				 */
                     if ((parent.style & SWT.VIRTUAL) != 0) {
-                        /*
-					 * Only re-create SWT.CHECK renderers if this is the first column.
-					 * Otherwise check-boxes will be rendered in columns they are not
-					 * supposed to be rendered in. See bug 513761.
-					 */
-                        boolean check = modelIndex == SwtTree.FIRST_COLUMN && (parent.style & SWT.CHECK) != 0;
-                        ((SwtTree) parent.getImpl()).createRenderers(column, modelIndex, check, parent.style);
+                        OS.g_object_set(parent.handle, OS.fixed_height_mode, false, 0);
+                        GTK.gtk_tree_view_columns_autosize(parent.handle);
+                        OS.g_object_set(parent.handle, OS.fixed_height_mode, true, 0);
                     }
                 }
             }

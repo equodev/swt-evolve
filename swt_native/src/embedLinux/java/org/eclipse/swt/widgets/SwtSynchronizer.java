@@ -36,7 +36,7 @@ import org.eclipse.swt.graphics.*;
  * </p>
  *
  * @see Display#setSynchronizer
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public class SwtSynchronizer implements ISynchronizer {
 
@@ -81,9 +81,8 @@ public class SwtSynchronizer implements ISynchronizer {
     }
 
     void addLast(RunnableLock lock) {
-        boolean wake = messages.isEmpty();
         messages.add(lock);
-        if (wake)
+        if (messages.peek() == lock)
             ((SwtDisplay) display.getImpl()).wakeThread();
     }
 

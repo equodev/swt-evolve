@@ -30,7 +30,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * can have a graphics context (GC) created for them, and they
  * can be drawn on by sending messages to the associated GC.
  *
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public abstract class Device implements Drawable {
 
@@ -473,6 +473,16 @@ public abstract class Device implements Drawable {
      */
     protected int getDeviceZoom() {
         return getImpl().getDeviceZoom();
+    }
+
+    /**
+     * Returns the GDK primary monitor handle, falling back to the monitor at
+     * virtual coordinate (0,0) when no primary monitor is reported (e.g. on Wayland).
+     *
+     * @noreference This method is not intended to be referenced by clients.
+     */
+    protected long getPrimaryMonitor(long display) {
+        return getImpl().getPrimaryMonitor(display);
     }
 
     protected IDevice impl;

@@ -83,9 +83,9 @@ import dev.equo.swt.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#styledtext">StyledText snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Examples: CustomControlExample, TextEditor</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#styledtext">StyledText snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Examples: CustomControlExample, TextEditor</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class DartStyledText extends DartCanvas implements IStyledText {
@@ -8675,8 +8675,10 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         customBackground = color != null && !this.insideSetEnableCall && !backgroundDisabled;
         background = color;
         super.setBackground(color);
-        resetCache(0, content.getLineCount());
-        setCaretLocations();
+        if (content != null) {
+            resetCache(0, content.getLineCount());
+            setCaretLocations();
+        }
         super.redraw();
     }
 
@@ -9328,8 +9330,10 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         customForeground = color != null && !this.insideSetEnableCall && !foregroundDisabled;
         foreground = color;
         super.setForeground(color);
-        resetCache(0, content.getLineCount());
-        setCaretLocations();
+        if (content != null) {
+            resetCache(0, content.getLineCount());
+            setCaretLocations();
+        }
         super.redraw();
     }
 

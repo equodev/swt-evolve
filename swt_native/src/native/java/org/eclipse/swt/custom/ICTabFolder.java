@@ -328,6 +328,7 @@ public interface ICTabFolder extends IComposite, ImplCTabFolder {
      * @return <code>true</code> if the CTabFolder is rendered with a simple shape
      *
      * @since 3.0
+     * @deprecated Curved tabs are no longer supported.
      */
     boolean getSimple();
 
@@ -916,6 +917,7 @@ public interface ICTabFolder extends IComposite, ImplCTabFolder {
      * </ul>
      *
      * @since 3.0
+     * @deprecated Curved tabs are no longer supported.
      */
     void setSimple(boolean simple);
 
@@ -1024,6 +1026,49 @@ public interface ICTabFolder extends IComposite, ImplCTabFolder {
      * @since 3.0
      */
     void setUnselectedCloseVisible(boolean visible);
+
+    /**
+     * Sets whether the dirty indicator style is enabled. When enabled,
+     * dirty items (marked via {@link CTabItem#setShowDirty(boolean)}) show a
+     * bullet dot at the close button location instead of the traditional
+     * <code>*</code> prefix. The bullet transforms into the close button on hover
+     * when close is enabled for the folder or the individual item.
+     * <p>
+     * Note: the dirty indicator is purely visual. Clicking the bullet does not
+     * close the tab unless close is independently enabled (via the
+     * {@link SWT#CLOSE} style or {@link CTabItem#setShowClose(boolean)}).
+     * </p>
+     * <p>
+     * The default value is <code>false</code> (traditional <code>*</code> prefix
+     * behavior).
+     * </p>
+     *
+     * @param enabled <code>true</code> to enable the dirty indicator style
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @see CTabItem#setShowDirty(boolean)
+     * @since 3.134
+     */
+    void setDirtyIndicatorStyle(boolean enabled);
+
+    /**
+     * Returns whether the dirty indicator style is enabled.
+     *
+     * @return <code>true</code> if the dirty indicator style is enabled
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @see #setDirtyIndicatorStyle(boolean)
+     * @since 3.134
+     */
+    boolean getDirtyIndicatorStyle();
 
     /**
      * Specify whether the image appears on unselected tabs.

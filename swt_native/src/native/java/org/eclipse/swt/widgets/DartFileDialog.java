@@ -35,9 +35,9 @@ import dev.equo.swt.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#filedialog">FileDialog snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample, Dialog tab</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#filedialog">FileDialog snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample, Dialog tab</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class DartFileDialog extends DartDialog implements IIFileDialog {
@@ -457,6 +457,11 @@ public class DartFileDialog extends DartDialog implements IIFileDialog {
      * @since 3.4
      */
     public void setOverwrite(boolean overwrite) {
+        /**
+         * The overwriteExistingFileCheck private method is not available since macOS 10.15.
+         * Hence, there is no way to suppress the overwrite prompt and overwrite is always true.
+         */
+        this.overwrite = true;
     }
 
     /**

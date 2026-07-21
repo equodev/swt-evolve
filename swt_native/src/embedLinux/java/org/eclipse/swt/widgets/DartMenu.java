@@ -39,9 +39,9 @@ import dev.equo.swt.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#menu">Menu snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#menu">Menu snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class DartMenu extends DartWidget implements IMenu {
@@ -61,7 +61,7 @@ public class DartMenu extends DartWidget implements IMenu {
     /**
      * GTK4 only fields
      */
-    long modelHandle, actionGroup, shortcutController;
+    long modelHandle, popoverHandle, actionGroup, shortcutController;
 
     public class Section {
 
@@ -305,13 +305,8 @@ public class DartMenu extends DartWidget implements IMenu {
 			*/
                 if ((parent.getImpl()._getShell().style & SWT.ON_TOP) != 0) {
                 }
-                long eventPtr = 0;
                 if (ableToSetLocation()) {
                 } else {
-                    if (eventPtr == 0) {
-                    }
-                    adjustParentWindowWayland(eventPtr);
-                    verifyMenuPosition(getItemCount());
                 }
                 poppedUpCount = getItemCount();
             } else {
@@ -628,6 +623,55 @@ public class DartMenu extends DartWidget implements IMenu {
         return this.visible;
     }
 
+    private void connectDropDownMenuSignals() {
+        if (items == null)
+            return;
+        for (MenuItem menuItem : items) {
+            if ((menuItem.style & SWT.SEPARATOR) != 0)
+                continue;
+            if (((DartMenuItem) menuItem.getImpl()).menu != null && ((DartMenuItem) menuItem.getImpl()).menu.getImpl()._popoverHandle() == 0) {
+            }
+        }
+    }
+
+    private void connectCascadeSubMenuSignals(Menu menu) {
+        connectCascadeSubMenuSignals(menu, menu.getImpl()._popoverHandle());
+    }
+
+    private void connectCascadeSubMenuSignals(Menu menu, long parentPopoverHandle) {
+        if (menu == null || parentPopoverHandle == 0 || menu.getImpl().getItems() == null)
+            return;
+        for (MenuItem item : menu.getImpl().getItems()) {
+            if ((item.style & SWT.CASCADE) != 0 && ((DartMenuItem) item.getImpl()).menu != null) {
+                /*
+			 * item.menu is the CASCADE submenu (always SWT.DROP_DOWN style).
+			 * Its popoverHandle is 0 until we find and register its GtkPopoverMenu.
+			 * Skip if already connected (popoverHandle != 0).
+			 */
+                if (((DartMenuItem) item.getImpl()).menu.getImpl()._popoverHandle() != 0)
+                    continue;
+                long nestedPopover = findNestedPopoverForModel(parentPopoverHandle, ((DartMenuItem) item.getImpl()).menu.getImpl()._modelHandle());
+                if (nestedPopover != 0) {
+                    if (((DartMenuItem) item.getImpl()).menu.getImpl() instanceof DartMenu) {
+                        ((DartMenu) ((DartMenuItem) item.getImpl()).menu.getImpl()).popoverHandle = nestedPopover;
+                    }
+                    if (((DartMenuItem) item.getImpl()).menu.getImpl() instanceof SwtMenu) {
+                        ((SwtMenu) ((DartMenuItem) item.getImpl()).menu.getImpl()).popoverHandle = nestedPopover;
+                    }
+                    ((SwtDisplay) display.getImpl()).addWidget(nestedPopover, ((DartMenuItem) item.getImpl()).menu);
+                    // Recurse to handle further nested CASCADE submenus
+                    connectCascadeSubMenuSignals(((DartMenuItem) item.getImpl()).menu);
+                }
+            }
+        }
+    }
+
+    private long findNestedPopoverForModel(long parentWidget, long targetModel) {
+        if (parentWidget == 0 || targetModel == 0)
+            return 0;
+        return 0;
+    }
+
     @Override
     void hookEvents() {
         super.hookEvents();
@@ -750,6 +794,11 @@ public class DartMenu extends DartWidget implements IMenu {
         if (menuHandle != 0) {
             menuHandle = 0;
         }
+    }
+
+    @Override
+    void deregister() {
+        super.deregister();
     }
 
     /**
@@ -1101,6 +1150,10 @@ public class DartMenu extends DartWidget implements IMenu {
 
     public long _modelHandle() {
         return modelHandle;
+    }
+
+    public long _popoverHandle() {
+        return popoverHandle;
     }
 
     public long _actionGroup() {

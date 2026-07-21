@@ -12,8 +12,6 @@ public interface ImplCTabFolder extends ImplComposite {
 
     boolean _single();
 
-    boolean _simple();
-
     int _fixedTabHeight();
 
     int _tabHeight();
@@ -71,6 +69,8 @@ public interface ImplCTabFolder extends ImplComposite {
     boolean _showClose();
 
     boolean _showUnselectedClose();
+
+    boolean _dirtyIndicatorStyle();
 
     boolean _showMin();
 

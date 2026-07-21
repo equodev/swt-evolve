@@ -56,9 +56,9 @@ import dev.equo.swt.*;
  * </p>
  *
  * @see List
- * @see <a href="http://www.eclipse.org/swt/snippets/#combo">Combo snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#combo">Combo snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class DartCombo extends DartComposite implements ICombo {
@@ -496,12 +496,6 @@ public class DartCombo extends DartComposite implements ICombo {
             return false;
         }
         return super.dragDetect(x, y, filter, consume);
-    }
-
-    @Override
-    public Cursor findCursor() {
-        Cursor cursor = super.findCursor();
-        return cursor;
     }
 
     /**

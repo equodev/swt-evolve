@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -48,7 +48,7 @@ import dev.equo.swt.*;
  * </p>
  *
  * @see #checkSubclass
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public abstract class DartWidget implements IWidget {
 
@@ -1736,13 +1736,36 @@ public abstract class DartWidget implements IWidget {
     }
 
     /**
-     * Converts an incoming snapshot into a gtk_draw() call, complete with
-     * a Cairo context.
+     * Renders the widget background during a GTK4 snapshot. Called before
+     * children are snapshotted so the background appears behind them.
+     * Subclasses can override to perform background rendering.
      *
      * @param handle the widget receiving the snapshot
      * @param snapshot the actual GtkSnapshot
      */
+    void snapshotBackground(long handle, long snapshot) {
+    }
+
+    /**
+     * Converts an incoming snapshot into a gtk_draw() call, complete with
+     * a Cairo context. Used by subclasses to
+     * trigger painting at the appropriate point in the snapshot order.
+     */
+    void snapshotPaint(long handle, long snapshot) {
+    }
+
+    /**
+     * Called before child widgets are snapshotted. Containers (Composite) override
+     * this to paint backgrounds behind their children.
+     */
     void snapshotToDraw(long handle, long snapshot) {
+    }
+
+    /**
+     * Called after child widgets are snapshotted. Leaf controls (Button, Label,
+     * etc.) override this to paint on top of their native appearance.
+     */
+    void snapshotToDrawAfterChildren(long handle, long snapshot) {
     }
 
     /**

@@ -30,6 +30,7 @@ class CTabFolderSerializeTest extends SerializeTestBase {
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("MRUVisible").equalsTo(w.getMRUVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("borderVisible").equalsTo(w.getBorderVisible(), orAbsentIfFalse));
+        assertJ.satisfies(node("dirtyIndicatorStyle").equalsTo(w.getDirtyIndicatorStyle(), orAbsentIfFalse));
         assertJ.satisfies(node("highlightEnabled").equalsTo(w.getHighlightEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("maximizeVisible").equalsTo(w.getMaximizeVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("maximized").equalsTo(w.getMaximized(), orAbsentIfFalse));

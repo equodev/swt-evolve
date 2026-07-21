@@ -42,9 +42,9 @@ import org.eclipse.swt.internal.cocoa.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#button">Button snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#button">Button snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtButton extends SwtControl implements IButton {
@@ -263,27 +263,27 @@ public class SwtButton extends SwtControl implements IButton {
                 }
             }
         }
-        int type = OS.NSMomentaryLightButton;
+        int type = OS.NSButtonTypeMomentaryLight;
         if ((getApi().style & SWT.PUSH) != 0) {
             if ((getApi().style & SWT.FLAT) != 0) {
-                widget.setBezelStyle(OS.NSShadowlessSquareBezelStyle);
+                widget.setBezelStyle(OS.NSBezelStyleSmallSquare);
             } else {
-                widget.setBezelStyle((getApi().style & SWT.WRAP) != 0 ? OS.NSRegularSquareBezelStyle : OS.NSRoundedBezelStyle);
+                widget.setBezelStyle((getApi().style & SWT.WRAP) != 0 ? OS.NSBezelStyleFlexiblePush : OS.NSBezelStylePush);
             }
         } else if ((getApi().style & SWT.CHECK) != 0) {
-            type = OS.NSSwitchButton;
+            type = OS.NSButtonTypeSwitch;
         } else if ((getApi().style & SWT.RADIO) != 0) {
-            type = OS.NSRadioButton;
+            type = OS.NSButtonTypeRadio;
             radioParent = (SWTView) new SWTView().alloc().init();
         } else if ((getApi().style & SWT.TOGGLE) != 0) {
-            type = OS.NSPushOnPushOffButton;
+            type = OS.NSButtonTypePushOnPushOff;
             if ((getApi().style & SWT.FLAT) != 0) {
-                widget.setBezelStyle(OS.NSShadowlessSquareBezelStyle);
+                widget.setBezelStyle(OS.NSBezelStyleSmallSquare);
             } else {
-                widget.setBezelStyle((getApi().style & SWT.WRAP) != 0 ? OS.NSRegularSquareBezelStyle : OS.NSRoundedBezelStyle);
+                widget.setBezelStyle((getApi().style & SWT.WRAP) != 0 ? OS.NSBezelStyleFlexiblePush : OS.NSBezelStylePush);
             }
         } else if ((getApi().style & SWT.ARROW) != 0) {
-            widget.setBezelStyle(OS.NSShadowlessSquareBezelStyle);
+            widget.setBezelStyle(OS.NSBezelStyleSmallSquare);
         }
         widget.setButtonType(type);
         widget.setTitle(NSString.string());
@@ -372,10 +372,10 @@ public class SwtButton extends SwtControl implements IButton {
                 lineWidth = 1f;
             }
             final long bezelStyle = button.bezelStyle();
-            if (bezelStyle == OS.NSRoundedBezelStyle) {
+            if (bezelStyle == OS.NSBezelStylePush) {
                 NSRect rect2 = smallerRect(cellFrame, 6.5f, 4.5f, 7.5f, lineWidth);
                 path = NSBezierPath.bezierPathWithRoundedRect(rect2, 3, 3);
-            } else if (bezelStyle == OS.NSRegularSquareBezelStyle) {
+            } else if (bezelStyle == OS.NSBezelStyleFlexiblePush) {
                 NSRect rect2 = smallerRect(cellFrame, 2.5f, 2.5f, 3.5f, lineWidth);
                 path = NSBezierPath.bezierPathWithRoundedRect(rect2, 3, 3);
             } else {
@@ -842,10 +842,13 @@ public class SwtButton extends SwtControl implements IButton {
                 heightThreshold = SMALL_BUTTON_HEIGHT;
             }
             NSButton button = (NSButton) getApi().view;
-            if (height > heightThreshold) {
-                button.setBezelStyle(OS.NSRegularSquareBezelStyle);
+            // Use NSBezelStyleFlexiblePush when a custom font is set or when the height
+            // exceeds the standard button height. NSBezelStylePush assumes the macOS
+            // default font size (13pt) and clips text at larger sizes.
+            if (height > heightThreshold || font != null) {
+                button.setBezelStyle(OS.NSBezelStyleFlexiblePush);
             } else {
-                button.setBezelStyle(OS.NSRoundedBezelStyle);
+                button.setBezelStyle(OS.NSBezelStylePush);
             }
         }
         super.setBounds(x, y, width, height, move, resize);
@@ -858,9 +861,14 @@ public class SwtButton extends SwtControl implements IButton {
     }
 
     @Override
-    void setFont(NSFont font) {
+    void setFont(NSFont nsFont) {
         if (text != null) {
             ((NSButton) getApi().view).setAttributedTitle(createString());
+        }
+        if ((getApi().style & (SWT.PUSH | SWT.TOGGLE)) != 0 && (getApi().style & (SWT.FLAT | SWT.WRAP)) == 0) {
+            // Use NSBezelStyleFlexiblePush when a custom font is set. NSBezelStylePush
+            // assumes the macOS default font size (13pt) and clips text at larger sizes.
+            ((NSButton) getApi().view).setBezelStyle(font != null ? OS.NSBezelStyleFlexiblePush : OS.NSBezelStylePush);
         }
     }
 

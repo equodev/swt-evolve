@@ -57,9 +57,9 @@ import org.eclipse.swt.internal.gtk.*;
  * </p>
  *
  * @see org.eclipse.swt.events.PaintEvent
- * @see <a href="http://www.eclipse.org/swt/snippets/#gc">GC snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Examples: GraphicsExample, PaintExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#gc">GC snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Examples: GraphicsExample, PaintExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public final class SwtGC extends SwtResource implements IGC {
 
@@ -199,6 +199,18 @@ public final class SwtGC extends SwtResource implements IGC {
         long gdkGC = drawable.internal_new_GC(data);
         init(drawable, data, gdkGC);
         init();
+    }
+
+    private float calculateTransformationScale() {
+        if (currentTransform == null) {
+            return 1.0f;
+        }
+        // this calculates the effective length in x and y
+        // direction without being affected by the rotation
+        // of the transformation
+        float scaleWidth = (float) Math.hypot(currentTransform[0], currentTransform[2]);
+        float scaleHeight = (float) Math.hypot(currentTransform[1], currentTransform[3]);
+        return Math.max(scaleWidth, scaleHeight);
     }
 
     /**
@@ -866,7 +878,12 @@ public final class SwtGC extends SwtResource implements IGC {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (image.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        drawImage(image, 0, 0, -1, -1, x, y, -1, -1, true);
+        if (currentTransform != null && !isIdentity(currentTransform)) {
+            Rectangle imageBounds = image.getBounds();
+            drawImage(image, x, y, imageBounds.width, imageBounds.height);
+        } else {
+            drawImage(image, 0, 0, -1, -1, x, y, -1, -1, true);
+        }
     }
 
     /**
@@ -965,8 +982,11 @@ public final class SwtGC extends SwtResource implements IGC {
         if (image.isDisposed()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
+        float transformationScale = calculateTransformationScale();
+        int scaledWidth = Math.round(destWidth * transformationScale);
+        int scaledHeight = Math.round(destHeight * transformationScale);
         if (image.getImpl() instanceof SwtImage) {
-            ((SwtImage) image.getImpl()).executeOnImageAtSize(imageAtSize -> drawImage(imageAtSize, 0, 0, 0, 0, destX, destY, destWidth, destHeight, false), destWidth, destHeight);
+            ((SwtImage) image.getImpl()).executeOnImageAtSize(imageAtSize -> drawImage(imageAtSize, 0, 0, 0, 0, destX, destY, destWidth, destHeight, false), scaledWidth, scaledHeight);
         }
     }
 
@@ -2009,7 +2029,7 @@ public final class SwtGC extends SwtResource implements IGC {
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         //BOGUS
-        return stringExtentInPixels(new String(new char[] { ch })).x;
+        return textExtentInPixels(new String(new char[] { ch }), 0).x;
     }
 
     /**
@@ -2150,7 +2170,7 @@ public final class SwtGC extends SwtResource implements IGC {
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         //BOGUS
-        return stringExtentInPixels(new String(new char[] { ch })).x;
+        return textExtentInPixels(new String(new char[] { ch }), 0).x;
     }
 
     /**
@@ -3320,7 +3340,17 @@ public final class SwtGC extends SwtResource implements IGC {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (path != null && path.isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
+        Transform t = null;
+        if (currentTransform != null) {
+            t = new Transform(getDevice());
+            getTransform(t);
+            setTransform(null);
+        }
         resetClipping();
+        if (t != null) {
+            setTransform(t);
+            t.dispose();
+        }
         if (path != null) {
             initCairo();
             long cairo = data.cairo;
@@ -4052,10 +4082,8 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public Point stringExtent(String string) {
-        return textExtentInPixels(string, 0);
-    }
-
-    Point stringExtentInPixels(String string) {
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return textExtentInPixels(string, 0);
     }
 
@@ -4079,6 +4107,8 @@ public final class SwtGC extends SwtResource implements IGC {
      * </ul>
      */
     public Point textExtent(String string) {
+        if (getApi().handle == 0)
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         return textExtentInPixels(string, SWT.DRAW_DELIMITER | SWT.DRAW_TAB);
     }
 

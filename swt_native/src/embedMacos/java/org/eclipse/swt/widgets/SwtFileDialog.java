@@ -35,9 +35,9 @@ import org.eclipse.swt.internal.cocoa.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#filedialog">FileDialog snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample, Dialog tab</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#filedialog">FileDialog snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample, Dialog tab</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtFileDialog extends SwtDialog implements IIFileDialog {
@@ -80,7 +80,7 @@ public class SwtFileDialog extends SwtDialog implements IIFileDialog {
 
     private String selectedExtension;
 
-    boolean overwrite = (OS.VERSION >= OS.VERSION(10, 15, 0)) ? true : false;
+    boolean overwrite = true;
 
     /**
      * Constructs a new instance of this class given only its parent.
@@ -476,9 +476,7 @@ public class SwtFileDialog extends SwtDialog implements IIFileDialog {
                     panel.setAllowedFileTypes(extensions);
                 panel.setAllowsOtherFileTypes(true);
             } else {
-                if (OS.VERSION >= OS.VERSION(10, 11, 0)) {
-                    ((NSOpenPanel) panel).setAccessoryViewDisclosed(true);
-                }
+                ((NSOpenPanel) panel).setAccessoryViewDisclosed(true);
             }
         } else {
             panel.setTreatsFilePackagesAsDirectories(false);
@@ -729,10 +727,10 @@ public class SwtFileDialog extends SwtDialog implements IIFileDialog {
      */
     public void setOverwrite(boolean overwrite) {
         /**
-         * Since macOS 10.15, overwriteExistingFileCheck private method is not available.
-         * Hence, there is no way to suppress the overwrite prompt and overwrite is always set to true.
+         * The overwriteExistingFileCheck private method is not available since macOS 10.15.
+         * Hence, there is no way to suppress the overwrite prompt and overwrite is always true.
          */
-        this.overwrite = (OS.VERSION >= OS.VERSION(10, 15, 0)) ? true : overwrite;
+        this.overwrite = true;
     }
 
     /**

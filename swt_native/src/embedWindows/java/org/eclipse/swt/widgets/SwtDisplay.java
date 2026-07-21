@@ -103,8 +103,8 @@ import org.eclipse.swt.internal.win32.version.*;
  * @see #readAndDispatch
  * @see #sleep
  * @see Device#dispose
- * @see <a href="http://www.eclipse.org/swt/snippets/#display">Display snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#display">Display snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
@@ -2303,6 +2303,20 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
             }
         }
         return isDarkTheme;
+    }
+
+    /**
+     * Informs the operating system that the application prefers a dark
+     * theme for native components such as title bars, scrollbars, and
+     * native dialogs.
+     *
+     * @param preferred true if the dark theme is preferred, false otherwise.
+     *
+     * @since 3.134
+     */
+    public void setDarkThemePreferred(boolean preferred) {
+        checkDevice();
+        OS.setTheme(preferred);
     }
 
     int getLastEventTime() {

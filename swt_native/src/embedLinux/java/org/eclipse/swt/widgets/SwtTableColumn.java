@@ -37,8 +37,8 @@ import org.eclipse.swt.internal.gtk4.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#table">Table, TableItem, TableColumn snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#table">Table, TableItem, TableColumn snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtTableColumn extends SwtItem implements ITableColumn {
@@ -364,7 +364,6 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
                 GDK.gdk_event_get_button(eventPtr, eventButton);
             }
             int eventType = GDK.gdk_event_get_event_type(eventPtr);
-            eventType = SwtControl.fixGdkEventTypeValues(eventType);
             int eventTime = GDK.gdk_event_get_time(eventPtr);
             switch(eventType) {
                 case GDK.GDK_BUTTON_RELEASE:
@@ -388,7 +387,6 @@ public class SwtTableColumn extends SwtItem implements ITableColumn {
     @Override
     long gtk3_event_after(long widget, long gdkEvent) {
         int eventType = GDK.gdk_event_get_event_type(gdkEvent);
-        eventType = SwtControl.fixGdkEventTypeValues(eventType);
         switch(eventType) {
             case GDK.GDK_BUTTON_PRESS:
                 {
