@@ -3,9 +3,14 @@ package dev.equo;
 import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CCombo;
+import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
+import org.eclipse.swt.custom.SashForm;
+import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.custom.StyledText;
+import org.eclipse.swt.events.MouseAdapter;
+import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
@@ -250,6 +255,138 @@ public class GallerySnippet {
             item.setPreferredSize(item.computeSize(size.x, size.y));
         }
 
+        // Slider / Scale / Spinner — the value controls. Each posts its current value to the
+        // status Label so the suite can assert the Java round-trip, and each carries live
+        // `selection` state to assert directly.
+        Group valueGroup = section(root, "Slider / Scale / Spinner");
+        valueGroup.setLayout(new GridLayout(1, false));
+        Slider slider = new Slider(valueGroup, SWT.HORIZONTAL);
+        slider.setMinimum(0);
+        slider.setMaximum(100);
+        slider.setSelection(25);
+        slider.setLayoutData(fillH);
+        slider.addSelectionListener(widgetSelectedAdapter(e -> status.setText("Slider at " + slider.getSelection())));
+        Scale scale = new Scale(valueGroup, SWT.HORIZONTAL);
+        scale.setMinimum(0);
+        scale.setMaximum(100);
+        scale.setSelection(25);
+        scale.setLayoutData(fillH);
+        scale.addSelectionListener(widgetSelectedAdapter(e -> status.setText("Scale at " + scale.getSelection())));
+        Spinner spinner = new Spinner(valueGroup, SWT.BORDER);
+        spinner.setMinimum(0);
+        spinner.setMaximum(100);
+        spinner.setSelection(25);
+        spinner.addSelectionListener(widgetSelectedAdapter(e -> status.setText("Spinner at " + spinner.getSelection())));
+
+        // ProgressBar / DateTime — the ProgressBar is display-only, so a Button advances it from
+        // the Java side and the suite asserts the state render; the DateTime starts on a fixed
+        // date so its state is deterministic.
+        Group progressGroup = section(root, "ProgressBar / DateTime");
+        progressGroup.setLayout(new GridLayout(2, false));
+        ProgressBar progressBar = new ProgressBar(progressGroup, SWT.HORIZONTAL);
+        progressBar.setMinimum(0);
+        progressBar.setMaximum(100);
+        progressBar.setSelection(30);
+        progressBar.setLayoutData(fillH);
+        Button advanceProgress = new Button(progressGroup, SWT.PUSH);
+        advanceProgress.setText("Advance Progress");
+        advanceProgress.addSelectionListener(widgetSelectedAdapter(e -> {
+            progressBar.setSelection(progressBar.getSelection() + 10);
+            status.setText("Progress at " + progressBar.getSelection());
+        }));
+        DateTime date = new DateTime(progressGroup, SWT.DATE | SWT.BORDER);
+        date.setDate(2026, 6, 15); // months are 0-based: July 15, 2026
+        date.addSelectionListener(widgetSelectedAdapter(e -> status.setText("Date changed")));
+
+        // Menu / CLabel / Canvas — the CLabel carries the popup menu (each item posts to the
+        // status Label) and the Canvas reports its mouse events the same way. The Canvas gets
+        // NO menu: attaching one swallowed its mouse events (documented product gap).
+        Group menuGroup = section(root, "Menu / CLabel / Canvas");
+        menuGroup.setLayout(new RowLayout(SWT.HORIZONTAL));
+        CLabel clabel = new CLabel(menuGroup, SWT.NONE);
+        clabel.setText("Right-click me");
+        Menu popup = new Menu(clabel);
+        for (String action : new String[] {"Menu Action", "Other Action"}) {
+            MenuItem mi = new MenuItem(popup, SWT.PUSH);
+            mi.setText(action);
+            mi.addSelectionListener(widgetSelectedAdapter(e -> {
+                // Web gap: an item click doesn't close/sync the menu (its modal barrier then
+                // swallows every later click) — close it from Java, BEFORE the status update so
+                // the status change guarantees the close was already delivered.
+                popup.setVisible(false);
+                status.setText(action + " clicked");
+            }));
+        }
+        clabel.setMenu(popup);
+        // Programmatic opener for MANUAL exploration: right-click (MenuDetect) does not open a
+        // control's popup on web yet, and closing a popup can leave an intercepting semantics
+        // node — both documented product gaps, which is why no automated scenario drives this
+        // menu (see the coverage table in e2e/README.md).
+        Button openMenu = new Button(menuGroup, SWT.PUSH);
+        openMenu.setText("Open Menu");
+        openMenu.addSelectionListener(widgetSelectedAdapter(e -> popup.setVisible(true)));
+        Canvas canvas = new Canvas(menuGroup, SWT.BORDER);
+        canvas.setLayoutData(new org.eclipse.swt.layout.RowData(120, 60));
+        canvas.addPaintListener(e -> {
+            e.gc.setBackground(e.display.getSystemColor(SWT.COLOR_DARK_CYAN));
+            e.gc.fillRectangle(10, 10, 100, 40);
+        });
+        canvas.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseDown(MouseEvent e) {
+                status.setText("Canvas clicked");
+            }
+        });
+
+        // SashForm / Sash — the SashForm holds two panes (its internal sash resizes them); the
+        // standalone Sash reports its drag to Java, which is the observable event.
+        Group sashGroup = section(root, "SashForm / Sash");
+        sashGroup.setLayout(new GridLayout(1, false));
+        SashForm sashForm = new SashForm(sashGroup, SWT.HORIZONTAL);
+        GridData sashFormData = new GridData(SWT.FILL, SWT.CENTER, true, false);
+        sashFormData.heightHint = 50;
+        sashForm.setLayoutData(sashFormData);
+        Text leftPane = new Text(sashForm, SWT.BORDER | SWT.MULTI);
+        leftPane.setText("Left pane");
+        Text rightPane = new Text(sashForm, SWT.BORDER | SWT.MULTI);
+        rightPane.setText("Right pane");
+        sashForm.setWeights(new int[] {1, 1});
+        Sash sash = new Sash(sashGroup, SWT.VERTICAL);
+        GridData sashData = new GridData(SWT.CENTER, SWT.CENTER, false, false);
+        sashData.widthHint = 8;
+        sashData.heightHint = 30;
+        sash.setLayoutData(sashData);
+        sash.addSelectionListener(widgetSelectedAdapter(e -> status.setText("Sash dragged")));
+
+        // ToolTip / ScrolledComposite — the balloon ToolTip is shown programmatically (its
+        // observable state is VToolTip.visible/text); the ScrolledComposite hosts content taller
+        // than its viewport.
+        Group tipGroup = section(root, "ToolTip / ScrolledComposite");
+        tipGroup.setLayout(new GridLayout(2, false));
+        ToolTip tip = new ToolTip(shell, SWT.BALLOON | SWT.ICON_INFORMATION);
+        tip.setText("Gallery tip");
+        tip.setMessage("This balloon came from Java");
+        Button showTip = new Button(tipGroup, SWT.PUSH);
+        showTip.setText("Show Tooltip");
+        showTip.addSelectionListener(widgetSelectedAdapter(e -> tip.setVisible(true)));
+        ScrolledComposite scrolled = new ScrolledComposite(tipGroup, SWT.V_SCROLL | SWT.BORDER);
+        GridData scrolledData = new GridData(SWT.FILL, SWT.CENTER, true, false);
+        scrolledData.heightHint = 60;
+        scrolled.setLayoutData(scrolledData);
+        Composite scrolledContent = new Composite(scrolled, SWT.NONE);
+        scrolledContent.setLayout(new GridLayout(1, false));
+        Text scrolledTop = new Text(scrolledContent, SWT.READ_ONLY);
+        scrolledTop.setText("Scrolled content top");
+        for (int i = 1; i <= 5; i++) {
+            Label filler = new Label(scrolledContent, SWT.NONE);
+            filler.setText("Scrolled row " + i);
+        }
+        scrolledContent.pack();
+        scrolled.setContent(scrolledContent);
+        scrolled.setMinSize(scrolledContent.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+        scrolled.setExpandHorizontal(true);
+        scrolled.setExpandVertical(false);
+
         // Dialog — a secondary (child) Shell with its own Text input, opened modally on
         // demand. Unlike MessageBox (a one-off Flutter showDialog()), this exercises a real
         // DartShell: it renders as a Positioned overlay inside the same Display Stack (see
@@ -313,7 +450,13 @@ public class GallerySnippet {
             ccombo.select(0);
             list.deselectAll();
             text.setText("Editable text field");
-            styledText.setText("Multi-line\nstyled text\nwith several lines.");
+            // Only touch the StyledText when a scenario actually changed it: setText fires its
+            // ModifyListener, whose web round-trip echo can land AFTER the baseline status below
+            // and overwrite the next scenario's status assert with "StyledText modified".
+            String styledBaseline = "Multi-line\nstyled text\nwith several lines.";
+            if (!styledBaseline.equals(styledText.getText())) {
+                styledText.setText(styledBaseline);
+            }
             table.deselectAll();
             tree.deselectAll();
             for (TreeItem branch : tree.getItems()) {
@@ -326,6 +469,14 @@ public class GallerySnippet {
             for (int i = 0; i < barItems.length; i++) {
                 barItems[i].setExpanded(i == 0);
             }
+            slider.setSelection(25);
+            scale.setSelection(25);
+            spinner.setSelection(25);
+            progressBar.setSelection(30);
+            date.setDate(2026, 6, 15);
+            popup.setVisible(false); // a failed scenario may leave the context menu up
+            tip.setVisible(false);
+            sashForm.setWeights(new int[] {1, 1});
             status.setText("Status: (no interaction yet)");
         }));
 
