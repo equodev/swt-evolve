@@ -75,6 +75,12 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   final FocusNode _popupAnchorFocusNode = FocusNode(debugLabel: 'MenuAnchor.popup');
   // The actual keyboard-entry point into the menu: see MenuChangeNotifier.autofocusItemFocusNode.
   final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'MenuItem.autofocus');
+  // True only while the open menu was opened by Java (the `visible && !isOpen` branch below). A
+  // context menu opened imperatively from Dart (openContextMenuAt, on right-click) keeps
+  // state.visible == false the whole time, so the symmetric close must NOT read that steady false
+  // as a Java-driven setVisible(false) — otherwise the first state push after SWT.Show closes the
+  // menu the instant it appears (the context-menu flicker regression).
+  bool _openedFromVisibleFlag = false;
 
   @override
   void initState() {
@@ -98,6 +104,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
 
   void openContextMenuAt(BuildContext context, Offset position) {
     if (!_menuController.isOpen) {
+      _openedFromVisibleFlag = false;
       _menuController.open(position: position);
       _focusFirstItemNextFrame();
     }
@@ -225,10 +232,11 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
               ? Offset(location.x.toDouble(), location.y.toDouble())
               : const Offset(100, 100);
           _menuController.open(position: menuPosition);
+          _openedFromVisibleFlag = true;
           _focusFirstItemNextFrame();
         }
       });
-    } else if (!visible && _menuController.isOpen) {
+    } else if (_openedFromVisibleFlag && !visible && _menuController.isOpen) {
       // Symmetric Java-driven close (Menu.setVisible(false)): the open above is imperative, so
       // the close must be too — without it a popup opened from Java can never be closed from
       // Java, and its modal barrier keeps swallowing every later click.
@@ -261,6 +269,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       onOpen: () => widget.sendMenuShow(state, null),
       onClose: () {
         _sendPendingChanges();
+        _openedFromVisibleFlag = false;
         if (visible) {
           visible = false;
           // Sync the SERIALIZED state too: build() reads state.visible, and with it stuck true
