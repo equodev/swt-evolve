@@ -26,7 +26,7 @@ import dev.equo.swt.*;
  * using the <code>getFontMetrics()</code> method.
  *
  * @see GC#getFontMetrics
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public final class DartFontMetrics implements IFontMetrics {
 
@@ -78,7 +78,7 @@ public final class DartFontMetrics implements IFontMetrics {
      * @since 3.107
      */
     public double getAverageCharacterWidth() {
-        return getAverageCharWidth();
+        return 0;
     }
 
     /**

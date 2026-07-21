@@ -118,9 +118,9 @@ import org.eclipse.swt.internal.win32.version.*;
  *
  * @see Decorations
  * @see SWT
- * @see <a href="http://www.eclipse.org/swt/snippets/#shell">Shell snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#shell">Shell snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtShell extends SwtDecorations implements IShell {
@@ -590,7 +590,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         OS.SetWindowLongPtr(balloonTipHandle, OS.GWLP_WNDPROC, ((SwtDisplay) display.getImpl()).windowProc);
     }
 
-    void setTitleColoring() {
+    void setTitleColoring(boolean preferred) {
         int attributeID = 0;
         if (OsVersion.IS_WIN10_2004) {
             // Documented since build 20348, but was already present since build 19041
@@ -603,8 +603,22 @@ public class SwtShell extends SwtDecorations implements IShell {
             // Not supported
             return;
         }
-        int[] value = new int[] { 1 };
+        int[] value = new int[] { preferred ? 1 : 0 };
         OS.DwmSetWindowAttribute(getApi().handle, attributeID, value, 4);
+    }
+
+    /**
+     * Informs the operating system that the application prefers a dark
+     * theme for native components such as title bars, scrollbars, and
+     * native dialogs.
+     *
+     * @param preferred true if the dark theme is preferred, false otherwise.
+     *
+     * @since 3.134
+     */
+    public void setDarkThemePreferred(boolean preferred) {
+        checkWidget();
+        setTitleColoring(preferred);
     }
 
     @Override
@@ -637,7 +651,7 @@ public class SwtShell extends SwtDecorations implements IShell {
         //	if ((style & SWT.ON_TOP) != 0)  display.lockActiveWindow = false;
         if (!embedded) {
             if (((SwtDisplay) display.getImpl()).useShellTitleColoring) {
-                setTitleColoring();
+                setTitleColoring(true);
             }
             int bits = OS.GetWindowLong(getApi().handle, OS.GWL_STYLE);
             bits &= ~(OS.WS_OVERLAPPED | OS.WS_CAPTION);

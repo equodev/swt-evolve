@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2021 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -38,7 +38,7 @@ import org.eclipse.swt.widgets.*;
  * will not withdraw support for a <em>HINT</em> once it is made available.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 /* NOTE:
  *   Good javadoc coding style is to put the values of static final
@@ -2560,22 +2560,6 @@ public class SWT {
      * @since 3.7
      */
     public static final int WEBKIT = 1 << 16;
-
-    /**
-     * Style constant specifying that a Browser should use Chromium Embedded Framework
-     * for rendering its content (value is 1&lt;&lt;17).
-     * <p><b>Note:</b> No longer supported and ignored.</p>
-     * <p><b>Used By:</b></p>
-     * <ul>
-     * <li><code>Browser</code></li>
-     * </ul>
-     *
-     * @since 3.115
-     * @deprecated Support for Chromium was limited to ancient and full of CVEs version of Chromium.
-     * See <a href="https://bugs.eclipse.org/bugs/show_bug.cgi?id=572010">bug report</a> for details
-     */
-    @Deprecated(forRemoval = true, since = "2024-03")
-    public static final int CHROMIUM = 1 << 17;
 
     /**
      * Style constant specifying that a Browser should use Edge (WebView2)

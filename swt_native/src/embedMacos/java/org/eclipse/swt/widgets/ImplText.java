@@ -25,7 +25,5 @@ public interface ImplText extends ImplScrollable {
 
     long _actionCancel();
 
-    Cursor findCursor();
-
     void updateCursorRects(boolean enabled);
 }

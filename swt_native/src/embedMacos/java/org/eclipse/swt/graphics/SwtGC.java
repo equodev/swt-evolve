@@ -56,9 +56,9 @@ import org.eclipse.swt.internal.cocoa.*;
  * </p>
  *
  * @see org.eclipse.swt.events.PaintEvent
- * @see <a href="http://www.eclipse.org/swt/snippets/#gc">GC snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Examples: GraphicsExample, PaintExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#gc">GC snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Examples: GraphicsExample, PaintExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public final class SwtGC extends SwtResource implements IGC {
 
@@ -311,6 +311,19 @@ public final class SwtGC extends SwtResource implements IGC {
         if ((style & SWT.LEFT_TO_RIGHT) != 0)
             style &= ~SWT.RIGHT_TO_LEFT;
         return style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);
+    }
+
+    private float calculateTransformationScale() {
+        if (data.transform == null) {
+            return 1.0f;
+        }
+        // this calculates the effective length in x and y
+        // direction without being affected by the rotation
+        // of the transformation
+        NSAffineTransformStruct struct = data.transform.transformStruct();
+        float scaleWidth = (float) Math.hypot(struct.m11, struct.m21);
+        float scaleHeight = (float) Math.hypot(struct.m12, struct.m22);
+        return Math.max(scaleWidth, scaleHeight);
     }
 
     /**
@@ -612,7 +625,7 @@ public final class SwtGC extends SwtResource implements IGC {
                 }
                 NSAffineTransform transform = NSAffineTransform.transform();
                 NSSize size = image.handle.size();
-                transform.translateXBy(0, size.height - (destHeight + 2 * destY));
+                transform.translateXBy(0, (size.height - (destHeight + 2 * destY)) * scaleFactor);
                 transform.concat();
                 NSRect srcRect = new NSRect();
                 srcRect.x = srcX;
@@ -1269,7 +1282,12 @@ public final class SwtGC extends SwtResource implements IGC {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (image.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        drawImage(image, 0, 0, -1, -1, x, y, -1, -1, true);
+        if (data.transform != null) {
+            Rectangle imageBounds = image.getBounds();
+            drawImage(image, x, y, imageBounds.width, imageBounds.height);
+        } else {
+            drawImage(image, 0, 0, -1, -1, x, y, -1, -1, true);
+        }
     }
 
     /**
@@ -1368,10 +1386,13 @@ public final class SwtGC extends SwtResource implements IGC {
         if (image.isDisposed()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
+        float transformationScale = calculateTransformationScale();
+        int scaledWidth = Math.round(destWidth * transformationScale);
+        int scaledHeight = Math.round(destHeight * transformationScale);
         if (image.getImpl() instanceof SwtImage) {
             ((SwtImage) image.getImpl()).executeOnImageAtSizeBestFittingSize(imageAtSize -> {
                 drawImage(imageAtSize, 0, 0, imageAtSize.getImpl()._width(), imageAtSize.getImpl()._height(), destX, destY, destWidth, destHeight, false);
-            }, destWidth, destHeight);
+            }, scaledWidth, scaledHeight);
         }
     }
 

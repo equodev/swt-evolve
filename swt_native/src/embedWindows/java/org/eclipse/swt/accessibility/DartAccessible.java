@@ -41,8 +41,8 @@ import dev.equo.swt.*;
  * @see AccessibleEvent
  * @see AccessibleControlListener
  * @see AccessibleControlEvent
- * @see <a href="http://www.eclipse.org/swt/snippets/#accessibility">Accessibility snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#accessibility">Accessibility snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  *
  * @since 2.0
  */
@@ -3502,7 +3502,7 @@ public class DartAccessible implements IIAccessible {
             int r = Integer.parseInt(rgbString.substring(open + 1, comma1));
             int g = Integer.parseInt(rgbString.substring(comma1 + 1, comma2));
             int b = Integer.parseInt(rgbString.substring(comma2 + 1, close));
-            return new Color(control.getDisplay(), r, g, b);
+            return new Color(r, g, b);
         } catch (NumberFormatException ex) {
         }
         return null;

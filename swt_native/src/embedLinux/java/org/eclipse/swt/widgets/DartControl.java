@@ -43,9 +43,9 @@ import dev.equo.swt.*;
  * within the SWT implementation.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#control">Control snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#control">Control snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public abstract class DartControl extends DartWidget implements Drawable, IControl {
@@ -371,6 +371,26 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     boolean hooksPaint() {
         return hooks(SWT.Paint) || filters(SWT.Paint);
+    }
+
+    @Override
+    void snapshotPaint(long handle, long snapshot) {
+        /*
+	 * Guard against creating an empty Cairo render node when there are no paint
+	 * listeners. gtk_snapshot_append_cairo() appends a node immediately; leaving it
+	 * empty/unfinished causes it to obscure render nodes already in the snapshot
+	 * (e.g. GtkTreeView content snapshotted before this call).
+	 */
+        if (!hooksPaint())
+            return;
+        super.snapshotPaint(handle, snapshot);
+    }
+
+    @Override
+    void snapshotToDrawAfterChildren(long handle, long snapshot) {
+        // Leaf controls (Button, Label, etc.) paint after children so SWT.Paint listeners
+        // draw on top of the native widget appearance, matching GTK3 DRAW (after=true) behavior.
+        snapshotPaint(handle, snapshot);
     }
 
     @Override

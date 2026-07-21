@@ -39,8 +39,8 @@ import dev.equo.swt.*;
  * @see AccessibleEvent
  * @see AccessibleControlListener
  * @see AccessibleControlEvent
- * @see <a href="http://www.eclipse.org/swt/snippets/#accessibility">Accessibility snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#accessibility">Accessibility snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  *
  * @since 2.0
  */

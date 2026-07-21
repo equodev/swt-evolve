@@ -117,9 +117,9 @@ import org.eclipse.swt.internal.cocoa.*;
  *
  * @see Decorations
  * @see SWT
- * @see <a href="http://www.eclipse.org/swt/snippets/#shell">Shell snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#shell">Shell snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtShell extends SwtDecorations implements IShell {
@@ -581,7 +581,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                 }
             }
             long styleMask = window.styleMask();
-            if (styleMask == OS.NSBorderlessWindowMask || (styleMask & (OS.NSNonactivatingPanelMask | OS.NSDocModalWindowMask | OS.NSResizableWindowMask)) != 0)
+            if (styleMask == OS.NSWindowStyleMaskBorderless || (styleMask & (OS.NSWindowStyleMaskNonactivatingPanel | OS.NSWindowStyleMaskDocModalWindow | OS.NSWindowStyleMaskResizable)) != 0)
                 return true;
         }
         return super.canBecomeKeyWindow(id, sel);
@@ -686,28 +686,28 @@ public class SwtShell extends SwtDecorations implements IShell {
     void createHandle() {
         getApi().state |= HIDDEN;
         if (window == null && getApi().view == null) {
-            int styleMask = OS.NSBorderlessWindowMask;
+            int styleMask = OS.NSWindowStyleMaskBorderless;
             if ((getApi().style & (SWT.TOOL | SWT.SHEET)) != 0) {
                 window = (NSWindow) new SWTPanel().alloc();
                 if ((getApi().style & SWT.SHEET) != 0) {
-                    styleMask |= OS.NSDocModalWindowMask;
+                    styleMask |= OS.NSWindowStyleMaskDocModalWindow;
                 } else {
-                    styleMask |= OS.NSUtilityWindowMask | OS.NSNonactivatingPanelMask;
+                    styleMask |= OS.NSWindowStyleMaskUtilityWindow | OS.NSWindowStyleMaskNonactivatingPanel;
                 }
             } else {
                 window = (NSWindow) new SWTWindow().alloc();
             }
             if ((getApi().style & SWT.NO_TRIM) == 0) {
                 if ((getApi().style & SWT.TITLE) != 0)
-                    styleMask |= OS.NSTitledWindowMask;
+                    styleMask |= OS.NSWindowStyleMaskTitled;
                 if ((getApi().style & SWT.CLOSE) != 0)
-                    styleMask |= OS.NSClosableWindowMask;
+                    styleMask |= OS.NSWindowStyleMaskClosable;
                 if ((getApi().style & SWT.MIN) != 0)
-                    styleMask |= OS.NSMiniaturizableWindowMask;
+                    styleMask |= OS.NSWindowStyleMaskMiniaturizable;
                 if ((getApi().style & SWT.MAX) != 0)
-                    styleMask |= OS.NSResizableWindowMask;
+                    styleMask |= OS.NSWindowStyleMaskResizable;
                 if ((getApi().style & SWT.RESIZE) != 0)
-                    styleMask |= OS.NSResizableWindowMask;
+                    styleMask |= OS.NSWindowStyleMaskResizable;
             }
             NSScreen screen = null;
             NSScreen primaryScreen = new NSScreen(NSScreen.screens().objectAtIndex(0));
@@ -723,7 +723,7 @@ public class SwtShell extends SwtDecorations implements IShell {
                 window.setMovable(false);
             }
             if ((getApi().style & SWT.TOOL) != 0) {
-                // Feature in Cocoa: NSPanels that use NSUtilityWindowMask are always promoted to the floating window layer.
+                // Feature in Cocoa: NSPanels that use NSWindowStyleMaskUtilityWindow are always promoted to the floating window layer.
                 // Fix is to call setFloatingPanel:NO, which turns off this behavior.
                 ((NSPanel) window).setFloatingPanel(false);
                 // By default, panels hide on deactivation.
@@ -743,15 +743,11 @@ public class SwtShell extends SwtDecorations implements IShell {
                     OS.objc_msgSend(window.id, OS.sel_setMovable_, 0);
                 }
             }
-            if (OS.VERSION >= OS.VERSION(10, 12, 0)) {
-                /*
-			 * In macOS 10.12, a new system preference "prefer tabs when opening documents"
-			 * has been added which causes automatic tabbing of windows in Eclipse.
-			 * Disable automatic window tabbing, but setting the NSWindow.allowsAutomaticWindowTabbing
-			 * property to false.
-			 */
-                OS.objc_msgSend(OS.class_NSWindow, OS.sel_setAllowsAutomaticWindowTabbing_, false);
-            }
+            /*
+		 * Disable automatic window tabbing. The system preference "prefer tabs when opening documents"
+		 * would otherwise cause automatic tabbing of windows in Eclipse.
+		 */
+            OS.objc_msgSend(OS.class_NSWindow, OS.sel_setAllowsAutomaticWindowTabbing_, false);
             ((SwtDisplay) display.getImpl()).cascadeWindow(window, screen);
             NSRect screenFrame = screen.frame();
             double width = screenFrame.width * 5 / 8, height = screenFrame.height * 5 / 8;
@@ -1036,7 +1032,7 @@ public class SwtShell extends SwtDecorations implements IShell {
 
     boolean _getFullScreen() {
         if ((window.collectionBehavior() & OS.NSWindowCollectionBehaviorFullScreenPrimary) != 0) {
-            return (window.styleMask() & OS.NSFullScreenWindowMask) != 0 ? true : false;
+            return (window.styleMask() & OS.NSWindowStyleMaskFullScreen) != 0 ? true : false;
         }
         return fullScreen;
     }
@@ -2158,6 +2154,26 @@ public class SwtShell extends SwtDecorations implements IShell {
         getApi().view.performSelector(OS.sel_clearDeferFlushing, null, 0.0, ((SwtDisplay) display.getImpl()).runLoopModes());
     }
 
+    /**
+     * Informs the operating system that the application prefers a dark
+     * theme for native components such as title bars, scrollbars, and
+     * native dialogs.
+     *
+     * @param preferred true if the dark theme is preferred, false otherwise.
+     *
+     * @since 3.134
+     */
+    public void setDarkThemePreferred(boolean preferred) {
+        checkWidget();
+        if (window == null)
+            return;
+        String appearanceName = preferred ? "NSAppearanceNameDarkAqua" : "NSAppearanceNameAqua";
+        NSAppearance appearance = NSAppearance.appearanceNamed(NSString.stringWith(appearanceName));
+        if (appearance != null) {
+            OS.objc_msgSend(window.id, OS.sel_setAppearance_, appearance.id);
+        }
+    }
+
     @Override
     public void setText(String string) {
         checkWidget();
@@ -2205,13 +2221,8 @@ public class SwtShell extends SwtDecorations implements IShell {
 	 *
 	 * Both bugs are bugs of macOS itself. The workaround is to cancel
 	 * menu tracking just before showing Shell.
-	 *
-	 * The condition should be for (macOS >= 12), but it's not possible
-	 * to reliably distinguish 11 from 12, see comment for OS.VERSION.
 	 */
-        if (OS.isBigSurOrLater()) {
-            SwtDisplay.cancelRootMenuTracking();
-        }
+        SwtDisplay.cancelRootMenuTracking();
     }
 
     void setWindowVisible(boolean visible, boolean key) {
@@ -2389,15 +2400,11 @@ public class SwtShell extends SwtDecorations implements IShell {
                      */
                     if ((getApi().style & SWT.ON_TOP) != 0) {
                         window.setLevel(OS.NSStatusWindowLevel);
-                    } else if (OS.VERSION >= OS.VERSION(10, 11, 0)) {
+                    } else {
                         /*
-					 * Feature in Cocoa on 10.11: Second-level child windows of
-					 * a full-screen window are sometimes shown behind their
-					 * parent window, although they take keyboard focus.
-					 *
-					 * The exact circumstances are unknown. Could only be
-					 * reproduced when the app was launched with the Eclipse
-					 * launcher. This hack is a workaround for
+					 * Feature in Cocoa: Second-level child windows of a full-screen
+					 * window are sometimes shown behind their parent window, although
+					 * they take keyboard focus. This hack is a workaround for
 					 * https://bugs.eclipse.org/478975 .
 					 */
                         Shell parentShell = (Shell) parent;

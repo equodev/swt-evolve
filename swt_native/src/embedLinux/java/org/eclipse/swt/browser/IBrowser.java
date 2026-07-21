@@ -792,5 +792,7 @@ public interface IBrowser extends IComposite, ImplBrowser {
      */
     void stop();
 
+    String toString();
+
     Browser getApi();
 }

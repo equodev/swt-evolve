@@ -102,8 +102,8 @@ import org.eclipse.swt.widgets.Display.APPEARANCE;
  * @see #readAndDispatch
  * @see #sleep
  * @see Device#dispose
- * @see <a href="http://www.eclipse.org/swt/snippets/#display">Display snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#display">Display snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
@@ -935,23 +935,17 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
 	 * macOS 11 always enables it regardless of sdk. The option is force
 	 * enabled here in case SWT runs with java/launcher linked with older sdk.
 	 */
-        if (!OS.isBigSurOrLater()) {
-            configureSystemOption("NSViewAllowsRootLayerBacking", true);
-        }
         /*
-	 * Starting with macOS 11, layer backing is always enabled. That's fine.
-	 * What is not fine however is that macOS uses "automatic" image format for
-	 * it. This means that instead of actual rendering, macOS's GC only remembers
-	 * the operations performed. This causes macOS to ignore clip rect and paint
-	 * entire visible rect whenever something changes, and that's a lot of
-	 * painting. Example: Table will now repaint all visible items when a single
-	 * item is selected/deselected. In case of owner drawn Table, this makes
-	 * things a lot slower. The workaround is to disable the "automatic" image
-	 * format.
+	 * Layer backing is always enabled since macOS 11. macOS uses "automatic"
+	 * image format for it. This means that instead of actual rendering, macOS's
+	 * GC only remembers the operations performed. This causes macOS to ignore
+	 * clip rect and paint entire visible rect whenever something changes, and
+	 * that's a lot of painting. Example: Table will now repaint all visible
+	 * items when a single item is selected/deselected. In case of owner drawn
+	 * Table, this makes things a lot slower. The workaround is to disable the
+	 * "automatic" image format.
 	 */
-        if (OS.isBigSurOrLater()) {
-            configureSystemOption("NSViewUsesAutomaticLayerBackingStores", false);
-        }
+        configureSystemOption("NSViewUsesAutomaticLayerBackingStores", false);
     }
 
     /**
@@ -978,9 +972,9 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     void createDisplay(DeviceData data) {
-        if (OS.VERSION < OS.VERSION(10, 10, 0)) {
+        if (OS.VERSION < OS.VERSION(11, 0, 0)) {
             //$NON-NLS-1$
-            System.out.println("***WARNING: SWT requires MacOS X version 10.10 or greater");
+            System.out.println("***WARNING: SWT requires macOS version 11 or greater");
             error(SWT.ERROR_NOT_IMPLEMENTED);
         }
         NSThread nsthread = NSThread.currentThread();
@@ -1795,6 +1789,20 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         return OS.isSystemDarkAppearance();
     }
 
+    /**
+     * Informs the operating system that the application prefers a dark
+     * theme for native components such as title bars, scrollbars, and
+     * native dialogs.
+     *
+     * @param preferred true if the dark theme is preferred, false otherwise.
+     *
+     * @since 3.134
+     */
+    public void setDarkThemePreferred(boolean preferred) {
+        checkDevice();
+        OS.setTheme(preferred);
+    }
+
     int getLastEventTime() {
         NSEvent event = application != null ? application.currentEvent() : null;
         if (event == null)
@@ -2042,22 +2050,14 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                 color = NSColor.controlDarkShadowColor();
                 break;
             case SWT.COLOR_WIDGET_NORMAL_SHADOW:
-                if (OS.VERSION >= OS.VERSION(10, 14, 0)) {
-                    return new double[] { 159 / 255f, 159 / 255f, 159 / 255f, 1 };
-                }
-                color = NSColor.controlShadowColor();
-                break;
+                return new double[] { 159 / 255f, 159 / 255f, 159 / 255f, 1 };
             case SWT.COLOR_WIDGET_LIGHT_SHADOW:
-                if (OS.VERSION >= OS.VERSION(10, 14, 0)) {
-                    return new double[] { 232 / 255f, 232 / 255f, 232 / 255f, 1 };
-                }
-                color = NSColor.controlHighlightColor();
-                break;
+                return new double[] { 232 / 255f, 232 / 255f, 232 / 255f, 1 };
             case SWT.COLOR_WIDGET_HIGHLIGHT_SHADOW:
                 color = NSColor.controlLightHighlightColor();
                 break;
             case SWT.COLOR_WIDGET_BACKGROUND:
-                color = OS.VERSION >= OS.VERSION(10, 14, 0) ? NSColor.windowBackgroundColor() : NSColor.controlHighlightColor();
+                color = NSColor.windowBackgroundColor();
                 break;
             case SWT.COLOR_WIDGET_FOREGROUND:
                 color = NSColor.controlTextColor();
@@ -2086,11 +2086,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                 textView.release();
                 break;
             case SWT.COLOR_WIDGET_DISABLED_FOREGROUND:
-                if (OS.VERSION >= OS.VERSION(10, 14, 0)) {
-                    color = NSColor.secondarySelectedControlColor();
-                } else {
-                    color = NSColor.disabledControlTextColor();
-                }
+                color = NSColor.secondarySelectedControlColor();
                 break;
         }
         return getNSColorRGB(color);
@@ -2226,34 +2222,24 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
                 {
                     if (infoImage != null)
                         return infoImage;
-                    NSImage img;
-                    if (OS.isBigSurOrLater()) {
-                        img = NSImage.imageNamed(OS.NSImageNameInfo);
-                        /*
-				 * retain() is required here, as img is used below to create Image object.
-				 * img will be released later in Image.destroy().
-				 */
-                        img.retain();
-                    } else {
-                        img = getSystemImageForID(OS.kAlertNoteIcon);
-                    }
+                    NSImage img = NSImage.imageNamed(OS.NSImageNameInfo);
+                    /*
+			 * retain() is required here, as img is used below to create Image object.
+			 * img will be released later in Image.destroy().
+			 */
+                    img.retain();
                     return infoImage = SwtImage.cocoa_new(this.getApi(), SWT.ICON, img);
                 }
             case SWT.ICON_WARNING:
                 {
                     if (warningImage != null)
                         return warningImage;
-                    NSImage img;
-                    if (OS.isBigSurOrLater()) {
-                        img = NSImage.imageNamed(OS.NSImageNameCaution);
-                        /*
-				 * retain() is required here, as img is used below to create Image object.
-				 * img will be released later in Image.destroy().
-				 */
-                        img.retain();
-                    } else {
-                        img = getSystemImageForID(OS.kAlertCautionIcon);
-                    }
+                    NSImage img = NSImage.imageNamed(OS.NSImageNameCaution);
+                    /*
+			 * retain() is required here, as img is used below to create Image object.
+			 * img will be released later in Image.destroy().
+			 */
+                    img.retain();
                     return warningImage = SwtImage.cocoa_new(this.getApi(), SWT.ICON, img);
                 }
         }
@@ -3396,7 +3382,7 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
         if (screenWindow == null) {
             NSWindow window = (NSWindow) new NSWindow().alloc();
             NSRect rect = new NSRect();
-            window = window.initWithContentRect(rect, OS.NSBorderlessWindowMask, OS.NSBackingStoreBuffered, false);
+            window = window.initWithContentRect(rect, OS.NSWindowStyleMaskBorderless, OS.NSBackingStoreBuffered, false);
             window.setReleasedWhenClosed(false);
             screenWindow = window;
         }
@@ -4664,8 +4650,6 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     void setAppAppearance(APPEARANCE newMode) {
-        if (OS.VERSION < OS.VERSION(10, 14, 0))
-            return;
         NSAppearance appearance = getAppearance(newMode);
         if (appearance != null && application != null) {
             OS.objc_msgSend(application.id, OS.sel_setAppearance_, appearance.id);
@@ -4681,8 +4665,6 @@ public class SwtDisplay extends SwtDevice implements Executor, IDisplay {
     }
 
     void setWindowsAppearance(APPEARANCE newMode) {
-        if (OS.VERSION < OS.VERSION(10, 14, 0))
-            return;
         NSAppearance appearance = getAppearance(newMode);
         if (appearance != null) {
             Shell[] shells = getShells();

@@ -45,8 +45,8 @@ import org.eclipse.swt.internal.win32.*;
  * Note: Only one of the above styles may be specified.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#cursor">Cursor snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#cursor">Cursor snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public final class DartCursor extends DartResource implements ICursor {
 
@@ -286,12 +286,6 @@ public final class DartCursor extends DartResource implements ICursor {
         ((SwtDevice) this.device.getImpl()).registerResourceWithZoomSupport(this.getApi());
     }
 
-    private void setHandleForZoomLevel(CursorHandle handle, Integer zoom) {
-        if (zoom != null && !zoomLevelToHandle.containsKey(zoom)) {
-            zoomLevelToHandle.put(zoom, handle);
-        }
-    }
-
     /**
      * Retrieves the scaling factor of the mouse pointer size as set in Windows
      * 10/11 "Settings &gt; Accessibility &gt; Mouse pointer and touch &gt; Size".
@@ -338,7 +332,7 @@ public final class DartCursor extends DartResource implements ICursor {
     public boolean equals(Object object) {
         if (object == this.getApi())
             return true;
-        if (!(object instanceof Cursor))
+        if (!(object instanceof Cursor cursor))
             return false;
         return false;
     }
@@ -389,7 +383,7 @@ public final class DartCursor extends DartResource implements ICursor {
     @Override
     void destroyHandlesExcept(Set<Integer> zoomLevels) {
         zoomLevelToHandle.entrySet().removeIf(entry -> {
-            final Integer zoom = entry.getKey();
+            Integer zoom = entry.getKey();
             if (!zoomLevels.contains(zoom) && zoom != DPIUtil.getZoomForAutoscaleProperty(DEFAULT_ZOOM)) {
                 entry.getValue().destroy();
                 return true;
@@ -435,7 +429,7 @@ public final class DartCursor extends DartResource implements ICursor {
         }
     }
 
-    private static interface CursorHandleProvider {
+    private interface CursorHandleProvider {
 
         CursorHandle createHandle(Device device, int zoom);
     }
@@ -453,7 +447,7 @@ public final class DartCursor extends DartResource implements ICursor {
             return null;
         }
 
-        private static final long getOSCursorIdFromStyle(int style) {
+        private static long getOSCursorIdFromStyle(int style) {
             long lpCursorName = 0;
             switch(style) {
                 case SWT.CURSOR_HAND:
@@ -586,15 +580,15 @@ public final class DartCursor extends DartResource implements ICursor {
         }
 
         private void validateMask(ImageData source, ImageData mask) {
-            ImageData testMask = mask == null ? null : (ImageData) mask.clone();
-            if (testMask == null) {
+            ImageData effectiveMask = mask;
+            if (effectiveMask == null) {
                 if (source.getTransparencyType() != SWT.TRANSPARENCY_MASK) {
                     SWT.error(SWT.ERROR_NULL_ARGUMENT);
                 }
-                testMask = source.getTransparencyMask();
+                effectiveMask = source.getTransparencyMask();
             }
             /* Check the bounds. Mask must be the same size as source */
-            if (testMask.width != source.width || testMask.height != source.height) {
+            if (effectiveMask.width != source.width || effectiveMask.height != source.height) {
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
             }
         }
@@ -642,6 +636,10 @@ public final class DartCursor extends DartResource implements ICursor {
         }
         impl.setHandleForZoomLevel(handle, zoom);
         return impl.zoomLevelToHandle.get(zoom).getHandle();
+    }
+
+    void setHandleForZoomLevel(CursorHandle handle, int zoom) {
+        zoomLevelToHandle.put(zoom, handle);
     }
 
     public Cursor getApi() {

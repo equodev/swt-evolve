@@ -48,9 +48,9 @@ import org.eclipse.swt.widgets.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#ctabfolder">CTabFolder, CTabItem snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: CustomControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#ctabfolder">CTabFolder, CTabItem snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: CustomControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
@@ -59,8 +59,6 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
     boolean onBottom = false;
 
     boolean single = false;
-
-    boolean simple = true;
 
     int fixedTabHeight = SWT.DEFAULT;
 
@@ -169,6 +167,8 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
     boolean showClose = false;
 
     boolean showUnselectedClose = true;
+
+    boolean dirtyIndicatorStyle = false;
 
     boolean showMin = false;
 
@@ -620,7 +620,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                         rects[i].height = getControlHeight(ctrlSize);
                         rects[i].x = x;
                         rects[i].y = getControlY(size, rects, borderBottom, borderTop, i);
-                    } else if (((alignment & (SWT.WRAP)) != 0 && ctrlSize.x < availableWidth)) {
+                    } else if ((alignment & SWT.WRAP) != 0 && ctrlSize.x <= availableWidth) {
                         x -= ctrlSize.x;
                         rects[i].width = ctrlSize.x;
                         rects[i].height = getControlHeight(ctrlSize);
@@ -715,8 +715,6 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
             if (lastIndex != -1) {
                 CTabItem lastItem = items[lastIndex];
                 int w = ((SwtCTabItem) lastItem.getImpl()).x + ((SwtCTabItem) lastItem.getImpl()).width + SPACING;
-                if (!simple && lastIndex == selectedIndex)
-                    w -= (((SwtCTabFolderRenderer) renderer.getImpl()).curveIndent - 7);
                 rects[controls.length - 1].x = w;
             }
         }
@@ -1311,10 +1309,12 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
      * @return <code>true</code> if the CTabFolder is rendered with a simple shape
      *
      * @since 3.0
+     * @deprecated Curved tabs are no longer supported.
      */
+    @Deprecated(forRemoval = true, since = "2026-06")
     public boolean getSimple() {
         checkWidget();
-        return simple;
+        return true;
     }
 
     /**
@@ -1894,6 +1894,14 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
         }
     }
 
+    /**
+     * Returns whether the given point (px, py) is contained within the bounds
+     * of the given CTabItem, without allocating a Rectangle object.
+     */
+    private static boolean containsPoint(CTabItem item, int px, int py) {
+        return px >= ((SwtCTabItem) item.getImpl()).x && py >= ((SwtCTabItem) item.getImpl()).y && px < ((SwtCTabItem) item.getImpl()).x + ((SwtCTabItem) item.getImpl()).width && py < ((SwtCTabItem) item.getImpl()).y + ((SwtCTabItem) item.getImpl()).height;
+    }
+
     void onMouse(Event event) {
         if (isDisposed()) {
             return;
@@ -1968,21 +1976,21 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                     CTabItem item = null;
                     if (single) {
                         if (selectedIndex != -1) {
-                            Rectangle bounds = items[selectedIndex].getBounds();
-                            if (bounds.contains(x, y)) {
-                                item = items[selectedIndex];
+                            CTabItem selectedItem = items[selectedIndex];
+                            if (containsPoint(selectedItem, x, y)) {
+                                item = selectedItem;
                             }
                         }
                     } else {
                         for (CTabItem tabItem : items) {
-                            Rectangle bounds = tabItem.getBounds();
-                            if (bounds.contains(x, y)) {
+                            if (containsPoint(tabItem, x, y)) {
                                 item = tabItem;
+                                break;
                             }
                         }
                     }
                     if (item != null) {
-                        if (((SwtCTabItem) item.getImpl()).closeRect.contains(x, y)) {
+                        if ((showClose || ((SwtCTabItem) item.getImpl()).showClose) && ((SwtCTabItem) item.getImpl()).closeRect.contains(x, y)) {
                             ((SwtCTabItem) item.getImpl()).closeImageState = SWT.SELECTED;
                             redraw(((SwtCTabItem) item.getImpl()).closeRect.x, ((SwtCTabItem) item.getImpl()).closeRect.y, ((SwtCTabItem) item.getImpl()).closeRect.width, ((SwtCTabItem) item.getImpl()).closeRect.height, false);
                             update();
@@ -2013,7 +2021,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                     for (int i = 0; i < items.length; i++) {
                         CTabItem item = items[i];
                         close = false;
-                        if (item.getBounds().contains(x, y)) {
+                        if (containsPoint(item, x, y)) {
                             close = true;
                             if (((SwtCTabItem) item.getImpl()).closeRect.contains(x, y)) {
                                 if (((SwtCTabItem) item.getImpl()).closeImageState != SWT.SELECTED && ((SwtCTabItem) item.getImpl()).closeImageState != SWT.HOT) {
@@ -2053,21 +2061,21 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                     CTabItem item = null;
                     if (single) {
                         if (selectedIndex != -1) {
-                            Rectangle bounds = items[selectedIndex].getBounds();
-                            if (bounds.contains(x, y)) {
-                                item = items[selectedIndex];
+                            CTabItem selectedItem = items[selectedIndex];
+                            if (containsPoint(selectedItem, x, y)) {
+                                item = selectedItem;
                             }
                         }
                     } else {
                         for (CTabItem tabItem : items) {
-                            Rectangle bounds = tabItem.getBounds();
-                            if (bounds.contains(x, y)) {
+                            if (containsPoint(tabItem, x, y)) {
                                 item = tabItem;
+                                break;
                             }
                         }
                     }
                     if (item != null) {
-                        if (((SwtCTabItem) item.getImpl()).closeRect.contains(x, y)) {
+                        if ((showClose || ((SwtCTabItem) item.getImpl()).showClose) && ((SwtCTabItem) item.getImpl()).closeRect.contains(x, y)) {
                             boolean selected = ((SwtCTabItem) item.getImpl()).closeImageState == SWT.SELECTED;
                             ((SwtCTabItem) item.getImpl()).closeImageState = SWT.HOT;
                             redraw(((SwtCTabItem) item.getImpl()).closeRect.x, ((SwtCTabItem) item.getImpl()).closeRect.y, ((SwtCTabItem) item.getImpl()).closeRect.width, ((SwtCTabItem) item.getImpl()).closeRect.height, false);
@@ -2247,9 +2255,6 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                 Rectangle trim = renderer.computeTrim(CTabFolderRenderer.PART_BODY, SWT.NONE, 0, 0, 0, 0);
                 if (size.x != oldSize.x)
                     x1 -= trim.width + trim.x - getApi().marginWidth + 2;
-                // rounded top right corner
-                if (!simple)
-                    x1 -= 5;
                 int y1 = Math.min(size.y, oldSize.y);
                 if (size.y != oldSize.y)
                     y1 -= trim.height + trim.y - getApi().marginHeight;
@@ -2484,8 +2489,6 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
     @Override
     public void setBackground(Color color) {
         super.setBackground(color);
-        //TODO: need better caching strategy
-        ((SwtCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
         updateBkImages(true);
         redraw();
     }
@@ -2617,8 +2620,6 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
     @Override
     public void setBackgroundImage(Image image) {
         super.setBackgroundImage(image);
-        //TODO: need better caching strategy
-        ((SwtCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
         redraw();
     }
 
@@ -2934,7 +2935,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                     ((SwtCTabItem) item.getImpl()).x = leftItemEdge;
                     ((SwtCTabItem) item.getImpl()).y = y;
                     ((SwtCTabItem) item.getImpl()).showing = true;
-                    if (showClose || ((SwtCTabItem) item.getImpl()).showClose) {
+                    if (showClose || ((SwtCTabItem) item.getImpl()).showClose || (dirtyIndicatorStyle && ((SwtCTabItem) item.getImpl()).showDirty)) {
                         ((SwtCTabItem) item.getImpl()).closeRect.x = leftItemEdge - renderer.computeTrim(i, SWT.NONE, 0, 0, 0, 0).x;
                         ((SwtCTabItem) item.getImpl()).closeRect.y = onBottom ? size.y - borderBottom - tabHeight + (tabHeight - closeButtonSize.y) / 2 : borderTop + (tabHeight - closeButtonSize.y) / 2;
                     }
@@ -2977,9 +2978,6 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                     ((SwtCTabItem) item.getImpl()).closeRect.x = ((SwtCTabItem) item.getImpl()).x + ((SwtCTabItem) item.getImpl()).width - (edgeTrim.width + edgeTrim.x) - closeButtonSize.x;
                     ((SwtCTabItem) item.getImpl()).closeRect.y = onBottom ? size.y - borderBottom - tabHeight + (tabHeight - closeButtonSize.y) / 2 : borderTop + (tabHeight - closeButtonSize.y) / 2;
                     x = x + ((SwtCTabItem) item.getImpl()).width;
-                    //TODO: fix next item position
-                    if (!simple && i == selectedIndex)
-                        x -= ((SwtCTabFolderRenderer) renderer.getImpl()).curveIndent;
                 }
             }
         }
@@ -3054,7 +3052,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                     ((SwtCTabItem) tab.getImpl()).height = tabHeight;
                     ((SwtCTabItem) tab.getImpl()).width = width;
                     ((SwtCTabItem) tab.getImpl()).closeRect.width = ((SwtCTabItem) tab.getImpl()).closeRect.height = 0;
-                    if (showClose || ((SwtCTabItem) tab.getImpl()).showClose) {
+                    if (showClose || ((SwtCTabItem) tab.getImpl()).showClose || (dirtyIndicatorStyle && ((SwtCTabItem) tab.getImpl()).showDirty)) {
                         Point closeSize = renderer.computeSize(CTabFolderRenderer.PART_CLOSE_BUTTON, SWT.SELECTED, gc, SWT.DEFAULT, SWT.DEFAULT);
                         ((SwtCTabItem) tab.getImpl()).closeRect.width = closeSize.x;
                         ((SwtCTabItem) tab.getImpl()).closeRect.height = closeSize.y;
@@ -3141,8 +3139,8 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
             ((SwtCTabItem) tab.getImpl()).height = tabHeight;
             ((SwtCTabItem) tab.getImpl()).width = width;
             ((SwtCTabItem) tab.getImpl()).closeRect.width = ((SwtCTabItem) tab.getImpl()).closeRect.height = 0;
-            if (showClose || ((SwtCTabItem) tab.getImpl()).showClose) {
-                if (i == selectedIndex || showUnselectedClose) {
+            if (showClose || ((SwtCTabItem) tab.getImpl()).showClose || (dirtyIndicatorStyle && ((SwtCTabItem) tab.getImpl()).showDirty)) {
+                if (i == selectedIndex || showUnselectedClose || (dirtyIndicatorStyle && ((SwtCTabItem) tab.getImpl()).showDirty)) {
                     Point closeSize = renderer.computeSize(CTabFolderRenderer.PART_CLOSE_BUTTON, SWT.NONE, gc, SWT.DEFAULT, SWT.DEFAULT);
                     ((SwtCTabItem) tab.getImpl()).closeRect.width = closeSize.x;
                     ((SwtCTabItem) tab.getImpl()).closeRect.height = closeSize.y;
@@ -3473,14 +3471,11 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
         if (inDispose)
             return;
         checkWidget();
-        setSelectionHighlightGradientColor(null);
         if (selectionBackground == color)
             return;
         if (color == null)
             color = getDisplay().getSystemColor(SELECTION_BACKGROUND);
         selectionBackground = color;
-        //TODO:  need better caching strategy
-        ((SwtCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
         if (selectedIndex > -1)
             redraw();
     }
@@ -3546,8 +3541,6 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
     public void setSelectionBackground(Color[] colors, int[] percents, boolean vertical) {
         checkWidget();
         int colorsLength;
-        //null == no highlight
-        Color highlightBeginColor = null;
         if (colors != null) {
             //The colors array can optionally have an extra entry which describes the highlight top color
             //Thus its either one or two larger than the percents array
@@ -3562,10 +3555,8 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
                     SWT.error(SWT.ERROR_INVALID_ARGUMENT);
                 }
             }
-            //If the colors is exactly two more than percents then last is highlight
-            //Keep track of *real* colorsLength (minus the highlight)
+            //If the colors is exactly two more than percents then last was highlight color (now ignored)
             if (percents.length == colors.length - 2) {
-                highlightBeginColor = colors[colors.length - 1];
                 colorsLength = colors.length - 1;
             } else {
                 colorsLength = colors.length;
@@ -3611,7 +3602,6 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
             selectionGradientPercents = null;
             selectionGradientVertical = false;
             setSelectionBackground((Color) null);
-            setSelectionHighlightGradientColor(null);
         } else {
             selectionGradientColors = new Color[colorsLength];
             for (int i = 0; i < colorsLength; ++i) {
@@ -3623,22 +3613,10 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
             }
             selectionGradientVertical = vertical;
             setSelectionBackground(selectionGradientColors[selectionGradientColors.length - 1]);
-            setSelectionHighlightGradientColor(highlightBeginColor);
         }
         // Refresh with the new settings
         if (selectedIndex > -1)
             redraw();
-    }
-
-    /*
- * Set the color for the highlight start for selected tabs.
- * Update the cache of highlight gradient colors if required.
- */
-    void setSelectionHighlightGradientColor(Color start) {
-        if (inDispose)
-            return;
-        //TODO: need better caching strategy
-        ((SwtCTabFolderRenderer) renderer.getImpl()).setSelectionHighlightGradientColor(start);
     }
 
     /**
@@ -3654,18 +3632,13 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
      */
     public void setSelectionBackground(Image image) {
         checkWidget();
-        setSelectionHighlightGradientColor(null);
         if (image == selectionBgImage)
             return;
         if (image != null) {
             selectionGradientColors = null;
             selectionGradientPercents = null;
-            //TODO: need better caching strategy
-            ((SwtCTabFolderRenderer) renderer.getImpl()).disposeSelectionHighlightGradientColors();
         }
         selectionBgImage = image;
-        //TODO:  need better caching strategy
-        ((SwtCTabFolderRenderer) renderer.getImpl()).createAntialiasColors();
         if (selectedIndex > -1)
             redraw();
     }
@@ -3723,13 +3696,11 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
      * </ul>
      *
      * @since 3.0
+     * @deprecated Curved tabs are no longer supported.
      */
+    @Deprecated(forRemoval = true, since = "2026-06")
     public void setSimple(boolean simple) {
         checkWidget();
-        if (this.simple != simple) {
-            this.simple = simple;
-            updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
-        }
     }
 
     /**
@@ -3897,6 +3868,58 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
         // display close button when mouse hovers
         showUnselectedClose = visible;
         updateFolder(REDRAW);
+    }
+
+    /**
+     * Sets whether the dirty indicator style is enabled. When enabled,
+     * dirty items (marked via {@link CTabItem#setShowDirty(boolean)}) show a
+     * bullet dot at the close button location instead of the traditional
+     * <code>*</code> prefix. The bullet transforms into the close button on hover
+     * when close is enabled for the folder or the individual item.
+     * <p>
+     * Note: the dirty indicator is purely visual. Clicking the bullet does not
+     * close the tab unless close is independently enabled (via the
+     * {@link SWT#CLOSE} style or {@link CTabItem#setShowClose(boolean)}).
+     * </p>
+     * <p>
+     * The default value is <code>false</code> (traditional <code>*</code> prefix
+     * behavior).
+     * </p>
+     *
+     * @param enabled <code>true</code> to enable the dirty indicator style
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @see CTabItem#setShowDirty(boolean)
+     * @since 3.134
+     */
+    public void setDirtyIndicatorStyle(boolean enabled) {
+        checkWidget();
+        if (dirtyIndicatorStyle == enabled)
+            return;
+        dirtyIndicatorStyle = enabled;
+        updateFolder(REDRAW_TABS);
+    }
+
+    /**
+     * Returns whether the dirty indicator style is enabled.
+     *
+     * @return <code>true</code> if the dirty indicator style is enabled
+     *
+     * @exception SWTException <ul>
+     *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+     *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+     * </ul>
+     *
+     * @see #setDirtyIndicatorStyle(boolean)
+     * @since 3.134
+     */
+    public boolean getDirtyIndicatorStyle() {
+        checkWidget();
+        return dirtyIndicatorStyle;
     }
 
     /**
@@ -4159,7 +4182,7 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
         gc.dispose();
         if (fixedTabHeight == SWT.DEFAULT && controls != null && controls.length > 0) {
             for (int i = 0; i < controls.length; i++) {
-                if ((controlAlignments[i] & SWT.WRAP) == 0 && !controls[i].isDisposed() && controls[i].getVisible()) {
+                if (!controls[i].isDisposed() && controls[i].getVisible()) {
                     int topHeight = controls[i].computeSize(SWT.DEFAULT, SWT.DEFAULT).y;
                     topHeight += renderer.computeTrim(CTabFolderRenderer.PART_HEADER, SWT.NONE, 0, 0, 0, 0).height + 1;
                     tabHeight = Math.max(topHeight, tabHeight);
@@ -4265,9 +4288,11 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
             return null;
         if (!((SwtCTabItem) item.getImpl()).showing)
             return null;
-        if ((showClose || ((SwtCTabItem) item.getImpl()).showClose) && ((SwtCTabItem) item.getImpl()).closeRect.contains(x, y)) {
-            //$NON-NLS-1$
-            return SWT.getMessage("SWT_Close");
+        if (((SwtCTabItem) item.getImpl()).closeRect.contains(x, y)) {
+            if (showClose || ((SwtCTabItem) item.getImpl()).showClose) {
+                //$NON-NLS-1$
+                return SWT.getMessage("SWT_Close");
+            }
         }
         return item.getToolTipText();
     }
@@ -4539,10 +4564,6 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
         return single;
     }
 
-    public boolean _simple() {
-        return simple;
-    }
-
     public int _fixedTabHeight() {
         return fixedTabHeight;
     }
@@ -4657,6 +4678,10 @@ public class SwtCTabFolder extends SwtComposite implements ICTabFolder {
 
     public boolean _showUnselectedClose() {
         return showUnselectedClose;
+    }
+
+    public boolean _dirtyIndicatorStyle() {
+        return dirtyIndicatorStyle;
     }
 
     public boolean _showMin() {

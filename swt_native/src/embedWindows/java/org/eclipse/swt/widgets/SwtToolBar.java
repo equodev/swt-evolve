@@ -44,9 +44,9 @@ import org.eclipse.swt.internal.win32.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#toolbar">ToolBar, ToolItem snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#toolbar">ToolBar, ToolItem snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtToolBar extends SwtComposite implements IToolBar {
@@ -1777,7 +1777,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
                     case OS.CDDS_PREPAINT:
                         {
                             long result = OS.CDRF_DODEFAULT;
-                            if (background != -1 || (foreground != -1 && OS.IsWindowEnabled(getApi().handle)) || (getApi().state & CUSTOM_DRAW_ITEM) != 0) {
+                            if (background != -1 || (foreground != -1 && OS.IsWindowEnabled(getApi().handle)) || (getApi().state & CUSTOM_DRAW_ITEM) != 0 || ((SwtDisplay) display.getImpl()).useDarkModeExplorerTheme) {
                                 result = OS.CDRF_NOTIFYITEMDRAW;
                             }
                             return new LRESULT(result);
@@ -1785,10 +1785,23 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
                     case OS.CDDS_ITEMPREPAINT:
                         {
                             long result = OS.TBCDRF_USECDCOLORS;
-                            nmcd.clrBtnFace = getBackgroundPixel(child);
+                            int bgPixel = getBackgroundPixel(child);
+                            nmcd.clrBtnFace = bgPixel;
+                            nmcd.clrBtnHighlight = getDifferentColor(bgPixel);
                             nmcd.clrText = getForegroundPixel(child);
                             OS.MoveMemory(lParam, nmcd, NMTBCUSTOMDRAW.sizeof);
-                            if (child != null && ((SwtToolItem) child.getImpl()).background != -1) {
+                            if (((SwtDisplay) display.getImpl()).useDarkModeExplorerTheme && (nmcd.uItemState & (OS.CDIS_CHECKED | OS.CDIS_HOT)) != 0) {
+                                int pixel;
+                                if ((nmcd.uItemState & OS.CDIS_CHECKED) != 0) {
+                                    pixel = getDifferentColor(bgPixel);
+                                } else {
+                                    pixel = getSlightlyDifferentColor(bgPixel);
+                                }
+                                RECT rect = new RECT(nmcd.left, nmcd.top, nmcd.right, nmcd.bottom);
+                                OS.SetDCBrushColor(nmcd.hdc, pixel);
+                                OS.FillRect(nmcd.hdc, rect, OS.GetStockObject(OS.DC_BRUSH));
+                                result |= OS.TBCDRF_NOBACKGROUND;
+                            } else if (child != null && ((SwtToolItem) child.getImpl()).background != -1) {
                                 RECT rect = new RECT(nmcd.left, nmcd.top, nmcd.right, nmcd.bottom);
                                 OS.SetDCBrushColor(nmcd.hdc, ((SwtToolItem) child.getImpl()).background);
                                 OS.FillRect(nmcd.hdc, rect, OS.GetStockObject(OS.DC_BRUSH));

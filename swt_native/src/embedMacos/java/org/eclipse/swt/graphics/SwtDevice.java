@@ -25,7 +25,7 @@ import org.eclipse.swt.internal.cocoa.*;
  * can have a graphics context (GC) created for them, and they
  * can be drawn on by sending messages to the associated GC.
  *
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public abstract class SwtDevice implements Drawable, IDevice {
 
@@ -628,23 +628,23 @@ public abstract class SwtDevice implements Drawable, IDevice {
      */
     public void init() {
         /* Create the standard colors */
-        COLOR_TRANSPARENT = new Color(this.getApi(), 0xFF, 0xFF, 0xFF, 0);
-        COLOR_BLACK = new Color(this.getApi(), 0, 0, 0);
-        COLOR_DARK_RED = new Color(this.getApi(), 0x80, 0, 0);
-        COLOR_DARK_GREEN = new Color(this.getApi(), 0, 0x80, 0);
-        COLOR_DARK_YELLOW = new Color(this.getApi(), 0x80, 0x80, 0);
-        COLOR_DARK_BLUE = new Color(this.getApi(), 0, 0, 0x80);
-        COLOR_DARK_MAGENTA = new Color(this.getApi(), 0x80, 0, 0x80);
-        COLOR_DARK_CYAN = new Color(this.getApi(), 0, 0x80, 0x80);
-        COLOR_GRAY = new Color(this.getApi(), 0xC0, 0xC0, 0xC0);
-        COLOR_DARK_GRAY = new Color(this.getApi(), 0x80, 0x80, 0x80);
-        COLOR_RED = new Color(this.getApi(), 0xFF, 0, 0);
-        COLOR_GREEN = new Color(this.getApi(), 0, 0xFF, 0);
-        COLOR_YELLOW = new Color(this.getApi(), 0xFF, 0xFF, 0);
-        COLOR_BLUE = new Color(this.getApi(), 0, 0, 0xFF);
-        COLOR_MAGENTA = new Color(this.getApi(), 0xFF, 0, 0xFF);
-        COLOR_CYAN = new Color(this.getApi(), 0, 0xFF, 0xFF);
-        COLOR_WHITE = new Color(this.getApi(), 0xFF, 0xFF, 0xFF);
+        COLOR_TRANSPARENT = new Color(0xFF, 0xFF, 0xFF, 0);
+        COLOR_BLACK = new Color(0, 0, 0);
+        COLOR_DARK_RED = new Color(0x80, 0, 0);
+        COLOR_DARK_GREEN = new Color(0, 0x80, 0);
+        COLOR_DARK_YELLOW = new Color(0x80, 0x80, 0);
+        COLOR_DARK_BLUE = new Color(0, 0, 0x80);
+        COLOR_DARK_MAGENTA = new Color(0x80, 0, 0x80);
+        COLOR_DARK_CYAN = new Color(0, 0x80, 0x80);
+        COLOR_GRAY = new Color(0xC0, 0xC0, 0xC0);
+        COLOR_DARK_GRAY = new Color(0x80, 0x80, 0x80);
+        COLOR_RED = new Color(0xFF, 0, 0);
+        COLOR_GREEN = new Color(0, 0xFF, 0);
+        COLOR_YELLOW = new Color(0xFF, 0xFF, 0);
+        COLOR_BLUE = new Color(0, 0, 0xFF);
+        COLOR_MAGENTA = new Color(0xFF, 0, 0xFF);
+        COLOR_CYAN = new Color(0, 0xFF, 0xFF);
+        COLOR_WHITE = new Color(0xFF, 0xFF, 0xFF);
         paragraphStyle = (NSMutableParagraphStyle) new NSMutableParagraphStyle().alloc().init();
         paragraphStyle.setAlignment(OS.NSTextAlignmentLeft);
         paragraphStyle.setLineBreakMode(OS.NSLineBreakByClipping);

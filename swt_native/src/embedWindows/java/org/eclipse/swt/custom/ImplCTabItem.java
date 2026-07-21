@@ -38,5 +38,7 @@ public interface ImplCTabItem extends ImplItem {
 
     boolean _showClose();
 
+    boolean _showDirty();
+
     boolean _showing();
 }

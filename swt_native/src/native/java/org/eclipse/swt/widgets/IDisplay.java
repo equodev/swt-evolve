@@ -517,6 +517,17 @@ public interface IDisplay extends IDevice, ImplDisplay {
     Point[] getIconSizes();
 
     /**
+     * Informs the operating system that the application prefers a dark
+     * theme for native components such as title bars, scrollbars, and
+     * native dialogs.
+     *
+     * @param preferred true if the dark theme is preferred, false otherwise.
+     *
+     * @since 3.134
+     */
+    void setDarkThemePreferred(boolean preferred);
+
+    /**
      * Returns an array of monitors attached to the device.
      *
      * @return the array of monitors

@@ -32,8 +32,8 @@ import org.eclipse.swt.internal.win32.*;
  * when those instances are no longer required.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: GraphicsExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: GraphicsExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public final class SwtRegion extends SwtResource implements IRegion {
 
@@ -300,9 +300,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
     public Rectangle getBounds() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return applyUsingAnyHandle(regionHandle -> {
-            return Win32DPIUtils.pixelToPoint(getBoundsInPixels(regionHandle.handle()), regionHandle.zoom());
-        });
+        return applyUsingAnyHandle(regionHandle -> Win32DPIUtils.pixelToPoint(getBoundsInPixels(regionHandle.handle()), regionHandle.zoom()));
     }
 
     private Rectangle getBoundsInPixels(long handle) {
@@ -493,8 +491,8 @@ public final class SwtRegion extends SwtResource implements IRegion {
     public boolean isEmpty() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        RECT rect = new RECT();
         return applyUsingAnyHandle(regionHandle -> {
+            RECT rect = new RECT();
             int result = OS.GetRgnBox(regionHandle.handle(), rect);
             if (result == OS.NULLREGION)
                 return true;
@@ -700,11 +698,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
     }
 
     private RegionHandle getRegionHandle(int zoom) {
-        if (!zoomToHandle.containsKey(zoom)) {
-            RegionHandle regionHandle = newRegionHandle(zoom, operations);
-            zoomToHandle.put(zoom, regionHandle);
-        }
-        return zoomToHandle.get(zoom);
+        return zoomToHandle.computeIfAbsent(zoom, z -> newRegionHandle(z, operations));
     }
 
     Region copy() {
@@ -745,7 +739,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
     public String toString() {
         if (isDisposed())
             return "Region {*DISPOSED*}";
-        return "Region {" + zoomToHandle.entrySet().stream().map(entry -> entry.getValue() + "(zoom:" + entry.getKey() + ")").collect(Collectors.joining(","));
+        return "Region {" + zoomToHandle.entrySet().stream().map(entry -> entry.getValue().toString()).collect(Collectors.joining(",")) + "}";
     }
 
     private record RegionHandle(long handle, int zoom) {
@@ -801,19 +795,19 @@ public final class SwtRegion extends SwtResource implements IRegion {
         @Override
         void add(long handle, int zoom) {
             Rectangle bounds = getScaledRectangle(zoom);
-            addInPixels(handle, bounds.x, bounds.y, bounds.width, bounds.height);
+            combineWithRectInPixels(handle, bounds.x, bounds.y, bounds.width, bounds.height, OS.RGN_OR);
         }
 
         @Override
         void subtract(long handle, int zoom) {
             Rectangle bounds = getScaledRectangle(zoom);
-            subtractInPixels(handle, bounds.x, bounds.y, bounds.width, bounds.height);
+            combineWithRectInPixels(handle, bounds.x, bounds.y, bounds.width, bounds.height, OS.RGN_DIFF);
         }
 
         @Override
         void intersect(long handle, int zoom) {
             Rectangle bounds = getScaledRectangle(zoom);
-            intersectInPixels(handle, bounds.x, bounds.y, bounds.width, bounds.height);
+            combineWithRectInPixels(handle, bounds.x, bounds.y, bounds.width, bounds.height, OS.RGN_AND);
         }
 
         @Override
@@ -821,27 +815,11 @@ public final class SwtRegion extends SwtResource implements IRegion {
             throw new UnsupportedOperationException();
         }
 
-        private void addInPixels(long handle, int x, int y, int width, int height) {
+        private static void combineWithRectInPixels(long handle, int x, int y, int width, int height, int mode) {
             if (width < 0 || height < 0)
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
             long rectRgn = OS.CreateRectRgn(x, y, x + width, y + height);
-            OS.CombineRgn(handle, handle, rectRgn, OS.RGN_OR);
-            OS.DeleteObject(rectRgn);
-        }
-
-        private void subtractInPixels(long handle, int x, int y, int width, int height) {
-            if (width < 0 || height < 0)
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-            long rectRgn = OS.CreateRectRgn(x, y, x + width, y + height);
-            OS.CombineRgn(handle, handle, rectRgn, OS.RGN_DIFF);
-            OS.DeleteObject(rectRgn);
-        }
-
-        private void intersectInPixels(long handle, int x, int y, int width, int height) {
-            if (width < 0 || height < 0)
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-            long rectRgn = OS.CreateRectRgn(x, y, x + width, y + height);
-            OS.CombineRgn(handle, handle, rectRgn, OS.RGN_AND);
+            OS.CombineRgn(handle, handle, rectRgn, mode);
             OS.DeleteObject(rectRgn);
         }
 
@@ -854,7 +832,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
 
         private final int[] data;
 
-        public OperationWithArray(OperationStrategy operationStrategy, int[] data) {
+        OperationWithArray(OperationStrategy operationStrategy, int[] data) {
             super(operationStrategy);
             this.data = data;
         }
@@ -866,14 +844,12 @@ public final class SwtRegion extends SwtResource implements IRegion {
 
         @Override
         void add(long handle, int zoom) {
-            int[] points = getScaledPoints(zoom);
-            addInPixels(handle, points);
+            combineWithPolyInPixels(handle, getScaledPoints(zoom), OS.RGN_OR);
         }
 
         @Override
         void subtract(long handle, int zoom) {
-            int[] pointArray = getScaledPoints(zoom);
-            subtractInPixels(handle, pointArray);
+            combineWithPolyInPixels(handle, getScaledPoints(zoom), OS.RGN_DIFF);
         }
 
         @Override
@@ -886,15 +862,9 @@ public final class SwtRegion extends SwtResource implements IRegion {
             throw new UnsupportedOperationException();
         }
 
-        private void addInPixels(long handle, int[] pointArray) {
+        private static void combineWithPolyInPixels(long handle, int[] pointArray, int mode) {
             long polyRgn = OS.CreatePolygonRgn(pointArray, pointArray.length / 2, OS.ALTERNATE);
-            OS.CombineRgn(handle, handle, polyRgn, OS.RGN_OR);
-            OS.DeleteObject(polyRgn);
-        }
-
-        private void subtractInPixels(long handle, int[] pointArray) {
-            long polyRgn = OS.CreatePolygonRgn(pointArray, pointArray.length / 2, OS.ALTERNATE);
-            OS.CombineRgn(handle, handle, polyRgn, OS.RGN_DIFF);
+            OS.CombineRgn(handle, handle, polyRgn, mode);
             OS.DeleteObject(polyRgn);
         }
 
@@ -907,7 +877,7 @@ public final class SwtRegion extends SwtResource implements IRegion {
 
         private final Point data;
 
-        public OperationWithPoint(OperationStrategy operationStrategy, Point data) {
+        OperationWithPoint(OperationStrategy operationStrategy, Point data) {
             super(operationStrategy);
             this.data = data;
         }
@@ -955,23 +925,17 @@ public final class SwtRegion extends SwtResource implements IRegion {
 
         @Override
         void add(long handle, int zoom) {
-            applyUsingTemporaryHandle(zoom, operations, regionHandle -> {
-                return OS.CombineRgn(handle, handle, regionHandle.handle(), OS.RGN_OR);
-            });
+            applyUsingTemporaryHandle(zoom, operations, regionHandle -> OS.CombineRgn(handle, handle, regionHandle.handle(), OS.RGN_OR));
         }
 
         @Override
         void subtract(long handle, int zoom) {
-            applyUsingTemporaryHandle(zoom, operations, regionHandle -> {
-                return OS.CombineRgn(handle, handle, regionHandle.handle(), OS.RGN_DIFF);
-            });
+            applyUsingTemporaryHandle(zoom, operations, regionHandle -> OS.CombineRgn(handle, handle, regionHandle.handle(), OS.RGN_DIFF));
         }
 
         @Override
         void intersect(long handle, int zoom) {
-            applyUsingTemporaryHandle(zoom, operations, regionHandle -> {
-                return OS.CombineRgn(handle, handle, regionHandle.handle(), OS.RGN_AND);
-            });
+            applyUsingTemporaryHandle(zoom, operations, regionHandle -> OS.CombineRgn(handle, handle, regionHandle.handle(), OS.RGN_AND));
         }
 
         @Override

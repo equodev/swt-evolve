@@ -36,7 +36,7 @@ import org.eclipse.swt.internal.gtk.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  *
  * @since 3.4
  * @noextend This class is not intended to be subclassed by clients.
@@ -258,7 +258,7 @@ public class SwtIME extends SwtWidget implements IIME {
     }
 
     @Override
-    long gtk_button_press_event(long widget, long event) {
+    long gtk3_button_press_event(long widget, long event) {
         if (!isInlineEnabled())
             return 0;
         long imHandle = imHandle();

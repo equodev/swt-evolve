@@ -39,9 +39,9 @@ import dev.equo.swt.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#spinner">Spinner snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#spinner">Spinner snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  *
  * @since 3.1
  * @noextend This class is not intended to be subclassed by clients.
@@ -238,12 +238,6 @@ public class DartSpinner extends DartComposite implements ISpinner {
     @Override
     void deregister() {
         super.deregister();
-    }
-
-    @Override
-    public Cursor findCursor() {
-        Cursor cursor = super.findCursor();
-        return cursor;
     }
 
     /**

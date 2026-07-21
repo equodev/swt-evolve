@@ -73,9 +73,9 @@ import org.eclipse.swt.internal.win32.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#tree">Tree, TreeItem, TreeColumn snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#tree">Tree, TreeItem, TreeColumn snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtTree extends SwtComposite implements ITree {
@@ -6090,8 +6090,12 @@ public class SwtTree extends SwtComposite implements ITree {
                     }
                 }
             }
-            long hImageList = imageList.getHandle(getAutoscalingZoom());
-            OS.SendMessage(getApi().handle, OS.TVM_SETIMAGELIST, OS.TVSIL_NORMAL, hImageList);
+            // Image list is only set at OS when the first column contains images,
+            // thus check if an image list is set at the OS to refresh and otherwise skip it
+            if (OS.SendMessage(getApi().handle, OS.TVM_GETIMAGELIST, OS.TVSIL_NORMAL, 0) != 0) {
+                long hImageList = imageList.getHandle(getAutoscalingZoom());
+                OS.SendMessage(getApi().handle, OS.TVM_SETIMAGELIST, OS.TVSIL_NORMAL, hImageList);
+            }
         }
         if (hwndHeader != 0) {
             if (headerImageList != null) {
@@ -7750,7 +7754,11 @@ public class SwtTree extends SwtComposite implements ITree {
             LRESULT result = wmNotifyToolTip(hdr, wParam, lParam);
             if (result != null)
                 return result;
+        } else if (hdr.hwndFrom == headerToolTipHandle && headerToolTipHandle != 0) {
+            // if it's the header, let Windows do its thing.
         } else if (hdr.code == OS.TTN_SHOW) {
+            // Fallback: it's not about the item or about the header but it's still about a
+            // tooltip.
             return positionTooltip(hdr, wParam, lParam, false);
         }
         if (hdr.hwndFrom == hwndHeader && hwndHeader != 0) {

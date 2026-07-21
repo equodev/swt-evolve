@@ -37,6 +37,14 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).borderVisible = value;
     }
 
+    public boolean getDirtyIndicatorStyle() {
+        return ((DartCTabFolder) impl).getDirtyIndicatorStyle();
+    }
+
+    public void setDirtyIndicatorStyle(boolean value) {
+        ((DartCTabFolder) impl).dirtyIndicatorStyle = value;
+    }
+
     public Color[] getGradientColors() {
         Color[] values = ((DartCTabFolder) impl).gradientColors;
         if (values == null)

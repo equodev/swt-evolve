@@ -39,8 +39,8 @@ import org.eclipse.swt.internal.cocoa.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#tracker">Tracker snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#tracker">Tracker snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtTracker extends SwtWidget implements ITracker {
@@ -807,7 +807,7 @@ public class SwtTracker extends SwtWidget implements ITracker {
             NSScreen screen = new NSScreen(screens.objectAtIndex(i));
             NSRect frame = screen.frame();
             NSWindow window = (NSWindow) new NSWindow().alloc();
-            window = window.initWithContentRect(frame, OS.NSBorderlessWindowMask, OS.NSBackingStoreBuffered, false);
+            window = window.initWithContentRect(frame, OS.NSWindowStyleMaskBorderless, OS.NSBackingStoreBuffered, false);
             window.setOpaque(false);
             window.setLevel(OS.NSStatusWindowLevel);
             window.setContentView(null);

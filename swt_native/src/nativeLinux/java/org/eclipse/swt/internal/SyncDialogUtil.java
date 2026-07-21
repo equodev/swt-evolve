@@ -53,7 +53,7 @@ public class SyncDialogUtil {
      * therefore essential that callers use the address of the {@link Callback}
      * as address for the {@code AsyncReadyCallback} object.
      */
-    static public long run(Display display, AsyncReadyCallback callback) {
+    public static long run(Display display, AsyncReadyCallback callback) {
         initializeResponseCallback();
         dialogAsyncFinish = callback::await;
         callback.async(dialogResponseCallback.getAddress());
@@ -72,7 +72,7 @@ public class SyncDialogUtil {
      *
      * @return the response_id from the dialog presented to the user
      */
-    static public int run(Display display, long handle, boolean isNativeDialog) {
+    public static int run(Display display, long handle, boolean isNativeDialog) {
         initializeResponseCallback();
         OS.g_signal_connect(handle, OS.response, dialogResponseCallback.getAddress(), 0);
         if (isNativeDialog) {
@@ -93,7 +93,7 @@ public class SyncDialogUtil {
             }
         }
         disposeResponseCallback();
-        return (int) responseID;
+        return responseID;
     }
 
     /**

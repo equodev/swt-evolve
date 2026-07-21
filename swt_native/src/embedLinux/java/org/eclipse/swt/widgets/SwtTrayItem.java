@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2017 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -36,8 +36,8 @@ import org.eclipse.swt.internal.gtk4.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#tray">Tray, TrayItem snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#tray">Tray, TrayItem snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  *
  * @since 3.0
  * @noextend This class is not intended to be subclassed by clients.
@@ -261,16 +261,14 @@ public class SwtTrayItem extends SwtItem implements ITrayItem {
 	*/
         long nextEvent = GDK.gdk_event_peek();
         if (nextEvent != 0) {
-            int nextEventType = GDK.GDK_EVENT_TYPE(nextEvent);
+            int nextEventType = GDK.gdk_event_get_event_type(nextEvent);
             long currEvent = GTK3.gtk_get_current_event();
             int currEventType = 0;
             if (currEvent != 0) {
-                currEventType = GDK.GDK_EVENT_TYPE(currEvent);
+                currEventType = GDK.gdk_event_get_event_type(currEvent);
                 gdk_event_free(currEvent);
             }
             gdk_event_free(nextEvent);
-            currEventType = SwtControl.fixGdkEventTypeValues(currEventType);
-            nextEventType = SwtControl.fixGdkEventTypeValues(nextEventType);
             if (currEventType == GDK.GDK_BUTTON_PRESS && nextEventType == GDK.GDK_2BUTTON_PRESS) {
                 sendSelectionEvent(SWT.DefaultSelection);
             }
@@ -279,7 +277,7 @@ public class SwtTrayItem extends SwtItem implements ITrayItem {
     }
 
     @Override
-    long gtk_button_press_event(long widget, long event) {
+    long gtk3_button_press_event(long widget, long event) {
         int eventType = GDK.gdk_event_get_event_type(event);
         int[] eventButton = new int[1];
         GDK.gdk_event_get_button(event, eventButton);

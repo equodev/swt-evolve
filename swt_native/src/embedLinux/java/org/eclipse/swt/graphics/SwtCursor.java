@@ -43,8 +43,8 @@ import org.eclipse.swt.internal.gtk.*;
  * Note: Only one of the above styles may be specified.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#cursor">Cursor snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#cursor">Cursor snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public final class SwtCursor extends SwtResource implements ICursor {
 
@@ -103,71 +103,71 @@ public final class SwtCursor extends SwtResource implements ICursor {
         String name1 = null, name2 = null;
         switch(style) {
             case SWT.CURSOR_APPSTARTING:
-                name1 = "left_ptr_watch";
+                name1 = GTK.GTK4 ? "progress" : "left_ptr_watch";
                 break;
             case SWT.CURSOR_ARROW:
-                name1 = "left_ptr";
+                name1 = GTK.GTK4 ? "default" : "left_ptr";
                 break;
             case SWT.CURSOR_WAIT:
-                name1 = "watch";
+                name1 = GTK.GTK4 ? "wait" : "watch";
                 break;
             case SWT.CURSOR_CROSS:
                 name1 = "crosshair";
                 break;
             case SWT.CURSOR_HAND:
-                name1 = "hand2";
+                name1 = GTK.GTK4 ? "pointer" : "hand2";
                 break;
             case SWT.CURSOR_HELP:
-                name1 = "question_arrow";
+                name1 = GTK.GTK4 ? "help" : "question_arrow";
                 break;
             case SWT.CURSOR_SIZEALL:
-                name1 = "fleur";
+                name1 = GTK.GTK4 ? "move" : "fleur";
                 break;
             case SWT.CURSOR_SIZENESW:
-                name1 = "size_bdiag";
+                name1 = GTK.GTK4 ? "nesw-resize" : "size_bdiag";
                 break;
             case SWT.CURSOR_SIZENS:
-                name1 = "sb_v_double_arrow";
+                name1 = GTK.GTK4 ? "ns-resize" : "sb_v_double_arrow";
                 break;
             case SWT.CURSOR_SIZENWSE:
-                name1 = "size_fdiag";
+                name1 = GTK.GTK4 ? "nwse-resize" : "size_fdiag";
                 break;
             case SWT.CURSOR_SIZEWE:
-                name1 = "sb_h_double_arrow";
+                name1 = GTK.GTK4 ? "ew-resize" : "sb_h_double_arrow";
                 break;
             case SWT.CURSOR_SIZEN:
-                name1 = "top_side";
+                name1 = GTK.GTK4 ? "n-resize" : "top_side";
                 break;
             case SWT.CURSOR_SIZES:
-                name1 = "bottom_side";
+                name1 = GTK.GTK4 ? "s-resize" : "bottom_side";
                 break;
             case SWT.CURSOR_SIZEE:
-                name1 = "right_side";
+                name1 = GTK.GTK4 ? "e-resize" : "right_side";
                 break;
             case SWT.CURSOR_SIZEW:
-                name1 = "left_side";
+                name1 = GTK.GTK4 ? "w-resize" : "left_side";
                 break;
             case SWT.CURSOR_SIZENE:
-                name1 = "top_right_corner";
+                name1 = GTK.GTK4 ? "ne-resize" : "top_right_corner";
                 break;
             case SWT.CURSOR_SIZESE:
-                name1 = "bottom_right_corner";
+                name1 = GTK.GTK4 ? "se-resize" : "bottom_right_corner";
                 break;
             case SWT.CURSOR_SIZESW:
-                name1 = "bottom_left_corner";
+                name1 = GTK.GTK4 ? "sw-resize" : "bottom_left_corner";
                 break;
             case SWT.CURSOR_SIZENW:
-                name1 = "top_left_corner";
+                name1 = GTK.GTK4 ? "nw-resize" : "top_left_corner";
                 break;
             case SWT.CURSOR_UPARROW:
-                name1 = "sb_up_arrow";
+                name1 = GTK.GTK4 ? "default" : "sb_up_arrow";
                 name2 = "up-arrow";
                 break;
             case SWT.CURSOR_IBEAM:
-                name1 = "xterm";
+                name1 = GTK.GTK4 ? "text" : "xterm";
                 break;
             case SWT.CURSOR_NO:
-                name1 = "crossed_circle";
+                name1 = GTK.GTK4 ? "not-allowed" : "crossed_circle";
                 name2 = "not-allowed";
                 break;
             default:

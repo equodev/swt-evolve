@@ -61,9 +61,9 @@ import dev.equo.swt.*;
  * </p>
  *
  * @see org.eclipse.swt.events.PaintEvent
- * @see <a href="http://www.eclipse.org/swt/snippets/#gc">GC snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Examples: GraphicsExample, PaintExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#gc">GC snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Examples: GraphicsExample, PaintExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public final class DartGC extends DartResource implements IGC {
 
@@ -1090,7 +1090,18 @@ public final class DartGC extends DartResource implements IGC {
     }
 
     private void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, DartImage.ImageHandle tempImageHandle) {
-        if (data.gdipGraphics != 0) {
+        if (data.gdipGraphics == 0) {
+            switch(srcImage.type) {
+                case SWT.BITMAP:
+                    drawBitmap(srcImage, tempImageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+                    break;
+                case SWT.ICON:
+                    drawIcon(tempImageHandle.handle(), srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+                    break;
+            }
+            return;
+        }
+        try {
             if (srcWidth == 0 && srcHeight == 0) {
             }
             if (simple) {
@@ -1102,15 +1113,7 @@ public final class DartGC extends DartResource implements IGC {
             }
             if ((data.style & SWT.MIRRORED) != 0) {
             }
-            return;
-        }
-        switch(srcImage.type) {
-            case SWT.BITMAP:
-                drawBitmap(srcImage, tempImageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
-                break;
-            case SWT.ICON:
-                drawIcon(tempImageHandle.handle(), srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
-                break;
+        } finally {
         }
     }
 
@@ -3408,7 +3411,7 @@ public final class DartGC extends DartResource implements IGC {
 
         SetBackgroundOperation(Color color) {
             RGB rgb = color.getRGB();
-            this.color = new Color(color.getDevice(), rgb);
+            this.color = new Color(rgb);
             registerForDisposal(this.color);
         }
 
@@ -3780,7 +3783,7 @@ public final class DartGC extends DartResource implements IGC {
 
         SetForegroundOperation(Color color) {
             RGB rgb = color.getRGB();
-            this.color = new Color(color.getDevice(), rgb);
+            this.color = new Color(rgb);
             registerForDisposal(this.color);
         }
 
@@ -3961,7 +3964,11 @@ public final class DartGC extends DartResource implements IGC {
 
         @Override
         void apply() {
-            setLineAttributesInPixels(attributes);
+            setLineAttributesInPixels(convertToPixels(attributes));
+        }
+
+        private LineAttributes convertToPixels(LineAttributes attributes) {
+            return null;
         }
     }
 
@@ -4026,10 +4033,6 @@ public final class DartGC extends DartResource implements IGC {
                     changed = true;
             }
             if (changed) {
-                float[] newDashes = new float[dashes.length];
-                for (int i = 0; i < newDashes.length; i++) {
-                }
-                dashes = newDashes;
                 mask |= LINE_STYLE;
             } else {
                 dashes = lineDashes;
@@ -4519,6 +4522,8 @@ public final class DartGC extends DartResource implements IGC {
     }
 
     Point stringExtentInPixels(String string) {
+        if (string == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
         checkNonDisposed();
         checkGC(FONT);
         int length = string.length();

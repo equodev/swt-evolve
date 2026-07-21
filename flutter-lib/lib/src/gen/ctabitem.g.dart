@@ -30,6 +30,7 @@ VCTabItem _$VCTabItemFromJson(Map<String, dynamic> json) => VCTabItem()
       ? null
       : VColor.fromJson(json['selectionForeground'] as Map<String, dynamic>)
   ..showClose = json['showClose'] as bool?
+  ..showDirty = json['showDirty'] as bool?
   ..showing = json['showing'] as bool?
   ..toolTipText = json['toolTipText'] as String?;
 
@@ -45,6 +46,7 @@ Map<String, dynamic> _$VCTabItemToJson(VCTabItem instance) => <String, dynamic>{
   'foreground': ?instance.foreground,
   'selectionForeground': ?instance.selectionForeground,
   'showClose': ?instance.showClose,
+  'showDirty': ?instance.showDirty,
   'showing': ?instance.showing,
   'toolTipText': ?instance.toolTipText,
 };

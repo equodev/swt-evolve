@@ -38,9 +38,9 @@ import org.eclipse.swt.internal.gtk.*;
  * </p>
  *
  * @see Composite
- * @see <a href="http://www.eclipse.org/swt/snippets/#canvas">Canvas snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#canvas">Canvas snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public class SwtCanvas extends SwtComposite implements ICanvas {
 
@@ -157,13 +157,13 @@ public class SwtCanvas extends SwtComposite implements ICanvas {
     }
 
     @Override
-    long gtk_button_press_event(long widget, long event) {
+    long gtk3_button_press_event(long widget, long event) {
         if (ime != null) {
-            long result = ((SwtIME) ime.getImpl()).gtk_button_press_event(widget, event);
+            long result = ((SwtIME) ime.getImpl()).gtk3_button_press_event(widget, event);
             if (result != 0)
                 return result;
         }
-        return super.gtk_button_press_event(widget, event);
+        return super.gtk3_button_press_event(widget, event);
     }
 
     @Override

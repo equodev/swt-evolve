@@ -25,6 +25,8 @@ public interface ImplMenu extends ImplWidget {
 
     long _modelHandle();
 
+    long _popoverHandle();
+
     long _actionGroup();
 
     long _shortcutController();

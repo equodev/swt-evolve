@@ -31,7 +31,7 @@ import com.dslplatform.json.JsonAttribute;
  * object has been inserted.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 @CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
 public class StyleRange extends TextStyle implements Cloneable {

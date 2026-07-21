@@ -35,7 +35,7 @@ import dev.equo.swt.*;
  *
  * @see DragSourceEffect
  * @see DragSourceEvent
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  *
  * @since 3.3
  */

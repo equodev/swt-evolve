@@ -19,7 +19,6 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.gdip.*;
-import org.eclipse.swt.internal.win32.*;
 
 /**
  * Instances of this class represent patterns to use while drawing. Patterns
@@ -34,9 +33,9 @@ import org.eclipse.swt.internal.win32.*;
  * which may not be available on some platforms.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#path">Path, Pattern snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: GraphicsExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#path">Path, Pattern snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: GraphicsExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  *
  * @since 3.1
  */

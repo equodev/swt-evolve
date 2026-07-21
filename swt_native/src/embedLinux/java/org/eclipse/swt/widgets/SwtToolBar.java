@@ -46,9 +46,9 @@ import org.eclipse.swt.internal.gtk4.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#toolbar">ToolBar, ToolItem snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#toolbar">ToolBar, ToolItem snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtToolBar extends SwtComposite implements IToolBar {
@@ -184,22 +184,7 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
             wHint = 0;
         if (hHint != SWT.DEFAULT && hHint < 0)
             hHint = 0;
-        Point size = null;
-        if (GTK.GTK4) {
-            size = computeNativeSize(getApi().handle, wHint, hHint, changed);
-        } else {
-            /*
-		 * Feature in GTK. Size of toolbar is calculated incorrectly
-		 * and appears as just the overflow arrow, if the arrow is enabled
-		 * to display. The fix is to disable it before the computation of
-		 * size and enable it if WRAP style is set.
-		 */
-            GTK3.gtk_toolbar_set_show_arrow(getApi().handle, false);
-            size = computeNativeSize(getApi().handle, wHint, hHint, changed);
-            if ((getApi().style & SWT.WRAP) != 0)
-                GTK3.gtk_toolbar_set_show_arrow(getApi().handle, true);
-        }
-        return size;
+        return computeNativeSize(getApi().handle, wHint, hHint, changed);
     }
 
     @Override
@@ -641,20 +626,9 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 
     @Override
     int setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
-        if (!GTK.GTK4)
-            GTK3.gtk_toolbar_set_show_arrow(getApi().handle, false);
         int result = super.setBounds(x, y, width, height, move, resize);
         if ((result & RESIZED) != 0)
             relayout();
-        if ((getApi().style & SWT.WRAP) != 0) {
-            if (GTK.GTK4) {
-                /* TODO: GTK4 will require us to implement our own
-			 * overflow menu. May require the use of the "toolbar" style class
-			 * applied to the widget.  */
-            } else {
-                GTK3.gtk_toolbar_set_show_arrow(getApi().handle, true);
-            }
-        }
         return result;
     }
 

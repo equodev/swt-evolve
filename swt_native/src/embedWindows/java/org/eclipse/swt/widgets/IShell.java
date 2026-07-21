@@ -46,6 +46,17 @@ public interface IShell extends IDecorations {
     void close();
 
     /**
+     * Informs the operating system that the application prefers a dark
+     * theme for native components such as title bars, scrollbars, and
+     * native dialogs.
+     *
+     * @param preferred true if the dark theme is preferred, false otherwise.
+     *
+     * @since 3.134
+     */
+    void setDarkThemePreferred(boolean preferred);
+
+    /**
      * If the receiver is visible, moves it to the top of the
      * drawing order for the display on which it was created
      * (so that all other shells on that display, which are not

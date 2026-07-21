@@ -32,7 +32,7 @@ import dev.equo.swt.Config;
  * <pre><code>
  * Canvas canvas = new Canvas(shell, SWT.BORDER);
  * canvas.setBounds(10, 10, 300, 300);
- * Color color = new Color(null, 255, 0, 0);
+ * Color color = new Color(255, 0, 0);
  * canvas.setBackground(color);
  * ControlEditor editor = new ControlEditor (canvas);
  * // The editor will be a button in the bottom right corner of the canvas.
@@ -47,7 +47,7 @@ import dev.equo.swt.Config;
  * 		RGB rgb = dialog.getRGB();
  * 		if (rgb != null) {
  * 			if (color != null) color.dispose();
- * 			color = new Color(null, rgb);
+ * 			color = new Color(rgb);
  * 			canvas.setBackground(color);
  * 		}
  *
@@ -64,7 +64,7 @@ import dev.equo.swt.Config;
  * editor.setEditor (button);
  * </code></pre>
  *
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public class ControlEditor {
 

@@ -46,9 +46,9 @@ import org.eclipse.swt.internal.gtk4.*;
  * within the SWT implementation.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#control">Control snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#control">Control snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public abstract class SwtControl extends SwtWidget implements Drawable, IControl {
@@ -321,41 +321,6 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return gtk_widget_get_surface(eventHandle);
     }
 
-    /**
-     * GdkEventType constants different on GTK4 and GTK3.
-     * This checks for GTK versions and return the correct constants defined in GDK.java
-     * @return constant defined
-     */
-    static int fixGdkEventTypeValues(int eventType) {
-        if (GTK.GTK4) {
-            switch(eventType) {
-                case GDK.GDK4_EXPOSE:
-                    return GDK.GDK_EXPOSE;
-                case GDK.GDK4_MOTION_NOTIFY:
-                    return GDK.GDK_MOTION_NOTIFY;
-                case GDK.GDK4_BUTTON_PRESS:
-                    return GDK.GDK_BUTTON_PRESS;
-                case GDK.GDK4_BUTTON_RELEASE:
-                    return GDK.GDK_BUTTON_RELEASE;
-                case GDK.GDK4_KEY_PRESS:
-                    return GDK.GDK_KEY_PRESS;
-                case GDK.GDK4_ENTER_NOTIFY:
-                    return GDK.GDK_ENTER_NOTIFY;
-                case GDK.GDK4_LEAVE_NOTIFY:
-                    return GDK.GDK_LEAVE_NOTIFY;
-                case GDK.GDK4_FOCUS_CHANGE:
-                    return GDK.GDK_FOCUS_CHANGE;
-                case GDK.GDK4_CONFIGURE:
-                    return GDK.GDK_CONFIGURE;
-                case GDK.GDK4_MAP:
-                    return GDK.GDK_MAP;
-                case GDK.GDK4_UNMAP:
-                    return GDK.GDK_UNMAP;
-            }
-        }
-        return eventType;
-    }
-
     void fixFocus(Control focusControl) {
         Shell shell = getShell();
         Control control = this.getApi();
@@ -586,6 +551,26 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     @Override
+    void snapshotPaint(long handle, long snapshot) {
+        /*
+	 * Guard against creating an empty Cairo render node when there are no paint
+	 * listeners. gtk_snapshot_append_cairo() appends a node immediately; leaving it
+	 * empty/unfinished causes it to obscure render nodes already in the snapshot
+	 * (e.g. GtkTreeView content snapshotted before this call).
+	 */
+        if (!hooksPaint())
+            return;
+        super.snapshotPaint(handle, snapshot);
+    }
+
+    @Override
+    void snapshotToDrawAfterChildren(long handle, long snapshot) {
+        // Leaf controls (Button, Label, etc.) paint after children so SWT.Paint listeners
+        // draw on top of the native widget appearance, matching GTK3 DRAW (after=true) behavior.
+        snapshotPaint(handle, snapshot);
+    }
+
+    @Override
     long hoverProc(long widget) {
         int[] x = new int[1], y = new int[1], mask = new int[1];
         if (GTK.GTK4) {
@@ -666,18 +651,52 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             error(SWT.ERROR_INVALID_ARGUMENT);
         long topHandle = topHandle();
         GTK.gtk_widget_realize(topHandle);
-        /*
-	 * Feature in GTK: gtk_widget_draw() will only draw if the
-	 * widget's priv->alloc_needed field is set to TRUE. Since
-	 * this field is private and inaccessible, get and set the
-	 * allocation to trigger it to be TRUE. See bug 530969.
-	 */
-        GtkAllocation allocation = new GtkAllocation();
-        GTK.gtk_widget_get_allocation(topHandle, allocation);
-        // Prevent allocation warnings
-        GTK.gtk_widget_get_preferred_size(topHandle, null, null);
-        GTK3.gtk_widget_size_allocate(topHandle, allocation);
-        GTK3.gtk_widget_draw(topHandle, gc.handle);
+        if (GTK.GTK4) {
+            /*
+         * In GTK4 gtk_widget_draw() has been removed. Rendering is now
+         * done via GtkSnapshot and the GskRenderNode pipeline. Snapshot the widget,
+         * extract the render node, then draw it onto the GC's Cairo context using
+         * gsk_render_node_draw().
+         */
+            long widgetPaintable = GTK4.gtk_widget_paintable_new(topHandle);
+            if (widgetPaintable == 0)
+                return false;
+            try {
+                int width = GTK4.gtk_widget_get_width(topHandle);
+                int height = GTK4.gtk_widget_get_height(topHandle);
+                long snapshot = GTK4.gtk_snapshot_new();
+                if (snapshot == 0)
+                    return false;
+                try {
+                    GTK4.gdk_paintable_snapshot(widgetPaintable, snapshot, width, height);
+                    long renderNode = GTK4.gtk_snapshot_free_to_node(snapshot);
+                    // freed by gtk_snapshot_free_to_node
+                    snapshot = 0;
+                    if (renderNode == 0)
+                        return false;
+                    GTK4.gsk_render_node_draw(renderNode, gc.handle);
+                    GTK4.gsk_render_node_unref(renderNode);
+                } finally {
+                    if (snapshot != 0)
+                        OS.g_object_unref(snapshot);
+                }
+            } finally {
+                OS.g_object_unref(widgetPaintable);
+            }
+        } else {
+            /*
+		 * In GTK 3 gtk_widget_draw() will only draw if the
+		 * widget's priv->alloc_needed field is set to TRUE. Since
+		 * this field is private and inaccessible, get and set the
+		 * allocation to trigger it to be TRUE. See bug 530969.
+		 */
+            GtkAllocation allocation = new GtkAllocation();
+            GTK.gtk_widget_get_allocation(topHandle, allocation);
+            // Prevent allocation warnings
+            GTK.gtk_widget_get_preferred_size(topHandle, null, null);
+            GTK3.gtk_widget_size_allocate(topHandle, allocation);
+            GTK3.gtk_widget_draw(topHandle, gc.handle);
+        }
         return true;
     }
 
@@ -2776,7 +2795,6 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 if (eventPtr == 0)
                     return dragOnTimeout;
                 int eventType = GDK.gdk_event_get_event_type(eventPtr);
-                eventType = fixGdkEventTypeValues(eventType);
                 switch(eventType) {
                     case GDK.GDK_MOTION_NOTIFY:
                         {
@@ -3538,8 +3556,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     @Override
-    long gtk_button_press_event(long widget, long event) {
-        return gtk_button_press_event(widget, event, true);
+    long gtk3_button_press_event(long widget, long event) {
+        return gtk3_button_press_event(widget, event, true);
     }
 
     boolean wantDragDropDetection() {
@@ -3552,7 +3570,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         return hooks(SWT.DragDetect);
     }
 
-    long gtk_button_press_event(long widget, long event, boolean sendMouseDown) {
+    long gtk3_button_press_event(long widget, long event, boolean sendMouseDown) {
         mouseDown = true;
         double[] eventX = new double[1];
         double[] eventY = new double[1];
@@ -3588,7 +3606,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             ((SwtDisplay) display.getImpl()).clickCount = 1;
             long nextEvent = GDK.gdk_event_peek();
             if (nextEvent != 0) {
-                int peekedEventType = GDK.GDK_EVENT_TYPE(nextEvent);
+                int peekedEventType = GDK.gdk_event_get_event_type(nextEvent);
                 if (peekedEventType == GDK.GDK_2BUTTON_PRESS)
                     ((SwtDisplay) display.getImpl()).clickCount = 2;
                 if (peekedEventType == GDK.GDK_3BUTTON_PRESS)
@@ -3650,7 +3668,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     @Override
-    long gtk_button_release_event(long widget, long event) {
+    long gtk3_button_release_event(long widget, long event) {
         mouseDown = false;
         double[] eventX = new double[1];
         double[] eventY = new double[1];
@@ -3777,7 +3795,6 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     @Override
     long gtk3_event_after(long widget, long gdkEvent) {
         int eventType = GDK.gdk_event_get_event_type(gdkEvent);
-        eventType = fixGdkEventTypeValues(eventType);
         switch(eventType) {
             case GDK.GDK_BUTTON_PRESS:
                 {
@@ -4130,7 +4147,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     @Override
-    long gtk_leave_notify_event(long widget, long event) {
+    long gtk3_leave_notify_event(long widget, long event) {
         if (((SwtDisplay) display.getImpl()).currentControl != this.getApi())
             return 0;
         int[] state = new int[1];
@@ -4169,7 +4186,6 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         long eventPtr = GTK3.gtk_get_current_event();
         if (eventPtr != 0) {
             int type = GDK.gdk_event_get_event_type(eventPtr);
-            type = fixGdkEventTypeValues(type);
             if (type == GDK.GDK_KEY_PRESS) {
                 Control focusControl = display.getFocusControl();
                 long focusHandle = focusControl != null ? ((SwtControl) focusControl.getImpl()).focusHandle() : 0;
@@ -4212,7 +4228,7 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
     }
 
     @Override
-    long gtk_motion_notify_event(long widget, long event) {
+    long gtk3_motion_notify_event(long widget, long event) {
         double[] eventX = new double[1];
         double[] eventY = new double[1];
         GDK.gdk_event_get_coords(event, eventX, eventY);
@@ -4236,17 +4252,13 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
                 int eventType = GDK.gdk_event_get_event_type(event);
                 if (eventType == GDK.GDK_3BUTTON_PRESS)
                     return 0;
-                Point scaledEvent = new Point((int) eventX[0], (int) eventY[0]);
-                int[] eventButton = new int[1];
+                // Use the original mouseDown coordinates and button from the queued event,
+                // not the current motion event position (which is past the drag threshold
+                // and may be off the tab label, causing ctf.getItem() lookups to fail).
+                Event mouseDownEvent = dragDetectionQueue.getFirst();
                 int[] eventState = new int[1];
-                if (GTK.GTK4) {
-                    eventButton[0] = GDK.gdk_button_event_get_button(event);
-                    eventState[0] = GDK.gdk_event_get_modifier_state(event);
-                } else {
-                    GDK.gdk_event_get_button(event, eventButton);
-                    GDK.gdk_event_get_state(event, eventState);
-                }
-                if (sendDragEvent(eventButton[0], eventState[0], scaledEvent.x, scaledEvent.y, false)) {
+                GDK.gdk_event_get_state(event, eventState);
+                if (sendDragEvent(mouseDownEvent.button, eventState[0], mouseDownEvent.x, mouseDownEvent.y, false)) {
                     return 1;
                 }
             }
@@ -4258,28 +4270,22 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
         double x, y;
         int[] state = new int[1];
         boolean isHint = false;
-        if (GTK.GTK4) {
-            state[0] = GDK.gdk_event_get_modifier_state(event);
-            x = eventX[0];
-            y = eventY[0];
-        } else {
-            double[] eventRX = new double[1];
-            double[] eventRY = new double[1];
-            GDK.gdk_event_get_root_coords(event, eventRX, eventRY);
-            x = eventRX[0];
-            y = eventRY[0];
-            GdkEventMotion gdkEvent = new GdkEventMotion();
-            GTK3.memmove(gdkEvent, event, GdkEventMotion.sizeof);
-            state[0] = gdkEvent.state;
-            isHint = gdkEvent.is_hint != 0;
-            if (isHint) {
-                int[] pointer_x = new int[1], pointer_y = new int[1], mask = new int[1];
-                long window = eventWindow();
-                ((SwtDisplay) display.getImpl()).getWindowPointerPosition(window, pointer_x, pointer_y, mask);
-                x = pointer_x[0];
-                y = pointer_y[0];
-                state[0] = mask[0];
-            }
+        double[] eventRX = new double[1];
+        double[] eventRY = new double[1];
+        GDK.gdk_event_get_root_coords(event, eventRX, eventRY);
+        x = eventRX[0];
+        y = eventRY[0];
+        GdkEventMotion gdkEvent = new GdkEventMotion();
+        GTK3.memmove(gdkEvent, event, GdkEventMotion.sizeof);
+        state[0] = gdkEvent.state;
+        isHint = gdkEvent.is_hint != 0;
+        if (isHint) {
+            int[] pointer_x = new int[1], pointer_y = new int[1], mask = new int[1];
+            long window = eventWindow();
+            ((SwtDisplay) display.getImpl()).getWindowPointerPosition(window, pointer_x, pointer_y, mask);
+            x = pointer_x[0];
+            y = pointer_y[0];
+            state[0] = mask[0];
         }
         if (this.getApi() != ((SwtDisplay) display.getImpl()).currentControl) {
             if (((SwtDisplay) display.getImpl()).currentControl != null && !((SwtDisplay) display.getImpl()).currentControl.isDisposed()) {

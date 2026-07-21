@@ -85,8 +85,8 @@ import org.eclipse.swt.internal.gtk4.*;
  * @see Scrollable
  * @see Scrollable#getHorizontalBar
  * @see Scrollable#getVerticalBar
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtScrollBar extends SwtWidget implements IScrollBar {
@@ -516,8 +516,8 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
     }
 
     @Override
-    long gtk_button_press_event(long widget, long eventPtr) {
-        long result = super.gtk_button_press_event(widget, eventPtr);
+    long gtk3_button_press_event(long widget, long eventPtr) {
+        long result = super.gtk3_button_press_event(widget, eventPtr);
         if (result != 0)
             return result;
         detail = GTK.GTK_SCROLL_NONE;
@@ -580,7 +580,6 @@ public class SwtScrollBar extends SwtWidget implements IScrollBar {
     @Override
     long gtk3_event_after(long widget, long gdkEvent) {
         int eventType = GDK.gdk_event_get_event_type(gdkEvent);
-        eventType = SwtControl.fixGdkEventTypeValues(eventType);
         switch(eventType) {
             case GDK.GDK_BUTTON_RELEASE:
                 {

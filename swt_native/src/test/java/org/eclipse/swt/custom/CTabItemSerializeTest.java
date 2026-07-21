@@ -34,6 +34,7 @@ class CTabItemSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("selectionForeground").equalsTo(w.getSelectionForeground(), orAbsentIfNull));
         assertJ.satisfies(node("showClose").equalsTo(w.getShowClose(), orAbsentIfFalse));
+        assertJ.satisfies(node("showDirty").equalsTo(w.getShowDirty(), orAbsentIfFalse));
         assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
     }
 

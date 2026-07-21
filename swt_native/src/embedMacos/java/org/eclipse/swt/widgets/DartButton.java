@@ -43,9 +43,9 @@ import dev.equo.swt.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#button">Button snippets</a>
- * @see <a href="http://www.eclipse.org/swt/examples.php">SWT Example: ControlExample</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#button">Button snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class DartButton extends DartControl implements IButton {
@@ -442,7 +442,10 @@ public class DartButton extends DartControl implements IButton {
     void setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
         if ((getApi().style & (SWT.PUSH | SWT.TOGGLE)) != 0 && (getApi().style & (SWT.FLAT | SWT.WRAP)) == 0) {
             int heightThreshold = REGULAR_BUTTON_HEIGHT;
-            if (height > heightThreshold) {
+            // Use NSBezelStyleFlexiblePush when a custom font is set or when the height
+            // exceeds the standard button height. NSBezelStylePush assumes the macOS
+            // default font size (13pt) and clips text at larger sizes.
+            if (height > heightThreshold || font != null) {
             } else {
             }
         }

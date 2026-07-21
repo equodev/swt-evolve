@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -50,7 +50,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * </p>
  *
  * @see #checkSubclass
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public abstract class SwtWidget implements IWidget {
 
@@ -941,11 +941,11 @@ public abstract class SwtWidget implements IWidget {
         adjustment.value = GTK.gtk_adjustment_get_value(adjustmentHandle);
     }
 
-    long gtk_button_press_event(long widget, long event) {
+    long gtk3_button_press_event(long widget, long event) {
         return 0;
     }
 
-    long gtk_button_release_event(long widget, long event) {
+    long gtk3_button_release_event(long widget, long event) {
         return 0;
     }
 
@@ -1162,7 +1162,7 @@ public abstract class SwtWidget implements IWidget {
         return sendKeyEvent(SWT.KeyUp, event) ? 0 : 1;
     }
 
-    long gtk_leave_notify_event(long widget, long event) {
+    long gtk3_leave_notify_event(long widget, long event) {
         return 0;
     }
 
@@ -1203,7 +1203,7 @@ public abstract class SwtWidget implements IWidget {
         return 0;
     }
 
-    long gtk_motion_notify_event(long widget, long event) {
+    long gtk3_motion_notify_event(long widget, long event) {
         return 0;
     }
 
@@ -1901,7 +1901,6 @@ public abstract class SwtWidget implements IWidget {
             ptr = GTK.GTK4 ? GTK4.gtk_event_controller_get_current_event(controller) : GTK3.gtk_get_current_event();
             if (ptr != 0) {
                 int eventType = GDK.gdk_event_get_event_type(ptr);
-                eventType = SwtControl.fixGdkEventTypeValues(eventType);
                 switch(eventType) {
                     case GDK.GDK_KEY_PRESS:
                     case GDK.GDK_KEY_RELEASE:
@@ -1978,7 +1977,6 @@ public abstract class SwtWidget implements IWidget {
         long ptr = GTK.GTK4 ? 0 : GTK3.gtk_get_current_event();
         if (ptr != 0) {
             int currentEventType = GDK.gdk_event_get_event_type(ptr);
-            currentEventType = SwtControl.fixGdkEventTypeValues(currentEventType);
             switch(currentEventType) {
                 case GDK.GDK_BUTTON_PRESS:
                 case GDK.GDK_2BUTTON_PRESS:
@@ -2478,13 +2476,22 @@ public abstract class SwtWidget implements IWidget {
     }
 
     /**
-     * Converts an incoming snapshot into a gtk_draw() call, complete with
-     * a Cairo context.
+     * Renders the widget background during a GTK4 snapshot. Called before
+     * children are snapshotted so the background appears behind them.
+     * Subclasses can override to perform background rendering.
      *
      * @param handle the widget receiving the snapshot
      * @param snapshot the actual GtkSnapshot
      */
-    void snapshotToDraw(long handle, long snapshot) {
+    void snapshotBackground(long handle, long snapshot) {
+    }
+
+    /**
+     * Converts an incoming snapshot into a gtk_draw() call, complete with
+     * a Cairo context. Used by subclasses to
+     * trigger painting at the appropriate point in the snapshot order.
+     */
+    void snapshotPaint(long handle, long snapshot) {
         GtkAllocation allocation = new GtkAllocation();
         GTK.gtk_widget_get_allocation(handle, allocation);
         long rect = Graphene.graphene_rect_alloc();
@@ -2495,6 +2502,20 @@ public abstract class SwtWidget implements IWidget {
             gtk4_draw(handle, cairo, bounds);
         }
         Graphene.graphene_rect_free(rect);
+    }
+
+    /**
+     * Called before child widgets are snapshotted. Containers (Composite) override
+     * this to paint backgrounds behind their children.
+     */
+    void snapshotToDraw(long handle, long snapshot) {
+    }
+
+    /**
+     * Called after child widgets are snapshotted. Leaf controls (Button, Label,
+     * etc.) override this to paint on top of their native appearance.
+     */
+    void snapshotToDrawAfterChildren(long handle, long snapshot) {
     }
 
     long gtk_widget_get_window(long widget) {
@@ -2556,13 +2577,9 @@ public abstract class SwtWidget implements IWidget {
      * @return the keymask to be used with constants like
      *        OS.GDK_SHIFT_MASK / OS.GDK_CONTROL_MASK / OS.GDK_MOD1_MASK etc..
      */
-    int gdk_event_get_state(long event) {
+    int gdk3_event_get_state(long event) {
         int[] state = new int[1];
-        if (GTK.GTK4) {
-            state[0] = GDK.gdk_event_get_modifier_state(event);
-        } else {
-            GDK.gdk_event_get_state(event, state);
-        }
+        GDK.gdk_event_get_state(event, state);
         return state[0];
     }
 
@@ -2832,9 +2849,9 @@ public abstract class SwtWidget implements IWidget {
                     return 1;
                 }
             case BUTTON_PRESS_EVENT:
-                return gtk_button_press_event(handle, arg0);
+                return gtk3_button_press_event(handle, arg0);
             case BUTTON_RELEASE_EVENT:
-                return gtk_button_release_event(handle, arg0);
+                return gtk3_button_release_event(handle, arg0);
             case COMMIT:
                 return gtk_commit(handle, arg0);
             case CONFIGURE_EVENT:
@@ -2865,13 +2882,13 @@ public abstract class SwtWidget implements IWidget {
             case INPUT:
                 return gtk_input(handle, arg0);
             case LEAVE_NOTIFY_EVENT:
-                return gtk_leave_notify_event(handle, arg0);
+                return gtk3_leave_notify_event(handle, arg0);
             case MAP_EVENT:
                 return gtk_map_event(handle, arg0);
             case MNEMONIC_ACTIVATE:
                 return gtk_mnemonic_activate(handle, arg0);
             case MOTION_NOTIFY_EVENT:
-                return gtk_motion_notify_event(handle, arg0);
+                return gtk3_motion_notify_event(handle, arg0);
             case MOVE_FOCUS:
                 return gtk_move_focus(handle, arg0);
             case POPULATE_POPUP:

@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- *  Copyright (c) 2000, 2025 IBM Corporation and others.
+ *  Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -41,8 +41,8 @@ import org.eclipse.swt.internal.gtk4.*;
  * IMPORTANT: This class is <em>not</em> intended to be subclassed.
  * </p>
  *
- * @see <a href="http://www.eclipse.org/swt/snippets/#toolbar">ToolBar, ToolItem snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#toolbar">ToolBar, ToolItem snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class SwtToolItem extends SwtItem implements IToolItem {
@@ -628,13 +628,13 @@ public class SwtToolItem extends SwtItem implements IToolItem {
     }
 
     @Override
-    long gtk_button_press_event(long widget, long event) {
-        return ((SwtComposite) parent.getImpl()).gtk_button_press_event(widget, event);
+    long gtk3_button_press_event(long widget, long event) {
+        return ((SwtComposite) parent.getImpl()).gtk3_button_press_event(widget, event);
     }
 
     @Override
-    long gtk_button_release_event(long widget, long event) {
-        return ((SwtControl) parent.getImpl()).gtk_button_release_event(widget, event);
+    long gtk3_button_release_event(long widget, long event) {
+        return ((SwtControl) parent.getImpl()).gtk3_button_release_event(widget, event);
     }
 
     @Override
@@ -644,7 +644,6 @@ public class SwtToolItem extends SwtItem implements IToolItem {
             long eventPtr = GTK3.gtk_get_current_event();
             if (eventPtr != 0) {
                 int eventType = GDK.gdk_event_get_event_type(eventPtr);
-                eventType = SwtControl.fixGdkEventTypeValues(eventType);
                 long topHandle = topHandle();
                 switch(eventType) {
                     //Fall Through..
@@ -807,7 +806,6 @@ public class SwtToolItem extends SwtItem implements IToolItem {
     @Override
     long gtk3_event_after(long widget, long gdkEvent) {
         int eventType = GDK.gdk_event_get_event_type(gdkEvent);
-        eventType = SwtControl.fixGdkEventTypeValues(eventType);
         switch(eventType) {
             case GDK.GDK_BUTTON_PRESS:
                 {
@@ -841,8 +839,8 @@ public class SwtToolItem extends SwtItem implements IToolItem {
     }
 
     @Override
-    long gtk_leave_notify_event(long widget, long event) {
-        ((SwtControl) parent.getImpl()).gtk_leave_notify_event(widget, event);
+    long gtk3_leave_notify_event(long widget, long event) {
+        ((SwtControl) parent.getImpl()).gtk3_leave_notify_event(widget, event);
         if (drawHotImage) {
             drawHotImage = false;
             if (image != null) {
@@ -886,6 +884,40 @@ public class SwtToolItem extends SwtItem implements IToolItem {
     @Override
     long gtk_mnemonic_activate(long widget, long arg1) {
         return ((SwtControl) parent.getImpl()).gtk_mnemonic_activate(widget, arg1);
+    }
+
+    @Override
+    int gtk_gesture_press_event(long gesture, int n_press, double x, double y, long event) {
+        /*
+	 * GTK4: For DROP_DOWN items, the arrow portion is a GtkMenuButton
+	 * (arrowHandle) that is separate from the main button. Attach a gesture
+	 * controller to arrowHandle and detect it here in order to send the
+	 * SWT.ARROW selection detail to the listener (e.g. to open a drop-down menu).
+	 */
+        if ((getApi().style & SWT.DROP_DOWN) != 0 && arrowHandle != 0 && GTK.gtk_event_controller_get_widget(gesture) == arrowHandle && n_press == 1 && GTK.gtk_gesture_single_get_current_button(gesture) == 1) {
+            Event e = new Event();
+            e.detail = SWT.ARROW;
+            GtkAllocation allocation = new GtkAllocation();
+            GTK.gtk_widget_get_allocation(arrowHandle, allocation);
+            /*
+		 * On GTK4 gtk_widget_get_allocation returns parent-widget-relative
+		 * coordinates, but the SWT event x/y must be in ToolBar-relative
+		 * coordinates so that callers can use toolBar.toDisplay(event.x, event.y).
+		 * Translate the arrow button's origin into the ToolBar's coordinate space.
+		 * If translation fails, fall back to the parent-relative allocation.
+		 */
+            double[] destX = new double[1];
+            double[] destY = new double[1];
+            boolean translated = GTK4.gtk_widget_translate_coordinates(arrowHandle, parent.handle, 0, 0, destX, destY);
+            e.x = translated ? (int) destX[0] : allocation.x;
+            if ((parent.style & SWT.MIRRORED) != 0)
+                e.x = ((SwtControl) parent.getImpl()).getClientWidth() - allocation.width - e.x;
+            System.out.println(e.x);
+            e.y = translated ? (int) destY[0] + allocation.height : allocation.y + allocation.height;
+            sendSelectionEvent(SWT.Selection, e, false);
+            return GTK4.GTK_EVENT_SEQUENCE_CLAIMED;
+        }
+        return GTK4.GTK_EVENT_SEQUENCE_NONE;
     }
 
     @Override

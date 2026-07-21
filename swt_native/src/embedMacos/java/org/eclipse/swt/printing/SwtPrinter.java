@@ -38,8 +38,8 @@ import org.eclipse.swt.internal.cocoa.*;
  *
  * @see PrinterData
  * @see PrintDialog
- * @see <a href="http://www.eclipse.org/swt/snippets/#printing">Printing snippets</a>
- * @see <a href="http://www.eclipse.org/swt/">Sample code and further information</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#printing">Printing snippets</a>
+ * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
 public final class SwtPrinter extends SwtDevice implements IPrinter {
 
@@ -259,7 +259,7 @@ public final class SwtPrinter extends SwtDevice implements IPrinter {
             }
             NSRect rect = new NSRect();
             window = (NSWindow) new NSWindow().alloc();
-            window.initWithContentRect(rect, OS.NSBorderlessWindowMask, OS.NSBackingStoreBuffered, false);
+            window.initWithContentRect(rect, OS.NSWindowStyleMaskBorderless, OS.NSBackingStoreBuffered, false);
             //$NON-NLS-1$
             String className = "SWTPrinterView";
             if (OS.objc_lookUpClass(className) == 0) {
