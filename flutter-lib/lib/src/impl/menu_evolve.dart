@@ -228,6 +228,15 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
           _focusFirstItemNextFrame();
         }
       });
+    } else if (!visible && _menuController.isOpen) {
+      // Symmetric Java-driven close (Menu.setVisible(false)): the open above is imperative, so
+      // the close must be too — without it a popup opened from Java can never be closed from
+      // Java, and its modal barrier keeps swallowing every later click.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _menuController.isOpen && !(state.visible ?? false)) {
+          _menuController.close();
+        }
+      });
     }
 
     return tagSemantics(MenuAnchor(
@@ -249,6 +258,11 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
         _sendPendingChanges();
         if (visible) {
           visible = false;
+          // Sync the SERIALIZED state too: build() reads state.visible, and with it stuck true
+          // the open guard re-opens the menu on every rebuild (Java can't help — its own field
+          // already went false on the Hide event, so a later setVisible(false) is a no-op that
+          // never serializes).
+          state.visible = false;
           widget.sendMenuHide(state, null);
         }
       },
