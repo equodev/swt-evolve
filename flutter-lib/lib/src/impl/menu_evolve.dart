@@ -239,7 +239,12 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       });
     }
 
-    return tagSemantics(MenuAnchor(
+    // The popup ANCHOR itself is deliberately untagged: its semantics node serves no locator
+    // (items carry their own MenuItem/ identifiers; state queries don't need the DOM), and the
+    // engine reuses a stale full-overlay rect for it across open/close cycles — the node then
+    // intercepts pointer events over the page (after a close) or over the menu's own items
+    // (after a reopen). No node, no stale rect.
+    return MenuAnchor(
       controller: _menuController,
       style: MenuStyle(
         backgroundColor: WidgetStateProperty.all(backgroundColor),
@@ -273,17 +278,14 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
           closeMenu: _menuController.close,
           autofocusItem: _firstFocusableMenuItem(menuItems),
           autofocusItemFocusNode: _firstItemFocusNode,
-          // explicitChildNodes keeps each MenuItem's tagSemantics identifier as its own DOM node
-          // instead of being merged away inside the overlay — without it an open menu exposes zero
-          // flt-semantics-identifier nodes and tests can only reach items by blind keyboard nav.
-          child: Semantics(
-            explicitChildNodes: true,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: menuItems
-                  .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
-                  .toList(),
-            ),
+          // No extra Semantics wrapper: with the anchor untagged, each item's own tagSemantics
+          // materializes on its own (a tagged anchor merges them away; an added wrapper here
+          // duplicates every item node instead).
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: menuItems
+                .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
+                .toList(),
           ),
         )),
       ],
@@ -292,7 +294,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       // focusable item at all.
       builder: (context, controller, child) =>
           Focus(focusNode: _popupAnchorFocusNode, child: const SizedBox.shrink()),
-    ));
+    );
   }
 
   void _registerPendingChange(void Function() callback) {

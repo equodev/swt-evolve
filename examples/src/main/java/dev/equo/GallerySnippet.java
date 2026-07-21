@@ -2,6 +2,7 @@ package dev.equo;
 
 import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.custom.CTabFolder;
@@ -387,6 +388,28 @@ public class GallerySnippet {
         scrolled.setExpandHorizontal(true);
         scrolled.setExpandVertical(false);
 
+        // Browser — an embedded webview (iframe on web) with inline HTML. The TitleListener is
+        // the Java-observable signal: "Reload Browser" re-sets the same content, whose load
+        // fires a TitleChanged round trip (Java -> iframe -> Java).
+        Group browserGroup = section(root, "Browser");
+        browserGroup.setLayout(new GridLayout(1, false));
+        Browser browser = new Browser(browserGroup, SWT.NONE);
+        GridData browserData = new GridData(SWT.FILL, SWT.CENTER, true, false);
+        browserData.heightHint = 60;
+        browser.setLayoutData(browserData);
+        String browserHtml = "<html><head><title>Gallery Browser</title></head>"
+                + "<body><h1>Hello from Browser</h1></body></html>";
+        browser.setText(browserHtml);
+        // Only report scenario-driven titles: the initial load and the reset's restore both
+        // carry the original title, and their async echo would otherwise overwrite whatever
+        // status the next scenario just wrote (same family as the StyledText reset guard).
+        browser.addTitleListener(e -> {
+            if (!"Gallery Browser".equals(e.title)) {
+                status.setText("Browser title: " + e.title);
+            }
+        });
+        boolean[] browserReloaded = {false};
+
         // Dialog — a secondary (child) Shell with its own Text input, opened modally on
         // demand. Unlike MessageBox (a one-off Flutter showDialog()), this exercises a real
         // DartShell: it renders as a Positioned overlay inside the same Display Stack (see
@@ -395,6 +418,17 @@ public class GallerySnippet {
         dialogGroup.setLayout(new RowLayout(SWT.HORIZONTAL));
         Button openDialog = new Button(dialogGroup, SWT.PUSH);
         openDialog.setText("Open Dialog");
+        // Lives here, NOT in the Browser section: any sibling of the embedded webview (a
+        // platform view) loses its DOM semantics node — renders fine, but locators never
+        // resolve it (documented product gap). Loads content with a DIFFERENT title: reloading
+        // identical content fires no TitleChanged (and same-content navigations dedup).
+        Button reloadBrowser = new Button(dialogGroup, SWT.PUSH);
+        reloadBrowser.setText("Reload Browser");
+        reloadBrowser.addSelectionListener(widgetSelectedAdapter(e -> {
+            browserReloaded[0] = true;
+            browser.setText("<html><head><title>Gallery Browser Reloaded</title></head>"
+                    + "<body><h1>Hello again</h1></body></html>");
+        }));
         openDialog.addSelectionListener(widgetSelectedAdapter(e -> {
             Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
             dialog.setText("Enter your name");
@@ -476,6 +510,10 @@ public class GallerySnippet {
             date.setDate(2026, 6, 15);
             popup.setVisible(false); // a failed scenario may leave the context menu up
             tip.setVisible(false);
+            if (browserReloaded[0]) { // restore silently (the TitleListener ignores the original title)
+                browserReloaded[0] = false;
+                browser.setText(browserHtml);
+            }
             sashForm.setWeights(new int[] {1, 1});
             status.setText("Status: (no interaction yet)");
         }));
