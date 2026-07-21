@@ -58,6 +58,15 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   final Set<int> _pendingVerticalScrollValues = {};
   final Set<int> _pendingHorizontalScrollValues = {};
 
+  /// Texts sent to Java (Modify) whose value-push echo hasn't come back yet, plus the latest
+  /// locally-known text — the same guard text_evolve has: on a slow round trip the echo of an
+  /// earlier Modify arrives AFTER further local typing and, unguarded, rebuilds the editor from
+  /// the older text, silently dropping the newer keystrokes. Unlike Text (whose truth lives in
+  /// its controller), here the local truth IS state.text — already overwritten by the incoming
+  /// push when extraSetState runs — so a stale echo must also RESTORE state.text.
+  final List<String> _pendingTextEchoes = [];
+  String _localText = '';
+
   StyledTextThemeExtension get _styledTextTheme =>
       Theme.of(context).extension<StyledTextThemeExtension>()!;
 
@@ -113,6 +122,19 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   @override
   void extraSetState() {
     super.extraSetState();
+    final incomingText = state.text ?? '';
+    final echoIndex = _pendingTextEchoes.indexOf(incomingText);
+    if (echoIndex >= 0) {
+      _pendingTextEchoes.removeRange(0, echoIndex + 1);
+      if (_localText != incomingText) {
+        // The echo is older than what the user has typed since: put the local truth back so
+        // the rebuild below (and queryState) keep the newer content.
+        state.text = _localText;
+      }
+    } else {
+      // A genuine Java-driven text (setText): accept it as the new local truth.
+      _localText = incomingText;
+    }
     _editable = state.editable ?? false;
     _wordWrap = state.wordWrap ?? false; // SWT default is no wrap; wrap only when explicitly set
 
@@ -623,6 +645,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     // Keep the value object in sync with the local edit (same as text_evolve), so the live
     // state (queryState) reflects the content without waiting for a Java-side setText.
     state.text = newText;
+    _localText = newText;
+    _pendingTextEchoes.add(newText);
 
     final event = VEvent()
       ..text = newText
