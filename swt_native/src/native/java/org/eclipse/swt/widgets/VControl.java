@@ -48,7 +48,10 @@ public class VControl extends VWidget {
 
     @JsonAttribute(nullable = true)
     public Rectangle getBounds() {
-        Rectangle b = ((DartControl) impl).bounds;
+        DartControl c = ((DartControl) impl);
+        Rectangle b = c.bounds;
+        if (!c.laidOut)
+            return new Rectangle(b.x, b.y, -1, -1);
         return new Rectangle(b.x, b.y, b.width, b.height);
     }
 

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import '../gen/control.dart';
+import '../gen/rectangle.dart';
 import '../gen/droptarget.dart';
 import '../gen/event.dart';
 import '../gen/menu.dart';
@@ -31,6 +32,41 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   // Matches DartDisplay.getToolTipTime() — fires SWT.MouseHover after stillness
   static const int _hoverDelayMs = 560;
   Timer? _hoverTimer;
+
+  VRectangle? _lastRealBounds;
+
+  void _resolveSentinelBounds(V value) {
+    final b = value.bounds;
+    if (b == null) return;
+    if (b.width < 0 || b.height < 0) {
+      if (_lastRealBounds != null) {
+        value.bounds = _lastRealBounds;
+      } else {
+        b.width = 0;
+        b.height = 0;
+      }
+    } else {
+      _lastRealBounds = b;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _resolveSentinelBounds(state);
+  }
+
+  @override
+  void setValue(V value) {
+    _resolveSentinelBounds(value);
+    super.setValue(value);
+  }
+
+  @override
+  void didUpdateWidget(covariant T oldWidget) {
+    _resolveSentinelBounds(widget.value as V);
+    super.didUpdateWidget(oldWidget);
+  }
 
   void sendThrottledMouseMove(V state, VEvent event) {
     final now = DateTime.now().millisecondsSinceEpoch;
