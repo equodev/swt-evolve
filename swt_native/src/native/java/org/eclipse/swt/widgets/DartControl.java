@@ -2607,6 +2607,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         } else if (resize) {
         }
         boolean sizeChanged = resize && (this.bounds.width != newValue.width || this.bounds.height != newValue.height);
+        laidOut = true;
         this.bounds = newValue;
         getBridge().setBounds(this, bounds);
         if (sizeChanged)
@@ -4082,6 +4083,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public boolean _visible() {
         return visible;
     }
+
+    boolean laidOut = false;
 
     int resolveTextDirection() {
         /*
