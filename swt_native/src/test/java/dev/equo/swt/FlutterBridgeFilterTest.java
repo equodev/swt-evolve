@@ -10,6 +10,8 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.swtShell;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(Mocks.class)
 public class FlutterBridgeFilterTest extends SerializeTestBase {
@@ -135,6 +137,35 @@ public class FlutterBridgeFilterTest extends SerializeTestBase {
                 child2.getImpl(),
                 parent3.getImpl()
         );
+    }
+
+    @Test
+    void shouldKeepDialogShellEvenWhenParentShellIsDirty() {
+        // Regression for #737: a dialog Shell's SWT getParent() is the main Shell, which repaints
+        // constantly and is therefore almost always dirty. A parent Shell's serialization does NOT
+        // carry child/dialog Shells (they are separate windows, delivered on their own channel / via
+        // the Display's shells list), so the dialog Shell must NOT be filtered out as "the parent
+        // will carry it" — otherwise the dialog's content (e.g. the Preferences page) is never
+        // re-delivered and stays frozen until a resize.
+        //
+        // Real Dart Shells can't be instantiated in the embedded test backend (no native handles),
+        // so the dialog Shell's impl is mocked: a DartControl whose api is a Shell and whose parent
+        // is a real (dirty) DartComposite standing in for the main window.
+        Composite mainWindow = new Composite(swtShell(), SWT.NONE);
+
+        DartControl dialogShell = mock(DartControl.class);
+        when(dialogShell.getApi()).thenReturn(mock(Shell.class));
+        when(dialogShell.getParent()).thenReturn(mainWindow);
+        when(dialogShell.isDisposed()).thenReturn(false);
+
+        Set<Object> dirty = new HashSet<>();
+        dirty.add(mainWindow.getImpl());  // main window, dirty from a repaint
+        dirty.add(dialogShell);           // dialog whose page just changed
+
+        Set<Object> filtered = FlutterBridge.filterWidgetsWithDirtyAncestors(dirty);
+
+        // The dialog Shell must survive filtering so it (and its page subtree) is delivered.
+        assertThat(filtered).contains(dialogShell);
     }
 
     @Test
