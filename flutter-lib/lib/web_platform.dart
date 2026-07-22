@@ -32,20 +32,38 @@ external void _addWindowEventListener(JSString type, JSFunction listener);
 @JS('window.requestAnimationFrame')
 external JSNumber _requestAnimationFrame(JSFunction callback);
 
+// --dart-define fallbacks for a `flutter run` dev launch (Phase 2 web introspection path): when the
+// app is served by `flutter run` instead of WebFlutterServer, there is no runtime placeholder
+// injection of window.equoCommPort / window.evolve.*, so these values arrive via
+// --dart-define=equo.comm_port / equo.widget_id / equo.widget_name instead. See
+// docs/design/flutter-dtd-introspection.md (Phase 2). 0 / "" mean "not provided".
+const int _envCommPort = int.fromEnvironment("equo.comm_port", defaultValue: 0);
+const int _envWidgetId = int.fromEnvironment("equo.widget_id", defaultValue: 0);
+const String _envWidgetName = String.fromEnvironment("equo.widget_name", defaultValue: "");
+
 int? getPort(List<String> _) {
-  print("Using web port: $_equoCommPort");
-  return _equoCommPort?.toDartInt;
+  print("Using web port: $_equoCommPort (env fallback: $_envCommPort)");
+  final injected = _equoCommPort?.toDartInt;
+  if (injected != null && injected != 0) return injected;
+  return _envCommPort != 0 ? _envCommPort : null;
 }
 
 int? getWidgetId(List<String> _) {
   final params = Uri.base.queryParameters;
   final value = params['widgetId'];
-  return value != null ? int.tryParse(value) : _widgetId?.toDartInt;
+  if (value != null) return int.tryParse(value);
+  final injected = _widgetId?.toDartInt;
+  if (injected != null && injected != 0) return injected;
+  return _envWidgetId != 0 ? _envWidgetId : null;
 }
 
 String? getWidgetName(List<String> _) {
   final params = Uri.base.queryParameters;
-  return params['widgetName'] ?? _widgetName?.toDart;
+  final q = params['widgetName'];
+  if (q != null) return q;
+  final injected = _widgetName?.toDart;
+  if (injected != null && injected.isNotEmpty) return injected;
+  return _envWidgetName.isNotEmpty ? _envWidgetName : null;
 }
 
 String? getTheme(List<String> args) {

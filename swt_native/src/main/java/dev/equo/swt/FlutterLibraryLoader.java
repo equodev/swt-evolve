@@ -35,7 +35,15 @@ public class FlutterLibraryLoader {
     private static final String MACOS_LIB_NAME = "libflutter_bridge.dylib";
     public static final String CONTENTS = "Contents";
     public static final String SWTFLUTTER_APP = "swtflutter.app";
-    public static final String SWTFLUTTER_APP_CONTENTS = "macos/Build/Products/Release/" + SWTFLUTTER_APP + SEP + CONTENTS;
+    // With -Ddev.equo.swt.dartDebug=true the desktop Flutter frameworks were built with --debug (JIT)
+    // so the embedded engine exposes a Dart VM Service (DTD/MCP introspection). Flutter writes those
+    // artifacts under its Debug/debug output dirs instead of Release/release. Only the dev (build-dir)
+    // loading below needs to follow suit — the packaged-jar path is mode-agnostic (it just contains
+    // swtflutter.app / runner, with no Release|Debug segment). See docs/design/flutter-dtd-introspection.md.
+    private static final boolean DART_DEBUG = Boolean.getBoolean("dev.equo.swt.dartDebug");
+    private static final String BUILD_MODE_CAP = DART_DEBUG ? "Debug" : "Release";     // macOS & Windows
+    private static final String BUILD_MODE_LOWER = DART_DEBUG ? "debug" : "release";   // Linux
+    public static final String SWTFLUTTER_APP_CONTENTS = "macos/Build/Products/" + BUILD_MODE_CAP + "/" + SWTFLUTTER_APP + SEP + CONTENTS;
     private static final String RUNNER_DIR_NAME = "runner";
     private static final String LINUX_BUNDLE_DIR_NAME = "bundle";
     private static final String LINUX_LIB_NAME = "libflutter_bridge.so";
@@ -44,8 +52,8 @@ public class FlutterLibraryLoader {
     private static final String LINUX_WEBVIEW_PLUGIN_NAME = "libwebview_all_linux_plugin.so";
     private static final String WIN_LIB1_NAME = "flutter_windows.dll";
     private static final String WIN_LIB_NAME = "flutter_bridge.dll";
-    public static final String LINUX_X64_RELEASE = "linux/x64/release";
-    public static final String WIN_X64_RELEASE = "windows/x64/runner/Release";
+    public static final String LINUX_X64_RELEASE = "linux/x64/" + BUILD_MODE_LOWER;
+    public static final String WIN_X64_RELEASE = "windows/x64/runner/" + BUILD_MODE_CAP;
 
     private static final String EQUO_LIB_PATH_SUFFIX =
             EQUO_BASE_DIR_NAME + SEP + SWT_DIR_NAME + SEP + LIB_SUB_DIR_NAME + SEP + getOS() + SEP + getArch();

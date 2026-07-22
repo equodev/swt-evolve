@@ -24,6 +24,8 @@ public class WebDisplayBridge extends DisplayBridge {
 
     private WebFlutterServer webServer;
     private ChromiumStandaloneLauncher chromiumLauncher;
+    /** Dev-only `flutter run` process for the -PdartDebug web introspection path (null in production). */
+    private Process flutterRunProc;
     /** CSD maximize strategy: "bounds" (default), "native", or "fullscreen". */
     private String csdMaxStrategy = "bounds";
 
@@ -84,6 +86,19 @@ public class WebDisplayBridge extends DisplayBridge {
         registerWindowControls(display);
 
         int port = comm.getPort();
+
+        // Dev/introspection path (Phase 2): serve the app via a live `flutter run -d chrome` instead
+        // of static WebFlutterServer, so the Dart VM Service is available for DTD/MCP + flutter_driver.
+        // The app connects back to this comm port via --dart-define. Static serving + the Browser-widget
+        // endpoints (/proxy, /equo-browser-function) are skipped in this mode.
+        if (isDartDebug()) {
+            launchFlutterRunDev(port, displayId, "Display");
+            FlutterBridgeSpi.registerWebServerUrlLookup(WebDisplayBridge::lookupWebServerUrl);
+            FlutterBridgeSpi.registerCommPortLookup(WebDisplayBridge::lookupCommPort);
+            FlutterBridgeSpi.notifyDisplayCreated(display.getApi());
+            return;
+        }
+
         webServer = new WebFlutterServer.Builder()
                 .commPort(port)
                 .widgetId(displayId)
@@ -142,6 +157,47 @@ public class WebDisplayBridge extends DisplayBridge {
         comm.on(win + "WinRestore", Rectangle.class, rect -> applyCsdMaximize(winApi, rect, false));
         comm.on(win + "WinClose", String.class, s -> onClientWindowClosed());
         comm.on(win + "WinUnload", String.class, s -> scheduleDeferredClose());
+    }
+
+    /** Whether the Phase 2 dev/introspection path is active (serve via `flutter run`, VM Service on). */
+    private static boolean isDartDebug() {
+        return Boolean.getBoolean("dev.equo.swt.dartDebug");
+    }
+
+    /**
+     * Dev-only: spawn `flutter run -d chrome` to serve the web app with a live Dart VM Service, passing
+     * this Display's comm port + identity as --dart-define values (web_platform.dart reads them). flutter
+     * run opens Chrome and prints the VM Service URI to stdout (inheritIO). Requires the flutter-lib path
+     * and flutter command via system properties (set by the :examples runWebExample task under -PdartDebug).
+     * Falls back to the static browser if the flutter-lib dir wasn't provided.
+     */
+    private void launchFlutterRunDev(int commPort, long widgetId, String widgetName) {
+        String flutterLibDir = System.getProperty("dev.equo.swt.flutterLibDir");
+        String flutterCmd = System.getProperty("dev.equo.swt.flutterCmd", "flutter");
+        if (flutterLibDir == null || flutterLibDir.isBlank()) {
+            System.err.println("[WebDisplayBridge] dartDebug set but dev.equo.swt.flutterLibDir is missing; "
+                    + "cannot launch `flutter run`. Run via :examples:runWebExample -PdartDebug.");
+            return;
+        }
+        java.util.List<String> cmd = new java.util.ArrayList<>();
+        for (String tok : flutterCmd.trim().split("\\s+"))
+            if (!tok.isBlank()) cmd.add(tok);
+        cmd.add("run");
+        cmd.add("-d");
+        cmd.add("chrome");
+        cmd.add("--dart-define=equo.comm_port=" + commPort);
+        cmd.add("--dart-define=equo.widget_id=" + widgetId);
+        cmd.add("--dart-define=equo.widget_name=" + widgetName);
+        try {
+            flutterRunProc = new ProcessBuilder(cmd)
+                    .directory(new java.io.File(flutterLibDir))
+                    .inheritIO()
+                    .start();
+            System.out.println("[WebDisplayBridge] dartDebug: launched `" + String.join(" ", cmd)
+                    + "` in " + flutterLibDir + " (comm port " + commPort + ")");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to launch `flutter run` for dartDebug", e);
+        }
     }
 
     @Override
@@ -247,6 +303,10 @@ public class WebDisplayBridge extends DisplayBridge {
         if (chromiumLauncher != null) {
             chromiumLauncher.close(true);
             chromiumLauncher = null;
+        }
+        if (flutterRunProc != null) {
+            flutterRunProc.destroy();
+            flutterRunProc = null;
         }
         if (webServer != null) {
             webServer.stop();

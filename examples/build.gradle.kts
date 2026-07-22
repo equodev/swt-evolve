@@ -130,6 +130,15 @@ tasks.register<JavaExec>("runExample") {
         jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
 }
 
+// fvm-aware flutter command for the -PdartDebug web launcher (mirrors swt_native's resolution): prefer the
+// repo-pinned SDK via `fvm flutter` when flutter-lib has a .fvmrc and fvm is on PATH; else plain flutter.
+fun resolveFlutterCmd(): String {
+    val hasPin = file("../flutter-lib/.fvmrc").exists()
+    val pathDirs = (System.getenv("PATH") ?: "").split(File.pathSeparator)
+    val fvmOnPath = pathDirs.any { dir -> File(dir, "fvm").canExecute() }
+    return if (hasPin && fvmOnPath) "fvm flutter" else "flutter"
+}
+
 // webOnlyAware: only "runWebExample" supports -PwebOnly=true, which swaps in the plain
 // browser-only "webJar" instead of the hybrid "${currentPlatform}Jar" -- that hybrid jar always
 // bundles the desktop Flutter build (see swt_native's `tasks.jar`), which on Windows needs the
@@ -158,7 +167,11 @@ fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = f
         systemProperty("dev.equo.swt.crashReport.disabled", "true")
         systemProperty("dev.equo.swt.web.crossOriginIsolated", "false")
         systemProperty("dev.equo.swt.mode", mode)
-        System.getProperty("dev.equo.swt.debug")?.let { systemProperty("dev.equo.swt.debug", it) }
+        // -Pdebug turns on the Java-side DebugLog (Config.isDebug): prints every `send:` of a widget's
+        // V* payload to Flutter. That's the Java side of the Phase 3 Flutter-vs-V* cross-check. It can
+        // also still be enabled directly via -Ddev.equo.swt.debug.
+        if (project.hasProperty("debug") || System.getProperty("dev.equo.swt.debug") != null)
+            systemProperty("dev.equo.swt.debug", "true")
         // Forward e.g. -Dequo.swt.browser=none so an external driver (Playwright, etc.) can be
         // the only WebSocket client instead of racing the auto-launched system browser tab.
         System.getProperty("equo.swt.browser")?.let { systemProperty("equo.swt.browser", it) }
@@ -166,6 +179,29 @@ fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = f
         System.getProperty("dev.equo.swt.web.httpPort")?.let { systemProperty("dev.equo.swt.web.httpPort", it) }
         // Forward the runtime (no-rebuild) semantics toggle — see WebFlutterServer.Builder#enableTestSemantics.
         System.getProperty("dev.equo.swt.web.enableTestSemantics")?.let { systemProperty("dev.equo.swt.web.enableTestSemantics", it) }
+        // -PdartDebug: run the Dart/Flutter rendering side in debug so its Dart VM Service is available
+        // for DTD/MCP + flutter_driver. One flag for both render modes: desk builds the frameworks with
+        // --debug (JIT) and FlutterLibraryLoader loads the Debug build-dir; web serves via a live
+        // `flutter run -d chrome`. See docs/design/flutter-dtd-introspection.md (Phases 1 & 2).
+        if (project.hasProperty("dartDebug")) {
+            systemProperty("dev.equo.swt.dartDebug", "true")
+            if (mode == "desktop") {
+                // The desktop engine runs in-process (JNI), so this JVM's env IS the engine's env. Pin the
+                // Dart VM Service to a predictable URL via the engine env-switch channel so tooling can
+                // attach without scraping stdout. Result: http://127.0.0.1:<port>/. Override -PdartVmPort.
+                val vmPort = (project.findProperty("dartVmPort") as String?) ?: "8181"
+                environment("FLUTTER_ENGINE_SWITCHES", "2")
+                environment("FLUTTER_ENGINE_SWITCH_1", "vm-service-port=$vmPort")
+                environment("FLUTTER_ENGINE_SWITCH_2", "disable-service-auth-codes=true")
+            } else {
+                // Web: WebDisplayBridge spawns `flutter run` with the Display's comm port as --dart-define
+                // instead of static WebFlutterServer. Give it the flutter-lib dir + fvm flutter command,
+                // and disable the Java-side browser (flutter run opens Chrome itself).
+                systemProperty("dev.equo.swt.flutterLibDir", file("../flutter-lib").absolutePath)
+                systemProperty("dev.equo.swt.flutterCmd", resolveFlutterCmd())
+                systemProperty("equo.swt.browser", "none")
+            }
+        }
         // Attach the JaCoCo agent when a driving E2E suite asks for it: this app JVM is the thing under
         // test, and it's an external process (the suite spawns this build), so it can't be covered by a
         // Gradle Test task's own instrumentation — the agent has to go on directly. The .exec it writes is

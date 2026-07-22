@@ -70,8 +70,12 @@ uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
                                   const char *widget_name, const char *theme, jint background_color, jint parent_background_color) {
   FlDartProject *project = fl_dart_project_new();
   std::string base_path = GetSharedLibraryPath();
-  fl_dart_project_set_aot_library_path(
-      project, (base_path + "/bundle/lib/libapp.so").c_str());
+  // AOT (release) ships libapp.so; a --debug (JIT) build has no libapp.so and runs the kernel from
+  // flutter_assets instead — which also brings up the Dart VM Service for DTD/MCP introspection.
+  // Only point the engine at an AOT library when one is actually present.
+  std::string aot_path = base_path + "/bundle/lib/libapp.so";
+  if (g_file_test(aot_path.c_str(), G_FILE_TEST_EXISTS))
+    fl_dart_project_set_aot_library_path(project, aot_path.c_str());
   fl_dart_project_set_assets_path(
       project, (gchar *)(base_path + "/bundle/data/flutter_assets/").c_str());
   fl_dart_project_set_icu_data_path(
@@ -198,7 +202,11 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
                                    const char *theme, int backgroundColor, int width, int height) {
   FlDartProject *project = fl_dart_project_new();
   std::string base_path = GetSharedLibraryPath();
-  fl_dart_project_set_aot_library_path(project, (base_path + "/bundle/lib/libapp.so").c_str());
+  // See note above: skip the AOT library in --debug (JIT) builds so the engine runs the kernel
+  // from flutter_assets and exposes the Dart VM Service.
+  std::string aot_path = base_path + "/bundle/lib/libapp.so";
+  if (g_file_test(aot_path.c_str(), G_FILE_TEST_EXISTS))
+    fl_dart_project_set_aot_library_path(project, aot_path.c_str());
   fl_dart_project_set_assets_path(project, (gchar *)(base_path + "/bundle/data/flutter_assets/").c_str());
   fl_dart_project_set_icu_data_path(project, (gchar *)(base_path + "/bundle/data/icudtl.dat").c_str());
 
