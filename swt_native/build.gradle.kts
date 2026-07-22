@@ -512,28 +512,39 @@ fun parsePlatform(platform: String): WebPlatformMeta {
 // only loaded by WebFlutterServer), so they'd carry the ~9MB of TTFs for nothing.
 val libertyFontExclude = "**/flutter_assets/assets/fonts/Liberation*.ttf"
 
-fun CopySpec.copyFlutterNatives(os: String, flutterArch: String) {
+// Dart debug/JIT build: `-PdartDebug` builds the desktop Flutter frameworks in --debug (JIT) mode
+// instead of the default --release (AOT), so the embedded engine exposes a Dart VM Service that
+// DTD/MCP tooling (and flutter_driver) can attach to. Release is unchanged and remains the default.
+// (One flag across render modes — web interprets it as `flutter run`; see examples/build.gradle.kts.)
+// See docs/design/flutter-dtd-introspection.md (Phases 1 & 2).
+val dartDebug = project.hasProperty("dartDebug")
+
+fun CopySpec.copyFlutterNatives(os: String, flutterArch: String, debug: Boolean) {
+    // Flutter emits build outputs under a mode-named directory: macOS/Windows capitalize
+    // (Products/Debug, runner/Debug), Linux lower-cases (build/linux/<arch>/debug).
+    val modeCap = if (debug) "Debug" else "Release"
+    val modeLower = if (debug) "debug" else "release"
     when (os) {
-        "macos" -> from("../flutter-lib/build/macos/Build/Products/Release/swtflutter.app") {
+        "macos" -> from("../flutter-lib/build/macos/Build/Products/$modeCap/swtflutter.app") {
             into("swtflutter.app")
             exclude(libertyFontExclude)
         }
         "linux" -> {
-            from("../flutter-lib/build/linux/$flutterArch/release/runner") {
+            from("../flutter-lib/build/linux/$flutterArch/$modeLower/runner") {
                 include("libflutter_bridge.so")
                 into("runner")
             }
-            from("../flutter-lib/build/linux/$flutterArch/release/bundle/lib") {
+            from("../flutter-lib/build/linux/$flutterArch/$modeLower/bundle/lib") {
                 include("*.so")
                 into("bundle/lib")
             }
-            from("../flutter-lib/build/linux/$flutterArch/release/bundle/data") {
+            from("../flutter-lib/build/linux/$flutterArch/$modeLower/bundle/data") {
                 include("icudtl.dat", "flutter_assets/**")
                 exclude(libertyFontExclude)
                 into("bundle/data")
             }
         }
-        "windows" -> from("../flutter-lib/build/windows/$flutterArch/runner/Release/") {
+        "windows" -> from("../flutter-lib/build/windows/$flutterArch/runner/$modeCap/") {
             include("*.dll", "data/")
             exclude(libertyFontExclude)
             into("runner")
@@ -622,12 +633,17 @@ platforms.forEach { platform ->
                 exclude("**/ephemeral/**", "Pods/**", "**/*.bak")
             })
             outputs.dir("../flutter-lib/build/${info.os}")
+            // Toggling -PdartDebug must invalidate this task even though its output dir is unchanged
+            // (Flutter writes debug/release into sibling subdirs of the same build/<os> tree).
+            inputs.property("dartDebug", dartDebug)
+            val modeFlag = if (dartDebug) listOf("--debug") else emptyList()
             when (info.os) {
                 "macos" -> {
                     val flutterArch = if (info.arch == "aarch64") "arm64" else "x86_64"
-                    commandLine = listOf("bash", "-c", "./set-arch.sh $flutterArch && ${flutterCmd().joinToString(" ")} build macos")
+                    val extra = if (dartDebug) " --debug" else ""
+                    commandLine = listOf("bash", "-c", "./set-arch.sh $flutterArch && ${flutterCmd().joinToString(" ")} build macos$extra")
                 }
-                else -> commandLine = flutterCmd() + listOf("build", info.os)
+                else -> commandLine = flutterCmd() + listOf("build", info.os) + modeFlag
             }
             // macOS aarch64 + x86_64 both build into flutter's single build/macos dir (set-arch.sh
             // switches the arch in place), so a second build overwrites the first arch's app. Serialize
@@ -649,7 +665,7 @@ platforms.forEach { platform ->
             // this (aarch64) copy completes; see macos-x86_64FlutterLib's mustRunAfter above.
 
             val flutterArch = if (info.arch == "aarch64") "arm64" else "x64"
-            copyFlutterNatives(info.os, flutterArch)
+            copyFlutterNatives(info.os, flutterArch, dartDebug)
 
             into(layout.buildDirectory.dir("natives/${info.desktopPlatform}"))
         }

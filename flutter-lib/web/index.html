@@ -32,13 +32,18 @@
   <title>swtflutter</title>
   <link rel="manifest" href="manifest.json">
   <script>
-    window.equoCommPort = {{EQUO_COMM_PORT}};
-    window.equoCommUrl = "{{EQUO_COMM_URL}}";
+    // WebFlutterServer replaces the {{…}} placeholders at serve time (production static path).
+    // Under a `flutter run` dev launch (Phase 2 web introspection) they are NOT replaced, so every
+    // value is parsed defensively — an unreplaced placeholder degrades to 0 / "" instead of a JS
+    // syntax error that would abort this whole block. The real values then arrive via --dart-define
+    // (see web_platform.dart). Keep these robust: this file is served verbatim by `flutter run`.
+    window.equoCommPort = parseInt("{{EQUO_COMM_PORT}}", 10) || 0;
+    window.equoCommUrl = "{{EQUO_COMM_URL}}".indexOf("{{") === 0 ? "" : "{{EQUO_COMM_URL}}";
     window.evolve = {};
-    window.evolve.widgetId = {{EQUO_WIDGETID}};
-    window.evolve.widgetName = "{{EQUO_WIDGETNAME}}";
-    window.evolve.browserProxy = {{EQUO_BROWSER_PROXY}};
-    window.evolve.enableTestSemantics = {{EQUO_ENABLE_TEST_SEMANTICS}};
+    window.evolve.widgetId = parseInt("{{EQUO_WIDGETID}}", 10) || 0;
+    window.evolve.widgetName = "{{EQUO_WIDGETNAME}}".indexOf("{{") === 0 ? "" : "{{EQUO_WIDGETNAME}}";
+    window.evolve.browserProxy = "{{EQUO_BROWSER_PROXY}}" === "true";
+    window.evolve.enableTestSemantics = "{{EQUO_ENABLE_TEST_SEMANTICS}}" === "true";
   </script>
   <script>
     document.addEventListener('contextmenu', function(e) { e.preventDefault(); }, true);
