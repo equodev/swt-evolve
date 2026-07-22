@@ -39,7 +39,6 @@ class FloatingShellChromeScope extends InheritedWidget {
 class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T, V> {
   Offset? _offset;
   Size? _size;
-  bool _minimized = false;
   bool _maximized = false;
   bool _interacting = false;
   bool _initialBoundsSent = false;
@@ -78,7 +77,6 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
   int get _style => state.style;
   bool get _hasTitle => (_style & SWT.TITLE) != 0;
   bool get _hasClose => (_style & SWT.CLOSE) != 0;
-  bool get _hasMin => (_style & SWT.MIN) != 0;
   bool get _hasMax => (_style & SWT.MAX) != 0;
   bool get _hasResize => (_style & SWT.RESIZE) != 0;
   bool get _noTrim => (_style & SWT.NO_TRIM) != 0;
@@ -116,7 +114,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
     final w = (isFullScreen || _maximized) ? viewport.maxWidth : bodyW;
     final h = (isFullScreen || _maximized) ? viewport.maxHeight : bodyH;
-    final frameH = _minimized ? headerH : headerH + h;
+    final frameH = headerH + h;
 
     Offset resolvedOffset() {
       if (isFullScreen || _maximized) return Offset.zero;
@@ -153,21 +151,9 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       });
     }
 
-    void onMinimize() {
-      final willMinimize = !_minimized;
-      setState(() => _minimized = willMinimize);
-      if (willMinimize) {
-        widget.sendShellIconify(state, null);
-      } else {
-        widget.sendShellDeiconify(state, null);
-        sendBoundsToJava();
-      }
-    }
-
     void onMaximize() {
       setState(() {
         _maximized = !_maximized;
-        if (_maximized) _minimized = false;
       });
       sendBoundsToJava();
     }
@@ -179,12 +165,8 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     Widget body = ClipRect(
       child: SizedBox(
         width: w,
-        height: _minimized ? 0 : h,
-        child: Visibility(
-          visible: !_minimized,
-          maintainState: true,
-          child: super.build(context),
-        ),
+        height: h,
+        child: super.build(context),
       ),
     );
 
@@ -198,9 +180,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
               title: title,
               isTool: _isTool,
               hasClose: _hasClose,
-              hasMin: _hasMin,
               hasMax: _hasMax,
-              isMinimized: _minimized,
               isMaximized: _maximized,
               isDraggable: _isDraggable,
               height: titleBarH,
@@ -214,7 +194,6 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
               },
               onDragCancel: () => setState(() => _interacting = false),
               onClose: () => widget.sendShellClose(state, null),
-              onMinimize: onMinimize,
               onMaximize: onMaximize,
             ),
           ),
@@ -233,7 +212,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       width: w,
       height: frameH,
       child: _ResizableWrapper(
-        enabled: !_minimized && _hasResize && !_maximized && !isFullScreen,
+        enabled: _hasResize && !_maximized && !isFullScreen,
         width: w,
         height: frameH,
         onResizeStart: () => setState(() => _interacting = true),
@@ -319,22 +298,20 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
 class _TitleBar extends StatelessWidget {
   final String title;
-  final bool isTool, hasClose, hasMin, hasMax, isMinimized, isMaximized, isDraggable;
+  final bool isTool, hasClose, hasMax, isMaximized, isDraggable;
   final double height, borderRadius;
   final DisplayThemeExtension theme;
   final VoidCallback? onDragStart;
   final void Function(Offset) onDrag;
   final VoidCallback? onDragEnd;
   final VoidCallback? onDragCancel;
-  final VoidCallback onClose, onMinimize, onMaximize;
+  final VoidCallback onClose, onMaximize;
 
   const _TitleBar({
     required this.title,
     required this.isTool,
     required this.hasClose,
-    required this.hasMin,
     required this.hasMax,
-    required this.isMinimized,
     required this.isMaximized,
     required this.isDraggable,
     required this.height,
@@ -345,7 +322,6 @@ class _TitleBar extends StatelessWidget {
     this.onDragEnd,
     this.onDragCancel,
     required this.onClose,
-    required this.onMinimize,
     required this.onMaximize,
   });
 
@@ -372,14 +348,6 @@ class _TitleBar extends StatelessWidget {
               maxLines: 1,
             ),
           ),
-          if (hasMin && !isTool)
-            _TitleBarButton(
-              icon: isMinimized ? Icons.open_in_full : Icons.remove,
-              iconColor: theme.minimizeButtonColor,
-              hoverBgColor: theme.minimizeButtonHoverColor,
-              iconSize: btnSize,
-              onTap: onMinimize,
-            ),
           if (hasMax && !isTool)
             _TitleBarButton(
               icon: isMaximized ? Icons.close_fullscreen : Icons.crop_square,
