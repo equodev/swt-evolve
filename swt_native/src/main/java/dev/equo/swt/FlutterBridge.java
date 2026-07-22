@@ -160,12 +160,16 @@ public abstract class FlutterBridge {
         Set<Object> filtered = new HashSet<>();
 
         for (Object widget : dirtySet) {
-            if (isFlutterRoot(widget) || !hasAncestorInSet(widget, dirtySet)) {
+            if (isFlutterRoot(widget) || isShell(widget) || !hasAncestorInSet(widget, dirtySet)) {
                 filtered.add(widget);
             }
         }
 
         return filtered;
+    }
+
+    private static boolean isShell(Object widget) {
+        return widget instanceof DartControl d && d.getApi() instanceof Shell;
     }
 
     private static boolean isFlutterRoot(Object widget) {
