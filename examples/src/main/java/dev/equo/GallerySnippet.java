@@ -19,6 +19,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.*;
 
+import static org.eclipse.swt.events.SelectionListener.widgetDefaultSelectedAdapter;
 import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
 
 /**
@@ -116,6 +117,7 @@ public class GallerySnippet {
         ccombo.select(0);
         List list = new List(selectGroup, SWT.BORDER | SWT.SINGLE);
         list.setItems(new String[] {"List item 1", "List item 2", "List item 3"});
+        list.addSelectionListener(widgetDefaultSelectedAdapter(e -> status.setText("List item default-selected")));
 
         // Table
         Group tableGroup = section(root, "Table");
