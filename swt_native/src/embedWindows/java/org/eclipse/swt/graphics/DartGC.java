@@ -911,8 +911,6 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight) {
-        if (image == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
         checkNonDisposed();
         if (srcWidth == 0 || srcHeight == 0 || destWidth == 0 || destHeight == 0)
             return;
