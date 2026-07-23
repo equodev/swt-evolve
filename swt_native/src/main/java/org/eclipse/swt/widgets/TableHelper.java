@@ -392,44 +392,135 @@ public class TableHelper {
 
     public static Image[] getImages(DartTableItem item) {
         int count = Math.max(1, item.parent.getColumnCount());
-        Image[] result = new Image[count];
-        Image[] rowImages = item.images;
-        if (rowImages != null) {
+        Image[] result = ownImages(item, count);
+        OwnerDraw drawn = ownerDraw(item);
+        if (drawn != null) {
             for (int i = 0; i < count; i++) {
-                Image img = i < rowImages.length ? rowImages[i] : null;
-                result[i] = dartImageOrNull(img);
+                if (drawn.suppressed[i] || result[i] == null) {
+                    result[i] = dartImageOrNull(drawn.images[i]);
+                }
             }
-        } else {
-            result[0] = dartImageOrNull(item.image);
-        }
-        if (((DartWidget) item.parent.getImpl()).hooks(SWT.PaintItem)) {
-            firePaintItemForEmptyCells(item, result, count);
         }
         return result;
     }
 
-    private static void firePaintItemForEmptyCells(DartTableItem item, Image[] result, int count) {
+    public static String[] getTexts(DartTableItem item) {
+        String[] model = item.strings;
+        OwnerDraw drawn = ownerDraw(item);
+        if (drawn == null || !drawn.anySuppressed()) {
+            return model;
+        }
+        String[] result = new String[drawn.suppressed.length];
+        for (int i = 0; i < result.length; i++) {
+            String own = model != null && i < model.length ? model[i] : null;
+            result[i] = drawn.suppressed[i] ? drawn.texts[i] : own;
+        }
+        return result;
+    }
+
+    private static Image[] ownImages(DartTableItem item, int count) {
+        Image[] result = new Image[count];
+        Image[] rowImages = item.images;
+        if (rowImages != null) {
+            for (int i = 0; i < count; i++) {
+                result[i] = dartImageOrNull(i < rowImages.length ? rowImages[i] : null);
+            }
+        } else {
+            result[0] = dartImageOrNull(item.image);
+        }
+        return result;
+    }
+
+    /** What an SWT.PaintItem listener actually drew into each cell of one item. */
+    private static final class OwnerDraw {
+
+        final String[] texts;
+
+        final Image[] images;
+
+        final boolean[] suppressed;
+
+        OwnerDraw(String[] texts, Image[] images, boolean[] suppressed) {
+            this.texts = texts;
+            this.images = images;
+            this.suppressed = suppressed;
+        }
+
+        boolean anySuppressed() {
+            for (boolean s : suppressed) {
+                if (s)
+                    return true;
+            }
+            return false;
+        }
+    }
+
+    private static OwnerDraw ownerDraw(DartTableItem item) {
+        if (!((DartWidget) item.parent.getImpl()).hooks(SWT.PaintItem)) {
+            return null;
+        }
+        return captureOwnerDraw(item);
+    }
+
+    private static OwnerDraw captureOwnerDraw(DartTableItem item) {
+        int count = Math.max(1, item.parent.getColumnCount());
+        DartWidget parent = (DartWidget) item.parent.getImpl();
+        Image[] own = ownImages(item, count);
+        boolean[] suppressed = suppressedForegrounds(item, parent, count);
+
+        String[] texts = new String[count];
+        Image[] images = new Image[count];
         GC gc = new GC(item.parent);
         DartGC dartGc = (DartGC) gc.getImpl();
         int itemHeight = ((DartTable) item.parent.getImpl()).getItemHeight();
         try {
-            for (int columnIndex = 0; columnIndex < count; columnIndex++) {
-                if (result[columnIndex] != null)
+            for (int i = 0; i < count; i++) {
+                if (!suppressed[i] && own[i] != null) {
                     continue;
-                Image[] captured = new Image[1];
-                dartGc.imageCapture = drawnImage -> captured[0] = drawnImage;
+                }
+                StringBuilder text = new StringBuilder();
+                Image[] image = new Image[1];
+                dartGc.textCapture = drawn -> {
+                    if (drawn != null)
+                        text.append(drawn);
+                };
+                dartGc.imageCapture = drawn -> image[0] = drawn;
                 Event event = new Event();
                 event.item = item.getApi();
-                event.index = columnIndex;
+                event.index = i;
                 event.gc = gc;
                 event.height = itemHeight;
-                ((DartWidget) item.parent.getImpl()).sendEvent(SWT.PaintItem, event);
-                result[columnIndex] = dartImageOrNull(captured[0]);
+                parent.sendEvent(SWT.PaintItem, event);
+                texts[i] = text.toString();
+                images[i] = image[0];
             }
         } finally {
+            dartGc.textCapture = null;
             dartGc.imageCapture = null;
             gc.dispose();
         }
+        return new OwnerDraw(texts, images, suppressed);
+    }
+
+    /**
+     * Asks the SWT.EraseItem listeners which cells they paint themselves. An owner-drawing app
+     * clears SWT.FOREGROUND there to mean "do not paint this item's own text/image, I will paint
+     * it" -- Eclipse's QuickAccessEntry.erase() does exactly {@code detail &= ~SWT.FOREGROUND}.
+     */
+    private static boolean[] suppressedForegrounds(DartTableItem item, DartWidget parent, int count) {
+        boolean[] suppressed = new boolean[count];
+        if (!parent.hooks(SWT.EraseItem)) {
+            return suppressed;
+        }
+        for (int i = 0; i < count; i++) {
+            Event event = new Event();
+            event.item = item.getApi();
+            event.index = i;
+            event.detail = SWT.FOREGROUND | SWT.BACKGROUND;
+            parent.sendEvent(SWT.EraseItem, event);
+            suppressed[i] = (event.detail & SWT.FOREGROUND) == 0;
+        }
+        return suppressed;
     }
 
     public static void setImages(Image[] value, DartTableItem item) {

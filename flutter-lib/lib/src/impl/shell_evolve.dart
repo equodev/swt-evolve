@@ -44,9 +44,38 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
   bool _initialBoundsSent = false;
   final Set<int> _openedDialogIds = {};
 
+  final FocusScopeNode _focusScopeNode = FocusScopeNode(debugLabel: 'ShellFocusScope');
+  bool _hasFocus = false;
+  bool _autoFocusRequested = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusScopeNode.addListener(_handleFocusScopeChange);
+  }
+
+  @override
+  void dispose() {
+    _focusScopeNode.removeListener(_handleFocusScopeChange);
+    _focusScopeNode.dispose();
+    super.dispose();
+  }
+
+  void _handleFocusScopeChange() {
+    final hasFocusNow = _focusScopeNode.hasFocus;
+    if (hasFocusNow == _hasFocus) return;
+    _hasFocus = hasFocusNow;
+    if (_hasFocus) {
+      widget.sendShellActivate(state, null);
+    } else {
+      widget.sendShellDeactivate(state, null);
+    }
+  }
+
   @override
   void setValue(V value) {
     final prevDialogs = state.dialogs ?? [];
+    final wasVisible = state.visible ?? true;
     super.setValue(value);
     final newDialogs = value.dialogs ?? [];
     _openedDialogIds.removeWhere((id) => !newDialogs.any((d) => d.id == id));
@@ -58,11 +87,18 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
         });
       }
     }
+    if (!wasVisible && (value.visible ?? true)) {
+      _autoFocusRequested = false;
+    }
   }
 
   @override
   void didUpdateWidget(covariant T oldWidget) {
+    final wasVisible = oldWidget.value.visible ?? true;
     super.didUpdateWidget(oldWidget);
+    if (!wasVisible && (state.visible ?? true)) {
+      _autoFocusRequested = false;
+    }
     if (_interacting) return;
     _size = null;
   }
@@ -87,13 +123,25 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
   bool get _showTitleBar => !_noTrim && (_hasTitle || _hasClose);
   bool get _showBorder => !_noTrim && (_hasBorder || _showTitleBar);
+  bool get _showFloatingBorder => !_noTrim;
   bool get _isDraggable =>
       _showTitleBar && !_noMove && !_isSheet && !_maximized && state.fullScreen != true;
 
   @override
   Widget build(BuildContext context) {
     final scope = FloatingShellChromeScope.maybeOf(context);
-    if (scope == null) return super.build(context);
+    if (scope == null) {
+      return FocusScope(
+        node: _focusScopeNode,
+        child: Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (_) {
+            if (!_focusScopeNode.hasFocus) _focusScopeNode.requestFocus();
+          },
+          child: super.build(context),
+        ),
+      );
+    }
 
     final viewport = scope.viewportConstraints;
     final theme = Theme.of(context).extension<DisplayThemeExtension>()!;
@@ -273,10 +321,10 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       decoration: BoxDecoration(
         color: shellBg ?? theme.dialogBackgroundColor,
         borderRadius: BorderRadius.circular(borderRadius),
-        border: _showBorder
+        border: _showFloatingBorder
             ? Border.all(color: theme.dialogBorderColor, width: theme.dialogBorderWidth)
             : null,
-        boxShadow: _showBorder
+        boxShadow: _showFloatingBorder
             ? [
                 BoxShadow(
                   color: theme.dialogShadowColor,
@@ -292,7 +340,25 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
     if (opacity < 1.0) dialog = Opacity(opacity: opacity, child: dialog);
 
-    return Positioned(left: offset.dx, top: offset.dy, child: pointerInterceptor(dialog));
+    final content = FocusScope(
+      node: _focusScopeNode,
+      child: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: (_) {
+          if (!_focusScopeNode.hasFocus) _focusScopeNode.requestFocus();
+        },
+        child: dialog,
+      ),
+    );
+
+    if (!_autoFocusRequested) {
+      _autoFocusRequested = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _focusScopeNode.nextFocus();
+      });
+    }
+
+    return Positioned(left: offset.dx, top: offset.dy, child: pointerInterceptor(content));
   }
 }
 

@@ -228,6 +228,7 @@ const _equoDarkScheme = ColorScheme(
   onSurface: Color(0xFFE8EFFE),
   onSurfaceVariant: Color(0xFF6B89C9),
   surfaceVariant: Color(0xFF1A2035),
+  surfaceContainer: Color(0xFF373737),
   surfaceContainerHighest: Color(0xFF161922),
   surfaceContainerHigh: Color(0xFF1A1F2A),
   surfaceContainerLow: Color(0xFF1E2330),

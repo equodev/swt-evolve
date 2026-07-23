@@ -129,8 +129,10 @@ class TextImpl<T extends TextSwt, V extends VText>
       },
     );
 
+    final isReadOnly =
+        !(state.editable ?? true) || hasStyle(state.style, SWT.READ_ONLY);
     final parentBg = ParentBackgroundScope.backgroundOf(context);
-    if (parentBg != null) {
+    if (parentBg != null && isReadOnly) {
       decoration = decoration.copyWith(filled: true, fillColor: parentBg);
     }
 
@@ -163,8 +165,7 @@ class TextImpl<T extends TextSwt, V extends VText>
       focusNode: _focusNode,
       enabled: enabled,
       obscureText: isPassword,
-      readOnly:
-          !(state.editable ?? true) || hasStyle(state.style, SWT.READ_ONLY),
+      readOnly: isReadOnly,
       maxLines: singleLine ? 1 : null,
       expands: shouldExpand,
       textAlignVertical: TextAlignVertical.center,
@@ -175,6 +176,7 @@ class TextImpl<T extends TextSwt, V extends VText>
       maxLength: state.textLimit,
       onChanged: _handleTextChanged,
       onSubmitted: _handleSubmitted,
+      onTapOutside: (_) {},
       cursorColor: cursorColor,
     );
     return DoubleClickWordSelector(

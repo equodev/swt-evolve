@@ -1084,7 +1084,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     public ImageData getImageData(int zoom) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-if (memGC != null && !memGC.isDisposed() && memGC.getImpl() instanceof DartGC dgc) {
+        if (memGC != null && !memGC.isDisposed() && memGC.getImpl() instanceof DartGC dgc) {
             // A GC is still actively drawing on this image (no dispose() yet) — this backend
             // only renders in response to an explicit signal (see GCImageDrawer), unlike real
             // SWT where GC draws are immediately visible, so ask it to render the current

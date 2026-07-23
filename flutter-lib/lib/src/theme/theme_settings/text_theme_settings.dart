@@ -52,13 +52,13 @@ TextThemeExtension _getTextTheme({
     placeholderColor: colorSchemeExtension.surfacePlaceholder,
     helperTextColor: colorScheme.onSurfaceVariant,
     errorTextColor: colorScheme.error,
-    
-    backgroundColor: colorScheme.surface,
+    backgroundColor: isDark ? colorScheme.surfaceContainer : colorScheme.surface,
     disabledBackgroundColor: colorScheme.surfaceVariant,
     hoverBackgroundColor: colorSchemeExtension.surfaceFocused,
     focusedBackgroundColor: colorSchemeExtension.surfaceFocused,
-    
-    borderColor: colorSchemeExtension.surfaceBorderEnabled,
+    borderColor: isDark
+        ? colorScheme.outline.withOpacity(0.38)
+        : colorSchemeExtension.surfaceBorderEnabled,
     hoverBorderColor: colorSchemeExtension.surfaceBorderHovered,
     focusedBorderColor: colorSchemeExtension.surfaceBorderFocused,
     errorBorderColor: colorScheme.error,

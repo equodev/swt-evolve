@@ -95,6 +95,28 @@ void main() {
       expect(widths[cols.length], isA<FlexColumnWidth>());
     });
 
+    testWidgets('mixed widths: a null-width column sizes to content, not 0',
+        (tester) async {
+      // Find Actions (#818) shape: the category column has no explicit width
+      // while the label column does. A null width must size to content, not
+      // collapse to 0 (which hid the category column entirely).
+      final cols = [_col(1), _col(2, width: 300)];
+      final value = _table(
+          columns: cols, items: [_item(10, ['Editors', 'Toggle Split Editor'])]);
+
+      await tester.pumpWidget(_wrap(value));
+      await tester.pump();
+
+      final widths =
+          tester.state<TableImpl>(find.byType(TableSwt<VTable>)).cachedColumnWidths!;
+
+      expect((widths[0] as FixedColumnWidth).value, greaterThan(0.0),
+          reason:
+              'a column with no explicit width must size to content, not 0 (#818)');
+      expect((widths[1] as FixedColumnWidth).value, equals(300.0),
+          reason: 'columns with an explicit width keep it');
+    });
+
     testWidgets('fixed columns keep their declared pixel widths', (tester) async {
       final cols = [_col(1, width: 100), _col(2, width: 250)];
       final value = _table(columns: cols, items: []);
