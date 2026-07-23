@@ -322,7 +322,7 @@ public class WebDisplayBridge extends DisplayBridge {
     private boolean isChromiumWindow(DartControl control) {
         return hasNativeWindow()
                 && control instanceof DartShell dartShell
-                && shouldTrackDisplayBounds((Shell) dartShell.getApi());
+                && isMainShell(forDisplay, (Shell) dartShell.getApi());
     }
 
     /** Whether a real OS window (Chromium standalone) is hosting this Display (false in tests / pure web). */

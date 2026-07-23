@@ -9,9 +9,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Lets a web-target Browser display a {@code file://} URL by re-serving it (and
- * any sibling resources it references by relative path) same-origin through
- * {@link WebFlutterServer}'s {@code /local-file/<token>/...} endpoint.
+ * Lets a web-target Browser display a {@code file://} URL by re-serving it (and any
+ * sibling resources it references, by a relative or a root-absolute path) same-origin
+ * through {@link WebFlutterServer}'s {@code /local-file/<token>/...} endpoint.
  * <p>
  * Native SWT's Browser is a real OS webview and loads {@code file://} URLs
  * directly; the web-target Browser is an {@code <iframe>}, and browsers refuse
@@ -28,6 +28,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * the first place, not a new one.
  */
 public final class LocalFileServing {
+
+    /** URL path prefix under which {@link #registerIfLocalFile} registrations are served. */
+    public static final String URL_PREFIX = "/local-file/";
 
     private static final Map<String, File> rootsByToken = new ConcurrentHashMap<>();
     private static final Map<String, String> tokensByPath = new ConcurrentHashMap<>();
@@ -109,6 +112,21 @@ public final class LocalFileServing {
     }
 
     /**
+     * Extracts the registration token from a {@code Referer} header pointing at a
+     * {@code /local-file/<token>/...} page, or {@code null} if it isn't one. Lets a caller
+     * resolve a root-absolute sub-resource request against the same registered directory as
+     * the page that requested it — see {@link #resolve}.
+     */
+    public static String tokenFromLocalFileReferer(String referer) {
+        if (referer == null) return null;
+        int start = referer.indexOf(URL_PREFIX);
+        if (start < 0) return null;
+        String rest = referer.substring(start + URL_PREFIX.length());
+        int slash = rest.indexOf('/');
+        return slash > 0 ? rest.substring(0, slash) : null;
+    }
+
+    /**
      * Parses a {@code file:} URL into a {@link Path}, tolerating the
      * not-strictly-RFC-3986-compliant forms real tools produce in practice —
      * notably Eclipse's {@code FileLocator.toFileURL()}, which emits a single
@@ -117,9 +135,18 @@ public final class LocalFileServing {
      * raw string instead: it collapses {@code file:} plus any number of
      * following slashes down to one, then tries the result first literally and,
      * if that path doesn't exist, percent-decoded.
+     * <p>
+     * Also strips a trailing {@code #fragment} or {@code ?query} before touching the
+     * filesystem, so a hash-router single-page app's URL still resolves to its file.
      */
     private static Path parseFileUrl(String url) {
         String rest = url.substring("file:".length());
+        int end = rest.length();
+        int hash = rest.indexOf('#');
+        if (hash >= 0 && hash < end) end = hash;
+        int query = rest.indexOf('?');
+        if (query >= 0 && query < end) end = query;
+        rest = rest.substring(0, end);
         int i = 0;
         while (i < rest.length() && rest.charAt(i) == '/') i++;
         String rawPath = "/" + rest.substring(i);

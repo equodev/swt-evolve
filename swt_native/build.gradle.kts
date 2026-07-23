@@ -268,7 +268,9 @@ sourceSets {
             include("dev/equo/swt/harness/**", "**/*FlutterTest.java",
                     "dev/equo/swt/MockFlutterBridge.java",
                     "dev/equo/swt/size/**",
-                    "org/eclipse/swt/widgets/DartMocks.java")
+                    "org/eclipse/swt/widgets/DartMocks.java",
+                    // Test-only stand-in for the real Eclipse e4 workbench class.
+                    "org/eclipse/e4/ui/workbench/renderers/swt/**")
         }
         resources {
             srcDirs("src/test/resources")
