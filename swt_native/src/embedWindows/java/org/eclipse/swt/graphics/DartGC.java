@@ -3392,6 +3392,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setBackground(Color color) {
+        color = GraphicsUtils.copyColor(color);
         Color newValue = color;
         if (!java.util.Objects.equals(this.background, newValue)) {
             dirty();
@@ -3764,6 +3765,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setForeground(Color color) {
+        color = GraphicsUtils.copyColor(color);
         Color newValue = color;
         if (!java.util.Objects.equals(this.foreground, newValue)) {
             dirty();

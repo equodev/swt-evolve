@@ -3353,6 +3353,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     private void _setBackground(Color color) {
+        color = GraphicsUtils.copyColor(color);
         Color newValue = color;
         if (!java.util.Objects.equals(this.background, newValue)) {
             dirty();
