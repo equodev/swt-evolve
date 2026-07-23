@@ -598,6 +598,7 @@ public class DartLink extends DartControl implements ILink {
      * @since 3.105
      */
     public void setLinkForeground(Color color) {
+        color = GraphicsUtils.copyColor(color);
         checkWidget();
         if (!java.util.Objects.equals(this.linkColor, color)) {
             dirty();

@@ -1,6 +1,7 @@
 package org.eclipse.swt.graphics;
 
 import dev.equo.swt.Config;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 
 /**
@@ -59,6 +60,30 @@ public class GraphicsUtils {
         } else {
             return image;
         }
+    }
+
+    /**
+     * Creates an independent, widget-owned copy of a Color with the same RGBA channels.
+     * <p>
+     * Colors passed to a widget setter (background, foreground, …) may be disposed by the caller
+     * afterwards — legal in SWT, since native captures the value at set-time. In the Dart backend the
+     * widget instead holds the Java {@code Color} reference and reads its channels later, at async
+     * serialization; a disposed color throws ERROR_GRAPHIC_DISPOSED there and aborts the whole widget
+     * payload (swt-flutter#749). Storing this independent copy decouples the widget from the caller's
+     * disposal. Colors carry no native handle, so this is a cheap value copy.
+     *
+     * @param color the color to copy (can be null)
+     * @return an independent DartColor copy, or null if input is null
+     */
+    public static Color copyColor(Color color) {
+        if (color == null) {
+            return null;
+        }
+        if (color.isDisposed()) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        DartColor copy = new DartColor(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha(), null);
+        return copy.getApi();
     }
 
     private static java.util.Map<String, java.io.File> assetFilesCache = null;

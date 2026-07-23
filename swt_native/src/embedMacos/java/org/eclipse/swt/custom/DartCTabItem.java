@@ -490,6 +490,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      * @since 3.114
      */
     public void setForeground(Color color) {
+        color = GraphicsUtils.copyColor(color);
         checkWidget();
         if (!java.util.Objects.equals(this.foreground, color)) {
             dirty();
@@ -521,6 +522,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      * @since 3.114
      */
     public void setSelectionForeground(Color color) {
+        color = GraphicsUtils.copyColor(color);
         checkWidget();
         if (!java.util.Objects.equals(this.selectionForeground, color)) {
             dirty();
