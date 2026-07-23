@@ -558,12 +558,17 @@ class GCDrawer extends GCDrawerBase {
       VGCDrawImageImageintintintintintintintint o) {
     if (o.image == null) return;
     final capturedClipping = clipping;
-    final idx = _staging.length;
-    _staging.add(_PlaceholderShape());
+    // Capture the staging list this op belongs to: gcDispose() may reassign
+    // `_staging` to a fresh list for the next paint cycle before this image
+    // finishes decoding, and _onImageLoaded must write back into the list it
+    // was scheduled against, not whatever `_staging` points to when it fires.
+    final stagingList = _staging;
+    final idx = stagingList.length;
+    stagingList.add(_PlaceholderShape());
     final f = ImageShape.fromVImageDetailed(o.image!, o, capturedClipping);
     _pendingImages.add(f);
     f.then((s) {
-      _onImageLoaded(idx, s);
+      _onImageLoaded(stagingList, idx, s);
     });
   }
 
@@ -572,18 +577,19 @@ class GCDrawer extends GCDrawerBase {
     VGCDrawImageImageintintintintintintintint opArgs,
     Rect? capturedClipping,
   ) {
-    final idx = _staging.length;
-    _staging.add(_PlaceholderShape());
+    final stagingList = _staging;
+    final idx = stagingList.length;
+    stagingList.add(_PlaceholderShape());
     final f = ImageShape.fromVImageDetailed(vImage, opArgs, capturedClipping);
     _pendingImages.add(f);
     f.then((imageShape) {
-      _onImageLoaded(idx, imageShape);
+      _onImageLoaded(stagingList, idx, imageShape);
     });
   }
 
-  void _onImageLoaded(int idx, ImageShape shape) {
-    if (idx < _staging.length) {
-      _staging[idx] = shape;
+  void _onImageLoaded(List<Shape> stagingList, int idx, ImageShape shape) {
+    if (idx < stagingList.length) {
+      stagingList[idx] = shape;
     } else {
       _lateLoadedImages.add(shape);
     }
