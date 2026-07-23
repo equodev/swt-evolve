@@ -1382,7 +1382,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * @since 3.112
      */
     public static boolean isSystemDarkTheme() {
-        return false;
+        return "dark".equals(Config.getConfigFlags().force_theme);
     }
 
     /**

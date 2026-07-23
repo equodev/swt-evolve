@@ -615,7 +615,11 @@ public class Config {
             configFlags.show_scaling_control = Boolean.getBoolean("swt.evolve.show_scaling_control");
             configFlags.decorations_align = DecorationsAlign.fromString(System.getProperty("swt.evolve.decorations_align", "vleft"));
             configFlags.print_move = Boolean.getBoolean("dev.equo.swt.printMove");
-            configFlags.force_theme = System.getProperty("swt.evolve.force_theme", "dark");
+            String forceTheme = System.getProperty("swt.evolve.force_theme");
+            if (forceTheme == null) {
+                forceTheme = EclipseWorkspaceTheme.detect();
+            }
+            configFlags.force_theme = forceTheme != null ? forceTheme : "dark";
             configFlags.theme_name = System.getProperty("swt.evolve.theme_name", "equo");
             configFlags.theme_color = System.getProperty("swt.evolve.theme_color");
             // Client-Side Decorations: a single property selects placement and on/off

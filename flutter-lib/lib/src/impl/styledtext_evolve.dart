@@ -31,6 +31,10 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   @override
   bool get forwardsKeysFromWrap => false;
 
+  // Flutter's Draggable fires on any pointer jitter, turning ordinary clicks into spurious drag/drop.
+  @override
+  bool get wrapsWholeWidgetForDnd => false;
+
   List<Shape> shapes = [];
   TextShape? _editableTextShape;
   bool _isEditingText = false;
@@ -238,13 +242,20 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       } else if (_editableTextShape!.text != text) {
         _enterLocalEditMode(textShape);
         _hasProgrammaticSelection = false;
-      } else if (selectionFromState != null) {
-        _editableTextShape = _editableTextShape!.copyWithSelection(selectionFromState);
-        _hasProgrammaticSelection = true;
-      } else if (_hasProgrammaticSelection) {
-        // Java cleared the Find/Replace highlight (selectionFromState == null but we had one).
-        _editableTextShape = _editableTextShape!.clearSelection();
-        _hasProgrammaticSelection = false;
+      } else {
+        // Text already matches what we echoed locally, but this sync may carry fresh
+        // StyleRanges from an async recolor (e.g. JDT's reconciler) for the edit we
+        // already predicted — adopt them so syntax highlighting doesn't go stale.
+        _localEditingState = editingState;
+        _editableTextShape = _editableTextShape!.copyWithEditingState(editingState);
+        if (selectionFromState != null) {
+          _editableTextShape = _editableTextShape!.copyWithSelection(selectionFromState);
+          _hasProgrammaticSelection = true;
+        } else if (_hasProgrammaticSelection) {
+          // Java cleared the Find/Replace highlight (selectionFromState == null but we had one).
+          _editableTextShape = _editableTextShape!.clearSelection();
+          _hasProgrammaticSelection = false;
+        }
       }
     } else {
       shapes = [...shapes, textShape];
@@ -2030,6 +2041,25 @@ class TextShape extends Shape {
       onTextChanged,
       editingState,
       selection,
+      lineHeight,
+    );
+  }
+
+  TextShape copyWithEditingState(TextEditingState newEditingState) {
+    return TextShape(
+      text,
+      off,
+      style,
+      clipRect,
+      TextRenderer.buildFinalTextSpan(text, newEditingState, style),
+      caretInfo,
+      wordWrap,
+      canvasSize,
+      editable,
+      styledTextId,
+      onTextChanged,
+      newEditingState,
+      selectionInfo,
       lineHeight,
     );
   }
