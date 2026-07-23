@@ -384,6 +384,16 @@ public class WebFlutterServer {
                 }
 
                 if (!file.isFile() || !file.canRead()) {
+                    // A local-file page's own root-absolute sub-resource request lands here
+                    // instead of under /local-file/<token>/; recover the token from the Referer
+                    // and try the same registered directory before the SPA fallback below.
+                    String referer = exchange.getRequestHeaders().getFirst("Referer");
+                    String token = LocalFileServing.tokenFromLocalFileReferer(referer);
+                    File localFile = token != null ? LocalFileServing.resolve(token, requestPath) : null;
+                    if (localFile != null) {
+                        LocalFileHandler.serveResolvedFile(exchange, localFile, method);
+                        return;
+                    }
                     // For single-page apps, fall back to index.html for navigation routes
                     File fallback = rootDir.resolve("index.html").toFile();
                     if (fallback.isFile() && fallback.canRead()) {
@@ -726,8 +736,6 @@ public class WebFlutterServer {
      */
     private static class LocalFileHandler implements HttpHandler {
 
-        private static final String PREFIX = "/local-file/";
-
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             try {
@@ -744,7 +752,8 @@ public class WebFlutterServer {
                 }
 
                 String path = exchange.getRequestURI().getPath();
-                String rest = path.startsWith(PREFIX) ? path.substring(PREFIX.length()) : "";
+                String rest = path.startsWith(LocalFileServing.URL_PREFIX)
+                        ? path.substring(LocalFileServing.URL_PREFIX.length()) : "";
                 int slash = rest.indexOf('/');
                 if (slash <= 0) {
                     sendPlain(exchange, 404, "Not Found");
@@ -762,22 +771,7 @@ public class WebFlutterServer {
                     sendPlain(exchange, 404, "Not Found");
                     return;
                 }
-
-                exchange.getResponseHeaders().set("Content-Type", StaticFileHandler.getMimeType(file.getName()));
-                exchange.getResponseHeaders().set("Cache-Control", "no-store");
-                StaticFileHandler.setCrossOriginHeaders(exchange);
-                StaticFileHandler.setSameOriginCorsHeaders(exchange);
-
-                if ("HEAD".equalsIgnoreCase(method)) {
-                    exchange.sendResponseHeaders(200, -1);
-                    return;
-                }
-
-                exchange.sendResponseHeaders(200, file.length());
-                try (OutputStream os = exchange.getResponseBody();
-                     InputStream is = Files.newInputStream(file.toPath())) {
-                    is.transferTo(os);
-                }
+                serveResolvedFile(exchange, file, method);
             } catch (Exception e) {
                 LOG.log(Level.WARNING, "local-file error for " + exchange.getRequestURI(), e);
                 try {
@@ -786,6 +780,26 @@ public class WebFlutterServer {
                 }
             } finally {
                 exchange.close();
+            }
+        }
+
+        /** Streams a file resolved by {@link LocalFileServing#resolve}. Shared by this handler's own
+         *  requests and by {@link StaticFileHandler}'s root-path Referer fallback. */
+        static void serveResolvedFile(HttpExchange exchange, File file, String method) throws IOException {
+            exchange.getResponseHeaders().set("Content-Type", StaticFileHandler.getMimeType(file.getName()));
+            exchange.getResponseHeaders().set("Cache-Control", "no-store");
+            StaticFileHandler.setCrossOriginHeaders(exchange);
+            StaticFileHandler.setSameOriginCorsHeaders(exchange);
+
+            if ("HEAD".equalsIgnoreCase(method)) {
+                exchange.sendResponseHeaders(200, -1);
+                return;
+            }
+
+            exchange.sendResponseHeaders(200, file.length());
+            try (OutputStream os = exchange.getResponseBody();
+                 InputStream is = Files.newInputStream(file.toPath())) {
+                is.transferTo(os);
             }
         }
 

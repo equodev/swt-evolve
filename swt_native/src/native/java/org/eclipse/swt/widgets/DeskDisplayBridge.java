@@ -209,7 +209,7 @@ public class DeskDisplayBridge extends DisplayBridge {
     private boolean isMainWindow(DartControl control) {
         return hasNativeWindow()
                 && control instanceof DartShell dartShell
-                && shouldTrackDisplayBounds((Shell) dartShell.getApi());
+                && isMainShell(forDisplay, (Shell) dartShell.getApi());
     }
 
     @Override

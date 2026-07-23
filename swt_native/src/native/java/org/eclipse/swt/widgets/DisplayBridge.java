@@ -235,39 +235,56 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         }
     }
 
-    /** Slave every display-tracking main shell to {@code viewport} (wrapped by the caller in
-     *  {@link #applyClientBounds} so the setBounds isn't echoed to the window). Slaved regardless of
-     *  origin — the Eclipse workbench opens non-origin, which an earlier atOrigin-only guard skipped.
-     *  Only touch it when the geometry differs, so a no-op repeat doesn't feed the resize loop. */
+    /** Slave the main shell to {@code viewport} (wrapped by the caller in {@link #applyClientBounds}
+     *  so the setBounds isn't echoed to the window). Slaved regardless of origin — the Eclipse
+     *  workbench opens non-origin, which an earlier atOrigin-only guard skipped. Only touch it when
+     *  the geometry differs, so a no-op repeat doesn't feed the resize loop. */
     protected void resizeMainShells(DartDisplay display, Rectangle viewport) {
-        for (Shell shell : display._shells()) {
-            if (shell == null || shell.isDisposed()) {
-                continue;
-            }
-            if (!shouldTrackDisplayBounds(shell)) {
-                continue;
-            }
-            Rectangle shellBounds = shell.getBounds();
-            boolean matchesViewport =
-                    shellBounds != null
-                            && shellBounds.x == 0
-                            && shellBounds.y == 0
-                            && shellBounds.width == viewport.width
-                            && shellBounds.height == viewport.height;
-            if (!matchesViewport) {
-                shell.setBounds(0, 0, viewport.width, viewport.height);
-            }
+        Shell shell = mainShell(display);
+        if (shell == null || shell.isDisposed()) {
+            return;
+        }
+        Rectangle shellBounds = shell.getBounds();
+        boolean matchesViewport =
+                shellBounds != null
+                        && shellBounds.x == 0
+                        && shellBounds.y == 0
+                        && shellBounds.width == viewport.width
+                        && shellBounds.height == viewport.height;
+        if (!matchesViewport) {
+            shell.setBounds(0, 0, viewport.width, viewport.height);
         }
     }
 
-    /** The first top-level, display-tracking shell (the one slaved to the window viewport), or null. */
+    /** Class name of the Eclipse e4 workbench's main-window layout, checked by name only (no hard
+     *  dependency on the e4 workbench jar). Also used by {@code dev.equo.swt.Config}. */
+    private static final String E4_MAIN_SHELL_LAYOUT =
+            "org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout";
+
+    /** The top-level, display-tracking shell that drives (and is slaved to) the viewport, or null.
+     *  Prefers a shell laid out with {@link #E4_MAIN_SHELL_LAYOUT} over construction order; falls
+     *  back to the first trackable shell when no such shell exists yet. */
     protected Shell mainShell(DartDisplay display) {
+        Shell firstTrackable = null;
         for (Shell shell : display._shells()) {
-            if (shell != null && !shell.isDisposed() && shouldTrackDisplayBounds(shell)) {
+            if (shell == null || shell.isDisposed() || !shouldTrackDisplayBounds(shell)) {
+                continue;
+            }
+            Layout layout = shell.getLayout();
+            if (layout != null && E4_MAIN_SHELL_LAYOUT.equals(layout.getClass().getName())) {
                 return shell;
             }
+            if (firstTrackable == null) {
+                firstTrackable = shell;
+            }
         }
-        return null;
+        return firstTrackable;
+    }
+
+    /** Whether {@code shell} is the one {@link #mainShell} returns — the single shell that drives
+     *  (and is slaved to) the native/host window. */
+    protected boolean isMainShell(DartDisplay display, Shell shell) {
+        return shell != null && !shell.isDisposed() && shell == mainShell(display);
     }
 
     protected boolean shouldTrackDisplayBounds(Shell shell) {
@@ -374,7 +391,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         if (control instanceof DartShell dartShell) {
             Shell shell = (Shell) dartShell.getApi();
             if (visible && forDisplay != null) {
-                if (shouldTrackDisplayBounds(shell)) {
+                if (isMainShell(forDisplay, shell)) {
                     // Fill the viewport on show even if the shell opened at a stale, non-origin
                     // geometry persisted from a previous run (a maximized browser fires no resize).
                     applyClientBounds(() -> resizeMainShells(forDisplay, forDisplay.bounds));

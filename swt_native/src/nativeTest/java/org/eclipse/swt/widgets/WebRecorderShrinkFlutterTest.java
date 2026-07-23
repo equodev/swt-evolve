@@ -83,6 +83,52 @@ class WebRecorderShrinkFlutterTest {
     }
 
     @Test
+    void parentlessSecondaryShell_explicitBounds_doesNotShrinkMainShellOrReachNativeWindow() {
+        // A parentless secondary Shell (e.g. Katalon's "Mobile Recorder", owned by the Display
+        // directly, just like the main shell) that sizes itself via setBounds() must not be
+        // mistaken for the window-driving shell.
+        TestChromiumWebBridge web = install(TestChromiumWebBridge::new);
+        Shell main = new Shell(display);
+        clientReady(web.comm, 1728, 1001, true);
+        main.open();
+        web.forwarded.clear();
+
+        Shell recorder = new Shell(display, SWT.SHELL_TRIM); // no parent — like Katalon's Mobile Recorder
+        recorder.open();
+        recorder.setBounds(569, 288, 590, 425); // Katalon sizes its own dialog explicitly
+
+        assertThat(web.forwarded)
+                .as("a secondary shell's own dialog geometry must never reach the native/Chromium window")
+                .isEmpty();
+        assertThat(main.getBounds())
+                .as("opening/sizing the secondary shell must not shrink the main shell")
+                .isEqualTo(new Rectangle(0, 0, 1728, 1001));
+
+        assertThat(recorder.getBounds())
+                .as("the recorder keeps the geometry Katalon gave it")
+                .isEqualTo(new Rectangle(569, 288, 590, 425));
+    }
+
+    @Test
+    void e4MainShell_recognizedOverEarlierTransientShell() {
+        // A transient shell (e.g. an e4 splash screen) alive before the real e4 workbench window
+        // must not be mistaken for the main shell just for having been created first.
+        TestWebBridge web = install(TestWebBridge::new);
+
+        Shell splash = new Shell(display); // parentless, non-modal, non-TOOL, plain layout
+        Shell workbench = new Shell(display);
+        workbench.setLayout(new org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout());
+
+        clientReady(web.comm, 1728, 1001, true);
+        splash.open();
+        workbench.open();
+
+        assertThat(workbench.getBounds())
+                .as("the workbench shell must fill the viewport, not the earlier splash shell")
+                .isEqualTo(new Rectangle(0, 0, 1728, 1001));
+    }
+
+    @Test
     void redundantSetLocation_onChromiumMainWindow_isNotForwarded() {
         // Mirrors Katalon's DialogUtil.createDialogShell(), which calls setLocation(x, y) on the
         // active (main) shell with the x/y it already has while centering an unrelated dialog.
