@@ -1125,6 +1125,10 @@ public class DartTableItem extends DartItem implements ITableItem {
         return TableHelper.getImages(this);
     }
 
+    public String[] getTexts() {
+        return TableHelper.getTexts(this);
+    }
+
     public void setImages(Image[] value) {
         TableHelper.setImages(value, this);
     }

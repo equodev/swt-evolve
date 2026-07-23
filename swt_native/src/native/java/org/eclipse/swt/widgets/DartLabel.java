@@ -347,6 +347,11 @@ public class DartLabel extends DartControl implements ILabel {
         checkWidget();
         if (!java.util.Objects.equals(this.text, string)) {
             dirty();
+            getDisplay().asyncExec(() -> {
+                org.eclipse.swt.widgets.Control control = (org.eclipse.swt.widgets.Control) getApi();
+                if (!control.isDisposed())
+                    getShell().layout(new org.eclipse.swt.widgets.Control[] { control });
+            });
         }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);

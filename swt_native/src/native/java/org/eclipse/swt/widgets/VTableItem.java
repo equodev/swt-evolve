@@ -76,7 +76,7 @@ public class VTableItem extends VItem {
     }
 
     public String[] getTexts() {
-        return ((DartTableItem) impl).strings;
+        return ((DartTableItem) impl).getTexts();
     }
 
     public void setTexts(String[] value) {

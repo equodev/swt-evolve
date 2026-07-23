@@ -780,7 +780,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
     final Map<int, TableColumnWidth> widths;
     if (hasExplicitWidths) {
-      widths = _calculateExplicitColumnWidths(columns, theme, hasCheckStyle);
+      widths =
+          _calculateExplicitColumnWidths(context, columns, theme, hasCheckStyle);
     } else {
       widths = _calculateIntrinsicColumnWidths(
         context,
@@ -794,6 +795,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
   }
 
   Map<int, TableColumnWidth> _calculateExplicitColumnWidths(
+    BuildContext context,
     List<VTableColumn> columns,
     TableThemeExtension theme,
     bool hasCheckStyle,
@@ -803,13 +805,58 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
     for (int i = 0; i < columns.length; i++) {
       final column = columns[i];
-      double width = (column.width ?? 0).toDouble();
-      if (hasCheckStyle && i == 0) {
-        width += checkboxWidth + theme.cellPadding.left;
+      double width;
+      if (column.width != null) {
+        width = column.width!.toDouble();
+        if (hasCheckStyle && i == 0) {
+          width += checkboxWidth + theme.cellPadding.left;
+        }
+      } else {
+        // No explicit width (e.g. Find Actions' category column, #818): size to
+        // content instead of collapsing to 0, which would hide the column.
+        width = _intrinsicColumnWidth(
+            context, columns, i, theme, hasCheckStyle, checkboxWidth);
       }
       widths[i] = FixedColumnWidth(width);
     }
     return widths;
+  }
+
+  /// Content-based width for a single column (widest of its header and cells),
+  /// mirroring [_calculateIntrinsicColumnWidths] for one column.
+  double _intrinsicColumnWidth(
+    BuildContext context,
+    List<VTableColumn> columns,
+    int i,
+    TableThemeExtension theme,
+    bool hasCheckStyle,
+    double checkboxWidth,
+  ) {
+    final headerTextStyle = getTextStyle(
+      context: context,
+      font: state.font,
+      textColor: getTableHeaderTextColor(state, theme),
+      baseTextStyle: theme.headerTextStyle,
+    );
+    final rowTextStyle = getTextStyle(
+      context: context,
+      font: state.font,
+      textColor: theme.rowTextColor,
+      baseTextStyle: theme.rowTextStyle,
+    );
+
+    double maxWidth = _calculateHeaderWidth(columns[i], headerTextStyle, theme);
+    for (final item in getItems()) {
+      final cellWidth = _calculateCellWidth(
+          context, item, i, rowTextStyle, theme, hasCheckStyle, checkboxWidth);
+      if (cellWidth > maxWidth) maxWidth = cellWidth;
+    }
+    if (hasCheckStyle &&
+        i == 0 &&
+        maxWidth < checkboxWidth + theme.cellPadding.left) {
+      maxWidth = checkboxWidth + theme.cellPadding.left;
+    }
+    return maxWidth > 0 ? maxWidth : 50.0;
   }
 
   Map<int, TableColumnWidth> _calculateIntrinsicColumnWidths(
