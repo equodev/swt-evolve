@@ -69,10 +69,31 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     return color.withOpacity(_alpha / 255.0);
   }
 
+  // Skips the request if a previous one is still awaiting its gcDispose response,
+  // so overlapping Paint round-trips (e.g. a Shell fade animation and a hover
+  // redraw both firing close together) can't race on the GC's shapes commit (#601).
+  // Before the GC overlay child has mounted (gcOverlayKey.currentState still null —
+  // true for initState() and the first build()), there's nothing to track pending
+  // state against, so cap it at a single request until the overlay exists.
+  bool _sentInitialPaintRequest = false;
+
+  void _requestPaint() {
+    final gc = gcOverlayKey.currentState;
+    if (gc == null) {
+      if (_sentInitialPaintRequest) return;
+      _sentInitialPaintRequest = true;
+      widget.sendPaintPaint(state, null);
+      return;
+    }
+    if (gc.hasPendingPaint) return;
+    gc.markPaintRequested();
+    widget.sendPaintPaint(state, null);
+  }
+
   @override
   void initState() {
     super.initState();
-    widget.sendPaintPaint(state, null);
+    _requestPaint();
   }
 
   @override
@@ -95,7 +116,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     }
 
     if (!_scrollbarDragging && !_isSnapping) {
-      widget.sendPaintPaint(state, null);
+      _requestPaint();
     }
 
     final widgetTheme = _theme;

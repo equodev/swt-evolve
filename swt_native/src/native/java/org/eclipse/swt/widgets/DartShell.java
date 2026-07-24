@@ -1735,7 +1735,7 @@ public class DartShell extends DartDecorations implements IShell {
         return false;
     }
 
-    int alpha;
+    int alpha = 255;
 
     boolean darkThemePreferred;
 

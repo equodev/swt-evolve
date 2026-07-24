@@ -46,6 +46,15 @@ class GCDrawer extends GCDrawerBase {
 
   List<Shape> _staging = [];
 
+  // Two gcDispose cycles can be in flight at once (e.g. a hover-driven redraw
+  // firing again before a previous cycle's image decode resolves). Whichever
+  // *finishes* last wins today, but finish order doesn't track start order —
+  // a cycle with no pending images can complete before an older, slower one,
+  // so the older cycle's late completion would clobber newer, correct shapes
+  // with stale/incomplete ones. Only the most-recently-*started* cycle may
+  // commit; anything superseded by a newer start discards itself (#601).
+  int _gcDisposeGeneration = 0;
+
   /// Standalone mode: registers comm listeners for state + all draw ops + imageInit/gcDispose.
   /// Used for headless image rendering (new GC(image)). [onDisposed] fires once the render is sent.
   GCDrawer.standalone(VGC state, {void Function()? onDisposed})
@@ -58,8 +67,10 @@ class GCDrawer extends GCDrawerBase {
       );
     });
     EquoCommService.onRaw("${state.swt}/${state.id}/gcDispose", (_) async {
+      final myGeneration = ++_gcDisposeGeneration;
       if (_baseImageCompleter != null) await _baseImageCompleter!.future;
       await Future.wait(_pendingImages);
+      if (myGeneration != _gcDisposeGeneration) return;
       shapes
         ..clear()
         ..addAll(_staging);
@@ -87,6 +98,7 @@ class GCDrawer extends GCDrawerBase {
   /// onShapesUpdated triggers GCImpl.setState().
   GCDrawer.embedded(VGC state, {this.onShapesUpdated, this.onGCDispose}) : super(state) {
     EquoCommService.onRaw("${state.swt}/${state.id}/gcDispose", (_) async {
+      final myGeneration = ++_gcDisposeGeneration;
       final cycleStaging = _staging;
       _staging = [];
 
@@ -102,6 +114,10 @@ class GCDrawer extends GCDrawerBase {
       }
 
       cycleStaging.removeWhere((s) => s is _PlaceholderShape);
+
+      if (myGeneration != _gcDisposeGeneration) {
+        return;
+      }
 
       // Outgoing cycle's image clones become unreachable here; release them now.
       disposeShapeImages(shapes);

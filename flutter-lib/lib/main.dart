@@ -444,6 +444,10 @@ class EvolveApp extends StatelessWidget {
               ValueListenableBuilder<double>(
                 valueListenable: appScaleNotifier,
                 builder: (ctx, scale, _) {
+                  // Skip the Transform entirely at the (overwhelmingly common) default
+                  // scale: this RenderTransform wraps the whole app, and keeping a
+                  // permanently-inert one around isn't free — see issue #601.
+                  if (scale == 1.0) return contentWidget;
                   return Transform.scale(
                     scale: scale,
                     alignment: Alignment.topLeft,

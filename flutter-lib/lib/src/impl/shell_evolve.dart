@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
@@ -44,6 +46,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
   bool _initialBoundsSent = false;
   final Set<int> _openedDialogIds = {};
 
+  final ValueNotifier<double> _opacityNotifier = ValueNotifier(1.0);
   final FocusScopeNode _focusScopeNode = FocusScopeNode(debugLabel: 'ShellFocusScope');
   bool _hasFocus = false;
   bool _autoFocusRequested = false;
@@ -51,11 +54,13 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
   @override
   void initState() {
     super.initState();
+    _opacityNotifier.value = (state.alpha ?? 255) / 255.0;
     _focusScopeNode.addListener(_handleFocusScopeChange);
   }
 
   @override
   void dispose() {
+    _opacityNotifier.dispose();
     _focusScopeNode.removeListener(_handleFocusScopeChange);
     _focusScopeNode.dispose();
     super.dispose();
@@ -72,8 +77,15 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     }
   }
 
+  /// Alpha-only updates bypass setState/rebuild and just touch this notifier (#601).
   @override
   void setValue(V value) {
+    _opacityNotifier.value = (value.alpha ?? 255) / 255.0;
+    final sameExceptAlpha = _sameJsonExceptAlpha(state, value);
+    if (sameExceptAlpha) {
+      state = value;
+      return;
+    }
     final prevDialogs = state.dialogs ?? [];
     final wasVisible = state.visible ?? true;
     super.setValue(value);
@@ -92,10 +104,22 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     }
   }
 
+  bool _sameJsonExceptAlpha(V a, V b) {
+    if (identical(a, b)) return true;
+    try {
+      final aJson = Map<String, dynamic>.from(a.toJson())..remove('alpha');
+      final bJson = Map<String, dynamic>.from(b.toJson())..remove('alpha');
+      return jsonEncode(aJson) == jsonEncode(bJson);
+    } catch (_) {
+      return false;
+    }
+  }
+
   @override
   void didUpdateWidget(covariant T oldWidget) {
     final wasVisible = oldWidget.value.visible ?? true;
     super.didUpdateWidget(oldWidget);
+    _opacityNotifier.value = (state.alpha ?? 255) / 255.0;
     if (!wasVisible && (state.visible ?? true)) {
       _autoFocusRequested = false;
     }
@@ -206,7 +230,6 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       sendBoundsToJava();
     }
 
-    final opacity = state.alpha != null ? (state.alpha! / 255.0).clamp(0.0, 1.0) : 1.0;
     final title = (state.modified == true ? '• ' : '') + (state.text ?? '');
     final borderRadius = _showBorder ? theme.dialogBorderRadius : 0.0;
 
@@ -338,8 +361,6 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       child: framed,
     );
 
-    if (opacity < 1.0) dialog = Opacity(opacity: opacity, child: dialog);
-
     final content = FocusScope(
       node: _focusScopeNode,
       child: Listener(
@@ -358,7 +379,16 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       });
     }
 
-    return Positioned(left: offset.dx, top: offset.dy, child: pointerInterceptor(content));
+    // Always wrap in Opacity, never conditionally on opacity < 1.0 -- branching the widget
+    // TYPE at this position tears down and remounts the whole content subtree on the first
+    // alpha tick, wiping any already-committed GC shapes inside it (#601).
+    final opacityWrapped = ValueListenableBuilder<double>(
+      valueListenable: _opacityNotifier,
+      child: content,
+      builder: (context, opacity, child) => Opacity(opacity: opacity, child: child),
+    );
+
+    return Positioned(left: offset.dx, top: offset.dy, child: pointerInterceptor(opacityWrapped));
   }
 }
 
