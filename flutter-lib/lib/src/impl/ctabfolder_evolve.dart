@@ -106,7 +106,6 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     final tabBodies = getTabBodies();
 
     final isTabBottom = state.tabPosition == SWT.BOTTOM;
-    final isMinimized = state.minimized ?? false;
 
     final double? tabHeight = 32;
 
@@ -130,13 +129,16 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onTabReorder: _handleTabReorder,
             onChevronShowList: _handleChevronShowList,
           ),
-        if (!isMinimized)
-          Expanded(
-            child: IndexedStack(
-              index: _selectedIndex < tabBodies.length ? _selectedIndex : 0,
-              children: tabBodies,
-            ),
+        // Render the body regardless of `minimized`: native SWT's `minimized` only
+        // shrinks computeSize, it never hides the selected control. A collapsed folder
+        // gets a tab-strip-height bounds (Expanded → ~0 height); an E4 minimized-stack
+        // fly-out gets a full client area and must show its content (#872).
+        Expanded(
+          child: IndexedStack(
+            index: _selectedIndex < tabBodies.length ? _selectedIndex : 0,
+            children: tabBodies,
           ),
+        ),
         if (isTabBottom)
           _CTabBar(
             state: state,
