@@ -1567,7 +1567,7 @@ class WidgetMeasurer {
           );
           buffer.writeln('${indent}if (wHint != SWT.DEFAULT) {');
           buffer.writeln(
-            '${indent}    width = singleLine ? Math.max(wHint, naturalWidth) : wHint;',
+            '${indent}    width = singleLine ? wHint + $styleName.HORIZONTAL_PADDING : wHint;',
           );
           buffer.writeln('${indent}} else {');
           buffer.writeln('${indent}    width = naturalWidth;');

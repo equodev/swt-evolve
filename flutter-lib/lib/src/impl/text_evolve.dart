@@ -142,15 +142,17 @@ class TextImpl<T extends TextSwt, V extends VText>
 
     if (hasValidBounds) {
       final hPadding = widgetTheme.contentPadding.left;
-      decoration = decoration.copyWith(
-        contentPadding: EdgeInsets.symmetric(horizontal: hPadding),
-      );
       if (singleLine) {
         decoration = decoration.copyWith(
           isDense: false,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 3.0),
           constraints: BoxConstraints.tightFor(
             height: state.bounds!.height.toDouble(),
           ),
+        );
+      } else {
+        decoration = decoration.copyWith(
+          contentPadding: EdgeInsets.symmetric(horizontal: hPadding),
         );
       }
     }

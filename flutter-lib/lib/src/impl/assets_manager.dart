@@ -31,6 +31,7 @@ class AssetsManager {
   }
 
   static Future<String?> _resolveAssetsPath() async {
+    if (kIsWeb) return null;
     // Return cached value if we've already resolved it successfully
     if (_cachedAssetsPath != null) {
       return _cachedAssetsPath;
@@ -116,6 +117,7 @@ class AssetsManager {
     String filename,
     String assetsPath,
   ) async {
+    if (kIsWeb) return null;
     // Extract just the filename without path (e.g., "toolbar/new_24.png" -> "new_24")
     String filenameOnly = filename;
     if (filename.contains('/')) {

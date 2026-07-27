@@ -40,7 +40,7 @@ public class TextSizes {
         double naturalWidth = Math.max(m.text.x() + (m.text.x() > 0 ? LEFT.HORIZONTAL_PADDING : 0), LEFT.MIN_WIDTH);
         boolean singleLine = !hasFlags(style, SWT.MULTI) && !hasFlags(style, SWT.WRAP);
         if (wHint != SWT.DEFAULT) {
-            width = singleLine ? Math.max(wHint, naturalWidth) : wHint;
+            width = singleLine ? wHint + LEFT.HORIZONTAL_PADDING : wHint;
         } else {
             width = naturalWidth;
         }
