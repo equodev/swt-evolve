@@ -200,6 +200,12 @@ fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = f
                 systemProperty("dev.equo.swt.flutterLibDir", file("../flutter-lib").absolutePath)
                 systemProperty("dev.equo.swt.flutterCmd", resolveFlutterCmd())
                 systemProperty("equo.swt.browser", "none")
+                // -PdartDriver (needs -PdartDebug too): launch lib/main_driver.dart instead of lib/main.dart
+                // so ext.flutter.driver is live -- scripted taps/typing via driver_cmd.dart for a repro that
+                // doesn't depend on a human clicking the right pixel. Web only; see WebDisplayBridge.
+                if (project.hasProperty("dartDriver")) {
+                    systemProperty("dev.equo.swt.dartDriver", "true")
+                }
             }
         }
         // Attach the JaCoCo agent when a driving E2E suite asks for it: this app JVM is the thing under

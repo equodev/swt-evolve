@@ -170,6 +170,13 @@ public class WebDisplayBridge extends DisplayBridge {
      * run opens Chrome and prints the VM Service URI to stdout (inheritIO). Requires the flutter-lib path
      * and flutter command via system properties (set by the :examples runWebExample task under -PdartDebug).
      * Falls back to the static browser if the flutter-lib dir wasn't provided.
+     *
+     * <p>{@code dev.equo.swt.dartDriver=true} additionally targets {@code lib/main_driver.dart} instead
+     * of the default {@code lib/main.dart} — that entrypoint calls {@code enableFlutterDriverExtension()}
+     * before delegating to the real app, so {@code ext.flutter.driver} is live on the VM Service and a
+     * repro can be scripted with {@code docs/design/dtd-helpers/driver_cmd.dart} (tap/scroll/enter_text/
+     * get_text by finder — no coordinates). {@code main.dart} itself never imports {@code main_driver.dart},
+     * so this never affects a production build; only the dev/introspection path can even reach it.
      */
     private void launchFlutterRunDev(int commPort, long widgetId, String widgetName) {
         String flutterLibDir = System.getProperty("dev.equo.swt.flutterLibDir");
@@ -179,10 +186,15 @@ public class WebDisplayBridge extends DisplayBridge {
                     + "cannot launch `flutter run`. Run via :examples:runWebExample -PdartDebug.");
             return;
         }
+        boolean dartDriver = Boolean.getBoolean("dev.equo.swt.dartDriver");
         java.util.List<String> cmd = new java.util.ArrayList<>();
         for (String tok : flutterCmd.trim().split("\\s+"))
             if (!tok.isBlank()) cmd.add(tok);
         cmd.add("run");
+        if (dartDriver) {
+            cmd.add("-t");
+            cmd.add("lib/main_driver.dart");
+        }
         cmd.add("-d");
         cmd.add("chrome");
         cmd.add("--dart-define=equo.comm_port=" + commPort);

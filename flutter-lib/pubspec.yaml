@@ -51,6 +51,12 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+  # Debug-only entrypoint (lib/main_driver.dart) drives the app via `ext.flutter.driver` for
+  # scripted E2E/bug repro (docs/design/dtd-helpers/driver_cmd.dart, -PdartDriver). Never imported
+  # by lib/main.dart, so it never reaches a production build.
+  flutter_driver:
+    sdk: flutter
+
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
