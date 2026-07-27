@@ -111,6 +111,18 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     }
   }
 
+  /// Sends the SWT Expand/Collapse for this item. Called from the row's tap handler
+  /// when the tap lands in the expander column — see [_buildItemRow].
+  void _toggleExpand(bool expanded) {
+    if (_context?.treeImpl == null) return;
+    final e = _createEvent();
+    if (expanded) {
+      _context!.parentTree.sendTreeCollapse(_context!.parentTreeValue, e);
+    } else {
+      _context!.parentTree.sendTreeExpand(_context!.parentTreeValue, e);
+    }
+  }
+
   VEvent _createEvent({int? detail, int? stateMask}) {
     final widgetTheme = Theme.of(context).extension<TreeThemeExtension>();
     var e = VEvent();
@@ -670,25 +682,18 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         ? theme.expandIconColor
         : theme.expandIconDisabledColor;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () {
-        if (!enabled) return;
-        if (_context?.treeImpl == null) return;
-        final e = _createEvent();
-        if (expanded) {
-          _context!.parentTree.sendTreeCollapse(_context!.parentTreeValue, e);
-        } else {
-          _context!.parentTree.sendTreeExpand(_context!.parentTreeValue, e);
-        }
-      },
-      child: MouseRegion(
-        cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-        child: Icon(
-          expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-          size: theme.expandIconSize,
-          color: arrowColor,
-        ),
+    // The arrow carries no gesture of its own: the row's GestureDetector owns the tap
+    // and decides by x-position whether it is an expand or a selection (see
+    // _buildItemRow). A single handler guarantees the "expander area" the row abdicates
+    // and the area that actually toggles are the same rectangle — when they were two
+    // widgets the icon only covered 12x12 of a 34px-tall row, so taps in the gap were
+    // swallowed by neither and did nothing at all (#832).
+    return MouseRegion(
+      cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: Icon(
+        expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
+        size: theme.expandIconSize,
+        color: arrowColor,
       ),
     );
   }
@@ -838,10 +843,17 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     required bool hasMultiColumn,
     required double effectiveItemHeight,
   }) {
-    final double expanderAreaWidth =
-        widgetTheme.itemIndent * level +
-        widgetTheme.expandIconSize +
-        widgetTheme.expandIconSpacing;
+    // Horizontal band of the expander arrow, in row-local coordinates (the tap position
+    // is relative to the row's outer box, so the row padding counts). The band spans the
+    // full row height on purpose: the arrow icon is only expandIconSize tall and centred,
+    // and anything outside it used to be discarded silently instead of toggling (#832).
+    final EdgeInsets rowPadding = hasMultiColumn
+        ? widgetTheme.itemPaddingWithCols
+        : widgetTheme.itemPadding;
+    final double expanderHitLeft =
+        rowPadding.left + widgetTheme.itemIndent * level;
+    final double expanderHitRight =
+        expanderHitLeft + widgetTheme.expandIconSize;
 
     double? totalTreeWidth = _context?.treeWidth;
     final effectiveWidths = TreeEffectiveColumnWidthsProvider.of(context);
@@ -904,9 +916,15 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           onTap: () {
             if (!enabled) return;
 
-            if (_lastTapPosition != null &&
-                _lastTapPosition!.dx < expanderAreaWidth &&
-                hasChildren) {
+            // A tap in the expander column toggles this item; the arrow itself carries
+            // no gesture, so this band is the single source of truth for what counts as
+            // an expand/collapse click — see _buildExpander (#832).
+            final Offset? tap = _lastTapPosition;
+            if (hasChildren &&
+                tap != null &&
+                tap.dx >= expanderHitLeft &&
+                tap.dx < expanderHitRight) {
+              _toggleExpand(expanded);
               return;
             }
 
