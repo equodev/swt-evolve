@@ -15,16 +15,16 @@ class SashFormImpl<T extends SashFormSwt, V extends VSashForm>
     extends CompositeImpl<T, V> {
   @override
   Widget build(BuildContext context) {
-    final children = state.children;
+    final allChildren = state.children;
 
-    if (children == null || children.isEmpty) {
+    if (allChildren == null || allChildren.isEmpty) {
       return wrap(const SizedBox.shrink());
     }
 
     if (state.maximizedControl != null) {
-      final maxChild = children.firstWhere(
+      final maxChild = allChildren.firstWhere(
         (child) => child.id == state.maximizedControl?.id,
-        orElse: () => children.first,
+        orElse: () => allChildren.first,
       );
       return wrap(mapWidgetFromValue(maxChild));
     }
@@ -33,11 +33,26 @@ class SashFormImpl<T extends SashFormSwt, V extends VSashForm>
     final widgetTheme = Theme.of(context).extension<SashThemeExtension>()!;
     final sashWidth = (state.sashWidth ?? widgetTheme.hitAreaSize).toDouble();
 
-    List<int> weights = state.weights ?? List.filled(children.length, 1);
+    List<int> allWeights = state.weights ?? List.filled(allChildren.length, 1);
 
-    if (weights.length != children.length) {
-      weights = List.filled(children.length, 1);
+    if (allWeights.length != allChildren.length) {
+      allWeights = List.filled(allChildren.length, 1);
     }
+
+    // Mirror DartSashFormLayout.getControls(true) on the Java side: a pane
+    // that has been set invisible (e.g. an expand/collapse toggle) must not
+    // reserve any sash-form space, so the remaining visible panes take it over.
+    final visibleIndices = [
+      for (var i = 0; i < allChildren.length; i++)
+        if (allChildren[i].visible != false) i,
+    ];
+
+    if (visibleIndices.isEmpty) {
+      return wrap(const SizedBox.shrink());
+    }
+
+    final children = [for (final i in visibleIndices) allChildren[i]];
+    final weights = [for (final i in visibleIndices) allWeights[i]];
 
     return wrap(
       _SashFormLayout(
@@ -48,7 +63,11 @@ class SashFormImpl<T extends SashFormSwt, V extends VSashForm>
         sashTheme: widgetTheme,
         onWeightsChanged: (newWeights) {
           setState(() {
-            state.weights = newWeights;
+            final mergedWeights = List<int>.of(allWeights);
+            for (var i = 0; i < visibleIndices.length; i++) {
+              mergedWeights[visibleIndices[i]] = newWeights[i];
+            }
+            state.weights = mergedWeights;
           });
         },
         onMouseEnter: () => widget.sendMouseTrackMouseEnter(state, null),
