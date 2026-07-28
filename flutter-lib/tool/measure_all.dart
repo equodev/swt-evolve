@@ -11,8 +11,10 @@ import './measure_progressbar.dart' as progressbar;
 import './measure_sash.dart' as sash;
 import './measure_scale.dart' as scale;
 import './measure_slider.dart' as slider;
+import './measure_table.dart' as table;
 import './measure_tableitem.dart' as tableitem;
 import './measure_text.dart' as text;
+import './measure_tree.dart' as tree;
 import './measure_treeitem.dart' as treeitem;
 
 void main() {
@@ -28,8 +30,10 @@ void main() {
   sash.setupCases(measurer);
   scale.setupCases(measurer);
   slider.setupCases(measurer);
+  table.setupCases(measurer);
   tableitem.setupCases(measurer);
   text.setupCases(measurer);
+  tree.setupCases(measurer);
   treeitem.setupCases(measurer);
 
   print('Generated ${measurer.testCases.length} total test cases');

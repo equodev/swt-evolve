@@ -428,7 +428,9 @@ public class Sizes {
     public static Point computeSize(DartTable c, int wHint, int hHint, boolean changed) {
         int cols = Math.max(c.getColumnCount(), 1);
         int width = wHint != SWT.DEFAULT ? wHint : cols * 70;
-        int height = hHint != SWT.DEFAULT ? hHint : c.getItemCount() * c.getItemHeight() + 16;
+        int height = hHint != SWT.DEFAULT
+            ? hHint
+            : c.getHeaderHeight() + c.getItemCount() * c.getItemHeight() + 2 * dev.equo.swt.size.TableSizes.getBorderWidth();
         return new Point(width, height);
     }
 
@@ -585,15 +587,13 @@ public class Sizes {
         return new Point(width, height);
     }
 
-    private static final int DEFAULT_VISIBLE_ITEM_COUNT = 15;
-    private static final int DEFAULT_ITEM_HEIGHT = 20;
-
     public static Point computeSize(DartTree t, int wHint, int hHint, boolean changed) {
         int columnCount = t.getColumnCount();
-        int itemCount = t.getItemCount();
 
         int width = (wHint != SWT.DEFAULT && wHint > 0) ? wHint : (columnCount > 0 ? columnCount * 30 : 200);
-        int height = (hHint != SWT.DEFAULT && hHint > 0) ? hHint : Math.min(itemCount, DEFAULT_VISIBLE_ITEM_COUNT) * DEFAULT_ITEM_HEIGHT;
+        int height = (hHint != SWT.DEFAULT && hHint > 0)
+            ? hHint
+            : t.getHeaderHeight() + flattenVisibleTreeItems(t).size() * t.getItemHeight();
 
         return new Point(width, height);
     }
@@ -723,7 +723,7 @@ public class Sizes {
         List<TreeItem> flat = flattenVisibleTreeItems(dartTree);
         int rowIndex = flat.indexOf(item.getApi());
         if (rowIndex == -1) return new Rectangle(0, 0, 0, 0);
-        int y = rowIndex * itemHeight;
+        int y = dartTree.getHeaderHeight() + rowIndex * itemHeight;
         Rectangle parentBounds = parent.getBounds();
         int width = parentBounds != null ? parentBounds.width : 100;
         return new Rectangle(0, y, width, itemHeight);
@@ -740,7 +740,7 @@ public class Sizes {
         List<TreeItem> flat = flattenVisibleTreeItems(dartTree);
         int rowIndex = flat.indexOf(item.getApi());
         if (rowIndex == -1) return new Rectangle(0, 0, 0, 0);
-        int y = rowIndex * itemHeight;
+        int y = dartTree.getHeaderHeight() + rowIndex * itemHeight;
         int x = 0, width = 100;
         if (columnCount > 0) {
             TreeColumn[] columns = dartTree.columns;

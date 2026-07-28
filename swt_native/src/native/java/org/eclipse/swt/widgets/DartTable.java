@@ -917,9 +917,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public int getHeaderHeight() {
         checkWidget();
-        if (!getHeaderVisible())
-            return 0;
-        return (int) Math.ceil(dev.equo.swt.FontMetricsUtil.getFontSize("Ag", getFont()).y()) + 8;
+        return TableSizes.getHeaderHeight(this);
     }
 
     /**

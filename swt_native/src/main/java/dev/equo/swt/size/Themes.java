@@ -6,9 +6,9 @@ public class Themes {
 
     public enum Theme {
 
-        NonDefault(ButtonTheme.getNonDefaultTheme(), LabelTheme.getNonDefaultTheme(), ComboTheme.getNonDefaultTheme(), CComboTheme.getNonDefaultTheme(), TextTheme.getNonDefaultTheme(), ProgressBarTheme.getNonDefaultTheme(), CLabelTheme.getNonDefaultTheme(), LinkTheme.getNonDefaultTheme(), SliderTheme.getNonDefaultTheme(), ScaleTheme.getNonDefaultTheme(), SashTheme.getNonDefaultTheme(), TableItemTheme.getNonDefaultTheme(), TreeItemTheme.getNonDefaultTheme()), Default(ButtonTheme.getDefaultTheme(), LabelTheme.getDefaultTheme(), ComboTheme.getDefaultTheme(), CComboTheme.getDefaultTheme(), TextTheme.getDefaultTheme(), ProgressBarTheme.getDefaultTheme(), CLabelTheme.getDefaultTheme(), LinkTheme.getDefaultTheme(), SliderTheme.getDefaultTheme(), ScaleTheme.getDefaultTheme(), SashTheme.getDefaultTheme(), TableItemTheme.getDefaultTheme(), TreeItemTheme.getDefaultTheme());
+        NonDefault(ButtonTheme.getNonDefaultTheme(), LabelTheme.getNonDefaultTheme(), ComboTheme.getNonDefaultTheme(), CComboTheme.getNonDefaultTheme(), TextTheme.getNonDefaultTheme(), ProgressBarTheme.getNonDefaultTheme(), CLabelTheme.getNonDefaultTheme(), LinkTheme.getNonDefaultTheme(), SliderTheme.getNonDefaultTheme(), ScaleTheme.getNonDefaultTheme(), SashTheme.getNonDefaultTheme(), TableItemTheme.getNonDefaultTheme(), TreeItemTheme.getNonDefaultTheme(), TableHeaderTheme.getNonDefaultTheme()), Default(ButtonTheme.getDefaultTheme(), LabelTheme.getDefaultTheme(), ComboTheme.getDefaultTheme(), CComboTheme.getDefaultTheme(), TextTheme.getDefaultTheme(), ProgressBarTheme.getDefaultTheme(), CLabelTheme.getDefaultTheme(), LinkTheme.getDefaultTheme(), SliderTheme.getDefaultTheme(), ScaleTheme.getDefaultTheme(), SashTheme.getDefaultTheme(), TableItemTheme.getDefaultTheme(), TreeItemTheme.getDefaultTheme(), TableHeaderTheme.getDefaultTheme());
 
-        Theme(ButtonTheme button, LabelTheme label, ComboTheme combo, CComboTheme cCombo, TextTheme text, ProgressBarTheme progressBar, CLabelTheme cLabel, LinkTheme link, SliderTheme slider, ScaleTheme scale, SashTheme sash, TableItemTheme tableItem, TreeItemTheme treeItem) {
+        Theme(ButtonTheme button, LabelTheme label, ComboTheme combo, CComboTheme cCombo, TextTheme text, ProgressBarTheme progressBar, CLabelTheme cLabel, LinkTheme link, SliderTheme slider, ScaleTheme scale, SashTheme sash, TableItemTheme tableItem, TreeItemTheme treeItem, TableHeaderTheme tableHeader) {
             this.button = button;
             this.label = label;
             this.combo = combo;
@@ -22,6 +22,7 @@ public class Themes {
             this.sash = sash;
             this.tableItem = tableItem;
             this.treeItem = treeItem;
+            this.tableHeader = tableHeader;
         }
 
         public final ButtonTheme button;
@@ -49,6 +50,8 @@ public class Themes {
         public final TableItemTheme tableItem;
 
         public final TreeItemTheme treeItem;
+
+        public final TableHeaderTheme tableHeader;
     }
 
     public static Theme getTheme() {

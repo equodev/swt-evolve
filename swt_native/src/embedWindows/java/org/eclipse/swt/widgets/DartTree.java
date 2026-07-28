@@ -1098,7 +1098,7 @@ public class DartTree extends DartComposite implements ITree {
      */
     public int getHeaderHeight() {
         checkWidget();
-        return DPIUtil.pixelToPoint(getHeaderHeightInPixels(), getAutoscalingZoom());
+        return TreeSizes.getHeaderHeight(this);
     }
 
     int getHeaderHeightInPixels() {
@@ -1331,7 +1331,7 @@ public class DartTree extends DartComposite implements ITree {
         int itemHeight = getItemHeight();
         if (itemHeight <= 0)
             return null;
-        int y = point.y;
+        int y = point.y - getHeaderHeight();
         if (y < 0)
             return null;
         int index = y / itemHeight;

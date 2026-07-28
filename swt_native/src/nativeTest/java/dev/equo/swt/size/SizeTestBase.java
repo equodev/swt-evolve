@@ -168,6 +168,10 @@ public abstract class SizeTestBase extends SizeAssert {
             return measure(Map.of("widget", w, "config", config, "name", caseName));
         }
 
+        public CompletableFuture<Measure> measureUnbounded(DartWidget w) {
+            return measure(Map.of("widget", w, "name", caseName, "unbounded", true));
+        }
+
         @Override
         public void beforeEach(ExtensionContext context) throws Exception {
             caseName = context.getDisplayName();

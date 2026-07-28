@@ -23,8 +23,15 @@ class MeasurementResult {
   final Size? text;
   final TextStyle? textStyle;
   final Size? image;
+  final Map<String, Size> named;
 
-  MeasurementResult(this.widget, this.text, this.textStyle, this.image);
+  MeasurementResult(
+    this.widget,
+    this.text,
+    this.textStyle,
+    this.image, [
+    this.named = const {},
+  ]);
 }
 
 (MeasurementResult, RenderBox?) _measureCurrentCase(GlobalKey key) {
@@ -49,11 +56,32 @@ class MeasurementResult {
   final widgetSize = renderBox.size;
   final (textSize, textStyle) = _findTextSize(renderBox);
   final imageSize = _findImageSize(renderBox);
+  final namedSizes = _findNamedSizes(renderBox);
 
   return (
-    MeasurementResult(widgetSize, textSize, textStyle, imageSize),
+    MeasurementResult(widgetSize, textSize, textStyle, imageSize, namedSizes),
     renderBox,
   );
+}
+
+Map<String, Size> _findNamedSizes(RenderBox renderBox) {
+  final result = <String, Size>{};
+  void visit(RenderBox box) {
+    if (box is RenderSemanticsAnnotations) {
+      final identifier = box.properties.identifier;
+      if (identifier != null &&
+          identifier.startsWith('sizeprobe:') &&
+          box.hasSize) {
+        result[identifier.substring('sizeprobe:'.length)] = box.size;
+      }
+    }
+    box.visitChildren((child) {
+      if (child is RenderBox) visit(child);
+    });
+  }
+
+  visit(renderBox);
+  return result;
 }
 
 (Size?, TextStyle?) _findTextSize(RenderBox renderBox) {
@@ -135,7 +163,13 @@ void measureRequest(String bridge, int id) {
     final widget = mapWidget(widgetValue);
     final widgetName = widgetValue["swt"];
     final caseName = widgetConfig["name"] as String;
-    final testApp = _TestApp(KeyedSubtree(key: key, child: widget), bridge, id);
+    final unbounded = widgetConfig["unbounded"] == true;
+    final testApp = _TestApp(
+      KeyedSubtree(key: key, child: widget),
+      bridge,
+      id,
+      unbounded: unbounded,
+    );
     runApp(testApp);
 
     // Schedule callback after widget is run, and wait for it to be fully laid out
@@ -165,6 +199,10 @@ void measureRequest(String bridge, int id) {
         'image': result.image != null
             ? {'x': result.image!.width, 'y': result.image!.height}
             : null,
+        if (result.named.isNotEmpty)
+          'namedSizes': result.named.map(
+            (name, size) => MapEntry(name, {'x': size.width, 'y': size.height}),
+          ),
       };
 
       EquoCommService.sendPayload("$bridge/$id/widgetSizeResponse", response);
@@ -177,8 +215,9 @@ class _TestApp extends StatefulWidget {
   Widget swtwidget;
   String bridge;
   int id;
+  bool unbounded;
 
-  _TestApp(this.swtwidget, this.bridge, this.id);
+  _TestApp(this.swtwidget, this.bridge, this.id, {this.unbounded = false});
 
   @override
   State<_TestApp> createState() => _TestAppState();
@@ -203,7 +242,11 @@ class _TestAppState extends State<_TestApp> {
       darkTheme: darkTheme,
       themeMode: ThemeMode.light,
       home: Scaffold(
-        body: Center(child: RepaintBoundary(child: widget.swtwidget)),
+        body: widget.unbounded
+            ? SingleChildScrollView(
+                child: RepaintBoundary(child: widget.swtwidget),
+              )
+            : Center(child: RepaintBoundary(child: widget.swtwidget)),
       ),
     );
   }

@@ -122,6 +122,7 @@ class RenderBoxInfo {
   final String? imageSource;
   final TextStyle? textStyle;
   final bool? softWrap;
+  final String? sizeProbeName;
 
   RenderBoxInfo(
     this.type,
@@ -134,6 +135,7 @@ class RenderBoxInfo {
     this.imageSource,
     this.textStyle,
     this.softWrap,
+    this.sizeProbeName,
     this.children = const [],
   });
 
@@ -145,6 +147,7 @@ class RenderBoxInfo {
       if (textContent != null) 'textContent': textContent,
       if (imageSource != null) 'imageSource': imageSource,
       if (softWrap != null) 'softWrap': softWrap,
+      if (sizeProbeName != null) 'sizeProbeName': sizeProbeName,
       if (textStyle != null)
         'textStyle': {
           'fontFamily': textStyle!.fontFamily,
@@ -687,6 +690,14 @@ class WidgetMeasurer {
     EdgeInsets? margin;
     String? textContent;
     String? imageSource;
+    String? sizeProbeName;
+
+    if (renderBox is RenderSemanticsAnnotations) {
+      final identifier = renderBox.properties.identifier;
+      if (identifier != null && identifier.startsWith('sizeprobe:')) {
+        sizeProbeName = identifier.substring('sizeprobe:'.length);
+      }
+    }
 
     if (renderBox is RenderPadding) {
       padding = renderBox.padding as EdgeInsetsGeometry?;
@@ -751,6 +762,7 @@ class WidgetMeasurer {
       imageSource: imageSource,
       textStyle: textStyle,
       softWrap: softWrap,
+      sizeProbeName: sizeProbeName,
       children: children,
     );
   }
@@ -807,7 +819,33 @@ class WidgetMeasurer {
       }
     }
 
+    final namedComponents = expectedComponents['named'];
+    if (namedComponents is List) {
+      for (final name in namedComponents) {
+        final namedBox = _findNamedBox(root, name as String);
+        if (namedBox != null) {
+          discovered[name] = {
+            'width': namedBox.size.width,
+            'height': namedBox.size.height,
+          };
+        }
+      }
+    }
+
     return discovered;
+  }
+
+  RenderBoxInfo? _findNamedBox(RenderBoxInfo box, String name) {
+    if (box.sizeProbeName == name) {
+      return box;
+    }
+
+    for (var child in box.children) {
+      final found = _findNamedBox(child, name);
+      if (found != null) return found;
+    }
+
+    return null;
   }
 
   RenderBoxInfo? _findTextBox(RenderBoxInfo box, String expectedText) {

@@ -138,8 +138,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
     // Y position
     double headerOffset = 0.0;
-    if ((state.headerVisible == true || columns.isNotEmpty) &&
-        columns.isNotEmpty) {
+    if (state.headerVisible == true) {
       headerOffset = _cachedHeaderHeight ?? theme.headerHeight;
     }
     final y = headerOffset + (itemIndex * itemHeight);
@@ -236,16 +235,29 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
         final double screenWidth = MediaQuery.of(context).size.width;
         final double screenHeight = MediaQuery.of(context).size.height;
+
+        final columns = getTreeColumns();
+        final flatItems = _flattenVisibleItems(state.items, 0);
+        final allItems = _collectAllTreeItems(state.items);
+        final hasMultiColumn = columns.length > 1;
+        _cachedHeaderHeight = hasMultiColumn
+            ? widgetTheme!.headerHeightWithCols
+            : widgetTheme!.headerHeight;
+        _cachedItemHeight = hasMultiColumn
+            ? widgetTheme!.itemHeightWithCols
+            : widgetTheme!.itemHeight + widgetTheme!.itemPadding.vertical;
+
+        final double contentHeight =
+            (state.headerVisible == true ? _cachedHeaderHeight! : 0.0) +
+            flatItems.length * _cachedItemHeight!;
+
         final double maxWidth = constraints.maxWidth.isFinite
             ? constraints.maxWidth.clamp(0.0, screenWidth)
             : screenWidth;
         final double maxHeight = constraints.maxHeight.isFinite
             ? constraints.maxHeight.clamp(0.0, screenHeight)
-            : screenHeight;
+            : contentHeight;
 
-        final columns = getTreeColumns();
-        final flatItems = _flattenVisibleItems(state.items, 0);
-        final allItems = _collectAllTreeItems(state.items);
         final preferredWidths = columns.isEmpty
             ? <double>[]
             : _computePreferredColumnWidths(
@@ -271,13 +283,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                 widgetTheme!,
               );
         _cachedEffectiveWidths = effectiveWidths;
-        final hasMultiColumn = columns.length > 1;
-        _cachedHeaderHeight = hasMultiColumn
-            ? widgetTheme!.headerHeightWithCols
-            : widgetTheme!.headerHeight;
-        _cachedItemHeight = hasMultiColumn
-            ? widgetTheme!.itemHeightWithCols
-            : widgetTheme!.itemHeight + widgetTheme!.itemPadding.vertical;
 
         final enabled = state.enabled ?? true;
         final backgroundColor = enabled
@@ -309,9 +314,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if ((state.headerVisible == true ||
-                                columns.isNotEmpty) &&
-                            columns.isNotEmpty)
+                        if (state.headerVisible == true)
                           _buildHeaderWithLines(
                             columns,
                             effectiveWidths,
@@ -683,49 +686,52 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
     Widget headerContent = Stack(
       children: [
-        Container(
-          height: headerHeight,
-          color: headerBgColor,
-          child: TreeLinesVisibleProvider(
-            linesVisible: state.linesVisible ?? false,
-            child: TreeHasMultiColumnProvider(
-              hasMultiColumn: hasMultiColumn,
-              child: Row(
-                children: [
-                  ...columns.asMap().entries.map((entry) {
-                    final int columnIndex = entry.key;
-                    final column = entry.value;
-                    final double width =
-                        effectiveWidths != null &&
-                            columnIndex < effectiveWidths.length
-                        ? effectiveWidths[columnIndex]
-                        : (column.width ?? defaultWidth).toDouble();
-                    cumulativeWidth += width;
-                    if (columnIndex < columns.length - 1) {
-                      linePositions.add(cumulativeWidth - borderWidth);
-                    }
-                    if (columnIndex == 0) {
+        Semantics(
+          identifier: 'sizeprobe:header',
+          child: Container(
+            height: headerHeight,
+            color: headerBgColor,
+            child: TreeLinesVisibleProvider(
+              linesVisible: state.linesVisible ?? false,
+              child: TreeHasMultiColumnProvider(
+                hasMultiColumn: hasMultiColumn,
+                child: Row(
+                  children: [
+                    ...columns.asMap().entries.map((entry) {
+                      final int columnIndex = entry.key;
+                      final column = entry.value;
+                      final double width =
+                          effectiveWidths != null &&
+                              columnIndex < effectiveWidths.length
+                          ? effectiveWidths[columnIndex]
+                          : (column.width ?? defaultWidth).toDouble();
+                      cumulativeWidth += width;
+                      if (columnIndex < columns.length - 1) {
+                        linePositions.add(cumulativeWidth - borderWidth);
+                      }
+                      if (columnIndex == 0) {
+                        return SizedBox(
+                          width: width,
+                          child: Row(
+                            children: [
+                              SizedBox(width: prefix),
+                              Expanded(
+                                child: getWidgetForTreeColumn(
+                                  column,
+                                  columnIndex,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
                       return SizedBox(
                         width: width,
-                        child: Row(
-                          children: [
-                            SizedBox(width: prefix),
-                            Expanded(
-                              child: getWidgetForTreeColumn(
-                                column,
-                                columnIndex,
-                              ),
-                            ),
-                          ],
-                        ),
+                        child: getWidgetForTreeColumn(column, columnIndex),
                       );
-                    }
-                    return SizedBox(
-                      width: width,
-                      child: getWidgetForTreeColumn(column, columnIndex),
-                    );
-                  }),
-                ],
+                    }),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1145,8 +1151,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     // Account for header if visible
     double headerOffset = 0.0;
     final columns = getTreeColumns();
-    if ((state.headerVisible == true || columns.isNotEmpty) &&
-        columns.isNotEmpty) {
+    if (state.headerVisible == true) {
       headerOffset = _cachedHeaderHeight ?? theme.headerHeight;
     }
 
@@ -1224,8 +1229,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         _cachedItemHeight ??
         (widgetTheme.itemHeight + widgetTheme.itemPadding.vertical);
     double headerOffset = 0.0;
-    if ((state.headerVisible == true || columns.isNotEmpty) &&
-        columns.isNotEmpty) {
+    if (state.headerVisible == true) {
       headerOffset = _cachedHeaderHeight ?? widgetTheme.headerHeight;
     }
 

@@ -213,7 +213,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     );
     _cachedRowHeight = calculateRowHeight(rowTextStyle, widgetTheme);
     double headerOff = widgetTheme.borderWidth;
-    if (showHeader && columns.isNotEmpty) {
+    if (showHeader) {
       final headerTextStyle = getTextStyle(
         context: context,
         font: state.font,
@@ -226,20 +226,29 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
     final editorOverlays = _buildEditorOverlays(context, columns, widgetTheme, columnWidths);
 
+    final body = buildBody(context, items, columns, showLines, widgetTheme, columnWidths);
+    final naturalBodyHeight = items.length * _cachedRowHeight!;
+
     final tableContent = wrapTableForDrop(
       Stack(
         children: [
           Container(
             decoration: buildBorder(widgetTheme),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                if (showHeader && columns.isNotEmpty)
-                  buildHeader(context, columns, showLines, widgetTheme, columnWidths),
-                Expanded(
-                  child: buildBody(context, items, columns, showLines, widgetTheme, columnWidths),
-                ),
-              ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final bounded = constraints.maxHeight.isFinite;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: bounded ? MainAxisSize.max : MainAxisSize.min,
+                  children: <Widget>[
+                    if (showHeader)
+                      buildHeader(context, columns, showLines, widgetTheme, columnWidths),
+                    bounded
+                        ? Expanded(child: body)
+                        : SizedBox(height: naturalBodyHeight, child: body),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -282,9 +291,13 @@ class TableImpl<T extends TableSwt, V extends VTable>
       textColor: textColor,
       baseTextStyle: theme.headerTextStyle,
     );
-    return Container(
-      color: backgroundColor,
-      child: _buildHeaderTable(columns, columnWidths, showLines, textStyle, theme),
+    return Semantics(
+      identifier: 'sizeprobe:header',
+      child: Container(
+        color: backgroundColor,
+        height: calculateHeaderHeight(textStyle, theme),
+        child: _buildHeaderTable(columns, columnWidths, showLines, textStyle, theme),
+      ),
     );
   }
 
@@ -644,7 +657,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final borderWidth = theme.borderWidth;
 
     double headerOffset = borderWidth;
-    if (state.headerVisible == true && columns.isNotEmpty) {
+    if (state.headerVisible == true) {
       final headerTextStyle = getTextStyle(
         context: context,
         font: state.font,

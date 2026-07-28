@@ -223,6 +223,8 @@ public abstract class FlutterBridge {
 
         for (Object widget : filteredDirty) {
             if (isDisposed(widget)) continue;
+            // No bridge (Display already gone) -> nothing to send; skip to avoid NPE below.
+            if (getBridge(widget) == null) continue;
             Runnable send = () -> {
                 try {
                     if (isDisposed(widget)) return; // widget may have been disposed while waiting for clientReady

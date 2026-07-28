@@ -995,7 +995,7 @@ public class DartTree extends DartComposite implements ITree {
      */
     public int getHeaderHeight() {
         checkWidget();
-        return getHeaderVisible() ? 32 : 0;
+        return TreeSizes.getHeaderHeight(this);
     }
 
     /**
@@ -1077,7 +1077,7 @@ public class DartTree extends DartComposite implements ITree {
         int itemHeight = getItemHeight();
         if (itemHeight <= 0)
             return null;
-        int y = point.y;
+        int y = point.y - getHeaderHeight();
         if (y < 0)
             return null;
         int index = y / itemHeight;

@@ -24,6 +24,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     extends WidgetSwtState<T, V> {
 
   final GlobalKey<State<MenuSwt>> _menuKey = GlobalKey<State<MenuSwt>>();
+  final GlobalKey _tooltipContentKey = GlobalKey();
   int _lastButton = 1;
   int _lastMouseMoveMs = 0;
   int _lastDragMoveMs = 0;
@@ -243,7 +244,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       widget = applyMenu(widget);
     }
 
-    // Wrap with Tooltip if toolTipText is set
+    widget = KeyedSubtree(key: _tooltipContentKey, child: widget);
     if (state.toolTipText != null && state.toolTipText!.isNotEmpty) {
       final tooltipTheme = Theme.of(context).extension<TooltipThemeExtension>();
       widget = Tooltip(
