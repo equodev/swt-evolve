@@ -12,6 +12,7 @@ import '../theme/theme_extensions/menuitem_theme_extension.dart';
 import '../theme/theme_settings/menuitem_theme_settings.dart';
 import 'menu_evolve.dart';
 import 'utils/image_utils.dart';
+import 'utils/pointer.dart';
 import 'utils/text_utils.dart';
 
 class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
@@ -528,7 +529,11 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
               ),
             ),
           ),
-          menuChildren: _menuChildren,
+          menuChildren: [
+            pointerInterceptor(
+              Column(mainAxisSize: MainAxisSize.min, children: _menuChildren),
+            ),
+          ],
           child: Row(
             children: [
               if (widget.leading != null) ...[
