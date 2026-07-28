@@ -99,11 +99,18 @@ public class WebDisplayBridge extends DisplayBridge {
             return;
         }
 
-        webServer = new WebFlutterServer.Builder()
+        WebFlutterServer.Builder serverBuilder = new WebFlutterServer.Builder()
                 .commPort(port)
                 .widgetId(displayId)
-                .widgetName("Display")
-                .build();
+                .widgetName("Display");
+        // Optional override of the served web build directory, so a combined/host app can serve
+        // its own Flutter web build (with any extension hooks installed) instead of the one
+        // extracted from Evolve's jar. Set via -Ddev.equo.swt.web.dir=<absolute dir>.
+        String webDirOverride = System.getProperty("dev.equo.swt.web.dir");
+        if (webDirOverride != null && !webDirOverride.isBlank()) {
+            serverBuilder.webDirectory(new java.io.File(webDirOverride));
+        }
+        webServer = serverBuilder.build();
         try {
             webServer.start();
             if (isChromium) {

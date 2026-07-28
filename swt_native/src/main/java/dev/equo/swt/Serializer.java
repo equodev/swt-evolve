@@ -28,6 +28,9 @@ public class Serializer {
                 .includeServiceLoader(Serializer.class.getClassLoader())
                 .skipDefaultValues(true);
         dsl = new DslJson<>(settings);
+        // Enable reading arbitrary JSON (arrays/objects/scalars) into Object — used by EWT's callback
+        // payloads ([id] / [id, arg]). Additive: Object.class was previously unregistered.
+        dsl.registerReader(Object.class, com.dslplatform.json.ObjectConverter::deserializeObject);
         writerPool = ThreadLocal.withInitial(java.util.ArrayDeque::new);
     }
 
