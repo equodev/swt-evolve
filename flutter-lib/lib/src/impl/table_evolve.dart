@@ -576,6 +576,39 @@ class TableImpl<T extends TableSwt, V extends VTable>
     });
   }
 
+  void commitEditorIfLeaving(int rowIndex) {
+    final editors = state.editors;
+    if (editors == null || editors.isEmpty) return;
+    final remaining = <VTableEditor>[];
+    bool leaving = false;
+    for (final e in editors) {
+      final ed = e.editor;
+      if (ed != null &&
+          e.item != null &&
+          findItemIndex(e.item!.id) != rowIndex) {
+        EquoCommService.send("${ed.swt}/${ed.id}/Focus/FocusOut");
+        leaving = true;
+      } else {
+        remaining.add(e);
+      }
+    }
+    if (leaving) {
+      setState(() {
+        state.editors = remaining;
+      });
+    }
+  }
+
+  void selectRowLocally(int index) {
+    if (state.enabled != true) return;
+    setState(() {
+      _selectedRowIndex = index;
+      state.selection ??= [];
+      state.selection!.clear();
+      state.selection!.add(index);
+    });
+  }
+
   void handleRowDoubleTap(int index, VTableItem item) {
     if (state.enabled != true) return;
     setState(() {
@@ -631,6 +664,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
       final itemIndex = findItemIndex(editingItemId);
       if (itemIndex < 0) continue;
+      if (itemIndex != _selectedRowIndex) continue;
 
       final scrollOffset = _verticalScrollController.hasClients
           ? _verticalScrollController.offset

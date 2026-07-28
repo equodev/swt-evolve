@@ -20,6 +20,23 @@ public class TableHelper {
         table.dirty();
     }
 
+    public static void handleMouseDownSelection(DartTable table, Event event) {
+        if (table == null || table.isDisposed())
+            return;
+        if (event == null || (event.button != 1 && event.button != 3))
+            return;
+        if (event.segments == null || event.segments.length == 0)
+            return;
+        int index = event.segments[0];
+        if (table.items == null || index < 0 || index >= table.items.length)
+            return;
+        int[] current = table.selection;
+        boolean sameSingleRow = current != null && current.length == 1 && current[0] == index;
+        if (sameSingleRow)
+            return;
+        sendSelection(table, event, SWT.Selection);
+    }
+
     public static void sendSelection(DartTable table, Event event, int selectionType) {
         if (event.detail == SWT.CHECK) {
             if (event.segments != null && event.segments.length > 0) {

@@ -144,14 +144,16 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
 
     void sendMouseDown(int button) {
       if (enabled && _context != null) {
+        _context!.tableImpl?.commitEditorIfLeaving(rowIndex);
         if ((button == 1 || button == 3) && _context!.tableImpl != null) {
-          _context!.tableImpl!.handleRowTap(rowIndex, state);
+          _context!.tableImpl!.selectRowLocally(rowIndex);
         }
         final e = VEvent();
         e.x = _computeCellCenterX(columnIndex, theme);
         e.y = _computeCellCenterY(rowIndex, textStyle, theme);
         e.button = button;
         e.count = 1;
+        e.segments = [rowIndex];
         _context!.parentTable.sendEvent(
           _context!.parentTableValue,
           "Mouse/MouseDown",
@@ -162,7 +164,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
 
     void sendMouseDoubleClick(int button) {
       if (enabled && _context?.tableImpl != null) {
-        _context!.tableImpl!.handleRowTap(rowIndex, state);
+        _context!.tableImpl!.selectRowLocally(rowIndex);
         final e = VEvent();
         e.x = _computeCellCenterX(columnIndex, theme);
         e.y = _computeCellCenterY(rowIndex, textStyle, theme);

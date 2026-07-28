@@ -205,6 +205,9 @@ public class DartControlEditor implements IControlEditor {
      * @param editor the Control that is displayed above the composite being edited
      */
     public void setEditor(Control editor) {
+        if (this.editor != null && this.editor != editor && !this.editor.isDisposed()) {
+            this.editor.dispose();
+        }
         if (editor == null) {
             // this is the case where the caller is setting the editor to be blank
             // set all the values accordingly
