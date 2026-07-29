@@ -35,6 +35,10 @@ bool _hitsAnyChild(VComposite state, Offset pos) {
 Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
   final state = impl.state;
 
+  if (state.menu != null && (state.children?.isNotEmpty ?? false)) {
+    content = impl.applyMenu(content);
+  }
+
   // Cursor is merged into the existing MouseRegion instead of adding a new
   // outer wrapper. Adding/removing a wrapper widget on cursor-change would
   // change the root widget type returned by build(), deactivating all child
