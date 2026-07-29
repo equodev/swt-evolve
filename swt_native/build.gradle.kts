@@ -286,6 +286,19 @@ configurations["nativeTestImplementation"].extendsFrom(configurations["testImple
 configurations["nativeTestRuntimeOnly"].extendsFrom(configurations["testRuntimeOnly"])
 configurations["nativeTestAnnotationProcessor"].extendsFrom(configurations["testAnnotationProcessor"])
 
+run {
+    val jfaceVersion: String by project
+    val coreCommandsVersion: String by project
+    val equinoxCommonVersion: String by project
+    dependencies {
+        "nativeTestImplementation"("org.eclipse.platform:org.eclipse.jface:$jfaceVersion") {
+            exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
+        }
+        "nativeTestImplementation"("org.eclipse.platform:org.eclipse.core.commands:$coreCommandsVersion")
+        "nativeTestImplementation"("org.eclipse.platform:org.eclipse.equinox.common:$equinoxCommonVersion")
+    }
+}
+
 val chromiumMode = System.getProperty("mode.chromium", "false") == "true"
 if (chromiumMode) {
     dependencies {

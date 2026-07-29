@@ -430,7 +430,16 @@ public class TableHelper {
         String[] result = new String[drawn.suppressed.length];
         for (int i = 0; i < result.length; i++) {
             String own = model != null && i < model.length ? model[i] : null;
-            result[i] = drawn.suppressed[i] ? drawn.texts[i] : own;
+            if (!drawn.suppressed[i]) {
+                result[i] = own;
+                continue;
+            }
+            String captured = drawn.texts[i];
+            if ((captured == null || captured.isEmpty()) && drawn.textDrawn[i] && own != null && !own.isEmpty()) {
+                result[i] = own;
+            } else {
+                result[i] = captured;
+            }
         }
         return result;
     }
@@ -453,12 +462,15 @@ public class TableHelper {
 
         final String[] texts;
 
+        final boolean[] textDrawn;
+
         final Image[] images;
 
         final boolean[] suppressed;
 
-        OwnerDraw(String[] texts, Image[] images, boolean[] suppressed) {
+        OwnerDraw(String[] texts, boolean[] textDrawn, Image[] images, boolean[] suppressed) {
             this.texts = texts;
+            this.textDrawn = textDrawn;
             this.images = images;
             this.suppressed = suppressed;
         }
@@ -486,6 +498,7 @@ public class TableHelper {
         boolean[] suppressed = suppressedForegrounds(item, parent, count);
 
         String[] texts = new String[count];
+        boolean[] textDrawn = new boolean[count];
         Image[] images = new Image[count];
         GC gc = new GC(item.parent);
         DartGC dartGc = (DartGC) gc.getImpl();
@@ -496,8 +509,10 @@ public class TableHelper {
                     continue;
                 }
                 StringBuilder text = new StringBuilder();
+                boolean[] drewText = new boolean[1];
                 Image[] image = new Image[1];
                 dartGc.textCapture = drawn -> {
+                    drewText[0] = true;
                     if (drawn != null)
                         text.append(drawn);
                 };
@@ -509,6 +524,7 @@ public class TableHelper {
                 event.height = itemHeight;
                 parent.sendEvent(SWT.PaintItem, event);
                 texts[i] = text.toString();
+                textDrawn[i] = drewText[0];
                 images[i] = image[0];
             }
         } finally {
@@ -516,7 +532,7 @@ public class TableHelper {
             dartGc.imageCapture = null;
             gc.dispose();
         }
-        return new OwnerDraw(texts, images, suppressed);
+        return new OwnerDraw(texts, textDrawn, images, suppressed);
     }
 
     /**
