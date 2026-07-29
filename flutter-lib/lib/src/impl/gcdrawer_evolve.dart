@@ -26,6 +26,10 @@ class GCDrawer extends GCDrawerBase {
   final List<Shape> shapes = [];
   final void Function(List<Shape>)? onShapesUpdated;
 
+  // Channel -> token for this drawer's extra channels (gcDispose/imageInit/renderSnapshot),
+  // removed by token so a stale drawer can't unregister a newer one's handler (issue #836).
+  final Map<String, Object> _localTokens = {};
+
   final List<ImageShape> _lateLoadedImages = [];
 
 
@@ -59,14 +63,16 @@ class GCDrawer extends GCDrawerBase {
   /// Used for headless image rendering (new GC(image)). [onDisposed] fires once the render is sent.
   GCDrawer.standalone(VGC state, {void Function()? onDisposed})
       : onShapesUpdated = null, onGCDispose = null, super(state) {
-    EquoCommService.onRaw("${state.swt}/${state.id}/imageInit", (payload) {
+    _localTokens["${state.swt}/${state.id}/imageInit"] =
+        EquoCommService.onRaw("${state.swt}/${state.id}/imageInit", (payload) {
       _baseImageCompleter = Completer<void>();
       _handleImageInit(payload).then(
         (_) => _baseImageCompleter!.complete(),
         onError: (e) => _baseImageCompleter!.completeError(e),
       );
     });
-    EquoCommService.onRaw("${state.swt}/${state.id}/gcDispose", (_) async {
+    _localTokens["${state.swt}/${state.id}/gcDispose"] =
+        EquoCommService.onRaw("${state.swt}/${state.id}/gcDispose", (_) async {
       final myGeneration = ++_gcDisposeGeneration;
       if (_baseImageCompleter != null) await _baseImageCompleter!.future;
       await Future.wait(_pendingImages);
@@ -85,7 +91,8 @@ class GCDrawer extends GCDrawerBase {
     // another snapshot) still work afterward. Used when Java asks for the image mid-drawing —
     // this backend only paints in response to an explicit signal, unlike real SWT where GC draws
     // are immediately visible in the image.
-    EquoCommService.onRaw("${state.swt}/${state.id}/renderSnapshot", (_) async {
+    _localTokens["${state.swt}/${state.id}/renderSnapshot"] =
+        EquoCommService.onRaw("${state.swt}/${state.id}/renderSnapshot", (_) async {
       if (_baseImageCompleter != null) await _baseImageCompleter!.future;
       await Future.wait(_pendingImages);
       await _renderSnapshotAndSend();
@@ -97,7 +104,8 @@ class GCDrawer extends GCDrawerBase {
   /// Embedded mode: registers comm listeners for state + all draw ops + gcDispose.
   /// onShapesUpdated triggers GCImpl.setState().
   GCDrawer.embedded(VGC state, {this.onShapesUpdated, this.onGCDispose}) : super(state) {
-    EquoCommService.onRaw("${state.swt}/${state.id}/gcDispose", (_) async {
+    _localTokens["${state.swt}/${state.id}/gcDispose"] =
+        EquoCommService.onRaw("${state.swt}/${state.id}/gcDispose", (_) async {
       final myGeneration = ++_gcDisposeGeneration;
       final cycleStaging = _staging;
       _staging = [];
@@ -435,9 +443,12 @@ class GCDrawer extends GCDrawerBase {
   }
 
   void _unregisterImageListeners() {
-    EquoCommService.remove('${state.swt}/${state.id}/imageInit');
-    EquoCommService.remove('${state.swt}/${state.id}/gcDispose');
-    EquoCommService.remove('${state.swt}/${state.id}/renderSnapshot');
+    // Remove by token; channels this drawer never registered are absent and skipped.
+    for (final channel in const ['imageInit', 'gcDispose', 'renderSnapshot']) {
+      final key = '${state.swt}/${state.id}/$channel';
+      final token = _localTokens.remove(key);
+      if (token != null) EquoCommService.remove(key, token);
+    }
   }
 
   // ── CopyArea helpers ────────────────────────────────────────────────────

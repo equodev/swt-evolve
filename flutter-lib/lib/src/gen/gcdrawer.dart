@@ -5,8 +5,15 @@ import '../gen/gc.dart';
 abstract class GCDrawerBase {
   VGC state;
 
+  // Channel -> token, so teardown removes only handlers this drawer registered and never a newer
+  // drawer's live handler for the same id (issue #836).
+  final Map<String, Object> _handlerTokens = {};
+
   GCDrawerBase(this.state) {
-    EquoCommService.on("${state.swt}/${state.id}", _trackChanges);
+    _handlerTokens["${state.swt}/${state.id}"] = EquoCommService.on(
+      "${state.swt}/${state.id}",
+      _trackChanges,
+    );
     _registerOps();
   }
 
@@ -18,7 +25,8 @@ abstract class GCDrawerBase {
   void onStateChanged(VGC newState) {}
 
   void _op(String name, void Function(Map<String, dynamic>) fn) {
-    EquoCommService.onRaw("${state.swt}/${state.id}/$name", (raw) {
+    final channel = "${state.swt}/${state.id}/$name";
+    _handlerTokens[channel] = EquoCommService.onRaw(channel, (raw) {
       try {
         final map = raw is String
             ? jsonDecode(raw) as Map<String, dynamic>
@@ -167,42 +175,11 @@ abstract class GCDrawerBase {
     );
   }
 
-  static const _opNames = [
-    "copyAreaImageintint",
-    "copyAreaintintintintintint",
-    "copyAreaintintintintintintboolean",
-    "drawArcintintintintintint",
-    "drawFocusintintintint",
-    "drawImageImageintint",
-    "drawImageImageintintintint",
-    "drawImageImageintintintintintintintint",
-    "drawLineintintintint",
-    "drawOvalintintintint",
-    "drawPointintint",
-    "drawPolygonint",
-    "drawPolylineint",
-    "drawRectangleRectangle",
-    "drawRectangleintintintint",
-    "drawRoundRectangleintintintintintint",
-    "drawStringStringintint",
-    "drawStringStringintintboolean",
-    "drawTextStringintint",
-    "drawTextStringintintboolean",
-    "drawTextStringintintint",
-    "fillArcintintintintintint",
-    "fillGradientRectangleintintintintboolean",
-    "fillOvalintintintint",
-    "fillPolygonint",
-    "fillRectangleRectangle",
-    "fillRectangleintintintint",
-    "fillRoundRectangleintintintintintint",
-  ];
-
   void dispose() {
-    EquoCommService.remove("${state.swt}/${state.id}");
-    for (final op in _opNames) {
-      EquoCommService.remove("${state.swt}/${state.id}/$op");
-    }
+    _handlerTokens.forEach((channel, token) {
+      EquoCommService.remove(channel, token);
+    });
+    _handlerTokens.clear();
   }
 
   void onCopyAreaImageintint(VGCCopyAreaImageintint opArgs);

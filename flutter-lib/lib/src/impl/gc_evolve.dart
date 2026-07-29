@@ -29,6 +29,11 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
         _awaitingDispose = false;
         if (!mounted) return;
         setState(() {});
+        // Promote the overlay onstage once it has painted content (a constructor-only paint
+        // sends no VGC state push that would otherwise do it) — issue #836.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _notifyParentGCReady();
+        });
       },
       onGCDispose: (finalShapes) {
         if (mounted) {

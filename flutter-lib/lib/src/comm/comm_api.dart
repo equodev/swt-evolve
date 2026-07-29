@@ -8,7 +8,7 @@ class EquoCommService {
   static Object on<V extends VWidget>(
           String userEventActionId, CommCallback<V> onSuccess) =>
       throw UnsupportedError("EquoComm.on");
-  static void onRaw(
+  static Object onRaw(
           String userEventActionId, CommCallback<Object?> onSuccess) =>
       throw UnsupportedError("EquoComm.on");
   static Future send(String userEventActionId) =>

@@ -44,7 +44,7 @@ class EquoCommService {
     return p != 0 ? _DesktopComm(host: "localhost", port: p) : NoComm();
   }
 
-  static void onRaw(String userEventActionId, CommCallback<dynamic> onSuccess) =>
+  static Object onRaw(String userEventActionId, CommCallback<dynamic> onSuccess) =>
       _comm.on(userEventActionId, onSuccess);
 
   static Object on<V extends VWidget>(

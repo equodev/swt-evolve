@@ -122,7 +122,7 @@ class EquoCommService {
     return p > 0 ? 'ws://localhost:$p' : null;
   }
 
-  static void onRaw(String userEventActionId, CommCallback<dynamic> onSuccess) =>
+  static Object onRaw(String userEventActionId, CommCallback<dynamic> onSuccess) =>
       _comm.on(userEventActionId, onSuccess);
 
   static Object on<V extends VWidget>(

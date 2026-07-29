@@ -5,6 +5,7 @@ import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.WebFlutterServer;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.spi.FlutterBridgeSpi;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
 
 import java.util.concurrent.Executors;
@@ -292,6 +293,38 @@ public class WebDisplayBridge extends DisplayBridge {
     @Override
     protected void onDisplayClientReady(boolean first) {
         cancelDeferredClose();
+        // On refresh, a fresh client reconnects with the widget-tree state but not the one-shot GC
+        // paints Java already fired — re-fire them so custom-drawn content isn't blank (issue #836).
+        if (!first) {
+            refirePaintsForFreshClient();
+        }
+    }
+
+    /** Re-fire SWT.Paint for every custom-painted control in the tree, on the Display thread. */
+    private void refirePaintsForFreshClient() {
+        DartDisplay display = forDisplay;
+        if (display == null) return;
+        Display api = display.getApi();
+        if (api == null || api.isDisposed()) return;
+        api.asyncExec(() -> {
+            if (api.isDisposed()) return;
+            for (Shell shell : api.getShells()) {
+                refirePaints(shell);
+            }
+        });
+    }
+
+    private void refirePaints(Control c) {
+        if (c == null || c.isDisposed()) return;
+        // Only paint-listening controls emit GC ops; skip the rest to avoid needless GC churn.
+        if (c.isListening(SWT.Paint) && c.getImpl() instanceof DartControl dc) {
+            ControlHelper.paint(dc);
+        }
+        if (c instanceof Composite comp) {
+            for (Control child : comp.getChildren()) {
+                refirePaints(child);
+            }
+        }
     }
 
     private void onClientWindowClosed() {
