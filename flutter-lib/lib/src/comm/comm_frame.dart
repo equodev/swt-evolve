@@ -65,6 +65,13 @@ abstract class EquoCommBase {
   final List<Uint8List> _queue = [];
   bool _open = false;
 
+  /// Arrival order of incoming frames, of each buffered payload, and of the
+  /// newest JSON payload handed to a handler — used by [on] to tell a fresh
+  /// early arrival from a stale leftover (#863).
+  int _arrivalSeq = 0;
+  int _lastJsonDeliveredSeq = 0;
+  final Map<String, int> _pendingSeq = {};
+
   /// Puts an encoded frame on the wire. Only called while the socket is open.
   void rawSend(Uint8List frame);
 
@@ -97,6 +104,7 @@ abstract class EquoCommBase {
 
   /// Subclasses call this with the raw bytes of each received binary frame.
   void receiveBinary(Uint8List data) {
+    _arrivalSeq++;
     if (data.length < 2) return;
     final nameLen = (data[0] << 8) | data[1];
     if (data.length < 2 + nameLen) return;
@@ -129,6 +137,7 @@ abstract class EquoCommBase {
     final callback = _handlers[actionId];
     if (jsonOk && callback != null) {
       if (callback.args?.once ?? false) _handlers.remove(actionId);
+      _lastJsonDeliveredSeq = _arrivalSeq;
       _deliver(actionId, callback.onSuccess, payload);
       return;
     }
@@ -136,7 +145,10 @@ abstract class EquoCommBase {
     // Neither on() nor onBytes() has registered yet for this actionId (or the body isn't valid
     // JSON, meaning it's a raw-bytes payload). Buffer both ways so whichever registers first
     // can claim it.
-    if (jsonOk) _pending[actionId] = payload;
+    if (jsonOk) {
+      _pending[actionId] = payload;
+      _pendingSeq[actionId] = _arrivalSeq;
+    }
     _rawPending[actionId] = body ?? Uint8List(0);
   }
 
@@ -180,7 +192,15 @@ abstract class EquoCommBase {
       token: token,
     );
     final pending = _pending.remove(actionId);
-    if (pending != null) _deliver(actionId, onSuccess, pending);
+    final pendingSeq = _pendingSeq.remove(actionId);
+    // Replay a buffered payload only while it is still the newest information
+    // received. A widget that stayed unmounted (no handler) buffers payloads
+    // frozen at old state; once anything newer was delivered — e.g. the parent
+    // payload whose embedded state just mounted this widget — replaying the
+    // buffer would roll the widget back to that stale snapshot (#863).
+    if (pending != null && (pendingSeq == null || pendingSeq > _lastJsonDeliveredSeq)) {
+      _deliver(actionId, onSuccess, pending);
+    }
     return token;
   }
 
@@ -208,6 +228,7 @@ abstract class EquoCommBase {
     if (token != null && _handlers[actionId]?.token != token) return;
     _handlers.remove(actionId);
     _pending.remove(actionId);
+    _pendingSeq.remove(actionId);
     _rawHandlers.remove(actionId);
     _rawPending.remove(actionId);
   }
