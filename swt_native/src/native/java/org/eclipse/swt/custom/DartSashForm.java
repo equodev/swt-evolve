@@ -539,6 +539,13 @@ public class DartSashForm extends DartComposite implements ISashForm {
 
     protected void _hookEvents() {
         super._hookEvents();
+        FlutterBridge.on(this, "Selection", "Selection", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                SashFormHelper.applyWeightsFromFlutter(this, e);
+            });
+        });
     }
 
     public SashForm getApi() {

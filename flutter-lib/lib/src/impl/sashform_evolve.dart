@@ -62,20 +62,64 @@ class SashFormImpl<T extends SashFormSwt, V extends VSashForm>
         sashWidth: sashWidth,
         sashTheme: widgetTheme,
         onWeightsChanged: (newWeights) {
+          final mergedWeights =
+              _mergeVisibleWeights(allWeights, visibleIndices, newWeights);
           setState(() {
-            final mergedWeights = List<int>.of(allWeights);
-            for (var i = 0; i < visibleIndices.length; i++) {
-              mergedWeights[visibleIndices[i]] = newWeights[i];
-            }
             state.weights = mergedWeights;
           });
+          // Report the dragged weights back to Java: DartSashForm applies
+          // them via setWeights, so the next Java-side layout (e.g. a window
+          // resize) keeps the user's drag instead of recomputing the panels
+          // from the stale weights (issue #509). setWeights validates against
+          // the FULL children list, so the merged array is what must go over.
+          _sendWeights(mergedWeights);
         },
+        // Live sync while the sash moves, so Java re-lays-out the pane
+        // CONTENT during the drag (not only at drop) — the stale content is
+        // the visible symptom of #509. state.weights is left alone mid-drag;
+        // the drag-end onWeightsChanged commit stays authoritative.
+        onWeightsDragged: (newWeights) => _sendWeights(
+            _mergeVisibleWeights(allWeights, visibleIndices, newWeights)),
         onMouseEnter: () => widget.sendMouseTrackMouseEnter(state, null),
         onMouseExit: () => widget.sendMouseTrackMouseExit(state, null),
         onFocusIn: () => widget.sendFocusFocusIn(state, null),
         onFocusOut: () => widget.sendFocusFocusOut(state, null),
       ),
     );
+  }
+
+  void _sendWeights(List<int> weights) {
+    final event = VEvent()..text = weights.join(',');
+    widget.sendEvent(state, 'Selection/Selection', event);
+  }
+
+  /// Folds the dragged weights of the VISIBLE panes back into the full
+  /// weights array Java's setWeights expects. Everything is first rescaled to
+  /// a ~1000 total so a hidden pane keeps its relative share for when it is
+  /// shown again, without the small-total rounding that loses drags.
+  static List<int> _mergeVisibleWeights(
+    List<int> allWeights,
+    List<int> visibleIndices,
+    List<int> visibleWeights,
+  ) {
+    if (visibleIndices.length == allWeights.length) {
+      return visibleWeights; // nothing hidden — the common case
+    }
+    final totalAll = allWeights.fold<int>(0, (a, b) => a + b);
+    if (totalAll <= 0) return visibleWeights;
+    final base = [
+      for (final w in allWeights) ((w / totalAll) * 1000).round(),
+    ];
+    final visiblePortion =
+        visibleIndices.fold<int>(0, (a, i) => a + base[i]);
+    final newTotal = visibleWeights.fold<int>(0, (a, b) => a + b);
+    if (newTotal <= 0) return base;
+    final merged = List<int>.of(base);
+    for (var i = 0; i < visibleIndices.length; i++) {
+      merged[visibleIndices[i]] =
+          ((visibleWeights[i] / newTotal) * visiblePortion).round();
+    }
+    return merged;
   }
 }
 
@@ -86,6 +130,7 @@ class _SashFormLayout extends StatefulWidget {
   final double sashWidth;
   final SashThemeExtension sashTheme;
   final Function(List<int>) onWeightsChanged;
+  final Function(List<int>) onWeightsDragged;
   final VoidCallback onMouseEnter;
   final VoidCallback onMouseExit;
   final VoidCallback onFocusIn;
@@ -99,6 +144,7 @@ class _SashFormLayout extends StatefulWidget {
     required this.sashWidth,
     required this.sashTheme,
     required this.onWeightsChanged,
+    required this.onWeightsDragged,
     required this.onMouseEnter,
     required this.onMouseExit,
     required this.onFocusIn,
@@ -115,6 +161,10 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
   bool _isInLocalEditMode = false;
   bool _isDragPaused = false;
   double _dragStartGlobalPosition = 0.0;
+  // Last weights live-synced to Java this drag, so mid-drag updates only fire
+  // when the values move by a visible amount (>= _liveSyncMinDelta per mille).
+  List<int>? _lastSentWeights;
+  static const int _liveSyncMinDelta = 5;
 
   @override
   void initState() {
@@ -207,6 +257,9 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
     for (int i = 0; i < widget.children.length; i++) {
       stackChildren.add(
         Positioned(
+          // Stable key so Flutter preserves the panel's State across the
+          // rebuilds a sash drag produces (same pattern as NoLayout).
+          key: ValueKey(widget.children[i].id),
           left: currentX,
           top: 0,
           width: panelWidths[i],
@@ -242,6 +295,9 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
     for (int i = 0; i < widget.children.length; i++) {
       stackChildren.add(
         Positioned(
+          // Stable key so Flutter preserves the panel's State across the
+          // rebuilds a sash drag produces (same pattern as NoLayout).
+          key: ValueKey(widget.children[i].id),
           left: 0,
           top: currentY,
           width: totalWidth,
@@ -307,6 +363,8 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
         // Nothing to do on exit
       },
       child: GestureDetector(
+        // Stable key so tests/tooling (flutter_driver) can target a divider.
+        key: ValueKey('sashform-sash-$index'),
         onPanStart: (details) => _onSashDragStart(index, details, isVertical),
         onPanUpdate: (details) =>
             _onSashDragUpdate(details, isVertical, constraints),
@@ -380,6 +438,18 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
       _isInLocalEditMode = true;
       _dragStartGlobalPosition = currentGlobalPosition - currentPixelPosition;
     });
+    _lastSentWeights = null;
+  }
+
+  // Normalize to a 1000 scale before rounding: with small weight totals
+  // (e.g. [1, 1]) plain rounding collapses a sub-half-weight drag back to
+  // the original values and the drag is silently lost. Only the ratios
+  // matter to SWT.
+  List<int> _normalizedWeights() {
+    final totalWeight = _panelSizes.reduce((a, b) => a + b);
+    return _panelSizes
+        .map((f) => ((f / totalWeight) * 1000).round())
+        .toList();
   }
 
   void _onSashDragUpdate(
@@ -441,6 +511,24 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
         _panelSizes[_draggingSashIndex! + 1] = newRightSize;
       }
     });
+
+    // Live-sync to Java while the sash moves so the pane content reflows
+    // during the drag (not only at drop) — throttled to visible movement.
+    final live = _normalizedWeights();
+    final last = _lastSentWeights;
+    var moved = last == null || last.length != live.length;
+    if (!moved) {
+      for (int i = 0; i < live.length; i++) {
+        if ((live[i] - last[i]).abs() >= _liveSyncMinDelta) {
+          moved = true;
+          break;
+        }
+      }
+    }
+    if (moved) {
+      _lastSentWeights = live;
+      widget.onWeightsDragged(live);
+    }
   }
 
   void _onSashDragEnd() {
@@ -450,7 +538,6 @@ class _SashFormLayoutState extends State<_SashFormLayout> {
       _isDragPaused = false;
     });
 
-    final newWeights = _panelSizes.map((f) => f.round()).toList();
-    widget.onWeightsChanged(newWeights);
+    widget.onWeightsChanged(_normalizedWeights());
   }
 }

@@ -264,6 +264,18 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
 
     _lastX = newX;
     _lastY = newY;
+
+    // Native SWT fires Selection continuously while the sash is dragged
+    // (SwtSash.mouseDragged) so apps can resize the surrounding composites
+    // live — without this nothing relayouts until the drag ends (issue #509).
+    final event = VEvent()
+      ..x = newX
+      ..y = newY
+      ..width = width
+      ..height = height
+      ..detail = 0
+      ..stateMask = 0;
+    widget.sendSelectionSelection(state, event);
   }
 
   void handleSelectionEnd(DragEndDetails details) {

@@ -359,7 +359,16 @@ public class GallerySnippet {
         sashData.widthHint = 8;
         sashData.heightHint = 30;
         sash.setLayoutData(sashData);
-        sash.addSelectionListener(widgetSelectedAdapter(e -> status.setText("Sash dragged")));
+        // Count Sash Selection events on a dedicated Label (the shared status is clobbered by the
+        // Browser's async title listener) so a scenario can assert they fire during the drag (#509).
+        Label sashEventsLabel = new Label(sashGroup, SWT.NONE);
+        sashEventsLabel.setText("Sash events: 0");
+        int[] sashDragEvents = {0};
+        sash.addSelectionListener(widgetSelectedAdapter(e -> {
+            sashDragEvents[0]++;
+            sashEventsLabel.setText("Sash events: " + sashDragEvents[0]);
+            status.setText("Sash dragged (" + sashDragEvents[0] + ")");
+        }));
 
         // ToolTip / ScrolledComposite — the balloon ToolTip is shown programmatically (its
         // observable state is VToolTip.visible/text); the ScrolledComposite hosts content taller
@@ -517,6 +526,8 @@ public class GallerySnippet {
                 browser.setText(browserHtml);
             }
             sashForm.setWeights(new int[] {1, 1});
+            sashDragEvents[0] = 0;
+            sashEventsLabel.setText("Sash events: 0");
             status.setText("Status: (no interaction yet)");
         }));
 
