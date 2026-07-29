@@ -134,6 +134,11 @@ class _DisplaySwtState extends State<DisplaySwt> {
         });
       }
 
+      var topmostModalIndex = -1;
+      for (var i = 0; i < dialogShells.length; i++) {
+        if (_isModal(dialogShells[i])) topmostModalIndex = i;
+      }
+
       return Stack(children: [
         for (final s in mainShells)
           KeyedSubtree(
@@ -150,20 +155,23 @@ class _DisplaySwtState extends State<DisplaySwt> {
             key: ValueKey('tooltip_${tooltip.id}'),
             child: Positioned.fill(child: gen.mapWidgetFromValue(tooltip)),
           ),
-        if (dialogShells.any(_isModal))
-          Positioned.fill(
-            child: ColoredBox(
-              color: Theme.of(context).extension<DisplayThemeExtension>()!.modalOverlayColor,
+        for (var i = 0; i < dialogShells.length; i++) ...[
+          if (i == topmostModalIndex)
+            Positioned.fill(
+              child: ColoredBox(
+                color: Theme.of(context)
+                    .extension<DisplayThemeExtension>()!
+                    .modalOverlayColor,
+              ),
             ),
-          ),
-        for (final dialog in dialogShells)
           KeyedSubtree(
-            key: ValueKey(dialog.id),
+            key: ValueKey(dialogShells[i].id),
             child: FloatingShellChromeScope(
               viewportConstraints: constraints,
-              child: gen.mapWidgetFromValue(dialog),
+              child: gen.mapWidgetFromValue(dialogShells[i]),
             ),
           ),
+        ],
       ]);
     });
   }
