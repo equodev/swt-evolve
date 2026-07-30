@@ -89,6 +89,35 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = getConstraintsFromBounds(state.bounds);
 
+    final textStyle = _labelTextStyle(context, widgetTheme, enabled);
+
+    EdgeInsets padding = widgetTheme.padding.resolve(TextDirection.ltr);
+    var fitTextToBounds = false;
+    final shouldWrap = shouldWrapText(
+      style: state.style,
+      hasValidBounds: hasValidBounds,
+      text: text,
+    );
+    if (hasValidBounds &&
+        !shouldWrap &&
+        !hasStyle(state.style, SWT.VERTICAL) &&
+        text.isNotEmpty &&
+        state.image == null) {
+      final painter = TextPainter(
+        text: TextSpan(text: text, style: textStyle),
+        maxLines: 1,
+        textDirection: TextDirection.ltr,
+      )..layout();
+      final boundsWidth = state.bounds!.width.toDouble();
+      if (painter.width > boundsWidth - padding.horizontal) {
+        padding = EdgeInsets.only(top: padding.top, bottom: padding.bottom);
+        if (painter.width > boundsWidth &&
+            painter.width <= boundsWidth * 1.4) {
+          fitTextToBounds = true;
+        }
+      }
+    }
+
     final child = _buildLabelContent(
       context,
       widgetTheme,
@@ -96,6 +125,8 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
       text,
       textAlign,
       hasValidBounds,
+      textStyle,
+      fitTextToBounds,
     );
 
     return Focus(
@@ -111,7 +142,7 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
         child: wrap(
           Container(
             constraints: constraints,
-            padding: widgetTheme.padding,
+            padding: padding,
             margin: widgetTheme.margin,
             decoration: backgroundColor != null
                 ? BoxDecoration(
@@ -139,16 +170,11 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     );
   }
 
-  Widget _buildLabelContent(
+  TextStyle _labelTextStyle(
     BuildContext context,
     LabelThemeExtension widgetTheme,
     bool enabled,
-    String text,
-    TextAlign textAlign,
-    bool hasValidBounds,
   ) {
-    final isVertical = hasStyle(state.style, SWT.VERTICAL);
-
     final textColor = enabled
         ? getForegroundColor(
             foreground: state.foreground,
@@ -160,12 +186,25 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
         ? widgetTheme.primaryTextStyle
         : widgetTheme.disabledTextStyle;
 
-    final textStyle = getTextStyle(
+    return getTextStyle(
       context: context,
       font: state.font,
       textColor: textColor,
       baseTextStyle: baseTextStyle,
     );
+  }
+
+  Widget _buildLabelContent(
+    BuildContext context,
+    LabelThemeExtension widgetTheme,
+    bool enabled,
+    String text,
+    TextAlign textAlign,
+    bool hasValidBounds,
+    TextStyle textStyle,
+    bool fitTextToBounds,
+  ) {
+    final isVertical = hasStyle(state.style, SWT.VERTICAL);
 
     final shouldWrap = shouldWrapText(
       style: state.style,
@@ -181,6 +220,14 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
       maxLines: shouldWrap ? null : 1,
       style: textStyle,
     );
+
+    if (fitTextToBounds) {
+      textWidget = FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: getAlignmentFromTextAlign(textAlign),
+        child: textWidget,
+      );
+    }
 
     if (isVertical) {
       textWidget = RotatedBox(quarterTurns: 3, child: textWidget);

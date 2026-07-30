@@ -161,6 +161,7 @@ InputDecoration getInputDecoration(
   final isSearch = hasStyle(state.style, SWT.SEARCH);
   final hasSearchIcon = isSearch && hasStyle(state.style, SWT.ICON_SEARCH);
   final hasCancelIcon = isSearch && hasStyle(state.style, SWT.ICON_CANCEL);
+  final isBorderless = !hasStyle(state.style, SWT.BORDER);
   final isReadOnly =
       !(state.editable ?? true) || hasStyle(state.style, SWT.READ_ONLY);
 
@@ -207,10 +208,10 @@ InputDecoration getInputDecoration(
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
           )
         : null,
-    border: isReadOnly ? transparentBorder : outlineBorder,
-    enabledBorder: isReadOnly ? transparentBorder : outlineEnabled,
-    focusedBorder: isReadOnly ? transparentBorder : outlineFocused,
-    disabledBorder: isReadOnly ? transparentBorder : outlineDisabled,
+    border: isBorderless ? transparentBorder : outlineBorder,
+    enabledBorder: isBorderless ? transparentBorder : outlineEnabled,
+    focusedBorder: isBorderless ? transparentBorder : outlineFocused,
+    disabledBorder: isBorderless ? transparentBorder : outlineDisabled,
     fillColor: bgColor,
     filled: true,
     counterText: '',

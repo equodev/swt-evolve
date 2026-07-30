@@ -131,8 +131,9 @@ class TextImpl<T extends TextSwt, V extends VText>
 
     final isReadOnly =
         !(state.editable ?? true) || hasStyle(state.style, SWT.READ_ONLY);
+    final hasBorderStyle = hasStyle(state.style, SWT.BORDER);
     final parentBg = ParentBackgroundScope.backgroundOf(context);
-    if (parentBg != null && isReadOnly) {
+    if (parentBg != null && isReadOnly && !hasBorderStyle) {
       decoration = decoration.copyWith(filled: true, fillColor: parentBg);
     }
 
@@ -141,7 +142,6 @@ class TextImpl<T extends TextSwt, V extends VText>
     final shouldExpand = hasValidBounds && !singleLine;
 
     if (hasValidBounds) {
-      final hPadding = widgetTheme.contentPadding.left;
       if (singleLine) {
         decoration = decoration.copyWith(
           isDense: false,
@@ -152,7 +152,10 @@ class TextImpl<T extends TextSwt, V extends VText>
         );
       } else {
         decoration = decoration.copyWith(
-          contentPadding: EdgeInsets.symmetric(horizontal: hPadding),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 3.0,
+            vertical: 4.0,
+          ),
         );
       }
     }
@@ -170,7 +173,8 @@ class TextImpl<T extends TextSwt, V extends VText>
       readOnly: isReadOnly,
       maxLines: singleLine ? 1 : null,
       expands: shouldExpand,
-      textAlignVertical: TextAlignVertical.center,
+      textAlignVertical:
+          singleLine ? TextAlignVertical.center : TextAlignVertical.top,
       textAlign: textAlign,
       style: textStyle,
       decoration: decoration,

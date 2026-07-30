@@ -10,7 +10,7 @@ public record LabelTheme (TextStyle textStyle) {
     }
 
     public static LabelTheme getDefaultTheme() {
-        return new LabelTheme(new TextStyle("System", 14, false, 400));
+        return new LabelTheme(new TextStyle("Inter", 14, false, 500));
     }
 
 }
