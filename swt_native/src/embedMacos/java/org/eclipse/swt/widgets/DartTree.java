@@ -1812,6 +1812,7 @@ public class DartTree extends DartComposite implements ITree {
         checkItems();
         count = Math.max(0, count);
         setItemCount(null, count);
+        loadVirtualPage(null);
     }
 
     void setItemCount(TreeItem parentItem, int count) {
