@@ -424,13 +424,14 @@ public class TableHelper {
     public static String[] getTexts(DartTableItem item) {
         String[] model = item.strings;
         OwnerDraw drawn = ownerDraw(item);
-        if (drawn == null || !drawn.anySuppressed()) {
+        if (drawn == null) {
             return model;
         }
         String[] result = new String[drawn.suppressed.length];
         for (int i = 0; i < result.length; i++) {
             String own = model != null && i < model.length ? model[i] : null;
-            if (!drawn.suppressed[i]) {
+            // Model wins only when not suppressed AND it has its own text; otherwise use what PaintItem drew.
+            if (!drawn.suppressed[i] && own != null) {
                 result[i] = own;
                 continue;
             }
@@ -473,14 +474,6 @@ public class TableHelper {
             this.textDrawn = textDrawn;
             this.images = images;
             this.suppressed = suppressed;
-        }
-
-        boolean anySuppressed() {
-            for (boolean s : suppressed) {
-                if (s)
-                    return true;
-            }
-            return false;
         }
     }
 

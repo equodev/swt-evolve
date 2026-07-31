@@ -89,6 +89,35 @@ class TableOwnerDrawSerializeTest extends SerializeTestBase {
     }
 
     @Test
+    void ownerDrawnText_isCaptured_whenForegroundNeverSuppressed_andModelHasNoText() {
+        // Issue #907: an Rcp App's GlobalVariablePart.MyLabelProvider overrides only measure()/paint(),
+        // never erase() -- so EraseItem never clears SWT.FOREGROUND -- yet paint() still draws the
+        // real, current value on every repaint. The column's model text is never set (owner-drawn
+        // columns never go through item.setText()), so getTexts() must still prefer what PaintItem
+        // drew over the (always null) model -- mirroring what getImages() already did correctly.
+        Table table = table();
+        when(table.getColumnCount()).thenReturn(1);
+        DartTable tableImpl = (DartTable) table.getImpl();
+        when(tableImpl.hooks(SWT.PaintItem)).thenReturn(true);
+        when(tableImpl.hooks(SWT.EraseItem)).thenReturn(true);
+        when(tableImpl.getItemHeight()).thenReturn(20);
+        // EraseItem fires but never clears FOREGROUND, as a label provider with no erase() override behaves.
+        doAnswer(invocation -> null).when(tableImpl).sendEvent(eq(SWT.EraseItem), any(Event.class));
+        doAnswer(invocation -> {
+            Event event = invocation.getArgument(1);
+            event.gc.drawText("aaaa", 2, 2, true);
+            return null;
+        }).when(tableImpl).sendEvent(eq(SWT.PaintItem), any(Event.class));
+
+        TableItem item = new TableItem(table, SWT.NONE);
+        // No item.setText(...) call -- the model stays null, as a real owner-drawn column's does.
+
+        String json = serialize(item);
+
+        assertThatJson(json).node("texts[0]").isEqualTo("aaaa");
+    }
+
+    @Test
     void ownerDrawnImage_isCaptured_fromScaledDrawImage() {
         Table table = table();
         DartTable tableImpl = ownerDrawnTable(table, 2);
