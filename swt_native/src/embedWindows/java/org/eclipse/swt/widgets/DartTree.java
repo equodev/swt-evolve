@@ -1336,9 +1336,12 @@ public class DartTree extends DartComposite implements ITree {
             return null;
         int index = y / itemHeight;
         java.util.List<TreeItem> flat = Sizes.flattenVisibleTreeItems(this);
-        if (index >= 0 && index < flat.size())
-            return flat.get(index);
-        return null;
+        if (index < 0 || index >= flat.size())
+            return null;
+        TreeItem item = flat.get(index);
+        if (TreeSizes.isOverExpander(this, item, point.x))
+            return null;
+        return item;
     }
 
     TreeItem getItemInPixels(Point point) {

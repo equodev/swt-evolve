@@ -426,12 +426,7 @@ public class Sizes {
     }
 
     public static Point computeSize(DartTable c, int wHint, int hHint, boolean changed) {
-        int cols = Math.max(c.getColumnCount(), 1);
-        int width = wHint != SWT.DEFAULT ? wHint : cols * 70;
-        int height = hHint != SWT.DEFAULT
-            ? hHint
-            : c.getHeaderHeight() + c.getItemCount() * c.getItemHeight() + 2 * dev.equo.swt.size.TableSizes.getBorderWidth();
-        return new Point(width, height);
+        return dev.equo.swt.size.TableSizes.computeSize(c, wHint, hHint, changed);
     }
 
     public static Point computeSize(DartTabFolder w, int wHint, int hHint, boolean flushCache) {
@@ -588,14 +583,7 @@ public class Sizes {
     }
 
     public static Point computeSize(DartTree t, int wHint, int hHint, boolean changed) {
-        int columnCount = t.getColumnCount();
-
-        int width = (wHint != SWT.DEFAULT && wHint > 0) ? wHint : (columnCount > 0 ? columnCount * 30 : 200);
-        int height = (hHint != SWT.DEFAULT && hHint > 0)
-            ? hHint
-            : t.getHeaderHeight() + flattenVisibleTreeItems(t).size() * t.getItemHeight();
-
-        return new Point(width, height);
+        return TreeSizes.computeSize(t, wHint, hHint, changed);
     }
 
     public static Point computeSize(DartText c, int wHint, int hHint, boolean changed) {

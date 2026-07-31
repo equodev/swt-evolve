@@ -113,6 +113,11 @@ class MeasurementResult {
 class RenderBoxInfo {
   final String type;
   final Size size;
+
+  /// Top-left of this box relative to the measured root. Sizes alone cannot express where a
+  /// widget's parts sit, and some Java-side geometry is about position rather than extent — the
+  /// x of a Tree's expander arrow, for instance, is what `Tree.getItem(Point)` hit-tests against.
+  final Offset offset;
   final EdgeInsetsGeometry? padding;
   final EdgeInsets? border;
   final EdgeInsets? margin;
@@ -124,10 +129,17 @@ class RenderBoxInfo {
   final bool? softWrap;
   final String? sizeProbeName;
 
+  /// The chain of widgets that created this render object, e.g.
+  /// `SizedBox ← MouseRegion ← ... ← TreeItemSwt ← ...`. Debug-only Flutter data, which is all
+  /// the measurement tool ever runs in — it lets the tool find a widget's parts by the code that
+  /// built them, instead of the widget having to mark them for it.
+  final String? creator;
+
   RenderBoxInfo(
     this.type,
     this.size,
     this.depth, {
+    this.offset = Offset.zero,
     this.padding,
     this.border,
     this.margin,
@@ -136,13 +148,17 @@ class RenderBoxInfo {
     this.textStyle,
     this.softWrap,
     this.sizeProbeName,
+    this.creator,
     this.children = const [],
   });
+
+  bool createdBy(String widgetType) => creator?.contains(widgetType) ?? false;
 
   Map<String, dynamic> toJson() {
     return {
       'type': type,
       'size': {'width': size.width, 'height': size.height},
+      'offset': {'x': offset.dx, 'y': offset.dy},
       'depth': depth,
       if (textContent != null) 'textContent': textContent,
       if (imageSource != null) 'imageSource': imageSource,
@@ -189,6 +205,51 @@ class RenderBoxInfo {
         'children': children.map((c) => c.toJson()).toList(),
     };
   }
+}
+
+/// Tree widths the row-geometry cases are measured at. Two are needed because the tree's left
+/// edge gap is a fraction of the tree width: a single sample cannot tell that fraction apart from
+/// the fixed row padding beside it.
+const List<int> geometryWidths = [300, 600];
+
+/// Font height the row-geometry cases are re-measured at, to find out whether a widget's row and
+/// header heights follow the font (Table) or are fixed theme values (Tree).
+const int fontProbeSize = 28;
+
+/// Fallback widths for `computeSize` when no width hint is given, as `(perColumn, noColumns)`.
+///
+/// These are *not* measurements and cannot be: a row widget fills the width it is given, so an
+/// unbounded measurement returns the measurement window, not a property of the widget (that is
+/// exactly how the generic emitter used to produce MIN_WIDTH = 1264). They are SWT layout policy,
+/// carried over verbatim from what Sizes.java did by hand, so generating computeSize preserves
+/// the sizes every existing layout already gets.
+const Map<String, (int, int)> rowWidgetFallbackWidth = {
+  'Tree': (30, 200),
+  'Table': (70, 70),
+};
+
+/// Row geometry read off a rendered row widget (Tree, Table), for one column-count variant.
+/// The expander fields are only populated for a widget that draws one.
+class _RowGeometry {
+  final double rowHeight;
+  final double rowPaddingVertical;
+  final double? borderWidth;
+  final double? arrowWidth;
+  final double? gapFraction;
+  final double? paddingLeft;
+  final double? indent;
+
+  _RowGeometry({
+    required this.rowHeight,
+    required this.rowPaddingVertical,
+    this.borderWidth,
+    this.arrowWidth,
+    this.gapFraction,
+    this.paddingLeft,
+    this.indent,
+  });
+
+  bool get hasExpander => arrowWidth != null;
 }
 
 // Analysis results for a widget type
@@ -681,9 +742,23 @@ class WidgetMeasurer {
     }
   }
 
-  RenderBoxInfo _analyzeRenderBox(RenderBox renderBox, int depth) {
+  RenderBoxInfo _analyzeRenderBox(
+    RenderBox renderBox,
+    int depth, {
+    Offset? rootOrigin,
+  }) {
     final type = renderBox.runtimeType.toString();
     final size = renderBox.size;
+
+    Offset origin = Offset.zero;
+    Offset offset = Offset.zero;
+    if (renderBox.attached && renderBox.hasSize) {
+      final global = renderBox.localToGlobal(Offset.zero);
+      origin = rootOrigin ?? global;
+      offset = global - origin;
+    } else {
+      origin = rootOrigin ?? Offset.zero;
+    }
 
     EdgeInsetsGeometry? padding;
     EdgeInsets? border;
@@ -697,6 +772,12 @@ class WidgetMeasurer {
       if (identifier != null && identifier.startsWith('sizeprobe:')) {
         sizeProbeName = identifier.substring('sizeprobe:'.length);
       }
+    }
+
+    String? creator;
+    final debugCreator = renderBox.debugCreator;
+    if (debugCreator is DebugCreator) {
+      creator = debugCreator.element.debugGetCreatorChain(20);
     }
 
     if (renderBox is RenderPadding) {
@@ -745,16 +826,26 @@ class WidgetMeasurer {
     }
 
     final children = <RenderBoxInfo>[];
-    renderBox.visitChildren((child) {
-      if (child is RenderBox) {
-        children.add(_analyzeRenderBox(child, depth + 1));
-      }
-    });
+    // Descend through render objects that are not boxes (a ListView's viewport reaches its rows
+    // through a RenderSliver) — stopping at them would hide every scrolled child, which is where
+    // a Tree keeps its rows.
+    void collect(RenderObject node) {
+      node.visitChildren((child) {
+        if (child is RenderBox) {
+          children.add(_analyzeRenderBox(child, depth + 1, rootOrigin: origin));
+        } else {
+          collect(child);
+        }
+      });
+    }
+
+    collect(renderBox);
 
     return RenderBoxInfo(
       type,
       size,
       depth,
+      offset: offset,
       padding: padding,
       border: border,
       margin: margin,
@@ -763,6 +854,7 @@ class WidgetMeasurer {
       textStyle: textStyle,
       softWrap: softWrap,
       sizeProbeName: sizeProbeName,
+      creator: creator,
       children: children,
     );
   }
@@ -824,15 +916,142 @@ class WidgetMeasurer {
       for (final name in namedComponents) {
         final namedBox = _findNamedBox(root, name as String);
         if (namedBox != null) {
-          discovered[name] = {
-            'width': namedBox.size.width,
-            'height': namedBox.size.height,
-          };
+          discovered[name] = _probeJson(namedBox);
         }
       }
     }
 
+    // Row geometry, found from the render tree itself rather than from markers the widget has to
+    // carry for us: the rows of a row widget, and (for a Tree) the expander arrow in each.
+    final rowWidget = expectedComponents['rowsOf'];
+    if (rowWidget is String) {
+      final header = _findNamedBox(root, 'header');
+      final rows = _findRowBoxes(root, rowWidget, header);
+      if (rows.isNotEmpty) {
+        discovered['row'] = rows.map(_probeJson).toList();
+        final expanders = rows
+            .map(_findExpanderBox)
+            .whereType<RenderBoxInfo>()
+            .toList();
+        if (expanders.isNotEmpty) {
+          discovered['expander'] = expanders.map(_probeJson).toList();
+        }
+      }
+      final borderWidth = _firstBorderWidth(root);
+      if (borderWidth != null) {
+        discovered['frame'] = {
+          'width': root.size.width,
+          'height': root.size.height,
+          'left': root.offset.dx,
+          'top': root.offset.dy,
+          'borderWidth': borderWidth,
+        };
+      }
+    }
+
     return discovered;
+  }
+
+  /// The laid-out rows of a row widget, outermost box per row, top to bottom.
+  ///
+  /// Two shapes, because the two widgets build rows differently and neither needs to know this
+  /// tool exists: a Tree renders each row as its own `{Widget}ItemSwt`, while a Table builds one
+  /// Flutter `Table` whose cells are the rows (its items are not widgets of their own). The
+  /// header is excluded — it is a row of the same `Table`.
+  List<RenderBoxInfo> _findRowBoxes(
+    RenderBoxInfo root,
+    String rowWidget,
+    RenderBoxInfo? header,
+  ) {
+    final byWidget = <RenderBoxInfo>[];
+    void collectOutermost(RenderBoxInfo box) {
+      if (identical(box, header)) return;
+      if (box.createdBy(rowWidget)) {
+        byWidget.add(box);
+        return; // outermost box of the row; its children are the row's parts
+      }
+      for (final child in box.children) {
+        collectOutermost(child);
+      }
+    }
+
+    collectOutermost(root);
+    if (byWidget.isNotEmpty) {
+      byWidget.sort((a, b) => a.offset.dy.compareTo(b.offset.dy));
+      return byWidget;
+    }
+
+    // Table: take the first cell of each row of the body's RenderTable.
+    final tables = <RenderBoxInfo>[];
+    void collectTables(RenderBoxInfo box) {
+      if (identical(box, header)) return;
+      if (box.type.contains('RenderTable')) tables.add(box);
+      for (final child in box.children) {
+        collectTables(child);
+      }
+    }
+
+    collectTables(root);
+    if (tables.isEmpty) return const [];
+    final cells = <double, RenderBoxInfo>{};
+    for (final cell in tables.first.children) {
+      final existing = cells[cell.offset.dy];
+      if (existing == null || cell.offset.dx < existing.offset.dx) {
+        cells[cell.offset.dy] = cell;
+      }
+    }
+    final tops = cells.keys.toList()..sort();
+    return [for (final top in tops) cells[top]!];
+  }
+
+  /// The expand/collapse arrow inside a row: the first square icon box in it. A widget without
+  /// one (a Table, or a leaf row) simply yields none.
+  RenderBoxInfo? _findExpanderBox(RenderBoxInfo row) {
+    if (row.createdBy('Icon') &&
+        row.size.width > 0 &&
+        row.size.width == row.size.height) {
+      return row;
+    }
+    for (final child in row.children) {
+      final found = _findExpanderBox(child);
+      if (found != null) return found;
+    }
+    return null;
+  }
+
+  Map<String, dynamic> _probeJson(RenderBoxInfo box) {
+    final paddingVertical = _firstPaddingVertical(box);
+    final borderWidth = _firstBorderWidth(box);
+    return {
+      'width': box.size.width,
+      'height': box.size.height,
+      'left': box.offset.dx,
+      'top': box.offset.dy,
+      // The padding inside a probed box is the part of its height that is *not* text. A widget
+      // whose rows grow with the font needs it as a constant, with the text measured in Java.
+      if (paddingVertical != null) 'paddingVertical': paddingVertical,
+      if (borderWidth != null) 'borderWidth': borderWidth,
+    };
+  }
+
+  double? _firstPaddingVertical(RenderBoxInfo box) {
+    final padding = box.padding;
+    if (padding is EdgeInsets) return padding.vertical;
+    for (final child in box.children) {
+      final found = _firstPaddingVertical(child);
+      if (found != null) return found;
+    }
+    return null;
+  }
+
+  double? _firstBorderWidth(RenderBoxInfo box) {
+    final border = box.border;
+    if (border != null && border.left > 0) return border.left;
+    for (final child in box.children) {
+      final found = _firstBorderWidth(child);
+      if (found != null) return found;
+    }
+    return null;
   }
 
   RenderBoxInfo? _findNamedBox(RenderBoxInfo box, String name) {
@@ -846,6 +1065,17 @@ class WidgetMeasurer {
     }
 
     return null;
+  }
+
+  void _collectNamedBoxes(
+    RenderBoxInfo box,
+    String name,
+    List<RenderBoxInfo> into,
+  ) {
+    if (box.sizeProbeName == name) into.add(box);
+    for (var child in box.children) {
+      _collectNamedBoxes(child, name, into);
+    }
   }
 
   RenderBoxInfo? _findTextBox(RenderBoxInfo box, String expectedText) {
@@ -1196,7 +1426,10 @@ class WidgetMeasurer {
           final byFontSize = <int, List<double>>{};
           for (var r in iconPairs) {
             final imgW = r.discoveredComponents['image']!['width'] as double;
-            final fontSize = (r.discoveredComponents['text']!['textStyle']?['fontSize'] as double?)?.round();
+            final fontSize =
+                (r.discoveredComponents['text']!['textStyle']?['fontSize']
+                        as double?)
+                    ?.round();
             if (fontSize != null) {
               byFontSize.putIfAbsent(fontSize, () => []).add(imgW);
             }
@@ -1339,6 +1572,15 @@ class WidgetMeasurer {
     // Extract simple class name from FQN (e.g., "Button" from "org.eclipse.swt.widgets.Button")
     final widgetType = widgetName(fqn);
 
+    // A row widget (Tree, Table) does not size itself from its own text — it fills what it is
+    // given — so the "constant-size widget" inference below reduces it to the measurement window.
+    // What Java needs from these is the row geometry it cannot ask Flutter for synchronously.
+    // Keyed on the probes the measurement actually produced, not on the class name.
+    if (_hasRowGeometry(analyses)) {
+      _generateJavaRowWidgetSizes(fqn, analyses);
+      return;
+    }
+
     final buffer = StringBuffer();
 
     // Extract package and class name to create DartClassName import
@@ -1358,9 +1600,11 @@ class WidgetMeasurer {
     buffer.writeln();
     buffer.writeln('import dev.equo.swt.Config;');
     buffer.writeln('import dev.equo.swt.FontMetricsUtil;');
-    final isIconImageWidget = hasAnyImageSupport &&
+    final isIconImageWidget =
+        hasAnyImageSupport &&
         analyses.any((a) => a.derivedConstants['isIconImage'] == true);
-    final isFixedIconSizeWidget = isIconImageWidget &&
+    final isFixedIconSizeWidget =
+        isIconImageWidget &&
         analyses.any((a) => a.derivedConstants['isFixedIconSize'] == true);
     final fixedIconWidthValue = isFixedIconSizeWidget
         ? analyses
@@ -1539,7 +1783,9 @@ class WidgetMeasurer {
           if (isFixedIconSizeWidget) {
             buffer.writeln('${indent}m.image = computeImage(widget);');
           } else if (isIconImageWidget) {
-            buffer.writeln('${indent}m.image = computeImage(widget, m.textStyle);');
+            buffer.writeln(
+              '${indent}m.image = computeImage(widget, m.textStyle);',
+            );
           } else {
             buffer.writeln('${indent}m.image = computeImage(widget);');
           }
@@ -1595,7 +1841,8 @@ class WidgetMeasurer {
           naturalExpr =
               'Math.max($textWidthExpr + ($widthCondition ? $styleName.HORIZONTAL_PADDING : 0)$slackTerm, $styleName.MIN_WIDTH)';
         } else {
-          naturalExpr = 'Math.max($textWidthExpr$slackTerm, $styleName.MIN_WIDTH)';
+          naturalExpr =
+              'Math.max($textWidthExpr$slackTerm, $styleName.MIN_WIDTH)';
         }
 
         if (widgetType == 'Text') {
@@ -1619,7 +1866,9 @@ class WidgetMeasurer {
         final wrapsMode = constants['wrapsMode'] as String? ?? 'none';
         if (wrapsMode != 'none' && !isConstantSize) {
           if (wrapsMode == 'whenWrapStyle') {
-            buffer.writeln('${indent}boolean wraps = hasFlags(style, SWT.WRAP);');
+            buffer.writeln(
+              '${indent}boolean wraps = hasFlags(style, SWT.WRAP);',
+            );
           }
           final wrapCondition = wrapsMode == 'whenWrapStyle'
               ? 'wHint != SWT.DEFAULT && wraps && m.textStyle != null'
@@ -1629,56 +1878,100 @@ class WidgetMeasurer {
           buffer.writeln('${indent}} else if ($wrapCondition) {');
           if (wrapsMode == 'always') {
             buffer.writeln('${indent}    String rawText = widget.getText();');
-            buffer.writeln('${indent}    String visualText = rawText != null ? rawText.replaceAll("<[^>]+>", "") : "";');
-            final aw = useHorizontalPadding ? 'wHint - $styleName.HORIZONTAL_PADDING' : '(double) wHint';
-            buffer.writeln('${indent}    double availableWidth = Math.max(1.0, $aw);');
-            buffer.writeln('${indent}    PointD wrapped = FontMetricsUtil.getFontSizeWrapped(visualText, m.textStyle, availableWidth);');
-            final hExpr = useVerticalPadding ? 'wrapped.y() + $styleName.VERTICAL_PADDING' : 'wrapped.y()';
-            buffer.writeln('${indent}    height = Math.max($hExpr, $styleName.MIN_HEIGHT);');
+            buffer.writeln(
+              '${indent}    String visualText = rawText != null ? rawText.replaceAll("<[^>]+>", "") : "";',
+            );
+            final aw = useHorizontalPadding
+                ? 'wHint - $styleName.HORIZONTAL_PADDING'
+                : '(double) wHint';
+            buffer.writeln(
+              '${indent}    double availableWidth = Math.max(1.0, $aw);',
+            );
+            buffer.writeln(
+              '${indent}    PointD wrapped = FontMetricsUtil.getFontSizeWrapped(visualText, m.textStyle, availableWidth);',
+            );
+            final hExpr = useVerticalPadding
+                ? 'wrapped.y() + $styleName.VERTICAL_PADDING'
+                : 'wrapped.y()';
+            buffer.writeln(
+              '${indent}    height = Math.max($hExpr, $styleName.MIN_HEIGHT);',
+            );
           } else {
             if (imageAffectsWidth) {
-              final sp = hasImageSpacing ? 'imageWidth > 0 ? $styleName.IMAGE_SPACING : 0' : '0';
+              final sp = hasImageSpacing
+                  ? 'imageWidth > 0 ? $styleName.IMAGE_SPACING : 0'
+                  : '0';
               buffer.writeln('${indent}    double imageWidth = m.image.x();');
               buffer.writeln('${indent}    double imageSpacing = $sp;');
-              final pad = useHorizontalPadding ? '(m.text.x() > 0 || imageWidth > 0) ? $styleName.HORIZONTAL_PADDING : 0' : '0';
-              buffer.writeln('${indent}    double availableWidth = Math.max(1.0, wHint - ($pad) - imageWidth - imageSpacing);');
+              final pad = useHorizontalPadding
+                  ? '(m.text.x() > 0 || imageWidth > 0) ? $styleName.HORIZONTAL_PADDING : 0'
+                  : '0';
+              buffer.writeln(
+                '${indent}    double availableWidth = Math.max(1.0, wHint - ($pad) - imageWidth - imageSpacing);',
+              );
             } else {
-              final aw = useHorizontalPadding ? 'wHint - $styleName.HORIZONTAL_PADDING' : '(double) wHint';
-              buffer.writeln('${indent}    double availableWidth = Math.max(1.0, $aw);');
+              final aw = useHorizontalPadding
+                  ? 'wHint - $styleName.HORIZONTAL_PADDING'
+                  : '(double) wHint';
+              buffer.writeln(
+                '${indent}    double availableWidth = Math.max(1.0, $aw);',
+              );
             }
-            buffer.writeln('${indent}    PointD wrapped = FontMetricsUtil.getFontSizeWrapped(widget.getText(), m.textStyle, availableWidth);');
+            buffer.writeln(
+              '${indent}    PointD wrapped = FontMetricsUtil.getFontSizeWrapped(widget.getText(), m.textStyle, availableWidth);',
+            );
             if (imageAffectsHeight && useVerticalPadding) {
-              buffer.writeln('${indent}    height = Math.max(Math.max(wrapped.y(), m.image.y()) + (wrapped.y() > 0 || m.image.y() > 0 ? $styleName.VERTICAL_PADDING : 0), $styleName.MIN_HEIGHT);');
+              buffer.writeln(
+                '${indent}    height = Math.max(Math.max(wrapped.y(), m.image.y()) + (wrapped.y() > 0 || m.image.y() > 0 ? $styleName.VERTICAL_PADDING : 0), $styleName.MIN_HEIGHT);',
+              );
             } else if (useVerticalPadding) {
-              buffer.writeln('${indent}    height = Math.max(wrapped.y() + $styleName.VERTICAL_PADDING, $styleName.MIN_HEIGHT);');
+              buffer.writeln(
+                '${indent}    height = Math.max(wrapped.y() + $styleName.VERTICAL_PADDING, $styleName.MIN_HEIGHT);',
+              );
             } else {
-              buffer.writeln('${indent}    height = Math.max(wrapped.y(), $styleName.MIN_HEIGHT);');
+              buffer.writeln(
+                '${indent}    height = Math.max(wrapped.y(), $styleName.MIN_HEIGHT);',
+              );
             }
           }
           buffer.writeln('${indent}} else {');
           if (useVerticalPadding) {
             if (emptyTextAffectsSizing) {
-              buffer.writeln('${indent}    height = Math.max($textHeightExpr + $styleName.VERTICAL_PADDING, $styleName.MIN_HEIGHT);');
+              buffer.writeln(
+                '${indent}    height = Math.max($textHeightExpr + $styleName.VERTICAL_PADDING, $styleName.MIN_HEIGHT);',
+              );
             } else {
-              final hc = (hasAnyImageSupport && imageAffectsHeight) ? '($textY > 0 || m.image.y() > 0)' : '$textY > 0';
-              buffer.writeln('${indent}    height = Math.max($textHeightExpr + ($hc ? $styleName.VERTICAL_PADDING : 0), $styleName.MIN_HEIGHT);');
+              final hc = (hasAnyImageSupport && imageAffectsHeight)
+                  ? '($textY > 0 || m.image.y() > 0)'
+                  : '$textY > 0';
+              buffer.writeln(
+                '${indent}    height = Math.max($textHeightExpr + ($hc ? $styleName.VERTICAL_PADDING : 0), $styleName.MIN_HEIGHT);',
+              );
             }
           } else {
-            buffer.writeln('${indent}    height = Math.max($textHeightExpr, $styleName.MIN_HEIGHT);');
+            buffer.writeln(
+              '${indent}    height = Math.max($textHeightExpr, $styleName.MIN_HEIGHT);',
+            );
           }
           buffer.writeln('${indent}}');
         } else {
           if (useVerticalPadding) {
             if (emptyTextAffectsSizing) {
-              buffer.writeln('${indent}height = hHint != SWT.DEFAULT ? hHint : Math.max($textHeightExpr + $styleName.VERTICAL_PADDING, $styleName.MIN_HEIGHT);');
+              buffer.writeln(
+                '${indent}height = hHint != SWT.DEFAULT ? hHint : Math.max($textHeightExpr + $styleName.VERTICAL_PADDING, $styleName.MIN_HEIGHT);',
+              );
             } else {
               final heightCondition = (hasAnyImageSupport && imageAffectsHeight)
                   ? '($textY > 0 || m.image.y() > 0)'
                   : '$textY > 0';
-              buffer.writeln('${indent}height = hHint != SWT.DEFAULT ? hHint : Math.max($textHeightExpr + ($heightCondition ? $styleName.VERTICAL_PADDING : 0), $styleName.MIN_HEIGHT);');
+              buffer.writeln(
+                '${indent}height = hHint != SWT.DEFAULT ? hHint : Math.max($textHeightExpr + ($heightCondition ? $styleName.VERTICAL_PADDING : 0), $styleName.MIN_HEIGHT);',
+              );
             }
           } else {
-            buffer.writeln('${indent}height = hHint != SWT.DEFAULT ? hHint : Math.max($textHeightExpr, $styleName.MIN_HEIGHT);');
+            buffer.writeln(
+              '${indent}height = hHint != SWT.DEFAULT ? hHint : Math.max($textHeightExpr, $styleName.MIN_HEIGHT);',
+            );
           }
         }
       }
@@ -1946,6 +2239,453 @@ class WidgetMeasurer {
 
     buffer.writeln('}');
 
+    final javaFile = File(
+      '../swt_native/src/main/java/dev/equo/swt/size/${widgetType}Sizes.java',
+    );
+    javaFile.writeAsStringSync(buffer.toString());
+    print('Generated: ${javaFile.path}');
+  }
+
+  /// Number formatted as a Java `double` literal, with float noise from the layout rounded off.
+  String _d(double v) {
+    final rounded = double.parse(v.toStringAsFixed(6));
+    return rounded == rounded.roundToDouble()
+        ? rounded.toStringAsFixed(1)
+        : '$rounded';
+  }
+
+  MeasurementResult? _caseNamed(List<MeasurementResult> all, String suffix) {
+    for (final m in all) {
+      if (m.name.endsWith(suffix)) return m;
+    }
+    return null;
+  }
+
+  /// Reads the geometry of a tree row: the height of a row and the x/width of the expander arrow
+  /// at each nesting level, for a given column count, at each measured width.
+  _RowGeometry? _readRowGeometry(List<MeasurementResult> all, int columnCount) {
+    final expanderSamples = <int, List<double>>{};
+    double? rowHeight;
+    double? rowPaddingVertical;
+    double? borderWidth;
+    double? arrowWidth;
+
+    for (final width in geometryWidths) {
+      final result = _caseNamed(all, 'geometry_width${width}_cols$columnCount');
+      if (result == null) return null;
+      final rows = result.discoveredComponents['row'];
+      if (rows is! List || rows.isEmpty) return null;
+      rowHeight ??= (rows.first['height'] as num).toDouble();
+      rowPaddingVertical ??= (rows.first['paddingVertical'] as num?)
+          ?.toDouble();
+      final frame = result.discoveredComponents['frame'];
+      if (frame is Map) {
+        borderWidth ??= (frame['borderWidth'] as num?)?.toDouble();
+      }
+
+      // Only a widget that draws an expander reports one; a Table simply has none.
+      final expanders = result.discoveredComponents['expander'];
+      if (expanders is List && expanders.length >= 2) {
+        expanderSamples[width] = expanders
+            .map((e) => (e['left'] as num).toDouble())
+            .toList();
+        arrowWidth ??= (expanders.first['width'] as num).toDouble();
+      }
+    }
+
+    if (rowHeight == null) return null;
+
+    double? gapFraction;
+    double? paddingLeft;
+    double? indent;
+    final widths = expanderSamples.keys.toList()..sort();
+    if (widths.length >= 2) {
+      final narrow = widths.first;
+      final wide = widths.last;
+      final leftNarrow = expanderSamples[narrow]![0];
+      final leftWide = expanderSamples[wide]![0];
+
+      // The left edge gap is a fraction of the widget width; the row padding is fixed. Two
+      // widths separate them: the slope is the fraction, the intercept is the padding.
+      gapFraction = (leftWide - leftNarrow) / (wide - narrow);
+      paddingLeft = leftNarrow - narrow * gapFraction;
+      indent = expanderSamples[narrow]![1] - expanderSamples[narrow]![0];
+    } else {
+      arrowWidth = null;
+    }
+
+    return _RowGeometry(
+      rowHeight: rowHeight,
+      rowPaddingVertical: rowPaddingVertical ?? 0,
+      borderWidth: borderWidth,
+      arrowWidth: arrowWidth,
+      gapFraction: gapFraction,
+      paddingLeft: paddingLeft,
+      indent: indent,
+    );
+  }
+
+  bool _hasRowGeometry(List<WidgetAnalysis> analyses) => analyses.any(
+    (a) => a.measurements.any((m) => m.discoveredComponents['row'] is List),
+  );
+
+  /// Emits `computeSize`, so a row widget reports its preferred size the same way every other
+  /// generated widget does instead of keeping the arithmetic by hand in Sizes.java.
+  ///
+  /// The height is the measured composition — header, plus one row per row on screen, plus the
+  /// widget's border. Which rows count is the one part that is not arithmetic: a widget whose
+  /// items nest shows only the expanded ones, a flat one shows them all.
+  void _writeComputeSize(
+    StringBuffer buffer, {
+    required String widgetType,
+    required bool nested,
+    required bool hasBorder,
+  }) {
+    final param = widgetType.toLowerCase();
+    final itemType = '${widgetType}Item';
+    buffer.writeln(
+      '    public static Point computeSize(Dart$widgetType $param, int wHint, int hHint, boolean changed) {',
+    );
+    buffer.writeln('        int columnCount = $param.getColumnCount();');
+    // `!= SWT.DEFAULT` alone, as every other generated Sizes class does: a hint of 0 is a real
+    // hint, not an absent one. Table already read it that way; Tree used to also require > 0.
+    buffer.writeln('        int width = wHint != SWT.DEFAULT ? wHint');
+    buffer.writeln(
+      '            : (columnCount > 0 ? columnCount * WIDTH_PER_COLUMN : WIDTH_NO_COLUMNS);',
+    );
+    buffer.writeln(
+      '        int height = hHint != SWT.DEFAULT ? hHint : getPreferredHeight($param);',
+    );
+    buffer.writeln('        return new Point(width, height);');
+    buffer.writeln('    }');
+    buffer.writeln();
+    buffer.writeln(
+      '    public static int getPreferredHeight(Dart$widgetType $param) {',
+    );
+    final rows = nested
+        ? 'countVisibleRows($param.getApi().getItems())'
+        : '$param.getItemCount()';
+    final border = hasBorder ? ' + 2 * getBorderWidth()' : '';
+    buffer.writeln(
+      '        return getHeaderHeight($param) + $rows * getItemHeight($param)$border;',
+    );
+    buffer.writeln('    }');
+    if (nested) {
+      buffer.writeln();
+      buffer.writeln(
+        '    private static int countVisibleRows($itemType[] items) {',
+      );
+      buffer.writeln('        int count = 0;');
+      buffer.writeln('        for ($itemType item : items) {');
+      buffer.writeln('            count++;');
+      buffer.writeln(
+        '            if (item.getExpanded()) count += countVisibleRows(item.getItems());',
+      );
+      buffer.writeln('        }');
+      buffer.writeln('        return count;');
+      buffer.writeln('    }');
+    }
+  }
+
+  /// Emits one height accessor. A dimension that tracks the font is computed in Java from font
+  /// metrics plus the measured padding; one that does not is emitted as the measured constant.
+  void _writeRowDimension(
+    StringBuffer buffer, {
+    required String widgetType,
+    required String method,
+    required String themeClass,
+    required String constant,
+    required String padding,
+    required bool fontSensitive,
+    required bool headerGuard,
+  }) {
+    final param = widgetType.toLowerCase();
+    buffer.writeln('    public static int $method(Dart$widgetType $param) {');
+    if (headerGuard) {
+      buffer.writeln('        if (!$param.getHeaderVisible()) return 0;');
+    }
+    buffer.writeln(
+      '        double minHeight = $param.getColumnCount() > 1 ? ${constant}_WITH_COLS : $constant;',
+    );
+    if (fontSensitive) {
+      buffer.writeln('        TextStyle ts;');
+      buffer.writeln('        if (!Config.getConfigFlags().use_swt_fonts) {');
+      buffer.writeln(
+        '            ts = $themeClass.get().textStyle().withStyleFrom($param.getFont());',
+      );
+      buffer.writeln('        } else {');
+      buffer.writeln('            ts = TextStyle.from($param.getFont());');
+      buffer.writeln('        }');
+      // Flutter lays these rows out with a minimum height, so text only grows them past the
+      // theme's floor — a plain text+padding sum would shrink a Tree row from 34px to 18px.
+      buffer.writeln(
+        '        double textHeight = FontMetricsUtil.getFontSize("Ag", ts).y() + $padding;',
+      );
+      buffer.writeln(
+        '        return (int) Math.ceil(Math.max(textHeight, minHeight));',
+      );
+    } else {
+      buffer.writeln('        return (int) Math.ceil(minHeight);');
+    }
+    buffer.writeln('    }');
+  }
+
+  /// A dimension that grows with the widget's font has to be computed in Java from font metrics,
+  /// not baked in as a constant. Measuring the same case at two font sizes is what tells them
+  /// apart — a Table's rows track the font, a Tree's are a fixed theme height.
+  bool _isFontSensitive(double? atDefaultFont, double? atLargerFont) =>
+      atDefaultFont != null &&
+      atLargerFont != null &&
+      (atLargerFont - atDefaultFont).abs() > 0.5;
+
+  void _generateJavaRowWidgetSizes(String fqn, List<WidgetAnalysis> analyses) {
+    final widgetType = widgetName(fqn);
+    final all = analyses.expand((a) => a.measurements).toList();
+
+    Map<String, dynamic>? probe(String caseSuffix, String name) {
+      final found = _caseNamed(all, caseSuffix)?.discoveredComponents[name];
+      if (found is Map<String, dynamic>) return found;
+      if (found is List && found.isNotEmpty) {
+        final first = found.first;
+        if (first is Map<String, dynamic>) return first;
+      }
+      return null;
+    }
+
+    double? heightOf(String caseSuffix, String name) =>
+        (probe(caseSuffix, name)?['height'] as num?)?.toDouble();
+
+    double? headerHeight(int columnCount) =>
+        heightOf('header_visibletrue_cols$columnCount', 'header');
+    double? headerPadding(int columnCount) =>
+        (probe(
+                  'header_visibletrue_cols$columnCount',
+                  'header',
+                )?['paddingVertical']
+                as num?)
+            ?.toDouble();
+
+    final plain = _readRowGeometry(all, 0) ?? _readRowGeometry(all, 3);
+    final withCols = _readRowGeometry(all, 3) ?? plain;
+    final headerPlain = headerHeight(0) ?? headerHeight(3);
+    final headerWithCols = headerHeight(3) ?? headerPlain;
+
+    if (plain == null ||
+        withCols == null ||
+        headerPlain == null ||
+        headerWithCols == null) {
+      // Refuse to write a file that would drop methods the widget's Dart impl calls. Better a
+      // loud skip than a silently truncated Sizes class that only fails at compile time.
+      print(
+        'SKIPPED ${widgetType}Sizes.java: measure_${widgetType.toLowerCase()}.dart did not '
+        'produce the header and geometry cases it needs '
+        '(header_visibletrue_cols{0,3}, geometry_width{...}_cols{0,3}).',
+      );
+      return;
+    }
+
+    // Does the widget's row/header height track its font? Measured, not assumed.
+    final rowFontSensitive = _isFontSensitive(
+      plain.rowHeight,
+      heightOf('fontprobe_cols0', 'row') ?? heightOf('fontprobe_cols3', 'row'),
+    );
+    final headerFontSensitive = _isFontSensitive(
+      headerPlain,
+      heightOf('fontprobe_cols0', 'header') ??
+          heightOf('fontprobe_cols3', 'header'),
+    );
+    final headerPaddingVertical = headerPadding(0) ?? headerPadding(3) ?? 0.0;
+    final needsFontMetrics = rowFontSensitive || headerFontSensitive;
+
+    final fallbackWidth = rowWidgetFallbackWidth[widgetType];
+    final nested = plain.hasExpander;
+
+    final buffer = StringBuffer();
+    buffer.writeln('package dev.equo.swt.size;');
+    buffer.writeln();
+    if (needsFontMetrics) {
+      buffer.writeln('import dev.equo.swt.Config;');
+      buffer.writeln('import dev.equo.swt.FontMetricsUtil;');
+    }
+    if (fallbackWidth != null) {
+      buffer.writeln('import org.eclipse.swt.SWT;');
+    }
+    if (plain.hasExpander) {
+      buffer.writeln('import org.eclipse.swt.graphics.Rectangle;');
+    }
+    if (fallbackWidth != null) {
+      buffer.writeln('import org.eclipse.swt.graphics.Point;');
+    }
+    buffer.writeln('import org.eclipse.swt.widgets.Dart$widgetType;');
+    if (nested) {
+      buffer.writeln('import org.eclipse.swt.widgets.${widgetType}Item;');
+    }
+    buffer.writeln();
+    buffer.writeln('public class ${widgetType}Sizes {');
+    buffer.writeln();
+    // Heights at the default font. For a widget whose rows track the font these are the floor
+    // Flutter lays out against, not the final height.
+    buffer.writeln(
+      '    private static final double ROW_HEIGHT = ${_d(plain.rowHeight)};',
+    );
+    buffer.writeln(
+      '    private static final double ROW_HEIGHT_WITH_COLS = ${_d(withCols.rowHeight)};',
+    );
+    buffer.writeln();
+    buffer.writeln(
+      '    private static final double HEADER_HEIGHT = ${_d(headerPlain)};',
+    );
+    buffer.writeln(
+      '    private static final double HEADER_HEIGHT_WITH_COLS = ${_d(headerWithCols)};',
+    );
+    buffer.writeln();
+    if (rowFontSensitive) {
+      buffer.writeln(
+        '    private static final double ROW_PADDING_VERTICAL = ${_d(plain.rowPaddingVertical)};',
+      );
+    }
+    if (headerFontSensitive) {
+      buffer.writeln(
+        '    private static final double HEADER_PADDING_VERTICAL = ${_d(headerPaddingVertical)};',
+      );
+    }
+    if (plain.borderWidth != null) {
+      buffer.writeln(
+        '    private static final double BORDER_WIDTH = ${_d(plain.borderWidth!)};',
+      );
+    }
+    if (fallbackWidth != null) {
+      buffer.writeln(
+        '    private static final int WIDTH_PER_COLUMN = ${fallbackWidth.$1};',
+      );
+      buffer.writeln(
+        '    private static final int WIDTH_NO_COLUMNS = ${fallbackWidth.$2};',
+      );
+    }
+    if (plain.hasExpander) {
+      // Horizontal row geometry: the left edge gap is a fraction of the widget width, then a
+      // fixed row padding, then one indent per nesting level, then the expander arrow itself.
+      buffer.writeln();
+      buffer.writeln(
+        '    private static final double EDGE_GAP_FRACTION = ${_d(plain.gapFraction!)};',
+      );
+      buffer.writeln(
+        '    private static final double EDGE_GAP_FRACTION_WITH_COLS = ${_d(withCols.gapFraction!)};',
+      );
+      buffer.writeln(
+        '    private static final double ITEM_PADDING_LEFT = ${_d(plain.paddingLeft!)};',
+      );
+      buffer.writeln(
+        '    private static final double ITEM_PADDING_LEFT_WITH_COLS = ${_d(withCols.paddingLeft!)};',
+      );
+      buffer.writeln(
+        '    private static final double ITEM_INDENT = ${_d(plain.indent!)};',
+      );
+      buffer.writeln(
+        '    private static final double ITEM_INDENT_WITH_COLS = ${_d(withCols.indent!)};',
+      );
+      buffer.writeln(
+        '    private static final double EXPAND_ICON_SIZE = ${_d(plain.arrowWidth!)};',
+      );
+    }
+    buffer.writeln();
+    if (fallbackWidth != null) {
+      _writeComputeSize(
+        buffer,
+        widgetType: widgetType,
+        nested: nested,
+        hasBorder: plain.borderWidth != null,
+      );
+      buffer.writeln();
+    }
+    if (plain.borderWidth != null) {
+      buffer.writeln('    public static int getBorderWidth() {');
+      buffer.writeln('        return (int) BORDER_WIDTH;');
+      buffer.writeln('    }');
+      buffer.writeln();
+    }
+    _writeRowDimension(
+      buffer,
+      widgetType: widgetType,
+      method: 'getItemHeight',
+      themeClass: '${widgetType}ItemTheme',
+      constant: 'ROW_HEIGHT',
+      padding: 'ROW_PADDING_VERTICAL',
+      fontSensitive: rowFontSensitive,
+      headerGuard: false,
+    );
+    buffer.writeln();
+    _writeRowDimension(
+      buffer,
+      widgetType: widgetType,
+      method: 'getHeaderHeight',
+      themeClass: '${widgetType}HeaderTheme',
+      constant: 'HEADER_HEIGHT',
+      padding: 'HEADER_PADDING_VERTICAL',
+      fontSensitive: headerFontSensitive,
+      headerGuard: true,
+    );
+    if (!plain.hasExpander) {
+      buffer.writeln('}');
+      _writeSizesFile(widgetType, buffer);
+      return;
+    }
+
+    final param = widgetType.toLowerCase();
+    final itemType = '${widgetType}Item';
+    // x of the left edge of a level's expand/collapse arrow, relative to the widget's top-left.
+    buffer.writeln();
+    buffer.writeln(
+      '    public static double getExpanderLeft(Dart$widgetType $param, int level) {',
+    );
+    buffer.writeln('        boolean withCols = $param.getColumnCount() > 1;');
+    buffer.writeln(
+      '        double gapFraction = withCols ? EDGE_GAP_FRACTION_WITH_COLS : EDGE_GAP_FRACTION;',
+    );
+    buffer.writeln(
+      '        double paddingLeft = withCols ? ITEM_PADDING_LEFT_WITH_COLS : ITEM_PADDING_LEFT;',
+    );
+    buffer.writeln(
+      '        double indent = withCols ? ITEM_INDENT_WITH_COLS : ITEM_INDENT;',
+    );
+    buffer.writeln('        Rectangle bounds = $param.getBounds();');
+    buffer.writeln(
+      '        double widgetWidth = bounds != null ? bounds.width : 0;',
+    );
+    buffer.writeln(
+      '        return widgetWidth * gapFraction + paddingLeft + indent * level;',
+    );
+    buffer.writeln('    }');
+    buffer.writeln();
+    buffer.writeln('    public static double getExpanderWidth() {');
+    buffer.writeln('        return EXPAND_ICON_SIZE;');
+    buffer.writeln('    }');
+    // Whether x falls on an item's arrow. Leaves have none, matching the Flutter row, which only
+    // claims the toggle band when the item has children. Native SWT resolves no item over the
+    // twistie (TVHT_ONITEMBUTTON on Win32, the outline cell on macOS, left of the cell area on
+    // GTK) — that null is what lets an application clear its selection on an arrow click, and
+    // what Dart{Widget}.getItem(Point) reproduces.
+    buffer.writeln();
+    buffer.writeln(
+      '    public static boolean isOverExpander(Dart$widgetType $param, $itemType item, int x) {',
+    );
+    buffer.writeln(
+      '        if (item == null || item.getItemCount() == 0) return false;',
+    );
+    buffer.writeln('        int level = 0;');
+    buffer.writeln(
+      '        for ($itemType parent = item.getParentItem(); parent != null; parent = parent.getParentItem()) {',
+    );
+    buffer.writeln('            level++;');
+    buffer.writeln('        }');
+    buffer.writeln('        double left = getExpanderLeft($param, level);');
+    buffer.writeln('        return x >= left && x < left + EXPAND_ICON_SIZE;');
+    buffer.writeln('    }');
+    buffer.writeln('}');
+    _writeSizesFile(widgetType, buffer);
+  }
+
+  void _writeSizesFile(String widgetType, StringBuffer buffer) {
     final javaFile = File(
       '../swt_native/src/main/java/dev/equo/swt/size/${widgetType}Sizes.java',
     );
