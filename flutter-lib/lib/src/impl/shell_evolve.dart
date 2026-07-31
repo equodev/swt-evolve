@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../gen/dialog.dart';
@@ -75,6 +76,16 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     } else {
       widget.sendShellDeactivate(state, null);
     }
+  }
+
+  KeyEventResult _handleShellKey(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+      widget.sendKeyKeyDown(state, VEvent()
+        ..keyCode = SWT.ESC
+        ..character = SWT.ESC);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
   }
 
   /// Alpha-only updates bypass setState/rebuild and just touch this notifier (#601).
@@ -157,6 +168,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     if (scope == null) {
       return FocusScope(
         node: _focusScopeNode,
+        onKeyEvent: _handleShellKey,
         child: Listener(
           behavior: HitTestBehavior.translucent,
           onPointerDown: (_) {
@@ -363,6 +375,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
     final content = FocusScope(
       node: _focusScopeNode,
+      onKeyEvent: _handleShellKey,
       child: Listener(
         behavior: HitTestBehavior.translucent,
         onPointerDown: (_) {

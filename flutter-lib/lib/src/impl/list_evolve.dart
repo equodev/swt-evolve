@@ -48,6 +48,10 @@ class ListImpl<T extends ListSwt, V extends VList>
         var e = VEvent()..segments = state.selection;
         widget.sendSelectionDefaultSelection(state, e);
       },
+      onItemMouseDown: () =>
+          widget.sendMouseMouseDown(state, VEvent()..button = 1..count = 1),
+      onItemMouseUp: () =>
+          widget.sendMouseMouseUp(state, VEvent()..button = 1..count = 1),
       onMouseEnter: () => widget.sendMouseTrackMouseEnter(state, null),
       onMouseExit: () => widget.sendMouseTrackMouseExit(state, null),
       onFocusIn: () => widget.sendFocusFocusIn(state, null),
@@ -82,6 +86,8 @@ class _StyledList extends StatefulWidget {
   final bool isMultiSelect;
   final Function(List<String>) onSelectionChanged;
   final Function(String) onItemDoubleClick;
+  final VoidCallback onItemMouseDown;
+  final VoidCallback onItemMouseUp;
   final VoidCallback onMouseEnter;
   final VoidCallback onMouseExit;
   final VoidCallback onFocusIn;
@@ -98,6 +104,8 @@ class _StyledList extends StatefulWidget {
     required this.isMultiSelect,
     required this.onSelectionChanged,
     required this.onItemDoubleClick,
+    required this.onItemMouseDown,
+    required this.onItemMouseUp,
     required this.onMouseEnter,
     required this.onMouseExit,
     required this.onFocusIn,
@@ -184,7 +192,9 @@ class _StyledListState extends State<_StyledList> {
       newSelection.clear();
       newSelection.add(item);
     }
+    widget.onItemMouseDown();
     widget.onSelectionChanged(newSelection);
+    widget.onItemMouseUp();
   }
 }
 

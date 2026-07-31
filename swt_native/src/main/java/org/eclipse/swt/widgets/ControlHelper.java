@@ -20,6 +20,61 @@ public class ControlHelper {
         } finally {
             FLUTTER_KEY.set(false);
         }
+        translateTraversal(widget, event);
+    }
+
+    /**
+     * Dart controls have no OS window proc, so nothing turns an incoming KeyDown into an
+     * {@link SWT#Traverse} event the way {@code SwtControl.translateTraversal} does natively.
+     * Popups and dialogs (e.g. the Command Palette) close on Escape via a Traverse listener on
+     * their Shell, which never fires without this translation. Mirror the native ancestor walk by
+     * delegating to {@code Control.traverse(int, Event)}, which sends SWT.Traverse up the parent
+     * chain to the Shell.
+     */
+    private static void translateTraversal(DartWidget widget, Event keyEvent) {
+        if (!(widget instanceof DartControl))
+            return;
+        DartControl origin = (DartControl) widget;
+        if (origin.isDisposed())
+            return;
+        int detail;
+        switch (keyEvent.keyCode) {
+            case SWT.ESC:
+                detail = SWT.TRAVERSE_ESCAPE;
+                break;
+            default:
+                return;
+        }
+        Control start = resolveTraverseStart(origin);
+        if (start == null || start.isDisposed() || !(start.getImpl() instanceof DartControl))
+            return;
+        Event event = new Event();
+        event.character = keyEvent.character;
+        event.keyCode = keyEvent.keyCode;
+        event.keyLocation = keyEvent.keyLocation;
+        event.stateMask = keyEvent.stateMask;
+        event.doit = true;
+        ((DartControl) start.getImpl()).traverse(detail, event);
+    }
+
+    /**
+     * Native SWT starts a traversal at {@code display.getFocusControl()}, not necessarily the widget
+     * that observed the key. When the key was forwarded by an actual control that control is already
+     * the right start. But a shell-level Escape (the shell's Flutter focus scope caught the key
+     * because no child holds Flutter focus) must start at the control the app's Traverse listener
+     * sits on — the focused control — or the walk fires only on the shell and misses the listener.
+     * {@code getFocusControl()} is Java-side tracked (see {@code DisplayBridge}), so it is set even
+     * though no Flutter FocusIn reached Java. (#465)
+     */
+    private static Control resolveTraverseStart(DartControl origin) {
+        Control self = origin.getApi();
+        if (!(self instanceof Shell))
+            return self;
+        Shell shell = (Shell) self;
+        Control fc = shell.getDisplay().getFocusControl();
+        if (fc != null && !fc.isDisposed() && fc.getShell() == shell && fc.getImpl() instanceof DartControl)
+            return fc;
+        return self;
     }
 
     public static boolean isFlutterOriginatedKey() {

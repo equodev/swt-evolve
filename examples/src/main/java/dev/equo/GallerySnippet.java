@@ -461,6 +461,16 @@ public class GallerySnippet {
                 dialog.dispose();
             }));
 
+            // Escape closes the dialog, like a real dialog/palette. The listener sits on the
+            // focused input (not the Shell) — the same wiring as an Rcp App's Command Palette (#465):
+            // it verifies an Escape caught at the Shell's focus scope is walked to the focus
+            // control's Traverse listener.
+            nameInput.addListener(SWT.Traverse, traverseEvent -> {
+                if (traverseEvent.detail == SWT.TRAVERSE_ESCAPE) {
+                    dialog.dispose();
+                }
+            });
+
             dialog.pack();
             // Center it on the main shell instead of leaving it wherever SWT's default
             // placement lands — at the gallery's size, the default position can overlap
@@ -471,6 +481,10 @@ public class GallerySnippet {
                 parentBounds.x + (parentBounds.width - dialogSize.x) / 2,
                 parentBounds.y + (parentBounds.height - dialogSize.y) / 2);
             dialog.open();
+            // Focus the input so it becomes the display's focus control (tracked by DisplayBridge):
+            // that is what an Escape caught at the Shell's focus scope resolves to when walking the
+            // Traverse up to the listener above (#465).
+            nameInput.setFocus();
         }));
 
         // Reset affordance for the E2E suite: one live Display serves every scenario (Scope.SUITE),
