@@ -10,7 +10,7 @@ public record ComboTheme (TextStyle textStyle) {
     }
 
     public static ComboTheme getDefaultTheme() {
-        return new ComboTheme(new TextStyle("System", 12, false, 400));
+        return new ComboTheme(new TextStyle("Inter", 14, false, 500));
     }
 
 }

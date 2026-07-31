@@ -52,9 +52,13 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
       if (painter.height > maxTextHeight) maxTextHeight = painter.height + 2;
     }
 
+    // The border insets the Row (Container pads by decoration.padding), and the
+    // arrow cell consumes iconSpacing + iconSize; both must be part of the
+    // preferred width or the longest item is clipped by the arrow (issue #905).
     final double width =
         maxTextWidth +
         theme.textFieldPadding.horizontal +
+        theme.borderWidth * 2 +
         (isSimple ? 0 : theme.iconSpacing + theme.iconSize);
     final double height = maxTextHeight + theme.textFieldPadding.vertical;
 
@@ -282,7 +286,10 @@ class _DropdownComboLayout extends StatelessWidget {
                 behavior: HitTestBehavior.opaque,
                 onTap: isEnabled ? onToggleOverlay : null,
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: theme.iconSpacing),
+                  // Right-only: the text field's own right padding already
+                  // separates text from arrow; a left inset here eats viewport
+                  // width the preferred size doesn't account for (issue #905).
+                  padding: EdgeInsets.only(right: theme.iconSpacing),
                   child: Icon(
                     Icons.arrow_drop_down,
                     color: iconColor,

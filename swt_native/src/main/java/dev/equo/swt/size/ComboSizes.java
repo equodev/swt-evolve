@@ -18,17 +18,17 @@ import static dev.equo.swt.Styles.hasFlags;
 public class ComboSizes {
 
     static class DROP_DOWN {
-        static final double MIN_WIDTH = 52.0;
-        static final double MIN_HEIGHT = 31.0;
-        static final double HORIZONTAL_PADDING = 53.333333333333336;
+        static final double MIN_WIDTH = 54.0;
+        static final double MIN_HEIGHT = 30.0;
+        static final double HORIZONTAL_PADDING = 54.0;
         static final double VERTICAL_PADDING = 18.0;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = true;
     }
 
     static class SIMPLE {
-        static final double MIN_WIDTH = 24.0;
-        static final double MIN_HEIGHT = 32.0;
-        static final double HORIZONTAL_PADDING = 25.333333333333332;
+        static final double MIN_WIDTH = 26.0;
+        static final double MIN_HEIGHT = 31.0;
+        static final double HORIZONTAL_PADDING = 26.0;
         static final double VERTICAL_PADDING = 19.0;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = true;
     }
