@@ -1,11 +1,27 @@
 import 'package:flutter/gestures.dart' show kDoubleTapTimeout;
 import 'package:flutter/widgets.dart';
 
+/// True only when this session is driven by our E2E test harness -- set once
+/// from `main()`, mirroring `getEnableTestSemantics` (see `main.dart` /
+/// `web_platform.dart`). Always false in production.
+///
+/// [DoubleTapDetector] widens its window when this is set: a CI runner's
+/// added event-processing latency between a Playwright-dispatched click pair
+/// can push a genuine double-click past the window real users hit, even
+/// though production timing (tuned per-widget -- see call sites below) is
+/// unaffected. This keeps the E2E scenario deterministic without changing
+/// what any real user sees.
+bool e2eTestMode = false;
+
+/// Only used in [e2eTestMode] -- generous on purpose since it never reaches
+/// production; must comfortably clear CI's observed worst-case gap (~500ms).
+const Duration _e2eDoubleClickTimeout = Duration(milliseconds: 1000);
+
 /// Arena-free multi-click detection (single / double / triple).
 ///
-/// Flutter's [DoubleTapGestureRecognizer] -- created by any `GestureDetector`
-/// or `InkWell` that sets `onDoubleTap` -- holds the gesture arena for
-/// [kDoubleTapTimeout] (300ms) on every tap, delaying every single tap by that
+/// Flutter's `DoubleTapGestureRecognizer` -- created by any `GestureDetector`
+/// or `InkWell` that sets `onDoubleTap` -- holds the gesture arena for its
+/// `kDoubleTapTimeout` (300ms) on every tap, delaying every single tap by that
 /// much. Instead of paying that cost, hold a [DoubleTapDetector] and compare
 /// timestamps in your existing `onTap`/`onPointerDown` handler: single taps stay
 /// instant and a quick second tap is reported as a double.
@@ -13,8 +29,14 @@ import 'package:flutter/widgets.dart';
 /// Used directly at sites that already own a `State`/impl or run inside a raw
 /// `Listener` (treeitem, tabfolder, tableitem, canvas, composite). For stateless
 /// leaf widgets, prefer the [InstantDoubleTapDetector] wrapper below.
+///
+/// Defaults to Flutter's `kDoubleTapTimeout` (300ms), same as before -- widget
+/// call sites that need a different window pass [timeout] explicitly (see
+/// `styledtext_evolve.dart`). Do not widen the shared default here; per-widget
+/// double-click timing is a deliberate, already-tuned product decision.
 class DoubleTapDetector {
-  DoubleTapDetector({this.timeout = kDoubleTapTimeout, this.slop = 5.0});
+  DoubleTapDetector({Duration? timeout, this.slop = 5.0})
+      : timeout = timeout ?? (e2eTestMode ? _e2eDoubleClickTimeout : kDoubleTapTimeout);
 
   /// Maximum gap between two taps for them to count as a double-click.
   final Duration timeout;
@@ -75,7 +97,7 @@ class DoubleTapDetector {
 }
 
 /// Drop-in replacement for a `GestureDetector` that has `onTap`, `onDoubleTap`,
-/// and optionally `onTripleTap`, without the [kDoubleTapTimeout] (300ms) arena
+/// and optionally `onTripleTap`, without the `kDoubleTapTimeout` (300ms) arena
 /// hold that delays every single tap.
 ///
 /// Internally it wires only a single-tap recognizer (which resolves the arena

@@ -10,6 +10,7 @@ import 'package:swtflutter/src/custom/csd/csd_scaffold.dart';
 import 'package:swtflutter/src/custom/csd/csd_state.dart';
 import 'package:swtflutter/src/custom/csd/equo_window.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
+import 'src/impl/utils/double_tap_detector.dart' as double_tap_detector;
 import 'src/styles.dart';
 import 'src/theme/theme.dart'
     show
@@ -80,9 +81,13 @@ void main(List<String> args) async {
   // -Ddev.equo.swt.web.enableTestSemantics=true on its own JVM and WebFlutterServer forwards it into
   // the served index.html as window.evolve.enableTestSemantics (read by getEnableTestSemantics),
   // so an already-shipped jar can be flipped into E2E-testable mode without recompiling.
-  if (getEnableTestSemantics(args)) {
+  final enableTestSemantics = getEnableTestSemantics(args);
+  if (enableTestSemantics) {
     SemanticsBinding.instance.ensureSemantics();
   }
+  // Same signal, reused: the E2E harness always sets enableTestSemantics, so it
+  // doubles as "this session is under E2E test" for double_tap_detector.dart.
+  double_tap_detector.e2eTestMode = enableTestSemantics;
 
   if (widgetName == "FontMeasureBridge") {
     font_size.measureRequest(widgetName, widgetId);
