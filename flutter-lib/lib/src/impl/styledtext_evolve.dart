@@ -649,7 +649,13 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     widget.sendSelectionSelection(state, event);
   }
 
-  void _notifyTextChanged(String newText, int caretPos) {
+  void _notifyTextChanged(
+    String newText,
+    int caretPos,
+    int rangeStart,
+    int rangeEnd,
+    String insertedText,
+  ) {
     // Clear the GC overlay to remove placeholder
     clearGCShapes();
 
@@ -659,9 +665,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     _localText = newText;
     _pendingTextEchoes.add(newText);
 
+    // Carries the edit as a range replacement (start/end/text), not the full document, so Java
+    // can apply it via replaceTextRange instead of setText.
     final event = VEvent()
-      ..text = newText
-      ..start = caretPos;
+      ..text = insertedText
+      ..start = rangeStart
+      ..end = rangeEnd;
     widget.sendModifyModify(state, event);
   }
 
@@ -1525,7 +1534,8 @@ class TextShape extends Shape {
 
   final bool editable;
   final int? styledTextId;
-  final Function(String, int)? onTextChanged;
+  final Function(String newText, int caretPos, int rangeStart, int rangeEnd, String insertedText)?
+  onTextChanged;
 
   final TextEditingState? editingState;
   final SelectionInfo? selectionInfo;
@@ -2135,6 +2145,7 @@ class TextShape extends Shape {
     String newText;
     int newCaretPos;
     int insertPosition = position;
+    int replacedRangeEnd = position;
 
     if (selectionInfo != null && selectionInfo!.hasSelection) {
       final start = selectionInfo!.normalizedStart;
@@ -2142,6 +2153,7 @@ class TextShape extends Shape {
       newText = text.substring(0, start) + insertText + text.substring(end);
       newCaretPos = start + insertText.length;
       insertPosition = start;
+      replacedRangeEnd = end;
     } else {
       newText =
           text.substring(0, position) + insertText + text.substring(position);
@@ -2198,7 +2210,13 @@ class TextShape extends Shape {
       );
     }
 
-    onTextChanged?.call(newText, newCaretPos);
+    onTextChanged?.call(
+      newText,
+      newCaretPos,
+      insertPosition,
+      replacedRangeEnd,
+      insertText,
+    );
 
     return copyWithText(newText, newCaretPos, newEditingState).clearSelection();
   }
@@ -2244,7 +2262,7 @@ class TextShape extends Shape {
       );
     }
 
-    onTextChanged?.call(newText, actualStart);
+    onTextChanged?.call(newText, actualStart, actualStart, actualEnd, '');
 
     return copyWithText(newText, actualStart, newEditingState);
   }
