@@ -1,5 +1,13 @@
 package dev.equo;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+
 import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
@@ -12,6 +20,7 @@ import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
@@ -41,7 +50,7 @@ import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
  * content's uncompressed preferred width, which easily exceeds the actual window.
  */
 public class GallerySnippet {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         Config.forceEquo();
 
         Display display = new Display();
@@ -87,10 +96,10 @@ public class GallerySnippet {
         labelGroup.setLayout(new RowLayout(SWT.HORIZONTAL));
         Label label = new Label(labelGroup, SWT.NONE);
         label.setText("A plain label");
-        // The anchor spans the whole label so a click anywhere on the widget hits it (the
-        // E2E suite clicks the Semantics node's center; only the anchor span is tappable).
+        // Mixed anchor + plain text (#946): "Click" is the tappable anchor, " not-this" is plain
+        // text that must NOT trigger it — proves per-span hit-testing, not just "the widget".
         Link link = new Link(labelGroup, SWT.NONE);
-        link.setText("<a href=\"https://equo.dev\">A link to equo.dev</a>");
+        link.setText("<a href=\"https://equo.dev\">Click</a> not-this");
         link.addSelectionListener(widgetSelectedAdapter(e -> status.setText("Link clicked: " + e.text)));
 
         // Text / StyledText
@@ -140,6 +149,10 @@ public class GallerySnippet {
             TableItem ti = new TableItem(table, SWT.NONE);
             ti.setText(row);
         }
+        // Only DefaultSelection (double-click) writes to status: single-click Selection is already
+        // asserted directly against live Dart `selection` state, and adding a Selection listener
+        // here too would make the status label race between the two events on a double-click.
+        table.addSelectionListener(widgetDefaultSelectedAdapter(e -> status.setText("Table row default-selected")));
 
         // Tree
         Group treeGroup = section(root, "Tree");
@@ -183,6 +196,18 @@ public class GallerySnippet {
             body.setText("Content for CTab " + i);
             item.setControl(body);
         }
+        // Closable tab (SWT.CLOSE) — the only tab in the gallery carrying it, so it's the only
+        // way to exercise CTabFolder2Listener.close()/itemClosed (#946). Held in a 1-element
+        // array so the "Reset Gallery" listener below can recreate it after a scenario disposes
+        // it (its close icon only renders while selected — SashForm/CoolBar-style single-use).
+        CTabItem[] closableTab = {new CTabItem(ctab, SWT.CLOSE)};
+        closableTab[0].setText("Closable");
+        ctab.addCTabFolder2Listener(new org.eclipse.swt.custom.CTabFolder2Adapter() {
+            @Override
+            public void close(org.eclipse.swt.custom.CTabFolderEvent event) {
+                status.setText("CTab closed");
+            }
+        });
         ctab.setSelection(0);
 
         // TabFolder
@@ -211,6 +236,17 @@ public class GallerySnippet {
             int toolIndex = i;
             item.addSelectionListener(widgetSelectedAdapter(e -> status.setText("Tool " + toolIndex + " clicked")));
         }
+        // Style variants (#946): the loop above only ever created SWT.PUSH items.
+        ToolItem toolCheck = new ToolItem(toolBar, SWT.CHECK);
+        toolCheck.setText("ToolCheck");
+        toolCheck.addSelectionListener(widgetSelectedAdapter(e -> status.setText("ToolCheck: " + toolCheck.getSelection())));
+        ToolItem toolRadio = new ToolItem(toolBar, SWT.RADIO);
+        toolRadio.setText("ToolRadio");
+        toolRadio.addSelectionListener(widgetSelectedAdapter(e -> status.setText("ToolRadio: " + toolRadio.getSelection())));
+        ToolItem toolDropDown = new ToolItem(toolBar, SWT.DROP_DOWN);
+        toolDropDown.setText("ToolMore");
+        toolDropDown.addSelectionListener(widgetSelectedAdapter(e -> status.setText(
+                e.detail == SWT.ARROW ? "ToolMore arrow clicked" : "ToolMore clicked")));
 
         // ExpandBar
         Group expandGroup = section(root, "ExpandBar");
@@ -308,6 +344,7 @@ public class GallerySnippet {
         menuGroup.setLayout(new RowLayout(SWT.HORIZONTAL));
         CLabel clabel = new CLabel(menuGroup, SWT.NONE);
         clabel.setText("Right-click me");
+        clabel.setImage(new Image(display, getImagePath("synced.png"))); // #946: image variant
         Menu popup = new Menu(clabel);
         for (String action : new String[] {"Menu Action", "Other Action"}) {
             MenuItem mi = new MenuItem(popup, SWT.PUSH);
@@ -414,8 +451,15 @@ public class GallerySnippet {
         // Only report scenario-driven titles: the initial load and the reset's restore both
         // carry the original title, and their async echo would otherwise overwrite whatever
         // status the next scenario just wrote (same family as the StyledText reset guard).
+        // "swtflutter" is also filtered: it's web/index.html's OUTER page <title>, not real
+        // iframe content — a product bug (#947, found via #946) where Browser's web TitleListener
+        // occasionally reports the top-level page's title instead of the embedded content's,
+        // repeatedly clobbering the shared status label for whatever scenario is running (the
+        // same class of interference Sash's dedicated "Sash events:" Label was built to dodge,
+        // see #509 above). Filtering the known-bad value here protects every status-based
+        // scenario in the suite until the underlying frame-scoping bug (#947) is fixed.
         browser.addTitleListener(e -> {
-            if (!"Gallery Browser".equals(e.title)) {
+            if (!"Gallery Browser".equals(e.title) && !"swtflutter".equals(e.title)) {
                 status.setText("Browser title: " + e.title);
             }
         });
@@ -505,6 +549,8 @@ public class GallerySnippet {
             radioA.setSelection(false);
             radioB.setSelection(false);
             toggle.setSelection(false);
+            toolCheck.setSelection(false);
+            toolRadio.setSelection(false);
             combo.select(0);
             ccombo.select(0);
             list.deselectAll();
@@ -522,6 +568,10 @@ public class GallerySnippet {
                 branch.setExpanded(false);
             }
             tree.getItem(0).setExpanded(true);
+            if (closableTab[0].isDisposed()) { // a closing_a_closable_tab run disposed it
+                closableTab[0] = new CTabItem(ctab, SWT.CLOSE);
+                closableTab[0].setText("Closable");
+            }
             ctab.setSelection(0);
             tabFolder.setSelection(0);
             ExpandItem[] barItems = expandBar.getItems();
@@ -567,5 +617,25 @@ public class GallerySnippet {
         data.widthHint = SECTION_WIDTH;
         group.setLayoutData(data);
         return group;
+    }
+
+    /** Resolves a bundled resource (e.g. `close.png`) to an on-disk path, extracting it to a
+     * temp file when the resource lives inside a jar. */
+    private static String getImagePath(String imageName) throws IOException {
+        URL resourceUrl = GallerySnippet.class.getResource("/" + imageName);
+        if (resourceUrl == null) {
+            throw new IllegalArgumentException("Resource not found: " + imageName);
+        }
+        if ("file".equals(resourceUrl.getProtocol())) {
+            return Paths.get(resourceUrl.getPath()).toString();
+        } else {
+            InputStream is = GallerySnippet.class.getResourceAsStream("/" + imageName);
+            Path tmpDir = Files.createTempDirectory("swt-evolve-images-");
+            Path tmpFile = tmpDir.resolve(imageName);
+            assert is != null;
+            Files.copy(is, tmpFile, StandardCopyOption.REPLACE_EXISTING);
+            tmpFile.toFile().deleteOnExit();
+            return tmpFile.toAbsolutePath().toString();
+        }
     }
 }

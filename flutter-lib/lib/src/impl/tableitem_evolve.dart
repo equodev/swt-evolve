@@ -200,6 +200,9 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         if (enabled && _context?.tableImpl != null) {
           if (_context!.tableImpl!.registerRowTap(rowIndex) == 2) {
             sendMouseDoubleClick(1);
+            // A double-click is SWT's DefaultSelection, not just the generic mouse event
+            // (#946) — handleRowDoubleTap already existed but nothing called it.
+            _context!.tableImpl!.handleRowDoubleTap(rowIndex, state);
           }
         }
       },
