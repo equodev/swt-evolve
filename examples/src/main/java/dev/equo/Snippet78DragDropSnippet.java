@@ -15,7 +15,7 @@ import org.eclipse.swt.layout.FillLayout;
 /**
  * Port of upstream Eclipse SWT Snippet78 (drag text between two labels), validating
  * TextTransfer drag/drop between two whole-widget Labels via the generic
- * ControlImpl.wrapDnd mechanism (see swt-evolve's issue #755 follow-up).
+ * ControlImpl.wrapDnd mechanism.
  */
 public class Snippet78DragDropSnippet {
 

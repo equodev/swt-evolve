@@ -26,7 +26,7 @@ import java.io.IOException;
  * Port of upstream Eclipse SWT Snippet79 (define my own data transfer type), validating
  * that a user-defined ByteArrayTransfer subclass exercises real javaToNative/nativeToJava
  * serialization on the Dart-backed client (see DartByteArrayTransfer's in-process byte[]
- * round trip, added alongside issue #755's generalized DND) instead of the previous no-op
+ * round trip, added alongside the generalized DND rework) instead of the previous no-op
  * stubs, plus DND.DROP_DEFAULT resolution in dragEnter/dragOperationChanged.
  */
 public class Snippet79DragDropSnippet {

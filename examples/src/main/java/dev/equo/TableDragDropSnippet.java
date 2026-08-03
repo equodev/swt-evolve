@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Reproduces issue #755: dragging a row within a Table to reorder it, using the same
+ * Exercises dragging a row within a Table to reorder it, using the same
  * TableViewer#addDragSupport / #addDropSupport idiom
  * (DND.DROP_MOVE + TextTransfer, index-as-string payload).
  */

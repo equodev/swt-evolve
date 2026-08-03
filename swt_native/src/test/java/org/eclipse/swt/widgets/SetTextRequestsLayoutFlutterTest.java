@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * {@code setText} on a text-sized control must re-lay-out its enclosing composite so a label whose
  * text is set after construction does not keep stale bounds — the "Start typing to search…" hint
- * that rendered at height 4 in "Find Actions" (#818).
+ * that rendered at height 4 in "Find Actions".
  *
  * <p>The relayout is <em>scheduled</em> (runs on the next event-loop turn via {@code asyncExec}),
  * NOT {@code requestLayout()}. {@code requestLayout()} routes through {@code layout(control,

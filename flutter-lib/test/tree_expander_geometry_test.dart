@@ -1,4 +1,4 @@
-// Drift guard for #896. `Tree.getItem(Point)` has to answer, synchronously on the SWT UI thread,
+// Drift guard. `Tree.getItem(Point)` has to answer, synchronously on the SWT UI thread,
 // whether a point falls on an item's expand/collapse arrow — native SWT resolves no item there, and
 // apps read that null as "the click was not on a row" and clear their selection. There is no Dart
 // round-trip available for that answer, so the horizontal geometry is duplicated in Java in

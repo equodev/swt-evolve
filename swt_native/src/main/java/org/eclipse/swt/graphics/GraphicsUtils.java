@@ -69,8 +69,8 @@ public class GraphicsUtils {
      * afterwards — legal in SWT, since native captures the value at set-time. In the Dart backend the
      * widget instead holds the Java {@code Color} reference and reads its channels later, at async
      * serialization; a disposed color throws ERROR_GRAPHIC_DISPOSED there and aborts the whole widget
-     * payload (swt-flutter#749). Storing this independent copy decouples the widget from the caller's
-     * disposal. Colors carry no native handle, so this is a cheap value copy.
+     * payload. Storing this independent copy decouples the widget from the caller's disposal.
+     * Colors carry no native handle, so this is a cheap value copy.
      *
      * @param color the color to copy (can be null)
      * @return an independent DartColor copy, or null if input is null

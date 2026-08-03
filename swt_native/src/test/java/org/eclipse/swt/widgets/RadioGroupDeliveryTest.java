@@ -82,8 +82,8 @@ class RadioGroupDeliveryTest {
         assertThat(r1OwnChannel || parentCarriesR1Deselected)
                 .as("deselected radio r1 must be communicated to Flutter as not-selected "
                         + "(own channel, or carried deselected in the parent payload), otherwise "
-                        + "Flutter keeps showing it selected and two radios appear checked "
-                        + "(issue #597). Frames: " + bridge.comm.sent.size())
+                        + "Flutter keeps showing it selected and two radios appear checked. "
+                        + "Frames: " + bridge.comm.sent.size())
                 .isTrue();
     }
 }

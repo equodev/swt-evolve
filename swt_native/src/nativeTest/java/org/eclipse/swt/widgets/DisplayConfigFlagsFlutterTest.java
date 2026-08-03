@@ -15,7 +15,7 @@ import java.util.function.Function;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins the fix for #821 ("Late ConfgFlags cause flicker"): the config flags ride in the Display value.
+ * Pins the fix for late config flags causing flicker: the config flags ride in the Display value.
  *
  * <p>The old ordering was not a race, it was structural. A Display update is buffered before the
  * client connects and flushed on connect, so the shells reach Dart as soon as the socket opens. The

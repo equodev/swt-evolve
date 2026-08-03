@@ -64,7 +64,7 @@ class CompositeChildrenDuringDisposeTest extends SerializeTestBase {
     }
 
     /**
-     * Regression test for #706: disposing a single child (while its parent stays
+     * Regression test: disposing a single child (while its parent stays
      * alive) must remove it from the parent's children array via
      * Composite.removeControl. If it doesn't, the disposed child lingers as a
      * zombie and later _getChildren() walks (reskinChildren,

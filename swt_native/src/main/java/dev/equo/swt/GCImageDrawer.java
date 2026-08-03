@@ -30,7 +30,7 @@ public class GCImageDrawer extends EmbeddedBridge {
     // previously unbounded (a bare .thenRun() on the ClientReady future): if the target engine —
     // shared Display engine or isolated off-screen one — never answers (crashed, dead comm, GLX
     // context lost), the Java caller hung forever with no escape hatch, unlike the render-result
-    // wait in DartImage#getImageData(int) which was always bounded. See issue #763 MR history.
+    // wait in DartImage#getImageData(int) which was always bounded. See the MR history for this fix.
     private static final long CLIENT_READY_TIMEOUT_SECONDS = 10;
 
     private static volatile boolean nativeWindowAvailable = true;

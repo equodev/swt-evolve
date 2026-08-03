@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.swtShell;
 
 /**
- * Regression for #896: {@code Tree.getItem(Point)} used to derive the item from {@code point.y}
+ * Regression: {@code Tree.getItem(Point)} used to derive the item from {@code point.y}
  * alone, so a click on the expand/collapse arrow resolved to the row it belongs to. Native SWT
  * resolves no item there, and applications lean on that: one that clears its selection whenever
  * {@code getItem} returns null kept the selection instead, because the arrow always resolved to a

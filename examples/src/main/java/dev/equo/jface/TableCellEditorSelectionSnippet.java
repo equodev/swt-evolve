@@ -32,7 +32,7 @@ public class TableCellEditorSelectionSnippet {
     public static void main(String[] args) {
         Display display = new Display();
         Shell shell = new Shell(display);
-        shell.setText("Table cell editor / selection (#841)");
+        shell.setText("Table cell editor / selection");
         shell.setLayout(new FillLayout());
         shell.setSize(600, 500);
 

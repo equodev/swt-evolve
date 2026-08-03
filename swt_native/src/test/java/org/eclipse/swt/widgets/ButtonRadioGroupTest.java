@@ -7,7 +7,7 @@ import org.junit.jupiter.api.*;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Reproduces issue #597: three RADIO buttons in the same Composite can end up
+ * Reproduces a bug where three RADIO buttons in the same Composite can end up
  * selected simultaneously, when a radio group must keep at most one selected.
  *
  * <p>The exclusivity logic lives in Java: when a Selection event arrives from
@@ -65,7 +65,7 @@ class ButtonRadioGroupTest extends SerializeTestBase {
         click(r3);
         assertThat(r3.getSelection()).as("r3 after clicking r3").isTrue();
         assertThat(selectedCount(r1, r2, r3))
-                .as("a radio group must never have more than one selection (issue #597)")
+                .as("a radio group must never have more than one selection")
                 .isEqualTo(1);
     }
 }

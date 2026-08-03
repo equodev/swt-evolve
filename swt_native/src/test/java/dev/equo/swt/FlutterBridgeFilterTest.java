@@ -141,7 +141,7 @@ public class FlutterBridgeFilterTest extends SerializeTestBase {
 
     @Test
     void shouldKeepDialogShellEvenWhenParentShellIsDirty() {
-        // Regression for #737: a dialog Shell's SWT getParent() is the main Shell, which repaints
+        // Regression: a dialog Shell's SWT getParent() is the main Shell, which repaints
         // constantly and is therefore almost always dirty. A parent Shell's serialization does NOT
         // carry child/dialog Shells (they are separate windows, delivered on their own channel / via
         // the Display's shells list), so the dialog Shell must NOT be filtered out as "the parent

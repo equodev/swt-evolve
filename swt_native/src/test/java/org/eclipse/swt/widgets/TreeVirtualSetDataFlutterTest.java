@@ -12,7 +12,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Regression for issue #867 — "The Expressions section of Debug does not show the table it should".
+ * Regression for "The Expressions section of Debug does not show the table it should".
  *
  * The Eclipse debug Expressions/Breakpoints views are SWT.VIRTUAL {@link Tree}s whose rows are
  * filled lazily through an SWT.SetData listener (the top-level row is a single "Add new expression"
@@ -60,7 +60,7 @@ class TreeVirtualSetDataFlutterTest {
     }
 
     @Test
-    @DisplayName("a VIRTUAL tree's single top-level row is populated via SetData on setItemCount, without expanding (issue #867)")
+    @DisplayName("a VIRTUAL tree's single top-level row is populated via SetData on setItemCount, without expanding")
     void topLevelRowIsPopulatedOnSetItemCount() {
         List<Integer> setDataIndices = new ArrayList<>();
         Tree tree = virtualTreeFilledOnSetData(setDataIndices);
@@ -78,7 +78,7 @@ class TreeVirtualSetDataFlutterTest {
     }
 
     @Test
-    @DisplayName("all top-level rows of a VIRTUAL tree (up to the initial page) receive SetData, not just the first (issue #867)")
+    @DisplayName("all top-level rows of a VIRTUAL tree (up to the initial page) receive SetData, not just the first")
     void allTopLevelRowsInInitialPageReceiveSetData() {
         List<Integer> setDataIndices = new ArrayList<>();
         Tree tree = virtualTreeFilledOnSetData(setDataIndices);

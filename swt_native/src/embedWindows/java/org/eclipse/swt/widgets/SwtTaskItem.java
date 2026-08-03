@@ -118,7 +118,7 @@ public class SwtTaskItem extends SwtItem implements ITaskItem {
             //   displayed on the taskbar button.
             // This implies that Shell should pass NULL before closing.
             //
-            // Issue #603: On Win11 the lack of this actually caused wrong overlay
+            // On Win11 the lack of this actually caused wrong overlay
             // to show after closing Shell.
             ((SwtTaskBar) parent.getImpl()).mTaskbarList3.SetOverlayIcon(shell.handle, 0, 0);
         }

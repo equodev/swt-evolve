@@ -96,7 +96,7 @@ public class GallerySnippet {
         labelGroup.setLayout(new RowLayout(SWT.HORIZONTAL));
         Label label = new Label(labelGroup, SWT.NONE);
         label.setText("A plain label");
-        // Mixed anchor + plain text (#946): "Click" is the tappable anchor, " not-this" is plain
+        // Mixed anchor + plain text: "Click" is the tappable anchor, " not-this" is plain
         // text that must NOT trigger it — proves per-span hit-testing, not just "the widget".
         Link link = new Link(labelGroup, SWT.NONE);
         link.setText("<a href=\"https://equo.dev\">Click</a> not-this");
@@ -197,7 +197,7 @@ public class GallerySnippet {
             item.setControl(body);
         }
         // Closable tab (SWT.CLOSE) — the only tab in the gallery carrying it, so it's the only
-        // way to exercise CTabFolder2Listener.close()/itemClosed (#946). Held in a 1-element
+        // way to exercise CTabFolder2Listener.close()/itemClosed. Held in a 1-element
         // array so the "Reset Gallery" listener below can recreate it after a scenario disposes
         // it (its close icon only renders while selected — SashForm/CoolBar-style single-use).
         CTabItem[] closableTab = {new CTabItem(ctab, SWT.CLOSE)};
@@ -236,7 +236,7 @@ public class GallerySnippet {
             int toolIndex = i;
             item.addSelectionListener(widgetSelectedAdapter(e -> status.setText("Tool " + toolIndex + " clicked")));
         }
-        // Style variants (#946): the loop above only ever created SWT.PUSH items.
+        // Style variants: the loop above only ever created SWT.PUSH items.
         ToolItem toolCheck = new ToolItem(toolBar, SWT.CHECK);
         toolCheck.setText("ToolCheck");
         toolCheck.addSelectionListener(widgetSelectedAdapter(e -> status.setText("ToolCheck: " + toolCheck.getSelection())));
@@ -344,7 +344,7 @@ public class GallerySnippet {
         menuGroup.setLayout(new RowLayout(SWT.HORIZONTAL));
         CLabel clabel = new CLabel(menuGroup, SWT.NONE);
         clabel.setText("Right-click me");
-        clabel.setImage(new Image(display, getImagePath("synced.png"))); // #946: image variant
+        clabel.setImage(new Image(display, getImagePath("synced.png"))); // image variant
         Menu popup = new Menu(clabel);
         for (String action : new String[] {"Menu Action", "Other Action"}) {
             MenuItem mi = new MenuItem(popup, SWT.PUSH);
@@ -397,7 +397,7 @@ public class GallerySnippet {
         sashData.heightHint = 30;
         sash.setLayoutData(sashData);
         // Count Sash Selection events on a dedicated Label (the shared status is clobbered by the
-        // Browser's async title listener) so a scenario can assert they fire during the drag (#509).
+        // Browser's async title listener) so a scenario can assert they fire during the drag.
         Label sashEventsLabel = new Label(sashGroup, SWT.NONE);
         sashEventsLabel.setText("Sash events: 0");
         int[] sashDragEvents = {0};
@@ -452,12 +452,12 @@ public class GallerySnippet {
         // carry the original title, and their async echo would otherwise overwrite whatever
         // status the next scenario just wrote (same family as the StyledText reset guard).
         // "swtflutter" is also filtered: it's web/index.html's OUTER page <title>, not real
-        // iframe content — a product bug (#947, found via #946) where Browser's web TitleListener
+        // iframe content — a product bug where Browser's web TitleListener
         // occasionally reports the top-level page's title instead of the embedded content's,
         // repeatedly clobbering the shared status label for whatever scenario is running (the
         // same class of interference Sash's dedicated "Sash events:" Label was built to dodge,
-        // see #509 above). Filtering the known-bad value here protects every status-based
-        // scenario in the suite until the underlying frame-scoping bug (#947) is fixed.
+        // see above). Filtering the known-bad value here protects every status-based
+        // scenario in the suite until the underlying frame-scoping bug is fixed.
         browser.addTitleListener(e -> {
             if (!"Gallery Browser".equals(e.title) && !"swtflutter".equals(e.title)) {
                 status.setText("Browser title: " + e.title);
@@ -506,8 +506,8 @@ public class GallerySnippet {
             }));
 
             // Escape closes the dialog, like a real dialog/palette. The listener sits on the
-            // focused input (not the Shell) — the same wiring as an Rcp App's Command Palette (#465):
-            // it verifies an Escape caught at the Shell's focus scope is walked to the focus
+            // focused input (not the Shell) — the same wiring as a real-world command-palette-style
+            // dialog: it verifies an Escape caught at the Shell's focus scope is walked to the focus
             // control's Traverse listener.
             nameInput.addListener(SWT.Traverse, traverseEvent -> {
                 if (traverseEvent.detail == SWT.TRAVERSE_ESCAPE) {
@@ -527,7 +527,7 @@ public class GallerySnippet {
             dialog.open();
             // Focus the input so it becomes the display's focus control (tracked by DisplayBridge):
             // that is what an Escape caught at the Shell's focus scope resolves to when walking the
-            // Traverse up to the listener above (#465).
+            // Traverse up to the listener above.
             nameInput.setFocus();
         }));
 

@@ -20,7 +20,7 @@ import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 
 /**
- * Minimal reproduction of issue #601: a toolbar icon opens a borderless popup Shell on hover,
+ * Minimal reproduction: a toolbar icon opens a borderless popup Shell on hover,
  * fading its alpha in over ~500ms and continuously repositioning itself on every Paint event of
  * its parent toolbar. Inside, three Canvas "buttons" are drawn entirely with GC PaintListeners
  * (hand-drawn menu items), the part that intermittently fails to render (or flashes and
@@ -44,7 +44,7 @@ public class PopoverGCButtonsSnippet {
         Display display = new Display();
         Shell shell = new Shell(display);
         shell.setLayout(new FillLayout());
-        shell.setText("Popover GC Buttons Snippet (#601)");
+        shell.setText("Popover GC Buttons Snippet");
         shell.setSize(500, 300);
 
         ToolBar toolBar = new ToolBar(shell, SWT.FLAT);

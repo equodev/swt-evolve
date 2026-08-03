@@ -128,10 +128,10 @@ class TableViewerStyledCellBlankFlutterTest {
         String[] row1 = ((DartTableItem) table.getItem(1).getImpl()).getTexts();
 
         assertThat(row0)
-                .as("row 0 cells must render their owner-drawn text, not blank (issue #892)")
+                .as("row 0 cells must render their owner-drawn text, not blank")
                 .containsExactly("TC-1", "Login test");
         assertThat(row1)
-                .as("row 1 cells must render their owner-drawn text, not blank (issue #892)")
+                .as("row 1 cells must render their owner-drawn text, not blank")
                 .containsExactly("TC-2", "Checkout test");
     }
 }

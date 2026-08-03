@@ -27,7 +27,7 @@ class GCDrawer extends GCDrawerBase {
   final void Function(List<Shape>)? onShapesUpdated;
 
   // Channel -> token for this drawer's extra channels (gcDispose/imageInit/renderSnapshot),
-  // removed by token so a stale drawer can't unregister a newer one's handler (issue #836).
+  // removed by token so a stale drawer can't unregister a newer one's handler.
   final Map<String, Object> _localTokens = {};
 
   final List<ImageShape> _lateLoadedImages = [];
@@ -56,7 +56,7 @@ class GCDrawer extends GCDrawerBase {
   // a cycle with no pending images can complete before an older, slower one,
   // so the older cycle's late completion would clobber newer, correct shapes
   // with stale/incomplete ones. Only the most-recently-*started* cycle may
-  // commit; anything superseded by a newer start discards itself (#601).
+  // commit; anything superseded by a newer start discards itself.
   int _gcDisposeGeneration = 0;
 
   /// Standalone mode: registers comm listeners for state + all draw ops + imageInit/gcDispose.

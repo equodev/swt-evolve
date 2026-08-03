@@ -687,7 +687,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     // _buildItemRow). A single handler guarantees the "expander area" the row abdicates
     // and the area that actually toggles are the same rectangle — when they were two
     // widgets the icon only covered 12x12 of a 34px-tall row, so taps in the gap were
-    // swallowed by neither and did nothing at all (#832).
+    // swallowed by neither and did nothing at all.
     return MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: Icon(
@@ -846,7 +846,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     // Horizontal band of the expander arrow, in row-local coordinates (the tap position
     // is relative to the row's outer box, so the row padding counts). The band spans the
     // full row height on purpose: the arrow icon is only expandIconSize tall and centred,
-    // and anything outside it used to be discarded silently instead of toggling (#832).
+    // and anything outside it used to be discarded silently instead of toggling.
     final EdgeInsets rowPadding = hasMultiColumn
         ? widgetTheme.itemPaddingWithCols
         : widgetTheme.itemPadding;
@@ -918,7 +918,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
             // A tap in the expander column toggles this item; the arrow itself carries
             // no gesture, so this band is the single source of truth for what counts as
-            // an expand/collapse click — see _buildExpander (#832).
+            // an expand/collapse click — see _buildExpander.
             final Offset? tap = _lastTapPosition;
             if (hasChildren &&
                 tap != null &&

@@ -27,7 +27,7 @@ import java.util.function.Consumer;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Full-stack tests for the DND generalization (issue #755), driven through a real Flutter
+ * Full-stack tests for the DND generalization, driven through a real Flutter
  * client via {@link WidgetFlutterHarness} — the same harness {@code RadioGroupFlutterTest}
  * uses. A real {@link Display} is required here (not {@code Mocks}): DND negotiation runs
  * through the standard SWT {@code notifyListeners}/{@code EventTable} event dispatch, which
@@ -141,7 +141,7 @@ class DndFlutterTest {
         });
 
         // The target has no DragSource of its own: matchingDragSource() must not accidentally
-        // resolve to it (the pre-#755 bug assumed source and target always share a control).
+        // resolve to it (an earlier bug assumed source and target always share a control).
         DropTarget dropTarget = new DropTarget(target, DND.DROP_COPY);
         dropTarget.setTransfer(TextTransfer.getInstance());
 
@@ -357,7 +357,7 @@ class DndFlutterTest {
     }
 
     @Test
-    @DisplayName("Table row drop reorders the rendered items (issue #755's original repro)")
+    @DisplayName("Table row drop reorders the rendered items")
     void tableRowDropReordersRenderedItems() {
         Table table = new Table(shell, SWT.BORDER);
         List<String> order = new ArrayList<>(List.of("id", "name", "xpath"));

@@ -1,4 +1,4 @@
-// Issue #823 — SWT glues the shortcut to the label with a tab ("&New\tAlt+Shift+N").
+// SWT glues the shortcut to the label with a tab ("&New\tAlt+Shift+N").
 // Only PUSH items split it; CASCADE/CHECK/RADIO rendered the raw text, so the
 // shortcut showed up inside the label, in the label's style instead of the
 // themed accelerator style.

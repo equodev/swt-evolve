@@ -56,7 +56,7 @@ class TableCellEditorSelectionSyncFlutterTest {
     }
 
     @Test
-    @DisplayName("rapid clicks keep the selection on the row that was clicked (issue #841)")
+    @DisplayName("rapid clicks keep the selection on the row that was clicked")
     void rapidClicksKeepSelectionOnClickedRow() {
         Table table = editableTable(3);
 
@@ -78,7 +78,7 @@ class TableCellEditorSelectionSyncFlutterTest {
     }
 
     @Test
-    @DisplayName("re-clicking the already-selected row fires no redundant Selection (issue #841)")
+    @DisplayName("re-clicking the already-selected row fires no redundant Selection")
     void reclickingSameRowIsANoOp() {
         Table table = editableTable(3);
 
@@ -100,7 +100,7 @@ class TableCellEditorSelectionSyncFlutterTest {
     }
 
     @Test
-    @DisplayName("installing a new cell editor disposes the previous one (issue #841)")
+    @DisplayName("installing a new cell editor disposes the previous one")
     void replacingTheCellEditorDisposesThePrevious() {
         Table table = editableTable(2);
         TableItem row0 = table.getItem(0);

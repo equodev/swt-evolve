@@ -1,12 +1,12 @@
-// Issue #509 — SashForm half (the actual surface: the Windows Action
-// Recorder is a 3-pane SashForm).
+// SashForm half (a real-world surface: a resizable 3-pane action-recorder-style
+// panel).
 //
 // Dragging a SashForm divider resizes the panels Flutter-locally
 // (_SashFormLayout keeps _panelSizes and SashFormImpl.onWeightsChanged only
 // does a local setState) — but the new weights are NEVER sent to Java.
 // DartSashForm keeps the original weights, so the next Java-side layout (a
 // window resize) recomputes the panels from stale weights and discards the
-// user's drag. Verified live: after a divider drag,
+// user's drag. Verified live in a real app: after a divider drag,
 // VSashForm.weights stayed [5,4,6] and maximizing the dialog snapped the
 // panels back.
 //
@@ -61,7 +61,7 @@ VSashForm _sashForm() => VSashForm()
   ..children = [_panel(1), _panel(2)];
 
 void main() {
-  testWidgets('dragging a SashForm divider sends the new weights to Java (#509)',
+  testWidgets('dragging a SashForm divider sends the new weights to Java',
       (WidgetTester tester) async {
     final selections = <VEvent?>[];
 
@@ -90,8 +90,7 @@ void main() {
 
     expect(selections, isNotEmpty,
         reason: 'the weights must live-sync to Java DURING the drag so the '
-            'pane content reflows as the sash moves, not only at drop '
-            '(issue #509)');
+            'pane content reflows as the sash moves, not only at drop');
     final liveCount = selections.length;
 
     await gesture.up();
@@ -102,8 +101,7 @@ void main() {
     expect(selections, isNotEmpty,
         reason: 'releasing a SashForm divider must send the new weights to '
             'Java — otherwise DartSashForm keeps the stale weights and the '
-            'next Java-side layout (window resize) discards the drag '
-            '(issue #509)');
+            'next Java-side layout (window resize) discards the drag');
     final payload = selections.last;
     expect(payload, isNotNull);
     final weights =

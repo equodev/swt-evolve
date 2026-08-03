@@ -9,7 +9,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Full-stack reproduction of issue #754: a widget whose ancestor is disabled must render as
+ * Full-stack reproduction of a bug where a widget whose ancestor is disabled must render as
  * disabled on the Dart side, even though the widget's own {@code getEnabled()} flag is still
  * {@code true}.
  *
@@ -51,7 +51,7 @@ class DisabledAncestorRenderedEnabledFlutterTest {
     }
 
     @Test
-    @DisplayName("a ToolItem renders disabled when an ancestor is disabled (issue #754)")
+    @DisplayName("a ToolItem renders disabled when an ancestor is disabled")
     void toolItemDisabledByAncestor() {
         Composite group = new Composite(shell, SWT.NONE);
         ToolBar bar = new ToolBar(group, SWT.FLAT);
@@ -73,7 +73,7 @@ class DisabledAncestorRenderedEnabledFlutterTest {
     }
 
     @Test
-    @DisplayName("a Control renders disabled when an ancestor is disabled (issue #754)")
+    @DisplayName("a Control renders disabled when an ancestor is disabled")
     void controlDisabledByAncestor() {
         Composite group = new Composite(shell, SWT.NONE);
         Button button = new Button(group, SWT.PUSH);

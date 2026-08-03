@@ -1,6 +1,6 @@
 // On macOS, Ctrl+Click is a secondary click: it must open the control's
 // context menu and keep the clicked item selected, instead of toggling
-// multi-selection (issue #727). Cmd+Click remains the toggle modifier.
+// multi-selection. Cmd+Click remains the toggle modifier.
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';

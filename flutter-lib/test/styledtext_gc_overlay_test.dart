@@ -1,4 +1,4 @@
-// Issue #752 — the "Enter text to search..." hint (drawn by an app SWT.Paint
+// The "Enter text to search..." hint (drawn by an app SWT.Paint
 // listener via GC) was invisible on StyledText-based search fields.
 //
 // StyledText extends Canvas in SWT, so StyledTextImpl extends CanvasImpl and

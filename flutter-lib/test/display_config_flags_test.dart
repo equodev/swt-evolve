@@ -3,7 +3,7 @@ import 'package:swtflutter/src/gen/display.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
-/// #821 — "Late ConfgFlags cause flicker".
+/// "Late ConfgFlags cause flicker".
 ///
 /// The flags used to reach Flutter only on the `swt.evolve.properties` channel, which Java pushes on
 /// the first ClientReady — and Flutter only sends ClientReady after its first frame. The Display

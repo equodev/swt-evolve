@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Owner-draw capture through a {@link TextLayout} (issue #818, Eclipse "Find Actions").
+ * Owner-draw capture through a {@link TextLayout} (Eclipse "Find Actions").
  *
  * <p>Eclipse's {@code QuickAccessEntry.paint()} does not draw its cell text with {@code gc.drawText}
  * — it draws it through a {@link TextLayout}. So capturing owner-drawn text at the GC alone is not

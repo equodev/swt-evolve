@@ -1,4 +1,4 @@
-// Issue #597 — Dart-side root cause.
+// Dart-side root cause.
 //
 // `ButtonImpl._onPressed` (button_evolve.dart) optimistically toggles ONLY the
 // clicked radio's `state.selection` and sends a Selection event. Nothing on the
@@ -69,6 +69,6 @@ void main() {
     await tester.tap(find.text('Option 3'));
     await tester.pump();
     expect(_selectedCount(tester), 1,
-        reason: 'a radio group must keep exactly one selection (issue #597)');
+        reason: 'a radio group must keep exactly one selection');
   });
 }

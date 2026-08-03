@@ -71,7 +71,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
 
   // Skips the request if a previous one is still awaiting its gcDispose response,
   // so overlapping Paint round-trips (e.g. a Shell fade animation and a hover
-  // redraw both firing close together) can't race on the GC's shapes commit (#601).
+  // redraw both firing close together) can't race on the GC's shapes commit.
   // Before the GC overlay child has mounted (gcOverlayKey.currentState still null —
   // true for initState() and the first build()), there's nothing to track pending
   // state against, so cap it at a single request until the overlay exists.

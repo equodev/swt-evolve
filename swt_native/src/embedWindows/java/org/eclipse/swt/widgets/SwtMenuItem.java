@@ -69,7 +69,7 @@ public class SwtMenuItem extends SwtItem implements IMenuItem {
     // This static is used to mitigate this increase
     private final static int WINDOWS_OVERHEAD = 6;
 
-    // Workaround for: selection indicator is missing for menu item with image on Win11 (#501)
+    // Workaround for: selection indicator is missing for menu item with image on Win11
     // 0= off/system behavior; 1= no image if selected; 2= with overlay marker (default)
     private final static int CUSTOM_SELECTION_IMAGE = (OsVersion.IS_WIN11_21H2) ? Integer.getInteger("org.eclipse.swt.internal.win32.menu.customSelectionImage", 2) : 0;
 

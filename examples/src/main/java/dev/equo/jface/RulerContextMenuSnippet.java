@@ -13,7 +13,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.*;
 
 /**
- * Repro for issue #861: right-clicking the line numbers of an editor must open
+ * Repro for right-clicking the line numbers of an editor: it must open
  * the ruler context menu (Add Bookmark..., etc.).
  *
  * Mirrors AbstractTextEditor.createPartControl: the menu is set on
@@ -34,7 +34,7 @@ public class RulerContextMenuSnippet {
 
         Display display = new Display();
         Shell shell = new Shell(display);
-        shell.setText("Ruler Context Menu Snippet (#861)");
+        shell.setText("Ruler Context Menu Snippet");
         shell.setLayout(new GridLayout(1, false));
         shell.setSize(700, 520);
 

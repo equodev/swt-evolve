@@ -34,7 +34,7 @@ VShell _shell(int id, int style, VRectangle bounds, {List<VButton>? children}) =
 
 void main() {
   testWidgets(
-      'a modal dialog blocks input to the dialog beneath it (single-instance, #900)',
+      'a modal dialog blocks input to the dialog beneath it (single-instance)',
       (WidgetTester tester) async {
     const buttonId = 9001;
     final button = find.byWidgetPredicate(
@@ -78,7 +78,7 @@ void main() {
       isFalse,
       reason: 'while a modal dialog is open, the dialog beneath it must not '
           'receive pointer input — otherwise the nested dialog can be re-opened '
-          'more than once (issue #900).',
+          'more than once.',
     );
   });
 }

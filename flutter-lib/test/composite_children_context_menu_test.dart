@@ -1,4 +1,4 @@
-// Issue #861 — a composite WITH children builds through buildComposite()/
+// A composite WITH children builds through buildComposite()/
 // wrapCompositeInteractionChrome(), which used to skip applyMenu(), so a
 // context menu set on the composite (Control.setMenu) never opened. That is
 // exactly the editor line-number ruler: Eclipse's CompositeRuler sets the

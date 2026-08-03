@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Pins #817: isSystemDarkTheme() must reflect Config's force_theme, not a hardcoded value.
+// Pins isSystemDarkTheme() reflecting Config's force_theme, not a hardcoded value.
 @Tag("flutter-it")
 class DisplayIsSystemDarkThemeFlutterTest {
 

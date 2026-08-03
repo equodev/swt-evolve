@@ -1,4 +1,4 @@
-// Regression tests for table visual fixes (issue #779).
+// Regression tests for table visual fixes.
 //
 // 1. calculateColumnWidths() always appends a FlexColumnWidth(1) filler at
 //    index columns.length. The flex absorbs leftover space so Flutter does not
@@ -97,7 +97,7 @@ void main() {
 
     testWidgets('mixed widths: a null-width column sizes to content, not 0',
         (tester) async {
-      // Find Actions (#818) shape: the category column has no explicit width
+      // A "Find Actions"-style shape: the category column has no explicit width
       // while the label column does. A null width must size to content, not
       // collapse to 0 (which hid the category column entirely).
       final cols = [_col(1), _col(2, width: 300)];
@@ -112,7 +112,7 @@ void main() {
 
       expect((widths[0] as FixedColumnWidth).value, greaterThan(0.0),
           reason:
-              'a column with no explicit width must size to content, not 0 (#818)');
+              'a column with no explicit width must size to content, not 0');
       expect((widths[1] as FixedColumnWidth).value, equals(300.0),
           reason: 'columns with an explicit width keep it');
     });

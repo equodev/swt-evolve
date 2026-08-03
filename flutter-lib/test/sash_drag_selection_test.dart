@@ -1,11 +1,11 @@
-// Issue #509 — Dart-side half: moving the sash must fire Selection events.
+// Dart-side half: moving the sash must fire Selection events.
 //
 // Native SWT fires Selection continuously while the sash is dragged (see
 // SwtSash.mouseDragged on every platform; on macOS the style is forced to
 // SWT.SMOOTH and the sash also moves itself). Apps — Snippet 54, SashForm,
-// a recorder view — resize the neighboring composites from those
-// events, so with no during-drag events nothing relayouts while the user
-// drags ("Sash movement does not resize composites").
+// and resizable panel layouts in real apps — resize the neighboring composites
+// from those events, so with no during-drag events nothing relayouts while the
+// user drags ("Sash movement does not resize composites").
 //
 // SashImpl (sash_evolve.dart) currently sends a single Selection only on
 // drag END, so this test's during-drag assertion FAILS on current code.
@@ -43,7 +43,7 @@ VSash _verticalSash() => VSash()
     ..height = 260);
 
 void main() {
-  testWidgets('dragging a sash fires Selection events while it moves (#509)',
+  testWidgets('dragging a sash fires Selection events while it moves',
       (WidgetTester tester) async {
     final selections = <VEvent>[];
 
@@ -87,7 +87,7 @@ void main() {
     expect(selections, isNotEmpty,
         reason: 'native SWT fires Selection continuously during a sash drag '
             '(SwtSash.mouseDragged); without those events the app cannot '
-            'resize the composites while the sash moves (issue #509)');
+            'resize the composites while the sash moves');
     expect(selections.last.x, greaterThan(195),
         reason: 'during-drag Selection must carry the new position');
 

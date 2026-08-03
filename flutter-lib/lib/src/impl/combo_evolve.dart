@@ -54,7 +54,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
 
     // The border insets the Row (Container pads by decoration.padding), and the
     // arrow cell consumes iconSpacing + iconSize; both must be part of the
-    // preferred width or the longest item is clipped by the arrow (issue #905).
+    // preferred width or the longest item is clipped by the arrow.
     final double width =
         maxTextWidth +
         theme.textFieldPadding.horizontal +
@@ -288,7 +288,7 @@ class _DropdownComboLayout extends StatelessWidget {
                 child: Padding(
                   // Right-only: the text field's own right padding already
                   // separates text from arrow; a left inset here eats viewport
-                  // width the preferred size doesn't account for (issue #905).
+                  // width the preferred size doesn't account for.
                   padding: EdgeInsets.only(right: theme.iconSpacing),
                   child: Icon(
                     Icons.arrow_drop_down,

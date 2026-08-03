@@ -6,7 +6,7 @@ abstract class GCDrawerBase {
   VGC state;
 
   // Channel -> token, so teardown removes only handlers this drawer registered and never a newer
-  // drawer's live handler for the same id (issue #836).
+  // drawer's live handler for the same id.
   final Map<String, Object> _handlerTokens = {};
 
   GCDrawerBase(this.state) {

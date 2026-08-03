@@ -300,7 +300,7 @@ class DisplayWakeFlutterTest {
     }
 
     /**
-     * Regression for #758: a runnable posted while the queue is <b>non-empty</b> must still wake the
+     * Regression: a runnable posted while the queue is <b>non-empty</b> must still wake the
      * UI thread. The other tests here only ever post <em>one</em> runnable to a freshly-parked,
      * <em>empty</em> queue — the empty&rarr;non-empty transition, which even the old
      * {@code addLast} (that woke <em>only</em> on that transition) handled. The bug lived in the path
@@ -344,7 +344,7 @@ class DisplayWakeFlutterTest {
             display.asyncExec(() -> {}); // post #2 → queue now non-empty → the previously-dropped wake
             int afterNonEmpty = wakePermits();
             assertThat(afterNonEmpty)
-                    .as("a post to a NON-EMPTY queue must also wake (regression #758)")
+                    .as("a post to a NON-EMPTY queue must also wake (regression test)")
                     .isEqualTo(afterEmpty + 1);
         } finally {
             release.countDown(); // let the loop drain and re-park so tearDown is clean

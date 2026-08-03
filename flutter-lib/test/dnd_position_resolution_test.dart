@@ -1,5 +1,5 @@
 // Verifies that a real drag gesture resolves to the correct target row/item — the position
-// math in TableImpl#wrapTableForDrop / TreeImpl#wrapTreeForDrop that issue #755's fix touched
+// math in TableImpl#wrapTableForDrop / TreeImpl#wrapTreeForDrop that a prior regression fix touched
 // most, and that DndFlutterTest (the Java-side suite) can't exercise: those tests synthesize
 // itemId/index directly on a Java Event instead of performing an actual Flutter gesture, so
 // they never run the Dart-side position resolution this test targets.

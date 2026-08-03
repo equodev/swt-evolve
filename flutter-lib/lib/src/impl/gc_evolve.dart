@@ -15,7 +15,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   // Guards against overlapping Paint request/response round-trips for the same
   // Canvas (e.g. a Shell fade animation and a hover-driven redraw both asking to
   // repaint close together): shapes.clear()+addAll() on gcDispose isn't safe if a
-  // second request's ops are still arriving when the first one commits. See #601.
+  // second request's ops are still arriving when the first one commits.
   bool _awaitingDispose = false;
   bool get hasPendingPaint => _awaitingDispose;
   void markPaintRequested() => _awaitingDispose = true;
@@ -30,7 +30,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
         if (!mounted) return;
         setState(() {});
         // Promote the overlay onstage once it has painted content (a constructor-only paint
-        // sends no VGC state push that would otherwise do it) — issue #836.
+        // sends no VGC state push that would otherwise do it).
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _notifyParentGCReady();
         });

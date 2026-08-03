@@ -88,7 +88,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     return KeyEventResult.ignored;
   }
 
-  /// Alpha-only updates bypass setState/rebuild and just touch this notifier (#601).
+  /// Alpha-only updates bypass setState/rebuild and just touch this notifier.
   @override
   void setValue(V value) {
     _opacityNotifier.value = (value.alpha ?? 255) / 255.0;
@@ -394,7 +394,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
     // Always wrap in Opacity, never conditionally on opacity < 1.0 -- branching the widget
     // TYPE at this position tears down and remounts the whole content subtree on the first
-    // alpha tick, wiping any already-committed GC shapes inside it (#601).
+    // alpha tick, wiping any already-committed GC shapes inside it.
     final opacityWrapped = ValueListenableBuilder<double>(
       valueListenable: _opacityNotifier,
       child: content,

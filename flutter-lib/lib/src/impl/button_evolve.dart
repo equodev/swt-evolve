@@ -544,7 +544,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     }
     // A radio selecting itself must immediately deselect the other radios in its
     // group, so the UI never shows more than one selected even before Java's
-    // selectRadio round-trip lands (issue #597). Java remains the source of
+    // selectRadio round-trip lands. Java remains the source of
     // truth and confirms the same result.
     if (isRadio && (state.selection ?? false)) {
       _deselectSiblingRadios();

@@ -1,4 +1,4 @@
-// Issue #597 — web delivery path.
+// Web delivery path.
 //
 // On web, DartButton.selectRadio() additionally dirties the PARENT Composite.
 // The bridge's dirty-ancestor filter then drops the deselected sibling from
@@ -77,7 +77,7 @@ void main() {
 
     expect(byText['Option 1'], isFalse,
         reason: 'After the parent update, radio Option 1 must be deselected. '
-            'If it stays selected, two radios appear checked (issue #597).');
+            'If it stays selected, two radios appear checked.');
     expect(byText['Option 2'], isTrue,
         reason: 'Radio Option 2 must be selected after the parent update.');
   });

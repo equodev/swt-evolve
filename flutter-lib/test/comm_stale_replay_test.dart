@@ -5,10 +5,10 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/comm_frame.dart';
 
-/// Regression for #863: a payload buffered for a not-yet-registered channel must
+/// Regression: a payload buffered for a not-yet-registered channel must
 /// not be replayed once newer information was already delivered — replaying it
 /// rolled freshly-mounted widgets back to a stale pre-reveal snapshot (blank
-/// data-binding section on the first "Show Data Binding" click).
+/// data-binding section on the first reveal click in a real app).
 class _TestComm extends EquoCommBase {
   final List<Uint8List> sent = [];
 
@@ -48,7 +48,7 @@ void main() {
     ]);
   });
 
-  test('drops a buffered payload once newer information was delivered (#863)', () async {
+  test('drops a buffered payload once newer information was delivered', () async {
     final comm = _TestComm();
 
     // Stale per-widget payload arrives while the widget is unmounted (no handler).

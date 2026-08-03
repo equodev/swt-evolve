@@ -132,7 +132,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
         // Render the body regardless of `minimized`: native SWT's `minimized` only
         // shrinks computeSize, it never hides the selected control. A collapsed folder
         // gets a tab-strip-height bounds (Expanded → ~0 height); an E4 minimized-stack
-        // fly-out gets a full client area and must show its content (#872).
+        // fly-out gets a full client area and must show its content.
         Expanded(
           child: IndexedStack(
             index: _selectedIndex < tabBodies.length ? _selectedIndex : 0,

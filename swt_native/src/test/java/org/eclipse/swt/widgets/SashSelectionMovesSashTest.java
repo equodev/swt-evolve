@@ -12,13 +12,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
 /**
- * Issue #509 — Java-side half: a Selection event arriving from Flutter must move the sash.
+ * Java-side half: a Selection event arriving from Flutter must move the sash.
  *
  * {@code DartSash.checkStyle} forces {@code SWT.SMOOTH}, i.e. it claims the macOS smooth-sash
  * contract — and in native SWT that contract includes the sash applying its own move:
  * {@code SwtSash.mouseDragged}/{@code mouseUp} call {@code setBounds(event.x, event.y, ...)}
  * whenever the app's listeners leave {@code event.doit} true. Apps therefore do NOT have to
- * reposition a smooth sash themselves, and a recorder view doesn't. {@code DartSash}'s
+ * reposition a smooth sash themselves, and some apps' custom recorder/overlay views don't. {@code DartSash}'s
  * Selection hook only forwards the event to listeners and never applies the move, so the sash
  * (and everything laid out around it) stays put until a window resize forces a fresh layout —
  * exactly the reported symptom.
@@ -90,7 +90,7 @@ class SashSelectionMovesSashTest {
     }
 
     @Test
-    @DisplayName("a Selection from Flutter moves the sash when no listener vetoes (issue #509)")
+    @DisplayName("a Selection from Flutter moves the sash when no listener vetoes")
     void selectionAppliesTheMove() {
         Sash sash = sash();
 
@@ -99,7 +99,7 @@ class SashSelectionMovesSashTest {
         assertThat(sash.getBounds().x)
                 .as("a SMOOTH sash applies its own move on Selection (SwtSash.mouseDragged/" +
                         "mouseUp parity) — without it the sash never repositions until a window " +
-                        "resize forces a layout (issue #509)")
+                        "resize forces a layout")
                 .isEqualTo(255);
     }
 

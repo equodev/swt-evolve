@@ -73,10 +73,10 @@ Java backend** (`src/main + src/native + src/native<currentOs>`) via its own sou
 against this backend: `Mocks`/`SerializeTestBase` import embedded-only `Swt*` classes; hence the
 `include` filter.)
 
-## Does it reproduce issue #597?
+## Does it reproduce the radio-group selection race?
 
 No — and that's worth stating plainly. The harness compiles, boots a real Flutter web client, renders
-the widgets, and reads their state back (the sample **passes**). But #597 is an **intermittent timing
+the widgets, and reads their state back (the sample **passes**). But that bug is an **intermittent timing
 race** in the Display event loop, and the sample passes with **both** the fixed (synchronous) and the
 old (`asyncExec`) `selectRadio` parent-dirty — verified by reverting the fix and re-running. Driving
 `selectRadio()` + a synchronous `flush()` doesn't recreate the async interleaving; even a

@@ -1,5 +1,5 @@
-// #465 — an Rcp App's Command Palette opens the selected item from a MouseListener on the
-// underlying SWT List (mouseUp -> performCommand()), not from Selection/DefaultSelection.
+// An app's own MouseListener on the underlying SWT List can open the selected item directly
+// on mouseUp (mouseUp -> performCommand()), not via Selection/DefaultSelection.
 // A List item click must therefore emit SWT MouseDown/MouseUp, in native order around the
 // Selection, or the item never opens. Before the fix the item's tap detector consumed the
 // pointer and only Selection was sent.
@@ -45,7 +45,7 @@ VList _list(List<String> items) => VList()
 
 void main() {
   testWidgets(
-    'clicking a List item emits MouseDown, then Selection, then MouseUp (#465)',
+    'clicking a List item emits MouseDown, then Selection, then MouseUp',
     (tester) async {
       final calls = <String>[];
       final value = _list(['Alpha', 'Bravo', 'Charlie']);
@@ -68,8 +68,8 @@ void main() {
       expect(
         calls,
         equals(['MouseDown', 'Selection:[1]', 'MouseUp']),
-        reason: 'App MouseListeners (e.g. a Command Palette) open the item on the '
-            "List's mouseUp, with the selection already applied.",
+        reason: "App MouseListeners open the item on the List's mouseUp, with the "
+            'selection already applied.',
       );
     },
   );

@@ -8,7 +8,7 @@ import org.junit.jupiter.api.*;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Full-stack reproduction of issue #597 (a radio group must keep one selection): drives the real
+ * Full-stack reproduction of a bug where a radio group must keep one selection: drives the real
  * SWT → bridge → Flutter path through {@link WidgetFlutterHarness} and reads back the
  * <em>rendered</em> selection from a live Flutter web client for each radio.
  *

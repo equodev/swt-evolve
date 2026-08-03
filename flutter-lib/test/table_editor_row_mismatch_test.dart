@@ -1,6 +1,5 @@
-// Regression test for issue #826: in a table editor,
-// clicking a cell opens the in-place editor on the row above the one that
-// was clicked.
+// Regression test: in a table editor, clicking a cell opens the in-place
+// editor on the row above the one that was clicked.
 //
 // SWT contract: mouse-event coordinates (event.x/event.y) are always relative
 // to the origin (top-left corner) of the control that received them --

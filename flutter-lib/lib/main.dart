@@ -451,7 +451,7 @@ class EvolveApp extends StatelessWidget {
                 builder: (ctx, scale, _) {
                   // Skip the Transform entirely at the (overwhelmingly common) default
                   // scale: this RenderTransform wraps the whole app, and keeping a
-                  // permanently-inert one around isn't free — see issue #601.
+                  // permanently-inert one around isn't free.
                   if (scale == 1.0) return contentWidget;
                   return Transform.scale(
                     scale: scale,

@@ -8,7 +8,7 @@ import org.junit.jupiter.api.*;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * #465 — the Command Palette (a JFace Dialog) did not close on Escape under the Flutter backend.
+ * The Command Palette (a JFace Dialog) did not close on Escape under the Flutter backend.
  * Dart controls have no OS window proc, so nothing translated an incoming KeyDown into the
  * {@link SWT#Traverse} event the dialog's Escape listener relies on. The fix lives in
  * {@link ControlHelper#sendFlutterKeyDown}: it now runs the native-style traversal walk, and for
@@ -45,7 +45,7 @@ class CommandPaletteEscapeFlutterTest {
         palette.open();
         search.setFocus();
         // The headless harness has no live focus round-trip (its bridge doesn't track focus), so
-        // mark the search field as the display's focus control directly — the state an Rcp App's
+        // mark the search field as the display's focus control directly — the state a live app's
         // forceFocus produces in the running app, where DisplayBridge tracks it.
         ((DartDisplay) display.getImpl()).focusControl = search;
     }

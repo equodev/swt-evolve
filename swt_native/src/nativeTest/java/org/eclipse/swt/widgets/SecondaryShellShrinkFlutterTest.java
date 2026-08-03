@@ -15,7 +15,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Regression coverage for issue #526's follow-up: opening a secondary Shell (a
+ * Regression coverage for a follow-up fix: opening a secondary Shell (a
  * dialog that never calls pack()/setSize() itself) must not shrink the main shell, and
  * a same-geometry setBounds()/setLocation() on a Chromium-standalone main window must not reach
  * the native window.

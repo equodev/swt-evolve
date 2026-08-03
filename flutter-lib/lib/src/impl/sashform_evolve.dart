@@ -70,13 +70,13 @@ class SashFormImpl<T extends SashFormSwt, V extends VSashForm>
           // Report the dragged weights back to Java: DartSashForm applies
           // them via setWeights, so the next Java-side layout (e.g. a window
           // resize) keeps the user's drag instead of recomputing the panels
-          // from the stale weights (issue #509). setWeights validates against
+          // from the stale weights. setWeights validates against
           // the FULL children list, so the merged array is what must go over.
           _sendWeights(mergedWeights);
         },
         // Live sync while the sash moves, so Java re-lays-out the pane
         // CONTENT during the drag (not only at drop) — the stale content is
-        // the visible symptom of #509. state.weights is left alone mid-drag;
+        // the visible symptom of that. state.weights is left alone mid-drag;
         // the drag-end onWeightsChanged commit stays authoritative.
         onWeightsDragged: (newWeights) => _sendWeights(
             _mergeVisibleWeights(allWeights, visibleIndices, newWeights)),

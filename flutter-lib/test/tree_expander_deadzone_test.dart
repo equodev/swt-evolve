@@ -1,4 +1,4 @@
-// Regression for #832: the Tree expand/collapse arrow intermittently "stopped responding".
+// Regression: the Tree expand/collapse arrow intermittently "stopped responding".
 // Root cause was a dead zone — the row's tap handler ceded the whole expander band (full row
 // height) expecting the arrow to take it, but the arrow's hit area was only the 12x12 icon
 // centred in a ~34px row. A tap in the gap (same x as the arrow, but above/below the icon) was

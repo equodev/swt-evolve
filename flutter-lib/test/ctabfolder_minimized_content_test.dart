@@ -1,4 +1,4 @@
-// Issue #872 — a CTabFolder that is `minimized` but given a real client area (an
+// A CTabFolder that is `minimized` but given a real client area (an
 // E4 minimized-stack fly-out) must still render its selected tab's content. The
 // impl gated the body on `if (!isMinimized)`, blanking the fly-out. Native SWT's
 // `minimized` only shrinks computeSize; it never hides the selected control.
@@ -45,7 +45,7 @@ Widget _host(VCTabFolder value) => EvolveApp(
 
 // The CTabFolder tab-strip decoration trips an unrelated debug-only paint assertion
 // in the isolated test harness (a hairline 0-width border with a non-zero border
-// radius, ctabfolder_evolve.dart's tab AnimatedContainer). It is orthogonal to #872,
+// radius, ctabfolder_evolve.dart's tab AnimatedContainer). It is orthogonal to this test,
 // which is purely about whether the selected tab's content is BUILT into the tree.
 // Drain those paint exceptions so they don't mask the assertion we actually care about.
 void _drainPaintExceptions(WidgetTester tester) {
@@ -61,7 +61,7 @@ void main() {
   });
 
   testWidgets(
-      'a minimized CTabFolder with a client area still renders its content (issue #872)',
+      'a minimized CTabFolder with a client area still renders its content',
       (WidgetTester tester) async {
     await tester.pumpWidget(_host(_folder(minimized: true)));
     _drainPaintExceptions(tester);
@@ -70,6 +70,6 @@ void main() {
         reason: 'A CTabFolder that is minimized but given a real client area '
             '(the E4 minimized-view fly-out) must still render its selected tab '
             'content. Gating the body on !minimized blanked every re-shown '
-            'fly-out (issue #872).');
+            'fly-out.');
   });
 }

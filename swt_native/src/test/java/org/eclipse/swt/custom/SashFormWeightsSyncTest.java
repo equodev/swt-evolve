@@ -16,11 +16,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
 /**
- * Issue #509 — Java half of the SashForm surface (the Windows Action Recorder in an Rcp App is a
- * 3-pane SashForm): when the user drags a divider, Flutter recomputes the panel weights locally
+ * Java half of the SashForm surface (a multi-pane app layout backed by a 3-pane SashForm):
+ * when the user drags a divider, Flutter recomputes the panel weights locally
  * and must report them back; DartSashForm has to apply them, or its stale weights win at the next
  * Java-side layout (a window resize) and the user's drag is discarded — the reported symptom,
- * confirmed live (VSashForm.weights stayed [5,4,6] after a drag).
+ * confirmed live in a running app (VSashForm.weights stayed [5,4,6] after a drag).
  *
  * Flutter reports the weights as a Selection event whose {@code text} is the comma-separated
  * weight list. Uses a {@link RecordingBridge} whose {@code RecordingComm} captures the
@@ -86,7 +86,7 @@ class SashFormWeightsSyncTest {
     }
 
     @Test
-    @DisplayName("weights reported by a Flutter divider drag are applied (issue #509)")
+    @DisplayName("weights reported by a Flutter divider drag are applied")
     void weightsFromFlutterAreApplied() {
         SashForm form = sashForm();
 
@@ -95,7 +95,7 @@ class SashFormWeightsSyncTest {
         assertThat(form.getWeights())
                 .as("the dragged weights must be applied to DartSashForm — otherwise the next "
                         + "Java-side layout recomputes the panels from the stale weights and "
-                        + "discards the user's drag (issue #509); getWeights() normalizes to a "
+                        + "discards the user's drag; getWeights() normalizes to a "
                         + "total of 1000")
                 .containsExactly(300, 700);
     }

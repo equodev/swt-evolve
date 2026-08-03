@@ -14,7 +14,7 @@ import static org.eclipse.swt.widgets.Mocks.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Owner-draw parity for Table cells (issue #818, Eclipse "Find Actions").
+ * Owner-draw parity for Table cells (Eclipse "Find Actions").
  *
  * <p>An owner-drawing app clears {@link SWT#FOREGROUND} from the {@link SWT#EraseItem} event to tell
  * SWT "do not paint this item's own text/image — I will paint it", then paints the cell itself in
@@ -90,7 +90,7 @@ class TableOwnerDrawSerializeTest extends SerializeTestBase {
 
     @Test
     void ownerDrawnText_isCaptured_whenForegroundNeverSuppressed_andModelHasNoText() {
-        // Issue #907: an Rcp App's GlobalVariablePart.MyLabelProvider overrides only measure()/paint(),
+        // An app's custom TableViewer LabelProvider can override only measure()/paint(),
         // never erase() -- so EraseItem never clears SWT.FOREGROUND -- yet paint() still draws the
         // real, current value on every repaint. The column's model text is never set (owner-drawn
         // columns never go through item.setText()), so getTexts() must still prefer what PaintItem

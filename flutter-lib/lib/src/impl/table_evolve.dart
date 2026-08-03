@@ -859,7 +859,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
           width += checkboxWidth + theme.cellPadding.left;
         }
       } else {
-        // No explicit width (e.g. Find Actions' category column, #818): size to
+        // No explicit width (e.g. Find Actions' category column): size to
         // content instead of collapsing to 0, which would hide the column.
         width = _intrinsicColumnWidth(
             context, columns, i, theme, hasCheckStyle, checkboxWidth);

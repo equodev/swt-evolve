@@ -18,7 +18,7 @@ import org.eclipse.swt.widgets.Shell;
 /**
  * Port of upstream Eclipse SWT Snippet284 (drag a URL between two labels), validating
  * URLTransfer (a built-in ByteArrayTransfer subclass, see DartURLTransfer's real
- * javaToNative/nativeToJava round trip added alongside issue #755's DND generalization)
+ * javaToNative/nativeToJava round trip added alongside the generalized DND rework)
  * and a non-DROP_COPY default operation (DND.DROP_LINK) resolved in
  * dragEnter/dragOperationChanged.
  */

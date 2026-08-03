@@ -67,7 +67,7 @@ abstract class EquoCommBase {
 
   /// Arrival order of incoming frames, of each buffered payload, and of the
   /// newest JSON payload handed to a handler — used by [on] to tell a fresh
-  /// early arrival from a stale leftover (#863).
+  /// early arrival from a stale leftover.
   int _arrivalSeq = 0;
   int _lastJsonDeliveredSeq = 0;
   final Map<String, int> _pendingSeq = {};
@@ -197,7 +197,7 @@ abstract class EquoCommBase {
     // received. A widget that stayed unmounted (no handler) buffers payloads
     // frozen at old state; once anything newer was delivered — e.g. the parent
     // payload whose embedded state just mounted this widget — replaying the
-    // buffer would roll the widget back to that stale snapshot (#863).
+    // buffer would roll the widget back to that stale snapshot.
     if (pending != null && (pendingSeq == null || pendingSeq > _lastJsonDeliveredSeq)) {
       _deliver(actionId, onSuccess, pending);
     }

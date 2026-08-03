@@ -1,4 +1,4 @@
-// Issue #905 — the combo's arrow cuts off the text of the longest item.
+// The combo's arrow cuts off the text of the longest item.
 //
 // A DROP_DOWN combo with no bounds sizes itself via _calculatePreferredSize.
 // That width must leave the EditableText a viewport at least as wide as the
@@ -8,7 +8,7 @@
 //
 // ComboSizes.java's HORIZONTAL_PADDING is measured from this same natural
 // width, so a deficit here reproduces identically when Java fixes the bounds
-// (this case).
+// (a real-world case seen with a long item label).
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -51,6 +51,6 @@ void main() {
     expect(viewportWidth, greaterThanOrEqualTo(painter.width),
         reason: 'The text viewport (${viewportWidth.toStringAsFixed(2)}px) is '
             'narrower than the longest item (${painter.width.toStringAsFixed(2)}px): '
-            'the arrow cuts off the end of the text (issue #905).');
+            'the arrow cuts off the end of the text.');
   });
 }

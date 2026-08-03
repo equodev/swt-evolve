@@ -46,7 +46,7 @@ public class MenuItem extends Item {
 
     // There is a weird behavior in the Windows API with menus in OWENERDRAW mode that the returned
     // value in wmMeasureChild is increased by a fixed value (in points) when wmDrawChild is called
-    // Workaround for: selection indicator is missing for menu item with image on Win11 (#501)
+    // Workaround for: selection indicator is missing for menu item with image on Win11
     /**
      * Constructs a new instance of this class given its parent
      * (which must be a <code>Menu</code>) and a style value

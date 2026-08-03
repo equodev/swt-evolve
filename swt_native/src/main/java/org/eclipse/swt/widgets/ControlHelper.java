@@ -64,7 +64,7 @@ public class ControlHelper {
      * because no child holds Flutter focus) must start at the control the app's Traverse listener
      * sits on — the focused control — or the walk fires only on the shell and misses the listener.
      * {@code getFocusControl()} is Java-side tracked (see {@code DisplayBridge}), so it is set even
-     * though no Flutter FocusIn reached Java. (#465)
+     * though no Flutter FocusIn reached Java.
      */
     private static Control resolveTraverseStart(DartControl origin) {
         Control self = origin.getApi();

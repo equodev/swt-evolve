@@ -294,7 +294,7 @@ public class WebDisplayBridge extends DisplayBridge {
     protected void onDisplayClientReady(boolean first) {
         cancelDeferredClose();
         // On refresh, a fresh client reconnects with the widget-tree state but not the one-shot GC
-        // paints Java already fired — re-fire them so custom-drawn content isn't blank (issue #836).
+        // paints Java already fired — re-fire them so custom-drawn content isn't blank.
         if (!first) {
             refirePaintsForFreshClient();
         }

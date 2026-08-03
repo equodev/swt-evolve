@@ -1,4 +1,4 @@
-// Issue #836 — overlapping GC drawers for the same id: a stale drawer's tokenless teardown
+// Overlapping GC drawers for the same id: a stale drawer's tokenless teardown
 // unregistered the newer drawer's live handler, so the next draw op arrived with no subscriber
 // and the icon never rendered. Teardown is now token-scoped; this locks that invariant.
 
@@ -39,7 +39,7 @@ void main() {
     var oldReceived = 0, newReceived = 0;
 
     // Old drawer subscribes, then a new drawer for the same GC id re-subscribes (overwriting
-    // the channel's current handler) — this is the overlapping-lifecycle churn from #836.
+    // the channel's current handler) — this is the overlapping-lifecycle churn this test guards.
     final oldToken = comm.on(channel, (_) => oldReceived++);
     final newToken = comm.on(channel, (_) => newReceived++);
 
@@ -75,7 +75,7 @@ void main() {
     await Future<void>.value();
 
     expect(newReceived, 0,
-        reason: 'a tokenless remove clobbers the live handler — this is the #836 failure the '
+        reason: 'a tokenless remove clobbers the live handler — this is the failure the '
             'token-scoped teardown fixes');
   });
 }
