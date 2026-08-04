@@ -193,7 +193,7 @@ public class SessionManagerDBus {
             clientObjectPath = null;
         }
         if (clientProxy != 0) {
-            // Issue #462: sometimes signal is called even after it was
+            // sometimes signal is called even after it was
             // disposed. This crashes JVM. I understand that SWT is not
             // the only owner of clientProxy, so it continues to handle
             // signals even after SWT's reference is freed. The solution

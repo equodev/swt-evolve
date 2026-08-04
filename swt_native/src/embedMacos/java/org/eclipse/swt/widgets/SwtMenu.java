@@ -282,7 +282,7 @@ public class SwtMenu extends SwtWidget implements IMenu {
             hasLocation = false;
             // Hold on to window in case it is disposed while the popup is open.
             window.retain();
-            // The menu might get disposed in a NS* call below (#922), so better
+            // The menu might get disposed in a NS* call below, so better
             // keep a reference to `display` here.
             final Display display = this.display;
             // NSMenu processes events on its own while the popup is open.

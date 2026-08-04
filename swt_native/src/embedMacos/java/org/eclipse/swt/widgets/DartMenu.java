@@ -261,7 +261,7 @@ public class DartMenu extends DartWidget implements IMenu {
             } else {
             }
             hasLocation = false;
-            // The menu might get disposed in a NS* call below (#922), so better
+            // The menu might get disposed in a NS* call below, so better
             // keep a reference to `display` here.
             final Display display = this.display;
             // NSMenu processes events on its own while the popup is open.
