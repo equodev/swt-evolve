@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../custom/html_tooltip.dart';
 import '../gen/ccombo.dart';
 import '../gen/event.dart';
 import '../gen/point.dart';
@@ -316,14 +317,26 @@ class _StyledDropdownCCombo extends StatelessWidget {
         size: widgetTheme.iconSize,
       ),
       onSelected: onSelected,
-      dropdownMenuEntries: items.map<DropdownMenuEntry<String>>((item) {
+      dropdownMenuEntries:
+          items.asMap().entries.map<DropdownMenuEntry<String>>((entry) {
+        final int index = entry.key;
+        final String item = entry.value;
         final bool isSelected = item == state.text;
+        // Per-item tooltip fed via setData; the string may carry HTML that HtmlTooltip renders.
+        final String? tooltip =
+            (state.itemTooltips != null && index < state.itemTooltips!.length)
+                ? state.itemTooltips![index]
+                : null;
+        final Widget labelWidget = Align(
+          alignment: _getAlignment(),
+          child: Text(item, style: textStyle),
+        );
         return DropdownMenuEntry<String>(
           value: item,
           label: item,
-          labelWidget: Align(
-            alignment: _getAlignment(),
-            child: Text(item, style: textStyle),
+          labelWidget: HtmlTooltip(
+            html: tooltip,
+            child: labelWidget,
           ),
           style: MenuItemButton.styleFrom(
             foregroundColor: textStyle.color,

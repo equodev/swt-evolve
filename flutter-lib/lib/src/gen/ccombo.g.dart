@@ -62,6 +62,9 @@ VCCombo _$VCComboFromJson(Map<String, dynamic> json) => VCCombo()
       .toList()
   ..alignment = (json['alignment'] as num?)?.toInt()
   ..editable = json['editable'] as bool?
+  ..itemTooltips = (json['itemTooltips'] as List<dynamic>?)
+      ?.map((e) => e as String)
+      .toList()
   ..items = (json['items'] as List<dynamic>?)?.map((e) => e as String).toList()
   ..listVisible = json['listVisible'] as bool?
   ..selection = json['selection'] == null
@@ -103,6 +106,7 @@ Map<String, dynamic> _$VCComboToJson(VCCombo instance) => <String, dynamic>{
   'tabList': ?instance.tabList,
   'alignment': ?instance.alignment,
   'editable': ?instance.editable,
+  'itemTooltips': ?instance.itemTooltips,
   'items': ?instance.items,
   'listVisible': ?instance.listVisible,
   'selection': ?instance.selection,

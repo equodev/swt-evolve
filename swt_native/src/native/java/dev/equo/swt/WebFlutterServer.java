@@ -266,23 +266,11 @@ public class WebFlutterServer {
     }
 
     private void launchDefaultBrowser(String url) throws IOException {
-        String os = System.getProperty("os.name", "").toLowerCase();
-        try {
-            if (os.contains("mac")) {
-                new ProcessBuilder("open", url).inheritIO().start();
-            } else if (os.contains("win")) {
-                new ProcessBuilder("cmd", "/c", "start", "", url).inheritIO().start();
-            } else if (os.contains("linux") || os.contains("nux")) {
-                new ProcessBuilder("xdg-open", url).inheritIO().start();
-            } else {
-                System.out.println("Cannot detect browser. Open manually: " + url);
-                return;
-            }
-            LOG.info("Opened default browser: " + url);
-            System.out.println("Opened default browser: " + url);
-        } catch (Exception e) {
-            throw new IOException("Failed to launch browser for URL: " + url, e);
+        if (!org.eclipse.swt.program.Program.launch(url)) {
+            System.out.println("Cannot detect browser. Open manually: " + url);
+            return;
         }
+        LOG.info("Opened default browser: " + url);
     }
 
     /**

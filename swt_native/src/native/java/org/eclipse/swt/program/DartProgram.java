@@ -157,9 +157,31 @@ public final class DartProgram implements IProgram {
     public static boolean launch(String fileName, String workingDir) {
         if (fileName == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        //try {    if (workingDir != null && isExecutable(fileName)) {        try {            Compatibility.exec(new String[] { fileName }, null, workingDir);            return true;        } catch (IOException e) {            return false;        }    }    NSURL url = getURL(fileName);    NSWorkspace workspace = NSWorkspace.sharedWorkspace();    return workspace.openURL(url);} finally {    pool.release();}
-        ;
-        return false;
+        String target = fileName.trim();
+        if (target.isEmpty())
+            return false;
+        String osName = System.getProperty("os.name", "").toLowerCase();
+        try {
+            ProcessBuilder pb;
+            if (osName.contains("mac")) {
+                pb = new ProcessBuilder("open", target);
+            } else if (osName.contains("win")) {
+                pb = new ProcessBuilder("cmd", "/c", "start", "", target);
+            } else if (osName.contains("linux") || osName.contains("nux")) {
+                pb = new ProcessBuilder("xdg-open", target);
+            } else {
+                return false;
+            }
+            if (workingDir != null) {
+                java.io.File dir = new java.io.File(workingDir);
+                if (dir.isDirectory())
+                    pb.directory(dir);
+            }
+            pb.inheritIO().start();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**

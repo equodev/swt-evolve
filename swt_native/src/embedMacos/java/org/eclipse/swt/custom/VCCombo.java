@@ -37,6 +37,20 @@ public class VCCombo extends VComposite {
         ((DartCCombo) impl).editable = value;
     }
 
+    public String[] getItemTooltips() {
+        String[] values = ((DartCCombo) impl).itemTooltips;
+        if (values == null)
+            return null;
+        ArrayList<String> result = new ArrayList<>(values.length);
+        for (String v : values) if (v != null)
+            result.add(v);
+        return result.toArray(String[]::new);
+    }
+
+    public void setItemTooltips(String[] value) {
+        ((DartCCombo) impl).itemTooltips = value;
+    }
+
     public String[] getItems() {
         String[] values = ((DartCCombo) impl).items;
         if (values == null)

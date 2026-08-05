@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -58,12 +59,13 @@ public abstract class FlutterBridge {
 
     /**
      * Creates a fresh comm (transport chosen by {@code -Dcomm.impl}) and wires the inbound
-     * property-set channel to it. Each comm is independent, so web Displays each get their own.
+     * channels to it. Each comm is independent, so web Displays each get their own.
      */
     protected static CommService newComm() {
         String impl = System.getProperty("comm.impl", "java-websocket");
         CommService comm = "jetty".equals(impl) ? new JettyBinaryCommService() : new BinaryCommService();
         comm.on("swt.evolve.property.set", ConfigFlags.class, parsed -> handlePropertySetFromFlutter(comm, parsed));
+        comm.on("swt.evolve.url.open", Object.class, FlutterBridge::handleUrlOpenFromFlutter);
         return comm;
     }
 
@@ -105,6 +107,31 @@ public abstract class FlutterBridge {
 
     private static CommService commOf(FlutterBridge b) {
         return b != null ? b.comm() : null;
+    }
+
+    static void handleUrlOpenFromFlutter(Object payload) {
+        String url = payload instanceof Map ? urlOf((Map<?, ?>) payload) : null;
+        if (url == null) {
+            System.out.println("[url.open] refused: " + payload);
+            return;
+        }
+        if (!org.eclipse.swt.program.Program.launch(url)) {
+            System.out.println("[url.open] could not open: " + url);
+        }
+    }
+
+    /**
+     * The URL in a {@code swt.evolve.url.open} payload, or null when it carries none or one the OS
+     * must not be handed. Only http(s) passes: this is Flutter-supplied input and the OS handler is
+     * ShellExecute on Windows, which would equally run an executable path or a custom scheme. The
+     * check belongs here rather than in {@code Program.launch}, which legitimately opens local files.
+     */
+    static String urlOf(Map<?, ?> payload) {
+        Object value = payload.get("url");
+        if (!(value instanceof String)) return null;
+        String url = ((String) value).trim();
+        String lower = url.toLowerCase();
+        return lower.startsWith("http://") || lower.startsWith("https://") ? url : null;
     }
 
     private static void handlePropertySetFromFlutter(CommService comm, ConfigFlags parsed) {

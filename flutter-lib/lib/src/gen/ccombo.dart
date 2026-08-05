@@ -50,6 +50,7 @@ class VCCombo extends VComposite {
 
   int? alignment;
   bool? editable;
+  List<String>? itemTooltips;
   List<String>? items;
   bool? listVisible;
   VPoint? selection;

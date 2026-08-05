@@ -2310,6 +2310,8 @@ public class DartCCombo extends DartComposite implements ICCombo {
 
     boolean editable;
 
+    String[] itemTooltips = new String[0];
+
     String[] items = new String[0];
 
     boolean listVisible;
@@ -2364,6 +2366,10 @@ public class DartCCombo extends DartComposite implements ICCombo {
         return editable;
     }
 
+    public String[] _itemTooltips() {
+        return itemTooltips;
+    }
+
     public String[] _items() {
         return items;
     }
@@ -2390,6 +2396,16 @@ public class DartCCombo extends DartComposite implements ICCombo {
 
     public Color __background() {
         return background;
+    }
+
+    @Override
+    public void setData(String key, Object value) {
+        if ("org.eclipse.swt.custom.CCombo.itemToolTips".equals(key)) {
+            this.itemTooltips = value instanceof String[] ? (String[]) value : null;
+            dirty();
+            return;
+        }
+        super.setData(key, value);
     }
 
     protected void _hookEvents() {

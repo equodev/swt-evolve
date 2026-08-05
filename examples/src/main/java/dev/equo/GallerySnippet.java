@@ -123,6 +123,9 @@ public class GallerySnippet {
         combo.select(0);
         CCombo ccombo = new CCombo(selectGroup, SWT.BORDER);
         ccombo.setItems(new String[] {"CCombo A", "CCombo B", "CCombo C"});
+        // Per-item tooltips delivered via setData (issue #610).
+        ccombo.setData("org.eclipse.swt.custom.CCombo.itemToolTips",
+                new String[] {"<p>Tooltip for A</p>", "<p>Tooltip for B</p>", "<p>Tooltip for C</p>"});
         ccombo.select(0);
         List list = new List(selectGroup, SWT.BORDER | SWT.SINGLE);
         list.setItems(new String[] {"List item 1", "List item 2", "List item 3"});
