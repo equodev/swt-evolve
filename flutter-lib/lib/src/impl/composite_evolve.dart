@@ -60,6 +60,8 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
       onPointerDown: (e) {
         if (_hitsAnyChild(state, e.localPosition)) return;
         if (!impl.forwardsControlMouseDown) return;
+        // Captured so onPointerUp can forward it regardless of where the pointer ends up.
+        impl.capturedPointerDowns.add(e.pointer);
         final pos = e.localPosition;
         impl.widget.sendMouseMouseDown(
           state,
@@ -81,11 +83,15 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         }
       },
       onPointerUp: (e) {
-        if (_hitsAnyChild(state, e.localPosition)) return;
+        // Re-testing hitsAnyChild here would drop the MouseUp once a drag moves onto a sibling's rect.
+        if (!impl.capturedPointerDowns.remove(e.pointer)) return;
         final event = VEvent()
           ..x = e.localPosition.dx.round()
           ..y = e.localPosition.dy.round();
         impl.widget.sendMouseMouseUp(state, event);
+      },
+      onPointerCancel: (e) {
+        impl.capturedPointerDowns.remove(e.pointer);
       },
       onPointerMove: (e) {
         final event = VEvent()
@@ -103,6 +109,9 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
 class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     extends ScrollableImpl<T, V> {
   final DoubleTapDetector dblTap = DoubleTapDetector();
+
+  /// Pointer ids whose MouseDown this composite (not a descendant) forwarded to Java.
+  final Set<int> capturedPointerDowns = {};
 
   /// Whether this composite forwards MouseDoubleClick from the interaction
   /// chrome. CanvasImpl overrides this to false because it forwards its own
