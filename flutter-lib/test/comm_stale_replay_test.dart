@@ -5,19 +5,27 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/comm_frame.dart';
 
-/// Regression: a payload buffered for a not-yet-registered channel must
-/// not be replayed once newer information was already delivered — replaying it
-/// rolled freshly-mounted widgets back to a stale pre-reveal snapshot (blank
-/// data-binding section on the first reveal click in a real app).
+/// Regression: a widget-state payload buffered while
+/// the widget was unmounted is ambiguous — replaying it can roll the widget
+/// back to a stale snapshot (blank pane on the first reveal of a maximized-away
+/// SashForm),
+/// while silently dropping it can lose fresh content (empty Web/Mobile Recorder
+/// dialogs). The comm must apply neither: it drops the buffer and asks Java to
+/// re-serialize the widget, whose response is authoritative.
 class _TestComm extends EquoCommBase {
-  final List<Uint8List> sent = [];
+  final List<(String, String)> sent = [];
 
   _TestComm() {
     markOpen();
   }
 
   @override
-  void rawSend(Uint8List frame) => sent.add(frame);
+  void rawSend(Uint8List frame) {
+    final nameLen = (frame[0] << 8) | frame[1];
+    final actionId = utf8.decode(frame.sublist(2, 2 + nameLen));
+    final body = utf8.decode(frame.sublist(2 + nameLen));
+    sent.add((actionId, body));
+  }
 
   /// Feeds an incoming JSON frame as the transport would.
   void receiveJson(String actionId, Object payload) {
@@ -35,45 +43,56 @@ class _TestComm extends EquoCommBase {
 Future<void> _drainMicrotasks() => Future<void>.delayed(Duration.zero);
 
 void main() {
-  test('replays a buffered payload while it is still the newest information', () async {
+  test('a buffered widget-state payload is not replayed — a refresh is requested instead', () async {
     final comm = _TestComm();
-    comm.receiveJson('Table/1', {'width': 744});
+
+    // Buffered while the widget is unmounted (no handler). Whether it is stale
+    // or fresh (dialog content) cannot be known here.
+    comm.receiveJson('Table/123', {'width': -1});
 
     final received = <dynamic>[];
-    comm.on('Table/1', received.add);
+    comm.on('Table/123', received.add);
     await _drainMicrotasks();
 
+    // Not applied; Java is asked for the live state instead.
+    expect(received, isEmpty);
+    expect(comm.sent, [(EquoCommBase.widgetRefreshChannel, '"123"')]);
+
+    // The refresh response (and any later update) flows normally.
+    comm.receiveJson('Table/123', {'width': 744});
+    await _drainMicrotasks();
     expect(received, [
       {'width': 744}
     ]);
   });
 
-  test('drops a buffered payload once newer information was delivered', () async {
+  test('a buffered non-widget payload is still replayed on registration', () async {
     final comm = _TestComm();
+    comm.receiveJson('swt.evolve.properties', {'theme_name': 'dark'});
+    comm.receiveJson('Display/7', {'bounds': null});
 
-    // Stale per-widget payload arrives while the widget is unmounted (no handler).
-    comm.receiveJson('Table/1', {'width': -1});
-
-    // A newer payload (e.g. the parent's reveal payload, carrying the widget's
-    // fresh embedded state) is delivered to a registered handler afterwards.
-    final parentReceived = <dynamic>[];
-    comm.on('SashForm/2', parentReceived.add);
-    comm.receiveJson('SashForm/2', {'maximizedControl': null});
+    final props = <dynamic>[];
+    final display = <dynamic>[];
+    comm.on('swt.evolve.properties', props.add);
+    comm.on('Display/7', display.add);
     await _drainMicrotasks();
-    expect(parentReceived, hasLength(1));
 
-    // The widget now mounts and registers: the stale buffer must NOT be replayed.
+    expect(props, [
+      {'theme_name': 'dark'}
+    ]);
+    expect(display, [
+      {'bounds': null}
+    ]);
+    expect(comm.sent, isEmpty);
+  });
+
+  test('no buffer means no replay and no refresh', () async {
+    final comm = _TestComm();
     final received = <dynamic>[];
-    comm.on('Table/1', received.add);
+    comm.on('Shell/9', received.add);
     await _drainMicrotasks();
 
     expect(received, isEmpty);
-
-    // Live payloads keep flowing normally after the dropped replay.
-    comm.receiveJson('Table/1', {'width': 744});
-    await _drainMicrotasks();
-    expect(received, [
-      {'width': 744}
-    ]);
+    expect(comm.sent, isEmpty);
   });
 }

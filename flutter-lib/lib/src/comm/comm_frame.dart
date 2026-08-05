@@ -65,13 +65,6 @@ abstract class EquoCommBase {
   final List<Uint8List> _queue = [];
   bool _open = false;
 
-  /// Arrival order of incoming frames, of each buffered payload, and of the
-  /// newest JSON payload handed to a handler — used by [on] to tell a fresh
-  /// early arrival from a stale leftover.
-  int _arrivalSeq = 0;
-  int _lastJsonDeliveredSeq = 0;
-  final Map<String, int> _pendingSeq = {};
-
   /// Puts an encoded frame on the wire. Only called while the socket is open.
   void rawSend(Uint8List frame);
 
@@ -104,7 +97,6 @@ abstract class EquoCommBase {
 
   /// Subclasses call this with the raw bytes of each received binary frame.
   void receiveBinary(Uint8List data) {
-    _arrivalSeq++;
     if (data.length < 2) return;
     final nameLen = (data[0] << 8) | data[1];
     if (data.length < 2 + nameLen) return;
@@ -137,7 +129,6 @@ abstract class EquoCommBase {
     final callback = _handlers[actionId];
     if (jsonOk && callback != null) {
       if (callback.args?.once ?? false) _handlers.remove(actionId);
-      _lastJsonDeliveredSeq = _arrivalSeq;
       _deliver(actionId, callback.onSuccess, payload);
       return;
     }
@@ -145,10 +136,7 @@ abstract class EquoCommBase {
     // Neither on() nor onBytes() has registered yet for this actionId (or the body isn't valid
     // JSON, meaning it's a raw-bytes payload). Buffer both ways so whichever registers first
     // can claim it.
-    if (jsonOk) {
-      _pending[actionId] = payload;
-      _pendingSeq[actionId] = _arrivalSeq;
-    }
+    if (jsonOk) _pending[actionId] = payload;
     _rawPending[actionId] = body ?? Uint8List(0);
   }
 
@@ -192,16 +180,42 @@ abstract class EquoCommBase {
       token: token,
     );
     final pending = _pending.remove(actionId);
-    final pendingSeq = _pendingSeq.remove(actionId);
-    // Replay a buffered payload only while it is still the newest information
-    // received. A widget that stayed unmounted (no handler) buffers payloads
-    // frozen at old state; once anything newer was delivered — e.g. the parent
-    // payload whose embedded state just mounted this widget — replaying the
-    // buffer would roll the widget back to that stale snapshot.
-    if (pending != null && (pendingSeq == null || pendingSeq > _lastJsonDeliveredSeq)) {
-      _deliver(actionId, onSuccess, pending);
+    if (pending != null) {
+      if (_isWidgetStateChannel(actionId)) {
+        // A widget-state payload buffered while the widget was unmounted is
+        // ambiguous: it may be older than the state the widget just mounted
+        // with (a stale pre-reveal snapshot — replaying it blanked the whole
+        // subtree) or newer (a dialog Shell's content sent right after
+        // the Display embed that mounted it — dropping it left the dialog
+        // empty). Instead of guessing, ask Java to re-serialize the widget:
+        // the response carries the live state and arrives after the mount, so
+        // it is authoritative either way.
+        send(widgetRefreshChannel, actionId.substring(actionId.indexOf('/') + 1));
+      } else {
+        _deliver(actionId, onSuccess, pending);
+      }
     }
     return token;
+  }
+
+  /// Channel Java listens on for "re-serialize widget `<id>`" requests (see
+  /// FlutterBridge.handleWidgetRefresh).
+  static const widgetRefreshChannel = 'swt.evolve.widget.refresh';
+
+  /// A per-widget state channel: `{SwtClass}/{id}` with a numeric id, e.g.
+  /// "Table/123" or "Shell/9". Excludes `Display/*` (a Display is not in
+  /// Java's widget registry and its single pre-subscribe payload is always the
+  /// newest, so the plain replay stays correct) and multi-segment event
+  /// channels like "Button/1/Selection".
+  static bool _isWidgetStateChannel(String actionId) {
+    final slash = actionId.indexOf('/');
+    if (slash <= 0 || actionId.startsWith('Display/')) return false;
+    final id = actionId.substring(slash + 1);
+    if (id.isEmpty) return false;
+    for (final c in id.codeUnits) {
+      if (c < 0x30 || c > 0x39) return false;
+    }
+    return true;
   }
 
   /// Typed handler: decodes the payload into the widget value object before delivery.
@@ -228,7 +242,6 @@ abstract class EquoCommBase {
     if (token != null && _handlers[actionId]?.token != token) return;
     _handlers.remove(actionId);
     _pending.remove(actionId);
-    _pendingSeq.remove(actionId);
     _rawHandlers.remove(actionId);
     _rawPending.remove(actionId);
   }

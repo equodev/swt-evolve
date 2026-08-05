@@ -66,7 +66,40 @@ public abstract class FlutterBridge {
         CommService comm = "jetty".equals(impl) ? new JettyBinaryCommService() : new BinaryCommService();
         comm.on("swt.evolve.property.set", ConfigFlags.class, parsed -> handlePropertySetFromFlutter(comm, parsed));
         comm.on("swt.evolve.url.open", Object.class, FlutterBridge::handleUrlOpenFromFlutter);
+        comm.on(WIDGET_REFRESH_CHANNEL, String.class, FlutterBridge::handleWidgetRefresh);
         return comm;
+    }
+
+    /**
+     * Channel Flutter sends "re-serialize widget <id>" requests on. Flutter asks for one when it
+     * finds a payload that was buffered while the widget was unmounted: such a payload is
+     * ambiguous — it can be older than the state the widget just mounted with (a stale snapshot
+     * from before a SashForm reveal) or newer (a dialog Shell's content sent right after
+     * the Display embed that mounted it) — so instead of applying it, Flutter drops it and asks
+     * for the live state, which is authoritative either way.
+     */
+    public static final String WIDGET_REFRESH_CHANNEL = "swt.evolve.widget.refresh";
+
+    /** Widgets/resources by {@link #id}, so a refresh request can find its target. */
+    private static final java.util.concurrent.ConcurrentHashMap<Long, java.lang.ref.WeakReference<Object>> widgetsById =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    static void handleWidgetRefresh(String idText) {
+        if (idText == null) return;
+        long id;
+        try {
+            id = Long.parseLong(idText.trim());
+        } catch (NumberFormatException e) {
+            return;
+        }
+        java.lang.ref.WeakReference<Object> ref = widgetsById.get(id);
+        Object w = ref != null ? ref.get() : null;
+        if (w == null || isDisposed(w)) return;
+        FlutterBridge bridge = getBridge(w);
+        if (bridge == null) return;
+        // dirty() is safe off the display thread; the next dispatch flushes the fresh state.
+        if (w instanceof DartWidget widget) bridge.dirty(widget);
+        else if (w instanceof DartResource resource) bridge.dirty(resource);
     }
 
     /** The shared desktop comm, created (and started) on first access. */
@@ -518,6 +551,7 @@ public abstract class FlutterBridge {
     public void dirty(DartResource resource) {
         if (resource == null)
             return;
+        registerForRefresh(resource);
         synchronized (dirty) {
             dirty.add(resource);
         }
@@ -527,10 +561,21 @@ public abstract class FlutterBridge {
     public void dirty(DartWidget widget) {
         if (widget == null)
             return;
+        registerForRefresh(widget);
         synchronized (dirty) {
             dirty.add(widget);
         }
         wakeForDirty();
+    }
+
+    /**
+     * A dirty() during construction can run before the api peer is wired, when the widget has no
+     * id yet — skip it; the next dirty() (any later state change or send) registers it.
+     */
+    private static void registerForRefresh(Object w) {
+        Object api = getApi(w);
+        if (api != null)
+            widgetsById.put((long) api.hashCode(), new java.lang.ref.WeakReference<>(w));
     }
 
     /**
