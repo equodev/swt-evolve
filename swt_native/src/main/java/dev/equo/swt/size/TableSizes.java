@@ -19,12 +19,25 @@ public class TableSizes {
     private static final double BORDER_WIDTH = 2.0;
     private static final int WIDTH_PER_COLUMN = 70;
     private static final int WIDTH_NO_COLUMNS = 70;
+    private static final int NATIVE_SCROLLER_AND_BEZEL_TRIM = 15 + 2;
 
     public static Point computeSize(DartTable table, int wHint, int hHint, boolean changed) {
         int columnCount = table.getColumnCount();
-        int width = wHint != SWT.DEFAULT ? wHint
-            : (columnCount > 0 ? columnCount * WIDTH_PER_COLUMN : WIDTH_NO_COLUMNS);
-        int height = hHint != SWT.DEFAULT ? hHint : getPreferredHeight(table);
+        int style = table.getStyle();
+        int width;
+        if (wHint != SWT.DEFAULT) {
+            width = wHint;
+        } else {
+            width = columnCount > 0 ? columnCount * WIDTH_PER_COLUMN : WIDTH_NO_COLUMNS;
+            if ((style & SWT.V_SCROLL) != 0) width += NATIVE_SCROLLER_AND_BEZEL_TRIM;
+        }
+        int height;
+        if (hHint != SWT.DEFAULT) {
+            height = hHint;
+        } else {
+            height = getPreferredHeight(table);
+            if ((style & SWT.H_SCROLL) != 0) height += NATIVE_SCROLLER_AND_BEZEL_TRIM - 2 * getBorderWidth();
+        }
         return new Point(width, height);
     }
 

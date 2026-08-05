@@ -218,13 +218,16 @@ Color getTableHeaderBackgroundColor(
 }
 
 
-Border getTableRowBorder(bool isSelected, TableThemeExtension theme) {
+Border getTableRowBorder(bool isSelected, TableThemeExtension theme,
+    {bool showLines = true}) {
   final bottomBorder = isSelected
       ? BorderSide(
           color: theme.rowSelectedBorderColor,
           width: theme.rowSelectedBorderWidth,
         )
-      : BorderSide(color: theme.rowSeparatorColor, width: theme.linesWidth);
+      : showLines
+          ? BorderSide(color: theme.rowSeparatorColor, width: theme.linesWidth)
+          : BorderSide.none;
 
   final selectedBorder = isSelected
       ? BorderSide(

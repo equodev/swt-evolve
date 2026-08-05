@@ -59,6 +59,7 @@ class _MeasureAppState extends State<_MeasureApp> {
         'public class MenuSizes {\n'
         '    public static final int VERTICAL_MENU_BUTTON_WIDTH = ${r['verticalMenuButtonWidth']};\n'
         '    public static final int HEIGHT_VERTICAL_MENU       = ${r['heightVerticalMenu']};\n'
+        '    public static final int MENU_BAR_HEIGHT            = ${r['menuBarHeight']};\n'
         '    public static final int HEIGHT_HORIZONTAL_MENU     = ${r['heightHorizontalMenu']};\n'
         '}\n';
     final file = File('../swt_native/src/main/java/dev/equo/swt/size/MenuSizes.java');

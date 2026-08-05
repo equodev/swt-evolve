@@ -228,6 +228,15 @@ const Map<String, (int, int)> rowWidgetFallbackWidth = {
   'Table': (70, 70),
 };
 
+/// What the native `Scrollable.computeTrim` reserves on each axis for the scroll bars and the
+/// frame, whether or not they end up showing (on macOS, `NSScrollView.frameSizeForContentSize`
+/// with legacy scrollers). Like the fallback widths above these are not measurements and cannot
+/// be: Flutter reserves nothing there, but callers size themselves against the native numbers —
+/// code that subtracts a fixed slack from `computeSize` to fit a list in a popup, for instance,
+/// loses its last row when the preferred size is the exact content size.
+const int nativeScrollerSize = 15;
+const int nativeBezelSize = 2;
+
 /// Row geometry read off a rendered row widget (Tree, Table), for one column-count variant.
 /// The expander fields are only populated for a widget that draws one.
 class _RowGeometry {
@@ -2347,15 +2356,34 @@ class WidgetMeasurer {
       '    public static Point computeSize(Dart$widgetType $param, int wHint, int hHint, boolean changed) {',
     );
     buffer.writeln('        int columnCount = $param.getColumnCount();');
+    buffer.writeln('        int style = $param.getStyle();');
     // `!= SWT.DEFAULT` alone, as every other generated Sizes class does: a hint of 0 is a real
     // hint, not an absent one. Table already read it that way; Tree used to also require > 0.
-    buffer.writeln('        int width = wHint != SWT.DEFAULT ? wHint');
+    // A hinted axis is taken verbatim; an unhinted one carries the native scroll-bar trim, which
+    // getPreferredHeight deliberately does not (that one is what Flutter draws).
+    buffer.writeln('        int width;');
+    buffer.writeln('        if (wHint != SWT.DEFAULT) {');
+    buffer.writeln('            width = wHint;');
+    buffer.writeln('        } else {');
     buffer.writeln(
-      '            : (columnCount > 0 ? columnCount * WIDTH_PER_COLUMN : WIDTH_NO_COLUMNS);',
+      '            width = columnCount > 0 ? columnCount * WIDTH_PER_COLUMN : WIDTH_NO_COLUMNS;',
     );
     buffer.writeln(
-      '        int height = hHint != SWT.DEFAULT ? hHint : getPreferredHeight($param);',
+      '            if ((style & SWT.V_SCROLL) != 0) width += NATIVE_SCROLLER_AND_BEZEL_TRIM;',
     );
+    buffer.writeln('        }');
+    buffer.writeln('        int height;');
+    buffer.writeln('        if (hHint != SWT.DEFAULT) {');
+    buffer.writeln('            height = hHint;');
+    buffer.writeln('        } else {');
+    buffer.writeln('            height = getPreferredHeight($param);');
+    final borderTrim = hasBorder
+        ? ' - 2 * getBorderWidth()'
+        : '';
+    buffer.writeln(
+      '            if ((style & SWT.H_SCROLL) != 0) height += NATIVE_SCROLLER_AND_BEZEL_TRIM$borderTrim;',
+    );
+    buffer.writeln('        }');
     buffer.writeln('        return new Point(width, height);');
     buffer.writeln('    }');
     buffer.writeln();
@@ -2560,6 +2588,9 @@ class WidgetMeasurer {
       );
       buffer.writeln(
         '    private static final int WIDTH_NO_COLUMNS = ${fallbackWidth.$2};',
+      );
+      buffer.writeln(
+        '    private static final int NATIVE_SCROLLER_AND_BEZEL_TRIM = $nativeScrollerSize + $nativeBezelSize;',
       );
     }
     if (plain.hasExpander) {

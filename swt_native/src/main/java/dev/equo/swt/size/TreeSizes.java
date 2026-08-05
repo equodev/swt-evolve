@@ -19,6 +19,7 @@ public class TreeSizes {
     private static final double ROW_PADDING_VERTICAL = 2.0;
     private static final int WIDTH_PER_COLUMN = 30;
     private static final int WIDTH_NO_COLUMNS = 200;
+    private static final int NATIVE_SCROLLER_AND_BEZEL_TRIM = 15 + 2;
 
     private static final double EDGE_GAP_FRACTION = 0.0275;
     private static final double EDGE_GAP_FRACTION_WITH_COLS = 0.005;
@@ -30,9 +31,21 @@ public class TreeSizes {
 
     public static Point computeSize(DartTree tree, int wHint, int hHint, boolean changed) {
         int columnCount = tree.getColumnCount();
-        int width = wHint != SWT.DEFAULT ? wHint
-            : (columnCount > 0 ? columnCount * WIDTH_PER_COLUMN : WIDTH_NO_COLUMNS);
-        int height = hHint != SWT.DEFAULT ? hHint : getPreferredHeight(tree);
+        int style = tree.getStyle();
+        int width;
+        if (wHint != SWT.DEFAULT) {
+            width = wHint;
+        } else {
+            width = columnCount > 0 ? columnCount * WIDTH_PER_COLUMN : WIDTH_NO_COLUMNS;
+            if ((style & SWT.V_SCROLL) != 0) width += NATIVE_SCROLLER_AND_BEZEL_TRIM;
+        }
+        int height;
+        if (hHint != SWT.DEFAULT) {
+            height = hHint;
+        } else {
+            height = getPreferredHeight(tree);
+            if ((style & SWT.H_SCROLL) != 0) height += NATIVE_SCROLLER_AND_BEZEL_TRIM;
+        }
         return new Point(width, height);
     }
 

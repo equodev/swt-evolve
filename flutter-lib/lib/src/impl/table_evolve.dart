@@ -436,7 +436,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
         .asMap()
         .entries
         .map(
-          (entry) => buildRow(context, entry.key, entry.value, columns.length, theme),
+          (entry) => buildRow(context, entry.key, entry.value, columns.length, theme,
+              showLines: showLines),
         )
         .toList();
 
@@ -463,8 +464,9 @@ class TableImpl<T extends TableSwt, V extends VTable>
     int rowIndex,
     VTableItem item,
     int columnCount,
-    TableThemeExtension theme,
-  ) {
+    TableThemeExtension theme, {
+    bool showLines = true,
+  }) {
     final isSelected = rowIndex == _selectedRowIndex || isItemSelected(item);
     final backgroundColor = getTableRowBackgroundColor(
       item,
@@ -487,7 +489,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     return TableRow(
       decoration: BoxDecoration(
         color: backgroundColor,
-        border: getTableRowBorder(isSelected, theme),
+        border: getTableRowBorder(isSelected, theme, showLines: showLines),
       ),
       children: [
         ...cells.map((cell) => wrapCellForRowDrag(cell, rowIndex, item)),

@@ -54,11 +54,15 @@ public class DartMainToolbar extends DartComposite {
         super.updateLayout(all);
         if (widthReserve > 0) bounds.width += widthReserve;
 
+        int yOffset   = align.isVertical() ? 0 : MenuSizes.MENU_BAR_HEIGHT;
+        int rowHeight = getMainToolbarHeight() - yOffset;
         for (Control child : _getChildren()) {
             if (child == null) continue;
             org.eclipse.swt.graphics.Rectangle cb = child.getBounds();
-            if (cb.x + xOffset != cb.x) child.setBounds(cb.x + xOffset, cb.y, cb.width, cb.height);
-            if (cb.y != 0)              child.setBounds(cb.x + xOffset, 0,     cb.width, cb.height);
+            int h = Math.min(cb.height, rowHeight);
+            int y = yOffset + Math.max(0, (rowHeight - h) / 2);
+            if (xOffset != 0 || cb.y != y || cb.height != h)
+                child.setBounds(cb.x + xOffset, y, cb.width, h);
         }
         appliedXReserve = xOffset;
     }

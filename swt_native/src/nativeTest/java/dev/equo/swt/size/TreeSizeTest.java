@@ -5,8 +5,6 @@ import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.swt.widgets.DartTree;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.widgets.Sizes;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -55,10 +53,10 @@ class TreeSizeTest extends SizeTestBase {
         impl.setHeaderVisible(headerVisible);
         for (int i = 0; i < columnCount; i++) new TreeColumn(w, SWT.NONE);
         for (int i = 0; i < itemCount; i++) new TreeItem(w, SWT.NONE);
-        Point javaSize = Sizes.computeSize(impl, SWT.DEFAULT, SWT.DEFAULT, true);
+        int javaHeight = TreeSizes.getPreferredHeight(impl);
         CompletableFuture<Measure> result = flutter.measureUnbounded(impl);
         Measure measure = assertCompletes(flutter, result);
-        assertThat(measure.widget.y).as("widget height").isEqualTo(javaSize.y);
+        assertThat(measure.widget.y).as("widget height").isEqualTo(javaHeight);
     }
 
     static Stream<Arguments> fullSizeCases() {
