@@ -10,7 +10,10 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * Formats and prints the {@code send:} debug lines emitted by {@link FlutterBridge}.
+ * Formats and prints the {@code send:} (outgoing), {@code recv:} (incoming) and {@code chk:}
+ * (control-flow checkpoint) debug lines emitted by {@link FlutterBridge}. Together they give a
+ * two-directional trace of the Java↔Flutter bridge on the real app once {@code dev.equo.swt.debug}
+ * is on — no per-bug rebuild needed to see whether an event arrived, was dispatched, or took effect.
  *
  * <p>The serialized payload is parsed into a generic {@code Map}/{@code List} tree, pruned, and
  * re-rendered — so field filtering is a plain {@code map.remove(key)} and pretty-printing is
@@ -76,6 +79,39 @@ final class DebugLog {
         }
         String size = SUMMARY ? " (" + bytes.length + " B)" : "";
         System.out.println("send: " + eventName + size + ": " + body);
+    }
+
+    /**
+     * Prints a {@code recv:} line for an incoming Flutter→Java event — the symmetric counterpart of
+     * {@link #logSend}. Gated behind the master {@code dev.equo.swt.debug} switch and the same name
+     * filters, so the two directions line up by event name in the log.
+     */
+    static void logRecv(String eventName, Object event) {
+        if (!shouldLog(eventName)) return;
+        System.out.println("recv: " + eventName + ": " + event);
+    }
+
+    /** {@link #logRecv} for a raw payload receiver (no {@code V*} object to render). */
+    static void logRecvPayload(String eventName, String payload) {
+        if (!shouldLog(eventName)) return;
+        System.out.println("recv: " + eventName + ": " + payload);
+    }
+
+    /**
+     * Prints a {@code chk:} control-flow checkpoint — a decision point on the incoming path (an early
+     * return taken, a setter invoked, a computed value at selection time). Same gating/filtering as the
+     * {@code send:}/{@code recv:} lines (so {@code debug.filter}/{@code debug.exclude} narrow it too),
+     * and zero cost when debugging is off. On the real app this is what distinguishes "event never
+     * arrived" (no {@code recv:}) from "arrived but early-returned" (a {@code chk:} skip) from "ran but
+     * a computed value was off" (a {@code chk:} with that value, and no follow-up {@code send:}).
+     */
+    static void checkpoint(String tag, Object... details) {
+        if (!shouldLog(tag)) return;
+        StringBuilder sb = new StringBuilder("chk: ").append(tag);
+        for (int i = 0; details != null && i < details.length; i++) {
+            sb.append(i == 0 ? ": " : " ").append(details[i]);
+        }
+        System.out.println(sb);
     }
 
     private static boolean shouldLog(String eventName) {

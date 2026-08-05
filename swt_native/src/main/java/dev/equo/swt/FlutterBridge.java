@@ -362,9 +362,12 @@ public abstract class FlutterBridge {
     public static void on(DartWidget widget, String listener, String event, Consumer<Event> cb) {
         String eventName = event(widget, listener, event);
         commFor(widget).on(eventName, Event.class, ev -> {
-            if (widget.isDisposed()) return;
+            if (widget.isDisposed()) {
+                DebugLog.checkpoint(eventName, "skipped: widget disposed");
+                return;
+            }
             if (!eventName.contains("MouseMove") || getConfigFlags().print_move)
-                System.out.println(eventName + ", event:" + ev);
+                DebugLog.logRecv(eventName, ev);
             cb.accept(ev);
         });
     }
@@ -373,7 +376,7 @@ public abstract class FlutterBridge {
         String eventName = eventName(widget, event);
         commFor(widget).on(eventName, byte[].class, p -> {
             if (!eventName.contains("MouseMove") || getConfigFlags().print_move)
-                System.out.println(eventName + ", payload:" + (p == null ? "null" : p.length + "B"));
+                DebugLog.logRecvPayload(eventName, p == null ? "null" : p.length + "B");
             cb.accept(p);
         });
     }
@@ -382,7 +385,7 @@ public abstract class FlutterBridge {
         String eventName = eventName(widget, event);
         commFor(widget).on(eventName, cls, p -> {
             if (!eventName.contains("MouseMove") || getConfigFlags().print_move)
-                System.out.println(eventName + ", payload:" + p);
+                DebugLog.logRecvPayload(eventName, String.valueOf(p));
             cb.accept(p);
         });
     }

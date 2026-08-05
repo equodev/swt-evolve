@@ -1,5 +1,8 @@
 import 'dart:convert';
 
+import 'package:flutter/gestures.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/widgets.dart';
 
 import 'src/comm/comm.dart';
@@ -9,6 +12,8 @@ import 'test_harness_iframe_stub.dart'
     if (dart.library.js_interop) 'test_harness_iframe_web.dart';
 import 'test_harness_jsapi_stub.dart'
     if (dart.library.js_interop) 'test_harness_jsapi_web.dart';
+
+part 'test_harness_actions.dart';
 
 /// Test-only support: a dormant comm channel that lets a Java integration test
 /// read the *live* Flutter state of any rendered SWT widget by id, and send it
