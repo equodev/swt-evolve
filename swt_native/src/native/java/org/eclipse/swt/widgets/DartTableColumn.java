@@ -597,6 +597,15 @@ public class DartTableColumn extends DartItem implements ITableColumn {
         return width;
     }
 
+    @Override
+    protected void dirty() {
+        if (parent != null && !parent.isDisposed()) {
+            ((DartWidget) parent.getImpl()).dirty();
+            return;
+        }
+        super.dirty();
+    }
+
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;

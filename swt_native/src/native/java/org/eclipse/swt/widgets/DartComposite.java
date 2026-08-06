@@ -1059,7 +1059,7 @@ public class DartComposite extends DartScrollable implements IComposite {
             parent.state |= LAYOUT_CHILD;
             return;
         }
-        if ((getApi().state & LAYOUT_NEEDED) != 0) {
+        if ((getApi().state & LAYOUT_NEEDED) != 0 && hasLayoutableClientArea()) {
             boolean changed = (getApi().state & LAYOUT_CHANGED) != 0;
             getApi().state &= ~(LAYOUT_NEEDED | LAYOUT_CHANGED);
             ((DartDisplay) display.getImpl()).runSkin();
@@ -1116,6 +1116,11 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     Object contentView() {
         return getBridge().container(this);
+    }
+
+    private boolean hasLayoutableClientArea() {
+        Rectangle client = getApi().getClientArea();
+        return client == null || client.width > 0 || client.height > 0;
     }
 
     protected void _hookEvents() {
