@@ -7,6 +7,7 @@ import '../gen/link.dart';
 import '../impl/control_evolve.dart';
 import './utils/widget_utils.dart';
 import './utils/font_utils.dart';
+import './utils/text_utils.dart';
 import '../theme/theme_extensions/link_theme_extension.dart';
 
 class LinkImpl<T extends LinkSwt, V extends VLink> extends ControlImpl<T, V> {
@@ -154,7 +155,7 @@ class _StyledLinkState extends State<StyledLink> {
 
     final hasLinks = widget.text.toLowerCase().contains('<a');
     if (!hasLinks) {
-      return Text(widget.text, style: baseTextStyle);
+      return Text(stripAccelerators(widget.text), style: baseTextStyle);
     }
 
     final List<TextSpan> spans = _parseText(widget.text);
@@ -185,8 +186,10 @@ class _StyledLinkState extends State<StyledLink> {
 
     return matches.map((match) {
       if (match.group(2) != null) {
-        final url = match.group(1) ?? match.group(2)!;
-        final linkText = match.group(2)!;
+        // Preserve the raw href (URLs may contain '&' query params); only the
+        // visible link label carries an SWT mnemonic marker to strip.
+        final url = match.group(1) ?? stripAccelerators(match.group(2)!);
+        final linkText = stripAccelerators(match.group(2)!);
         return TextSpan(
           text: linkText,
           style: TextStyle(color: linkColor, decoration: linkDecoration),
@@ -195,7 +198,7 @@ class _StyledLinkState extends State<StyledLink> {
               : null,
         );
       } else {
-        return TextSpan(text: match.group(3));
+        return TextSpan(text: stripAccelerators(match.group(3)));
       }
     }).toList();
   }

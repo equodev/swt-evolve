@@ -125,6 +125,11 @@ public class GallerySnippet {
         Link link = new Link(labelGroup, SWT.NONE);
         link.setText("<a href=\"https://equo.dev\">Click</a> not-this");
         link.addSelectionListener(widgetSelectedAdapter(e -> status.setText("Link clicked: " + e.text)));
+        // A Link whose anchor label and plain tail both carry SWT mnemonic markers ('&'):
+        // SWT strips them for display, so the rendered text must read "Open equo.dev and more"
+        // with no literal '&'. The href keeps its raw value.
+        Link mnemonicLink = new Link(labelGroup, SWT.NONE);
+        mnemonicLink.setText("<a href=\"https://equo.dev\">&Open equo.dev</a> and &more");
 
         // Text / StyledText
         Group textGroup = section(root, "Text / StyledText");
