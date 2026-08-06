@@ -16,6 +16,7 @@ import '../gen/widget.dart';
 import '../impl/canvas_evolve.dart';
 import '../impl/gcdrawer_evolve.dart';
 import 'widget_config.dart';
+import 'key_forwarding.dart';
 import 'key_mapping.dart';
 import 'utils/double_tap_detector.dart';
 import 'utils/font_utils.dart';
@@ -107,6 +108,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     _horizontalController = ScrollController();
     _verticalController.addListener(_onVerticalScroll);
     _horizontalController.addListener(_onHorizontalScroll);
+    _focusNode.addListener(_syncEditorKeyOwnership);
     EquoCommService.onRaw("${state.swt}/${state.id}/focusLost", (_) {
       if (_isEditingText) {
         _stopEditing();
@@ -114,10 +116,20 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     });
   }
 
+  /// While this StyledText holds focus, tell the top-level key handler to stay out of the way — it
+  /// forwards its own key events (see [_handleKeyEvent]) and must not be raced by a parallel forward.
+  void _syncEditorKeyOwnership() {
+    focusedEditorHandlesOwnKeys = _focusNode.hasFocus;
+  }
+
   @override
   void dispose() {
     _verticalController.dispose();
     _horizontalController.dispose();
+    if (_focusNode.hasFocus) {
+      focusedEditorHandlesOwnKeys = false;
+    }
+    _focusNode.removeListener(_syncEditorKeyOwnership);
     _focusNode.dispose();
     _caretBlinkTimer?.cancel();
     super.dispose();
@@ -773,7 +785,10 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     if (!_isEditingText || _editableTextShape == null) return;
     if (event is! RawKeyDownEvent) return;
 
-    // Send KeyDown event to Java
+    // Send KeyDown to Java directly. StyledText runs its own keyboard pipeline and its content
+    // sync to Java rides on this event, so it must forward reliably here rather than depend on the
+    // whole-tree top-level handler (whose async focus resolution races a tight click-then-type).
+    // The top-level router skips a focused StyledText so this is not dispatched twice.
     _sendKeyDownEvent(event);
 
     widget.sendVerifyKeyverifyKey(state, mapKeyEventToSwt(event));

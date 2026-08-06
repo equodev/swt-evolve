@@ -175,6 +175,48 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     }
 
     /**
+     * Wires the top-level key channel for the whole-tree model. Flutter captures every keystroke
+     * once at the Display root (see {@code display_evolve.dart}) and posts it here; we route it to
+     * the currently focused control so it flows through the normal SWT dispatch: the Display filter
+     * chain (e.g. Eclipse's command key bindings, installed via {@code Display.addFilter(SWT.KeyDown,
+     * …)}) and then the focused control's own KeyDown/KeyUp listeners. This is the single generic
+     * path that replaces the per-control forwarders while a Display is rendered.
+     */
+    protected void registerDisplayKeyEvents(DartDisplay display) {
+        long displayId = display.getApi().hashCode();
+        comm().on("Display/" + displayId + "/Key/KeyDown", Event.class,
+                ev -> routeKeyToFocused(display, org.eclipse.swt.SWT.KeyDown, ev));
+        comm().on("Display/" + displayId + "/Key/KeyUp", Event.class,
+                ev -> routeKeyToFocused(display, org.eclipse.swt.SWT.KeyUp, ev));
+    }
+
+    private void routeKeyToFocused(DartDisplay display, int type, Event ev) {
+        Display api = display.getApi();
+        if (api == null || api.isDisposed())
+            return;
+        // Arrives on the comm thread; hop to the Display thread like every other inbound event.
+        api.asyncExec(() -> {
+            if (api.isDisposed())
+                return;
+            Control focus = api.getFocusControl();
+            if (focus == null || focus.isDisposed() || !(focus.getImpl() instanceof DartControl dc))
+                return;
+            // StyledText runs its own keyboard pipeline and forwards its own KeyDown (its content
+            // sync depends on it), so routing here would dispatch the key twice — skip it.
+            if (focus instanceof org.eclipse.swt.custom.StyledText)
+                return;
+            if (type == org.eclipse.swt.SWT.KeyDown) {
+                ControlHelper.sendFlutterKeyDown(dc, ev);
+                // Surface the traversal (Tab/arrows/Esc/Enter/Page) as SWT.Traverse too, so a Display
+                // Traverse filter (Eclipse command bindings) and TraverseListeners see it.
+                ControlHelper.sendFlutterTraverse(dc, ev);
+            } else {
+                dc.sendEvent(org.eclipse.swt.SWT.KeyUp, ev);
+            }
+        });
+    }
+
+    /**
      * Hook fired on every {@code Display/{id}/ClientReady}, before the viewport sync. No-op here; the
      * web surface overrides it to cancel a deferred tab-close when a refreshed client reconnects.
      * {@code first} is whether this was the first (bridge-completing) ClientReady.

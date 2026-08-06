@@ -74,6 +74,9 @@ void main(List<String> args) async {
   }
 
   WidgetsFlutterBinding.ensureInitialized();
+  // Keep browser-reserved shortcuts (Cmd/Ctrl+S/P/O) from triggering the browser's own action (e.g.
+  // the Save-page dialog) so they reach the app; no-op off the web. See suppressBrowserShortcuts.
+  suppressBrowserShortcuts();
   // Forces the semantics tree on so Flutter Web emits real <flt-semantics> DOM nodes (with our
   // Semantics identifiers, see ControlImpl.wrap) for E2E tools like Playwright to find and click.
   // Off by default: building the semantics tree has a real runtime cost, so production must not pay

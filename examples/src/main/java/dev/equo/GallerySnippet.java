@@ -72,11 +72,35 @@ public class GallerySnippet {
         statusData.horizontalSpan = 2;
         status.setLayoutData(statusData);
 
+        // Keyboard shortcut. Eclipse RCP apps dispatch command shortcuts through a global Display key
+        // filter (org.eclipse.ui's WorkbenchKeyboard adds Display.addFilter(SWT.KeyDown/Traverse, ...)),
+        // NOT MenuItem.setAccelerator. A Flutter-originated KeyDown already flows through the SWT event
+        // machinery into Display.filterEvent, so this filter fires exactly as it would in a native SWT
+        // app, with no custom dispatch. It writes the shared status Label as the E2E-observable signal.
+        // SWT.MOD1 resolves to CTRL on the web/desk backend (its platform is not "cocoa"), so the
+        // shortcut is Ctrl+S there.
+        display.addFilter(SWT.KeyDown, e -> {
+            if ((e.stateMask & SWT.MOD1) != 0 && Character.toLowerCase(e.keyCode) == 's') {
+                status.setText("Ctrl+S command triggered");
+                e.doit = false;
+            }
+        });
+        // Eclipse also dispatches command key bindings through a Display SWT.Traverse filter (and
+        // TraverseListeners observe traversal keys). Traversal (Tab/arrows/Esc/Enter/Page) is derived
+        // from the forwarded KeyDown on the Java side — this filter is the E2E-observable proof.
+        display.addFilter(SWT.Traverse, e -> {
+            if (e.detail == SWT.TRAVERSE_ESCAPE) {
+                status.setText("Escape traverse received");
+            }
+        });
+
         // Button
         Group buttonGroup = section(root, "Button");
         buttonGroup.setLayout(new RowLayout(SWT.HORIZONTAL));
         Button push = new Button(buttonGroup, SWT.PUSH);
-        push.setText("Push");
+        // "&Push" registers 'P' as the button's mnemonic (the '&' is stripped from the visible text).
+        // Alt+P then activates it from anywhere in the shell — see KeyboardShortcutTest.
+        push.setText("&Push");
         push.addSelectionListener(widgetSelectedAdapter(e -> {
             System.out.println("Push clicked");
             status.setText("Push clicked");

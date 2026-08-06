@@ -654,6 +654,11 @@ public abstract class FlutterBridge {
         return false;
     }
 
+    /** Clears the tracked focus holder if it is {@code control}. No-op unless a Display-level bridge
+     *  tracks focus (see the whole-tree surface); embedded/other bridges have nothing to clear. */
+    public void clearFocus(DartControl control) {
+    }
+
     public Object container(DartComposite parent) {
         return null;
     }

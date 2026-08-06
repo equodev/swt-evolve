@@ -48,6 +48,7 @@ public class DeskDisplayBridge extends DisplayBridge {
     @Override
     protected void start(DartDisplay display) {
         registerDisplayClientReady(display);
+        registerDisplayKeyEvents(display);
 
         long displayId = display.getApi().hashCode();
         int port = comm().getPort();

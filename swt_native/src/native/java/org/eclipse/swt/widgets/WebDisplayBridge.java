@@ -84,6 +84,7 @@ public class WebDisplayBridge extends DisplayBridge {
         CommService comm = comm();
 
         registerDisplayClientReady(display);
+        registerDisplayKeyEvents(display);
         registerWindowControls(display);
 
         int port = comm.getPort();

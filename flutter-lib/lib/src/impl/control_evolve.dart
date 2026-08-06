@@ -14,6 +14,7 @@ import '../gen/menu.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../styles.dart';
+import '../impl/key_forwarding.dart';
 import '../impl/key_mapping.dart';
 import '../impl/menu_evolve.dart';
 import '../theme/theme_extensions/tooltip_theme_extension.dart';
@@ -264,7 +265,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     // Wrap with GC overlay if needed
     widget = wrapWithGCOverlay(widget);
 
-    if (forwardsKeysFromWrap) {
+    // Skipped when a whole-tree Display forwards keys from a single top-level handler (see
+    // [displayLevelKeyForwardingActive]) — otherwise the same key would reach Java twice. Still
+    // the sole path in the embedded backend, which has no whole-tree Display.
+    if (forwardsKeysFromWrap && !displayLevelKeyForwardingActive) {
       widget = Focus(
         onKeyEvent: (node, event) {
           if (event is KeyDownEvent) {

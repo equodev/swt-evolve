@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../gen/display.dart';
 import '../gen/shell.dart';
 import '../gen/swt.dart';
@@ -7,6 +8,8 @@ import '../gen/widgets.dart' as gen;
 import '../comm/comm.dart';
 import '../custom/csd/csd_state.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
+import 'key_forwarding.dart';
+import 'key_mapping.dart';
 import 'shell_evolve.dart';
 import 'widget_config.dart';
 
@@ -38,6 +41,42 @@ class _DisplaySwtState extends State<DisplaySwt> {
     super.initState();
     _display = _lastDisplayState[widget.value.id] ?? widget.value;
     EquoCommService.onRaw('Display/${widget.value.id}', _onUpdate);
+    // Single top-level keyboard capture for the whole-tree model: every physical key is forwarded
+    // once, here, and Java routes it to the focused control (running Display.filterEvent, which is
+    // how Eclipse command shortcuts dispatch). This replaces the per-control forwarders while a
+    // Display is mounted — see [displayLevelKeyForwardingActive].
+    displayLevelKeyForwardingActive = true;
+    HardwareKeyboard.instance.addHandler(_forwardKeyToSwt);
+  }
+
+  @override
+  void dispose() {
+    HardwareKeyboard.instance.removeHandler(_forwardKeyToSwt);
+    displayLevelKeyForwardingActive = false;
+    super.dispose();
+  }
+
+  /// Forwards every physical KeyDown/KeyUp to Java as an SWT key event on the Display's channel.
+  /// Returns false so the keystroke still reaches Flutter's own widgets (text editing, tree
+  /// navigation, etc.) — this only mirrors the key to SWT, it never consumes it.
+  bool _forwardKeyToSwt(KeyEvent event) {
+    // A focused editor that runs its own keyboard pipeline (StyledText) forwards its own events;
+    // staying out entirely avoids racing its per-key editing/content sync. It still reaches Display
+    // filters through its own forwarding.
+    if (focusedEditorHandlesOwnKeys) return false;
+    final int id = widget.value.id ?? 0;
+    if (event is KeyDownEvent || event is KeyRepeatEvent) {
+      final v = mapNewKeyEventToSwt(event);
+      if (v.keyCode != 0 || v.character != 0) {
+        EquoCommService.sendPayload('Display/$id/Key/KeyDown', v);
+      }
+    } else if (event is KeyUpEvent) {
+      final v = mapNewKeyEventToSwt(event);
+      if (v.keyCode != 0 || v.character != 0) {
+        EquoCommService.sendPayload('Display/$id/Key/KeyUp', v);
+      }
+    }
+    return false;
   }
 
   void _onUpdate(dynamic raw) {

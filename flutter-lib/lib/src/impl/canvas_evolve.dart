@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../comm/comm.dart';
+import 'key_forwarding.dart';
 import 'key_mapping.dart';
 import '../gen/canvas.dart';
 import '../gen/composite.dart';
@@ -185,10 +186,15 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       onKeyEvent: (node, event) {
         final vEvent = mapNewKeyEventToSwt(event);
         if (vEvent.keyCode != 0 || vEvent.character != 0) {
-          if (event is KeyDownEvent || event is KeyRepeatEvent) {
-            widget.sendKeyKeyDown(state, vEvent);
-          } else if (event is KeyUpEvent) {
-            widget.sendKeyKeyUp(state, vEvent);
+          // When a whole-tree Display forwards keys from its single top-level handler, that handler
+          // already delivers this key to Java (routed to the focused Canvas); forwarding again here
+          // would double-dispatch. Still consume it so the native window doesn't beep.
+          if (!displayLevelKeyForwardingActive) {
+            if (event is KeyDownEvent || event is KeyRepeatEvent) {
+              widget.sendKeyKeyDown(state, vEvent);
+            } else if (event is KeyUpEvent) {
+              widget.sendKeyKeyUp(state, vEvent);
+            }
           }
           // Consume it: the key is handled by the (SWT/embedded) widget. Letting it
           // bubble to the native window makes macOS ring the unhandled-key beep on

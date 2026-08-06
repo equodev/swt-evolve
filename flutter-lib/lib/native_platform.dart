@@ -112,4 +112,8 @@ void observeViewportChanges(void Function() onChange) {
 /// for Dart to observe here. Present to satisfy the shared platform interface with web_platform.dart.
 void observeWindowClose(void Function() onClose) {}
 
+/// No-op off the web: only a browser has reserved shortcuts to suppress. Present to satisfy the
+/// shared platform interface with web_platform.dart.
+void suppressBrowserShortcuts() {}
+
 void close() {}

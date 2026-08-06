@@ -81,6 +81,76 @@ public class ControlHelper {
         return FLUTTER_KEY.get();
     }
 
+    /**
+     * Derives and fires an {@link SWT#Traverse} event from a Flutter-originated KeyDown, matching
+     * native SWT's key&rarr;traversal mapping (Tab/Shift+Tab, arrows, Enter, Ctrl+PageUp/Down) and the
+     * Alt+letter mnemonic. This is the whole-tree analogue of the platform's {@code translateTraversal}:
+     * it lets a Display Traverse filter (e.g. Eclipse's command key bindings, hooked via
+     * {@code Display.addFilter(SWT.Traverse, …)}) and any {@code TraverseListener} see traversal keys.
+     * Focus movement itself stays with Flutter — this only surfaces the event; it does not run SWT's
+     * traversal (unlike {@link DartControl#traverse(int, char, int, int, int, boolean)}).
+     *
+     * <p>Escape is intentionally excluded: {@link #translateTraversal} already emits it (via the full
+     * {@code Control.traverse}, so popups/dialogs still close) from {@link #sendFlutterKeyDown}, which
+     * runs first in every path. Handling it here too would fire {@code SWT.Traverse} twice.
+     */
+    public static void sendFlutterTraverse(DartWidget widget, Event keyEvent) {
+        int detail = traverseDetail(keyEvent.keyCode, keyEvent.stateMask);
+        boolean mnemonic = detail == SWT.TRAVERSE_NONE && isMnemonicTrigger(keyEvent);
+        if (mnemonic)
+            detail = SWT.TRAVERSE_MNEMONIC;
+        if (detail == SWT.TRAVERSE_NONE)
+            return;
+        Event e = new Event();
+        e.character = keyEvent.character;
+        e.keyCode = keyEvent.keyCode;
+        e.stateMask = keyEvent.stateMask;
+        e.detail = detail;
+        // Arrow traversal is off by default (the focused control consumes arrows); the rest default
+        // to performing the traversal — the same doit defaults as Control.traverse(...).
+        e.doit = detail != SWT.TRAVERSE_ARROW_NEXT && detail != SWT.TRAVERSE_ARROW_PREVIOUS;
+        widget.sendEvent(SWT.Traverse, e);
+        // An Alt+letter mnemonic that a Traverse listener/filter didn't veto activates the matching
+        // widget (Button click, Label→next focus, Group→first child, TabItem select) in the shell.
+        if (mnemonic && e.doit && widget instanceof DartControl dc && !dc.getApi().isDisposed()) {
+            MnemonicHelper.dispatch(dc.getApi(), (char) keyEvent.keyCode);
+        }
+    }
+
+    /** True when the key event is an {@code Alt+<letter/digit>} mnemonic trigger (no Ctrl/Command). */
+    private static boolean isMnemonicTrigger(Event ev) {
+        if ((ev.stateMask & SWT.ALT) == 0)
+            return false;
+        if ((ev.stateMask & (SWT.CTRL | SWT.COMMAND)) != 0)
+            return false;
+        int key = ev.keyCode;
+        return key > 0 && key <= 0xFFFF && (key & SWT.KEYCODE_BIT) == 0
+                && Character.isLetterOrDigit((char) key);
+    }
+
+    private static int traverseDetail(int keyCode, int stateMask) {
+        switch (keyCode) {
+            // Escape is handled by translateTraversal() (from sendFlutterKeyDown, which runs first),
+            // so it is deliberately not mapped here — see sendFlutterTraverse's javadoc.
+            case SWT.CR:
+                return SWT.TRAVERSE_RETURN;
+            case SWT.ARROW_DOWN:
+            case SWT.ARROW_RIGHT:
+                return SWT.TRAVERSE_ARROW_NEXT;
+            case SWT.ARROW_UP:
+            case SWT.ARROW_LEFT:
+                return SWT.TRAVERSE_ARROW_PREVIOUS;
+            case SWT.TAB:
+                return (stateMask & SWT.SHIFT) != 0 ? SWT.TRAVERSE_TAB_PREVIOUS : SWT.TRAVERSE_TAB_NEXT;
+            case SWT.PAGE_DOWN:
+                return (stateMask & SWT.CTRL) != 0 ? SWT.TRAVERSE_PAGE_NEXT : SWT.TRAVERSE_NONE;
+            case SWT.PAGE_UP:
+                return (stateMask & SWT.CTRL) != 0 ? SWT.TRAVERSE_PAGE_PREVIOUS : SWT.TRAVERSE_NONE;
+            default:
+                return SWT.TRAVERSE_NONE;
+        }
+    }
+
     private static Control walkToSwtAncestor(Control control, int[] offset) {
         Control current = control;
         while (current != null && (current.getImpl() instanceof DartControl)) {

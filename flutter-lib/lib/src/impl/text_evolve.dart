@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../gen/event.dart';
 import '../gen/point.dart';
 import '../gen/swt.dart';
@@ -7,6 +8,8 @@ import '../gen/widget.dart';
 import '../impl/scrollable_evolve.dart';
 import '../theme/theme_extensions/text_theme_extension.dart';
 import '../theme/theme_settings/text_theme_settings.dart';
+import 'key_forwarding.dart';
+import 'key_mapping.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 
@@ -96,15 +99,44 @@ class TextImpl<T extends TextSwt, V extends VText>
       hasValidBounds,
     );
 
+    final fieldWrapper = _buildTextFieldWrapper(
+      textField,
+      widgetTheme,
+      isMultiLine,
+      hasValidBounds,
+    );
     return tagSemantics(
       wrapDnd(
-        _buildTextFieldWrapper(
-          textField,
-          widgetTheme,
-          isMultiLine,
-          hasValidBounds,
-        ),
+        // When a whole-tree Display forwards keys from its single top-level handler, that handler
+        // already delivers shortcuts to Java while a Text has focus, so skip the per-field wrapper
+        // to avoid double-dispatch. In the embedded backend (no whole-tree Display) it is the only
+        // path — Text builds its own field via [wrapDnd] and never routes through [ControlImpl.wrap].
+        displayLevelKeyForwardingActive
+            ? fieldWrapper
+            : _forwardShortcutKeys(fieldWrapper),
       ),
+    );
+  }
+
+  /// Forwards shortcut keystrokes the text field itself does not consume (e.g. Ctrl/Cmd+S) to Java
+  /// as SWT.KeyDown, so an app's Display key filter or KeyListener — the mechanism Eclipse RCP
+  /// command bindings use — sees them even while a Text has focus. Ordinary typing and the field's own
+  /// editing shortcuts are consumed by the TextField first and never bubble up here, so this does
+  /// not double-process input. The wrapper never takes focus itself; it only observes keys bubbling
+  /// from the field. Only used in the embedded backend (see the [build] call site).
+  Widget _forwardShortcutKeys(Widget child) {
+    return Focus(
+      canRequestFocus: false,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
+          final vEvent = mapNewKeyEventToSwt(event);
+          if (vEvent.keyCode != 0 || vEvent.character != 0) {
+            widget.sendKeyKeyDown(state, vEvent);
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: child,
     );
   }
 

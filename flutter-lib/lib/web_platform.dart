@@ -29,8 +29,20 @@ external JSNumber? get _innerHeight;
 @JS('window.addEventListener')
 external void _addWindowEventListener(JSString type, JSFunction listener);
 
+@JS('window.addEventListener')
+external void _addWindowEventListenerCapture(
+    JSString type, JSFunction listener, JSBoolean useCapture);
+
 @JS('window.requestAnimationFrame')
 external JSNumber _requestAnimationFrame(JSFunction callback);
+
+/// Minimal view of a DOM KeyboardEvent — just what shortcut suppression needs.
+extension type _KeyboardEvent(JSObject _) implements JSObject {
+  external String get key;
+  external bool get metaKey;
+  external bool get ctrlKey;
+  external void preventDefault();
+}
 
 // --dart-define fallbacks for a `flutter run` dev launch (Phase 2 web introspection path): when the
 // app is served by `flutter run` instead of WebFlutterServer, there is no runtime placeholder
@@ -139,6 +151,25 @@ void observeViewportChanges(void Function() onChange) {
 void observeWindowClose(void Function() onClose) {
   _addWindowEventListener('pagehide'.toJS, (() { onClose(); }).toJS);
   _addWindowEventListener('beforeunload'.toJS, (() { onClose(); }).toJS);
+}
+
+/// Stops the browser from acting on a small set of reserved shortcuts (Ctrl/Cmd + S, P, O) so they
+/// reach the app instead — e.g. Cmd+S otherwise opens the browser's "Save page" dialog. Runs in the
+/// capture phase and only calls preventDefault; it never stops propagation, so Flutter still receives
+/// the key and forwards it to Java (an Eclipse command bound to the shortcut still dispatches). The
+/// editing shortcuts (Ctrl/Cmd + C/V/X/A/Z) are deliberately left alone so text fields keep working.
+void suppressBrowserShortcuts() {
+  const reserved = {'s', 'p', 'o'};
+  _addWindowEventListenerCapture(
+    'keydown'.toJS,
+    ((_KeyboardEvent event) {
+      if (!(event.metaKey || event.ctrlKey)) return;
+      if (reserved.contains(event.key.toLowerCase())) {
+        event.preventDefault();
+      }
+    }).toJS,
+    true.toJS,
+  );
 }
 
 void close() {
