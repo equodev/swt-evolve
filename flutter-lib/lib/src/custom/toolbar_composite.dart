@@ -31,7 +31,7 @@ class HorizontalMenuBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = DecorationsMenuData.of(context);
-    if (data == null || !data.isHorizontal || data.menuBar == null) {
+    if (data == null || !data.isHorizontal || !data.hasItems) {
       return const SizedBox.shrink();
     }
     return mapWidgetFromValue(data.menuBar!);
@@ -105,7 +105,9 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
     final csdTrailing = csdInToolbar && !csdLeading;
 
     final menuData = isRootToolbar ? DecorationsMenuData.of(context) : null;
-    final hasHorizontalMenu = menuData?.isHorizontal == true && menuData?.menuBar != null;
+    // An itemless menu bar renders nothing, so it must not get a row of its own in the Column
+    // either -- otherwise the toolbar keeps a blank strip where the menu used to be.
+    final hasHorizontalMenu = menuData?.isHorizontal == true && menuData?.hasItems == true;
 
     if (widget.useBoundsLayout) {
       final boundsHeight = state.bounds?.height;

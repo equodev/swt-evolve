@@ -161,6 +161,11 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       bool visible,
       ) {
     final menuItems = _getMenuItems();
+    // Nothing to show: no background strip and no bottom border either, so an itemless menu bar
+    // leaves no trace of itself above the toolbar.
+    if (menuItems.isEmpty) {
+      return const SizedBox.shrink();
+    }
     final align = getConfigFlags().decorations_align ?? DecorationsAlign.hleft;
     final alignRight = align == DecorationsAlign.hright;
     final backgroundColor = enabled

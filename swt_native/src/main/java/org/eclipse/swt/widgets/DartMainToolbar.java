@@ -38,8 +38,9 @@ public class DartMainToolbar extends DartComposite {
         getApi().state |= LAYOUT_CHANGED;
 
         DecorationsAlign align = decorationsAlign();
-        int xOffset      = align == DecorationsAlign.VLEFT ? MenuSizes.VERTICAL_MENU_BUTTON_WIDTH : 0;
-        int widthReserve = (align.isVertical() ? MenuSizes.VERTICAL_MENU_BUTTON_WIDTH : 0) + csdToolbarWidth();
+        int menuButton   = align.isVertical() && hasMenuBarItems() ? MenuSizes.VERTICAL_MENU_BUTTON_WIDTH : 0;
+        int xOffset      = align == DecorationsAlign.VLEFT ? menuButton : 0;
+        int widthReserve = menuButton + csdToolbarWidth();
 
         if (appliedXReserve > 0) {
             for (Control child : _getChildren()) {
@@ -54,7 +55,7 @@ public class DartMainToolbar extends DartComposite {
         super.updateLayout(all);
         if (widthReserve > 0) bounds.width += widthReserve;
 
-        int yOffset   = align.isVertical() ? 0 : MenuSizes.MENU_BAR_HEIGHT;
+        int yOffset   = hasMenuStrip() ? MenuSizes.MENU_BAR_HEIGHT : 0;
         int rowHeight = getMainToolbarHeight() - yOffset;
         for (Control child : _getChildren()) {
             if (child == null) continue;
@@ -85,7 +86,28 @@ public class DartMainToolbar extends DartComposite {
         }
     }
 
-    private static int getMainToolbarHeight() {
-        return decorationsAlign().isVertical() ? MenuSizes.HEIGHT_VERTICAL_MENU : MenuSizes.HEIGHT_HORIZONTAL_MENU;
+    private int getMainToolbarHeight() {
+        return hasMenuStrip() ? MenuSizes.HEIGHT_HORIZONTAL_MENU : MenuSizes.HEIGHT_VERTICAL_MENU;
+    }
+
+    /**
+     * Whether the menu bar is drawn as its own strip above the toolbar row. Only a horizontally
+     * aligned menu bar with something in it is: the height it adds and the offset it pushes the
+     * toolbar row down by must agree, so both read this.
+     */
+    private boolean hasMenuStrip() {
+        return !decorationsAlign().isVertical() && hasMenuBarItems();
+    }
+
+    /**
+     * An empty menu bar is not rendered at all (see {@code DecorationsMenuData.hasItems} on the
+     * Flutter side), so it must not reserve layout space here either: no button width for a
+     * vertical alignment, no menu strip height for a horizontal one.
+     */
+    private boolean hasMenuBarItems() {
+        Shell shell = getApi().getShell();
+        if (shell == null || shell.isDisposed()) return false;
+        Menu bar = shell.getMenuBar();
+        return bar != null && !bar.isDisposed() && bar.getItemCount() > 0;
     }
 }
