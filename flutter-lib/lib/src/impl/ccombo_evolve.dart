@@ -11,10 +11,11 @@ import '../theme/theme_extensions/ccombo_theme_extension.dart';
 import '../theme/theme_settings/ccombo_theme_settings.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
+import 'utils/pending_text_echoes.dart';
 import 'color_utils.dart';
 
 class CComboImpl<T extends CComboSwt, V extends VCCombo>
-    extends CompositeImpl<T, V> {
+    extends CompositeImpl<T, V> with PendingTextEchoes {
   late TextEditingController _controller;
   FocusNode? _focusNode;
   bool _menuOpen = false;
@@ -32,6 +33,9 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
   @override
   void extraSetState() {
     String newText = state.text ?? "";
+    // Ignore a stale echo of our own in-flight typing (see PendingTextEchoes); a value we
+    // never sent is a genuine external change and still updates the controller below.
+    if (isStaleTextEcho(newText, _controller.text)) return;
     if (_controller.text != newText) {
       _controller.text = newText;
       _controller.selection = TextSelection.collapsed(offset: newText.length);
@@ -186,6 +190,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
 
   void onTextChanged(String value) {
     state.text = value;
+    recordSentText(value);
     widget.sendModifyModify(state, VEvent()..text = value);
   }
 

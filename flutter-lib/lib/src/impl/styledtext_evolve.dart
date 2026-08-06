@@ -22,12 +22,13 @@ import 'utils/double_tap_detector.dart';
 import 'utils/font_utils.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
+import 'utils/pending_text_echoes.dart';
 import 'color_utils.dart';
 import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
 import '../theme/theme_extensions/styledtext_theme_extension.dart';
 
 class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
-    extends CanvasImpl<T, V> {
+    extends CanvasImpl<T, V> with PendingTextEchoes {
   // The RawKeyboardListener below already sends Key/VerifyKey per keystroke.
   @override
   bool get forwardsKeysFromWrap => false;
@@ -62,15 +63,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   int _lastSentHorizontalOffset = 0;
   final Set<int> _pendingVerticalScrollValues = {};
   final Set<int> _pendingHorizontalScrollValues = {};
-
-  /// Texts sent to Java (Modify) whose value-push echo hasn't come back yet, plus the latest
-  /// locally-known text — the same guard text_evolve has: on a slow round trip the echo of an
-  /// earlier Modify arrives AFTER further local typing and, unguarded, rebuilds the editor from
-  /// the older text, silently dropping the newer keystrokes. Unlike Text (whose truth lives in
-  /// its controller), here the local truth IS state.text — already overwritten by the incoming
-  /// push when extraSetState runs — so a stale echo must also RESTORE state.text.
-  final List<String> _pendingTextEchoes = [];
-  String _localText = '';
 
   StyledTextThemeExtension get _styledTextTheme =>
       Theme.of(context).extension<StyledTextThemeExtension>()!;
@@ -138,19 +130,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   @override
   void extraSetState() {
     super.extraSetState();
-    final incomingText = state.text ?? '';
-    final echoIndex = _pendingTextEchoes.indexOf(incomingText);
-    if (echoIndex >= 0) {
-      _pendingTextEchoes.removeRange(0, echoIndex + 1);
-      if (_localText != incomingText) {
-        // The echo is older than what the user has typed since: put the local truth back so
-        // the rebuild below (and queryState) keep the newer content.
-        state.text = _localText;
-      }
-    } else {
-      // A genuine Java-driven text (setText): accept it as the new local truth.
-      _localText = incomingText;
-    }
     _editable = state.editable ?? false;
     _wordWrap = state.wordWrap ?? false; // SWT default is no wrap; wrap only when explicitly set
 
@@ -185,6 +164,25 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   void _buildTextShapeFromState() {
     final originalText = state.text ?? '';
     final text = originalText.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+
+    // While the user types, edits are applied optimistically on the client and only sent to
+    // Java as async Modify events, so any full-state snapshot Java pushes mid-edit (e.g. from
+    // a ControlHelper.paint-driven dirty()) can still carry older text. Re-basing onto it
+    // (the `_enterLocalEditMode(textShape)` path below) would drop the just-typed characters
+    // whenever such a push interleaves with typing. If the incoming text is a stale echo of
+    // our own in-flight edit (see PendingTextEchoes), keep the local buffer authoritative and
+    // re-sync `state` to it; a value we never sent is a genuine external setText and falls
+    // through to re-base (matching SWT, which swaps the content even mid-edit).
+    if (_isEditingText &&
+        _isInLocalEditMode &&
+        _editableTextShape != null &&
+        _editableTextShape!.styledTextId == state.id &&
+        isStaleTextEcho(text, _editableTextShape!.text)) {
+      state.text = _editableTextShape!.text;
+      state.caretOffset =
+          _editableTextShape!.caretInfo?.offset ?? state.caretOffset;
+      return;
+    }
 
     final styledTextId = state.id;
     final caretOffset = _adjustOffsetForNormalizedText(
@@ -674,8 +672,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     // Keep the value object in sync with the local edit (same as text_evolve), so the live
     // state (queryState) reflects the content without waiting for a Java-side setText.
     state.text = newText;
-    _localText = newText;
-    _pendingTextEchoes.add(newText);
+
+    // Remember what we forward so its eventual Java echo doesn't clobber later keystrokes.
+    recordSentText(newText);
 
     // Carries the edit as a range replacement (start/end/text), not the full document, so Java
     // can apply it via replaceTextRange instead of setText.
@@ -1231,6 +1230,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   }
 
   void _startEditing(TextShape textShape, int shapeIndex) {
+    // Seed the pre-edit baseline so a stale snapshot carrying the text as it stood at edit
+    // start (the one value not covered by per-keystroke sends) is recognised as an echo.
+    seedTextEchoBaseline(textShape.text);
     _enterLocalEditMode(textShape);
     widget.sendFocusFocusIn(state, null);
     setState(() {
@@ -1342,6 +1344,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     _originalServerTextShape = null;
     _localEditingState = null;
     _hasProgrammaticSelection = false;
+    // Edit session over: Java is authoritative again (we just sent the definitive
+    // StateUpdate), so any leftover in-flight echoes are irrelevant.
+    clearSentTextEchoes();
   }
 
   /// Build a VStyledText with updated text, caret, and style ranges
