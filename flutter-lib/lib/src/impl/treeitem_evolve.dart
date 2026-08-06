@@ -111,11 +111,11 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     }
   }
 
-  /// Sends the SWT Expand/Collapse for this item. Called from the row's tap handler
-  /// when the tap lands in the expander column — see [_buildItemRow].
   void _toggleExpand(bool expanded) {
-    if (_context?.treeImpl == null) return;
+    final treeImpl = _context?.treeImpl;
+    if (treeImpl == null) return;
     final e = _createEvent();
+    treeImpl.setItemExpanded(state.id, !expanded);
     if (expanded) {
       _context!.parentTree.sendTreeCollapse(_context!.parentTreeValue, e);
     } else {

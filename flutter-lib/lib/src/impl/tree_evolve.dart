@@ -824,6 +824,14 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     return StyleBits(state.style).has(SWT.CHECK);
   }
 
+  void setItemExpanded(Object itemId, bool expanded) {
+    final item = _findTreeItemById(itemId);
+    if (item == null || (item.expanded ?? false) == expanded) return;
+    setState(() {
+      item.expanded = expanded;
+    });
+  }
+
   void setupTreeItemExpandListener(VTreeItem treeItemValue) {
     String eventName = "TreeItem/${treeItemValue.id}/TreeItem/Expand";
 
