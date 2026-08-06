@@ -138,6 +138,10 @@ class TextImpl<T extends TextSwt, V extends VText>
     }
 
     final isPassword = hasStyle(state.style, SWT.PASSWORD);
+    final echoChar = (isPassword || isMultiLine)
+        ? null
+        : _obscuringCharacter(state.echoCharacter);
+    final isObscured = isPassword || echoChar != null;
     final singleLine = !isMultiLine || isPassword;
     final shouldExpand = hasValidBounds && !singleLine;
 
@@ -169,7 +173,10 @@ class TextImpl<T extends TextSwt, V extends VText>
       controller: _controller,
       focusNode: _focusNode,
       enabled: enabled,
-      obscureText: isPassword,
+      obscureText: isObscured,
+      obscuringCharacter: echoChar ?? _defaultObscuringCharacter,
+      enableSuggestions: !isObscured,
+      autocorrect: !isObscured,
       readOnly: isReadOnly,
       maxLines: singleLine ? 1 : null,
       expands: shouldExpand,
@@ -221,6 +228,14 @@ class TextImpl<T extends TextSwt, V extends VText>
     return IntrinsicWidth(child: textField);
   }
 
+  static String? _obscuringCharacter(int? echoCharacter) {
+    if (echoCharacter == null || echoCharacter == 0) return null;
+    final mask = String.fromCharCode(echoCharacter);
+    return mask.length == 1 ? mask : _defaultObscuringCharacter;
+  }
+
+  static const String _defaultObscuringCharacter = '•';
+
   void _handleTextChanged(String value) {
     final isSingleLineExpand =
         hasBounds(state.bounds) && !hasStyle(state.style, SWT.MULTI);
@@ -247,7 +262,6 @@ class TextImpl<T extends TextSwt, V extends VText>
   }
 
   void _handleFocusChange() {
-    print("Text ${state.id} focus changed: hasFocus=${_focusNode!.hasFocus}");
     if (_focusNode!.hasFocus) {
       widget.sendFocusFocusIn(state, null);
     } else {

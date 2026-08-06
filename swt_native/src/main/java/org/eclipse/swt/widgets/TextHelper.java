@@ -298,6 +298,17 @@ public class TextHelper {
         text.sendEvent(SWT.Modify);
     }
 
+    public static void setEditText(DartText text, char[] chars) {
+        int length = Math.min(chars.length, text.textLimit);
+        if ((text.getApi().style & SWT.PASSWORD) == 0 && text.echoCharacter != '\0') {
+            text.hiddenText = new char[length];
+            System.arraycopy(chars, 0, text.hiddenText, 0, length);
+        } else {
+            text.hiddenText = null;
+        }
+        text.text = new String(chars, 0, length);
+    }
+
     private static char[] withCrLf(char[] string) {
         int length = string.length;
         if (length == 0)

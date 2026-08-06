@@ -1339,20 +1339,7 @@ public class DartText extends DartScrollable implements IText {
     }
 
     void setEditText(char[] text) {
-        char[] buffer;
-        int length = Math.min(text.length, textLimit);
-        if ((getApi().style & SWT.PASSWORD) == 0 && echoCharacter != '\0') {
-            hiddenText = new char[length];
-            buffer = new char[length];
-            for (int i = 0; i < length; i++) {
-                hiddenText[i] = text[i];
-                buffer[i] = echoCharacter;
-            }
-        } else {
-            hiddenText = null;
-            buffer = text;
-        }
-        this.text = new String(buffer, 0, Math.min(buffer.length, length));
+        TextHelper.setEditText(this, text);
     }
 
     @Override
