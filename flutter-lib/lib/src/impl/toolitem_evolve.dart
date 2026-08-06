@@ -620,6 +620,6 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
   }
 
   void openMenu() {
-    widget.sendSelectionOpenMenu(state, null);
+    widget.sendSelectionOpenMenu(state, toolItemGeometryEvent(context));
   }
 }

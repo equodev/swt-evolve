@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:swtflutter/src/gen/item.dart';
+import '../gen/event.dart';
 import '../gen/swt.dart';
 import '../gen/toolbar.dart';
 import '../gen/toolitem.dart';
@@ -13,6 +14,23 @@ import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import '../theme/theme_settings/toolitem_theme_settings.dart';
 import 'utils/widget_utils.dart';
+
+VEvent? toolItemGeometryEvent(BuildContext context) {
+  final itemBox = context.findRenderObject();
+  if (itemBox is! RenderBox || !itemBox.hasSize) return null;
+  final toolbarState = context.findAncestorStateOfType<ToolBarImpl>();
+  final toolbarBox = toolbarState?.context.findRenderObject();
+  if (toolbarBox is! RenderBox || !toolbarBox.hasSize) return null;
+  final topLeft = itemBox.localToGlobal(Offset.zero, ancestor: toolbarBox);
+  final bottomRight = itemBox.localToGlobal(
+      Offset(itemBox.size.width, itemBox.size.height),
+      ancestor: toolbarBox);
+  return VEvent()
+    ..x = topLeft.dx.round()
+    ..y = topLeft.dy.round()
+    ..width = (bottomRight.dx - topLeft.dx).round()
+    ..height = (bottomRight.dy - topLeft.dy).round();
+}
 
 /// Carries toolbar layout config down to ToolItem children.
 /// [textOnRight]: true when the ToolBar has SWT.RIGHT style (icon left, text right).
@@ -580,7 +598,8 @@ class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
         onTap: enabled
             ? () {
                 final itemWidget = ToolItemSwt(value: widget.toolItem);
-                itemWidget.sendSelectionOpenMenu(widget.toolItem, null);
+                itemWidget.sendSelectionOpenMenu(
+                    widget.toolItem, toolItemGeometryEvent(context));
               }
             : null,
         splashColor: widgetTheme.specialDropdownTextColor.withOpacity(

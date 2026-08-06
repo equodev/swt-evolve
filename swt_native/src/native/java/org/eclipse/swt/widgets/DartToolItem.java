@@ -269,7 +269,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public Rectangle getBounds() {
         checkWidget();
-        return Sizes.getBounds(this);
+        return flutterItemBounds != null ? new Rectangle(flutterItemBounds.x, flutterItemBounds.y, flutterItemBounds.width, flutterItemBounds.height) : Sizes.getBounds(this);
     }
 
     /**
@@ -1019,9 +1019,15 @@ public class DartToolItem extends DartItem implements IToolItem {
     private void sendOpenMenu(Event e) {
         if (e == null)
             e = new Event();
+        if (e.width > 0 || e.height > 0) {
+            flutterItemBounds = new Rectangle(e.x, e.y, e.width, e.height);
+            e.y = e.y + e.height;
+        }
         e.detail = SWT.ARROW;
         sendEvent(SWT.Selection, e);
     }
+
+    Rectangle flutterItemBounds;
 
     public FlutterBridge getBridge() {
         if (bridge != null)
