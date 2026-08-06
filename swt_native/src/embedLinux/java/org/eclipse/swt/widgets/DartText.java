@@ -2051,6 +2051,15 @@ public class DartText extends DartScrollable implements IText {
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
             getDisplay().asyncExec(() -> {
                 if (!isDisposed()) {
+                    if (e.detail == SWT.ICON_CANCEL) {
+                        if (getCharCount() != 0) {
+                            setText("");
+                        }
+                        if (!isDisposed()) {
+                            sendEvent(SWT.DefaultSelection, e);
+                        }
+                        return;
+                    }
                     if (!traverse(SWT.TRAVERSE_RETURN)) {
                         Event crEvent = new Event();
                         crEvent.keyCode = SWT.CR;
