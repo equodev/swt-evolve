@@ -529,6 +529,7 @@ public class DartClipboard implements IClipboard {
         if ((clipboards & DND.CLIPBOARD) != 0) {
             _webClipboardData.put(DND.CLIPBOARD, data);
             _webClipboardTransfers.put(DND.CLIPBOARD, dataTypes);
+            _writeTextToSystemClipboard(data, dataTypes);
         }
         if ((clipboards & DND.SELECTION_CLIPBOARD) != 0) {
             _webClipboardData.put(DND.SELECTION_CLIPBOARD, data);
@@ -639,6 +640,18 @@ public class DartClipboard implements IClipboard {
         for (String x : an) for (String y : bn) if (x.equals(y))
             return true;
         return false;
+    }
+
+    private static void _writeTextToSystemClipboard(Object[] data, Transfer[] dataTypes) {
+        for (int i = 0; i < dataTypes.length; i++) {
+            if (dataTypes[i] instanceof TextTransfer && data[i] instanceof String) {
+                try {
+                    java.awt.Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new java.awt.datatransfer.StringSelection((String) data[i]), null);
+                } catch (java.awt.HeadlessException ignored) {
+                }
+                return;
+            }
+        }
     }
 
     public Clipboard getApi() {
