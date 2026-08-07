@@ -19,6 +19,10 @@ public class EvolveBrowser extends WebBrowser {
     // Bumped on every setUrl/setText so the Flutter side can distinguish a real
     // (re-)navigation from an incidental state push and reload even the same URL.
     private int navSeq = 0;
+    // Last navigation, replayed when a Flutter Browser built after it was sent asks for it. The op
+    // is one-shot and only routes once the Dart State exists, and the serialized state can't stand
+    // in for it: for a file: URL the loadable /local-file/<token>/ path travels in this op alone.
+    private java.util.Map<String, Object> lastNavArgs;
     private String popupKey;
     private String visibilityKey;
     private String closeKey;
@@ -51,6 +55,15 @@ public class EvolveBrowser extends WebBrowser {
             // The resolved current URL (after history navigation / redirects), so
             // getUrl() reflects where the Browser actually is, not the last setUrl.
             if (e.text != null && !e.text.isEmpty()) url = e.text;
+        });
+
+        // A Dart Browser State that came up without ever receiving a navigate op asks for it here.
+        // The fresh seq is what makes the Dart side accept the replay (it drops seqs already seen).
+        FlutterBridge.onPayload(browser.getImpl(), "navigateRequest", Event.class, e -> {
+            if (lastNavArgs == null) return;
+            java.util.Map<String, Object> replay = new java.util.HashMap<>(lastNavArgs);
+            replay.put("seq", ++navSeq);
+            FlutterBridge.send(getDartWidget(), "navigate", replay);
         });
 
         // When hosted in an Equo Chromium standalone window, this Browser is a CEF sub-frame. The
@@ -192,9 +205,17 @@ public class EvolveBrowser extends WebBrowser {
     @Override
     public boolean setText(String html, boolean trusted) {
         text = html;
-        FlutterBridge.send(getDartWidget(), "navigate",
-                java.util.Map.of("text", html == null ? "" : html, "seq", ++navSeq));
+        java.util.Map<String, Object> args = new java.util.HashMap<>();
+        args.put("text", html == null ? "" : html);
+        args.put("seq", ++navSeq);
+        sendNavigate(args);
         return true;
+    }
+
+    /** Sends a navigation op and remembers it, so {@code navigateRequest} can replay it. */
+    private void sendNavigate(java.util.Map<String, Object> args) {
+        lastNavArgs = args;
+        FlutterBridge.send(getDartWidget(), "navigate", args);
     }
 
     @Override
@@ -212,7 +233,7 @@ public class EvolveBrowser extends WebBrowser {
         // -- see LocalFileServing for why this is safe to do unconditionally.
         dev.equo.swt.LocalFileServing.Served served = dev.equo.swt.LocalFileServing.registerIfLocalFile(url);
         if (served != null) args.put("localFilePath", served.tokenPath());
-        FlutterBridge.send(getDartWidget(), "navigate", args);
+        sendNavigate(args);
         return true;
     }
 

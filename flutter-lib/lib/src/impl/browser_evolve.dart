@@ -245,6 +245,16 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     });
 
     _applyContent();
+
+    // Ops only route once this State exists, so a Browser whose widget is built after Java sent its
+    // one-shot "navigate" never learns where to go — and _applyContent can't stand in for it, since
+    // a file: URL's loadable /local-file/ path travels only in that op. Ask Java to replay it, after
+    // the first frame so the normal case (op already delivered) never loads the page twice.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _opNavigated) return;
+      EquoCommService.sendPayload(
+          "${state.swt}/${state.id}/navigateRequest", VEvent());
+    });
   }
 
   /// Emits the iframe's current document title (same-origin only) as an SWT
