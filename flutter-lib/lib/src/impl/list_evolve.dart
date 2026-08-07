@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../gen/event.dart';
 import '../gen/list.dart';
 import '../gen/swt.dart';
@@ -121,6 +122,9 @@ class _StyledList extends StatefulWidget {
 class _StyledListState extends State<_StyledList> {
   bool _isFocused = false;
 
+  /// Anchor for Shift+click range extension — the item a plain or Ctrl click last landed on.
+  int? _anchorIndex;
+
   @override
   Widget build(BuildContext context) {
     final theme = widget.widgetTheme;
@@ -181,17 +185,38 @@ class _StyledListState extends State<_StyledList> {
   void _handleItemTap(String item) {
     if (!widget.enabled) return;
 
-    List<String> newSelection = List.from(widget.selection);
-    if (widget.isMultiSelect) {
-      if (newSelection.contains(item)) {
-        newSelection.remove(item);
-      } else {
-        newSelection.add(item);
+    final items = widget.items;
+    final tappedIndex = items.indexOf(item);
+    if (tappedIndex < 0) return;
+
+    // Native SWT semantics: a plain click selects only the clicked item (deselecting the
+    // rest) even in a MULTI list; Ctrl/Cmd toggles it; Shift extends a range from the anchor.
+    final keyboard = HardwareKeyboard.instance;
+    final toggle = widget.isMultiSelect &&
+        (keyboard.isControlPressed || keyboard.isMetaPressed);
+    final extendRange = widget.isMultiSelect && keyboard.isShiftPressed;
+
+    List<int> newIndices;
+    if (extendRange && _anchorIndex != null) {
+      final lo = _anchorIndex! < tappedIndex ? _anchorIndex! : tappedIndex;
+      final hi = _anchorIndex! < tappedIndex ? tappedIndex : _anchorIndex!;
+      newIndices = [for (var i = lo; i <= hi; i++) i];
+      // Shift+click keeps the existing anchor so a further shift re-extends from it.
+    } else if (toggle) {
+      newIndices = widget.selection
+          .map((s) => items.indexOf(s))
+          .where((i) => i >= 0)
+          .toList();
+      if (!newIndices.remove(tappedIndex)) {
+        newIndices.add(tappedIndex);
       }
+      _anchorIndex = tappedIndex;
     } else {
-      newSelection.clear();
-      newSelection.add(item);
+      newIndices = [tappedIndex];
+      _anchorIndex = tappedIndex;
     }
+
+    final newSelection = newIndices.map((i) => items[i]).toList();
     widget.onItemMouseDown();
     widget.onSelectionChanged(newSelection);
     widget.onItemMouseUp();
