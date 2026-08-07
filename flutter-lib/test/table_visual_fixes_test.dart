@@ -169,6 +169,44 @@ void main() {
     });
   });
 
+  // A column-less Table (SWT List-style single column, e.g. JDT's "Defined
+  // classpath variables" list) must let its one text cell use the full width and
+  // clip only at the real edge — matching native SWT. Regression: buildBody set
+  // only {0: FlexColumnWidth()} while buildRow still appends a trailing
+  // SizedBox.shrink() cell, so the unlisted trailing column fell back to
+  // Flutter's default FlexColumnWidth(1). Two equal-weight flex columns split
+  // the width 50/50, so the text was ellipsized at ~half the list width with an
+  // empty gap on the right (issue: item text truncated long before available width).
+  group('column-less table fills the single cell', () {
+    const longText =
+        'JRE_LIB - /opt/example/very/long/installation/path/'
+        'runtime/Contents/Eclipse/jre/lib/jrt-fs.jar';
+
+    testWidgets('single text cell uses nearly the full width, not half',
+        (tester) async {
+      // Matches the reported list signature: 0 columns, no header, long item text.
+      final value = _table(
+        columns: const [],
+        items: [_item(10, [longText])],
+        headerVisible: false,
+      );
+
+      await tester.pumpWidget(_wrap(value));
+      await tester.pump();
+
+      // The Text is Expanded inside its cell, so its laid-out width equals the
+      // cell (column 0) width. In an 800-wide list a healthy single column fills
+      // almost all of it; the 50/50 bug caps it near 400.
+      final textWidth = tester.getSize(find.text(longText)).width;
+      expect(
+        textWidth,
+        greaterThan(640.0),
+        reason: 'the lone text column must fill the list width (>0.8*800), not '
+            'split it 50/50 with the empty trailing filler (~400)',
+      );
+    });
+  });
+
   group('column text alignment', () {
     Future<TextAlign?> textAlign(WidgetTester tester, int alignment) async {
       final cols = [VTableColumn()

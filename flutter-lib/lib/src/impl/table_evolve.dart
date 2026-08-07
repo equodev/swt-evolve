@@ -441,7 +441,15 @@ class TableImpl<T extends TableSwt, V extends VTable>
         )
         .toList();
 
-    final trailingColumnWidths = columns.isEmpty ? const {0: FlexColumnWidth()} : columnWidths;
+    // A column-less table (SWT List-style single column) still gets a trailing
+    // SizedBox.shrink() cell from buildRow, so its row has two Table columns.
+    // Pin column 0 to flex and the trailing filler to zero width — otherwise the
+    // unlisted filler falls back to Flutter's default FlexColumnWidth(1) and the
+    // two equal-weight flex columns split the width 50/50, ellipsizing the text
+    // at half the list width with an empty gap on the right.
+    final trailingColumnWidths = columns.isEmpty
+        ? const {0: FlexColumnWidth(), 1: FixedColumnWidth(0)}
+        : columnWidths;
 
     return Container(
       color: backgroundColor,
