@@ -303,6 +303,94 @@ String typeById(String identifier, String text) {
   }
 }
 
+// ============================================================================
+// UI-thread runner triggers — reach app surfaces the Flutter action layer can't.
+//
+// A native OS menu (macOS Cmd+, / Window > Preferences) can't be driven by any
+// synthetic Flutter gesture, and it gates every Preferences-dialog bug. These
+// send a request on `swt.evolve.test.runUi` to a debug-gated Java hook
+// (TestUiRunner) that runs a reflective action on the SWT Display thread — e.g.
+// opening the Preferences dialog through the app's own workbench layer. Once the
+// dialog is open its content is Flutter-rendered again, so `tapById`/`typeById`
+// above take over.
+//
+// The opener/registry class names are app-specific and come from the caller (the
+// private flutter-mcp wrapper), so nothing here — or in the Java hook — names an
+// application. Each returns the small `{"ok":...}` envelope; the request itself is
+// fire-and-forget (Java acts asynchronously on the UI thread).
+// ============================================================================
+
+/// Latest `listPrefPages` result cached from the Java response channel (see
+/// test_harness.dart). Read via [lastPrefPages] after a [listPrefPages] request.
+Map<String, dynamic>? _lastRunUiResponse;
+
+/// Open the app's Preferences dialog via [opener] (an app-supplied opener class),
+/// optionally jumping straight to page [id]; [style] selects the opener shape
+/// (`builder` — a JFace preference-dialog builder; `util` — Eclipse's
+/// PreferencesUtil). With no [id] it opens at the default page and the caller
+/// navigates the Flutter-rendered preference tree with `tapById`.
+String openPref(String opener, [String? id, String style = 'builder']) {
+  EquoCommService.sendPayload('swt.evolve.test.runUi', {
+    'action': 'openPreferences',
+    'opener': opener,
+    'style': style,
+    if (id != null && id.isNotEmpty) 'id': id,
+  });
+  return _ok('sent', 'openPreferences ${id == null || id.isEmpty ? "(default page)" : id} via $style');
+}
+
+/// Open the app's Preferences dialog on a preference manager built from an
+/// app-supplied [registry] class and its [xpField] extension-point constant,
+/// optionally jumping straight to page [id]. Reaches preference registries the
+/// app exposes outside Eclipse's PreferencesUtil set and the project-settings
+/// builder — e.g. an app's "general settings" pages that live under a non-project
+/// extension point. The Java hook builds a plain JFace `PreferenceDialog` on that
+/// manager, so nothing here names an application.
+String openPrefViaRegistry(String registry, String xpField, [String? id]) {
+  EquoCommService.sendPayload('swt.evolve.test.runUi', {
+    'action': 'openPreferences',
+    'style': 'registry',
+    'registry': registry,
+    'xpField': xpField,
+    if (id != null && id.isNotEmpty) 'id': id,
+  });
+  return _ok('sent',
+      'openPreferences[registry] ${id == null || id.isEmpty ? "(default page)" : id} via $registry');
+}
+
+/// Open an application [project] (a path) so project-scoped surfaces can build —
+/// some preference pages NPE until a project is open. Posts the app's own
+/// project-open workbench event, whose topic is read at runtime from the
+/// app-supplied [eventClass] `#`[topicField] constant.
+String openProject(String project, String eventClass, String topicField) {
+  EquoCommService.sendPayload('swt.evolve.test.runUi', {
+    'action': 'openProject',
+    'project': project,
+    'eventClass': eventClass,
+    'topicField': topicField,
+  });
+  return _ok('sent', 'openProject $project');
+}
+
+/// Ask the Java hook to enumerate the preference pages via [registry] (an
+/// app-supplied registry class) and its [xpField] extension-point constant. The
+/// result arrives asynchronously on the response channel — read it with
+/// [lastPrefPages] a beat later.
+String listPrefPages(String registry, [String? xpField]) {
+  EquoCommService.sendPayload('swt.evolve.test.runUi', {
+    'action': 'listPrefPages',
+    'registry': registry,
+    if (xpField != null && xpField.isNotEmpty) 'xpField': xpField,
+  });
+  return _ok('sent', 'listPrefPages via $registry');
+}
+
+/// The most recent [listPrefPages] result (`{"action":...,"pages":[{id,label}...]}`)
+/// as a JSON string, or an `ok:false` envelope if none has arrived yet.
+String lastPrefPages() => _lastRunUiResponse == null
+    ? _fail('lastPrefPages', 'no listPrefPages response yet — send listPrefPages first, then retry')
+    : jsonEncode(_lastRunUiResponse);
+
 /// Scroll the scrollable at/under [identifier] one step in [direction]
 /// (up|down|left|right), via the semantics scroll action Scrollable exposes.
 String scrollById(String identifier, String direction) {

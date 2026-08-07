@@ -55,6 +55,13 @@ void registerTestQueryChannel() {
     });
   });
 
+  // Result channel for the debug UI-thread runner (see test_harness_actions.dart `openPref` /
+  // `listPrefPages`). Java answers a `listPrefPages` request here; we cache the latest payload so a
+  // follow-up `lastPrefPages()` eval can read it (a single eval can't span the async Java round-trip).
+  EquoCommService.onRaw("swt.evolve.test.runUiResponse", (dynamic resp) {
+    if (resp is Map) _lastRunUiResponse = resp.cast<String, dynamic>();
+  });
+
   // Relay embedded-iframe load pings to Java (web only; no-op elsewhere).
   registerIframeLoadProbe();
 

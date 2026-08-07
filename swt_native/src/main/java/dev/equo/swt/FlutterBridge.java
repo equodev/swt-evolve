@@ -67,6 +67,11 @@ public abstract class FlutterBridge {
         comm.on("swt.evolve.property.set", ConfigFlags.class, parsed -> handlePropertySetFromFlutter(comm, parsed));
         comm.on("swt.evolve.url.open", Object.class, FlutterBridge::handleUrlOpenFromFlutter);
         comm.on(WIDGET_REFRESH_CHANNEL, String.class, FlutterBridge::handleWidgetRefresh);
+        // Debug-only: a reflective "run this on the UI thread" primitive (open a dialog by id, etc.)
+        // that reaches surfaces the Flutter action layer can't drive — e.g. a native-menu-gated
+        // Preferences dialog. Gated so it never registers in production. See TestUiRunner.
+        if (Config.isDebug())
+            comm.on(TestUiRunner.CHANNEL, Object.class, m -> TestUiRunner.handle(comm, m));
         return comm;
     }
 
