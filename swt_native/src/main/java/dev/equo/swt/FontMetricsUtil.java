@@ -28,6 +28,37 @@ public final class FontMetricsUtil {
     }
 
     /**
+     * The font families a Dart-backed {@code Device} can actually honour: every name we know how
+     * to map to a real typeface, plus the system font.
+     *
+     * <p>Native SWT enumerates the OS font list; there is no OS to ask here, so without this the
+     * impl reports only the system font (named literally "system" on web). Callers that intersect
+     * a CSS {@code font-family} list against this set — Eclipse theming does, via
+     * {@code Display.getFontList(null, true)} — then match nothing and fall back to null, which
+     * they happily pass to {@code FontData.setName}.</p>
+     *
+     * <p>Reads the substitution table, never populates it: registering is the web runtime's call
+     * (see {@code WebFlutterServer}), and forcing it here would make a desktop build substitute
+     * names it can render natively.</p>
+     */
+    public static FontData[] getFontList(String faceName, boolean scalable, FontData systemFontData) {
+        if (!scalable) return new FontData[0];
+        java.util.LinkedHashSet<String> names = new java.util.LinkedHashSet<>();
+        if (systemFontData != null && systemFontData.getName() != null) {
+            names.add(systemFontData.getName());
+        }
+        names.addAll(fontSubstitutionKeys());
+        int height = Math.max(1, systemFontData != null ? systemFontData.getHeight() : 11);
+        java.util.List<FontData> result = new java.util.ArrayList<>();
+        for (String name : names) {
+            if (faceName == null || faceName.equalsIgnoreCase(name)) {
+                result.add(new FontData(name, height, SWT.NORMAL));
+            }
+        }
+        return result.toArray(new FontData[0]);
+    }
+
+    /**
      * Computes scaled font metric values for the given font.
      * Returns int[] {ascent, descent, height, avgCharWidth}, or null if the
      * font has no entry in {@link GenFontMetrics#DATA}.

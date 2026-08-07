@@ -415,29 +415,7 @@ public abstract class DartDevice implements Drawable, IDevice {
      */
     public FontData[] getFontList(String faceName, boolean scalable) {
         checkDevice();
-        if (!scalable)
-            return new FontData[0];
-        String systemFontName = systemFont.getFontData()[0].getName();
-        boolean systemFontIncluded = false;
-        int count = 0;
-        FontData[] fds = new FontData[100];
-        if (!systemFontIncluded && (faceName == null || faceName.equalsIgnoreCase(systemFontName))) {
-            /*
-		 * Feature in Mac OS X 10.10: The default system font ".Helvetica Neue DeskInterface"
-		 * is not available from the NSFontManager. The fix is to include it manually if necessary.
-		 */
-            if (count == fds.length) {
-                FontData[] newFds = new FontData[fds.length + 1];
-                System.arraycopy(fds, 0, newFds, 0, fds.length);
-                fds = newFds;
-            }
-            fds[count++] = systemFont.getFontData()[0];
-        }
-        if (count == fds.length)
-            return fds;
-        FontData[] result = new FontData[count];
-        System.arraycopy(fds, 0, result, 0, count);
-        return result;
+        return FontMetricsUtil.getFontList(faceName, scalable, systemFont == null ? null : systemFont.getFontData()[0]);
     }
 
     Point getScreenDPI() {
