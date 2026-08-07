@@ -67,8 +67,20 @@ import com.sun.javafx.stage.EmbeddedWindow;
 public class FXCanvas extends Canvas {
 
     private static final AtomicBoolean TOOLKIT_STARTED = new AtomicBoolean(false);
+    private static final AtomicBoolean UNAVAILABLE_WARNED = new AtomicBoolean(false);
 
-    private final HostContainer hostContainer = new HostContainer();
+    // Created on demand, NOT in a field initializer. Instantiating it defines HostContainer,
+    // which implements com.sun.javafx.embed.HostInterface — and a host that loads JavaFX into
+    // its own ModuleLayer (e(fx)clipse does) never exports com.sun.javafx.* to this unnamed
+    // module, so that definition throws IllegalAccessError. Eagerly, that error escaped from
+    // `new FXCanvas(...)` and took down the host application's startup; an optional bridge must
+    // not be able to do that. Deferred and guarded, an unreachable JavaFX degrades this canvas
+    // to a blank one instead. See fxHostUnavailable / ensureHost().
+    private HostContainer hostContainer;
+
+    // Set once we know JavaFX can't be driven from here. Everything that would touch the FX
+    // toolkit checks it, so a degraded canvas never throws.
+    private boolean fxHostUnavailable;
 
     private EmbeddedWindow stage;
     private volatile Scene scene;
@@ -113,7 +125,15 @@ public class FXCanvas extends Canvas {
 
     public FXCanvas(Composite parent, int style) {
         super(parent, style);
-        startToolkit();
+        // Stays in the constructor: paintControl posts to the FX thread, and a paint can
+        // arrive before the first setScene(), so the toolkit has to be up by then. Guarded
+        // because JavaFX may be absent entirely (the javafx.* imports are optional).
+        try {
+            startToolkit();
+        } catch (Throwable t) {
+            fxHostUnavailable = true;
+            warnUnavailable(t);
+        }
 
         addPaintListener(this::paintControl);
         addListener(SWT.Dispose, e -> dispose0());
@@ -163,6 +183,11 @@ public class FXCanvas extends Canvas {
     public void setScene(final Scene newScene) {
         checkWidget();
         this.scene = newScene;
+        if (!ensureHost()) {
+            // Degraded: the scene is kept so getScene() stays coherent, but nothing is
+            // handed to JavaFX and the canvas renders nothing.
+            return;
+        }
         Platform.runLater(() -> {
             if (pulseScene != null) {
                 pulseScene.removePostLayoutPulseListener(pulseListener);
@@ -232,6 +257,50 @@ public class FXCanvas extends Canvas {
 
     // ---- JavaFX toolkit bootstrap (headless / offscreen) -------------------
 
+    /**
+     * Creates the {@link HostContainer} on first use, and reports whether this canvas can
+     * drive JavaFX at all.
+     *
+     * <p>This is the single place {@code HostContainer} is instantiated, which matters: that
+     * instantiation is what forces the JVM to define a class implementing
+     * {@code com.sun.javafx.embed.HostInterface}. When the host application loads JavaFX into
+     * its own {@code ModuleLayer} — e(fx)clipse's {@code FXClassLoader} does — {@code
+     * javafx.graphics} exports its {@code com.sun.javafx.*} packages to that layer only, never
+     * to this bundle's unnamed module, and the definition fails with {@link IllegalAccessError}.
+     * Command-line {@code --add-exports} does not help: it only applies to the boot layer.</p>
+     *
+     * <p>Rather than let that escape and abort the host application's startup, we record it and
+     * degrade: the canvas stays blank and every FX-touching path becomes a no-op.</p>
+     *
+     * @return {@code true} if the JavaFX embedding internals are reachable
+     */
+    private boolean ensureHost() {
+        if (hostContainer != null) {
+            return true;
+        }
+        if (fxHostUnavailable) {
+            return false;
+        }
+        try {
+            hostContainer = new HostContainer();
+            return true;
+        } catch (Throwable t) {
+            fxHostUnavailable = true;
+            warnUnavailable(t);
+            return false;
+        }
+    }
+
+    /** Explains the blank canvas once per JVM — otherwise it is undiagnosable. */
+    private static void warnUnavailable(Throwable cause) {
+        if (UNAVAILABLE_WARNED.compareAndSet(false, true)) {
+            System.err.println("[FXCanvas] JavaFX embedding disabled — this canvas will stay blank. "
+                    + "The JavaFX internals (com.sun.javafx.*) are not reachable from this bundle, "
+                    + "which happens when the host application loads JavaFX into its own ModuleLayer. "
+                    + "Cause: " + cause);
+        }
+    }
+
     private static void startToolkit() {
         if (!TOOLKIT_STARTED.compareAndSet(false, true)) {
             return;
@@ -259,7 +328,7 @@ public class FXCanvas extends Canvas {
 
     /** Coalesced request to (re)render the scene on the FX thread. */
     private void requestSnapshot() {
-        if (scene == null) {
+        if (scene == null || fxHostUnavailable) {
             return;
         }
         if (snapshotPending.compareAndSet(false, true)) {
@@ -347,6 +416,10 @@ public class FXCanvas extends Canvas {
             pWidth = w;
             pHeight = h;
             final int fw = w, fh = h;
+            // Degraded: no toolkit to post to, and nothing to resize.
+            if (fxHostUnavailable) {
+                return;
+            }
             Platform.runLater(() -> {
                 if (stagePeer != null) {
                     stagePeer.setSize(fw, fh);

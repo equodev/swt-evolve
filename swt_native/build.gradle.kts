@@ -608,6 +608,20 @@ fun evolveVersion(): Any = gradle.parent?.rootProject?.version ?: project.versio
 fun hostVersion(suffix: String) = swtVersionProvider.map {
     "${it.substringBefore(".v")}.v${evolveVersion().toString().replace('.', '_')}-$suffix"
 }
+// -PexcludeFxCanvas: build the fragment WITHOUT our javafx.embed.swt.FXCanvas — neither the
+// classes nor the package export — so a host that already provides one keeps using its own.
+//
+// Why that can be preferable: e(fx)clipse loads its FXCanvas inside the JavaFX ModuleLayer,
+// where com.sun.javafx.* is reachable, so it works where ours cannot (see the FXCanvas issue).
+// In hosts that route their AWT event processor through FXCanvas, ours failing does not just
+// blank a canvas — it costs them single-UI-thread dispatch, and everything built on that
+// assumption breaks. Deferring to the host's FXCanvas keeps that arrangement intact; JavaFX
+// content still reaches the screen because upstream FXCanvas paints through the SWT Canvas's
+// GC, which Evolve pipes to Flutter — what is given up is *our* render path, not the content.
+//
+// Off by default: with no host-provided FXCanvas, ours is the only one there is.
+val excludeFxCanvas = project.hasProperty("excludeFxCanvas")
+
 fun swtExportPackage(swtWs: String?): String = (
     listOf(
         "org.eclipse.swt", "org.eclipse.swt.accessibility", "org.eclipse.swt.awt",
@@ -617,8 +631,8 @@ fun swtExportPackage(swtWs: String?): String = (
         "org.eclipse.swt.widgets",
         "org.eclipse.swt.internal; x-friends:=\"org.eclipse.ui\"",
         "org.eclipse.swt.internal.image; x-internal:=true",
-        "javafx.embed.swt",
     )
+        + (if (excludeFxCanvas) emptyList() else listOf("javafx.embed.swt"))
         + (swtWs?.let { listOf("org.eclipse.swt.internal.$it; x-friends:=\"org.eclipse.ui\"") } ?: emptyList())
         + "com.equo.chromium.swt"
     ).joinToString(",")
@@ -714,6 +728,10 @@ platforms.forEach { platform ->
         // Add all dependencies to the JAR
         from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
         exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "META-INF/LICENSE*", "META-INF/NOTICE*", "OSGI-OPT/")
+        // Must drop the classes as well as the export (see excludeFxCanvas): leaving them in a
+        // bundle that no longer exports the package would let nothing load them anyway, and
+        // keeping the export without classes resolves the host's import against an empty package.
+        if (excludeFxCanvas) exclude("javafx/embed/swt/**")
 
         val bsn = if (info.isWeb) "dev.equo.swt_evolve.web"
                   else "org.eclipse.swt.${info.swtWs}.${info.swtOs}.${info.arch}"
