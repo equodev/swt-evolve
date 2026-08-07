@@ -770,12 +770,10 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     public Rectangle getBounds() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        try {
-            if (width != -1 && height != -1) {
-                return new Rectangle(0, 0, width, height);
-            }
-        } finally {
-        }
+        if (width != -1 && height != -1)
+            return new Rectangle(0, 0, width, height);
+        if (imageData != null)
+            return new Rectangle(0, 0, width = imageData.width, height = imageData.height);
         return new Rectangle(0, 0, width, height);
     }
 
