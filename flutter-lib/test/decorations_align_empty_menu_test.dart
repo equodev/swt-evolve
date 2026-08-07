@@ -61,12 +61,12 @@ VMenu _menuBar({required bool withItems}) {
     ..items = withItems ? [cascade] : <VMenuItem>[];
 }
 
-VToolBar _toolBar() => VToolBar()
+VToolBar _toolBar({int y = 5}) => VToolBar()
   ..id = 11
   ..style = SWT.FLAT
   ..enabled = true
   ..visible = true
-  ..bounds = _rect(0, 0, 200, 40)
+  ..bounds = _rect(0, y, 200, 40)
   ..items = [
     VToolItem()
       ..id = 12
@@ -75,23 +75,26 @@ VToolBar _toolBar() => VToolBar()
       ..text = 'Save',
   ];
 
-VComposite _mainToolbar() => VComposite()
+/// Java's own geometry for the bar: with a menu strip it is taller and the toolbar row starts below
+/// the strip; without one the row is the whole bar. The row's y matters because the toolbar honours
+/// it, so a fixture that always used 0 would not describe any real state.
+VComposite _mainToolbar({required bool withMenuStrip}) => VComposite()
   ..id = 10
   ..swt = 'MainToolbar'
   ..style = SWT.NONE
   ..enabled = true
   ..visible = true
-  ..bounds = _rect(0, 0, _viewportWidth.toInt(), 68)
-  ..children = [_toolBar()];
+  ..bounds = _rect(0, 0, _viewportWidth.toInt(), withMenuStrip ? 68 : 40)
+  ..children = [_toolBar(y: withMenuStrip ? 33 : 5)];
 
-VDecorations _decorations(VMenu? menuBar) => VDecorations()
+VDecorations _decorations(VMenu? menuBar, {required bool withMenuStrip}) => VDecorations()
   ..id = 1
   ..style = SWT.NONE
   ..enabled = true
   ..visible = true
   ..bounds = _rect(0, 0, _viewportWidth.toInt(), _viewportHeight.toInt())
   ..menuBar = menuBar
-  ..children = [_mainToolbar()];
+  ..children = [_mainToolbar(withMenuStrip: withMenuStrip)];
 
 Future<void> _pumpShell(
   WidgetTester tester, {
@@ -104,7 +107,12 @@ Future<void> _pumpShell(
     contentWidget: SizedBox(
       width: _viewportWidth,
       height: _viewportHeight,
-      child: DecorationsSwt<VDecorations>(value: _decorations(menuBar)),
+      child: DecorationsSwt<VDecorations>(
+        value: _decorations(
+          menuBar,
+          withMenuStrip: !align.isVertical && (menuBar?.items?.isNotEmpty ?? false),
+        ),
+      ),
     ),
   ));
   // A second pump lets the toolbar's post-layout measurement of the vertical menu button settle.

@@ -122,18 +122,56 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
           .where((c) => c is! VLabel)
           .where((c) => (c.bounds?.width ?? 0) > 0 || (c.bounds?.height ?? 0) > 0)
           .toList()
-        ..sort((a, b) => (a.bounds?.x ?? 0).compareTo(b.bounds?.x ?? 0));
+        ..sort((a, b) {
+          final byRow = (a.bounds?.y ?? 0).compareTo(b.bounds?.y ?? 0);
+          return byRow != 0 ? byRow : (a.bounds?.x ?? 0).compareTo(b.bounds?.x ?? 0);
+        });
 
-      final computedDividers = <double>[];
-      for (var i = 0; i < nonSepChildren.length - 1; i++) {
-        final curr = nonSepChildren[i];
-        final next = nonSepChildren[i + 1];
-        if (curr is VToolBar) {
-          final currEnd =
-              ((curr.bounds?.x ?? 0) + (curr.bounds?.width ?? 0)).toDouble();
-          final nextStart = (next.bounds?.x ?? 0).toDouble();
-          if (nextStart > currEnd) {
-            computedDividers.add((currEnd + nextStart) / 2.0);
+      // The trim wraps its contributions onto extra rows when the window is too narrow to fit them
+      // on one line, and a child carries its row in the y it was given. Group by vertical overlap so
+      // each row keeps its own horizontal flow: treating them as a single line puts the wrapped rows
+      // back at x=0 and draws them over the first one.
+      final rows = <List<VControl>>[];
+      var rowBottom = 0.0;
+      for (final child in nonSepChildren) {
+        final top = (child.bounds?.y ?? 0).toDouble();
+        final bottom = top + (child.bounds?.height ?? 0).toDouble();
+        if (rows.isEmpty || top >= rowBottom) {
+          rows.add(<VControl>[]);
+          rowBottom = bottom;
+        } else if (bottom > rowBottom) {
+          rowBottom = bottom;
+        }
+        rows.last.add(child);
+      }
+
+      // A divider fills the gap between two adjacent contributions, so it belongs to a single row
+      // and spans only that row's height.
+      final computedDividers = <({double x, double top, double height})>[];
+      for (final row in rows) {
+        row.sort((a, b) => (a.bounds?.x ?? 0).compareTo(b.bounds?.x ?? 0));
+        var rowTop = double.infinity;
+        var rowEnd = 0.0;
+        for (final c in row) {
+          final top = (c.bounds?.y ?? 0).toDouble();
+          final bottom = top + (c.bounds?.height ?? 0).toDouble();
+          if (top < rowTop) rowTop = top;
+          if (bottom > rowEnd) rowEnd = bottom;
+        }
+        for (var i = 0; i < row.length - 1; i++) {
+          final curr = row[i];
+          final next = row[i + 1];
+          if (curr is VToolBar) {
+            final currEnd =
+                ((curr.bounds?.x ?? 0) + (curr.bounds?.width ?? 0)).toDouble();
+            final nextStart = (next.bounds?.x ?? 0).toDouble();
+            if (nextStart > currEnd) {
+              computedDividers.add((
+                x: (currEnd + nextStart) / 2.0,
+                top: rowTop,
+                height: rowEnd - rowTop,
+              ));
+            }
           }
         }
       }
@@ -155,6 +193,12 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
                 final effectiveH =
                     box.maxHeight.isFinite ? box.maxHeight : toolbarHeight;
 
+                // Children carry a y measured from the top of the whole bar, but a horizontal menu
+                // bar takes the first band of the Column and leaves this Stack only what is below
+                // it. Without shifting by that band, every child is placed a menu-height too low and
+                // clipped. The band is exactly what the bar has that this Stack does not.
+                final rowOrigin = toolbarHeight - effectiveH;
+
                 final stackChildren = <Widget>[];
 
                 final vmBtnRb = _vmBtnAtStartKey.currentContext?.findRenderObject() as RenderBox?;
@@ -167,21 +211,26 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
                 for (final entry in builtChildren) {
                   final left = (entry.child.bounds?.x ?? 0).toDouble() - vmBtnW;
                   final width = (entry.child.bounds?.width ?? 0).toDouble();
+                  final height = (entry.child.bounds?.height ?? 0).toDouble();
                   if (width <= 0) continue;
+                  // Honour the y the trim layout assigned: it is what puts a wrapped contribution on
+                  // the second row instead of on top of the first. Children with no height of their
+                  // own still stretch to fill the bar, as they always did.
                   stackChildren.add(Positioned(
                     left: left,
-                    top: 0,
-                    bottom: 0,
+                    top: (entry.child.bounds?.y ?? 0).toDouble() - rowOrigin,
+                    bottom: height > 0 ? null : 0,
                     width: width,
+                    height: height > 0 ? height : null,
                     child: entry.widget,
                   ));
                 }
 
-                for (final dividerX in computedDividers) {
+                for (final divider in computedDividers) {
                   stackChildren.add(Positioned(
-                    left: dividerX - dividerThickness / 2,
-                    top: dividerVerticalPadding,
-                    bottom: dividerVerticalPadding,
+                    left: divider.x - dividerThickness / 2,
+                    top: divider.top - rowOrigin + dividerVerticalPadding,
+                    height: divider.height - dividerVerticalPadding * 2,
                     width: dividerThickness,
                     child: ColoredBox(color: dividerColor),
                   ));
