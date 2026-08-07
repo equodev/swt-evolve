@@ -242,6 +242,7 @@ const int nativeBezelSize = 2;
 class _RowGeometry {
   final double rowHeight;
   final double rowPaddingVertical;
+  final double? cellPaddingHorizontal;
   final double? borderWidth;
   final double? arrowWidth;
   final double? gapFraction;
@@ -251,6 +252,7 @@ class _RowGeometry {
   _RowGeometry({
     required this.rowHeight,
     required this.rowPaddingVertical,
+    this.cellPaddingHorizontal,
     this.borderWidth,
     this.arrowWidth,
     this.gapFraction,
@@ -1030,6 +1032,7 @@ class WidgetMeasurer {
 
   Map<String, dynamic> _probeJson(RenderBoxInfo box) {
     final paddingVertical = _firstPaddingVertical(box);
+    final paddingHorizontal = _firstPaddingHorizontal(box);
     final borderWidth = _firstBorderWidth(box);
     return {
       'width': box.size.width,
@@ -1039,6 +1042,9 @@ class WidgetMeasurer {
       // The padding inside a probed box is the part of its height that is *not* text. A widget
       // whose rows grow with the font needs it as a constant, with the text measured in Java.
       if (paddingVertical != null) 'paddingVertical': paddingVertical,
+      // The horizontal counterpart, for a widget that has to size itself to its widest item:
+      // the text is measured in Java, the cell's own inset is this constant.
+      if (paddingHorizontal != null) 'paddingHorizontal': paddingHorizontal,
       if (borderWidth != null) 'borderWidth': borderWidth,
     };
   }
@@ -1048,6 +1054,16 @@ class WidgetMeasurer {
     if (padding is EdgeInsets) return padding.vertical;
     for (final child in box.children) {
       final found = _firstPaddingVertical(child);
+      if (found != null) return found;
+    }
+    return null;
+  }
+
+  double? _firstPaddingHorizontal(RenderBoxInfo box) {
+    final padding = box.padding;
+    if (padding is EdgeInsets) return padding.horizontal;
+    for (final child in box.children) {
+      final found = _firstPaddingHorizontal(child);
       if (found != null) return found;
     }
     return null;
@@ -2276,6 +2292,7 @@ class WidgetMeasurer {
     final expanderSamples = <int, List<double>>{};
     double? rowHeight;
     double? rowPaddingVertical;
+    double? cellPaddingHorizontal;
     double? borderWidth;
     double? arrowWidth;
 
@@ -2286,6 +2303,8 @@ class WidgetMeasurer {
       if (rows is! List || rows.isEmpty) return null;
       rowHeight ??= (rows.first['height'] as num).toDouble();
       rowPaddingVertical ??= (rows.first['paddingVertical'] as num?)
+          ?.toDouble();
+      cellPaddingHorizontal ??= (rows.first['paddingHorizontal'] as num?)
           ?.toDouble();
       final frame = result.discoveredComponents['frame'];
       if (frame is Map) {
@@ -2326,6 +2345,7 @@ class WidgetMeasurer {
     return _RowGeometry(
       rowHeight: rowHeight,
       rowPaddingVertical: rowPaddingVertical ?? 0,
+      cellPaddingHorizontal: cellPaddingHorizontal,
       borderWidth: borderWidth,
       arrowWidth: arrowWidth,
       gapFraction: gapFraction,
@@ -2349,6 +2369,8 @@ class WidgetMeasurer {
     required String widgetType,
     required bool nested,
     required bool hasBorder,
+    required bool measuresContent,
+    required String themeClass,
   }) {
     final param = widgetType.toLowerCase();
     final itemType = '${widgetType}Item';
@@ -2365,9 +2387,18 @@ class WidgetMeasurer {
     buffer.writeln('        if (wHint != SWT.DEFAULT) {');
     buffer.writeln('            width = wHint;');
     buffer.writeln('        } else {');
-    buffer.writeln(
-      '            width = columnCount > 0 ? columnCount * WIDTH_PER_COLUMN : WIDTH_NO_COLUMNS;',
-    );
+    if (measuresContent) {
+      buffer.writeln(
+        '            width = columnCount > 0 ? columnCount * WIDTH_PER_COLUMN',
+      );
+      buffer.writeln(
+        '                    : Math.max(WIDTH_NO_COLUMNS, getContentWidth($param));',
+      );
+    } else {
+      buffer.writeln(
+        '            width = columnCount > 0 ? columnCount * WIDTH_PER_COLUMN : WIDTH_NO_COLUMNS;',
+      );
+    }
     buffer.writeln(
       '            if ((style & SWT.V_SCROLL) != 0) width += NATIVE_SCROLLER_AND_BEZEL_TRIM;',
     );
@@ -2387,6 +2418,53 @@ class WidgetMeasurer {
     buffer.writeln('        return new Point(width, height);');
     buffer.writeln('    }');
     buffer.writeln();
+    if (measuresContent) {
+      // The widest item drives the width, the way the native computeSize does for a widget with
+      // no columns. VIRTUAL is skipped: reading the items to size the widget would materialise
+      // the whole model.
+      buffer.writeln(
+        '    private static int getContentWidth(Dart$widgetType $param) {',
+      );
+      buffer.writeln(
+        '        if (($param.getStyle() & SWT.VIRTUAL) != 0) return 0;',
+      );
+      buffer.writeln('        int widest = 0;');
+      buffer.writeln(
+        '        for ($itemType item : $param.getItems()) {',
+      );
+      buffer.writeln('            if (item == null) continue;');
+      buffer.writeln('            TextStyle ts;');
+      buffer.writeln('            if (!Config.getConfigFlags().use_swt_fonts) {');
+      buffer.writeln(
+        '                ts = $themeClass.get().textStyle().withStyleFrom(item.getFont());',
+      );
+      buffer.writeln('            } else {');
+      buffer.writeln('                ts = TextStyle.from(item.getFont());');
+      buffer.writeln('            }');
+      buffer.writeln('            int cellWidth = 0;');
+      buffer.writeln('            String text = item.getText();');
+      buffer.writeln('            if (text != null && !text.isEmpty()) {');
+      buffer.writeln(
+        '                cellWidth += (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());',
+      );
+      buffer.writeln('            }');
+      buffer.writeln('            if (item.getImage() != null) {');
+      buffer.writeln(
+        '                cellWidth += ts.size() + CELL_PADDING_LEFT;',
+      );
+      buffer.writeln('            }');
+      buffer.writeln('            widest = Math.max(widest, cellWidth);');
+      buffer.writeln('        }');
+      buffer.writeln('        if (widest == 0) return 0;');
+      buffer.writeln(
+        '        if (($param.getStyle() & SWT.CHECK) != 0) widest += CHECKBOX_WIDTH + CELL_PADDING_LEFT;',
+      );
+      buffer.writeln(
+        '        return widest + CELL_PADDING_HORIZONTAL + CELL_MARGIN;',
+      );
+      buffer.writeln('    }');
+      buffer.writeln();
+    }
     buffer.writeln(
       '    public static int getPreferredHeight(Dart$widgetType $param) {',
     );
@@ -2527,6 +2605,14 @@ class WidgetMeasurer {
 
     final fallbackWidth = rowWidgetFallbackWidth[widgetType];
     final nested = plain.hasExpander;
+    // A flat widget with no columns paints its items in an implicit column 0, so its preferred
+    // width has to follow the widest item instead of the fallback constant. A nested one is left
+    // alone: its rows carry indent and expanders that this arithmetic does not model.
+    final measuresContent =
+        !nested &&
+        fallbackWidth != null &&
+        rowFontSensitive &&
+        plain.cellPaddingHorizontal != null;
 
     final buffer = StringBuffer();
     buffer.writeln('package dev.equo.swt.size;');
@@ -2545,7 +2631,7 @@ class WidgetMeasurer {
       buffer.writeln('import org.eclipse.swt.graphics.Point;');
     }
     buffer.writeln('import org.eclipse.swt.widgets.Dart$widgetType;');
-    if (nested) {
+    if (nested || measuresContent) {
       buffer.writeln('import org.eclipse.swt.widgets.${widgetType}Item;');
     }
     buffer.writeln();
@@ -2593,6 +2679,19 @@ class WidgetMeasurer {
         '    private static final int NATIVE_SCROLLER_AND_BEZEL_TRIM = $nativeScrollerSize + $nativeBezelSize;',
       );
     }
+    if (measuresContent) {
+      final cellPaddingHorizontal = plain.cellPaddingHorizontal!.round();
+      buffer.writeln(
+        '    private static final int CELL_PADDING_LEFT = ${cellPaddingHorizontal ~/ 2};',
+      );
+      buffer.writeln(
+        '    private static final int CELL_PADDING_HORIZONTAL = $cellPaddingHorizontal;',
+      );
+      // Slack the cell keeps beyond its own padding, and the checkbox column a CHECK widget
+      // reserves ahead of column 0 — both mirror what the row impl draws.
+      buffer.writeln('    private static final int CELL_MARGIN = 2;');
+      buffer.writeln('    private static final int CHECKBOX_WIDTH = 20;');
+    }
     if (plain.hasExpander) {
       // Horizontal row geometry: the left edge gap is a fraction of the widget width, then a
       // fixed row padding, then one indent per nesting level, then the expander arrow itself.
@@ -2625,6 +2724,8 @@ class WidgetMeasurer {
         buffer,
         widgetType: widgetType,
         nested: nested,
+        measuresContent: measuresContent,
+        themeClass: '${widgetType}ItemTheme',
         hasBorder: plain.borderWidth != null,
       );
       buffer.writeln();

@@ -5,6 +5,7 @@ import dev.equo.swt.FontMetricsUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.DartTable;
+import org.eclipse.swt.widgets.TableItem;
 
 public class TableSizes {
 
@@ -20,6 +21,10 @@ public class TableSizes {
     private static final int WIDTH_PER_COLUMN = 70;
     private static final int WIDTH_NO_COLUMNS = 70;
     private static final int NATIVE_SCROLLER_AND_BEZEL_TRIM = 15 + 2;
+    private static final int CELL_PADDING_LEFT = 8;
+    private static final int CELL_PADDING_HORIZONTAL = 16;
+    private static final int CELL_MARGIN = 2;
+    private static final int CHECKBOX_WIDTH = 20;
 
     public static Point computeSize(DartTable table, int wHint, int hHint, boolean changed) {
         int columnCount = table.getColumnCount();
@@ -28,7 +33,8 @@ public class TableSizes {
         if (wHint != SWT.DEFAULT) {
             width = wHint;
         } else {
-            width = columnCount > 0 ? columnCount * WIDTH_PER_COLUMN : WIDTH_NO_COLUMNS;
+            width = columnCount > 0 ? columnCount * WIDTH_PER_COLUMN
+                    : Math.max(WIDTH_NO_COLUMNS, getContentWidth(table));
             if ((style & SWT.V_SCROLL) != 0) width += NATIVE_SCROLLER_AND_BEZEL_TRIM;
         }
         int height;
@@ -39,6 +45,32 @@ public class TableSizes {
             if ((style & SWT.H_SCROLL) != 0) height += NATIVE_SCROLLER_AND_BEZEL_TRIM - 2 * getBorderWidth();
         }
         return new Point(width, height);
+    }
+
+    private static int getContentWidth(DartTable table) {
+        if ((table.getStyle() & SWT.VIRTUAL) != 0) return 0;
+        int widest = 0;
+        for (TableItem item : table.getItems()) {
+            if (item == null) continue;
+            TextStyle ts;
+            if (!Config.getConfigFlags().use_swt_fonts) {
+                ts = TableItemTheme.get().textStyle().withStyleFrom(item.getFont());
+            } else {
+                ts = TextStyle.from(item.getFont());
+            }
+            int cellWidth = 0;
+            String text = item.getText();
+            if (text != null && !text.isEmpty()) {
+                cellWidth += (int) Math.ceil(FontMetricsUtil.getFontSize(text, ts).x());
+            }
+            if (item.getImage() != null) {
+                cellWidth += ts.size() + CELL_PADDING_LEFT;
+            }
+            widest = Math.max(widest, cellWidth);
+        }
+        if (widest == 0) return 0;
+        if ((table.getStyle() & SWT.CHECK) != 0) widest += CHECKBOX_WIDTH + CELL_PADDING_LEFT;
+        return widest + CELL_PADDING_HORIZONTAL + CELL_MARGIN;
     }
 
     public static int getPreferredHeight(DartTable table) {
