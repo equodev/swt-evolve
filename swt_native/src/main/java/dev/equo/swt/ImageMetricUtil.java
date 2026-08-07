@@ -19,11 +19,15 @@ public class ImageMetricUtil {
     }
 
     public static PointD getImageSize(ImageData imageData) {
+        // An Image whose imageData never got populated returns null here rather than throwing.
+        // Zero is the right answer: the *Sizes formulas all read a zero image size as "this
+        // image contributes nothing to the layout", and Flutter draws nothing for it either.
+        if (imageData == null) return new PointD(0, 0);
         return new PointD(imageData.width, imageData.height);
     }
 
     public static PointD getImageSize(Image image) {
-        if (image == null) return null;
+        if (image == null) return new PointD(0, 0);
         return getImageSize(image.getImageData());
     }
 }
