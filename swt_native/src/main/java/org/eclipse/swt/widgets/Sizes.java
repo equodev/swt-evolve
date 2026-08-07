@@ -799,7 +799,18 @@ public class Sizes {
     }
 
     public static Point getSize(DartScrollBar scrollBar) {
-        return null;
+        // Win32 measures a bar against its parent's client rect: a horizontal bar spans the
+        // client width and is SM_CYHSCROLL tall, a vertical one is the transpose. Callers only
+        // read the thickness (ScrolledCompositeLayout takes .y, Forms' SharedScrolledComposite
+        // takes .x) but they dereference the result, so this must never return null.
+        Scrollable parent = scrollBar.parent;
+        Rectangle client = (parent != null && !parent.isDisposed())
+            ? parent.getClientArea()
+            : new Rectangle(0, 0, 0, 0);
+        if ((scrollBar.getApi().style & SWT.HORIZONTAL) != 0) {
+            return new Point(Math.max(0, client.width), SCROLL_BAR_SIZE);
+        }
+        return new Point(SCROLL_BAR_SIZE, Math.max(0, client.height));
     }
 
     public static Point minimumSize(DartComposite composite, int wHint, int hHint, boolean changed) {
