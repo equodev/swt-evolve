@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:js_interop';
 import 'dart:ui' show Size;
 
+import 'src/impl/key_forwarding.dart';
+
 @JS('window.equoCommPort')
 external JSNumber? get _equoCommPort;
 
@@ -154,15 +156,19 @@ void observeWindowClose(void Function() onClose) {
 }
 
 /// Stops the browser from acting on a small set of reserved shortcuts (Ctrl/Cmd + S, P, O) so they
-/// reach the app instead — e.g. Cmd+S otherwise opens the browser's "Save page" dialog. Runs in the
-/// capture phase and only calls preventDefault; it never stops propagation, so Flutter still receives
-/// the key and forwards it to Java (an Eclipse command bound to the shortcut still dispatches). The
-/// editing shortcuts (Ctrl/Cmd + C/V/X/A/Z) are deliberately left alone so text fields keep working.
+/// reach the app instead — e.g. Cmd+S otherwise opens the browser's "Save page" dialog. Also stops
+/// the browser's own Tab-key DOM focus traversal while [focusedEditorHandlesOwnKeys]. Runs in the
+/// capture phase and only calls preventDefault; it never stops propagation, so Flutter still
+/// receives the key. The editing shortcuts (Ctrl/Cmd + C/V/X/A/Z) are left alone.
 void suppressBrowserShortcuts() {
   const reserved = {'s', 'p', 'o'};
   _addWindowEventListenerCapture(
     'keydown'.toJS,
     ((_KeyboardEvent event) {
+      if (event.key == 'Tab' && focusedEditorHandlesOwnKeys) {
+        event.preventDefault();
+        return;
+      }
       if (!(event.metaKey || event.ctrlKey)) return;
       if (reserved.contains(event.key.toLowerCase())) {
         event.preventDefault();

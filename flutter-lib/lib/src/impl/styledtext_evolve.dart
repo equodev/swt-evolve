@@ -2431,7 +2431,6 @@ class TextShape extends Shape {
     final tp = TextPainter(
       text: textSpan ?? TextSpan(text: text.isEmpty ? " " : text, style: style),
       textDirection: TextDirection.ltr,
-      maxLines: wordWrap == true ? null : 1,
     );
 
     if (wordWrap == true) {

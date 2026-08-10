@@ -372,6 +372,15 @@ String openProject(String project, String eventClass, String topicField) {
   return _ok('sent', 'openProject $project');
 }
 
+/// Open a file (by absolute [path]) in its default editor.
+String openFile(String path) {
+  EquoCommService.sendPayload('swt.evolve.test.runUi', {
+    'action': 'openFile',
+    'path': path,
+  });
+  return _ok('sent', 'openFile $path');
+}
+
 /// Ask the Java hook to enumerate the preference pages via [registry] (an
 /// app-supplied registry class) and its [xpField] extension-point constant. The
 /// result arrives asynchronously on the response channel — read it with

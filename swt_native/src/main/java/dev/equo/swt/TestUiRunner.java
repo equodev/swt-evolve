@@ -31,6 +31,7 @@ import java.util.Map;
  *   { "action":"openPreferences", "style":"registry", "registry":"&lt;fqcn&gt;", "xpField":"&lt;staticField&gt;", "id":"&lt;pageId?&gt;" }
  *   { "action":"listPrefPages",  "registry":"&lt;fqcn&gt;", "xpField":"&lt;staticField?&gt;" }
  *   { "action":"openProject",    "project":"&lt;path&gt;", "eventClass":"&lt;fqcn&gt;", "topicField":"&lt;staticField&gt;" }
+ *   { "action":"openFile",       "path":"&lt;absolute file path&gt;" }
  * </pre>
  * A {@code listPrefPages} result is returned on {@link #RESPONSE_CHANNEL}
  * ({@code swt.evolve.test.runUiResponse}) and also logged as a {@code chk:} line for the run log.
@@ -69,6 +70,7 @@ final class TestUiRunner {
                     case "openPreferences" -> openPreferences(m);
                     case "listPrefPages" -> listPrefPages(comm, m);
                     case "openProject" -> openProject(m);
+                    case "openFile" -> openFile(m);
                     default -> DebugLog.checkpoint(CHANNEL, "unknown action:", action);
                 }
             } catch (Throwable t) {
@@ -175,6 +177,30 @@ final class TestUiRunner {
         DebugLog.checkpoint(CHANNEL, "openProject sending", topic, "->", project);
         Object sent = brokerCls.getMethod("send", String.class, Object.class).invoke(broker, topic, project);
         DebugLog.checkpoint(CHANNEL, "openProject send returned", sent);
+    }
+
+    /** Opens a file in its default editor via {@code IDE.openEditorOnFileStore}. */
+    private static void openFile(Map<?, ?> m) throws Exception {
+        String path = str(m.get("path"));
+        if (path == null) {
+            DebugLog.checkpoint(CHANNEL, "openFile: no path in payload");
+            return;
+        }
+        Class<?> platformUi = loadAppClass("org.eclipse.ui.PlatformUI");
+        Object workbench = platformUi.getMethod("getWorkbench").invoke(null);
+        Class<?> iWorkbench = loadAppClass("org.eclipse.ui.IWorkbench");
+        Object window = iWorkbench.getMethod("getActiveWorkbenchWindow").invoke(workbench);
+        Class<?> iWorkbenchWindow = loadAppClass("org.eclipse.ui.IWorkbenchWindow");
+        Class<?> iWorkbenchPage = loadAppClass("org.eclipse.ui.IWorkbenchPage");
+        Object page = iWorkbenchWindow.getMethod("getActivePage").invoke(window);
+        Class<?> efs = loadAppClass("org.eclipse.core.filesystem.EFS");
+        Class<?> iFileStore = loadAppClass("org.eclipse.core.filesystem.IFileStore");
+        Object fileStore = efs.getMethod("getStore", java.net.URI.class).invoke(null, new java.io.File(path).toURI());
+        Class<?> ideCls = loadAppClass("org.eclipse.ui.ide.IDE");
+        Method openEditor = ideCls.getMethod("openEditorOnFileStore", iWorkbenchPage, iFileStore);
+        DebugLog.checkpoint(CHANNEL, "openFile", path);
+        Object editorPart = openEditor.invoke(null, page, fileStore);
+        DebugLog.checkpoint(CHANNEL, "openFile opened", editorPart);
     }
 
     /**
