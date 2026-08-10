@@ -303,6 +303,18 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
           child: Focus(
             focusNode: _focusNode,
             onKeyEvent: _handleKeyEvent,
+            // Taking focus on the Flutter side is not enough: SWT tracks its own focus
+            // control, and the workbench decides which part is active from it. Without
+            // telling Java, clicking the tree leaves focus on whatever held it before —
+            // so the part that owns the tree never reactivates, and actions bound to it
+            // (opening the double-clicked file) silently do nothing.
+            onFocusChange: (hasFocus) {
+              if (hasFocus) {
+                widget.sendFocusFocusIn(state, null);
+              } else {
+                widget.sendFocusFocusOut(state, null);
+              }
+            },
             child: Stack(
               children: [
                 Container(
@@ -895,6 +907,13 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     final item = _findTreeItemById(itemId);
     if (item == null) return;
     _focusNode.requestFocus();
+    // Report focus on the gesture, not only on a Flutter focus change. Java owns the SWT
+    // focus holder and moves it on its own — activating an editor part focuses that part's
+    // control — while this tree keeps its Flutter focus, so a later click produces no focus
+    // change here and Java would never learn the tree is focused again. The workbench picks
+    // the active part from the SWT focus holder, so leaving it stale makes every action bound
+    // to this tree's part (opening the double-clicked file) silently do nothing.
+    widget.sendFocusFocusIn(state, null);
 
     final bool isMultiMode = StyleBits(state.style).has(SWT.MULTI);
     setState(() {

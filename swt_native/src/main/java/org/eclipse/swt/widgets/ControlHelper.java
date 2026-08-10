@@ -299,4 +299,32 @@ public class ControlHelper {
             c.fixFocus(control);
     }
 
+    /**
+     * Announce that the user activated [control], by sending SWT.Activate up its parent chain.
+     *
+     * There is no OS focus machinery behind this backend, so nothing generates the activation an
+     * embedding workbench listens for. Eclipse's part renderer, for one, binds its activation
+     * listener to the *client Composite* of a part rather than to the control the user actually
+     * clicked, and only reacts when that widget carries the part's own model data — so the event
+     * has to travel up from the focused control for the enclosing part to become the active one.
+     * Without it a view keeps drawing and reporting selection while the workbench still considers
+     * a different part active, and every action bound to it quietly does nothing.
+     *
+     * Ancestors that are not part containers simply have no listener and ignore the event.
+     */
+    public static void sendActivateToAncestors(DartControl control) {
+        if (control == null || control.getApi() == null || control.getApi().isDisposed())
+            return;
+        for (Widget widget = control.getApi(); widget != null; ) {
+            if (widget.isDisposed())
+                return;
+            // A Dart control can sit inside a natively-backed ancestor; that one already gets its
+            // activation from the OS, so walk past it rather than assuming the whole chain is ours.
+            if (widget.getImpl() instanceof DartWidget impl)
+                impl.sendEvent(SWT.Activate);
+            if (widget instanceof Shell)
+                return;
+            widget = (widget instanceof Control c) ? c.getParent() : null;
+        }
+    }
 }
