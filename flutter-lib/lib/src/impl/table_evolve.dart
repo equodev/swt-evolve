@@ -602,23 +602,21 @@ class TableImpl<T extends TableSwt, V extends VTable>
   void commitEditorIfLeaving(int rowIndex) {
     final editors = state.editors;
     if (editors == null || editors.isEmpty) return;
-    final remaining = <VTableEditor>[];
-    bool leaving = false;
+    // A JFace inline cell editor (TableViewerEditor) lives on the selected row
+    // and must commit when selection moves off it -- send Focus/FocusOut so the
+    // edit is persisted. Only the editor on the row we are LEAVING is committed;
+    // permanent editors on other rows (per-row checkboxes etc.) are left alone,
+    // since in SWT they are not tied to selection. Java's editor list stays the
+    // source of truth for which editors exist, so this does not remove any.
+    final leavingRow = _selectedRowIndex;
+    if (leavingRow < 0 || leavingRow == rowIndex) return;
     for (final e in editors) {
       final ed = e.editor;
       if (ed != null &&
           e.item != null &&
-          findItemIndex(e.item!.id) != rowIndex) {
+          findItemIndex(e.item!.id) == leavingRow) {
         EquoCommService.send("${ed.swt}/${ed.id}/Focus/FocusOut");
-        leaving = true;
-      } else {
-        remaining.add(e);
       }
-    }
-    if (leaving) {
-      setState(() {
-        state.editors = remaining;
-      });
     }
   }
 
@@ -687,7 +685,13 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
       final itemIndex = findItemIndex(editingItemId);
       if (itemIndex < 0) continue;
-      if (itemIndex != _selectedRowIndex) continue;
+      // An SWT TableEditor control is visible as soon as setEditor(...) is
+      // called and stays visible until the editor is disposed -- it does NOT
+      // follow selection. A table can place a permanent control on every row
+      // (e.g. a Button(SWT.CHECK) per row via TableEditor.setEditor(button,
+      // item, col)), so every editor in the list must render regardless of
+      // which row is selected. Java's editor list is the source of truth for
+      // which editors exist.
 
       final scrollOffset = _verticalScrollController.hasClients
           ? _verticalScrollController.offset
