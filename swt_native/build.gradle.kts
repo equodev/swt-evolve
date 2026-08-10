@@ -241,6 +241,13 @@ sourceSets {
     test {
         compileClasspath = configurations["testCompileClasspath"] + embedBackend.output + webShared.output
         runtimeClasspath = output + configurations["testRuntimeClasspath"] + embedBackend.output + webShared.output
+        // The committed WorkbenchTree bench fixture is generated against the DEFAULT SWT and bakes
+        // in APIs newer than the oldest supported versions (e.g. CTabFolder.setSelectionBarThickness,
+        // added in 3.121). The whole bench suite is tagged 'bench' and never runs in the version
+        // `test` job — it only needs to compile — so on sub-3.121 builds we skip compiling it.
+        // 3.121+ (including the default) keep compiling bench unchanged.
+        val swtMinor = swtVersion.split(".").getOrNull(1)?.toIntOrNull() ?: Int.MAX_VALUE
+        if (swtMinor < 121) java { exclude("dev/equo/swt/bench/**") }
     }
 
     // Native-family integration test source set: the SAME test code (src/test/java), but compiled

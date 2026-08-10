@@ -13,6 +13,8 @@ public class ControlHelper {
     // already inserted; Java-simulated keys (upstream tests, apps) keep the full SWT behavior.
     private static final ThreadLocal<Boolean> FLUTTER_KEY = ThreadLocal.withInitial(() -> false);
 
+    public static int inPaintDepth;
+
     public static void sendFlutterKeyDown(DartWidget widget, Event event) {
         FLUTTER_KEY.set(true);
         try {
@@ -236,8 +238,26 @@ public class ControlHelper {
         // from DartImage.getImageData during serialization).
         if (bounds.width <= 0 || bounds.height <= 0)
             return;
+        // Mark that a paint is in progress. sendEvent(SWT.Paint) runs the paint handler
+        // synchronously, and that handler (plus the GC dispose below) can pump the SWT event
+        // loop via DartImage.getImageData. While inPaintDepth > 0, DartDisplay.runDeferredEvents
+        // leaves queued input events untouched, so a click can't be dispatched re-entrantly
+        // against widgets that are mid-teardown. Balanced in a finally; nested paints just
+        // increment further and unwind cleanly.
+        inPaintDepth++;
         try {
-            if (!Class.forName("org.eclipse.draw2d.FigureCanvas").isInstance(c.getApi())) {
+            try {
+                if (!Class.forName("org.eclipse.draw2d.FigureCanvas").isInstance(c.getApi())) {
+                    Event event = new Event();
+                    event.x = 0;
+                    event.y = 0;
+                    event.width = bounds.width;
+                    event.height = bounds.height;
+                    event.gc = new GC(c.getApi());
+                    c.sendEvent(SWT.Paint, event);
+                    event.gc.dispose();
+                }
+            } catch (ClassNotFoundException ex) {
                 Event event = new Event();
                 event.x = 0;
                 event.y = 0;
@@ -247,15 +267,8 @@ public class ControlHelper {
                 c.sendEvent(SWT.Paint, event);
                 event.gc.dispose();
             }
-        } catch (ClassNotFoundException ex) {
-            Event event = new Event();
-            event.x = 0;
-            event.y = 0;
-            event.width = bounds.width;
-            event.height = bounds.height;
-            event.gc = new GC(c.getApi());
-            c.sendEvent(SWT.Paint, event);
-            event.gc.dispose();
+        } finally {
+            inPaintDepth--;
         }
     }
 
