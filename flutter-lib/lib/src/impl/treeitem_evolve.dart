@@ -140,6 +140,26 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     return e;
   }
 
+  void _secondaryActivate({required int button}) {
+    final bool enabled = _context?.parentTreeValue.enabled ?? true;
+    final bool selected =
+        _context?.treeImpl?.isItemSelected(state.id) ?? false;
+    if (!enabled) return;
+    if (!selected) {
+      _context?.treeImpl?.handleTreeItemSelection(state.id, notifyJava: false);
+      final e = _createEvent();
+      e.count = 1;
+      e.button = button;
+      _context?.parentTree.sendSelectionSelection(
+        _context!.parentTreeValue,
+        e,
+      );
+    }
+    if (_lastTapGlobalPosition != null) {
+      _context?.treeImpl?.openContextMenu(_lastTapGlobalPosition!);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     _context = TreeItemContext.of(context);
@@ -913,6 +933,13 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             _lastTapPosition = details.localPosition;
             _lastTapGlobalPosition = details.globalPosition;
           },
+          onSecondaryTapDown: (TapDownDetails details) {
+            _lastTapPosition = details.localPosition;
+            _lastTapGlobalPosition = details.globalPosition;
+          },
+          onSecondaryTap: () {
+            _secondaryActivate(button: 3);
+          },
           onTap: () {
             if (!enabled) return;
 
@@ -939,19 +966,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               // toggles multi-selection — that's Cmd — nor counts toward a
               // double-click): select the item, keeping an existing
               // multi-selection it belongs to, and open the context menu.
-              if (!selected) {
-                _context?.treeImpl?.handleTreeItemSelection(state.id, notifyJava: false);
-                final e = _createEvent();
-                e.count = 1;
-                e.button = 1;
-                _context?.parentTree.sendSelectionSelection(
-                  _context!.parentTreeValue,
-                  e,
-                );
-              }
-              if (_lastTapGlobalPosition != null) {
-                _context?.treeImpl?.openContextMenu(_lastTapGlobalPosition!);
-              }
+              _secondaryActivate(button: 1);
               return;
             }
 
