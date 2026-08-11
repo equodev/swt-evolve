@@ -2590,12 +2590,15 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
-        dirty();
+        ;
         int finalX = move ? x : this.bounds.x;
         int finalY = move ? y : this.bounds.y;
         int finalWidth = resize ? width : this.bounds.width;
         int finalHeight = resize ? height : this.bounds.height;
         Rectangle newValue = new Rectangle(finalX, finalY, finalWidth, finalHeight);
+        boolean boundsChanged = !this.bounds.equals(newValue);
+        if (boundsChanged)
+            dirty();
         /*
 	* Bug in Cocoa. On Mac 10.8, a text control loses and gains focus
 	* when its bounds changes.  The fix is to ignore these events.
@@ -2613,7 +2616,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         getBridge().setBounds(this, bounds);
         if (sizeChanged)
             resized();
-        if (parent != null && parent.getImpl() instanceof DartWidget pw)
+        if (boundsChanged && parent != null && parent.getImpl() instanceof DartWidget pw)
             pw.dirty();
         ((DartDisplay) display.getImpl()).ignoreFocusControl = oldIgnoreFocusControl;
         ;
@@ -3293,7 +3296,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setVisible(boolean visible) {
         boolean newValue = visible;
-        if (!java.util.Objects.equals(this.visible, newValue)) {
+        if (((getApi().state & HIDDEN) == 0) != newValue) {
             dirty();
             if (parent != null && parent.getImpl() instanceof DartTable table)
                 table.dirty();

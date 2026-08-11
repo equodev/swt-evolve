@@ -127,8 +127,10 @@ class GCDrawer extends GCDrawerBase {
         return;
       }
 
-      // Outgoing cycle's image clones become unreachable here; release them now.
-      disposeShapeImages(shapes);
+      final keep = <ui.Image>{};
+      collectShapeImages(cycleStaging, keep);
+      collectShapeImages(_lateLoadedImages, keep);
+      disposeShapeImages(shapes, keep: keep);
       shapes.clear();
       shapes.addAll(cycleStaging);
       shapes.addAll(_lateLoadedImages);
@@ -839,21 +841,36 @@ class GCDrawer extends GCDrawerBase {
     _baseImage?.dispose();
     _baseImage = null;
     final seen = <ui.Image>{};
-    disposeShapeImages(shapes, seen);
-    disposeShapeImages(_staging, seen);
-    disposeShapeImages(_lateLoadedImages, seen);
+    disposeShapeImages(shapes, seen: seen);
+    disposeShapeImages(_staging, seen: seen);
+    disposeShapeImages(_lateLoadedImages, seen: seen);
   }
 }
 
 // Each image is an independently disposable clone; track [seen] since copyArea can duplicate
 // a shape while reusing the same ui.Image reference, and double-disposing throws.
-void disposeShapeImages(List<Shape> shapes, [Set<ui.Image>? seen]) {
+void disposeShapeImages(List<Shape> shapes, {Set<ui.Image>? seen, Set<ui.Image>? keep}) {
   final disposed = seen ?? <ui.Image>{};
   for (final s in shapes) {
     if (s is ImageShape && s.type == ImageType.raster && s.image != null) {
-      if (disposed.add(s.image!)) {
-        s.image!.dispose();
+      final img = s.image!;
+      if (keep != null && keep.contains(img)) continue;
+      if (disposed.add(img)) {
+        img.dispose();
       }
+      s.image = null;
+    } else if (s is TransformShape) {
+      disposeShapeImages(s.children, seen: disposed, keep: keep);
+    }
+  }
+}
+
+void collectShapeImages(List<Shape> shapes, Set<ui.Image> out) {
+  for (final s in shapes) {
+    if (s is ImageShape && s.type == ImageType.raster && s.image != null) {
+      out.add(s.image!);
+    } else if (s is TransformShape) {
+      collectShapeImages(s.children, out);
     }
   }
 }
@@ -1389,7 +1406,7 @@ class ImageShape extends Shape {
 
   final ImageType type;
   final Rect destRect;
-  final ui.Image? image;
+  ui.Image? image;
   final Rect? srcRect;
   final PictureInfo? pictureInfo;
   final ColorFilter? colorFilter;

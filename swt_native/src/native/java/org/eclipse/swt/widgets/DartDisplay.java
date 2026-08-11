@@ -278,9 +278,6 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     /* Package Name */
     static final String PACKAGE_PREFIX = "org.eclipse.swt.widgets.";
 
-    /* Timer */
-    Runnable[] timerList;
-
     /* Settings */
     boolean runSettings;
 
@@ -2952,10 +2949,23 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     boolean runTimers() {
-        if (timerList == null)
-            return false;
         boolean result = false;
-        for (int i = 0; i < timerList.length; i++) {
+        for (int n = _dueTimers.size(); n > 0; n--) {
+            Runnable r = _dueTimers.poll();
+            if (r == null)
+                break;
+            result = true;
+            sendPreEvent(SWT.None);
+            try {
+                r.run();
+            } catch (RuntimeException | Error e) {
+                e.printStackTrace();
+            } finally {
+                if (!isDisposed())
+                    sendPostEvent(SWT.None);
+            }
+            if (isDisposed())
+                break;
         }
         return result;
     }
@@ -3610,7 +3620,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
             @Override
             public void run() {
                 _timerExecTasks.remove(runnable);
-                asyncExec(runnable);
+                _dueTimers.add(runnable);
+                wakeThread();
             }
         };
         _timerExecTasks.put(runnable, task);
@@ -3993,10 +4004,6 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         return skinCount;
     }
 
-    public Runnable[] _timerList() {
-        return timerList;
-    }
-
     public boolean _runSettings() {
         return runSettings;
     }
@@ -4069,7 +4076,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     private boolean hasPendingWork() {
-        return !((DartSynchronizer) synchronizer.getImpl()).isMessagesEmpty() || (displayBridge != null && displayBridge.hasDirty());
+        return !_dueTimers.isEmpty() || !((DartSynchronizer) synchronizer.getImpl()).isMessagesEmpty() || (displayBridge != null && displayBridge.hasDirty());
     }
 
     void addShell(Shell shell) {
@@ -4097,6 +4104,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     Map<Runnable, TimerTask> _timerExecTasks = new HashMap<>();
 
     Timer _timerExecTimer = new Timer(true);
+
+    final java.util.concurrent.ConcurrentLinkedQueue<Runnable> _dueTimers = new java.util.concurrent.ConcurrentLinkedQueue<>();
 
     final java.util.concurrent.Semaphore _wakeSignal = new java.util.concurrent.Semaphore(0);
 

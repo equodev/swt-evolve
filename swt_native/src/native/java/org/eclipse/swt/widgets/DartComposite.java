@@ -915,9 +915,7 @@ public class DartComposite extends DartScrollable implements IComposite {
      */
     public void setLayoutDeferred(boolean defer) {
         boolean newValue = defer;
-        if (!java.util.Objects.equals(this.layoutDeferred, newValue)) {
-            dirty();
-        }
+        ;
         checkWidget();
         this.layoutDeferred = newValue;
         if (!defer) {

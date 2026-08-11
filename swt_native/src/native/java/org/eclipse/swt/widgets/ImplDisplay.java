@@ -138,8 +138,6 @@ public interface ImplDisplay extends ImplDevice {
 
     int _skinCount();
 
-    Runnable[] _timerList();
-
     boolean _runSettings();
 
     Object _data();
