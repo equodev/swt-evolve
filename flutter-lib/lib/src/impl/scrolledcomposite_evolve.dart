@@ -16,6 +16,19 @@ class ScrolledCompositeImpl<
   ScrollController? _horizontalController;
   ScrollController? _verticalController;
 
+  bool _userScrolled = false;
+
+  void _pinToTopIfNeeded() {
+    if (_userScrolled) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _userScrolled) return;
+      final h = _horizontalController;
+      final v = _verticalController;
+      if (h != null && h.hasClients && h.offset != 0) h.jumpTo(0);
+      if (v != null && v.hasClients && v.offset != 0) v.jumpTo(0);
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -67,19 +80,29 @@ class ScrolledCompositeImpl<
       expandVertical,
     );
 
+    _pinToTopIfNeeded();
+
     return wrap(
-      _ThemedScrolledComposite(
-        horizontalController: _horizontalController!,
-        verticalController: _verticalController!,
-        hasHScroll: hasHScroll,
-        hasVScroll: hasVScroll,
-        expandHorizontal: expandHorizontal,
-        expandVertical: expandVertical,
-        minContentSize: minContentSize,
-        alwaysShowScrollBars: alwaysShowScrollBars,
-        widgetTheme: widgetTheme,
-        backgroundColor: backgroundColor,
-        child: contentWidget,
+      NotificationListener<ScrollNotification>(
+        onNotification: (n) {
+          if (n is ScrollStartNotification && n.dragDetails != null) {
+            _userScrolled = true;
+          }
+          return false;
+        },
+        child: _ThemedScrolledComposite(
+          horizontalController: _horizontalController!,
+          verticalController: _verticalController!,
+          hasHScroll: hasHScroll,
+          hasVScroll: hasVScroll,
+          expandHorizontal: expandHorizontal,
+          expandVertical: expandVertical,
+          minContentSize: minContentSize,
+          alwaysShowScrollBars: alwaysShowScrollBars,
+          widgetTheme: widgetTheme,
+          backgroundColor: backgroundColor,
+          child: contentWidget,
+        ),
       ),
     );
   }
