@@ -612,12 +612,12 @@ public class DartTree extends DartComposite implements ITree {
         if (item == null) {
             return;
         }
-        boolean wasEmpty = (itemCount == 0);
+        boolean wasEmpty = (rootItemCount == 0);
         int index = (int) hInsertAfter;
         if (index == -1 && hInsertAfter == -1) {
-            index = itemCount;
+            index = rootItemCount;
         }
-        int requiredSize = Math.max(index + 1, itemCount + 1);
+        int requiredSize = Math.max(index + 1, rootItemCount + 1);
         if (items == null || requiredSize > items.length) {
             int newSize = Math.max(4, requiredSize + 4);
             TreeItem[] newItems = new TreeItem[newSize];
@@ -625,12 +625,12 @@ public class DartTree extends DartComposite implements ITree {
                 System.arraycopy(items, 0, newItems, 0, items.length);
             items = newItems;
         }
-        if (index < itemCount) {
-            System.arraycopy(items, index, items, index + 1, itemCount - index);
+        if (index < rootItemCount) {
+            System.arraycopy(items, index, items, index + 1, rootItemCount - index);
         }
         items[index] = item;
         lastID = Math.max(lastID, index + 1);
-        itemCount++;
+        rootItemCount++;
         dirty();
         if (wasEmpty) {
             Event event = new Event();
@@ -890,11 +890,11 @@ public class DartTree extends DartComposite implements ITree {
         if (getDrawing())
             updateScrollBar();
         {
-            boolean wasNotEmpty = (itemCount > 0);
-            if (itemCount > 0) {
-                itemCount--;
+            boolean wasNotEmpty = (rootItemCount > 0);
+            if (rootItemCount > 0) {
+                rootItemCount--;
             }
-            if (wasNotEmpty && itemCount == 0) {
+            if (wasNotEmpty && rootItemCount == 0) {
                 Event event = new Event();
                 event.detail = 1;
                 sendEvent(TreeHelper.EMPTINESS_CHANGED, event);
@@ -1799,7 +1799,7 @@ public class DartTree extends DartComposite implements ITree {
         scrollWidth = 0;
         setScrollWidth();
         lastID = 0;
-        itemCount = 0;
+        rootItemCount = 0;
         updateScrollBar();
     }
 
@@ -3139,7 +3139,7 @@ public class DartTree extends DartComposite implements ITree {
         return topItem;
     }
 
-    int itemCount;
+    int rootItemCount;
 
     public void updateChildItems() {
         if (items == null)
