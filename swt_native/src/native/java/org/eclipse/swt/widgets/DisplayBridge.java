@@ -155,6 +155,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
             Display api = display.getApi();
             Runnable apply = () -> {
+                display.applyClientDeviceZoom(p.zoom);
                 boolean changed = applyClientViewport(display,
                         new Rectangle(0, 0, p.width, p.height), monitorOf(p), p.isFirst);
                 // Push on the very first ClientReady (it bootstraps the Flutter tree); otherwise only

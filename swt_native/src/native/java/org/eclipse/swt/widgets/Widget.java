@@ -710,6 +710,8 @@ public abstract class Widget {
         return getImpl().toString();
     }
 
+    public int nativeZoom;
+
     protected IWidget impl;
 
     protected Widget(IWidget impl) {

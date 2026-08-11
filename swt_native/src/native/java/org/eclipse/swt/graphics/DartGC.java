@@ -1854,6 +1854,7 @@ public final class DartGC extends DartResource implements IGC {
     }
 
     void init(Drawable drawable, GCData data, long context) {
+        data.nativeZoom = ((DartDevice) data.device.getImpl()).getDeviceZoom();
         if (this.background == null) {
             Color white = new Color(255, 255, 255);
             data.background = white.handle;

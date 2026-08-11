@@ -282,6 +282,16 @@ Size? _currentLogicalMonitorSize() {
 
 bool _displayClientReadySent = false;
 
+/// Device zoom in percent (100 = no scaling), from devicePixelRatio. 0 when unknown.
+int _currentDeviceZoomPercent() {
+  final dispatcher = WidgetsBinding.instance.platformDispatcher;
+  if (dispatcher.views.isEmpty) {
+    return 0;
+  }
+  final dpr = dispatcher.views.first.devicePixelRatio;
+  return dpr > 0 ? (dpr * 100).round() : 0;
+}
+
 void _sendWindowSizedClientReady(String widgetName, int widgetId, {Size? sizeOverride}) {
   final size = sizeOverride ?? _currentLogicalViewSize();
   final bool isFirst = !_displayClientReadySent;
@@ -292,6 +302,7 @@ void _sendWindowSizedClientReady(String widgetName, int widgetId, {Size? sizeOve
   final monitor = _currentLogicalMonitorSize();
   final int mw = monitor?.width.toInt() ?? 0;
   final int mh = monitor?.height.toInt() ?? 0;
+  final int zoom = _currentDeviceZoomPercent();
   print('[ClientReady] Display/$widgetId isFirst=$isFirst size=${w}x${h} monitor=${mw}x${mh}');
   EquoCommService.sendPayload("$widgetName/$widgetId/ClientReady", {
     'width': w,
@@ -299,6 +310,7 @@ void _sendWindowSizedClientReady(String widgetName, int widgetId, {Size? sizeOve
     'isFirst': isFirst,
     'displayWidth': mw,
     'displayHeight': mh,
+    'zoom': zoom,
   });
 }
 

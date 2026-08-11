@@ -823,6 +823,9 @@ public abstract class DartWidget implements IWidget {
     void register() {
         bridge = DisplayBridge.of(this);
         _hookEvents();
+        if (display != null && !display.isDisposed()) {
+            getApi().nativeZoom = ((DartDisplay) display.getImpl()).getDeviceZoom();
+        }
     }
 
     public void release(boolean destroy) {

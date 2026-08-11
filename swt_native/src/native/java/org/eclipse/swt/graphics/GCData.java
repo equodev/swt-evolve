@@ -77,6 +77,8 @@ public final class GCData {
 
     public boolean restoreContext;
 
+    public int nativeZoom;
+
     public GCData() {
         this((IGCData) null);
         setImpl(new DartGCData(this));
