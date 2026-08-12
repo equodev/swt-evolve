@@ -172,9 +172,16 @@ class TextImpl<T extends TextSwt, V extends VText>
 
     if (hasValidBounds) {
       if (singleLine) {
+        final isSearch = hasStyle(state.style, SWT.SEARCH);
+        InputBorder noGap(InputBorder? b) =>
+            (!isSearch && b is OutlineInputBorder) ? b.copyWith(gapPadding: 0.0) : b!;
         decoration = decoration.copyWith(
           isDense: false,
           contentPadding: const EdgeInsets.symmetric(horizontal: 3.0),
+          border: noGap(decoration.border),
+          enabledBorder: noGap(decoration.enabledBorder),
+          focusedBorder: noGap(decoration.focusedBorder),
+          disabledBorder: noGap(decoration.disabledBorder),
           constraints: BoxConstraints.tightFor(
             height: state.bounds!.height.toDouble(),
           ),

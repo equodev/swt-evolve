@@ -1861,14 +1861,18 @@ class WidgetMeasurer {
         final slackTerm = (widgetType == 'Button' && styleName == 'CHECK')
             ? ' + ($textX > 0 ? $styleName.TEXT_SLACK : 0)'
             : '';
-        final String naturalExpr;
+        final String naturalBase;
         if (useHorizontalPadding) {
-          naturalExpr =
+          naturalBase =
               'Math.max($textWidthExpr + ($widthCondition ? $styleName.HORIZONTAL_PADDING : 0)$slackTerm, $styleName.MIN_WIDTH)';
         } else {
-          naturalExpr =
+          naturalBase =
               'Math.max($textWidthExpr$slackTerm, $styleName.MIN_WIDTH)';
         }
+        final bool zeroWhenEmpty = widgetType == 'Label';
+        final String naturalExpr = zeroWhenEmpty
+            ? '($widthCondition ? $naturalBase : 0.0)'
+            : naturalBase;
 
         if (widgetType == 'Text') {
           buffer.writeln('${indent}double naturalWidth = $naturalExpr;');
