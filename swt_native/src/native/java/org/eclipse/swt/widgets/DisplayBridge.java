@@ -207,7 +207,13 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             if (focus instanceof org.eclipse.swt.custom.StyledText)
                 return;
             if (type == org.eclipse.swt.SWT.KeyDown) {
+                boolean vetoable = focus.isListening(org.eclipse.swt.SWT.KeyDown);
+                ev.doit = true;
                 ControlHelper.sendFlutterKeyDown(dc, ev);
+                if (vetoable) {
+                    dev.equo.swt.FlutterBridge.send(dc, "key/verdict",
+                            java.util.Map.of("doit", ev.doit));
+                }
                 // Surface the traversal (Tab/arrows/Esc/Enter/Page) as SWT.Traverse too, so a Display
                 // Traverse filter (Eclipse command bindings) and TraverseListeners see it.
                 ControlHelper.sendFlutterTraverse(dc, ev);
@@ -409,6 +415,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     @Override
     public boolean setFocus(DartControl widget) {
         focused = widget;
+        Control api = widget == null ? null : widget.getApi();
+        if (api != null && !api.isDisposed() && api.isListening(org.eclipse.swt.SWT.KeyDown)) {
+            dev.equo.swt.FlutterBridge.send(widget, "key/vetoable", java.util.Map.of("value", true));
+        }
         return true;
     }
 

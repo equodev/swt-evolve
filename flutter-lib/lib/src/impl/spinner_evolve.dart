@@ -1,5 +1,9 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../comm/comm.dart';
 import '../gen/event.dart';
 import '../gen/spinner.dart';
 import '../gen/swt.dart';
@@ -14,6 +18,38 @@ import 'utils/widget_utils.dart';
 class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
     extends CompositeImpl<T, V> {
   bool _isFocused = false;
+
+  final _SpinnerKeyGate _keyGate = _SpinnerKeyGate();
+  Object? _vetoableToken;
+  Object? _verdictToken;
+
+  String get _vetoableChannel => '${state.swt}/${state.id}/key/vetoable';
+  String get _verdictChannel => '${state.swt}/${state.id}/key/verdict';
+
+  @override
+  void initState() {
+    super.initState();
+    _vetoableToken = EquoCommService.onRaw(
+      _vetoableChannel,
+      (args) => _keyGate.vetoable = _boolArg(args, 'value') ?? false,
+    );
+    _verdictToken = EquoCommService.onRaw(
+      _verdictChannel,
+      (args) => _keyGate.onVerdict?.call(_boolArg(args, 'doit') ?? true),
+    );
+  }
+
+  @override
+  void dispose() {
+    EquoCommService.remove(_vetoableChannel, _vetoableToken);
+    EquoCommService.remove(_verdictChannel, _verdictToken);
+    super.dispose();
+  }
+
+  bool? _boolArg(dynamic args, String key) {
+    final decoded = args is String ? jsonDecode(args) : args;
+    return decoded is Map ? decoded[key] as bool? : null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +106,7 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
         textLimit: textLimit,
         enabled: enabled,
         readOnly: readOnly,
+        keyGate: _keyGate,
         width: size.width,
         height: size.height,
         widgetTheme: widgetTheme,
@@ -96,6 +133,7 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
           if (hasFocus) {
             widget.sendFocusFocusIn(state, null);
           } else {
+            _keyGate.vetoable = false;
             widget.sendFocusFocusOut(state, null);
           }
         },
@@ -111,6 +149,11 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
   }
 }
 
+class _SpinnerKeyGate {
+  bool vetoable = false;
+  void Function(bool doit)? onVerdict;
+}
+
 class _ThemedSpinner extends StatefulWidget {
   final int value;
   final int min;
@@ -121,6 +164,8 @@ class _ThemedSpinner extends StatefulWidget {
   final int textLimit;
   final bool enabled;
   final bool readOnly;
+
+  final _SpinnerKeyGate keyGate;
   final double width;
   final double height;
   final SpinnerThemeExtension widgetTheme;
@@ -143,6 +188,7 @@ class _ThemedSpinner extends StatefulWidget {
     required this.textLimit,
     required this.enabled,
     required this.readOnly,
+    required this.keyGate,
     required this.width,
     required this.height,
     required this.widgetTheme,
@@ -164,6 +210,8 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
   int? _localValue;
+  TextEditingValue? _pendingEdit;
+  Timer? _pendingTimer;
   bool _isUpHovered = false;
   bool _isDownHovered = false;
   bool _isUpPressed = false;
@@ -175,11 +223,16 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
     _controller = TextEditingController(text: _formatValue(widget.value));
     _focusNode = FocusNode();
     _focusNode.addListener(_handleFocusChange);
+    widget.keyGate.onVerdict = _handleKeyVerdict;
   }
 
   @override
   void didUpdateWidget(_ThemedSpinner oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.keyGate, widget.keyGate)) {
+      oldWidget.keyGate.onVerdict = null;
+      widget.keyGate.onVerdict = _handleKeyVerdict;
+    }
     if (_localValue == null && oldWidget.value != widget.value) {
       _controller.text = _formatValue(widget.value);
     }
@@ -187,10 +240,40 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
 
   @override
   void dispose() {
+    widget.keyGate.onVerdict = null;
+    _pendingTimer?.cancel();
     _controller.dispose();
     _focusNode.removeListener(_handleFocusChange);
     _focusNode.dispose();
     super.dispose();
+  }
+
+  TextEditingValue _gateEdit(TextEditingValue oldValue, TextEditingValue newValue) {
+    if (!widget.keyGate.vetoable) return newValue;
+    if (newValue.text == oldValue.text) return newValue;
+    _pendingEdit = newValue;
+    _pendingTimer?.cancel();
+    _pendingTimer = Timer(
+      const Duration(milliseconds: 400),
+      () => _applyPendingEdit(true),
+    );
+    return oldValue;
+  }
+
+  void _handleKeyVerdict(bool doit) {
+    _pendingTimer?.cancel();
+    _pendingTimer = null;
+    _applyPendingEdit(doit);
+  }
+
+  void _applyPendingEdit(bool doit) {
+    final pending = _pendingEdit;
+    _pendingEdit = null;
+    if (!doit) return;
+    widget.keyGate.vetoable = false;
+    if (pending == null || !mounted) return;
+    _controller.value = pending;
+    _handleTextChanged(pending.text);
   }
 
   @override
@@ -255,6 +338,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
         FilteringTextInputFormatter.allow(
           widget.digits > 0 ? RegExp(r'^-?\d*\.?\d*$') : RegExp(r'^-?\d*$'),
         ),
+        TextInputFormatter.withFunction(_gateEdit),
       ],
       onChanged: _handleTextChanged,
       onSubmitted: _handleSubmitted,
