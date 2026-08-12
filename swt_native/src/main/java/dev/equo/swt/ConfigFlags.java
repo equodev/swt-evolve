@@ -49,6 +49,8 @@ public class ConfigFlags {
 
     public boolean use_swt_colors;
 
+    public boolean disable_swt_canvas_colors;
+
     public boolean use_swt_fonts;
 
     public boolean use_special_dropdown_button;
@@ -90,6 +92,7 @@ public class ConfigFlags {
                 ", assets_path=" + assets_path +
                 ", use_default_icons=" + use_default_icons +
                 ", use_swt_colors=" + use_swt_colors +
+                ", disable_swt_canvas_colors=" + disable_swt_canvas_colors +
                 ", use_swt_fonts=" + use_swt_fonts +
                 ", force_theme='" + force_theme + '\'' +
                 ", theme_name='" + theme_name + '\'' +

@@ -40,8 +40,10 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   CanvasThemeExtension get _theme =>
       Theme.of(context).extension<CanvasThemeExtension>()!;
 
-  Color get bg =>
-      colorFromVColor(state.background, defaultColor: _theme.backgroundColor);
+  Color get bg => getBackgroundColor(
+        background: state.background,
+        defaultColor: _theme.backgroundColor,
+      )!;
   Color get fg => _theme.foregroundColor;
   Color gcBg = Colors.transparent;
 

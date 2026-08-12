@@ -15,6 +15,18 @@ mixin _$CanvasThemeExtensionTailorMixin
   double get defaultHeight;
   Color get backgroundColor;
   Color get foregroundColor;
+  Color get fillColor;
+  Color get strokeColor;
+  Color get lineColor;
+  Color get pointColor;
+  Color get textColor;
+  Color get textBackgroundColor;
+  Color get focusColor;
+  Color get gradientStartColor;
+  Color get gradientEndColor;
+  Color get patternStartColor;
+  Color get patternEndColor;
+  Color get imageTintColor;
 
   @override
   CanvasThemeExtension copyWith({
@@ -22,12 +34,36 @@ mixin _$CanvasThemeExtensionTailorMixin
     double? defaultHeight,
     Color? backgroundColor,
     Color? foregroundColor,
+    Color? fillColor,
+    Color? strokeColor,
+    Color? lineColor,
+    Color? pointColor,
+    Color? textColor,
+    Color? textBackgroundColor,
+    Color? focusColor,
+    Color? gradientStartColor,
+    Color? gradientEndColor,
+    Color? patternStartColor,
+    Color? patternEndColor,
+    Color? imageTintColor,
   }) {
     return CanvasThemeExtension(
       defaultWidth: defaultWidth ?? this.defaultWidth,
       defaultHeight: defaultHeight ?? this.defaultHeight,
       backgroundColor: backgroundColor ?? this.backgroundColor,
       foregroundColor: foregroundColor ?? this.foregroundColor,
+      fillColor: fillColor ?? this.fillColor,
+      strokeColor: strokeColor ?? this.strokeColor,
+      lineColor: lineColor ?? this.lineColor,
+      pointColor: pointColor ?? this.pointColor,
+      textColor: textColor ?? this.textColor,
+      textBackgroundColor: textBackgroundColor ?? this.textBackgroundColor,
+      focusColor: focusColor ?? this.focusColor,
+      gradientStartColor: gradientStartColor ?? this.gradientStartColor,
+      gradientEndColor: gradientEndColor ?? this.gradientEndColor,
+      patternStartColor: patternStartColor ?? this.patternStartColor,
+      patternEndColor: patternEndColor ?? this.patternEndColor,
+      imageTintColor: imageTintColor ?? this.imageTintColor,
     );
   }
 
@@ -42,6 +78,34 @@ mixin _$CanvasThemeExtensionTailorMixin
       defaultHeight: t < 0.5 ? defaultHeight : other.defaultHeight,
       backgroundColor: Color.lerp(backgroundColor, other.backgroundColor, t)!,
       foregroundColor: Color.lerp(foregroundColor, other.foregroundColor, t)!,
+      fillColor: Color.lerp(fillColor, other.fillColor, t)!,
+      strokeColor: Color.lerp(strokeColor, other.strokeColor, t)!,
+      lineColor: Color.lerp(lineColor, other.lineColor, t)!,
+      pointColor: Color.lerp(pointColor, other.pointColor, t)!,
+      textColor: Color.lerp(textColor, other.textColor, t)!,
+      textBackgroundColor: Color.lerp(
+        textBackgroundColor,
+        other.textBackgroundColor,
+        t,
+      )!,
+      focusColor: Color.lerp(focusColor, other.focusColor, t)!,
+      gradientStartColor: Color.lerp(
+        gradientStartColor,
+        other.gradientStartColor,
+        t,
+      )!,
+      gradientEndColor: Color.lerp(
+        gradientEndColor,
+        other.gradientEndColor,
+        t,
+      )!,
+      patternStartColor: Color.lerp(
+        patternStartColor,
+        other.patternStartColor,
+        t,
+      )!,
+      patternEndColor: Color.lerp(patternEndColor, other.patternEndColor, t)!,
+      imageTintColor: Color.lerp(imageTintColor, other.imageTintColor, t)!,
     );
   }
 
@@ -65,6 +129,45 @@ mixin _$CanvasThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               foregroundColor,
               other.foregroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(fillColor, other.fillColor) &&
+            const DeepCollectionEquality().equals(
+              strokeColor,
+              other.strokeColor,
+            ) &&
+            const DeepCollectionEquality().equals(lineColor, other.lineColor) &&
+            const DeepCollectionEquality().equals(
+              pointColor,
+              other.pointColor,
+            ) &&
+            const DeepCollectionEquality().equals(textColor, other.textColor) &&
+            const DeepCollectionEquality().equals(
+              textBackgroundColor,
+              other.textBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              focusColor,
+              other.focusColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              gradientStartColor,
+              other.gradientStartColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              gradientEndColor,
+              other.gradientEndColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              patternStartColor,
+              other.patternStartColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              patternEndColor,
+              other.patternEndColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              imageTintColor,
+              other.imageTintColor,
             ));
   }
 
@@ -76,6 +179,18 @@ mixin _$CanvasThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(defaultHeight),
       const DeepCollectionEquality().hash(backgroundColor),
       const DeepCollectionEquality().hash(foregroundColor),
+      const DeepCollectionEquality().hash(fillColor),
+      const DeepCollectionEquality().hash(strokeColor),
+      const DeepCollectionEquality().hash(lineColor),
+      const DeepCollectionEquality().hash(pointColor),
+      const DeepCollectionEquality().hash(textColor),
+      const DeepCollectionEquality().hash(textBackgroundColor),
+      const DeepCollectionEquality().hash(focusColor),
+      const DeepCollectionEquality().hash(gradientStartColor),
+      const DeepCollectionEquality().hash(gradientEndColor),
+      const DeepCollectionEquality().hash(patternStartColor),
+      const DeepCollectionEquality().hash(patternEndColor),
+      const DeepCollectionEquality().hash(imageTintColor),
     );
   }
 }
@@ -87,4 +202,16 @@ extension CanvasThemeExtensionBuildContextProps on BuildContext {
   double get defaultHeight => canvasThemeExtension.defaultHeight;
   Color get backgroundColor => canvasThemeExtension.backgroundColor;
   Color get foregroundColor => canvasThemeExtension.foregroundColor;
+  Color get fillColor => canvasThemeExtension.fillColor;
+  Color get strokeColor => canvasThemeExtension.strokeColor;
+  Color get lineColor => canvasThemeExtension.lineColor;
+  Color get pointColor => canvasThemeExtension.pointColor;
+  Color get textColor => canvasThemeExtension.textColor;
+  Color get textBackgroundColor => canvasThemeExtension.textBackgroundColor;
+  Color get focusColor => canvasThemeExtension.focusColor;
+  Color get gradientStartColor => canvasThemeExtension.gradientStartColor;
+  Color get gradientEndColor => canvasThemeExtension.gradientEndColor;
+  Color get patternStartColor => canvasThemeExtension.patternStartColor;
+  Color get patternEndColor => canvasThemeExtension.patternEndColor;
+  Color get imageTintColor => canvasThemeExtension.imageTintColor;
 }

@@ -8,10 +8,12 @@ import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../comm/comm.dart';
+import '../gen/color.dart';
 import '../gen/gc.dart';
 import '../gen/gcdrawer.dart';
 import '../gen/image.dart';
 import '../gen/swt.dart';
+import '../theme/theme_extensions/canvas_theme_extension.dart';
 import 'assets_manager.dart';
 import 'color_utils.dart';
 import 'utils/font_utils.dart';
@@ -36,6 +38,7 @@ class GCDrawer extends GCDrawerBase {
   // BuildContext for text style resolution (widget mode only, null in image mode).
   // Updated by GCImpl before each build via syncContext().
   BuildContext? _context;
+  CanvasThemeExtension? _canvasTheme;
 
   // Standalone image mode state
   ui.Image? _baseImage;
@@ -142,7 +145,10 @@ class GCDrawer extends GCDrawerBase {
   }
 
   /// Called by GCImpl.build() to provide context for text style resolution.
-  void syncContext(BuildContext ctx) => _context = ctx;
+  void syncContext(BuildContext ctx) {
+    _context = ctx;
+    _canvasTheme = Theme.of(ctx).extension<CanvasThemeExtension>();
+  }
 
   // SWT {m11,m12,m21,m22,dx,dy} → Flutter column-major 4×4, or null for identity.
   Float64List? get currentTransform {
@@ -162,8 +168,52 @@ class GCDrawer extends GCDrawerBase {
 
   // ── State getters (read from VGC) ──────────────────────────────────────
 
-  Color get bg => colorFromVColor(state.background, defaultColor: const Color(0xFFFFFFFF));
-  Color get fg => colorFromVColor(state.foreground, defaultColor: const Color(0xFF333232));
+  // Drawing keeps the colors the application painted with. disable_swt_canvas_colors drops them
+  // for the Canvas theme's, the rule getBackgroundColor applies to widgets; use_swt_colors, which
+  // asks for the application's colors everywhere, wins over it.
+  bool get _useThemeColors {
+    final flags = getConfigFlags();
+    return (flags.disable_swt_canvas_colors ?? false) && !(flags.use_swt_colors ?? false);
+  }
+
+  Color _themed(VColor? swtColor, Color? themeColor, Color fallback) {
+    if (_useThemeColors) return themeColor ?? fallback;
+    return colorFromVColor(swtColor, defaultColor: fallback);
+  }
+
+  // Used until a theme is resolved: the standalone image drawer renders offscreen, never builds,
+  // and so never gets a context.
+  static const _swtBackground = Color(0xFFFFFFFF);
+  static const _swtForeground = Color(0xFF333232);
+
+  // One getter per painted role, differing only in the theme slot it reads. The GC hands the
+  // drawing side a background or a foreground; the role says what it is being used for.
+  Color get bg =>
+      _themed(state.background, _canvasTheme?.backgroundColor, _swtBackground);
+  Color get fillColor =>
+      _themed(state.background, _canvasTheme?.fillColor, _swtBackground);
+  Color get textBackgroundColor =>
+      _themed(state.background, _canvasTheme?.textBackgroundColor, _swtBackground);
+  Color get strokeColor =>
+      _themed(state.foreground, _canvasTheme?.strokeColor, _swtForeground);
+  Color get lineColor =>
+      _themed(state.foreground, _canvasTheme?.lineColor, _swtForeground);
+  Color get pointColor =>
+      _themed(state.foreground, _canvasTheme?.pointColor, _swtForeground);
+  Color get textColor =>
+      _themed(state.foreground, _canvasTheme?.textColor, _swtForeground);
+  Color get focusColor =>
+      _themed(state.foreground, _canvasTheme?.focusColor, _swtForeground);
+  // fillGradientRectangle ramps foreground -> background.
+  Color get gradientStartColor =>
+      _themed(state.foreground, _canvasTheme?.gradientStartColor, _swtForeground);
+  Color get gradientEndColor =>
+      _themed(state.background, _canvasTheme?.gradientEndColor, _swtBackground);
+  // An icon has no color of the application's to keep, so opting out leaves the tint that
+  // preserve_icon_colors=false already used.
+  Color get imageTintColor => _useThemeColors
+      ? (_canvasTheme?.imageTintColor ?? AppColors.getColor(true))
+      : AppColors.getColor(true);
   double get lineWidth => (state.lineWidth ?? 1).toDouble();
   int get lineCap => state.lineCap ?? 1;
   int get lineJoin => state.lineJoin ?? 1;
@@ -224,7 +274,7 @@ class GCDrawer extends GCDrawerBase {
     required bool isFilled,
   }) {
     final rect = _getRectFromArgs(x, y, width, height);
-    final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
+    final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
     final strokeWidth = isFilled ? 0.0 : lineWidth;
     _addShape(RoundRectShape(
         rect, arcWidth / 2.0, arcHeight / 2.0, color, strokeWidth, lineCap, lineJoin,
@@ -239,7 +289,7 @@ class GCDrawer extends GCDrawerBase {
     required bool isFilled,
   }) {
     final rect = _getRectFromArgs(x, y, width, height);
-    final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
+    final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
     final strokeWidth = isFilled ? 0.0 : lineWidth;
     _addShape(OvalShape(rect, color, strokeWidth,
         isFilled: isFilled, clipRect: clipping));
@@ -255,15 +305,17 @@ class GCDrawer extends GCDrawerBase {
     final rect = _getRectFromArgs(x, y, width, height);
     final pattern = isFilled ? state.backgroundPattern : null;
     if (pattern != null) {
-      final c1 = colorFromVColor(pattern.color1);
-      final c2 = colorFromVColor(pattern.color2);
+      final c1 = _themed(pattern.color1, _canvasTheme?.patternStartColor,
+          colorFromVColor(pattern.color1));
+      final c2 = _themed(pattern.color2, _canvasTheme?.patternEndColor,
+          colorFromVColor(pattern.color2));
       final begin = _patternAlignment(
           pattern.startX ?? 0, pattern.startY ?? 0, rect);
       final end = _patternAlignment(
           pattern.endX ?? 0, pattern.endY ?? 0, rect);
       _addShape(GradientRectShape.aligned(rect, c1, c2, begin, end, clipping));
     } else {
-      final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
+      final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
       final strokeWidth = isFilled ? 0.0 : lineWidth;
       _addShape(RectShape(rect, color, strokeWidth, lineCap, lineJoin,
           isFilled: isFilled, clipRect: clipping));
@@ -276,7 +328,7 @@ class GCDrawer extends GCDrawerBase {
     int minPoints = 6,
   }) {
     if (points.length >= minPoints && points.length % 2 == 0) {
-      final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
+      final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
       final strokeWidth = isFilled ? 0.0 : lineWidth;
       _addShape(PolygonShape(points, color, strokeWidth, lineCap, lineJoin,
           isFilled: isFilled, clipRect: clipping));
@@ -289,7 +341,7 @@ class GCDrawer extends GCDrawerBase {
     int minPoints = 2,
   }) {
     if (points.length >= minPoints && points.length % 2 == 0) {
-      final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
+      final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
       final strokeWidth = isFilled ? 0.0 : lineWidth;
       _addShape(PolylineShape(points, color, strokeWidth, lineCap, lineJoin,
           isFilled: isFilled, clipRect: clipping));
@@ -306,7 +358,7 @@ class GCDrawer extends GCDrawerBase {
     required bool isFilled,
   }) {
     final rect = _getRectFromArgs(x, y, width, height);
-    final color = isFilled ? applyAlpha(bg) : applyAlpha(fg);
+    final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
     final strokeWidth = isFilled ? 0.0 : lineWidth;
     _addShape(ArcShape(
         rect,
@@ -333,7 +385,7 @@ class GCDrawer extends GCDrawerBase {
     final textStyle = FontUtils.textStyleFromVFont(
       state.font,
       _context,
-      color: applyAlpha(fg),
+      color: applyAlpha(textColor),
       applyDpiScaling: true,
     );
 
@@ -347,7 +399,7 @@ class GCDrawer extends GCDrawerBase {
         textDirection: TextDirection.ltr,
       )..layout();
       shapes.add(RectShape(Rect.fromLTWH(x, y, tp.width, tp.height),
-          applyAlpha(bg), 0, lineCap, lineJoin,
+          applyAlpha(textBackgroundColor), 0, lineCap, lineJoin,
           isFilled: true, clipRect: childClip));
     }
     shapes.add(TextShape(processedText, Offset(x, y), textStyle, childClip));
@@ -556,7 +608,7 @@ class GCDrawer extends GCDrawerBase {
   @override
   void onDrawFocusintintintint(VGCDrawFocusintintintint o) {
     final rect = _getRectFromArgs(o.x, o.y, o.width, o.height);
-    _addShape(FocusRectShape(rect, applyAlpha(fg), clipping));
+    _addShape(FocusRectShape(rect, applyAlpha(focusColor), clipping));
   }
 
   @override
@@ -594,7 +646,8 @@ class GCDrawer extends GCDrawerBase {
     final stagingList = _staging;
     final idx = stagingList.length;
     stagingList.add(_PlaceholderShape());
-    final f = ImageShape.fromVImageDetailed(o.image!, o, capturedClipping);
+    final f = ImageShape.fromVImageDetailed(o.image!, o, capturedClipping,
+        tint: imageTintColor);
     _pendingImages.add(f);
     f.then((s) {
       _onImageLoaded(stagingList, idx, s);
@@ -609,7 +662,8 @@ class GCDrawer extends GCDrawerBase {
     final stagingList = _staging;
     final idx = stagingList.length;
     stagingList.add(_PlaceholderShape());
-    final f = ImageShape.fromVImageDetailed(vImage, opArgs, capturedClipping);
+    final f = ImageShape.fromVImageDetailed(vImage, opArgs, capturedClipping,
+        tint: imageTintColor);
     _pendingImages.add(f);
     f.then((imageShape) {
       _onImageLoaded(stagingList, idx, imageShape);
@@ -629,7 +683,7 @@ class GCDrawer extends GCDrawerBase {
     _addShape(LineShape(
         Offset(o.x1.toDouble(), o.y1.toDouble()),
         Offset(o.x2.toDouble(), o.y2.toDouble()),
-        applyAlpha(fg), lineWidth, lineCap, lineJoin, clipping));
+        applyAlpha(lineColor), lineWidth, lineCap, lineJoin, clipping));
   }
 
   @override
@@ -646,7 +700,7 @@ class GCDrawer extends GCDrawerBase {
   void onDrawPointintint(VGCDrawPointintint o) {
     _addShape(PointShape(
         Offset(o.x.toDouble(), o.y.toDouble()),
-        applyAlpha(fg), clipping));
+        applyAlpha(pointColor), clipping));
   }
 
   @override
@@ -729,7 +783,8 @@ class GCDrawer extends GCDrawerBase {
       VGCFillGradientRectangleintintintintboolean o) {
     final rect = _getRectFromArgs(o.x, o.y, o.width, o.height);
     _addShape(GradientRectShape(
-        rect, applyAlpha(fg), applyAlpha(bg), o.vertical, clipping));
+        rect, applyAlpha(gradientStartColor), applyAlpha(gradientEndColor),
+        o.vertical, clipping));
   }
 
   @override
@@ -1324,11 +1379,12 @@ class ImageShape extends Shape {
   }
 
   static Future<ImageShape> fromVImageDetailed(VImage vImage,
-      VGCDrawImageImageintintintintintintintint opArgs, Rect? clipRect) async {
+      VGCDrawImageImageintintintintintintintint opArgs, Rect? clipRect,
+      {Color? tint}) async {
     final preserveColors = getConfigFlags().preserve_icon_colors ?? true;
     final colorFilter = preserveColors
         ? null
-        : ColorFilter.mode(AppColors.getColor(true), BlendMode.srcIn);
+        : ColorFilter.mode(tint ?? AppColors.getColor(true), BlendMode.srcIn);
     try {
       Object? replacement;
       if (vImage.svgContent?.isNotEmpty ?? false) {

@@ -34,12 +34,34 @@ CanvasThemeExtension _getCanvasTheme({
   required TextTheme textTheme,
   required ColorSchemeExtension colorSchemeExtension,
 }) {
+  final surface = isDark ? colorScheme.surface : colorSchemeExtension.neutral;
+
   return CanvasThemeExtension(
     defaultWidth: 64.0,
     defaultHeight: 64.0,
 
     // Colors
-    backgroundColor: isDark ? colorScheme.surface : colorSchemeExtension.neutral,
+    backgroundColor: surface,
     foregroundColor: colorScheme.onSurface,
+
+    // What a GC paints with. Several slots share an origin today; they exist so the theme can
+    // separate them later without the drawing side changing.
+    fillColor: surface,
+    textBackgroundColor: surface,
+    // An outline is a deliberate mark, so it takes the accent: at the text color it would read
+    // as one more glyph.
+    strokeColor: colorScheme.primary,
+    textColor: colorScheme.onSurface,
+    pointColor: colorScheme.onSurface,
+    // Softer than the text — at the text's tone, a dense grid of lines reads as heavy.
+    lineColor: colorScheme.outline,
+    focusColor: colorScheme.primary,
+    // Starts on the accent container rather than inside the surface family, whose whole range is
+    // ~7 points of lightness: an application asking for a gradient wants the ramp seen.
+    gradientStartColor: colorScheme.primaryContainer,
+    gradientEndColor: surface,
+    patternStartColor: colorScheme.primaryContainer,
+    patternEndColor: surface,
+    imageTintColor: colorScheme.onSurface,
   );
 }

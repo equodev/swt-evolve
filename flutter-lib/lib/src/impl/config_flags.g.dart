@@ -13,6 +13,7 @@ ConfigFlags _$ConfigFlagsFromJson(Map<String, dynamic> json) => ConfigFlags()
   ..assets_path = json['assets_path'] as String?
   ..use_default_icons = json['use_default_icons'] as bool?
   ..use_swt_colors = json['use_swt_colors'] as bool?
+  ..disable_swt_canvas_colors = json['disable_swt_canvas_colors'] as bool?
   ..use_swt_fonts = json['use_swt_fonts'] as bool?
   ..theme_name = json['theme_name'] as String?
   ..force_theme = json['force_theme'] as String?
@@ -41,6 +42,7 @@ Map<String, dynamic> _$ConfigFlagsToJson(
   'assets_path': ?instance.assets_path,
   'use_default_icons': ?instance.use_default_icons,
   'use_swt_colors': ?instance.use_swt_colors,
+  'disable_swt_canvas_colors': ?instance.disable_swt_canvas_colors,
   'use_swt_fonts': ?instance.use_swt_fonts,
   'theme_name': ?instance.theme_name,
   'force_theme': ?instance.force_theme,
