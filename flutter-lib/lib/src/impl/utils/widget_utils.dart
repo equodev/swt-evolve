@@ -107,6 +107,15 @@ bool shouldWrapText({
   return hasStyle(style, SWT.WRAP);
 }
 
+/// Whether the text carries explicit line delimiters.
+///
+/// SWT breaks text on its delimiters regardless of SWT.WRAP: the style only
+/// governs whether the widget also wraps on its own once the text runs past the
+/// available width. So a widget without SWT.WRAP still has to lay the text out
+/// over as many lines as it has delimiters.
+bool hasLineDelimiter(String text) =>
+    text.contains('\n') || text.contains('\r');
+
 /// Converts TextAlign to MainAxisAlignment
 MainAxisAlignment getMainAxisAlignmentFromTextAlign(
   TextAlign textAlign,

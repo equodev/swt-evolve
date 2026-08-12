@@ -98,8 +98,12 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
       hasValidBounds: hasValidBounds,
       text: text,
     );
+    // Squeezing a too-long line into its bounds is a single-line measurement:
+    // on multi-line text it would only ever see the first delimiter, and Java
+    // has already sized the label for every line.
     if (hasValidBounds &&
         !shouldWrap &&
+        !hasLineDelimiter(text) &&
         !hasStyle(state.style, SWT.VERTICAL) &&
         text.isNotEmpty &&
         state.image == null) {
@@ -212,12 +216,17 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
       text: text,
     );
 
+    // Without SWT.WRAP the label never wraps on its own, but it still breaks on
+    // the delimiters the text already carries -- clamping to a single line
+    // would drop every line after the first.
+    final isMultiLine = hasLineDelimiter(text);
+
     Widget textWidget = Text(
       text,
       textAlign: textAlign,
       softWrap: shouldWrap,
       overflow: shouldWrap ? TextOverflow.visible : TextOverflow.ellipsis,
-      maxLines: shouldWrap ? null : 1,
+      maxLines: shouldWrap || isMultiLine ? null : 1,
       style: textStyle,
     );
 
