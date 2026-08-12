@@ -25,6 +25,18 @@ final Map<String, NamedTheme> kNamedThemes = {
     darkColorSchemeExtension:
         createColorSchemeExtension(createDarkColorScheme()),
   ),
+  'hb': NamedTheme(
+    lightColorScheme: _hbLightScheme(),
+    darkColorScheme: _hbDarkScheme(),
+    // primaryHovered is the one slot createColorSchemeExtension does not derive from the
+    // scheme — it returns a fixed blue, which is what push buttons hover to.
+    lightColorSchemeExtension: createColorSchemeExtension(_hbLightScheme()).copyWith(
+      primaryHovered: const Color(0xFFA30000),
+    ),
+    darkColorSchemeExtension: createColorSchemeExtension(_hbDarkScheme()).copyWith(
+      primaryHovered: const Color(0xFFE37272),
+    ),
+  ),
   'cursor': NamedTheme(
     lightColorScheme: _cursorLightScheme(),
     darkColorScheme: _cursorDarkScheme(),
@@ -62,6 +74,26 @@ final Map<String, NamedTheme> kNamedThemes = {
     ),
   ),
 };
+
+// Same neutral scheme as 'nondefault', with its violet accents swapped for reds.
+// Dark mode lifts the primary so it reads on a dark surface.
+ColorScheme _hbLightScheme() => createLightColorScheme().copyWith(
+  primary: const Color(0xFFCC0000),
+  secondary: const Color(0xFFF9DEDE),
+  onSecondary: const Color(0xFF961B24),
+  secondaryContainer: const Color(0xFFF9DEDE),
+  onSecondaryContainer: const Color(0xFF961B24),
+  onTertiary: const Color(0xFF43494E),
+);
+
+ColorScheme _hbDarkScheme() => createDarkColorScheme().copyWith(
+  primary: const Color(0xFFDE5959),
+  onPrimary: const Color(0xFF141414),
+  secondary: const Color(0xFF961B24),
+  onSecondary: const Color(0xFFFFFFFF),
+  secondaryContainer: const Color(0xFF5A1219),
+  onSecondaryContainer: const Color(0xFFF9DEDE),
+);
 
 ColorScheme _cursorLightScheme() => ColorScheme.fromSeed(
   seedColor: const Color(0xFF626262),

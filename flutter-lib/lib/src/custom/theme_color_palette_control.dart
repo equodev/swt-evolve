@@ -34,6 +34,8 @@ const _kNamedPicks = <_ThemePick>[
   (key: 'equo', label: 'Equo Light', forceTheme: 'light'),
   (key: 'equo', label: 'Equo Dark', forceTheme: 'dark'),
   (key: 'cursor', label: 'Cursor Dark', forceTheme: 'dark'),
+  (key: 'hb', label: 'HB Light', forceTheme: 'light'),
+  (key: 'hb', label: 'HB Dark', forceTheme: 'dark'),
 ];
 
 class ThemeColorToolbarPaletteControl extends StatelessWidget {
