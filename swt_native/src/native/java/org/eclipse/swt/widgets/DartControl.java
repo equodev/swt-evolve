@@ -3296,7 +3296,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setVisible(boolean visible) {
         boolean newValue = visible;
-        if (((getApi().state & HIDDEN) == 0) != newValue) {
+        if (!java.util.Objects.equals(getVisible(), newValue)) {
             dirty();
             if (parent != null && parent.getImpl() instanceof DartTable table)
                 table.dirty();
@@ -3351,7 +3351,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             if (isDisposed())
                 return;
         }
-        this.visible = newValue;
         if (fixFocus)
             fixFocus(control);
     }
@@ -3991,8 +3990,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     int textDirection;
 
-    boolean visible;
-
     public Composite _parent() {
         return parent;
     }
@@ -4083,10 +4080,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public int _textDirection() {
         return textDirection;
-    }
-
-    public boolean _visible() {
-        return visible;
     }
 
     boolean laidOut = false;

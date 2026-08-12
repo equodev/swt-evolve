@@ -192,7 +192,7 @@ public class VControl extends VWidget {
     }
 
     public void setVisible(Boolean value) {
-        ((DartControl) impl).visible = Boolean.TRUE.equals(value);
+        ((DartControl) impl).getApi().state = Boolean.TRUE.equals(value) ? (((DartControl) impl).getApi().state & ~DartWidget.HIDDEN) : (((DartControl) impl).getApi().state | DartWidget.HIDDEN);
     }
 
     @JsonConverter(target = Control.class)

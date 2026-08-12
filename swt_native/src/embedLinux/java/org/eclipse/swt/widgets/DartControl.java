@@ -4023,13 +4023,12 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setVisible(boolean visible) {
         boolean newValue = visible;
-        if (!java.util.Objects.equals(this.visible, newValue)) {
+        if (!java.util.Objects.equals(getVisible(), newValue)) {
             dirty();
         }
         checkWidget();
         if (((getApi().state & HIDDEN) == 0) == visible)
             return;
-        this.visible = newValue;
         if (visible) {
             /*
 		* It is possible (but unlikely), that application
@@ -4678,8 +4677,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     boolean touchEnabled;
 
-    boolean visible = true;
-
     public long _fixedHandle() {
         return fixedHandle;
     }
@@ -4834,10 +4831,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public boolean _touchEnabled() {
         return touchEnabled;
-    }
-
-    public boolean _visible() {
-        return visible;
     }
 
     int resolveTextDirection() {
