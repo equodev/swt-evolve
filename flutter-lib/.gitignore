@@ -46,3 +46,5 @@ app.*.map.json
 
 # FVM Version Cache
 .fvm/
+# Coverage output from `flutter test --coverage`.
+coverage/
