@@ -1,8 +1,10 @@
+import 'colordialog.dart';
 import 'dialog.dart';
 import 'messagebox.dart';
 
 VDialog mapDialogValue(Map<String, dynamic> m) => switch (m['swt'] as String?) {
   'MessageBox' => VMessageBox.fromJson(m),
+  'ColorDialog' => VColorDialog.fromJson(m),
   _ => VDialog.fromJson(m),
 };
 

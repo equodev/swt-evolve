@@ -40,6 +40,7 @@ import 'theme_settings/theme_color_palette_theme_settings.dart';
 import 'theme_settings/display_theme_settings.dart';
 import 'theme_settings/scaling_scale_theme_settings.dart';
 import 'theme_settings/message_box_theme_settings.dart';
+import 'theme_settings/colordialog_theme_settings.dart';
 
 ColorScheme _resolveWidgetColorScheme(
   String widgetKey,
@@ -720,6 +721,11 @@ ThemeData createLightDefaultTheme(int? backgroundColor, {Color? seedColor}) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final colorDialogTheme = getColorDialogLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -763,6 +769,7 @@ ThemeData createLightDefaultTheme(int? backgroundColor, {Color? seedColor}) {
       displayTheme,
       scalingScaleTheme,
       messageBoxTheme,
+      colorDialogTheme,
     ],
   );
 }
@@ -961,6 +968,11 @@ ThemeData createLightNonDefaultTheme(
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final colorDialogTheme = getColorDialogLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -1005,6 +1017,7 @@ ThemeData createLightNonDefaultTheme(
       displayTheme,
       scalingScaleTheme,
       messageBoxTheme,
+      colorDialogTheme,
     ],
   );
 }
@@ -1203,6 +1216,11 @@ ThemeData createDarkDefaultTheme(int? backgroundColor, {Color? seedColor}) {
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final colorDialogTheme = getColorDialogDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -1246,6 +1264,7 @@ ThemeData createDarkDefaultTheme(int? backgroundColor, {Color? seedColor}) {
       displayTheme,
       scalingScaleTheme,
       messageBoxTheme,
+      colorDialogTheme,
     ],
   );
 }
@@ -1444,6 +1463,11 @@ ThemeData createDarkNonDefaultTheme(
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final colorDialogTheme = getColorDialogDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -1488,6 +1512,7 @@ ThemeData createDarkNonDefaultTheme(
       displayTheme,
       scalingScaleTheme,
       messageBoxTheme,
+      colorDialogTheme,
     ],
   );
 }

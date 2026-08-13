@@ -17,6 +17,9 @@ package org.eclipse.swt.graphics;
 
 import java.io.*;
 import org.eclipse.swt.*;
+import com.dslplatform.json.CompiledJson;
+import com.dslplatform.json.CompiledJson.*;
+import com.dslplatform.json.JsonAttribute;
 
 /**
  * Instances of this class are descriptions of colors in
@@ -42,6 +45,7 @@ import org.eclipse.swt.*;
  * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#color">Color and RGB snippets</a>
  * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
+@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
 public final class RGB implements Serializable {
 
     /**
@@ -73,6 +77,7 @@ public final class RGB implements Serializable {
      *    <li>ERROR_INVALID_ARGUMENT - if the red, green or blue argument is not between 0 and 255</li>
      * </ul>
      */
+    @CompiledJson()
     public RGB(int red, int green, int blue) {
         if ((red > 255) || (red < 0) || (green > 255) || (green < 0) || (blue > 255) || (blue < 0))
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);

@@ -273,6 +273,9 @@ sourceSets {
             // rest of src/test/java (Mocks, SerializeTestBase, …) imports native-only Swt*
             // classes absent from this backend.
             include("dev/equo/swt/harness/**", "**/*FlutterTest.java",
+                    // *NativeTest: plain unit tests of Dart*/V* classes that only exist in this
+                    // backend — no live renderer, unlike the *FlutterTest integration tests.
+                    "**/*NativeTest.java",
                     "dev/equo/swt/MockFlutterBridge.java",
                     "dev/equo/swt/size/**",
                     "org/eclipse/swt/widgets/DartMocks.java",
@@ -357,17 +360,18 @@ tasks.test {
 
 tasks.register<Test>("nativeTest") {
     group = "verification"
-    description = "Runs Flutter integration tests (tagged 'flutter-it') against the whole-tree-Flutter " +
-            "(native/web) Java backend — every widget, including Display/Shell, is Dart-backed, no " +
-            "Swt* classes involved. Defaults to the WEB render client (headless Chrome + CanvasKit); " +
-            "pass -Dharness.client=native to run the same suite against the desktop Flutter engine instead."
+    description = "Runs the tests that need the whole-tree-Flutter (native/web) Java backend — every " +
+            "widget, including Display/Shell, is Dart-backed, no Swt* classes involved. That is the " +
+            "Flutter integration tests (tagged 'flutter-it', defaulting to the WEB render client, " +
+            "headless Chrome + CanvasKit; pass -Dharness.client=native for the desktop Flutter engine) " +
+            "plus the renderer-free unit tests of native-only classes (tagged 'native-unit')."
     testClassesDirs = sourceSets["nativeTest"].output.classesDirs
     classpath = if (chromiumMode)
         sourceSets["native${currentOs.replaceFirstChar { it.titlecase() }}"].output + sourceSets["nativeTest"].runtimeClasspath
     else
         sourceSets["nativeTest"].runtimeClasspath
     useJUnitPlatform {
-        includeTags("flutter-it")
+        includeTags("flutter-it", "native-unit")
         val excludeTagsProp = System.getProperty("excludeTags")
         if (excludeTagsProp != null) excludeTags(*excludeTagsProp.split(",").toTypedArray())
     }

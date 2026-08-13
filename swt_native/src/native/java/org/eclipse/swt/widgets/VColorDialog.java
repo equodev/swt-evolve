@@ -17,7 +17,7 @@ public class VColorDialog extends VDialog {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
+    @JsonAttribute(name = "RGB")
     public RGB getRGB() {
         return ((DartColorDialog) impl).rgb;
     }
@@ -26,7 +26,7 @@ public class VColorDialog extends VDialog {
         ((DartColorDialog) impl).rgb = value;
     }
 
-    @JsonAttribute(ignore = true)
+    @JsonAttribute(name = "RGBs")
     public RGB[] getRGBs() {
         RGB[] values = ((DartColorDialog) impl).rgbs;
         if (values == null)

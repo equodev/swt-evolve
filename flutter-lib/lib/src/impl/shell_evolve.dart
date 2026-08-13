@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import '../gen/colordialog.dart';
 import '../gen/dialog.dart';
 import '../gen/event.dart';
 import '../gen/messagebox.dart';
 import '../gen/shell.dart';
 import '../gen/swt.dart';
 import '../impl/color_utils.dart';
+import '../impl/colordialog_evolve.dart';
 import '../impl/decorations_evolve.dart';
 import '../impl/messagebox_evolve.dart';
 import '../impl/utils/widget_utils.dart';
@@ -142,6 +144,8 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     switch (d.swt) {
       case 'MessageBox':
         showMessageBoxDialog(context, d as VMessageBox, d.id);
+      case 'ColorDialog':
+        showColorDialog(context, d as VColorDialog, d.id);
     }
   }
 

@@ -17,7 +17,7 @@ public class VFontDialog extends VDialog {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
+    @JsonAttribute(name = "RGB")
     public RGB getRGB() {
         return ((DartFontDialog) impl).rgb;
     }
