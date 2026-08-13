@@ -295,8 +295,12 @@ class TextImpl<T extends TextSwt, V extends VText>
 
   void _handleFocusChange() {
     if (_focusNode!.hasFocus) {
+      // Record the pre-edit text so a later stale echo of it is ignored rather than applied over
+      // in-progress typing (no keystroke records this value, so the echo guard can't recognise it).
+      seedTextEchoBaseline(_controller.text);
       widget.sendFocusFocusIn(state, null);
     } else {
+      clearSentTextEchoes();
       widget.sendFocusFocusOut(state, null);
     }
   }

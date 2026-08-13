@@ -207,8 +207,12 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     setState(() => _isFocused = _focusNode!.hasFocus);
     if (_focusNode!.hasFocus) {
       _menuOpen = false;
+      // Record the pre-edit text so a later stale echo of it is ignored rather than applied over
+      // in-progress typing (no keystroke records this value, so the echo guard can't recognise it).
+      seedTextEchoBaseline(_controller.text);
       widget.sendFocusFocusIn(state, null);
     } else if (!_menuOpen) {
+      clearSentTextEchoes();
       widget.sendFocusFocusOut(state, null);
     }
   }
