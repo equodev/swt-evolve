@@ -23,6 +23,7 @@ public class MenuHelper {
                 } catch (RuntimeException ex) {
                 }
                 menu.dirty();
+                FlutterBridge.update().whenComplete((r, ex) -> FlutterBridge.sendEvent(menu, "shown"));
             });
         });
     }

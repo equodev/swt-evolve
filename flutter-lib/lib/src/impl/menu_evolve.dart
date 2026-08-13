@@ -81,6 +81,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   // as a Java-driven setVisible(false) — otherwise the first state push after SWT.Show closes the
   // menu the instant it appears (the context-menu flicker regression).
   bool _openedFromVisibleFlag = false;
+  Offset? _pendingContextMenuPosition;
 
   @override
   void initState() {
@@ -93,6 +94,10 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
         }
       },
     );
+    EquoCommService.onRaw(
+      "${state.swt}/${state.id}/shown",
+          (_) => _onMenuShown(),
+    );
   }
 
   @override
@@ -103,11 +108,21 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   }
 
   void openContextMenuAt(BuildContext context, Offset position) {
-    if (!_menuController.isOpen) {
+    if (_menuController.isOpen || _pendingContextMenuPosition != null) return;
+    _pendingContextMenuPosition = position;
+    widget.sendMenuShow(state, null);
+  }
+
+  void _onMenuShown() {
+    final position = _pendingContextMenuPosition;
+    if (position == null || _menuController.isOpen || !mounted) return;
+    _pendingContextMenuPosition = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _menuController.isOpen) return;
       _openedFromVisibleFlag = false;
       _menuController.open(position: position);
       _focusFirstItemNextFrame();
-    }
+    });
   }
 
   // Runs after the overlay's first frame (build + layout + paint) so it always has the final
