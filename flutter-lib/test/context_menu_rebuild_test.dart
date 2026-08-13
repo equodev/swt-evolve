@@ -16,6 +16,8 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/tree.dart';
 import 'package:swtflutter/src/gen/treeitem.dart';
 
+import 'support/menu_shown_ack.dart';
+
 VTreeItem _item(int id, String text) => VTreeItem()
   ..id = id
   ..text = text;
@@ -57,6 +59,7 @@ Future<void> _rightClick(WidgetTester tester, Finder target) async {
   await tester.tap(target, buttons: kSecondaryButton);
   await tester.pump();
   await tester.pump();
+  await ackMenuShown(tester, 100);
 }
 
 void main() {

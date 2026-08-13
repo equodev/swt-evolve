@@ -15,6 +15,8 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/tree.dart';
 import 'package:swtflutter/src/gen/treeitem.dart';
 
+import 'support/menu_shown_ack.dart';
+
 VTreeItem _item(int id, String text) => VTreeItem()
   ..id = id
   ..text = text;
@@ -78,6 +80,7 @@ void main() {
     await _modifierClick(
         tester, find.text('Node 1'), LogicalKeyboardKey.controlLeft);
     await tester.pump();
+    await ackMenuShown(tester, 100);
 
     expect(_selectedIds(value), equals([11]));
     expect(find.text('Menu Action'), findsOneWidget,
@@ -97,6 +100,7 @@ void main() {
     await _modifierClick(
         tester, find.text('Node 0'), LogicalKeyboardKey.controlLeft);
     await tester.pump();
+    await ackMenuShown(tester, 100);
 
     expect(_selectedIds(value), equals([10]),
         reason: 'Ctrl+Click must not deselect the item on macOS');

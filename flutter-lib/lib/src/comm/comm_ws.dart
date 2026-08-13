@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:meta/meta.dart';
+
 import '../gen/widget.dart';
 import 'comm_api.dart';
 import 'comm_frame.dart';
@@ -38,6 +40,11 @@ class EquoCommService {
   static EquoCommBase? _impl;
 
   static EquoCommBase get _comm => _impl ??= _create();
+
+  /// The live transport, so a widget test can deliver an inbound frame through
+  /// [EquoCommBase.receiveBinary]. Read-only: it cannot alter production wiring.
+  @visibleForTesting
+  static EquoCommBase get commForTesting => _comm;
 
   static EquoCommBase _create() {
     final p = _getPort();

@@ -16,6 +16,8 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/tree.dart';
 import 'package:swtflutter/src/gen/treeitem.dart';
 
+import 'support/menu_shown_ack.dart';
+
 VTreeItem _item(int id, String text) => VTreeItem()
   ..id = id
   ..text = text;
@@ -78,6 +80,7 @@ void main() {
     // Right-click item B (currently unselected).
     await tester.tap(find.text('Node 1'), buttons: kSecondaryButton);
     await tester.pump();
+    await ackMenuShown(tester, 100);
 
     expect(_selectedIds(value), equals([11]),
         reason: 'right-click must move selection to the clicked item');

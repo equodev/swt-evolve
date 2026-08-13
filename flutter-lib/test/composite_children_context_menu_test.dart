@@ -17,6 +17,8 @@ import 'package:swtflutter/src/gen/menuitem.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 
+import 'support/menu_shown_ack.dart';
+
 VRectangle _rect(int x, int y, int w, int h) => VRectangle()
   ..x = x
   ..y = y
@@ -71,6 +73,7 @@ void main() {
     await tester.tapAt(const Offset(30, 200), buttons: kSecondaryButton);
     await tester.pump();
     await tester.pump();
+    await ackMenuShown(tester, 100);
 
     expect(find.text('Add Bookmark...'), findsOneWidget,
         reason: 'the menu set on the composite must open on right-click '

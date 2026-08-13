@@ -123,6 +123,9 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       _menuController.open(position: position);
       _focusFirstItemNextFrame();
     });
+    // The ack arrives in a microtask, so nothing has scheduled the frame this callback needs.
+    // Without this the menu silently never opens.
+    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
   // Runs after the overlay's first frame (build + layout + paint) so it always has the final
