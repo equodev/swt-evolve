@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../main.dart';
 import 'gen/composite.dart';
 import 'gen/control.dart';
+import 'gen/rectangle.dart';
+import 'live_bounds.dart';
 import 'gen/widget.dart';
 import 'gen/widgets.dart';
 import 'gen/widgets.dart' as gen;
@@ -27,7 +29,8 @@ class NoLayout extends StatelessWidget {
         ? Theme.of(context).extension<CompositeThemeExtension>()!
         : null;
     return CustomMultiChildLayout(
-        delegate: _AbsoluteLayoutDelegate(children, composite),
+        delegate: _AbsoluteLayoutDelegate(children, composite,
+            relayout: LiveBounds.relayoutFor(children.map((child) => child.id))),
         children: [
           for (var child in children.reversed)
             LayoutId(
@@ -82,7 +85,22 @@ class _AbsoluteLayoutDelegate extends MultiChildLayoutDelegate {
   List<VControl> children;
   VComposite? composite;
 
-  _AbsoluteLayoutDelegate(this.children, this.composite);
+  _AbsoluteLayoutDelegate(this.children, this.composite, {super.relayout});
+
+  /// The bounds to lay [child] out at: the parent's own copy, except when that copy is 0x0 and the
+  /// child itself reports otherwise ([LiveBounds]) — a stale copy must not pin a live child at zero
+  /// size. A child that is genuinely 0x0 publishes 0x0 too, so it stays 0x0.
+  VRectangle? _boundsOf(VControl child) {
+    final fromParent = child.bounds;
+    if (fromParent != null && (fromParent.width != 0 || fromParent.height != 0)) {
+      return fromParent;
+    }
+    final ownBounds = LiveBounds.of(child.id);
+    if (ownBounds != null && (ownBounds.width != 0 || ownBounds.height != 0)) {
+      return ownBounds;
+    }
+    return fromParent;
+  }
 
   @override
   Size getSize(BoxConstraints constraints) {
@@ -96,10 +114,11 @@ class _AbsoluteLayoutDelegate extends MultiChildLayoutDelegate {
   @override
   void performLayout(Size size) {
     for (var child in children.whereType<VControl>()) {
-      var w = child.bounds?.width.toDouble();
-      var h = child.bounds?.height.toDouble();
-      var x = child.bounds?.x ?? 0;
-      var y = child.bounds?.y ?? 0;
+      final bounds = _boundsOf(child);
+      var w = bounds?.width.toDouble();
+      var h = bounds?.height.toDouble();
+      var x = bounds?.x ?? 0;
+      var y = bounds?.y ?? 0;
       layoutChild(child.id, BoxConstraints.tightFor(width: w, height: h));
       positionChild(child.id, Offset(x.toDouble(), y.toDouble()));
     }
@@ -115,8 +134,10 @@ class _AbsoluteLayoutDelegate extends MultiChildLayoutDelegate {
 
       if (currentChild.id != oldChild.id) return true;
 
-      final currentBounds = currentChild.bounds;
-      final oldBounds = oldChild.bounds;
+      // Compare what the layout will actually use, not the raw parent copy — otherwise a rebuild
+      // that carries the same stale copy reports "nothing moved" while the resolved bounds did.
+      final currentBounds = _boundsOf(currentChild);
+      final oldBounds = oldDelegate._boundsOf(oldChild);
 
       if (currentBounds == null && oldBounds != null) return true;
       if (currentBounds != null && oldBounds == null) return true;

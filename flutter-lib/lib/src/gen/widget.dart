@@ -36,12 +36,29 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   GlobalKey? widgetBoundaryKey;
 
   Object? _onChangeToken;
+  String? _onChangeChannel;
 
   @override
   void initState() {
     super.initState();
     state = widget.value as V;
-    _onChangeToken = EquoCommService.on("${state.swt}/${state.id}", _onChange);
+    _subscribeToState();
+  }
+
+  /// Remembers the exact channel name: [state] is replaced in didUpdateWidget, so
+  /// deriving it a second time can name a different channel than the one subscribed.
+  void _subscribeToState() {
+    _onChangeChannel = "${state.swt}/${state.id}";
+    _onChangeToken = EquoCommService.on(_onChangeChannel!, _onChange);
+  }
+
+  void _unsubscribeFromState() {
+    final channel = _onChangeChannel;
+    if (channel != null) {
+      EquoCommService.remove(channel, _onChangeToken);
+    }
+    _onChangeChannel = null;
+    _onChangeToken = null;
   }
 
   /// Called by GCSwt when it receives state from Java.
@@ -82,12 +99,19 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   void didUpdateWidget(covariant T oldWidget) {
     super.didUpdateWidget(oldWidget);
     state = widget.value as V;
+    // The state was just replaced; keeping the old subscription would leave the widget
+    // listening on a dead channel and silently not repainting.
+    final channel = "${state.swt}/${state.id}";
+    if (channel != _onChangeChannel) {
+      _unsubscribeFromState();
+      _subscribeToState();
+    }
     extraSetState();
   }
 
   @override
   void dispose() {
-    EquoCommService.remove("${state.swt}/${state.id}", _onChangeToken);
+    _unsubscribeFromState();
     super.dispose();
   }
 

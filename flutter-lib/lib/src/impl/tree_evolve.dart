@@ -54,14 +54,24 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     // handle to read/expand the tree from the test harness. One-time registrations; cheap.
     _registerGetIdFromPointListener();
     _registerGetItemBoundsListener();
+    // Remember the key we register under. `state` is reassigned in didUpdateWidget (see
+    // WidgetSwtState), so recomputing this string in dispose can produce a DIFFERENT key than the
+    // one registered here — the unregister then removes nothing and this handle stays in the
+    // registry for the life of the page. queryTreeItemsJson() flattens every registered tree, so a
+    // leaked handle keeps serving items of a tree that no longer exists, and a text -> identifier
+    // lookup resolves to a dead id. That is what made a shared (SUITE-scoped) app unusable: after a
+    // few part closes the registry held four 'Classic Examples' roots and 304 items.
+    _testTreeKey = '${state.swt}/${state.id}';
     registerTestTree(
-      '${state.swt}/${state.id}',
+      _testTreeKey,
       TestTreeHandle(
         items: _testTreeItems,
         expand: _testExpandTreeItem,
       ),
     );
   }
+
+  late final String _testTreeKey;
 
   void _registerGetIdFromPointListener() {
     final eventName = "${state.swt}/${state.id}/GetIdFromPoint";
@@ -1747,7 +1757,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   @override
   void dispose() {
-    unregisterTestTree('${state.swt}/${state.id}');
+    unregisterTestTree(_testTreeKey);
     _horizontalController?.dispose();
     _verticalController?.dispose();
     _focusNode.dispose();

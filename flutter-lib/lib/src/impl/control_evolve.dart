@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import '../gen/control.dart';
 import '../gen/rectangle.dart';
+import '../live_bounds.dart';
 import '../gen/droptarget.dart';
 import '../gen/event.dart';
 import '../gen/menu.dart';
@@ -52,22 +53,31 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     }
   }
 
+  /// Publishes the bounds this control believes it has, so its parent's layout can prefer them
+  /// over a stale copy of this child (see [LiveBounds]).
+  void _publishBounds() {
+    LiveBounds.publish(state.id, state.bounds, this);
+  }
+
   @override
   void initState() {
     super.initState();
     _resolveSentinelBounds(state);
+    _publishBounds();
   }
 
   @override
   void setValue(V value) {
     _resolveSentinelBounds(value);
     super.setValue(value);
+    _publishBounds();
   }
 
   @override
   void didUpdateWidget(covariant T oldWidget) {
     _resolveSentinelBounds(widget.value as V);
     super.didUpdateWidget(oldWidget);
+    _publishBounds();
   }
 
   void sendThrottledMouseMove(V state, VEvent event) {
@@ -88,6 +98,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   @override
   void dispose() {
     _hoverTimer?.cancel();
+    LiveBounds.forget(state.id, this);
     super.dispose();
   }
 

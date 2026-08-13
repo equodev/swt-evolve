@@ -274,9 +274,13 @@ public abstract class FlutterBridge {
 
         List<CompletableFuture<Void>> futures = new ArrayList<>();
 
+        // Drain, don't copy-then-clear: clearing after the sends discarded every mark made while
+        // this flush ran, and nothing re-marks them, so that state never reached Dart at all.
+        // Anything dirtied from here on belongs to the next flush.
         Set<Object> dirtySnapshot;
         synchronized (dirty) {
             dirtySnapshot = new HashSet<>(dirty);
+            dirty.clear();
         }
         Set<Object> filteredDirty = filterWidgetsWithDirtyAncestors(dirtySnapshot);
 
@@ -314,9 +318,6 @@ public abstract class FlutterBridge {
             };
             CompletableFuture<Void> future = getBridge(widget).clientReady.thenRun(() -> runOnDisplayThread(widget, send));
             futures.add(future);
-        }
-        synchronized (dirty) {
-            dirty.clear();
         }
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
@@ -406,6 +407,19 @@ public abstract class FlutterBridge {
             }
             if (!eventName.contains("MouseMove") || getConfigFlags().print_move)
                 DebugLog.logRecv(eventName, ev);
+            // A message whose body is absent deserializes to null, and handlers read the Event
+            // straight away — DartText's DefaultSelection does `e.detail == SWT.ICON_CANCEL`, so a
+            // bodyless Enter in a Text threw NullPointerException out of an asyncExec, which e4
+            // turns into a modal "Internal Error" dialog that blocks the whole workbench. Six
+            // handlers across five widgets dereference the event this way; guarding here fixes the
+            // class rather than the instance. An empty Event carries detail == 0, which is what a
+            // "no detail" event means to every one of them. Logged, not swallowed: a null body is
+            // still worth seeing when reading a trace.
+            if (ev == null) {
+                DebugLog.checkpoint(eventName, "empty body: substituting a blank Event");
+                cb.accept(new Event());
+                return;
+            }
             cb.accept(ev);
         });
     }
