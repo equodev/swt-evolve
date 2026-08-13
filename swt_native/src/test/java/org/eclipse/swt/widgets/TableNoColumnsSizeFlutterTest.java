@@ -117,14 +117,22 @@ class TableNoColumnsSizeFlutterTest {
     }
 
     @Test
-    void aTableWithColumnsIsUnaffected() {
+    void aTableWithPackedColumnsSizesToTheSumOfItsColumnWidths() {
+        // A table with columns used to fall back to a fixed columnCount*70 guess here, ignoring
+        // whatever the columns were actually packed to - so a caller that packs a column to its
+        // content, then reads Table.computeSize(SWT.DEFAULT, ...) to size itself against that
+        // content, got a guess instead of the real width.
         Shell shell = new Shell(display);
         Table table = new Table(shell, SWT.BORDER | SWT.V_SCROLL);
-        new TableColumn(table, SWT.LEFT);
-        new TableColumn(table, SWT.LEFT);
+        TableColumn first = new TableColumn(table, SWT.LEFT);
+        first.setWidth(120);
+        TableColumn second = new TableColumn(table, SWT.LEFT);
+        second.setWidth(80);
         new TableItem(table, SWT.NONE).setText(new String[] {
                 "a considerably longer annotation label", "and another one" });
 
-        assertThat(table.computeSize(SWT.DEFAULT, SWT.DEFAULT).x).isEqualTo(2 * 70 + 17);
+        assertThat(table.computeSize(SWT.DEFAULT, SWT.DEFAULT).x)
+                .as("width must be the sum of the packed column widths, not a fixed per-column guess")
+                .isGreaterThanOrEqualTo(120 + 80);
     }
 }

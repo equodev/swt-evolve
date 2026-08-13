@@ -5,6 +5,8 @@ import dev.equo.swt.FontMetricsUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.DartTable;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.TableItem;
 
 public class TableSizes {
@@ -18,7 +20,6 @@ public class TableSizes {
     private static final double ROW_PADDING_VERTICAL = 8.0;
     private static final double HEADER_PADDING_VERTICAL = 8.0;
     private static final double BORDER_WIDTH = 2.0;
-    private static final int WIDTH_PER_COLUMN = 70;
     private static final int WIDTH_NO_COLUMNS = 70;
     private static final int NATIVE_SCROLLER_AND_BEZEL_TRIM = 15 + 2;
     private static final int CELL_PADDING_LEFT = 8;
@@ -33,9 +34,12 @@ public class TableSizes {
         if (wHint != SWT.DEFAULT) {
             width = wHint;
         } else {
-            width = columnCount > 0 ? columnCount * WIDTH_PER_COLUMN
+            width = columnCount > 0 ? getColumnsWidth(table)
                     : Math.max(WIDTH_NO_COLUMNS, getContentWidth(table));
-            if ((style & SWT.V_SCROLL) != 0) width += NATIVE_SCROLLER_AND_BEZEL_TRIM;
+            if ((style & SWT.V_SCROLL) != 0) {
+                ScrollBar vBar = table.getVerticalBar();
+                width += vBar != null ? vBar.getSize().x : NATIVE_SCROLLER_AND_BEZEL_TRIM;
+            }
         }
         int height;
         if (hHint != SWT.DEFAULT) {
@@ -45,6 +49,15 @@ public class TableSizes {
             if ((style & SWT.H_SCROLL) != 0) height += NATIVE_SCROLLER_AND_BEZEL_TRIM - 2 * getBorderWidth();
         }
         return new Point(width, height);
+    }
+
+    private static int getColumnsWidth(DartTable table) {
+        int width = 0;
+        for (TableColumn column : table.getColumns()) {
+            width += column.getWidth();
+        }
+        if ((table.getStyle() & SWT.CHECK) != 0) width += CHECKBOX_WIDTH + CELL_PADDING_LEFT;
+        return width;
     }
 
     private static int getContentWidth(DartTable table) {

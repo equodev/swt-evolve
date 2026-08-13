@@ -2393,19 +2393,26 @@ class WidgetMeasurer {
     buffer.writeln('        } else {');
     if (measuresContent) {
       buffer.writeln(
-        '            width = columnCount > 0 ? columnCount * WIDTH_PER_COLUMN',
+        '            width = columnCount > 0 ? getColumnsWidth($param)',
       );
       buffer.writeln(
         '                    : Math.max(WIDTH_NO_COLUMNS, getContentWidth($param));',
       );
     } else {
       buffer.writeln(
-        '            width = columnCount > 0 ? columnCount * WIDTH_PER_COLUMN : WIDTH_NO_COLUMNS;',
+        '            width = columnCount > 0 ? getColumnsWidth($param) : WIDTH_NO_COLUMNS;',
       );
     }
+    // A caller that reads the vertical scrollbar's width back off the widget (e.g. to shrink
+    // column 0 by that amount so the scrollbar doesn't overlap it) needs the real, currently
+    // rendered scrollbar width already budgeted here, not a fixed guess - or the column, and its
+    // content, end up narrower than what was packed.
+    buffer.writeln('            if ((style & SWT.V_SCROLL) != 0) {');
+    buffer.writeln('                ScrollBar vBar = $param.getVerticalBar();');
     buffer.writeln(
-      '            if ((style & SWT.V_SCROLL) != 0) width += NATIVE_SCROLLER_AND_BEZEL_TRIM;',
+      '                width += vBar != null ? vBar.getSize().x : NATIVE_SCROLLER_AND_BEZEL_TRIM;',
     );
+    buffer.writeln('            }');
     buffer.writeln('        }');
     buffer.writeln('        int height;');
     buffer.writeln('        if (hHint != SWT.DEFAULT) {');
@@ -2420,6 +2427,27 @@ class WidgetMeasurer {
     );
     buffer.writeln('        }');
     buffer.writeln('        return new Point(width, height);');
+    buffer.writeln('    }');
+    buffer.writeln();
+    // A caller that reads a column's width back off the widget (e.g. to shrink it by the vertical
+    // scrollbar's width so the scrollbar doesn't overlap the last column) needs the column's own
+    // packed width, summed across every real ${widgetType}Column - not a fixed per-column guess -
+    // or the columns (and their content) end up narrower than what was packed.
+    buffer.writeln(
+      '    private static int getColumnsWidth(Dart$widgetType $param) {',
+    );
+    buffer.writeln('        int width = 0;');
+    buffer.writeln(
+      '        for (${widgetType}Column column : $param.getColumns()) {',
+    );
+    buffer.writeln('            width += column.getWidth();');
+    buffer.writeln('        }');
+    if (measuresContent) {
+      buffer.writeln(
+        '        if (($param.getStyle() & SWT.CHECK) != 0) width += CHECKBOX_WIDTH + CELL_PADDING_LEFT;',
+      );
+    }
+    buffer.writeln('        return width;');
     buffer.writeln('    }');
     buffer.writeln();
     if (measuresContent) {
@@ -2635,6 +2663,10 @@ class WidgetMeasurer {
       buffer.writeln('import org.eclipse.swt.graphics.Point;');
     }
     buffer.writeln('import org.eclipse.swt.widgets.Dart$widgetType;');
+    if (fallbackWidth != null) {
+      buffer.writeln('import org.eclipse.swt.widgets.${widgetType}Column;');
+      buffer.writeln('import org.eclipse.swt.widgets.ScrollBar;');
+    }
     if (nested || measuresContent) {
       buffer.writeln('import org.eclipse.swt.widgets.${widgetType}Item;');
     }
@@ -2673,9 +2705,6 @@ class WidgetMeasurer {
       );
     }
     if (fallbackWidth != null) {
-      buffer.writeln(
-        '    private static final int WIDTH_PER_COLUMN = ${fallbackWidth.$1};',
-      );
       buffer.writeln(
         '    private static final int WIDTH_NO_COLUMNS = ${fallbackWidth.$2};',
       );
