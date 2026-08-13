@@ -451,7 +451,15 @@ public class Sizes {
                 height = Math.max(height, size.y);
             }
         }
-        return new Point(width, height);
+        if (wHint != SWT.DEFAULT)
+            width = wHint;
+        if (hHint != SWT.DEFAULT)
+            height = hHint;
+        // The loop above measures the tab CONTENT. A folder also has to make room for the tab strip
+        // it renders above that content, or it is laid out exactly as tall as its content and the
+        // renderer clips the bottom of the content away.
+        Rectangle trim = w.getApi().computeTrim(0, 0, width, height);
+        return new Point(trim.width, trim.height);
     }
 
     public static Point computeSize(DartToolBar c, int wHint, int hHint, boolean changed) {
@@ -774,6 +782,25 @@ public class Sizes {
         } else {
             return new Rectangle(0, 32, b.width, b.height - 32);
         }
+    }
+
+    /**
+     * Height of the tab strip a TabFolder renders above its content: the tallest tab (label text
+     * plus its bottom padding, plus the tab's own bottom border) plus the strip's bottom border.
+     * Measured against the render side, which pins the same number from a rendering test so the two
+     * cannot silently drift apart.
+     */
+    public static final int TAB_FOLDER_TAB_STRIP_HEIGHT = 18;
+
+    public static Rectangle getClientArea(DartTabFolder widget) {
+        Rectangle b = widget.getBounds();
+        return new Rectangle(0, TAB_FOLDER_TAB_STRIP_HEIGHT, b.width,
+                Math.max(0, b.height - TAB_FOLDER_TAB_STRIP_HEIGHT));
+    }
+
+    public static Rectangle computeTrim(DartTabFolder widget, int x, int y, int width, int height) {
+        return new Rectangle(x, y - TAB_FOLDER_TAB_STRIP_HEIGHT, width,
+                height + TAB_FOLDER_TAB_STRIP_HEIGHT);
     }
 
     public static Rectangle getClientArea(DartGroup widget) {
