@@ -5,6 +5,7 @@ import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.DecorationsAlign;
 import dev.equo.swt.size.CsdSizes;
 import dev.equo.swt.size.MenuSizes;
+import dev.equo.swt.size.ToolbarControlsSizes;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 
@@ -78,12 +79,23 @@ public class DartMainToolbar extends DartComposite {
 
     /** Width the bar keeps for itself, so the trim layout never lays out under the menu/CSD controls. */
     private int widthReserve() {
-        return menuButtonWidth() + csdToolbarWidth();
+        return menuButtonWidth() + csdToolbarWidth() + optionalControlsWidth();
     }
 
     private int menuButtonWidth() {
         return decorationsAlign().isVertical() && hasMenuBarItems()
                 ? MenuSizes.VERTICAL_MENU_BUTTON_WIDTH : 0;
+    }
+
+    /**
+     * The theme palette / scaling controls render at the trailing end of the bar on the Flutter side
+     * only. Without a reserve the trim hands that strip to a contribution and both draw there.
+     */
+    private static int optionalControlsWidth() {
+        ConfigFlags flags = Config.getConfigFlags();
+        if (flags == null) return 0;
+        return flags.show_theme_color_palette || flags.show_scaling_control
+                ? ToolbarControlsSizes.COLLAPSED_WIDTH : 0;
     }
 
     /** Vertical space above the first row: the menu strip sits there when there is one. */

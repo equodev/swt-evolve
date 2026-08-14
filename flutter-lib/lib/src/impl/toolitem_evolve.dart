@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import '../gen/swt.dart';
 import '../gen/toolitem.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../gen/image.dart';
 import '../impl/item_evolve.dart';
 import './utils/image_utils.dart';
@@ -560,6 +561,8 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
             ),
           );
         }(),
+        SWT.SEPARATOR when state.control != null =>
+          mapWidgetFromValue(state.control!),
         SWT.SEPARATOR when (state.image != null || (state.text?.isNotEmpty == true)) => () {
           final image = _getImageForState(enabled);
           return _buildToolbarButton(

@@ -149,7 +149,15 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
           child: super.wrap(
             Align(
               alignment: Alignment.centerLeft,
-              child: Container(decoration: decoration, child: bar),
+              child: Container(
+                decoration: decoration,
+                // Controls hosted by a separator item are ordinary Composites and would paint
+                // themselves on the default surface, a white slab on top of the toolbar band.
+                child: ParentBackgroundScope(
+                  background: backgroundColor,
+                  child: bar,
+                ),
+              ),
             ),
           ),
         );
@@ -194,7 +202,14 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     var contentIndex = 0;
     for (final item in allItems) {
       if ((item.style & SWT.SEPARATOR) != 0) {
-        result.add(_buildToolBarSeparator(isVertical, toolbarTheme));
+        // A SEPARATOR ToolItem carrying setControl() hosts a real control — combos,
+        // text fields, nested toolbars. Collapsing it to a divider drops that whole
+        // subtree, so let the item build itself instead.
+        if (item.control != null) {
+          result.add(ToolItemSwt(value: item));
+        } else {
+          result.add(_buildToolBarSeparator(isVertical, toolbarTheme));
+        }
       } else if (item.image != null || item.text != null) {
         if (contentIndex < contentWidgets.length) {
           result.add(contentWidgets[contentIndex++]);
