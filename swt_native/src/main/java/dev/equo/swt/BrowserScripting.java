@@ -25,6 +25,20 @@ public final class BrowserScripting {
     private BrowserScripting() {
     }
 
+    /** Prefix the Dart side stamps on a reply carrying a JS exception instead of a value. */
+    private static final String ERROR_PREFIX = "__error__:";
+
+    /** How long a synchronous evaluate() waits for the Flutter side before giving up. */
+    private static final long TIMEOUT_MS = 5000;
+
+    /**
+     * Wraps {@code script} as an immediately-invoked function body, per {@code Browser.evaluate}'s
+     * contract. The newlines keep a trailing {@code //} comment off the closing braces.
+     */
+    static String asFunctionBody(String script) {
+        return "(function() {\n" + (script == null ? "" : script) + "\n})();";
+    }
+
     /**
      * Synchronous {@code Browser.evaluate}: ships the script to the Flutter side,
      * pumps the SWT event loop while awaiting the reply (the comm delivers it on
@@ -37,15 +51,17 @@ public final class BrowserScripting {
         CompletableFuture<Object> future = new CompletableFuture<>();
         FlutterBridge.onPayload(widget, "evaluate/" + reqId, Event.class, result -> {
             String text = result != null ? result.text : null;
-            if (text != null && text.startsWith("__error__:")) {
-                future.completeExceptionally(new SWTException(SWT.ERROR_FAILED_EVALUATE));
+            if (text != null && text.startsWith(ERROR_PREFIX)) {
+                future.completeExceptionally(
+                        failed(text.substring(ERROR_PREFIX.length())));
             } else {
                 future.complete(EvalJson.parse(text));
             }
         });
-        FlutterBridge.send(widget, "evaluate", Map.of("script", script, "reqId", reqId));
+        FlutterBridge.send(widget, "evaluate",
+                Map.of("script", asFunctionBody(script), "reqId", reqId));
         Display d = display != null ? display : Display.getCurrent();
-        long end = System.currentTimeMillis() + 5000;
+        long end = System.currentTimeMillis() + TIMEOUT_MS;
         while (!future.isDone() && System.currentTimeMillis() < end) {
             if (d == null || !d.readAndDispatch()) {
                 try {
@@ -56,16 +72,22 @@ public final class BrowserScripting {
                 }
             }
         }
-        if (!future.isDone()) throw new SWTException(SWT.ERROR_FAILED_EVALUATE);
+        if (!future.isDone()) throw failed("no reply from the browser within " + TIMEOUT_MS + "ms");
         try {
             return future.get();
         } catch (ExecutionException ex) {
             if (ex.getCause() instanceof SWTException) throw (SWTException) ex.getCause();
-            throw new SWTException(SWT.ERROR_FAILED_EVALUATE);
+            throw failed(String.valueOf(ex.getCause()));
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            throw new SWTException(SWT.ERROR_FAILED_EVALUATE);
+            throw failed("interrupted while awaiting the result");
         }
+    }
+
+    private static SWTException failed(String detail) {
+        return detail == null || detail.isEmpty()
+                ? new SWTException(SWT.ERROR_FAILED_EVALUATE)
+                : new SWTException(SWT.ERROR_FAILED_EVALUATE, detail);
     }
 
     /**

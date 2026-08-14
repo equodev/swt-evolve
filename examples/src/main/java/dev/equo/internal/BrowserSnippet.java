@@ -359,12 +359,12 @@ public class BrowserSnippet {
                                     + "document.body.appendChild(d);document.title='exec-OK';");
                     return browser.evaluate("var e=document.getElementById('equoExec');return e?e.textContent:'NONE';");
                 }, o -> "execute() ran".equals(o));
-        test(script, "evaluate(\"1+1\")", "Evaluate JS and return the Java value. Expected: 2.0 (Double).",
-                () -> browser.evaluate("1+1"), o -> Double.valueOf(2).equals(o));
+        test(script, "evaluate(\"return 1+1\")", "Evaluate JS and return the Java value. Expected: 2.0 (Double).",
+                () -> browser.evaluate("return 1+1"), o -> Double.valueOf(2).equals(o));
         test(script, "evaluate(userAgent)", "Evaluate and return a String (navigator.userAgent).",
-                () -> browser.evaluate("navigator.userAgent"), nonEmpty());
+                () -> browser.evaluate("return navigator.userAgent"), nonEmpty());
         test(script, "evaluate(script,trusted)", "Trusted evaluate. Expected: 42.0.",
-                () -> browser.evaluate("2*21", true), o -> Double.valueOf(42).equals(o));
+                () -> browser.evaluate("return 2*21", true), o -> Double.valueOf(42).equals(o));
 
         // --- State ---
         Group state = group("State");

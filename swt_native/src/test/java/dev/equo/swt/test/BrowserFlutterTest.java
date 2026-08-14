@@ -1,6 +1,7 @@
 package dev.equo.swt.test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.io.IOException;
@@ -23,6 +24,7 @@ import dev.equo.swt.harness.BrowserKit;
 import dev.equo.swt.harness.BrowserFlutterHarness;
 import dev.equo.swt.harness.FlutterHarness;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
 import org.eclipse.swt.browser.CloseWindowListener;
 import org.eclipse.swt.browser.LocationListener;
 import org.eclipse.swt.browser.ProgressListener;
@@ -469,75 +471,140 @@ class BrowserFlutterTest {
         //   null/undefined -> null,  boolean -> Boolean,  number -> Double,
         //   string -> String,  array -> Object[] (elements mapped recursively).
         // The tests below cover each, easiest (scalars) to hardest (nested arrays).
+        //
+        // Note the "return" in every script: evaluate()'s argument is a FUNCTION BODY, not an
+        // expression (see BrowserScripting.asFunctionBody and the *_swtContract tests below), so
+        // that is how a value gets back to Java. This is also how every upstream SWT test and
+        // Snippet308 writes it.
 
         @Test
         void execute_thenEvaluateReadsBack() throws Exception {
             assertThat(browser.execute("window.__equo = 42;")).isTrue();
             flutter.pumpClient();
-            assertThat(browser.evaluate("window.__equo")).isEqualTo(42.0);
+            assertThat(browser.evaluate("return window.__equo")).isEqualTo(42.0);
         }
 
         @Test
         void evaluate_arithmetic() throws Exception {
-            assertThat(browser.evaluate("1+1")).isEqualTo(2.0);
+            assertThat(browser.evaluate("return 1+1")).isEqualTo(2.0);
         }
 
         @Test
         void evaluate_trusted() throws Exception {
-            assertThat(browser.evaluate("2*21", true)).isEqualTo(42.0);
+            assertThat(browser.evaluate("return 2*21", true)).isEqualTo(42.0);
         }
 
         @Test
         void evaluate_numberMapsToDouble_swtContract() throws Exception {
             // A JS number must come back as java.lang.Double.
-            assertThat(browser.evaluate("1+1")).isInstanceOf(Double.class);
+            assertThat(browser.evaluate("return 1+1")).isInstanceOf(Double.class);
         }
 
         @Test
         void evaluate_null() throws Exception {
-            assertThat(browser.evaluate("null")).isNull();
+            assertThat(browser.evaluate("return null")).isNull();
         }
 
         @Test
         void evaluate_undefined() throws Exception {
             // JS undefined has no value; SWT maps it to Java null.
-            assertThat(browser.evaluate("void 0")).isNull();
+            assertThat(browser.evaluate("return void 0")).isNull();
         }
 
         @Test
         void evaluate_boolean() throws Exception {
-            assertThat(browser.evaluate("1 < 2")).isEqualTo(Boolean.TRUE);
-            assertThat(browser.evaluate("1 > 2")).isEqualTo(Boolean.FALSE);
+            assertThat(browser.evaluate("return 1 < 2")).isEqualTo(Boolean.TRUE);
+            assertThat(browser.evaluate("return 1 > 2")).isEqualTo(Boolean.FALSE);
         }
 
         @Test
         void evaluate_string() throws Exception {
-            assertThat(browser.evaluate("'he\"llo\\n'")).isEqualTo("he\"llo\n");
+            assertThat(browser.evaluate("return 'he\"llo\\n'")).isEqualTo("he\"llo\n");
         }
 
         @Test
         void evaluate_array() throws Exception {
-            Object r = browser.evaluate("[1, 2, 3]");
+            Object r = browser.evaluate("return [1, 2, 3]");
             assertThat(r).isInstanceOf(Object[].class);
             assertThat((Object[]) r).containsExactly(1.0, 2.0, 3.0);
         }
 
         @Test
         void evaluate_mixedArray() throws Exception {
-            Object r = browser.evaluate("['a', true, 7, null]");
+            Object r = browser.evaluate("return ['a', true, 7, null]");
             assertThat(r).isInstanceOf(Object[].class);
             assertThat((Object[]) r).containsExactly("a", Boolean.TRUE, 7.0, null);
         }
 
         @Test
         void evaluate_nestedArray() throws Exception {
-            Object r = browser.evaluate("[1, ['a', true], null]");
+            Object r = browser.evaluate("return [1, ['a', true], null]");
             assertThat(r).isInstanceOf(Object[].class);
             Object[] arr = (Object[]) r;
             assertThat(arr[0]).isEqualTo(1.0);
             assertThat(arr[1]).isInstanceOf(Object[].class);
             assertThat((Object[]) arr[1]).containsExactly("a", Boolean.TRUE);
             assertThat(arr[2]).isNull();
+        }
+
+        // --- evaluate() runs a function BODY, not an expression -------------------------------
+        // The script may hold statements and returns its value with `return`, exactly like the
+        // native backends (WebBrowser.evaluate / Webkit2AsyncToSync.evaluate both wrap it in a
+        // function). Evaluating it as a bare expression instead makes `return` an Illegal return
+        // statement, which is what broke every SWT-idiomatic caller.
+
+        @Test
+        void evaluate_returnStatement_swtContract() throws Exception {
+            assertThat(browser.evaluate("return 1 + 1;")).isEqualTo(2.0);
+        }
+
+        @Test
+        void evaluate_statementsBeforeReturn_swtContract() throws Exception {
+            // Upstream's test_evaluate_returnMoved: `return` need not start the script.
+            assertThat(browser.evaluate("var x = 1; return 'hello'")).isEqualTo("hello");
+        }
+
+        @Test
+        void evaluate_bodyWithoutReturn_isNull_swtContract() throws Exception {
+            // A function body that never returns yields undefined -> null, even though the same
+            // text evaluated as an expression would have a value.
+            assertThat(browser.evaluate("1 + 1;")).isNull();
+        }
+
+        @Test
+        void evaluate_trailingLineComment_swtContract() throws Exception {
+            // The wrapper must not let a trailing // comment swallow its closing braces.
+            assertThat(browser.evaluate("return 7; // done")).isEqualTo(7.0);
+        }
+
+        @Test
+        void evaluate_varIsScopedToTheBody_swtContract() throws Exception {
+            // `var` inside the body is function-scoped, so it must not leak to the page globals.
+            browser.evaluate("var __equoLeak = 1; return 0;");
+            assertThat(browser.evaluate("return typeof window.__equoLeak")).isEqualTo("undefined");
+        }
+
+        /**
+         * The pattern an embedded JS source editor uses to round-trip its content: push a value in
+         * with a statement script, read it back with a {@code return} script. Both halves go
+         * through {@code evaluate}, and the read-back half is what fails when the script is
+         * treated as an expression.
+         */
+        @Test
+        void evaluate_statementThenReturnRoundTrip_swtContract() throws Exception {
+            browser.evaluate("window.__equoEditor = { v: '' };");
+            browser.evaluate("window.__equoEditor.v = \"<name>value</name>\";");
+            assertThat(browser.evaluate("return window.__equoEditor.v;"))
+                    .isEqualTo("<name>value</name>");
+        }
+
+        @Test
+        void evaluate_failingScript_throwsWithDetail() {
+            // Upstream's test_evaluate_evaluation_failed_exception, plus: the JS error text must
+            // survive into the SWTException, or a broken evaluate is undiagnosable.
+            assertThatThrownBy(() -> browser.evaluate("return noSuchFunctionAnywhere();"))
+                    .isInstanceOf(SWTException.class)
+                    .hasMessageContaining("noSuchFunctionAnywhere");
         }
     }
 
@@ -832,7 +899,7 @@ class BrowserFlutterTest {
             });
 //            pumpUntil(() -> false, 300);
             flutter.pumpClient();
-            Object result = browser.evaluate("window.equoFn ? window.equoFn('hi') : 'NONE'");
+            Object result = browser.evaluate("return window.equoFn ? window.equoFn('hi') : 'NONE'");
             assertThat(fired).as("BrowserFunction Java callback invoked from JS").isTrue();
             assertThat(result).isEqualTo("ok:hi");
         }
