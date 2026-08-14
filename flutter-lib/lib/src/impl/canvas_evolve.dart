@@ -166,6 +166,12 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
         if (!hasActiveChildren) _keyboardFocus.requestFocus();
         final pos = e.localPosition;
         if (_dblTap.registerTap(position: pos) == 2) {
+          // Nested Canvases (the editor's ruler columns sit inside a ruler container
+          // inside the text Canvas) each receive a pointer as it propagates to the
+          // ancestors. Only the deepest Canvas under the pointer may forward the gesture;
+          // otherwise the SWT double-click action (e.g. toggle breakpoint) runs once per
+          // ancestor, duplicating breakpoints.
+          if (_pointerHitsChild(pos)) return;
           widget.sendMouseMouseDoubleClick(
             state,
             VEvent()
@@ -207,6 +213,23 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       },
       child: content,
     );
+  }
+
+  bool _pointerHitsChild(Offset pos) {
+    final kids = state.children;
+    if (kids == null) return false;
+    for (final child in kids) {
+      final b = child.bounds;
+      if (b == null) continue;
+      final rect = Rect.fromLTWH(
+        b.x.toDouble(),
+        b.y.toDouble(),
+        b.width.toDouble(),
+        b.height.toDouble(),
+      );
+      if (rect.contains(pos)) return true;
+    }
+    return false;
   }
 
   Size getBounds() {
