@@ -250,7 +250,12 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       borderRadius: widgetTheme.checkboxBorderRadius,
       borderWidth: widgetTheme.checkboxBorderWidth,
       checkmarkSize: checkboxSize * widgetTheme.checkboxCheckmarkSizeMultiplier,
-      checkmarkColor: widgetTheme.checkboxCheckmarkColor,
+      // checkboxCheckmarkColor is picked to contrast with the selected fill; on the
+      // light disabled fill it would be invisible, so a disabled tick uses the
+      // disabled foreground instead — as the radio's inner dot already does.
+      checkmarkColor: enabled
+          ? widgetTheme.checkboxCheckmarkColor
+          : widgetTheme.disabledForegroundColor,
       grayedMargin: checkboxSize * widgetTheme.checkboxGrayedMarginMultiplier,
       grayedBorderRadius: widgetTheme.checkboxGrayedBorderRadius,
       duration: widgetTheme.buttonPressDelay,
