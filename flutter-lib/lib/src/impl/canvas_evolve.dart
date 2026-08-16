@@ -80,16 +80,24 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   // state against, so cap it at a single request until the overlay exists.
   bool _sentInitialPaintRequest = false;
 
+  // Called right before a Paint request actually goes out. Subclasses push whatever
+  // the Java-side SWT.Paint listeners must already have when they run (e.g.
+  // StyledText's text geometry): the same ordered channel carries both messages, so
+  // "pushed before the request" means "applied before the painters" by construction.
+  void beforePaintRequest() {}
+
   void _requestPaint() {
     final gc = gcOverlayKey.currentState;
     if (gc == null) {
       if (_sentInitialPaintRequest) return;
       _sentInitialPaintRequest = true;
+      beforePaintRequest();
       widget.sendPaintPaint(state, null);
       return;
     }
     if (gc.hasPendingPaint) return;
     gc.markPaintRequested();
+    beforePaintRequest();
     widget.sendPaintPaint(state, null);
   }
 

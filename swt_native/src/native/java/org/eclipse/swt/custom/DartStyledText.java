@@ -4112,6 +4112,9 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public int getLinePixel(int lineIndex) {
         checkWidget();
+        Integer geometryLinePixel = StyledTextHelper.geometryLinePixel(this, lineIndex);
+        if (geometryLinePixel != null)
+            return geometryLinePixel;
         int lineCount = content.getLineCount();
         lineIndex = Math.max(0, Math.min(lineCount, lineIndex));
         if (isFixedLineHeight()) {
@@ -4147,6 +4150,9 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public int getLineIndex(int y) {
         checkWidget();
+        Integer geometryLineIndex = StyledTextHelper.geometryLineIndex(this, y);
+        if (geometryLineIndex != null)
+            return geometryLineIndex;
         y -= topMargin;
         if (isFixedLineHeight()) {
             int lineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
@@ -4403,6 +4409,9 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         if (point == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
+        Integer geometryOffset = StyledTextHelper.geometryOffsetAtPoint(this, point.x, point.y);
+        if (geometryOffset != null)
+            return geometryOffset;
         int[] trailing = new int[1];
         int offset = getOffsetAtPoint(point.x, point.y, trailing, true);
         return offset != -1 ? offset + trailing[0] : -1;
@@ -5198,6 +5207,9 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         if (start < 0 || start >= contentLength || end < 0 || end >= contentLength || start > end) {
             SWT.error(SWT.ERROR_INVALID_RANGE);
         }
+        Rectangle geometryBounds = StyledTextHelper.geometryTextBounds(this, start, end);
+        if (geometryBounds != null)
+            return geometryBounds;
         int lineStart = content.getLineAtOffset(start);
         int lineEnd = content.getLineAtOffset(end);
         Rectangle rect;
@@ -5513,6 +5525,9 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      * @return location of the character at the given offset in the line.
      */
     Point getPointAtOffset(int offset) {
+        Point geometryPoint = StyledTextHelper.geometryPointAtOffset(this, offset);
+        if (geometryPoint != null)
+            return geometryPoint;
         int lineIndex = content.getLineAtOffset(offset);
         String line = content.getLine(lineIndex);
         int lineOffset = content.getOffsetAtLine(lineIndex);
@@ -12071,6 +12086,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             });
         });
         StyledTextHelper.registerStateUpdateHandler(this);
+        StyledTextHelper.registerTextGeometryHandler(this);
     }
 
     public StyledText getApi() {

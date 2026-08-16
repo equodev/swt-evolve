@@ -667,7 +667,12 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             _bidiVisual(ls, le, left, right, rtl);
             x = rtl[idx] ? (trailing ? left[idx] : right[idx]) : (trailing ? right[idx] : left[idx]);
         }
-        return new Point((int) Math.round(x) + _alignShift(ls, le), lineIndex * _effLineHeight());
+        // A location at the line's visual edge must equal getBounds()/getLineBounds() width
+        // exactly (the TextLayout contract): those ceil the same measure, while interior
+        // caret positions round — so snap edge positions onto the ceiled width instead of
+        // letting the two roundings split on the fraction.
+        int xi = Math.abs(x - totalWidth) < 0.75 ? (int) Math.ceil(totalWidth) : (int) Math.round(x);
+        return new Point(xi + _alignShift(ls, le), lineIndex * _effLineHeight());
     }
 
     /**
@@ -2058,29 +2063,85 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         end = Math.max(0, Math.min(end, len));
         if (end <= start)
             return 0;
-        double w = 0;
-        int i = start;
+        int lineStart = start;
+        if (text.lastIndexOf('\t', end - 1) >= start) {
+            while (lineStart > 0) {
+                char prev = text.charAt(lineStart - 1);
+                if (prev == '\n' || prev == '\r')
+                    break;
+                lineStart--;
+            }
+        }
+        double px = dev.equo.swt.FontMetricsUtil.dpiScale();
+        double x = 0;
+        double atStart = 0;
+        int i = lineStart;
         while (i < end) {
+            if (i == start)
+                atStart = x;
             TextStyle st = _styleFor(i);
             if (st != null && st.metrics != null) {
-                w += st.metrics.width;
+                x += st.metrics.width;
+                i++;
+                continue;
+            }
+            char c = text.charAt(i);
+            if (c == '\n' || c == '\r') {
+                x = 0;
+                i++;
+                continue;
+            }
+            if (c == '\t') {
+                x = _nextTabStop(x);
                 i++;
                 continue;
             }
             org.eclipse.swt.graphics.Font f = _fontFor(i);
             int j = i + 1;
-            while (j < end && _fontFor(j) == f) {
+            while (j < end) {
+                char cj = text.charAt(j);
+                if (cj == '\t' || cj == '\n' || cj == '\r')
+                    break;
+                if (_fontFor(j) != f)
+                    break;
                 TextStyle sj = _styleFor(j);
                 if (sj != null && sj.metrics != null)
                     break;
                 j++;
             }
+            if (i < start && j > start)
+                j = start;
             if (f != null) {
-                w += dev.equo.swt.FontMetricsUtil.getFontSize(text.substring(i, j), f).x();
+                x += dev.equo.swt.FontMetricsUtil.getFontSize(text.substring(i, j), f).x() * px;
             }
             i = j;
         }
-        return w;
+        return x - atStart;
+    }
+
+    double _nextTabStop(double x) {
+        if (tabs != null && tabs.length > 0) {
+            for (int t = 0; t < tabs.length; t++) {
+                if (tabs[t] > x + 0.01)
+                    return tabs[t];
+            }
+            int last = tabs[tabs.length - 1];
+            int prev = tabs.length > 1 ? tabs[tabs.length - 2] : 0;
+            double interval = Math.max(1, last - prev);
+            double stop = last;
+            while (stop <= x + 0.01) stop += interval;
+            return stop;
+        }
+        double tw = defaultTabWidth;
+        if (tw <= 0) {
+            org.eclipse.swt.graphics.Font f = _fontFor(0);
+            if (f != null) {
+                tw = dev.equo.swt.FontMetricsUtil.getFontSize(" ", f).x() * 8 * dev.equo.swt.FontMetricsUtil.dpiScale();
+            }
+        }
+        if (tw <= 0)
+            return x;
+        return (Math.floor((x + 0.01) / tw) + 1) * tw;
     }
 
     int _effLineHeight() {

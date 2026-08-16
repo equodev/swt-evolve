@@ -101,11 +101,33 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     _verticalController.addListener(_onVerticalScroll);
     _horizontalController.addListener(_onHorizontalScroll);
     _focusNode.addListener(_syncEditorKeyOwnership);
+    _focusNode.onKeyEvent = _keepTabInsideEditor;
     EquoCommService.onRaw("${state.swt}/${state.id}/focusLost", (_) {
       if (_isEditingText) {
         _stopEditing();
       }
     });
+  }
+
+  /// A multi-line editable StyledText keeps Tab as content instead of traversing away from it
+  /// (SWT's `StyledText.handleTraverse`), and Java relies on that: it applies the tab itself,
+  /// because the Flutter editor skips control characters. Flutter's focus traversal has no such
+  /// rule, so unless the key is marked handled here it moves focus off the editor and every
+  /// later keystroke is stranded until the user clicks back in. Marking it handled stops only
+  /// the traversal — [_handleKeyEvent] listens on the raw keyboard stream and still forwards the
+  /// Tab to Java.
+  KeyEventResult _keepTabInsideEditor(FocusNode node, KeyEvent event) {
+    if (event is KeyUpEvent) return KeyEventResult.ignored;
+    if (event.logicalKey != LogicalKeyboardKey.tab) return KeyEventResult.ignored;
+    if (!_editable || hasStyle(state.style, SWT.SINGLE)) return KeyEventResult.ignored;
+    final keys = HardwareKeyboard.instance;
+    if (keys.isShiftPressed ||
+        keys.isControlPressed ||
+        keys.isAltPressed ||
+        keys.isMetaPressed) {
+      return KeyEventResult.ignored;
+    }
+    return KeyEventResult.handled;
   }
 
   /// While this StyledText holds focus, tell the top-level key handler to stay out of the way — it
@@ -237,6 +259,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       editingState,
       selectionFromState,
       javaLineHeight,
+      state.tabs ?? 4,
     );
 
     // Update shapes list - remove old shape with same id and add new one
@@ -626,6 +649,41 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     }
 
     return Size(totalWidth, totalHeight);
+  }
+
+  // ---- Text geometry push (Java answers its position API from this) ----
+  //
+  // Java's StyledText position API (getLocationAtOffset, getOffsetAtPoint,
+  // getLinePixel, getLineIndex, getTextBounds) repeats back what is painted here
+  // instead of estimating it from glyph tables. The table rides in front of every
+  // Paint request on the same ordered channel (see CanvasImpl.beforePaintRequest),
+  // so the Java-side painters always see geometry at least as fresh as the frame
+  // they draw over.
+  TextShape? _geometrySentForShape;
+
+  @override
+  void beforePaintRequest() {
+    final shape = _currentTextShape();
+    if (shape == null || identical(shape, _geometrySentForShape)) return;
+    final geometry = shape.computeGeometry();
+    if (geometry == null) return;
+    _geometrySentForShape = shape;
+    EquoCommService.sendPayload(
+      "${state.swt}/${state.id}/TextGeometry",
+      geometry,
+    );
+  }
+
+  TextShape? _currentTextShape() {
+    if (_editableTextShape != null &&
+        _editableTextShape!.styledTextId == state.id) {
+      return _editableTextShape;
+    }
+    for (int i = shapes.length - 1; i >= 0; i--) {
+      final s = shapes[i];
+      if (s is TextShape && s.styledTextId == state.id) return s;
+    }
+    return null;
   }
 
   /// Convert a viewport-space position to content-space by adding scroll offsets.
@@ -1336,6 +1394,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       _localEditingState,
       null,
       _originalServerTextShape!.lineHeight,
+      _originalServerTextShape!.tabs,
     );
   }
 
@@ -1541,6 +1600,31 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   }
 }
 
+// Stands in for one '\t'. Its width comes from the PlaceholderDimensions computed per
+// tab, so the child is never measured or painted.
+const WidgetSpan _tabPlaceholder = WidgetSpan(
+  alignment: PlaceholderAlignment.baseline,
+  baseline: TextBaseline.alphabetic,
+  child: SizedBox.shrink(),
+);
+
+class _StyledRun {
+  final String text;
+  final TextStyle style;
+
+  const _StyledRun(this.text, this.style);
+}
+
+class _TabExpandedLine {
+  final TextSpan span;
+
+  /// One entry per tab placeholder in [span], in paragraph order. Empty when the
+  /// line has no tabs, in which case [span] is the untouched original.
+  final List<PlaceholderDimensions> tabStops;
+
+  const _TabExpandedLine(this.span, this.tabStops);
+}
+
 class TextShape extends Shape {
   final String text;
   final Offset off;
@@ -1562,6 +1646,8 @@ class TextShape extends Shape {
   // Java-calculated line height (ascent + descent). When > 0, used for
   // currentY advancement so ruler positions stay in sync with Flutter rendering.
   final double lineHeight;
+  // StyledText.getTabs(): tab stop spacing in columns. SWT's default is 4.
+  final int tabs;
 
   TextShape(
     this.text,
@@ -1578,6 +1664,7 @@ class TextShape extends Shape {
     this.editingState,
     this.selectionInfo,
     this.lineHeight = 0.0,
+    this.tabs = 4,
   ]);
 
   // Vertical advance for one logical line. Each logical line is painted by a single
@@ -1631,21 +1718,19 @@ class TextShape extends Shape {
       final align = _mapSwtAlignmentToTextAlign(alignValue);
       final effectiveAlign = justify ? TextAlign.justify : align;
 
-      final lineTextSpan = _getTextSpanForLine(line, i, effectiveTextSpan);
-
-      final tp = TextPainter(
-        text: lineTextSpan,
-        textAlign: effectiveAlign,
-        textDirection: TextDirection.ltr,
-      );
-
       double maxW = double.infinity;
       if (wordWrap == true && canvasSize != null) {
         maxW = canvasSize!.width - paintOffset.dx - indent.toDouble();
         if (maxW <= 0) maxW = double.infinity;
       }
 
-      tp.layout(maxWidth: maxW);
+      final tp = _layoutLine(
+        line,
+        i,
+        effectiveTextSpan,
+        align: effectiveAlign,
+        maxWidth: maxW,
+      );
 
       double finalX = paintOffset.dx + indent.toDouble();
 
@@ -1695,6 +1780,142 @@ class TextShape extends Shape {
     }
   }
 
+  // Per-char x boundaries are skipped past this size so a large document doesn't
+  // ship a payload proportional to its character count on every paint; the Java
+  // side then falls back to its glyph-table estimate for within-line x only.
+  static const int _charXPayloadLimit = 20000;
+
+  /// Per-visual-line geometry of the document exactly as [draw] paints it, for the
+  /// Java side to answer its position API from (the `TextGeometry` push).
+  ///
+  /// Coordinates are relative to the text origin ([off] is not applied — the Java
+  /// side adds margins and scroll offsets). Each entry describes one visual line
+  /// after wrapping: `l` logical line, `s`/`e` document offset range, `x`/`y`/`w`/`h`
+  /// box, and `cx` the per-character x boundaries (length `e - s + 1`).
+  Map<String, dynamic>? computeGeometry() {
+    TextSpan effectiveTextSpan;
+    if (editingState != null) {
+      effectiveTextSpan = TextRenderer.buildFinalTextSpan(
+        text,
+        editingState!,
+        style,
+      );
+    } else if (textSpan != null) {
+      effectiveTextSpan = textSpan!;
+    } else {
+      effectiveTextSpan = TextSpan(text: text, style: style);
+    }
+
+    final lines = text.split('\n');
+    final includeCharX = text.length <= _charXPayloadLimit;
+    final visual = <Map<String, dynamic>>[];
+    double currentY = 0;
+    double maxWidth = 0;
+    int docOffset = 0;
+
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i];
+
+      int indent = 0;
+      int alignValue = 16384; // Default SWT.LEFT
+      bool justify = false;
+      if (editingState != null && editingState!.lineProperties.containsKey(i)) {
+        final lineProps = editingState!.lineProperties[i]!;
+        indent = lineProps.indent ?? 0;
+        alignValue = lineProps.alignment ?? 16384;
+        justify = lineProps.justify ?? false;
+      }
+      final align = _mapSwtAlignmentToTextAlign(alignValue);
+      final effectiveAlign = justify ? TextAlign.justify : align;
+
+      double maxW = double.infinity;
+      if (wordWrap == true && canvasSize != null) {
+        maxW = canvasSize!.width - off.dx - indent.toDouble();
+        if (maxW <= 0) maxW = double.infinity;
+      }
+
+      final tp = _layoutLine(
+        line,
+        i,
+        effectiveTextSpan,
+        align: effectiveAlign,
+        maxWidth: maxW,
+      );
+
+      double finalX = indent.toDouble();
+      if (canvasSize != null && maxW != double.infinity) {
+        switch (effectiveAlign) {
+          case TextAlign.center:
+            if (tp.width < maxW) {
+              finalX = indent.toDouble() + (maxW - tp.width) / 2;
+            }
+            break;
+          case TextAlign.right:
+            if (tp.width < maxW) {
+              finalX = indent.toDouble() + (maxW - tp.width);
+            }
+            break;
+          default:
+            break;
+        }
+      }
+
+      List<double> charX(int from, int to) => [
+        for (int k = from; k <= to; k++)
+          finalX +
+              tp.getOffsetForCaret(TextPosition(offset: k), Rect.zero).dx,
+      ];
+
+      final metrics = tp.computeLineMetrics();
+      if (metrics.length <= 1) {
+        maxWidth = math.max(maxWidth, finalX + tp.width);
+        visual.add({
+          'l': i,
+          's': docOffset,
+          'e': docOffset + line.length,
+          'x': finalX,
+          'y': currentY,
+          'w': tp.width,
+          'h': _advance(tp.height),
+          if (includeCharX) 'cx': charX(0, line.length),
+        });
+      } else {
+        int local = 0;
+        for (int m = 0; m < metrics.length && local <= line.length; m++) {
+          final lm = metrics[m];
+          int vEnd = line.length;
+          if (m < metrics.length - 1) {
+            final boundary = tp.getLineBoundary(TextPosition(offset: local));
+            vEnd = boundary.end > local ? boundary.end : local + 1;
+            if (vEnd > line.length) vEnd = line.length;
+          }
+          maxWidth = math.max(maxWidth, finalX + lm.left + lm.width);
+          visual.add({
+            'l': i,
+            's': docOffset + local,
+            'e': docOffset + vEnd,
+            'x': finalX + lm.left,
+            'y': currentY + (lm.baseline - lm.ascent),
+            'w': lm.width,
+            'h': lm.height,
+            if (includeCharX) 'cx': charX(local, vEnd),
+          });
+          local = vEnd;
+        }
+      }
+
+      currentY += _advance(tp.height);
+      docOffset += line.length + 1;
+    }
+
+    return {
+      'charCount': text.length,
+      'contentWidth': maxWidth,
+      'contentHeight': currentY,
+      'lines': visual,
+    };
+  }
+
   TextSpan _getTextSpanForLine(
     String lineText,
     int lineIndex,
@@ -1705,6 +1926,113 @@ class TextShape extends Shape {
     } else {
       return TextSpan(text: lineText, style: style);
     }
+  }
+
+  // Every per-line TextPainter goes through here so painting, caret placement and
+  // hit-testing measure a line the same way — in particular they all get the same
+  // tab stops (see _expandTabStops).
+  TextPainter _layoutLine(
+    String lineText,
+    int lineIndex,
+    TextSpan unifiedTextSpan, {
+    required TextAlign align,
+    required double maxWidth,
+  }) {
+    final line = _expandTabStops(
+      _getTextSpanForLine(lineText, lineIndex, unifiedTextSpan),
+    );
+    final tp = TextPainter(
+      text: line.span,
+      textAlign: align,
+      textDirection: TextDirection.ltr,
+    );
+    if (line.tabStops.isNotEmpty) {
+      tp.setPlaceholderDimensions(line.tabStops);
+    }
+    tp.layout(maxWidth: maxWidth);
+    return tp;
+  }
+
+  // SWT lays a line out with a repeating tab stop every `tabs` spaces wide
+  // (SwtStyledTextRenderer: tabWidth = width of `tabs` spaces), so a tab advances to
+  // the next multiple of that width from the line start — a tab after "ab" moves 2
+  // columns, not 4. Flutter's TextPainter has no tab stops, so each '\t' is replaced
+  // by a zero-height placeholder sized to reach the next stop. A placeholder occupies
+  // exactly one UTF-16 code unit (U+FFFC) just like the '\t' it stands in for, which
+  // keeps getOffsetForCaret/getPositionForOffset offsets identical to document offsets.
+  _TabExpandedLine _expandTabStops(TextSpan lineSpan) {
+    final leaves = <_StyledRun>[];
+    _flattenSpan(lineSpan, style, leaves);
+    if (!leaves.any((leaf) => leaf.text.contains('\t'))) {
+      return _TabExpandedLine(lineSpan, const []);
+    }
+
+    final tabWidth = _tabStopWidth();
+    final children = <InlineSpan>[];
+    final tabStops = <PlaceholderDimensions>[];
+    double x = 0;
+
+    for (final leaf in leaves) {
+      final parts = leaf.text.split('\t');
+      for (int i = 0; i < parts.length; i++) {
+        if (i > 0) {
+          // Epsilon guards against a run measured a hair under an exact stop, which
+          // would otherwise make the tab advance ~0 instead of a full column.
+          final nextStop = (((x + 0.01) / tabWidth).floor() + 1) * tabWidth;
+          tabStops.add(
+            PlaceholderDimensions(
+              size: Size(nextStop - x, 0),
+              alignment: PlaceholderAlignment.baseline,
+              baseline: TextBaseline.alphabetic,
+              baselineOffset: 0,
+            ),
+          );
+          children.add(_tabPlaceholder);
+          x = nextStop;
+        }
+        if (parts[i].isEmpty) continue;
+        children.add(TextSpan(text: parts[i], style: leaf.style));
+        x += _measureRun(parts[i], leaf.style);
+      }
+    }
+
+    return _TabExpandedLine(
+      TextSpan(style: style, children: children),
+      tabStops,
+    );
+  }
+
+  void _flattenSpan(
+    InlineSpan span,
+    TextStyle inherited,
+    List<_StyledRun> out,
+  ) {
+    if (span is! TextSpan) return;
+    final effective = span.style == null
+        ? inherited
+        : inherited.merge(span.style);
+    if (span.text != null && span.text!.isNotEmpty) {
+      out.add(_StyledRun(span.text!, effective));
+    }
+    for (final child in span.children ?? const <InlineSpan>[]) {
+      _flattenSpan(child, effective, out);
+    }
+  }
+
+  double _tabStopWidth() {
+    final columns = tabs > 0 ? tabs : 4;
+    final width = _measureRun(' ' * columns, style);
+    return width > 0 ? width : columns * (style.fontSize ?? 16) * 0.5;
+  }
+
+  double _measureRun(String run, TextStyle runStyle) {
+    final tp = TextPainter(
+      text: TextSpan(text: run, style: runStyle),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    final width = tp.width;
+    tp.dispose();
+    return width;
   }
 
   TextSpan _buildLineTextSpanFromState(String lineText, int lineIndex) {
@@ -1844,11 +2172,6 @@ class TextShape extends Shape {
     double currentY = off.dy;
     for (int i = 0; i < currentLineIndex; i++) {
       final prevLine = lines[i];
-      final prevLineTextSpan = _getTextSpanForLine(
-        prevLine,
-        i,
-        TextSpan(text: text, style: style),
-      );
 
       int prevIndent = 0;
       int prevAlignValue = 16384;
@@ -1870,30 +2193,25 @@ class TextShape extends Shape {
         if (prevMaxW <= 0) prevMaxW = double.infinity;
       }
 
-      final prevTp = TextPainter(
-        text: prevLineTextSpan,
-        textAlign: prevEffectiveAlign,
-        textDirection: TextDirection.ltr,
+      final prevTp = _layoutLine(
+        prevLine,
+        i,
+        TextSpan(text: text, style: style),
+        align: prevEffectiveAlign,
+        maxWidth: prevMaxW,
       );
 
-      prevTp.layout(maxWidth: prevMaxW);
       currentY += _advance(prevTp.height);
     }
 
     final currentLine = lines[currentLineIndex];
-    final lineTextSpan = _getTextSpanForLine(
+    final tp = _layoutLine(
       currentLine,
       currentLineIndex,
       TextSpan(text: text, style: style),
+      align: effectiveAlign,
+      maxWidth: maxW,
     );
-
-    final tp = TextPainter(
-      text: lineTextSpan,
-      textAlign: effectiveAlign,
-      textDirection: TextDirection.ltr,
-    );
-
-    tp.layout(maxWidth: maxW);
 
     double finalX = off.dx + indent.toDouble();
 
@@ -1996,24 +2314,19 @@ class TextShape extends Shape {
       final align = _mapSwtAlignmentToTextAlign(alignValue);
       final effectiveAlign = justify ? TextAlign.justify : align;
 
-      final lineTextSpan = _getTextSpanForLine(
-        line,
-        lineIndex,
-        TextSpan(text: text, style: style),
-      );
-      final tp = TextPainter(
-        text: lineTextSpan,
-        textAlign: effectiveAlign,
-        textDirection: TextDirection.ltr,
-      );
-
       double maxW = double.infinity;
       if (canvasSize != null) {
         maxW = canvasSize!.width - off.dx - indent.toDouble();
         if (maxW <= 0) maxW = double.infinity;
       }
 
-      tp.layout(maxWidth: maxW);
+      final tp = _layoutLine(
+        line,
+        lineIndex,
+        TextSpan(text: text, style: style),
+        align: effectiveAlign,
+        maxWidth: maxW,
+      );
 
       if (lineIndex >= startLineIndex && lineIndex <= endLineIndex) {
         int lineSelectionStart = 0;
@@ -2072,6 +2385,7 @@ class TextShape extends Shape {
       editingState,
       selection,
       lineHeight,
+      tabs,
     );
   }
 
@@ -2091,6 +2405,7 @@ class TextShape extends Shape {
       newEditingState,
       selectionInfo,
       lineHeight,
+      tabs,
     );
   }
 
@@ -2134,6 +2449,7 @@ class TextShape extends Shape {
       newEditingState ?? editingState,
       selectionInfo,
       lineHeight,
+      tabs,
     );
   }
 
@@ -2153,6 +2469,7 @@ class TextShape extends Shape {
       editingState,
       selectionInfo,
       lineHeight,
+      tabs,
     );
   }
 
@@ -2352,23 +2669,17 @@ class TextShape extends Shape {
       final align = _mapSwtAlignmentToTextAlign(alignValue);
       final effectiveAlign = justify ? TextAlign.justify : align;
 
-      final lineTextSpan = _getTextSpanForLine(
-        line,
-        i,
-        TextSpan(text: text, style: style),
-      );
-
-      final tp = TextPainter(
-        text: lineTextSpan,
-        textAlign: effectiveAlign,
-        textDirection: TextDirection.ltr,
-      );
-
       double maxW = double.infinity;
       maxW = canvasSize.width - off.dx - indent.toDouble();
       if (maxW <= 0) maxW = double.infinity;
 
-      tp.layout(maxWidth: maxW);
+      final tp = _layoutLine(
+        line,
+        i,
+        TextSpan(text: text, style: style),
+        align: effectiveAlign,
+        maxWidth: maxW,
+      );
 
       double finalX = indent.toDouble();
 

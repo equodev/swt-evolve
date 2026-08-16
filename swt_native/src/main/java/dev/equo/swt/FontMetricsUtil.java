@@ -59,6 +59,16 @@ public final class FontMetricsUtil {
     }
 
     /**
+     * Device pixels per 72-dpi point. {@link GenFontMetrics} stores point advances while text is
+     * painted at the display DPI, so widths derived from the table must be multiplied by this to
+     * land on painted glyphs.
+     */
+    public static double dpiScale() {
+        Display display = Display.getCurrent();
+        return (display != null && display.getDPI().x > 0) ? display.getDPI().x / 72.0 : 96.0 / 72.0;
+    }
+
+    /**
      * Computes scaled font metric values for the given font.
      * Returns int[] {ascent, descent, height, avgCharWidth}, or null if the
      * font has no entry in {@link GenFontMetrics#DATA}.

@@ -31,8 +31,7 @@ public class StyledTextHelper {
     private static final int GLYPH_START = 32;
 
     private static double dpiScale() {
-        Display display = Display.getCurrent();
-        return (display != null && display.getDPI().x > 0) ? display.getDPI().x / 72.0 : 96.0 / 72.0;
+        return FontMetricsUtil.dpiScale();
     }
 
     /**
@@ -44,6 +43,206 @@ public class StyledTextHelper {
             styledText.getDisplay().asyncExec(() ->
                     processStateUpdate(styledText, new String(payload, StandardCharsets.UTF_8)));
         });
+    }
+
+    // ---- Text geometry pushed by the render side ----
+    //
+    // The render side lays the document out with real shaping and pushes the resulting
+    // per-visual-line geometry in front of every Paint request, on the same ordered
+    // channel — so by the time the SWT.Paint listeners run, the geometry they align
+    // against is at least as fresh as the frame they draw over. The position API
+    // answers from this table when it is fresh (same character count as the current
+    // content) and falls back to the glyph-table estimate otherwise, e.g. before the
+    // first frame.
+
+    /** One visual line, after wrapping. Coordinates are relative to the text origin. */
+    static final class VisualLine {
+        int logicalLine;
+        int start, end;          // document offsets, [start, end]
+        double x, y, w, h;
+        double[] charX;          // x boundary per character, length end - start + 1, or null
+    }
+
+    static final class TextGeometry {
+        int charCount;
+        double contentWidth, contentHeight;
+        VisualLine[] lines;      // in document order, y ascending
+    }
+
+    private static final Map<DartStyledText, TextGeometry> textGeometries =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /** Registers the TextGeometry handler; mirrors {@link #registerStateUpdateHandler}. */
+    public static void registerTextGeometryHandler(DartStyledText styledText) {
+        FlutterBridge.onPayload(styledText, "TextGeometry", payload -> {
+            if (payload == null) return;
+            styledText.getDisplay().asyncExec(() ->
+                    processTextGeometry(styledText, new String(payload, StandardCharsets.UTF_8)));
+        });
+    }
+
+    static void processTextGeometry(DartStyledText styledText, String payload) {
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = serializer.from(Map.class, payload.getBytes(StandardCharsets.UTF_8));
+            if (map == null) return;
+            applyTextGeometry(styledText, map);
+        } catch (IOException ex) {
+            // Ignore deserialization errors
+        }
+    }
+
+    static void applyTextGeometry(DartStyledText styledText, Map<String, Object> map) {
+        Object linesObj = map.get("lines");
+        if (!(linesObj instanceof List<?> lineMaps)) return;
+        TextGeometry g = new TextGeometry();
+        g.charCount = asInt(map.get("charCount"), -1);
+        g.contentWidth = asDouble(map.get("contentWidth"), 0);
+        g.contentHeight = asDouble(map.get("contentHeight"), 0);
+        List<VisualLine> lines = new ArrayList<>(lineMaps.size());
+        for (Object o : lineMaps) {
+            if (!(o instanceof Map<?, ?> lm)) return;
+            VisualLine v = new VisualLine();
+            v.logicalLine = asInt(lm.get("l"), -1);
+            v.start = asInt(lm.get("s"), -1);
+            v.end = asInt(lm.get("e"), -1);
+            v.x = asDouble(lm.get("x"), 0);
+            v.y = asDouble(lm.get("y"), 0);
+            v.w = asDouble(lm.get("w"), 0);
+            v.h = asDouble(lm.get("h"), 0);
+            if (v.logicalLine < 0 || v.start < 0 || v.end < v.start) return;
+            if (lm.get("cx") instanceof List<?> cx) {
+                if (cx.size() != v.end - v.start + 1) return;
+                v.charX = new double[cx.size()];
+                for (int i = 0; i < cx.size(); i++) v.charX[i] = asDouble(cx.get(i), 0);
+            }
+            lines.add(v);
+        }
+        g.lines = lines.toArray(new VisualLine[0]);
+        textGeometries.put(styledText, g);
+    }
+
+    private static int asInt(Object o, int def) {
+        return o instanceof Number n ? n.intValue() : def;
+    }
+
+    private static double asDouble(Object o, double def) {
+        return o instanceof Number n ? n.doubleValue() : def;
+    }
+
+    /** The pushed geometry, or null when absent or stale relative to the current content. */
+    static TextGeometry freshGeometry(DartStyledText styledText) {
+        TextGeometry g = textGeometries.get(styledText);
+        if (g == null || g.lines.length == 0) return null;
+        if (styledText.content == null || g.charCount != styledText.getCharCount()) return null;
+        return g;
+    }
+
+    /** Index into g.lines of the visual line holding the offset, preferring the line it starts. */
+    private static int visualLineOf(TextGeometry g, int offset) {
+        int found = -1;
+        for (int i = 0; i < g.lines.length; i++) {
+            VisualLine v = g.lines[i];
+            if (offset < v.start) break;
+            if (offset <= v.end) {
+                found = i;
+                if (offset < v.end) break;
+                // offset == v.end: prefer the next visual line if the offset starts it.
+            }
+        }
+        return found;
+    }
+
+    /** Widget-space location of the offset, or null when the table can't answer exactly. */
+    public static org.eclipse.swt.graphics.Point geometryPointAtOffset(DartStyledText styledText, int offset) {
+        TextGeometry g = freshGeometry(styledText);
+        if (g == null) return null;
+        int vi = visualLineOf(g, offset);
+        if (vi < 0) return null;
+        VisualLine v = g.lines[vi];
+        if (v.charX == null) return null;
+        double x = v.charX[offset - v.start];
+        return new org.eclipse.swt.graphics.Point(
+                (int) Math.round(x) + styledText.leftMargin - styledText.horizontalScrollOffset,
+                (int) Math.round(v.y) - styledText.getVerticalScrollOffset() + styledText.topMargin);
+    }
+
+    /** Widget-space top pixel of a logical line; line == lineCount answers the content bottom. */
+    public static Integer geometryLinePixel(DartStyledText styledText, int lineIndex) {
+        TextGeometry g = freshGeometry(styledText);
+        if (g == null) return null;
+        double y = -1;
+        if (lineIndex > g.lines[g.lines.length - 1].logicalLine) {
+            y = g.contentHeight;
+        } else {
+            for (VisualLine v : g.lines) {
+                if (v.logicalLine == lineIndex) { y = v.y; break; }
+                if (v.logicalLine > lineIndex) break;
+            }
+        }
+        if (y < 0) return null;
+        return (int) Math.round(y) - styledText.getVerticalScrollOffset() + styledText.topMargin;
+    }
+
+    /** Logical line at a widget-space y, clamped to the content like the estimate path. */
+    public static Integer geometryLineIndex(DartStyledText styledText, int y) {
+        TextGeometry g = freshGeometry(styledText);
+        if (g == null) return null;
+        double contentY = y - styledText.topMargin + styledText.getVerticalScrollOffset();
+        if (contentY < 0) return 0;
+        for (VisualLine v : g.lines) {
+            if (contentY < v.y + v.h) return v.logicalLine;
+        }
+        return g.lines[g.lines.length - 1].logicalLine;
+    }
+
+    /**
+     * Document offset nearest to a widget-space point (trailing already applied, matching
+     * the public getOffsetAtPoint), or null when outside the content or not answerable.
+     */
+    public static Integer geometryOffsetAtPoint(DartStyledText styledText, int x, int y) {
+        TextGeometry g = freshGeometry(styledText);
+        if (g == null) return null;
+        double contentX = x - styledText.leftMargin + styledText.horizontalScrollOffset;
+        double contentY = y - styledText.topMargin + styledText.getVerticalScrollOffset();
+        if (contentY < 0 || contentY >= g.contentHeight) return null;
+        VisualLine line = null;
+        for (VisualLine v : g.lines) {
+            if (contentY < v.y + v.h) { line = v; break; }
+        }
+        if (line == null || line.charX == null) return null;
+        int best = 0;
+        double bestDist = Double.MAX_VALUE;
+        for (int i = 0; i < line.charX.length; i++) {
+            double d = Math.abs(line.charX[i] - contentX);
+            if (d < bestDist) { bestDist = d; best = i; }
+        }
+        return line.start + best;
+    }
+
+    /** Widget-space bounds of [start, end], or null when the table can't answer exactly. */
+    public static org.eclipse.swt.graphics.Rectangle geometryTextBounds(DartStyledText styledText, int start, int end) {
+        TextGeometry g = freshGeometry(styledText);
+        if (g == null) return null;
+        int first = visualLineOf(g, start);
+        int last = visualLineOf(g, end);
+        if (first < 0 || last < 0) return null;
+        double left = Double.MAX_VALUE, right = -Double.MAX_VALUE;
+        for (int i = first; i <= last; i++) {
+            VisualLine v = g.lines[i];
+            if (v.charX == null) return null;
+            int from = Math.max(start, v.start) - v.start;
+            int to = Math.min(end, v.end) - v.start;
+            left = Math.min(left, Math.min(v.charX[from], v.charX[to]));
+            right = Math.max(right, Math.max(v.charX[from], v.charX[to]));
+        }
+        double top = g.lines[first].y;
+        double bottom = g.lines[last].y + g.lines[last].h;
+        return new org.eclipse.swt.graphics.Rectangle(
+                (int) Math.round(left) + styledText.leftMargin - styledText.horizontalScrollOffset,
+                (int) Math.round(top) - styledText.getVerticalScrollOffset() + styledText.topMargin,
+                (int) Math.round(right - left),
+                (int) Math.round(bottom - top));
     }
 
     private static void processStateUpdate(DartStyledText styledText, String payload) {
