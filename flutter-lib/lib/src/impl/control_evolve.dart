@@ -28,6 +28,15 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   final GlobalKey<State<MenuSwt>> _menuKey = GlobalKey<State<MenuSwt>>();
   final GlobalKey _tooltipContentKey = GlobalKey();
   int _lastButton = 1;
+  // SWT click count: consecutive same-button downs within the double-click
+  // window chain (1, 2, 3…), like a native Display reports them. Java-side
+  // consumers key real behavior off it — StyledText's word/line selection
+  // takes the double-click branch whenever count > 1, and JFace's
+  // PaintManager expects the caret set by a count==1 down — so the count
+  // must be truthful, never assumed.
+  int _clickCount = 0;
+  Duration? _lastClickStamp;
+  Offset? _lastClickPosition;
   int _lastMouseMoveMs = 0;
   int _lastDragMoveMs = 0;
   static const int _mouseMoveThrottleMs = 15;
@@ -296,13 +305,22 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
     widget = Listener(
       onPointerDown: (e) {
-        _lastButton = e.buttons == kSecondaryMouseButton ? 3 : e.buttons == kMiddleMouseButton ? 2 : 1;
+        final button = e.buttons == kSecondaryMouseButton ? 3 : e.buttons == kMiddleMouseButton ? 2 : 1;
+        final chained = _lastClickStamp != null &&
+            _lastClickPosition != null &&
+            button == _lastButton &&
+            e.timeStamp - _lastClickStamp! <= kDoubleTapTimeout &&
+            (e.position - _lastClickPosition!).distance <= kDoubleTapSlop;
+        _clickCount = chained ? _clickCount + 1 : 1;
+        _lastClickStamp = e.timeStamp;
+        _lastClickPosition = e.position;
+        _lastButton = button;
         if (forwardsControlMouseDown) {
           final event = VEvent()
             ..button = _lastButton
             ..x = e.localPosition.dx.round()
             ..y = e.localPosition.dy.round()
-            ..count = 2;
+            ..count = _clickCount;
           this.widget.sendMouseMouseDown(state, event);
         }
       },
@@ -311,7 +329,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
           ..button = _lastButton
           ..x = e.localPosition.dx.round()
           ..y = e.localPosition.dy.round()
-          ..count = 1;
+          ..count = _clickCount == 0 ? 1 : _clickCount;
         this.widget.sendMouseMouseUp(state, event);
       },
       onPointerMove: (e) {
