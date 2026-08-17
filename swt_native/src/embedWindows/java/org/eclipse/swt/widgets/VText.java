@@ -7,6 +7,7 @@ import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
 import java.io.IOException;
+import dev.equo.swt.CharArrayConverter;
 
 @CompiledJson()
 public class VText extends VScrollable {
@@ -34,12 +35,12 @@ public class VText extends VScrollable {
         ((DartText) impl).doubleClick = value;
     }
 
-    public char getEchoCharacter() {
+    public int getEchoCharacter() {
         return ((DartText) impl).getEchoChar();
     }
 
-    public void setEchoCharacter(char value) {
-        ((DartText) impl).echoCharacter = value;
+    public void setEchoCharacter(int value) {
+        ((DartText) impl).echoCharacter = (char) value;
     }
 
     public boolean getEditable() {
@@ -50,6 +51,7 @@ public class VText extends VScrollable {
         ((DartText) impl).editable = value;
     }
 
+    @JsonAttribute(converter = CharArrayConverter.class)
     public char[] getHiddenText() {
         return ((DartText) impl).hiddenText;
     }
@@ -91,6 +93,7 @@ public class VText extends VScrollable {
         ((DartText) impl).text = value;
     }
 
+    @JsonAttribute(converter = CharArrayConverter.class)
     public char[] getTextChars() {
         return ((DartText) impl).textChars;
     }

@@ -26,7 +26,7 @@ class TextSerializeTest extends SerializeTestBase {
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Text")
-               .containsEntry("echoCharacter", String.valueOf(w.getEchoChar()))
+               .containsEntry("echoCharacter", (int) w.getEchoChar())
                .containsEntry("message", json(w.getMessage()))
                .containsEntry("text", json(w.getText()))
                .containsEntry("toolTipText", json(w.getToolTipText()))
@@ -35,7 +35,7 @@ class TextSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("editable").equalsTo(w.getEditable(), orAbsentIfFalse));
         assertJ.satisfies(node("selection").equalsTo(value(w).getSelection(), orAbsentIfNull));
         assertJ.satisfies(node("tabs").equalsTo(w.getTabs(), orAbsentIf0));
-        assertJ.satisfies(node("textChars").equalsTo(new String(w.getTextChars()), orAbsentIfNull));
+        assertJ.satisfies(node("textChars").equalsTo(codeUnits(w.getTextChars()), orAbsentIfNull));
         assertJ.satisfies(node("textLimit").equalsTo(w.getTextLimit(), orAbsentIf0));
         assertJ.satisfies(node("topIndex").equalsTo(w.getTopIndex(), orAbsentIf0));
         assertJ.satisfies(node("scrollbarsMode").equalsTo(w.getScrollbarsMode(), orAbsentIf0));

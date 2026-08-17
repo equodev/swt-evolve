@@ -9,8 +9,10 @@ import java.io.IOException;
 
 @JsonConverter(target = char.class)
 public class CharConverter {
+    // Written as the code unit, not a one-character string: the Dart side types every char
+    // property as int, and a string value makes the whole V* payload fail to deserialize.
     public static void write(JsonWriter writer, char value) {
-        writer.writeString(String.valueOf(value));
+        NumberConverter.serialize((int) value, writer);
     }
 
     public static char read(JsonReader reader) throws IOException {

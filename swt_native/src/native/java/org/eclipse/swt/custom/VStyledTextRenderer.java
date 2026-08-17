@@ -7,6 +7,7 @@ import org.eclipse.swt.widgets.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
 import java.io.IOException;
+import dev.equo.swt.CharArrayConverter;
 
 @CompiledJson()
 public class VStyledTextRenderer {
@@ -486,6 +487,7 @@ public class VStyledTextRenderer {
 
         private char[] segmentsChars;
 
+        @JsonAttribute(converter = CharArrayConverter.class)
         public char[] getSegmentsChars() {
             return segmentsChars;
         }

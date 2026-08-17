@@ -7,6 +7,7 @@ import org.eclipse.swt.widgets.Display.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
 import java.io.IOException;
+import dev.equo.swt.CharArrayConverter;
 
 @CompiledJson()
 public class VText extends VScrollable {
@@ -50,6 +51,7 @@ public class VText extends VScrollable {
         ((DartText) impl).editable = value;
     }
 
+    @JsonAttribute(converter = CharArrayConverter.class)
     public char[] getHiddenText() {
         return ((DartText) impl).hiddenText;
     }
@@ -91,6 +93,7 @@ public class VText extends VScrollable {
         ((DartText) impl).text = value;
     }
 
+    @JsonAttribute(converter = CharArrayConverter.class)
     public char[] getTextChars() {
         return ((DartText) impl).textChars;
     }

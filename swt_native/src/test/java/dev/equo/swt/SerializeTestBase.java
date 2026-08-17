@@ -330,6 +330,15 @@ public class SerializeTestBase {
         return Base64.getEncoder().encodeToString(value);
     }
 
+    /** char[] crosses the bridge as a JSON array of code units (see CharArrayConverter). */
+    protected static int[] codeUnits(char[] chars) {
+        if (chars == null) return null;
+        int[] units = new int[chars.length];
+        for (int i = 0; i < chars.length; i++)
+            units[i] = chars[i];
+        return units;
+    }
+
     public static class AssertConsumer {
         private final String field;
 

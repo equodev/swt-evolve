@@ -20,6 +20,7 @@ import com.dslplatform.json.CompiledJson;
 import com.dslplatform.json.CompiledJson.*;
 import com.dslplatform.json.JsonAttribute;
 import dev.equo.swt.IntArrayConverter;
+import dev.equo.swt.CharArrayConverter;
 
 /**
  * Instances of this class provide a description of a particular
@@ -297,7 +298,7 @@ public class Event {
      * Characters to be applied on the segment boundaries
      * @since 3.8
      */
-    @JsonAttribute()
+    @JsonAttribute(converter = CharArrayConverter.class)
     public char[] segmentsChars;
 
     /**
