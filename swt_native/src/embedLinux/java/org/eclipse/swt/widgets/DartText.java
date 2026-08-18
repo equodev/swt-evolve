@@ -2022,9 +2022,7 @@ public class DartText extends DartScrollable implements IText {
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
                 if (!isDisposed()) {
-                    setText(e.text);
-                    if (e.start >= 0)
-                        setSelection(e.start);
+                    TextHelper.handleModify(this, e);
                 }
             });
         });

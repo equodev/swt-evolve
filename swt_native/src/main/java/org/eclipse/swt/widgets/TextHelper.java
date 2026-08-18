@@ -275,6 +275,28 @@ public class TextHelper {
         return count;
     }
 
+    /**
+     * Applies a Modify proposal coming from the Flutter client. SWT's Verify contract is that a
+     * vetoed keystroke is never displayed, so a Verify-hooked field holds each edit client-side
+     * until this answers with a modify/verdict: {@code doit} is whether the proposal survived the
+     * Verify/textLimit chain unchanged. (FlutterBridge.send flushes pending state pushes first,
+     * so a rejection's corrective push never arrives after its verdict.)
+     */
+    public static void handleModify(DartText text, Event e) {
+        if (e.text == null)
+            return;
+        String proposed = e.text;
+        text.setText(proposed);
+        boolean applied = proposed.equals(text.getText());
+        if (applied && e.start >= 0) {
+            text.setSelection(e.start);
+        }
+        if (text.hooks(SWT.Verify) || text.filters(SWT.Verify)) {
+            dev.equo.swt.FlutterBridge.send(text, "modify/verdict",
+                    java.util.Map.of("doit", applied));
+        }
+    }
+
     public static void setText(DartText text, String string) {
         if (text.hooks(SWT.Verify) || text.filters(SWT.Verify)) {
             int length = text.getCharCount();

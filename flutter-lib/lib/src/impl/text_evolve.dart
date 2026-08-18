@@ -1,5 +1,9 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../comm/comm.dart';
 import '../gen/event.dart';
 import '../gen/point.dart';
 import '../gen/swt.dart';
@@ -20,6 +24,18 @@ class TextImpl<T extends TextSwt, V extends VText>
 
   FocusNode? _focusNode;
 
+  // SWT's VerifyListener runs BEFORE the character is displayed. Java flags a Verify-hooked
+  // field via modify/vetoable; each edit is then held un-rendered, sent to Java as the Modify
+  // proposal, and applied or dropped on the modify/verdict answer.
+  bool _vetoable = false;
+  TextEditingValue? _pendingEdit;
+  Timer? _pendingTimer;
+  Object? _vetoableToken;
+  Object? _verdictToken;
+
+  String get _vetoableChannel => '${state.swt}/${state.id}/modify/vetoable';
+  String get _verdictChannel => '${state.swt}/${state.id}/modify/verdict';
+
   @override
   void initState() {
     super.initState();
@@ -27,8 +43,81 @@ class TextImpl<T extends TextSwt, V extends VText>
     _controller.addListener(_updateCaretPosition);
     _focusNode = FocusNode();
     _focusNode!.addListener(_handleFocusChange);
+    _vetoableToken = EquoCommService.onRaw(
+      _vetoableChannel,
+      (args) => _vetoable = _boolArg(args, 'value') ?? false,
+    );
+    _verdictToken = EquoCommService.onRaw(
+      _verdictChannel,
+      (args) => _handleModifyVerdict(_boolArg(args, 'doit') ?? true),
+    );
     // Initialize caret position
     WidgetsBinding.instance.addPostFrameCallback((_) => _updateCaretPosition());
+  }
+
+  static bool? _boolArg(dynamic args, String key) {
+    final decoded = args is String ? jsonDecode(args) : args;
+    return decoded is Map ? decoded[key] as bool? : null;
+  }
+
+  /// Holds an edit while the field is vetoable: the proposal goes to Java as the Modify, the
+  /// controller keeps the old value until the verdict. Selection-only changes and the
+  /// single-line newline path (submit semantics, see [_handleTextChanged]) stay optimistic.
+  TextEditingValue _gateEdit(TextEditingValue oldValue, TextEditingValue newValue) {
+    if (!_vetoable) return newValue;
+    if (newValue.text == oldValue.text) return newValue;
+    final isSingleLineExpand =
+        hasBounds(state.bounds) && !hasStyle(state.style, SWT.MULTI);
+    if (isSingleLineExpand && newValue.text.contains('\n')) return newValue;
+    _pendingEdit = newValue;
+    _pendingTimer?.cancel();
+    // If Java never answers (e.g. it went away mid-edit), fall back to the optimistic apply
+    // rather than swallowing the user's typing.
+    _pendingTimer = Timer(
+      const Duration(milliseconds: 400),
+      () => _resolvePendingEdit(true),
+    );
+    recordSentText(newValue.text);
+    widget.sendModifyModify(
+      state,
+      VEvent()
+        ..text = newValue.text
+        ..start = newValue.selection.baseOffset,
+    );
+    return oldValue;
+  }
+
+  void _handleModifyVerdict(bool doit) {
+    _pendingTimer?.cancel();
+    _pendingTimer = null;
+    _resolvePendingEdit(doit);
+  }
+
+  void _resolvePendingEdit(bool doit) {
+    final pending = _pendingEdit;
+    _pendingEdit = null;
+    if (!doit) {
+      // Java rejected the edit: it is authoritative now. A held edit is simply dropped (it was
+      // never rendered). An edit that had already been applied optimistically (no vetoable flag
+      // yet) must be reverted from Java's push — which the stale-echo guard would otherwise
+      // swallow, since the pre-edit text is its focus baseline — so stop suppressing echoes and
+      // resync from the pushed state.
+      clearSentTextEchoes();
+      if (pending == null && mounted) {
+        final authoritative = state.text ?? '';
+        if (_controller.text != authoritative) {
+          _controller.value = _controller.value.copyWith(
+            text: authoritative,
+            selection: TextSelection.collapsed(offset: authoritative.length),
+            composing: TextRange.empty,
+          );
+        }
+      }
+      return;
+    }
+    if (pending == null || !mounted) return;
+    _controller.value = pending;
+    state.text = pending.text;
   }
 
   @override
@@ -219,6 +308,10 @@ class TextImpl<T extends TextSwt, V extends VText>
       decoration: decoration,
       keyboardType: isMultiLine ? TextInputType.multiline : TextInputType.text,
       maxLength: state.textLimit,
+      // SWT rejects the keystroke at the limit; Flutter's default on web lets over-limit
+      // text stand until composition ends, which briefly renders it.
+      maxLengthEnforcement: MaxLengthEnforcement.enforced,
+      inputFormatters: [TextInputFormatter.withFunction(_gateEdit)],
       onChanged: _handleTextChanged,
       onSubmitted: _handleSubmitted,
       onTapOutside: (_) {},
@@ -300,6 +393,8 @@ class TextImpl<T extends TextSwt, V extends VText>
       seedTextEchoBaseline(_controller.text);
       widget.sendFocusFocusIn(state, null);
     } else {
+      // Java re-flags vetoable per focus (DisplayBridge.setFocus).
+      _vetoable = false;
       clearSentTextEchoes();
       widget.sendFocusFocusOut(state, null);
     }
@@ -327,6 +422,9 @@ class TextImpl<T extends TextSwt, V extends VText>
 
   @override
   void dispose() {
+    _pendingTimer?.cancel();
+    EquoCommService.remove(_vetoableChannel, _vetoableToken);
+    EquoCommService.remove(_verdictChannel, _verdictToken);
     _controller.removeListener(_updateCaretPosition);
     _controller.dispose();
     _focusNode?.removeListener(_handleFocusChange);

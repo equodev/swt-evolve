@@ -419,6 +419,12 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         if (api != null && !api.isDisposed() && api.isListening(org.eclipse.swt.SWT.KeyDown)) {
             dev.equo.swt.FlutterBridge.send(widget, "key/vetoable", java.util.Map.of("value", true));
         }
+        // A Verify-hooked Text must not display a keystroke its listener vetoes: the client holds
+        // each edit until TextHelper.handleModify answers with modify/verdict.
+        if (api != null && !api.isDisposed() && widget instanceof DartText
+                && api.isListening(org.eclipse.swt.SWT.Verify)) {
+            dev.equo.swt.FlutterBridge.send(widget, "modify/vetoable", java.util.Map.of("value", true));
+        }
         return true;
     }
 
