@@ -14,6 +14,7 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.ControlHelper;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -32,6 +33,29 @@ public class StyledTextHelper {
 
     private static double dpiScale() {
         return FontMetricsUtil.dpiScale();
+    }
+
+    /**
+     * Applies an edit the render side has already displayed, and puts the caret where the
+     * document ended up.
+     *
+     * <p>A {@code VerifyListener} may rewrite an edit rather than merely veto it: JFace runs every
+     * {@code IAutoEditStrategy} — auto-indent, bracket auto-close, tabs-to-spaces — inside
+     * {@code TextViewer.verifyText} and hands the result back through the event. {@code
+     * replaceTextRange} raises that Verify on its own event, so the applied text is not the text
+     * passed in and its length cannot be used to advance the caret. Measuring the document instead
+     * covers every outcome, including a veto (nothing applied, so the caret does not move) and a
+     * listener that rewrites through the Document rather than the event.</p>
+     */
+    public static void handleModify(DartStyledText styledText, Event e) {
+        if (e.text == null || e.start < 0 || e.end < e.start) {
+            return;
+        }
+        int replaced = e.end - e.start;
+        int before = styledText.getCharCount();
+        styledText.replaceTextRange(e.start, replaced, e.text);
+        int applied = styledText.getCharCount() - before + replaced;
+        styledText.setCaretOffset(e.start + applied);
     }
 
     /**

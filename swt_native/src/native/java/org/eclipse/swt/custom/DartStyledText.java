@@ -12043,10 +12043,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                if (e.text != null && e.start >= 0 && e.end >= e.start) {
-                    replaceTextRange(e.start, e.end - e.start, e.text);
-                    setCaretOffset(e.start + e.text.length());
-                }
+                StyledTextHelper.handleModify(this, e);
                 sendSelectionEvent();
                 redraw();
                 ControlHelper.paint(this);
