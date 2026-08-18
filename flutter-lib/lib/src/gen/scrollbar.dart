@@ -31,6 +31,7 @@ class VScrollBar extends VWidget {
   }
 
   bool? enabled;
+  bool? enabledEffective;
   int? increment;
   int? maximum;
   int? minimum;

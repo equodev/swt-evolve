@@ -232,6 +232,11 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     );
   }
 
+  Widget blockWhenDisabled(Widget child) {
+    if (state.enabledEffective != false) return child;
+    return ExcludeFocus(child: IgnorePointer(child: child));
+  }
+
   Widget wrap(Widget widget) {
     if (wrapsWholeWidgetForDnd) {
       widget = wrapDnd(widget);
@@ -258,7 +263,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       return Visibility(visible: false, child: widget);
     }
     if (state.enabled != null && !state.enabled!) {
-      return Opacity(opacity: 0.35, child: widget);
+      return blockWhenDisabled(Opacity(opacity: 0.35, child: widget));
     }
 
     if (state.menu != null) {
@@ -355,7 +360,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       ),
     );
 
-    return widget;
+    return blockWhenDisabled(widget);
   }
 
   Widget applyMenu(Widget child) {

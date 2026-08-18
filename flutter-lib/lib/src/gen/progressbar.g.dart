@@ -27,6 +27,7 @@ VProgressBar _$VProgressBarFromJson(Map<String, dynamic> json) => VProgressBar()
   ..dragSource = json['dragSource'] as bool?
   ..dropTargetId = (json['dropTargetId'] as num?)?.toInt()
   ..enabled = json['enabled'] as bool?
+  ..enabledEffective = json['enabledEffective'] as bool?
   ..font = json['font'] == null
       ? null
       : VFont.fromJson(json['font'] as Map<String, dynamic>)
@@ -63,6 +64,7 @@ Map<String, dynamic> _$VProgressBarToJson(VProgressBar instance) =>
       'dragSource': ?instance.dragSource,
       'dropTargetId': ?instance.dropTargetId,
       'enabled': ?instance.enabled,
+      'enabledEffective': ?instance.enabledEffective,
       'font': ?instance.font,
       'foreground': ?instance.foreground,
       'menu': ?instance.menu,

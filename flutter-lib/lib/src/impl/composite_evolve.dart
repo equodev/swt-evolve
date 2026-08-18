@@ -170,6 +170,6 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
       inner = ColoredBox(color: backgroundColor, child: rawLayout);
     }
 
-    return wrapCompositeInteractionChrome(this, inner);
+    return blockWhenDisabled(wrapCompositeInteractionChrome(this, inner));
   }
 }

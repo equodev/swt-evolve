@@ -35,11 +35,18 @@ public class VMenuItem extends VItem {
     }
 
     public boolean getEnabled() {
-        return ((DartMenuItem) impl).isEnabled();
+        return ((DartMenuItem) impl).getEnabled();
     }
 
     public void setEnabled(boolean value) {
         ((DartMenuItem) impl).enabled = value;
+    }
+
+    public Boolean getEnabledEffective() {
+        return ((DartMenuItem) impl).isEnabled();
+    }
+
+    public void setEnabledEffective(Boolean value) {
     }
 
     public Menu getMenu() {

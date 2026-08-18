@@ -66,6 +66,7 @@ class VShell extends VDecorations {
   List<VDialog>? dialogs;
   int? alpha;
   bool? darkThemePreferred;
+  bool? enabledEffective;
   bool? fullScreen;
   int? imeInputMode;
   VPoint? maximumSize;

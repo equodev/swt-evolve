@@ -43,6 +43,7 @@ class VMenuItem extends VItem {
   int? ID;
   int? accelerator;
   bool? enabled;
+  bool? enabledEffective;
   VMenu? menu;
   bool? selection;
   String? toolTipText;

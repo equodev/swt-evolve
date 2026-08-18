@@ -103,12 +103,19 @@ public class VControl extends VWidget {
     public void setDropTargetId(Long value) {
     }
 
-    public boolean getEnabled() {
+    public Boolean getEnabled() {
+        return ((DartControl) impl).getEnabled();
+    }
+
+    public void setEnabled(Boolean value) {
+        ((DartControl) impl).enabled = Boolean.TRUE.equals(value);
+    }
+
+    public Boolean getEnabledEffective() {
         return ((DartControl) impl).isEnabled();
     }
 
-    public void setEnabled(boolean value) {
-        ((DartControl) impl).enabled = value;
+    public void setEnabledEffective(Boolean value) {
     }
 
     public Font getFont() {

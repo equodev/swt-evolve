@@ -49,11 +49,18 @@ public class VToolItem extends VItem {
     }
 
     public boolean getEnabled() {
-        return ((DartToolItem) impl).isEnabled();
+        return ((DartToolItem) impl).getEnabled();
     }
 
     public void setEnabled(boolean value) {
         ((DartToolItem) impl).enabled = value;
+    }
+
+    public Boolean getEnabledEffective() {
+        return ((DartToolItem) impl).isEnabled();
+    }
+
+    public void setEnabledEffective(Boolean value) {
     }
 
     public Color getForeground() {

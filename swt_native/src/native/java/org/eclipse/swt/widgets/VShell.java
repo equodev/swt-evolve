@@ -43,6 +43,13 @@ public class VShell extends VDecorations {
         ((DartShell) impl).dialogs = value;
     }
 
+    public Boolean getEnabledEffective() {
+        return ((DartShell) impl).isEnabled();
+    }
+
+    public void setEnabledEffective(Boolean value) {
+    }
+
     public boolean getFullScreen() {
         return ((DartShell) impl).getFullScreen();
     }

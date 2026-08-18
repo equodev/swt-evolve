@@ -11,6 +11,7 @@ VScrollBar _$VScrollBarFromJson(Map<String, dynamic> json) => VScrollBar()
   ..id = (json['id'] as num).toInt()
   ..style = (json['style'] as num).toInt()
   ..enabled = json['enabled'] as bool?
+  ..enabledEffective = json['enabledEffective'] as bool?
   ..increment = (json['increment'] as num?)?.toInt()
   ..maximum = (json['maximum'] as num?)?.toInt()
   ..minimum = (json['minimum'] as num?)?.toInt()
@@ -25,6 +26,7 @@ Map<String, dynamic> _$VScrollBarToJson(VScrollBar instance) =>
       'id': instance.id,
       'style': instance.style,
       'enabled': ?instance.enabled,
+      'enabledEffective': ?instance.enabledEffective,
       'increment': ?instance.increment,
       'maximum': ?instance.maximum,
       'minimum': ?instance.minimum,

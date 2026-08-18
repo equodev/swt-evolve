@@ -2990,6 +2990,10 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
 
     boolean enabledSet;
 
+    boolean enabledEffective;
+
+    boolean enabledEffectiveSet;
+
     boolean focus;
 
     boolean focusSet;
@@ -3080,6 +3084,8 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
         ;
         if (enabledSet)
             newImpl.setEnabled(getEnabled());
+        //newImpl.enabledEffective = enabledEffective;
+        ;
         if (focus)
             newImpl.setFocus();
         if (fontSet)

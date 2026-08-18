@@ -39,6 +39,7 @@ class VMenu extends VWidget {
 
   VMenuItem? defaultItem;
   bool? enabled;
+  bool? enabledEffective;
   List<VMenuItem>? items;
   VPoint? location;
   int? orientation;

@@ -14,6 +14,7 @@ VMenu _$VMenuFromJson(Map<String, dynamic> json) => VMenu()
       ? null
       : VMenuItem.fromJson(json['defaultItem'] as Map<String, dynamic>)
   ..enabled = json['enabled'] as bool?
+  ..enabledEffective = json['enabledEffective'] as bool?
   ..items = (json['items'] as List<dynamic>?)
       ?.map((e) => VMenuItem.fromJson(e as Map<String, dynamic>))
       .toList()
@@ -32,6 +33,7 @@ Map<String, dynamic> _$VMenuToJson(VMenu instance) => <String, dynamic>{
   'style': instance.style,
   'defaultItem': ?instance.defaultItem,
   'enabled': ?instance.enabled,
+  'enabledEffective': ?instance.enabledEffective,
   'items': ?instance.items,
   'location': ?instance.location,
   'orientation': ?instance.orientation,

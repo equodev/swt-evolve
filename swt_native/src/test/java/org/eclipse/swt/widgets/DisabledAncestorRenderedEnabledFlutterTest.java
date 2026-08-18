@@ -9,8 +9,8 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Full-stack reproduction of a bug where a widget whose ancestor is disabled must render as
- * disabled on the Dart side, even though the widget's own {@code getEnabled()} flag is still
+ * Full-stack reproduction of a bug where a widget whose ancestor is disabled must stop taking
+ * input on the Dart side, even though the widget's own {@code getEnabled()} flag is still
  * {@code true}.
  *
  * <p>The reported case is the "?" help button in a settings group: it is a {@link ToolItem}
@@ -20,9 +20,12 @@ import static org.assertj.core.api.Assertions.*;
  * widget because {@code isEnabled()} consults the parent chain; the value serialized to Dart
  * did not, so the item stayed clickable / highlighted.
  *
- * <p>The fix serializes the effective {@code isEnabled()} (own AND all ancestors) for the
- * {@code enabled} property. Before it, both assertions below fail (the widget still renders
- * enabled); after it, they pass.
+ * <p>The payload carries both states, the way SWT itself splits them: {@code enabled} is the
+ * control's own flag and drives how it is drawn, while {@code enabledEffective} (own AND all
+ * ancestors) is what native SWT consults in its hit test and event dispatch. Natively, disabling a
+ * container never touches a child's handle, so the child keeps its own look but stops taking input
+ * — which is what these assertions check. Before the fix {@code enabledEffective} did not exist and
+ * the item stayed interactive.
  *
  * <p>Run via the {@code webTest} task, which compiles this against the WEB Java backend.
  *
@@ -51,7 +54,7 @@ class DisabledAncestorRenderedEnabledFlutterTest {
     }
 
     @Test
-    @DisplayName("a ToolItem renders disabled when an ancestor is disabled")
+    @DisplayName("a ToolItem stops taking input when an ancestor is disabled")
     void toolItemDisabledByAncestor() {
         Composite group = new Composite(shell, SWT.NONE);
         ToolBar bar = new ToolBar(group, SWT.FLAT);
@@ -59,7 +62,7 @@ class DisabledAncestorRenderedEnabledFlutterTest {
         item.setText("?");
         flutter.show(shell);
 
-        assertThat(renderedEnabled(item)).as("ToolItem enabled while the group is enabled").isTrue();
+        assertThat(renderedEffectivelyEnabled(item)).as("ToolItem enabled while the group is enabled").isTrue();
 
         // Disable the ancestor group. This never flips the ToolItem's own enabled flag; only its
         // isEnabled() (which walks the parent chain) becomes false.
@@ -67,38 +70,46 @@ class DisabledAncestorRenderedEnabledFlutterTest {
         flutter.flush();
 
         assertThat(item.getEnabled()).as("the ToolItem's own flag is untouched").isTrue();
-        assertThat(renderedEnabled(item))
-                .as("ToolItem must render disabled when an ancestor is disabled")
+        assertThat(renderedEffectivelyEnabled(item))
+                .as("ToolItem must stop taking input when an ancestor is disabled")
                 .isFalse();
     }
 
     @Test
-    @DisplayName("a Control renders disabled when an ancestor is disabled")
+    @DisplayName("a Control stops taking input when an ancestor is disabled")
     void controlDisabledByAncestor() {
         Composite group = new Composite(shell, SWT.NONE);
         Button button = new Button(group, SWT.PUSH);
         button.setText("Action");
         flutter.show(shell);
 
-        assertThat(flutter.renderedEnabled(button)).as("Button enabled while the group is enabled").isTrue();
+        assertThat(renderedEffectivelyEnabled(button)).as("Button enabled while the group is enabled").isTrue();
 
         group.setEnabled(false);
         flutter.flush();
 
         assertThat(button.getEnabled()).as("the Button's own flag is untouched").isTrue();
-        assertThat(flutter.renderedEnabled(button))
-                .as("Button must render disabled when an ancestor is disabled")
+        assertThat(renderedEffectivelyEnabled(button))
+                .as("Button must stop taking input when an ancestor is disabled")
                 .isFalse();
+        assertThat(renderedOwnEnabled(button))
+                .as("the Button keeps its own look — the platform never touches a child's handle")
+                .isTrue();
     }
 
-    /** The rendered enabled state of any widget (mirrors {@link FlutterHarness#renderedEnabled}
-     *  but accepts a {@link Widget} so it also covers {@link ToolItem}, which is not a Control). */
+    private boolean renderedEffectivelyEnabled(Widget w) {
+        return Boolean.TRUE.equals(renderedState(w, "enabledEffective"));
+    }
+
+    private boolean renderedOwnEnabled(Widget w) {
+        return Boolean.TRUE.equals(renderedState(w, "enabled"));
+    }
+
     @SuppressWarnings("unchecked")
-    private boolean renderedEnabled(Widget w) {
+    private Object renderedState(Widget w, String field) {
         Map<String, Object> resp = flutter.queryState(w);
-        if (!Boolean.TRUE.equals(resp.get("found"))) return false;
+        if (!Boolean.TRUE.equals(resp.get("found"))) return null;
         Map<String, Object> state = (Map<String, Object>) resp.get("state");
-        Object enabled = state == null ? null : state.get("enabled");
-        return Boolean.TRUE.equals(enabled);
+        return state == null ? null : state.get(field);
     }
 }

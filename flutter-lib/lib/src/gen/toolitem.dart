@@ -41,6 +41,7 @@ class VToolItem extends VItem {
   VControl? control;
   VImage? disabledImage;
   bool? enabled;
+  bool? enabledEffective;
   VColor? foreground;
   VImage? hotImage;
   bool? selection;

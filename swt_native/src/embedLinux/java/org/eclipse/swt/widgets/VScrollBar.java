@@ -18,11 +18,18 @@ public class VScrollBar extends VWidget {
     }
 
     public boolean getEnabled() {
-        return ((DartScrollBar) impl).isEnabled();
+        return ((DartScrollBar) impl).getEnabled();
     }
 
     public void setEnabled(boolean value) {
         ((DartScrollBar) impl).enabled = value;
+    }
+
+    public Boolean getEnabledEffective() {
+        return ((DartScrollBar) impl).isEnabled();
+    }
+
+    public void setEnabledEffective(Boolean value) {
     }
 
     public int getIncrement() {

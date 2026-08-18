@@ -117,6 +117,7 @@ class VControl extends VWidget {
   bool? dragSource;
   int? dropTargetId;
   bool? enabled;
+  bool? enabledEffective;
   VFont? font;
   VColor? foreground;
   VMenu? menu;

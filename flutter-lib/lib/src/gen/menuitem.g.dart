@@ -17,6 +17,7 @@ VMenuItem _$VMenuItemFromJson(Map<String, dynamic> json) => VMenuItem()
   ..ID = (json['ID'] as num?)?.toInt()
   ..accelerator = (json['accelerator'] as num?)?.toInt()
   ..enabled = json['enabled'] as bool?
+  ..enabledEffective = json['enabledEffective'] as bool?
   ..menu = json['menu'] == null
       ? null
       : VMenu.fromJson(json['menu'] as Map<String, dynamic>)
@@ -32,6 +33,7 @@ Map<String, dynamic> _$VMenuItemToJson(VMenuItem instance) => <String, dynamic>{
   'ID': ?instance.ID,
   'accelerator': ?instance.accelerator,
   'enabled': ?instance.enabled,
+  'enabledEffective': ?instance.enabledEffective,
   'menu': ?instance.menu,
   'selection': ?instance.selection,
   'toolTipText': ?instance.toolTipText,

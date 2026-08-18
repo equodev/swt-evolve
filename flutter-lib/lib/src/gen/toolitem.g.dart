@@ -24,6 +24,7 @@ VToolItem _$VToolItemFromJson(Map<String, dynamic> json) => VToolItem()
       ? null
       : VImage.fromJson(json['disabledImage'] as Map<String, dynamic>)
   ..enabled = json['enabled'] as bool?
+  ..enabledEffective = json['enabledEffective'] as bool?
   ..foreground = json['foreground'] == null
       ? null
       : VColor.fromJson(json['foreground'] as Map<String, dynamic>)
@@ -44,6 +45,7 @@ Map<String, dynamic> _$VToolItemToJson(VToolItem instance) => <String, dynamic>{
   'control': ?instance.control,
   'disabledImage': ?instance.disabledImage,
   'enabled': ?instance.enabled,
+  'enabledEffective': ?instance.enabledEffective,
   'foreground': ?instance.foreground,
   'hotImage': ?instance.hotImage,
   'selection': ?instance.selection,
