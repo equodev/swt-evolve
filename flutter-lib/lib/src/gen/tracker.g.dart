@@ -9,6 +9,7 @@ part of 'tracker.dart';
 VTracker _$VTrackerFromJson(Map<String, dynamic> json) => VTracker()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
+  ..seq = (json['seq'] as num?)?.toInt() ?? 0
   ..style = (json['style'] as num).toInt()
   ..cursor = json['cursor'] == null
       ? null

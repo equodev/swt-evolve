@@ -260,7 +260,8 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     final rawLayout = NoLayout(children: children, composite: state);
     return wrapCompositeInteractionChrome(
       this,
-      ColoredBox(color: Colors.transparent, child: rawLayout),
+      wrapWithGCOverlay(
+          ColoredBox(color: Colors.transparent, child: rawLayout)),
     );
   }
 

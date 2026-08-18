@@ -9,6 +9,7 @@ part of 'control.dart';
 VControl _$VControlFromJson(Map<String, dynamic> json) => VControl()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
+  ..seq = (json['seq'] as num?)?.toInt() ?? 0
   ..style = (json['style'] as num).toInt()
   ..background = json['background'] == null
       ? null

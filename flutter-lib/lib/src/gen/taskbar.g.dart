@@ -9,6 +9,7 @@ part of 'taskbar.dart';
 VTaskBar _$VTaskBarFromJson(Map<String, dynamic> json) => VTaskBar()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
+  ..seq = (json['seq'] as num?)?.toInt() ?? 0
   ..style = (json['style'] as num).toInt()
   ..items = (json['items'] as List<dynamic>?)
       ?.map((e) => VTaskItem.fromJson(e as Map<String, dynamic>))

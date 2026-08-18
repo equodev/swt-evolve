@@ -16,6 +16,12 @@ public class Serializer {
     private static final byte[] name_id = "id".getBytes(java.nio.charset.StandardCharsets.UTF_8);
     private static final byte[] name_swt = "swt".getBytes(java.nio.charset.StandardCharsets.UTF_8);
     private static final byte[] name_style = "style".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    private static final byte[] name_seq = "seq".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+
+    // A widget is serialized both on its own channel and nested inside an ancestor's tree, and
+    // the two snapshots can arrive in either order. Bumped at write time, so a lower seq is
+    // strictly the older snapshot.
+    private static final java.util.concurrent.atomic.AtomicLong writeSeq = new java.util.concurrent.atomic.AtomicLong();
 
     private final DslJson<Object> dsl;
     // Pooled per thread rather than a single thread-local instance: to() can be re-entered on
@@ -89,6 +95,9 @@ public class Serializer {
         writer.writeByte((byte)',');
         writer.writeByte((byte)'"'); writer.writeAscii(name_swt); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
         StringConverter.serialize(swtWidgetName(impl, api), writer);
+        writer.writeByte((byte)',');
+        writer.writeByte((byte)'"'); writer.writeAscii(name_seq); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
+        NumberConverter.serialize(writeSeq.incrementAndGet(), writer);
         writer.writeByte((byte)',');
 //        writer.writeByte((byte)'"'); writer.writeAscii(name_style); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
 //        NumberConverter.serialize(api.getStyle(), writer);

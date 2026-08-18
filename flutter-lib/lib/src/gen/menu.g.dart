@@ -9,6 +9,7 @@ part of 'menu.dart';
 VMenu _$VMenuFromJson(Map<String, dynamic> json) => VMenu()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
+  ..seq = (json['seq'] as num?)?.toInt() ?? 0
   ..style = (json['style'] as num).toInt()
   ..defaultItem = json['defaultItem'] == null
       ? null

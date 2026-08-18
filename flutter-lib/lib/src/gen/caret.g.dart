@@ -9,6 +9,7 @@ part of 'caret.dart';
 VCaret _$VCaretFromJson(Map<String, dynamic> json) => VCaret()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
+  ..seq = (json['seq'] as num?)?.toInt() ?? 0
   ..style = (json['style'] as num).toInt()
   ..font = json['font'] == null
       ? null

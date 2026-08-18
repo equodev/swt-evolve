@@ -9,6 +9,7 @@ part of 'tabfolder.dart';
 VTabFolder _$VTabFolderFromJson(Map<String, dynamic> json) => VTabFolder()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
+  ..seq = (json['seq'] as num?)?.toInt() ?? 0
   ..style = (json['style'] as num).toInt()
   ..background = json['background'] == null
       ? null

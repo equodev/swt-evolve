@@ -9,6 +9,7 @@ part of 'expanditem.dart';
 VExpandItem _$VExpandItemFromJson(Map<String, dynamic> json) => VExpandItem()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
+  ..seq = (json['seq'] as num?)?.toInt() ?? 0
   ..style = (json['style'] as num).toInt()
   ..image = json['image'] == null
       ? null

@@ -9,6 +9,7 @@ part of 'treeeditor.dart';
 VTreeEditor _$VTreeEditorFromJson(Map<String, dynamic> json) => VTreeEditor()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
+  ..seq = (json['seq'] as num?)?.toInt() ?? 0
   ..style = (json['style'] as num).toInt()
   ..column = (json['column'] as num?)?.toInt()
   ..editor = json['editor'] == null

@@ -9,6 +9,7 @@ part of 'tree.dart';
 VTree _$VTreeFromJson(Map<String, dynamic> json) => VTree()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
+  ..seq = (json['seq'] as num?)?.toInt() ?? 0
   ..style = (json['style'] as num).toInt()
   ..background = json['background'] == null
       ? null

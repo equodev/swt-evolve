@@ -9,6 +9,7 @@ part of 'tablecursor.dart';
 VTableCursor _$VTableCursorFromJson(Map<String, dynamic> json) => VTableCursor()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
+  ..seq = (json['seq'] as num?)?.toInt() ?? 0
   ..style = (json['style'] as num).toInt()
   ..background = json['background'] == null
       ? null

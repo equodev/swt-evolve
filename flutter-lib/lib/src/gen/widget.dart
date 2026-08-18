@@ -98,7 +98,13 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   @override
   void didUpdateWidget(covariant T oldWidget) {
     super.didUpdateWidget(oldWidget);
-    state = widget.value as V;
+    final incoming = widget.value as V;
+    // An ancestor rebuild hands down the copy nested in the ancestor's payload, which
+    // can be older than one already applied from this widget's own channel. Flutter
+    // rebuilds top-down, so adopting it unconditionally rewinds the widget one update.
+    if (incoming.id != state.id || incoming.seq >= state.seq) {
+      state = incoming;
+    }
     // The state was just replaced; keeping the old subscription would leave the widget
     // listening on a dead channel and silently not repainting.
     final channel = "${state.swt}/${state.id}";
@@ -206,6 +212,11 @@ class VWidget {
 
   String swt;
   int id;
+
+  /// Write stamp from the Java serializer; a lower value is an older snapshot.
+  /// Out of toJson so it never affects value equality or round-trips.
+  @JsonKey(includeToJson: false, defaultValue: 0)
+  int seq = 0;
   int style;
 
   factory VWidget.fromJson(Map<String, dynamic> json) => mapWidgetValue(json);

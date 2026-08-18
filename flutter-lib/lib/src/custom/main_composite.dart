@@ -58,5 +58,5 @@ Widget buildMainCompositeLayout(CompositeImpl impl) {
     );
   }
 
-  return wrapCompositeInteractionChrome(impl, inner);
+  return wrapCompositeInteractionChrome(impl, impl.wrapWithGCOverlay(inner));
 }

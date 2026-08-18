@@ -103,7 +103,10 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
     ),
   );
 
-  return impl.gcOverlay != null ? impl.wrapWithGCOverlay(listener) : listener;
+  // The GC wrap is applied by each build path exactly once, never here: choosing it on
+  // gcOverlay moved the Stack across this chrome the moment the overlay mounted and set it,
+  // which remounted every descendant.
+  return listener;
 }
 
 class CompositeImpl<T extends CompositeSwt, V extends VComposite>
@@ -170,7 +173,7 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
       inner = ColoredBox(color: backgroundColor, child: rawLayout);
     }
 
-    return blockWhenDisabled(wrapCompositeInteractionChrome(
-        this, gcOverlay == null ? wrapWithGCOverlay(inner) : inner));
+    return blockWhenDisabled(
+        wrapCompositeInteractionChrome(this, wrapWithGCOverlay(inner)));
   }
 }

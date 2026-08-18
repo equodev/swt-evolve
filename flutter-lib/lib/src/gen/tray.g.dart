@@ -9,6 +9,7 @@ part of 'tray.dart';
 VTray _$VTrayFromJson(Map<String, dynamic> json) => VTray()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
+  ..seq = (json['seq'] as num?)?.toInt() ?? 0
   ..style = (json['style'] as num).toInt()
   ..items = (json['items'] as List<dynamic>?)
       ?.map((e) => VTrayItem.fromJson(e as Map<String, dynamic>))

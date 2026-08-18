@@ -9,6 +9,7 @@ part of 'dragsource.dart';
 VDragSource _$VDragSourceFromJson(Map<String, dynamic> json) => VDragSource()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
+  ..seq = (json['seq'] as num?)?.toInt() ?? 0
   ..style = (json['style'] as num).toInt()
   ..control = json['control'] == null
       ? null

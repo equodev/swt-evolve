@@ -9,6 +9,7 @@ part of 'widget.dart';
 VWidget _$VWidgetFromJson(Map<String, dynamic> json) => VWidget()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
+  ..seq = (json['seq'] as num?)?.toInt() ?? 0
   ..style = (json['style'] as num).toInt();
 
 Map<String, dynamic> _$VWidgetToJson(VWidget instance) => <String, dynamic>{

@@ -9,6 +9,7 @@ part of 'droptarget.dart';
 VDropTarget _$VDropTargetFromJson(Map<String, dynamic> json) => VDropTarget()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
+  ..seq = (json['seq'] as num?)?.toInt() ?? 0
   ..style = (json['style'] as num).toInt()
   ..control = json['control'] == null
       ? null
