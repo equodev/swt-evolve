@@ -24,6 +24,8 @@ class EquoCommService {
           String userEventActionId, void Function(Uint8List) callback) =>
       throw UnsupportedError("EquoComm.onBytes");
   static Future setPort(int port) => throw UnsupportedError("EquoComm.setPort");
+  static void onReconnect(void Function() callback) =>
+      throw UnsupportedError("EquoComm.onReconnect");
   static void remove(String eventName, [Object? token]) =>
       throw UnsupportedError("EquoComm.remove");
 }

@@ -72,6 +72,12 @@ class EquoCommService {
 
   static void remove(eventName, [Object? token]) => _comm.remove(eventName, token);
 
+  /// Registers the callback fired when the socket comes back after a drop. Never fires on
+  /// desktop: the socket is a local link to the JVM that owns this window, so it only ends
+  /// when that JVM does — there is nothing to reconnect to.
+  static void onReconnect(void Function() callback) =>
+      _comm.onReconnected = callback;
+
   static Future setPort(int p) async {
     port = p;
     if (p != 0) _comm; // trigger connection with the configured port

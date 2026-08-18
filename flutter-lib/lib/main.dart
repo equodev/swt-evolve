@@ -201,10 +201,21 @@ class _DisplayMetricsReporter {
   _DisplayMetricsReporter(this.widgetId) {
     observeViewportChanges(_sendCurrentSize);
     observeWindowClose(_sendWindowClose);
+    EquoCommService.onReconnect(_resyncAfterReconnect);
   }
 
   final int widgetId;
   bool _windowCloseSent = false;
+
+  // The comm socket dropped and came back (an idle timeout, sleep/resume, a network blip).
+  // Everything Java pushed meanwhile went nowhere, so this client's tree is arbitrarily
+  // stale: announce it as a fresh one. A ClientReady with isFirst makes Java re-broadcast the
+  // properties and re-serialize the whole Display — the same resync a page refresh gets —
+  // and cancels any tab-close it had deferred.
+  void _resyncAfterReconnect() {
+    _displayClientReadySent = false;
+    _sendWindowSizedClientReady("Display", widgetId);
+  }
 
   // The window/tab is tearing down (pagehide/beforeunload): ask Java to close the SWT shells (no-op on
   // desktop-native, where the close is detected natively). This fires for a *refresh* exactly as it does

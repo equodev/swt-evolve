@@ -52,11 +52,14 @@ class UserEventCallback {
 ///     (envelope-less, fire-and-forget — same wire format as the Java server),
 ///   - the handler / pending / raw-bytes maps and dispatch,
 ///   - a send-before-open queue (sends issued before the socket opens are buffered
-///     and flushed by [markOpen]).
+///     and flushed by [markOpen]),
+///   - the socket lifecycle: while the socket is down sends buffer instead of
+///     reaching a dead wire, and [openSocket] is retried with a capped backoff.
 ///
-/// A subclass supplies only the socket: it constructs it, calls [markOpen] when the
-/// socket opens, calls [receiveBinary] with the bytes of each incoming binary frame,
-/// and implements [rawSend] to put bytes on the wire.
+/// A subclass supplies only the socket: it constructs it (in [openSocket] if it can
+/// be reopened), calls [markOpen] when the socket opens and [markClosed] when it
+/// closes or fails, calls [receiveBinary] with the bytes of each incoming binary
+/// frame, and implements [rawSend] to put bytes on the wire.
 abstract class EquoCommBase {
   final Map<String, UserEventCallback> _handlers = {};
   final Map<String, dynamic> _pending = {};
@@ -64,25 +67,83 @@ abstract class EquoCommBase {
   final Map<String, Uint8List> _rawPending = {};
   final List<Uint8List> _queue = [];
   bool _open = false;
+  bool _everOpened = false;
+  bool _reopenScheduled = false;
+  int _reopenAttempt = 0;
 
-  /// Puts an encoded frame on the wire. Only called while the socket is open.
+  /// Cap on frames buffered while the socket is down. An outage lasts as long as the
+  /// other end is away while the UI keeps producing frames, so an uncapped buffer grows
+  /// for the life of the page. Oldest (most likely already stale) frames are dropped.
+  static const int maxQueuedFrames = 1024;
+
+  /// Puts an encoded frame on the wire. Only called while the socket is believed open;
+  /// a transport that finds its socket dead here re-buffers via [bufferUnsent].
   void rawSend(Uint8List frame);
+
+  /// Opens a fresh socket, which must call [markOpen] once open and [markClosed] when it
+  /// closes or fails. Implemented only by transports that can be reopened; one that never
+  /// calls [markClosed] never needs it.
+  void openSocket() {}
+
+  /// Called after the socket comes back up following a drop — never on the first open.
+  /// Whatever the other end pushed while the socket was down was lost, so the app resyncs
+  /// from here.
+  void Function()? onReconnected;
 
   /// Subclasses call this once the socket is open; flushes any queued frames.
   void markOpen() {
+    final bool reconnected = _everOpened;
     _open = true;
-    for (final f in _queue) {
+    _everOpened = true;
+    _reopenAttempt = 0;
+    // Drain into a local first: a transport whose socket died again mid-flush re-buffers
+    // through [bufferUnsent], which would otherwise mutate the list being iterated.
+    final pending = List<Uint8List>.of(_queue);
+    _queue.clear();
+    for (final f in pending) {
       rawSend(f);
     }
-    _queue.clear();
+    if (reconnected) onReconnected?.call();
+  }
+
+  /// Subclasses call this when the socket closed or failed. Sends buffer again — calling
+  /// [rawSend] on a dead socket only loses the frame (and, in a browser, logs "WebSocket is
+  /// already in CLOSING or CLOSED state" per attempt) — and the socket is reopened, so a
+  /// drop the app never asked for (idle timeout, sleep/resume, a network blip) is transparent.
+  void markClosed() {
+    _open = false;
+    _scheduleReopen();
+  }
+
+  /// Re-buffers a frame the transport could not put on the wire.
+  void bufferUnsent(Uint8List frame) => _buffer(frame);
+
+  void _scheduleReopen() {
+    if (_open || _reopenScheduled) return;
+    _reopenScheduled = true;
+    // 50ms, 100, 200, … capped at 5s: fast enough that a transient drop is invisible, slow
+    // enough that an end that stays away (a closed Java side) isn't polled hard for hours.
+    final shift = _reopenAttempt < 7 ? _reopenAttempt : 7;
+    final delayMs = (50 * (1 << shift)).clamp(50, 5000);
+    _reopenAttempt++;
+    Timer(Duration(milliseconds: delayMs), () {
+      _reopenScheduled = false;
+      if (_open) return;
+      openSocket();
+    });
   }
 
   void _enqueue(Uint8List frame) {
     if (_open) {
       rawSend(frame);
     } else {
-      _queue.add(frame);
+      _buffer(frame);
     }
+  }
+
+  void _buffer(Uint8List frame) {
+    if (_queue.length >= maxQueuedFrames) _queue.removeAt(0);
+    _queue.add(frame);
   }
 
   Uint8List _frame(String actionId, Uint8List body) {
