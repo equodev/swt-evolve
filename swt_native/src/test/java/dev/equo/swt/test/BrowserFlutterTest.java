@@ -23,6 +23,7 @@ import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.harness.BrowserKit;
 import dev.equo.swt.harness.BrowserFlutterHarness;
 import dev.equo.swt.harness.FlutterHarness;
+import dev.equo.swt.harness.StallTolerantDeadline;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.browser.CloseWindowListener;
@@ -966,10 +967,14 @@ class BrowserFlutterTest {
      * Pumps the SWT event loop until {@code cond} is true or the timeout elapses. Driving
      * {@code display.readAndDispatch()} is what delivers the browser's {@code asyncExec}'d listener
      * callbacks; the short sleep when idle yields for comm messages arriving on the WS thread.
+     *
+     * <p>The timeout counts running time only ({@link StallTolerantDeadline}): expiring while the
+     * process was frozen would report a navigation as never having happened when nothing had been
+     * given the chance to deliver it.
      */
     protected boolean pumpUntil(BooleanSupplier cond, long timeoutMs) {
-        long end = System.currentTimeMillis() + timeoutMs;
-        while (!cond.getAsBoolean() && System.currentTimeMillis() < end) {
+        StallTolerantDeadline end = new StallTolerantDeadline(timeoutMs);
+        while (!cond.getAsBoolean() && end.hasTimeLeft()) {
             // Advance the renderer's loop too: under chromium-standalone on mac, CEF is
             // single-threaded and only progresses when pumped, so without this a page navigated
             // during this wait would never finish loading (readAndDispatch only drives SWT).

@@ -142,8 +142,8 @@ public abstract class FlutterHarness extends EmbeddedBridge {
     }
 
     private void awaitClientReady() {
-        long deadline = System.currentTimeMillis() + READY_TIMEOUT_MS;
-        while (!clientReady.isDone() && System.currentTimeMillis() < deadline) pump(1);
+        StallTolerantDeadline deadline = new StallTolerantDeadline(READY_TIMEOUT_MS);
+        while (!clientReady.isDone() && deadline.hasTimeLeft()) pump(1);
         if (!clientReady.isDone())
             throw new IllegalStateException("Flutter client did not become ready within " + READY_TIMEOUT_MS + "ms");
     }
@@ -182,8 +182,8 @@ public abstract class FlutterHarness extends EmbeddedBridge {
 
     /** Pump the loop until ClientReady arrives or {@code ms} elapses; returns whether it is ready. */
     private boolean awaitReadyFor(long ms) {
-        long deadline = System.currentTimeMillis() + ms;
-        while (!clientReady.isDone() && System.currentTimeMillis() < deadline) pump(1);
+        StallTolerantDeadline deadline = new StallTolerantDeadline(ms);
+        while (!clientReady.isDone() && deadline.hasTimeLeft()) pump(1);
         return clientReady.isDone();
     }
 
@@ -204,8 +204,8 @@ public abstract class FlutterHarness extends EmbeddedBridge {
      *  on timeout; callers that need a hard failure should check {@code f.isDone()} themselves
      *  (see {@link #awaitFuture}) or decide their own fallback. */
     protected void awaitQuiet(CompletableFuture<?> f, long timeoutMs) {
-        long deadline = System.currentTimeMillis() + timeoutMs;
-        while (!f.isDone() && System.currentTimeMillis() < deadline) pump(1);
+        StallTolerantDeadline deadline = new StallTolerantDeadline(timeoutMs);
+        while (!f.isDone() && deadline.hasTimeLeft()) pump(1);
     }
 
     protected <R> R awaitFuture(CompletableFuture<R> f, long timeoutMs, String what) {

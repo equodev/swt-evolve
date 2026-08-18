@@ -1,6 +1,7 @@
 package dev.equo.swt.size;
 
 import dev.equo.swt.harness.FlutterHarness;
+import dev.equo.swt.harness.StallTolerantDeadline;
 import org.eclipse.swt.graphics.Point;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
@@ -15,12 +16,12 @@ public class SizeAssert {
     private static final double TEXT_TOLERANCE_PERCENT = 12/100.0; // 12%
     private static final double TOLERANCE_PERCENT = 5/100.0; // 5%
     /**
-     * Seconds a measurement round-trip is given before the test gives up. Generous on purpose: this
-     * only bounds how long a genuinely stuck future takes to fail, since the wait loop exits as soon
-     * as the result lands — so a bigger number costs a passing run nothing, while a small one turns a
-     * merely slow response into a false failure. It read as a failure at 1s, and still did at 5s: a
-     * CI runner starved for CPU took ~5.5s for one Futura measurement whose result was correct and
-     * arrived intact right after the deadline. 20s is ~4x the worst round-trip seen under that load.
+     * Seconds of <em>running</em> time a measurement round-trip is given before the test gives up.
+     * The loop exits the moment the result lands, so a generous number costs a passing run nothing.
+     *
+     * <p>Raising it is not what makes this wait reliable, and three raises did not: a round-trip is
+     * either tens of milliseconds or never, with no tail in between to grow into. The real cause is
+     * the process freezing wholesale, which {@link StallTolerantDeadline} discounts.
      *
      * <p>Override with {@code -Dsize.wait.seconds} to debug a genuinely stuck measurement locally.
      */
@@ -33,12 +34,12 @@ public class SizeAssert {
     }
 
     static <R> R assertCompletes(FlutterHarness bridge, CompletableFuture<R> result) {
-        long timeout = System.currentTimeMillis() + (WAIT * 1000);
-        while (!result.isDone() && System.currentTimeMillis() < timeout) {
+        StallTolerantDeadline deadline = new StallTolerantDeadline(WAIT * 1000L);
+        while (!result.isDone() && deadline.hasTimeLeft()) {
             bridge.pumpClient();
         }
         assertThat(result).as("measurement did not complete within %ss — the round-trip timed out, "
-                + "which says nothing about the size being right", WAIT).isDone();
+                + "which says nothing about the size being right%s", WAIT, deadline.stallSuffix()).isDone();
         try {
             return result.get();
         } catch (Exception e) {
