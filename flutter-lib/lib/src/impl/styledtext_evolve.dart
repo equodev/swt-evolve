@@ -2126,7 +2126,19 @@ class TextShape extends Shape {
   }
 
   void _drawCaret(Canvas c) {
-    if (caretInfo == null || !caretInfo!.visible) return;
+    final rect = caretRect();
+    if (rect == null) return;
+    c.drawRect(
+      rect,
+      Paint()
+        ..color = caretInfo!.color
+        ..style = PaintingStyle.fill,
+    );
+  }
+
+  /// Geometry of the painted caret, or null when no caret is visible.
+  Rect? caretRect() {
+    if (caretInfo == null || !caretInfo!.visible) return null;
 
     final caretOffset = caretInfo!.offset.clamp(0, text.length);
     final lines = text.split('\n');
@@ -2244,19 +2256,29 @@ class TextShape extends Shape {
       Rect.fromLTWH(0, 0, tp.width, tp.height),
     );
 
-    final caretRect = Rect.fromLTWH(
+    return Rect.fromLTWH(
       finalX + caretPosition.dx,
-      currentY + caretPosition.dy,
+      currentY + _caretLineTop(tp, caretPosition.dy),
       caretInfo!.width,
       caretInfo!.height > 0 ? caretInfo!.height : (style.fontSize ?? 16) * 1.2,
     );
+  }
 
-    c.drawRect(
-      caretRect,
-      Paint()
-        ..color = caretInfo!.color
-        ..style = PaintingStyle.fill,
-    );
+  /// Top of the visual line [dy] falls in.
+  ///
+  /// A tab is painted as a zero-height, baseline-aligned placeholder (see
+  /// [_expandTabStops]), whose box therefore starts at the baseline rather than at the
+  /// top of the line. A caret resolving to one — any caret sitting right after a tab —
+  /// would otherwise be drawn a baseline's worth too low. Line metrics give the line
+  /// box itself, which is what the caret spans, and stay correct under word wrap where
+  /// [dy] legitimately selects a wrapped sub-line.
+  double _caretLineTop(TextPainter tp, double dy) {
+    double top = 0;
+    for (final line in tp.computeLineMetrics()) {
+      if (dy < top + line.height) return top;
+      top += line.height;
+    }
+    return tp.computeLineMetrics().isEmpty ? dy : top;
   }
 
   void _drawSelection(Canvas c) {
