@@ -139,6 +139,12 @@ fun resolveFlutterCmd(): String {
     return if (hasPin && fvmOnPath) "fvm flutter" else "flutter"
 }
 
+// Identifies the caller's session (one per git worktree) so its JVMs can be found and torn down
+// without touching another session's. -PsessionId, else EQUO_SESSION_ID, else unstamped.
+fun sessionId(): String? =
+    (project.findProperty("sessionId") as String?)?.takeIf { it.isNotBlank() }
+        ?: System.getenv("EQUO_SESSION_ID")?.takeIf { it.isNotBlank() }
+
 // webOnlyAware: only "runWebExample" supports -PwebOnly=true, which swaps in the plain
 // browser-only "webJar" instead of the hybrid "${currentPlatform}Jar" -- that hybrid jar always
 // bundles the desktop Flutter build (see swt_native's `tasks.jar`), which on Windows needs the
@@ -164,6 +170,10 @@ fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = f
                 sourceSets["main"].output +
                 runtimeClasspathWithoutSwtNative
         mainClass.set(project.findProperty("mainClass")?.toString() ?: "dev.equo.ButtonSnippet")
+        // -PsessionId stamps this JVM so a caller can tear down exactly its own run. Several
+        // worktrees drive their own app on one machine; matching on the task name instead
+        // (`pkill -f runWebExample`) reaps all of them.
+        sessionId()?.let { systemProperty("dev.equo.session", it) }
         systemProperty("dev.equo.swt.crashReport.disabled", "true")
         systemProperty("dev.equo.swt.web.crossOriginIsolated", "false")
         systemProperty("dev.equo.swt.mode", mode)
@@ -189,7 +199,11 @@ fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = f
                 // The desktop engine runs in-process (JNI), so this JVM's env IS the engine's env. Pin the
                 // Dart VM Service to a predictable URL via the engine env-switch channel so tooling can
                 // attach without scraping stdout. Result: http://127.0.0.1:<port>/. Override -PdartVmPort.
-                val vmPort = (project.findProperty("dartVmPort") as String?) ?: "8181"
+                // With a session id the default is derived per worktree instead: a fixed 8181 means the
+                // second concurrent desktop session silently fails to bind and tooling attaches to the first.
+                val vmPort = (project.findProperty("dartVmPort") as String?)
+                    ?: sessionId()?.let { (8181 + Math.floorMod(it.hashCode(), 50) * 5).toString() }
+                    ?: "8181"
                 environment("FLUTTER_ENGINE_SWITCHES", "2")
                 environment("FLUTTER_ENGINE_SWITCH_1", "vm-service-port=$vmPort")
                 environment("FLUTTER_ENGINE_SWITCH_2", "disable-service-auth-codes=true")
