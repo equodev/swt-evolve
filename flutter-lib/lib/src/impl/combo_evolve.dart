@@ -11,10 +11,11 @@ import '../theme/theme_extensions/combo_theme_extension.dart';
 import '../theme/theme_settings/combo_theme_settings.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
+import 'utils/pending_text_echoes.dart';
 import 'utils/pointer.dart';
 
 class ComboImpl<T extends ComboSwt, V extends VCombo>
-    extends CompositeImpl<T, V> {
+    extends CompositeImpl<T, V> with PendingTextEchoes {
   late TextEditingController _controller;
   final FocusNode _focusNode = FocusNode();
   final OverlayPortalController _overlayController = OverlayPortalController();
@@ -89,8 +90,12 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
 
   @override
   void extraSetState() {
-    if (_controller.text != state.text) {
-      _controller.text = state.text ?? "";
+    final String newText = state.text ?? "";
+    // Ignore a stale echo of our own in-flight typing (see PendingTextEchoes); a value we
+    // never sent is a genuine external change and still updates the controller below.
+    if (!isStaleTextEcho(newText, _controller.text) &&
+        _controller.text != newText) {
+      _controller.text = newText;
       _controller.selection = TextSelection.collapsed(
         offset: _controller.text.length,
       );
@@ -105,9 +110,24 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
   void _handleFocusChange() {
     if (!mounted) return;
     setState(() => _isFocused = _focusNode.hasFocus);
-    _focusNode.hasFocus
-        ? widget.sendFocusFocusIn(state, null)
-        : widget.sendFocusFocusOut(state, null);
+    if (_focusNode.hasFocus) {
+      // Record the pre-edit text so a later stale echo of it is ignored rather than applied over
+      // in-progress typing (no keystroke records this value, so the echo guard can't recognise it).
+      seedTextEchoBaseline(_controller.text);
+      widget.sendFocusFocusIn(state, null);
+    } else {
+      clearSentTextEchoes();
+      widget.sendFocusFocusOut(state, null);
+    }
+  }
+
+  /// Forwards each edit of the text field as a Modify, the way native SWT does: anything that
+  /// reads Combo.getText() from a Modify/Key listener (JFace field-editor validation) would
+  /// otherwise keep seeing the pre-edit value for as long as the user only types.
+  void _handleTextChanged(String value) {
+    state.text = value;
+    recordSentText(value);
+    widget.sendModifyModify(state, VEvent()..text = value);
   }
 
   @override
@@ -170,6 +190,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
             bgColor: bgColor,
             borderColor: borderColor,
             onSelected: _onItemSelected,
+            onTextChanged: _handleTextChanged,
             hasFixedSize: hasFixedSize,
           )
         : _DropdownComboLayout(
@@ -186,6 +207,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
             overlayController: _overlayController,
             layerLink: _layerLink,
             onSelected: _onItemSelected,
+            onTextChanged: _handleTextChanged,
             onToggleOverlay: _toggleOverlay,
             width: width,
             textPadding: textPadding,
@@ -252,6 +274,7 @@ class _DropdownComboLayout extends StatelessWidget {
   final OverlayPortalController overlayController;
   final LayerLink layerLink;
   final ValueChanged<String?> onSelected;
+  final ValueChanged<String> onTextChanged;
   final VoidCallback onToggleOverlay;
   final double width;
   final EdgeInsets textPadding;
@@ -270,6 +293,7 @@ class _DropdownComboLayout extends StatelessWidget {
     required this.overlayController,
     required this.layerLink,
     required this.onSelected,
+    required this.onTextChanged,
     required this.onToggleOverlay,
     required this.width,
     required this.textPadding,
@@ -304,6 +328,7 @@ class _DropdownComboLayout extends StatelessWidget {
                         controller: controller,
                         focusNode: focusNode,
                         readOnly: isReadOnly,
+                        onChanged: onTextChanged,
                         style: textStyle,
                         cursorColor: textStyle.color ?? theme.textColor,
                         backgroundCursorColor: bgColor,
@@ -388,6 +413,7 @@ class _SimpleComboLayout extends StatelessWidget {
   final bool isEnabled, isReadOnly, hasFixedSize;
   final Color bgColor, borderColor;
   final ValueChanged<String?> onSelected;
+  final ValueChanged<String> onTextChanged;
 
   const _SimpleComboLayout({
     required this.state,
@@ -401,6 +427,7 @@ class _SimpleComboLayout extends StatelessWidget {
     required this.bgColor,
     required this.borderColor,
     required this.onSelected,
+    required this.onTextChanged,
   });
 
   @override
@@ -421,6 +448,7 @@ class _SimpleComboLayout extends StatelessWidget {
               controller: controller,
               focusNode: focusNode,
               readOnly: isReadOnly,
+              onChanged: onTextChanged,
               style: textStyle,
               cursorColor: textStyle.color ?? theme.textColor,
               backgroundCursorColor: bgColor,
