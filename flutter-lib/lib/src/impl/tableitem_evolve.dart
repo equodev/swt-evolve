@@ -316,20 +316,19 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     TextStyle textStyle,
     TableThemeExtension theme,
   ) {
-    final iconSize = textStyle.fontSize ?? 16.0;
+    final iconHeight = textStyle.fontSize ?? 16.0;
     return FutureBuilder<Widget?>(
       future: ImageUtils.buildVImageAsync(
         image,
-        size: iconSize,
+        height: iconHeight,
         enabled: enabled,
+        // Allow width up to 6× height so non-square images keep their aspect ratio.
         constraints: BoxConstraints(
-          minWidth: iconSize,
-          minHeight: iconSize,
-          maxWidth: iconSize,
-          maxHeight: iconSize,
+          maxWidth: iconHeight * 6,
+          maxHeight: iconHeight,
         ),
         useBinaryImage: true,
-        renderAsIcon: true,
+        renderAsIcon: false,
       ),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done &&
@@ -339,7 +338,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
             child: snapshot.data!,
           );
         }
-        return SizedBox(width: iconSize, height: iconSize);
+        return SizedBox(width: iconHeight, height: iconHeight);
       },
     );
   }
