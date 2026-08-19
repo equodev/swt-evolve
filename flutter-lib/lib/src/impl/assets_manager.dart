@@ -71,7 +71,7 @@ class AssetsManager {
       if (result != null) return result;
     }
 
-    if (getConfigFlags().use_default_icons == true) {
+    if (useEvolveIcons) {
       return await _loadFromBundleAssets(filename);
     }
 

@@ -52,6 +52,14 @@ ConfigFlags getConfigFlags() {
   return configFlags;
 }
 
+/// True when Evolve may substitute an application icon with one of its own — the bundled icon set
+/// and the name-to-Material-icon map. An `assets_path` override applies regardless.
+bool get useEvolveIcons => !(getConfigFlags().disable_evolve_icons ?? false);
+
+/// True when an icon keeps the colors it was authored in. False (the default) tints it with the
+/// theme color. Both fall back to the same value the Java side sends when no config arrived yet.
+bool get preserveIconColors => getConfigFlags().preserve_icon_colors ?? false;
+
 void setConfigFlags(ConfigFlags newFlags) {
   final prev = configFlags;
   String? mergeString(String? incoming, String? previous) {

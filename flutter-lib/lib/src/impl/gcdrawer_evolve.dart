@@ -1381,7 +1381,7 @@ class ImageShape extends Shape {
   static Future<ImageShape> fromVImageDetailed(VImage vImage,
       VGCDrawImageImageintintintintintintintint opArgs, Rect? clipRect,
       {Color? tint}) async {
-    final preserveColors = getConfigFlags().preserve_icon_colors ?? true;
+    final preserveColors = preserveIconColors;
     final colorFilter = preserveColors
         ? null
         : ColorFilter.mode(tint ?? AppColors.getColor(true), BlendMode.srcIn);

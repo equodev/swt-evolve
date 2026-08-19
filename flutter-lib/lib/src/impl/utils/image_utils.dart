@@ -36,7 +36,10 @@ class ImageUtils {
     Color? color,
     bool enabled = true,
   }) {
-    final preserveColors = getConfigFlags().preserve_icon_colors ?? true;
+    // Our icon map is a substitution like the bundled set, so the same flag governs it.
+    if (!useEvolveIcons) return null;
+
+    final preserveColors = preserveIconColors;
     final cacheKey =
         '$filename-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled-$preserveColors';
 
@@ -84,7 +87,7 @@ class ImageUtils {
     BoxConstraints? constraints,
     bool renderAsIcon = true,
   }) {
-    final preserveColors = getConfigFlags().preserve_icon_colors ?? true;
+    final preserveColors = preserveIconColors;
     final cacheKey = renderAsIcon
         ? 'icon-${bytes?.length ?? file ?? 'none'}-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled-$preserveColors'
         : (file != null)
@@ -211,7 +214,7 @@ class ImageUtils {
     BoxConstraints? constraints,
     bool renderAsIcon = true,
   }) {
-    final preserveColors = getConfigFlags().preserve_icon_colors ?? true;
+    final preserveColors = preserveIconColors;
     final Color? effectiveTint = preserveColors
         ? null
         : (color ?? AppColors.getColor(enabled));
@@ -391,11 +394,11 @@ class ImageUtils {
     }
 
     // Generate cache key based on all parameters that affect the result
-    final preserveColors = getConfigFlags().preserve_icon_colors ?? true;
+    final preserveColors = preserveIconColors;
     final cacheKey =
         'future-${stableImageKey(image)}-'
         '${size ?? width ?? height ?? 'default'}-${color?.value ?? 'default'}-'
-        '$preserveColors-$enabled-$renderAsIcon';
+        '$preserveColors-$useEvolveIcons-$enabled-$renderAsIcon';
 
     // Return cached Future if it exists
     if (_futureCache.containsKey(cacheKey)) {
@@ -532,8 +535,16 @@ class ImageUtils {
     if (image.filename?.isNotEmpty ?? false) {
       final filename = image.filename!;
 
-      Widget? syncFallback;
-      if (useBinaryImage && image.imageData?.data != null) {
+      // Same precedence as the async path: a resolved replacement wins, then our icon map, then
+      // the application's own bytes. loadReplacement is always consulted so an assets_path
+      // override applies even with disable_evolve_icons on; the flag gates what it falls back to.
+      Widget? syncFallback = buildIconWidget(
+        filename,
+        size: size ?? width ?? height,
+        color: color,
+        enabled: enabled,
+      );
+      if (syncFallback == null && useBinaryImage && image.imageData?.data != null) {
         syncFallback = _buildBinaryImage(
           bytes: Uint8List.fromList(image.imageData!.data!),
           file: filename,
@@ -542,34 +553,24 @@ class ImageUtils {
           constraints: constraints, renderAsIcon: renderAsIcon,
         );
       }
-      syncFallback ??= buildIconWidget(
-        filename,
-        size: size ?? width ?? height,
-        color: color,
-        enabled: enabled,
+
+      final fallback = syncFallback ?? const SizedBox.shrink();
+      return FutureBuilder<Object?>(
+        future: AssetsManager.loadReplacement(filename),
+        builder: (context, snapshot) {
+          final data = snapshot.data;
+          if (data != null) {
+            return _buildReplacementWidget(
+              data,
+              filename: filename,
+              size: size, width: width, height: height,
+              color: color, enabled: enabled,
+              constraints: constraints, renderAsIcon: renderAsIcon,
+            ) ?? fallback;
+          }
+          return fallback;
+        },
       );
-
-      if (getConfigFlags().use_default_icons == true) {
-        final fallback = syncFallback ?? const SizedBox.shrink();
-        return FutureBuilder<Object?>(
-          future: AssetsManager.loadReplacement(filename),
-          builder: (context, snapshot) {
-            final data = snapshot.data;
-            if (data != null) {
-              return _buildReplacementWidget(
-                data,
-                filename: filename,
-                size: size, width: width, height: height,
-                color: color, enabled: enabled,
-                constraints: constraints, renderAsIcon: renderAsIcon,
-              ) ?? fallback;
-            }
-            return fallback;
-          },
-        );
-      }
-
-      if (syncFallback != null) return syncFallback;
     }
 
     if (useBinaryImage && image.imageData?.data != null) {

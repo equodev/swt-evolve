@@ -45,7 +45,12 @@ public class ConfigFlags {
 
     public String assets_path;
 
-    public boolean use_default_icons;
+    /**
+     * True keeps the application's own icons. Off by default, which lets Evolve substitute an icon
+     * with one of ours — the bundled icon set and the name-to-Material-icon map. An
+     * {@code assets_path} override applies either way.
+     */
+    public boolean disable_evolve_icons;
 
     public boolean use_swt_colors;
 
@@ -90,7 +95,7 @@ public class ConfigFlags {
                 ", ctabfolder_visible_controls=" + ctabfolder_visible_controls +
                 ", image_disable_icons_replacement=" + image_disable_icons_replacement +
                 ", assets_path=" + assets_path +
-                ", use_default_icons=" + use_default_icons +
+                ", disable_evolve_icons=" + disable_evolve_icons +
                 ", use_swt_colors=" + use_swt_colors +
                 ", disable_swt_canvas_colors=" + disable_swt_canvas_colors +
                 ", use_swt_fonts=" + use_swt_fonts +
