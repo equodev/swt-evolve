@@ -119,4 +119,42 @@ class TableCellEditorSelectionSyncFlutterTest {
                 .isTrue();
         assertThat(second.isDisposed()).as("the new editor stays alive").isFalse();
     }
+
+    @Test
+    @DisplayName("clearing the editor hides its control instead of disposing it")
+    void clearingTheEditorKeepsTheControlAlive() {
+        Table table = editableTable(1);
+
+        TableEditor editor = new TableEditor(table);
+        Text cellEditor = new Text(table, SWT.NONE);
+        editor.setEditor(cellEditor, table.getItem(0), 0);
+
+        editor.setEditor(null, null, 0);
+
+        assertThat(cellEditor.isDisposed())
+                .as("the caller still owns this control after the editor is cleared and goes on using it")
+                .isFalse();
+        assertThat(cellEditor.getVisible())
+                .as("but it must stop showing over the table")
+                .isFalse();
+        assertThat(editor.getEditor()).as("the editor no longer holds a control").isNull();
+    }
+
+    @Test
+    @DisplayName("a cleared editor control can be installed again")
+    void aClearedEditorCanBeReinstalled() {
+        Table table = editableTable(2);
+
+        TableEditor editor = new TableEditor(table);
+        // A JFace EditingSupport hands back the same CellEditor for every row, so the control that
+        // is cleared here is the very one the next activation installs.
+        Text cellEditor = new Text(table, SWT.NONE);
+        editor.setEditor(cellEditor, table.getItem(0), 0);
+        editor.setEditor(null, null, 0);
+
+        editor.setEditor(cellEditor, table.getItem(1), 0);
+
+        assertThat(editor.getEditor()).as("editing a second row reuses the same control").isSameAs(cellEditor);
+        assertThat(cellEditor.getVisible()).as("and it shows again").isTrue();
+    }
 }

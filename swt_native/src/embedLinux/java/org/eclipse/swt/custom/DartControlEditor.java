@@ -206,7 +206,11 @@ public class DartControlEditor implements IControlEditor {
      */
     public void setEditor(Control editor) {
         if (this.editor != null && this.editor != editor && !this.editor.isDisposed()) {
-            this.editor.dispose();
+            if (editor == null) {
+                this.editor.setVisible(false);
+            } else {
+                this.editor.dispose();
+            }
         }
         if (editor == null) {
             // this is the case where the caller is setting the editor to be blank
