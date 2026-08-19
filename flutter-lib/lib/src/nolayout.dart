@@ -102,13 +102,26 @@ class _AbsoluteLayoutDelegate extends MultiChildLayoutDelegate {
     return fromParent;
   }
 
+  /// The declared bounds, grown to at least cover every child's own bottom-right
+  /// corner. A parent's declared size can understate what it actually needs (e.g.
+  /// SWT's `ScrolledComposite` forcing a "fill" size onto content whose real layout
+  /// is taller) -- reporting the smaller size here would silently clip children
+  /// positioned past it instead of letting an ancestor scroll view reach them.
   @override
   Size getSize(BoxConstraints constraints) {
     final bounds = composite?.bounds;
-    if (bounds != null && bounds.width >= 0 && bounds.height >= 0) {
-      return Size(bounds.width.toDouble(), bounds.height.toDouble());
+    if (bounds == null || bounds.width < 0 || bounds.height < 0) {
+      return super.getSize(constraints);
     }
-    return super.getSize(constraints);
+    double width = bounds.width.toDouble();
+    double height = bounds.height.toDouble();
+    for (final child in children) {
+      final b = _boundsOf(child);
+      if (b == null) continue;
+      if (b.width > 0 && b.x + b.width > width) width = (b.x + b.width).toDouble();
+      if (b.height > 0 && b.y + b.height > height) height = (b.y + b.height).toDouble();
+    }
+    return Size(width, height);
   }
 
   @override

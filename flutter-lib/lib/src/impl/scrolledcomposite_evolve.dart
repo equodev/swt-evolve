@@ -186,8 +186,12 @@ class _ThemedScrolledComposite extends StatelessWidget {
             vpW.isFinite &&
             minContentSize.width <= vpW;
 
-        final bool doVScroll = hasVScroll && !vFill;
-        final bool doHScroll = hasHScroll && !hFill;
+        // Wrap in a scroll view whenever the style asks for it, even in "fill" mode:
+        // the stretch below only guarantees a *minimum* size, so content that turns
+        // out taller/wider than the viewport anyway (e.g. a declared minSize that
+        // understates the real content) stays reachable instead of being clipped.
+        final bool doVScroll = hasVScroll;
+        final bool doHScroll = hasHScroll;
 
         Widget result = child;
 
