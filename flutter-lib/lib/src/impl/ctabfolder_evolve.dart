@@ -393,6 +393,18 @@ class _CTabBarState extends State<_CTabBar> {
   int? _pendingFrom;
   int? _pendingTo;
 
+  // ctabfolder_topright_auto_hide (default true, matches the historical behaviour):
+  // the topRight/chevron/minimize/maximize block auto-hides until hovered and floats
+  // on top of the tab row without reserving space. Set to false to keep it always
+  // shown and reserving its own width in the tab row instead -- a client relying on
+  // an always-visible topRight toolbar needs both effects together, so this is one
+  // flag, not two: ctabfolder_visible_controls alone only removes the hover-fade, it
+  // does not reserve space.
+  bool get _autoHide => getConfigFlags().ctabfolder_topright_auto_hide != false;
+  bool get _reserveTopRightSpace => !_autoHide;
+  bool get _controlsAlwaysVisible =>
+      getConfigFlags().ctabfolder_visible_controls == true ||
+      _reserveTopRightSpace;
 
   @override
   void initState() {
@@ -571,15 +583,11 @@ class _CTabBarState extends State<_CTabBar> {
       dragThreshold: widgetTheme.tabDragThreshold,
     );
 
-    Widget tabBarContent = Row(
-      children: [
-        Expanded(
-          child: _buildHorizontalScrollableTabs(
-            widgetTheme: widgetTheme,
-            child: tabRowWithDrag,
-          ),
-        ),
-      ],
+    final scrollableTabs = Expanded(
+      child: _buildHorizontalScrollableTabs(
+        widgetTheme: widgetTheme,
+        child: tabRowWithDrag,
+      ),
     );
 
     final topRightControls = _buildTopRightControls(
@@ -593,18 +601,27 @@ class _CTabBarState extends State<_CTabBar> {
       alignment: topRightAlignment,
     );
 
+    // ctabfolder_topright_auto_hide=false: the controls sit as a normal Row
+    // sibling, so the scrollable tab area shrinks to make room for them -- no tab
+    // ever ends up hidden underneath a floating overlay. Default (true): the
+    // original Stack overlay, full-width tabs with the (auto-hidden, hover-revealed)
+    // controls on top.
+    final Widget header = _reserveTopRightSpace
+        ? Row(children: [scrollableTabs, topRightControls])
+        : Stack(
+            children: [
+              Row(children: [scrollableTabs]),
+              Positioned(right: 0, top: 0, bottom: 0, child: topRightControls),
+            ],
+          );
+
     return MouseRegion(
       onEnter: (_) => setState(() => _hoveringTopBar = true),
       onExit: (_) => setState(() => _hoveringTopBar = false),
       child: _buildTabBarContainer(
         widgetTheme: widgetTheme,
         height: height,
-        child: Stack(
-          children: [
-            tabBarContent,
-            Positioned(right: 0, top: 0, bottom: 0, child: topRightControls),
-          ],
-        ),
+        child: header,
         isTabBottom: isTabBottom,
       ),
     );
@@ -1198,10 +1215,7 @@ class _CTabBarState extends State<_CTabBar> {
         if (showMinimizeButton)
           Builder(
             builder: (context) {
-              final isVisible =
-                  getConfigFlags().ctabfolder_visible_controls == true
-                  ? true
-                  : _hoveringTopBar;
+              final isVisible = _controlsAlwaysVisible ? true : _hoveringTopBar;
               return _buildControlButton(
                 context: context,
                 widgetTheme: widgetTheme,
@@ -1220,10 +1234,7 @@ class _CTabBarState extends State<_CTabBar> {
         if (showMaximizeButton)
           Builder(
             builder: (context) {
-              final isVisible =
-                  getConfigFlags().ctabfolder_visible_controls == true
-                  ? true
-                  : _hoveringTopBar;
+              final isVisible = _controlsAlwaysVisible ? true : _hoveringTopBar;
               return _buildControlButton(
                 context: context,
                 widgetTheme: widgetTheme,
@@ -1242,10 +1253,7 @@ class _CTabBarState extends State<_CTabBar> {
       ],
     );
 
-    final isControlsVisible =
-        getConfigFlags().ctabfolder_visible_controls == true
-        ? true
-        : _hoveringTopBar;
+    final isControlsVisible = _controlsAlwaysVisible ? true : _hoveringTopBar;
 
     final revealWidget = _HoverReveal(
       visible: isControlsVisible,
@@ -1253,21 +1261,27 @@ class _CTabBarState extends State<_CTabBar> {
       hideDuration: widgetTheme.hoverHideDuration,
       child: Align(
         alignment: Alignment.topRight,
-        child: Container(
-          height: double.infinity,
-          decoration: BoxDecoration(
-            color: widgetTheme.tabBarBackgroundColor,
-            boxShadow: [
-              BoxShadow(
-                color: widgetTheme.topRightControlsShadowColor.withOpacity(
-                  widgetTheme.topRightControlsShadowOpacity,
+        // Opacity alone doesn't stop hit-testing: while faded out (not hovering)
+        // this box still sat on top of the Stack and swallowed clicks meant for
+        // a tab hidden underneath it. Only block pointers while genuinely hidden.
+        child: IgnorePointer(
+          ignoring: !isControlsVisible,
+          child: Container(
+            height: double.infinity,
+            decoration: BoxDecoration(
+              color: widgetTheme.tabBarBackgroundColor,
+              boxShadow: [
+                BoxShadow(
+                  color: widgetTheme.topRightControlsShadowColor.withOpacity(
+                    widgetTheme.topRightControlsShadowOpacity,
+                  ),
+                  blurRadius: widgetTheme.topRightControlsShadowBlurRadius,
+                  offset: widgetTheme.topRightControlsShadowOffset,
                 ),
-                blurRadius: widgetTheme.topRightControlsShadowBlurRadius,
-                offset: widgetTheme.topRightControlsShadowOffset,
-              ),
-            ],
+              ],
+            ),
+            child: controls,
           ),
-          child: controls,
         ),
       ),
     );

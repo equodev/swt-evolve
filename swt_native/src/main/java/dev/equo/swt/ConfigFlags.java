@@ -41,6 +41,14 @@ public class ConfigFlags {
 
     public boolean ctabfolder_visible_controls;
 
+    /** Default true (matches the historical behaviour): the CTabFolder topRight/minimize/
+     *  maximize/chevron block only appears on hover and floats on top of the tab row without
+     *  reserving space. Set to false to keep it always shown and reserving its own width in the
+     *  tab row (a Row sibling) instead -- lets a client that relies on an always-visible
+     *  topRight toolbar (e.g. via setTopRight) keep every tab reachable instead of some being
+     *  hidden underneath that floating overlay. */
+    public boolean ctabfolder_topright_auto_hide;
+
     public boolean image_disable_icons_replacement;
 
     public String assets_path;
@@ -93,6 +101,7 @@ public class ConfigFlags {
         return "ConfigFlags{" +
                 "mode=" + mode() +
                 ", ctabfolder_visible_controls=" + ctabfolder_visible_controls +
+                ", ctabfolder_topright_auto_hide=" + ctabfolder_topright_auto_hide +
                 ", image_disable_icons_replacement=" + image_disable_icons_replacement +
                 ", assets_path=" + assets_path +
                 ", disable_evolve_icons=" + disable_evolve_icons +

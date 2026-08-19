@@ -605,6 +605,7 @@ public class Config {
         if (configFlags == null) {
             configFlags = new ConfigFlags();
             configFlags.ctabfolder_visible_controls = Boolean.getBoolean("swt.evolve.ctabfolder_visible_controls");
+            configFlags.ctabfolder_topright_auto_hide = Boolean.parseBoolean(System.getProperty("swt.evolve.ctabfolder_topright_auto_hide", "true"));
             configFlags.image_disable_icons_replacement = Boolean.getBoolean("swt.evolve.image_disable_icons_replacement");
             configFlags.assets_path = System.getProperty("swt.evolve.assets_path");
             configFlags.disable_evolve_icons = Boolean.getBoolean("swt.evolve.disable_evolve_icons");

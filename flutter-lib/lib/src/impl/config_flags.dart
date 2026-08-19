@@ -8,6 +8,7 @@ class ConfigFlags {
   ConfigFlags();
 
   bool? ctabfolder_visible_controls;
+  bool? ctabfolder_topright_auto_hide;
   bool? image_disable_icons_replacement;
   String? assets_path;
   bool? disable_evolve_icons;
