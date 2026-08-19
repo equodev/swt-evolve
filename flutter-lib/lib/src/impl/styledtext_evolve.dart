@@ -848,8 +848,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     // The top-level router skips a focused StyledText so this is not dispatched twice.
     _sendKeyDownEvent(event);
 
-    widget.sendVerifyKeyverifyKey(state, mapKeyEventToSwt(event));
-
     final isShiftPressed = event.data.isShiftPressed;
     final bool hadSelection = _editableTextShape?.selectionInfo?.hasSelection == true;
     final oldCaretOffset = _editableTextShape!.caretInfo?.offset;

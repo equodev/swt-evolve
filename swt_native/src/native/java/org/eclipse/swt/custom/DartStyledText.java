@@ -6121,6 +6121,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         verifyEvent.doit = event.doit;
         verifyEvent.doit = true;
         notifyListeners(ST.VerifyKey, verifyEvent);
+        StyledTextHelper.recordVerifyKeyVerdict(this, verifyEvent.doit);
         if (verifyEvent.doit) {
             if ((event.stateMask & SWT.MODIFIER_MASK) == SWT.CTRL && event.keyCode == SWT.SHIFT && isBidiCaret()) {
                 newOrientation = event.keyLocation == SWT.LEFT ? SWT.LEFT_TO_RIGHT : SWT.RIGHT_TO_LEFT;
@@ -12043,6 +12044,10 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                if (StyledTextHelper.consumeVerifyKeyVeto(this)) {
+                    dirty();
+                    return;
+                }
                 StyledTextHelper.handleModify(this, e);
                 sendSelectionEvent();
                 redraw();
@@ -12069,9 +12074,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         });
         FlutterBridge.on(this, "VerifyKey", "verifyKey", e -> {
             getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                notifyListeners(ST.VerifyKey, e);
             });
         });
         FlutterBridge.on(this, "WordMovement", "getNextOffset", e -> {

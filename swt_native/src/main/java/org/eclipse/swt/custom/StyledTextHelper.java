@@ -35,6 +35,23 @@ public class StyledTextHelper {
         return FontMetricsUtil.dpiScale();
     }
 
+    private static final Map<DartStyledText, Boolean> vetoedFlutterKeys =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    public static void recordVerifyKeyVerdict(DartStyledText styledText, boolean doit) {
+        if (!ControlHelper.isFlutterOriginatedKey())
+            return;
+        if (doit) {
+            vetoedFlutterKeys.remove(styledText);
+        } else {
+            vetoedFlutterKeys.put(styledText, Boolean.TRUE);
+        }
+    }
+
+    public static boolean consumeVerifyKeyVeto(DartStyledText styledText) {
+        return vetoedFlutterKeys.remove(styledText) != null;
+    }
+
     /**
      * Applies an edit the render side has already displayed, and puts the caret where the
      * document ended up.
