@@ -19,9 +19,9 @@ public class TextSizes {
 
     static class LEFT {
         static final double MIN_WIDTH = 35.0;
-        static final double MIN_HEIGHT = 24.0;
+        static final double MIN_HEIGHT = 17.0;
         static final double HORIZONTAL_PADDING = 32.0;
-        static final double VERTICAL_PADDING = 12.0;
+        static final double VERTICAL_PADDING = 5.0;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = true;
     }
 

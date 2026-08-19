@@ -31,11 +31,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     _lastSentListVisible = state.listVisible;
   }
 
-  Size _calculatePreferredSize(
-    TextStyle style,
-    ComboThemeExtension theme,
-    bool isSimple,
-  ) {
+  Size _maxTextSize(TextStyle style) {
     final List<String> allStrings = [state.text ?? "", ...(state.items ?? [])];
 
     double maxTextWidth = 0;
@@ -52,17 +48,43 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
       if (painter.height > maxTextHeight) maxTextHeight = painter.height + 2;
     }
 
+    return Size(maxTextWidth, maxTextHeight);
+  }
+
+  Size _calculatePreferredSize(
+    Size textSize,
+    ComboThemeExtension theme,
+    bool isSimple,
+  ) {
     // The border insets the Row (Container pads by decoration.padding), and the
     // arrow cell consumes iconSpacing + iconSize; both must be part of the
     // preferred width or the longest item is clipped by the arrow.
     final double width =
-        maxTextWidth +
+        textSize.width +
         theme.textFieldPadding.horizontal +
         theme.borderWidth * 2 +
         (isSimple ? 0 : theme.iconSpacing + theme.iconSize);
-    final double height = maxTextHeight + theme.textFieldPadding.vertical;
+    final double height = textSize.height + theme.textFieldPadding.vertical;
 
     return Size(width, height);
+  }
+
+  /// The text-field padding is a fixed inset, so a height an application pins
+  /// below the preferred one (GridData.heightHint) leaves EditableText a
+  /// viewport of a couple of pixels and the glyphs are cut off at the bottom.
+  /// The text keeps a full line height; the vertical padding absorbs the
+  /// deficit, down to none at all.
+  EdgeInsets _fitTextPadding(
+    ComboThemeExtension theme,
+    double textHeight,
+    double? height,
+  ) {
+    final EdgeInsets padding = theme.textFieldPadding;
+    if (height == null) return padding;
+    final double room = height - theme.borderWidth * 2 - textHeight;
+    if (room >= padding.vertical) return padding;
+    final double half = room > 0 ? room / 2 : 0;
+    return padding.copyWith(top: half, bottom: half);
   }
 
   @override
@@ -115,8 +137,9 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
       baseTextStyle: theme.textStyle,
     );
 
+    final Size textSize = _maxTextSize(textStyle);
     final Size preferredSize = _calculatePreferredSize(
-      textStyle,
+      textSize,
       theme,
       isSimple,
     );
@@ -128,6 +151,12 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     final double? height = hasFixedSize
         ? state.bounds!.height.toDouble()
         : (isSimple ? null : preferredSize.height);
+
+    final EdgeInsets textPadding = _fitTextPadding(
+      theme,
+      textSize.height,
+      height,
+    );
 
     final Widget content = isSimple
         ? _SimpleComboLayout(
@@ -159,6 +188,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
             onSelected: _onItemSelected,
             onToggleOverlay: _toggleOverlay,
             width: width,
+            textPadding: textPadding,
           );
 
     return tagSemantics(DoubleClickWordSelector(
@@ -224,6 +254,7 @@ class _DropdownComboLayout extends StatelessWidget {
   final ValueChanged<String?> onSelected;
   final VoidCallback onToggleOverlay;
   final double width;
+  final EdgeInsets textPadding;
 
   const _DropdownComboLayout({
     required this.state,
@@ -241,6 +272,7 @@ class _DropdownComboLayout extends StatelessWidget {
     required this.onSelected,
     required this.onToggleOverlay,
     required this.width,
+    required this.textPadding,
   });
 
   @override
@@ -265,7 +297,7 @@ class _DropdownComboLayout extends StatelessWidget {
                       ? () => focusNode.requestFocus()
                       : (isEnabled ? onToggleOverlay : null),
                   child: Padding(
-                    padding: theme.textFieldPadding,
+                    padding: textPadding,
                     child: IgnorePointer(
                       ignoring: isReadOnly,
                       child: EditableText(

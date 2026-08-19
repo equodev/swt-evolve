@@ -72,7 +72,7 @@ TextThemeExtension _getTextTheme({
     errorBorderWidth: 1.0,
     
     // Padding and spacing
-    contentPadding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.5),
     
     // Typography
     fontSize: baseTextStyle.fontSize ?? 14.0,
