@@ -87,14 +87,14 @@ public class CTabFolderHelper {
         }
     }
 
+    // The min/max flags belong to the listener, as in upstream onSelection: e4 marks a minimized
+    // stack maximized=true so its one remaining button acts as restore. Assigning here overwrites that.
     public static void handleMinimize(DartCTabFolder obj, Event e) {
         if (obj.isDisposed()) return;
         CTabFolderEvent minimizeEvent = new CTabFolderEvent(obj.getApi());
         for (CTabFolder2Listener listener : obj.folderListeners) {
             listener.minimize(minimizeEvent);
         }
-        obj.minimized = true;
-        obj.maximized = false;
     }
 
     public static void handleMaximize(DartCTabFolder obj, Event e) {
@@ -103,8 +103,6 @@ public class CTabFolderHelper {
         for (CTabFolder2Listener listener : obj.folderListeners) {
             listener.maximize(maximizeEvent);
         }
-        obj.maximized = true;
-        obj.minimized = false;
     }
 
     public static void handleRestore(DartCTabFolder obj, Event e) {
@@ -113,8 +111,6 @@ public class CTabFolderHelper {
         for (CTabFolder2Listener listener : obj.folderListeners) {
             listener.restore(restoreEvent);
         }
-        obj.minimized = false;
-        obj.maximized = false;
     }
 
     public static Image createButtonImage(DartCTabFolder obj, Display display, int button) {
