@@ -285,12 +285,16 @@ class _StyledDropdownCCombo extends StatelessWidget {
         ? state.bounds!.width.toDouble()
         : _calculateMinWidth();
 
-    final EdgeInsetsGeometry effectivePadding = controlHeight != null
-        ? EdgeInsets.symmetric(
-            horizontal: widgetTheme.textFieldPadding.horizontal / 2,
-            vertical: 0,
-          )
-        : widgetTheme.textFieldPadding;
+    // Dense/collapsed styling must apply whether or not Java has already handed us a
+    // controlHeight: without it, InputDecorator reserves Material's default text-field
+    // baseline space (~48-56px) even for a natural, unconstrained measurement — which is
+    // exactly the pass computeSize()/the measure tool captures, so it baked that inflated
+    // height into CComboSizes' MIN_HEIGHT constants instead of the compact size the widget
+    // actually renders at once Java gives it real bounds.
+    final EdgeInsetsGeometry effectivePadding = EdgeInsets.symmetric(
+      horizontal: widgetTheme.textFieldPadding.horizontal / 2,
+      vertical: controlHeight != null ? 0 : 4.0,
+    );
 
     final BoxConstraints? inputConstraints = controlHeight != null
         ? BoxConstraints.tightFor(height: controlHeight)
@@ -311,10 +315,10 @@ class _StyledDropdownCCombo extends StatelessWidget {
         isDense: true,
         contentPadding: effectivePadding,
         constraints: inputConstraints,
-        isCollapsed: controlHeight != null,
+        isCollapsed: true,
         suffixIconConstraints: controlHeight != null
             ? BoxConstraints.tightFor(height: controlHeight)
-            : null,
+            : BoxConstraints.tightFor(height: widgetTheme.iconSize),
       ),
       menuStyle: MenuStyle(
         backgroundColor: WidgetStateProperty.all(widgetTheme.backgroundColor),

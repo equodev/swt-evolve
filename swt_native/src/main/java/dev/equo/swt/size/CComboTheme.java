@@ -10,7 +10,7 @@ public record CComboTheme (TextStyle textStyle) {
     }
 
     public static CComboTheme getDefaultTheme() {
-        return new CComboTheme(new TextStyle("System", 12, false, 400));
+        return new CComboTheme(new TextStyle("Inter", 12, false, 500));
     }
 
 }
