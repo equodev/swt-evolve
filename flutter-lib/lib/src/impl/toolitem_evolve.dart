@@ -377,7 +377,9 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     var bits = SWT.PUSH | SWT.CHECK | SWT.RADIO | SWT.SEPARATOR | SWT.DROP_DOWN;
 
     BoxConstraints? constraints;
-    if (state.width != null && state.width! > 0) {
+    if ((state.style & SWT.SEPARATOR) != 0 &&
+        state.width != null &&
+        state.width! > 0) {
       constraints = BoxConstraints(
         minWidth: state.width!.toDouble(),
         maxWidth: state.width!.toDouble(),
