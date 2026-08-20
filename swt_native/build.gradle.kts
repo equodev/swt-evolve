@@ -281,6 +281,10 @@ sourceSets {
                     "org/eclipse/swt/widgets/DartMocks.java",
                     // Test-only stand-in for the real Eclipse e4 workbench class.
                     "org/eclipse/e4/ui/workbench/renderers/swt/**")
+            // Mac*NativeTest: assert against Cocoa itself, so they only compile where the per-OS
+            // backend carries org.eclipse.swt.internal.cocoa. An @EnabledOnOs would skip the run
+            // but the source still has to compile on every runner.
+            if (currentOs != "macos") exclude("**/Mac*NativeTest.java")
         }
         resources {
             srcDirs("src/test/resources")
