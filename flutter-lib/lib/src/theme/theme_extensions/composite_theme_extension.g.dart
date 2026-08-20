@@ -20,6 +20,7 @@ CompositeThemeExtension _$CompositeThemeExtensionFromJson(
     json['focusedBorderColor'] as String,
   ),
   borderWidth: (json['borderWidth'] as num).toDouble(),
+  focusedBorderWidth: (json['focusedBorderWidth'] as num).toDouble(),
   borderRadius: (json['borderRadius'] as num).toDouble(),
   contentPadding: (json['contentPadding'] as num).toDouble(),
   workbenchAreaGapColor: const ColorConverter().fromJson(
@@ -51,6 +52,7 @@ Map<String, dynamic> _$CompositeThemeExtensionToJson(
     instance.focusedBorderColor,
   ),
   'borderWidth': instance.borderWidth,
+  'focusedBorderWidth': instance.focusedBorderWidth,
   'borderRadius': instance.borderRadius,
   'contentPadding': instance.contentPadding,
   'workbenchAreaGapColor': const ColorConverter().toJson(

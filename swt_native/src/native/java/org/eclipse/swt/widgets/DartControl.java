@@ -4119,6 +4119,19 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return null;
     }
 
+    public Color getExplicitBackground() {
+        if (_background != null)
+            return _background;
+        if (parent != null && parent.getImpl() instanceof DartControl) {
+            return ((DartControl) parent.getImpl()).getExplicitBackground();
+        }
+        return null;
+    }
+
+    public boolean getHasOwnBackground() {
+        return _background != null;
+    }
+
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;

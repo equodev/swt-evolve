@@ -25,7 +25,7 @@ public class CLabelSizes {
         static final double HORIZONTAL_PADDING = 6.0;
         static final double VERTICAL_PADDING = 6.0;
         static final double IMAGE_SPACING = 4.0;
-        static final boolean EMPTY_TEXT_AFFECTS_SIZING = false;
+        static final boolean EMPTY_TEXT_AFFECTS_SIZING = true;
     }
 
     public static Point computeSize(DartCLabel widget, int wHint, int hHint, boolean changed) {
@@ -39,8 +39,10 @@ public class CLabelSizes {
 
         double width, height;
 
-        m.text = computeText(widget, m, LEFT.EMPTY_TEXT_AFFECTS_SIZING);
         m.image = computeImage(widget);
+        // With an image set, Dart's empty-text branch never runs (it shows only the image) --
+        // so empty text reserves a line only when there's no image to take that branch instead.
+        m.text = computeText(widget, m, LEFT.EMPTY_TEXT_AFFECTS_SIZING && widget.getImage() == null);
         width = wHint != SWT.DEFAULT ? wHint : Math.max((m.text.x() + m.image.x() + (m.image.x() > 0 && m.text.x() > 0 ? LEFT.IMAGE_SPACING : 0)) + ((m.text.x() > 0 || m.image.x() > 0) ? LEFT.HORIZONTAL_PADDING : 0), LEFT.MIN_WIDTH);
         boolean wraps = hasFlags(style, SWT.WRAP);
         if (hHint != SWT.DEFAULT) {
@@ -68,8 +70,11 @@ public class CLabelSizes {
     }
 
     private static PointD computeText(DartCLabel widget, Measure m, boolean emptyTextAffectsSizing) {
+        // Dart treats a null text field the same as "" (state.text ?? ''); match that here so an
+        // untouched (never setText()) CLabel sizes the same as one explicitly set to "".
         String text = widget.getText();
-        if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
+        if (text == null) text = "";
+        if (emptyTextAffectsSizing || !text.isEmpty()) {
             if (!Config.getConfigFlags().use_swt_fonts) {
                 m.textStyle = CLabelTheme.get().textStyle().withStyleFrom(widget.getFont());
             } else {

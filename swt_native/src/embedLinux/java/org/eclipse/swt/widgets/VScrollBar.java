@@ -17,6 +17,7 @@ public class VScrollBar extends VWidget {
         super(impl);
     }
 
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public boolean getEnabled() {
         return ((DartScrollBar) impl).getEnabled();
     }

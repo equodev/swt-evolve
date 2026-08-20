@@ -120,6 +120,7 @@ class VControl extends VWidget {
   bool? enabledEffective;
   VFont? font;
   VColor? foreground;
+  bool? hasOwnBackground;
   VMenu? menu;
   int? orientation;
   bool? redraw;

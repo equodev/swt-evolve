@@ -128,10 +128,11 @@ class _AbsoluteLayoutDelegate extends MultiChildLayoutDelegate {
   void performLayout(Size size) {
     for (var child in children.whereType<VControl>()) {
       final bounds = _boundsOf(child);
-      var w = bounds?.width.toDouble();
-      var h = bounds?.height.toDouble();
-      var x = bounds?.x ?? 0;
-      var y = bounds?.y ?? 0;
+      // Never-set bounds (SWT.DEFAULT/-1) must render at zero size, not an invalid tight constraint.
+      final w = (bounds != null && bounds.width > 0) ? bounds.width.toDouble() : 0.0;
+      final h = (bounds != null && bounds.height > 0) ? bounds.height.toDouble() : 0.0;
+      final x = bounds?.x ?? 0;
+      final y = bounds?.y ?? 0;
       layoutChild(child.id, BoxConstraints.tightFor(width: w, height: h));
       positionChild(child.id, Offset(x.toDouble(), y.toDouble()));
     }

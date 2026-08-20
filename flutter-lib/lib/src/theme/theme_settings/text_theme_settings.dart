@@ -151,17 +151,22 @@ InputDecoration getInputDecoration(
   
   final hintColor = widgetTheme.placeholderColor;
   
-  final normalBorderColor = widgetTheme.borderColor;
-  final focusedBorderColor = widgetTheme.focusedBorderColor;
   final disabledBorderColor = widgetTheme.disabledBorderColor;
   final borderWidth = widgetTheme.borderWidth;
-  final focusedBorderWidth = widgetTheme.focusedBorderWidth;
   final borderRadius = widgetTheme.borderRadius;
 
   final isSearch = hasStyle(state.style, SWT.SEARCH);
   final hasSearchIcon = isSearch && hasStyle(state.style, SWT.ICON_SEARCH);
   final hasCancelIcon = isSearch && hasStyle(state.style, SWT.ICON_CANCEL);
   final isBorderless = !hasStyle(state.style, SWT.BORDER);
+  // SWT.TRANSPARENT means "paint nothing of my own" (the same convention already honored for
+  // CLabel/Canvas/Composite) -- filled was unconditional here, keyed off nothing at all, so a
+  // TRANSPARENT-styled Text (e.g. this app's username/password fields) always painted an opaque
+  // fill anyway. state.background is Java's already-resolved (never-null) color regardless of
+  // whether this Control set one itself, so hasOwnBackground is what actually distinguishes "I
+  // have a real color of my own" from "this is just an inherited default".
+  final shouldFill = !hasStyle(state.style, SWT.TRANSPARENT) ||
+      (state.hasOwnBackground ?? false);
   final isReadOnly =
       !(state.editable ?? true) || hasStyle(state.style, SWT.READ_ONLY);
 
@@ -176,15 +181,24 @@ InputDecoration getInputDecoration(
   );
   final outlineBorder = OutlineInputBorder(
     borderRadius: BorderRadius.circular(borderRadius),
-    borderSide: BorderSide(color: normalBorderColor, width: borderWidth),
+    borderSide: focusAwareBorderSide(
+      focused: false,
+      color: widgetTheme.borderColor,
+      width: widgetTheme.borderWidth,
+      focusedColor: widgetTheme.focusedBorderColor,
+      focusedWidth: widgetTheme.focusedBorderWidth,
+    ),
   );
-  final outlineEnabled = OutlineInputBorder(
-    borderRadius: BorderRadius.circular(borderRadius),
-    borderSide: BorderSide(color: normalBorderColor, width: borderWidth),
-  );
+  final outlineEnabled = outlineBorder;
   final outlineFocused = OutlineInputBorder(
     borderRadius: BorderRadius.circular(borderRadius),
-    borderSide: BorderSide(color: focusedBorderColor, width: focusedBorderWidth),
+    borderSide: focusAwareBorderSide(
+      focused: true,
+      color: widgetTheme.borderColor,
+      width: widgetTheme.borderWidth,
+      focusedColor: widgetTheme.focusedBorderColor,
+      focusedWidth: widgetTheme.focusedBorderWidth,
+    ),
   );
   final outlineDisabled = OutlineInputBorder(
     borderRadius: BorderRadius.circular(borderRadius),
@@ -213,7 +227,7 @@ InputDecoration getInputDecoration(
     focusedBorder: isBorderless ? transparentBorder : outlineFocused,
     disabledBorder: isBorderless ? transparentBorder : outlineDisabled,
     fillColor: bgColor,
-    filled: true,
+    filled: shouldFill,
     counterText: '',
     hoverColor: isReadOnly ? widgetTheme.backgroundColor.withOpacity(0) : null,
   );

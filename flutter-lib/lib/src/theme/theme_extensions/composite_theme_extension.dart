@@ -16,6 +16,7 @@ class CompositeThemeExtension extends ThemeExtension<CompositeThemeExtension> wi
   final Color borderColor;
   final Color focusedBorderColor;
   final double borderWidth;
+  final double focusedBorderWidth;
   final double borderRadius;
   final double contentPadding;
 
@@ -35,6 +36,7 @@ class CompositeThemeExtension extends ThemeExtension<CompositeThemeExtension> wi
     required this.borderColor,
     required this.focusedBorderColor,
     required this.borderWidth,
+    required this.focusedBorderWidth,
     required this.borderRadius,
     required this.contentPadding,
     required this.workbenchAreaGapColor,

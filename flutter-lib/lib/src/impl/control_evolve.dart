@@ -20,6 +20,8 @@ import '../impl/key_mapping.dart';
 import '../impl/menu_evolve.dart';
 import '../theme/theme_extensions/tooltip_theme_extension.dart';
 import 'utils/dnd_utils.dart';
+import 'utils/hover_arbiter.dart';
+import 'utils/widget_utils.dart';
 import 'widget_config.dart';
 
 abstract class ControlImpl<T extends ControlSwt, V extends VControl>
@@ -72,6 +74,13 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   void initState() {
     super.initState();
     _resolveSentinelBounds(state);
+    HoverExclusivityArbiter.instance.register(this, (hovering) {
+      if (hovering) {
+        widget.sendMouseTrackMouseEnter(state, null);
+      } else {
+        widget.sendMouseTrackMouseExit(state, null);
+      }
+    });
     _publishBounds();
   }
 
@@ -107,6 +116,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   @override
   void dispose() {
     _hoverTimer?.cancel();
+    HoverExclusivityArbiter.instance.unregister(this);
     LiveBounds.forget(state.id, this);
     super.dispose();
   }
@@ -135,6 +145,14 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   }
 
   Color? getSwtBackgroundColor(BuildContext context) {
+    // Same guard as clabel_evolve.dart's stayTransparentForImage: an ancestor's own
+    // backgroundImage is already painted by that ancestor, so paint nothing here and let
+    // it show through -- otherwise state.background (an explicit color set somewhere up
+    // the chain, resolved regardless of any image) would flatly paint over it.
+    if (state.backgroundImage == null &&
+        ParentBackgroundScope.backgroundImageOf(context) != null) {
+      return null;
+    }
     var swtBackground = state.background;
     if (swtBackground != null) {
       return Color.fromARGB(
@@ -238,6 +256,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   }
 
   Widget wrap(Widget widget) {
+    final hoverDepth = ControlNestingScope.depthOf(context);
     if (wrapsWholeWidgetForDnd) {
       widget = wrapDnd(widget);
     }
@@ -344,10 +363,11 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         sendThrottledDragMove(state, event);
       },
       child: MouseRegion(
-        onEnter: (_) => this.widget.sendMouseTrackMouseEnter(state, null),
+        onEnter: (_) =>
+            HoverExclusivityArbiter.instance.setActive(this, hoverDepth, true),
         onExit: (_) {
           _hoverTimer?.cancel();
-          this.widget.sendMouseTrackMouseExit(state, null);
+          HoverExclusivityArbiter.instance.setActive(this, hoverDepth, false);
         },
         onHover: (e) {
           final event = VEvent()
@@ -360,7 +380,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       ),
     );
 
-    return blockWhenDisabled(widget);
+    return ControlNestingScope(
+      depth: hoverDepth + 1,
+      child: blockWhenDisabled(widget),
+    );
   }
 
   Widget applyMenu(Widget child) {

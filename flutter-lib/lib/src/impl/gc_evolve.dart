@@ -112,9 +112,11 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     final List<Shape> shapes = _drawer.shapes.isNotEmpty
         ? List.unmodifiable(_drawer.shapes)
         : List.unmodifiable(_snapshot);
+    // No shapes to paint over: skip the backdrop, it was redundantly occluding the
+    // Control/Canvas's own background (including any inherited backgroundImage).
     final Widget painted = CustomPaint(
       size: bounds,
-      painter: ScenePainter(canvasBg, shapes),
+      painter: ScenePainter(shapes.isEmpty ? Colors.transparent : canvasBg, shapes),
     );
     // Expose any text painted via the GC (drawString/drawText) as an aria-label so
     // canvas-drawn controls (e.g. custom buttons) are identifiable in devtools / E2E,

@@ -33,7 +33,9 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   @override
   void initState() {
     super.initState();
-    _selectedIndex = state.selection ?? 0;
+    // -1 means genuinely unselected (not Java's skipDefaultValues null=0); fall back to item 0.
+    final selection = state.selection;
+    _selectedIndex = (selection != null && selection >= 0) ? selection : 0;
   }
 
   @override
@@ -68,8 +70,9 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
       if (_selectedIndex >= itemCount) {
         // _selectedIndex is out of range after tab removal, adjust it
         _selectedIndex = itemCount - 1;
-      } else if (state.selection == null && _selectedIndex != 0) {
-        // state.selection=null means Java has selection=0, update if different
+      } else if ((state.selection == null || state.selection! < 0) &&
+          _selectedIndex != 0) {
+        // See initState: null (skipDefaultValues) and -1 (genuine) both fall back to item 0.
         _selectedIndex = 0;
       }
     }

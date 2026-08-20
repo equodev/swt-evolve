@@ -28,7 +28,7 @@ public class VControl extends VWidget {
     }
 
     public Color getBackground() {
-        return ((DartControl) impl).getBackground();
+        return ((DartControl) impl).getExplicitBackground();
     }
 
     public void setBackground(Color value) {
@@ -101,6 +101,7 @@ public class VControl extends VWidget {
     public void setDropTargetId(Long value) {
     }
 
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public Boolean getEnabled() {
         return ((DartControl) impl).getEnabled();
     }
@@ -133,6 +134,13 @@ public class VControl extends VWidget {
 
     public void setForeground(Color value) {
         ((DartControl) impl).setForeground(value);
+    }
+
+    public boolean getHasOwnBackground() {
+        return ((DartControl) impl).getHasOwnBackground();
+    }
+
+    public void setHasOwnBackground(boolean value) {
     }
 
     public Menu getMenu() {

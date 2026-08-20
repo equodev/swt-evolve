@@ -3006,6 +3006,10 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
 
     boolean foregroundSet;
 
+    boolean hasOwnBackground;
+
+    boolean hasOwnBackgroundSet;
+
     Object layoutData;
 
     boolean layoutDataSet;
@@ -3092,6 +3096,8 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
             newImpl.setFont(getFont());
         if (foregroundSet)
             newImpl.setForeground(getForeground());
+        //newImpl.hasOwnBackground = hasOwnBackground;
+        ;
         if (layoutDataSet)
             newImpl.setLayoutData(getLayoutData());
         if (locationSet)

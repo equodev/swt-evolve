@@ -1875,17 +1875,16 @@ class WidgetMeasurer {
             : naturalBase;
 
         if (widgetType == 'Text') {
+          // SWT's computeSize(wHint, hHint) contract: once wHint is given (e.g. GridLayout
+          // handing this Text its already-decided column width), the returned width IS wHint --
+          // not wHint plus more padding on top. Adding HORIZONTAL_PADDING here (previously done
+          // for single-line Text only) inflated every Text past whatever width its layout had
+          // already settled on (e.g. GridData's minimumWidth), independent of the actual text
+          // content. Match the general (non-Text) branch below instead.
           buffer.writeln('${indent}double naturalWidth = $naturalExpr;');
           buffer.writeln(
-            '${indent}boolean singleLine = !hasFlags(style, SWT.MULTI) && !hasFlags(style, SWT.WRAP);',
+            '${indent}width = wHint != SWT.DEFAULT ? wHint : naturalWidth;',
           );
-          buffer.writeln('${indent}if (wHint != SWT.DEFAULT) {');
-          buffer.writeln(
-            '${indent}    width = singleLine ? wHint + $styleName.HORIZONTAL_PADDING : wHint;',
-          );
-          buffer.writeln('${indent}} else {');
-          buffer.writeln('${indent}    width = naturalWidth;');
-          buffer.writeln('${indent}}');
         } else {
           buffer.writeln(
             '${indent}width = wHint != SWT.DEFAULT ? wHint : $naturalExpr;',

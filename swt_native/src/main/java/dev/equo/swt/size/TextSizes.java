@@ -38,12 +38,7 @@ public class TextSizes {
 
         m.text = computeText(widget, m, LEFT.EMPTY_TEXT_AFFECTS_SIZING);
         double naturalWidth = Math.max(m.text.x() + (m.text.x() > 0 ? LEFT.HORIZONTAL_PADDING : 0), LEFT.MIN_WIDTH);
-        boolean singleLine = !hasFlags(style, SWT.MULTI) && !hasFlags(style, SWT.WRAP);
-        if (wHint != SWT.DEFAULT) {
-            width = singleLine ? wHint + LEFT.HORIZONTAL_PADDING : wHint;
-        } else {
-            width = naturalWidth;
-        }
+        width = wHint != SWT.DEFAULT ? wHint : naturalWidth;
         height = hHint != SWT.DEFAULT ? hHint : Math.max(m.text.y() + LEFT.VERTICAL_PADDING, LEFT.MIN_HEIGHT);
 
         m.widget = new Point((int) Math.ceil(width), (int) Math.ceil(height));

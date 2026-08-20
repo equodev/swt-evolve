@@ -84,8 +84,10 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
   ) {
     final text = stripAccelerators(state.text);
     final textAlign = getTextAlignFromStyle(state.style, widgetTheme.textAlign);
-    final backgroundColor = ParentBackgroundScope.backgroundOf(context) ??
-        getBackgroundColor(background: state.background, defaultColor: widgetTheme.backgroundColor);
+    // state.background already resolves inheritance (DartControl.getExplicitBackground(), Java
+    // side); ParentBackgroundScope would unconditionally shadow it with a stale ancestor value.
+    final backgroundColor =
+        getBackgroundColor(background: state.background, defaultColor: null);
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = getConstraintsFromBounds(state.bounds);
 

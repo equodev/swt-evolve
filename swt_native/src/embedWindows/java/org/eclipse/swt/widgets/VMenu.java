@@ -29,6 +29,7 @@ public class VMenu extends VWidget {
         ((DartMenu) impl).defaultItem = value;
     }
 
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public boolean getEnabled() {
         return ((DartMenu) impl).getEnabled();
     }

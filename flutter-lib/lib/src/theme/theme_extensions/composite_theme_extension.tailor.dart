@@ -16,6 +16,7 @@ mixin _$CompositeThemeExtensionTailorMixin
   Color get borderColor;
   Color get focusedBorderColor;
   double get borderWidth;
+  double get focusedBorderWidth;
   double get borderRadius;
   double get contentPadding;
   Color get workbenchAreaGapColor;
@@ -35,6 +36,7 @@ mixin _$CompositeThemeExtensionTailorMixin
     Color? borderColor,
     Color? focusedBorderColor,
     double? borderWidth,
+    double? focusedBorderWidth,
     double? borderRadius,
     double? contentPadding,
     Color? workbenchAreaGapColor,
@@ -54,6 +56,7 @@ mixin _$CompositeThemeExtensionTailorMixin
       borderColor: borderColor ?? this.borderColor,
       focusedBorderColor: focusedBorderColor ?? this.focusedBorderColor,
       borderWidth: borderWidth ?? this.borderWidth,
+      focusedBorderWidth: focusedBorderWidth ?? this.focusedBorderWidth,
       borderRadius: borderRadius ?? this.borderRadius,
       contentPadding: contentPadding ?? this.contentPadding,
       workbenchAreaGapColor:
@@ -91,6 +94,9 @@ mixin _$CompositeThemeExtensionTailorMixin
         t,
       )!,
       borderWidth: t < 0.5 ? borderWidth : other.borderWidth,
+      focusedBorderWidth: t < 0.5
+          ? focusedBorderWidth
+          : other.focusedBorderWidth,
       borderRadius: t < 0.5 ? borderRadius : other.borderRadius,
       contentPadding: t < 0.5 ? contentPadding : other.contentPadding,
       workbenchAreaGapColor: Color.lerp(
@@ -143,6 +149,10 @@ mixin _$CompositeThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               borderWidth,
               other.borderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              focusedBorderWidth,
+              other.focusedBorderWidth,
             ) &&
             const DeepCollectionEquality().equals(
               borderRadius,
@@ -199,6 +209,7 @@ mixin _$CompositeThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(borderColor),
       const DeepCollectionEquality().hash(focusedBorderColor),
       const DeepCollectionEquality().hash(borderWidth),
+      const DeepCollectionEquality().hash(focusedBorderWidth),
       const DeepCollectionEquality().hash(borderRadius),
       const DeepCollectionEquality().hash(contentPadding),
       const DeepCollectionEquality().hash(workbenchAreaGapColor),
@@ -223,6 +234,7 @@ extension CompositeThemeExtensionBuildContextProps on BuildContext {
   Color get borderColor => compositeThemeExtension.borderColor;
   Color get focusedBorderColor => compositeThemeExtension.focusedBorderColor;
   double get borderWidth => compositeThemeExtension.borderWidth;
+  double get focusedBorderWidth => compositeThemeExtension.focusedBorderWidth;
   double get borderRadius => compositeThemeExtension.borderRadius;
   double get contentPadding => compositeThemeExtension.contentPadding;
   Color get workbenchAreaGapColor =>

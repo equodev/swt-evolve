@@ -35,6 +35,7 @@ public class VMenuItem extends VItem {
         ((DartMenuItem) impl).accelerator = value;
     }
 
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public boolean getEnabled() {
         return ((DartMenuItem) impl).getEnabled();
     }

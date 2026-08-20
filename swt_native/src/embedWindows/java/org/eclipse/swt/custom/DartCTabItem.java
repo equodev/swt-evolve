@@ -396,6 +396,8 @@ public class DartCTabItem extends DartItem implements ICTabItem {
             if (index == parent.getSelectionIndex()) {
                 this.control.setBounds(parent.getClientArea());
                 this.control.setVisible(true);
+            } else if (parent.getSelectionIndex() == -1) {
+                ((DartCTabFolder) parent.getImpl()).setSelection(index);
             } else {
                 int selectedIndex = parent.getSelectionIndex();
                 Control selectedControl = null;

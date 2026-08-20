@@ -10,14 +10,17 @@ import '../gen/composite.dart';
 import '../gen/control.dart';
 import '../gen/event.dart';
 import '../gen/gc.dart';
+import '../gen/image.dart';
 import '../gen/scrollbar.dart';
 import '../gen/swt.dart';
 import '../gen/widgets.dart';
 import '../nolayout.dart';
+import '../styles.dart';
 import 'composite_evolve.dart';
 import '../custom/toolbar_composite.dart';
 import 'color_utils.dart';
 import 'utils/double_tap_detector.dart';
+import 'utils/image_utils.dart';
 import 'utils/widget_utils.dart';
 import '../theme/theme_extensions/canvas_theme_extension.dart';
 import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
@@ -46,6 +49,33 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       )!;
   Color get fg => _theme.foregroundColor;
   Color gcBg = Colors.transparent;
+
+  /// Paints [bg] plus our own tiled backgroundImage; stays transparent for an inherited
+  /// one, already painted by the ancestor that owns it (ShellImpl.buildComposite).
+  Widget _paintBackground(Widget child) {
+    // SWT.TRANSPARENT with no background of its own (e.g. a toolbar-icon Canvas): native SWT
+    // paints nothing at all here, so whatever's behind it shows through live -- including a
+    // later repaint, like a hover highlight landing on an ancestor. Painting `bg` unconditionally
+    // (state.background already resolves to an inherited ancestor color via
+    // DartControl.getExplicitBackground()) would instead show a static snapshot of that color,
+    // fragmenting what should be one seamless region into visibly distinct tiles.
+    // hasOwnBackground defaults to false (the serializer omits default values from the
+    // wire), so a missing/null value here means "no", not "unknown" -- treat it as false.
+    if (state.style.has(SWT.TRANSPARENT) && !(state.hasOwnBackground ?? false)) {
+      return child;
+    }
+    if (state.backgroundImage == null &&
+        ParentBackgroundScope.peekBackgroundImageOf(context) != null) {
+      return child;
+    }
+    final decorationImage = ImageUtils.buildTiledBackgroundImage(state.backgroundImage);
+    // No image: stay transparent, like a GC-only leaf (e.g. a JFace ruler) always did.
+    if (decorationImage == null) return child;
+    return DecoratedBox(
+      decoration: BoxDecoration(color: bg, image: decorationImage),
+      child: child,
+    );
+  }
 
   final int _alpha = 255;
   Rect? clipRect;
@@ -148,7 +178,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
           height: widgetTheme.defaultHeight,
         );
       }
-      base = wrap(content);
+      base = wrap(_paintBackground(content));
     }
 
     if (_localVScrollPx != 0.0 || _localHScrollPx != 0.0) {
@@ -254,14 +284,27 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   Widget buildComposite() {
     final children = state.children;
     if (children == null || children.isEmpty) {
-      final content = wrap(ColoredBox(color: bg, child: const SizedBox.expand()));
+      final content = wrap(_paintBackground(const SizedBox.expand()));
       return wrapCompositeInteractionChrome(this, content);
     }
-    final rawLayout = NoLayout(children: children, composite: state);
+    // Re-scopes background inheritance for this Canvas's own children (mirrors
+    // CompositeImpl.buildComposite()): matches SWT's per-Composite backgroundMode instead of
+    // leaving a distant ancestor's ParentBackgroundScope visible unchanged straight through.
+    final rawLayout = wrapBackgroundInheritanceScope(
+      context: context,
+      backgroundMode: state.backgroundMode,
+      effectiveBackground: bg,
+      backgroundImage: state.backgroundImage,
+      child: NoLayout(children: children, composite: state),
+    );
+    // Paint this Canvas's own resolved background behind its children (mirrors
+    // CompositeImpl.buildComposite()) instead of a hardcoded transparent fill -- a
+    // RowLayout with gaps, or SWT.TRANSPARENT children that paint nothing of their own,
+    // would otherwise show whatever's behind the whole widget instead of this Canvas's
+    // actual color, fragmenting what should read as one seamless region.
     return wrapCompositeInteractionChrome(
       this,
-      wrapWithGCOverlay(
-          ColoredBox(color: Colors.transparent, child: rawLayout)),
+      wrapWithGCOverlay(_paintBackground(rawLayout)),
     );
   }
 

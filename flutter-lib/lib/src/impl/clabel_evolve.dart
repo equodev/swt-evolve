@@ -119,10 +119,16 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
       widgetTheme.textAlign,
     );
     final parentBg = ParentBackgroundScope.backgroundOf(context);
-    final backgroundColor = getBackgroundColor(
-      background: state.background,
-      defaultColor: parentBg ?? widgetTheme.backgroundColor,
-    );
+    // Gate on backgroundImage (not background, which Java always resolves non-null):
+    // stay transparent so an inherited image, already painted by the ancestor, shows through.
+    final stayTransparentForImage = state.backgroundImage == null &&
+        ParentBackgroundScope.backgroundImageOf(context) != null;
+    final backgroundColor = stayTransparentForImage
+        ? null
+        : getBackgroundColor(
+            background: state.background,
+            defaultColor: parentBg ?? widgetTheme.backgroundColor,
+          );
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = getConstraintsFromBounds(state.bounds);
 
@@ -256,8 +262,12 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
               style: textStyle,
             );
     } else {
-      // Empty CLabel
-      return const SizedBox.shrink();
+      // Empty CLabel: still reserves one line of text height, matching native SWT (a CLabel is
+      // a text-bearing widget and stays laid out at font-line height even with no text set yet,
+      // e.g. a label column reused as a spacer/divider next to a field). SizedBox.shrink() here
+      // collapsed to just the margins, in turn undersizing CLabelSizes.computeSize() (which is
+      // measured off this same render) and losing the whole row's visual height.
+      return Text('', style: textStyle);
     }
   }
 

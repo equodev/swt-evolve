@@ -14,6 +14,7 @@ import '../impl/color_utils.dart';
 import '../impl/colordialog_evolve.dart';
 import '../impl/decorations_evolve.dart';
 import '../impl/messagebox_evolve.dart';
+import '../impl/utils/image_utils.dart';
 import '../impl/utils/widget_utils.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
 import 'utils/pointer.dart';
@@ -165,6 +166,33 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
   bool get _showFloatingBorder => !_noTrim;
   bool get _isDraggable =>
       _showTitleBar && !_noMove && !_isSheet && !_maximized && state.fullScreen != true;
+
+  /// Paints the shell's own background/backgroundImage, and publishes it via
+  /// ParentBackgroundScope for INHERIT_DEFAULT/FORCE descendants that don't set their own.
+  @override
+  Widget buildComposite() {
+    final built = super.buildComposite();
+
+    final ownColor = state.background != null ? colorFromVColor(state.background) : null;
+    final tiledImage = ImageUtils.buildTiledBackgroundImage(state.backgroundImage);
+
+    Widget painted = built;
+    if (ownColor != null || tiledImage != null) {
+      painted = DecoratedBox(
+        decoration: BoxDecoration(color: ownColor, image: tiledImage),
+        child: built,
+      );
+    }
+
+    final inheritable = (state.backgroundMode ?? SWT.INHERIT_NONE) != SWT.INHERIT_NONE;
+    if (!inheritable || (ownColor == null && tiledImage == null)) return painted;
+
+    return ParentBackgroundScope(
+      background: ownColor,
+      backgroundImage: state.backgroundImage,
+      child: painted,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

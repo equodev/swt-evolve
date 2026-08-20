@@ -238,3 +238,29 @@ fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = f
 
 registerFlutterExample("runWebExample", if (chromiumMode) "chromium" else "web", webOnlyAware = true)
 registerFlutterExample("runDeskExample", "desktop")
+
+// Embedded: the per-widget native-SWT scenario (embed-<os>-<arch>.jar) -- a real native SWT shell
+// that renders Equo-enabled widgets (per Config.equoEnabled) through Flutter and everything else
+// through native SWT, same backend eclipse_run swaps into a real RCP app. Unlike SnippetCapturer
+// (:swt_eclipse_examples), this keeps the window open for interactive use instead of
+// screenshotting and exiting after 1s.
+tasks.register<JavaExec>("runEmbedExample") {
+    group = "examples"
+    description = "Run an example against the embedded (per-widget native-SWT) backend. " +
+            "Usage: ./gradlew :examples:runEmbedExample -PmainClass=dev.equo.ButtonSnippet"
+
+    val jarTaskName = "embed-${currentPlatform}Jar"
+    val jar = project(":swt_native").tasks.named<Jar>(jarTaskName)
+    dependsOn(jar)
+    val runtimeClasspathWithoutSwtNative = configurations["runtimeClasspath"].copyRecursive { dep ->
+        !(dep is ProjectDependency && dep.path == ":swt_native")
+    }
+    classpath = files(jar.map { it.archiveFile }) +
+            sourceSets["main"].output +
+            runtimeClasspathWithoutSwtNative
+    mainClass.set(project.findProperty("mainClass")?.toString() ?: "dev.equo.ButtonSnippet")
+    systemProperty("dev.equo.swt.crashReport.disabled", "true")
+
+    if (System.getProperty("test.debug") != null)
+        jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
+}

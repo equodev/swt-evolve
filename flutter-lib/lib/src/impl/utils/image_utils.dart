@@ -14,6 +14,28 @@ class ImageUtils {
   static final Map<String, Widget> _imageCache = {};
   // Cache for async image loading Futures to prevent recreation on every rebuild
   static final Map<String, Future<Widget?>> _futureCache = {};
+  static final Map<String, DecorationImage> _backgroundImageCache = {};
+
+  /// SWT tiles a Control's backgroundImage at native size (unlike buildVImage's
+  /// BoxFit.contain path for icons/labels).
+  static DecorationImage? buildTiledBackgroundImage(VImage? image) {
+    final data = image?.imageData?.data;
+    if (data == null) return null;
+
+    final cacheKey = 'tiled-${stableImageKey(image)}';
+    final cached = _backgroundImageCache[cacheKey];
+    if (cached != null) return cached;
+
+    final decorationImage = DecorationImage(
+      image: MemoryImage(Uint8List.fromList(data)),
+      repeat: ImageRepeat.repeat,
+      alignment: Alignment.topLeft,
+      // Without an explicit fit, repeat defaults to BoxFit.scaleDown per tile.
+      fit: BoxFit.none,
+    );
+    _backgroundImageCache[cacheKey] = decorationImage;
+    return decorationImage;
+  }
 
   // ui.Image instances rendered by GCDrawer.standalone, keyed by the remoteRef Java holds so a
   // later drawImage() can reuse them instead of round-tripping PNG bytes (see GCImageDrawer.java).
@@ -614,6 +636,7 @@ class ImageUtils {
     _iconCache.clear();
     _imageCache.clear();
     _futureCache.clear();
+    _backgroundImageCache.clear();
   }
 
   static Map<String, int> getCacheStats() => {

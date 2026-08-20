@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import '../nolayout.dart';
 import '../gen/composite.dart';
+import '../gen/decorations.dart';
 import '../gen/event.dart';
 import '../gen/gc.dart';
+import '../gen/swt.dart';
 import '../gen/widget.dart';
+import '../styles.dart';
 import '../impl/gc_evolve.dart';
 import '../impl/scrollable_evolve.dart';
 import '../custom/toolbar_composite.dart';
 import 'utils/double_tap_detector.dart';
+import 'utils/hover_arbiter.dart';
+import 'utils/image_utils.dart';
 import 'utils/widget_utils.dart';
 import '../theme/theme_extensions/composite_theme_extension.dart';
 import '../theme/theme_settings/composite_theme_settings.dart';
@@ -34,6 +39,7 @@ bool _hitsAnyChild(VComposite state, Offset pos) {
 
 Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
   final state = impl.state;
+  final hoverDepth = ControlNestingScope.depthOf(impl.context);
 
   if (state.menu != null && (state.children?.isNotEmpty ?? false)) {
     content = impl.applyMenu(content);
@@ -49,6 +55,12 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
 
   Widget listener = MouseRegion(
     cursor: cursor,
+    // A childless Composite reaches ControlImpl.wrap() (which already sends these); this
+    // "has children" path bypasses it, so MouseEnter/MouseExit never fired here before.
+    onEnter: (_) =>
+        HoverExclusivityArbiter.instance.setActive(impl, hoverDepth, true),
+    onExit: (_) =>
+        HoverExclusivityArbiter.instance.setActive(impl, hoverDepth, false),
     onHover: (e) {
       final event = VEvent()
         ..x = e.localPosition.dx.round()
@@ -99,14 +111,44 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
           ..y = e.localPosition.dy.round();
         impl.sendThrottledDragMove(state, event);
       },
-      child: content,
+      child: ControlNestingScope(depth: hoverDepth + 1, child: content),
     ),
   );
+
+  Widget bordered = listener;
+  // A childless Composite reaches ControlImpl.wrap() (which already applies this); this
+  // "has children" path bypasses it, so SWT.BORDER was never drawn here before -- a real, general
+  // gap (SWT.BORDER is a universal Control style, not Text-specific), so this applies to any
+  // bordered Composite, not just this app's password-field container. No fill: a
+  // TRANSPARENT-styled Composite paints nothing of its own, same convention as Text's
+  // SWT.TRANSPARENT handling -- just the outline. Uses CompositeThemeExtension's own border
+  // tokens (not Text's) so a generic Composite never depends on a different widget type's theme.
+  // Excludes Decorations (Shell): there SWT.BORDER means a resizable OS window frame, already
+  // handled by ShellImpl's own chrome -- not an internal outline to draw on top of it.
+  if (state.style.has(SWT.BORDER) && state is! VDecorations) {
+    final widgetTheme = Theme.of(impl.context).extension<CompositeThemeExtension>()!;
+    // Plain, static outline -- not focus-aware. Text's focusedBorder swap belongs to Text alone:
+    // its FocusNode is the literal caret target. A Composite's border sits on an *ancestor* of
+    // whatever descendant controls it contains, and Flutter's Focus.of(context).hasFocus is true
+    // whenever ANY descendant holds focus -- so a focus-aware swap here would light up blue for
+    // as long as focus is anywhere inside the panel (a button click, a nested field), not because
+    // the panel itself is "focused" the way a Text field is.
+    bordered = Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        border: Border.fromBorderSide(
+          BorderSide(color: widgetTheme.borderColor, width: widgetTheme.borderWidth),
+        ),
+        borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
+      ),
+      child: bordered,
+    );
+  }
 
   // The GC wrap is applied by each build path exactly once, never here: choosing it on
   // gcOverlay moved the Stack across this chrome the moment the overlay mounted and set it,
   // which remounted every descendant.
-  return listener;
+  return bordered;
 }
 
 class CompositeImpl<T extends CompositeSwt, V extends VComposite>
@@ -148,29 +190,56 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     final enabled = state.enabled ?? true;
     final children = state.children;
 
-    final backgroundColor = ParentBackgroundScope.backgroundOf(context) ??
-        getCompositeBackgroundColor(state, widgetTheme, isEnabled: enabled);
+    // state.background already resolves inheritance (DartControl.getBackground(), Java side)
+    // and always wins when set; ParentBackgroundScope.backgroundOf only fills in the default
+    // for a Composite with no color of its own (e.g. a control hosted on a ToolBar band).
+    final backgroundColor = getCompositeBackgroundColor(
+      state,
+      widgetTheme,
+      isEnabled: enabled,
+      parentBackground: ParentBackgroundScope.backgroundOf(context),
+    );
+    final decorationImage = ImageUtils.buildTiledBackgroundImage(state.backgroundImage);
+
+    Widget paintBackground(Widget child) {
+      // Inherited backgroundImage is already painted once by the ancestor that owns it
+      // (ShellImpl.buildComposite); stay transparent so it isn't occluded by our own fill.
+      if (state.backgroundImage == null &&
+          ParentBackgroundScope.backgroundImageOf(context) != null) {
+        return child;
+      }
+      if (decorationImage == null) return ColoredBox(color: backgroundColor, child: child);
+      return DecoratedBox(
+        decoration: BoxDecoration(color: backgroundColor, image: decorationImage),
+        child: child,
+      );
+    }
 
     if (children == null || children.isEmpty) {
-      final content = wrap(
-        ColoredBox(color: backgroundColor, child: const SizedBox.expand()),
-      );
+      final content = wrap(paintBackground(const SizedBox.expand()));
       return wrapCompositeInteractionChrome(this, content);
     }
 
-    final rawLayout = NoLayout(children: children, composite: state);
+    // Re-scopes background inheritance for this composite's own children instead of leaving a
+    // distant ancestor's ParentBackgroundScope (e.g. a Shell's) visible unchanged straight
+    // through -- matches SWT's per-Composite backgroundMode, where INHERIT_NONE (the default)
+    // stops a parent's color from reaching grandchildren that never opted in.
+    final rawLayout = wrapBackgroundInheritanceScope(
+      context: context,
+      backgroundMode: state.backgroundMode,
+      effectiveBackground: backgroundColor,
+      backgroundImage: state.backgroundImage,
+      child: NoLayout(children: children, composite: state),
+    );
     if (state.visible != null && !state.visible!) {
       return Visibility(visible: false, child: rawLayout);
     }
 
     final Widget inner;
     if (isPanelChild) {
-      inner = ColoredBox(
-        color: backgroundColor,
-        child: SashPanelMarker(active: false, child: rawLayout),
-      );
+      inner = paintBackground(SashPanelMarker(active: false, child: rawLayout));
     } else {
-      inner = ColoredBox(color: backgroundColor, child: rawLayout);
+      inner = paintBackground(rawLayout);
     }
 
     return blockWhenDisabled(

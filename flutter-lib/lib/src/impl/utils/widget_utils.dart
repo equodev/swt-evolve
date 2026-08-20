@@ -3,6 +3,7 @@ import '../../gen/rectangle.dart';
 import '../../gen/swt.dart';
 import '../../gen/color.dart';
 import '../../gen/font.dart';
+import '../../gen/image.dart';
 import '../../impl/color_utils.dart';
 import '../../impl/widget_config.dart';
 import 'font_utils.dart';
@@ -10,6 +11,22 @@ import 'font_utils.dart';
 /// Checks if a style flag is set in the given style value
 bool hasStyle(int style, int flag) {
   return (style & flag) != 0;
+}
+
+/// The BorderSide a bordered, focus-aware Control's outline uses, normal or focused. Shared so
+/// unrelated widget types (a Text field's own Material decoration, a Composite drawing SWT.BORDER
+/// itself) that each want this same "swap color/width when focused" behavior stay in sync without
+/// one borrowing the other's theme -- each caller supplies its own theme's values.
+BorderSide focusAwareBorderSide({
+  required bool focused,
+  required Color color,
+  required double width,
+  required Color focusedColor,
+  double? focusedWidth,
+}) {
+  return focused
+      ? BorderSide(color: focusedColor, width: focusedWidth ?? width)
+      : BorderSide(color: color, width: width);
 }
 
 /// Checks if a VRectangle has valid bounds (non-null and positive dimensions)
@@ -182,17 +199,77 @@ EdgeInsets adjustPaddingForAlignment({
 
 class ParentBackgroundScope extends InheritedWidget {
   final Color? background;
+  final VImage? backgroundImage;
 
   const ParentBackgroundScope({
     super.key,
     required this.background,
+    this.backgroundImage,
     required super.child,
   });
 
   static Color? backgroundOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<ParentBackgroundScope>()?.background;
 
+  static VImage? backgroundImageOf(BuildContext context) => context
+      .dependOnInheritedWidgetOfExactType<ParentBackgroundScope>()
+      ?.backgroundImage;
+
+  // Same as backgroundImageOf but doesn't subscribe -- for a one-time build-time read.
+  static VImage? peekBackgroundImageOf(BuildContext context) {
+    final element = context.getElementForInheritedWidgetOfExactType<ParentBackgroundScope>();
+    return (element?.widget as ParentBackgroundScope?)?.backgroundImage;
+  }
+
   @override
   bool updateShouldNotify(ParentBackgroundScope oldWidget) =>
-      background != oldWidget.background;
+      background != oldWidget.background ||
+      backgroundImage != oldWidget.backgroundImage;
+}
+
+/// Re-publishes background *color* inheritance for a Composite/Canvas's own children, mirroring
+/// SWT's per-Composite backgroundMode instead of leaving a single ancestor's ParentBackgroundScope
+/// (e.g. a Shell's) visible unchanged to every descendant no matter how many plain composites sit
+/// in between. INHERIT_NONE (the default) stops the color here, so a composite that never opted in
+/// doesn't leak a distant ancestor's color to its own children; INHERIT_DEFAULT/FORCE passes this
+/// composite's own effective color onward instead.
+///
+/// backgroundImage is a different concern -- purely "don't repaint/occlude what an ancestor
+/// already tiled" -- and is not gated by backgroundMode: it always keeps propagating (this
+/// composite's own image if it set one, otherwise whatever was already in scope), so a plain,
+/// INHERIT_NONE composite sitting between an image-painting Shell and a deeper transparent child
+/// doesn't block that child from seeing the image and staying transparent for it.
+Widget wrapBackgroundInheritanceScope({
+  required BuildContext context,
+  required int? backgroundMode,
+  required Color effectiveBackground,
+  required VImage? backgroundImage,
+  required Widget child,
+}) {
+  final inheritable = (backgroundMode ?? SWT.INHERIT_NONE) != SWT.INHERIT_NONE;
+  return ParentBackgroundScope(
+    background: inheritable ? effectiveBackground : null,
+    backgroundImage: backgroundImage ?? ParentBackgroundScope.backgroundImageOf(context),
+    child: child,
+  );
+}
+
+/// Depth of the nearest Control ancestor in the SWT widget tree (root Shell
+/// is 0), used by HoverExclusivityArbiter to pick the deepest hovered one.
+class ControlNestingScope extends InheritedWidget {
+  final int depth;
+
+  const ControlNestingScope({
+    super.key,
+    required this.depth,
+    required super.child,
+  });
+
+  static int depthOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ControlNestingScope>()?.depth ??
+      0;
+
+  @override
+  bool updateShouldNotify(ControlNestingScope oldWidget) =>
+      depth != oldWidget.depth;
 }

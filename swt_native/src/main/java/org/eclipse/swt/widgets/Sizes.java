@@ -192,6 +192,9 @@ public class Sizes {
         if (hHint != SWT.DEFAULT)
             size.y = hHint;
         Rectangle trim = composite.computeTrim(0, 0, size.x, size.y);
+        // Matches SwtComposite.computeSize(): halve the DEFAULT_HEIGHT fallback's trim.
+        if (size.y == 64)
+            trim.height = 32;
         return new Point(trim.width, trim.height);
     }
 
@@ -781,6 +784,16 @@ public class Sizes {
             return new Rectangle(0, 0, b.width, b.height - 32);
         } else {
             return new Rectangle(0, 32, b.width, b.height - 32);
+        }
+    }
+
+    // Inverse of getClientArea(DartCTabFolder): adds the tab strip back on top, matching native.
+    public static Rectangle computeTrim(DartCTabFolder widget, int x, int y, int width, int height) {
+        boolean onBottom = widget.getTabPosition() == SWT.BOTTOM;
+        if (onBottom) {
+            return new Rectangle(x, y, width, height + 32);
+        } else {
+            return new Rectangle(x, y - 32, width, height + 32);
         }
     }
 

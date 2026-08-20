@@ -48,6 +48,7 @@ public class VToolItem extends VItem {
         ((DartToolItem) impl).disabledImage = value;
     }
 
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public boolean getEnabled() {
         return ((DartToolItem) impl).getEnabled();
     }

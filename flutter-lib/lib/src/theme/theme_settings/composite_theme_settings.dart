@@ -39,10 +39,21 @@ CompositeThemeExtension _getCompositeTheme({
   return CompositeThemeExtension(
     backgroundColor: colorScheme.surface,
     disabledBackgroundColor: colorScheme.surfaceVariant,
-    borderColor: colorScheme.outline,
-    focusedBorderColor: colorScheme.primary,
-    borderWidth: 0.0,
-    borderRadius: 0.0,
+    // Matches TextThemeExtension's own borderColor treatment (same colorScheme.outline token,
+    // same dark-mode dimming) -- a SWT.BORDER Composite and a SWT.BORDER Text should read as the
+    // same outline weight, not one full-strength and the other faded.
+    borderColor: isDark
+        ? colorScheme.outline.withOpacity(0.38)
+        : colorSchemeExtension.surfaceBorderEnabled,
+    focusedBorderColor: colorSchemeExtension.surfaceBorderFocused,
+    // A SWT.BORDER Composite draws this outline (see composite_evolve.dart); 0-width/0-radius
+    // would have made that border invisible and square. Mirrors the existing panelBorderWidth/
+    // panelBorderRadius values below, which already establish this theme's visible-border weight.
+    borderWidth: 1.0,
+    // Matches TextThemeExtension's own focusedBorderWidth (2.0): a SWT.BORDER Composite's
+    // outline should thicken on focus by the same amount a SWT.BORDER Text's does.
+    focusedBorderWidth: 2.0,
+    borderRadius: 4.0,
     contentPadding: 0.0,
     workbenchAreaGapColor: colorSchemeExtension.surfaceToolbar,
     panelBorderColor: colorSchemeExtension.compositePanelBorderColor,
@@ -61,14 +72,14 @@ Color getCompositeBackgroundColor(
   CompositeThemeExtension widgetTheme, {
   required bool isEnabled,
   bool isMain = false,
+  Color? parentBackground,
 }) {
   if (!isEnabled) {
     return widgetTheme.disabledBackgroundColor;
   }
 
-  final defaultColor = isMain
-      ? widgetTheme.workbenchAreaGapColor
-      : widgetTheme.backgroundColor;
+  final defaultColor = parentBackground ??
+      (isMain ? widgetTheme.workbenchAreaGapColor : widgetTheme.backgroundColor);
 
   return getBackgroundColor(
     background: state.background,

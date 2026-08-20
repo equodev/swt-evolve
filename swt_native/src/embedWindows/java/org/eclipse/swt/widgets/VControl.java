@@ -103,6 +103,7 @@ public class VControl extends VWidget {
     public void setDropTargetId(Long value) {
     }
 
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public Boolean getEnabled() {
         return ((DartControl) impl).getEnabled();
     }
@@ -137,6 +138,13 @@ public class VControl extends VWidget {
 
     public void setForeground(Color value) {
         ((DartControl) impl).setForeground(value);
+    }
+
+    public boolean getHasOwnBackground() {
+        return true;
+    }
+
+    public void setHasOwnBackground(boolean value) {
     }
 
     public Menu getMenu() {
