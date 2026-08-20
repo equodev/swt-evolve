@@ -1626,6 +1626,17 @@ class TextShape extends Shape {
     return tpHeight > lh ? tpHeight : lh;
   }
 
+  // The single wrap policy for every per-line layout: a line wraps at the canvas
+  // width only when wordWrap is on, matching what draw() paints. A site that wraps
+  // on its own measures visual rows the paint never drew, so its running Y outpaces
+  // the painted one and hit-tests resolve above the glyphs that were clicked.
+  double _lineMaxWidth(int indent, [Size? canvas]) {
+    final size = canvas ?? canvasSize;
+    if (wordWrap != true || size == null) return double.infinity;
+    final maxW = size.width - off.dx - indent.toDouble();
+    return maxW > 0 ? maxW : double.infinity;
+  }
+
   @override
   void draw(Canvas c) {
     if (clipRect != null) {
@@ -1668,11 +1679,7 @@ class TextShape extends Shape {
       final align = _mapSwtAlignmentToTextAlign(alignValue);
       final effectiveAlign = justify ? TextAlign.justify : align;
 
-      double maxW = double.infinity;
-      if (wordWrap == true && canvasSize != null) {
-        maxW = canvasSize!.width - paintOffset.dx - indent.toDouble();
-        if (maxW <= 0) maxW = double.infinity;
-      }
+      final maxW = _lineMaxWidth(indent);
 
       final tp = _layoutLine(
         line,
@@ -1778,11 +1785,7 @@ class TextShape extends Shape {
       final align = _mapSwtAlignmentToTextAlign(alignValue);
       final effectiveAlign = justify ? TextAlign.justify : align;
 
-      double maxW = double.infinity;
-      if (wordWrap == true && canvasSize != null) {
-        maxW = canvasSize!.width - off.dx - indent.toDouble();
-        if (maxW <= 0) maxW = double.infinity;
-      }
+      final maxW = _lineMaxWidth(indent);
 
       final tp = _layoutLine(
         line,
@@ -2125,11 +2128,7 @@ class TextShape extends Shape {
     final align = _mapSwtAlignmentToTextAlign(alignValue);
     final effectiveAlign = justify ? TextAlign.justify : align;
 
-    double maxW = double.infinity;
-    if (wordWrap == true && canvasSize != null) {
-      maxW = canvasSize!.width - off.dx - indent.toDouble();
-      if (maxW <= 0) maxW = double.infinity;
-    }
+    final maxW = _lineMaxWidth(indent);
 
     double currentY = off.dy;
     for (int i = 0; i < currentLineIndex; i++) {
@@ -2149,11 +2148,7 @@ class TextShape extends Shape {
       final prevAlign = _mapSwtAlignmentToTextAlign(prevAlignValue);
       final prevEffectiveAlign = prevJustify ? TextAlign.justify : prevAlign;
 
-      double prevMaxW = double.infinity;
-      if (wordWrap == true && canvasSize != null) {
-        prevMaxW = canvasSize!.width - off.dx - prevIndent.toDouble();
-        if (prevMaxW <= 0) prevMaxW = double.infinity;
-      }
+      final prevMaxW = _lineMaxWidth(prevIndent);
 
       final prevTp = _layoutLine(
         prevLine,
@@ -2286,11 +2281,7 @@ class TextShape extends Shape {
       final align = _mapSwtAlignmentToTextAlign(alignValue);
       final effectiveAlign = justify ? TextAlign.justify : align;
 
-      double maxW = double.infinity;
-      if (canvasSize != null) {
-        maxW = canvasSize!.width - off.dx - indent.toDouble();
-        if (maxW <= 0) maxW = double.infinity;
-      }
+      final maxW = _lineMaxWidth(indent);
 
       final tp = _layoutLine(
         line,
@@ -2641,9 +2632,7 @@ class TextShape extends Shape {
       final align = _mapSwtAlignmentToTextAlign(alignValue);
       final effectiveAlign = justify ? TextAlign.justify : align;
 
-      double maxW = double.infinity;
-      maxW = canvasSize.width - off.dx - indent.toDouble();
-      if (maxW <= 0) maxW = double.infinity;
+      final maxW = _lineMaxWidth(indent, canvasSize);
 
       final tp = _layoutLine(
         line,
