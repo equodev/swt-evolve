@@ -10,7 +10,6 @@ import '../gen/event.dart';
 import '../gen/messagebox.dart';
 import '../gen/shell.dart';
 import '../gen/swt.dart';
-import '../impl/color_utils.dart';
 import '../impl/colordialog_evolve.dart';
 import '../impl/decorations_evolve.dart';
 import '../impl/messagebox_evolve.dart';
@@ -173,7 +172,12 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
   Widget buildComposite() {
     final built = super.buildComposite();
 
-    final ownColor = state.background != null ? colorFromVColor(state.background) : null;
+    // Gated the same way Composite's own background is (getCompositeBackgroundColor ->
+    // getBackgroundColor): a bare state.background is often just the SWT default widget-background
+    // gray (e.g. JFace's COLOR_WIDGET_BACKGROUND on dialog Shells) rather than a deliberate color,
+    // so only paint it when use_swt_colors opts in. backgroundImage has no such "default" case, so
+    // it stays unconditional.
+    final ownColor = getBackgroundColor(background: state.background, defaultColor: null);
     final tiledImage = ImageUtils.buildTiledBackgroundImage(state.backgroundImage);
 
     Widget painted = built;
