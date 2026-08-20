@@ -744,6 +744,31 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   }
 
   //-----------Edition----------------
+
+  /// This editor's own text shape, plus its index in [shapes] (-1 when it is the shape
+  /// currently being edited, which lives outside that list).
+  ///
+  /// Keyed on `styledTextId`: `editable` says whether the user may *type*, not whether the
+  /// shape is ours, and SWT moves the caret, selects and deselects in a read-only StyledText
+  /// exactly as in an editable one. A position past the end of the text still resolves to the
+  /// shape — SWT clamps such a click to the nearest offset rather than ignoring it.
+  (TextShape?, int) _ownTextShapeAt(Offset contentPos, Size canvasSize) {
+    if (_isEditingText && _editableTextShape != null) {
+      return (_editableTextShape, -1);
+    }
+    for (int i = shapes.length - 1; i >= 0; i--) {
+      final shape = shapes[i];
+      if (shape is TextShape &&
+          shape.styledTextId == state.id &&
+          shape.containsPoint(contentPos, canvasSize)) {
+        return (shape, i);
+      }
+    }
+    final index =
+        shapes.lastIndexWhere((s) => s is TextShape && s.styledTextId == state.id);
+    return index == -1 ? (null, -1) : (shapes[index] as TextShape, index);
+  }
+
   void _handleTap(Offset position) {
     final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
@@ -751,86 +776,39 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final canvasSize = renderBox.size;
     position = _toContentPosition(position);
 
-    TextShape? tappedTextShape;
-    int? shapeIndex;
+    final (tappedTextShape, shapeIndex) = _ownTextShapeAt(position, canvasSize);
 
-    for (int i = shapes.length - 1; i >= 0; i--) {
-      final shape = shapes[i];
-      if (shape is TextShape &&
-          shape.editable &&
-          shape.containsPoint(position, canvasSize)) {
-        tappedTextShape = shape;
-        shapeIndex = i;
-        break;
-      }
-    }
-
-    if (tappedTextShape == null && _editable) {
-      if (_isEditingText && _editableTextShape != null && _editableTextShape!.editable) {
-        tappedTextShape = _editableTextShape;
-        shapeIndex = -1;
-      } else {
-        shapeIndex = shapes.lastIndexWhere((s) => s is TextShape && s.editable);
-        if (shapeIndex != -1) {
-          tappedTextShape = shapes[shapeIndex] as TextShape;
-        }
-      }
-    }
-
-    if (tappedTextShape != null && shapeIndex != null) {
-      final caretOffset = tappedTextShape.getOffsetFromPosition(position, canvasSize);
-
-      if (!_isEditingText ||
-          _editableTextShape?.styledTextId != tappedTextShape.styledTextId) {
-        if (_isEditingText) {
-          _stopEditing();
-        }
-        _startEditing(tappedTextShape, shapeIndex);
-      }
-
-      setState(() {
-        _editableTextShape = _editableTextShape!.clearSelection().moveCaret(
-          caretOffset,
-        );
-      });
-      _sendSelectionCleared(caretOffset);
-
-      _onCaretMoved();
-      _focusNode.requestFocus();
-    } else {
-      bool clickedInEditableText = false;
-
-      if (_isEditingText && _editableTextShape != null) {
-        if (_editableTextShape!.containsPoint(position, canvasSize)) {
-          clickedInEditableText = true;
-
-          final caretOffset = _editableTextShape!.getOffsetFromPosition(
-            position,
-            canvasSize,
-          );
-
-          setState(() {
-            _editableTextShape = _editableTextShape!.clearSelection().moveCaret(
-              caretOffset,
-            );
-
-            _isSelecting = false;
-            _selectionStartOffset = null;
-          });
-          _sendSelectionCleared(caretOffset);
-
-          _onCaretMoved();
-        }
-      }
-
-      if (!clickedInEditableText && _isEditingText) {
+    if (tappedTextShape == null) {
+      if (_isEditingText) {
         _stopEditing();
       }
-      if (!clickedInEditableText) {
-        widget.sendFocusFocusIn(state, null);
-        _focusNode.requestFocus();
-      }
+      widget.sendFocusFocusIn(state, null);
+      _focusNode.requestFocus();
+      return;
     }
+
+    final caretOffset = tappedTextShape.getOffsetFromPosition(position, canvasSize);
+
+    if (!_isEditingText ||
+        _editableTextShape?.styledTextId != tappedTextShape.styledTextId) {
+      if (_isEditingText) {
+        _stopEditing();
+      }
+      _startEditing(tappedTextShape, shapeIndex);
+    }
+
+    setState(() {
+      _editableTextShape = _editableTextShape!.clearSelection().moveCaret(
+        caretOffset,
+      );
+
+      _isSelecting = false;
+      _selectionStartOffset = null;
+    });
+    _sendSelectionCleared(caretOffset);
+
+    _onCaretMoved();
+    _focusNode.requestFocus();
   }
 
   void _sendKeyDownEvent(RawKeyEvent event) {
@@ -1152,20 +1130,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
     if (!_isEditingText || _editableTextShape == null) {
       final contentPos = _toContentPosition(pos);
-      TextShape? textShape;
-      int shapeIndex = -1;
-      for (int i = shapes.length - 1; i >= 0; i--) {
-        final s = shapes[i];
-        if (s is TextShape && s.editable && s.containsPoint(contentPos, rb.size)) {
-          textShape = s;
-          shapeIndex = i;
-          break;
-        }
-      }
-      if (textShape == null && _editable) {
-        shapeIndex = shapes.lastIndexWhere((s) => s is TextShape && s.editable);
-        if (shapeIndex != -1) textShape = shapes[shapeIndex] as TextShape?;
-      }
+      final (textShape, shapeIndex) = _ownTextShapeAt(contentPos, rb.size);
       if (textShape == null) return;
       if (_isEditingText) _stopEditing();
       _startEditing(textShape, shapeIndex);
@@ -1211,20 +1176,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
     if (!_isEditingText || _editableTextShape == null) {
       final contentPos = _toContentPosition(pos);
-      TextShape? textShape;
-      int shapeIndex = -1;
-      for (int i = shapes.length - 1; i >= 0; i--) {
-        final s = shapes[i];
-        if (s is TextShape && s.editable && s.containsPoint(contentPos, rb.size)) {
-          textShape = s;
-          shapeIndex = i;
-          break;
-        }
-      }
-      if (textShape == null && _editable) {
-        shapeIndex = shapes.lastIndexWhere((s) => s is TextShape && s.editable);
-        if (shapeIndex != -1) textShape = shapes[shapeIndex] as TextShape?;
-      }
+      final (textShape, shapeIndex) = _ownTextShapeAt(contentPos, rb.size);
       if (textShape == null) return;
       if (_isEditingText) _stopEditing();
       _startEditing(textShape, shapeIndex);
