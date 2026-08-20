@@ -250,9 +250,16 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     );
   }
 
+  /// Adding or removing these wrappers would change the widget type at the root of the subtree,
+  /// which deactivates every descendant element. Each one is then rebuilt from the copy of its
+  /// state nested in the parent's payload — an older snapshot than what the descendant may already
+  /// have applied from its own channel. Keep the wrappers mounted and toggle their flags instead.
   Widget blockWhenDisabled(Widget child) {
-    if (state.enabledEffective != false) return child;
-    return ExcludeFocus(child: IgnorePointer(child: child));
+    final blocked = state.enabledEffective == false;
+    return ExcludeFocus(
+      excluding: blocked,
+      child: IgnorePointer(ignoring: blocked, child: child),
+    );
   }
 
   Widget wrap(Widget widget) {
