@@ -18,6 +18,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import dev.equo.swt.Config;
 
 /**
  * This class is the abstract superclass of all non-windowed
@@ -62,7 +63,10 @@ public abstract class Item extends Widget {
      * @see Widget#getStyle
      */
     public Item(Widget parent, int style) {
-        super(parent, style);
+        this((IItem) null);
+        setImpl(Config.isEquo(Item.class, parent) ? new DartItem(parent, style, this) {
+        } : new SwtItem(parent, style, this) {
+        });
     }
 
     /**
@@ -96,7 +100,10 @@ public abstract class Item extends Widget {
      * @see Widget#getStyle
      */
     public Item(Widget parent, int style, int index) {
-        this(parent, style);
+        this((IItem) null);
+        setImpl(Config.isEquo(Item.class, parent) ? new DartItem(parent, style, index, this) {
+        } : new SwtItem(parent, style, index, this) {
+        });
     }
 
     protected void checkSubclass() {

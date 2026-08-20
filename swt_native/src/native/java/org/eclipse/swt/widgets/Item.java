@@ -62,7 +62,9 @@ public abstract class Item extends Widget {
      * @see Widget#getStyle
      */
     public Item(Widget parent, int style) {
-        super(parent, style);
+        this((IItem) null);
+        setImpl(new DartItem(parent, style, this) {
+        });
     }
 
     /**
@@ -96,7 +98,9 @@ public abstract class Item extends Widget {
      * @see Widget#getStyle
      */
     public Item(Widget parent, int style, int index) {
-        this(parent, style);
+        this((IItem) null);
+        setImpl(new DartItem(parent, style, index, this) {
+        });
     }
 
     protected void checkSubclass() {
