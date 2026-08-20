@@ -61,7 +61,7 @@ public class CComboSizes {
     private static PointD computeText(DartCCombo widget, Measure m, boolean emptyTextAffectsSizing) {
         String text = widget.getText();
         if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
-            if (!Config.getConfigFlags().use_swt_fonts) {
+            if (!Config.getConfigFlags().use_swt_fonts || widget.getExplicitFont() == null) {
                 m.textStyle = CComboTheme.get().textStyle().withStyleFrom(widget.getFont());
             } else {
                 m.textStyle = TextStyle.from(widget.getFont());

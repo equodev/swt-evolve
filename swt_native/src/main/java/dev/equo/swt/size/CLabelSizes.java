@@ -21,7 +21,7 @@ public class CLabelSizes {
 
     static class LEFT {
         static final double MIN_WIDTH = 6.0;
-        static final double MIN_HEIGHT = 6.0;
+        static final double MIN_HEIGHT = 18.0;
         static final double HORIZONTAL_PADDING = 6.0;
         static final double VERTICAL_PADDING = 6.0;
         static final double IMAGE_SPACING = 4.0;
@@ -49,12 +49,12 @@ public class CLabelSizes {
             height = hHint;
         } else if (wHint != SWT.DEFAULT && wraps && m.textStyle != null) {
             double imageWidth = m.image.x();
-            double imageSpacing = (imageWidth > 0 && m.text.x() > 0) ? LEFT.IMAGE_SPACING : 0;
+            double imageSpacing = imageWidth > 0 ? LEFT.IMAGE_SPACING : 0;
             double availableWidth = Math.max(1.0, wHint - ((m.text.x() > 0 || imageWidth > 0) ? LEFT.HORIZONTAL_PADDING : 0) - imageWidth - imageSpacing);
             PointD wrapped = FontMetricsUtil.getFontSizeWrapped(widget.getText(), m.textStyle, availableWidth);
             height = Math.max(Math.max(wrapped.y(), m.image.y()) + (wrapped.y() > 0 || m.image.y() > 0 ? LEFT.VERTICAL_PADDING : 0), LEFT.MIN_HEIGHT);
         } else {
-            height = Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? LEFT.VERTICAL_PADDING : 0), LEFT.MIN_HEIGHT);
+            height = Math.max(Math.max(m.text.y(), m.image.y()) + LEFT.VERTICAL_PADDING, LEFT.MIN_HEIGHT);
         }
 
         m.widget = new Point((int) Math.ceil(width), (int) Math.ceil(height));
@@ -75,7 +75,7 @@ public class CLabelSizes {
         String text = widget.getText();
         if (text == null) text = "";
         if (emptyTextAffectsSizing || !text.isEmpty()) {
-            if (!Config.getConfigFlags().use_swt_fonts) {
+            if (!Config.getConfigFlags().use_swt_fonts || widget.getExplicitFont() == null) {
                 m.textStyle = CLabelTheme.get().textStyle().withStyleFrom(widget.getFont());
             } else {
                 m.textStyle = TextStyle.from(widget.getFont());

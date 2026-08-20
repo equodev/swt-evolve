@@ -8,6 +8,7 @@ import org.eclipse.swt.widgets.DartTable;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.widgets.DartTableItem;
 
 public class TableSizes {
 
@@ -66,7 +67,7 @@ public class TableSizes {
         for (TableItem item : table.getItems()) {
             if (item == null) continue;
             TextStyle ts;
-            if (!Config.getConfigFlags().use_swt_fonts) {
+            if (!Config.getConfigFlags().use_swt_fonts || ((DartTableItem) item.getImpl()).getExplicitFont() == null) {
                 ts = TableItemTheme.get().textStyle().withStyleFrom(item.getFont());
             } else {
                 ts = TextStyle.from(item.getFont());
@@ -97,7 +98,7 @@ public class TableSizes {
     public static int getItemHeight(DartTable table) {
         double minHeight = table.getColumnCount() > 1 ? ROW_HEIGHT_WITH_COLS : ROW_HEIGHT;
         TextStyle ts;
-        if (!Config.getConfigFlags().use_swt_fonts) {
+        if (!Config.getConfigFlags().use_swt_fonts || table.getExplicitFont() == null) {
             ts = TableItemTheme.get().textStyle().withStyleFrom(table.getFont());
         } else {
             ts = TextStyle.from(table.getFont());
@@ -110,7 +111,7 @@ public class TableSizes {
         if (!table.getHeaderVisible()) return 0;
         double minHeight = table.getColumnCount() > 1 ? HEADER_HEIGHT_WITH_COLS : HEADER_HEIGHT;
         TextStyle ts;
-        if (!Config.getConfigFlags().use_swt_fonts) {
+        if (!Config.getConfigFlags().use_swt_fonts || table.getExplicitFont() == null) {
             ts = TableHeaderTheme.get().textStyle().withStyleFrom(table.getFont());
         } else {
             ts = TextStyle.from(table.getFont());

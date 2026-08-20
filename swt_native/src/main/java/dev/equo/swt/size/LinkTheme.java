@@ -10,7 +10,7 @@ public record LinkTheme (TextStyle textStyle) {
     }
 
     public static LinkTheme getDefaultTheme() {
-        return new LinkTheme(new TextStyle("System", 14, false, 400));
+        return new LinkTheme(new TextStyle("Inter", 14, false, 500));
     }
 
 }

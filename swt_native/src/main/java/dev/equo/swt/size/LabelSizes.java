@@ -116,7 +116,7 @@ public class LabelSizes {
     private static PointD computeText(DartLabel widget, Measure m, boolean emptyTextAffectsSizing) {
         String text = widget.getText();
         if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
-            if (!Config.getConfigFlags().use_swt_fonts) {
+            if (!Config.getConfigFlags().use_swt_fonts || widget.getExplicitFont() == null) {
                 m.textStyle = LabelTheme.get().textStyle().withStyleFrom(widget.getFont());
             } else {
                 m.textStyle = TextStyle.from(widget.getFont());

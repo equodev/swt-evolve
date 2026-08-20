@@ -9,6 +9,7 @@ import org.eclipse.swt.widgets.DartTree;
 import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.TreeItem;
+import org.eclipse.swt.widgets.DartTreeItem;
 
 public class TreeSizes {
 
@@ -77,7 +78,7 @@ public class TreeSizes {
     public static int getItemHeight(DartTree tree) {
         double minHeight = tree.getColumnCount() > 1 ? ROW_HEIGHT_WITH_COLS : ROW_HEIGHT;
         TextStyle ts;
-        if (!Config.getConfigFlags().use_swt_fonts) {
+        if (!Config.getConfigFlags().use_swt_fonts || tree.getExplicitFont() == null) {
             ts = TreeItemTheme.get().textStyle().withStyleFrom(tree.getFont());
         } else {
             ts = TextStyle.from(tree.getFont());

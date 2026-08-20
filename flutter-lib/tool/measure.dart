@@ -2221,7 +2221,7 @@ class WidgetMeasurer {
       );
 
       buffer.writeln(
-        '            if (!Config.getConfigFlags().use_swt_fonts) {',
+        '            if (!Config.getConfigFlags().use_swt_fonts || widget.getExplicitFont() == null) {',
       );
       buffer.writeln(
         '                m.textStyle = ${widgetType}Theme.get().textStyle().withStyleFrom(widget.getFont());',
@@ -2465,7 +2465,9 @@ class WidgetMeasurer {
       );
       buffer.writeln('            if (item == null) continue;');
       buffer.writeln('            TextStyle ts;');
-      buffer.writeln('            if (!Config.getConfigFlags().use_swt_fonts) {');
+      buffer.writeln(
+        '            if (!Config.getConfigFlags().use_swt_fonts || ((Dart$itemType) item.getImpl()).getExplicitFont() == null) {',
+      );
       buffer.writeln(
         '                ts = $themeClass.get().textStyle().withStyleFrom(item.getFont());',
       );
@@ -2546,7 +2548,9 @@ class WidgetMeasurer {
     );
     if (fontSensitive) {
       buffer.writeln('        TextStyle ts;');
-      buffer.writeln('        if (!Config.getConfigFlags().use_swt_fonts) {');
+      buffer.writeln(
+        '        if (!Config.getConfigFlags().use_swt_fonts || $param.getExplicitFont() == null) {',
+      );
       buffer.writeln(
         '            ts = $themeClass.get().textStyle().withStyleFrom($param.getFont());',
       );
@@ -2668,6 +2672,7 @@ class WidgetMeasurer {
     }
     if (nested || measuresContent) {
       buffer.writeln('import org.eclipse.swt.widgets.${widgetType}Item;');
+      buffer.writeln('import org.eclipse.swt.widgets.Dart${widgetType}Item;');
     }
     buffer.writeln();
     buffer.writeln('public class ${widgetType}Sizes {');

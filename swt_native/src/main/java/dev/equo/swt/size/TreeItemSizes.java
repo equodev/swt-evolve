@@ -65,7 +65,7 @@ public class TreeItemSizes {
     private static PointD computeText(DartTreeItem widget, Measure m, boolean emptyTextAffectsSizing) {
         String text = widget.getText();
         if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
-            if (!Config.getConfigFlags().use_swt_fonts) {
+            if (!Config.getConfigFlags().use_swt_fonts || widget.getExplicitFont() == null) {
                 m.textStyle = TreeItemTheme.get().textStyle().withStyleFrom(widget.getFont());
             } else {
                 m.textStyle = TextStyle.from(widget.getFont());

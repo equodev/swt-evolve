@@ -10,7 +10,7 @@ public record CLabelTheme (TextStyle textStyle) {
     }
 
     public static CLabelTheme getDefaultTheme() {
-        return new CLabelTheme(new TextStyle("System", 12, false, 400));
+        return new CLabelTheme(new TextStyle("Inter", 12, false, 500));
     }
 
 }

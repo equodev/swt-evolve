@@ -10,7 +10,7 @@ public record TableItemTheme (TextStyle textStyle) {
     }
 
     public static TableItemTheme getDefaultTheme() {
-        return new TableItemTheme(new TextStyle("System", 14, false, 400));
+        return new TableItemTheme(new TextStyle("Inter", 14, false, 500));
     }
 
 }

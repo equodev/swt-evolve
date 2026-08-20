@@ -4868,6 +4868,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return null;
     }
 
+    public Font getExplicitFont() {
+        return font;
+    }
+
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;

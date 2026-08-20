@@ -1269,6 +1269,10 @@ public class DartTableItem extends DartItem implements ITableItem {
         return images;
     }
 
+    public Font getExplicitFont() {
+        return font;
+    }
+
     public Image[] getImages() {
         return TableHelper.getImages(this);
     }

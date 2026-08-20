@@ -2,7 +2,6 @@ package dev.equo.swt.size;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FontMetricsUtil;
-import dev.equo.swt.ImageMetricUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Image;
@@ -28,7 +27,7 @@ public class ButtonSizes {
         static final double MIN_WIDTH = 16.8;
         static final double MIN_HEIGHT = 16.8;
         static final double HORIZONTAL_PADDING = 24.800000000000004;
-        static final double VERTICAL_PADDING = 1.9000000000000004;
+        static final double VERTICAL_PADDING = 2.4000000000000004;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = false;
         static final double TEXT_SLACK = 1.0;
     }
@@ -118,17 +117,14 @@ public class ButtonSizes {
     }
 
     private static PointD computeImage(DartButton widget) {
-        Image image = widget.getImage();
-        if (image != null) {
-            return ImageMetricUtil.getImageSize(image.getImageData());
-        }
-        return PointD.zero;
+        if (widget.getImage() == null) return PointD.zero;
+        return new PointD(16.8, 16.8);
     }
 
     private static PointD computeText(DartButton widget, Measure m, boolean emptyTextAffectsSizing) {
         String text = widget.getText();
         if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
-            if (!Config.getConfigFlags().use_swt_fonts) {
+            if (!Config.getConfigFlags().use_swt_fonts || widget.getExplicitFont() == null) {
                 m.textStyle = ButtonTheme.get().textStyle().withStyleFrom(widget.getFont());
             } else {
                 m.textStyle = TextStyle.from(widget.getFont());

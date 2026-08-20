@@ -1518,6 +1518,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         return width;
     }
 
+    public Font getExplicitFont() {
+        return font;
+    }
+
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;

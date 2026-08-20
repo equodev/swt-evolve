@@ -1572,6 +1572,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         return items;
     }
 
+    public Font getExplicitFont() {
+        return font;
+    }
+
     public void updateChildItems() {
         if (items == null)
             return;
