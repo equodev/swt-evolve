@@ -18,4 +18,11 @@ final class DisplayBridgePlatform {
             return;
         MacApplicationMenu.install();
     }
+
+    /** The application menu as SWT widgets, for the menu bar Evolve draws inside the window. */
+    static Menu systemMenu(Display display) {
+        if ("false".equals(System.getProperty("dev.equo.swt.loadLibrary")))
+            return null;
+        return MacApplicationMenu.systemMenu(display);
+    }
 }

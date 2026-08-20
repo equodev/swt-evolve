@@ -34,4 +34,9 @@ final class DisplayBridgePlatform {
         if (!init)
             SWT.error(SWT.ERROR_NO_HANDLES, null, " [gtk_init_check() failed]");
     }
+
+    /** No application menu outside macOS: the platform has no such concept. */
+    static Menu systemMenu(Display display) {
+        return null;
+    }
 }

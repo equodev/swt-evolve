@@ -40,6 +40,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
   void initState() {
     super.initState();
     _display = _lastDisplayState[widget.value.id] ?? widget.value;
+    applySystemMenu(_display.systemMenu);
     EquoCommService.onRaw('Display/${widget.value.id}', _onUpdate);
     // Single top-level keyboard capture for the whole-tree model: every physical key is forwarded
     // once, here, and Java routes it to the focused control (running Display.filterEvent, which is
@@ -83,6 +84,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
     try {
       final updated = VDisplay.fromJson(raw as Map<String, dynamic>);
       applyConfigFlags(updated.config);
+      applySystemMenu(updated.systemMenu);
       _lastDisplayState[widget.value.id] = updated;
       if (mounted) setState(() => _display = updated);
     } catch (e) {

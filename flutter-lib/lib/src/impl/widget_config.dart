@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:swtflutter/src/gen/menu.dart';
+import 'package:swtflutter/src/gen/menuitem.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 
 bool _useDarkTheme = false;
@@ -29,8 +31,21 @@ void applyConfigFlags(ConfigFlags? flags) {
   configFlagsVersion.value++;
 }
 
+/// The application menu (macOS only) carried by every `Display/{id}` update. It belongs to the
+/// Display rather than to any Shell, so it reaches the menu bar the Decorations draw through here
+/// instead of down the widget tree.
+VMenu? _systemMenu;
+
+void applySystemMenu(VMenu? menu) {
+  _systemMenu = menu;
+}
+
+/// The application menu's top-level entries, to be shown ahead of the Shell's own menus.
+List<VMenuItem> applicationMenuItems() => _systemMenu?.items ?? const [];
+
 @visibleForTesting
 void resetConfigFlags() {
+  _systemMenu = null;
   configFlags = ConfigFlags();
   _lastAppliedConfig = null;
   configFlagsVersion.value = 0;

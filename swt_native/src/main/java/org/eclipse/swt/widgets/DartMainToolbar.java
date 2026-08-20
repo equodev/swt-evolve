@@ -224,12 +224,27 @@ public class DartMainToolbar extends DartComposite {
     /**
      * An empty menu bar is not rendered at all (see {@code DecorationsMenuData.hasItems} on the
      * Flutter side), so it must not reserve layout space here either: no button width for a
-     * vertical alignment, no menu strip height for a horizontal one.
+     * vertical alignment, no menu strip height for a horizontal one. The application menu counts
+     * too: the client draws it ahead of the Shell's own menus, so it fills a bar that is otherwise
+     * empty.
      */
     private boolean hasMenuBarItems() {
         Shell shell = getApi().getShell();
         if (shell == null || shell.isDisposed()) return false;
+        if (hasApplicationMenu(shell)) return true;
         Menu bar = shell.getMenuBar();
         return bar != null && !bar.isDisposed() && bar.getItemCount() > 0;
+    }
+
+    /**
+     * Only a Dart-backed application menu is drawn by the client. The embedded backend has one too
+     * — the real Cocoa menu — but that one lives in the system menu bar and reserves nothing here.
+     */
+    private static boolean hasApplicationMenu(Shell shell) {
+        Display display = shell.getDisplay();
+        if (display == null || display.isDisposed()) return false;
+        Menu appMenu = display.getSystemMenu();
+        return appMenu != null && !appMenu.isDisposed()
+                && appMenu.getImpl() instanceof DartMenu && appMenu.getItemCount() > 0;
     }
 }

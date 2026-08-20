@@ -15,6 +15,9 @@ VDisplay _$VDisplayFromJson(Map<String, dynamic> json) => VDisplay()
   ..popups = (json['popups'] as List<dynamic>?)
       ?.map((e) => VMenu.fromJson(e as Map<String, dynamic>))
       .toList()
+  ..systemMenu = json['systemMenu'] == null
+      ? null
+      : VMenu.fromJson(json['systemMenu'] as Map<String, dynamic>)
   ..tooltips = (json['tooltips'] as List<dynamic>?)
       ?.map((e) => VToolTip.fromJson(e as Map<String, dynamic>))
       .toList()
@@ -28,6 +31,7 @@ Map<String, dynamic> _$VDisplayToJson(VDisplay instance) => <String, dynamic>{
   'id': ?instance.id,
   'shells': ?instance.shells,
   'popups': ?instance.popups,
+  'systemMenu': ?instance.systemMenu,
   'tooltips': ?instance.tooltips,
   'config': ?instance.config,
   'activeShellId': ?instance.activeShellId,

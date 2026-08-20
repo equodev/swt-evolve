@@ -15,4 +15,9 @@ final class DisplayBridgePlatform {
             return;
         org.eclipse.swt.internal.win32.OS.OleInitialize(0);
     }
+
+    /** No application menu outside macOS: the platform has no such concept. */
+    static Menu systemMenu(Display display) {
+        return null;
+    }
 }

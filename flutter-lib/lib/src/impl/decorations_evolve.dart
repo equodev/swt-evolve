@@ -22,10 +22,14 @@ class DecorationsMenuData extends InheritedWidget {
     required super.child,
   });
 
+  /// The Shell's own menus plus, ahead of them, the application menu -- on macOS that one lives in
+  /// the system menu bar, which a browser tab cannot reach.
+  List<VMenuItem> get items => [...applicationMenuItems(), ...?menuBar?.items];
+
   /// A menu bar with nothing in it must not be shown at all -- neither as the horizontal strip
   /// above the toolbar nor as the vertical hamburger button inside it. `DartMainToolbar` mirrors
   /// this on the Java side so the hidden menu does not reserve layout space either.
-  bool get hasItems => menuBar?.items?.isNotEmpty == true;
+  bool get hasItems => items.isNotEmpty;
 
   static DecorationsMenuData? of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<DecorationsMenuData>();
@@ -80,8 +84,6 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
         !data.hasItems) {
       return const SizedBox.shrink();
     }
-    final menuBar = data.menuBar!;
-
     final menuTheme = Theme.of(context).extension<MenuThemeExtension>()!;
     return MenuAnchor(
       controller: _controller,
@@ -105,7 +107,7 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
           closeMenu: _controller.close,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: (menuBar.items ?? [])
+            children: data.items
                 .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
                 .toList(),
           ),

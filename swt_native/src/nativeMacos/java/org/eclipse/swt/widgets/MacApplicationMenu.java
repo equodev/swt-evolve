@@ -23,6 +23,11 @@ import org.eclipse.swt.internal.cocoa.id;
  * {@code NSApp}, which implements them. Quit is the exception: it must raise {@code SWT.Close} on
  * the Display first, so the workbench can save or veto, which is what native SWT does from
  * {@code applicationShouldTerminate:}.
+ *
+ * <p>{@link #systemMenu} mirrors the same block as ordinary SWT widgets, for the menu bar Evolve
+ * draws inside the window. That one is the only application menu a user can reach when the tree is
+ * rendered in a plain browser tab, where the window — and with it the system menu bar — belongs to
+ * the browser rather than to this process.
  */
 final class MacApplicationMenu {
 
@@ -37,6 +42,12 @@ final class MacApplicationMenu {
     private static Callback quitCallback;
 
     private static id quitTarget;
+
+    /** Cached because the Display value object is rebuilt on every update. */
+    private static Menu systemMenu;
+
+    /** The Shell {@link #systemMenu} hangs off; the menu dies with it and has to be rebuilt. */
+    private static Shell systemMenuShell;
 
     private MacApplicationMenu() {
     }
@@ -101,6 +112,64 @@ final class MacApplicationMenu {
         mainMenu.release();
     }
 
+    /**
+     * The application menu as SWT widgets, so it serializes to the Flutter side like any other menu.
+     * Services is left out: its content is filled in by Cocoa and only exists in the native bar.
+     */
+    static Menu systemMenu(Display display) {
+        // Serializing a Menu reads its Decorations parent, so it needs a Shell to hang off even
+        // though the application menu belongs to the Display.
+        Shell shell = firstShell(display);
+        if (shell == null)
+            return null;
+        if (systemMenu != null && !systemMenu.isDisposed() && systemMenuShell == shell)
+            return systemMenu;
+        String appName = applicationName();
+        Menu holder = new Menu(shell, SWT.BAR);
+        MenuItem appItem = new MenuItem(holder, SWT.CASCADE);
+        appItem.setText(appName);
+        Menu appMenu = new Menu(appItem);
+        appItem.setMenu(appMenu);
+
+        NSApplication application = NSApplication.sharedApplication();
+        action(appMenu, SWT.getMessage("SWT_About") + " " + appName, SWT.ID_ABOUT,
+                () -> application.orderFrontStandardAboutPanel(null));
+        new MenuItem(appMenu, SWT.SEPARATOR);
+        // No action: the application contributes the page through the SWT.ID_PREFERENCES id.
+        action(appMenu, SWT.getMessage("SWT_Preferences"), SWT.ID_PREFERENCES, null);
+        new MenuItem(appMenu, SWT.SEPARATOR);
+        action(appMenu, SWT.getMessage("SWT_Hide") + " " + appName, SWT.ID_HIDE,
+                () -> application.hide(null));
+        action(appMenu, SWT.getMessage("SWT_HideOthers"), SWT.ID_HIDE_OTHERS,
+                () -> application.hideOtherApplications(null));
+        action(appMenu, SWT.getMessage("SWT_ShowAll"), SWT.ID_SHOW_ALL,
+                () -> application.unhideAllApplications(null));
+        new MenuItem(appMenu, SWT.SEPARATOR);
+        action(appMenu, SWT.getMessage("SWT_Quit") + " " + appName, SWT.ID_QUIT,
+                MacApplicationMenu::closeDisplay);
+
+        ((DartDisplay) display.getImpl()).appMenu = appMenu;
+        systemMenu = holder;
+        systemMenuShell = shell;
+        return systemMenu;
+    }
+
+    private static Shell firstShell(Display display) {
+        for (Shell shell : display.getShells()) {
+            if (shell != null && !shell.isDisposed())
+                return shell;
+        }
+        return null;
+    }
+
+    private static void action(Menu menu, String text, int id, Runnable onSelection) {
+        MenuItem item = new MenuItem(menu, SWT.PUSH);
+        item.setText(text);
+        item.setID(id);
+        if (onSelection != null)
+            item.addListener(SWT.Selection, event -> onSelection.run());
+    }
+
     private static NSMenuItem add(NSMenu menu, String title, long action, NSString keyEquivalent, int tag) {
         NSMenuItem item = menu.addItemWithTitle(NSString.stringWith(title), action, keyEquivalent);
         if (tag != 0)
@@ -128,17 +197,21 @@ final class MacApplicationMenu {
     }
 
     static long quitProc(long targetId, long sel, long arg0) {
+        closeDisplay();
+        return 0;
+    }
+
+    private static void closeDisplay() {
         // Cocoa fires the action on the main thread, which is the Display thread.
         Display current = Display.getCurrent();
         if (current == null || current.isDisposed()) {
             NSApplication.sharedApplication().terminate(null);
-            return 0;
+            return;
         }
         Event event = new Event();
         ((DartDisplay) current.getImpl()).sendEvent(SWT.Close, event);
         if (event.doit)
             current.dispose();
-        return 0;
     }
 
     /**

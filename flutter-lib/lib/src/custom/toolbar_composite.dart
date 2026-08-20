@@ -31,7 +31,9 @@ class HorizontalMenuBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = DecorationsMenuData.of(context);
-    if (data == null || !data.isHorizontal || !data.hasItems) {
+    // The strip renders the Shell's own menu bar widget, so it needs one to exist: an application
+    // menu on its own has no VMenu to render and only shows in the hamburger variant.
+    if (data == null || !data.isHorizontal || !data.hasItems || data.menuBar == null) {
       return const SizedBox.shrink();
     }
     return mapWidgetFromValue(data.menuBar!);

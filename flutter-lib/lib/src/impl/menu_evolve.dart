@@ -358,7 +358,13 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   }
 
   List<VMenuItem> _getMenuItems() {
-    return state.items ?? [];
+    final items = state.items ?? const <VMenuItem>[];
+    // On macOS the application menu belongs to the system menu bar, which is out of reach in a
+    // browser tab; show it here instead, in the position the OS would give it.
+    if ((state.style & SWT.BAR) != 0) {
+      return [...applicationMenuItems(), ...items];
+    }
+    return items;
   }
 }
 

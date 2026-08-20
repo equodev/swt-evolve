@@ -16,6 +16,13 @@ public class VDisplay {
     public String swt;
     public Shell[] shells;
     public Menu[] popups;
+
+    /**
+     * The application menu (macOS only, null elsewhere). The system menu bar is owned by the OS and
+     * is out of reach whenever the tree renders in a browser tab, so the same menu is handed to the
+     * client for the menu bar Evolve draws inside the window.
+     */
+    public Menu systemMenu;
     public ToolTip[] tooltips;
     public ConfigFlags config;
 
@@ -51,6 +58,8 @@ public class VDisplay {
             }
         }
         v.popups = popupList.toArray(Menu[]::new);
+        Menu appMenu = DisplayBridgePlatform.systemMenu(display.getApi());
+        v.systemMenu = appMenu != null && !appMenu.isDisposed() ? appMenu : null;
         ToolTip[] allTooltips = display._activeTooltips();
         ArrayList<ToolTip> tooltipList = new ArrayList<>();
         if (allTooltips != null) {
@@ -111,6 +120,10 @@ public class VDisplay {
                     VMenu.MenuJson.write(writer, v.popups[i]);
                 }
                 writer.writeByte((byte) ']');
+            }
+            if (v.systemMenu != null) {
+                writer.writeAscii(",\"systemMenu\":");
+                VMenu.MenuJson.write(writer, v.systemMenu);
             }
             writer.writeAscii(",\"tooltips\":");
             if (v.tooltips == null || v.tooltips.length == 0) {

@@ -12,6 +12,7 @@ class VDisplay {
   int? id;
   List<VShell>? shells;
   List<VMenu>? popups;
+  VMenu? systemMenu;
   List<VToolTip>? tooltips;
   ConfigFlags? config;
 
