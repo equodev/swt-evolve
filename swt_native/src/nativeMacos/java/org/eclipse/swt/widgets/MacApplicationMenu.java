@@ -46,9 +46,6 @@ final class MacApplicationMenu {
     /** Cached because the Display value object is rebuilt on every update. */
     private static Menu systemMenu;
 
-    /** The Shell {@link #systemMenu} hangs off; the menu dies with it and has to be rebuilt. */
-    private static Shell systemMenuShell;
-
     private MacApplicationMenu() {
     }
 
@@ -117,25 +114,24 @@ final class MacApplicationMenu {
      * Services is left out: its content is filled in by Cocoa and only exists in the native bar.
      */
     static Menu systemMenu(Display display) {
-        // Serializing a Menu reads its Decorations parent, so it needs a Shell to hang off even
-        // though the application menu belongs to the Display.
-        Shell shell = firstShell(display);
-        if (shell == null)
-            return null;
-        if (systemMenu != null && !systemMenu.isDisposed() && systemMenuShell == shell)
+        if (systemMenu != null && !systemMenu.isDisposed())
             return systemMenu;
         String appName = applicationName();
-        Menu holder = new Menu(shell, SWT.BAR);
-        MenuItem appItem = new MenuItem(holder, SWT.CASCADE);
+        // The Display's own menu bar, not a Shell's: it needs no Decorations parent and so exists
+        // before any window does, which is when an application asks for the menu to contribute to.
+        Menu holder = display.getMenuBar();
+        MenuItem appItem = new MenuItem(holder, SWT.CASCADE, 0);
         appItem.setText(appName);
         Menu appMenu = new Menu(appItem);
         appItem.setMenu(appMenu);
 
         NSApplication application = NSApplication.sharedApplication();
-        action(appMenu, SWT.getMessage("SWT_About") + " " + appName, SWT.ID_ABOUT,
-                () -> application.orderFrontStandardAboutPanel(null));
+        // About, Preferences and Quit carry no action of their own: they are the three the
+        // application contributes to, keyed by the ids below, and native SWT leaves them alone for
+        // the same reason. The window actions are the opposite case — only Cocoa can perform them
+        // and nothing contributes to them.
+        action(appMenu, SWT.getMessage("SWT_About") + " " + appName, SWT.ID_ABOUT, null);
         new MenuItem(appMenu, SWT.SEPARATOR);
-        // No action: the application contributes the page through the SWT.ID_PREFERENCES id.
         action(appMenu, SWT.getMessage("SWT_Preferences"), SWT.ID_PREFERENCES, null);
         new MenuItem(appMenu, SWT.SEPARATOR);
         action(appMenu, SWT.getMessage("SWT_Hide") + " " + appName, SWT.ID_HIDE,
@@ -145,21 +141,11 @@ final class MacApplicationMenu {
         action(appMenu, SWT.getMessage("SWT_ShowAll"), SWT.ID_SHOW_ALL,
                 () -> application.unhideAllApplications(null));
         new MenuItem(appMenu, SWT.SEPARATOR);
-        action(appMenu, SWT.getMessage("SWT_Quit") + " " + appName, SWT.ID_QUIT,
-                MacApplicationMenu::closeDisplay);
+        action(appMenu, SWT.getMessage("SWT_Quit") + " " + appName, SWT.ID_QUIT, null);
 
         ((DartDisplay) display.getImpl()).appMenu = appMenu;
         systemMenu = holder;
-        systemMenuShell = shell;
         return systemMenu;
-    }
-
-    private static Shell firstShell(Display display) {
-        for (Shell shell : display.getShells()) {
-            if (shell != null && !shell.isDisposed())
-                return shell;
-        }
-        return null;
     }
 
     private static void action(Menu menu, String text, int id, Runnable onSelection) {

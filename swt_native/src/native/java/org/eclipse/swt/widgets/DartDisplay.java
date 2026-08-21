@@ -1753,6 +1753,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     public Menu getSystemMenu() {
         checkDevice();
         if (appMenu == null) {
+            DisplayBridgePlatform.systemMenu(this.getApi());
         }
         return appMenu;
     }
