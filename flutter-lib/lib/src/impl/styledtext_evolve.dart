@@ -18,6 +18,7 @@ import '../impl/gcdrawer_evolve.dart';
 import 'widget_config.dart';
 import 'key_forwarding.dart';
 import 'key_mapping.dart';
+import 'utils/composed_text_input.dart';
 import 'utils/double_tap_detector.dart';
 import 'utils/font_utils.dart';
 import 'utils/text_utils.dart';
@@ -68,6 +69,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       Theme.of(context).extension<StyledTextThemeExtension>()!;
 
   final FocusNode _focusNode = FocusNode();
+
+  /// Held open while the editor is in edit mode so the platform has somewhere to compose; the
+  /// raw key stream alone never carries a composed character.
+  late final ComposedTextInput _composedInput =
+      ComposedTextInput(onComposedText: _insertComposedText);
 
   @override
   Color get bg =>
@@ -140,6 +146,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   void dispose() {
     _verticalController.dispose();
     _horizontalController.dispose();
+    _composedInput.detach();
     setEditorKeyOwnership(this, false);
     _focusNode.removeListener(_syncEditorKeyOwnership);
     _focusNode.dispose();
@@ -953,6 +960,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       } else if (event.character != null && event.character!.isNotEmpty) {
         if (!_editable) return;
         if (event.data.isMetaPressed || event.data.isControlPressed) return;
+        if (_composedInput.isComposing) return;
         final char = event.character!;
         if (char.codeUnitAt(0) >= 32) {
           var shape = currentShape;
@@ -974,12 +982,41 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         event.logicalKey == LogicalKeyboardKey.delete ||
         (event.character != null &&
          event.character!.isNotEmpty &&
+         !_composedInput.isComposing &&
          !event.data.isMetaPressed &&
          !event.data.isControlPressed);
     if (hadSelection && isDestructiveKey) {
       _sendSelectionCleared(_editableTextShape?.caretInfo?.offset ?? 0);
     }
 
+    final newCaretOffset = _editableTextShape?.caretInfo?.offset;
+    if (newCaretOffset != null && newCaretOffset != oldCaretOffset) {
+      _onCaretMoved();
+    }
+  }
+
+  /// Inserts text the platform composed — a dead-key sequence, an accent, an IME run. It arrives
+  /// on a later keystroke than the [RawKeyEvent] that started it, so it carries the selection and
+  /// caret bookkeeping [_handleKeyEvent] does for a typed character.
+  void _insertComposedText(String text) {
+    if (!_isEditingText || _editableTextShape == null || !_editable) return;
+
+    final bool hadSelection = _editableTextShape!.selectionInfo?.hasSelection == true;
+    final int? oldCaretOffset = _editableTextShape!.caretInfo?.offset;
+
+    setState(() {
+      var shape = _editableTextShape!;
+      if (shape.selectionInfo?.hasSelection == true) shape = shape.deleteSelection();
+      final newShape = shape.insertText(text, shape.caretInfo?.offset ?? 0);
+      _editableTextShape = newShape;
+      if (_isInLocalEditMode && newShape.editingState != null) {
+        _localEditingState = newShape.editingState;
+      }
+    });
+
+    if (hadSelection) {
+      _sendSelectionCleared(_editableTextShape?.caretInfo?.offset ?? 0);
+    }
     final newCaretOffset = _editableTextShape?.caretInfo?.offset;
     if (newCaretOffset != null && newCaretOffset != oldCaretOffset) {
       _onCaretMoved();
@@ -1246,6 +1283,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     // start (the one value not covered by per-keystroke sends) is recognised as an echo.
     seedTextEchoBaseline(textShape.text);
     _enterLocalEditMode(textShape);
+    if (_editable) _composedInput.attach();
     widget.sendFocusFocusIn(state, null);
     setState(() {
       _isEditingText = true;
@@ -1444,6 +1482,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   }
 
   void _stopEditing() {
+    _composedInput.detach();
     if (_isInLocalEditMode && _editableTextShape != null) {
       // Send all updated state in a single event
       final updatedState = _buildUpdatedVStyledText();
