@@ -358,7 +358,19 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         if ((style & modalMask) != 0) {
             return false;
         }
-        return (style & org.eclipse.swt.SWT.TOOL) == 0;
+        if ((style & org.eclipse.swt.SWT.TOOL) != 0) {
+            return false;
+        }
+        // Plain browser only: a lone shell with no resize trim (e.g. a fixed-size login/splash
+        // screen) isn't meant to track the browser viewport -- it renders at its own declared
+        // size via the floating shell chrome instead of being stretched to fill the page.
+        // Desktop and the Chromium standalone surface always have a real OS/CEF window framing
+        // the app, so every shell there still fills it regardless of trim.
+        if (!ConfigFlags.isDesktopMode() && !ConfigFlags.isChromiumMode()
+                && (style & org.eclipse.swt.SWT.RESIZE) == 0) {
+            return false;
+        }
+        return true;
     }
 
     public String registerBrowserHtml(long browserId, String html) {

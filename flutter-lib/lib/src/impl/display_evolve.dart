@@ -101,12 +101,16 @@ class _DisplaySwtState extends State<DisplaySwt> {
     final b = s.bounds;
     if (b == null || b.x != 0 || b.y != 0) return false;
     if (b.width == 1024 && b.height == 768) return true; // eclipse workbench default
-    if (!_isModal(s) &&
-        b.width >= (constraints.maxWidth * 0.8).round() &&
-        b.height >= (constraints.maxHeight * 0.8).round()) {
-      return true;
-    }
+    if (_fillsViewport(s, constraints)) return true;
     return !_isModal(s) && b.width == constraints.maxWidth.toInt() && b.height == constraints.maxHeight.toInt();
+  }
+
+  bool _fillsViewport(VShell s, BoxConstraints constraints) {
+    final b = s.bounds;
+    if (b == null) return false;
+    return !_isModal(s) &&
+        b.width >= (constraints.maxWidth * 0.8).round() &&
+        b.height >= (constraints.maxHeight * 0.8).round();
   }
 
   int _shellArea(VShell shell) {
@@ -153,7 +157,9 @@ class _DisplaySwtState extends State<DisplaySwt> {
           dialogShells.add(s);
         }
       }
-      if (mainShells.isEmpty && largestNonModalShell != null) {
+      if (mainShells.isEmpty &&
+          largestNonModalShell != null &&
+          _fillsViewport(largestNonModalShell, constraints)) {
         dialogShells.remove(largestNonModalShell);
         mainShells.add(largestNonModalShell!);
       }

@@ -265,6 +265,37 @@ class DisplayResizeFlutterTest {
     }
 
     @Test
+    void web_nonResizableLoneShell_isNotSlavedToViewport() {
+        // A small, fixed-size shell (no SWT.RESIZE), positioned off-origin like a login/splash
+        // screen, must not be stretched to fill the browser viewport -- it renders at its own
+        // declared bounds instead, through the floating shell chrome.
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = new Shell(display, org.eclipse.swt.SWT.BACKGROUND);
+        shell.setBounds(50, 50, 800, 600);
+
+        clientReady(web.comm, 1600, 1000, true);
+
+        assertThat(shell.getBounds())
+                .as("a non-resizable lone shell keeps its own declared bounds on the browser")
+                .isEqualTo(new Rectangle(50, 50, 800, 600));
+    }
+
+    @Test
+    void desk_nonResizableLoneShell_isStillSlavedToViewport() {
+        // Desktop/Chromium always have a real OS/CEF window framing the app, so a shell there
+        // still fills it regardless of trim -- only the plain-browser surface floats it.
+        TestDeskBridge desk = install(TestDeskBridge::new);
+        Shell shell = new Shell(display, org.eclipse.swt.SWT.BACKGROUND);
+        shell.setBounds(50, 50, 800, 600);
+
+        clientReady(desk.comm, 1600, 1000, true);
+
+        assertThat(shell.getBounds())
+                .as("on desktop a non-resizable lone shell is still slaved to the window viewport")
+                .isEqualTo(new Rectangle(0, 0, 1600, 1000));
+    }
+
+    @Test
     void web_winClose_closesMainShell() {
         TestWebBridge web = install(TestWebBridge::new);
         Shell shell = newMainShell();
