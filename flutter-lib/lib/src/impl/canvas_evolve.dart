@@ -50,8 +50,10 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   Color get fg => _theme.foregroundColor;
   Color gcBg = Colors.transparent;
 
-  /// Paints [bg] plus our own tiled backgroundImage; stays transparent for an inherited
-  /// one, already painted by the ancestor that owns it (ShellImpl.buildComposite).
+  /// Paints our own tiled backgroundImage; stays transparent for an inherited one, already
+  /// painted by the ancestor that owns it (ShellImpl.buildComposite). The solid `bg` color is
+  /// NOT painted here -- see [wrapWithGCOverlay], which paints it as the bottom layer of the GC
+  /// stack instead, so it sits under (not over) any hand-drawn GC content.
   Widget _paintBackground(Widget child) {
     // SWT.TRANSPARENT with no background of its own (e.g. a toolbar-icon Canvas): native SWT
     // paints nothing at all here, so whatever's behind it shows through live -- including a
@@ -69,7 +71,6 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       return child;
     }
     final decorationImage = ImageUtils.buildTiledBackgroundImage(state.backgroundImage);
-    // No image: stay transparent, like a GC-only leaf (e.g. a JFace ruler) always did.
     if (decorationImage == null) return child;
     return DecoratedBox(
       decoration: BoxDecoration(color: bg, image: decorationImage),
@@ -314,6 +315,11 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     final gcWidget = GCSwt<VGC>(key: gcOverlayKey, value: gc);
     return Stack(
       children: [
+        // An explicit background (e.g. a line-number ruler's light gray) belongs under the GC
+        // drawing, not over it -- a JFace ruler both sets its own background AND draws digits via
+        // GC on top of it, and painting the color as `child`/`_paintBackground`'s own layer (which
+        // sits above the GC overlay below) would hide that drawing.
+        if (state.hasOwnBackground ?? false) Positioned.fill(child: ColoredBox(color: bg)),
         Positioned.fill(child: IgnorePointer(child: gcWidget)),
         child,
       ],
