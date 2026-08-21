@@ -1581,6 +1581,16 @@ class _TabExpandedLine {
   const _TabExpandedLine(this.span, this.tabStops);
 }
 
+/// Prefix-sum of line heights for one layout identity, so finding a line's y is
+/// a lookup instead of one TextPainter layout per preceding line on every paint.
+/// Blink and selection copies change no layout input and share the holder; any
+/// copy that changes text, style, wrap or line properties gets a fresh one.
+class _LineTopsCache {
+  /// tops[i] = y of logical line i relative to the text origin,
+  /// tops[lineCount] = total content height. Null until first computed.
+  List<double>? tops;
+}
+
 class TextShape extends Shape {
   final String text;
   final Offset off;
@@ -1622,6 +1632,41 @@ class TextShape extends Shape {
     this.lineHeight = 0.0,
     this.tabs = 4,
   ]);
+
+  _LineTopsCache _lineTopsCache = _LineTopsCache();
+
+  /// Per-line properties that affect layout, from [editingState] when present.
+  ({int indent, TextAlign align}) _linePropsFor(int lineIndex) {
+    final props = editingState?.lineProperties[lineIndex];
+    final indent = props?.indent ?? 0;
+    final align = _mapSwtAlignmentToTextAlign(props?.alignment ?? 16384);
+    return (
+      indent: indent,
+      align: (props?.justify ?? false) ? TextAlign.justify : align,
+    );
+  }
+
+  List<double> _lineTopsFor(List<String> lines, Size? canvas) {
+    final tops = List<double>.filled(lines.length + 1, 0);
+    double y = 0;
+    for (int i = 0; i < lines.length; i++) {
+      tops[i] = y;
+      final props = _linePropsFor(i);
+      final tp = _layoutLine(
+        lines[i],
+        i,
+        TextSpan(text: text, style: style),
+        align: props.align,
+        maxWidth: _lineMaxWidth(props.indent, canvas),
+      );
+      y += _advance(tp.height);
+    }
+    tops[lines.length] = y;
+    return tops;
+  }
+
+  List<double> _lineTops(List<String> lines) =>
+      _lineTopsCache.tops ??= _lineTopsFor(lines, canvasSize);
 
   // Vertical advance for one logical line. Each logical line is painted by a single
   // TextPainter that may wrap into several visual lines (tpHeight is the wrapped total),
@@ -1668,8 +1713,15 @@ class TextShape extends Shape {
     final paintOffset = off;
     double currentY = paintOffset.dy;
 
+    // The paint loop measures every line anyway, so fill the line-tops cache
+    // for free while at it — _drawSelection/_drawCaret below then just look up.
+    final cacheTops = _lineTopsCache.tops == null
+        ? List<double>.filled(lines.length + 1, 0)
+        : null;
+
     for (int i = 0; i < lines.length; i++) {
       final line = lines[i];
+      cacheTops?[i] = currentY - paintOffset.dy;
 
       int indent = 0;
       int alignValue = 16384; // Default SWT.LEFT
@@ -1728,6 +1780,11 @@ class TextShape extends Shape {
 
       tp.paint(c, Offset(finalX, currentY));
       currentY += _advance(tp.height);
+    }
+
+    if (cacheTops != null) {
+      cacheTops[lines.length] = currentY - paintOffset.dy;
+      _lineTopsCache.tops = cacheTops;
     }
 
     if (selectionInfo != null && selectionInfo!.hasSelection) {
@@ -1887,6 +1944,10 @@ class TextShape extends Shape {
     }
   }
 
+  /// Count of per-line layouts performed, for tests asserting layout cost.
+  @visibleForTesting
+  static int debugLayoutLineCalls = 0;
+
   // Every per-line TextPainter goes through here so painting, caret placement and
   // hit-testing measure a line the same way — in particular they all get the same
   // tab stops (see _expandTabStops).
@@ -1897,6 +1958,7 @@ class TextShape extends Shape {
     required TextAlign align,
     required double maxWidth,
   }) {
+    debugLayoutLineCalls++;
     final line = _expandTabStops(
       _getTextSpanForLine(lineText, lineIndex, unifiedTextSpan),
     );
@@ -2119,77 +2181,33 @@ class TextShape extends Shape {
       currentLineStartOffset = lineEndOffset + 1;
     }
 
-    int indent = 0;
-    int alignValue = 16384;
-    bool justify = false;
-
-    if (editingState != null &&
-        editingState!.lineProperties.containsKey(currentLineIndex)) {
-      final lineProps = editingState!.lineProperties[currentLineIndex]!;
-      indent = lineProps.indent ?? 0;
-      alignValue = lineProps.alignment ?? 16384;
-      justify = lineProps.justify ?? false;
-    }
-
-    final align = _mapSwtAlignmentToTextAlign(alignValue);
-    final effectiveAlign = justify ? TextAlign.justify : align;
-
-    final maxW = _lineMaxWidth(indent);
-
-    double currentY = off.dy;
-    for (int i = 0; i < currentLineIndex; i++) {
-      final prevLine = lines[i];
-
-      int prevIndent = 0;
-      int prevAlignValue = 16384;
-      bool prevJustify = false;
-
-      if (editingState != null && editingState!.lineProperties.containsKey(i)) {
-        final prevProps = editingState!.lineProperties[i]!;
-        prevIndent = prevProps.indent ?? 0;
-        prevAlignValue = prevProps.alignment ?? 16384;
-        prevJustify = prevProps.justify ?? false;
-      }
-
-      final prevAlign = _mapSwtAlignmentToTextAlign(prevAlignValue);
-      final prevEffectiveAlign = prevJustify ? TextAlign.justify : prevAlign;
-
-      final prevMaxW = _lineMaxWidth(prevIndent);
-
-      final prevTp = _layoutLine(
-        prevLine,
-        i,
-        TextSpan(text: text, style: style),
-        align: prevEffectiveAlign,
-        maxWidth: prevMaxW,
-      );
-
-      currentY += _advance(prevTp.height);
-    }
+    final props = _linePropsFor(currentLineIndex);
+    final maxW = _lineMaxWidth(props.indent);
+    final currentY = off.dy + _lineTops(lines)[currentLineIndex];
 
     final currentLine = lines[currentLineIndex];
     final tp = _layoutLine(
       currentLine,
       currentLineIndex,
       TextSpan(text: text, style: style),
-      align: effectiveAlign,
+      align: props.align,
       maxWidth: maxW,
     );
 
-    double finalX = off.dx + indent.toDouble();
+    double finalX = off.dx + props.indent.toDouble();
 
     if (canvasSize != null && maxW != double.infinity) {
-      switch (effectiveAlign) {
+      switch (props.align) {
         case TextAlign.center:
           final textWidth = tp.width;
           if (textWidth < maxW) {
-            finalX = off.dx + indent.toDouble() + (maxW - textWidth) / 2;
+            finalX = off.dx + props.indent.toDouble() + (maxW - textWidth) / 2;
           }
           break;
         case TextAlign.right:
           final textWidth = tp.width;
           if (textWidth < maxW) {
-            finalX = off.dx + indent.toDouble() + (maxW - textWidth);
+            finalX = off.dx + props.indent.toDouble() + (maxW - textWidth);
           }
           break;
         default:
@@ -2267,74 +2285,60 @@ class TextShape extends Shape {
       currentLineStartOffset = lineEndOffset + 1;
     }
 
-    double currentY = off.dy;
+    final tops = _lineTops(lines);
 
-    for (int lineIndex = 0; lineIndex <= endLineIndex; lineIndex++) {
+    for (
+      int lineIndex = startLineIndex;
+      lineIndex <= endLineIndex;
+      lineIndex++
+    ) {
       final line = lines[lineIndex];
-
-      int indent = 0;
-      int alignValue = 16384;
-      bool justify = false;
-
-      if (editingState != null &&
-          editingState!.lineProperties.containsKey(lineIndex)) {
-        final lineProps = editingState!.lineProperties[lineIndex]!;
-        indent = lineProps.indent ?? 0;
-        alignValue = lineProps.alignment ?? 16384;
-        justify = lineProps.justify ?? false;
-      }
-
-      final align = _mapSwtAlignmentToTextAlign(alignValue);
-      final effectiveAlign = justify ? TextAlign.justify : align;
-
-      final maxW = _lineMaxWidth(indent);
+      final props = _linePropsFor(lineIndex);
 
       final tp = _layoutLine(
         line,
         lineIndex,
         TextSpan(text: text, style: style),
-        align: effectiveAlign,
-        maxWidth: maxW,
+        align: props.align,
+        maxWidth: _lineMaxWidth(props.indent),
       );
 
-      if (lineIndex >= startLineIndex && lineIndex <= endLineIndex) {
-        int lineSelectionStart = 0;
-        int lineSelectionEnd = line.length;
+      final currentY = off.dy + tops[lineIndex];
 
-        if (lineIndex == startLineIndex) {
-          lineSelectionStart = startPositionInLine;
-        }
-        if (lineIndex == endLineIndex) {
-          lineSelectionEnd = endPositionInLine;
-        }
+      int lineSelectionStart = 0;
+      int lineSelectionEnd = line.length;
 
-        if (lineSelectionStart < lineSelectionEnd) {
-          final boxes = tp.getBoxesForSelection(
-            TextSelection(
-              baseOffset: lineSelectionStart.clamp(0, line.length),
-              extentOffset: lineSelectionEnd.clamp(0, line.length),
-            ),
-          );
-
-          for (final box in boxes) {
-            final selectionRect = Rect.fromLTWH(
-              off.dx + indent.toDouble() + box.left,
-              currentY + box.top,
-              box.right - box.left,
-              box.bottom - box.top,
-            );
-
-            c.drawRect(
-              selectionRect,
-              Paint()
-                ..color = selectionInfo!.selectionColor.withOpacity(0.6)
-                ..style = PaintingStyle.fill,
-            );
-          }
-        }
+      if (lineIndex == startLineIndex) {
+        lineSelectionStart = startPositionInLine;
+      }
+      if (lineIndex == endLineIndex) {
+        lineSelectionEnd = endPositionInLine;
       }
 
-      currentY += _advance(tp.height);
+      if (lineSelectionStart < lineSelectionEnd) {
+        final boxes = tp.getBoxesForSelection(
+          TextSelection(
+            baseOffset: lineSelectionStart.clamp(0, line.length),
+            extentOffset: lineSelectionEnd.clamp(0, line.length),
+          ),
+        );
+
+        for (final box in boxes) {
+          final selectionRect = Rect.fromLTWH(
+            off.dx + props.indent.toDouble() + box.left,
+            currentY + box.top,
+            box.right - box.left,
+            box.bottom - box.top,
+          );
+
+          c.drawRect(
+            selectionRect,
+            Paint()
+              ..color = selectionInfo!.selectionColor.withOpacity(0.6)
+              ..style = PaintingStyle.fill,
+          );
+        }
+      }
     }
   }
 
@@ -2355,7 +2359,7 @@ class TextShape extends Shape {
       selection,
       lineHeight,
       tabs,
-    );
+    ).._lineTopsCache = _lineTopsCache;
   }
 
   TextShape copyWithEditingState(TextEditingState newEditingState) {
@@ -2439,7 +2443,7 @@ class TextShape extends Shape {
       selectionInfo,
       lineHeight,
       tabs,
-    );
+    ).._lineTopsCache = _lineTopsCache;
   }
 
   TextShape updateCaretOffset(int offset) {
@@ -2618,85 +2622,70 @@ class TextShape extends Shape {
     final lines = text.split('\n');
     final relativePosition = tapPosition - off;
 
-    double currentY = 0;
-    int globalOffset = 0;
+    // The cache is keyed to this shape's own canvas width; a caller-supplied
+    // size that changes the wrap width gets a fresh, uncached walk instead.
+    final cacheValid =
+        wordWrap != true || canvasSize.width == this.canvasSize?.width;
+    final tops = cacheValid
+        ? _lineTops(lines)
+        : _lineTopsFor(lines, canvasSize);
 
+    final dy = relativePosition.dy;
+    if (dy < 0 || dy >= tops[lines.length]) return text.length;
+
+    int lineIndex = lines.length - 1;
     for (int i = 0; i < lines.length; i++) {
-      final line = lines[i];
-
-      int indent = 0;
-      int alignValue = 16384;
-      bool justify = false;
-
-      if (editingState != null && editingState!.lineProperties.containsKey(i)) {
-        final lineProps = editingState!.lineProperties[i]!;
-        indent = lineProps.indent ?? 0;
-        alignValue = lineProps.alignment ?? 16384;
-        justify = lineProps.justify ?? false;
-      }
-
-      final align = _mapSwtAlignmentToTextAlign(alignValue);
-      final effectiveAlign = justify ? TextAlign.justify : align;
-
-      final maxW = _lineMaxWidth(indent, canvasSize);
-
-      final tp = _layoutLine(
-        line,
-        i,
-        TextSpan(text: text, style: style),
-        align: effectiveAlign,
-        maxWidth: maxW,
-      );
-
-      double finalX = indent.toDouble();
-
-      if (maxW != double.infinity) {
-        switch (effectiveAlign) {
-          case TextAlign.center:
-            final availableWidth = maxW;
-            final textWidth = tp.width;
-            if (textWidth < availableWidth) {
-              finalX = indent.toDouble() + (availableWidth - textWidth) / 2;
-            }
-            break;
-          case TextAlign.right:
-            final availableWidth = maxW;
-            final textWidth = tp.width;
-            if (textWidth < availableWidth) {
-              finalX = indent.toDouble() + (availableWidth - textWidth);
-            }
-            break;
-          case TextAlign.justify:
-          case TextAlign.left:
-          default:
-            break;
-        }
-      }
-
-      final advance = _advance(tp.height);
-      if (relativePosition.dy >= currentY &&
-          relativePosition.dy < currentY + advance) {
-        final lineRelativeX = relativePosition.dx - finalX;
-        final lineRelativePosition = Offset(
-          lineRelativeX,
-          relativePosition.dy - currentY,
-        );
-
-        final textPosition = tp.getPositionForOffset(lineRelativePosition);
-        final offsetInLine = textPosition.offset.clamp(0, line.length);
-
-        return (globalOffset + offsetInLine).clamp(0, text.length);
-      }
-
-      currentY += advance;
-      globalOffset += line.length;
-
-      if (i < lines.length - 1) {
-        globalOffset += 1;
+      if (dy < tops[i + 1]) {
+        lineIndex = i;
+        break;
       }
     }
 
-    return text.length;
+    int globalOffset = 0;
+    for (int i = 0; i < lineIndex; i++) {
+      globalOffset += lines[i].length + 1;
+    }
+
+    final line = lines[lineIndex];
+    final props = _linePropsFor(lineIndex);
+    final maxW = _lineMaxWidth(props.indent, canvasSize);
+
+    final tp = _layoutLine(
+      line,
+      lineIndex,
+      TextSpan(text: text, style: style),
+      align: props.align,
+      maxWidth: maxW,
+    );
+
+    double finalX = props.indent.toDouble();
+
+    if (maxW != double.infinity) {
+      switch (props.align) {
+        case TextAlign.center:
+          if (tp.width < maxW) {
+            finalX = props.indent.toDouble() + (maxW - tp.width) / 2;
+          }
+          break;
+        case TextAlign.right:
+          if (tp.width < maxW) {
+            finalX = props.indent.toDouble() + (maxW - tp.width);
+          }
+          break;
+        default:
+          break;
+      }
+    }
+
+    final lineRelativePosition = Offset(
+      relativePosition.dx - finalX,
+      dy - tops[lineIndex],
+    );
+
+    final textPosition = tp.getPositionForOffset(lineRelativePosition);
+    final offsetInLine = textPosition.offset.clamp(0, line.length);
+
+    return (globalOffset + offsetInLine).clamp(0, text.length);
   }
 
   bool containsPoint(Offset point, Size canvasSize) {
