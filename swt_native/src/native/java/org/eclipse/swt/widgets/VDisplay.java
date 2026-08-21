@@ -19,6 +19,12 @@ public class VDisplay {
     public ToolTip[] tooltips;
     public ConfigFlags config;
 
+    /**
+     * The shell SWT considers active, or 0 when none is. Filled in by the Display bridge, which
+     * tracks focus; a shell only takes keyboard focus on the client when it is named here.
+     */
+    public long activeShellId;
+
     protected VDisplay() {
     }
 
@@ -117,6 +123,8 @@ public class VDisplay {
                 }
                 writer.writeByte((byte) ']');
             }
+            writer.writeAscii(",\"activeShellId\":");
+            com.dslplatform.json.NumberConverter.serialize(v.activeShellId, writer);
             writeConfig(writer, v.config);
             writer.writeByte((byte) '}');
         }

@@ -21,9 +21,13 @@ import 'utils/pointer.dart';
 class FloatingShellChromeScope extends InheritedWidget {
   final BoxConstraints viewportConstraints;
 
+  /// The shell SWT currently considers active (`VDisplay.activeShellId`), or null when none is.
+  final int? activeShellId;
+
   const FloatingShellChromeScope({
     super.key,
     required this.viewportConstraints,
+    required this.activeShellId,
     required super.child,
   });
 
@@ -38,7 +42,8 @@ class FloatingShellChromeScope extends InheritedWidget {
 
   @override
   bool updateShouldNotify(FloatingShellChromeScope oldWidget) =>
-      viewportConstraints != oldWidget.viewportConstraints;
+      viewportConstraints != oldWidget.viewportConstraints ||
+      activeShellId != oldWidget.activeShellId;
 }
 
 class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T, V> {
@@ -421,7 +426,10 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       ),
     );
 
-    if (!_autoFocusRequested) {
+    // Only a shell SWT activated may take the keyboard. `Shell.setVisible(true)` does not activate:
+    // a JFace `SWT.ON_TOP` popup (content assist) is shown that way precisely so the control that
+    // opened it keeps focus and can drive the popup from its own VerifyKeyListener.
+    if (!_autoFocusRequested && scope.activeShellId == state.id) {
       _autoFocusRequested = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _focusScopeNode.nextFocus();

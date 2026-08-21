@@ -15,6 +15,10 @@ class VDisplay {
   List<VToolTip>? tooltips;
   ConfigFlags? config;
 
+  /// The shell SWT considers active, or null/0 when none is. A shell takes keyboard focus only
+  /// when it is named here — see [ShellImpl].
+  int? activeShellId;
+
   VDisplay();
 
   factory VDisplay.fromJson(Map<String, dynamic> json) =>

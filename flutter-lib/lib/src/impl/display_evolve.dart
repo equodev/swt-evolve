@@ -207,6 +207,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
             key: ValueKey(dialogShells[i].id),
             child: FloatingShellChromeScope(
               viewportConstraints: constraints,
+              activeShellId: _display.activeShellId,
               child: gen.mapWidgetFromValue(dialogShells[i]),
             ),
           ),

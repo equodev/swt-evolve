@@ -277,6 +277,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         // gives Flutter content the moment it connects (which also keeps its runloop live).
         try {
             VDisplay vd = VDisplay.of(display);
+            vd.activeShellId = publishedActiveShell = activeShellId();
             serializeAndSend("Display/" + vd.id, vd);
             FlutterBridge.displayBootstrapped = true;
         } catch (Exception e) {
@@ -412,6 +413,35 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return null;
     }
 
+    /** Last {@link #activeShellId()} the client was told about, so a re-push only happens on a change. */
+    private long publishedActiveShell;
+
+    /**
+     * The shell owning the focus control, or 0 when nothing holds focus. This is
+     * {@code Display.getActiveShell()} without its "otherwise the newest visible shell" fallback:
+     * that fallback would name a shell nobody activated, which is exactly the case this value exists
+     * to rule out.
+     */
+    private long activeShellId() {
+        Control focus = getFocused();
+        if (focus == null || focus.isDisposed())
+            return 0;
+        Shell shell = focus.getShell();
+        return (shell != null && !shell.isDisposed() && shell.getVisible()) ? shell.hashCode() : 0;
+    }
+
+    /**
+     * Re-push the Display state when focus moves to another shell. A shell only takes keyboard focus
+     * on the client once it is the active shell, and {@code Shell.open()} focuses into the new shell
+     * <em>after</em> the display update that introduced it — without this the client would never hear
+     * that the shell became active.
+     */
+    private void publishActiveShell() {
+        if (forDisplay == null || activeShellId() == publishedActiveShell)
+            return;
+        sendDisplayUpdate(forDisplay);
+    }
+
     @Override
     public boolean setFocus(DartControl widget) {
         focused = widget;
@@ -425,6 +455,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 && api.isListening(org.eclipse.swt.SWT.Verify)) {
             dev.equo.swt.FlutterBridge.send(widget, "modify/vetoable", java.util.Map.of("value", true));
         }
+        publishActiveShell();
         return true;
     }
 
@@ -442,6 +473,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     public void clearFocus(DartControl widget) {
         if (focused == widget) {
             focused = null;
+            publishActiveShell();
         }
     }
 
