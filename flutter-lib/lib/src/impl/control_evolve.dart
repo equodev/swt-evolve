@@ -315,7 +315,12 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       return Visibility(visible: false, child: widget);
     }
     if (state.enabled != null && !state.enabled!) {
-      return blockWhenDisabled(Opacity(opacity: 0.35, child: widget));
+      // A disabled control still paints: Java dispatches SWT.Paint and emits the draw ops on this
+      // widget's GC channels whatever its enablement, so the GC has to be mounted and subscribed on
+      // this branch too. Without it, everything a Canvas draws for itself is dropped -- a ui.forms
+      // Hyperlink, which applications create disabled, renders as an empty row.
+      return blockWhenDisabled(
+          Opacity(opacity: 0.35, child: wrapWithGCOverlay(widget)));
     }
 
     if (state.menu != null) {

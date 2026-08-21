@@ -1595,6 +1595,9 @@ public class DartCombo extends DartComposite implements ICombo {
                         dirty();
                     }
                 }
+                sendEvent(SWT.Modify);
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.Selection, e);
             });
         });
