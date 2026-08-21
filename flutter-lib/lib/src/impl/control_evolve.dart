@@ -312,7 +312,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     }
 
     if (state.visible != null && !state.visible!) {
-      return Visibility(visible: false, child: widget);
+      return Visibility(visible: false, maintainState: true, child: widget);
     }
     if (state.enabled != null && !state.enabled!) {
       // A disabled control still paints: Java dispatches SWT.Paint and emits the draw ops on this

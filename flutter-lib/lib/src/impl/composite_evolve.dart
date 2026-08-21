@@ -232,7 +232,7 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
       child: NoLayout(children: children, composite: state),
     );
     if (state.visible != null && !state.visible!) {
-      return Visibility(visible: false, child: rawLayout);
+      return Visibility(visible: false, maintainState: true, child: rawLayout);
     }
 
     final Widget inner;

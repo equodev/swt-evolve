@@ -28,8 +28,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * origin) while every other operation on it still reports success.
  *
  * <p>The fix is a replay: such a State asks for its navigation with a {@code navigateRequest}, and
- * the Browser re-sends the last one with a fresh {@code seq} (the Dart side drops any seq it has
- * already seen). These tests drive that request directly through the recording comm.
+ * the Browser re-sends the last one under its <em>original</em> {@code seq}. A State that never saw
+ * the op has seen no seq at all and so accepts it, while one that did drops it as stale — which is
+ * what keeps the replay from reloading a page that is already there, throwing away everything it did
+ * after {@code completed}. These tests drive that request directly through the recording comm.
  *
  * <p>Lives in {@code dev.equo.swt} for {@link Config#resetForceEclipse()}: that flag short-circuits
  * every impl decision, is package-private to reset, and is left set by anything exercising
@@ -97,8 +99,8 @@ class BrowserNavigateReplayTest {
                 .contains("localFilePath")
                 .contains("viewer.html");
         assertThat(seq(after.get(1).json))
-                .as("the replay uses a fresh seq, else the Dart side drops it as stale")
-                .isGreaterThan(seq(after.get(0).json));
+                .as("the replay keeps the original seq, so a State that already navigated drops it")
+                .isEqualTo(seq(after.get(0).json));
     }
 
     @Test
@@ -112,7 +114,42 @@ class BrowserNavigateReplayTest {
         List<RecordingComm.Frame> frames = navigateFrames();
         assertThat(frames).hasSize(2);
         assertThat(frames.get(1).json).contains("Inline");
-        assertThat(seq(frames.get(1).json)).isGreaterThan(seq(frames.get(0).json));
+        assertThat(seq(frames.get(1).json)).isEqualTo(seq(frames.get(0).json));
+    }
+
+    @Test
+    @DisplayName("repeated requests all replay the same seq, so only a State that missed it navigates")
+    void repeatedRequestsReplayTheSameSeq() {
+        Browser browser = new Browser(shell, SWT.NONE);
+        browser.setUrl("https://example.invalid/first");
+
+        // A widget rebuild puts the new State in the tree before the old one is disposed, so both
+        // ask; the second navigation must not become a reload of the first.
+        bridge.comm.fireContaining("/navigateRequest", null);
+        bridge.comm.fireContaining("/navigateRequest", null);
+
+        List<RecordingComm.Frame> frames = navigateFrames();
+        assertThat(frames).hasSize(3);
+        assertThat(seq(frames.get(1).json)).isEqualTo(seq(frames.get(0).json));
+        assertThat(seq(frames.get(2).json)).isEqualTo(seq(frames.get(0).json));
+    }
+
+    @Test
+    @DisplayName("a later setUrl replays under its own seq, not the earlier navigation's")
+    void replayFollowsTheLatestNavigation() {
+        Browser browser = new Browser(shell, SWT.NONE);
+        browser.setUrl("https://example.invalid/first");
+        browser.setUrl("https://example.invalid/second");
+
+        bridge.comm.fireContaining("/navigateRequest", null);
+
+        List<RecordingComm.Frame> frames = navigateFrames();
+        assertThat(frames).hasSize(3);
+        assertThat(frames.get(2).json).contains("second");
+        assertThat(seq(frames.get(2).json))
+                .as("a State that only saw the first navigation must still take the second")
+                .isEqualTo(seq(frames.get(1).json))
+                .isGreaterThan(seq(frames.get(0).json));
     }
 
     @Test

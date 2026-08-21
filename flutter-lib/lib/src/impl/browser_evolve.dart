@@ -42,6 +42,9 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   int _lastNavSeq = 0;
   bool _opNavigated = false;
   bool _loadedLocalFile = false;
+  // Whether the document being loaded is served from this origin (the
+  // /local-file/ endpoint or the /proxy one), and so must end up readable.
+  bool _expectSameOrigin = false;
   // Web iframe creation params (null on non-web). Kept so execute/evaluate can
   // reach the iframe's contentWindow directly — webview_all_web's runJavaScript
   // is unconditionally unsupported, so DOM-level eval is the only option, and it
@@ -75,8 +78,10 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
         )
         ..setNavigationDelegate(
           NavigationDelegate(
-            onProgress: (p) =>
-                widget.sendProgresschanged(state, VEvent()..x = p..y = 100),
+            onProgress: (p) {
+              if (!_navigationRequested) return;
+              widget.sendProgresschanged(state, VEvent()..x = p..y = 100);
+            },
             onPageStarted: (url) {
               widget.sendProgresschanged(state, VEvent()..x = 0..y = 100);
               // New document: clear the dedup state so its title/status fire even
@@ -85,6 +90,8 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
               _lastStatus = '';
             },
             onPageFinished: (url) {
+              if (_isPlaceholderLoad(url)) return;
+              if (!_documentIsLive()) return;
               final real = _resolveReportedUrl(url);
               widget.sendLocationchanged(state, VEvent()..text = real);
               widget.sendProgresscompleted(state, null);
@@ -100,14 +107,17 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
               _pushNavState(real);
             },
             onUrlChange: (change) {
+              if (_isPlaceholderLoad(change.url)) return;
               final real = _resolveReportedUrl(change.url);
               if (real != null) {
                 widget.sendLocationchanged(state, VEvent()..text = real);
               }
               _pushNavState(real);
             },
-            onWebResourceError: (error) =>
-                widget.sendProgresscompleted(state, null),
+            onWebResourceError: (error) {
+              if (!_navigationRequested) return;
+              widget.sendProgresscompleted(state, null);
+            },
             // Mirror SWT's cancellable LocationListener.changing: ask Java
             // whether to proceed and honour event.doit.
             onNavigationRequest: (request) async {
@@ -155,6 +165,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
           final postData = m["postData"] as String?;
           if (postData != null) {
             _loadedLocalFile = false;
+            _expectSameOrigin = false;
             // POST bypasses the proxy (which is GET-only); the web backend's
             // own XHR carries the body.
             _controller.loadRequest(
@@ -165,15 +176,18 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
             );
           } else if (localFilePath != null && localFilePath.isNotEmpty) {
             _loadedLocalFile = true;
+            _expectSameOrigin = true;
             _controller.loadRequest(Uri.parse(localFileRewrite(localFilePath)));
           } else {
             _loadedLocalFile = false;
             final resolved = _resolveLoadUri(url, uri);
+            _expectSameOrigin = resolved.toString() != url;
             _controller.loadRequest(resolved);
           }
         }
       } else if (text != null) {
         _loadedLocalFile = false;
+        _expectSameOrigin = false;
         _loadedText = text;
         _loadedUrl = null;
         _controller.loadHtmlString(text);
@@ -255,6 +269,47 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       EquoCommService.sendPayload(
           "${state.swt}/${state.id}/navigateRequest", VEvent());
     });
+  }
+
+  // Every navigation path records its target before handing it to the webview.
+  bool get _navigationRequested => _loadedUrl != null || _loadedText != null;
+
+  /// Whether a reported load is the placeholder document the web `<iframe>` is
+  /// created with (see `browserWebViewParams`). Reporting it makes consumers
+  /// run their `ProgressListener.completed` setup against an empty document.
+  /// It can't be a blanket "ignore about:blank" — navigating there on purpose
+  /// is legitimate — so it is identified by never having been asked for.
+  /// Whether the document a load event just reported is really in the frame.
+  ///
+  /// The url carried by that event is not proof: the web backend reads it from
+  /// the frame and, when the frame is not readable, falls back to the url that
+  /// was *requested* — so a load event fired while the frame is still
+  /// transitional arrives stamped with the very url we are waiting for. Passing
+  /// it on gives consumers a `completed` for a document they then cannot script
+  /// (`eval` on it fails as cross-origin).
+  ///
+  /// Only checkable when we serve the document ourselves, via `/local-file/` or
+  /// `/proxy` — then unreadable means "not ours yet" and the real load event is
+  /// still coming. A genuinely cross-origin page is never readable and must
+  /// still report, so it is not gated.
+  bool _documentIsLive() {
+    if (!_expectSameOrigin || _params == null) return true;
+    try {
+      browserEvalInFrame(_params, '1');
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  bool _isPlaceholderLoad(String? reportedUrl) {
+    if (!_navigationRequested) return true;
+    // A late placeholder load can still land just after a real navigation
+    // started. setText is reported under about:blank too (it loads from a
+    // data: URL whose location can't be read back), so only URLs are checked.
+    return reportedUrl == 'about:blank' &&
+        _loadedText == null &&
+        _loadedUrl != 'about:blank';
   }
 
   /// Emits the iframe's current document title (same-origin only) as an SWT
@@ -400,8 +455,10 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       _loadedUrl = url;
       _loadedText = null;
       final resolved = _resolveLoadUri(url!, uri);
+      _expectSameOrigin = resolved.toString() != url;
       _controller.loadRequest(resolved);
     } else if (state.text != null && state.text != _loadedText) {
+      _expectSameOrigin = false;
       _loadedText = state.text;
       _loadedUrl = null;
       _controller.loadHtmlString(state.text!);

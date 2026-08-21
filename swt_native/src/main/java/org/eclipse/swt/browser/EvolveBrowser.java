@@ -58,12 +58,13 @@ public class EvolveBrowser extends WebBrowser {
         });
 
         // A Dart Browser State that came up without ever receiving a navigate op asks for it here.
-        // The fresh seq is what makes the Dart side accept the replay (it drops seqs already seen).
+        // Replayed under its ORIGINAL seq, so a State that did receive it drops the replay instead
+        // of reloading: a reload throws away everything the page did after `completed` (an editor's
+        // injected content, say), and requests overlap freely — a widget rebuild puts the new State
+        // in the tree before the old one is disposed, and both ask.
         FlutterBridge.onPayload(browser.getImpl(), "navigateRequest", Event.class, e -> {
             if (lastNavArgs == null) return;
-            java.util.Map<String, Object> replay = new java.util.HashMap<>(lastNavArgs);
-            replay.put("seq", ++navSeq);
-            FlutterBridge.send(getDartWidget(), "navigate", replay);
+            FlutterBridge.send(getDartWidget(), "navigate", lastNavArgs);
         });
 
         // When hosted in an Equo Chromium standalone window, this Browser is a CEF sub-frame. The

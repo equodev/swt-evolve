@@ -149,7 +149,7 @@ Widget mapWidgetFromValue(VWidget child) {
     VStyledText() => StyledTextSwt(key: ValueKey(id), value: child),
     VTableCursor() => TableCursorSwt(key: ValueKey(id), value: child),
     VTreeCursor() => TreeCursorSwt(key: ValueKey(id), value: child),
-    VBrowser() => BrowserSwt(key: ValueKey(id), value: child),
+    VBrowser() => BrowserSwt(key: GlobalObjectKey(id), value: child),
     VCBanner() => CBannerSwt(key: ValueKey(id), value: child),
     VCCombo() => CComboSwt(key: ValueKey(id), value: child),
     VCTabFolder() => CTabFolderSwt(key: ValueKey(id), value: child),

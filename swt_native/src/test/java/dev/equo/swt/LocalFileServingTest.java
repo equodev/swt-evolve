@@ -79,6 +79,30 @@ class LocalFileServingTest {
     }
 
     @Test
+    void registerIfLocalFile_forAFileWrittenAfterTheNavigation_stillServesIt() throws Exception {
+        // An application may navigate to a template it writes moments later, and does. Requiring
+        // the file to exist at setUrl time would leave the iframe on the raw file: URL for good,
+        // which a browser refuses to load at all — blank however long the file exists by the time
+        // it is fetched.
+        File dir = Files.createTempDirectory("equo-late-file").toFile();
+        File file = new File(dir, "template.html");
+
+        LocalFileServing.Served served =
+                LocalFileServing.registerIfLocalFile("file:" + file.getAbsolutePath());
+
+        assertThat(served).as("a not-yet-written file must still register").isNotNull();
+        assertThat(LocalFileServing.resolve(served.token, served.relativePath))
+                .as("nothing to serve until the file appears").isNull();
+
+        Files.writeString(file.toPath(), "<html></html>", StandardCharsets.UTF_8);
+
+        assertThat(LocalFileServing.resolve(served.token, served.relativePath))
+                .as("the same registration serves the file once it has been written")
+                .isNotNull()
+                .satisfies(served2 -> assertThat(served2.getCanonicalFile()).isEqualTo(file.getCanonicalFile()));
+    }
+
+    @Test
     void tokenFromLocalFileReferer_extractsTokenFromLocalFileUrl() {
         String referer = "http://localhost:56591/local-file/AbCdEf123456/LocalPage.html";
         assertThat(LocalFileServing.tokenFromLocalFileReferer(referer)).isEqualTo("AbCdEf123456");

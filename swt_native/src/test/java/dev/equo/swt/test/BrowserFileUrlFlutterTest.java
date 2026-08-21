@@ -5,10 +5,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 import dev.equo.swt.harness.BrowserFlutterHarness;
 import dev.equo.swt.harness.BrowserKit;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.browser.ProgressListener;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
@@ -95,9 +98,51 @@ class BrowserFileUrlFlutterTest {
                 .isTrue();
     }
 
+    /**
+     * The consumer shape that motivated this: navigate to a local template, then script it from
+     * {@code ProgressListener.completed} — the page declares a top-level function and the listener
+     * calls it. Scripting requires the document to be same-origin, which is exactly what serving the
+     * {@code file:} URL through {@code /local-file/} is for.
+     */
+    @Test
+    @Tag("flutter-it")
+    void evaluate_fromCompletedListener_scriptsTheLocalPage() {
+        AtomicReference<Object> result = new AtomicReference<>();
+        AtomicReference<Throwable> error = new AtomicReference<>();
+        CountDownLatch done = new CountDownLatch(1);
+        browser.addProgressListener(ProgressListener.completedAdapter(e -> {
+            try {
+                result.set(browser.evaluate("return equoMarker();"));
+            } catch (Throwable t) {
+                error.set(t);
+            } finally {
+                done.countDown();
+            }
+        }));
+        browser.setUrl(fixtureFile.toURI().toString());
+        flutter.flush();
+
+        long end = System.currentTimeMillis() + IFRAME_LOAD_TIMEOUT;
+        while (done.getCount() > 0 && System.currentTimeMillis() < end) {
+            flutter.pumpClient();
+            if (!display.readAndDispatch()) {
+                try {
+                    Thread.sleep(5);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
+        assertThat(done.getCount()).as("completed fired for the local page").isZero();
+        assertThat(error.get()).as("evaluate() must not fail on the local page").isNull();
+        assertThat(result.get()).isEqualTo("ready");
+    }
+
     private File writeFixture() throws Exception {
         String html = "<!doctype html><html><head><title>FileUrlReproPage</title></head><body>"
-                + "<h1 id='h'>hello from disk</h1>" + LOAD_PING + "</body></html>";
+                + "<h1 id='h'>hello from disk</h1>"
+                + "<script>function equoMarker(){return 'ready';}</script>" + LOAD_PING + "</body></html>";
         File f = File.createTempFile("equo-file-url-repro", ".html");
         Files.writeString(f.toPath(), html, StandardCharsets.UTF_8);
         return f;

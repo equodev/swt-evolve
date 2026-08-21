@@ -59,15 +59,24 @@ public final class LocalFileServing {
      * If {@code url} is a {@code file:} URL, registers its parent directory
      * (reusing the same token for repeat navigations to that directory) and
      * returns the token + filename Dart should request instead. Returns
-     * {@code null} for any other scheme, or if the URL can't be resolved to an
-     * existing file — callers fall back to the normal navigate path.
+     * {@code null} for any other scheme, or for a URL that names no path at all —
+     * callers fall back to the normal navigate path.
+     * <p>
+     * The file is deliberately <em>not</em> required to exist yet. A real webview
+     * resolves a {@code file:} URL when it loads, so an application may navigate to
+     * a template it writes moments later, and does. Refusing to register then would
+     * leave the {@code <iframe>} pointing at the raw {@code file:} URL for good —
+     * which a browser refuses to load at all ("Not allowed to load local resource"),
+     * rendering blank however long the file has existed by the time it is fetched.
+     * {@link #resolve} re-checks existence when the request actually arrives, so a
+     * path that never appears yields an ordinary 404 instead.
      */
     public static Served registerIfLocalFile(String url) {
         if (url == null || !url.regionMatches(true, 0, "file:", 0, 5)) return null;
         Path filePath = parseFileUrl(url);
         if (filePath == null) return null;
         File file = filePath.toFile();
-        if (!file.isFile()) return null;
+        if (file.getName().isEmpty() || file.isDirectory()) return null;
         File parent = file.getParentFile();
         if (parent == null) return null;
         try {
