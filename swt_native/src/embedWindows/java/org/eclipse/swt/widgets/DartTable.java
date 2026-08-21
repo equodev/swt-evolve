@@ -3279,6 +3279,8 @@ public class DartTable extends DartComposite implements ITable {
 
     boolean loadingVirtualData = false;
 
+    int virtualWindowEnd;
+
     boolean checkData(TableItem item, int index) {
         return checkData(item, index, true);
     }
@@ -3321,6 +3323,13 @@ public class DartTable extends DartComposite implements ITable {
     protected void _hookEvents() {
         super._hookEvents();
         getApi().addListener(SWT.MouseDown, event -> TableHelper.handleMouseDownSelection(this, event));
+        FlutterBridge.on(this, "SetData", "SetData", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                TableHelper.loadVirtualWindow(this, e.end);
+            });
+        });
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())

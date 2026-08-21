@@ -1885,17 +1885,7 @@ public class DartTable extends DartComposite implements ITable {
         this.items = newItems;
         this.itemCount = count;
         updateRowCount();
-        if ((getApi().style & SWT.VIRTUAL) != 0 && this.itemCount > 0) {
-            // Eagerly populate an initial page of virtual rows so SWT.SetData fires like a
-            // native table. Flutter drives further loading as the user scrolls; the client
-            // area is not reliably laid out yet here, so use a fixed initial page size.
-            int limit = Math.min(this.itemCount, 16);
-            for (int i = 0; i < limit; i++) {
-                TableItem it = _getItem(i);
-                if (it != null)
-                    checkData(it, i);
-            }
-        }
+        TableHelper.loadVirtualItems(this);
     }
 
     /*public*/
@@ -2545,6 +2535,8 @@ public class DartTable extends DartComposite implements ITable {
 
     boolean loadingVirtualData = false;
 
+    int virtualWindowEnd;
+
     public void _addEditor(TableEditor value) {
         TableEditor[] result = ControlEditorHelper.addEditor(editors, value, TableEditor.class);
         if (result != editors) {
@@ -2564,6 +2556,13 @@ public class DartTable extends DartComposite implements ITable {
     protected void _hookEvents() {
         super._hookEvents();
         getApi().addListener(SWT.MouseDown, event -> TableHelper.handleMouseDownSelection(this, event));
+        FlutterBridge.on(this, "SetData", "SetData", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                TableHelper.loadVirtualWindow(this, e.end);
+            });
+        });
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())

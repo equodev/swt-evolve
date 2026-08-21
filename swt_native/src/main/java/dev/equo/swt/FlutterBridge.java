@@ -267,7 +267,39 @@ public abstract class FlutterBridge {
         }
     }
 
+    /** Smallest gap between two pushes of the same widget: a frame, as a repaint would coalesce to. */
+    private static final long PUSH_INTERVAL_NANOS = 16_000_000L;
+
+    private static final Map<Object, Long> lastPushNanos =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /**
+     * Table only: a held-back push arrives a turn later, which breaks code that changes a widget,
+     * pumps the loop and reads the result at once. Table's payload carries every row, so it is the
+     * one widget where the saving is worth that.
+     */
+    private static boolean coalescible(Object widget) {
+        return widget instanceof DartControl control
+                && control.getApi() instanceof org.eclipse.swt.widgets.Table;
+    }
+
+    private static boolean pushDue(Object widget, long now) {
+        if (!coalescible(widget)) return true;
+        Long last = lastPushNanos.get(widget);
+        return last == null || now - last >= PUSH_INTERVAL_NANOS;
+    }
+
+    /** The event loop's flush: coalescible widgets are held to one push per frame. */
+    public static CompletableFuture<Void> updateFrame() {
+        return update(true);
+    }
+
+    /** Flushes everything now: callers that block on the result need the state out on this call. */
     public static CompletableFuture<Void> update() {
+        return update(false);
+    }
+
+    private static CompletableFuture<Void> update(boolean coalesce) {
         if (dirty.isEmpty()) {
             return CompletableFuture.completedFuture(null);
         }
@@ -290,10 +322,18 @@ public abstract class FlutterBridge {
             }
         }
 
+        long now = System.nanoTime();
         for (Object widget : filteredDirty) {
             if (isDisposed(widget)) continue;
             // No bridge (Display already gone) -> nothing to send; skip to avoid NPE below.
             if (getBridge(widget) == null) continue;
+            if (coalesce && !pushDue(widget, now)) {
+                synchronized (dirty) {
+                    dirty.add(widget);
+                }
+                continue;
+            }
+            if (coalescible(widget)) lastPushNanos.put(widget, now);
             Runnable send = () -> {
                 try {
                     if (isDisposed(widget)) return; // widget may have been disposed while waiting for clientReady
@@ -622,10 +662,18 @@ public abstract class FlutterBridge {
         }
     }
     
-    /** Whether any widget/resource is awaiting a flush to Dart — a pending-work condition for sleep(). */
+    /**
+     * Whether anything is awaiting a flush <em>now</em> — a pending-work condition for sleep(). A
+     * held-back widget must not count, or the loop spins instead of parking for the rest of the
+     * frame, and it is the parking that coalesces the pushes.
+     */
     public boolean hasDirty() {
+        long now = System.nanoTime();
         synchronized (dirty) {
-            return !dirty.isEmpty();
+            for (Object widget : dirty) {
+                if (pushDue(widget, now)) return true;
+            }
+            return false;
         }
     }
 

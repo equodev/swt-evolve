@@ -46,6 +46,7 @@ class VTable extends VComposite {
     swt = "Table";
   }
 
+  int? itemCount;
   List<int>? columnOrder;
   List<VTableColumn>? columns;
   List<VTableEditor>? editors;

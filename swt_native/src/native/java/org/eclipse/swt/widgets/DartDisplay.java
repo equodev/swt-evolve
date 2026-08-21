@@ -2516,7 +2516,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     public boolean readAndDispatch() {
         checkDevice();
         dev.equo.swt.CrashReporter.checkPendingNativeCrashesIfNeeded();
-        dev.equo.swt.FlutterBridge.update();
+        dev.equo.swt.FlutterBridge.updateFrame();
         if (displayBridge != null)
             displayBridge.onUpdate();
         addPool();

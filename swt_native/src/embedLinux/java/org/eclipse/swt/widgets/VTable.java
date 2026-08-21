@@ -130,6 +130,13 @@ public class VTable extends VComposite {
         ((DartTable) impl).topIndex = value;
     }
 
+    public int getItemCount() {
+        return ((DartTable) impl).getItemCount();
+    }
+
+    public void setItemCount(int value) {
+    }
+
     @JsonConverter(target = Table.class)
     public static class TableJson implements Configuration {
 

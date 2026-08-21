@@ -600,16 +600,42 @@ public class TableHelper {
         return img;
     }
 
+    /**
+     * Rows populated before Flutter reports what is on screen; it only has to cover the first paint.
+     * Must stay small: SWT caps a virtual table's SetData at three times its visible rows.
+     */
+    static final int VIRTUAL_INITIAL_ROWS = 16;
+
+    /** Seeds the first page, keeping any larger window Flutter already asked for. */
     public static void loadVirtualItems(DartTable table) {
+        loadVirtualWindow(table, VIRTUAL_INITIAL_ROWS);
+    }
+
+    /**
+     * Fires {@code SWT.SetData} for the rows in {@code [0, endExclusive)} that have no data yet.
+     *
+     * <p>There is no native paint loop here to pull virtual rows in, so Flutter reports how far it
+     * renders and this grows the window to match. Rows that already carry data are skipped, so a
+     * repeat call is cheap and a row the application cleared still re-fires.
+     */
+    public static void loadVirtualWindow(DartTable table, int endExclusive) {
         if ((table.getApi().style & SWT.VIRTUAL) == 0) return;
+        int end = Math.min(Math.max(endExclusive, table.virtualWindowEnd), table.getItemCount());
+        if (end <= 0) return;
+        boolean loadedAny = false;
         table.loadingVirtualData = true;
         try {
-            for (int i = 0; i < table.getItemCount(); i++) {
-                table.checkData(table._getItem(i), i);
+            for (int i = 0; i < end; i++) {
+                if (table.isDisposed()) return;
+                TableItem item = table._getItem(i);
+                if (item == null || ((DartTableItem) item.getImpl()).cached) continue;
+                table.checkData(item, i);
+                loadedAny = true;
             }
         } finally {
             table.loadingVirtualData = false;
         }
-        table.dirty();
+        table.virtualWindowEnd = end;
+        if (loadedAny) table.dirty();
     }
 }

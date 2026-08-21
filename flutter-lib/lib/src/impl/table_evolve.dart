@@ -24,6 +24,17 @@ import '../gen/widgets.dart';
 import '../gen/rectangle.dart';
 import 'utils/double_tap_detector.dart';
 
+/// Below this many rows a table is built whole, so short tables keep every row's semantics node.
+const int _rowWindowFloor = 200;
+
+
+class _RowWindow {
+  const _RowWindow(this.start, this.end);
+
+  final int start;
+  final int end;
+}
+
 class TableImpl<T extends TableSwt, V extends VTable>
     extends CompositeImpl<T, V> {
   int _selectedRowIndex = -1;
@@ -36,6 +47,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
   final ScrollController _verticalScrollController = ScrollController();
 
   final DoubleTapDetector _rowTapDetector = DoubleTapDetector();
+
+  int _requestedRowEnd = 0;
 
   int registerRowTap(int rowIndex) => _rowTapDetector.registerTap(key: rowIndex);
 
@@ -226,8 +239,9 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
     final editorOverlays = _buildEditorOverlays(context, columns, widgetTheme, columnWidths);
 
+    final totalRows = rowCount(items);
     final body = buildBody(context, items, columns, showLines, widgetTheme, columnWidths);
-    final naturalBodyHeight = items.length * _cachedRowHeight!;
+    final naturalBodyHeight = totalRows * _cachedRowHeight!;
 
     final tableContent = wrapTableForDrop(
       Stack(
@@ -253,7 +267,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
           ),
         ],
       ),
-      items.length,
+      totalRows,
     );
 
     final wrappedTable = super.wrap(tableContent);
@@ -430,16 +444,9 @@ class TableImpl<T extends TableSwt, V extends VTable>
       textColor: theme.rowTextColor,
       baseTextStyle: theme.rowTextStyle,
     );
-    final height = calculateHeight(items.length, theme, context, rowTextStyle);
-
-    final tableRows = items
-        .asMap()
-        .entries
-        .map(
-          (entry) => buildRow(context, entry.key, entry.value, columns.length, theme,
-              showLines: showLines),
-        )
-        .toList();
+    final totalRows = rowCount(items);
+    final height = calculateHeight(totalRows, theme, context, rowTextStyle);
+    final rowHeight = _cachedRowHeight ?? calculateRowHeight(rowTextStyle, theme);
 
     // A column-less table (SWT List-style single column) still gets a trailing
     // SizedBox.shrink() cell from buildRow, so its row has two Table columns.
@@ -454,17 +461,96 @@ class TableImpl<T extends TableSwt, V extends VTable>
     return Container(
       color: backgroundColor,
       height: height,
-      child: items.isEmpty
+      child: totalRows == 0
           ? Container()
-          : SingleChildScrollView(
-              controller: _verticalScrollController,
-              child: Table(
-                columnWidths: trailingColumnWidths,
-                border: buildBodyBorder(showLines, theme),
-                children: tableRows,
-              ),
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                final window = _rowWindow(constraints, rowHeight, totalRows);
+                _requestRows(window.end);
+                return SingleChildScrollView(
+                  controller: _verticalScrollController,
+                  child: Padding(
+                    // The rows outside the window are height alone, so the scrollbar spans the table.
+                    padding: EdgeInsets.only(
+                      top: window.start * rowHeight,
+                      bottom: (totalRows - window.end) * rowHeight,
+                    ),
+                    child: Table(
+                      columnWidths: trailingColumnWidths,
+                      border: buildBodyBorder(showLines, theme),
+                      children: [
+                        for (int i = window.start; i < window.end; i++)
+                          i < items.length
+                              ? buildRow(context, i, items[i], columns.length, theme,
+                                  showLines: showLines)
+                              : buildPendingRow(columns, rowHeight, showLines, theme),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
     );
+  }
+
+  /// Rows the table has: for a VIRTUAL table, more than the rows whose data has arrived. Falls back
+  /// to the items when no count is sent.
+  int rowCount(List<VTableItem> items) {
+    final declared = state.itemCount ?? 0;
+    return declared > items.length ? declared : items.length;
+  }
+
+  /// The row range to build; everything outside it costs height only.
+  _RowWindow _rowWindow(BoxConstraints constraints, double rowHeight, int totalRows) {
+    if (totalRows <= _rowWindowFloor || rowHeight <= 0) {
+      return _RowWindow(0, totalRows);
+    }
+    final viewport =
+        constraints.maxHeight.isFinite ? constraints.maxHeight : totalRows * rowHeight;
+    final offset =
+        _verticalScrollController.hasClients ? _verticalScrollController.offset : 0.0;
+    final visibleRows = (viewport / rowHeight).ceil() + 1;
+    // Half a screenful each side: enough that a small scroll shows no blank frame, and proportional
+    // so the window stays inside SWT's budget of three times the visible rows of SetData.
+    final overscan = visibleRows ~/ 2;
+    final span = visibleRows + 2 * overscan;
+    var start = (offset / rowHeight).floor() - overscan;
+    if (start < 0) start = 0;
+    var end = start + span;
+    if (end > totalRows) end = totalRows;
+    return _RowWindow(start, end);
+  }
+
+  /// A row whose SWT.SetData has not run yet. Its cell count must match the populated rows, or
+  /// Flutter's Table asserts.
+  TableRow buildPendingRow(
+    List<VTableColumn> columns,
+    double rowHeight,
+    bool showLines,
+    TableThemeExtension theme,
+  ) {
+    final cellCount = columns.isNotEmpty ? columns.length : 1;
+    return TableRow(
+      decoration: BoxDecoration(
+        border: getTableRowBorder(false, theme, showLines: showLines),
+      ),
+      children: [
+        for (int i = 0; i < cellCount; i++) SizedBox(height: rowHeight),
+        const SizedBox.shrink(),
+      ],
+    );
+  }
+
+  /// Asks Java to run SWT.SetData up to [end]. Deferred past the frame: the answer is a state push,
+  /// and sending mid-build would rebuild the tree being built.
+  void _requestRows(int end) {
+    if (end <= _requestedRowEnd) return;
+    if (!StyleBits(state.style).has(SWT.VIRTUAL)) return;
+    _requestedRowEnd = end;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      widget.sendEvent(state, "SetData/SetData", VEvent()..end = end);
+    });
   }
 
   TableRow buildRow(
