@@ -9,23 +9,11 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Full-stack reproduction of a bug where a widget whose ancestor is disabled must stop taking
- * input on the Dart side, even though the widget's own {@code getEnabled()} flag is still
- * {@code true}.
- *
- * <p>The reported case is the "?" help button in a settings group: it is a {@link ToolItem}
- * inside a {@link ToolBar} inside a {@link Composite}. Disabling the group only flips the
- * container's own enabled flag (ToolItems are not returned by {@code Composite.getChildren()},
- * so a recursive {@code setEnabled} never touches the item). Native SWT still blocks such a
- * widget because {@code isEnabled()} consults the parent chain; the value serialized to Dart
- * did not, so the item stayed clickable / highlighted.
- *
- * <p>The payload carries both states, the way SWT itself splits them: {@code enabled} is the
- * control's own flag and drives how it is drawn, while {@code enabledEffective} (own AND all
- * ancestors) is what native SWT consults in its hit test and event dispatch. Natively, disabling a
- * container never touches a child's handle, so the child keeps its own look but stops taking input
- * — which is what these assertions check. Before the fix {@code enabledEffective} did not exist and
- * the item stayed interactive.
+ * A widget whose ancestor is disabled must render as disabled on the Dart side, even though
+ * its own {@code getEnabled()} flag is still {@code true} — {@code isEnabled()} consults the
+ * parent chain, so the serialized {@code enabled} property must reflect that, not just the
+ * widget's own flag. Case: a {@link ToolItem}, not returned by {@code Composite.getChildren()},
+ * so a recursive {@code setEnabled} on the group never touches it directly.
  *
  * <p>Run via the {@code webTest} task, which compiles this against the WEB Java backend.
  *

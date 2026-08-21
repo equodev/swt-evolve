@@ -108,8 +108,12 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   // redraw both firing close together) can't race on the GC's shapes commit.
   // Before the GC overlay child has mounted (gcOverlayKey.currentState still null —
   // true for initState() and the first build()), there's nothing to track pending
-  // state against, so cap it at a single request until the overlay exists.
+  // state against, so cap it at one request per bounds phase until the overlay exists.
   bool _sentInitialPaintRequest = false;
+  // ControlHelper.firePaint() (Java) silently drops a Paint request while the control
+  // still has 0x0 bounds, so a request sent before Java reports real bounds back would
+  // otherwise be lost for good. Retry once bounds become valid, but only once.
+  bool _requestedWithValidBounds = false;
 
   // Called right before a Paint request actually goes out. Subclasses push whatever
   // the Java-side SWT.Paint listeners must already have when they run (e.g.
@@ -120,8 +124,12 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   void _requestPaint() {
     final gc = gcOverlayKey.currentState;
     if (gc == null) {
-      if (_sentInitialPaintRequest) return;
+      final boundsValid = hasBounds(state.bounds);
+      if (_sentInitialPaintRequest && (!boundsValid || _requestedWithValidBounds)) {
+        return;
+      }
       _sentInitialPaintRequest = true;
+      if (boundsValid) _requestedWithValidBounds = true;
       beforePaintRequest();
       widget.sendPaintPaint(state, null);
       return;
@@ -303,9 +311,13 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     // RowLayout with gaps, or SWT.TRANSPARENT children that paint nothing of their own,
     // would otherwise show whatever's behind the whole widget instead of this Canvas's
     // actual color, fragmenting what should read as one seamless region.
+    // See composite_evolve.dart's buildComposite() for why wrapDnd() is applied explicitly here:
+    // the children branch bypasses wrap() (and thus wrapDnd()), so a Canvas with children never
+    // became a Draggable/DragTarget even when it carried a dragSource/dropTargetId.
+    final gcWrapped = wrapWithGCOverlay(_paintBackground(rawLayout));
     return wrapCompositeInteractionChrome(
       this,
-      wrapWithGCOverlay(_paintBackground(rawLayout)),
+      wrapsWholeWidgetForDnd ? wrapDnd(gcWrapped) : gcWrapped,
     );
   }
 

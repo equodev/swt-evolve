@@ -155,6 +155,9 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         super(control, checkStyle(style), api);
         this.control = control;
         this.bridge = ((DartWidget) control.getImpl()).getBridge();
+        if (this.bridge != null) {
+            this.bridge.dirty((DartWidget) control.getImpl());
+        }
         _hookEvents();
     }
 
@@ -695,14 +698,14 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         if (source == null)
             return new TransferData[0];
         java.util.List<TransferData> mutual = new java.util.ArrayList<>();
-        for (Transfer target : transferAgents) {
-            if (target == null)
+        for (Transfer offered : source._transferAgents()) {
+            if (offered == null)
                 continue;
-            for (int targetTypeId : target.getTypeIds()) {
-                for (Transfer offered : source._transferAgents()) {
-                    if (offered == null)
+            for (int offeredTypeId : offered.getTypeIds()) {
+                for (Transfer target : transferAgents) {
+                    if (target == null)
                         continue;
-                    for (int offeredTypeId : offered.getTypeIds()) {
+                    for (int targetTypeId : target.getTypeIds()) {
                         if (targetTypeId == offeredTypeId) {
                             TransferData data = new TransferData();
                             data.type = targetTypeId;
@@ -728,6 +731,7 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         DartDragSource source = matchingDragSource();
         TransferData[] mutual = computeMutualDataTypes(source);
         TransferData type = selectedDataType != null ? selectedDataType : (mutual.length > 0 ? mutual[0] : null);
+        event.dataTypes = mutual;
         event.dataType = type;
         if (source != null && type != null) {
             event.data = source.requestData(type);

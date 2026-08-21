@@ -1,12 +1,17 @@
 package dev.equo.swt;
 
 import java.io.File;
+import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Lets a web-target Browser display a {@code file://} URL by re-serving it (and any
@@ -35,6 +40,20 @@ public final class LocalFileServing {
     private static final Map<String, File> rootsByToken = new ConcurrentHashMap<>();
     private static final Map<String, String> tokensByPath = new ConcurrentHashMap<>();
     private static final SecureRandom RANDOM = new SecureRandom();
+
+    /**
+     * Secondary root per token, for pages whose {@code <base href>} points at a directory
+     * other than the file's own (e.g. a temp copy pointing back at its install directory).
+     * See {@link #resolve}.
+     */
+    private static final Map<String, File> baseHrefRootsByToken = new ConcurrentHashMap<>();
+
+    /** Matches an HTML {@code <base href="...">} tag; only the first hit (in the head) matters. */
+    private static final Pattern BASE_HREF_PATTERN =
+            Pattern.compile("<base\\s+[^>]*href\\s*=\\s*[\"']([^\"']*)[\"']", Pattern.CASE_INSENSITIVE);
+
+    /** Only worth scanning for a {@code <base>} tag in the head, so cap the read. */
+    private static final int BASE_HREF_SCAN_LIMIT = 32 * 1024;
 
     private LocalFileServing() {
     }
@@ -87,7 +106,65 @@ public final class LocalFileServing {
         String canonicalKey = parent.getPath();
         String token = tokensByPath.computeIfAbsent(canonicalKey, p -> newToken());
         rootsByToken.put(token, parent);
+        registerBaseHrefRoot(token, file);
         return new Served(token, file.getName());
+    }
+
+    /**
+     * If {@code htmlFile} declares a {@code <base href>} pointing at a filesystem
+     * location other than its own directory, registers that location's directory
+     * as a secondary root for {@code token} (see {@link #baseHrefRootsByToken}).
+     * Best-effort: any failure (not HTML, unreadable, unparsable/remote href,
+     * target doesn't exist) just skips the fallback, leaving the primary root as
+     * the only lookup for that token.
+     */
+    private static void registerBaseHrefRoot(String token, File htmlFile) {
+        String name = htmlFile.getName().toLowerCase(Locale.ROOT);
+        if (!name.endsWith(".html") && !name.endsWith(".htm")) return;
+        try {
+            String head = readHead(htmlFile, BASE_HREF_SCAN_LIMIT);
+            Matcher m = BASE_HREF_PATTERN.matcher(head);
+            if (!m.find()) return;
+            File target = resolveBaseHrefTarget(m.group(1));
+            if (target == null) return;
+            File dir = target.isDirectory() ? target : target.getParentFile();
+            if (dir == null || !dir.isDirectory()) return;
+            baseHrefRootsByToken.put(token, dir.getCanonicalFile());
+        } catch (Exception ignored) {
+            // Best-effort only, see javadoc above.
+        }
+    }
+
+    /** Reads up to {@code limit} bytes of {@code file} as UTF-8, for a bounded head-of-file scan. */
+    private static String readHead(File file, int limit) throws Exception {
+        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+            int len = (int) Math.min(limit, raf.length());
+            byte[] buf = new byte[len];
+            raf.readFully(buf);
+            return new String(buf, StandardCharsets.UTF_8);
+        }
+    }
+
+    /**
+     * Resolves a {@code <base href>} value to the {@link File} it names, or
+     * {@code null} if it's remote ({@code http(s):}/{@code data:}), relative (the
+     * primary root already covers that case), or doesn't exist on disk. Accepts
+     * both {@code file:} URLs and the root-absolute, scheme-less filesystem paths
+     * tools like Eclipse's {@code FileLocator} commonly emit.
+     */
+    private static File resolveBaseHrefTarget(String href) {
+        if (href == null || href.isEmpty()) return null;
+        Path p;
+        if (href.regionMatches(true, 0, "file:", 0, 5)) {
+            p = parseFileUrl(href);
+        } else if (href.startsWith("/")) {
+            p = Paths.get(href);
+        } else {
+            return null;
+        }
+        if (p == null) return null;
+        File f = p.toFile();
+        return f.exists() ? f : null;
     }
 
     /**
@@ -109,15 +186,31 @@ public final class LocalFileServing {
      * {@code ../} traversal past the app-requested directory). Returns
      * {@code null} if the token is unknown, the path escapes the root, or the
      * resolved file doesn't exist.
+     * <p>
+     * Falls back to the token's {@code <base href>} directory (see
+     * {@link #registerBaseHrefRoot}) when the primary root doesn't have it, treating
+     * {@code "/" + relativePath} as the resource's real absolute filesystem path.
      */
     public static File resolve(String token, String relativePath) {
         File root = rootsByToken.get(token);
-        if (root == null) return null;
-        Path rootPath = root.toPath().normalize();
-        Path resolved = rootPath.resolve(relativePath).normalize();
-        if (!resolved.startsWith(rootPath)) return null;
-        File file = resolved.toFile();
-        return file.isFile() ? file : null;
+        if (root != null) {
+            Path rootPath = root.toPath().normalize();
+            Path resolved = rootPath.resolve(relativePath).normalize();
+            if (resolved.startsWith(rootPath)) {
+                File file = resolved.toFile();
+                if (file.isFile()) return file;
+            }
+        }
+        File baseRoot = baseHrefRootsByToken.get(token);
+        if (baseRoot != null) {
+            Path basePath = baseRoot.toPath().normalize();
+            Path absolute = Paths.get("/" + relativePath).normalize();
+            if (absolute.startsWith(basePath)) {
+                File file = absolute.toFile();
+                if (file.isFile()) return file;
+            }
+        }
+        return null;
     }
 
     /**

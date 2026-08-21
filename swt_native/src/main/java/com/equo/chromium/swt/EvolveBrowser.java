@@ -50,6 +50,9 @@ public class EvolveBrowser extends WebBrowser {
     @Override
     public void create(Composite parent, int style) {
         display = browser.getDisplay();
+        // Desktop-webview BrowserFunction calls arrive here (fire-and-forget); see
+        // BrowserScripting.listenForFunctionCalls. No-op on the web backend.
+        BrowserScripting.listenForFunctionCalls(getDartWidget(), display);
         // Flutter pushes the webview history state (x = canGoBack, y =
         // canGoForward as 0/1) after each navigation; cache it for
         // isBackEnabled()/isForwardEnabled()

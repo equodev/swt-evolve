@@ -44,6 +44,14 @@ public class VBrowser extends VComposite {
         ((DartBrowser) impl).url = value;
     }
 
+    @JsonAttribute(nullable = false)
+    public String[] getFunctionNames() {
+        return dev.equo.swt.BrowserFunctionRegistry.namesFor(dev.equo.swt.FlutterBridge.id(impl)).toArray(new String[0]);
+    }
+
+    public void setFunctionNames(String[] value) {
+    }
+
     @JsonConverter(target = Browser.class)
     public static class BrowserJson implements Configuration {
 

@@ -246,27 +246,14 @@ public class ControlHelper {
         // increment further and unwind cleanly.
         inPaintDepth++;
         try {
-            try {
-                if (!Class.forName("org.eclipse.draw2d.FigureCanvas").isInstance(c.getApi())) {
-                    Event event = new Event();
-                    event.x = 0;
-                    event.y = 0;
-                    event.width = bounds.width;
-                    event.height = bounds.height;
-                    event.gc = new GC(c.getApi());
-                    c.sendEvent(SWT.Paint, event);
-                    event.gc.dispose();
-                }
-            } catch (ClassNotFoundException ex) {
-                Event event = new Event();
-                event.x = 0;
-                event.y = 0;
-                event.width = bounds.width;
-                event.height = bounds.height;
-                event.gc = new GC(c.getApi());
-                c.sendEvent(SWT.Paint, event);
-                event.gc.dispose();
-            }
+            Event event = new Event();
+            event.x = 0;
+            event.y = 0;
+            event.width = bounds.width;
+            event.height = bounds.height;
+            event.gc = new GC(c.getApi());
+            c.sendEvent(SWT.Paint, event);
+            event.gc.dispose();
         } finally {
             inPaintDepth--;
         }

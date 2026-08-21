@@ -1424,8 +1424,9 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     private void _releaseRemoteRefOnDart(Long ref) {
         if (ref != null && device instanceof Display disp) {
             dev.equo.swt.comm.CommService c = dev.equo.swt.FlutterBridge.resolveDisplayGcComm(disp);
-            if (c != null)
-                c.send("Image/releaseRemoteRef", java.nio.ByteBuffer.allocate(8).putLong(ref).array());
+            if (c != null) {
+                dev.equo.swt.FlutterBridge.awaitPendingDeferredSends().whenComplete((r, e) -> c.send("Image/releaseRemoteRef", java.nio.ByteBuffer.allocate(8).putLong(ref).array()));
+            }
         }
     }
 

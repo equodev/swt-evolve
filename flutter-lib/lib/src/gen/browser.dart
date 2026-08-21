@@ -75,6 +75,7 @@ class VBrowser extends VComposite {
     swt = "Browser";
   }
 
+  List<String>? functionNames;
   bool? javascriptEnabled;
   String? text;
   String? url;

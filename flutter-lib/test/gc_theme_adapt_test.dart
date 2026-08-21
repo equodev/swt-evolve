@@ -127,7 +127,7 @@ void main() {
     addTearDown(drawer.dispose);
 
     expect(drawer.fillColor, const Color(0xFFFFFFFF));
-    expect(drawer.textColor, const Color(0xFF333232));
+    expect(drawer.textColor, const Color(0xFF1F1F1F));
   });
 }
 

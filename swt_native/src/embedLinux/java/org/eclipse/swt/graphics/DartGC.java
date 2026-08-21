@@ -189,6 +189,7 @@ public final class DartGC extends DartResource implements IGC {
         super(api);
         if (drawable == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        fullRepaint = org.eclipse.swt.widgets.ControlHelper.inPaintDepth > 0;
         GCData data = new GCData();
         data.style = checkStyle(style);
         Device device = data.device;
@@ -474,8 +475,9 @@ public final class DartGC extends DartResource implements IGC {
             drawable.internal_dispose_GC(getApi().handle, data);
         }
         data.drawable = data.clipRgn = 0;
-        if (drawable instanceof Control)
-            FlutterBridge.sendEvent(this, "gcDispose");
+        if (drawable instanceof Control && !silentDispose) {
+            FlutterBridge.send(this, "gcDispose", java.util.Map.of("fullRepaint", fullRepaint));
+        }
         drawable = null;
         getApi().handle = 0;
         data.image = null;
@@ -2051,6 +2053,7 @@ public final class DartGC extends DartResource implements IGC {
                 if (d != null && !d.isDisposed())
                     d.wake();
             });
+            dirty();
         }
         this.drawable = drawable;
         this.data = data;
@@ -3476,6 +3479,8 @@ public final class DartGC extends DartResource implements IGC {
         return transform;
     }
 
+    boolean fullRepaint;
+
     private Display display;
 
     public Display getDisplay() {
@@ -3489,6 +3494,8 @@ public final class DartGC extends DartResource implements IGC {
     public java.util.function.Consumer<Image> imageCapture;
 
     public java.util.function.Consumer<String> textCapture;
+
+    public boolean silentDispose;
 
     public void requestRenderSnapshotAndWait() {
         if (!(bridge instanceof GCImageDrawer drawer))

@@ -17,6 +17,10 @@ Object? browserEvalInFrame(
         PlatformWebViewControllerCreationParams? params, String script) =>
     null;
 
+/// No iframe to listen to on non-web platforms; desktop webviews get their
+/// re-injection from the `onPageFinished` navigation delegate instead.
+void browserOnFrameLoad(dynamic params, void Function() onLoad) {}
+
 /// Only the web iframe swallows the keys typed inside it; native webviews route them through
 /// Flutter's keyboard.
 bool installBrowserFrameKeyHandling(

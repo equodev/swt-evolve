@@ -108,7 +108,12 @@ class GCDrawer extends GCDrawerBase {
   /// onShapesUpdated triggers GCImpl.setState().
   GCDrawer.embedded(VGC state, {this.onShapesUpdated, this.onGCDispose}) : super(state) {
     _localTokens["${state.swt}/${state.id}/gcDispose"] =
-        EquoCommService.onRaw("${state.swt}/${state.id}/gcDispose", (_) async {
+        EquoCommService.onRaw("${state.swt}/${state.id}/gcDispose", (payload) async {
+      // Whether this GC mirrors a real SWT.Paint (ControlHelper.firePaint()) versus one
+      // the app opened outside any Paint dispatch (e.g. GEF/draw2d drag/hover feedback on
+      // a FigureCanvas). Malformed/missing payload defaults to true (replace).
+      final fullRepaint =
+          !(payload is Map && payload['fullRepaint'] == false);
       final myGeneration = ++_gcDisposeGeneration;
       final cycleStaging = _staging;
       _staging = [];
@@ -133,9 +138,22 @@ class GCDrawer extends GCDrawerBase {
       final keep = <ui.Image>{};
       collectShapeImages(cycleStaging, keep);
       collectShapeImages(_lateLoadedImages, keep);
-      disposeShapeImages(shapes, keep: keep);
-      shapes.clear();
-      shapes.addAll(cycleStaging);
+      if (fullRepaint) {
+        // A FigureCanvas/GEF full repaint can synchronously answer with only its
+        // background layer, while the app's own delayed update loop redraws the actual
+        // figures moments later as separate, additive ImageShapes (fullRepaint=false).
+        // So a full repaint only clears non-image shapes; ImageShapes ride through
+        // untouched. No-op for ordinary widgets, which paint everything synchronously.
+        final keptImages = shapes.whereType<ImageShape>().toList();
+        disposeShapeImages(shapes.where((s) => s is! ImageShape).toList(), keep: keep);
+        shapes.clear();
+        shapes.addAll(cycleStaging);
+        shapes.addAll(keptImages);
+      } else {
+        // A feedback-only draw (e.g. a hover highlight) composites on top instead of
+        // wiping existing shapes; the next full repaint's clear above resets any buildup.
+        shapes.addAll(cycleStaging);
+      }
       shapes.addAll(_lateLoadedImages);
       _lateLoadedImages.clear();
 
@@ -182,9 +200,11 @@ class GCDrawer extends GCDrawerBase {
   }
 
   // Used until a theme is resolved: the standalone image drawer renders offscreen, never builds,
-  // and so never gets a context.
-  static const _swtBackground = Color(0xFFFFFFFF);
-  static const _swtForeground = Color(0xFF333232);
+  // and so never gets a context (_canvasTheme stays null). Falls back to the global dark/light
+  // setting (getCurrentTheme(), no BuildContext needed) instead of a fixed white/dark-grey pair,
+  // so GEF/draw2d's offscreen `new GC(image)` double-buffering still matches the app's theme.
+  Color get _swtBackground => getBackground();
+  Color get _swtForeground => getForeground();
 
   // One getter per painted role, differing only in the theme slot it reads. The GC hands the
   // drawing side a background or a foreground; the role says what it is being used for.

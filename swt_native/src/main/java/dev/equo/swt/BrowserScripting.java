@@ -92,21 +92,54 @@ public final class BrowserScripting {
 
     /**
      * Records a {@code BrowserFunction} callback in {@link BrowserFunctionRegistry}
-     * (keyed by this Browser's id) and asks the Dart side to inject the page-side
-     * XHR shim. The callback is passed as a plain {@link Function} so this stays
-     * agnostic of which package's {@code BrowserFunction} type is in play.
+     * (keyed by this Browser's id) and marks the widget dirty so the next state
+     * snapshot carries the updated {@code VBrowser.functionNames} to Dart, which
+     * injects the page-side XHR shim. The callback is passed as a plain
+     * {@link Function} so this stays agnostic of which package's
+     * {@code BrowserFunction} type is in play.
      */
     public static void registerFunction(DartWidget widget, Display display, String name,
             Function<Object[], Object> fn) {
         long id = FlutterBridge.id(widget);
         Display d = display != null ? display : Display.getCurrent();
         BrowserFunctionRegistry.register(id, name, d, fn);
-        FlutterBridge.send(widget, "registerFunction", Map.of("name", name));
+        markDirty(widget);
     }
 
     public static void unregisterFunction(DartWidget widget, String name) {
         long id = FlutterBridge.id(widget);
         BrowserFunctionRegistry.unregister(id, name);
-        FlutterBridge.send(widget, "unregisterFunction", Map.of("name", name));
+        markDirty(widget);
+    }
+
+    private static void markDirty(DartWidget widget) {
+        FlutterBridge bridge = widget.getBridge();
+        if (bridge != null) bridge.dirty(widget);
+    }
+
+    /**
+     * Wires the desktop-webview {@code BrowserFunction} call path: a native webview has no
+     * synchronous JS&lt;-&gt;Dart bridge, so its {@code window[name]()} shim posts {@code
+     * {name, args}} through a one-way JS channel instead of calling back directly. Runs the
+     * callback fire-and-forget -- unlike {@link #evaluate}, nothing waits on a reply. Safe to
+     * call unconditionally: the web backend never sends this payload.
+     */
+    public static void listenForFunctionCalls(DartWidget widget, Display display) {
+        long id = FlutterBridge.id(widget);
+        FlutterBridge.onPayload(widget, "browserFunctionCall", Event.class, e -> {
+            if (e == null || e.text == null) return;
+            Object parsed = EvalJson.parse(e.text);
+            if (!(parsed instanceof Map)) return;
+            Map<?, ?> m = (Map<?, ?>) parsed;
+            Object nameObj = m.get("name");
+            if (!(nameObj instanceof String)) return;
+            Object argsObj = m.get("args");
+            Object[] args = (argsObj instanceof Object[]) ? (Object[]) argsObj : new Object[0];
+            try {
+                BrowserFunctionRegistry.invoke(id, (String) nameObj, args);
+            } catch (RuntimeException ignored) {
+                // No synchronous caller here to surface this to (unlike the web/evaluate path).
+            }
+        });
     }
 }

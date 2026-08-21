@@ -527,13 +527,14 @@ public abstract class FlutterBridge {
             return;
         }
         if (dirty.contains(resource)) {
-            update().whenComplete((r, a) -> {
+            CompletableFuture<Void> deferred = update().whenComplete((r, a) -> {
                 try {
                     serializeAndSend(comm, eventName(resource, event), args);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             });
+            trackDeferredSend(deferred);
         } else {
             try {
                 serializeAndSend(comm, eventName(resource, event), args);
@@ -541,6 +542,28 @@ public abstract class FlutterBridge {
                 e.printStackTrace();
             }
         }
+    }
+
+    // A send through the "dirty" branch above defers the actual wire send to an arbitrary
+    // later point. An unbuffered, immediate send issued afterwards (e.g. releasing a remote
+    // image cache entry a still-deferred draw references) can then physically overtake it on
+    // the wire. Track every deferred send so such a caller can wait for the backlog to drain.
+    private static final java.util.Set<CompletableFuture<?>> pendingDeferredSends =
+            java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    private static void trackDeferredSend(CompletableFuture<Void> future) {
+        pendingDeferredSends.add(future);
+        future.whenComplete((r, e) -> pendingDeferredSends.remove(future));
+    }
+
+    /**
+     * Resolves once every {@link #send(DartResource, String, Object)} deferred at the moment of
+     * this call has actually gone out. Callers that must not let a message overtake an
+     * already-queued deferred send (e.g. releasing a remote image cache entry a pending draw might
+     * still reference) should send after this completes rather than immediately.
+     */
+    public static CompletableFuture<Void> awaitPendingDeferredSends() {
+        return CompletableFuture.allOf(pendingDeferredSends.toArray(new CompletableFuture[0]));
     }
 
     public static void send(DartWidget resource, String event, Object args) {

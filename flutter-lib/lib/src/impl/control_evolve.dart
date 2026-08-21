@@ -19,6 +19,7 @@ import '../impl/key_forwarding.dart';
 import '../impl/key_mapping.dart';
 import '../impl/menu_evolve.dart';
 import '../theme/theme_extensions/tooltip_theme_extension.dart';
+import 'utils/dnd_session.dart';
 import 'utils/dnd_utils.dart';
 import 'utils/hover_arbiter.dart';
 import 'utils/widget_utils.dart';
@@ -82,6 +83,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       }
     });
     _publishBounds();
+    ActiveDragTracker.ensureInitialized();
   }
 
   @override
@@ -375,10 +377,13 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         sendThrottledDragMove(state, event);
       },
       child: MouseRegion(
-        onEnter: (_) =>
-            HoverExclusivityArbiter.instance.setActive(this, hoverDepth, true),
+        onEnter: (_) {
+          if (ActiveDragTracker.isSuppressingHover) return;
+          HoverExclusivityArbiter.instance.setActive(this, hoverDepth, true);
+        },
         onExit: (_) {
           _hoverTimer?.cancel();
+          if (ActiveDragTracker.isSuppressingHover) return;
           HoverExclusivityArbiter.instance.setActive(this, hoverDepth, false);
         },
         onHover: (e) {

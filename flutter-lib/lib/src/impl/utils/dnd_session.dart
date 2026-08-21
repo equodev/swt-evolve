@@ -1,5 +1,38 @@
+import 'package:flutter/gestures.dart';
+
 import '../../comm/comm.dart';
 import '../../gen/event.dart';
+
+/// Tracks whether a pointer button is held down anywhere in the app, to suppress
+/// MouseTrack enter/exit forwarding to Java during a drag-like gesture.
+///
+/// On the web, Flutter keeps updating [MouseRegion] membership while a button is
+/// held, unlike real OS-level DND, so an unsuppressed onExit mid-drag would forward
+/// a spurious SWT MouseExit. Listens on the pointer router directly rather than
+/// [Draggable]'s onDragStarted, which only fires after the drag distance threshold
+/// is crossed — by then the origin's onExit may already have fired.
+class ActiveDragTracker {
+  ActiveDragTracker._();
+
+  static bool _pointerDown = false;
+  static bool _initialized = false;
+
+  static bool get isSuppressingHover => _pointerDown;
+
+  static void ensureInitialized() {
+    if (_initialized) return;
+    _initialized = true;
+    GestureBinding.instance.pointerRouter.addGlobalRoute(_onPointerEvent);
+  }
+
+  static void _onPointerEvent(PointerEvent event) {
+    if (event is PointerDownEvent) {
+      _pointerDown = true;
+    } else if (event is PointerUpEvent || event is PointerCancelEvent) {
+      _pointerDown = false;
+    }
+  }
+}
 
 class DndNegotiationState {
   final int detail;

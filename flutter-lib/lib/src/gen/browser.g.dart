@@ -63,6 +63,9 @@ VBrowser _$VBrowserFromJson(Map<String, dynamic> json) => VBrowser()
   ..tabList = (json['tabList'] as List<dynamic>?)
       ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
       .toList()
+  ..functionNames = (json['functionNames'] as List<dynamic>?)
+      ?.map((e) => e as String)
+      .toList()
   ..javascriptEnabled = json['javascriptEnabled'] as bool?
   ..text = json['text'] as String?
   ..url = json['url'] as String?;
@@ -99,6 +102,7 @@ Map<String, dynamic> _$VBrowserToJson(VBrowser instance) => <String, dynamic>{
   'children': ?instance.children,
   'layoutDeferred': ?instance.layoutDeferred,
   'tabList': ?instance.tabList,
+  'functionNames': ?instance.functionNames,
   'javascriptEnabled': ?instance.javascriptEnabled,
   'text': ?instance.text,
   'url': ?instance.url,

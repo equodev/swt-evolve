@@ -49,7 +49,13 @@ class ImageUtils {
   }
 
   static void releaseRemoteImage(int ref) {
-    _remoteImageCache.remove(ref)?.dispose();
+    // This release arrives on a different comm registry than a drawImage() referencing
+    // the same ref, so dispatch order isn't guaranteed to match send order even though
+    // Java always sends the draw first. Evicting synchronously could beat an in-flight
+    // draw's cache lookup, leaving it permanently blank. Defer by one event-loop turn.
+    Future(() {
+      _remoteImageCache.remove(ref)?.dispose();
+    });
   }
 
   static Widget? buildIconWidget(

@@ -47,6 +47,16 @@ String localFileRewrite(String tokenPath) {
   return '$origin/local-file/$tokenPath';
 }
 
+/// Listens for the iframe's native `load` DOM event, fired every time it lands
+/// a new document (navigation, back/forward, reload) -- the real signal that
+/// was missing when this was written, versus guessing with a retry loop.
+void browserOnFrameLoad(
+    PlatformWebViewControllerCreationParams? params, void Function() onLoad) {
+  if (params is! WebWebViewControllerCreationParams) return;
+  // ignore: invalid_use_of_visible_for_testing_member
+  params.iFrame.onLoad.listen((_) => onLoad());
+}
+
 /// Evaluates [script] directly in the iframe's content window and returns the
 /// dartified result (`null`/`bool`/`double`/`String`/`List`/`Map`, recursively).
 /// Works only when the content is same-origin (e.g. served via the proxy);

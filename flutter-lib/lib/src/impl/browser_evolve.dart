@@ -55,6 +55,9 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   // a JS shim that round-trips to Java; they must be re-injected after every
   // navigation (a fresh document loses the previous window's globals).
   final Set<String> _functionNames = <String>{};
+  // Desktop-only JS channel: native webviews have no sync JS<->Dart bridge, so
+  // BrowserFunction calls go one-way through this instead. See _injectBrowserFunction.
+  static const String _kFunctionChannel = 'EquoBrowserFunction';
   // Last values pushed to Java, to suppress duplicate Title/StatusText events.
   String? _lastTitle;
   String _lastStatus = '';
@@ -142,6 +145,27 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     // }
     _controller = controller;
 
+    // Web: the underlying iframe's native `load` event fires for every new
+    // document (navigation, back/forward, reload), so re-inject every
+    // registered BrowserFunction shim then. No-op on non-web (see
+    // browser_frame_params_stub.dart) -- desktop gets its reinjection from
+    // onPageFinished above.
+    browserOnFrameLoad(_params, () {
+      if (!mounted) return;
+      for (final name in _functionNames) {
+        _injectBrowserFunction(name);
+      }
+    });
+
+    // Desktop only (web uses the sync-XHR shim). Must be added before the first
+    // load -- a channel only takes effect starting with the next navigation.
+    if (_params == null) {
+      controller.addJavaScriptChannel(
+        _kFunctionChannel,
+        onMessageReceived: _handleBrowserFunctionChannelMessage,
+      ).catchError((e) {});
+    }
+
     _onOp("locationchanging/result", (args) {
       final doit = (args as Map)['doit'] as bool? ?? true;
       final c = _locationChangingCompleter;
@@ -176,7 +200,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
               headers: _parseHeaders(m["headers"]),
               body: Uint8List.fromList(utf8.encode(postData)),
             );
-          } else if (localFilePath != null && localFilePath.isNotEmpty) {
+          } else if (kIsWeb && localFilePath != null && localFilePath.isNotEmpty) {
             _loadedLocalFile = true;
             _expectSameOrigin = true;
             _controller.loadRequest(Uri.parse(localFileRewrite(localFilePath)));
@@ -195,9 +219,15 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
         _controller.loadHtmlString(text);
       }
     });
-    _onOp("back", (_) => _controller.goBack());
-    _onOp("forward", (_) => _controller.goForward());
-    _onOp("reload", (_) => _controller.reload());
+    _onOp("back", (_) {
+      _controller.goBack();
+    });
+    _onOp("forward", (_) {
+      _controller.goForward();
+    });
+    _onOp("reload", (_) {
+      _controller.reload();
+    });
     _onOp("execute", (args) {
       final script = (args as Map)["script"] as String?;
       if (script == null) return;
@@ -210,22 +240,6 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
         _emitStatus();
       } else {
         _controller.runJavaScript(script);
-      }
-    });
-    _onOp("registerFunction", (args) {
-      final name = (args as Map)["name"] as String?;
-      if (name == null) return;
-      _functionNames.add(name);
-      _injectBrowserFunction(name);
-    });
-    _onOp("unregisterFunction", (args) {
-      final name = (args as Map)["name"] as String?;
-      if (name == null) return;
-      _functionNames.remove(name);
-      if (_params != null) {
-        try {
-          browserEvalInFrame(_params, 'try{delete window[${jsonEncode(name)}];}catch(e){}');
-        } catch (_) {}
       }
     });
     _onOp("evaluate", (args) async {
@@ -261,15 +275,22 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     });
 
     _applyContent();
+    // Same reasoning as _applyContent above: extraSetState never runs for the very
+    // first snapshot, so a BrowserFunction already registered by the time this
+    // State is first built (e.g. one wired up during app startup, before the
+    // Browser widget's first frame) needs its shim injected here too.
+    _syncFunctionNames();
 
     // Ops only route once this State exists, so a Browser whose widget is built after Java sent its
     // one-shot "navigate" never learns where to go — and _applyContent can't stand in for it, since
     // a file: URL's loadable /local-file/ path travels only in that op. Ask Java to replay it, after
     // the first frame so the normal case (op already delivered) never loads the page twice.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _opNavigated) return;
-      EquoCommService.sendPayload(
-          "${state.swt}/${state.id}/navigateRequest", VEvent());
+      if (!mounted) return;
+      if (!_opNavigated) {
+        EquoCommService.sendPayload(
+            "${state.swt}/${state.id}/navigateRequest", VEvent());
+      }
     });
   }
 
@@ -432,26 +453,60 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   /// a normal blocking function call. Only meaningful for same-origin (proxied)
   /// content; on a cross-origin iframe the eval throws and is swallowed.
   void _injectBrowserFunction(String name) {
-    if (_params == null) return;
     final nameLit = jsonEncode(name);
+    if (_params != null) {
+      final script = '''
+        window[$nameLit] = function() {
+          var xhr = new XMLHttpRequest();
+          xhr.open('POST', location.origin + '/equo-browser-function', false);
+          xhr.setRequestHeader('Content-Type', 'application/json');
+          xhr.send(JSON.stringify({
+            browserId: ${state.id},
+            name: $nameLit,
+            args: Array.prototype.slice.call(arguments)
+          }));
+          if (xhr.status !== 200) throw new Error('browser function failed: ' + xhr.status);
+          var r = JSON.parse(xhr.responseText);
+          if (r && r.error != null) throw new Error(r.error);
+          return r ? r.value : undefined;
+        };
+      ''';
+      try {
+        browserEvalInFrame(_params, script);
+      } catch (_) {}
+      return;
+    }
+    // Desktop: native JS channels are one-way (postMessage), so this is
+    // fire-and-forget -- window[name](...) always returns undefined immediately,
+    // a real gap versus SWT's synchronous BrowserFunction contract.
     final script = '''
       window[$nameLit] = function() {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', location.origin + '/equo-browser-function', false);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.send(JSON.stringify({
-          browserId: ${state.id},
-          name: $nameLit,
-          args: Array.prototype.slice.call(arguments)
-        }));
-        if (xhr.status !== 200) throw new Error('browser function failed: ' + xhr.status);
-        var r = JSON.parse(xhr.responseText);
-        if (r && r.error != null) throw new Error(r.error);
-        return r ? r.value : undefined;
+        try {
+          $_kFunctionChannel.postMessage(JSON.stringify({
+            name: $nameLit,
+            args: Array.prototype.slice.call(arguments)
+          }));
+        } catch (e) {}
+        return undefined;
       };
     ''';
+    _controller.runJavaScript(script).catchError((e) {});
+  }
+
+  /// Handles a call posted to [_kFunctionChannel] (desktop only, see
+  /// [_injectBrowserFunction]). Forwards it to Java as a one-way event; no
+  /// result travels back to JS.
+  void _handleBrowserFunctionChannelMessage(JavaScriptMessage message) {
     try {
-      browserEvalInFrame(_params, script);
+      final data = jsonDecode(message.message);
+      if (data is! Map) return;
+      final name = data['name'];
+      if (name is! String) return;
+      final args = data['args'] is List ? data['args'] as List : const [];
+      EquoCommService.sendPayload(
+        "${state.swt}/${state.id}/browserFunctionCall",
+        VEvent()..text = jsonEncode({'name': name, 'args': args}),
+      );
     } catch (_) {}
   }
 
@@ -499,6 +554,31 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   void extraSetState() {
     super.extraSetState();
     _applyContent();
+    _syncFunctionNames();
+  }
+
+  /// Diffs [VBrowser.functionNames] against the locally tracked set: injects
+  /// the JS shim for any name newly present (a fresh registration, or a State
+  /// (re)hydrating into an already-populated field on reconnect) and runs the
+  /// cleanup script for any name no longer present.
+  void _syncFunctionNames() {
+    final incoming = state.functionNames?.toSet() ?? const <String>{};
+    for (final name in incoming) {
+      if (_functionNames.add(name)) {
+        _injectBrowserFunction(name);
+      }
+    }
+    for (final name in _functionNames.difference(incoming)) {
+      _functionNames.remove(name);
+      final cleanup = 'try{delete window[${jsonEncode(name)}];}catch(e){}';
+      if (_params != null) {
+        try {
+          browserEvalInFrame(_params, cleanup);
+        } catch (_) {}
+      } else {
+        _controller.runJavaScript(cleanup);
+      }
+    }
   }
 
   @override

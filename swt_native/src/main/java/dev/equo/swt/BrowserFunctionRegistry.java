@@ -1,5 +1,7 @@
 package dev.equo.swt;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -51,6 +53,22 @@ public final class BrowserFunctionRegistry {
 
     public static boolean isRegistered(long browserId, String name) {
         return ENTRIES.containsKey(key(browserId, name));
+    }
+
+    /**
+     * Names currently registered for {@code browserId}, for replaying the JS shim
+     * injection when the Dart-side {@code BrowserImpl} State is recreated (e.g. a web
+     * reconnect) after this Java-side registration already happened.
+     */
+    public static List<String> namesFor(long browserId) {
+        String prefix = browserId + "/";
+        List<String> names = new ArrayList<>();
+        for (String key : ENTRIES.keySet()) {
+            if (key.startsWith(prefix)) {
+                names.add(key.substring(prefix.length()));
+            }
+        }
+        return names;
     }
 
     /**

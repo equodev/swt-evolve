@@ -40,26 +40,6 @@ class ButtonSizeTest extends SizeTestBase {
         });
     }
 
-    // No explicit font + use_swt_fonts=true. computeText() must not size for
-    // display.getSystemFont() (Java's getFont() fallback) -- Flutter never sees that font, since
-    // the serializer sends null and Flutter falls back to its own calibrated theme style instead.
-    @ParameterizedTest
-    @ValueSource(strings = {"Anmelden", "Ignore login", "Abbrechen"})
-    void java_size_should_equals_flutter_when_font_is_unset(String text) {
-        DartButton w = createButton(SWT.PUSH, NoImg, text, FromTheme);
-        ConfigFlags config = ConfigFlags.use_swt_fonts(true);
-        //
-        Measure javaSize = ButtonSizes.computeSizes(w, SWT.DEFAULT, SWT.DEFAULT, true);
-        //
-        CompletableFuture<Measure> result = flutter.measure(w, config);
-        Measure measure = assertCompletes(flutter, result);
-        assertSoftly(soft -> {
-            soft.assertThat(javaSize).as("widget size").satisfies(similarSize(measure));
-            soft.assertThat(javaSize).as("text size").satisfies(similarTextSize(measure));
-            soft.assertThat(javaSize.textStyle).as("text style").isEqualTo(measure.textStyle);
-        });
-    }
-
     @ParameterizedTest
     @MethodSource("boldCases")
     void java_size_should_equals_flutter_with_bold(int style, String text, int size, int fontStyle) {

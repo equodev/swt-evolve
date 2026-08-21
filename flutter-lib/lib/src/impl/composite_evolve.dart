@@ -242,7 +242,10 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
       inner = paintBackground(rawLayout);
     }
 
-    return blockWhenDisabled(
-        wrapCompositeInteractionChrome(this, wrapWithGCOverlay(inner)));
+    // wrapCompositeInteractionChrome(), unlike wrap() above, never applies wrapDnd() —
+    // apply it explicitly so a Composite with children can still be a Draggable/DragTarget.
+    final gcWrapped = wrapWithGCOverlay(inner);
+    final dndWrapped = wrapsWholeWidgetForDnd ? wrapDnd(gcWrapped) : gcWrapped;
+    return blockWhenDisabled(wrapCompositeInteractionChrome(this, dndWrapped));
   }
 }

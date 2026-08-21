@@ -39,6 +39,19 @@ public class VBrowser extends VComposite {
         ((DartBrowser) impl).url = value;
     }
 
+    @JsonAttribute(nullable = false)
+    public String[] getFunctionNames() {
+        return dev.equo.swt.BrowserFunctionRegistry
+                .namesFor(dev.equo.swt.FlutterBridge.id(impl))
+                .toArray(new String[0]);
+    }
+
+    // DSL-JSON only treats a getter as a serializable @CompiledJson property when it is
+    // paired with a setter; this field is Java -> Dart only (BrowserFunctionRegistry is
+    // the source of truth), so the setter has nothing to do.
+    public void setFunctionNames(String[] value) {
+    }
+
     @JsonConverter(target = Browser.class)
     public static class BrowserJson implements Configuration {
 

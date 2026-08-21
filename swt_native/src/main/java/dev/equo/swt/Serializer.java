@@ -89,6 +89,10 @@ public class Serializer {
         Widget api = impl.getApi();
         VWidget value = impl.getValue();
         FormatConverter converter = ((FormatConverter) json.tryFindWriter(value.getClass()));
+        // A widget can be disposed between the start of a tree walk and reaching this node
+        // (e.g. Shell.close()'s disposal cascade racing a serialize of the same shell). Its
+        // checkWidget()-guarded getters would throw and abort the whole tree, not just this node.
+        boolean disposed = api.isDisposed();
         writer.writeByte((byte)'{');
         writer.writeByte((byte)'"'); writer.writeAscii(name_id); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
         NumberConverter.serialize(FlutterBridge.id(api), writer);
@@ -98,10 +102,18 @@ public class Serializer {
         writer.writeByte((byte)',');
         writer.writeByte((byte)'"'); writer.writeAscii(name_seq); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
         NumberConverter.serialize(writeSeq.incrementAndGet(), writer);
-        writer.writeByte((byte)',');
 //        writer.writeByte((byte)'"'); writer.writeAscii(name_style); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
 //        NumberConverter.serialize(api.getStyle(), writer);
 //        writer.writeByte((byte)',');
+        if (converter == null) {
+            writer.writeByte((byte)'}');
+            return;
+        }
+        if (disposed) {
+            writer.writeByte((byte)'}');
+            return;
+        }
+        writer.writeByte((byte)',');
         if (alwaysSerialize) { converter.writeContentFull(writer, value); writer.writeByte((byte)'}'); }
         else if (converter.writeContentMinimal(writer, value)) writer.getByteBuffer()[writer.size() - 1] = '}';
         else writer.getByteBuffer()[writer.size() - 1] = '}';
@@ -151,6 +163,10 @@ public class Serializer {
         writer.writeByte((byte)',');
         writer.writeByte((byte)'"'); writer.writeAscii(name_swt); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
         StringConverter.serialize(swtName, writer);
+        if (converter == null) {
+            writer.writeByte((byte)'}');
+            return;
+        }
         writer.writeByte((byte)',');
         if (style != null) {
             writer.writeByte((byte)'"'); writer.writeAscii(name_style); writer.writeByte((byte)'"'); writer.writeByte((byte)':');

@@ -96,11 +96,12 @@ Widget wrapDropTarget<T extends Object>({
   Offset Function(DragTargetDetails<T> details)? resolvePosition,
   Widget Function(BuildContext context, Widget child, DndNegotiationState negotiation, bool isHovering)? builder,
 }) {
-  final dropTargetId = state.dropTargetId;
-  if (dropTargetId == null) return child;
-
+  // Always return _DropTargetNegotiator, even while dropTargetId is still null (it can
+  // resolve later, e.g. a Composite whose SWT DropTarget attaches after first serialize).
+  // Switching widget type at this tree position would force Flutter to tear down and
+  // rebuild the whole subtree the instant a long-lived ancestor first gets a real id.
   return _DropTargetNegotiator<T>(
-    dropTargetId: dropTargetId,
+    dropTargetId: state.dropTargetId,
     resolveIndex: resolveIndex,
     resolveItemId: resolveItemId,
     resolvePosition: resolvePosition,
@@ -111,7 +112,7 @@ Widget wrapDropTarget<T extends Object>({
 }
 
 class _DropTargetNegotiator<T extends Object> extends StatefulWidget {
-  final int dropTargetId;
+  final int? dropTargetId;
   final int Function(DragTargetDetails<T> details)? resolveIndex;
   final int Function(DragTargetDetails<T> details)? resolveItemId;
   final Offset Function(DragTargetDetails<T> details)? resolvePosition;
@@ -138,13 +139,32 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
   @override
   void initState() {
     super.initState();
-    DndSession.listen(widget.dropTargetId, _onNegotiationUpdate);
+    _subscribe(widget.dropTargetId);
+  }
+
+  @override
+  void didUpdateWidget(covariant _DropTargetNegotiator<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.dropTargetId != widget.dropTargetId) {
+      _unsubscribe(oldWidget.dropTargetId);
+      _subscribe(widget.dropTargetId);
+    }
   }
 
   @override
   void dispose() {
-    DndSession.unlisten(widget.dropTargetId, _onNegotiationUpdate);
+    _unsubscribe(widget.dropTargetId);
     super.dispose();
+  }
+
+  void _subscribe(int? id) {
+    if (id == null) return;
+    DndSession.listen(id, _onNegotiationUpdate);
+  }
+
+  void _unsubscribe(int? id) {
+    if (id == null) return;
+    DndSession.unlisten(id, _onNegotiationUpdate);
   }
 
   void _onNegotiationUpdate(DndNegotiationState state) {
@@ -155,7 +175,9 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
       widget.resolvePosition != null ? widget.resolvePosition!(details) : details.offset;
 
   void _sendNegotiation(String ev, DragTargetDetails<T>? details) {
-    final dropTargetValue = VDropTarget()..id = widget.dropTargetId;
+    final id = widget.dropTargetId;
+    if (id == null) return;
+    final dropTargetValue = VDropTarget()..id = id;
     final event = VEvent();
     if (details != null) {
       final position = _resolvePosition(details);
@@ -176,19 +198,25 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
   Widget build(BuildContext context) {
     return DragTarget<T>(
       onWillAcceptWithDetails: (details) {
+        if (widget.dropTargetId == null) return false;
         _sendNegotiation("dragEnter", details);
         return true;
       },
       onMove: (details) => _sendNegotiation("dragOver", details),
-      onLeave: (_) => _sendNegotiation("dragLeave", null),
+      onLeave: (_) {
+        if (widget.dropTargetId == null) return;
+        _sendNegotiation("dragLeave", null);
+      },
       onAcceptWithDetails: (details) {
+        if (widget.dropTargetId == null) return;
         if (DragStartVeto.isVetoed) return;
         final index = widget.resolveIndex != null ? widget.resolveIndex!(details) : null;
         final itemId = widget.resolveItemId != null ? widget.resolveItemId!(details) : null;
         widget.onDrop(details.data, index, itemId, _resolvePosition(details));
       },
       builder: (context, candidateData, rejectedData) {
-        final negotiation = DndSession.stateFor(widget.dropTargetId);
+        final id = widget.dropTargetId;
+        final negotiation = id != null ? DndSession.stateFor(id) : DndNegotiationState.none;
         return widget.builder != null
             ? widget.builder!(context, widget.child, negotiation, candidateData.isNotEmpty)
             : widget.child;

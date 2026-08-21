@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -229,10 +230,14 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     final rawH = (b?.height ?? 300).toDouble();
     final bodyW = _size != null
         ? _size!.width
-        : (!_showTitleBar && !_showBorder ? rawW : rawW.clamp(200.0, viewport.maxWidth * 0.9));
+        : (!_showTitleBar && !_showBorder
+            ? rawW
+            : rawW.clamp(200.0, math.max(200.0, viewport.maxWidth * 0.9)).toDouble());
     final bodyH = _size != null
         ? _size!.height
-        : (!_showTitleBar && !_showBorder ? rawH : rawH.clamp(150.0, viewport.maxHeight * 0.9));
+        : (!_showTitleBar && !_showBorder
+            ? rawH
+            : rawH.clamp(150.0, math.max(150.0, viewport.maxHeight * 0.9)).toDouble());
 
     final titleBarH = _isTool ? theme.toolWindowTitleBarHeight : theme.titleBarHeight;
     final headerH = _showTitleBar ? titleBarH : 0.0;

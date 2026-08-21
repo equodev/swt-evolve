@@ -542,6 +542,9 @@ public class TableHelper {
         Image[] images = new Image[count];
         GC gc = new GC(item.parent);
         DartGC dartGc = (DartGC) gc.getImpl();
+        // This GC only ever draws through textCapture/imageCapture below — Flutter never
+        // learns it exists, so its dispose must not tell Flutter otherwise.
+        dartGc.silentDispose = true;
         int itemHeight = ((DartTable) item.parent.getImpl()).getItemHeight();
         try {
             for (int i = 0; i < count; i++) {
