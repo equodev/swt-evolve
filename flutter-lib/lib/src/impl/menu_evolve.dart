@@ -83,25 +83,56 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   bool _openedFromVisibleFlag = false;
   Offset? _pendingContextMenuPosition;
 
+  String? _rawChannel;
+  Object? _closeMenuToken;
+  Object? _shownToken;
+
   @override
   void initState() {
     super.initState();
-    EquoCommService.onRaw(
-      "${state.swt}/${state.id}/closeMenu",
+    _subscribeRawChannels();
+  }
+
+  @override
+  void didUpdateWidget(covariant T oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if ("${state.swt}/${state.id}" != _rawChannel) {
+      _unsubscribeRawChannels();
+      _subscribeRawChannels();
+      _pendingContextMenuPosition = null;
+    }
+  }
+
+  void _subscribeRawChannels() {
+    final channel = "${state.swt}/${state.id}";
+    _rawChannel = channel;
+    _closeMenuToken = EquoCommService.onRaw(
+      "$channel/closeMenu",
           (_) {
         if (_menuController.isOpen) {
           _menuController.close();
         }
       },
     );
-    EquoCommService.onRaw(
-      "${state.swt}/${state.id}/shown",
+    _shownToken = EquoCommService.onRaw(
+      "$channel/shown",
           (_) => _onMenuShown(),
     );
   }
 
+  void _unsubscribeRawChannels() {
+    final channel = _rawChannel;
+    if (channel == null) return;
+    EquoCommService.remove("$channel/closeMenu", _closeMenuToken);
+    EquoCommService.remove("$channel/shown", _shownToken);
+    _rawChannel = null;
+    _closeMenuToken = null;
+    _shownToken = null;
+  }
+
   @override
   void dispose() {
+    _unsubscribeRawChannels();
     _popupAnchorFocusNode.dispose();
     _firstItemFocusNode.dispose();
     super.dispose();
