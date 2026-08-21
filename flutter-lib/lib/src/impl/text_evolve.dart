@@ -23,10 +23,7 @@ class TextImpl<T extends TextSwt, V extends VText>
     extends ScrollableImpl<T, V> with PendingTextEchoes {
   late TextEditingController _controller;
 
-  final FocusNode _focusNode = FocusNode();
-
-  @override
-  FocusNode get swtFocusNode => _focusNode;
+  FocusNode? _focusNode;
 
   // SWT's VerifyListener runs BEFORE the character is displayed. Java flags a Verify-hooked
   // field via modify/vetoable; each edit is then held un-rendered, sent to Java as the Modify
@@ -45,7 +42,8 @@ class TextImpl<T extends TextSwt, V extends VText>
     super.initState();
     _controller = TextEditingController(text: state.text);
     _controller.addListener(_updateCaretPosition);
-    _focusNode.addListener(_handleFocusChange);
+    _focusNode = FocusNode();
+    _focusNode!.addListener(_handleFocusChange);
     _vetoableToken = EquoCommService.onRaw(
       _vetoableChannel,
       (args) => _vetoable = _boolArg(args, 'value') ?? false,
@@ -404,7 +402,7 @@ class TextImpl<T extends TextSwt, V extends VText>
   }
 
   void _handleFocusChange() {
-    if (_focusNode.hasFocus) {
+    if (_focusNode!.hasFocus) {
       // Record the pre-edit text so a later stale echo of it is ignored rather than applied over
       // in-progress typing (no keystroke records this value, so the echo guard can't recognise it).
       seedTextEchoBaseline(_controller.text);
@@ -444,8 +442,8 @@ class TextImpl<T extends TextSwt, V extends VText>
     EquoCommService.remove(_verdictChannel, _verdictToken);
     _controller.removeListener(_updateCaretPosition);
     _controller.dispose();
-    _focusNode.removeListener(_handleFocusChange);
-    _focusNode.dispose();
+    _focusNode?.removeListener(_handleFocusChange);
+    _focusNode?.dispose();
     super.dispose();
   }
 }

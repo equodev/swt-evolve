@@ -15,7 +15,6 @@ import '../gen/menu.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../styles.dart';
-import '../impl/focus_requests.dart';
 import '../impl/key_forwarding.dart';
 import '../impl/key_mapping.dart';
 import '../impl/menu_evolve.dart';
@@ -82,31 +81,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         widget.sendMouseTrackMouseExit(state, null);
       }
     });
-    FocusRequests.instance.addListener(_applyFocusRequest);
-    _applyFocusRequest();
     _publishBounds();
-  }
-
-  /// The node that takes keyboard focus when Java focuses this control ([FocusRequests]). Null for
-  /// controls that hold no keyboard focus of their own; those simply ignore the request.
-  ///
-  /// It must be readable from [initState] -- the request is usually already waiting by the time the
-  /// control is built -- so it has to be a field initializer, not something [initState] assigns.
-  FocusNode? get swtFocusNode => null;
-
-  void _applyFocusRequest() {
-    final node = swtFocusNode;
-    if (node == null) return;
-    if (!FocusRequests.instance.claim(state.id)) return;
-    if (node.context != null) {
-      node.requestFocus();
-      return;
-    }
-    // Java can focus a control in the same pass that creates it, so the request routinely arrives
-    // before this one's first build -- the node has no context yet and requestFocus() is dropped.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) swtFocusNode?.requestFocus();
-    });
   }
 
   @override
@@ -141,7 +116,6 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   @override
   void dispose() {
     _hoverTimer?.cancel();
-    FocusRequests.instance.removeListener(_applyFocusRequest);
     HoverExclusivityArbiter.instance.unregister(this);
     LiveBounds.forget(state.id, this);
     super.dispose();
