@@ -81,7 +81,7 @@ public class Serializer {
     }
 
     public static <T extends DartWidget> void writeWithId(DslJson json, JsonWriter writer, T impl) {
-        if (impl == null) {
+        if (impl == null || impl.isDisposed()) {
             writer.writeNull();
             return;
         }
