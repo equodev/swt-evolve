@@ -276,11 +276,18 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         _enterLocalEditMode(textShape);
         _hasProgrammaticSelection = false;
       } else {
-        // Text already matches what we echoed locally, but this sync may carry fresh
-        // StyleRanges from an async recolor (e.g. JDT's reconciler) for the edit we
-        // already predicted — adopt them so syntax highlighting doesn't go stale.
+        // Text already matches what we echoed locally, but the push still carries everything
+        // else Java may have changed meanwhile: fresh StyleRanges from an async recolor (e.g.
+        // JDT's reconciler), and the presentation the layout is measured against — wrap state,
+        // bounds, margins, font metrics, tab width. Re-base the painted shape on this snapshot
+        // instead of keeping the one taken when the edit session opened; only the caret and
+        // selection stay local, because Java's copy of those lags the keystrokes we predicted.
         _localEditingState = editingState;
-        _editableTextShape = _editableTextShape!.copyWithEditingState(editingState);
+        _originalServerTextShape = textShape;
+        _updateLocalTextShape(
+          caret: _editableTextShape!.caretInfo,
+          selection: _editableTextShape!.selectionInfo,
+        );
         if (selectionFromState != null) {
           _editableTextShape = _editableTextShape!.copyWithSelection(selectionFromState);
           _hasProgrammaticSelection = true;
@@ -1322,7 +1329,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     }
   }
 
-  void _updateLocalTextShape() {
+  // `caret`/`selection` override what the server snapshot carries: while an edit session is
+  // open the local caret and selection are ahead of anything Java has echoed back.
+  void _updateLocalTextShape({CaretInfo? caret, SelectionInfo? selection}) {
     if (!_isInLocalEditMode ||
         _originalServerTextShape == null ||
         _localEditingState == null) {
@@ -1335,14 +1344,14 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       _originalServerTextShape!.style,
       _originalServerTextShape!.clipRect,
       null,
-      _originalServerTextShape!.caretInfo,
+      caret ?? _originalServerTextShape!.caretInfo,
       _originalServerTextShape!.wordWrap,
       _originalServerTextShape!.canvasSize,
       _originalServerTextShape!.editable,
       _originalServerTextShape!.styledTextId,
       _notifyTextChanged,
       _localEditingState,
-      null,
+      selection,
       _originalServerTextShape!.lineHeight,
       _originalServerTextShape!.tabs,
     );
