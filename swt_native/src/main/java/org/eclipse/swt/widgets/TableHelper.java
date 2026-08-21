@@ -20,21 +20,68 @@ public class TableHelper {
         table.dirty();
     }
 
+    /**
+     * Hooks {@link ClickSelection} the first time the Table sees a click. The generated hook runs
+     * this before anything the application registered, which is exactly why it must not select
+     * here: JFace's default cell-editor activation strategy is a MouseDown listener that reads the
+     * table's selection to decide whether the click edits the clicked cell or only selects the row,
+     * and native SWT reports MouseDown with the selection the click has not moved yet.
+     */
     public static void handleMouseDownSelection(DartTable table, Event event) {
         if (table == null || table.isDisposed())
             return;
-        if (event == null || (event.button != 1 && event.button != 3))
-            return;
-        if (event.segments == null || event.segments.length == 0)
-            return;
-        int index = event.segments[0];
-        if (table.items == null || index < 0 || index >= table.items.length)
-            return;
-        int[] current = table.selection;
-        boolean sameSingleRow = current != null && current.length == 1 && current[0] == index;
-        if (sameSingleRow)
-            return;
-        sendSelection(table, event, SWT.Selection);
+        Table api = table.getApi();
+        for (Listener listener : api.getListeners(SWT.MouseDown)) {
+            if (listener instanceof ClickSelection)
+                return;
+        }
+        // Hooked during this very dispatch, so it also runs for the click that installed it:
+        // EventTable appends, and its send loop re-reads the listener array on every step.
+        api.addListener(SWT.MouseDown, new ClickSelection(table));
+    }
+
+    /**
+     * Moves the selection to the row a click landed on, behind every MouseDown listener the
+     * application put on the Table -- see {@link #handleMouseDownSelection}.
+     */
+    private static final class ClickSelection implements Listener {
+
+        private final DartTable table;
+
+        ClickSelection(DartTable table) {
+            this.table = table;
+        }
+
+        @Override
+        public void handleEvent(Event event) {
+            if (table.isDisposed())
+                return;
+            if (event == null || (event.button != 1 && event.button != 3))
+                return;
+            if (event.segments == null || event.segments.length == 0)
+                return;
+            int index = event.segments[0];
+            if (table.items == null || index < 0 || index >= table.items.length)
+                return;
+            int[] current = table.selection;
+            boolean sameSingleRow = current != null && current.length == 1 && current[0] == index;
+            if (sameSingleRow)
+                return;
+            // The Selection rides on its own Event: sendSelectionEvent() rewrites the type of the
+            // Event it is handed and EventTable's send loop re-reads that type on every step, so
+            // passing the in-flight MouseDown event would leave it typed SWT.Selection and drop
+            // every MouseDown listener still behind this one.
+            Event selection = new Event();
+            selection.segments = event.segments;
+            selection.detail = event.detail;
+            selection.stateMask = event.stateMask;
+            selection.button = event.button;
+            selection.count = event.count;
+            selection.x = event.x;
+            selection.y = event.y;
+            selection.time = event.time;
+            sendSelection(table, selection, SWT.Selection);
+        }
     }
 
     public static void sendSelection(DartTable table, Event event, int selectionType) {
