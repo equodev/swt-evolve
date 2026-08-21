@@ -962,9 +962,16 @@ public class DartShell extends DartDecorations implements IShell {
             updateModal();
         }
         bringToTop(false);
+        Shell prevActiveShell = display.getActiveShell();
         setWindowVisible(true, true);
         if (isDisposed())
             return;
+        if (prevActiveShell != null && prevActiveShell != this.getApi() && !prevActiveShell.isDisposed() && prevActiveShell.isVisible()) {
+            DartShell prevImpl = (DartShell) prevActiveShell.getImpl();
+            prevImpl.setActiveControl(null);
+            prevImpl.sendEvent(SWT.Deactivate);
+            prevImpl._suppressNextFlutterDeactivate = true;
+        }
         sendEvent(SWT.Activate);
         if (isDisposed())
             return;
@@ -1040,7 +1047,14 @@ public class DartShell extends DartDecorations implements IShell {
             savedDisplay.asyncExec(() -> {
                 Shell toActivate = (savedParent instanceof Shell sp && !sp.isDisposed() && sp.isVisible()) ? sp : savedDisplay.getActiveShell();
                 if (toActivate != null && !toActivate.isDisposed()) {
-                    ((DartShell) toActivate.getImpl()).sendEvent(SWT.Activate);
+                    Shell topmost = null;
+                    for (Shell s : savedDisplay.getShells()) {
+                        if (!s.isDisposed() && s.isVisible())
+                            topmost = s;
+                    }
+                    if (topmost == toActivate) {
+                        ((DartShell) toActivate.getImpl()).sendEvent(SWT.Activate);
+                    }
                 }
             });
         }
@@ -1907,12 +1921,15 @@ public class DartShell extends DartDecorations implements IShell {
         return super.traverseGroup(next);
     }
 
+    boolean _suppressNextFlutterDeactivate;
+
     protected void _hookEvents() {
         super._hookEvents();
         FlutterBridge.on(this, "Shell", "Activate", e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                _suppressNextFlutterDeactivate = false;
                 sendEvent(SWT.Activate, e);
             });
         });
@@ -1927,6 +1944,10 @@ public class DartShell extends DartDecorations implements IShell {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                if (_suppressNextFlutterDeactivate) {
+                    _suppressNextFlutterDeactivate = false;
+                    return;
+                }
                 sendEvent(SWT.Deactivate, e);
             });
         });
