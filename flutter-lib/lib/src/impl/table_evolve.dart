@@ -50,6 +50,10 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
   int _requestedRowEnd = 0;
 
+  /// Width the dragged column had when its resize started; the drag applies a
+  /// delta to this instead of to the live width, so rounding can't accumulate.
+  double? _resizeStartWidth;
+
   int registerRowTap(int rowIndex) => _rowTapDetector.registerTap(key: rowIndex);
 
   // Each cell has its own GestureDetector that sends MouseDown; suppress both
@@ -305,14 +309,84 @@ class TableImpl<T extends TableSwt, V extends VTable>
       textColor: textColor,
       baseTextStyle: theme.headerTextStyle,
     );
+    final headerHeight = calculateHeaderHeight(textStyle, theme);
     return Semantics(
       identifier: 'sizeprobe:header',
       child: Container(
         color: backgroundColor,
-        height: calculateHeaderHeight(textStyle, theme),
-        child: _buildHeaderTable(columns, columnWidths, showLines, textStyle, theme),
+        height: headerHeight,
+        child: Stack(
+          children: [
+            _buildHeaderTable(columns, columnWidths, showLines, textStyle, theme),
+            ..._buildColumnResizeHandles(
+                columns, columnWidths, headerHeight, theme),
+          ],
+        ),
       ),
     );
+  }
+
+  /// Native SWT has no sash widget on a column boundary: the header itself
+  /// switches to the resize cursor a few pixels either side of the boundary and
+  /// drags it. These transparent strips reproduce that hit region, so they must
+  /// straddle the boundary rather than sit inside one header cell -- a cell is
+  /// clipped, and a grip inside it would only respond from its own side.
+  List<Widget> _buildColumnResizeHandles(
+    List<VTableColumn> columns,
+    Map<int, TableColumnWidth>? columnWidths,
+    double headerHeight,
+    TableThemeExtension theme,
+  ) {
+    if (columns.isEmpty || columnWidths == null) return const [];
+    final grip = theme.columnResizeHandleWidth * 2;
+    final handles = <Widget>[];
+    double boundary = 0.0;
+    for (int i = 0; i < columns.length; i++) {
+      final width = columnWidths[i];
+      if (width is! FixedColumnWidth) return const [];
+      boundary += width.value;
+      // SWT's TableColumn.resizable defaults to true.
+      if (columns[i].resizable == false) continue;
+      handles.add(Positioned(
+        left: boundary - grip / 2,
+        top: 0,
+        width: grip,
+        height: headerHeight,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.resizeColumn,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onHorizontalDragStart: (_) =>
+                _startColumnResize(columns[i], width.value),
+            onHorizontalDragUpdate: (details) =>
+                _updateColumnResize(columns[i], details.delta.dx),
+            onHorizontalDragEnd: (_) => _resizeStartWidth = null,
+            onHorizontalDragCancel: () => _resizeStartWidth = null,
+          ),
+        ),
+      ));
+    }
+    return handles;
+  }
+
+  void _startColumnResize(VTableColumn column, double renderedWidth) {
+    // A column with no width of its own is sized to content; the width the user
+    // grabbed is that rendered width, and dragging it makes it explicit.
+    _resizeStartWidth = (column.width ?? renderedWidth.round()).toDouble();
+  }
+
+  void _updateColumnResize(VTableColumn column, double deltaX) {
+    final start = _resizeStartWidth;
+    if (start == null) return;
+    final next = (start + deltaX).clamp(0.0, double.infinity);
+    _resizeStartWidth = next;
+    if (next.round() == column.width) return;
+    setState(() => column.width = next.round());
+    // Native SWT resizes the column live and fires Resize on every change, and
+    // JFace layouts relayout from it; a single event on drag end would leave
+    // them stale for the whole drag.
+    final e = VEvent()..width = column.width;
+    TableColumnSwt<VTableColumn>(value: column).sendControlResize(column, e);
   }
 
   Widget _buildHeaderTable(

@@ -672,6 +672,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                setWidth(e.width);
                 sendEvent(SWT.Resize, e);
             });
         });

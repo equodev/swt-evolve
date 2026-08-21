@@ -745,6 +745,7 @@ public class DartTableColumn extends DartItem implements ITableColumn {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                setWidth(e.width);
                 sendEvent(SWT.Resize, e);
             });
         });
