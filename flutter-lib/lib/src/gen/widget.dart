@@ -131,6 +131,10 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
     // screen reader). Normal rendering rebuilds unconditionally, as before.
     if (WidgetsBinding.instance.semanticsEnabled &&
         _isSameValue(state, value)) {
+      // Skipping the rebuild must not skip the stamp: the state keeps the seq of the
+      // update before this one, and didUpdateWidget then reads an older ancestor
+      // snapshot as the newer one and rewinds the value this widget already holds.
+      if (value.seq > state.seq) state.seq = value.seq;
       return;
     }
     setState(() {

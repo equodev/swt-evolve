@@ -684,7 +684,7 @@ public class DartButton extends DartControl implements IButton {
                 if (isDisposed())
                     return;
                 if ((getApi().style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) != 0) {
-                    this.selection = !this.selection;
+                    setSelection(!getSelection());
                 }
                 sendSelection();
             });

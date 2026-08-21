@@ -934,10 +934,10 @@ public class DartButton extends DartControl implements IButton {
                     if ((parent.getStyle() & SWT.NO_RADIO_GROUP) == 0) {
                         selectRadio();
                     } else {
-                        this.selection = !this.selection;
+                        setSelection(!getSelection());
                     }
                 } else if ((getApi().style & (SWT.CHECK | SWT.TOGGLE)) != 0) {
-                    this.selection = !this.selection;
+                    setSelection(!getSelection());
                 }
                 sendEvent(SWT.Selection, e);
             });
