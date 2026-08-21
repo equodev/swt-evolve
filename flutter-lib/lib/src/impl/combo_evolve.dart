@@ -52,6 +52,21 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     return Size(maxTextWidth, maxTextHeight);
   }
 
+  /// The arrow's own cell in the Row: the icon plus the gap that separates it
+  /// from the text.
+  double _arrowCell(ComboThemeExtension theme, bool isSimple) =>
+      isSimple ? 0 : theme.iconSpacing + theme.iconSize;
+
+  /// The width of the value on display, with the slack [_maxTextSize] leaves.
+  double _selectedTextWidth(TextStyle style) {
+    final painter = TextPainter(
+      text: TextSpan(text: state.text ?? "", style: style),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout();
+    return painter.width + 2;
+  }
+
   Size _calculatePreferredSize(
     Size textSize,
     ComboThemeExtension theme,
@@ -64,28 +79,35 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
         textSize.width +
         theme.textFieldPadding.horizontal +
         theme.borderWidth * 2 +
-        (isSimple ? 0 : theme.iconSpacing + theme.iconSize);
+        _arrowCell(theme, isSimple);
     final double height = textSize.height + theme.textFieldPadding.vertical;
 
     return Size(width, height);
   }
 
-  /// The text-field padding is a fixed inset, so a height an application pins
-  /// below the preferred one (GridData.heightHint) leaves EditableText a
-  /// viewport of a couple of pixels and the glyphs are cut off at the bottom.
-  /// The text keeps a full line height; the vertical padding absorbs the
-  /// deficit, down to none at all.
+  /// The text-field padding is a fixed inset, so a size an application pins below
+  /// the preferred one (GridData.heightHint / widthHint) leaves EditableText a
+  /// viewport of a couple of pixels and the glyphs are cut off. The text keeps
+  /// its full extent -- a whole line height, and the whole width of the value on
+  /// display -- and the padding absorbs the deficit, down to none at all.
+  ///
+  /// [verticalRoom] and [horizontalRoom] are what the pinned size leaves the text
+  /// on each axis; null where nothing is pinned.
   EdgeInsets _fitTextPadding(
-    ComboThemeExtension theme,
-    double textHeight,
-    double? height,
-  ) {
-    final EdgeInsets padding = theme.textFieldPadding;
-    if (height == null) return padding;
-    final double room = height - theme.borderWidth * 2 - textHeight;
-    if (room >= padding.vertical) return padding;
-    final double half = room > 0 ? room / 2 : 0;
-    return padding.copyWith(top: half, bottom: half);
+    EdgeInsets padding, {
+    double? verticalRoom,
+    double? horizontalRoom,
+  }) {
+    EdgeInsets fitted = padding;
+    if (verticalRoom != null && verticalRoom < padding.vertical) {
+      final double half = verticalRoom > 0 ? verticalRoom / 2 : 0;
+      fitted = fitted.copyWith(top: half, bottom: half);
+    }
+    if (horizontalRoom != null && horizontalRoom < padding.horizontal) {
+      final double half = horizontalRoom > 0 ? horizontalRoom / 2 : 0;
+      fitted = fitted.copyWith(left: half, right: half);
+    }
+    return fitted;
   }
 
   @override
@@ -173,9 +195,18 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
         : (isSimple ? null : preferredSize.height);
 
     final EdgeInsets textPadding = _fitTextPadding(
-      theme,
-      textSize.height,
-      height,
+      theme.textFieldPadding,
+      verticalRoom: height == null
+          ? null
+          : height - theme.borderWidth * 2 - textSize.height,
+      // Only the arrow cell and the border stand between the pinned width and
+      // the text; the preferred width is free to keep its full padding.
+      horizontalRoom: hasFixedSize
+          ? width -
+                theme.borderWidth * 2 -
+                _arrowCell(theme, isSimple) -
+                _selectedTextWidth(textStyle)
+          : null,
     );
 
     final Widget content = isSimple
