@@ -103,25 +103,28 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         // A test/bench harness may inject a global bridge (FlutterBridge.set) that owns the comm;
         // every widget routes through it instead of the per-Display bridge.
         FlutterBridge injected = injected();
-        if (injected != null) return injected;
         if (widget instanceof DartControl dartControl) {
             Display display = dartControl._display();
             if (display != null) {
                 DartDisplay dartDisplay = (DartDisplay) display.getImpl();
                 if (widget instanceof DartShell dartShell) {
                     dartDisplay.addShell((Shell) dartShell.getApi());
-                    if (dartShell.parent == null) {
-                        dartShell.bounds = dartDisplay.bounds;
-                    } else if (dartShell.bounds.width == 0 && dartShell.bounds.height == 0) {
-                        Rectangle db = dartDisplay.bounds;
-                        int w = Math.max(400, db.width * 3 / 5);
-                        int h = Math.max(300, db.height * 3 / 5);
-                        dartShell.bounds = new Rectangle(dartShell.bounds.x, dartShell.bounds.y, w, h);
+                    if (injected == null) {
+                        if (dartShell.parent == null) {
+                            dartShell.bounds = dartDisplay.bounds;
+                        } else if (dartShell.bounds.width == 0 && dartShell.bounds.height == 0) {
+                            Rectangle db = dartDisplay.bounds;
+                            int w = Math.max(400, db.width * 3 / 5);
+                            int h = Math.max(300, db.height * 3 / 5);
+                            dartShell.bounds = new Rectangle(dartShell.bounds.x, dartShell.bounds.y, w, h);
+                        }
                     }
                 }
+                if (injected != null) return injected;
                 return dartDisplay.displayBridge;
             }
         }
+        if (injected != null) return injected;
         return null;
     }
 

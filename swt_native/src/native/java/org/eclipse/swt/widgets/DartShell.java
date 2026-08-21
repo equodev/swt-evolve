@@ -531,6 +531,9 @@ public class DartShell extends DartDecorations implements IShell {
 
     @Override
     void deregister() {
+        if (display != null) {
+            ((DartDisplay) display.getImpl()).removeShell(this.getApi());
+        }
         super.deregister();
     }
 
@@ -1033,7 +1036,7 @@ public class DartShell extends DartDecorations implements IShell {
         updateParent(false);
         ((DartDisplay) display.getImpl()).updateQuitMenu();
         lastActive = null;
-        if (savedParent != null && savedDisplay != null && !savedDisplay.isDisposed()) {
+        if (savedDisplay != null && !savedDisplay.isDisposed()) {
             savedDisplay.asyncExec(() -> {
                 Shell toActivate = (savedParent instanceof Shell sp && !sp.isDisposed() && sp.isVisible()) ? sp : savedDisplay.getActiveShell();
                 if (toActivate != null && !toActivate.isDisposed()) {
