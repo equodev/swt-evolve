@@ -16,3 +16,12 @@ String localFileRewrite(String tokenPath) => tokenPath;
 Object? browserEvalInFrame(
         PlatformWebViewControllerCreationParams? params, String script) =>
     null;
+
+/// Only the web iframe swallows the keys typed inside it; native webviews route them through
+/// Flutter's keyboard.
+bool installBrowserFrameKeyHandling(
+        PlatformWebViewControllerCreationParams? params,
+        void Function(String key, bool ctrl, bool shift, bool alt, bool meta,
+                bool down)
+            onKey) =>
+    false;

@@ -138,3 +138,67 @@ VEvent mapNewKeyEventToSwt(KeyEvent event) {
     ..character = mapped.character
     ..stateMask = stateMask;
 }
+
+/// DOM `KeyboardEvent.key` names for the non-printable keys, so they share the SWT table above.
+/// Printable keys need no entry: their `key` *is* the character.
+const Map<String, LogicalKeyboardKey> _domNamedKeys = {
+  'Enter': LogicalKeyboardKey.enter,
+  'Escape': LogicalKeyboardKey.escape,
+  'Backspace': LogicalKeyboardKey.backspace,
+  'Delete': LogicalKeyboardKey.delete,
+  'Tab': LogicalKeyboardKey.tab,
+  'ArrowUp': LogicalKeyboardKey.arrowUp,
+  'ArrowDown': LogicalKeyboardKey.arrowDown,
+  'ArrowLeft': LogicalKeyboardKey.arrowLeft,
+  'ArrowRight': LogicalKeyboardKey.arrowRight,
+  'Home': LogicalKeyboardKey.home,
+  'End': LogicalKeyboardKey.end,
+  'PageUp': LogicalKeyboardKey.pageUp,
+  'PageDown': LogicalKeyboardKey.pageDown,
+  'Insert': LogicalKeyboardKey.insert,
+  'F1': LogicalKeyboardKey.f1,
+  'F2': LogicalKeyboardKey.f2,
+  'F3': LogicalKeyboardKey.f3,
+  'F4': LogicalKeyboardKey.f4,
+  'F5': LogicalKeyboardKey.f5,
+  'F6': LogicalKeyboardKey.f6,
+  'F7': LogicalKeyboardKey.f7,
+  'F8': LogicalKeyboardKey.f8,
+  'F9': LogicalKeyboardKey.f9,
+  'F10': LogicalKeyboardKey.f10,
+  'F11': LogicalKeyboardKey.f11,
+  'F12': LogicalKeyboardKey.f12,
+};
+
+/// Maps a DOM `KeyboardEvent.key` to a [VEvent], for keys that arrive as DOM events instead of
+/// through Flutter's keyboard — those typed inside a Browser's iframe. A modifier pressed on its
+/// own has no SWT keyCode and yields an empty event, which the caller drops.
+VEvent mapDomKeyToSwt(String key,
+    {required bool ctrl,
+    required bool shift,
+    required bool alt,
+    required bool meta}) {
+  final named = _domNamedKeys[key];
+  final ({int keyCode, int character}) mapped;
+  if (named != null) {
+    mapped = _mapLogicalKey(named, null);
+  } else if (key.length == 1) {
+    mapped = (
+      keyCode: key.toLowerCase().codeUnitAt(0),
+      character: key.codeUnitAt(0)
+    );
+  } else {
+    mapped = (keyCode: 0, character: 0);
+  }
+
+  int stateMask = 0;
+  if (ctrl) stateMask |= SWT.CTRL;
+  if (shift) stateMask |= SWT.SHIFT;
+  if (alt) stateMask |= SWT.ALT;
+  if (meta) stateMask |= SWT.COMMAND;
+
+  return VEvent()
+    ..keyCode = mapped.keyCode
+    ..character = mapped.character
+    ..stateMask = stateMask;
+}

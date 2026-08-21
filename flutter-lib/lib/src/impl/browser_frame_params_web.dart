@@ -63,3 +63,45 @@ Object? browserEvalInFrame(
   final result = (win as JSObject).callMethod<JSAny?>('eval'.toJS, script.toJS);
   return result.dartify();
 }
+
+/// Reports keys typed inside the iframe to [onKey] and suppresses the same reserved shortcuts the
+/// embedding page does — they are delivered to the iframe's document and reach neither Flutter's
+/// keyboard nor `suppressBrowserShortcuts()`. Same-origin content only; returns whether the
+/// listener is in place. A navigation replaces the document, so the caller re-installs per load.
+bool installBrowserFrameKeyHandling(
+    PlatformWebViewControllerCreationParams? params,
+    void Function(String key, bool ctrl, bool shift, bool alt, bool meta,
+            bool down)
+        onKey) {
+  if (params is! WebWebViewControllerCreationParams) return false;
+  try {
+    // ignore: invalid_use_of_visible_for_testing_member
+    final doc = params.iFrame.contentDocument;
+    if (doc == null) return false;
+    const marker = '__equoKeyForwarding';
+    if (doc.getProperty(marker.toJS).isDefinedAndNotNull) return true;
+    doc.setProperty(marker.toJS, true.toJS);
+    const reserved = {'s', 'p', 'o'};
+    // preventDefault only, so the page's own handlers still see every key.
+    doc.addEventListener(
+        'keydown',
+        ((web.KeyboardEvent e) {
+          if ((e.metaKey || e.ctrlKey) &&
+              reserved.contains(e.key.toLowerCase())) {
+            e.preventDefault();
+          }
+          onKey(e.key, e.ctrlKey, e.shiftKey, e.altKey, e.metaKey, true);
+        }).toJS,
+        true.toJS);
+    doc.addEventListener(
+        'keyup',
+        ((web.KeyboardEvent e) {
+          onKey(e.key, e.ctrlKey, e.shiftKey, e.altKey, e.metaKey, false);
+        }).toJS,
+        true.toJS);
+    return true;
+  } catch (_) {
+    // Cross-origin content throws a SecurityError rather than returning a null contentDocument.
+    return false;
+  }
+}

@@ -185,6 +185,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * chain (e.g. Eclipse's command key bindings, installed via {@code Display.addFilter(SWT.KeyDown,
      * …)}) and then the focused control's own KeyDown/KeyUp listeners. This is the single generic
      * path that replaces the per-control forwarders while a Display is rendered.
+     *
+     * <p>A key arriving here was forwarded by nothing else — the client suppresses this channel for
+     * exactly the keystrokes a focused editor forwards on its own (see {@code key_forwarding.dart})
+     * — so every arrival is dispatched, whatever the focused control's type.
      */
     protected void registerDisplayKeyEvents(DartDisplay display) {
         long displayId = display.getApi().hashCode();
@@ -204,10 +208,6 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 return;
             Control focus = api.getFocusControl();
             if (focus == null || focus.isDisposed() || !(focus.getImpl() instanceof DartControl dc))
-                return;
-            // StyledText runs its own keyboard pipeline and forwards its own KeyDown (its content
-            // sync depends on it), so routing here would dispatch the key twice — skip it.
-            if (focus instanceof org.eclipse.swt.custom.StyledText)
                 return;
             if (type == org.eclipse.swt.SWT.KeyDown) {
                 boolean vetoable = focus.isListening(org.eclipse.swt.SWT.KeyDown);

@@ -11,9 +11,21 @@
 /// per-control forwarding remains the sole path — unchanged.
 bool displayLevelKeyForwardingActive = false;
 
-/// True while a focused widget runs its own keyboard pipeline and forwards its own key events
-/// (today: StyledText). The top-level handler then stays out of its way entirely — it neither
-/// forwards nor floods the comm channel for those keystrokes — so the editor's own per-key editing
-/// and content sync are not raced by a parallel forward. Such widgets still reach Display filters
-/// (Eclipse command bindings) through their own forwarding.
-bool focusedEditorHandlesOwnKeys = false;
+/// The widget that currently owns the keyboard, or `null` when none does.
+Object? _keyOwningEditor;
+
+/// True while a focused widget runs its own keyboard pipeline (today: StyledText) and the
+/// top-level handler stays out of its way. The owner must then forward *every* keystroke it sees,
+/// whatever mode it is in: nothing else forwards them.
+bool get focusedEditorHandlesOwnKeys => _keyOwningEditor != null;
+
+/// Claims (or releases) keyboard ownership for [editor]. A release only takes effect for the
+/// current owner, so a blur cannot clear the claim a newly focused editor just made — the two
+/// arrive in no guaranteed order.
+void setEditorKeyOwnership(Object editor, bool owns) {
+  if (owns) {
+    _keyOwningEditor = editor;
+  } else if (identical(_keyOwningEditor, editor)) {
+    _keyOwningEditor = null;
+  }
+}

@@ -133,16 +133,14 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   /// While this StyledText holds focus, tell the top-level key handler to stay out of the way — it
   /// forwards its own key events (see [_handleKeyEvent]) and must not be raced by a parallel forward.
   void _syncEditorKeyOwnership() {
-    focusedEditorHandlesOwnKeys = _focusNode.hasFocus;
+    setEditorKeyOwnership(this, _focusNode.hasFocus);
   }
 
   @override
   void dispose() {
     _verticalController.dispose();
     _horizontalController.dispose();
-    if (_focusNode.hasFocus) {
-      focusedEditorHandlesOwnKeys = false;
-    }
+    setEditorKeyOwnership(this, false);
     _focusNode.removeListener(_syncEditorKeyOwnership);
     _focusNode.dispose();
     _caretBlinkTimer?.cancel();
@@ -824,14 +822,13 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   }
 
   void _handleKeyEvent(RawKeyEvent event) {
-    if (!_isEditingText || _editableTextShape == null) return;
     if (event is! RawKeyDownEvent) return;
 
-    // Send KeyDown to Java directly. StyledText runs its own keyboard pipeline and its content
-    // sync to Java rides on this event, so it must forward reliably here rather than depend on the
-    // whole-tree top-level handler (whose async focus resolution races a tight click-then-type).
-    // The top-level router skips a focused StyledText so this is not dispatched twice.
+    // Must run before the edit-mode guard below: while this editor owns the keyboard nothing else
+    // forwards, so a key not sent here reaches Java through no path at all.
     _sendKeyDownEvent(event);
+
+    if (!_isEditingText || _editableTextShape == null) return;
 
     final isShiftPressed = event.data.isShiftPressed;
     final bool hadSelection = _editableTextShape?.selectionInfo?.hasSelection == true;

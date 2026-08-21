@@ -15,6 +15,7 @@ import '../gen/widget.dart';
 import '../impl/composite_evolve.dart';
 import 'browser_frame_params_stub.dart'
     if (dart.library.js_interop) 'browser_frame_params_web.dart';
+import 'key_mapping.dart';
 
 /// Browser implementation backed by the `webview_all` plugin (the federated
 /// `webview_flutter` API), which provides a real embedded webview on every
@@ -104,6 +105,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
               for (final name in _functionNames) {
                 _injectBrowserFunction(name);
               }
+              installBrowserFrameKeyHandling(_params, _forwardFrameKey);
               _pushNavState(real);
             },
             onUrlChange: (change) {
@@ -310,6 +312,21 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     return reportedUrl == 'about:blank' &&
         _loadedText == null &&
         _loadedUrl != 'about:blank';
+  }
+
+  /// Sends a key typed inside the iframe on this Browser's own channel, where `DartControl`
+  /// dispatches it as SWT.KeyDown/KeyUp. Nothing else forwards these keys, so it cannot double up.
+  void _forwardFrameKey(String key, bool ctrl, bool shift, bool alt, bool meta,
+      bool down) {
+    if (!mounted) return;
+    final v =
+        mapDomKeyToSwt(key, ctrl: ctrl, shift: shift, alt: alt, meta: meta);
+    if (v.keyCode == 0 && v.character == 0) return;
+    if (down) {
+      widget.sendKeyKeyDown(state, v);
+    } else {
+      widget.sendKeyKeyUp(state, v);
+    }
   }
 
   /// Emits the iframe's current document title (same-origin only) as an SWT
