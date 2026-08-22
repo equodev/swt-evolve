@@ -7,6 +7,7 @@ import org.eclipse.swt.widgets.Mocks;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.swtShell;
 
@@ -17,7 +18,8 @@ class SerializerDisposedWidgetTest extends SerializeTestBase {
     // ancestor's payload (Composite.children, Display.shells, ...). A widget can be disposed
     // between the start of that tree walk and reaching this node (see the comment on the
     // `disposed` check in Serializer.writeWithId) — the early-return path below must stay valid
-    // JSON, since one bad node poisons the whole ancestor payload.
+    // JSON, since one bad node poisons the whole ancestor payload. `style` belongs to the stub:
+    // every generated Dart decoder reads it as a non-nullable num.
     @Test
     void writeWithId_on_a_disposed_widget_does_not_emit_a_trailing_comma() {
         Button w = new Button(swtShell(), SWT.NONE);
@@ -28,5 +30,6 @@ class SerializerDisposedWidgetTest extends SerializeTestBase {
 
         assertThat(json).matches("\\{[^{}]*\\}");
         assertThat(json).doesNotContain(",}");
+        assertThatJson(json).isObject().containsOnlyKeys("id", "swt", "seq", "style");
     }
 }

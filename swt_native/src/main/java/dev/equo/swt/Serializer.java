@@ -81,7 +81,7 @@ public class Serializer {
     }
 
     public static <T extends DartWidget> void writeWithId(DslJson json, JsonWriter writer, T impl) {
-        if (impl == null || impl.isDisposed()) {
+        if (impl == null) {
             writer.writeNull();
             return;
         }
@@ -102,14 +102,13 @@ public class Serializer {
         writer.writeByte((byte)',');
         writer.writeByte((byte)'"'); writer.writeAscii(name_seq); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
         NumberConverter.serialize(writeSeq.incrementAndGet(), writer);
-//        writer.writeByte((byte)'"'); writer.writeAscii(name_style); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
-//        NumberConverter.serialize(api.getStyle(), writer);
-//        writer.writeByte((byte)',');
-        if (converter == null) {
-            writer.writeByte((byte)'}');
-            return;
-        }
-        if (disposed) {
+        // Identity stub. A null here is undecodable where the reference sits inside a widget array
+        // (children, items) and would abort the ancestor's payload; style is read off the api
+        // field, not a checkWidget()-guarded getter, so it is safe on a disposed widget.
+        if (converter == null || disposed) {
+            writer.writeByte((byte)',');
+            writer.writeByte((byte)'"'); writer.writeAscii(name_style); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
+            NumberConverter.serialize(api.getStyle(), writer);
             writer.writeByte((byte)'}');
             return;
         }
