@@ -246,14 +246,29 @@ public class ControlHelper {
         // increment further and unwind cleanly.
         inPaintDepth++;
         try {
-            Event event = new Event();
-            event.x = 0;
-            event.y = 0;
-            event.width = bounds.width;
-            event.height = bounds.height;
-            event.gc = new GC(c.getApi());
-            c.sendEvent(SWT.Paint, event);
-            event.gc.dispose();
+            // draw2d drives its own painting from the LightweightSystem, so a FigureCanvas must not
+            // get this synthetic full-area Paint. Without draw2d on the classpath, nothing to skip.
+            try {
+                if (!Class.forName("org.eclipse.draw2d.FigureCanvas").isInstance(c.getApi())) {
+                    Event event = new Event();
+                    event.x = 0;
+                    event.y = 0;
+                    event.width = bounds.width;
+                    event.height = bounds.height;
+                    event.gc = new GC(c.getApi());
+                    c.sendEvent(SWT.Paint, event);
+                    event.gc.dispose();
+                }
+            } catch (ClassNotFoundException ex) {
+                Event event = new Event();
+                event.x = 0;
+                event.y = 0;
+                event.width = bounds.width;
+                event.height = bounds.height;
+                event.gc = new GC(c.getApi());
+                c.sendEvent(SWT.Paint, event);
+                event.gc.dispose();
+            }
         } finally {
             inPaintDepth--;
         }
