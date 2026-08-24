@@ -229,7 +229,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
       baseTextStyle: widgetTheme.rowTextStyle,
     );
     _cachedRowHeight = calculateRowHeight(rowTextStyle, widgetTheme);
-    double headerOff = widgetTheme.borderWidth;
+    double headerOff = frameBorderWidth(widgetTheme);
     if (showHeader) {
       final headerTextStyle = getTextStyle(
         context: context,
@@ -822,7 +822,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final rowHeight = calculateRowHeight(rowTextStyle, theme);
     final showLines = state.linesVisible ?? false;
     final lineWidth = showLines ? theme.linesWidth : 0.0;
-    final borderWidth = theme.borderWidth;
+    final borderWidth = frameBorderWidth(theme);
 
     double headerOffset = borderWidth;
     if (state.headerVisible == true) {
@@ -927,7 +927,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
 
 
+  /// A borderless SWT Table reserves no trim, so rows * getItemHeight() must fit exactly.
+  double frameBorderWidth(TableThemeExtension theme) =>
+      hasStyle(SWT.BORDER) ? theme.borderWidth : 0.0;
+
   BoxDecoration buildBorder(TableThemeExtension theme) {
+    if (!hasStyle(SWT.BORDER)) return const BoxDecoration();
     return BoxDecoration(
       border: Border.all(color: theme.borderColor, width: theme.borderWidth),
     );

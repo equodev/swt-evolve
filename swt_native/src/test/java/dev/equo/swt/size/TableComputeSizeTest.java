@@ -9,6 +9,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.DartTable;
 import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -86,5 +87,31 @@ class TableComputeSizeTest {
         Point size = TableSizes.computeSize(table, SWT.DEFAULT, 100, true);
 
         assertThat(size.x).isEqualTo(142 + 20);
+    }
+
+    @Test
+    void heightOfABorderlessTableIsExactlyItsRows() {
+        // NatCombo sizes its popup as visibleItems * Table.getItemHeight() and lays the tables out
+        // at their computeSize height. Any trim the second answer adds and the first does not comes
+        // straight out of the item list, clipping its last row.
+        DartTable table = tableWithStyle(SWT.NONE);
+        when(table.getItemCount()).thenReturn(10);
+        when(table.getItems()).thenReturn(new TableItem[0]);
+
+        Point size = TableSizes.computeSize(table, SWT.DEFAULT, SWT.DEFAULT, true);
+
+        assertThat(size.y).isEqualTo(10 * TableSizes.getItemHeight(table));
+    }
+
+    @Test
+    void heightOfABorderedTableAddsTheBorderItPaints() {
+        DartTable table = tableWithStyle(SWT.BORDER);
+        when(table.getItemCount()).thenReturn(10);
+        when(table.getItems()).thenReturn(new TableItem[0]);
+
+        Point size = TableSizes.computeSize(table, SWT.DEFAULT, SWT.DEFAULT, true);
+
+        assertThat(size.y).isEqualTo(10 * TableSizes.getItemHeight(table) + TableSizes.getFrameBorder(table));
+        assertThat(TableSizes.getFrameBorder(table)).isPositive();
     }
 }

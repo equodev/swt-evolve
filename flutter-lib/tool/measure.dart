@@ -948,8 +948,8 @@ class WidgetMeasurer {
           discovered['expander'] = expanders.map(_probeJson).toList();
         }
       }
-      final borderWidth = _firstBorderWidth(root);
-      if (borderWidth != null) {
+      final borderWidth = _totalBorderWidth(root);
+      if (borderWidth > 0) {
         discovered['frame'] = {
           'width': root.size.width,
           'height': root.size.height,
@@ -1067,6 +1067,19 @@ class WidgetMeasurer {
       if (found != null) return found;
     }
     return null;
+  }
+
+  /// Every border between a widget's bounds and its content, summed: a control with SWT.BORDER
+  /// nests the generic frame and its own, and both inset what it can draw rows in.
+  double _totalBorderWidth(RenderBoxInfo box) {
+    final border = box.border;
+    final own = (border != null && border.left > 0) ? border.left : 0.0;
+    var deepest = 0.0;
+    for (final child in box.children) {
+      final found = _totalBorderWidth(child);
+      if (found > deepest) deepest = found;
+    }
+    return own + deepest;
   }
 
   double? _firstBorderWidth(RenderBoxInfo box) {
@@ -2309,11 +2322,6 @@ class WidgetMeasurer {
           ?.toDouble();
       cellPaddingHorizontal ??= (rows.first['paddingHorizontal'] as num?)
           ?.toDouble();
-      final frame = result.discoveredComponents['frame'];
-      if (frame is Map) {
-        borderWidth ??= (frame['borderWidth'] as num?)?.toDouble();
-      }
-
       // Only a widget that draws an expander reports one; a Table simply has none.
       final expanders = result.discoveredComponents['expander'];
       if (expanders is List && expanders.length >= 2) {
@@ -2325,6 +2333,12 @@ class WidgetMeasurer {
     }
 
     if (rowHeight == null) return null;
+
+    final borderCase = _caseNamed(all, 'border_frame_cols$columnCount');
+    final borderFrame = borderCase?.discoveredComponents['frame'];
+    if (borderFrame is Map) {
+      borderWidth = (borderFrame['borderWidth'] as num?)?.toDouble();
+    }
 
     double? gapFraction;
     double? paddingLeft;
@@ -2418,9 +2432,7 @@ class WidgetMeasurer {
     buffer.writeln('            height = hHint;');
     buffer.writeln('        } else {');
     buffer.writeln('            height = getPreferredHeight($param);');
-    final borderTrim = hasBorder
-        ? ' - 2 * getBorderWidth()'
-        : '';
+    final borderTrim = hasBorder ? ' - getFrameBorder($param)' : '';
     buffer.writeln(
       '            if ((style & SWT.H_SCROLL) != 0) height += NATIVE_SCROLLER_AND_BEZEL_TRIM$borderTrim;',
     );
@@ -2504,11 +2516,23 @@ class WidgetMeasurer {
     final rows = nested
         ? 'countVisibleRows($param.getApi().getItems())'
         : '$param.getItemCount()';
-    final border = hasBorder ? ' + 2 * getBorderWidth()' : '';
+    final border = hasBorder ? ' + getFrameBorder($param)' : '';
     buffer.writeln(
       '        return getHeaderHeight($param) + $rows * getItemHeight($param)$border;',
     );
     buffer.writeln('    }');
+    if (hasBorder) {
+      buffer.writeln();
+      // SWT reserves no trim on a borderless widget, so an application that sizes one as
+      // rows * getItemHeight() must get exactly that many rows back.
+      buffer.writeln(
+        '    public static int getFrameBorder(Dart$widgetType $param) {',
+      );
+      buffer.writeln(
+        '        return ($param.getStyle() & SWT.BORDER) != 0 ? (int) Math.ceil(2 * BORDER_WIDTH) : 0;',
+      );
+      buffer.writeln('    }');
+    }
     if (nested) {
       buffer.writeln();
       buffer.writeln(
@@ -2765,12 +2789,6 @@ class WidgetMeasurer {
         themeClass: '${widgetType}ItemTheme',
         hasBorder: plain.borderWidth != null,
       );
-      buffer.writeln();
-    }
-    if (plain.borderWidth != null) {
-      buffer.writeln('    public static int getBorderWidth() {');
-      buffer.writeln('        return (int) BORDER_WIDTH;');
-      buffer.writeln('    }');
       buffer.writeln();
     }
     _writeRowDimension(

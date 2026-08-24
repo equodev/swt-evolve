@@ -20,7 +20,7 @@ public class TableSizes {
 
     private static final double ROW_PADDING_VERTICAL = 8.0;
     private static final double HEADER_PADDING_VERTICAL = 8.0;
-    private static final double BORDER_WIDTH = 2.0;
+    private static final double BORDER_WIDTH = 2.5;
     private static final int WIDTH_NO_COLUMNS = 70;
     private static final int NATIVE_SCROLLER_AND_BEZEL_TRIM = 15 + 2;
     private static final int CELL_PADDING_LEFT = 8;
@@ -47,7 +47,7 @@ public class TableSizes {
             height = hHint;
         } else {
             height = getPreferredHeight(table);
-            if ((style & SWT.H_SCROLL) != 0) height += NATIVE_SCROLLER_AND_BEZEL_TRIM - 2 * getBorderWidth();
+            if ((style & SWT.H_SCROLL) != 0) height += NATIVE_SCROLLER_AND_BEZEL_TRIM - getFrameBorder(table);
         }
         return new Point(width, height);
     }
@@ -88,11 +88,11 @@ public class TableSizes {
     }
 
     public static int getPreferredHeight(DartTable table) {
-        return getHeaderHeight(table) + table.getItemCount() * getItemHeight(table) + 2 * getBorderWidth();
+        return getHeaderHeight(table) + table.getItemCount() * getItemHeight(table) + getFrameBorder(table);
     }
 
-    public static int getBorderWidth() {
-        return (int) BORDER_WIDTH;
+    public static int getFrameBorder(DartTable table) {
+        return (table.getStyle() & SWT.BORDER) != 0 ? (int) Math.ceil(2 * BORDER_WIDTH) : 0;
     }
 
     public static int getItemHeight(DartTable table) {
