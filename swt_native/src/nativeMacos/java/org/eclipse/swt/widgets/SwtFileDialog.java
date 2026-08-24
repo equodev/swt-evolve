@@ -130,8 +130,8 @@ public class SwtFileDialog extends SwtDialog implements IIFileDialog {
     public SwtFileDialog(Shell parent, int style, FileDialog api) {
         super(parent, checkStyle(parent, style), api);
         if (DartDisplay.getSheetEnabled()) {
-            if (parent != null && (style & SWT.SHEET) != 0)
-                this.style |= SWT.SHEET;
+            //if (parent != null && (style & SWT.SHEET) != 0)    this.style |= SWT.SHEET;
+            ;
         }
         checkSubclass();
     }

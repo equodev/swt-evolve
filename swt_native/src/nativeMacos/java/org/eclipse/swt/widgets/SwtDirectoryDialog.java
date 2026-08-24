@@ -98,8 +98,8 @@ public class SwtDirectoryDialog extends SwtDialog implements IDirectoryDialog {
     public SwtDirectoryDialog(Shell parent, int style, DirectoryDialog api) {
         super(parent, checkStyle(parent, style), api);
         if (DartDisplay.getSheetEnabled()) {
-            if (parent != null && (style & SWT.SHEET) != 0)
-                this.style |= SWT.SHEET;
+            //if (parent != null && (style & SWT.SHEET) != 0)    this.style |= SWT.SHEET;
+            ;
         }
         checkSubclass();
     }
