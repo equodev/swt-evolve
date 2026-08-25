@@ -771,7 +771,6 @@ public class DartToolItem extends DartItem implements IToolItem {
 
     @Override
     public void setImage(Image image) {
-        dirty();
         checkWidget();
         if (this.image == image)
             return;
@@ -847,7 +846,6 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     @Override
     public void setText(String string) {
-        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);

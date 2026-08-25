@@ -522,7 +522,6 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
 
     @Override
     public void setText(String string) {
-        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);

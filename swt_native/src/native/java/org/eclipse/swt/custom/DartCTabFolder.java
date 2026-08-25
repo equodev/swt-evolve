@@ -2425,7 +2425,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
     @Override
     public void setBackground(Color color) {
-        dirty();
         super.setBackground(color);
         updateBkImages(true);
         redraw();
@@ -2561,7 +2560,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
     @Override
     public void setBackgroundImage(Image image) {
-        dirty();
         super.setBackgroundImage(image);
         redraw();
     }
@@ -2790,7 +2788,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
     @Override
     public void setFont(Font font) {
-        dirty();
         checkWidget();
         if (font != null && font.equals(getFont()))
             return;
@@ -2807,7 +2804,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
     @Override
     public void setForeground(Color color) {
-        dirty();
         super.setForeground(color);
         // Chevron painting is cached as image and only recreated if number of hidden tabs changed.
         // To apply the new foreground color the image must be recreated with new foreground color.

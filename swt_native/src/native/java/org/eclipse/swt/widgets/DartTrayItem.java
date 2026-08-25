@@ -342,7 +342,6 @@ public class DartTrayItem extends DartItem implements ITrayItem {
      */
     @Override
     public void setImage(Image image) {
-        dirty();
         checkWidget();
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);

@@ -387,7 +387,6 @@ public class DartExpandItem extends DartItem implements IExpandItem {
 
     @Override
     public void setImage(Image image) {
-        dirty();
         super.setImage(image);
         int oldImageHeight = imageHeight;
         if (image != null) {
@@ -406,7 +405,6 @@ public class DartExpandItem extends DartItem implements IExpandItem {
 
     @Override
     public void setText(String string) {
-        dirty();
         super.setText(string);
         if ((getApi().state & HAS_AUTO_DIRECTION) != 0) {
             updateTextDirection(AUTO_TEXT_DIRECTION);

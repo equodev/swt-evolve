@@ -554,7 +554,6 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     @Override
     public void setRedraw(boolean redraw) {
-        dirty();
         checkWidget();
         super.setRedraw(redraw);
         if (redraw && drawCount == 0)
@@ -563,7 +562,6 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     @Override
     public void setVisible(boolean visible) {
-        dirty();
         super.setVisible(visible);
     }
 

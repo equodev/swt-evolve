@@ -1370,7 +1370,6 @@ public class DartCombo extends DartComposite implements ICombo {
 
     @Override
     public void setFont(Font font) {
-        dirty();
         checkWidget();
         /*
 	* Feature in Windows.  For some reason, in a editable combo box,
@@ -1487,7 +1486,6 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     @Override
     public void setOrientation(int orientation) {
-        dirty();
         super.setOrientation(orientation);
     }
 

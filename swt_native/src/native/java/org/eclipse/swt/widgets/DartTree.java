@@ -1907,7 +1907,6 @@ public class DartTree extends DartComposite implements ITree {
 
     @Override
     public void setRedraw(boolean redraw) {
-        dirty();
         checkWidget();
         super.setRedraw(redraw);
         if (redraw && drawCount == 0) {

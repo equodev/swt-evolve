@@ -291,7 +291,6 @@ public class DartTabItem extends DartItem implements ITabItem {
 
     @Override
     public void setImage(Image image) {
-        dirty();
         checkWidget();
         super.setImage(image);
         if (image != null) {
@@ -331,7 +330,6 @@ public class DartTabItem extends DartItem implements ITabItem {
      */
     @Override
     public void setText(String string) {
-        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);

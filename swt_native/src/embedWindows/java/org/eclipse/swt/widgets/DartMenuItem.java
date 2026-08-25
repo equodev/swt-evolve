@@ -704,7 +704,6 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      */
     @Override
     public void setImage(Image image) {
-        dirty();
         checkWidget();
         if (this.image == image)
             return;
@@ -918,7 +917,6 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      */
     @Override
     public void setText(String string) {
-        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);

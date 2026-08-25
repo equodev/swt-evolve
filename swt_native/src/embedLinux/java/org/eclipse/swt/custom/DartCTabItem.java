@@ -541,7 +541,6 @@ public class DartCTabItem extends DartItem implements ICTabItem {
 
     @Override
     public void setImage(Image image) {
-        dirty();
         checkWidget();
         if (image != null && image.isDisposed()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -621,7 +620,6 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      */
     @Override
     public void setText(String string) {
-        dirty();
         checkWidget();
         if (string == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);

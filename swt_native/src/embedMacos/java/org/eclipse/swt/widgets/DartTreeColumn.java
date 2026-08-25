@@ -439,7 +439,6 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
 
     @Override
     public void setImage(Image image) {
-        dirty();
         checkWidget();
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -499,7 +498,6 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
 
     @Override
     public void setText(String string) {
-        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);

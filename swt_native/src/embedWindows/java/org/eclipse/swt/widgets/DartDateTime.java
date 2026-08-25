@@ -490,7 +490,6 @@ public class DartDateTime extends DartComposite implements IDateTime {
 
     @Override
     public void setOrientation(int orientation) {
-        dirty();
         /* Currently supported only for CALENDAR style. */
         if ((getApi().style & SWT.CALENDAR) != 0)
             super.setOrientation(orientation);

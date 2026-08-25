@@ -96,11 +96,18 @@ public class ControlUtils {
             }
         }
 
+        // Re-inserting at the index the control was removed from reproduces the original order.
+        // E4 layout passes re-assert an already-correct z-order on every relayout; dirtying the
+        // parent for that re-serializes its whole subtree with unchanged content.
+        if (newIndex == movedIndex) {
+            return;
+        }
+
         Control[] finalChildren = new Control[newChildren.length + 1];
         System.arraycopy(newChildren, 0, finalChildren, 0, newIndex);
         finalChildren[newIndex] = movedControl;
         System.arraycopy(newChildren, newIndex, finalChildren, newIndex + 1, newChildren.length - newIndex);
-        
+
         parentImpl.children = finalChildren;
         ((DartControl) movedControl.getImpl()).getBridge().dirty(parentImpl);
     }

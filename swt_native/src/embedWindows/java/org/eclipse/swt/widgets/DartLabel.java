@@ -264,7 +264,6 @@ public class DartLabel extends DartControl implements ILabel {
 
     @Override
     public void setEnabled(boolean enabled) {
-        dirty();
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
         /*

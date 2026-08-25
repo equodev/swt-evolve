@@ -1701,7 +1701,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
 
     @Override
     public void setBackground(Color color) {
-        dirty();
         super.setBackground(color);
         background = color;
         if (text != null)
@@ -1736,7 +1735,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
 
     @Override
     public void setEnabled(boolean enabled) {
-        dirty();
         super.setEnabled(enabled);
         if (text != null)
             text.setEnabled(enabled);
@@ -1756,7 +1754,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
 
     @Override
     public void setFont(Font font) {
-        dirty();
         super.setFont(font);
         this.font = font;
         text.setFont(font);
@@ -1766,7 +1763,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
 
     @Override
     public void setForeground(Color color) {
-        dirty();
         super.setForeground(color);
         foreground = color;
         if (text != null)
@@ -1987,7 +1983,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
 
     @Override
     public void setToolTipText(String string) {
-        dirty();
         checkWidget();
         super.setToolTipText(string);
         arrow.setToolTipText(string);
@@ -1996,7 +1991,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
 
     @Override
     public void setVisible(boolean visible) {
-        dirty();
         super.setVisible(visible);
         /*
 	 * At this point the widget may have been disposed in a FocusOut event.

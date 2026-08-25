@@ -1266,7 +1266,6 @@ public class DartText extends DartScrollable implements IText {
 
     @Override
     public void setFont(Font font) {
-        dirty();
         checkWidget();
         super.setFont(font);
         setTabStops(tabs);
@@ -1335,7 +1334,6 @@ public class DartText extends DartScrollable implements IText {
      */
     @Override
     public void setOrientation(int orientation) {
-        dirty();
         super.setOrientation(orientation);
     }
 
@@ -1413,7 +1411,6 @@ public class DartText extends DartScrollable implements IText {
 
     @Override
     public void setRedraw(boolean redraw) {
-        dirty();
         checkWidget();
         super.setRedraw(redraw);
         /*

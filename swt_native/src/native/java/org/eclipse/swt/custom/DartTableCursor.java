@@ -474,7 +474,6 @@ public class DartTableCursor extends DartCanvas implements ITableCursor {
 
     @Override
     public void setVisible(boolean visible) {
-        dirty();
         checkWidget();
         if (visible)
             _resize();
@@ -596,7 +595,6 @@ public class DartTableCursor extends DartCanvas implements ITableCursor {
      */
     @Override
     public void setBackground(Color color) {
-        dirty();
         background = color;
         super.setBackground(getBackground());
         redraw();
@@ -621,7 +619,6 @@ public class DartTableCursor extends DartCanvas implements ITableCursor {
      */
     @Override
     public void setForeground(Color color) {
-        dirty();
         foreground = color;
         super.setForeground(getForeground());
         redraw();

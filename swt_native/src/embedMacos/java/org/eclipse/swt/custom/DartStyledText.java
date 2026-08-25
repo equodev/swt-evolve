@@ -8675,7 +8675,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     @Override
     public void setBackground(Color color) {
-        dirty();
         checkWidget();
         boolean backgroundDisabled = false;
         if (!this.enabled && color == null) {
@@ -8863,7 +8862,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     @Override
     public void setCaret(Caret caret) {
-        dirty();
         checkWidget();
         super.setCaret(caret);
         caretDirection = SWT.NULL;
@@ -9175,7 +9173,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     @Override
     public void setCursor(Cursor cursor) {
-        dirty();
         checkWidget();
         if (cursor != null && cursor.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -9234,7 +9231,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
 
     @Override
     public void setEnabled(boolean enabled) {
-        dirty();
         super.setEnabled(enabled);
         Display display = getDisplay();
         this.enabled = enabled;
@@ -9304,7 +9300,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     @Override
     public void setFont(Font font) {
-        dirty();
         checkWidget();
         int oldLineHeight = ((DartStyledTextRenderer) renderer.getImpl()).getLineHeight();
         super.setFont(font);
@@ -9330,7 +9325,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
 
     @Override
     public void setForeground(Color color) {
-        dirty();
         checkWidget();
         boolean foregroundDisabled = false;
         if (!this.enabled && color == null) {
@@ -10235,7 +10229,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     @Override
     public void setOrientation(int orientation) {
-        dirty();
         int oldOrientation = getOrientation();
         super.setOrientation(orientation);
         int newOrientation = getOrientation();
@@ -11184,7 +11177,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     @Override
     public void setTextDirection(int textDirection) {
-        dirty();
         checkWidget();
         int oldStyle = getStyle();
         super.setTextDirection(textDirection);

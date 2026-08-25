@@ -331,7 +331,6 @@ public class DartSashForm extends DartComposite implements ISashForm {
      */
     @Override
     public void setOrientation(int orientation) {
-        dirty();
         checkWidget();
         if (orientation == SWT.RIGHT_TO_LEFT || orientation == SWT.LEFT_TO_RIGHT) {
             super.setOrientation(orientation);
@@ -353,7 +352,6 @@ public class DartSashForm extends DartComposite implements ISashForm {
 
     @Override
     public void setBackground(Color color) {
-        dirty();
         super.setBackground(color);
         background = color;
         for (Sash sash : sashes) {
@@ -363,7 +361,6 @@ public class DartSashForm extends DartComposite implements ISashForm {
 
     @Override
     public void setForeground(Color color) {
-        dirty();
         super.setForeground(color);
         foreground = color;
         for (Sash sash : sashes) {
@@ -454,7 +451,6 @@ public class DartSashForm extends DartComposite implements ISashForm {
 
     @Override
     public void setToolTipText(String string) {
-        dirty();
         super.setToolTipText(string);
         for (Sash sash : sashes) {
             sash.setToolTipText(string);

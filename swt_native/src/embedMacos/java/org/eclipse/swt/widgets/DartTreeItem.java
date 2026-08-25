@@ -1299,7 +1299,6 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * @since 3.1
      */
     public void setImage(int index, Image image) {
-        dirty();
         checkWidget();
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1410,7 +1409,6 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * @since 3.1
      */
     public void setText(int index, String string) {
-        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);

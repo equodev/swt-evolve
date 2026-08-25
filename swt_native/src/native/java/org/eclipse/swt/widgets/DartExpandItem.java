@@ -352,7 +352,6 @@ public class DartExpandItem extends DartItem implements IExpandItem {
 
     @Override
     public void setImage(Image image) {
-        dirty();
         super.setImage(image);
         int oldImageHeight = imageHeight;
         if (image != null) {
@@ -394,7 +393,6 @@ public class DartExpandItem extends DartItem implements IExpandItem {
 
     @Override
     public void setText(String string) {
-        dirty();
         super.setText(string);
         redraw();
     }

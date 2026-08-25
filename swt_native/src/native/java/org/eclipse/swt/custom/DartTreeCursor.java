@@ -746,7 +746,6 @@ public class DartTreeCursor extends DartCanvas implements ITreeCursor {
      */
     @Override
     public void setBackground(Color color) {
-        dirty();
         background = color;
         super.setBackground(getBackground());
         redraw();
@@ -771,7 +770,6 @@ public class DartTreeCursor extends DartCanvas implements ITreeCursor {
      */
     @Override
     public void setForeground(Color color) {
-        dirty();
         foreground = color;
         super.setForeground(getForeground());
         redraw();
@@ -868,7 +866,6 @@ public class DartTreeCursor extends DartCanvas implements ITreeCursor {
 
     @Override
     public void setVisible(boolean visible) {
-        dirty();
         checkWidget();
         if (visible) {
             _resize();

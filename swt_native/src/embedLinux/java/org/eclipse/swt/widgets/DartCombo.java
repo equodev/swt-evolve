@@ -1493,7 +1493,6 @@ public class DartCombo extends DartComposite implements ICombo {
 
     @Override
     void setOrientation(boolean create) {
-        dirty();
         super.setOrientation(create);
         if ((getApi().style & SWT.RIGHT_TO_LEFT) != 0 || !create) {
             if (!create) {
@@ -1516,7 +1515,6 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     @Override
     public void setOrientation(int orientation) {
-        dirty();
         super.setOrientation(orientation);
     }
 

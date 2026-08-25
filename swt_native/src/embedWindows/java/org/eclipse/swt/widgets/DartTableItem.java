@@ -1095,7 +1095,6 @@ public class DartTableItem extends DartItem implements ITableItem {
      * </ul>
      */
     public void setText(int index, String string) {
-        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);

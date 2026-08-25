@@ -973,7 +973,6 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
 
     @Override
     public void setBackground(Color color) {
-        dirty();
         for (CoolItem ci : originalItems) {
             Control ctrl = ci.getControl();
             if (ctrl != null) {
@@ -1193,7 +1192,6 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
 
     @Override
     public void setCursor(Cursor cursor) {
-        dirty();
         checkWidget();
         super.setCursor(this.cursor = cursor);
     }
@@ -1241,7 +1239,6 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
 
     @Override
     public void setOrientation(int orientation) {
-        dirty();
         super.setOrientation(orientation);
         for (int row = 0; row < items.length; row++) {
             for (int column = 0; column < items[row].length; column++) {

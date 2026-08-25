@@ -432,7 +432,6 @@ public class DartTableColumn extends DartItem implements ITableColumn {
 
     @Override
     public void setImage(Image image) {
-        dirty();
         checkWidget();
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -494,7 +493,6 @@ public class DartTableColumn extends DartItem implements ITableColumn {
 
     @Override
     public void setText(String string) {
-        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);

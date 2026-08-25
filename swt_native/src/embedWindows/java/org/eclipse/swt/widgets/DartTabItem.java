@@ -304,7 +304,6 @@ public class DartTabItem extends DartItem implements ITabItem {
 
     @Override
     public void setImage(Image image) {
-        dirty();
         checkWidget();
         int index = parent.indexOf(this.getApi());
         if (index == -1)

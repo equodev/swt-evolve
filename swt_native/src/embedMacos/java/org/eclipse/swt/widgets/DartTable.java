@@ -1907,7 +1907,6 @@ public class DartTable extends DartComposite implements ITable {
 
     @Override
     public void setRedraw(boolean redraw) {
-        dirty();
         checkWidget();
         super.setRedraw(redraw);
         if (redraw && drawCount == 0) {

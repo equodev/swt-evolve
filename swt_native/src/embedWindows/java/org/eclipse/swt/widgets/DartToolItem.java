@@ -795,7 +795,6 @@ public class DartToolItem extends DartItem implements IToolItem {
 
     @Override
     public void setImage(Image image) {
-        dirty();
         checkWidget();
         if (this.image == image)
             return;

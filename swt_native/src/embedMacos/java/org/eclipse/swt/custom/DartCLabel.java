@@ -628,7 +628,6 @@ public class DartCLabel extends DartCanvas implements ICLabel {
 
     @Override
     public void setBackground(Color color) {
-        dirty();
         super.setBackground(color);
         // Are these settings the same as before?
         if (backgroundImage == null && gradientColors == null && gradientPercents == null) {
@@ -820,7 +819,6 @@ public class DartCLabel extends DartCanvas implements ICLabel {
 
     @Override
     public void setFont(Font font) {
-        dirty();
         super.setFont(font);
         redraw();
     }
@@ -969,7 +967,6 @@ public class DartCLabel extends DartCanvas implements ICLabel {
 
     @Override
     public void setToolTipText(String string) {
-        dirty();
         super.setToolTipText(string);
         appToolTipText = super.getToolTipText();
     }

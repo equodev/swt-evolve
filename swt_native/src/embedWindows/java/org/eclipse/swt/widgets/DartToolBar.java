@@ -653,7 +653,6 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     @Override
     public void setFont(Font font) {
-        dirty();
         checkWidget();
         setDropDownItems(false);
         super.setFont(font);
@@ -687,7 +686,6 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     @Override
     public void setRedraw(boolean redraw) {
-        dirty();
         checkWidget();
         setDropDownItems(false);
         super.setRedraw(redraw);

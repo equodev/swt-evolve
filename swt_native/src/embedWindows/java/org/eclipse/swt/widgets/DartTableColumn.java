@@ -597,7 +597,6 @@ public class DartTableColumn extends DartItem implements ITableColumn {
 
     @Override
     public void setText(String string) {
-        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);

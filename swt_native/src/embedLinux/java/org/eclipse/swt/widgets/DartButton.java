@@ -769,7 +769,6 @@ public class DartButton extends DartControl implements IButton {
      */
     @Override
     public void setEnabled(boolean enabled) {
-        dirty();
         checkWidget();
         if (this.enabled == enabled)
             return;

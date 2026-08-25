@@ -1246,7 +1246,6 @@ public class DartShell extends DartDecorations implements IShell {
 
     @Override
     public void setEnabled(boolean enabled) {
-        dirty();
         checkWidget();
         if (((getApi().state & DISABLED) == 0) == enabled)
             return;
@@ -1299,7 +1298,6 @@ public class DartShell extends DartDecorations implements IShell {
 
     @Override
     public void setMenuBar(Menu menu) {
-        dirty();
         checkWidget();
         super.setMenuBar(menu);
         if (display.getActiveShell() == this.getApi()) {
@@ -1334,7 +1332,6 @@ public class DartShell extends DartDecorations implements IShell {
 
     @Override
     public void setMaximized(boolean maximized) {
-        dirty();
         checkWidget();
         super.setMaximized(maximized);
         if (getBridge() instanceof dev.equo.swt.WindowBridge wb)
@@ -1401,7 +1398,6 @@ public class DartShell extends DartDecorations implements IShell {
 
     @Override
     public void setMinimized(boolean minimized) {
-        dirty();
         checkWidget();
         super.setMinimized(minimized);
         if (getBridge() instanceof dev.equo.swt.WindowBridge wb)
@@ -1559,7 +1555,6 @@ public class DartShell extends DartDecorations implements IShell {
 
     @Override
     public void setText(String string) {
-        dirty();
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -1570,7 +1565,6 @@ public class DartShell extends DartDecorations implements IShell {
 
     @Override
     public void setVisible(boolean visible) {
-        dirty();
         checkWidget();
         int mask = SWT.PRIMARY_MODAL | SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL;
         if ((getApi().style & mask) != 0) {

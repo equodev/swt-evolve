@@ -2224,7 +2224,6 @@ public class DartTree extends DartComposite implements ITree {
 
     @Override
     public void setFont(Font font) {
-        dirty();
         checkWidget();
         super.setFont(font);
         if ((getApi().style & SWT.CHECK) != 0)
@@ -2361,7 +2360,6 @@ public class DartTree extends DartComposite implements ITree {
 
     @Override
     public void setRedraw(boolean redraw) {
-        dirty();
         checkWidget();
         /*
 	* Feature in Windows.  When WM_SETREDRAW is used to

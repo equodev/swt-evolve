@@ -537,7 +537,6 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     @Override
     public void setToolTipText(String string) {
-        dirty();
         checkWidget();
         super.setToolTipText(string);
         ToolItem[] items = getItems();

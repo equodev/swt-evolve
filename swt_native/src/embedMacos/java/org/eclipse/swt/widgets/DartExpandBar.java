@@ -409,7 +409,6 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
 
     @Override
     public void setFont(Font font) {
-        dirty();
         super.setFont(font);
         this.font = font;
         layoutItems(0, true);
@@ -417,7 +416,6 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
 
     @Override
     public void setForeground(Color color) {
-        dirty();
         super.setForeground(color);
         foreground = color;
     }

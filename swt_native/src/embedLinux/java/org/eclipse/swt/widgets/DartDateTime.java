@@ -1188,7 +1188,6 @@ public class DartDateTime extends DartComposite implements IDateTime {
 
     @Override
     public void setBackground(Color color) {
-        dirty();
         super.setBackground(color);
         bg = color;
         if (popupCalendar != null)
@@ -1197,7 +1196,6 @@ public class DartDateTime extends DartComposite implements IDateTime {
 
     @Override
     public void setEnabled(boolean enabled) {
-        dirty();
         super.setEnabled(enabled);
         if (isDateWithDropDownButton())
             down.setEnabled(enabled);
@@ -1205,7 +1203,6 @@ public class DartDateTime extends DartComposite implements IDateTime {
 
     @Override
     public void setFont(Font font) {
-        dirty();
         super.setFont(font);
         this.font = font;
         if (popupCalendar != null)
@@ -1215,7 +1212,6 @@ public class DartDateTime extends DartComposite implements IDateTime {
 
     @Override
     public void setForeground(Color color) {
-        dirty();
         super.setForeground(color);
         fg = color;
         if (popupCalendar != null)
@@ -1343,7 +1339,6 @@ public class DartDateTime extends DartComposite implements IDateTime {
 
     @Override
     public void setMenu(Menu menu) {
-        dirty();
         super.setMenu(menu);
         if (down != null)
             down.setMenu(menu);

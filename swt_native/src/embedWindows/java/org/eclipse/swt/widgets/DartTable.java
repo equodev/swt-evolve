@@ -2111,7 +2111,6 @@ public class DartTable extends DartComposite implements ITable {
 
     @Override
     public void setFont(Font font) {
-        dirty();
         checkWidget();
         /*
 	* Bug in Windows.  Making any change to an item that

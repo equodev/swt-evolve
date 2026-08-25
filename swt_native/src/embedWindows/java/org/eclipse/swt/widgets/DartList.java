@@ -910,7 +910,6 @@ public class DartList extends DartScrollable implements IList {
 
     @Override
     public void setFont(Font font) {
-        dirty();
         checkWidget();
         super.setFont(font);
         if ((getApi().style & SWT.H_SCROLL) != 0)

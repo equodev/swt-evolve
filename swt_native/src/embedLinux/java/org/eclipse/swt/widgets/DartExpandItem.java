@@ -385,7 +385,6 @@ public class DartExpandItem extends DartItem implements IExpandItem {
 
     @Override
     public void setImage(Image image) {
-        dirty();
         super.setImage(image);
         if (image != null) {
             if (image.isDisposed())
@@ -403,7 +402,6 @@ public class DartExpandItem extends DartItem implements IExpandItem {
 
     @Override
     public void setText(String string) {
-        dirty();
         super.setText(string);
     }
 

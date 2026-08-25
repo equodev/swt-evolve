@@ -316,7 +316,6 @@ public class DartCanvas extends DartComposite implements ICanvas {
 
     @Override
     public void setFont(Font font) {
-        dirty();
         checkWidget();
         if (caret != null)
             caret.setFont(font);
