@@ -401,6 +401,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
             alignment: vLineInfo.alignment,
             indent: vLineInfo.indent,
             justify: vLineInfo.justify,
+            verticalIndent: vLineInfo.verticalIndent,
           );
         }
       }
@@ -1675,16 +1676,22 @@ class TextShape extends Shape {
   _LineTopsCache _lineTopsCache = _LineTopsCache();
 
   /// Per-line properties that affect layout, from [editingState] when present.
-  ({int indent, TextAlign align}) _linePropsFor(int lineIndex) {
+  ({int indent, TextAlign align, int vIndent}) _linePropsFor(int lineIndex) {
     final props = editingState?.lineProperties[lineIndex];
     final indent = props?.indent ?? 0;
     final align = _mapSwtAlignmentToTextAlign(props?.alignment ?? 16384);
     return (
       indent: indent,
       align: (props?.justify ?? false) ? TextAlign.justify : align,
+      vIndent: props?.verticalIndent ?? 0,
     );
   }
 
+  // A line's vertical indent (StyledText.setLineVerticalIndent) is extra space
+  // above the line's text, inside the line's own box: the box top stays where the
+  // previous line ended, the box grows by the indent, and the glyphs (and caret,
+  // selection, hit targets) sit vIndent below the box top. _lineTops holds box
+  // tops; every text-coordinate consumer adds vIndent for its line.
   List<double> _lineTopsFor(List<String> lines, Size? canvas) {
     final tops = List<double>.filled(lines.length + 1, 0);
     double y = 0;
@@ -1698,7 +1705,7 @@ class TextShape extends Shape {
         align: props.align,
         maxWidth: _lineMaxWidth(props.indent, canvas),
       );
-      y += _advance(tp.height);
+      y += props.vIndent + _advance(tp.height);
     }
     tops[lines.length] = y;
     return tops;
@@ -1765,12 +1772,14 @@ class TextShape extends Shape {
       int indent = 0;
       int alignValue = 16384; // Default SWT.LEFT
       bool justify = false;
+      int vIndent = 0;
 
       if (editingState != null && editingState!.lineProperties.containsKey(i)) {
         final lineProps = editingState!.lineProperties[i]!;
         indent = lineProps.indent ?? 0;
         alignValue = lineProps.alignment ?? 16384;
         justify = lineProps.justify ?? false;
+        vIndent = lineProps.verticalIndent ?? 0;
       }
 
       final align = _mapSwtAlignmentToTextAlign(alignValue);
@@ -1817,8 +1826,8 @@ class TextShape extends Shape {
         }
       }
 
-      tp.paint(c, Offset(finalX, currentY));
-      currentY += _advance(tp.height);
+      tp.paint(c, Offset(finalX, currentY + vIndent));
+      currentY += vIndent + _advance(tp.height);
     }
 
     if (cacheTops != null) {
@@ -1878,11 +1887,13 @@ class TextShape extends Shape {
       int indent = 0;
       int alignValue = 16384; // Default SWT.LEFT
       bool justify = false;
+      int vIndent = 0;
       if (editingState != null && editingState!.lineProperties.containsKey(i)) {
         final lineProps = editingState!.lineProperties[i]!;
         indent = lineProps.indent ?? 0;
         alignValue = lineProps.alignment ?? 16384;
         justify = lineProps.justify ?? false;
+        vIndent = lineProps.verticalIndent ?? 0;
       }
       final align = _mapSwtAlignmentToTextAlign(alignValue);
       final effectiveAlign = justify ? TextAlign.justify : align;
@@ -1921,6 +1932,10 @@ class TextShape extends Shape {
               tp.getOffsetForCaret(TextPosition(offset: k), Rect.zero).dx,
       ];
 
+      // The visual line's box: `y`/`h` include the line's vertical indent so bands
+      // stay contiguous; `vi` (first visual row only) is the indent within the box,
+      // i.e. the glyphs sit at y + vi. The Java side adds `vi` when answering
+      // text-position queries and uses the box for line/pixel queries.
       final metrics = tp.computeLineMetrics();
       if (metrics.length <= 1) {
         maxWidth = math.max(maxWidth, finalX + tp.width);
@@ -1931,7 +1946,8 @@ class TextShape extends Shape {
           'x': finalX,
           'y': currentY,
           'w': tp.width,
-          'h': _advance(tp.height),
+          'h': vIndent + _advance(tp.height),
+          if (vIndent != 0) 'vi': vIndent,
           if (includeCharX) 'cx': charX(0, line.length),
         });
       } else {
@@ -1950,16 +1966,19 @@ class TextShape extends Shape {
             's': docOffset + local,
             'e': docOffset + vEnd,
             'x': finalX + lm.left,
-            'y': currentY + (lm.baseline - lm.ascent),
+            'y': m == 0
+                ? currentY
+                : currentY + vIndent + (lm.baseline - lm.ascent),
             'w': lm.width,
-            'h': lm.height,
+            'h': m == 0 ? vIndent + lm.height : lm.height,
+            if (m == 0 && vIndent != 0) 'vi': vIndent,
             if (includeCharX) 'cx': charX(local, vEnd),
           });
           local = vEnd;
         }
       }
 
-      currentY += _advance(tp.height);
+      currentY += vIndent + _advance(tp.height);
       docOffset += line.length + 1;
     }
 
@@ -2222,7 +2241,8 @@ class TextShape extends Shape {
 
     final props = _linePropsFor(currentLineIndex);
     final maxW = _lineMaxWidth(props.indent);
-    final currentY = off.dy + _lineTops(lines)[currentLineIndex];
+    final currentY =
+        off.dy + _lineTops(lines)[currentLineIndex] + props.vIndent;
 
     final currentLine = lines[currentLineIndex];
     final tp = _layoutLine(
@@ -2342,7 +2362,7 @@ class TextShape extends Shape {
         maxWidth: _lineMaxWidth(props.indent),
       );
 
-      final currentY = off.dy + tops[lineIndex];
+      final currentY = off.dy + tops[lineIndex] + props.vIndent;
 
       int lineSelectionStart = 0;
       int lineSelectionEnd = line.length;
@@ -2718,7 +2738,7 @@ class TextShape extends Shape {
 
     final lineRelativePosition = Offset(
       relativePosition.dx - finalX,
-      dy - tops[lineIndex],
+      dy - tops[lineIndex] - props.vIndent,
     );
 
     final textPosition = tp.getPositionForOffset(lineRelativePosition);
@@ -2955,14 +2975,26 @@ class LineProperties {
   final int? alignment;
   final int? indent;
   final bool? justify;
+  final int? verticalIndent;
 
-  const LineProperties({this.alignment, this.indent, this.justify});
+  const LineProperties({
+    this.alignment,
+    this.indent,
+    this.justify,
+    this.verticalIndent,
+  });
 
-  LineProperties copyWith({int? alignment, int? indent, bool? justify}) {
+  LineProperties copyWith({
+    int? alignment,
+    int? indent,
+    bool? justify,
+    int? verticalIndent,
+  }) {
     return LineProperties(
       alignment: alignment ?? this.alignment,
       indent: indent ?? this.indent,
       justify: justify ?? this.justify,
+      verticalIndent: verticalIndent ?? this.verticalIndent,
     );
   }
 }

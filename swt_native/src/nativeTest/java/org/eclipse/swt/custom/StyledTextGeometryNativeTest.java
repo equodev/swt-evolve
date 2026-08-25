@@ -114,6 +114,50 @@ public class StyledTextGeometryNativeTest {
     }
 
     @Test
+    public void vertical_indent_sits_inside_the_line_box() {
+        DartStyledText st = widget(5);
+        // line 1 carries a 34 px vertical indent: box [15, 64), glyphs at 15 + 34 = 49
+        StyledTextHelper.applyTextGeometry(st, Map.of(
+                "charCount", 5,
+                "contentWidth", 20.0,
+                "contentHeight", 64.0,
+                "lines", List.of(
+                        Map.of("l", 0, "s", 0, "e", 2, "x", 0.0, "y", 0.0, "w", 20.0, "h", 15.0,
+                                "cx", List.of(0.0, 10.0, 20.0)),
+                        Map.of("l", 1, "s", 3, "e", 5, "x", 0.0, "y", 15.0, "w", 20.0, "h", 49.0,
+                                "vi", 34.0, "cx", List.of(0.0, 10.0, 20.0)))));
+
+        // text-position queries answer at the glyphs, below the indent
+        assertThat(StyledTextHelper.geometryPointAtOffset(st, 3)).isEqualTo(new Point(0, 49));
+        assertThat(StyledTextHelper.geometryTextBounds(st, 3, 5))
+                .isEqualTo(new Rectangle(0, 49, 20, 15));
+        // line queries answer the box: its top pixel, and the whole band including the indent
+        assertThat(StyledTextHelper.geometryLinePixel(st, 1)).isEqualTo(15);
+        assertThat(StyledTextHelper.geometryLineIndex(st, 20)).isEqualTo(1);
+    }
+
+    @Test
+    public void a_vertical_indent_delta_patches_the_stored_table_in_place() {
+        DartStyledText st = widget(5);
+        StyledTextHelper.applyTextGeometry(st, table());
+
+        StyledTextHelper.applyLineVerticalIndentDelta(st, 0, 34);
+
+        // line 0's glyphs move below the new indent; its box top stays put
+        assertThat(StyledTextHelper.geometryPointAtOffset(st, 0)).isEqualTo(new Point(0, 34));
+        assertThat(StyledTextHelper.geometryLinePixel(st, 0)).isEqualTo(0);
+        // line 1 shifts down whole, and the content bottom follows
+        assertThat(StyledTextHelper.geometryPointAtOffset(st, 3)).isEqualTo(new Point(0, 49));
+        assertThat(StyledTextHelper.geometryLinePixel(st, 2)).isEqualTo(64);
+
+        // removing the indent restores the original geometry
+        StyledTextHelper.applyLineVerticalIndentDelta(st, 0, -34);
+        assertThat(StyledTextHelper.geometryPointAtOffset(st, 0)).isEqualTo(new Point(0, 0));
+        assertThat(StyledTextHelper.geometryPointAtOffset(st, 3)).isEqualTo(new Point(0, 15));
+        assertThat(StyledTextHelper.geometryLinePixel(st, 2)).isEqualTo(30);
+    }
+
+    @Test
     public void a_table_without_char_positions_still_answers_line_queries() {
         DartStyledText st = widget(5);
         StyledTextHelper.applyTextGeometry(st, Map.of(

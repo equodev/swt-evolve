@@ -27,6 +27,12 @@ public class GCHelper {
      * Applies DPI scaling so the result matches what the GC actually draws.
      */
     public static PointD computeLineExtent(String line, Font font) {
+        // A widget may hold a font its client disposed after setFont — legal against native SWT,
+        // which measures when the font is set and never re-reads it. This estimate re-reads the
+        // FontData on every call, so measure with the system font instead of throwing.
+        if (font != null && font.isDisposed()) {
+            font = systemFont();
+        }
         PointD size = FontMetricsUtil.getFontSize(line, font);
         Display display = Display.getCurrent();
         if (display != null) {

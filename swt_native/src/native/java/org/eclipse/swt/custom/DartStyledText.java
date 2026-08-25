@@ -9877,6 +9877,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         int initialBottomIndex = getPartialBottomIndexFixedLineHeight();
         int verticalIndentDiff = verticalLineIndent - previousVerticalIndent;
         ((DartStyledTextRenderer) renderer.getImpl()).setLineVerticalIndent(lineIndex, verticalLineIndent);
+        StyledTextHelper.applyLineVerticalIndentDelta(this, lineIndex, verticalIndentDiff);
         this.hasVerticalIndent = verticalLineIndent != 0 || renderer.hasVerticalIndent();
         ScrollBar verticalScrollbar = getVerticalBar();
         if (lineIndex < initialTopIndex) {

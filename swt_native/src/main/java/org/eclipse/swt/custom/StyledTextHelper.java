@@ -100,7 +100,8 @@ public class StyledTextHelper {
     static final class VisualLine {
         int logicalLine;
         int start, end;          // document offsets, [start, end]
-        double x, y, w, h;
+        double x, y, w, h;       // the line's box; h includes vi
+        double vi;               // vertical indent within the box: glyphs sit at y + vi
         double[] charX;          // x boundary per character, length end - start + 1, or null
     }
 
@@ -151,6 +152,7 @@ public class StyledTextHelper {
             v.y = asDouble(lm.get("y"), 0);
             v.w = asDouble(lm.get("w"), 0);
             v.h = asDouble(lm.get("h"), 0);
+            v.vi = asDouble(lm.get("vi"), 0);
             if (v.logicalLine < 0 || v.start < 0 || v.end < v.start) return;
             if (lm.get("cx") instanceof List<?> cx) {
                 if (cx.size() != v.end - v.start + 1) return;
@@ -161,6 +163,30 @@ public class StyledTextHelper {
         }
         g.lines = lines.toArray(new VisualLine[0]);
         textGeometries.put(styledText, g);
+    }
+
+    /**
+     * Applies a vertical-indent change to the stored geometry in place — the same delta the
+     * render side will carry on its next push: the line's first visual row grows by
+     * {@code delta} (indent space above its glyphs), and every row below shifts by it.
+     * The table's charCount staleness check cannot see this mutation, and callers read
+     * positions synchronously right after it, before any new push can arrive.
+     */
+    public static void applyLineVerticalIndentDelta(DartStyledText styledText, int lineIndex, int delta) {
+        if (delta == 0) return;
+        TextGeometry g = textGeometries.get(styledText);
+        if (g == null) return;
+        boolean seen = false;
+        for (VisualLine v : g.lines) {
+            if (!seen && v.logicalLine == lineIndex) {
+                v.vi += delta;
+                v.h += delta;
+                seen = true;     // only the first visual row of the line carries the indent
+            } else if (seen) {
+                v.y += delta;    // later rows of the same line, and every line below
+            }
+        }
+        if (seen) g.contentHeight += delta;
     }
 
     private static int asInt(Object o, int def) {
@@ -205,7 +231,7 @@ public class StyledTextHelper {
         double x = v.charX[offset - v.start];
         return new org.eclipse.swt.graphics.Point(
                 (int) Math.round(x) + styledText.leftMargin - styledText.horizontalScrollOffset,
-                (int) Math.round(v.y) - styledText.getVerticalScrollOffset() + styledText.topMargin);
+                (int) Math.round(v.y + v.vi) - styledText.getVerticalScrollOffset() + styledText.topMargin);
     }
 
     /** Widget-space top pixel of a logical line; line == lineCount answers the content bottom. */
@@ -277,7 +303,7 @@ public class StyledTextHelper {
             left = Math.min(left, Math.min(v.charX[from], v.charX[to]));
             right = Math.max(right, Math.max(v.charX[from], v.charX[to]));
         }
-        double top = g.lines[first].y;
+        double top = g.lines[first].y + g.lines[first].vi;
         double bottom = g.lines[last].y + g.lines[last].h;
         return new org.eclipse.swt.graphics.Rectangle(
                 (int) Math.round(left) + styledText.leftMargin - styledText.horizontalScrollOffset,

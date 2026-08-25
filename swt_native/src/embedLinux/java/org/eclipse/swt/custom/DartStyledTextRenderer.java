@@ -1386,6 +1386,8 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         }
         if (lastOffset < length)
             styleEntries.add(new StyleEntry(null, lastOffset, length));
+        if (regularFont != null && regularFont.isDisposed())
+            regularFont = device.getSystemFont();
         layout.setFont(regularFont);
         layout.setAscent(ascent);
         layout.setDescent(descent);

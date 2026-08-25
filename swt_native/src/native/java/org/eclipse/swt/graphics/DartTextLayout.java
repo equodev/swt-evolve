@@ -649,7 +649,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         if (!(0 <= offset && offset <= length))
             SWT.error(SWT.ERROR_INVALID_RANGE);
         if (length == 0)
-            return new Point(0, 0);
+            return new Point(0, getVerticalIndent());
         int lineIndex = _lineOf(translateOffset(offset < length ? offset : length - 1));
         int[] offs = getLineOffsets();
         int ls = offs[lineIndex], le = offs[lineIndex + 1];
@@ -672,7 +672,9 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         // caret positions round — so snap edge positions onto the ceiled width instead of
         // letting the two roundings split on the fraction.
         int xi = Math.abs(x - totalWidth) < 0.75 ? (int) Math.ceil(totalWidth) : (int) Math.round(x);
-        return new Point(xi + _alignShift(ls, le), lineIndex * _effLineHeight());
+        // The vertical indent is blank space above the first line, inside the layout
+        // (setVerticalIndent): locations sit below it, exactly like the native layouts.
+        return new Point(xi + _alignShift(ls, le), lineIndex * _effLineHeight() + getVerticalIndent());
     }
 
     /**
@@ -804,6 +806,8 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         if (length == 0)
             return 0;
         int lineH = _effLineHeight();
+        // Inverse of getLocation: y is measured below the vertical indent.
+        y -= getVerticalIndent();
         int lineCount = getLineCount();
         int lineIndex = (y > 0 && lineH > 0) ? Math.min(lineCount - 1, y / lineH) : 0;
         int[] offs = getLineOffsets();
