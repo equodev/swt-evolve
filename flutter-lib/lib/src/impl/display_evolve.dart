@@ -95,8 +95,18 @@ class _DisplaySwtState extends State<DisplaySwt> {
   final Map<int, bool> _shellIsMainCache = {};
 
   bool _isMainShell(VShell s, BoxConstraints constraints) {
+    // The verdict is cached for the shell's whole life, so it must not be taken against bounds
+    // Java has not sent yet — a shell reaching its first build unsized would be pinned as a dialog.
+    if (_isUnsized(s)) return false;
     return _shellIsMainCache.putIfAbsent(
         s.id, () => _computeIsMainShell(s, constraints));
+  }
+
+  /// Java has not sized this shell yet, so its geometry says nothing about how the app wants it
+  /// rendered.
+  static bool _isUnsized(VShell s) {
+    final b = s.bounds;
+    return b == null || b.width <= 0 || b.height <= 0;
   }
 
   bool _computeIsMainShell(VShell s, BoxConstraints constraints) {
@@ -105,6 +115,15 @@ class _DisplaySwtState extends State<DisplaySwt> {
     if (b.width == 1024 && b.height == 768) return true; // eclipse workbench default
     if (_fillsViewport(s, constraints)) return true;
     return !_isModal(s) && b.width == constraints.maxWidth.toInt() && b.height == constraints.maxHeight.toInt();
+  }
+
+  /// The lone shell takes the viewport when it already covers it, or when Java has not sized it
+  /// yet — an unsized shell at the origin is the display-tracking main shell. Leaving it windowed
+  /// would have the chrome invent a size and push that back as its real bounds.
+  bool _qualifiesAsLoneMain(VShell s, BoxConstraints constraints) {
+    if (_fillsViewport(s, constraints)) return true;
+    final b = s.bounds;
+    return b != null && _isUnsized(s) && !_isModal(s) && b.x == 0 && b.y == 0;
   }
 
   bool _fillsViewport(VShell s, BoxConstraints constraints) {
@@ -118,7 +137,9 @@ class _DisplaySwtState extends State<DisplaySwt> {
   int _shellArea(VShell shell) {
     final bounds = shell.bounds;
     if (bounds == null || bounds.width <= 0 || bounds.height <= 0) {
-      return -1;
+      // Ranks below any sized shell, but still above "no candidate at all" so a lone unsized shell
+      // can be elected.
+      return 0;
     }
     return bounds.width * bounds.height;
   }
@@ -161,7 +182,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
       }
       if (mainShells.isEmpty &&
           largestNonModalShell != null &&
-          _fillsViewport(largestNonModalShell, constraints)) {
+          _qualifiesAsLoneMain(largestNonModalShell, constraints)) {
         dialogShells.remove(largestNonModalShell);
         mainShells.add(largestNonModalShell!);
       }
