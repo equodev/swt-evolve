@@ -302,6 +302,22 @@ public class ControlHelper {
     }
 
     /**
+     * Takes the focus and announces the activation that goes with it, so a control that focuses
+     * itself programmatically still reaches an embedding workbench's active-part tracking — there is
+     * no OS focus here to generate it. Deliberately does NOT send SWT.FocusIn: a control that
+     * re-focuses one of its own children from its own FocusIn handler (CCombo does) would re-enter
+     * that handler unbounded, since the bridge's focus holder is what breaks the cycle and the plain
+     * FlutterBridge does not track one.
+     */
+    public static boolean takeFocus(DartControl control) {
+        boolean result = control.getBridge().setFocus(control);
+        if (control.isDisposed())
+            return result;
+        sendActivateToAncestors(control);
+        return result;
+    }
+
+    /**
      * Announce that the user activated [control], by sending SWT.Activate up its parent chain.
      *
      * There is no OS focus machinery behind this backend, so nothing generates the activation an

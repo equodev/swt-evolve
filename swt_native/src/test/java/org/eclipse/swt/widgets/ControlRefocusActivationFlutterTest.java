@@ -87,6 +87,32 @@ class ControlRefocusActivationFlutterTest {
                 .isEqualTo(afterAcquire);
     }
 
+    @Test
+    @DisplayName("a control that focuses itself announces activation, without waiting for a client report")
+    void forceFocusAnnouncesActivationUpTheChain() {
+        Shell shell = new Shell(display);
+        Composite part = new Composite(shell, SWT.NONE);
+        Canvas canvas = new Canvas(part, SWT.NONE);
+        shell.open();
+
+        int[] partActivations = {0};
+        part.addListener(SWT.Activate, e -> partActivations[0]++);
+
+        // What a custom-drawn grid does from its own mouse-down handler: focus itself. There is no
+        // OS focus behind this backend, so nothing else announces it.
+        assertThat(canvas.forceFocus()).isTrue();
+
+        assertThat(partActivations[0])
+                .as("taking the focus announces activation up the chain, so the workbench "
+                        + "re-activates the owning part")
+                .isPositive();
+
+        // Already the focus holder: forceFocus() returns early, so nothing is announced twice.
+        int afterAcquire = partActivations[0];
+        assertThat(canvas.forceFocus()).isTrue();
+        assertThat(partActivations[0]).isEqualTo(afterAcquire);
+    }
+
     /** Fire the tree's own Dart→Java FocusIn handler and drain the asyncExec it hops through. */
     private void reportFocusIn(Tree tree) {
         String channel = FlutterBridge.event((DartWidget) tree.getImpl(), "Focus", "FocusIn");

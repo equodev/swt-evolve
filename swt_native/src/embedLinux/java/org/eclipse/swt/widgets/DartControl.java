@@ -2302,7 +2302,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (display.getActiveShell() != shell && !SwtDisplay.isActivateShellOnForceFocus())
             return false;
         ((SwtShell) shell.getImpl()).bringToTop(false);
-        boolean result = getBridge().setFocus(this);
+        boolean result = ControlHelper.takeFocus(this);
         return result;
     }
 
