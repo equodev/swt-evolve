@@ -32,6 +32,7 @@ import 'src/comm/comm.dart';
 import 'src/gen/display.dart';
 import 'src/gen/widgets.dart' as gen;
 import 'src/impl/display_evolve.dart';
+import 'src/impl/focus_requests.dart';
 import 'fontSize.dart' as font_size;
 import 'imageSize.dart' as image_size;
 import 'widgetSize.dart' as widget_size;
@@ -126,6 +127,7 @@ void main(List<String> args) async {
   setCurrentTheme(theme == ThemeMode.dark);
   setParentBackgroundColor(parentBackgroundColor);
   unawaited(initSwtEvolveProperties());
+  FocusRequests.listen();
 
   if (widgetName == "Display") {
     csdMainWindowId = widgetId;

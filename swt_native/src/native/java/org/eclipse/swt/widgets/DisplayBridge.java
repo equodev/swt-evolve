@@ -24,8 +24,14 @@ import org.eclipse.swt.graphics.Rectangle;
  */
 public abstract class DisplayBridge extends FlutterBridge implements WindowBridge {
 
+    /** Display-wide: a focus request can name a control the client has not built yet. */
+    private static final String FOCUS_CHANNEL = "swt.evolve.focus";
+
     protected DartDisplay forDisplay;
     private DartControl focused = null;
+    /** Last control the client was asked to focus, so one focus move is not sent twice: a single
+     *  {@code Control.forceFocus()} reaches {@link #setFocus} again through the shell's restoreFocus. */
+    private DartControl focusRequested = null;
     /** One comm (and one surface) per Display, unlike the embedded bridge's shared static comm. */
     private CommService comm;
 
@@ -471,7 +477,69 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             dev.equo.swt.FlutterBridge.send(widget, "modify/vetoable", java.util.Map.of("value", true));
         }
         publishActiveShell();
+        requestClientFocus(widget);
         return true;
+    }
+
+    /**
+     * Moves the client's keyboard focus onto {@code widget}. Tracking the focus holder in Java is not
+     * enough: the render side owns the real focus, so a control Java focuses on its own -- a JFace cell
+     * editor activating on Add, a part activation -- would take no keystroke until the user clicked it.
+     *
+     * <p>The request goes out on one Display-wide channel rather than the control's own, and is queued
+     * behind any pending widget flush. A control created in this same event-loop pass has not been sent
+     * yet, and only exists client-side a frame after its parent's state push, so nothing addressed to it
+     * directly could be received. The client holds the request until a control claims it.
+     *
+     * <p>A focus that started on the client comes back through here too (the FocusIn handler tracks
+     * it the same way); the cell-editor guard below is what keeps that from re-pushing anything.
+     */
+    private void requestClientFocus(DartControl widget) {
+        Control api = widget == null ? null : widget.getApi();
+        if (api == null || api.isDisposed())
+            return;
+        if (!isCellEditorControl(api))
+            return;
+        if (widget == focusRequested)
+            return;
+        focusRequested = widget;
+        long id = FlutterBridge.id(widget);
+        FlutterBridge.update().whenComplete((result, error) -> {
+            try {
+                serializeAndSend(FOCUS_CHANNEL, java.util.Map.of("id", id));
+            } catch (java.io.IOException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    /**
+     * Whether {@code control} is the control a {@link org.eclipse.swt.custom.TableEditor} or
+     * {@link org.eclipse.swt.custom.TreeEditor} just placed over a cell.
+     *
+     * <p>Moving the client's focus is deliberately limited to that case. Pushing it for every control
+     * Java focuses is measurably unsafe today: the Eclipse IDE New Project wizard, driven through the
+     * e2e suite, goes from 10/10 green to 5 failures with the field's keystrokes landing out of order,
+     * and the cause is the focus move itself rather than the transport (a run with the transport intact
+     * and only the move disabled is green). A cell editor is the case the render side genuinely cannot
+     * resolve on its own -- it is created, placed and focused inside one event-loop pass, with no user
+     * gesture anywhere -- so it is the one that is honoured until the general case is understood.
+     */
+    private static boolean isCellEditorControl(Control control) {
+        Composite parent = control.getParent();
+        if (parent instanceof Table table && table.getImpl() instanceof DartTable dartTable) {
+            for (org.eclipse.swt.custom.TableEditor editor : dartTable._editors()) {
+                if (editor != null && editor.getEditor() == control)
+                    return true;
+            }
+        }
+        if (parent instanceof Tree tree && tree.getImpl() instanceof DartTree dartTree) {
+            for (org.eclipse.swt.custom.TreeEditor editor : dartTree._editors()) {
+                if (editor != null && editor.getEditor() == control)
+                    return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -489,6 +557,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         if (focused == widget) {
             focused = null;
             publishActiveShell();
+        }
+        // The client moved focus off it, so focusing it again later is a real move to send.
+        if (focusRequested == widget) {
+            focusRequested = null;
         }
     }
 
