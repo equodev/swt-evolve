@@ -12,6 +12,7 @@ class ConfigFlags {
   bool? image_disable_icons_replacement;
   String? assets_path;
   bool? disable_evolve_icons;
+  bool? gc_icons_replacement;
   bool? use_swt_colors;
   bool? disable_swt_canvas_colors;
   bool? use_swt_fonts;

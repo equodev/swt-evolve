@@ -75,6 +75,11 @@ bool get useEvolveIcons => !(getConfigFlags().disable_evolve_icons ?? false);
 /// theme color. Both fall back to the same value the Java side sends when no config arrived yet.
 bool get preserveIconColors => getConfigFlags().preserve_icon_colors ?? false;
 
+/// True when the bundled icon set may stand in for an image the application blits with
+/// `GC#drawImage`. Off by default: the set is keyed by the bare filename stem, so an application
+/// image sharing a name with one of ours would otherwise be replaced by it.
+bool get gcIconsReplacement => getConfigFlags().gc_icons_replacement ?? false;
+
 void setConfigFlags(ConfigFlags newFlags) {
   final prev = configFlags;
   String? mergeString(String? incoming, String? previous) {

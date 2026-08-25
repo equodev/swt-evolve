@@ -1397,10 +1397,15 @@ class ImageShape extends Shape {
         ? null
         : ColorFilter.mode(tint ?? AppColors.getColor(true), BlendMode.srcIn);
     try {
+      // Bundled icons resolve by bare filename, so an application image sharing a name with one of
+      // ours is replaced by it — off unless the application asks for it. Java-side svgContent
+      // (an assets_path override) is explicit and applies either way.
       Object? replacement;
       if (vImage.svgContent?.isNotEmpty ?? false) {
         replacement = vImage.svgContent!;
-      } else if (vImage.filename != null && vImage.filename!.isNotEmpty) {
+      } else if (gcIconsReplacement &&
+          vImage.filename != null &&
+          vImage.filename!.isNotEmpty) {
         try {
           replacement = await AssetsManager.loadReplacement(vImage.filename!);
         } catch (e) {

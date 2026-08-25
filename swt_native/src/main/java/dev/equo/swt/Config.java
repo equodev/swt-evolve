@@ -609,6 +609,7 @@ public class Config {
             configFlags.image_disable_icons_replacement = Boolean.getBoolean("swt.evolve.image_disable_icons_replacement");
             configFlags.assets_path = System.getProperty("swt.evolve.assets_path");
             configFlags.disable_evolve_icons = Boolean.getBoolean("swt.evolve.disable_evolve_icons");
+            configFlags.gc_icons_replacement = Boolean.getBoolean("swt.evolve.gc_icons_replacement");
             configFlags.use_swt_colors = Boolean.getBoolean("swt.use_swt_colors");
             // Drops the colors an application paints with in Canvas/GC drawing, so the theme
             // colors it instead. Off by default; use_swt_colors wins over it.

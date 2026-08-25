@@ -14,6 +14,7 @@ ConfigFlags _$ConfigFlagsFromJson(Map<String, dynamic> json) => ConfigFlags()
       json['image_disable_icons_replacement'] as bool?
   ..assets_path = json['assets_path'] as String?
   ..disable_evolve_icons = json['disable_evolve_icons'] as bool?
+  ..gc_icons_replacement = json['gc_icons_replacement'] as bool?
   ..use_swt_colors = json['use_swt_colors'] as bool?
   ..disable_swt_canvas_colors = json['disable_swt_canvas_colors'] as bool?
   ..use_swt_fonts = json['use_swt_fonts'] as bool?
@@ -44,6 +45,7 @@ Map<String, dynamic> _$ConfigFlagsToJson(
   'image_disable_icons_replacement': ?instance.image_disable_icons_replacement,
   'assets_path': ?instance.assets_path,
   'disable_evolve_icons': ?instance.disable_evolve_icons,
+  'gc_icons_replacement': ?instance.gc_icons_replacement,
   'use_swt_colors': ?instance.use_swt_colors,
   'disable_swt_canvas_colors': ?instance.disable_swt_canvas_colors,
   'use_swt_fonts': ?instance.use_swt_fonts,

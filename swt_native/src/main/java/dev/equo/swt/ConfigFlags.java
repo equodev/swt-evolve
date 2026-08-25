@@ -60,6 +60,15 @@ public class ConfigFlags {
      */
     public boolean disable_evolve_icons;
 
+    /**
+     * Lets the bundled icon set stand in for an image the application blits itself with
+     * {@code GC#drawImage}. Off by default: the set is keyed by the bare filename stem, so any
+     * application image sharing a name with one of ours would be replaced by it, drawn at the
+     * replacement's own size. Turn it on for an application that wants its GC-painted icons themed.
+     * An {@code assets_path} override reaches a blit either way, since Java resolves it up front.
+     */
+    public boolean gc_icons_replacement;
+
     public boolean use_swt_colors;
 
     public boolean disable_swt_canvas_colors;
