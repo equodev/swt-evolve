@@ -101,6 +101,101 @@ public final class EvolveSwingHost {
         // than spawning real OS windows over the Flutter surface.
         javax.swing.JPopupMenu.setDefaultLightWeightPopupEnabled(true);
         Toolkit.getDefaultToolkit();
+        installEvolveDispatcher();
+    }
+
+    /**
+     * Installs {@link EvolveDispatcherWrapper} on the system {@link EventQueue} — see the
+     * class-level "AWT/Swing dispatch" section for why. Requires
+     * {@code --add-exports jdk.unsupported.desktop/jdk.swing.interop=ALL-UNNAMED} on the
+     * actual runtime JVM command line, not just at compile time; if that export is missing
+     * this fails closed (logged, caught) and dispatch falls back to whatever the host's own
+     * JavaFX/AWT bridge does by default.
+     *
+     * <p>Installs the first time any Evolve Swing embedding happens in the process. A host
+     * that constructs its own {@code JFXPanel} (unrelated to Evolve) before that point installs
+     * its own dispatcher first, and that specific panel's handshake is not protected by this —
+     * only dispatch from this point forward is.
+     */
+    private static void installEvolveDispatcher() {
+        try {
+            Display display = Display.getDefault();
+            EventQueue eq = Toolkit.getDefaultToolkit().getSystemEventQueue();
+            jdk.swing.interop.DispatcherWrapper.setFwDispatcher(eq, new EvolveDispatcherWrapper(display));
+        } catch (Throwable ignored) {
+            // Falls back to default AWT/JavaFX dispatch behavior.
+        }
+    }
+
+    // Package-private (not private) so EvolveDispatcherWrapperTest can construct and exercise
+    // these directly instead of only through the full JavaFX/AWT dispatch-merge trigger.
+    static final class EvolveDispatcherWrapper extends jdk.swing.interop.DispatcherWrapper {
+        private final Display display;
+
+        EvolveDispatcherWrapper(Display display) {
+            this.display = display;
+        }
+
+        @Override
+        public boolean isDispatchThread() {
+            return !display.isDisposed() && display.getThread() == Thread.currentThread();
+        }
+
+        @Override
+        public void scheduleDispatch(Runnable runnable) {
+            if (display.isDisposed()) return;
+            try {
+                display.asyncExec(runnable);
+            } catch (NullPointerException notYetInitialized) {
+                // installEvolveDispatcher() can capture a Display before its Synchronizer is set
+                // up -- JavaFX/AWT startup can reach the EDT before the SWT Display finishes its
+                // own construction, so isDisposed() (false) doesn't catch this window. Retry on
+                // the next EDT turn instead of losing the task.
+                EventQueue.invokeLater(() -> scheduleDispatch(runnable));
+            }
+        }
+
+        @Override
+        public java.awt.SecondaryLoop createSecondaryLoop() {
+            return new EvolveSecondaryLoop(display);
+        }
+    }
+
+    /**
+     * Pumps the SWT {@link Display}'s own event loop while "nested", in place of the native
+     * toolkit's own nested-event-loop mechanism (which a merged single-UI-thread host can enter
+     * and never return from, since nothing here pumps its native message loop). {@link #enter()}
+     * runs on whatever thread requests the nested loop — always the {@code Display}'s own thread
+     * in practice, since {@link EvolveDispatcherWrapper#createSecondaryLoop()} is only reached via
+     * code paths gated on {@link EvolveDispatcherWrapper#isDispatchThread()}. {@link #exit()} is
+     * called from elsewhere (typically a JavaFX-internal thread, once its own startup finishes)
+     * to release it.
+     */
+    static final class EvolveSecondaryLoop implements java.awt.SecondaryLoop {
+        private final Display display;
+        private volatile boolean running;
+
+        EvolveSecondaryLoop(Display display) {
+            this.display = display;
+        }
+
+        @Override
+        public boolean enter() {
+            if (running) return false;
+            running = true;
+            while (running && !display.isDisposed()) {
+                if (!display.readAndDispatch()) display.sleep();
+            }
+            return true;
+        }
+
+        @Override
+        public boolean exit() {
+            if (!running) return false;
+            running = false;
+            if (!display.isDisposed()) display.wake();
+            return true;
+        }
     }
 
     private static void setIfAbsent(String key, String value) {

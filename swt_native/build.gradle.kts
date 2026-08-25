@@ -328,9 +328,16 @@ tasks.withType<JavaCompile> {
     // The Evolve SWT_AWT bridge (dev.equo.swt.awt.*) hosts Swing off-screen through
     // sun.swing.JLightweightFrame / LightweightContent — the same internal contract
     // JavaFX's SwingNode uses. These packages are not exported by default.
+    // jdk.swing.interop.DispatcherWrapper: lets EvolveSwingHost install its own AWT/Swing
+    // dispatcher on java.awt.EventQueue, routed through the SWT Display's own pump, instead of
+    // leaving whatever JavaFX/host bridge code installs last (which routes through a JavaFX
+    // event loop DartDisplay never pumps, so posted tasks never run). The runtime JVM this
+    // actually executes under also needs the matching --add-exports on its own command line
+    // (the deployment's own -vmargs), independent of this compile-time one.
     options.compilerArgs.addAll(listOf(
         "--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
-        "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED"
+        "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED",
+        "--add-exports", "jdk.unsupported.desktop/jdk.swing.interop=ALL-UNNAMED"
     ))
 }
 
@@ -356,6 +363,11 @@ tasks.test {
     dependsOn("${currentPlatform}ExtractNatives", "${currentPlatform}CopyFlutterBinaries")
     if (org.gradle.internal.os.OperatingSystem.current().isMacOsX)
         jvmArgs = listOf("-XstartOnFirstThread")
+    // Runtime counterpart of the compile-time exports above -- EvolveDispatcherWrapperTest loads
+    // EvolveSwingHost's dispatcher classes, which extend/reference these restricted packages.
+    jvmArgs("--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
+            "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED",
+            "--add-exports", "jdk.unsupported.desktop/jdk.swing.interop=ALL-UNNAMED")
     systemProperty("harness.client", "native")
     systemProperty("swt.library.path", layout.buildDirectory.dir("natives/$currentPlatform").get().toString())
     if (System.getProperty("test.debug") != null)
