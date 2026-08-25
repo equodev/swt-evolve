@@ -138,22 +138,13 @@ class GCDrawer extends GCDrawerBase {
       final keep = <ui.Image>{};
       collectShapeImages(cycleStaging, keep);
       collectShapeImages(_lateLoadedImages, keep);
+      // A real SWT.Paint repaints the whole client area, so nothing the previous cycle left
+      // survives it; a GC opened outside one (draw2d/GEF feedback) composites on top instead.
       if (fullRepaint) {
-        // A FigureCanvas/GEF full repaint can synchronously answer with only its
-        // background layer, while the app's own delayed update loop redraws the actual
-        // figures moments later as separate, additive ImageShapes (fullRepaint=false).
-        // So a full repaint only clears non-image shapes; ImageShapes ride through
-        // untouched. No-op for ordinary widgets, which paint everything synchronously.
-        final keptImages = shapes.whereType<ImageShape>().toList();
-        disposeShapeImages(shapes.where((s) => s is! ImageShape).toList(), keep: keep);
+        disposeShapeImages(shapes, keep: keep);
         shapes.clear();
-        shapes.addAll(cycleStaging);
-        shapes.addAll(keptImages);
-      } else {
-        // A feedback-only draw (e.g. a hover highlight) composites on top instead of
-        // wiping existing shapes; the next full repaint's clear above resets any buildup.
-        shapes.addAll(cycleStaging);
       }
+      shapes.addAll(cycleStaging);
       shapes.addAll(_lateLoadedImages);
       _lateLoadedImages.clear();
 
