@@ -113,6 +113,31 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     });
   }
 
+  EdgeInsets _fitCellPadding(
+    int columnIndex,
+    String cellText,
+    TextStyle textStyle,
+    TableThemeExtension theme,
+    bool showCheckbox,
+    VImage? cellImage,
+  ) {
+    if (cellText.isEmpty) return theme.cellPadding;
+    final widths = _context?.tableImpl?.cachedColumnWidths;
+    final width = widths == null ? null : widths[columnIndex];
+    if (width is! FixedColumnWidth) return theme.cellPadding;
+
+    double chrome = 0.0;
+    if (showCheckbox) chrome += 20.0 + theme.cellPadding.left;
+    if (cellImage != null) {
+      chrome += (textStyle.fontSize ?? 16.0) + theme.cellPadding.left;
+    }
+    return fitTableCellPadding(
+      theme.cellPadding,
+      available: width.value - chrome,
+      contentWidth: measureTableText(cellText, textStyle),
+    );
+  }
+
   VImage? _cellImageForColumn(int columnIndex) {
     final imgs = state.images;
     if (imgs != null && columnIndex < imgs.length) {
@@ -141,6 +166,8 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     final checkboxOnly = showCheckbox && cellText.isEmpty && cellImage == null;
     final imageOnly = !showCheckbox && cellText.isEmpty && cellImage != null;
     final cellAlignment = _swtToAlignment(columnAlignment);
+    final cellPadding = _fitCellPadding(
+        columnIndex, cellText, textStyle, theme, showCheckbox, cellImage);
 
     void sendMouseDown(int button) {
       if (enabled && _context != null) {
@@ -209,7 +236,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       child: SizedBox(
         height: rowHeight,
         child: Container(
-          padding: theme.cellPadding,
+          padding: cellPadding,
           alignment: checkboxOnly || imageOnly ? cellAlignment : Alignment.centerLeft,
           color: cellBackgroundColor,
           child: checkboxOnly

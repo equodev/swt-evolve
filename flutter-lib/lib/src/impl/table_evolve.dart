@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -53,6 +55,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
   /// Width the dragged column had when its resize started; the drag applies a
   /// delta to this instead of to the live width, so rounding can't accumulate.
   double? _resizeStartWidth;
+
+  final Set<int> _userResizedColumns = {};
 
   int registerRowTap(int rowIndex) => _rowTapDetector.registerTap(key: rowIndex);
 
@@ -381,7 +385,10 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final next = (start + deltaX).clamp(0.0, double.infinity);
     _resizeStartWidth = next;
     if (next.round() == column.width) return;
-    setState(() => column.width = next.round());
+    setState(() {
+      _userResizedColumns.add(column.id);
+      column.width = next.round();
+    });
     // Native SWT resizes the column live and fires Resize on every change, and
     // JFace layouts relayout from it; a single event on drag end would leave
     // them stale for the whole drag.
@@ -426,10 +433,20 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final showCheckboxSpace = hasCheckStyle && columnIndex == 0;
     final headerHeight = calculateHeaderHeight(textStyle, theme);
 
+    final double? columnWidth = _columnWidthAt(columnIndex);
+    final EdgeInsets headerPadding = columnWidth == null
+        ? theme.headerPadding
+        : fitTableCellPadding(
+            theme.headerPadding,
+            available: columnWidth -
+                (showCheckboxSpace ? 20.0 + theme.cellPadding.left : 0.0),
+            contentWidth: measureTableText(column.text ?? "", textStyle),
+          );
+
     Widget cell = SizedBox(
       height: headerHeight,
       child: Container(
-        padding: theme.headerPadding,
+        padding: headerPadding,
         alignment: Alignment.centerLeft,
         child: Row(
           children: [
@@ -479,6 +496,11 @@ class TableImpl<T extends TableSwt, V extends VTable>
       },
       child: ClipRect(child: cell),
     ));
+  }
+
+  double? _columnWidthAt(int index) {
+    final width = _cachedColumnWidths?[index];
+    return width is FixedColumnWidth ? width.value : null;
   }
 
   int _computeHeaderCellCenterX(int columnIndex) {
@@ -1029,6 +1051,13 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final Map<int, TableColumnWidth> widths = {};
     const double checkboxWidth = 20.0;
 
+    final headerTextStyle = getTextStyle(
+      context: context,
+      font: state.font,
+      textColor: getTableHeaderTextColor(state, theme),
+      baseTextStyle: theme.headerTextStyle,
+    );
+
     for (int i = 0; i < columns.length; i++) {
       final column = columns[i];
       double width;
@@ -1036,6 +1065,13 @@ class TableImpl<T extends TableSwt, V extends VTable>
         width = column.width!.toDouble();
         if (hasCheckStyle && i == 0) {
           width += checkboxWidth + theme.cellPadding.left;
+        }
+        if (!_userResizedColumns.contains(column.id)) {
+          width = math.max(
+            width,
+            _headerTextFloor(column, headerTextStyle, theme, hasCheckStyle, i,
+                checkboxWidth),
+          );
         }
       } else {
         // No explicit width (e.g. Find Actions' category column): size to
@@ -1046,6 +1082,28 @@ class TableImpl<T extends TableSwt, V extends VTable>
       widths[i] = FixedColumnWidth(width);
     }
     return widths;
+  }
+
+  double _headerTextFloor(
+    VTableColumn column,
+    TextStyle headerTextStyle,
+    TableThemeExtension theme,
+    bool hasCheckStyle,
+    int columnIndex,
+    double checkboxWidth,
+  ) {
+    if ((column.width ?? 0) <= 0) return 0.0;
+    final headerText = column.text ?? "";
+    if (headerText.isEmpty) return 0.0;
+
+    double floor = measureTableText(headerText, headerTextStyle);
+    if (hasCheckStyle && columnIndex == 0) {
+      floor += checkboxWidth + theme.cellPadding.left;
+    }
+    if (column.image != null) {
+      floor += (headerTextStyle.fontSize ?? 16.0) + theme.headerPadding.left;
+    }
+    return floor;
   }
 
   /// Content-based width for a single column (widest of its header and cells),
@@ -1268,6 +1326,27 @@ class TableItemSwtWrapper {
     );
     return tableItemImpl.buildCells(context, theme);
   }
+}
+
+double measureTableText(String text, TextStyle style) {
+  if (text.isEmpty) return 0.0;
+  final painter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    textDirection: TextDirection.ltr,
+    maxLines: 1,
+  )..layout();
+  return painter.width;
+}
+
+EdgeInsets fitTableCellPadding(
+  EdgeInsets padding, {
+  required double available,
+  required double contentWidth,
+}) {
+  final double room = available - contentWidth;
+  if (room >= padding.horizontal) return padding;
+  final double half = room > 0 ? room / 2 : 0;
+  return padding.copyWith(left: half, right: half);
 }
 
 class TableItemContext {
