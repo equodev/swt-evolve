@@ -22,14 +22,16 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
   final LayerLink _layerLink = LayerLink();
   bool _isFocused = false;
   final bool _isHovered = false;
-  bool? _lastSentListVisible;
+  /// The last `listVisible` Java sent. The dropdown is otherwise local UI state Java only drives
+  /// through `Combo.setListVisible`, so only a change between two pushes is a command.
+  bool? _lastJavaListVisible;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: state.text);
     _focusNode.addListener(_handleFocusChange);
-    _lastSentListVisible = state.listVisible;
+    _lastJavaListVisible = state.listVisible;
   }
 
   Size _maxTextSize(TextStyle style) {
@@ -123,8 +125,8 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
       );
     }
     final bool? newVisible = state.listVisible;
-    if (newVisible != _lastSentListVisible) {
-      _lastSentListVisible = newVisible;
+    if (newVisible != _lastJavaListVisible) {
+      _lastJavaListVisible = newVisible;
       newVisible == true ? _overlayController.show() : _overlayController.hide();
     }
   }
@@ -263,14 +265,12 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     ));
   }
 
-  /// Toggles the dropdown keeping [VCombo.listVisible] truthful: the overlay is otherwise pure
-  /// local UI state, and a later Java-side value push carrying a stale `listVisible` could
-  /// silently reopen it (the intermittent floating-dropdown).
+  /// Toggles the dropdown keeping [VCombo.listVisible] truthful, so a value push that reuses the
+  /// state object cannot resurrect a stale flag.
   void _toggleOverlay() {
     final bool showing = !_overlayController.isShowing;
     setState(() {
       state.listVisible = showing;
-      _lastSentListVisible = showing;
     });
     showing ? _overlayController.show() : _overlayController.hide();
   }
@@ -280,7 +280,6 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
       state.text = value;
       _controller.text = value ?? "";
       state.listVisible = false;
-      _lastSentListVisible = false;
       _overlayController.hide();
     });
     widget.sendSelectionSelection(state, VEvent()..text = value);
