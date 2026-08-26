@@ -562,20 +562,25 @@ public class WebFlutterServer {
     // -------------------------------------------------------------------------
 
     /**
-     * Whether the same-origin Browser proxy is enabled, via the system property
-     * {@code dev.equo.swt.web.proxy} set to {@code all} or a comma-separated host whitelist.
-     * Off by default — it is a real reverse proxy (SSRF surface), so keep it opt-in.
+     * Whether the system property {@code dev.equo.swt.web.proxy} ({@code all} or a comma-separated
+     * host whitelist) opts *remote* hosts into the same-origin proxy. Off by default — proxying
+     * arbitrary remote URLs is a real reverse proxy (SSRF surface). Loopback does not need it; see
+     * {@link #proxyAllowed}.
      */
     static boolean proxyEnabled() {
         String p = System.getProperty("dev.equo.swt.web.proxy");
         return p != null && !p.isBlank();
     }
 
-    /** Whether {@code url}'s host is permitted by the proxy property ({@code all} or whitelist). */
+    /**
+     * Whether {@code url} may be proxied. The single authorization point for {@code /proxy}.
+     *
+     * <p>Loopback is always allowed: an embedder that serves its own UI from a local HTTP server is
+     * still a different origin than this one, so without proxying the iframe is unscriptable and a
+     * page that waits on a {@code BrowserFunction} never renders. Only literal loopback hosts match —
+     * resolving a name here would let DNS rebinding smuggle a remote address past this check.
+     */
     static boolean proxyAllowed(String url) {
-        String p = System.getProperty("dev.equo.swt.web.proxy");
-        if (p == null || p.isBlank()) return false;
-        if ("all".equalsIgnoreCase(p.trim())) return true;
         String host;
         try {
             host = URI.create(url).getHost();
@@ -583,12 +588,27 @@ public class WebFlutterServer {
             return false;
         }
         if (host == null) return false;
+        if (isLoopbackHost(host)) return true;
+        String p = System.getProperty("dev.equo.swt.web.proxy");
+        if (p == null || p.isBlank()) return false;
+        if ("all".equalsIgnoreCase(p.trim())) return true;
         for (String allowed : p.split(",")) {
             allowed = allowed.trim();
             if (!allowed.isEmpty() && (host.equals(allowed) || host.endsWith("." + allowed))) return true;
         }
         return false;
     }
+
+    /** Literal loopback host test — no name resolution, by design (see {@link #proxyAllowed}). */
+    static boolean isLoopbackHost(String host) {
+        if (host.equalsIgnoreCase("localhost")) return true;
+        // URI.getHost() keeps the brackets on an IPv6 literal.
+        if (host.equals("::1") || host.equals("[::1]")) return true;
+        return LOOPBACK_V4.matcher(host).matches();
+    }
+
+    private static final Pattern LOOPBACK_V4 =
+            Pattern.compile("127(?:\\.(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}");
 
     /** Extracts a single URL-decoded query parameter from a raw query string. */
     private static String queryParam(String rawQuery, String name) {
@@ -616,7 +636,6 @@ public class WebFlutterServer {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             try {
-                if (!proxyEnabled()) { sendPlain(exchange, 403, "proxy disabled"); return; }
                 String target = queryParam(exchange.getRequestURI().getRawQuery(), "url");
                 if (target == null || !proxyAllowed(target)) { sendPlain(exchange, 403, "url not allowed"); return; }
 

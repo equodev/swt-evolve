@@ -25,15 +25,31 @@ PlatformWebViewControllerCreationParams? browserWebViewParams(int id) {
   return params;
 }
 
-/// Whether the same-origin Browser proxy is enabled (server injects
-/// `window.evolve.browserProxy` from -Ddev.equo.swt.web.proxy). When on,
-/// external URLs are routed through this origin's /proxy endpoint so the iframe
-/// content is same-origin (enabling eval/execute/BrowserFunction).
-bool browserProxyEnabled() {
+/// Whether [url] should be routed through this origin's /proxy endpoint, which makes the iframe
+/// content same-origin and so scriptable (eval/execute/BrowserFunction).
+///
+/// Loopback always is: an app that serves its own UI from a local HTTP server is still a different
+/// origin, and a page that waits on a `BrowserFunction` renders nothing without the shim. Anything
+/// else needs the opt-in flag the server injects from -Ddev.equo.swt.web.proxy. Both halves of this
+/// decision are re-checked server-side by `WebFlutterServer.proxyAllowed`.
+bool browserProxyEnabled(String url) {
+  if (_isLoopbackUrl(url)) return true;
   final evolve = globalContext.getProperty('evolve'.toJS);
   if (evolve.isUndefinedOrNull) return false;
   final flag = (evolve as JSObject).getProperty('browserProxy'.toJS);
   return flag.isDefinedAndNotNull && (flag as JSBoolean).toDart;
+}
+
+/// Literal loopback hosts only — mirrors `WebFlutterServer.isLoopbackHost`.
+final RegExp _loopbackV4 =
+    RegExp(r'^127(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$');
+
+bool _isLoopbackUrl(String url) {
+  final host = Uri.tryParse(url)?.host;
+  if (host == null || host.isEmpty) return false;
+  if (host.toLowerCase() == 'localhost') return true;
+  if (host == '::1') return true;
+  return _loopbackV4.hasMatch(host);
 }
 
 /// Rewrites an absolute http(s) URL to go through this origin's /proxy endpoint.

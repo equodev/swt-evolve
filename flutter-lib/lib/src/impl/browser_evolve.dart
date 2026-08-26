@@ -1,5 +1,3 @@
-// Force the stub (blank box) on every platform so the Flutter iframe browser
-// implementation is never used, including on web.
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -427,7 +425,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   /// content is scriptable for execute/evaluate/BrowserFunction); otherwise
   /// loads directly. No-op on non-web.
   Uri _resolveLoadUri(String url, Uri uri) {
-    if (browserProxyEnabled() && (uri.scheme == 'http' || uri.scheme == 'https')) {
+    if (browserProxyEnabled(url) && (uri.scheme == 'http' || uri.scheme == 'https')) {
       return Uri.parse(browserProxyRewrite(url));
     }
     return uri;

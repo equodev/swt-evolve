@@ -7,7 +7,7 @@ PlatformWebViewControllerCreationParams? browserWebViewParams(int id) => null;
 
 /// The same-origin proxy and DOM-level eval only apply to the web iframe
 /// backend; on native platforms the webview's own controller handles JS.
-bool browserProxyEnabled() => false;
+bool browserProxyEnabled(String url) => false;
 
 String browserProxyRewrite(String url) => url;
 
