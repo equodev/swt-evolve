@@ -97,6 +97,24 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
             crossAxisAlignment: WrapCrossAlignment.center,
             children: limitedToolItems,
           );
+
+          if (hasBounds(state.bounds)) {
+            final allocatedHeight = state.bounds!.height.toDouble();
+            final unscaledBar = bar;
+            bar = LayoutBuilder(
+              builder: (context, incoming) {
+                if (incoming.maxWidth <= 0) return unscaledBar;
+                return ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: allocatedHeight),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.topCenter,
+                    child: unscaledBar,
+                  ),
+                );
+              },
+            );
+          }
         } else {
           bar = FittedBox(
             fit: BoxFit.scaleDown,
