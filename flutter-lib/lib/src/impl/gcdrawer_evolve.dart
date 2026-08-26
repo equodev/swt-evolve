@@ -180,10 +180,7 @@ class GCDrawer extends GCDrawerBase {
   // Drawing keeps the colors the application painted with. disable_swt_canvas_colors drops them
   // for the Canvas theme's, the rule getBackgroundColor applies to widgets; use_swt_colors, which
   // asks for the application's colors everywhere, wins over it.
-  bool get _useThemeColors {
-    final flags = getConfigFlags();
-    return (flags.disable_swt_canvas_colors ?? false) && !(flags.use_swt_colors ?? false);
-  }
+  bool get _useThemeColors => canvasUsesThemeColors;
 
   Color _themed(VColor? swtColor, Color? themeColor, Color fallback) {
     if (_useThemeColors) return themeColor ?? fallback;
@@ -225,6 +222,11 @@ class GCDrawer extends GCDrawerBase {
   Color get imageTintColor => _useThemeColors
       ? (_canvasTheme?.imageTintColor ?? AppColors.getColor(true))
       : AppColors.getColor(true);
+  GlyphTintLimits get glyphTintLimits => _canvasTheme == null
+      ? GlyphTintLimits.fallback
+      : GlyphTintLimits(
+          maxSide: _canvasTheme!.glyphTintMaxSide,
+          channelTolerance: _canvasTheme!.glyphTintChannelTolerance);
   double get lineWidth => (state.lineWidth ?? 1).toDouble();
   int get lineCap => state.lineCap ?? 1;
   int get lineJoin => state.lineJoin ?? 1;
@@ -658,7 +660,7 @@ class GCDrawer extends GCDrawerBase {
     final idx = stagingList.length;
     stagingList.add(_PlaceholderShape());
     final f = ImageShape.fromVImageDetailed(o.image!, o, capturedClipping,
-        tint: imageTintColor);
+        tint: imageTintColor, glyphLimits: glyphTintLimits);
     _pendingImages.add(f);
     f.then((s) {
       _onImageLoaded(stagingList, idx, s);
@@ -674,7 +676,7 @@ class GCDrawer extends GCDrawerBase {
     final idx = stagingList.length;
     stagingList.add(_PlaceholderShape());
     final f = ImageShape.fromVImageDetailed(vImage, opArgs, capturedClipping,
-        tint: imageTintColor);
+        tint: imageTintColor, glyphLimits: glyphTintLimits);
     _pendingImages.add(f);
     f.then((imageShape) {
       _onImageLoaded(stagingList, idx, imageShape);
@@ -1364,6 +1366,19 @@ class FocusRectShape extends Shape {
 
 enum ImageType { raster, svg }
 
+/// What the Canvas theme allows to read as a glyph — an image small enough, and with little enough
+/// color, that it has none of the application's to keep when the Canvas is drawn in theme colors.
+class GlyphTintLimits {
+  final int maxSide;
+  final int channelTolerance;
+
+  const GlyphTintLimits({required this.maxSide, required this.channelTolerance});
+
+  // Used by the standalone image drawer, which renders offscreen and never resolves a theme.
+  static const GlyphTintLimits fallback =
+      GlyphTintLimits(maxSide: 64, channelTolerance: 4);
+}
+
 class ImageShape extends Shape {
   ImageShape._({
     required this.type,
@@ -1389,9 +1404,60 @@ class ImageShape extends Shape {
         destRect: destRect, clipRect: clipRect, colorFilter: colorFilter);
   }
 
+  // Whether a blitted image reads as a glyph, by pixels — nothing here matches an image by name.
+  static final Map<String, bool> _monochromeGlyphs = {};
+
+  // Keyed on the whole payload, and on the limits that produced the verdict: two same-sized PNGs share their leading bytes, and a name may be
+  // re-registered with different pixels. Only reached past the size gate, so the payload is small.
+  static String? _glyphCacheKey(VImage vImage, GlyphTintLimits limits) {
+    final suffix = '${limits.maxSide}x${limits.channelTolerance}';
+    final remoteRef = vImage.remoteRef;
+    if (remoteRef != null) return 'ref-$remoteRef-$suffix';
+    final data = vImage.imageData?.data;
+    if (data == null || data.isEmpty) return null;
+    var hash = 0;
+    for (final byte in data) {
+      hash = (hash * 31 + byte) & 0x3FFFFFFF;
+    }
+    return 'bin-${data.length}-$hash-$suffix';
+  }
+
+  static Future<bool> _isMonochromeGlyph(
+      ui.Image image, VImage vImage, GlyphTintLimits limits) async {
+    if (image.width > limits.maxSide || image.height > limits.maxSide) {
+      return false;
+    }
+    final key = _glyphCacheKey(vImage, limits);
+    final cached = key == null ? null : _monochromeGlyphs[key];
+    if (cached != null) return cached;
+
+    var monochrome = false;
+    final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    if (data != null) {
+      final bytes = data.buffer.asUint8List();
+      monochrome = true;
+      for (var i = 0; i + 3 < bytes.length; i += 4) {
+        // Premultiplied alpha scales all three channels alike, so grey stays grey.
+        if (bytes[i + 3] == 0) continue;
+        final min = math.min(bytes[i], math.min(bytes[i + 1], bytes[i + 2]));
+        final max = math.max(bytes[i], math.max(bytes[i + 1], bytes[i + 2]));
+        if (max - min > limits.channelTolerance) {
+          monochrome = false;
+          break;
+        }
+      }
+    }
+    if (key != null) {
+      // The key is content-derived, so the map would otherwise grow without bound.
+      if (_monochromeGlyphs.length > 512) _monochromeGlyphs.clear();
+      _monochromeGlyphs[key] = monochrome;
+    }
+    return monochrome;
+  }
+
   static Future<ImageShape> fromVImageDetailed(VImage vImage,
       VGCDrawImageImageintintintintintintintint opArgs, Rect? clipRect,
-      {Color? tint}) async {
+      {Color? tint, GlyphTintLimits? glyphLimits}) async {
     final preserveColors = preserveIconColors;
     final colorFilter = preserveColors
         ? null
@@ -1462,9 +1528,17 @@ class ImageShape extends Shape {
               opArgs.srcHeight == -1 ? uiImage.height.toDouble() : (opArgs.srcHeight).toDouble(),
             );
 
-      // Only tint a genuine resolved icon, never an already-rendered bitmap.
+      // A resolved icon is tinted; an already-rendered bitmap keeps its colors, unless the Canvas
+      // itself is themed and the bitmap is a monochrome glyph.
+      final rasterFilter = replacement != null
+          ? colorFilter
+          : (canvasUsesThemeColors &&
+                  await _isMonochromeGlyph(
+                      uiImage, vImage, glyphLimits ?? GlyphTintLimits.fallback)
+              ? ColorFilter.mode(tint ?? AppColors.getColor(true), BlendMode.srcIn)
+              : null);
       return ImageShape.raster(uiImage, srcRect, destRect,
-          clipRect: clipRect, colorFilter: replacement != null ? colorFilter : null);
+          clipRect: clipRect, colorFilter: rasterFilter);
     } catch (e) {
       return ImageShape._(
         type: ImageType.raster,

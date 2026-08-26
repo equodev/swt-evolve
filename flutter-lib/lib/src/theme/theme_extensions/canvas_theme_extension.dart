@@ -33,6 +33,11 @@ class CanvasThemeExtension extends ThemeExtension<CanvasThemeExtension> with _$C
   final Color patternEndColor;
   final Color imageTintColor;
 
+  // A blitted image the application owns takes imageTintColor only while it reads as a glyph:
+  // no larger than this on either side, and no channel spread past this in any opaque pixel.
+  final int glyphTintMaxSide;
+  final int glyphTintChannelTolerance;
+
   const CanvasThemeExtension({
     required this.defaultWidth,
     required this.defaultHeight,
@@ -50,6 +55,8 @@ class CanvasThemeExtension extends ThemeExtension<CanvasThemeExtension> with _$C
     required this.patternStartColor,
     required this.patternEndColor,
     required this.imageTintColor,
+    required this.glyphTintMaxSide,
+    required this.glyphTintChannelTolerance,
   });
 
   factory CanvasThemeExtension.fromJson(Map<String, dynamic> json) =>

@@ -27,6 +27,8 @@ mixin _$CanvasThemeExtensionTailorMixin
   Color get patternStartColor;
   Color get patternEndColor;
   Color get imageTintColor;
+  int get glyphTintMaxSide;
+  int get glyphTintChannelTolerance;
 
   @override
   CanvasThemeExtension copyWith({
@@ -46,6 +48,8 @@ mixin _$CanvasThemeExtensionTailorMixin
     Color? patternStartColor,
     Color? patternEndColor,
     Color? imageTintColor,
+    int? glyphTintMaxSide,
+    int? glyphTintChannelTolerance,
   }) {
     return CanvasThemeExtension(
       defaultWidth: defaultWidth ?? this.defaultWidth,
@@ -64,6 +68,9 @@ mixin _$CanvasThemeExtensionTailorMixin
       patternStartColor: patternStartColor ?? this.patternStartColor,
       patternEndColor: patternEndColor ?? this.patternEndColor,
       imageTintColor: imageTintColor ?? this.imageTintColor,
+      glyphTintMaxSide: glyphTintMaxSide ?? this.glyphTintMaxSide,
+      glyphTintChannelTolerance:
+          glyphTintChannelTolerance ?? this.glyphTintChannelTolerance,
     );
   }
 
@@ -106,6 +113,10 @@ mixin _$CanvasThemeExtensionTailorMixin
       )!,
       patternEndColor: Color.lerp(patternEndColor, other.patternEndColor, t)!,
       imageTintColor: Color.lerp(imageTintColor, other.imageTintColor, t)!,
+      glyphTintMaxSide: t < 0.5 ? glyphTintMaxSide : other.glyphTintMaxSide,
+      glyphTintChannelTolerance: t < 0.5
+          ? glyphTintChannelTolerance
+          : other.glyphTintChannelTolerance,
     );
   }
 
@@ -168,6 +179,14 @@ mixin _$CanvasThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               imageTintColor,
               other.imageTintColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              glyphTintMaxSide,
+              other.glyphTintMaxSide,
+            ) &&
+            const DeepCollectionEquality().equals(
+              glyphTintChannelTolerance,
+              other.glyphTintChannelTolerance,
             ));
   }
 
@@ -191,6 +210,8 @@ mixin _$CanvasThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(patternStartColor),
       const DeepCollectionEquality().hash(patternEndColor),
       const DeepCollectionEquality().hash(imageTintColor),
+      const DeepCollectionEquality().hash(glyphTintMaxSide),
+      const DeepCollectionEquality().hash(glyphTintChannelTolerance),
     );
   }
 }
@@ -214,4 +235,7 @@ extension CanvasThemeExtensionBuildContextProps on BuildContext {
   Color get patternStartColor => canvasThemeExtension.patternStartColor;
   Color get patternEndColor => canvasThemeExtension.patternEndColor;
   Color get imageTintColor => canvasThemeExtension.imageTintColor;
+  int get glyphTintMaxSide => canvasThemeExtension.glyphTintMaxSide;
+  int get glyphTintChannelTolerance =>
+      canvasThemeExtension.glyphTintChannelTolerance;
 }

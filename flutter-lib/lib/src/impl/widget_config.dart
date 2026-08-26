@@ -80,6 +80,14 @@ bool get preserveIconColors => getConfigFlags().preserve_icon_colors ?? false;
 /// image sharing a name with one of ours would otherwise be replaced by it.
 bool get gcIconsReplacement => getConfigFlags().gc_icons_replacement ?? false;
 
+/// True when a Canvas is drawn in the theme's colors instead of the ones the application painted
+/// with. `use_swt_colors` asks for the application's colors everywhere, so it wins.
+bool get canvasUsesThemeColors {
+  final flags = getConfigFlags();
+  return (flags.disable_swt_canvas_colors ?? false) &&
+      !(flags.use_swt_colors ?? false);
+}
+
 void setConfigFlags(ConfigFlags newFlags) {
   final prev = configFlags;
   String? mergeString(String? incoming, String? previous) {

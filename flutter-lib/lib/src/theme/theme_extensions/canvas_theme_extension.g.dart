@@ -41,6 +41,8 @@ CanvasThemeExtension _$CanvasThemeExtensionFromJson(
   imageTintColor: const ColorConverter().fromJson(
     json['imageTintColor'] as String,
   ),
+  glyphTintMaxSide: (json['glyphTintMaxSide'] as num).toInt(),
+  glyphTintChannelTolerance: (json['glyphTintChannelTolerance'] as num).toInt(),
 );
 
 Map<String, dynamic> _$CanvasThemeExtensionToJson(
@@ -68,4 +70,6 @@ Map<String, dynamic> _$CanvasThemeExtensionToJson(
   ),
   'patternEndColor': const ColorConverter().toJson(instance.patternEndColor),
   'imageTintColor': const ColorConverter().toJson(instance.imageTintColor),
+  'glyphTintMaxSide': instance.glyphTintMaxSide,
+  'glyphTintChannelTolerance': instance.glyphTintChannelTolerance,
 };

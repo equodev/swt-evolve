@@ -63,5 +63,9 @@ CanvasThemeExtension _getCanvasTheme({
     patternStartColor: colorScheme.primaryContainer,
     patternEndColor: surface,
     imageTintColor: colorScheme.onSurface,
+    // Big enough for a 2x icon, far below any real picture; 4/255 admits a grey the encoder
+    // rounded unevenly without admitting a desaturated color.
+    glyphTintMaxSide: 64,
+    glyphTintChannelTolerance: 4,
   );
 }

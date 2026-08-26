@@ -44,6 +44,8 @@ const _canvasTheme = CanvasThemeExtension(
   patternStartColor: _patternStart,
   patternEndColor: _patternEnd,
   imageTintColor: _imageTint,
+  glyphTintMaxSide: 64,
+  glyphTintChannelTolerance: 4,
 );
 
 void main() {
