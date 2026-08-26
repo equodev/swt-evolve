@@ -340,6 +340,16 @@ public class StyledTextHelper {
                 if (lineHeight > 0) {
                     styledText.topIndex = topPixel / lineHeight;
                 }
+                // A render-side scroll must replay the signal a native scroll emits: the vertical
+                // scrollbar's Selection event is what JFace's viewport listeners (TextViewer,
+                // LineNumberRulerColumn) key their gutter redraw on. Sync the bar first so the
+                // widget's own handleVerticalScroll sees a zero delta and stays a no-op; skip
+                // entirely when the bar already has this value to avoid re-serializing it.
+                org.eclipse.swt.widgets.ScrollBar verticalBar = styledText.getVerticalBar();
+                if (verticalBar != null && verticalBar.getSelection() != topPixel) {
+                    verticalBar.setSelection(topPixel);
+                    verticalBar.notifyListeners(SWT.Selection, new Event());
+                }
                 // Repaint ruler sibling controls (e.g. LineNumberRulerColumn) in Flutter.
                 Composite parent = styledText.getParent();
                 if (parent != null) {
