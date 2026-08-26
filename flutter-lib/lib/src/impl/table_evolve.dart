@@ -781,24 +781,20 @@ class TableImpl<T extends TableSwt, V extends VTable>
     });
   }
 
-  void commitEditorIfLeaving(int rowIndex) {
-    final editors = state.editors;
-    if (editors == null || editors.isEmpty) return;
-    // A JFace inline cell editor (TableViewerEditor) lives on the selected row
-    // and must commit when selection moves off it -- send Focus/FocusOut so the
-    // edit is persisted. Only the editor on the row we are LEAVING is committed;
-    // permanent editors on other rows (per-row checkboxes etc.) are left alone,
-    // since in SWT they are not tied to selection. Java's editor list stays the
-    // source of truth for which editors exist, so this does not remove any.
-    final leavingRow = _selectedRowIndex;
-    if (leavingRow < 0 || leavingRow == rowIndex) return;
-    for (final e in editors) {
-      final ed = e.editor;
-      if (ed != null &&
-          e.item != null &&
-          findItemIndex(e.item!.id) == leavingRow) {
-        EquoCommService.send("${ed.swt}/${ed.id}/Focus/FocusOut");
-      }
+  /// Ids of the editor controls whose subtree currently holds the keyboard.
+  final Set<int> _focusedEditorIds = {};
+
+  /// A JFace cell editor commits from `CellEditor.focusLost()`, and in SWT a click anywhere
+  /// outside it takes the keyboard away. Flutter only moves focus onto a focusable target, so
+  /// a click on empty space or on another view left the editor focused and Java never saw
+  /// FocusOut. Dropping the focus here is what makes the editor control send its own FocusOut.
+  ///
+  /// The focus check is what keeps this off the editors it must not touch: a Table can carry a
+  /// permanent control on every row (a per-row `Button(SWT.CHECK)` via `TableEditor.setEditor`),
+  /// and in SWT those are tied to neither selection nor focus.
+  void _releaseEditorOnOutsideTap(int editorId) {
+    if (_focusedEditorIds.contains(editorId)) {
+      FocusManager.instance.primaryFocus?.unfocus();
     }
   }
 
@@ -900,18 +896,30 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
       final editorWidget = mapWidgetFromValue(editable.editor!);
 
+      final editorId = editable.editor!.id;
+
       overlays.add(
         Positioned(
           left: editorX,
           top: editorY,
           width: editorWidth,
           height: rowHeight,
-          child: Container(
-            color: Colors.white,
-            foregroundDecoration: BoxDecoration(
-              border: Border.all(color: Colors.blue, width: 1),
+          child: TapRegion(
+            onTapOutside: (_) => _releaseEditorOnOutsideTap(editorId),
+            child: Focus(
+              canRequestFocus: false,
+              skipTraversal: true,
+              onFocusChange: (hasFocus) => hasFocus
+                  ? _focusedEditorIds.add(editorId)
+                  : _focusedEditorIds.remove(editorId),
+              child: Container(
+                color: Colors.white,
+                foregroundDecoration: BoxDecoration(
+                  border: Border.all(color: Colors.blue, width: 1),
+                ),
+                child: editorWidget,
+              ),
             ),
-            child: editorWidget,
           ),
         ),
       );
