@@ -2692,11 +2692,11 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                     controls[i].setBounds(rects[i]);
                 } else {
                     controls[i].moveAbove(null);
-                    controls[i].setBounds(rects[i].x, rects[i].y, rects[i].width, headerHeight);
+                    int preferredHeight = controls[i].computeSize(SWT.DEFAULT, SWT.DEFAULT).y;
+                    controls[i].setBounds(rects[i].x, rects[i].y, rects[i].width, preferredHeight > 0 ? preferredHeight : headerHeight);
                 }
             }
             if (!changed && !rects[i].equals(controlRects[i])) {
-                // also updateBkImages after translation
                 changed = true;
             }
         }
