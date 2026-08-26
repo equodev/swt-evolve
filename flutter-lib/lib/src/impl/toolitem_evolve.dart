@@ -161,6 +161,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     required ToolItemThemeExtension widgetTheme,
     required Widget child,
     required Color hoverBackgroundColor,
+    BoxBorder? border,
     bool useMouseRegion = true,
   }) {
     Widget button = Material(
@@ -178,6 +179,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
           padding: widgetTheme.buttonPadding,
           decoration: BoxDecoration(
             color: hoverBackgroundColor,
+            border: border,
             borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
           ),
           child: child,
@@ -206,6 +208,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     BoxConstraints? constraints,
     String? tooltip,
     bool isDropdown = false,
+    bool selected = false,
   }) {
     final textColor = getForegroundColor(
       foreground: state.foreground,
@@ -324,6 +327,14 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
         ),
       );
     } else {
+      final isHovered = enabled && _isHovered;
+      final effectiveBackgroundColor = isHovered
+          ? widgetTheme.hoverColor
+          : (selected ? widgetTheme.selectedBackgroundColor : Colors.transparent);
+      final selectedBorder = selected
+          ? Border.all(color: widgetTheme.selectedBorderColor, width: 1.0)
+          : null;
+
       return ConstrainedBox(
         constraints: hasFiniteW ? BoxConstraints(maxWidth: availableWidth) : const BoxConstraints(),
         child: _buildClickableButton(
@@ -339,9 +350,8 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
                 : null,
             enabled: enabled,
             widgetTheme: widgetTheme,
-            hoverBackgroundColor: enabled && _isHovered
-                ? widgetTheme.hoverColor
-                : Colors.transparent,
+            hoverBackgroundColor: effectiveBackgroundColor,
+            border: selectedBorder,
             child: adaptChild(child),
           ),
       );
@@ -456,6 +466,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
             enabled: enabled,
             backgroundColor: defaultBackgroundColor,
             constraints: constraints,
+            selected: isChecked,
             onTap: () {
               setState(() {
                 state.selection = !isChecked;
@@ -510,6 +521,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
             widgetTheme: widgetTheme,
             enabled: enabled,
             constraints: constraints,
+            selected: isSelected,
             onTap: () {
               setState(() {
                 state.selection = !isSelected;

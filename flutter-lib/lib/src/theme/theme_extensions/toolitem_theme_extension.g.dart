@@ -17,6 +17,9 @@ ToolItemThemeExtension _$ToolItemThemeExtensionFromJson(
   selectedBackgroundColor: const ColorConverter().fromJson(
     json['selectedBackgroundColor'] as String,
   ),
+  selectedBorderColor: const ColorConverter().fromJson(
+    json['selectedBorderColor'] as String,
+  ),
   separatorColor: const ColorConverter().fromJson(
     json['separatorColor'] as String,
   ),
@@ -113,6 +116,9 @@ Map<String, dynamic> _$ToolItemThemeExtensionToJson(
   'hoverColor': const ColorConverter().toJson(instance.hoverColor),
   'selectedBackgroundColor': const ColorConverter().toJson(
     instance.selectedBackgroundColor,
+  ),
+  'selectedBorderColor': const ColorConverter().toJson(
+    instance.selectedBorderColor,
   ),
   'separatorColor': const ColorConverter().toJson(instance.separatorColor),
   'dropdownIconColor': const ColorConverter().toJson(

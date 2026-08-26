@@ -17,6 +17,7 @@ class ToolItemThemeExtension extends ThemeExtension<ToolItemThemeExtension> with
   final Color disabledColor;
   final Color hoverColor;
   final Color selectedBackgroundColor;
+  final Color selectedBorderColor;
   final Color separatorColor;
   final Color dropdownIconColor;
   final double borderRadius;
@@ -66,6 +67,7 @@ class ToolItemThemeExtension extends ThemeExtension<ToolItemThemeExtension> with
     required this.disabledColor,
     required this.hoverColor,
     required this.selectedBackgroundColor,
+    required this.selectedBorderColor,
     required this.separatorColor,
     required this.dropdownIconColor,
     required this.borderRadius,

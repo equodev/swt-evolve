@@ -15,6 +15,7 @@ mixin _$ToolItemThemeExtensionTailorMixin
   Color get disabledColor;
   Color get hoverColor;
   Color get selectedBackgroundColor;
+  Color get selectedBorderColor;
   Color get separatorColor;
   Color get dropdownIconColor;
   double get borderRadius;
@@ -65,6 +66,7 @@ mixin _$ToolItemThemeExtensionTailorMixin
     Color? disabledColor,
     Color? hoverColor,
     Color? selectedBackgroundColor,
+    Color? selectedBorderColor,
     Color? separatorColor,
     Color? dropdownIconColor,
     double? borderRadius,
@@ -115,6 +117,7 @@ mixin _$ToolItemThemeExtensionTailorMixin
       hoverColor: hoverColor ?? this.hoverColor,
       selectedBackgroundColor:
           selectedBackgroundColor ?? this.selectedBackgroundColor,
+      selectedBorderColor: selectedBorderColor ?? this.selectedBorderColor,
       separatorColor: separatorColor ?? this.separatorColor,
       dropdownIconColor: dropdownIconColor ?? this.dropdownIconColor,
       borderRadius: borderRadius ?? this.borderRadius,
@@ -191,6 +194,11 @@ mixin _$ToolItemThemeExtensionTailorMixin
       selectedBackgroundColor: Color.lerp(
         selectedBackgroundColor,
         other.selectedBackgroundColor,
+        t,
+      )!,
+      selectedBorderColor: Color.lerp(
+        selectedBorderColor,
+        other.selectedBorderColor,
         t,
       )!,
       separatorColor: Color.lerp(separatorColor, other.separatorColor, t)!,
@@ -329,6 +337,10 @@ mixin _$ToolItemThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               selectedBackgroundColor,
               other.selectedBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              selectedBorderColor,
+              other.selectedBorderColor,
             ) &&
             const DeepCollectionEquality().equals(
               separatorColor,
@@ -506,6 +518,7 @@ mixin _$ToolItemThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(disabledColor),
       const DeepCollectionEquality().hash(hoverColor),
       const DeepCollectionEquality().hash(selectedBackgroundColor),
+      const DeepCollectionEquality().hash(selectedBorderColor),
       const DeepCollectionEquality().hash(separatorColor),
       const DeepCollectionEquality().hash(dropdownIconColor),
       const DeepCollectionEquality().hash(borderRadius),
@@ -561,6 +574,7 @@ extension ToolItemThemeExtensionBuildContextProps on BuildContext {
   Color get hoverColor => toolItemThemeExtension.hoverColor;
   Color get selectedBackgroundColor =>
       toolItemThemeExtension.selectedBackgroundColor;
+  Color get selectedBorderColor => toolItemThemeExtension.selectedBorderColor;
   Color get separatorColor => toolItemThemeExtension.separatorColor;
   Color get dropdownIconColor => toolItemThemeExtension.dropdownIconColor;
   double get borderRadius => toolItemThemeExtension.borderRadius;
