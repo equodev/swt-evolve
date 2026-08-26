@@ -219,6 +219,8 @@ public class GCHelper {
             dev.equo.swt.FlutterBridge.send(w, eventName, args);
         else if (widget instanceof DartResource r)
             dev.equo.swt.FlutterBridge.send(r, eventName, args);
+        // Batched until the paint ends, and we are about to wait for this one's answer.
+        dev.equo.swt.FlutterBridge.flushOps(widget);
         long deadline = System.currentTimeMillis() + timeoutMs;
         while (!future.isDone() && System.currentTimeMillis() < deadline) {
             if (display != null && !display.isDisposed() && !display.readAndDispatch()) {

@@ -3,6 +3,7 @@ package dev.equo.swt;
 import dev.equo.swt.comm.BinaryCommService;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.comm.JettyBinaryCommService;
+import dev.equo.swt.comm.MessageBatch;
 import dev.equo.swt.spi.FlutterBridgeSpi;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
@@ -300,6 +301,7 @@ public abstract class FlutterBridge {
     }
 
     private static CompletableFuture<Void> update(boolean coalesce) {
+        flushOpBatches();
         if (dirty.isEmpty()) {
             return CompletableFuture.completedFuture(null);
         }
@@ -526,6 +528,10 @@ public abstract class FlutterBridge {
             }
             return;
         }
+        if (resource instanceof DartGC gc) {
+            bufferOp(comm, gc, event, args);
+            return;
+        }
         if (dirty.contains(resource)) {
             CompletableFuture<Void> deferred = update().whenComplete((r, a) -> {
                 try {
@@ -542,6 +548,56 @@ public abstract class FlutterBridge {
                 e.printStackTrace();
             }
         }
+    }
+
+    /** A GC's ops, held to one frame per paint. Flutter paints nothing until gcDispose anyway. */
+    private static final Map<DartGC, MessageBatch> opBatches =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /** Cap on what one batch holds, so a GC that is never disposed cannot grow it without end. */
+    private static final int MAX_BATCH_BYTES = 1 << 20;
+
+    private static void bufferOp(CommService comm, DartGC gc, String event, Object args) {
+        MessageBatch batch = opBatches.computeIfAbsent(gc, g -> new MessageBatch());
+        try {
+            // The GC's state has to precede the op drawn with it, and on the same frame.
+            synchronized (dirty) {
+                if (dirty.remove(gc)) addToBatch(batch, event(gc), serializer.to(getApi(gc)));
+            }
+            addToBatch(batch, eventName(gc, event), serializer.to(args));
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+        if (GC_DISPOSE.equals(event) || batch.byteSize() >= MAX_BATCH_BYTES) flushOpBatch(gc);
+    }
+
+    /** Terminates a paint: Flutter commits the staged ops when it arrives. */
+    private static final String GC_DISPOSE = "gcDispose";
+
+    private static void addToBatch(MessageBatch batch, String event, byte[] bytes) {
+        DebugLog.logSend(event, bytes);
+        batch.add(event, bytes);
+    }
+
+    /** Puts a GC's buffered ops on the wire, for a caller about to block on an answer to one. */
+    public static void flushOps(Object resource) {
+        if (resource instanceof DartGC gc) flushOpBatch(gc);
+    }
+
+    private static void flushOpBatch(DartGC gc) {
+        MessageBatch batch = opBatches.remove(gc);
+        if (batch != null && !batch.isEmpty()) commFor(gc).send(batch);
+    }
+
+    /** Nothing may stay buffered across an event-loop turn, whatever disposed the GC or didn't. */
+    private static void flushOpBatches() {
+        if (opBatches.isEmpty()) return;
+        List<DartGC> open;
+        synchronized (opBatches) {
+            open = new ArrayList<>(opBatches.keySet());
+        }
+        for (DartGC gc : open) flushOpBatch(gc);
     }
 
     // A send through the "dirty" branch above defers the actual wire send to an arbitrary

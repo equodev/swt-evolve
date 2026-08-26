@@ -187,18 +187,36 @@ abstract class EquoCommBase {
       }
     }
 
-    final callback = _handlers[actionId];
-    if (jsonOk && callback != null) {
-      if (callback.args?.once ?? false) _handlers.remove(actionId);
-      _deliver(actionId, callback.onSuccess, payload);
+    // A run of frames fused into one: each entry is delivered on its own channel.
+    if (jsonOk && actionId == batchEvent && payload is List) {
+      for (final entry in payload) {
+        if (entry is List && entry.length == 2 && entry[0] is String) {
+          final name = entry[0] as String;
+          if (!_deliverDecoded(name, entry[1])) _pending[name] = entry[1];
+        }
+      }
       return;
     }
+
+    if (jsonOk && _deliverDecoded(actionId, payload)) return;
 
     // Neither on() nor onBytes() has registered yet for this actionId (or the body isn't valid
     // JSON, meaning it's a raw-bytes payload). Buffer both ways so whichever registers first
     // can claim it.
     if (jsonOk) _pending[actionId] = payload;
     _rawPending[actionId] = body ?? Uint8List(0);
+  }
+
+  /// Channel a fused run of frames arrives on.
+  static const batchEvent = 'swt.evolve.batch';
+
+  /// Hands an already-decoded payload to [actionId]'s handler; false when none is registered.
+  bool _deliverDecoded(String actionId, dynamic payload) {
+    final callback = _handlers[actionId];
+    if (callback == null) return false;
+    if (callback.args?.once ?? false) _handlers.remove(actionId);
+    _deliver(actionId, callback.onSuccess, payload);
+    return true;
   }
 
   /// Runs a handler off the current call stack with its errors isolated.
