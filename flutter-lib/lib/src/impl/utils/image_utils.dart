@@ -174,7 +174,11 @@ class ImageUtils {
             constraints: constraints,
             child: iconContent,
           );
-        } else if (size == null) {
+        } else if (size == null && width == null && height == null) {
+          // Toolbar click targets get a minimum box. A caller that passed an
+          // explicit box must not: label-like widgets (Label, CLabel, Button,
+          // ExpandItem) are sized in Java by *Sizes.java from imageData, so a
+          // wider image here is taken out of the text, which then ellipsizes.
           imageWidget = ConstrainedBox(
             constraints: BoxConstraints(
               minWidth: AppSizes.toolbarMinSize,
