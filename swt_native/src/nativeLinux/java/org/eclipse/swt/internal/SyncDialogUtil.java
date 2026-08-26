@@ -92,6 +92,8 @@ public class SyncDialogUtil {
                 display.sleep();
             }
         }
+        while (OS.g_main_context_iteration(0, false)) {
+        }
         disposeResponseCallback();
         return responseID;
     }

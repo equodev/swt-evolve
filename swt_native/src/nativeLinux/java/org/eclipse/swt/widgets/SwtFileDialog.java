@@ -495,13 +495,7 @@ public class SwtFileDialog extends SwtDialog implements IIFileDialog {
                 response = SyncDialogUtil.run(display, handle, true);
             }
         } else {
-            //display.externalEventLoop = true;
-            ;
-            display.sendPreExternalEventDispatchEvent();
-            response = GTK3.gtk_native_dialog_run(handle);
-            //display.externalEventLoop = false;
-            ;
-            display.sendPostExternalEventDispatchEvent();
+            response = SyncDialogUtil.run(display, handle, true);
         }
         if ((style & SWT.RIGHT_TO_LEFT) != 0) {
             OS.g_signal_remove_emission_hook(signalId, hookId);

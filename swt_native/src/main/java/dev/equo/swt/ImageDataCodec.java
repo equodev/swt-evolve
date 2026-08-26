@@ -6,11 +6,44 @@ import org.eclipse.swt.graphics.ImageLoader;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.zip.CRC32;
 
 public final class ImageDataCodec {
 
+    /**
+     * getImageData() hands back a fresh ImageData (and pixel array) on every call, so a static
+     * icon reappearing in an unrelated widget's dirty-flush (e.g. every item of a large Tree, on
+     * every refresh) would otherwise re-run PngEncoder/Deflater from scratch each time. That cost,
+     * multiplied across a tree with hundreds of icons, is enough to stall the UI thread for whole
+     * seconds — long enough for the OS to flag the process as not responding while a modal (like a
+     * native FileDialog) is trying to open. Cache the encoded bytes by pixel content so an
+     * unchanged icon is encoded once. Bounded + access-ordered so a long session cycling through
+     * many distinct images doesn't grow this without limit.
+     */
+    private static final int CACHE_CAPACITY = 4000;
+    private static final Map<Long, byte[]> encodedCache = new LinkedHashMap<>(256, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<Long, byte[]> eldest) {
+            return size() > CACHE_CAPACITY;
+        }
+    };
+
+    private static long cacheKey(ImageData img) {
+        CRC32 crc = new CRC32();
+        crc.update(img.data);
+        return (crc.getValue() << 24) ^ ((long) img.width << 12) ^ ((long) img.height << 1) ^ img.depth;
+    }
+
     public static byte[] encode(ImageData img) {
         if (img.data == null) return null;
+
+        long key = cacheKey(img);
+        synchronized (encodedCache) {
+            byte[] cached = encodedCache.get(key);
+            if (cached != null) return cached;
+        }
 
         try {
             ImageLoader ldr = new ImageLoader();
@@ -25,10 +58,15 @@ public final class ImageDataCodec {
                 default -> SWT.IMAGE_PNG;
             };
 
+            byte[] bytes;
             try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
                 ldr.save(out, fmt);
-                return out.toByteArray();
+                bytes = out.toByteArray();
             }
+            synchronized (encodedCache) {
+                encodedCache.put(key, bytes);
+            }
+            return bytes;
         } catch (Exception e) {
             System.err.println("encode error: " + e.getMessage());
             return img.data;
