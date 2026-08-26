@@ -520,7 +520,31 @@ class GCDrawer extends GCDrawerBase {
 
   // ── CopyArea helpers ────────────────────────────────────────────────────
 
-  bool _shapeIntersects(Shape shape, Rect area) {
+  // SWT's GC#copyArea copies the pixels the GC's drawable already shows. A GC opened over
+  // an existing Image starts with that image's pixels as its content and an empty shape
+  // list, so translating shapes alone copies nothing — the drawable's own content, the
+  // base image, has to be copied too. JFace's scrolling double-buffers depend on that:
+  // LineNumberRulerColumn re-uses one buffer Image across paints and shifts it by the
+  // scroll delta, redrawing only the newly exposed band, so without the base copy the
+  // retained band keeps its pre-scroll content.
+  @visibleForTesting
+  static List<Shape> copyAreaShapes({
+    required ui.Image? baseImage,
+    required List<Shape> painted,
+    required Rect srcRect,
+    required Offset destOffset,
+  }) {
+    final destRect = srcRect.shift(destOffset);
+    return [
+      // Under the shapes drawn through this GC, so the copy keeps their z-order.
+      if (baseImage != null)
+        ImageShape.raster(baseImage.clone(), srcRect, destRect, clipRect: destRect),
+      for (final shape in painted.where((s) => _shapeIntersects(s, srcRect)))
+        _translateShapeWithClip(shape, destOffset, srcRect),
+    ];
+  }
+
+  static bool _shapeIntersects(Shape shape, Rect area) {
     return switch (shape) {
       LineShape s => area.contains(s.p1) ||
           area.contains(s.p2) ||
@@ -542,7 +566,7 @@ class GCDrawer extends GCDrawerBase {
     };
   }
 
-  Shape _translateShapeWithClip(Shape shape, Offset offset, Rect srcArea) {
+  static Shape _translateShapeWithClip(Shape shape, Offset offset, Rect srcArea) {
     final clipArea = srcArea.translate(offset.dx, offset.dy);
     return switch (shape) {
       LineShape s => LineShape(s.p1 + offset, s.p2 + offset, s.color,
@@ -583,7 +607,7 @@ class GCDrawer extends GCDrawerBase {
     };
   }
 
-  List<int> _translatePoints(List<int> points, Offset offset) {
+  static List<int> _translatePoints(List<int> points, Offset offset) {
     final result = <int>[];
     for (int i = 0; i < points.length; i += 2) {
       result.add(points[i] + offset.dx.toInt());
@@ -802,20 +826,8 @@ class GCDrawer extends GCDrawerBase {
 
   @override
   void onCopyAreaintintintintintintboolean(
-      VGCCopyAreaintintintintintintboolean o) {
-    final srcRect = _getRectFromArgs(o.srcX, o.srcY, o.width, o.height);
-    final destOffset = Offset(
-      o.destX.toDouble() - o.srcX.toDouble(),
-      o.destY.toDouble() - o.srcY.toDouble(),
-    );
-    final copiedShapes = _staging
-        .where((shape) => _shapeIntersects(shape, srcRect))
-        .map((shape) => _translateShapeWithClip(shape, destOffset, srcRect))
-        .toList();
-    for (final s in copiedShapes) {
-      _staging.add(s);
-    }
-  }
+      VGCCopyAreaintintintintintintboolean o) =>
+      _copyArea(o.srcX, o.srcY, o.width, o.height, o.destX, o.destY);
 
   @override
   void onCopyAreaImageintint(VGCCopyAreaImageintint o) async {
@@ -887,19 +899,17 @@ class GCDrawer extends GCDrawerBase {
   }
 
   @override
-  void onCopyAreaintintintintintint(VGCCopyAreaintintintintintint o) {
-    final srcRect = _getRectFromArgs(o.srcX, o.srcY, o.width, o.height);
-    final destOffset = Offset(
-      (o.destX).toDouble() - (o.srcX).toDouble(),
-      (o.destY).toDouble() - (o.srcY).toDouble(),
-    );
-    final copiedShapes = _staging
-        .where((shape) => _shapeIntersects(shape, srcRect))
-        .map((shape) => _translateShapeWithClip(shape, destOffset, srcRect))
-        .toList();
-    for (final s in copiedShapes) {
-      _staging.add(s);
-    }
+  void onCopyAreaintintintintintint(VGCCopyAreaintintintintintint o) =>
+      _copyArea(o.srcX, o.srcY, o.width, o.height, o.destX, o.destY);
+
+  void _copyArea(int srcX, int srcY, int width, int height, int destX, int destY) {
+    _staging.addAll(copyAreaShapes(
+      baseImage: _baseImage,
+      painted: _staging,
+      srcRect: _getRectFromArgs(srcX, srcY, width, height),
+      destOffset:
+          Offset((destX - srcX).toDouble(), (destY - srcY).toDouble()),
+    ));
   }
 
   @override
