@@ -627,6 +627,14 @@ public class WebFlutterServer {
      * content becomes same-origin (enabling eval/execute/BrowserFunction). Strips framing-blocking
      * headers and injects a {@code <base href>} so the page's relative sub-resources still resolve
      * against the original site.
+     *
+     * <p>Every response here carries this app's own cross-origin isolation headers. When the app is
+     * served cross-origin isolated, a nested document that does not itself declare a
+     * {@code Cross-Origin-Embedder-Policy} is refused by the browser even when it is same-origin —
+     * the frame shows "refused to connect" instead of the page. {@code credentialless} is what makes
+     * that work: the proxied document's own sub-resources still come from the original site (via the
+     * injected {@code <base href>}) and would need {@code Cross-Origin-Resource-Policy} headers we
+     * cannot add on its behalf under {@code require-corp}.
      */
     private static class ProxyHandler implements HttpHandler {
 
@@ -650,6 +658,7 @@ public class WebFlutterServer {
                 // Serve from this origin; deliberately do NOT copy X-Frame-Options / CSP frame-ancestors.
                 exchange.getResponseHeaders().set("Content-Type", contentType);
                 exchange.getResponseHeaders().set("Cache-Control", "no-store");
+                StaticFileHandler.setCrossOriginHeaders(exchange);
                 exchange.sendResponseHeaders(200, body.length);
                 try (OutputStream os = exchange.getResponseBody()) { os.write(body); }
             } catch (Exception e) {
@@ -667,9 +676,11 @@ public class WebFlutterServer {
                             : baseTag + html;
         }
 
+        /** Refusals need the isolation headers too, or the frame shows a browser error instead of why. */
         private static void sendPlain(HttpExchange exchange, int code, String msg) throws IOException {
             byte[] b = msg.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=utf-8");
+            StaticFileHandler.setCrossOriginHeaders(exchange);
             exchange.sendResponseHeaders(code, b.length);
             try (OutputStream os = exchange.getResponseBody()) { os.write(b); }
         }
