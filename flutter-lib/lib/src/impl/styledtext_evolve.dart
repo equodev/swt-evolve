@@ -495,6 +495,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   @override
   Widget build(BuildContext context) {
+    beforePaintRequest();
     final bounds = getBounds();
     final hasHScroll = hasStyle(state.style, SWT.H_SCROLL);
     final hasVScroll = hasStyle(state.style, SWT.V_SCROLL);
@@ -668,19 +669,40 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   //
   // Java's StyledText position API (getLocationAtOffset, getOffsetAtPoint,
   // getLinePixel, getLineIndex, getTextBounds) repeats back what is painted here
-  // instead of estimating it from glyph tables. The table rides in front of every
-  // Paint request on the same ordered channel (see CanvasImpl.beforePaintRequest),
-  // so the Java-side painters always see geometry at least as fresh as the frame
-  // they draw over.
-  TextShape? _geometrySentForShape;
+  // instead of estimating it from glyph tables, and its estimate knows nothing
+  // about wrapping — so a layout that is never described is a wrap-blind Java side.
+  //
+  // CanvasImpl calls this hook from its paint request, and this class replaces
+  // CanvasImpl.build; the only request left is initState's, which runs before the
+  // first state push has built a text shape. build() therefore drives the hook too,
+  // so a layout that changes after mount is still described.
+  //
+  // Gate on the shape's layout holder, not the shape reference: caret-blink and
+  // selection copies share the holder (their geometry is unchanged), while any copy
+  // that changes a layout input carries a fresh one. The payload is one layout per
+  // line plus a per-character x array for the document, so an ungated push per frame
+  // would serialize the whole document on every caret blink.
+  _LineTopsCache? _geometrySentForLayout;
+
+  /// Test seam: the transport is a no-op in a widget test, so a push is otherwise
+  /// unobservable. Counts every payload pushed and keeps the last one.
+  @visibleForTesting
+  static int debugGeometryPushes = 0;
+  @visibleForTesting
+  static Map<String, dynamic>? debugLastGeometry;
 
   @override
   void beforePaintRequest() {
     final shape = _currentTextShape();
-    if (shape == null || identical(shape, _geometrySentForShape)) return;
+    if (shape == null ||
+        identical(shape._lineTopsCache, _geometrySentForLayout)) {
+      return;
+    }
     final geometry = shape.computeGeometry();
     if (geometry == null) return;
-    _geometrySentForShape = shape;
+    _geometrySentForLayout = shape._lineTopsCache;
+    debugGeometryPushes++;
+    debugLastGeometry = geometry;
     EquoCommService.sendPayload(
       "${state.swt}/${state.id}/TextGeometry",
       geometry,
