@@ -566,8 +566,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         int lineCount = getLineCount();
         if (!(0 <= lineIndex && lineIndex < lineCount))
             SWT.error(SWT.ERROR_INVALID_RANGE);
-        FontMetrics metrics = getLineMetrics(lineIndex);
-        int lineHeight = metrics != null ? metrics.getHeight() : _effLineHeight();
+        int lineHeight = getLineMetrics(lineIndex).getHeight();
         int[] offs = getLineOffsets();
         int ls = offs[lineIndex], le = offs[lineIndex + 1];
         while (le > ls && (text.charAt(le - 1) == '\n' || text.charAt(le - 1) == '\r')) le--;
@@ -623,7 +622,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             }
         } finally {
         }
-        return null;
+        return TextLayoutHelper.lineMetrics(getFont(), getAscent(), getDescent());
     }
 
     /**

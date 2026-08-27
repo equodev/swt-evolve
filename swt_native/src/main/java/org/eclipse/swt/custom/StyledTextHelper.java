@@ -162,7 +162,53 @@ public class StyledTextHelper {
             lines.add(v);
         }
         g.lines = lines.toArray(new VisualLine[0]);
-        textGeometries.put(styledText, g);
+        TextGeometry previous = textGeometries.put(styledText, g);
+        // A layout change reaches the render side first and only lands here afterwards: the
+        // painters that answer from this table (JFace's ruler columns) have already drawn
+        // against the previous one and nothing would ask again. A wrap toggle is the visible
+        // case — the text rewraps while the gutter keeps the numbering it computed from the
+        // unwrapped table.
+        if (describesADifferentLayout(previous, g)) {
+            repaintRulerSiblings(styledText);
+        }
+    }
+
+    /** Whether the newly applied table lays the document out differently from the previous one. */
+    static boolean describesADifferentLayout(TextGeometry previous, TextGeometry next) {
+        return previous == null
+                || previous.lines.length != next.lines.length
+                || previous.contentHeight != next.contentHeight
+                || previous.contentWidth != next.contentWidth;
+    }
+
+    /**
+     * Repaints everything beside the StyledText — the ruler columns, which draw through a GC at
+     * coordinates this table answers for. The traversal has to go down, not just across: a column
+     * that paints line numbers is a child of the CompositeRuler standing beside the StyledText,
+     * so painting only the direct siblings leaves the gutter drawn against the previous table.
+     */
+    private static void repaintRulerSiblings(DartStyledText styledText) {
+        // The table is applied through asyncExec, so the editor can already be gone by the time
+        // this runs — on a disposed widget every accessor below throws out of the event loop and
+        // takes the Display's own teardown with it.
+        if (styledText.isDisposed()) return;
+        Composite parent = styledText.getParent();
+        if (parent == null || parent.isDisposed()) return;
+        for (Control child : parent.getChildren()) {
+            repaintTree(child);
+        }
+    }
+
+    private static void repaintTree(Control control) {
+        if (control.isDisposed()) return;
+        if (control.getImpl() instanceof org.eclipse.swt.widgets.DartControl dc) {
+            ControlHelper.paint(dc);
+        }
+        if (control instanceof Composite composite) {
+            for (Control child : composite.getChildren()) {
+                repaintTree(child);
+            }
+        }
     }
 
     /**
@@ -350,15 +396,7 @@ public class StyledTextHelper {
                     verticalBar.setSelection(topPixel);
                     verticalBar.notifyListeners(SWT.Selection, new Event());
                 }
-                // Repaint ruler sibling controls (e.g. LineNumberRulerColumn) in Flutter.
-                Composite parent = styledText.getParent();
-                if (parent != null) {
-                    for (Control child : parent.getChildren()) {
-                        if (child.getImpl() instanceof org.eclipse.swt.widgets.DartControl dc) {
-                            ControlHelper.paint(dc);
-                        }
-                    }
-                }
+                repaintRulerSiblings(styledText);
             }
 
             if (stateUpdate.containsKey("horizontalPixel")) {

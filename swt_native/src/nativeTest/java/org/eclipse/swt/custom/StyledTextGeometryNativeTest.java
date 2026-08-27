@@ -1,5 +1,7 @@
 package org.eclipse.swt.custom;
 
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.junit.jupiter.api.Tag;
@@ -9,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -173,5 +176,43 @@ public class StyledTextGeometryNativeTest {
         // x-precision queries defer to the estimate path
         assertThat(StyledTextHelper.geometryPointAtOffset(st, 4)).isNull();
         assertThat(StyledTextHelper.geometryTextBounds(st, 0, 4)).isNull();
+    }
+
+    // A layout change reaches the render side first and this table lands afterwards, so the
+    // painters that answer from it — the ruler columns — have already drawn against the previous
+    // one. Applying a table that lays the document out differently has to ask them again;
+    // re-applying the same layout must not, or every push would repaint the gutter.
+    @Test
+    public void a_table_that_lays_the_document_out_differently_is_recognised() {
+        StyledTextHelper.TextGeometry unwrapped = geometry(2, 30.0, 20.0);
+
+        assertThat(StyledTextHelper.describesADifferentLayout(null, unwrapped)).isTrue();
+        // the same document wrapped: more visual rows, taller, narrower
+        assertThat(StyledTextHelper.describesADifferentLayout(unwrapped, geometry(4, 60.0, 10.0)))
+                .isTrue();
+        // a row count that happens to match still differs by height
+        assertThat(StyledTextHelper.describesADifferentLayout(unwrapped, geometry(2, 45.0, 20.0)))
+                .isTrue();
+        assertThat(StyledTextHelper.describesADifferentLayout(unwrapped, geometry(2, 30.0, 20.0)))
+                .isFalse();
+    }
+
+    // The table is applied through asyncExec: the editor can be disposed by the time it lands, and
+    // an exception thrown out of that runnable takes the Display's own teardown down with it.
+    @Test
+    public void a_table_arriving_after_the_editor_is_disposed_is_dropped() {
+        DartStyledText st = widget(5);
+        when(st.isDisposed()).thenReturn(true);
+        when(st.getParent()).thenThrow(new SWTException(SWT.ERROR_WIDGET_DISPOSED, "Widget is disposed"));
+
+        assertThatCode(() -> StyledTextHelper.applyTextGeometry(st, table())).doesNotThrowAnyException();
+    }
+
+    private static StyledTextHelper.TextGeometry geometry(int rows, double height, double width) {
+        StyledTextHelper.TextGeometry g = new StyledTextHelper.TextGeometry();
+        g.lines = new StyledTextHelper.VisualLine[rows];
+        g.contentHeight = height;
+        g.contentWidth = width;
+        return g;
     }
 }
