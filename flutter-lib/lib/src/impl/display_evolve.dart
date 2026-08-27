@@ -119,11 +119,18 @@ class _DisplaySwtState extends State<DisplaySwt> {
 
   /// The lone shell takes the viewport when it already covers it, or when Java has not sized it
   /// yet — an unsized shell at the origin is the display-tracking main shell. Leaving it windowed
-  /// would have the chrome invent a size and push that back as its real bounds.
+  /// would have the chrome invent a size and push that back as its real bounds. Resize trim is what
+  /// tells it apart from a splash, which reaches Dart unsized at the origin too; it is the same cut
+  /// DisplayBridge.shouldTrackDisplayBounds makes on the Java side.
   bool _qualifiesAsLoneMain(VShell s, BoxConstraints constraints) {
     if (_fillsViewport(s, constraints)) return true;
     final b = s.bounds;
-    return b != null && _isUnsized(s) && !_isModal(s) && b.x == 0 && b.y == 0;
+    return b != null &&
+        _isUnsized(s) &&
+        !_isModal(s) &&
+        (s.style & SWT.RESIZE) != 0 &&
+        b.x == 0 &&
+        b.y == 0;
   }
 
   bool _fillsViewport(VShell s, BoxConstraints constraints) {
@@ -161,30 +168,28 @@ class _DisplaySwtState extends State<DisplaySwt> {
     return LayoutBuilder(builder: (context, constraints) {
       final mainShells = <VShell>[];
       final dialogShells = <VShell>[];
-      VShell? largestNonModalShell;
-      var largestNonModalArea = -1;
+      VShell? loneMainCandidate;
+      var loneMainArea = -1;
       for (var s in shells) {
         print("Shell text: ${s.text} ${s.bounds?.x},${s.bounds?.y},${s.bounds?.width},${s.bounds?.height}");
-        final isMain = _isMainShell(s, constraints);
-        final isModal = _isModal(s);
-        if (!isModal) {
+        if (_isMainShell(s, constraints)) {
+          mainShells.add(s);
+          continue;
+        }
+        dialogShells.add(s);
+        // Ranked among the shells that could be promoted: unsized shells all tie on area, so
+        // ranking every shell would let whichever arrives first take the slot.
+        if (_qualifiesAsLoneMain(s, constraints)) {
           final area = _shellArea(s);
-          if (area > largestNonModalArea) {
-            largestNonModalArea = area;
-            largestNonModalShell = s;
+          if (area > loneMainArea) {
+            loneMainArea = area;
+            loneMainCandidate = s;
           }
         }
-        if (isMain) {
-          mainShells.add(s);
-        } else {
-          dialogShells.add(s);
-        }
       }
-      if (mainShells.isEmpty &&
-          largestNonModalShell != null &&
-          _qualifiesAsLoneMain(largestNonModalShell, constraints)) {
-        dialogShells.remove(largestNonModalShell);
-        mainShells.add(largestNonModalShell!);
+      if (mainShells.isEmpty && loneMainCandidate != null) {
+        dialogShells.remove(loneMainCandidate);
+        mainShells.add(loneMainCandidate!);
       }
       for (var s in mainShells) {
         s.bounds!.x = 0;
