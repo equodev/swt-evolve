@@ -27,6 +27,7 @@ Widget buildMainCompositeLayout(CompositeImpl impl) {
   final children = state.children;
 
   final backgroundColor = getCompositeBackgroundColor(
+    context,
     state,
     widgetTheme,
     isEnabled: enabled,

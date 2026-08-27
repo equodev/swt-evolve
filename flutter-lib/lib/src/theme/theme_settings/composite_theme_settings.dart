@@ -68,6 +68,7 @@ CompositeThemeExtension _getCompositeTheme({
 }
 
 Color getCompositeBackgroundColor(
+  BuildContext context,
   VComposite state,
   CompositeThemeExtension widgetTheme, {
   required bool isEnabled,
@@ -84,5 +85,6 @@ Color getCompositeBackgroundColor(
   return getBackgroundColor(
     background: state.background,
     defaultColor: defaultColor,
+    context: context,
   ) ?? defaultColor;
 }

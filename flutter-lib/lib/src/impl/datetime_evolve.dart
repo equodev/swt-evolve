@@ -30,6 +30,36 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
     super.dispose();
   }
 
+  // The editable part of the control -- its ground and its digits -- follows the cell it edits.
+  // The spinner buttons and the drop-down trigger deliberately do not: upstream SWT keeps those
+  // platform affordances on the platform's own colors.
+  Color _ground(BuildContext context, Color fallback) =>
+      getBackgroundColor(
+        background: state.background,
+        defaultColor: fallback,
+        context: context,
+      ) ??
+      fallback;
+
+  Color _ink(BuildContext context, Color fallback) => getForegroundColor(
+        foreground: state.foreground,
+        defaultColor: fallback,
+        context: context,
+      );
+
+  // The palette a CALENDAR-style DateTime paints with: it is a Control in the tree, so it follows
+  // the same rule as any other. The drop-down popup does NOT use this: upstream SWT paints that
+  // with the platform's own colors, not the cell's.
+  ColorScheme _calendarColorScheme(BuildContext context) {
+    final base = Theme.of(context).colorScheme;
+    final onSurface = _ink(context, base.onSurface);
+    return base.copyWith(
+      surface: _ground(context, base.surface),
+      onSurface: onSurface,
+      onSurfaceVariant: onSurface.withOpacity(0.7),
+    );
+  }
+
   void _openCalendarOverlay({
     required int year,
     required int month,
@@ -108,7 +138,7 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
   // ── CALENDAR ──────────────────────────────────────────────────────────────
 
   Widget _buildCalendar(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = _calendarColorScheme(context);
     final enabled = state.enabled ?? true;
     final showWeekNumbers = hasStyle(state.style, SWT.CALENDAR_WEEKNUMBERS);
 
@@ -242,6 +272,8 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
       ),
     ];
 
+    // Upstream SWT opens the drop-down calendar in the platform's own colors, not the cell's, even
+    // when the field itself follows the table -- so this one keeps the app theme.
     final colorScheme = Theme.of(context).colorScheme;
 
     return wrap(_buildSpinnerContent(
@@ -284,7 +316,10 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
     Widget? extraTrailing,
   }) {
     final selIdx = _selectedField.clamp(0, fields.length - 1);
-    final textColor = enabled ? theme.textColor : theme.disabledTextColor;
+    final background = _ground(
+        context, enabled ? theme.backgroundColor : theme.disabledBackgroundColor);
+    final textColor =
+        enabled ? _ink(context, theme.textColor) : theme.disabledTextColor;
     final iconColor = enabled ? theme.iconColor : theme.disabledIconColor;
 
     Widget fieldRow() => Row(
@@ -403,7 +438,7 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
           final isBounded = constraints.hasBoundedWidth;
           return Container(
             decoration: BoxDecoration(
-              color: enabled ? theme.backgroundColor : theme.disabledBackgroundColor,
+              color: background,
               border: Border.all(
                 color: enabled ? theme.borderColor : theme.disabledBorderColor,
                 width: theme.borderWidth,

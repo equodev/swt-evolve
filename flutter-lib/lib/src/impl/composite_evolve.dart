@@ -194,6 +194,7 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     // and always wins when set; ParentBackgroundScope.backgroundOf only fills in the default
     // for a Composite with no color of its own (e.g. a control hosted on a ToolBar band).
     final backgroundColor = getCompositeBackgroundColor(
+      context,
       state,
       widgetTheme,
       isEnabled: enabled,

@@ -63,8 +63,10 @@ TextAlign getTextAlignFromStyle(int style, TextAlign defaultAlign) {
 Color? getBackgroundColor({
   required VColor? background,
   required Color? defaultColor,
+  BuildContext? context,
 }) {
-  final useSwtColors = getConfigFlags().use_swt_colors ?? false;
+  final useSwtColors = (getConfigFlags().use_swt_colors ?? false) ||
+      (context != null && SwtColorScope.isActive(context));
 
   if (useSwtColors && background != null) {
     return colorFromVColor(background, defaultColor: defaultColor);
@@ -77,10 +79,12 @@ Color? getBackgroundColor({
 Color getForegroundColor({
   required VColor? foreground,
   required Color defaultColor,
+  BuildContext? context,
 }) {
-  final useSwtFonts = getConfigFlags().use_swt_fonts ?? false;
+  final useSwtForeground = (getConfigFlags().use_swt_fonts ?? false) ||
+      (context != null && SwtColorScope.isActive(context));
 
-  if (useSwtFonts && foreground != null) {
+  if (useSwtForeground && foreground != null) {
     return colorFromVColor(foreground, defaultColor: defaultColor);
   }
 
@@ -195,6 +199,20 @@ EdgeInsets adjustPaddingForAlignment({
       bottom: basePadding.bottom,
     );
   }
+}
+
+/// Marks a subtree whose Controls keep the colors the application gave them instead of the
+/// theme's, published by a Canvas that paints with those colors itself ([canvasUsesThemeColors]).
+/// A Control the application hosts over such a Canvas -- a grid's cell editor is the usual case --
+/// is part of that drawing, so a themed editor would otherwise land on an application-colored grid.
+class SwtColorScope extends InheritedWidget {
+  const SwtColorScope({super.key, required super.child});
+
+  static bool isActive(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<SwtColorScope>() != null;
+
+  @override
+  bool updateShouldNotify(SwtColorScope oldWidget) => false;
 }
 
 class ParentBackgroundScope extends InheritedWidget {

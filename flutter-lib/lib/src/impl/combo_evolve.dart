@@ -164,11 +164,12 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     final bool hasFixedSize = hasBounds(state.bounds);
 
     final Color bgColor = getComboBackgroundColor(
+      context,
       state,
       theme,
       enabled: isEnabled,
     );
-    final Color textColor = getComboTextColor(state, theme, enabled: isEnabled);
+    final Color textColor = getComboTextColor(context, state, theme, enabled: isEnabled);
     final Color borderColor = isEnabled && (_isFocused || _isHovered)
         ? theme.borderColor
         : (isEnabled ? theme.dividerColor : theme.disabledBorderColor);

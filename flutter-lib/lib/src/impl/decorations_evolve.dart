@@ -131,6 +131,9 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
 class DecorationsImpl<T extends DecorationsSwt, V extends VDecorations>
     extends CanvasImpl<T, V> {
   @override
+  bool get hostsAppColoredContent => false;
+
+  @override
   Widget build(BuildContext context) {
     final align = getConfigFlags().decorations_align ?? DecorationsAlign.hleft;
 

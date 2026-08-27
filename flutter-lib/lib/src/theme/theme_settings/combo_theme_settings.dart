@@ -67,6 +67,7 @@ ComboThemeExtension _getComboTheme({
 }
 
 Color getComboBackgroundColor(
+  BuildContext context,
   VCombo state,
   ComboThemeExtension widgetTheme, {
   bool? enabled,
@@ -80,10 +81,12 @@ Color getComboBackgroundColor(
   return getBackgroundColor(
     background: state.background,
     defaultColor: widgetTheme.backgroundColor,
+    context: context,
   ) ?? widgetTheme.backgroundColor;
 }
 
 Color getComboTextColor(
+  BuildContext context,
   VCombo state,
   ComboThemeExtension widgetTheme, {
   bool? enabled,
@@ -97,6 +100,7 @@ Color getComboTextColor(
   return getForegroundColor(
     foreground: state.foreground,
     defaultColor: widgetTheme.textColor,
+    context: context,
   );
 }
 

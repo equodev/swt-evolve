@@ -305,6 +305,7 @@ class TextImpl<T extends TextSwt, V extends VText>
     final cursorColor = getForegroundColor(
       foreground: state.foreground,
       defaultColor: widgetTheme.textColor,
+      context: context,
     );
 
     final textField = TextField(

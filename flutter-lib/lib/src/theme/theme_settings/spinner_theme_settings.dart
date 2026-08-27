@@ -89,6 +89,7 @@ SpinnerThemeExtension _getSpinnerTheme({
 
 // Helper to get background color with SWT support
 Color getSpinnerBackgroundColor(
+  BuildContext context,
   VSpinner state,
   SpinnerThemeExtension widgetTheme, {
   required bool isEnabled,
@@ -100,11 +101,13 @@ Color getSpinnerBackgroundColor(
   return getBackgroundColor(
     background: state.background,
     defaultColor: widgetTheme.backgroundColor,
+    context: context,
   ) ?? widgetTheme.backgroundColor;
 }
 
 // Helper to get text color with SWT support
 Color getSpinnerTextColor(
+  BuildContext context,
   VSpinner state,
   SpinnerThemeExtension widgetTheme, {
   required bool isEnabled,
@@ -116,6 +119,7 @@ Color getSpinnerTextColor(
   return getForegroundColor(
     foreground: state.foreground,
     defaultColor: widgetTheme.textColor,
+    context: context,
   );
 }
 

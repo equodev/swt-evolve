@@ -22,6 +22,7 @@ import 'color_utils.dart';
 import 'utils/double_tap_detector.dart';
 import 'utils/image_utils.dart';
 import 'utils/widget_utils.dart';
+import 'widget_config.dart';
 import '../theme/theme_extensions/canvas_theme_extension.dart';
 import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
 
@@ -92,6 +93,11 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     _keyboardFocus.dispose();
     super.dispose();
   }
+
+  // A Shell -- and any other Decorations -- is a Canvas in SWT's class hierarchy, but it is a
+  // window rather than a surface the application paints content onto: its children are ordinary
+  // widgets and keep the theme. Only a plain Canvas hands its own colors to what is hosted over it.
+  bool get hostsAppColoredContent => true;
 
   // Canvas forwards its own MouseDoubleClick from build()'s Listener, so the
   // shared composite interaction chrome must not also forward it.
@@ -304,7 +310,9 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       backgroundMode: state.backgroundMode,
       effectiveBackground: bg,
       backgroundImage: state.backgroundImage,
-      child: NoLayout(children: children, composite: state),
+      child: !canvasUsesThemeColors && hostsAppColoredContent
+          ? SwtColorScope(child: NoLayout(children: children, composite: state))
+          : NoLayout(children: children, composite: state),
     );
     // Paint this Canvas's own resolved background behind its children (mirrors
     // CompositeImpl.buildComposite()) instead of a hardcoded transparent fill -- a

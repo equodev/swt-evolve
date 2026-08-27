@@ -112,6 +112,7 @@ TextStyle getTextFieldTextStyle(
       ? getForegroundColor(
           foreground: state.foreground,
           defaultColor: widgetTheme.textColor,
+          context: context,
         )
       : widgetTheme.disabledTextColor;
 
@@ -147,6 +148,7 @@ InputDecoration getInputDecoration(
   final bgColor = getBackgroundColor(
     background: state.background,
     defaultColor: defaultBgColor,
+    context: context,
   ) ?? defaultBgColor;
   
   final hintColor = widgetTheme.placeholderColor;

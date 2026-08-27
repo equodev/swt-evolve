@@ -70,12 +70,14 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
     final size = getSpinnerSize(state, widgetTheme);
 
     final backgroundColor = getSpinnerBackgroundColor(
+      context,
       state,
       widgetTheme,
       isEnabled: enabled,
     );
 
     final textColor = getSpinnerTextColor(
+      context,
       state,
       widgetTheme,
       isEnabled: enabled,

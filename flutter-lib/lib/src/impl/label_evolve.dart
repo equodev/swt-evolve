@@ -86,8 +86,8 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     final textAlign = getTextAlignFromStyle(state.style, widgetTheme.textAlign);
     // state.background already resolves inheritance (DartControl.getExplicitBackground(), Java
     // side); ParentBackgroundScope would unconditionally shadow it with a stale ancestor value.
-    final backgroundColor =
-        getBackgroundColor(background: state.background, defaultColor: null);
+    final backgroundColor = getBackgroundColor(
+        background: state.background, defaultColor: null, context: context);
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = getConstraintsFromBounds(state.bounds);
 
@@ -185,6 +185,7 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
         ? getForegroundColor(
             foreground: state.foreground,
             defaultColor: widgetTheme.primaryTextColor,
+            context: context,
           )
         : widgetTheme.disabledTextColor;
 

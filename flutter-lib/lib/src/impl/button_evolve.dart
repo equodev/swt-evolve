@@ -37,6 +37,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       final bg = getBackgroundColor(
         background: state.background,
         defaultColor: parentBg ?? defaultBg,
+        context: context,
       );
       return Container(
         color: bg ?? parentBg ?? defaultBg,
@@ -423,6 +424,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
                 ? getForegroundColor(
                     foreground: state.foreground,
                     defaultColor: widgetTheme.pushButtonTextColor,
+                    context: context,
                   )
                 : widgetTheme.disabledForegroundColor,
           ),
@@ -485,6 +487,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     final textColor = getForegroundColor(
       foreground: state.foreground,
       defaultColor: defaultTextColor,
+      context: context,
     );
 
     final textStyle = getTextStyle(
