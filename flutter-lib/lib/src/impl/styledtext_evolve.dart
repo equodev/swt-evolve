@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' show LineMetrics;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -1653,6 +1654,94 @@ class _LineTopsCache {
   List<double>? tops;
 }
 
+/// What the geometry table and the line-tops prefix sum need from one logical line's
+/// layout. Every field is a pure function of the [_LineLayoutKey] it is stored under,
+/// so a cached entry cannot go stale: a line whose text, styles, alignment, wrap width
+/// or tab width changes hashes to a different key.
+class _LineLayout {
+  _LineLayout(this.width, this.height, this.metrics, this.rowEnds, this.cost);
+
+  /// The line's length in characters — what this entry is charged against the cache
+  /// budget, whether or not [caretX] has been materialized yet.
+  final int cost;
+
+  final double width;
+  final double height;
+  final List<LineMetrics> metrics;
+
+  /// For a wrapped line, the end offset of each visual row but the last.
+  final List<int> rowEnds;
+
+  /// x of every character boundary, relative to the line's own origin. Materialized on
+  /// first use because the geometry payload skips it past [TextShape._charXPayloadLimit].
+  List<double>? caretX;
+}
+
+/// Everything a line's layout depends on. [style] rides along because it is the
+/// fallback style tab expansion measures its runs with, and [tabs] because a tab
+/// advances to the next multiple of that many columns.
+class _LineLayoutKey {
+  const _LineLayoutKey(
+    this.span,
+    this.style,
+    this.align,
+    this.maxWidth,
+    this.tabs,
+  );
+
+  final InlineSpan span;
+  final TextStyle style;
+  final TextAlign align;
+  final double maxWidth;
+  final int tabs;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _LineLayoutKey &&
+      other.span == span &&
+      other.style == style &&
+      other.align == align &&
+      other.maxWidth == maxWidth &&
+      other.tabs == tabs;
+
+  @override
+  int get hashCode => Object.hash(span, style, align, maxWidth, tabs);
+}
+
+/// A keystroke rewrites one logical line and leaves the rest of the document laid out
+/// exactly as before, but every shape it produces is a new object that re-derives all of
+/// them — one TextPainter layout per line plus, for the geometry table, one
+/// getOffsetForCaret per character of the document. Keying the result by the layout's
+/// own inputs turns those back into lookups for the lines the edit did not touch.
+///
+/// Insertion-ordered, so the eldest entry is the least recently used once a hit
+/// re-inserts its key. The budget counts characters rather than entries because the
+/// per-character x array is what the memory goes into.
+final Map<_LineLayoutKey, _LineLayout> _lineLayoutCache = {};
+int _lineLayoutCacheChars = 0;
+const int _lineLayoutCacheCharBudget = 200000;
+
+void _cacheLineLayout(_LineLayoutKey key, _LineLayout layout) {
+  _lineLayoutCache[key] = layout;
+  _lineLayoutCacheChars += layout.cost;
+  while (_lineLayoutCacheChars > _lineLayoutCacheCharBudget &&
+      _lineLayoutCache.length > 1) {
+    final evicted = _lineLayoutCache.remove(_lineLayoutCache.keys.first);
+    if (evicted != null) _lineLayoutCacheChars -= evicted.cost;
+  }
+}
+
+/// Test seam: layouts served from the cache instead of re-derived.
+@visibleForTesting
+int debugLineLayoutHits = 0;
+
+@visibleForTesting
+void debugResetLineLayoutCache() {
+  _lineLayoutCache.clear();
+  _lineLayoutCacheChars = 0;
+  debugLineLayoutHits = 0;
+}
+
 class TextShape extends Shape {
   final String text;
   final Offset off;
@@ -1720,14 +1809,14 @@ class TextShape extends Shape {
     for (int i = 0; i < lines.length; i++) {
       tops[i] = y;
       final props = _linePropsFor(i);
-      final tp = _layoutLine(
+      final layout = _lineLayout(
         lines[i],
         i,
-        TextSpan(text: text, style: style),
         align: props.align,
         maxWidth: _lineMaxWidth(props.indent, canvas),
+        wantCaretX: false,
       );
-      y += props.vIndent + _advance(tp.height);
+      y += props.vIndent + _advance(layout.height);
     }
     tops[lines.length] = y;
     return tops;
@@ -1883,19 +1972,6 @@ class TextShape extends Shape {
   /// after wrapping: `l` logical line, `s`/`e` document offset range, `x`/`y`/`w`/`h`
   /// box, and `cx` the per-character x boundaries (length `e - s + 1`).
   Map<String, dynamic>? computeGeometry() {
-    TextSpan effectiveTextSpan;
-    if (editingState != null) {
-      effectiveTextSpan = TextRenderer.buildFinalTextSpan(
-        text,
-        editingState!,
-        style,
-      );
-    } else if (textSpan != null) {
-      effectiveTextSpan = textSpan!;
-    } else {
-      effectiveTextSpan = TextSpan(text: text, style: style);
-    }
-
     final lines = text.split('\n');
     final includeCharX = text.length <= _charXPayloadLimit;
     final visual = <Map<String, dynamic>>[];
@@ -1922,25 +1998,25 @@ class TextShape extends Shape {
 
       final maxW = _lineMaxWidth(indent);
 
-      final tp = _layoutLine(
+      final layout = _lineLayout(
         line,
         i,
-        effectiveTextSpan,
         align: effectiveAlign,
         maxWidth: maxW,
+        wantCaretX: includeCharX,
       );
 
       double finalX = indent.toDouble();
       if (canvasSize != null && maxW != double.infinity) {
         switch (effectiveAlign) {
           case TextAlign.center:
-            if (tp.width < maxW) {
-              finalX = indent.toDouble() + (maxW - tp.width) / 2;
+            if (layout.width < maxW) {
+              finalX = indent.toDouble() + (maxW - layout.width) / 2;
             }
             break;
           case TextAlign.right:
-            if (tp.width < maxW) {
-              finalX = indent.toDouble() + (maxW - tp.width);
+            if (layout.width < maxW) {
+              finalX = indent.toDouble() + (maxW - layout.width);
             }
             break;
           default:
@@ -1948,27 +2024,26 @@ class TextShape extends Shape {
         }
       }
 
+      final caretX = layout.caretX;
       List<double> charX(int from, int to) => [
-        for (int k = from; k <= to; k++)
-          finalX +
-              tp.getOffsetForCaret(TextPosition(offset: k), Rect.zero).dx,
+        for (int k = from; k <= to; k++) finalX + caretX![k],
       ];
 
       // The visual line's box: `y`/`h` include the line's vertical indent so bands
       // stay contiguous; `vi` (first visual row only) is the indent within the box,
       // i.e. the glyphs sit at y + vi. The Java side adds `vi` when answering
       // text-position queries and uses the box for line/pixel queries.
-      final metrics = tp.computeLineMetrics();
+      final metrics = layout.metrics;
       if (metrics.length <= 1) {
-        maxWidth = math.max(maxWidth, finalX + tp.width);
+        maxWidth = math.max(maxWidth, finalX + layout.width);
         visual.add({
           'l': i,
           's': docOffset,
           'e': docOffset + line.length,
           'x': finalX,
           'y': currentY,
-          'w': tp.width,
-          'h': vIndent + _advance(tp.height),
+          'w': layout.width,
+          'h': vIndent + _advance(layout.height),
           if (vIndent != 0) 'vi': vIndent,
           if (includeCharX) 'cx': charX(0, line.length),
         });
@@ -1976,12 +2051,7 @@ class TextShape extends Shape {
         int local = 0;
         for (int m = 0; m < metrics.length && local <= line.length; m++) {
           final lm = metrics[m];
-          int vEnd = line.length;
-          if (m < metrics.length - 1) {
-            final boundary = tp.getLineBoundary(TextPosition(offset: local));
-            vEnd = boundary.end > local ? boundary.end : local + 1;
-            if (vEnd > line.length) vEnd = line.length;
-          }
+          int vEnd = m < layout.rowEnds.length ? layout.rowEnds[m] : line.length;
           maxWidth = math.max(maxWidth, finalX + lm.left + lm.width);
           visual.add({
             'l': i,
@@ -2000,7 +2070,7 @@ class TextShape extends Shape {
         }
       }
 
-      currentY += vIndent + _advance(tp.height);
+      currentY += vIndent + _advance(layout.height);
       docOffset += line.length + 1;
     }
 
@@ -2027,6 +2097,76 @@ class TextShape extends Shape {
   /// Count of per-line layouts performed, for tests asserting layout cost.
   @visibleForTesting
   static int debugLayoutLineCalls = 0;
+
+  /// The layout of one logical line, from the shared cache when an identical line has
+  /// already been measured. Only the paint loop needs a live TextPainter; everything
+  /// that just reads the layout back — the line-tops prefix sum and the geometry table
+  /// — goes through here, so an edit re-measures the line it touched and no other.
+  ///
+  /// [wantCaretX] materializes the per-character x boundaries the geometry table sends;
+  /// they are the dominant cost of describing a document, and a cached line keeps them.
+  _LineLayout _lineLayout(
+    String lineText,
+    int lineIndex, {
+    required TextAlign align,
+    required double maxWidth,
+    required bool wantCaretX,
+  }) {
+    final key = _LineLayoutKey(
+      _getTextSpanForLine(lineText, lineIndex, TextSpan(text: text, style: style)),
+      style,
+      align,
+      maxWidth,
+      tabs,
+    );
+
+    var layout = _lineLayoutCache.remove(key);
+    if (layout != null && (!wantCaretX || layout.caretX != null)) {
+      debugLineLayoutHits++;
+    } else {
+      final expanded = _expandTabStops(key.span as TextSpan);
+      debugLayoutLineCalls++;
+      final tp = TextPainter(
+        text: expanded.span,
+        textAlign: align,
+        textDirection: TextDirection.ltr,
+      );
+      if (expanded.tabStops.isNotEmpty) {
+        tp.setPlaceholderDimensions(expanded.tabStops);
+      }
+      tp.layout(maxWidth: maxWidth);
+
+      final metrics = tp.computeLineMetrics();
+      final rowEnds = <int>[];
+      if (metrics.length > 1) {
+        int local = 0;
+        for (int m = 0; m < metrics.length - 1 && local <= lineText.length; m++) {
+          final boundary = tp.getLineBoundary(TextPosition(offset: local));
+          int end = boundary.end > local ? boundary.end : local + 1;
+          if (end > lineText.length) end = lineText.length;
+          rowEnds.add(end);
+          local = end;
+        }
+      }
+      layout ??= _LineLayout(
+        tp.width,
+        tp.height,
+        metrics,
+        rowEnds,
+        lineText.length + 1,
+      );
+      if (wantCaretX) {
+        layout.caretX = [
+          for (int k = 0; k <= lineText.length; k++)
+            tp.getOffsetForCaret(TextPosition(offset: k), Rect.zero).dx,
+        ];
+      }
+      tp.dispose();
+    }
+    // Re-inserting on a hit puts the entry back at the young end of the eviction order.
+    _cacheLineLayout(key, layout);
+    return layout;
+  }
 
   // Every per-line TextPainter goes through here so painting, caret placement and
   // hit-testing measure a line the same way — in particular they all get the same
@@ -2136,22 +2276,72 @@ class TextShape extends Shape {
     return width;
   }
 
+  /// Document offset each logical line starts at. Held per shape because the callers
+  /// below run once per line: recomputing it in each of them splits the whole document
+  /// as many times as the document has lines.
+  List<int>? _lineStartsCache;
+
+  List<int> get _lineStarts {
+    final cached = _lineStartsCache;
+    if (cached != null) return cached;
+    final starts = <int>[0];
+    for (int i = 0; i < text.length; i++) {
+      if (text.codeUnitAt(i) == 0x0A) starts.add(i + 1);
+    }
+    return _lineStartsCache = starts;
+  }
+
+  /// Style ranges bucketed by the lines they cover. Both the paint loop and the geometry
+  /// table ask line by line, so scanning the whole range list per line costs the document
+  /// its line count times its range count on every frame.
+  List<List<StyleRange>>? _rangesByLineCache;
+
+  List<List<StyleRange>> get _rangesByLine {
+    final cached = _rangesByLineCache;
+    if (cached != null) return cached;
+    final starts = _lineStarts;
+    final buckets = List.generate(starts.length, (_) => <StyleRange>[]);
+    for (final range in editingState?.characterRanges ?? const <StyleRange>[]) {
+      if (range.end <= range.start) continue;
+      int first = _lineOfOffset(range.start);
+      final last = _lineOfOffset(range.end - 1);
+      for (; first <= last && first < buckets.length; first++) {
+        buckets[first].add(range);
+      }
+    }
+    return _rangesByLineCache = buckets;
+  }
+
+  int _lineOfOffset(int offset) {
+    final starts = _lineStarts;
+    int lo = 0, hi = starts.length - 1;
+    while (lo < hi) {
+      final mid = (lo + hi + 1) >> 1;
+      if (starts[mid] <= offset) {
+        lo = mid;
+      } else {
+        hi = mid - 1;
+      }
+    }
+    return lo;
+  }
+
   TextSpan _buildLineTextSpanFromState(String lineText, int lineIndex) {
     if (editingState == null || editingState!.characterRanges.isEmpty) {
       return TextSpan(text: lineText, style: style);
     }
 
-    int lineStartOffset = 0;
-    final lines = text.split('\n');
-    for (int i = 0; i < lineIndex; i++) {
-      lineStartOffset += lines[i].length + 1;
-    }
+    final starts = _lineStarts;
+    final lineStartOffset = lineIndex < starts.length ? starts[lineIndex] : 0;
 
     final lineEndOffset = lineStartOffset + lineText.length;
 
-    final lineRanges = editingState!.characterRanges.where((range) {
-      return range.start < lineEndOffset && range.end > lineStartOffset;
-    }).toList();
+    final lineRanges = lineIndex < _rangesByLine.length
+        ? _rangesByLine[lineIndex]
+            .where((range) =>
+                range.start < lineEndOffset && range.end > lineStartOffset)
+            .toList()
+        : const <StyleRange>[];
 
     if (lineRanges.isEmpty) {
       return TextSpan(text: lineText, style: style);
