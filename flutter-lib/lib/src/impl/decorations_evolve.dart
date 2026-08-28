@@ -6,6 +6,7 @@ import '../gen/widget.dart';
 import '../impl/canvas_evolve.dart';
 import '../impl/menu_evolve.dart';
 import '../impl/decorations_align.dart';
+import '../impl/utils/pointer.dart';
 import '../impl/widget_config.dart';
 import '../theme/theme_extensions/menu_theme_extension.dart';
 
@@ -101,7 +102,7 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
       anchorTapClosesMenu: false,
       onClose: _flushChanges,
       menuChildren: [
-        MenuChangeNotifier(
+        pointerInterceptor(MenuChangeNotifier(
           registerPendingChange: (cb) => _pendingChanges.add(cb),
           menuState: _menuState,
           closeMenu: _controller.close,
@@ -111,7 +112,7 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
                 .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
                 .toList(),
           ),
-        ),
+        )),
       ],
       builder: (context, controller, child) {
         return VerticalMenuIcon(
