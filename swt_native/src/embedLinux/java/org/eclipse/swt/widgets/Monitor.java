@@ -94,7 +94,7 @@ public final class Monitor {
      * @since 3.107
      */
     public int getZoom() {
-        return zoom;
+        return zoom > 0 ? zoom : 100;
     }
 
     void setBounds(Rectangle rect) {

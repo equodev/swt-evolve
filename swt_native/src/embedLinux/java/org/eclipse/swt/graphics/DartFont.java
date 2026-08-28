@@ -214,7 +214,7 @@ public final class DartFont extends DartResource implements IFont {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (height < 0)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        fontData[0] = new FontData(name, height, style);
+        fontData[0] = new FontData(name, FontMetricsUtil.substituteHeight(height, org.eclipse.swt.widgets.Display.getCurrent()), style);
     }
 
     /**

@@ -79,9 +79,9 @@ public final class FontMetricsUtil {
         Metrics m = GenFontMetrics.DATA.get(getId(fd));
         if (m == null) m = GenFontMetrics.DATA.get("Verdana-0-3");
         if (m == null) return null;
-        int h = fd.getHeight();
-        double scale = (double) h / GenFontMetrics.BASE;
         Display display = Display.getCurrent();
+        int h = effectiveHeight(fd, display);
+        double scale = (double) h / GenFontMetrics.BASE;
         double dpiScale = display != null ? display.getDPI().x / 72.0 : 1.0;
         return new int[]{
             (int) Math.round(m.ascent() * h * dpiScale),
@@ -89,6 +89,28 @@ public final class FontMetricsUtil {
             (int) Math.round(m.height() * h * dpiScale),
             (int) Math.round(m.avgCharWidth() * scale * dpiScale)
         };
+    }
+
+    /**
+     * Height 0 is a legal FontData value (native SWT allows it too): native SWT resolves it to a
+     * real handle and every later query — {@code getFontData()} included — reads the OS-assigned
+     * size back off that handle, so nothing downstream ever observes 0. We have no OS to do that
+     * substitution for us, so {@link org.eclipse.swt.graphics.DartFont}'s constructors substitute
+     * a real height at construction time (see the generator's {@code init(String, float, int, ...)}
+     * transform) — this mirrors that same substitution for callers still holding a raw
+     * {@link FontData} (e.g. a {@code FontData} built directly, never passed through a Font).
+     */
+    public static int substituteHeight(float height, Display display) {
+        if (height > 0) return (int) height;
+        // display.getSystemFont() is itself null before Device.systemFont has been assigned (a Font
+        // built with height 0 that early would otherwise NPE here instead of falling through to 11).
+        Font sysFont = display != null ? display.getSystemFont() : null;
+        FontData sysFd = sysFont != null ? sysFont.getFontData()[0] : null;
+        return (sysFd != null && sysFd.getHeight() > 0) ? sysFd.getHeight() : 11;
+    }
+
+    private static int effectiveHeight(FontData fd, Display display) {
+        return substituteHeight(fd.getHeight(), display);
     }
 
     /** Weight for normal (400) and bold (700); matches gen_fonts.dart weightKey and supported 300,400,500,600,700. */
@@ -129,7 +151,8 @@ public final class FontMetricsUtil {
 
     public static PointD getFontSize(String text, Font font) {
         FontData fontDatum = font.getFontData()[0];
-        return getFontSize(text, FontMetricsUtil.getId(fontDatum), fontDatum.getHeight(), 0);
+        int height = effectiveHeight(fontDatum, Display.getCurrent());
+        return getFontSize(text, FontMetricsUtil.getId(fontDatum), height, 0);
     }
 
     public static PointD getFontSize(String text, TextStyle textStyle) {
