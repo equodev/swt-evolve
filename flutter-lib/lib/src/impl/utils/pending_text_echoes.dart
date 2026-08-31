@@ -31,13 +31,24 @@ mixin PendingTextEchoes {
 
   /// Whether [incoming] (a text Java just pushed) is a stale echo of our own in-flight edit
   /// that should be ignored: true only when it is a recognised echo *and* the client has
-  /// since moved on to [currentLocal]. Recognised echoes (and older superseded ones) are
-  /// drained regardless. Returns false for any value we never sent — a genuine external
-  /// change to apply.
+  /// since moved on to [currentLocal]. Returns false for any value we never sent — a genuine
+  /// external change to apply.
+  ///
+  /// The matched value is kept as the queue's new baseline and only older entries are
+  /// dropped. Java pushes a full-state snapshot for reasons besides acknowledging a Modify —
+  /// a repaint-driven dirty() is the common one — so the same acknowledged text arrives more
+  /// than once; draining it on first sight made every later copy look like an external
+  /// setText and re-based the editor onto it, discarding whatever had been typed since.
+  ///
+  /// The queue therefore holds the last acknowledged value plus the un-acknowledged
+  /// keystrokes after it, never the document history. One narrow case stays ambiguous: an
+  /// undo landing exactly on the last acknowledged value while a newer keystroke is still in
+  /// flight is indistinguishable from that keystroke's own echo, and is ignored — the safe
+  /// direction, since the alternative discards input the user typed.
   bool isStaleTextEcho(String incoming, String currentLocal) {
     final index = _pendingEchoes.indexOf(incoming);
     if (index < 0) return false;
-    _pendingEchoes.removeRange(0, index + 1);
+    _pendingEchoes.removeRange(0, index);
     return incoming != currentLocal;
   }
 }
