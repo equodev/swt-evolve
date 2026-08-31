@@ -783,6 +783,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         checkWidget();
         if (!java.util.Objects.equals(this.backgroundImage, image)) {
             dirty();
+            ControlHelper.markDamaged(this);
         }
         if (image == backgroundImage)
             return;

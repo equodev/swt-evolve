@@ -48,12 +48,60 @@ public class Serializer {
         } else {
             writer.reset();
         }
+        java.util.Map<Object, Object> outerScope = payloadScope.get();
+        payloadScope.set(EMPTY_SCOPE);
         try {
             dsl.serialize(writer, p);
             return writer.toByteArray();
         } finally {
+            if (outerScope == null) {
+                payloadScope.remove();
+            } else {
+                payloadScope.set(outerScope);
+            }
             pool.addFirst(writer);
         }
+    }
+
+    // Null: no payload in flight. EMPTY_SCOPE: one is, and nothing has asked to be cached yet — so a
+    // payload with no expensive getter never allocates the map.
+    private static final java.util.Map<Object, Object> EMPTY_SCOPE = java.util.Collections.emptyMap();
+    private static final ThreadLocal<java.util.Map<Object, Object>> payloadScope = new ThreadLocal<>();
+
+    /**
+     * Derives {@code key}'s value once for the payload being written, or on every call when none is.
+     * A generated converter reads each field twice (null check, then write), and one derived value
+     * can back several fields, so an uncached getter runs many times per payload.
+     *
+     * <p>The scope belongs to a single {@link #to} invocation rather than being reference-counted: a
+     * getter can pump the event loop and re-enter {@code to}, and that inner payload is a later
+     * snapshot which must not reuse this one's values.
+     */
+    public static <T> T oncePerPayload(Object key, java.util.function.Supplier<T> derive) {
+        java.util.Map<Object, Object> scope = payloadScope.get();
+        if (scope == null) {
+            return derive.get();
+        }
+        Object cached = scope.get(key);
+        if (cached == null) {
+            T derived = derive.get();
+            if (derived == null) {
+                return null;
+            }
+            // Re-read: derive() can pump the event loop and re-enter for this same key.
+            scope = payloadScope.get();
+            if (scope == EMPTY_SCOPE) {
+                scope = new java.util.IdentityHashMap<>();
+                payloadScope.set(scope);
+            }
+            cached = scope.putIfAbsent(key, derived);
+            if (cached == null) {
+                cached = derived;
+            }
+        }
+        @SuppressWarnings("unchecked")
+        T value = (T) cached;
+        return value;
     }
 
     public <T> T from(Class<T> type, byte[] bytes) throws IOException {

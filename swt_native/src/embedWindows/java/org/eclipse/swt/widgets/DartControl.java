@@ -2004,6 +2004,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void redraw() {
         checkWidget();
+        ControlHelper.markDamaged(this);
     }
 
     /**
@@ -2045,8 +2046,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void redraw(int x, int y, int width, int height, boolean all) {
         checkWidget();
-        if (width <= 0 || height <= 0)
-            return;
+        ControlHelper.markDamaged(this);
     }
 
     boolean redrawChildren() {
@@ -2590,6 +2590,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         Color newValue = color;
         if (!java.util.Objects.equals(this._background, newValue)) {
             dirty();
+            ControlHelper.markDamaged(this);
         }
         int pixel = -1;
         int alpha = 255;
@@ -2637,6 +2638,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (!java.util.Objects.equals(this.backgroundImage, image)) {
             dirty();
+            ControlHelper.markDamaged(this);
         }
         if (image != null) {
             if (image.isDisposed())
@@ -2959,6 +2961,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (!java.util.Objects.equals(this.font, font)) {
             dirty();
+            ControlHelper.markDamaged(this);
         }
         Font newFont = font;
         if (newFont != null) {
@@ -2998,6 +3001,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         Color newValue = color;
         if (!java.util.Objects.equals(this._foreground, newValue)) {
             dirty();
+            ControlHelper.markDamaged(this);
         }
         checkWidget();
         int pixel = -1;
@@ -3220,6 +3224,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             if (drawCount++ == 0) {
             }
         }
+        if (redraw && drawCount == 0)
+            ControlHelper.markDamaged(this);
     }
 
     /**
@@ -3243,6 +3249,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (!java.util.Objects.equals(this.region, region)) {
             dirty();
+            ControlHelper.markDamaged(this);
         }
         if (region != null && region.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);

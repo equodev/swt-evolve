@@ -1902,6 +1902,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void redraw() {
         checkWidget();
+        ControlHelper.markDamaged(this);
     }
 
     void redraw(boolean children) {
@@ -1946,6 +1947,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void redraw(int x, int y, int width, int height, boolean all) {
         checkWidget();
+        ControlHelper.markDamaged(this);
     }
 
     long regionToRects(long message, long rgn, long r, long path) {
@@ -2534,6 +2536,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         Color newValue = color;
         if (!java.util.Objects.equals(this._background, newValue)) {
             dirty();
+            ControlHelper.markDamaged(this);
         }
         if (color != null) {
             if (color.isDisposed())
@@ -2579,6 +2582,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (!java.util.Objects.equals(this.backgroundImage, image)) {
             dirty();
+            ControlHelper.markDamaged(this);
         }
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -2643,8 +2647,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         boolean sizeChanged = resize && (this.bounds.width != newValue.width || this.bounds.height != newValue.height);
         this.bounds = newValue;
         getBridge().setBounds(this, bounds);
-        if (sizeChanged)
+        if (sizeChanged) {
             resized();
+            ControlHelper.markDamaged(this);
+        }
         if (parent != null && parent.getImpl() instanceof DartWidget pw)
             pw.dirty();
         ((SwtDisplay) display.getImpl()).ignoreFocusControl = oldIgnoreFocusControl;
@@ -2828,6 +2834,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (!java.util.Objects.equals(this.font, font)) {
             dirty();
+            ControlHelper.markDamaged(this);
         }
         if (font != null) {
             if (font.isDisposed())
@@ -2858,6 +2865,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         Color newValue = color;
         if (!java.util.Objects.equals(this._foreground, newValue)) {
             dirty();
+            ControlHelper.markDamaged(this);
         }
         checkWidget();
         if (color != null) {
@@ -3086,6 +3094,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             }
             drawCount++;
         }
+        if (redraw && drawCount == 0)
+            ControlHelper.markDamaged(this);
     }
 
     /**
@@ -3109,6 +3119,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         if (!java.util.Objects.equals(this.region, region)) {
             dirty();
+            ControlHelper.markDamaged(this);
         }
         if (region != null && region.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);

@@ -12,21 +12,12 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   late GCDrawer _drawer;
   List<Shape> _snapshot = [];
 
-  // Guards against overlapping Paint request/response round-trips for the same
-  // Canvas (e.g. a Shell fade animation and a hover-driven redraw both asking to
-  // repaint close together): shapes.clear()+addAll() on gcDispose isn't safe if a
-  // second request's ops are still arriving when the first one commits.
-  bool _awaitingDispose = false;
-  bool get hasPendingPaint => _awaitingDispose;
-  void markPaintRequested() => _awaitingDispose = true;
-
   @override
   void initState() {
     super.initState();
     _drawer = GCDrawer.embedded(
       state,
       onShapesUpdated: (_) {
-        _awaitingDispose = false;
         if (!mounted) return;
         setState(() {});
         // Promote the overlay onstage once it has painted content (a constructor-only paint
@@ -43,6 +34,23 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
         }
       },
     );
+    // The op channels are registered now; tell the owner it may ask Java to paint.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _notifyParentGCSubscribed();
+    });
+  }
+
+  void _notifyParentGCSubscribed() {
+    context.visitAncestorElements((element) {
+      if (element is StatefulElement && element.state is WidgetSwtState) {
+        final parentState = element.state as WidgetSwtState;
+        if (parentState.gcOverlayKey == widget.key) {
+          if (parentState is CanvasImpl) parentState.onGCOverlaySubscribed();
+          return false;
+        }
+      }
+      return true;
+    });
   }
 
   @override

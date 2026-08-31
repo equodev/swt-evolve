@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.Serializer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.DartGC;
 import org.eclipse.swt.graphics.DartImage;
@@ -528,7 +529,9 @@ public class TableHelper {
         if (!((DartWidget) item.parent.getImpl()).hooks(SWT.PaintItem)) {
             return null;
         }
-        return captureOwnerDraw(item);
+        // Capturing runs the app's SWT.PaintItem listener once per cell. Native SWT runs it once per
+        // cell per paint; both texts and images are derived from one capture, so one payload gets one.
+        return Serializer.oncePerPayload(item, () -> captureOwnerDraw(item));
     }
 
     private static OwnerDraw captureOwnerDraw(DartTableItem item) {

@@ -5,6 +5,9 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import java.util.Collections;
+import java.util.Set;
+import java.util.WeakHashMap;
 
 public class ControlHelper {
 
@@ -206,16 +209,33 @@ public class ControlHelper {
         return dartControl.display.map(null, dartControl.getApi(), x, y);
     }
 
+    // Its own latch, not drawCount: that is SWT's setRedraw counter, so a queued paint that moved it
+    // made the control look to everything else as though drawing had been turned off.
+    private static final Set<DartControl> paintQueued =
+        Collections.newSetFromMap(new WeakHashMap<>());
+
     static void paint(DartControl c, Event e) {
-        if (c.drawCount > 0) return;
+        if (c.drawCount > 0 || paintQueued.contains(c)) return;
         firePaint(c);
     }
 
+    /**
+     * Declares that what the control paints is out of date. Reachable from the custom-widget
+     * package, unlike Widget.hooks(int).
+     */
+    public static void markDamaged(DartControl c) {
+        if (c.hooks(SWT.Paint))
+            paint(c);
+    }
+
     public static void paint(DartControl c) {
-        if (c.drawCount > 0) return;
-        c.drawCount++;
+        if (c.drawCount > 0 || !paintQueued.add(c))
+            return;
         c.getDisplay().asyncExec(() -> {
-            c.drawCount--;
+            paintQueued.remove(c);
+            // Drawing may have been turned off in between; setRedraw(true) delivers the Paint then.
+            if (c.drawCount > 0)
+                return;
             firePaint(c);
             c.dirty();
         });

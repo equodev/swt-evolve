@@ -109,47 +109,34 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     return color.withOpacity(_alpha / 255.0);
   }
 
-  // Skips the request if a previous one is still awaiting its gcDispose response,
-  // so overlapping Paint round-trips (e.g. a Shell fade animation and a hover
-  // redraw both firing close together) can't race on the GC's shapes commit.
-  // Before the GC overlay child has mounted (gcOverlayKey.currentState still null —
-  // true for initState() and the first build()), there's nothing to track pending
-  // state against, so cap it at one request per bounds phase until the overlay exists.
+  // Java schedules every later repaint; it cannot schedule the first, having no mount event.
   bool _sentInitialPaintRequest = false;
-  // ControlHelper.firePaint() (Java) silently drops a Paint request while the control
-  // still has 0x0 bounds, so a request sent before Java reports real bounds back would
-  // otherwise be lost for good. Retry once bounds become valid, but only once.
+
+  // Java drops a Paint request while the control still has 0x0 bounds, so retry once they arrive.
   bool _requestedWithValidBounds = false;
 
-  // Called right before a Paint request actually goes out. Subclasses push whatever
-  // the Java-side SWT.Paint listeners must already have when they run (e.g.
-  // StyledText's text geometry): the same ordered channel carries both messages, so
-  // "pushed before the request" means "applied before the painters" by construction.
+  // Subclasses push what the Java-side SWT.Paint listeners must already have when they run (e.g.
+  // StyledText's text geometry); the same ordered channel carries both, so it lands first.
   void beforePaintRequest() {}
 
-  void _requestPaint() {
-    final gc = gcOverlayKey.currentState;
-    if (gc == null) {
-      final boundsValid = hasBounds(state.bounds);
-      if (_sentInitialPaintRequest && (!boundsValid || _requestedWithValidBounds)) {
-        return;
-      }
-      _sentInitialPaintRequest = true;
-      if (boundsValid) _requestedWithValidBounds = true;
-      beforePaintRequest();
-      widget.sendPaintPaint(state, null);
-      return;
-    }
-    if (gc.hasPendingPaint) return;
-    gc.markPaintRequested();
-    beforePaintRequest();
-    widget.sendPaintPaint(state, null);
+  // The overlay registers the GC op channels in its own initState, a build after this one. A run of
+  // ops that lands before that is buffered one-per-channel and replayed out of order, which is not a
+  // display list -- so the request waits until the overlay says it is listening.
+  bool _gcOverlaySubscribed = false;
+
+  void onGCOverlaySubscribed() {
+    if (_gcOverlaySubscribed) return;
+    _gcOverlaySubscribed = true;
+    _requestInitialPaint();
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _requestPaint();
+  void _requestInitialPaint() {
+    final boundsValid = hasBounds(state.bounds);
+    if (_sentInitialPaintRequest && (!boundsValid || _requestedWithValidBounds)) return;
+    _sentInitialPaintRequest = true;
+    if (boundsValid) _requestedWithValidBounds = true;
+    beforePaintRequest();
+    widget.sendPaintPaint(state, null);
   }
 
   @override
@@ -171,9 +158,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       _prevVBarSel = vSel;
     }
 
-    if (!_scrollbarDragging && !_isSnapping) {
-      _requestPaint();
-    }
+    if (_gcOverlaySubscribed) _requestInitialPaint();
 
     final widgetTheme = _theme;
     final hasValidBounds = hasBounds(state.bounds);
