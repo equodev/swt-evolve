@@ -62,16 +62,16 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     // lookup resolves to a dead id. That is what made a shared (SUITE-scoped) app unusable: after a
     // few part closes the registry held four 'Classic Examples' roots and 304 items.
     _testTreeKey = '${state.swt}/${state.id}';
-    registerTestTree(
-      _testTreeKey,
-      TestTreeHandle(
-        items: _testTreeItems,
-        expand: _testExpandTreeItem,
-      ),
+    _testTreeHandle = TestTreeHandle(
+      items: _testTreeItems,
+      expand: _testExpandTreeItem,
     );
+    registerTestTree(_testTreeKey, _testTreeHandle);
   }
 
   late final String _testTreeKey;
+
+  late final TestTreeHandle _testTreeHandle;
 
   void _registerGetIdFromPointListener() {
     final eventName = "${state.swt}/${state.id}/GetIdFromPoint";
@@ -1757,7 +1757,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   @override
   void dispose() {
-    unregisterTestTree(_testTreeKey);
+    unregisterTestTree(_testTreeKey, _testTreeHandle);
     _horizontalController?.dispose();
     _verticalController?.dispose();
     _focusNode.dispose();

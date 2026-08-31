@@ -21,8 +21,12 @@ void registerTestTree(String treeIdentifier, TestTreeHandle handle) {
   _trees[treeIdentifier] = handle;
 }
 
-void unregisterTestTree(String treeIdentifier) {
-  _trees.remove(treeIdentifier);
+/// Removes [handle] only while it is still the registered one: a re-inflated Tree registers its
+/// replacement during the build and disposes the outgoing state at the end of that same frame.
+void unregisterTestTree(String treeIdentifier, TestTreeHandle handle) {
+  if (identical(_trees[treeIdentifier], handle)) {
+    _trees.remove(treeIdentifier);
+  }
 }
 
 String queryTreeItemsJson() {
