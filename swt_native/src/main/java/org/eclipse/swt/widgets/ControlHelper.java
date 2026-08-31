@@ -116,6 +116,10 @@ public class ControlHelper {
      * runs first in every path. Handling it here too would fire {@code SWT.Traverse} twice.
      */
     public static void sendFlutterTraverse(DartWidget widget, Event keyEvent) {
+        // A KeyDown listener can dispose the control the key was routed to — Close All Editors
+        // disposes the focused editor — and the caller's disposal guard ran before that dispatch.
+        if (widget.isDisposed())
+            return;
         int detail = traverseDetail(keyEvent.keyCode, keyEvent.stateMask);
         boolean mnemonic = detail == SWT.TRAVERSE_NONE && isMnemonicTrigger(keyEvent);
         if (mnemonic)
