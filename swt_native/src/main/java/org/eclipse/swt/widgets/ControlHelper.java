@@ -9,6 +9,9 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import java.util.Map;
+import java.util.WeakHashMap;
+
 public class ControlHelper {
 
     // True while a Flutter-originated KeyDown is being dispatched. Widgets that edit content on
@@ -17,6 +20,19 @@ public class ControlHelper {
     private static final ThreadLocal<Boolean> FLUTTER_KEY = ThreadLocal.withInitial(() -> false);
 
     public static int inPaintDepth;
+
+    // Area each control still owes a Paint for, unioned as redraw() calls arrive and consumed by
+    // the paint that follows. Absent, or a null value, means the whole client area.
+    private static final Map<DartControl, Rectangle> pendingDamage = new WeakHashMap<>();
+
+    // Area the Paint being dispatched is scoped to, null when it covers the whole client area. A GC
+    // opened during that dispatch carries it to Flutter, which composites within it.
+    private static Rectangle paintDamage;
+
+    /** The damage the in-flight Paint is scoped to, or null outside one / for a full-area Paint. */
+    public static Rectangle currentPaintDamage() {
+        return paintDamage;
+    }
 
     public static void sendFlutterKeyDown(DartWidget widget, Event event) {
         FLUTTER_KEY.set(true);
@@ -216,6 +232,7 @@ public class ControlHelper {
 
     static void paint(DartControl c, Event e) {
         if (c.drawCount > 0 || paintQueued.contains(c)) return;
+        damageAll(c);
         firePaint(c);
     }
 
@@ -228,7 +245,55 @@ public class ControlHelper {
             paint(c);
     }
 
+    /** As {@link #markDamaged(DartControl)}, for an invalidation that named the area it dirtied. */
+    public static void markDamaged(DartControl c, int x, int y, int width, int height) {
+        if (c.hooks(SWT.Paint))
+            paint(c, x, y, width, height);
+    }
+
     public static void paint(DartControl c) {
+        damageAll(c);
+        schedulePaint(c);
+    }
+
+    /**
+     * A {@code redraw(x, y, width, height, all)} whose rectangle the following Paint must carry.
+     * Repeated invalidations before that Paint runs are unioned, the way SWT merges paint requests.
+     */
+    public static void paint(DartControl c, int x, int y, int width, int height) {
+        if (width <= 0 || height <= 0) return;
+        Rectangle damage = new Rectangle(x, y, width, height);
+        synchronized (pendingDamage) {
+            if (!pendingDamage.containsKey(c)) {
+                pendingDamage.put(c, damage);
+            } else {
+                Rectangle pending = pendingDamage.get(c);
+                // null is the whole client area, which already contains anything added to it.
+                if (pending != null) pending.add(damage);
+            }
+        }
+        schedulePaint(c);
+    }
+
+    private static void damageAll(DartControl c) {
+        synchronized (pendingDamage) {
+            pendingDamage.put(c, null);
+        }
+    }
+
+    /** The area to paint, clamped to {@code bounds}, or null when nothing is left to paint. */
+    private static Rectangle takeDamage(DartControl c, Rectangle bounds) {
+        Rectangle damage;
+        synchronized (pendingDamage) {
+            if (!pendingDamage.containsKey(c)) return bounds;
+            damage = pendingDamage.remove(c);
+        }
+        if (damage == null) return bounds;
+        damage.intersect(bounds);
+        return damage.isEmpty() ? null : damage;
+    }
+
+    private static void schedulePaint(DartControl c) {
         if (c.drawCount > 0 || !paintQueued.add(c))
             return;
         c.getDisplay().asyncExec(() -> {
@@ -258,6 +323,11 @@ public class ControlHelper {
         // from DartImage.getImageData during serialization).
         if (bounds.width <= 0 || bounds.height <= 0)
             return;
+        Rectangle clientArea = new Rectangle(0, 0, bounds.width, bounds.height);
+        Rectangle damage = takeDamage(c, clientArea);
+        if (damage == null)
+            return;
+        boolean scoped = !damage.equals(clientArea);
         // Mark that a paint is in progress. sendEvent(SWT.Paint) runs the paint handler
         // synchronously, and that handler (plus the GC dispose below) can pump the SWT event
         // loop via DartImage.getImageData. While inPaintDepth > 0, DartDisplay.runDeferredEvents
@@ -270,27 +340,33 @@ public class ControlHelper {
             // get this synthetic full-area Paint. Without draw2d on the classpath, nothing to skip.
             try {
                 if (!Class.forName("org.eclipse.draw2d.FigureCanvas").isInstance(c.getApi())) {
-                    Event event = new Event();
-                    event.x = 0;
-                    event.y = 0;
-                    event.width = bounds.width;
-                    event.height = bounds.height;
-                    event.gc = new GC(c.getApi());
-                    c.sendEvent(SWT.Paint, event);
-                    event.gc.dispose();
+                    sendPaint(c, damage, scoped);
                 }
             } catch (ClassNotFoundException ex) {
-                Event event = new Event();
-                event.x = 0;
-                event.y = 0;
-                event.width = bounds.width;
-                event.height = bounds.height;
-                event.gc = new GC(c.getApi());
-                c.sendEvent(SWT.Paint, event);
-                event.gc.dispose();
+                sendPaint(c, damage, scoped);
             }
         } finally {
             inPaintDepth--;
+        }
+    }
+
+    private static void sendPaint(DartControl c, Rectangle damage, boolean scoped) {
+        Event event = new Event();
+        event.x = damage.x;
+        event.y = damage.y;
+        event.width = damage.width;
+        event.height = damage.height;
+        Rectangle outer = paintDamage;
+        paintDamage = scoped ? damage : null;
+        try {
+            event.gc = new GC(c.getApi());
+            // SWT confines a paint handler to the damaged area by clipping the GC, and compositions
+            // read that clip back to confine their own children to it.
+            if (scoped) event.gc.setClipping(damage);
+            c.sendEvent(SWT.Paint, event);
+            event.gc.dispose();
+        } finally {
+            paintDamage = outer;
         }
     }
 

@@ -252,6 +252,7 @@ public final class DartGC extends DartResource implements IGC {
         if (drawable == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         fullRepaint = org.eclipse.swt.widgets.ControlHelper.inPaintDepth > 0;
+        paintDamage = org.eclipse.swt.widgets.ControlHelper.currentPaintDamage();
         try {
             GCData data = new GCData();
             data.style = checkStyle(style);
@@ -404,7 +405,7 @@ public final class DartGC extends DartResource implements IGC {
         }
         textDataCache.release();
         if (drawable instanceof Control && !silentDispose) {
-            FlutterBridge.send(this, "gcDispose", java.util.Map.of("fullRepaint", fullRepaint));
+            FlutterBridge.send(this, "gcDispose", paintDamage == null ? java.util.Map.of("fullRepaint", fullRepaint) : java.util.Map.of("fullRepaint", fullRepaint, "damage", java.util.Map.of("x", paintDamage.x, "y", paintDamage.y, "width", paintDamage.width, "height", paintDamage.height)));
         }
         drawable = null;
         data.image = null;
@@ -1487,7 +1488,8 @@ public final class DartGC extends DartResource implements IGC {
         if (this.clipping == null) {
             if (drawable instanceof Control) {
                 Rectangle b = ((Control) drawable).getBounds();
-                return new Rectangle(0, 0, b.width, b.height);
+                if (b != null)
+                    return new Rectangle(0, 0, b.width, b.height);
             }
             return new Rectangle(0, 0, Integer.MAX_VALUE, Integer.MAX_VALUE);
         }
@@ -2239,7 +2241,7 @@ public final class DartGC extends DartResource implements IGC {
     public void setClipping(int x, int y, int width, int height) {
         dirty();
         Rectangle newValue = new Rectangle(x, y, width, height);
-        this.clipping = newValue;
+        this.clipping = confineToPaint(newValue);
         try {
             if (width < 0) {
                 x = x + width;
@@ -2281,10 +2283,10 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setClipping(Path path) {
         dirty();
-        Rectangle newValue = new Rectangle(clipping.x, clipping.y, clipping.width, clipping.height);
+        Rectangle newValue = clipping;
         if (path != null && path.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        this.clipping = newValue;
+        this.clipping = confineToPaint(newValue);
         try {
         } finally {
         }
@@ -2308,7 +2310,7 @@ public final class DartGC extends DartResource implements IGC {
         if (!java.util.Objects.equals(this.clipping, newValue)) {
             dirty();
         }
-        this.clipping = newValue;
+        this.clipping = confineToPaint(newValue);
         if (rect == null) {
         } else {
             setClipping(rect.x, rect.y, rect.width, rect.height);
@@ -3054,7 +3056,7 @@ public final class DartGC extends DartResource implements IGC {
 
     Pattern backgroundPattern;
 
-    Rectangle clipping = new Rectangle(0, 0, 0, 0);
+    Rectangle clipping;
 
     int fillRule;
 
@@ -3197,6 +3199,25 @@ public final class DartGC extends DartResource implements IGC {
     }
 
     boolean fullRepaint;
+
+    org.eclipse.swt.graphics.Rectangle paintDamage;
+
+    /**
+     * Confines a clipping region to the area the in-flight Paint may touch. The platforms
+     * enforce this below SWT — a paint context carries the damaged region as its system
+     * clip, and Win32's SelectClipRgn, Cocoa's CGContextClip and cairo_clip can only narrow
+     * it — so an application that sets a wider region, or none at all, still draws just the
+     * damage. Outside a scoped Paint there is no floor and the region stands as given.
+     */
+    Rectangle confineToPaint(Rectangle rect) {
+        if (paintDamage == null)
+            return rect;
+        if (rect == null)
+            return new Rectangle(paintDamage.x, paintDamage.y, paintDamage.width, paintDamage.height);
+        Rectangle confined = new Rectangle(rect.x, rect.y, rect.width, rect.height);
+        confined.intersect(paintDamage);
+        return confined;
+    }
 
     private Display display;
 

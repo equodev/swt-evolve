@@ -33,6 +33,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
           });
         }
       },
+      onFullRepaintNeeded: _requestFullRepaintFromParent,
     );
     // The op channels are registered now; tell the owner it may ask Java to paint.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -73,6 +74,17 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     super.extraSetState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _notifyParentGCReady();
+    });
+  }
+
+  void _requestFullRepaintFromParent() {
+    if (!mounted) return;
+    context.visitAncestorElements((element) {
+      if (element is StatefulElement && element.state is CanvasImpl) {
+        (element.state as CanvasImpl).requestFullRepaint();
+        return false;
+      }
+      return true;
     });
   }
 
@@ -141,12 +153,18 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
 
   String? _paintedTextLabel(List<Shape> shapes) {
     final parts = <String>[];
-    for (final shape in shapes) {
-      if (shape is TextShape) {
-        final text = shape.text.trim();
-        if (text.isNotEmpty) parts.add(text);
+    void collect(List<Shape> from) {
+      for (final shape in from) {
+        if (shape is TextShape) {
+          final text = shape.text.trim();
+          if (text.isNotEmpty) parts.add(text);
+        } else if (shape is RegionShape) {
+          collect(shape.ops);
+        }
       }
     }
+
+    collect(shapes);
     return parts.isEmpty ? null : parts.join(' ');
   }
 

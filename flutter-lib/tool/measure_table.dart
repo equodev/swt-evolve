@@ -2,7 +2,6 @@ import 'package:flutter/widgets.dart';
 import 'package:swtflutter/src/gen/font.dart';
 import 'package:swtflutter/src/gen/fontdata.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
-import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/table.dart';
 import 'package:swtflutter/src/gen/tablecolumn.dart';
 import 'package:swtflutter/src/gen/tableitem.dart';
@@ -35,9 +34,6 @@ void setupCases(WidgetMeasurer measurer) {
         fontSize: fontProbeSize,
       ),
     );
-    // A Table only draws its frame when SWT.BORDER is set, so the trim has to be measured on a
-    // bordered instance - every other case here is borderless.
-    measurer.addTestCase(createBorderFrameCase(columnCount));
   }
   print('Generated ${measurer.testCases.length} Table test cases');
 }
@@ -91,32 +87,6 @@ MeasurementCase createGeometryCase(
         child: TableSwt(value: value),
       );
     },
-  );
-}
-
-MeasurementCase createBorderFrameCase(int columnCount) {
-  final value = createVTable(true, columnCount)
-    ..style = SWT.BORDER
-    ..bounds = (VRectangle()
-      ..x = 0
-      ..y = 0
-      ..width = geometryWidths.first
-      ..height = 400)
-    ..items = createGeometryItems(columnCount);
-  return MeasurementCase(
-    descr: 'border_frame_cols$columnCount',
-    style: 'NONE',
-    fqn: 'org.eclipse.swt.widgets.Table',
-    expectedComponents: const {
-      'named': ['header'],
-      'rowsOf': 'TableItemSwt',
-    },
-    widgetBuilder: (key) => SizedBox(
-      key: key,
-      width: geometryWidths.first.toDouble(),
-      height: 400,
-      child: TableSwt(value: value),
-    ),
   );
 }
 

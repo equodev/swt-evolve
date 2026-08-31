@@ -2980,7 +2980,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void redraw(int x, int y, int width, int height, boolean all) {
         checkWidget();
-        ControlHelper.markDamaged(this);
+        ControlHelper.markDamaged(this, x, y, width, height);
     }
 
     void redrawChildren() {

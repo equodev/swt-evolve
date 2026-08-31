@@ -130,6 +130,14 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     _requestInitialPaint();
   }
 
+  /// Asks Java for a full-area Paint. The GC drawer calls this when scoped repaints have stacked
+  /// deep enough to be worth collapsing back into a single display list.
+  void requestFullRepaint() {
+    if (!mounted) return;
+    beforePaintRequest();
+    widget.sendPaintPaint(state, null);
+  }
+
   void _requestInitialPaint() {
     final boundsValid = hasBounds(state.bounds);
     if (_sentInitialPaintRequest && (!boundsValid || _requestedWithValidBounds)) return;

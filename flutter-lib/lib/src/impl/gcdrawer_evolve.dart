@@ -65,7 +65,10 @@ class GCDrawer extends GCDrawerBase {
   /// Standalone mode: registers comm listeners for state + all draw ops + imageInit/gcDispose.
   /// Used for headless image rendering (new GC(image)). [onDisposed] fires once the render is sent.
   GCDrawer.standalone(VGC state, {void Function()? onDisposed})
-      : onShapesUpdated = null, onGCDispose = null, super(state) {
+      : onShapesUpdated = null,
+        onGCDispose = null,
+        onFullRepaintNeeded = null,
+        super(state) {
     _localTokens["${state.swt}/${state.id}/imageInit"] =
         EquoCommService.onRaw("${state.swt}/${state.id}/imageInit", (payload) {
       _baseImageCompleter = Completer<void>();
@@ -104,9 +107,39 @@ class GCDrawer extends GCDrawerBase {
 
   final void Function(List<Shape>)? onGCDispose;
 
+  /// Called when scoped repaints have stacked past [_maxRegionLayers]; the Canvas answers with a
+  /// full-area Paint, which collapses them back into one display list.
+  final void Function()? onFullRepaintNeeded;
+
+  // The ceiling for a control that only ever invalidates disjoint areas: a full-area Paint, which
+  // arrives on nearly every Canvas rebuild, collapses the layers anyway.
+  static const int _maxRegionLayers = 16;
+
+  // Rect.contains excludes the right and bottom edges, so it never reports a rectangle as holding
+  // itself — the case that matters here, a cell repainted on hover and again on unhover.
+  static bool _covers(Rect outer, Rect inner) =>
+      inner.left >= outer.left &&
+      inner.top >= outer.top &&
+      inner.right <= outer.right &&
+      inner.bottom <= outer.bottom;
+
+  /// The rectangle a Paint was scoped to, or null when it covered the whole client area.
+  static Rect? _damageOf(Object? payload) {
+    if (payload is! Map) return null;
+    final damage = payload['damage'];
+    if (damage is! Map) return null;
+    final width = (damage['width'] as num?)?.toDouble() ?? 0;
+    final height = (damage['height'] as num?)?.toDouble() ?? 0;
+    if (width <= 0 || height <= 0) return null;
+    return Rect.fromLTWH((damage['x'] as num?)?.toDouble() ?? 0,
+        (damage['y'] as num?)?.toDouble() ?? 0, width, height);
+  }
+
   /// Embedded mode: registers comm listeners for state + all draw ops + gcDispose.
   /// onShapesUpdated triggers GCImpl.setState().
-  GCDrawer.embedded(VGC state, {this.onShapesUpdated, this.onGCDispose}) : super(state) {
+  GCDrawer.embedded(VGC state,
+      {this.onShapesUpdated, this.onGCDispose, this.onFullRepaintNeeded})
+      : super(state) {
     _localTokens["${state.swt}/${state.id}/gcDispose"] =
         EquoCommService.onRaw("${state.swt}/${state.id}/gcDispose", (payload) async {
       // Whether this GC mirrors a real SWT.Paint (ControlHelper.firePaint()) versus one
@@ -138,15 +171,31 @@ class GCDrawer extends GCDrawerBase {
       final keep = <ui.Image>{};
       collectShapeImages(cycleStaging, keep);
       collectShapeImages(_lateLoadedImages, keep);
-      // A real SWT.Paint repaints the whole client area, so nothing the previous cycle left
-      // survives it; a GC opened outside one (draw2d/GEF feedback) composites on top instead.
-      if (fullRepaint) {
-        disposeShapeImages(shapes, keep: keep);
-        shapes.clear();
+      final damage = _damageOf(payload);
+      if (damage != null) {
+        // A scoped Paint leaves every pixel outside its rectangle alone, so the previous frame
+        // stays and this cycle becomes a layer over it, superseding any layer it covers.
+        shapes.removeWhere((s) {
+          if (s is! RegionShape || !_covers(damage, s.rect)) return false;
+          disposeShapeImages(s.ops, keep: keep);
+          return true;
+        });
+        shapes.add(RegionShape(damage, [...cycleStaging, ..._lateLoadedImages]));
+        _lateLoadedImages.clear();
+        if (shapes.whereType<RegionShape>().length > _maxRegionLayers) {
+          onFullRepaintNeeded?.call();
+        }
+      } else {
+        // A full-area Paint repaints the whole client area, so nothing the previous cycle left
+        // survives it; a GC opened outside one (draw2d/GEF feedback) composites on top instead.
+        if (fullRepaint) {
+          disposeShapeImages(shapes, keep: keep);
+          shapes.clear();
+        }
+        shapes.addAll(cycleStaging);
+        shapes.addAll(_lateLoadedImages);
+        _lateLoadedImages.clear();
       }
-      shapes.addAll(cycleStaging);
-      shapes.addAll(_lateLoadedImages);
-      _lateLoadedImages.clear();
 
       if (shapes.isNotEmpty) onGCDispose?.call(List.from(shapes));
       onShapesUpdated?.call(shapes);
@@ -235,7 +284,9 @@ class GCDrawer extends GCDrawerBase {
     if (state.clipping == null) return null;
     final width = state.clipping!.width?.toDouble() ?? 0;
     final height = state.clipping!.height?.toDouble() ?? 0;
-    if (width <= 0 || height <= 0) return null;
+    // An empty region discards every op, where null means unclipped. Compositions that confine a
+    // child by clipping to its intersection with the damaged area rely on the difference.
+    if (width <= 0 || height <= 0) return Rect.zero;
     return Rect.fromLTWH(
       state.clipping!.x?.toDouble() ?? 0,
       state.clipping!.y?.toDouble() ?? 0,
@@ -939,6 +990,8 @@ void disposeShapeImages(List<Shape> shapes, {Set<ui.Image>? seen, Set<ui.Image>?
       s.image = null;
     } else if (s is TransformShape) {
       disposeShapeImages(s.children, seen: disposed, keep: keep);
+    } else if (s is RegionShape) {
+      disposeShapeImages(s.ops, seen: disposed, keep: keep);
     }
   }
 }
@@ -949,6 +1002,8 @@ void collectShapeImages(List<Shape> shapes, Set<ui.Image> out) {
       out.add(s.image!);
     } else if (s is TransformShape) {
       collectShapeImages(s.children, out);
+    } else if (s is RegionShape) {
+      collectShapeImages(s.ops, out);
     }
   }
 }
@@ -974,7 +1029,11 @@ class ScenePainter extends CustomPainter {
     canvas.drawRect(Offset.zero & size, Paint()..color = bg);
     canvas.save();
     for (final s in shapes) {
-      s.draw(canvas);
+      if (s is RegionShape) {
+        s.drawOver(canvas, bg);
+      } else {
+        s.draw(canvas);
+      }
     }
     canvas.restore();
   }
@@ -992,6 +1051,41 @@ abstract class Shape {
   @override
   String toString();
   Rect? get clipRect => null;
+}
+
+/// One scoped Paint: the ops it emitted, and the rectangle it was allowed to touch.
+///
+/// SWT erases the damaged rectangle before the application paints it and keeps every pixel outside
+/// untouched; a composite that reproduces both is indistinguishable from a full repaint.
+class RegionShape extends Shape {
+  RegionShape(this.rect, this.ops);
+  final Rect rect;
+  final List<Shape> ops;
+
+  void drawOver(ui.Canvas c, ui.Color background) {
+    c.save();
+    // Hard-edged: an antialiased clip leaves the boundary pixels a blend of both frames.
+    c.clipRect(rect, doAntiAlias: false);
+    c.drawRect(rect, ui.Paint()..color = background);
+    for (final s in ops) {
+      s.draw(c);
+    }
+    c.restore();
+  }
+
+  // Headless image rendering, which never scopes a Paint and has no canvas background to erase to.
+  @override
+  void draw(ui.Canvas c) {
+    c.save();
+    c.clipRect(rect, doAntiAlias: false);
+    for (final s in ops) {
+      s.draw(c);
+    }
+    c.restore();
+  }
+
+  @override
+  String toString() => 'Region $rect [${ops.length} shapes]';
 }
 
 class TransformShape extends Shape {
