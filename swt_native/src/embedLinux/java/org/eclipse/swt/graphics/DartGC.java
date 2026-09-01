@@ -583,7 +583,7 @@ public final class DartGC extends DartResource implements IGC {
             return;
         }
         VGCDrawImageImageintint drawOp = new VGCDrawImageImageintint();
-        drawOp.image = GraphicsUtils.copyImage(display, image);
+        drawOp.image = GraphicsUtils.copyImageForDraw(display, image);
         drawOp.x = x;
         drawOp.y = y;
         FlutterBridge.send(this, "drawImageImageintint", drawOp);
@@ -679,7 +679,7 @@ public final class DartGC extends DartResource implements IGC {
             return;
         }
         VGCDrawImageImageintintintint drawOp = new VGCDrawImageImageintintintint();
-        drawOp.image = GraphicsUtils.copyImage(display, image);
+        drawOp.image = GraphicsUtils.copyImageForDraw(display, image);
         drawOp.destX = destX;
         drawOp.destY = destY;
         drawOp.destWidth = destWidth;
@@ -689,7 +689,7 @@ public final class DartGC extends DartResource implements IGC {
 
     void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
         VGCDrawImageImageintintintintintintintint drawOp = new VGCDrawImageImageintintintintintintintint();
-        drawOp.image = GraphicsUtils.copyImage(display, srcImage);
+        drawOp.image = GraphicsUtils.copyImageForDraw(display, srcImage);
         drawOp.srcX = srcX;
         drawOp.srcY = srcY;
         drawOp.srcWidth = srcWidth;

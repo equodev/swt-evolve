@@ -63,6 +63,34 @@ public class GraphicsUtils {
     }
 
     /**
+     * As {@link #copyImage}, for an image a GC is about to draw.
+     * <p>
+     * A GC opened on an Image renders only when told to — on dispose, or on an explicit snapshot —
+     * unlike native SWT, where every draw is immediately visible in the image. So an application
+     * that draws an image and blits it while that GC is still open would put the image's untouched
+     * backing buffer on the wire. draw2d's {@code BufferedGraphicsSource} does exactly that: it
+     * paints the figure tree into an off-screen Image and blits it, and never disposes the image's
+     * GC ({@code SWTGraphics#dispose()} leaves it open), so nothing else ever triggers the render.
+     * <p>
+     * This has to run at the draw call, not at the wire read in {@code DartImage#_imageDataForWire()}:
+     * that runs inside serialization, and waiting for the snapshot pumps the event loop, which
+     * would re-enter it.
+     *
+     * @param display the display on which to create the new image
+     * @param image the image about to be drawn (can be null)
+     * @return the image to put on the wire, as {@link #copyImage}
+     */
+    public static Image copyImageForDraw(Display display, Image image) {
+        if (image != null && !image.isDisposed() && image.getImpl() instanceof DartImage di) {
+            GC openGc = di._memGC();
+            if (openGc != null && !openGc.isDisposed() && openGc.getImpl() instanceof DartGC dgc) {
+                dgc.requestRenderSnapshotAndWait();
+            }
+        }
+        return copyImage(display, image);
+    }
+
+    /**
      * Creates an independent, widget-owned copy of a Color with the same RGBA channels.
      * <p>
      * Colors passed to a widget setter (background, foreground, …) may be disposed by the caller
