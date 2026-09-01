@@ -6,9 +6,11 @@ find_package(Java REQUIRED)
 find_package(JNI REQUIRED)
 
 set(FLUTTER_LIBRARY_NAME "flutter_bridge")
+# generated_plugin_registrant.cc is intentionally not compiled in: its
+# fl_register_plugins() would make the bridge require webview_all at load time. The
+# bridge registers it lazily via dlopen instead (EquoRegisterPlugins in flutter_bridge.cc).
 add_library(${FLUTTER_LIBRARY_NAME} SHARED
   "flutter_bridge.cc"
-  "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
 )
 
 # Add JNI include directories

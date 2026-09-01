@@ -11,8 +11,6 @@
 #include <stdlib.h>   // setenv
 #include <string>     // std::string
 
-#include "flutter/generated_plugin_registrant.h"
-
 // The webview_all Browser backend on Linux is WebKitGTK, which defaults to a
 // hardware GL renderer (accelerated compositing / DMABUF). Now that the FlView
 // is no longer destructively reparented (see the GtkOverlay note in
@@ -64,6 +62,29 @@ std::string GetSharedLibraryPath() {
     g_printerr("Error getting shared library info with dladdr\n");
   }
   return "";
+}
+
+// Registers the bundled plugins. webview_all is dlopen'd here rather than linked, so its
+// libwebkit2gtk-4.1 dependency is not required to start: if it can't be loaded the Browser
+// is inactive and the app keeps running.
+static void EquoRegisterPlugins(FlView *view) {
+  std::string plugin_path = GetSharedLibraryPath() + "/bundle/lib/libwebview_all_linux_plugin.so";
+  void *handle = dlopen(plugin_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
+  if (handle == nullptr) {
+    g_warning("Evolve: Browser unavailable - webview plugin not loaded (%s). "
+              "Desktop mode continues without Browser support.", dlerror());
+    return;
+  }
+  using RegisterFn = void (*)(FlPluginRegistrar *);
+  RegisterFn register_with_registrar = reinterpret_cast<RegisterFn>(
+      dlsym(handle, "webview_all_linux_plugin_register_with_registrar"));
+  if (register_with_registrar == nullptr) {
+    g_warning("Evolve: webview plugin missing register entry point: %s", dlerror());
+    return;
+  }
+  g_autoptr(FlPluginRegistrar) registrar =
+      fl_plugin_registry_get_registrar_for_plugin(FL_PLUGIN_REGISTRY(view), "WebviewAllLinuxPlugin");
+  register_with_registrar(registrar);
 }
 
 uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
@@ -133,7 +154,7 @@ uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
 
     g_print("Flutter headless initialized with window: %p, view: %p\n", window, view_widget);
 
-    fl_register_plugins(FL_PLUGIN_REGISTRY(view));
+    EquoRegisterPlugins(view);
 
     // Pump events to propagate size to Flutter engine
 //    while (gtk_events_pending()) {
@@ -172,7 +193,7 @@ uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
           parent_widget, overlay, view_widget);
 
   // Register plugins
-  fl_register_plugins(FL_PLUGIN_REGISTRY(view));
+  EquoRegisterPlugins(view);
 
   return (uintptr_t)widget_context;
 }
@@ -261,7 +282,7 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
   ctx->view = view_widget;
   ctx->top_window = window;
 
-  fl_register_plugins(FL_PLUGIN_REGISTRY(view));
+  EquoRegisterPlugins(view);
   g_print("FlutterNative.createDisplayWindow port:%d id:%ld name:%s %dx%d\n",
           port, (long)displayId, widget_name, width, height);
   return ctx;

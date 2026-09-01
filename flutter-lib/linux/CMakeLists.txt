@@ -76,11 +76,10 @@ set_target_properties(${BINARY_NAME}
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
-# flutter_bridge (the custom .so) also compiles generated_plugin_registrant.cc
-# and needs the same plugin include dirs that generated_plugins.cmake wires to BINARY_NAME.
-foreach(plugin ${FLUTTER_PLUGIN_LIST})
-  target_link_libraries(flutter_bridge PRIVATE ${plugin}_plugin)
-endforeach(plugin)
+# Do NOT link the plugins into flutter_bridge: that would make webview_all (and its
+# libwebkit2gtk-4.1 dependency) a hard NEEDED of the bridge, so it fails to load where
+# WebKitGTK is absent. The bridge dlopens the plugin lazily (see flutter_bridge.cc);
+# it is still bundled.
 
 
 # === Installation ===

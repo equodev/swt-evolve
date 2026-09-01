@@ -169,12 +169,10 @@ public class FlutterLibraryLoader {
                     throw new IOException("Essential Linux library not found after extraction: " + required.getAbsolutePath());
                 setExecutablePermission(required);
             }
-            // Load order matters. libflutter_bridge.so links against the engine and the webview plugin,
-            // both of which live in bundle/lib (off the runner's library path), so the linker can't resolve
-            // its NEEDED entries on its own. Pre-load them, in dependency order, so they resolve by soname:
-            //   1) the engine, 2) the webview plugin (needs the engine), 3) the bridge (needs both).
+            // Pre-load the engine, then the bridge (which links against it). The webview plugin is not
+            // pre-loaded: the bridge dlopens it lazily, so a missing libwebkit2gtk-4.1 leaves the Browser
+            // inactive instead of aborting Display creation. It is still extracted above.
             loadLibrary(flutFile.getAbsolutePath());
-            loadLibrary(webviewFile.getAbsolutePath());
             loadLibrary(libFile.getAbsolutePath());
         } else {
             String bundleLib = LINUX_BUNDLE_DIR_NAME + SEP + LIB_SUB_DIR_NAME + SEP;
