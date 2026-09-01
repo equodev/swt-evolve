@@ -38,6 +38,18 @@ String stripAccelerators(String? text) {
   return (start, end);
 }
 
+/// The logical line containing [offset]: its first offset, and the offset of its last
+/// character -- the newline that ends it is not included.
+///
+/// Callers that need SWT's line-select range (triple click) add the newline back; the ones
+/// that need its caret range (Home/End) do not.
+(int start, int end) getLineBoundaries(String text, int offset) {
+  final clamped = offset.clamp(0, text.length);
+  final start = clamped == 0 ? 0 : text.lastIndexOf('\n', clamped - 1) + 1;
+  final nl = text.indexOf('\n', clamped);
+  return (start, nl == -1 ? text.length : nl);
+}
+
 class DoubleClickWordSelector extends StatefulWidget {
   final Widget child;
   final TextEditingController controller;

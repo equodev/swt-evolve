@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show LineMetrics;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -574,7 +575,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     return wrap(
       Listener(
         onPointerSignal: _handlePointerSignal,
-        onPointerDown: (e) => _handlePointerDown(e.localPosition),
+        onPointerDown: (e) => _handlePointerDown(e.localPosition, e.buttons),
         onPointerMove: (e) => _handlePointerMove(e.localPosition),
         onPointerUp: (e) => _handlePointerUp(e.localPosition),
         child: SizedBox(
@@ -1071,17 +1072,31 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   }
 
   Offset? _pointerDownPos;
+  bool _secondaryPointerDown = false;
   static const _panSlop = 4.0;
 
-  void _handlePointerDown(Offset position) {
+  void _handlePointerDown(Offset position, int buttons) {
     _isSelecting = false;
     _pointerDownPos = position;
+    // SwtStyledText.handleMouseDown returns before touching selection or caret unless
+    // event.button == 1, so a secondary click only takes focus. It must not reach the tap
+    // detector either, or it would count toward a following double/triple click.
+    // The same guard excludes Ctrl+Click on macOS (its IS_MAC && MOD4 clause), which the
+    // platform and ControlImpl.applyMenu both treat as the context-menu gesture.
+    _secondaryPointerDown = buttons & kSecondaryButton != 0 ||
+        (defaultTargetPlatform == TargetPlatform.macOS &&
+            HardwareKeyboard.instance.isControlPressed);
+    if (_secondaryPointerDown) {
+      _lastTapCount = 1;
+      return;
+    }
     _lastTapCount = _tapDetector.registerTap(position: position);
     if (_lastTapCount == 2) _doubleTapPosition = position;
     if (_lastTapCount == 3) _tripleTapPosition = position;
   }
 
   void _handlePointerMove(Offset position) {
+    if (_secondaryPointerDown) return;
     if (_pointerDownPos == null) return;
     if (!_isSelecting) {
       final d = position - _pointerDownPos!;
@@ -1093,6 +1108,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   void _handlePointerUp(Offset position) {
     _pointerDownPos = null;
+    if (_secondaryPointerDown) {
+      _secondaryPointerDown = false;
+      // handleMouseDown still runs forceFocus() before the button check.
+      _focusNode.requestFocus();
+      return;
+    }
     if (_isSelecting) {
       _handlePanEnd();
     } else {
@@ -1187,7 +1208,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     _sendSelectionChange();
   }
 
+  /// StyledText.getDoubleClickEnabled(); SWT defaults it to true, so an absent value is true.
+  bool get _doubleClickEnabled => state.doubleClickEnabled != false;
+
   void _handleDoubleTap() {
+    if (!_doubleClickEnabled) return;
     final pos = _doubleTapPosition;
     if (pos == null) return;
     final RenderBox? rb = context.findRenderObject() as RenderBox?;
@@ -1234,6 +1259,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   }
 
   void _handleTripleTap() {
+    if (!_doubleClickEnabled) return;
     final pos = _tripleTapPosition;
     if (pos == null) return;
     final RenderBox? rb = context.findRenderObject() as RenderBox?;
@@ -1247,19 +1273,29 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       _startEditing(textShape, shapeIndex);
       _focusNode.requestFocus();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _applyTripleClickSelectAll();
+        if (mounted) _applyTripleClickLineSelection(pos, rb.size);
       });
       return;
     }
 
-    _applyTripleClickSelectAll();
+    _applyTripleClickLineSelection(pos, rb.size);
   }
 
-  void _applyTripleClickSelectAll() {
+  void _applyTripleClickLineSelection(Offset pos, Size canvasSize) {
     if (_editableTextShape == null) return;
+    final contentPos = _toContentPosition(pos);
+    final charOffset = _editableTextShape!.getOffsetFromPosition(contentPos, canvasSize);
+    final text = _editableTextShape!.text;
+    final (lineStart, lineEnd) = getLineBoundaries(text, charOffset);
+    // SwtStyledText.handleMouseDown ends a line select at the start of the next line, so
+    // the trailing newline is part of the selection; on the last line it ends at the content.
+    final selectionEnd = lineEnd < text.length ? lineEnd + 1 : text.length;
     setState(() {
-      _editableTextShape = _editableTextShape!.selectAll();
+      _editableTextShape = _editableTextShape!
+          .updateCaretOffset(charOffset)
+          .copyWithSelection(SelectionInfo.fromRange(lineStart, selectionEnd));
     });
+    _onCaretMoved();
     _sendSelectionChange();
   }
 
