@@ -246,7 +246,16 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
 
   FlView *view = fl_view_new(project);
   GtkWidget *view_widget = GTK_WIDGET(view);
-  gtk_container_add(GTK_CONTAINER(window), view_widget);
+
+  // Pre-wrap the FlView in a GtkOverlay, exactly as the embedded path does: otherwise
+  // webview_all's ensure_overlay() destructively reparents the realized FlView when a
+  // Browser is created, invalidating Flutter's GL context and aborting the process with
+  // GLX BadAccess on glXMakeContextCurrent. See InitializeFlutterWindow for the details.
+  GtkWidget *overlay = gtk_overlay_new();
+  gtk_widget_set_hexpand(view_widget, TRUE);
+  gtk_widget_set_vexpand(view_widget, TRUE);
+  gtk_container_add(GTK_CONTAINER(overlay), view_widget);
+  gtk_container_add(GTK_CONTAINER(window), overlay);
   gtk_widget_show_all(window);
 
   ctx->view = view_widget;
