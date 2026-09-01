@@ -18,6 +18,7 @@ repositories {
         }
         content {
             includeModule("org.eclipse", "draw2d")
+            includeModule("org.eclipse", "gef")
         }
     }
     maven {
@@ -44,6 +45,7 @@ tasks.compileJava {
 }
 
 val draw2dVersion: String by project
+val gefVersion: String by project
 val jfaceVersion: String by project
 val coreCommandsVersion: String by project
 val equinoxCommonVersion: String by project
@@ -70,6 +72,10 @@ dependencies {
     }
     implementation("org.eclipse.platform:org.eclipse.text:$eclipseTextVersion")
     implementation("org.eclipse:draw2d:$draw2dVersion")
+    // GEF re-exports draw2d and declares org.eclipse.ui.workbench / core.runtime in its OSGi
+    // manifest, but a viewer driven from a plain Shell only reaches org.eclipse.core.runtime.Assert,
+    // which equinox.common above already provides -- so no workbench on the classpath.
+    implementation("org.eclipse:gef:$gefVersion")
 
     implementation("org.eclipse.nebula.widgets.nattable:org.eclipse.nebula.widgets.nattable.core:$nattableVersion") {
         exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
