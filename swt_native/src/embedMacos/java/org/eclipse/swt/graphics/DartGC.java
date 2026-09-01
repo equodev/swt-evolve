@@ -396,7 +396,11 @@ public final class DartGC extends DartResource implements IGC {
                         si.memGC = null;
                     }
                     drawer.sendGcDispose();
-                    image.getImageData();
+                    if (skipRenderOnDispose) {
+                        di.cancelRenderFuture();
+                    } else {
+                        image.getImageData();
+                    }
                 }
             }
             if (image.getImpl() instanceof SwtImage) {
@@ -3234,6 +3238,8 @@ public final class DartGC extends DartResource implements IGC {
     public java.util.function.Consumer<String> textCapture;
 
     public boolean silentDispose;
+
+    public boolean skipRenderOnDispose;
 
     public void requestRenderSnapshotAndWait() {
         if (!(bridge instanceof GCImageDrawer drawer))

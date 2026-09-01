@@ -137,9 +137,15 @@ public class GCImageDrawer extends EmbeddedBridge {
                         comm().remove(resultEvent); // the shared comm outlives this one-shot render
                         long remoteRef = ByteBuffer.wrap(bytes).getLong();
                         byte[] pngBytes = Arrays.copyOfRange(bytes, 8, bytes.length);
-                        if (comm != null && dartImage != null && !dartImage.isDisposed()
-                                && dartImage.getImpl() instanceof DartImage di) {
-                            di._setRemoteRef(remoteRef);
+                        if (comm != null && dartImage != null) {
+                            if (dartImage.isDisposed()) {
+                                // The Image was disposed before its render came back — its constructor
+                                // threw and abandoned it, so nothing will call dispose() again to release
+                                // the ref this render just registered on the Dart side. Release it here.
+                                comm.send("Image/releaseRemoteRef", ByteBuffer.allocate(8).putLong(remoteRef).array());
+                            } else if (dartImage.getImpl() instanceof DartImage di) {
+                                di._setRemoteRef(remoteRef);
+                            }
                         }
                         onImageResult.accept(pngBytes);
                     });

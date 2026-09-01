@@ -717,8 +717,17 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         init();
         this.imageData = new ImageData(width, height, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF));
         GC gc = new GC(getApi());
-        imageGcDrawer.drawOn(gc, width, height);
-        gc.dispose();
+        boolean drawn = false;
+        try {
+            imageGcDrawer.drawOn(gc, width, height);
+            drawn = true;
+        } finally {
+            if (!drawn && gc.getImpl() instanceof DartGC dgc)
+                dgc.skipRenderOnDispose = true;
+            gc.dispose();
+            if (!drawn)
+                getApi().dispose();
+        }
     }
 
     private ElementAtZoom<ImageData> adaptImageDataIfDisabledOrGray(ElementAtZoom<ImageData> dataAtZoom) {

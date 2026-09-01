@@ -248,6 +248,9 @@ sourceSets {
         // 3.121+ (including the default) keep compiling bench unchanged.
         val swtMinor = swtVersion.split(".").getOrNull(1)?.toIntOrNull() ?: Int.MAX_VALUE
         if (swtMinor < 121) java { exclude("dev/equo/swt/bench/**") }
+        // ImageGcDrawer (and the Image constructor taking it) only exist from 3.129, so the test
+        // covering that constructor cannot compile against older SWT.
+        if (swtMinor < 129) java { exclude("org/eclipse/swt/graphics/ImageGcDrawerFailureTest.java") }
     }
 
     // Native-family integration test source set: the SAME test code (src/test/java), but compiled
