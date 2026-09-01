@@ -8,9 +8,21 @@ plugins {
     jacoco
 }
 
+val eclipseUrl: String by project
+val draw2dVersion: String by project
+
 repositories {
     mavenCentral()
     mavenLocal()
+    // draw2d, for the tests that cover how a FigureCanvas is painted. Scoped to that one module so
+    // nothing else can resolve through the Eclipse update site. Same declaration examples/ uses.
+    ivy {
+        url = uri("${project.findProperty("draw2dUrl")?.toString() ?: eclipseUrl}/plugins")
+        name = "Eclipse Plugins"
+        patternLayout { artifact("[organisation].[artifact]_[revision].[ext]") }
+        metadataSources { artifact() }
+        content { includeModule("org.eclipse", "draw2d") }
+    }
 }
 
 val arch = System.getProperty("os.arch")
@@ -158,6 +170,9 @@ dependencies {
     testImplementation(libs.gson)
     testImplementation(libs.mockito.core)
     testImplementation(libs.instancio.junit)
+    // Test-only: the paint path used to exclude a FigureCanvas via an isInstance() check, so the
+    // real type has to be resolvable for a test to tell that exclusion from its absence.
+    testImplementation("org.eclipse:draw2d:$draw2dVersion")
 
     // JavaFX — required to COMPILE the FXCanvas embedded-scene bridge
     // (javafx.embed.swt + com.sun.javafx.embed internals). compileOnly so the FX
