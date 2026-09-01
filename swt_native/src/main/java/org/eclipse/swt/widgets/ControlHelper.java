@@ -384,15 +384,14 @@ public class ControlHelper {
         // increment further and unwind cleanly.
         inPaintDepth++;
         try {
-            // draw2d drives its own painting from the LightweightSystem, so a FigureCanvas must not
-            // get this synthetic full-area Paint. Without draw2d on the classpath, nothing to skip.
-            try {
-                if (!Class.forName("org.eclipse.draw2d.FigureCanvas").isInstance(c.getApi())) {
-                    sendPaint(c, damage, scoped);
-                }
-            } catch (ClassNotFoundException ex) {
-                sendPaint(c, damage, scoped);
-            }
+            // A FigureCanvas takes this Paint like any other control. draw2d answers it by painting
+            // its whole figure tree straight into the event's GC (DeferredUpdateManager#paint), and
+            // that is the only paint path guaranteed to run once the Flutter client is connected:
+            // the LightweightSystem's own update loop can complete entirely before that, and its
+            // output goes through an off-screen Image blit whose pixels the client is not yet there
+            // to render. Skipping the Paint here left such a canvas showing whatever that early
+            // blit deposited -- for a fresh buffer, an opaque black rectangle.
+            sendPaint(c, damage, scoped);
         } finally {
             inPaintDepth--;
         }
