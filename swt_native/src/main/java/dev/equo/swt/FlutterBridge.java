@@ -253,6 +253,14 @@ public abstract class FlutterBridge {
             if (dirtySet.contains(parent)) {
                 return true;
             }
+            // Stop at the widget's own Shell: a Shell serializes its own subtree but not the Shells
+            // it opens (VShell.getShells() reads DartShell.shells, which nothing on the Java->Dart
+            // side ever assigns, so it is always null). A dirty ancestor above this Shell therefore
+            // cannot carry the widget, and treating it as a carrier drains the widget from the dirty
+            // set unsent, losing the change for good.
+            if (isShell(parent)) {
+                return false;
+            }
             parent = getParent(parent);
         }
 

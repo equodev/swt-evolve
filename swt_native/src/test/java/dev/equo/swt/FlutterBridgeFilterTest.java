@@ -12,6 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.swtShell;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 @ExtendWith(Mocks.class)
 public class FlutterBridgeFilterTest extends SerializeTestBase {
@@ -166,6 +167,49 @@ public class FlutterBridgeFilterTest extends SerializeTestBase {
 
         // The dialog Shell must survive filtering so it (and its page subtree) is delivered.
         assertThat(filtered).contains(dialogShell);
+    }
+
+    @Test
+    void shouldKeepControlInsideDialogShellWhenMainShellIsDirty() {
+        // Regression: the ancestor walk used to run past the widget's own Shell up to the main
+        // Shell, which repaints constantly and is therefore almost always dirty. A control inside a
+        // dialog (radio -> Group -> dialog Shell -> main Shell) was then filtered out as "the parent
+        // will carry it" and drained unsent — but the main Shell's payload does not carry another
+        // Shell's subtree, so the change was lost for good and only surfaced on a later, unrelated
+        // push. shouldKeepDialogShellEvenWhenParentShellIsDirty covers the dialog Shell itself; this
+        // covers its descendants.
+        //
+        // Real Dart Shells can't be instantiated in the embedded test backend (no native handles),
+        // so the dialog subtree is mocked on top of a real, dirty Composite standing in for the main
+        // window.
+        Composite mainWindow = new Composite(swtShell(), SWT.NONE);
+
+        Shell dialogShellApi = mock(Shell.class);
+        DartComposite dialogShell = mock(DartComposite.class, withSettings().extraInterfaces(IShell.class));
+        when(dialogShellApi.getImpl()).thenReturn((IShell) dialogShell);
+        when(dialogShell.getApi()).thenReturn(dialogShellApi);
+        when(dialogShell.getParent()).thenReturn(mainWindow);
+        when(dialogShell.isDisposed()).thenReturn(false);
+
+        Composite groupApi = mock(Composite.class);
+        DartComposite group = mock(DartComposite.class);
+        when(groupApi.getImpl()).thenReturn(group);
+        when(group.getApi()).thenReturn(groupApi);
+        when(group.getParent()).thenReturn(dialogShellApi);
+        when(group.isDisposed()).thenReturn(false);
+
+        DartControl radio = mock(DartControl.class);
+        when(radio.getApi()).thenReturn(mock(Button.class));
+        when(radio.getParent()).thenReturn(groupApi);
+        when(radio.isDisposed()).thenReturn(false);
+
+        Set<Object> dirty = new HashSet<>();
+        dirty.add(mainWindow.getImpl());  // main window, dirty from a repaint
+        dirty.add(radio);                 // the radio whose selection/text just changed
+
+        Set<Object> filtered = FlutterBridge.filterWidgetsWithDirtyAncestors(dirty);
+
+        assertThat(filtered).contains(radio);
     }
 
     @Test
