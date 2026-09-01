@@ -65,6 +65,7 @@ VCTabFolder _$VCTabFolderFromJson(Map<String, dynamic> json) => VCTabFolder()
       .toList()
   ..MRUVisible = json['MRUVisible'] as bool?
   ..borderVisible = json['borderVisible'] as bool?
+  ..chevronVisible = json['chevronVisible'] as bool?
   ..dirtyIndicatorStyle = json['dirtyIndicatorStyle'] as bool?
   ..gradientColors = (json['gradientColors'] as List<dynamic>?)
       ?.map((e) => VColor.fromJson(e as Map<String, dynamic>))
@@ -151,6 +152,7 @@ Map<String, dynamic> _$VCTabFolderToJson(VCTabFolder instance) =>
       'tabList': ?instance.tabList,
       'MRUVisible': ?instance.MRUVisible,
       'borderVisible': ?instance.borderVisible,
+      'chevronVisible': ?instance.chevronVisible,
       'dirtyIndicatorStyle': ?instance.dirtyIndicatorStyle,
       'gradientColors': ?instance.gradientColors,
       'gradientPercents': ?instance.gradientPercents,

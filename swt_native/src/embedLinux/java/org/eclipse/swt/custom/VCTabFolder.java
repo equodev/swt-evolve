@@ -37,6 +37,14 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).borderVisible = value;
     }
 
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
+    public boolean getChevronVisible() {
+        return ((DartCTabFolder) impl).chevronVisible;
+    }
+
+    public void setChevronVisible(boolean value) {
+    }
+
     public boolean getDirtyIndicatorStyle() {
         return ((DartCTabFolder) impl).getDirtyIndicatorStyle();
     }

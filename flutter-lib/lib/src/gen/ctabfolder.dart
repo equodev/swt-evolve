@@ -71,6 +71,7 @@ class VCTabFolder extends VComposite {
 
   bool? MRUVisible;
   bool? borderVisible;
+  bool? chevronVisible;
   bool? dirtyIndicatorStyle;
   List<VColor>? gradientColors;
   List<int>? gradientPercents;

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:swtflutter/main.dart';
@@ -259,15 +260,12 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     if (box != null && box.hasSize) {
       final Offset origin = box.localToGlobal(Offset.zero);
       _chevronButtonRect = origin & box.size;
-      final VEvent e = VEvent()
-        ..x = origin.dx.round()
-        ..y = origin.dy.round()
-        ..width = box.size.width.round()
-        ..height = box.size.height.round();
-      widget.sendCTabFolder2showList(state, e);
     } else {
-      widget.sendCTabFolder2showList(state, VEvent());
+      _chevronButtonRect = null;
     }
+    // Web-mode Java can't measure the viewport (marks every item showing=true), so drive
+    // the overflow menu client-side rather than round-tripping through Java.
+    _doShowChevronPopup();
   }
 
   void _doShowChevronPopup() {
@@ -278,10 +276,14 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     final allItems = state.items?.whereType<VCTabItem>().toList() ?? [];
     if (allItems.isEmpty) return;
 
-    final hasShowingInfo = allItems.any((item) => item.showing != null);
-    final hiddenEntries = allItems.asMap().entries
-        .where((e) => !hasShowingInfo || e.value.showing != true)
+    // Java marks every item showing=true in web mode, so when none is flagged hidden fall
+    // back to listing every tab -- otherwise the off-view tabs are unreachable.
+    var hiddenEntries = allItems.asMap().entries
+        .where((e) => e.value.showing == false)
         .toList();
+    if (hiddenEntries.isEmpty) {
+      hiddenEntries = allItems.asMap().entries.toList();
+    }
 
     final screenSize = MediaQuery.of(ctx).size;
     final buttonRect = _chevronButtonRect;
@@ -387,6 +389,8 @@ class _CTabBar extends StatefulWidget {
 class _CTabBarState extends State<_CTabBar> {
   bool _hoveringTopBar = false;
   bool _scrollbarVisible = false;
+  // True when the tab row overflows its width (some tabs scroll off-view). Drives the chevron.
+  bool _hasOverflow = false;
   Timer? _scrollbarHideTimer;
   late final ScrollController _horizontalScrollController;
   bool _isMinimizeHovered = false;
@@ -407,7 +411,9 @@ class _CTabBarState extends State<_CTabBar> {
   bool get _reserveTopRightSpace => !_autoHide;
   bool get _controlsAlwaysVisible =>
       getConfigFlags().ctabfolder_visible_controls == true ||
-      _reserveTopRightSpace;
+      _reserveTopRightSpace ||
+      // While overflowing, the chevron is the only way to reach the hidden tabs -- keep it visible.
+      _hasOverflow;
 
   @override
   void initState() {
@@ -609,7 +615,9 @@ class _CTabBarState extends State<_CTabBar> {
     // ever ends up hidden underneath a floating overlay. Default (true): the
     // original Stack overlay, full-width tabs with the (auto-hidden, hover-revealed)
     // controls on top.
-    final Widget header = _reserveTopRightSpace
+    // While overflowing, lay the controls out as a Row sibling so the chevron reserves space
+    // and stays clickable, instead of floating over the tab row where clicks get swallowed.
+    final Widget header = (_reserveTopRightSpace || _hasOverflow)
         ? Row(children: [scrollableTabs, topRightControls])
         : Stack(
             children: [
@@ -1070,33 +1078,64 @@ class _CTabBarState extends State<_CTabBar> {
   }) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return NotificationListener<ScrollUpdateNotification>(
+        // Re-measure overflow after each frame (a toggled _hasOverflow rebuilds this subtree).
+        WidgetsBinding.instance.addPostFrameCallback((_) => _checkOverflow());
+        return NotificationListener<SizeChangedLayoutNotification>(
+          // The row widens as tab icons load async without rebuilding this ancestor, so
+          // re-measure on each size change instead of relying on a one-shot check.
           onNotification: (notification) {
-            _showScrollbar();
-            _hideScrollbarAfterDelay(widgetTheme.scrollbarHideDelay);
+            WidgetsBinding.instance.addPostFrameCallback((_) => _checkOverflow());
             return false;
           },
-          child: MouseRegion(
-            onEnter: (_) {
+          child: NotificationListener<ScrollUpdateNotification>(
+            onNotification: (notification) {
               _showScrollbar();
-            },
-            onExit: (_) {
               _hideScrollbarAfterDelay(widgetTheme.scrollbarHideDelay);
+              return false;
             },
-            child: Listener(
-              onPointerDown: (_) {
+            child: MouseRegion(
+              onEnter: (_) {
                 _showScrollbar();
               },
-              child: Scrollbar(
-                controller: _horizontalScrollController,
-                thumbVisibility: _scrollbarVisible,
-                thickness: widgetTheme.tabScrollbarThickness,
-                child: SingleChildScrollView(
+              onExit: (_) {
+                _hideScrollbarAfterDelay(widgetTheme.scrollbarHideDelay);
+              },
+              child: Listener(
+                onPointerDown: (_) {
+                  _showScrollbar();
+                },
+                // A vertical wheel doesn't scroll a horizontal viewport by default; map it
+                // to horizontal offset.
+                onPointerSignal: (event) {
+                  if (event is! PointerScrollEvent) return;
+                  if (!_horizontalScrollController.hasClients) return;
+                  final position = _horizontalScrollController.position;
+                  if (!position.hasContentDimensions ||
+                      position.maxScrollExtent <= 0) {
+                    return;
+                  }
+                  final delta = event.scrollDelta.dy != 0
+                      ? event.scrollDelta.dy
+                      : event.scrollDelta.dx;
+                  final target = (position.pixels + delta)
+                      .clamp(0.0, position.maxScrollExtent);
+                  if (target != position.pixels) {
+                    _horizontalScrollController.jumpTo(target);
+                    _showScrollbar();
+                    _hideScrollbarAfterDelay(widgetTheme.scrollbarHideDelay);
+                  }
+                },
+                child: Scrollbar(
                   controller: _horizontalScrollController,
-                  scrollDirection: Axis.horizontal,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                    child: child,
+                  thumbVisibility: _scrollbarVisible,
+                  thickness: widgetTheme.tabScrollbarThickness,
+                  child: SingleChildScrollView(
+                    controller: _horizontalScrollController,
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                      child: SizeChangedLayoutNotifier(child: child),
+                    ),
                   ),
                 ),
               ),
@@ -1105,6 +1144,21 @@ class _CTabBarState extends State<_CTabBar> {
         );
       },
     );
+  }
+
+  // Surface the chevron once the tab row is wider than its viewport (read from the scroll
+  // controller, since web-mode Java can't measure the viewport).
+  void _checkOverflow() {
+    if (!mounted) return;
+    final position = _horizontalScrollController.hasClients
+        ? _horizontalScrollController.position
+        : null;
+    final overflow = position != null &&
+        position.hasContentDimensions &&
+        position.maxScrollExtent > 0.5;
+    if (overflow != _hasOverflow) {
+      setState(() => _hasOverflow = overflow);
+    }
   }
 
   void _hideScrollbarAfterDelay(Duration delay) {
@@ -1198,7 +1252,11 @@ class _CTabBarState extends State<_CTabBar> {
     required bool isMaximized,
     required int alignment,
   }) {
-    final showChevron = widget.state.showChevron ?? false;
+    // Show the chevron on overflow, but honour the folder's chevronVisible permission flag
+    // (default true) -- matching native SWT's showChevron = chevronVisible && overflow.
+    final chevronAllowed = widget.state.chevronVisible ?? true;
+    final showChevron =
+        chevronAllowed && ((widget.state.showChevron ?? false) || _hasOverflow);
     final hasControls =
         topRightComposite != null || showMinimizeButton || showMaximizeButton ||
         showChevron;
@@ -1532,7 +1590,13 @@ class _DragReorderRowState extends State<DragReorderRow> {
           children: [
             AbsorbPointer(
               absorbing: _dragActive,
-              child: Row(key: _rowKey, children: rowItems),
+              // mainAxisSize.min so the row takes its natural width and the scroll view
+              // overflows when tabs don't fit; the default (max) fills and clips instead.
+              child: Row(
+                key: _rowKey,
+                mainAxisSize: MainAxisSize.min,
+                children: rowItems,
+              ),
             ),
             if (dragOverlay != null) dragOverlay,
           ],
