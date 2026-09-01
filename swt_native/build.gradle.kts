@@ -251,6 +251,10 @@ sourceSets {
         // ImageGcDrawer (and the Image constructor taking it) only exist from 3.129, so the test
         // covering that constructor cannot compile against older SWT.
         if (swtMinor < 129) java { exclude("org/eclipse/swt/graphics/ImageGcDrawerFailureTest.java") }
+        // org.eclipse.swt.layout.BorderLayout was added in 3.119; the test that subclasses it
+        // cannot compile against older baselines. Layout subclassing itself stays covered there by
+        // LayoutSubclassTest, which does not touch BorderLayout.
+        if (swtMinor < 119) java { exclude("org/eclipse/swt/widgets/BorderLayoutSubclassTest.java") }
     }
 
     // Native-family integration test source set: the SAME test code (src/test/java), but compiled
