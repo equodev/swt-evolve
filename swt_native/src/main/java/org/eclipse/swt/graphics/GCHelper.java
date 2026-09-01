@@ -123,7 +123,12 @@ public class GCHelper {
     public static ImageGCContext setupImageGC(Drawable drawable, GCData data, GC gcApi) {
         Image image = drawable instanceof Image img ? img : data.image;
         if (image == null) return null;
-        if (!awaitDisplayBootstrap(data.device)) return null;
+        // Deliberately not gated on the Flutter client being connected. The Display's GC comm is
+        // safe to hand out before that -- the comm layer buffers pre-connect sends and flushes them
+        // on connect (DisplayBridge#sharedCommFor), and GCImageDrawer's own onReady() gates the part
+        // that genuinely needs a listening client. Bailing out here instead left the GC unwired:
+        // no gcImageId, so DartGC#hashCode() stayed 0 and every op went to the dead "GC/0" channel,
+        // and no memGC, so the image could never be rendered before being drawn.
 
         data.image = image;
         Image swtSource = null;
@@ -147,23 +152,6 @@ public class GCHelper {
         }
 
         return new ImageGCContext(drawable, swtSource, (Image) data.image, renderFuture);
-    }
-
-    private static final long DISPLAY_BOOTSTRAP_TIMEOUT_MS = 15000;
-
-    /** Pumps the event loop until the Display's Flutter client is ready, instead of dropping ops. */
-    private static boolean awaitDisplayBootstrap(Device device) {
-        if (dev.equo.swt.FlutterBridge.displayBootstrapped) return true;
-        Display display = device instanceof Display d ? d : Display.getCurrent();
-        if (display == null || display.isDisposed() || display.getThread() != Thread.currentThread()) {
-            return dev.equo.swt.FlutterBridge.displayBootstrapped;
-        }
-        long deadline = System.currentTimeMillis() + DISPLAY_BOOTSTRAP_TIMEOUT_MS;
-        while (!dev.equo.swt.FlutterBridge.displayBootstrapped && System.currentTimeMillis() < deadline) {
-            if (display.isDisposed()) break;
-            if (!display.readAndDispatch()) display.sleep();
-        }
-        return dev.equo.swt.FlutterBridge.displayBootstrapped;
     }
 
     /**
