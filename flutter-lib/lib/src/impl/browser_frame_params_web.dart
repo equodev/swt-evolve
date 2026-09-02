@@ -63,6 +63,15 @@ String localFileRewrite(String tokenPath) {
   return '$origin/local-file/$tokenPath';
 }
 
+/// Base URL for a `setText` document whose `file:` sub-resources Java rewrote to root-absolute
+/// `/local-file/...` paths: the document is rendered from a `data:` URL, which has no origin for
+/// those to resolve against. [basePath] is the document's own `<base href>` once rewritten, so
+/// its relative URLs keep resolving where the application meant them to.
+String localFileBaseRewrite(String? basePath) {
+  final origin = web.window.location.origin;
+  return basePath == null || basePath.isEmpty ? '$origin/' : '$origin$basePath';
+}
+
 /// Listens for the iframe's native `load` DOM event, fired every time it lands
 /// a new document (navigation, back/forward, reload) -- the real signal that
 /// was missing when this was written, versus guessing with a retry loop.

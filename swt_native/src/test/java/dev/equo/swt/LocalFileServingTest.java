@@ -8,7 +8,8 @@ import java.nio.file.Files;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** Covers {@link LocalFileServing#registerIfLocalFile}'s fragment/query handling and
+/** Covers {@link LocalFileServing#registerIfLocalFile}'s fragment/query handling,
+ *  {@link LocalFileServing#rewriteLocalResources} and
  *  {@link LocalFileServing#tokenFromLocalFileReferer}. */
 class LocalFileServingTest {
 
@@ -100,6 +101,85 @@ class LocalFileServingTest {
                 .as("the same registration serves the file once it has been written")
                 .isNotNull()
                 .satisfies(served2 -> assertThat(served2.getCanonicalFile()).isEqualTo(file.getCanonicalFile()));
+    }
+
+    @Test
+    void rewriteLocalResources_pointsEverySubResourceAtTheServingEndpoint() throws Exception {
+        File dir = Files.createTempDirectory("equo-settext").toFile();
+        File image = new File(dir, "overview48.png");
+        Files.writeString(image.toPath(), "png", StandardCharsets.UTF_8);
+        File style = new File(dir, "shared.css");
+        Files.writeString(style.toPath(), "body{}", StandardCharsets.UTF_8);
+
+        String html = "<html><head>"
+                + "<BASE href=\"file://" + dir.getAbsolutePath() + "/\">"
+                + "<LINK rel=\"stylesheet\" href=\"file://" + style.getAbsolutePath() + "\">"
+                + "</head><body><IMG src=\"file:" + image.getAbsolutePath() + "\"></body></html>";
+
+        LocalFileServing.ServedHtml served = LocalFileServing.rewriteLocalResources(html);
+
+        assertThat(served).isNotNull();
+        assertThat(served.html).as("no file: URL may survive the rewrite").doesNotContain("file:");
+        assertThat(served.basePath)
+                .as("the document's own <base href> becomes the directory's serving path")
+                .isNotNull()
+                .startsWith(LocalFileServing.URL_PREFIX)
+                .endsWith("/");
+        // Both sub-resources must resolve back through the endpoint the rewrite pointed them at.
+        assertThat(resolveServed(served.html, "overview48.png")).isEqualTo(image.getCanonicalFile());
+        assertThat(resolveServed(served.html, "shared.css")).isEqualTo(style.getCanonicalFile());
+    }
+
+    /**
+     * A stylesheet's own {@code url(../graphics/x.png)} resolves against the URL it was served
+     * from, so flattening it under a per-file token would send that one level above every
+     * registration. Serving it under the document's base root keeps the structure it needs.
+     */
+    @Test
+    void rewriteLocalResources_keepsResourcesUnderTheBaseRootAddressableFromTheirOwnRelativeUrls()
+            throws Exception {
+        File base = Files.createTempDirectory("equo-settext-base").toFile();
+        File style = new File(base, "themes/solstice/html/qroot.css");
+        style.getParentFile().mkdirs();
+        Files.writeString(style.toPath(), "body{background:url(../graphics/bg.png)}", StandardCharsets.UTF_8);
+        File graphic = new File(base, "themes/solstice/graphics/bg.png");
+        graphic.getParentFile().mkdirs();
+        Files.writeString(graphic.toPath(), "png", StandardCharsets.UTF_8);
+
+        String html = "<html><head><BASE href=\"file://" + base.getAbsolutePath() + "/\">"
+                + "<LINK rel=\"stylesheet\" href=\"file://" + style.getAbsolutePath() + "\">"
+                + "</head><body></body></html>";
+
+        LocalFileServing.ServedHtml served = LocalFileServing.rewriteLocalResources(html);
+
+        assertThat(served).isNotNull();
+        assertThat(served.basePath).isNotNull();
+        String token = served.basePath.substring(LocalFileServing.URL_PREFIX.length()).replace("/", "");
+        assertThat(served.html)
+                .as("the stylesheet keeps its path under the base root, not a token of its own")
+                .contains(served.basePath + "themes/solstice/html/qroot.css");
+        // What the browser asks for after resolving the stylesheet's own url(../graphics/bg.png).
+        assertThat(LocalFileServing.resolve(token, "themes/solstice/graphics/bg.png"))
+                .isNotNull()
+                .satisfies(f -> assertThat(f.getCanonicalFile()).isEqualTo(graphic.getCanonicalFile()));
+    }
+
+    @Test
+    void rewriteLocalResources_leavesADocumentWithNoLocalResourceAlone() {
+        assertThat(LocalFileServing.rewriteLocalResources(
+                "<html><body><img src=\"https://example.org/a.png\"></body></html>")).isNull();
+    }
+
+    /** Finds the rewritten {@code /local-file/<token>/<name>} reference and resolves it back. */
+    private static File resolveServed(String html, String name) throws Exception {
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile(java.util.regex.Pattern.quote(LocalFileServing.URL_PREFIX)
+                        + "([^/\"']+)/" + java.util.regex.Pattern.quote(name))
+                .matcher(html);
+        assertThat(m.find()).as("%s must appear as a served path", name).isTrue();
+        File resolved = LocalFileServing.resolve(m.group(1), name);
+        assertThat(resolved).as("%s must resolve to a real file", name).isNotNull();
+        return resolved.getCanonicalFile();
     }
 
     @Test

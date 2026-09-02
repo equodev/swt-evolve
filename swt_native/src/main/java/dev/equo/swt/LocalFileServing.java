@@ -2,6 +2,7 @@ package dev.equo.swt;
 
 import java.io.File;
 import java.io.RandomAccessFile;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -26,11 +27,14 @@ import java.util.regex.Pattern;
  * including {@code execute}/{@code evaluate}/{@code BrowserFunction}, which all
  * require same-origin content.
  * <p>
- * Only a directory a real {@code Browser.setUrl("file:...")} call itself named
- * becomes servable: {@link #registerIfLocalFile} registers just the file's own
- * parent directory, so this never exposes more than the app already asked to
- * display — the same trust boundary crossed by calling setUrl with that path in
- * the first place, not a new one.
+ * {@link #rewriteLocalResources} does the same for the {@code file:} URLs inside
+ * a {@code Browser.setText} document, which a {@code data:} URL cannot load at all.
+ * <p>
+ * Only a directory the application itself named — by passing it to
+ * {@code setUrl("file:...")}, or by embedding it in HTML it asked us to render —
+ * becomes servable, so this never exposes more than the app already asked to
+ * display: the same trust boundary crossed by making that call in the first
+ * place, not a new one.
  */
 public final class LocalFileServing {
 
@@ -55,6 +59,12 @@ public final class LocalFileServing {
     /** Only worth scanning for a {@code <base>} tag in the head, so cap the read. */
     private static final int BASE_HREF_SCAN_LIMIT = 32 * 1024;
 
+    /**
+     * Matches a {@code file:} URL as it appears in markup — an attribute value, a CSS
+     * {@code url(...)} argument — by running to the first character none of those can contain.
+     */
+    private static final Pattern FILE_URL_IN_MARKUP = Pattern.compile("file:[^\"'\\s>)]+");
+
     private LocalFileServing() {
     }
 
@@ -71,6 +81,24 @@ public final class LocalFileServing {
         /** {@code "<token>/<relativePath>"}, ready to append to the endpoint's base path. */
         public String tokenPath() {
             return token + "/" + relativePath;
+        }
+    }
+
+    /** A {@code Browser.setText} document rewritten by {@link #rewriteLocalResources}. */
+    public static final class ServedHtml {
+        /** The HTML, with every {@code file:} URL replaced by its {@code /local-file/} path. */
+        public final String html;
+        /**
+         * The path the document's own {@code <base href>} was rewritten to, or {@code null} if it
+         * declared none. Those {@code /local-file/} paths are root-absolute, so the caller has to
+         * resolve them against an origin; doing that with this as the base keeps the document's
+         * relative URLs resolving where the application meant them to.
+         */
+        public final String basePath;
+
+        ServedHtml(String html, String basePath) {
+            this.html = html;
+            this.basePath = basePath;
         }
     }
 
@@ -98,16 +126,127 @@ public final class LocalFileServing {
         if (file.getName().isEmpty() || file.isDirectory()) return null;
         File parent = file.getParentFile();
         if (parent == null) return null;
+        String token = registerRoot(parent);
+        registerBaseHrefRoot(token, file);
+        return new Served(token, file.getName());
+    }
+
+    /** Registers {@code dir} as a servable root, reusing the token a previous registration made. */
+    private static String registerRoot(File dir) {
         try {
-            parent = parent.getCanonicalFile();
+            dir = dir.getCanonicalFile();
         } catch (Exception ignored) {
             // Fall back to the non-canonicalized form; resolve() still guards traversal.
         }
-        String canonicalKey = parent.getPath();
-        String token = tokensByPath.computeIfAbsent(canonicalKey, p -> newToken());
-        rootsByToken.put(token, parent);
-        registerBaseHrefRoot(token, file);
-        return new Served(token, file.getName());
+        String token = tokensByPath.computeIfAbsent(dir.getPath(), p -> newToken());
+        rootsByToken.put(token, dir);
+        return token;
+    }
+
+    /**
+     * Rewrites every {@code file:} URL in a {@code Browser.setText} document to the
+     * {@code /local-file/<token>/...} path that serves it, registering each one on the way.
+     * Returns {@code null} when the document references no local file at all.
+     * <p>
+     * {@link #registerIfLocalFile} covers the page a {@code setUrl} names; this covers the
+     * sub-resources of a page handed over as a string, which have the same problem for a
+     * different reason. The web-target Browser renders {@code setText} content from a
+     * {@code data:} URL, and a {@code data:} document may not load {@code file:} sub-resources
+     * at all — so an application that builds HTML around absolute {@code file:} URLs (Eclipse's
+     * intro pages reference every image, stylesheet and script that way) gets a page whose
+     * markup renders but whose every resource is refused.
+     * <p>
+     * Registration reuses tokens and prefers the document's own {@code <base href>} directory as
+     * the root (see {@link #servedPath}), so a whole themed page usually costs one. As with
+     * {@code setUrl}, this exposes only directories the application itself named — here by
+     * embedding a path in HTML it asked us to render.
+     */
+    public static ServedHtml rewriteLocalResources(String html) {
+        if (html == null || html.isEmpty()) return null;
+        File baseDir = documentBaseDir(html);
+        String basePath = baseDir == null ? null : URL_PREFIX + registerRoot(baseDir) + "/";
+        Matcher m = FILE_URL_IN_MARKUP.matcher(html);
+        StringBuilder out = new StringBuilder(html.length());
+        int copied = 0;
+        boolean rewrote = false;
+        while (m.find()) {
+            String served = servedPath(m.group(), baseDir);
+            if (served == null) continue;
+            out.append(html, copied, m.start()).append(served);
+            copied = m.end();
+            rewrote = true;
+        }
+        if (!rewrote) return null;
+        out.append(html, copied, html.length());
+        return new ServedHtml(out.toString(), basePath);
+    }
+
+    /**
+     * The directory a document's own {@code <base href="file:...">} names, or {@code null}.
+     * Everything under it is served relative to it — see {@link #servedPath}.
+     */
+    private static File documentBaseDir(String html) {
+        Matcher m = BASE_HREF_PATTERN.matcher(html);
+        if (!m.find()) return null;
+        File target = resolveBaseHrefTarget(m.group(1));
+        if (target == null) return null;
+        File dir = target.isDirectory() ? target : target.getParentFile();
+        if (dir == null || !dir.isDirectory()) return null;
+        try {
+            return dir.getCanonicalFile();
+        } catch (Exception ignored) {
+            return dir;
+        }
+    }
+
+    /**
+     * The {@code /local-file/} path serving what a {@code file:} URL names.
+     * <p>
+     * A resource under {@code baseDir} is served as a path <em>relative to that one root</em>,
+     * because a served URL is all a sub-resource of its own has to resolve against: a stylesheet
+     * flattened to {@code /local-file/<its-own-token>/x.css} turns its {@code url(../graphics/y.png)}
+     * into {@code /local-file/graphics/y.png}, which names no registration at all. Keeping the
+     * directory structure under the root the document itself declared makes those resolve where
+     * they were meant to. Anything outside that root falls back to its own parent directory.
+     */
+    private static String servedPath(String fileUrl, File baseDir) {
+        Path path = parseFileUrl(fileUrl);
+        if (path == null) return null;
+        File file = path.toFile();
+        if (baseDir != null) {
+            String relative = relativize(baseDir, file);
+            if (relative != null) return URL_PREFIX + registerRoot(baseDir) + "/" + relative;
+        }
+        if (file.isDirectory()) return URL_PREFIX + registerRoot(file) + "/";
+        File parent = file.getParentFile();
+        if (parent == null || file.getName().isEmpty()) return null;
+        return URL_PREFIX + registerRoot(parent) + "/" + encodeSegment(file.getName());
+    }
+
+    /**
+     * {@code file}'s encoded path relative to {@code root}, or {@code null} if it isn't under it.
+     * {@code root} itself relativizes to the empty string, so it keeps its trailing slash.
+     */
+    private static String relativize(File root, File file) {
+        Path rootPath = root.toPath().normalize();
+        Path filePath;
+        try {
+            filePath = file.getCanonicalFile().toPath().normalize();
+        } catch (Exception ignored) {
+            filePath = file.toPath().normalize();
+        }
+        if (!filePath.startsWith(rootPath)) return null;
+        StringBuilder sb = new StringBuilder();
+        for (Path segment : rootPath.relativize(filePath)) {
+            if (sb.length() > 0) sb.append('/');
+            sb.append(encodeSegment(segment.toString()));
+        }
+        return sb.toString();
+    }
+
+    /** Percent-encodes one path segment the way the {@code /local-file/} handler decodes it. */
+    private static String encodeSegment(String name) {
+        return URLEncoder.encode(name, StandardCharsets.UTF_8).replace("+", "%20");
     }
 
     /**

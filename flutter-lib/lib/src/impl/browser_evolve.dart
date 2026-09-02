@@ -214,7 +214,16 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
         _expectSameOrigin = false;
         _loadedText = text;
         _loadedUrl = null;
-        _controller.loadHtmlString(text);
+        // On web the document is rendered from a data: URL, which refuses the file:
+        // sub-resources an application may embed; Java sends a copy with those rewritten to
+        // /local-file/ paths, loaded against this origin so they resolve.
+        final localFileText = m["localFileText"] as String?;
+        if (kIsWeb && localFileText != null && localFileText.isNotEmpty) {
+          _controller.loadHtmlString(localFileText,
+              baseUrl: localFileBaseRewrite(m["localFileBase"] as String?));
+        } else {
+          _controller.loadHtmlString(text);
+        }
       }
     });
     _onOp("back", (_) {
@@ -528,6 +537,10 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       _expectSameOrigin = resolved.toString() != url;
       _controller.loadRequest(resolved);
     } else if (state.text != null && state.text != _loadedText) {
+      // Like the file: url above: a document embedding file: sub-resources is only loadable in
+      // the rewritten form the navigate op carries, so leave it to the op rather than rendering
+      // the raw one -- which paints a resource-less page the op then has to replace.
+      if (kIsWeb && state.text!.contains('file:')) return;
       _expectSameOrigin = false;
       _loadedText = state.text;
       _loadedUrl = null;

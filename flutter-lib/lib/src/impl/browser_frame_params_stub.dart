@@ -13,6 +13,8 @@ String browserProxyRewrite(String url) => url;
 
 String localFileRewrite(String tokenPath) => tokenPath;
 
+String localFileBaseRewrite(String? basePath) => basePath ?? '';
+
 Object? browserEvalInFrame(
         PlatformWebViewControllerCreationParams? params, String script) =>
     null;
