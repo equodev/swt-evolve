@@ -81,6 +81,12 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   // as a Java-driven setVisible(false) — otherwise the first state push after SWT.Show closes the
   // menu the instant it appears (the context-menu flicker regression).
   bool _openedFromVisibleFlag = false;
+  // One setVisible(true) puts a popup up once. It stays up until something takes it down, and
+  // showing it again means putting it up again — which arrives as a fresh mount, because Java
+  // drops a hidden popup from the display's popup set and re-adds it on the next show. Latching
+  // that here keeps a state push composed before Java saw our dismissal from re-showing the menu
+  // the user just closed: without it the reopen races the round trip and the popup flickers back.
+  bool _shownOnce = false;
   Offset? _pendingContextMenuPosition;
 
   String? _rawChannel;
@@ -279,7 +285,13 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
         : widgetTheme.disabledBackgroundColor;
     final location = state.location;
 
-    if (visible && !_menuController.isOpen) {
+    if (!visible && !_menuController.isOpen) {
+      // Settled back to hidden: the next setVisible(true) is a new showing, not a re-assertion.
+      _shownOnce = false;
+    }
+
+    if (visible && !_menuController.isOpen && !_shownOnce) {
+      _shownOnce = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && !_menuController.isOpen && visible) {
           final menuPosition = location != null

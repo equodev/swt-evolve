@@ -2878,19 +2878,14 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         if (popups == null)
             return false;
         boolean result = false;
-        while (popups != null) {
-            Menu menu = popups[0];
-            if (menu == null)
-                break;
-            int length = popups.length;
-            System.arraycopy(popups, 1, popups, 0, --length);
-            popups[length] = null;
+        for (Menu menu : popups) {
+            if (menu == null || menu.isDisposed() || isPopupAlreadyShown(menu))
+                continue;
+            markPopupShown(menu);
             runDeferredEvents();
-            if (!menu.isDisposed())
-                menu.getImpl()._setVisible(true);
+            menu.getImpl()._setVisible(true);
             result = true;
         }
-        popups = null;
         return result;
     }
 
@@ -4047,6 +4042,32 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
 
     public Shell[] _shells() {
         return shells;
+    }
+
+    Menu[] shownPopups = new Menu[0];
+
+    boolean isPopupAlreadyShown(Menu menu) {
+        for (Menu m : shownPopups) {
+            if (m == menu)
+                return true;
+        }
+        return false;
+    }
+
+    void markPopupShown(Menu menu) {
+        int live = 0;
+        for (Menu m : shownPopups) {
+            if (m != null && !m.isDisposed())
+                live++;
+        }
+        Menu[] kept = new Menu[live + 1];
+        int i = 0;
+        for (Menu m : shownPopups) {
+            if (m != null && !m.isDisposed())
+                kept[i++] = m;
+        }
+        kept[i] = menu;
+        shownPopups = kept;
     }
 
     void bootFailureCleanup() {

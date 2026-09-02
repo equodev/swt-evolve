@@ -882,7 +882,7 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public int getTextHeight() {
         checkWidget();
-        return 0;
+        return Sizes.computeSize(this, SWT.DEFAULT, SWT.DEFAULT, false).y;
     }
 
     /**
