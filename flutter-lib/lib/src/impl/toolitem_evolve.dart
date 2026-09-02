@@ -62,7 +62,8 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     }
 
     final imageKey = ImageUtils.stableImageKey(image);
-    final futureKey = '${imageKey}_${iconSize}_${iconColor.value}_$enabled';
+    final futureKey =
+        '${imageKey}_${iconSize}_${iconColor.value}_${enabled}_${widgetTheme.disabledOpacity}';
 
     return FutureBuilder<Widget?>(
       key: ValueKey(futureKey),
@@ -74,6 +75,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
         constraints: constraints,
         useBinaryImage: true,
         renderAsIcon: true,
+        disabledOpacity: widgetTheme.disabledOpacity,
       ),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done &&
@@ -99,9 +101,18 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     );
   }
 
+  /// True when the icon pack answered for this image: the replacement arrives as SVG content, and
+  /// the resolver drops the filename once it has.
+  static bool _isReplaced(VImage? image) => image?.svgContent?.isNotEmpty ?? false;
+
   VImage? _getImageForState(bool enabled) {
     if (!enabled && state.disabledImage != null) {
-      return state.disabledImage;
+      // An application names its disabled icon as a second file, which the pack often has no
+      // counterpart for. Drawing it would put the application's own artwork next to siblings that
+      // were replaced, so the replaced image serves both states — the dimming for disabled is
+      // applied to whichever image this returns, not carried by the asset.
+      final useOwn = _isReplaced(state.disabledImage) || !_isReplaced(state.image);
+      return useOwn ? state.disabledImage : state.image;
     }
     if (enabled && _isHovered && state.hotImage != null) {
       return state.hotImage;

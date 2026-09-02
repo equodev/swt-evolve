@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme_extensions/clabel_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 
 CLabelThemeExtension getCLabelLightTheme({
   required ColorScheme colorScheme,
@@ -60,7 +61,7 @@ CLabelThemeExtension _getCLabelTheme({
     defaultMargin: 3.0,
 
     // Interactive properties
-    disabledOpacity: 0.5,
+    disabledOpacity: AppOpacities.disabled,
 
     // Alignment and positioning
     textAlign: TextAlign.left,

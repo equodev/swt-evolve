@@ -13,6 +13,7 @@ ToolItemThemeExtension _$ToolItemThemeExtensionFromJson(
   disabledColor: const ColorConverter().fromJson(
     json['disabledColor'] as String,
   ),
+  disabledOpacity: (json['disabledOpacity'] as num).toDouble(),
   hoverColor: const ColorConverter().fromJson(json['hoverColor'] as String),
   selectedBackgroundColor: const ColorConverter().fromJson(
     json['selectedBackgroundColor'] as String,
@@ -113,6 +114,7 @@ Map<String, dynamic> _$ToolItemThemeExtensionToJson(
 ) => <String, dynamic>{
   'enabledColor': const ColorConverter().toJson(instance.enabledColor),
   'disabledColor': const ColorConverter().toJson(instance.disabledColor),
+  'disabledOpacity': instance.disabledOpacity,
   'hoverColor': const ColorConverter().toJson(instance.hoverColor),
   'selectedBackgroundColor': const ColorConverter().toJson(
     instance.selectedBackgroundColor,

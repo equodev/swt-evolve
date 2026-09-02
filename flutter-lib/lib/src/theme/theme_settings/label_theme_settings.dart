@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme_extensions/label_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 
 LabelThemeExtension getLabelLightTheme({
   required ColorScheme colorScheme,
@@ -83,7 +84,7 @@ LabelThemeExtension _getLabelTheme({
     // Interactive properties
     isSelectable: false,
     showTooltip: false,
-    disabledOpacity: 0.6,
+    disabledOpacity: AppOpacities.disabled,
     hoverAnimationDuration: const Duration(milliseconds: 150),
     
     // Alignment and positioning

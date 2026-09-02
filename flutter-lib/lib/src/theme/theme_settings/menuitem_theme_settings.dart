@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme_extensions/menuitem_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 
 MenuItemThemeExtension getMenuItemLightTheme({
   required ColorScheme colorScheme,
@@ -96,7 +97,7 @@ MenuItemThemeExtension _getMenuItemTheme({
     radioButtonInnerSize: 8.0,
 
     // Disabled opacity
-    disabledOpacity: 0.38,
+    disabledOpacity: AppOpacities.disabled,
 
     // Font styles
     textStyle: textTheme.bodyMedium?.copyWith(fontSize: 14),

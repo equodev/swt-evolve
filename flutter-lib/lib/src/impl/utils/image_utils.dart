@@ -63,13 +63,15 @@ class ImageUtils {
     double? size,
     Color? color,
     bool enabled = true,
+    double? disabledOpacity,
   }) {
     // Our icon map is a substitution like the bundled set, so the same flag governs it.
     if (!useEvolveIcons) return null;
 
     final preserveColors = preserveIconColors;
+    final fade = disabledOpacity ?? AppOpacities.disabled;
     final cacheKey =
-        '$filename-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled-$preserveColors';
+        '$filename-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled-$preserveColors-$fade';
 
     if (_iconCache.containsKey(cacheKey)) {
       return _iconCache[cacheKey];
@@ -97,8 +99,12 @@ class ImageUtils {
       );
     }
 
-    // Apply opacity for disabled icons
-    iconWidget = Opacity(opacity: enabled ? 1.0 : 0.5, child: iconWidget);
+    // Fade only when nothing tinted the icon: a disabled tint already carries the state, and
+    // applying both leaves this branch's icons washed out next to a replacement's in the same
+    // toolbar. Same rule as _buildBinaryImage and _buildReplacementWidget.
+    if (preserveColors || color == null) {
+      iconWidget = Opacity(opacity: enabled ? 1.0 : fade, child: iconWidget);
+    }
 
     _iconCache[cacheKey] = iconWidget;
     return iconWidget;
@@ -113,14 +119,16 @@ class ImageUtils {
     Color? color,
     bool enabled = true,
     BoxConstraints? constraints,
+    double? disabledOpacity,
     bool renderAsIcon = true,
   }) {
     final preserveColors = preserveIconColors;
+    final fade = disabledOpacity ?? AppOpacities.disabled;
     final cacheKey = renderAsIcon
-        ? 'icon-${bytes?.length ?? file ?? 'none'}-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled-$preserveColors'
+        ? 'icon-${bytes?.length ?? file ?? 'none'}-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled-$preserveColors-$fade'
         : (file != null)
-        ? 'img-${file}-${width ?? 'default'}-${height ?? 'default'}-$enabled'
-        : 'img-${bytes?.length ?? 'none'}-$enabled';
+        ? 'img-${file}-${width ?? 'default'}-${height ?? 'default'}-$enabled-$fade'
+        : 'img-${bytes?.length ?? 'none'}-$enabled-$fade';
 
     if (_imageCache.containsKey(cacheKey)) {
       return _imageCache[cacheKey];
@@ -148,7 +156,7 @@ class ImageUtils {
           );
           if (color == null) {
             iconContent = Opacity(
-              opacity: enabled ? 1.0 : 0.5,
+              opacity: enabled ? 1.0 : fade,
               child: iconContent,
             );
           }
@@ -164,7 +172,7 @@ class ImageUtils {
             ),
           );
           iconContent = Opacity(
-            opacity: enabled ? 1.0 : 0.5,
+            opacity: enabled ? 1.0 : fade,
             child: iconContent,
           );
         }
@@ -219,7 +227,7 @@ class ImageUtils {
           constraints:
               constraints ??
               BoxConstraints(maxWidth: width ?? 64, maxHeight: height ?? 64),
-          child: Opacity(opacity: enabled ? 1.0 : 0.5, child: image),
+          child: Opacity(opacity: enabled ? 1.0 : fade, child: image),
         );
       }
 
@@ -245,16 +253,18 @@ class ImageUtils {
     bool enabled = true,
     BoxConstraints? constraints,
     bool renderAsIcon = true,
+    double? disabledOpacity,
   }) {
     final preserveColors = preserveIconColors;
     final Color? effectiveTint = preserveColors
         ? null
         : (color ?? AppColors.getColor(enabled));
 
+    final fade = disabledOpacity ?? AppOpacities.disabled;
     final cacheKey =
         'replacement-$filename-${size ?? width ?? height ?? 'default'}-'
         '${color?.value ?? 'default'}-${effectiveTint?.value ?? 'none'}-'
-        '$preserveColors-$enabled-$renderAsIcon';
+        '$preserveColors-$enabled-$renderAsIcon-$fade';
 
     if (_imageCache.containsKey(cacheKey)) {
       return _imageCache[cacheKey];
@@ -281,7 +291,7 @@ class ImageUtils {
         );
 
         if (preserveColors || color == null) {
-          svgContent = Opacity(opacity: enabled ? 1.0 : 0.5, child: svgContent);
+          svgContent = Opacity(opacity: enabled ? 1.0 : fade, child: svgContent);
         }
 
         if (constraints != null) {
@@ -309,7 +319,7 @@ class ImageUtils {
         );
 
         if (preserveColors || color == null) {
-          svgWidget = Opacity(opacity: enabled ? 1.0 : 0.5, child: svgWidget);
+          svgWidget = Opacity(opacity: enabled ? 1.0 : fade, child: svgWidget);
         }
 
         widget = ConstrainedBox(
@@ -347,7 +357,7 @@ class ImageUtils {
 
         if (preserveColors || color == null) {
           imageContent = Opacity(
-            opacity: enabled ? 1.0 : 0.5,
+            opacity: enabled ? 1.0 : fade,
             child: imageContent,
           );
         }
@@ -388,7 +398,7 @@ class ImageUtils {
 
         if (preserveColors || color == null) {
           imageWidget = Opacity(
-            opacity: enabled ? 1.0 : 0.5,
+            opacity: enabled ? 1.0 : fade,
             child: imageWidget,
           );
         }
@@ -420,6 +430,7 @@ class ImageUtils {
     BoxConstraints? constraints,
     bool useBinaryImage = true,
     bool renderAsIcon = true,
+    double? disabledOpacity,
   }) {
     if (image == null) {
       return Future.value(null);
@@ -430,7 +441,8 @@ class ImageUtils {
     final cacheKey =
         'future-${stableImageKey(image)}-'
         '${size ?? width ?? height ?? 'default'}-${color?.value ?? 'default'}-'
-        '$preserveColors-$useEvolveIcons-$enabled-$renderAsIcon';
+        '$preserveColors-$useEvolveIcons-$enabled-$renderAsIcon-'
+        '${disabledOpacity ?? AppOpacities.disabled}';
 
     // Return cached Future if it exists
     if (_futureCache.containsKey(cacheKey)) {
@@ -448,6 +460,7 @@ class ImageUtils {
       constraints: constraints,
       useBinaryImage: useBinaryImage,
       renderAsIcon: renderAsIcon,
+      disabledOpacity: disabledOpacity,
     );
 
     _futureCache[cacheKey] = future;
@@ -465,6 +478,7 @@ class ImageUtils {
     BoxConstraints? constraints,
     required bool useBinaryImage,
     required bool renderAsIcon,
+    double? disabledOpacity,
   }) async {
     // SVG content loaded by Java (no filesystem access needed)
     if (image.svgContent?.isNotEmpty ?? false) {
@@ -478,6 +492,7 @@ class ImageUtils {
         enabled: enabled,
         constraints: constraints,
         renderAsIcon: renderAsIcon,
+        disabledOpacity: disabledOpacity,
       );
     }
 
@@ -498,6 +513,7 @@ class ImageUtils {
             enabled: enabled,
             constraints: constraints,
             renderAsIcon: renderAsIcon,
+            disabledOpacity: disabledOpacity,
           );
         }
       } catch (e) {
@@ -512,6 +528,7 @@ class ImageUtils {
         size: size ?? width ?? height,
         color: color,
         enabled: enabled,
+        disabledOpacity: disabledOpacity,
       );
       if (iconWidget != null) {
         return iconWidget;
@@ -529,6 +546,7 @@ class ImageUtils {
         enabled: enabled,
         constraints: constraints,
         renderAsIcon: renderAsIcon,
+        disabledOpacity: disabledOpacity,
       );
     }
 
@@ -546,6 +564,7 @@ class ImageUtils {
     BoxConstraints? constraints,
     bool useBinaryImage = true,
     bool renderAsIcon = true,
+    double? disabledOpacity,
   }) {
     if (image == null) return null;
 
@@ -561,6 +580,7 @@ class ImageUtils {
         enabled: enabled,
         constraints: constraints,
         renderAsIcon: renderAsIcon,
+        disabledOpacity: disabledOpacity,
       );
     }
 
@@ -575,6 +595,7 @@ class ImageUtils {
         size: size ?? width ?? height,
         color: color,
         enabled: enabled,
+        disabledOpacity: disabledOpacity,
       );
       if (syncFallback == null && useBinaryImage && image.imageData?.data != null) {
         syncFallback = _buildBinaryImage(

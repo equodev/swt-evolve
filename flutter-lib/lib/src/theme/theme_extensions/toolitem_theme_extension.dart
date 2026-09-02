@@ -15,6 +15,7 @@ part 'toolitem_theme_extension.g.dart';
 class ToolItemThemeExtension extends ThemeExtension<ToolItemThemeExtension> with _$ToolItemThemeExtensionTailorMixin {
   final Color enabledColor;
   final Color disabledColor;
+  final double disabledOpacity;
   final Color hoverColor;
   final Color selectedBackgroundColor;
   final Color selectedBorderColor;
@@ -65,6 +66,7 @@ class ToolItemThemeExtension extends ThemeExtension<ToolItemThemeExtension> with
   const ToolItemThemeExtension({
     required this.enabledColor,
     required this.disabledColor,
+    required this.disabledOpacity,
     required this.hoverColor,
     required this.selectedBackgroundColor,
     required this.selectedBorderColor,

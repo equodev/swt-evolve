@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme_extensions/link_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 
 LinkThemeExtension getLinkLightTheme({
   required ColorScheme colorScheme,
@@ -58,7 +59,7 @@ LinkThemeExtension _getLinkTheme({
     padding: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 2.0),
 
     // Interactive properties
-    disabledOpacity: 0.6,
+    disabledOpacity: AppOpacities.disabled,
     hoverAnimationDuration: const Duration(milliseconds: 150),
 
     // Decoration properties

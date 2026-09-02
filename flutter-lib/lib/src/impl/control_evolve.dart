@@ -322,7 +322,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       // this branch too. Without it, everything a Canvas draws for itself is dropped -- a ui.forms
       // Hyperlink, which applications create disabled, renders as an empty row.
       return blockWhenDisabled(
-          Opacity(opacity: 0.35, child: wrapWithGCOverlay(widget)));
+          Opacity(opacity: AppOpacities.disabled, child: wrapWithGCOverlay(widget)));
     }
 
     if (state.menu != null) {

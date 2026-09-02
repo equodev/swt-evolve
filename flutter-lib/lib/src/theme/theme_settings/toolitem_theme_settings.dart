@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme_extensions/toolitem_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 
 ToolItemThemeExtension getToolItemLightTheme({
   required ColorScheme colorScheme,
@@ -37,6 +38,7 @@ ToolItemThemeExtension _getToolItemTheme({
   return ToolItemThemeExtension(
     enabledColor: textTheme.bodyMedium!.color!,
     disabledColor: colorSchemeExtension.onSurfaceVariantDisabled,
+    disabledOpacity: AppOpacities.disabled,
     hoverColor: colorSchemeExtension.stateDefaultHovered,
     selectedBackgroundColor: colorSchemeExtension.stateDefaultPressed,
     selectedBorderColor: colorScheme.outline,

@@ -3,12 +3,22 @@ import 'package:flutter/material.dart';
 import 'package:swtflutter/src/gen/menu.dart';
 import 'package:swtflutter/src/gen/menuitem.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
+import 'package:swtflutter/src/theme/theme_extensions/color_scheme_extension.dart';
 
 bool _useDarkTheme = false;
 int? _parentBackgroundColor;
 
 void setCurrentTheme(bool isDark) {
   _useDarkTheme = isDark;
+}
+
+/// The color scheme the running [MaterialApp] was built with, published here so the static helpers
+/// that render without a [BuildContext] — [AppColors], the icon pipeline — resolve against the same
+/// tokens as the widgets that do have one. Null until the first theme is built.
+ColorSchemeExtension? _currentColorSchemeExtension;
+
+void setCurrentColorSchemeExtension(ColorSchemeExtension? extension) {
+  _currentColorSchemeExtension = extension;
 }
 
 ConfigFlags configFlags = ConfigFlags();
@@ -123,6 +133,12 @@ class AppSizes {
   static const double separatorIndent = 8.0;
 }
 
+/// The single disabled opacity. Every widget that renders a disabled state by fading it reads this,
+/// so how faded "disabled" looks is one number rather than a literal per call site.
+class AppOpacities {
+  static const double disabled = 0.5;
+}
+
 class AppConstraints {
   static const BoxConstraints toolbarConstraints = BoxConstraints(
     minWidth: 20,
@@ -171,8 +187,11 @@ class AppColors {
   static Color getBorderColor() => _useDarkTheme ? darkBorder : lightBorder;
   static Color getEnabledColor() =>
       _useDarkTheme ? darkEnabledColor : lightEnabledColor;
+  /// The theme's disabled foreground, the same token every widget uses for disabled text. The
+  /// constants below are the fallback for before the first theme is built.
   static Color getDisabledColor() =>
-      _useDarkTheme ? darkDisabled : lightDisabled;
+      _currentColorSchemeExtension?.onSurfaceVariantDisabled ??
+      (_useDarkTheme ? darkDisabled : lightDisabled);
   static Color getTextColor() => _useDarkTheme ? darkTextColor : lightTextColor;
   static Color getColor(bool enabled) =>
       enabled ? getEnabledColor() : getDisabledColor();

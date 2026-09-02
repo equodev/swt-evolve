@@ -10,6 +10,7 @@ import 'package:swtflutter/src/custom/csd/csd_scaffold.dart';
 import 'package:swtflutter/src/custom/csd/csd_state.dart';
 import 'package:swtflutter/src/custom/csd/equo_window.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
+import 'package:swtflutter/src/theme/theme_extensions/color_scheme_extension.dart';
 import 'src/impl/utils/double_tap_detector.dart' as double_tap_detector;
 import 'src/styles.dart';
 import 'src/theme/theme.dart'
@@ -462,6 +463,15 @@ class EvolveApp extends StatelessWidget {
           lightTheme = createLightDefaultTheme(backgroundColor, seedColor: seedColor);
           darkTheme = createDarkDefaultTheme(backgroundColor, seedColor: seedColor);
         }
+
+        // Publish the scheme the app is actually rendering with, so the static helpers that have
+        // no BuildContext (AppColors, the icon pipeline) resolve disabled against the same token
+        // the widgets do.
+        final activeTheme =
+            effectiveThemeMode == ThemeMode.dark ? darkTheme : lightTheme;
+        setCurrentColorSchemeExtension(
+          activeTheme.extension<ColorSchemeExtension>(),
+        );
 
         return MaterialApp(
           title: 'Evolve',

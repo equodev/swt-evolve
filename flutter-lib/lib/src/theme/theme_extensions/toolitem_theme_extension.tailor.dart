@@ -13,6 +13,7 @@ mixin _$ToolItemThemeExtensionTailorMixin
     on ThemeExtension<ToolItemThemeExtension> {
   Color get enabledColor;
   Color get disabledColor;
+  double get disabledOpacity;
   Color get hoverColor;
   Color get selectedBackgroundColor;
   Color get selectedBorderColor;
@@ -64,6 +65,7 @@ mixin _$ToolItemThemeExtensionTailorMixin
   ToolItemThemeExtension copyWith({
     Color? enabledColor,
     Color? disabledColor,
+    double? disabledOpacity,
     Color? hoverColor,
     Color? selectedBackgroundColor,
     Color? selectedBorderColor,
@@ -114,6 +116,7 @@ mixin _$ToolItemThemeExtensionTailorMixin
     return ToolItemThemeExtension(
       enabledColor: enabledColor ?? this.enabledColor,
       disabledColor: disabledColor ?? this.disabledColor,
+      disabledOpacity: disabledOpacity ?? this.disabledOpacity,
       hoverColor: hoverColor ?? this.hoverColor,
       selectedBackgroundColor:
           selectedBackgroundColor ?? this.selectedBackgroundColor,
@@ -190,6 +193,7 @@ mixin _$ToolItemThemeExtensionTailorMixin
     return ToolItemThemeExtension(
       enabledColor: Color.lerp(enabledColor, other.enabledColor, t)!,
       disabledColor: Color.lerp(disabledColor, other.disabledColor, t)!,
+      disabledOpacity: t < 0.5 ? disabledOpacity : other.disabledOpacity,
       hoverColor: Color.lerp(hoverColor, other.hoverColor, t)!,
       selectedBackgroundColor: Color.lerp(
         selectedBackgroundColor,
@@ -329,6 +333,10 @@ mixin _$ToolItemThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               disabledColor,
               other.disabledColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              disabledOpacity,
+              other.disabledOpacity,
             ) &&
             const DeepCollectionEquality().equals(
               hoverColor,
@@ -516,6 +524,7 @@ mixin _$ToolItemThemeExtensionTailorMixin
       runtimeType.hashCode,
       const DeepCollectionEquality().hash(enabledColor),
       const DeepCollectionEquality().hash(disabledColor),
+      const DeepCollectionEquality().hash(disabledOpacity),
       const DeepCollectionEquality().hash(hoverColor),
       const DeepCollectionEquality().hash(selectedBackgroundColor),
       const DeepCollectionEquality().hash(selectedBorderColor),
@@ -571,6 +580,7 @@ extension ToolItemThemeExtensionBuildContextProps on BuildContext {
       Theme.of(this).extension<ToolItemThemeExtension>()!;
   Color get enabledColor => toolItemThemeExtension.enabledColor;
   Color get disabledColor => toolItemThemeExtension.disabledColor;
+  double get disabledOpacity => toolItemThemeExtension.disabledOpacity;
   Color get hoverColor => toolItemThemeExtension.hoverColor;
   Color get selectedBackgroundColor =>
       toolItemThemeExtension.selectedBackgroundColor;
