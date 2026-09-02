@@ -22,6 +22,7 @@ import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -277,8 +278,26 @@ public class GallerySnippet {
         toolRadio.addSelectionListener(widgetSelectedAdapter(e -> status.setText("ToolRadio: " + toolRadio.getSelection())));
         ToolItem toolDropDown = new ToolItem(toolBar, SWT.DROP_DOWN);
         toolDropDown.setText("ToolMore");
-        toolDropDown.addSelectionListener(widgetSelectedAdapter(e -> status.setText(
-                e.detail == SWT.ARROW ? "ToolMore arrow clicked" : "ToolMore clicked")));
+        Menu toolDropDownMenu = new Menu(shell, SWT.POP_UP);
+        for (String entry : new String[] { "More A", "More B" }) {
+            MenuItem moreItem = new MenuItem(toolDropDownMenu, SWT.PUSH);
+            moreItem.setText(entry);
+            moreItem.addSelectionListener(widgetSelectedAdapter(e -> status.setText(entry + " selected")));
+        }
+        toolDropDown.addSelectionListener(widgetSelectedAdapter(e -> {
+            if (e.detail == SWT.ARROW) {
+                // A DROP_DOWN ToolItem only reports the arrow click; placing and showing the menu
+                // under the item is the application's job, so the gallery uses the same idiom
+                // every SWT application does.
+                Rectangle itemBounds = toolDropDown.getBounds();
+                toolDropDownMenu.setLocation(
+                        toolBar.toDisplay(itemBounds.x, itemBounds.y + itemBounds.height));
+                toolDropDownMenu.setVisible(true);
+                status.setText("ToolMore arrow clicked");
+            } else {
+                status.setText("ToolMore clicked");
+            }
+        }));
 
         // ExpandBar
         Group expandGroup = section(root, "ExpandBar");

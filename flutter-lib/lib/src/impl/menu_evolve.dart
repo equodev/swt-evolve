@@ -319,7 +319,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
         ),
       ),
       alignmentOffset: Offset.zero,
-      anchorTapClosesMenu: false,
+      consumeOutsideTap: true,
       onOpen: () => widget.sendMenuShow(state, null),
       onClose: () {
         _sendPendingChanges();
