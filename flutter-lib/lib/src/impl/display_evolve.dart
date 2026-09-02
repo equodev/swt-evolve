@@ -11,6 +11,8 @@ import '../theme/theme_extensions/display_theme_extension.dart';
 import 'key_forwarding.dart';
 import 'key_mapping.dart';
 import 'shell_evolve.dart';
+import 'utils/traversal_veto_scope.dart';
+import 'utils/veto_gate.dart';
 import 'widget_config.dart';
 
 class DisplaySwt extends StatefulWidget {
@@ -36,6 +38,9 @@ final Map<int?, VDisplay> _lastDisplayState = <int?, VDisplay>{};
 class _DisplaySwtState extends State<DisplaySwt> {
   late VDisplay _display;
 
+  // The client owns traversal, so the Traverse gate is Display-scoped, not per-control.
+  final VetoGate _traverseGate = VetoGate('traverse');
+
   @override
   void initState() {
     super.initState();
@@ -47,12 +52,14 @@ class _DisplaySwtState extends State<DisplaySwt> {
     // how Eclipse command shortcuts dispatch). This replaces the per-control forwarders while a
     // Display is mounted — see [displayLevelKeyForwardingActive].
     displayLevelKeyForwardingActive = true;
+    _traverseGate.attach('Display', widget.value.id ?? 0);
     HardwareKeyboard.instance.addHandler(_forwardKeyToSwt);
   }
 
   @override
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_forwardKeyToSwt);
+    _traverseGate.detach();
     displayLevelKeyForwardingActive = false;
     super.dispose();
   }
@@ -165,7 +172,9 @@ class _DisplaySwtState extends State<DisplaySwt> {
     if (shells.isEmpty) return const SizedBox.shrink();
     _shellIsMainCache.removeWhere((id, _) => !shells.any((s) => s.id == id));
 
-    return LayoutBuilder(builder: (context, constraints) {
+    return TraversalVetoScope(
+        gate: _traverseGate,
+        child: LayoutBuilder(builder: (context, constraints) {
       final mainShells = <VShell>[];
       final dialogShells = <VShell>[];
       VShell? loneMainCandidate;
@@ -247,6 +256,6 @@ class _DisplaySwtState extends State<DisplaySwt> {
           ),
         ],
       ]);
-    });
+    }));
   }
 }

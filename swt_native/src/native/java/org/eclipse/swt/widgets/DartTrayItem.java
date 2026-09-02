@@ -539,6 +539,7 @@ public class DartTrayItem extends DartItem implements ITrayItem {
                 if (isDisposed())
                     return;
                 sendEvent(SWT.MenuDetect, e);
+                ControlHelper.sendMenuDetectVerdict(this, e);
             });
         });
         FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {

@@ -15,6 +15,7 @@ import '../gen/tablecolumn.dart';
 import '../gen/tableeditor.dart';
 import '../gen/droptarget.dart';
 import '../gen/font.dart';
+import 'utils/menu_detect_gate.dart';
 import 'utils/widget_utils.dart';
 import 'utils/font_utils.dart';
 import 'utils/image_utils.dart';
@@ -488,7 +489,11 @@ class TableImpl<T extends TableSwt, V extends VTable>
         );
       },
       onSecondaryTapDown: (details) {
-        openContextMenu(details.globalPosition);
+        MenuDetectGate.withhold(
+          state.swt,
+          state.id,
+          () => openContextMenu(details.globalPosition),
+        );
         final e = VEvent();
         e.x = _computeHeaderCellCenterX(columnIndex);
         e.y = ((_cachedHeaderOffset ?? 20.0) / 2).round();

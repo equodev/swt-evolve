@@ -115,17 +115,17 @@ public class ControlHelper {
      * {@code Control.traverse}, so popups/dialogs still close) from {@link #sendFlutterKeyDown}, which
      * runs first in every path. Handling it here too would fire {@code SWT.Traverse} twice.
      */
-    public static void sendFlutterTraverse(DartWidget widget, Event keyEvent) {
+    public static boolean sendFlutterTraverse(DartWidget widget, Event keyEvent) {
         // A KeyDown listener can dispose the control the key was routed to — Close All Editors
         // disposes the focused editor — and the caller's disposal guard ran before that dispatch.
         if (widget.isDisposed())
-            return;
+            return true;
         int detail = traverseDetail(keyEvent.keyCode, keyEvent.stateMask);
         boolean mnemonic = detail == SWT.TRAVERSE_NONE && isMnemonicTrigger(keyEvent);
         if (mnemonic)
             detail = SWT.TRAVERSE_MNEMONIC;
         if (detail == SWT.TRAVERSE_NONE)
-            return;
+            return true;
         Event e = new Event();
         e.character = keyEvent.character;
         e.keyCode = keyEvent.keyCode;
@@ -140,6 +140,21 @@ public class ControlHelper {
         if (mnemonic && e.doit && widget instanceof DartControl dc && !dc.getApi().isDisposed()) {
             MnemonicHelper.dispatch(dc.getApi(), (char) keyEvent.keyCode);
         }
+        return e.doit;
+    }
+
+    /** Answers the client's held context menu after the MenuDetect listeners have run. */
+    public static void sendMenuDetectVerdict(DartWidget widget, Event e) {
+        dev.equo.swt.FlutterBridge.send(widget, "menu/verdict", java.util.Map.of("doit", e.doit));
+    }
+
+    /**
+     * Whether the client withholds its own traversal for this key. Only Tab: it is the only key
+     * Flutter traverses on by itself. Java must publish a verdict for exactly these keys — the
+     * client matches by order, so an unpaired verdict would resolve the wrong proposal.
+     */
+    public static boolean isGatedTraversal(Event keyEvent) {
+        return keyEvent.keyCode == SWT.TAB;
     }
 
     /** True when the key event is an {@code Alt+<letter/digit>} mnemonic trigger (no Ctrl/Command). */

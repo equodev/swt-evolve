@@ -16,6 +16,7 @@ import 'key_forwarding.dart';
 import 'key_mapping.dart';
 import 'utils/hover_arbiter.dart';
 import 'utils/text_utils.dart';
+import 'utils/veto_gate.dart';
 import 'utils/widget_utils.dart';
 import 'utils/pending_text_echoes.dart';
 
@@ -28,17 +29,8 @@ class TextImpl<T extends TextSwt, V extends VText>
   @override
   FocusNode get swtFocusNode => _focusNode;
 
-  // SWT's VerifyListener runs BEFORE the character is displayed. Java flags a Verify-hooked
-  // field via modify/vetoable; each edit is then held un-rendered, sent to Java as the Modify
-  // proposal, and applied or dropped on the modify/verdict answer.
-  bool _vetoable = false;
-  TextEditingValue? _pendingEdit;
-  Timer? _pendingTimer;
-  Object? _vetoableToken;
-  Object? _verdictToken;
-
-  String get _vetoableChannel => '${state.swt}/${state.id}/modify/vetoable';
-  String get _verdictChannel => '${state.swt}/${state.id}/modify/verdict';
+  // A VerifyListener runs before the character is displayed, so edits are held un-rendered.
+  final VetoGate _modifyGate = VetoGate('modify');
 
   @override
   void initState() {
@@ -46,40 +38,31 @@ class TextImpl<T extends TextSwt, V extends VText>
     _controller = TextEditingController(text: state.text);
     _controller.addListener(_updateCaretPosition);
     _focusNode.addListener(_handleFocusChange);
-    _vetoableToken = EquoCommService.onRaw(
-      _vetoableChannel,
-      (args) => _vetoable = _boolArg(args, 'value') ?? false,
-    );
-    _verdictToken = EquoCommService.onRaw(
-      _verdictChannel,
-      (args) => _handleModifyVerdict(_boolArg(args, 'doit') ?? true),
-    );
+    _modifyGate.attach(state.swt, state.id);
+    _modifyGate.onUnmatched = _revertOptimisticEdit;
     // Initialize caret position
     WidgetsBinding.instance.addPostFrameCallback((_) => _updateCaretPosition());
-  }
-
-  static bool? _boolArg(dynamic args, String key) {
-    final decoded = args is String ? jsonDecode(args) : args;
-    return decoded is Map ? decoded[key] as bool? : null;
   }
 
   /// Holds an edit while the field is vetoable: the proposal goes to Java as the Modify, the
   /// controller keeps the old value until the verdict. Selection-only changes and the
   /// single-line newline path (submit semantics, see [_handleTextChanged]) stay optimistic.
   TextEditingValue _gateEdit(TextEditingValue oldValue, TextEditingValue newValue) {
-    if (!_vetoable) return newValue;
+    if (!_modifyGate.armed) return newValue;
     if (newValue.text == oldValue.text) return newValue;
     final isSingleLineExpand =
         hasBounds(state.bounds) && !hasStyle(state.style, SWT.MULTI);
     if (isSingleLineExpand && newValue.text.contains('\n')) return newValue;
-    _pendingEdit = newValue;
-    _pendingTimer?.cancel();
-    // If Java never answers (e.g. it went away mid-edit), fall back to the optimistic apply
-    // rather than swallowing the user's typing.
-    _pendingTimer = Timer(
-      const Duration(milliseconds: 400),
-      () => _resolvePendingEdit(true),
-    );
+    _modifyGate.propose((doit) {
+      if (!doit) {
+        // The held edit was never rendered, so it just drops; stop suppressing Java's echoes.
+        clearSentTextEchoes();
+        return;
+      }
+      if (!mounted) return;
+      _controller.value = newValue;
+      state.text = newValue.text;
+    });
     recordSentText(newValue.text);
     widget.sendModifyModify(
       state,
@@ -90,37 +73,20 @@ class TextImpl<T extends TextSwt, V extends VText>
     return oldValue;
   }
 
-  void _handleModifyVerdict(bool doit) {
-    _pendingTimer?.cancel();
-    _pendingTimer = null;
-    _resolvePendingEdit(doit);
-  }
-
-  void _resolvePendingEdit(bool doit) {
-    final pending = _pendingEdit;
-    _pendingEdit = null;
-    if (!doit) {
-      // Java rejected the edit: it is authoritative now. A held edit is simply dropped (it was
-      // never rendered). An edit that had already been applied optimistically (no vetoable flag
-      // yet) must be reverted from Java's push — which the stale-echo guard would otherwise
-      // swallow, since the pre-edit text is its focus baseline — so stop suppressing echoes and
-      // resync from the pushed state.
-      clearSentTextEchoes();
-      if (pending == null && mounted) {
-        final authoritative = state.text ?? '';
-        if (_controller.text != authoritative) {
-          _controller.value = _controller.value.copyWith(
-            text: authoritative,
-            selection: TextSelection.collapsed(offset: authoritative.length),
-            composing: TextRange.empty,
-          );
-        }
-      }
-      return;
+  /// Rejection for an edit that was never held (the embedded backend never arms the gate), so it is
+  /// already on screen. Clearing the echo guard lets Java's corrective push through.
+  void _revertOptimisticEdit(bool doit) {
+    if (doit) return;
+    clearSentTextEchoes();
+    if (!mounted) return;
+    final authoritative = state.text ?? '';
+    if (_controller.text != authoritative) {
+      _controller.value = _controller.value.copyWith(
+        text: authoritative,
+        selection: TextSelection.collapsed(offset: authoritative.length),
+        composing: TextRange.empty,
+      );
     }
-    if (pending == null || !mounted) return;
-    _controller.value = pending;
-    state.text = pending.text;
   }
 
   @override
@@ -411,8 +377,8 @@ class TextImpl<T extends TextSwt, V extends VText>
       seedTextEchoBaseline(_controller.text);
       widget.sendFocusFocusIn(state, null);
     } else {
-      // Java re-flags vetoable per focus (DisplayBridge.setFocus).
-      _vetoable = false;
+      // Java re-arms per focus (DisplayBridge.setFocus).
+      _modifyGate.armed = false;
       clearSentTextEchoes();
       widget.sendFocusFocusOut(state, null);
     }
@@ -440,9 +406,7 @@ class TextImpl<T extends TextSwt, V extends VText>
 
   @override
   void dispose() {
-    _pendingTimer?.cancel();
-    EquoCommService.remove(_vetoableChannel, _vetoableToken);
-    EquoCommService.remove(_verdictChannel, _verdictToken);
+    _modifyGate.detach();
     _controller.removeListener(_updateCaretPosition);
     _controller.dispose();
     _focusNode.removeListener(_handleFocusChange);

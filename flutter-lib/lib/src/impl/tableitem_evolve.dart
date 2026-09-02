@@ -11,6 +11,7 @@ import '../impl/table_evolve.dart';
 import '../theme/theme_extensions/table_theme_extension.dart';
 import '../theme/theme_settings/table_theme_settings.dart';
 import '../impl/color_utils.dart';
+import 'utils/menu_detect_gate.dart';
 import 'utils/widget_utils.dart';
 import 'utils/image_utils.dart';
 
@@ -211,7 +212,11 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       onSecondaryTapDown: (details) {
         sendMouseDown(3);
         if (_context?.tableImpl != null) {
-          _context!.tableImpl!.openContextMenu(details.globalPosition);
+          MenuDetectGate.withhold(
+            _context!.parentTableValue.swt,
+            _context!.parentTableValue.id,
+            () => _context!.tableImpl!.openContextMenu(details.globalPosition),
+          );
           final e = VEvent();
           e.x = _computeCellCenterX(columnIndex, theme);
           e.y = _computeCellCenterY(rowIndex, textStyle, theme);

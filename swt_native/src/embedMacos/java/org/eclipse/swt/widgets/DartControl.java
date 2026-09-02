@@ -4251,6 +4251,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 e.x = displayPt.x;
                 e.y = displayPt.y;
                 sendEvent(SWT.MenuDetect, e);
+                ControlHelper.sendMenuDetectVerdict(this, e);
             });
         });
         FlutterBridge.on(this, "Mouse", "MouseDoubleClick", e -> {

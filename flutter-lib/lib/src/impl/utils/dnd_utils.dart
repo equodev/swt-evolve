@@ -52,8 +52,7 @@ Widget wrapDraggable<T extends Object>({
   if (state.dragSource != true) return child;
 
   void fireDragDetect() {
-    DragStartVeto.reset();
-    DragStartVeto.listenFor(state.swt, state.id);
+    DragStartVeto.begin(state.swt, state.id);
     onDragStarted?.call();
     widget.sendDragDetectDragDetect(state, VEvent());
   }

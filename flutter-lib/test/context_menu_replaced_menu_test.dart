@@ -11,6 +11,7 @@ import 'package:swtflutter/src/gen/table.dart';
 import 'package:swtflutter/src/gen/tablecolumn.dart';
 import 'package:swtflutter/src/gen/tableitem.dart';
 
+import 'support/menu_detect_ack.dart';
 import 'support/menu_shown_ack.dart';
 
 VMenu _menu(int id) => VMenu()
@@ -65,6 +66,8 @@ Future<void> _rightClickRow(WidgetTester tester, {required int ackMenuId}) async
   await tester.tap(find.text('row 1'), buttons: kSecondaryButton);
   await tester.pump();
   await tester.pump();
+  // The row withholds its menu until Java's MenuDetect verdict allows it.
+  await ackMenuDetect(tester, 'Table', 1);
   await ackMenuShown(tester, ackMenuId);
 }
 

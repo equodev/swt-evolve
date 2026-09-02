@@ -225,7 +225,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 }
                 // Surface the traversal (Tab/arrows/Esc/Enter/Page) as SWT.Traverse too, so a Display
                 // Traverse filter (Eclipse command bindings) and TraverseListeners see it.
-                ControlHelper.sendFlutterTraverse(dc, ev);
+                boolean traverseDoit = ControlHelper.sendFlutterTraverse(dc, ev);
+                // The client traverses at Display level, so the verdict goes there, not to the control.
+                if (ControlHelper.isGatedTraversal(ev)) {
+                    sendDisplayGate(display, "traverse/verdict", "doit", traverseDoit);
+                }
             } else {
                 dc.sendEvent(org.eclipse.swt.SWT.KeyUp, ev);
             }
@@ -463,18 +467,46 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         sendDisplayUpdate(forDisplay);
     }
 
+    /**
+     * Publishes one boolean on {@code Display/{id}/<gate>}. The id must be the <em>API</em> Display's
+     * hashCode: a DartDisplay is a DartDevice, so {@code FlutterBridge.id} falls through to the impl
+     * object's hashCode and would address a channel the client never listens on.
+     */
+    private void sendDisplayGate(DartDisplay display, String gate, String key, boolean value) {
+        if (display == null || display.getApi() == null)
+            return;
+        try {
+            serializeAndSend("Display/" + display.getApi().hashCode() + "/" + gate,
+                    java.util.Map.of(key, value));
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /** Gates armed per focus. Arming keeps the round trip off the path where no veto is possible. */
+    private record FocusGate(String channel, int eventType, Class<? extends DartControl> impl) {}
+
+    private static final java.util.List<FocusGate> FOCUS_GATES = java.util.List.of(
+            new FocusGate("key", org.eclipse.swt.SWT.KeyDown, DartControl.class),
+            new FocusGate("modify", org.eclipse.swt.SWT.Verify, DartText.class));
+
     @Override
     public boolean setFocus(DartControl widget) {
         focused = widget;
         Control api = widget == null ? null : widget.getApi();
-        if (api != null && !api.isDisposed() && api.isListening(org.eclipse.swt.SWT.KeyDown)) {
-            dev.equo.swt.FlutterBridge.send(widget, "key/vetoable", java.util.Map.of("value", true));
+        boolean live = api != null && !api.isDisposed();
+        if (live) {
+            for (FocusGate gate : FOCUS_GATES) {
+                if (gate.impl().isInstance(widget) && api.isListening(gate.eventType())) {
+                    dev.equo.swt.FlutterBridge.send(widget, gate.channel() + "/vetoable",
+                            java.util.Map.of("value", true));
+                }
+            }
         }
-        // A Verify-hooked Text must not display a keystroke its listener vetoes: the client holds
-        // each edit until TextHelper.handleModify answers with modify/verdict.
-        if (api != null && !api.isDisposed() && widget instanceof DartText
-                && api.isListening(org.eclipse.swt.SWT.Verify)) {
-            dev.equo.swt.FlutterBridge.send(widget, "modify/vetoable", java.util.Map.of("value", true));
+        // Display-scoped, so it never hears the focus change: publish on every one, false included.
+        if (forDisplay != null) {
+            sendDisplayGate(forDisplay, "traverse/vetoable", "value",
+                    live && api.isListening(org.eclipse.swt.SWT.Traverse));
         }
         publishActiveShell();
         requestClientFocus(widget);

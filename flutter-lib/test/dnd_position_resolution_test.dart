@@ -121,6 +121,8 @@ void main() {
 
       await gesture.up();
       await tester.pumpAndSettle();
+      // Nothing answers the dragStart verdict here; let the fail-open timer run out.
+      await tester.pump(const Duration(milliseconds: 400));
     },
   );
 
@@ -148,6 +150,8 @@ void main() {
 
       await gesture.up();
       await tester.pumpAndSettle();
+      // Nothing answers the dragStart verdict here; let the fail-open timer run out.
+      await tester.pump(const Duration(milliseconds: 400));
     },
   );
 }

@@ -1,6 +1,3 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../comm/comm.dart';
@@ -13,42 +10,26 @@ import '../impl/composite_evolve.dart';
 import '../theme/theme_extensions/spinner_theme_extension.dart';
 import '../theme/theme_settings/spinner_theme_settings.dart';
 import 'utils/text_utils.dart';
+import 'utils/veto_gate.dart';
 import 'utils/widget_utils.dart';
 
 class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
     extends CompositeImpl<T, V> {
   bool _isFocused = false;
 
-  final _SpinnerKeyGate _keyGate = _SpinnerKeyGate();
-  Object? _vetoableToken;
-  Object? _verdictToken;
-
-  String get _vetoableChannel => '${state.swt}/${state.id}/key/vetoable';
-  String get _verdictChannel => '${state.swt}/${state.id}/key/verdict';
+  // A KeyDown listener may veto the keystroke, so an edit is held un-rendered until Java answers.
+  final VetoGate _keyGate = VetoGate('key');
 
   @override
   void initState() {
     super.initState();
-    _vetoableToken = EquoCommService.onRaw(
-      _vetoableChannel,
-      (args) => _keyGate.vetoable = _boolArg(args, 'value') ?? false,
-    );
-    _verdictToken = EquoCommService.onRaw(
-      _verdictChannel,
-      (args) => _keyGate.onVerdict?.call(_boolArg(args, 'doit') ?? true),
-    );
+    _keyGate.attach(state.swt, state.id);
   }
 
   @override
   void dispose() {
-    EquoCommService.remove(_vetoableChannel, _vetoableToken);
-    EquoCommService.remove(_verdictChannel, _verdictToken);
+    _keyGate.detach();
     super.dispose();
-  }
-
-  bool? _boolArg(dynamic args, String key) {
-    final decoded = args is String ? jsonDecode(args) : args;
-    return decoded is Map ? decoded[key] as bool? : null;
   }
 
   @override
@@ -135,7 +116,7 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
           if (hasFocus) {
             widget.sendFocusFocusIn(state, null);
           } else {
-            _keyGate.vetoable = false;
+            _keyGate.armed = false;
             widget.sendFocusFocusOut(state, null);
           }
         },
@@ -151,11 +132,6 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
   }
 }
 
-class _SpinnerKeyGate {
-  bool vetoable = false;
-  void Function(bool doit)? onVerdict;
-}
-
 class _ThemedSpinner extends StatefulWidget {
   final int value;
   final int min;
@@ -167,7 +143,7 @@ class _ThemedSpinner extends StatefulWidget {
   final bool enabled;
   final bool readOnly;
 
-  final _SpinnerKeyGate keyGate;
+  final VetoGate keyGate;
   final double width;
   final double height;
   final SpinnerThemeExtension widgetTheme;
@@ -212,8 +188,6 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
   int? _localValue;
-  TextEditingValue? _pendingEdit;
-  Timer? _pendingTimer;
   bool _isUpHovered = false;
   bool _isDownHovered = false;
   bool _isUpPressed = false;
@@ -225,16 +199,11 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
     _controller = TextEditingController(text: _formatValue(widget.value));
     _focusNode = FocusNode();
     _focusNode.addListener(_handleFocusChange);
-    widget.keyGate.onVerdict = _handleKeyVerdict;
   }
 
   @override
   void didUpdateWidget(_ThemedSpinner oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.keyGate, widget.keyGate)) {
-      oldWidget.keyGate.onVerdict = null;
-      widget.keyGate.onVerdict = _handleKeyVerdict;
-    }
     if (_localValue == null && oldWidget.value != widget.value) {
       _controller.text = _formatValue(widget.value);
     }
@@ -242,8 +211,6 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
 
   @override
   void dispose() {
-    widget.keyGate.onVerdict = null;
-    _pendingTimer?.cancel();
     _controller.dispose();
     _focusNode.removeListener(_handleFocusChange);
     _focusNode.dispose();
@@ -251,31 +218,14 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   }
 
   TextEditingValue _gateEdit(TextEditingValue oldValue, TextEditingValue newValue) {
-    if (!widget.keyGate.vetoable) return newValue;
+    if (!widget.keyGate.armed) return newValue;
     if (newValue.text == oldValue.text) return newValue;
-    _pendingEdit = newValue;
-    _pendingTimer?.cancel();
-    _pendingTimer = Timer(
-      const Duration(milliseconds: 400),
-      () => _applyPendingEdit(true),
-    );
+    widget.keyGate.propose((doit) {
+      if (!doit || !mounted) return;
+      _controller.value = newValue;
+      _handleTextChanged(newValue.text);
+    });
     return oldValue;
-  }
-
-  void _handleKeyVerdict(bool doit) {
-    _pendingTimer?.cancel();
-    _pendingTimer = null;
-    _applyPendingEdit(doit);
-  }
-
-  void _applyPendingEdit(bool doit) {
-    final pending = _pendingEdit;
-    _pendingEdit = null;
-    if (!doit) return;
-    widget.keyGate.vetoable = false;
-    if (pending == null || !mounted) return;
-    _controller.value = pending;
-    _handleTextChanged(pending.text);
   }
 
   @override

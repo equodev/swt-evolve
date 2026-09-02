@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 
 import '../../comm/comm.dart';
 import '../../gen/event.dart';
+import 'veto_gate.dart';
 
 /// Tracks whether a pointer button is held down anywhere in the app, to suppress
 /// MouseTrack enter/exit forwarding to Java during a drag-like gesture.
@@ -81,24 +82,30 @@ class DndSession {
   }
 }
 
+/// Whether the drag in flight was vetoed by Java's `dragStart` listener.
+///
+/// The answer arrives on the *source* control's channel while the check happens on the *drop
+/// target* — a different widget — so the link between them lives here for one gesture.
 class DragStartVeto {
   DragStartVeto._();
 
+  static final Map<String, VetoGate> _gates = {};
+  static VetoGate? _inFlight;
   static bool _vetoed = false;
-  static final Map<int, bool> _subscribed = {};
 
   static bool get isVetoed => _vetoed;
 
-  static void reset() {
+  static void begin(String controlSwt, int controlId) {
     _vetoed = false;
-  }
-
-  static void listenFor(String controlSwt, int controlId) {
-    if (_subscribed[controlId] == true) return;
-    _subscribed[controlId] = true;
-    EquoCommService.onRaw("$controlSwt/$controlId/DragDetect/dragStartResult", (payload) {
-      final event = VEvent.fromJson(payload as Map<String, dynamic>);
-      if (event.doit == false) _vetoed = true;
+    final gate = _gates.putIfAbsent('$controlSwt/$controlId', () {
+      final created = VetoGate.optimistic('DragDetect/dragStartResult');
+      created.attach(controlSwt, controlId);
+      return created;
+    });
+    _inFlight = gate;
+    gate.propose((doit) {
+      // Without this guard a late verdict rejects whatever drag is in flight next.
+      if (!doit && identical(_inFlight, gate)) _vetoed = true;
     });
   }
 }
