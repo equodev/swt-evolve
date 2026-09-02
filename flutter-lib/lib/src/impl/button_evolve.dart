@@ -823,21 +823,23 @@ class _HoverableCheckboxRadioState extends State<_HoverableCheckboxRadio> {
             width: widget.borderWidth,
           ),
         ),
-        child: widget.isSelected
-            ? Icon(
-                Icons.check,
-                size: widget.checkmarkSize,
-                color: widget.checkmarkColor,
+        // Grayed outranks checked: the partial mark is all that separates a partially-checked
+        // box from a fully-checked one.
+        child: widget.isGrayed
+            ? Container(
+                margin: EdgeInsets.all(widget.grayedMargin ?? 0),
+                decoration: BoxDecoration(
+                  color: widget.checkmarkColor,
+                  borderRadius: BorderRadius.circular(
+                    widget.grayedBorderRadius ?? 0,
+                  ),
+                ),
               )
-            : (widget.isGrayed
-                  ? Container(
-                      margin: EdgeInsets.all(widget.grayedMargin ?? 0),
-                      decoration: BoxDecoration(
-                        color: widget.checkmarkColor,
-                        borderRadius: BorderRadius.circular(
-                          widget.grayedBorderRadius ?? 0,
-                        ),
-                      ),
+            : (widget.isSelected
+                  ? Icon(
+                      Icons.check,
+                      size: widget.checkmarkSize,
+                      color: widget.checkmarkColor,
                     )
                   : null),
       );
