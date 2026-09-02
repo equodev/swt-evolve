@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui' show LineMetrics;
 import 'package:flutter/foundation.dart';
@@ -26,6 +27,7 @@ import 'utils/font_utils.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 import 'utils/pending_text_echoes.dart';
+import 'utils/verify_key_gate.dart';
 import 'color_utils.dart';
 import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
 import '../theme/theme_extensions/styledtext_theme_extension.dart';
@@ -49,6 +51,15 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   TextShape? _originalServerTextShape;
   bool _isInLocalEditMode = false;
   bool _hasProgrammaticSelection = false;
+
+  final VerifyKeyGate _verifyKeyGate = VerifyKeyGate();
+  Object? _verifyKeyVetoableToken;
+  Object? _verifyKeyVerdictToken;
+
+  String get _verifyKeyVetoableChannel =>
+      '${state.swt}/${state.id}/verifyKey/vetoable';
+  String get _verifyKeyVerdictChannel =>
+      '${state.swt}/${state.id}/verifyKey/verdict';
 
   bool _isSelecting = false;
   int? _selectionStartOffset;
@@ -115,6 +126,28 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         _stopEditing();
       }
     });
+    _verifyKeyVetoableToken = EquoCommService.onRaw(
+      _verifyKeyVetoableChannel,
+      (args) => _verifyKeyGate.armed = _boolArg(args, 'value') ?? false,
+    );
+    _verifyKeyVerdictToken = EquoCommService.onRaw(
+      _verifyKeyVerdictChannel,
+      (args) => _verifyKeyGate.verdict(
+        _boolArg(args, 'doit') ?? true,
+        _intArg(args, 'keyCode'),
+      ),
+    );
+  }
+
+  bool? _boolArg(dynamic args, String key) {
+    final decoded = args is String ? jsonDecode(args) : args;
+    return decoded is Map ? decoded[key] as bool? : null;
+  }
+
+  int? _intArg(dynamic args, String key) {
+    final decoded = args is String ? jsonDecode(args) : args;
+    final value = decoded is Map ? decoded[key] : null;
+    return value is int ? value : null;
   }
 
   /// A multi-line editable StyledText keeps Tab as content instead of traversing away from it
@@ -153,6 +186,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     _focusNode.removeListener(_syncEditorKeyOwnership);
     _focusNode.dispose();
     _caretBlinkTimer?.cancel();
+    EquoCommService.remove(_verifyKeyVetoableChannel, _verifyKeyVetoableToken);
+    EquoCommService.remove(_verifyKeyVerdictChannel, _verifyKeyVerdictToken);
+    _verifyKeyGate.dispose();
     super.dispose();
   }
 
@@ -848,9 +884,24 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     _focusNode.requestFocus();
   }
 
-  void _sendKeyDownEvent(RawKeyEvent event) {
+  /// Forwards the key to Java and reports the SWT event it sent, whose keyCode the verdicts for
+  /// caret-only keys are matched against.
+  VEvent _sendKeyDownEvent(RawKeyEvent event) {
     final vEvent = mapKeyEventToSwt(event);
     widget.sendKeyKeyDown(state, vEvent);
+    return vEvent;
+  }
+
+  /// Keys whose whole local effect is moving the caret. They produce no Modify, so a vetoed one
+  /// has no corrective push behind it the way a text-changing key does -- see [VerifyKeyGate].
+  static bool _movesCaretOnly(RawKeyEvent event) {
+    final key = event.logicalKey;
+    return key == LogicalKeyboardKey.arrowLeft ||
+        key == LogicalKeyboardKey.arrowRight ||
+        key == LogicalKeyboardKey.arrowUp ||
+        key == LogicalKeyboardKey.arrowDown ||
+        key == LogicalKeyboardKey.home ||
+        key == LogicalKeyboardKey.end;
   }
 
   void _handleKeyEvent(RawKeyEvent event) {
@@ -858,8 +909,43 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
     // Must run before the edit-mode guard below: while this editor owns the keyboard nothing else
     // forwards, so a key not sent here reaches Java through no path at all.
-    _sendKeyDownEvent(event);
+    final sent = _sendKeyDownEvent(event);
 
+    // Snapshot before applying: a caret-only key is applied straight away and undone if Java's
+    // VerifyKey listeners reject it. Only these keys are queued -- Java answers only these, because
+    // it never sees the keystrokes Eclipse consumes ahead of the widget.
+    final gated = _verifyKeyGate.armed && _movesCaretOnly(event);
+    final undo = gated ? _captureCaretRollback() : null;
+    _applyKeyLocally(event);
+    if (gated) _verifyKeyGate.record(sent.keyCode ?? 0, undo);
+  }
+
+  /// Captures the caret and selection so a rejected navigation key can be put back.
+  ///
+  /// The undo is skipped when the text has changed since: the user typed inside the round trip, and
+  /// restoring an offset measured against the older document would put the caret in the wrong
+  /// place. Leaving the caret where the typing left it is the safe direction.
+  VoidCallback? _captureCaretRollback() {
+    final shape = _editableTextShape;
+    if (shape == null) return null;
+    final caret = shape.caretInfo;
+    final selection = shape.selectionInfo;
+    final text = shape.text;
+    return () {
+      final current = _editableTextShape;
+      if (!mounted || current == null || current.text != text) return;
+      setState(() {
+        var restored = caret == null ? current : current.copyWithCaret(caret);
+        restored = selection == null
+            ? restored.clearSelection()
+            : restored.copyWithSelection(selection);
+        _editableTextShape = restored;
+      });
+      _onCaretMoved();
+    };
+  }
+
+  void _applyKeyLocally(RawKeyEvent event) {
     if (!_isEditingText || _editableTextShape == null) return;
 
     final isShiftPressed = event.data.isShiftPressed;

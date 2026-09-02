@@ -1100,6 +1100,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         if (listener == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         addListener(ST.VerifyKey, new StyledTextListener(listener));
+        StyledTextHelper.verifyKeyListenersChanged(this);
     }
 
     /**
@@ -6120,7 +6121,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         verifyEvent.doit = event.doit;
         verifyEvent.doit = true;
         notifyListeners(ST.VerifyKey, verifyEvent);
-        StyledTextHelper.recordVerifyKeyVerdict(this, verifyEvent.doit);
+        StyledTextHelper.recordVerifyKeyVerdict(this, verifyEvent);
         if (verifyEvent.doit) {
             if ((event.stateMask & SWT.MODIFIER_MASK) == SWT.CTRL && event.keyCode == SWT.SHIFT && isBidiCaret()) {
                 newOrientation = event.keyLocation == SWT.LEFT ? SWT.LEFT_TO_RIGHT : SWT.RIGHT_TO_LEFT;
@@ -8092,6 +8093,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         if (listener == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         removeTypedListener(ST.VerifyKey, listener);
+        StyledTextHelper.verifyKeyListenersChanged(this);
     }
 
     /**

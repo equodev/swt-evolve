@@ -218,7 +218,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             if (type == org.eclipse.swt.SWT.KeyDown) {
                 boolean vetoable = focus.isListening(org.eclipse.swt.SWT.KeyDown);
                 ev.doit = true;
-                ControlHelper.sendFlutterKeyDown(dc, ev);
+                ControlHelper.sendDisplayRoutedKeyDown(dc, ev);
                 if (vetoable) {
                     dev.equo.swt.FlutterBridge.send(dc, "key/verdict",
                             java.util.Map.of("doit", ev.doit));

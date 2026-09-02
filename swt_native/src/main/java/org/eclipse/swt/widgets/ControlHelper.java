@@ -44,6 +44,25 @@ public class ControlHelper {
         translateTraversal(widget, event);
     }
 
+    // True while the Display is forwarding a key to the focused control, rather than that control's
+    // own channel delivering one. The client suppresses its own forward in that case, so anything
+    // it correlates per keystroke (the StyledText VerifyKey verdicts) must not count these.
+    private static final ThreadLocal<Boolean> DISPLAY_ROUTED_KEY = ThreadLocal.withInitial(() -> false);
+
+    /** {@link #sendFlutterKeyDown} for a key the Display routed to the focused control. */
+    public static void sendDisplayRoutedKeyDown(DartWidget widget, Event event) {
+        DISPLAY_ROUTED_KEY.set(true);
+        try {
+            sendFlutterKeyDown(widget, event);
+        } finally {
+            DISPLAY_ROUTED_KEY.set(false);
+        }
+    }
+
+    public static boolean isDisplayRoutedKey() {
+        return DISPLAY_ROUTED_KEY.get();
+    }
+
     /**
      * Dart controls have no OS window proc, so nothing turns an incoming KeyDown into an
      * {@link SWT#Traverse} event the way {@code SwtControl.translateTraversal} does natively.

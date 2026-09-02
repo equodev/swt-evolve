@@ -38,14 +38,63 @@ public class StyledTextHelper {
     private static final Map<DartStyledText, Boolean> vetoedFlutterKeys =
             java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
 
-    public static void recordVerifyKeyVerdict(DartStyledText styledText, boolean doit) {
+    private static final Map<DartStyledText, Boolean> keyVetoPublished =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /** The keys the client applies by moving the caret alone, and can therefore undo. */
+    private static boolean movesCaretOnly(int keyCode) {
+        return keyCode == SWT.ARROW_UP || keyCode == SWT.ARROW_DOWN
+                || keyCode == SWT.ARROW_LEFT || keyCode == SWT.ARROW_RIGHT
+                || keyCode == SWT.HOME || keyCode == SWT.END;
+    }
+
+    public static void recordVerifyKeyVerdict(DartStyledText styledText, Event verifyEvent) {
         if (!ControlHelper.isFlutterOriginatedKey())
             return;
+        boolean doit = verifyEvent.doit;
         if (doit) {
             vetoedFlutterKeys.remove(styledText);
         } else {
             vetoedFlutterKeys.put(styledText, Boolean.TRUE);
         }
+        // A Display-routed key is one the client suppressed because the editor does not own the
+        // keyboard, so it has nothing outstanding to answer.
+        if (ControlHelper.isDisplayRoutedKey())
+            return;
+        // Only the keys the client can undo are exchanged, and each verdict names its keyCode.
+        // Eclipse consumes plenty of keystrokes before they reach here -- a command binding on the
+        // Display filter chain, say -- so answering every key drifts out of step with what the
+        // client is holding, and an answer meant for one key would undo another. Measured on a real
+        // Eclipse IDE: 482 keys forwarded, 423 answered.
+        if (!movesCaretOnly(verifyEvent.keyCode))
+            return;
+        if (Boolean.TRUE.equals(keyVetoPublished.get(styledText))) {
+            FlutterBridge.send(styledText, "verifyKey/verdict",
+                    Map.of("doit", doit, "keyCode", verifyEvent.keyCode));
+        }
+    }
+
+    /**
+     * Publishes whether an {@code ST.VerifyKey} listener is attached, so the client knows a key of
+     * its own may still be vetoed.
+     *
+     * <p>The client applies caret navigation optimistically; a vetoed arrow key produces no Modify,
+     * so unlike a text change it has no corrective push behind it and the moved caret stands. While
+     * this flag is set the client holds navigation until the verdict instead.
+     *
+     * <p>JFace attaches such a listener only while something needs the veto -- {@code TextViewer}'s
+     * manager installs on the first and uninstalls with the last, which for content assist is the
+     * lifetime of the proposal popup -- so ordinary typing never waits for a round trip.
+     */
+    public static void verifyKeyListenersChanged(DartStyledText styledText) {
+        if (styledText.isDisposed())
+            return;
+        boolean vetoable = styledText.isListening(ST.VerifyKey);
+        Boolean published = keyVetoPublished.get(styledText);
+        if (published != null && published == vetoable)
+            return;
+        keyVetoPublished.put(styledText, vetoable);
+        FlutterBridge.send(styledText, "verifyKey/vetoable", Map.of("value", vetoable));
     }
 
     public static boolean consumeVerifyKeyVeto(DartStyledText styledText) {
