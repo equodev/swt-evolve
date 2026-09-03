@@ -459,6 +459,41 @@ public class Config {
                 : "/Shell/0/Composite/1/Composite/1/Composite/1/Composite/1");
     }
 
+    /**
+     * The main workbench area resolved by structure rather than the fixed path
+     * {@link #isMainComposite} matches: the OUTERMOST composite whose layout is the e4
+     * {@code SashLayout} (the top part-sash container). A perspective that nests the sash
+     * container at a different depth (e.g. Debug) never matches that single hardcoded path,
+     * so it fell through to a plain Composite and lost the main-composite panel treatment
+     * (the {@code panelChildGap}, border and shadow that {@code MainComposite} gives its
+     * children) -- the web-mode "part separators vanish after a perspective switch" defect
+     * The SashLayout is only assigned after the composite is constructed, so
+     * this is consulted at serialize time ({@link Serializer#swtWidgetName}), not in
+     * {@link #getCompositeImpl}.
+     */
+    static boolean isMainSashComposite(Composite c) {
+        // The panel treatment (MainComposite) wraps this composite's DIRECT children, so the
+        // main composite must be the sash container that directly holds the part-stacks
+        // (CTabFolders) -- not an outer structural sash whose only child is another wrapper
+        // (which would wrap the whole area as one panel and leave the real parts blended, the
+        // symptom after a perspective switch). A perspective nests these at varying depths, so
+        // key off "SashLayout that directly arranges part-stacks" rather than a fixed path.
+        return c != null && !c.isDisposed() && hasSashLayout(c) && hasChildOfType(c, CTabFolder.class);
+    }
+
+    private static boolean hasSashLayout(Composite c) {
+        Layout layout = c.getLayout();
+        return layout != null
+                && layout.toString().contains("org.eclipse.e4.ui.workbench.renderers.swt.SashLayout");
+    }
+
+    private static boolean hasChildOfType(Composite c, Class<?> type) {
+        Control[] children = c.getChildren();
+        if (children == null) return false;
+        for (Control child : children) if (type.isInstance(child)) return true;
+        return false;
+    }
+
     public static boolean isSwtCTabFolderBody(Class<?> clazz, Widget parent) {
         return Composite.class.isAssignableFrom(clazz) && parent instanceof CTabFolder ct && !(ct.getParent().getImpl() instanceof DartWidget);
     }
