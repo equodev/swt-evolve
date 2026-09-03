@@ -468,8 +468,14 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
           final toolbarTheme = Theme.of(
             context,
           ).extension<ToolBarThemeExtension>();
-          final defaultBackgroundColor =
-              toolbarTheme?.compositeBackgroundColor ?? Colors.white;
+          // Painted opaque so the unchecked/unhovered state still shows a surface under the
+          // checkbox -- but that surface has to be the one the enclosing bar actually resolved
+          // to (e.g. a CTabFolder topRight's tab color), which is exactly what the bar published
+          // via ParentBackgroundScope; falling back to the theme default reads as a patch cut
+          // out of the bar whenever that differs from it.
+          final defaultBackgroundColor = ParentBackgroundScope.backgroundOf(context) ??
+              toolbarTheme?.compositeBackgroundColor ??
+              Colors.white;
 
           return _buildToolbarButton(
             context: context,

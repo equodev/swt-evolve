@@ -68,10 +68,15 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     final toolItems = getToolItems(context);
 
     final isInToolbarArea = ToolbarAreaMarker.of(context);
+    // A nested bar (e.g. the CTabFolder topRight slot) sits inside a composite that already
+    // picked its own background -- often not this theme's generic toolbarBackgroundColor, but
+    // the tab bar's accent color, so the composite and its own controls (minimize/maximize) read
+    // as one surface. Falling back to the marker's color instead of the theme default keeps this
+    // bar on that same surface rather than painting a mismatched slab over it.
     final Color? backgroundColor = getBackgroundColor(
       background: state.background,
       defaultColor: isInToolbarArea
-          ? widgetTheme.toolbarBackgroundColor
+          ? (ToolbarAreaMarker.backgroundOf(context) ?? widgetTheme.toolbarBackgroundColor)
           : Theme.of(context).colorScheme.surface,
     );
 
@@ -116,23 +121,52 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
             );
           }
         } else {
-          bar = FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: isRightToLeft ? Alignment.centerRight : Alignment.centerLeft,
-            child: isVertical
-                ? Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: toolItems,
-                  )
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    textDirection: isRightToLeft
-                        ? TextDirection.rtl
-                        : TextDirection.ltr,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: toolItems,
+          final itemRow = isVertical
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: toolItems,
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  textDirection: isRightToLeft
+                      ? TextDirection.rtl
+                      : TextDirection.ltr,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: toolItems,
+                );
+
+          bar = LayoutBuilder(
+            builder: (context, incoming) {
+              Widget scaled = FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment:
+                    isRightToLeft ? Alignment.centerRight : Alignment.centerLeft,
+                child: itemRow,
+              );
+
+              // Items paint at fixed theme sizes, so the row only reaches the scale the size
+              // model measured because this FittedBox squeezes it into the box the parent
+              // allotted. A parent that sizes children to their content instead (the CTabFolder
+              // topRight slot) leaves the axis unbounded, so on that axis fall back to the
+              // measured bounds -- otherwise the items paint at the raw theme size.
+              final measured = getConstraintsFromBounds(state.bounds);
+              if (measured != null &&
+                  (!incoming.hasBoundedWidth || !incoming.hasBoundedHeight)) {
+                scaled = ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: incoming.hasBoundedWidth
+                        ? double.infinity
+                        : measured.maxWidth,
+                    maxHeight: incoming.hasBoundedHeight
+                        ? double.infinity
+                        : measured.maxHeight,
                   ),
+                  child: scaled,
+                );
+              }
+              return scaled;
+            },
           );
         }
 

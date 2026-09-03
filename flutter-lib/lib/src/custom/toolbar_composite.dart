@@ -260,6 +260,7 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
         decoration: BoxDecoration(color: backgroundColor),
         child: ToolbarAreaMarker(
           active: true,
+          background: backgroundColor,
           child: _withCsdMove(
             csdInToolbar,
             hasHorizontalMenu
@@ -303,6 +304,7 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
       decoration: BoxDecoration(color: backgroundColor),
       child: ToolbarAreaMarker(
         active: true,
+        background: backgroundColor,
         child: _withCsdMove(
           csdInToolbar,
           hasHorizontalMenu
