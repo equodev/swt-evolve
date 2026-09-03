@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Base64;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -50,15 +51,23 @@ class BrowserFileUrlFlutterTest {
     private static final String LOAD_PING =
             "<script>try{parent.postMessage('equo-iframe-loaded:'+document.title,'*')}catch(e){}</script>";
 
+    /** 1x1 transparent PNG. */
+    private static final byte[] PIXEL_PNG = Base64.getDecoder().decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk"
+                    + "YPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==");
+
     Display display;
     Shell shell;
     BrowserFlutterHarness flutter;
     BrowserKit.Handle browser;
     private File fixtureFile;
+    private File imageFile;
 
     @BeforeEach
     void boot() throws Exception {
         System.setProperty("dev.equo.swt.web.crossOriginIsolated", "false");
+        imageFile = File.createTempFile("equo-file-url-resource", ".png");
+        Files.write(imageFile.toPath(), PIXEL_PNG);
         fixtureFile = writeFixture();
 
         flutter = new BrowserFlutterHarness();
@@ -80,6 +89,7 @@ class BrowserFileUrlFlutterTest {
         if (display != null && !display.isDisposed()) display.dispose();
         if (flutter != null) flutter.teardown();
         if (fixtureFile != null) fixtureFile.delete();
+        if (imageFile != null) imageFile.delete();
     }
 
     @Test
@@ -137,6 +147,43 @@ class BrowserFileUrlFlutterTest {
         assertThat(done.getCount()).as("completed fired for the local page").isZero();
         assertThat(error.get()).as("evaluate() must not fail on the local page").isNull();
         assertThat(result.get()).isEqualTo("ready");
+    }
+
+    /**
+     * The page a {@code setUrl("file:...")} names is served same-origin, but the absolute
+     * {@code file:} URLs <em>inside</em> it are still requested as {@code file:} from an
+     * {@code http:} document, which the browser refuses ("Not allowed to load local resource") —
+     * so the page renders with blank icons. Eclipse-based applications write exactly this markup:
+     * {@code FileLocator.toFileURL} yields an absolute {@code file:} URL per bundled resource.
+     */
+    @Test
+    @Tag("flutter-it")
+    void setUrl_withFileSchemeImageInPage_actuallyLoadsTheImage() throws Exception {
+        File page = writeImageFixture(imageFile.toURI().toString());
+        try {
+            flutter.clearIframeLoads();
+            browser.setUrl(page.toURI().toString());
+            flutter.flush();
+            assertThat(flutter.awaitIframeRendered("ImageLoaded", IFRAME_LOAD_TIMEOUT))
+                    .as("the file: image referenced by the local page actually loaded -- if this "
+                            + "is false the page renders with the blank icons reported in web mode")
+                    .isTrue();
+        } finally {
+            page.delete();
+        }
+    }
+
+    /** Reports which of load/error the image ended on, so a red run says why rather than timing out. */
+    private File writeImageFixture(String imageSrc) throws Exception {
+        String html = "<!doctype html><html><head><title>FileUrlImagePage</title>"
+                + "<script>function ping(t){document.title=t;"
+                + "try{parent.postMessage('equo-iframe-loaded:'+t,'*')}catch(e){}}</script>"
+                + "</head><body><h1>hello from disk</h1>"
+                + "<img src='" + imageSrc + "' onload=\"ping('ImageLoaded')\""
+                + " onerror=\"ping('ImageFailed')\"></body></html>";
+        File f = File.createTempFile("equo-file-url-image", ".html");
+        Files.writeString(f.toPath(), html, StandardCharsets.UTF_8);
+        return f;
     }
 
     private File writeFixture() throws Exception {

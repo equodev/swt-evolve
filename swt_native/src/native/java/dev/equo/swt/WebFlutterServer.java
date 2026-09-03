@@ -88,6 +88,9 @@ public class WebFlutterServer {
 
     private static final String DEFAULT_MIME = "application/octet-stream";
 
+    /** Cap on a served HTML page read into memory to rewrite its {@code file:} URLs. */
+    private static final long MAX_REWRITABLE_HTML_BYTES = 8L * 1024 * 1024;
+
     private final File webDirectory;
     private final int httpPort;
     private final int commPort;
@@ -804,7 +807,8 @@ public class WebFlutterServer {
         /** Streams a file resolved by {@link LocalFileServing#resolve}. Shared by this handler's own
          *  requests and by {@link StaticFileHandler}'s root-path Referer fallback. */
         static void serveResolvedFile(HttpExchange exchange, File file, String method) throws IOException {
-            exchange.getResponseHeaders().set("Content-Type", StaticFileHandler.getMimeType(file.getName()));
+            String mimeType = StaticFileHandler.getMimeType(file.getName());
+            exchange.getResponseHeaders().set("Content-Type", mimeType);
             exchange.getResponseHeaders().set("Cache-Control", "no-store");
             StaticFileHandler.setCrossOriginHeaders(exchange);
             StaticFileHandler.setSameOriginCorsHeaders(exchange);
@@ -814,10 +818,43 @@ public class WebFlutterServer {
                 return;
             }
 
+            byte[] rewritten = mimeType.startsWith("text/html") ? rewriteLocalResources(file) : null;
+            if (rewritten != null) {
+                exchange.sendResponseHeaders(200, rewritten.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(rewritten);
+                }
+                return;
+            }
+
             exchange.sendResponseHeaders(200, file.length());
             try (OutputStream os = exchange.getResponseBody();
                  InputStream is = Files.newInputStream(file.toPath())) {
                 is.transferTo(os);
+            }
+        }
+
+        /**
+         * Serving a page same-origin fixes the page, not the absolute {@code file:} URLs inside it:
+         * those are still requested as {@code file:} from an {@code http:} document, which the
+         * browser refuses ("Not allowed to load local resource"), so the page renders with blank
+         * icons. Applications built on Eclipse's {@code FileLocator.toFileURL} write exactly that
+         * markup, so a served page gets the same rewrite a {@code setText} document does. Returns
+         * {@code null} — serve the file as-is — when it references no local file, or is too large
+         * to be the kind of page this is for.
+         * <p>
+         * ISO-8859-1 maps bytes to chars one-to-one, so the rewrite (which only ever replaces ASCII
+         * URLs) round-trips a document of any real encoding back to its own bytes.
+         */
+        private static byte[] rewriteLocalResources(File file) {
+            if (file.length() > MAX_REWRITABLE_HTML_BYTES) return null;
+            try {
+                String html = new String(Files.readAllBytes(file.toPath()), StandardCharsets.ISO_8859_1);
+                LocalFileServing.ServedHtml served = LocalFileServing.rewriteLocalResources(html);
+                return served == null ? null : served.html.getBytes(StandardCharsets.ISO_8859_1);
+            } catch (IOException e) {
+                LOG.log(Level.FINE, "could not rewrite local resources in " + file, e);
+                return null;
             }
         }
 

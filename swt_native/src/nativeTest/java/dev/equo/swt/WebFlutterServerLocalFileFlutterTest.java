@@ -13,6 +13,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Base64;
 import java.util.Comparator;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,9 +27,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Tag("flutter-it")
 class WebFlutterServerLocalFileFlutterTest {
 
+    /** 1x1 transparent PNG. */
+    private static final byte[] PIXEL_PNG = Base64.getDecoder().decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk"
+                    + "YPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==");
+
     private WebFlutterServer server;
     private File appDir;
     private File pageDir;
+    private File imageDir;
     private final HttpClient client = HttpClient.newHttpClient();
 
     @BeforeEach
@@ -52,6 +59,7 @@ class WebFlutterServerLocalFileFlutterTest {
         if (server != null) server.stop();
         deleteRecursively(appDir);
         deleteRecursively(pageDir);
+        deleteRecursively(imageDir);
     }
 
     @Test
@@ -118,19 +126,71 @@ class WebFlutterServerLocalFileFlutterTest {
         assertThat(response.body()).contains("static/js/main.js");
     }
 
-    /** A local HTML fixture: a bundled page whose script is root-absolute. */
-    private LocalFileServing.Served registerLocalPageFixture() throws Exception {
+    @Test
+    void servedHtmlPage_hasItsFileSchemeResourcesRewrittenAndServed() throws Exception {
+        File image = writeImageFixture();
+        LocalFileServing.Served served = registerLocalPageFixture(
+                "<img src=\"" + image.toURI() + "\">");
+
+        String base = server.getApplicationUrl();
+        HttpResponse<String> page = client.send(
+                HttpRequest.newBuilder(URI.create(base + "/local-file/" + served.tokenPath())).GET().build(),
+                HttpResponse.BodyHandlers.ofString());
+
+        assertThat(page.statusCode()).isEqualTo(200);
+        assertThat(page.body())
+                .as("a file: URL left in the served page is requested as file: from an http: "
+                        + "document, which the browser refuses outright")
+                .doesNotContain("file:")
+                .contains(LocalFileServing.URL_PREFIX);
+
+        String imagePath = page.body().replaceAll("(?s).*src=\"([^\"]+)\".*", "$1");
+        HttpResponse<byte[]> servedImage = client.send(
+                HttpRequest.newBuilder(URI.create(base + imagePath)).GET().build(),
+                HttpResponse.BodyHandlers.ofByteArray());
+
+        assertThat(servedImage.statusCode()).as("the rewritten image URL actually serves").isEqualTo(200);
+        assertThat(servedImage.body()).isEqualTo(PIXEL_PNG);
+    }
+
+    @Test
+    void servedBinaryResource_isLeftByteIdentical() throws Exception {
+        File image = writeImageFixture();
+        LocalFileServing.Served served = LocalFileServing.registerIfLocalFile("file:" + image.getAbsolutePath());
+
+        HttpResponse<byte[]> response = client.send(
+                HttpRequest.newBuilder(URI.create(server.getApplicationUrl()
+                        + "/local-file/" + served.tokenPath())).GET().build(),
+                HttpResponse.BodyHandlers.ofByteArray());
+
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.body()).isEqualTo(PIXEL_PNG);
+    }
+
+    private File writeImageFixture() throws Exception {
+        imageDir = Files.createTempDirectory("equo-local-image").toFile();
+        File image = new File(imageDir, "icon.png");
+        Files.write(image.toPath(), PIXEL_PNG);
+        return image;
+    }
+
+    private LocalFileServing.Served registerLocalPageFixture(String extraBody) throws Exception {
         pageDir = Files.createTempDirectory("equo-local-page").toFile();
         File html = new File(pageDir, "LocalPage.html");
         Files.writeString(html.toPath(),
-                "<!doctype html><html><body><script src=\"/static/js/main.js\"></script></body></html>",
-                StandardCharsets.UTF_8);
+                "<!doctype html><html><body>" + extraBody + "</body></html>", StandardCharsets.UTF_8);
+        LocalFileServing.Served served = LocalFileServing.registerIfLocalFile("file:" + html.getAbsolutePath());
+        assertThat(served).as("fixture setup: the HTML file itself must register cleanly").isNotNull();
+        return served;
+    }
+
+    /** A local HTML fixture: a bundled page whose script is root-absolute. */
+    private LocalFileServing.Served registerLocalPageFixture() throws Exception {
+        LocalFileServing.Served served =
+                registerLocalPageFixture("<script src=\"/static/js/main.js\"></script>");
         File js = new File(pageDir, "static/js/main.js");
         js.getParentFile().mkdirs();
         Files.writeString(js.toPath(), "document.title='rendered-widgets';", StandardCharsets.UTF_8);
-
-        LocalFileServing.Served served = LocalFileServing.registerIfLocalFile("file:" + html.getAbsolutePath());
-        assertThat(served).as("fixture setup: the HTML file itself must register cleanly").isNotNull();
         return served;
     }
 
