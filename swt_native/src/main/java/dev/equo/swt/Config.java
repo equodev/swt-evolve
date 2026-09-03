@@ -663,7 +663,12 @@ public class Config {
         flags.show_theme_color_palette = true;
         flags.use_swt_colors = false;
         flags.use_swt_fonts = false;
-        flags.force_theme = "dark";
+        // Dark is the preset's own default, not a veto: an explicitly configured
+        // swt.evolve.force_theme is the product's own choice and outranks it.
+        String configuredTheme = System.getProperty("swt.evolve.force_theme");
+        if (configuredTheme == null || configuredTheme.trim().isEmpty()) {
+            flags.force_theme = "dark";
+        }
         flags.decorations_align = DecorationsAlign.VLEFT;
     }
 

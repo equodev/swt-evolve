@@ -43,7 +43,10 @@ import 'src/gen/gc.dart';
 import 'src/impl/gcdrawer_evolve.dart';
 import 'src/impl/utils/image_utils.dart';
 
-bool _themeConfigLogged = false;
+// Last theme config printed, so the line is emitted on every real change instead of once.
+// The flags arrive over the socket after the first build, so a once-only log always
+// reported them as null -- useless for diagnosing a product's configured theme.
+String? _loggedThemeConfig;
 Completer<void>? _swtEvolvePropertiesCompleter;
 bool _swtEvolvePropertiesListenerRegistered = false;
 _DisplayMetricsReporter? _displayMetricsReporter;
@@ -434,14 +437,13 @@ class EvolveApp extends StatelessWidget {
             ? kNamedThemes[themeName]
             : null;
         final seedColor = parseGlobalSeedColor(flags);
-        if (!_themeConfigLogged) {
-          _themeConfigLogged = true;
-          print(
-            'Theme config -> theme_name=$themeName, '
+        final themeConfig = 'Theme config -> theme_name=$themeName, '
             'force_theme=${flags.force_theme}, '
             'effective_theme_mode=${effectiveThemeMode.name}, '
-            'theme_color=${flags.theme_color}, theme_colors_by_widget=${flags.theme_colors_by_widget}, parsed_seed=${seedColor?.value.toRadixString(16)}',
-          );
+            'theme_color=${flags.theme_color}, theme_colors_by_widget=${flags.theme_colors_by_widget}, parsed_seed=${seedColor?.value.toRadixString(16)}';
+        if (themeConfig != _loggedThemeConfig) {
+          _loggedThemeConfig = themeConfig;
+          print(themeConfig);
         }
         final ThemeData lightTheme;
         final ThemeData darkTheme;
