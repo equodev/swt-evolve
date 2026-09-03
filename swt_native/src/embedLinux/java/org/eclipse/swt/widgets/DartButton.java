@@ -857,6 +857,8 @@ public class DartButton extends DartControl implements IButton {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                if (!isActive())
+                    return;
                 sendEvent(SWT.DefaultSelection, e);
             });
         });

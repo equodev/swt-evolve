@@ -688,6 +688,8 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                if (!isActive())
+                    return;
                 sendEvent(SWT.DefaultSelection, e);
             });
         });

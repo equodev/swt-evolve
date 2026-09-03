@@ -4368,6 +4368,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                if (!isActive())
+                    return;
                 sendEvent(SWT.DragDetect, e);
             });
         });
@@ -4427,6 +4429,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                if (!isActive())
+                    return;
                 org.eclipse.swt.graphics.Point displayPt = toDisplay(e.x, e.y);
                 e.x = displayPt.x;
                 e.y = displayPt.y;
@@ -4438,6 +4442,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                if (!isActive())
+                    return;
                 sendEvent(SWT.MouseDoubleClick, e);
             });
         });
@@ -4445,12 +4451,16 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                if (!isActive())
+                    return;
                 sendEvent(SWT.MouseDown, e);
             });
         });
         FlutterBridge.on(this, "Mouse", "MouseUp", e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
+                    return;
+                if (!isActive())
                     return;
                 sendEvent(SWT.MouseUp, e);
             });

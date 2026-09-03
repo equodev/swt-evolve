@@ -1034,15 +1034,14 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         Control focus = getFocusControl();
         if (focus != null && !focus.isDisposed()) {
             Shell shell = focus.getShell();
-            if (shell != null && !shell.isDisposed() && shell.getVisible()) {
+            if (canBeActiveShell(shell)) {
                 return shell;
             }
         }
         Shell[] currentShells = getShells();
         for (int i = currentShells.length - 1; i >= 0; i--) {
-            Shell shell = currentShells[i];
-            if (shell != null && !shell.isDisposed() && shell.getVisible()) {
-                return shell;
+            if (canBeActiveShell(currentShells[i])) {
+                return currentShells[i];
             }
         }
         return null;
@@ -4068,6 +4067,10 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         }
         kept[i] = menu;
         shownPopups = kept;
+    }
+
+    boolean canBeActiveShell(Shell shell) {
+        return shell != null && !shell.isDisposed() && shell.getVisible() && (shell.getStyle() & SWT.NO_FOCUS) == 0;
     }
 
     void bootFailureCleanup() {

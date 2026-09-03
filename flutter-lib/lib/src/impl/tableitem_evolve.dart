@@ -170,7 +170,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     final cellPadding = _fitCellPadding(
         columnIndex, cellText, textStyle, theme, showCheckbox, cellImage);
 
-    void sendMouseDown(int button) {
+    void sendMouseDown(int button, int count) {
       if (enabled && _context != null) {
         if ((button == 1 || button == 3) && _context!.tableImpl != null) {
           _context!.tableImpl!.selectRowLocally(rowIndex);
@@ -179,7 +179,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         e.x = _computeCellCenterX(columnIndex, theme);
         e.y = _computeCellCenterY(rowIndex, textStyle, theme);
         e.button = button;
-        e.count = 1;
+        e.count = count;
         e.segments = [rowIndex];
         _context!.parentTable.sendEvent(
           _context!.parentTableValue,
@@ -208,9 +208,15 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     // Tag only the first cell as the row's anchor for E2E tooling (Playwright etc.) —
     // tagging every cell would give the row's id to several DOM nodes at once.
     final cell = GestureDetector(
-      onTapDown: (_) => sendMouseDown(1),
+      // The click count is registered here, on the down, because that is the
+      // event SWT numbers -- onTap only decides what the completed gesture was.
+      onTapDown: (_) => sendMouseDown(
+          1,
+          enabled && _context?.tableImpl != null
+              ? _context!.tableImpl!.registerRowTap(rowIndex)
+              : 1),
       onSecondaryTapDown: (details) {
-        sendMouseDown(3);
+        sendMouseDown(3, 1);
         if (_context?.tableImpl != null) {
           MenuDetectGate.withhold(
             _context!.parentTableValue.swt,
@@ -226,10 +232,10 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
           );
         }
       },
-      onTertiaryTapDown: (_) => sendMouseDown(2),
+      onTertiaryTapDown: (_) => sendMouseDown(2, 1),
       onTap: () {
         if (enabled && _context?.tableImpl != null) {
-          if (_context!.tableImpl!.registerRowTap(rowIndex) == 2) {
+          if (_context!.tableImpl!.lastRowTapCount == 2) {
             sendMouseDoubleClick(1);
             // A double-click is SWT's DefaultSelection, not just the generic mouse event
             // — handleRowDoubleTap already existed but nothing called it.

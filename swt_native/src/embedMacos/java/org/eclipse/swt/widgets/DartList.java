@@ -1229,6 +1229,8 @@ public class DartList extends DartScrollable implements IList {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                if (!isActive())
+                    return;
                 ListHelper.sendSelection(this, e, SWT.DefaultSelection);
             });
         });

@@ -50,6 +50,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
   final ScrollController _verticalScrollController = ScrollController();
 
   final DoubleTapDetector _rowTapDetector = DoubleTapDetector();
+  int _lastRowTapCount = 1;
 
   int _requestedRowEnd = 0;
 
@@ -59,7 +60,16 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
   final Set<int> _userResizedColumns = {};
 
-  int registerRowTap(int rowIndex) => _rowTapDetector.registerTap(key: rowIndex);
+  /// Consecutive-click count of the most recent row tap (1, 2 or 3), as SWT
+  /// numbers the clicks of a multi-click on MouseDown. JFace's ColumnViewer
+  /// skips its cell-editor activation when MouseDown reports count == 2, so a
+  /// double-click activates a cell editor once — through MouseDoubleClick. A
+  /// cell that reports every down as count 1 defeats that guard and activates
+  /// the editor twice, which opens two dialogs for one double-click.
+  int get lastRowTapCount => _lastRowTapCount;
+
+  int registerRowTap(int rowIndex) =>
+      _lastRowTapCount = _rowTapDetector.registerTap(key: rowIndex);
 
   // Each cell has its own GestureDetector that sends MouseDown; suppress both
   // the ControlImpl.wrap() Listener and wrapCompositeInteractionChrome to

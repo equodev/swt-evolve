@@ -567,6 +567,8 @@ public class DartSlider extends DartControl implements ISlider {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                if (!isActive())
+                    return;
                 Event event = new Event();
                 event.detail = SWT.NONE;
                 event.widget = getApi();

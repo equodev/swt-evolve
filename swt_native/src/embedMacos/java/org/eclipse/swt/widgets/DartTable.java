@@ -2575,6 +2575,8 @@ public class DartTable extends DartComposite implements ITable {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                if (!isActive())
+                    return;
                 TableHelper.sendSelection(this, e, SWT.DefaultSelection);
             });
         });

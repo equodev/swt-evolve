@@ -3184,6 +3184,8 @@ public class DartTree extends DartComposite implements ITree {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                if (!isActive())
+                    return;
                 TreeHelper.sendSelection(this, e, SWT.DefaultSelection);
             });
         });

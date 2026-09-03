@@ -808,6 +808,8 @@ public class DartSpinner extends DartComposite implements ISpinner {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                if (!isActive())
+                    return;
                 setSelection(e.index);
                 sendEvent(SWT.DefaultSelection, e);
             });

@@ -1014,6 +1014,8 @@ public class DartTreeCursor extends DartCanvas implements ITreeCursor {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                if (!isActive())
+                    return;
                 sendEvent(SWT.DefaultSelection, e);
             });
         });

@@ -723,6 +723,8 @@ public class DartTableCursor extends DartCanvas implements ITableCursor {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                if (!isActive())
+                    return;
                 sendEvent(SWT.DefaultSelection, e);
             });
         });
