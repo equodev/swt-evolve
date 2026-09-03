@@ -4,6 +4,22 @@ import org.eclipse.swt.SWT;
 
 public class TreeHelper {
 
+    // How far Flutter has scrolled the tree, in pixels. A Tree's rows are laid out and scrolled on
+    // the Dart side, so Java has no other way to know: without it every coordinate-to-row lookup
+    // counts from the first item of the model and resolves the wrong row on a scrolled tree.
+    // Weak keys so a disposed Tree does not hold its entry.
+    private static final java.util.Map<DartTree, Integer> SCROLL_OFFSETS =
+        java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    public static void recordScrollOffset(DartTree tree, Event event) {
+        SCROLL_OFFSETS.put(tree, Math.max(0, event.y));
+    }
+
+    public static int scrollOffsetY(DartTree tree) {
+        Integer offset = SCROLL_OFFSETS.get(tree);
+        return offset == null ? 0 : offset;
+    }
+
     /** SWT.EmptinessChanged value (56), defined here for compatibility with SWT versions before 3.118 */
     public static final int EMPTINESS_CHANGED = 56;
 

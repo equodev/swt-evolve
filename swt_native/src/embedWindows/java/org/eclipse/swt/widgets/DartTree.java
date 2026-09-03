@@ -1334,7 +1334,9 @@ public class DartTree extends DartComposite implements ITree {
         int y = point.y - getHeaderHeight();
         if (y < 0)
             return null;
-        int index = y / itemHeight;
+        // point is in viewport coordinates; the flattened list starts at the top of the
+        // model, so the scroll distance has to be added back before indexing into it.
+        int index = (y + TreeHelper.scrollOffsetY(this)) / itemHeight;
         java.util.List<TreeItem> flat = Sizes.flattenVisibleTreeItems(this);
         if (index < 0 || index >= flat.size())
             return null;
@@ -3164,6 +3166,13 @@ public class DartTree extends DartComposite implements ITree {
 
     protected void _hookEvents() {
         super._hookEvents();
+        FlutterBridge.on(this, "Scroll", "Scroll", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                TreeHelper.recordScrollOffset(this, e);
+            });
+        });
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())

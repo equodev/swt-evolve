@@ -48,6 +48,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     super.initState();
     _horizontalController = ScrollController();
     _verticalController = ScrollController();
+    _verticalController!.addListener(_reportScrollOffset);
     // E2E test hooks: the Tree paints its rows onto the Flutter canvas, so there are no per-row DOM
     // nodes for a test to target. These expose the geometry a test needs instead — map a point to
     // the row id under it (GetIdFromPoint), report a row's bounds (GetItemBounds), and register a
@@ -1753,6 +1754,24 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
     visit(state.items);
     return found;
+  }
+
+  /// Java lays out no rows of its own, so every coordinate-to-row lookup it makes -- the hit test
+  /// behind getItem(Point), a cell's bounds, and the tooltip a JFace viewer positions from them --
+  /// counts from the top of the model. Tell it how far this tree has scrolled so it can take that
+  /// off. Rounded to whole pixels and skipped when unchanged, which drops the notifications a
+  /// ScrollController fires without movement; an actual drag still reports once per frame, the same
+  /// rate a mouse move is throttled to. Reporting every settled position is what keeps the lookups
+  /// correct, so it is not throttled further.
+  int _reportedScrollOffset = 0;
+
+  void _reportScrollOffset() {
+    final controller = _verticalController;
+    if (controller == null || !controller.hasClients) return;
+    final offset = controller.offset.round();
+    if (offset == _reportedScrollOffset) return;
+    _reportedScrollOffset = offset;
+    widget.sendEvent(state, "Scroll/Scroll", VEvent()..y = offset);
   }
 
   @override

@@ -722,7 +722,9 @@ public class Sizes {
         List<TreeItem> flat = flattenVisibleTreeItems(dartTree);
         int rowIndex = flat.indexOf(item.getApi());
         if (rowIndex == -1) return new Rectangle(0, 0, 0, 0);
-        int y = dartTree.getHeaderHeight() + rowIndex * itemHeight;
+        // Bounds are reported in viewport coordinates, so take off however far Flutter has
+        // scrolled -- the row index counts from the top of the model.
+        int y = dartTree.getHeaderHeight() + rowIndex * itemHeight - TreeHelper.scrollOffsetY(dartTree);
         Rectangle parentBounds = parent.getBounds();
         int width = parentBounds != null ? parentBounds.width : 100;
         return new Rectangle(0, y, width, itemHeight);

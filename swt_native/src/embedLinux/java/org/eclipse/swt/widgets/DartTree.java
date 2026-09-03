@@ -2604,6 +2604,13 @@ public class DartTree extends DartComposite implements ITree {
 
     protected void _hookEvents() {
         super._hookEvents();
+        FlutterBridge.on(this, "Scroll", "Scroll", e -> {
+            getDisplay().asyncExec(() -> {
+                if (isDisposed())
+                    return;
+                TreeHelper.recordScrollOffset(this, e);
+            });
+        });
         FlutterBridge.on(this, "Modify", "Modify", e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
