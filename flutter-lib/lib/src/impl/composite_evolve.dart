@@ -218,6 +218,9 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
 
     if (children == null || children.isEmpty) {
       final content = wrap(paintBackground(const SizedBox.expand()));
+      // Hidden Composite: the chrome Listener sits outside wrap()'s Visibility gate, so it would keep
+      // stealing clicks from a shown sibling stacked at the same bounds (e.g. a CTabFolder page).
+      if (state.visible != null && !state.visible!) return content;
       return wrapCompositeInteractionChrome(this, content);
     }
 
