@@ -110,7 +110,38 @@ void main() {
     'filter_history.png',
   ];
 
-  for (final filename in arcFamily) {
+  // The circular arrows whose head was redrawn onto the two shared constructions: the redraw moves
+  // ink, so the box they occupy is worth guarding too. recursive_co's faded sub-loop used to reach
+  // past the bottom of the viewBox and clip its last row.
+  const arrowheadFamily = <String>[
+    'restore.png',
+    'reset_proto.png',
+    'revert_edit.png',
+    'history.png',
+    'history_nav.png',
+    'history_list.png',
+    'fastview_restore.png',
+    'last_edit_pos.png',
+    'dep_loop.png',
+    'recursive_co.png',
+    'restart_co.png',
+    'runlast_co.png',
+    'next_edit_pos.png',
+  ];
+
+  // The magnifier family: a lens and a diagonal handle, plus a badge that has to fit the same box
+  // alongside them. search_icon_badge_placement_test covers where the badge sits relative to the
+  // magnifier; this covers the box the two of them share.
+  const magnifierFamily = <String>[
+    'search_rem.png',
+    'search_next.png',
+    'search_prev.png',
+    'search_goto.png',
+    'search_remall.png',
+    'search_history.png',
+  ];
+
+  for (final filename in [...arcFamily, ...arrowheadFamily, ...magnifierFamily]) {
     testWidgets('$filename is painted whole and centred in its toolbar item',
         (tester) async {
       await _pumpBar(tester, filename);
