@@ -202,6 +202,26 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
   void handleMouseEnter() => widget.sendMouseTrackMouseEnter(state, null);
   void handleMouseExit() => widget.sendMouseTrackMouseExit(state, null);
 
+  /// Whether the node that just took focus belongs to this control's own subtree. Flutter's
+  /// DropdownMenu focuses an internal node of its own when the popup opens, and that is not the
+  /// control losing focus -- native CCombo likewise stays focused while its internal text and list
+  /// children hold it. Reporting it would make a JFace cell editor apply and deactivate the moment
+  /// its dropdown opens, closing the popup before an option can be picked.
+  bool _focusStillInsideControl() {
+    final BuildContext? focused = FocusManager.instance.primaryFocus?.context;
+    if (focused == null || !mounted) return false;
+    final Element self = context as Element;
+    bool inside = false;
+    focused.visitAncestorElements((element) {
+      if (identical(element, self)) {
+        inside = true;
+        return false;
+      }
+      return true;
+    });
+    return inside;
+  }
+
   void _handleFocusChange() {
     if (!mounted) return;
     setState(() => _isFocused = _focusNode!.hasFocus);
@@ -211,7 +231,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
       // in-progress typing (no keystroke records this value, so the echo guard can't recognise it).
       seedTextEchoBaseline(_controller.text);
       widget.sendFocusFocusIn(state, null);
-    } else if (!_menuOpen) {
+    } else if (!_menuOpen && !_focusStillInsideControl()) {
       clearSentTextEchoes();
       widget.sendFocusFocusOut(state, null);
     }
