@@ -99,6 +99,11 @@ public class ConfigFlags {
      *  "native", or "fullscreen" (the last three delegate to the SWT bridge). */
     public String csd_maximize;
 
+    /** Double-click pairing window in milliseconds for the shared DoubleTapDetector on the Flutter
+     *  side. 0 (the default) keeps Flutter's kDoubleTapTimeout; a positive value overrides it, e.g.
+     *  for a test harness whose synthetic click pairs land further apart than a real user's. */
+    public int double_click_timeout_ms;
+
     public static ConfigFlags use_swt_fonts(boolean v) {
         ConfigFlags configFlags = new ConfigFlags();
         configFlags.use_swt_fonts = v;
@@ -128,6 +133,7 @@ public class ConfigFlags {
                 ", csd_placement='" + csd_placement + '\'' +
                 ", csd_os='" + csd_os + '\'' +
                 ", csd_maximize='" + csd_maximize + '\'' +
+                ", double_click_timeout_ms=" + double_click_timeout_ms +
                 '}';
     }
 }

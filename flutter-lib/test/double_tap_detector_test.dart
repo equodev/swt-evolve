@@ -1,14 +1,15 @@
+import 'package:flutter/gestures.dart' show kDoubleTapTimeout;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/utils/double_tap_detector.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 
 void main() {
-  tearDown(() {
-    e2eTestMode = false;
-  });
+  tearDown(resetConfigFlags);
 
-  group('production default (e2eTestMode off)', () {
+  group('unconfigured (production)', () {
     test('two taps within 300ms register as a double-click', () async {
       final detector = DoubleTapDetector();
 
@@ -26,18 +27,26 @@ void main() {
     });
   });
 
-  group('E2E test mode', () {
-    test('a 400ms gap -- past prod, within the CI-worst-case margin -- still registers as a double-click', () async {
-      e2eTestMode = true;
+  group('configured window (swt.evolve.double_click_timeout_ms)', () {
+    test('a 400ms gap -- past the default -- pairs once the flags widen the window', () async {
       final detector = DoubleTapDetector();
+      applyConfigFlags(ConfigFlags()..double_click_timeout_ms = 700);
 
       expect(detector.registerTap(), 1);
       await Future<void>.delayed(const Duration(milliseconds: 400));
       expect(detector.registerTap(), 2);
     });
 
-    test('an explicit timeout always wins over e2eTestMode', () async {
-      e2eTestMode = true;
+    test('the window applies to detectors built before the flags arrived', () async {
+      final detector = DoubleTapDetector();
+
+      expect(detector.timeout, kDoubleTapTimeout);
+      applyConfigFlags(ConfigFlags()..double_click_timeout_ms = 700);
+      expect(detector.timeout, const Duration(milliseconds: 700));
+    });
+
+    test('an explicit per-widget timeout always wins', () async {
+      applyConfigFlags(ConfigFlags()..double_click_timeout_ms = 700);
       final detector = DoubleTapDetector(timeout: const Duration(milliseconds: 100));
 
       expect(detector.registerTap(), 1);

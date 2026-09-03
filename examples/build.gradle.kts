@@ -189,6 +189,8 @@ fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = f
         System.getProperty("dev.equo.swt.web.httpPort")?.let { systemProperty("dev.equo.swt.web.httpPort", it) }
         // Forward the runtime (no-rebuild) semantics toggle — see WebFlutterServer.Builder#enableTestSemantics.
         System.getProperty("dev.equo.swt.web.enableTestSemantics")?.let { systemProperty("dev.equo.swt.web.enableTestSemantics", it) }
+        // Forward the double-click window (ms) an external driver needs — see ConfigFlags#double_click_timeout_ms.
+        System.getProperty("swt.evolve.double_click_timeout_ms")?.let { systemProperty("swt.evolve.double_click_timeout_ms", it) }
         // -PdartDebug: run the Dart/Flutter rendering side in debug so its Dart VM Service is available
         // for DTD/MCP + flutter_driver. One flag for both render modes: desk builds the frameworks with
         // --debug (JIT) and FlutterLibraryLoader loads the Debug build-dir; web serves via a live

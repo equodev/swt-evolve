@@ -35,7 +35,9 @@ ConfigFlags _$ConfigFlagsFromJson(Map<String, dynamic> json) => ConfigFlags()
   ..print_move = json['print_move'] as bool?
   ..csd_placement = json['csd_placement'] as String?
   ..csd_os = json['csd_os'] as String?
-  ..csd_maximize = json['csd_maximize'] as String?;
+  ..csd_maximize = json['csd_maximize'] as String?
+  ..double_click_timeout_ms = (json['double_click_timeout_ms'] as num?)
+      ?.toInt();
 
 Map<String, dynamic> _$ConfigFlagsToJson(
   ConfigFlags instance,
@@ -62,4 +64,5 @@ Map<String, dynamic> _$ConfigFlagsToJson(
   'csd_placement': ?instance.csd_placement,
   'csd_os': ?instance.csd_os,
   'csd_maximize': ?instance.csd_maximize,
+  'double_click_timeout_ms': ?instance.double_click_timeout_ms,
 };

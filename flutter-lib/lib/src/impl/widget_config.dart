@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart' show kDoubleTapTimeout;
 import 'package:flutter/material.dart';
 import 'package:swtflutter/src/gen/menu.dart';
 import 'package:swtflutter/src/gen/menuitem.dart';
@@ -96,6 +97,14 @@ bool get canvasUsesThemeColors {
   final flags = getConfigFlags();
   return (flags.disable_swt_canvas_colors ?? false) &&
       !(flags.use_swt_colors ?? false);
+}
+
+/// The shared double-click pairing window, used by every `DoubleTapDetector` whose call site does
+/// not pass an explicit one. Configured with `-Dswt.evolve.double_click_timeout_ms=<ms>`; unset (or
+/// 0) keeps Flutter's [kDoubleTapTimeout], which is what production runs on.
+Duration get doubleClickTimeout {
+  final ms = getConfigFlags().double_click_timeout_ms ?? 0;
+  return ms > 0 ? Duration(milliseconds: ms) : kDoubleTapTimeout;
 }
 
 void setConfigFlags(ConfigFlags newFlags) {

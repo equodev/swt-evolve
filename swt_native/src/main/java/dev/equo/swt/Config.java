@@ -643,6 +643,10 @@ public class Config {
             // to the screen via setWindowBounds; "native"/"fullscreen" use host ops.
             //   -Ddev.equo.swt.csd.maximize=direct|bounds|native|fullscreen
             configFlags.csd_maximize = System.getProperty("dev.equo.swt.csd.maximize", "direct");
+            // Double-click pairing window (ms) for the Flutter-side DoubleTapDetector. Unset/0 keeps
+            // Flutter's kDoubleTapTimeout; a test harness whose synthetic click pairs land further
+            // apart than a real user's widens it without a rebuild.
+            configFlags.double_click_timeout_ms = Integer.getInteger("swt.evolve.double_click_timeout_ms", 0);
             applyThemeColorsByWidgetFromProperties(configFlags);
             applyThemePresets(configFlags);
         }

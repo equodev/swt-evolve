@@ -11,7 +11,6 @@ import 'package:swtflutter/src/custom/csd/csd_state.dart';
 import 'package:swtflutter/src/custom/csd/equo_window.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 import 'package:swtflutter/src/theme/theme_extensions/color_scheme_extension.dart';
-import 'src/impl/utils/double_tap_detector.dart' as double_tap_detector;
 import 'src/styles.dart';
 import 'src/theme/theme.dart'
     show
@@ -93,10 +92,6 @@ void main(List<String> args) async {
   if (enableTestSemantics) {
     SemanticsBinding.instance.ensureSemantics();
   }
-  // Same signal, reused: the E2E harness always sets enableTestSemantics, so it
-  // doubles as "this session is under E2E test" for double_tap_detector.dart.
-  double_tap_detector.e2eTestMode = enableTestSemantics;
-
   if (widgetName == "FontMeasureBridge") {
     font_size.measureRequest(widgetName, widgetId);
     sendClientReady(widgetName, widgetId);

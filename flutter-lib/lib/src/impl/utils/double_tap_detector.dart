@@ -1,21 +1,6 @@
-import 'package:flutter/gestures.dart' show kDoubleTapTimeout;
 import 'package:flutter/widgets.dart';
 
-/// True only when this session is driven by our E2E test harness -- set once
-/// from `main()`, mirroring `getEnableTestSemantics` (see `main.dart` /
-/// `web_platform.dart`). Always false in production.
-///
-/// [DoubleTapDetector] widens its window when this is set: a CI runner's
-/// added event-processing latency between a Playwright-dispatched click pair
-/// can push a genuine double-click past the window real users hit, even
-/// though production timing (tuned per-widget -- see call sites below) is
-/// unaffected. This keeps the E2E scenario deterministic without changing
-/// what any real user sees.
-bool e2eTestMode = false;
-
-/// Only used in [e2eTestMode] -- generous on purpose since it never reaches
-/// production; must comfortably clear CI's observed worst-case gap (~500ms).
-const Duration _e2eDoubleClickTimeout = Duration(milliseconds: 1000);
+import 'package:swtflutter/src/impl/widget_config.dart' show doubleClickTimeout;
 
 /// Arena-free multi-click detection (single / double / triple).
 ///
@@ -30,16 +15,21 @@ const Duration _e2eDoubleClickTimeout = Duration(milliseconds: 1000);
 /// `Listener` (treeitem, tabfolder, tableitem, canvas, composite). For stateless
 /// leaf widgets, prefer the [InstantDoubleTapDetector] wrapper below.
 ///
-/// Defaults to Flutter's `kDoubleTapTimeout` (300ms), same as before -- widget
-/// call sites that need a different window pass [timeout] explicitly (see
-/// `styledtext_evolve.dart`). Do not widen the shared default here; per-widget
-/// double-click timing is a deliberate, already-tuned product decision.
+/// Follows the shared [doubleClickTimeout] -- Flutter's `kDoubleTapTimeout`
+/// (300ms) unless `swt.evolve.double_click_timeout_ms` configures another one
+/// (an E2E harness widens it; production leaves it unset). Widget call sites
+/// that need their own window pass [timeout] explicitly (see
+/// `styledtext_evolve.dart`); per-widget double-click timing is a deliberate,
+/// already-tuned product decision, so do not fold one into the shared default.
 class DoubleTapDetector {
-  DoubleTapDetector({Duration? timeout, this.slop = 5.0})
-      : timeout = timeout ?? (e2eTestMode ? _e2eDoubleClickTimeout : kDoubleTapTimeout);
+  DoubleTapDetector({Duration? timeout, this.slop = 5.0}) : _explicitTimeout = timeout;
 
-  /// Maximum gap between two taps for them to count as a double-click.
-  final Duration timeout;
+  final Duration? _explicitTimeout;
+
+  /// Maximum gap between two taps for them to count as a double-click. Resolved
+  /// per tap rather than at construction: the config flags carrying the shared
+  /// window arrive over the comm channel after the first widgets are built.
+  Duration get timeout => _explicitTimeout ?? doubleClickTimeout;
 
   /// Maximum distance (in logical pixels) between two taps when [registerTap] is
   /// given a [position]. Ignored when no position is supplied.

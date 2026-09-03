@@ -30,6 +30,7 @@ class ConfigFlags {
   String? csd_placement;
   String? csd_os;
   String? csd_maximize;
+  int? double_click_timeout_ms;
 
   factory ConfigFlags.fromJson(Map<String, dynamic> json) =>
       _$ConfigFlagsFromJson(json);
