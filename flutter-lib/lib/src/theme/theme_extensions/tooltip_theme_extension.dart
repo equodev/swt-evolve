@@ -42,6 +42,15 @@ class TooltipThemeExtension extends ThemeExtension<TooltipThemeExtension>
   final double iconSpacing;
 
   final EdgeInsets padding;
+
+  /// The hover tooltip -- the one a Control's toolTipText opens -- is a plainer surface than the
+  /// balloon [padding] sizes, and no platform is placing it in web mode, so its own geometry lives
+  /// here: how far its top-left corner clears the pointer, and how close it may come to the edge
+  /// of the window before it is pulled back inside.
+  final EdgeInsets hoverPadding;
+  final double pointerOffsetX;
+  final double pointerOffsetY;
+  final double screenMargin;
   final double minWidth;
   final double maxWidth;
   final double minHeight;
@@ -74,6 +83,10 @@ class TooltipThemeExtension extends ThemeExtension<TooltipThemeExtension>
     required this.iconSize,
     required this.iconSpacing,
     required this.padding,
+    required this.hoverPadding,
+    required this.pointerOffsetX,
+    required this.pointerOffsetY,
+    required this.screenMargin,
     required this.minWidth,
     required this.maxWidth,
     required this.minHeight,

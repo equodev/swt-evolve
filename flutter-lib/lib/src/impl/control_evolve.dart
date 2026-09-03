@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
@@ -19,6 +20,7 @@ import '../impl/focus_requests.dart';
 import '../impl/key_forwarding.dart';
 import '../impl/key_mapping.dart';
 import '../impl/menu_evolve.dart';
+import '../theme/theme_extensions/display_theme_extension.dart';
 import '../theme/theme_extensions/tooltip_theme_extension.dart';
 import 'utils/dnd_session.dart';
 import 'utils/dnd_utils.dart';
@@ -30,7 +32,6 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     extends WidgetSwtState<T, V> {
 
   final GlobalKey<State<MenuSwt>> _menuKey = GlobalKey<State<MenuSwt>>();
-  final GlobalKey _tooltipContentKey = GlobalKey();
   int _lastButton = 1;
   // SWT click count: consecutive same-button downs within the double-click
   // window chain (1, 2, 3…), like a native Display reports them. Java-side
@@ -48,6 +49,11 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   // Matches DartDisplay.getToolTipTime() — fires SWT.MouseHover after stillness
   static const int _hoverDelayMs = 560;
   Timer? _hoverTimer;
+
+  // The control's own tooltip is placed by hand, in an overlay, at the pointer. See
+  // [_showTooltipAtPointer].
+  OverlayEntry? _tooltipEntry;
+  Offset? _lastHoverPosition;
 
   VRectangle? _lastRealBounds;
 
@@ -136,13 +142,41 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   void _resetHoverTimer(V state, VEvent event) {
     _hoverTimer?.cancel();
     _hoverTimer = Timer(const Duration(milliseconds: _hoverDelayMs), () {
-      if (mounted) widget.sendMouseTrackMouseHover(state, event);
+      if (!mounted) return;
+      widget.sendMouseTrackMouseHover(state, event);
+      _showTooltipAtPointer();
     });
+  }
+
+  /// Opens the control's tooltip at the pointer, the way the platform places one: its top-left
+  /// corner just below and right of the cursor. Flutter's Tooltip centres the panel on its child
+  /// instead, which straddles the pointer and, on a control as tall as a Tree, lands nowhere near
+  /// the row under the mouse -- so this does not use it.
+  void _showTooltipAtPointer() {
+    final pointer = _lastHoverPosition;
+    final message = state.toolTipText;
+    if (pointer == null || message == null || message.isEmpty) return;
+    final overlay = Overlay.maybeOf(context, rootOverlay: true);
+    if (overlay == null) return;
+    _removeTooltip();
+    final entry = OverlayEntry(
+      builder: (overlayContext) => _tooltipOverlay(overlayContext, message, pointer),
+    );
+    _tooltipEntry = entry;
+    overlay.insert(entry);
+  }
+
+  /// Any movement takes the tooltip down, as a native one goes down; the hover timer reopens it
+  /// wherever the pointer came to rest.
+  void _removeTooltip() {
+    _tooltipEntry?.remove();
+    _tooltipEntry = null;
   }
 
   @override
   void dispose() {
     _hoverTimer?.cancel();
+    _removeTooltip();
     FocusRequests.instance.removeListener(_applyFocusRequest);
     HoverExclusivityArbiter.instance.unregister(this);
     LiveBounds.forget(state.id, this);
@@ -329,23 +363,6 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       widget = applyMenu(widget);
     }
 
-    widget = KeyedSubtree(key: _tooltipContentKey, child: widget);
-    if (state.toolTipText != null && state.toolTipText!.isNotEmpty) {
-      final tooltipTheme = Theme.of(context).extension<TooltipThemeExtension>();
-      widget = Tooltip(
-        message: state.toolTipText!,
-        waitDuration: tooltipTheme?.waitDuration!,
-        decoration: tooltipTheme != null
-            ? BoxDecoration(
-                color: tooltipTheme.backgroundColor,
-                borderRadius: BorderRadius.circular(tooltipTheme.borderRadius),
-              )
-            : null,
-        textStyle: tooltipTheme?.messageTextStyle,
-        child: widget,
-      );
-    }
-
     // Wrap with GC overlay if needed
     widget = wrapWithGCOverlay(widget);
 
@@ -409,6 +426,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         },
         onExit: (_) {
           _hoverTimer?.cancel();
+          _removeTooltip();
           if (ActiveDragTracker.isSuppressingHover) return;
           HoverExclusivityArbiter.instance.setActive(this, hoverDepth, false);
         },
@@ -416,6 +434,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
           final event = VEvent()
             ..x = e.localPosition.dx.round()
             ..y = e.localPosition.dy.round();
+          _lastHoverPosition = e.position;
+          _removeTooltip();
           sendThrottledMouseMove(state, event);
           _resetHoverTimer(state, event);
         },
@@ -426,6 +446,58 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     return ControlNestingScope(
       depth: hoverDepth + 1,
       child: blockWhenDisabled(widget),
+    );
+  }
+
+  Widget _tooltipOverlay(BuildContext context, String message, Offset pointer) {
+    final tooltipTheme = Theme.of(context).extension<TooltipThemeExtension>();
+    final displayTheme = Theme.of(context).extension<DisplayThemeExtension>();
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: CustomSingleChildLayout(
+          delegate: _PointerTooltipLayout(
+            pointer: pointer,
+            cursorOffset: Offset(
+              tooltipTheme?.pointerOffsetX ?? 0,
+              tooltipTheme?.pointerOffsetY ?? 0,
+            ),
+            screenMargin: tooltipTheme?.screenMargin ?? 0,
+          ),
+          child: Container(
+            padding: tooltipTheme?.hoverPadding,
+            decoration: tooltipTheme == null
+                ? null
+                // The info background, as a JFace viewer's popup-Shell tooltip is painted.
+                // tooltipTheme.backgroundColor is colorScheme.surface, which Tree and Table paint
+                // their own background from: over one of those the panel would be the exact colour
+                // of what is behind it, and without the border and shadow nothing would be left to
+                // see.
+                : BoxDecoration(
+                    color: displayTheme?.tooltipShellBackgroundColor ??
+                        tooltipTheme.backgroundColor,
+                    borderRadius: BorderRadius.circular(tooltipTheme.borderRadius),
+                    border: Border.all(
+                      color: tooltipTheme.borderColor,
+                      width: tooltipTheme.borderWidth,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: tooltipTheme.shadowColor,
+                        blurRadius: tooltipTheme.shadowBlurRadius,
+                        offset: Offset(0, tooltipTheme.shadowOffsetY),
+                      ),
+                    ],
+                  ),
+            // An OverlayEntry builds outside the app's DefaultTextStyle, and the fallback style
+            // paints text underlined in yellow. Set the whole style here rather than merging.
+            child: DefaultTextStyle(
+              style: (tooltipTheme?.messageTextStyle ?? const TextStyle())
+                  .copyWith(decoration: TextDecoration.none),
+              child: Text(message, maxLines: tooltipTheme?.messageMaxLines),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -459,4 +531,44 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       ),
     );
   }
+}
+
+/// Places a tooltip the way the platform does: top-left corner just below and right of the
+/// pointer, pulled back inside the window rather than clipped, and flipped above the pointer when
+/// there is no room underneath.
+class _PointerTooltipLayout extends SingleChildLayoutDelegate {
+  _PointerTooltipLayout({
+    required this.pointer,
+    required this.cursorOffset,
+    required this.screenMargin,
+  });
+
+  final Offset pointer;
+  final Offset cursorOffset;
+  final double screenMargin;
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) => constraints.loosen();
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) {
+    double x = pointer.dx + cursorOffset.dx;
+    if (x + childSize.width > size.width - screenMargin) {
+      x = size.width - childSize.width - screenMargin;
+    }
+    double y = pointer.dy + cursorOffset.dy;
+    if (y + childSize.height > size.height - screenMargin) {
+      y = pointer.dy - childSize.height - screenMargin;
+    }
+    return Offset(
+      x.clamp(screenMargin, math.max(screenMargin, size.width)),
+      y.clamp(screenMargin, math.max(screenMargin, size.height)),
+    );
+  }
+
+  @override
+  bool shouldRelayout(_PointerTooltipLayout oldDelegate) =>
+      oldDelegate.pointer != pointer ||
+      oldDelegate.cursorOffset != cursorOffset ||
+      oldDelegate.screenMargin != screenMargin;
 }

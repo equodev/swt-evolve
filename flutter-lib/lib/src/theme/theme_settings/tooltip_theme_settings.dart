@@ -59,6 +59,12 @@ TooltipThemeExtension _getTooltipTheme({
     iconSpacing: 12.0,
 
     padding: const EdgeInsets.all(12),
+    hoverPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    // Clear of the pointer, the way a platform tooltip sits below and right of the cursor rather
+    // than under it. Not measured against a native tooltip on any one platform.
+    pointerOffsetX: 12,
+    pointerOffsetY: 20,
+    screenMargin: 8,
     minWidth: 100.0,
     maxWidth: 350.0,
     minHeight: 40.0,

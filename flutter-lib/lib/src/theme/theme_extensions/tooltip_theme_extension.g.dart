@@ -56,6 +56,12 @@ TooltipThemeExtension _$TooltipThemeExtensionFromJson(
   padding: const EdgeInsetsConverter().fromJson(
     json['padding'] as Map<String, dynamic>,
   ),
+  hoverPadding: const EdgeInsetsConverter().fromJson(
+    json['hoverPadding'] as Map<String, dynamic>,
+  ),
+  pointerOffsetX: (json['pointerOffsetX'] as num).toDouble(),
+  pointerOffsetY: (json['pointerOffsetY'] as num).toDouble(),
+  screenMargin: (json['screenMargin'] as num).toDouble(),
   minWidth: (json['minWidth'] as num).toDouble(),
   maxWidth: (json['maxWidth'] as num).toDouble(),
   minHeight: (json['minHeight'] as num).toDouble(),
@@ -100,6 +106,10 @@ Map<String, dynamic> _$TooltipThemeExtensionToJson(
   'iconSize': instance.iconSize,
   'iconSpacing': instance.iconSpacing,
   'padding': const EdgeInsetsConverter().toJson(instance.padding),
+  'hoverPadding': const EdgeInsetsConverter().toJson(instance.hoverPadding),
+  'pointerOffsetX': instance.pointerOffsetX,
+  'pointerOffsetY': instance.pointerOffsetY,
+  'screenMargin': instance.screenMargin,
   'minWidth': instance.minWidth,
   'maxWidth': instance.maxWidth,
   'minHeight': instance.minHeight,

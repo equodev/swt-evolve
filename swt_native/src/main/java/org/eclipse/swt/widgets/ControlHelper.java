@@ -225,7 +225,17 @@ public class ControlHelper {
                 }
                 return null;
             }
-            current = current.getParent();
+            Composite parent = current.getParent();
+            // Only the vertical trim. Sizes.getClientArea(DartGroup) reports the client origin as
+            // (GROUP_BORDER, 0) whenever the Group has a title, so the layout already gave the
+            // child the horizontal inset in its bounds, while the title height the Group draws
+            // above its content is reported by nobody -- without it every popup a JFace viewer
+            // opens inside a Group came up a title-height too high. A Composite with no trim
+            // yields zero here and is unaffected. The Shell's own inset is the branch above.
+            if (parent != null && !(parent instanceof Shell)) {
+                offset[1] -= parent.computeTrim(0, 0, 0, 0).y;
+            }
+            current = parent;
         }
         return current;
     }

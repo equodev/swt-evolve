@@ -34,6 +34,10 @@ mixin _$TooltipThemeExtensionTailorMixin
   double get iconSize;
   double get iconSpacing;
   EdgeInsets get padding;
+  EdgeInsets get hoverPadding;
+  double get pointerOffsetX;
+  double get pointerOffsetY;
+  double get screenMargin;
   double get minWidth;
   double get maxWidth;
   double get minHeight;
@@ -66,6 +70,10 @@ mixin _$TooltipThemeExtensionTailorMixin
     double? iconSize,
     double? iconSpacing,
     EdgeInsets? padding,
+    EdgeInsets? hoverPadding,
+    double? pointerOffsetX,
+    double? pointerOffsetY,
+    double? screenMargin,
     double? minWidth,
     double? maxWidth,
     double? minHeight,
@@ -99,6 +107,10 @@ mixin _$TooltipThemeExtensionTailorMixin
       iconSize: iconSize ?? this.iconSize,
       iconSpacing: iconSpacing ?? this.iconSpacing,
       padding: padding ?? this.padding,
+      hoverPadding: hoverPadding ?? this.hoverPadding,
+      pointerOffsetX: pointerOffsetX ?? this.pointerOffsetX,
+      pointerOffsetY: pointerOffsetY ?? this.pointerOffsetY,
+      screenMargin: screenMargin ?? this.screenMargin,
       minWidth: minWidth ?? this.minWidth,
       maxWidth: maxWidth ?? this.maxWidth,
       minHeight: minHeight ?? this.minHeight,
@@ -166,6 +178,10 @@ mixin _$TooltipThemeExtensionTailorMixin
       iconSize: t < 0.5 ? iconSize : other.iconSize,
       iconSpacing: t < 0.5 ? iconSpacing : other.iconSpacing,
       padding: t < 0.5 ? padding : other.padding,
+      hoverPadding: t < 0.5 ? hoverPadding : other.hoverPadding,
+      pointerOffsetX: t < 0.5 ? pointerOffsetX : other.pointerOffsetX,
+      pointerOffsetY: t < 0.5 ? pointerOffsetY : other.pointerOffsetY,
+      screenMargin: t < 0.5 ? screenMargin : other.screenMargin,
       minWidth: t < 0.5 ? minWidth : other.minWidth,
       maxWidth: t < 0.5 ? maxWidth : other.maxWidth,
       minHeight: t < 0.5 ? minHeight : other.minHeight,
@@ -263,6 +279,22 @@ mixin _$TooltipThemeExtensionTailorMixin
               other.iconSpacing,
             ) &&
             const DeepCollectionEquality().equals(padding, other.padding) &&
+            const DeepCollectionEquality().equals(
+              hoverPadding,
+              other.hoverPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              pointerOffsetX,
+              other.pointerOffsetX,
+            ) &&
+            const DeepCollectionEquality().equals(
+              pointerOffsetY,
+              other.pointerOffsetY,
+            ) &&
+            const DeepCollectionEquality().equals(
+              screenMargin,
+              other.screenMargin,
+            ) &&
             const DeepCollectionEquality().equals(minWidth, other.minWidth) &&
             const DeepCollectionEquality().equals(maxWidth, other.maxWidth) &&
             const DeepCollectionEquality().equals(minHeight, other.minHeight) &&
@@ -307,6 +339,10 @@ mixin _$TooltipThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(iconSize),
       const DeepCollectionEquality().hash(iconSpacing),
       const DeepCollectionEquality().hash(padding),
+      const DeepCollectionEquality().hash(hoverPadding),
+      const DeepCollectionEquality().hash(pointerOffsetX),
+      const DeepCollectionEquality().hash(pointerOffsetY),
+      const DeepCollectionEquality().hash(screenMargin),
       const DeepCollectionEquality().hash(minWidth),
       const DeepCollectionEquality().hash(maxWidth),
       const DeepCollectionEquality().hash(minHeight),
@@ -345,6 +381,15 @@ extension TooltipThemeExtensionBuildContextProps on BuildContext {
   double get iconSize => tooltipThemeExtension.iconSize;
   double get iconSpacing => tooltipThemeExtension.iconSpacing;
   EdgeInsets get padding => tooltipThemeExtension.padding;
+
+  /// The hover tooltip -- the one a Control's toolTipText opens -- is a plainer surface than the
+  /// balloon [padding] sizes, and no platform is placing it in web mode, so its own geometry lives
+  /// here: how far its top-left corner clears the pointer, and how close it may come to the edge
+  /// of the window before it is pulled back inside.
+  EdgeInsets get hoverPadding => tooltipThemeExtension.hoverPadding;
+  double get pointerOffsetX => tooltipThemeExtension.pointerOffsetX;
+  double get pointerOffsetY => tooltipThemeExtension.pointerOffsetY;
+  double get screenMargin => tooltipThemeExtension.screenMargin;
   double get minWidth => tooltipThemeExtension.minWidth;
   double get maxWidth => tooltipThemeExtension.maxWidth;
   double get minHeight => tooltipThemeExtension.minHeight;
