@@ -150,6 +150,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
             textStyle: textStyle,
             onSelected: isEnabled ? onChanged : null,
             controlHeight: height,
+            borderWidth: borderWidth,
           ),
         ),
       );
@@ -258,6 +259,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
   final TextStyle textStyle;
   final ValueChanged<String?>? onSelected;
   final double? controlHeight;
+  final double borderWidth;
 
   const _StyledDropdownCCombo({
     required this.state,
@@ -271,7 +273,18 @@ class _StyledDropdownCCombo extends StatelessWidget {
     required this.textStyle,
     this.onSelected,
     this.controlHeight,
+    required this.borderWidth,
   });
+
+  /// The width of the value on display, with a pixel of slack either side.
+  double _selectedTextWidth() {
+    final painter = TextPainter(
+      text: TextSpan(text: state.text ?? '', style: textStyle),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout();
+    return painter.width + 2;
+  }
 
   double _calculateMinWidth() {
     double maxTextWidth = 0;
@@ -301,9 +314,20 @@ class _StyledDropdownCCombo extends StatelessWidget {
       focusNode!.canRequestFocus = false;
     }
 
-    final width = hasBounds(state.bounds)
-        ? state.bounds!.width.toDouble()
+    // The border is painted by the container wrapping this widget, so a pinned outer
+    // width reaches the menu already reduced by it.
+    final bool hasFixedWidth = hasBounds(state.bounds);
+    final double width = hasFixedWidth
+        ? state.bounds!.width.toDouble() - borderWidth * 2
         : _calculateMinWidth();
+
+    // The value on display keeps its whole width and the padding absorbs whatever a
+    // pinned width leaves short, down to none; a preferred-width combo keeps it all.
+    final double basePadding = widgetTheme.textFieldPadding.horizontal / 2;
+    final double textRoom = width - widgetTheme.iconSize - _selectedTextWidth();
+    final double horizontalPadding = hasFixedWidth && textRoom < basePadding * 2
+        ? (textRoom > 0 ? textRoom / 2 : 0)
+        : basePadding;
 
     // Dense/collapsed styling must apply whether or not Java has already handed us a
     // controlHeight: without it, InputDecorator reserves Material's default text-field
@@ -312,7 +336,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
     // height into CComboSizes' MIN_HEIGHT constants instead of the compact size the widget
     // actually renders at once Java gives it real bounds.
     final EdgeInsetsGeometry effectivePadding = EdgeInsets.symmetric(
-      horizontal: widgetTheme.textFieldPadding.horizontal / 2,
+      horizontal: horizontalPadding,
       vertical: controlHeight != null ? 0 : 4.0,
     );
 
@@ -336,9 +360,12 @@ class _StyledDropdownCCombo extends StatelessWidget {
         contentPadding: effectivePadding,
         constraints: inputConstraints,
         isCollapsed: true,
-        suffixIconConstraints: controlHeight != null
-            ? BoxConstraints.tightFor(height: controlHeight)
-            : BoxConstraints.tightFor(height: widgetTheme.iconSize),
+        // IconButton's 48px minimum tap target is not the width _calculateMinWidth()
+        // budgets; the arrow's hit area is the Positioned.fill overlay below.
+        suffixIconConstraints: BoxConstraints.tightFor(
+          width: widgetTheme.iconSize,
+          height: controlHeight ?? widgetTheme.iconSize,
+        ),
       ),
       menuStyle: MenuStyle(
         backgroundColor: WidgetStateProperty.all(widgetTheme.backgroundColor),
