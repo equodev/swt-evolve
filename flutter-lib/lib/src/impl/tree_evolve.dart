@@ -30,6 +30,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   final List<String> eventNames = [];
   TreeThemeExtension? _cachedWidgetTheme;
   List<double>? _cachedEffectiveWidths;
+  double? _measuredContentWidth;
+  // Set only while a columnless tree is actually scrolling horizontally: its rows must be
+  // laid out at the content width, not at the viewport width, or they clip their own text
+  // again inside the scrollable.
+  double? _hScrollContentWidth;
   double? _cachedHeaderHeight;
   double? _cachedItemHeight;
   List<VTreeItem>? _pendingSelection;
@@ -302,6 +307,13 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
         final bool hasVScroll = StyleBits(state.style).has(SWT.V_SCROLL);
         final bool hasHScroll = StyleBits(state.style).has(SWT.H_SCROLL);
+        _measuredContentWidth = (hasHScroll && columns.isEmpty)
+            ? _computeContentWidthWithoutColumns(
+                context,
+                flatItems,
+                widgetTheme!,
+              )
+            : null;
 
         // Build editor overlays if editing is active
         final editorOverlays = _buildEditorOverlays(
@@ -491,6 +503,52 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     return maxWidths;
   }
 
+  /// Natural width of the widest visible row. A tree with no columns has no column widths
+  /// to sum, so this is the only thing a horizontal scroll range can be derived from.
+  double _computeContentWidthWithoutColumns(
+    BuildContext context,
+    List<_FlatTreeItem> flatItems,
+    TreeThemeExtension theme,
+  ) {
+    final isCheckMode = StyleBits(state.style).has(SWT.CHECK);
+    final checkboxWidth = isCheckMode
+        ? (theme.checkboxSize + theme.checkboxSpacing)
+        : 0.0;
+    final prefixBase = theme.expandIconSize + theme.expandIconSpacing;
+    final iconSpace = theme.itemIconSize + theme.itemIconSpacing;
+    final paddingH = theme.itemPadding.horizontal + theme.cellPadding.horizontal;
+
+    double widest = 0.0;
+    for (final flat in flatItems) {
+      final item = flat.item;
+      final texts = item.texts ?? [];
+      final text = item.text ?? (texts.isNotEmpty ? texts[0] ?? '' : '');
+      final painter = TextPainter(
+        text: TextSpan(
+          text: text,
+          style: getTextStyle(
+            context: context,
+            font: item.font ?? state.font,
+            textColor: theme.itemTextColor,
+            baseTextStyle: theme.itemTextStyle,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+        maxLines: 1,
+      );
+      painter.layout();
+      double width =
+          painter.width +
+          paddingH +
+          prefixBase +
+          checkboxWidth +
+          theme.itemIndent * flat.level;
+      if (item.image != null) width += iconSpace;
+      if (width > widest) widest = width;
+    }
+    return widest;
+  }
+
   List<double> _computeEffectiveColumnWidths(
     List<VTreeColumn> columns,
     List<double> preferred,
@@ -549,7 +607,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       columns,
       widgetTheme,
       effectiveWidths,
+      maxWidth - leftGap - rightGap,
     );
+    _hScrollContentWidth = columns.isEmpty ? totalWidth : null;
 
     Widget scrollableContent;
     if (hasHScroll && totalWidth != null) {
@@ -605,8 +665,14 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     List<VTreeColumn> columns,
     TreeThemeExtension widgetTheme,
     List<double>? effectiveWidths,
+    double viewportWidth,
   ) {
-    if (!hasHScroll || columns.isEmpty) return null;
+    if (!hasHScroll) return null;
+    if (columns.isEmpty) {
+      final contentWidth = _measuredContentWidth;
+      if (contentWidth == null || contentWidth <= viewportWidth) return null;
+      return contentWidth;
+    }
     final boundsW = state.bounds?.width?.toDouble();
     if (boundsW != null && boundsW > 0) return boundsW;
     if (effectiveWidths != null && effectiveWidths.length == columns.length) {
@@ -825,7 +891,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   Widget _buildFlatTreeItemWidget(_FlatTreeItem flatItem) {
     setupTreeItemExpandListener(flatItem.item);
 
-    final treeWidth = state.bounds?.width?.toDouble();
+    final treeWidth = _hScrollContentWidth ?? state.bounds?.width?.toDouble();
 
     return TreeItemSwtWrapper(
       key: ValueKey(
