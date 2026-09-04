@@ -32,6 +32,14 @@ public class VDisplay {
      */
     public long activeShellId;
 
+    /**
+     * The shell that drives (and is slaved to) the viewport, or 0 when none does. Filled in by the
+     * Display bridge: parentage, modality, trim and the e4 workbench layout all decide this and
+     * none of them reach the client, so the client renders the shell named here full-bleed and
+     * every other shell as a window with its own chrome.
+     */
+    public long mainShellId;
+
     protected VDisplay() {
     }
 
@@ -138,6 +146,8 @@ public class VDisplay {
             }
             writer.writeAscii(",\"activeShellId\":");
             com.dslplatform.json.NumberConverter.serialize(v.activeShellId, writer);
+            writer.writeAscii(",\"mainShellId\":");
+            com.dslplatform.json.NumberConverter.serialize(v.mainShellId, writer);
             writeConfig(writer, v.config);
             writer.writeByte((byte) '}');
         }

@@ -124,4 +124,90 @@ void main() {
     );
     expect(find.byType(FloatingShellChromeScope), findsOneWidget);
   });
+
+  // The two tests above reach the promotion through the geometry heuristic. A Display update that
+  // carries VDisplay.mainShellId takes a different route -- _isMainShell answers from the id alone
+  // and the heuristic never runs -- so the splash needs its own guard on that route too.
+  group('with a main shell named in the Display update', () {
+    // The workbench shell as it arrives once it exists: full trim, covering the viewport.
+    VShell workbenchShellValue() => VShell()
+      ..id = 10
+      ..style = SWT.LEFT_TO_RIGHT | SWT.SHELL_TRIM
+      ..text = 'workbench'
+      ..bounds = _rect(0, 0, 1600, 1000)
+      ..children = [
+        VComposite()
+          ..id = 11
+          ..style = 0
+          ..bounds = _rect(0, 0, 100, 100)
+      ];
+
+    testWidgets('a splash alongside the named main shell is neither promoted nor stretched',
+        (tester) async {
+      tester.view.physicalSize = const Size(1600, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final splash = _splashShellValue();
+      final workbench = workbenchShellValue();
+
+      await tester.pumpWidget(EvolveApp(
+        theme: ThemeMode.light,
+        contentWidget: DisplaySwt(
+          value: VDisplay()
+            ..shells = [splash, workbench]
+            ..mainShellId = workbench.id,
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(
+        splash.bounds,
+        isNot(predicate<VRectangle?>(
+            (b) => b?.width == 1600 && b?.height == 1000, 'stretched to the viewport')),
+        reason: 'only the named main shell has its bounds overwritten to the viewport',
+      );
+
+      final imageBoxFinder = find.byWidgetPredicate(
+          (w) => w is DecoratedBox && (w.decoration as BoxDecoration?)?.image != null);
+      if (imageBoxFinder.evaluate().isNotEmpty) {
+        expect(
+          tester.getSize(imageBoxFinder.first).width,
+          lessThan(1600.0 * 0.8),
+          reason: 'the splash image must not be tiled across the viewport',
+        );
+      }
+    });
+
+    // Java sends 0 when no shell qualifies -- which is what a lone trimless splash produces, since
+    // DisplayBridge.shouldTrackDisplayBounds rules it out on the same resize-trim cut. The client
+    // must read that as "decide it yourself", not as "this shell is main".
+    testWidgets('a lone splash with mainShellId 0 still falls through to the heuristic',
+        (tester) async {
+      tester.view.physicalSize = const Size(1600, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final splash = _splashShellValue();
+
+      await tester.pumpWidget(EvolveApp(
+        theme: ThemeMode.light,
+        contentWidget: DisplaySwt(
+          value: VDisplay()
+            ..shells = [splash]
+            ..mainShellId = 0,
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(
+        splash.bounds,
+        isNot(predicate<VRectangle?>(
+            (b) => b?.width == 1600 && b?.height == 1000, 'stretched to the viewport')),
+      );
+      expect(find.byType(FloatingShellChromeScope), findsOneWidget);
+    });
+  });
 }

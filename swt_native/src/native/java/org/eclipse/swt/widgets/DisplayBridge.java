@@ -291,6 +291,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         try {
             VDisplay vd = VDisplay.of(display);
             vd.activeShellId = publishedActiveShell = activeShellId();
+            vd.mainShellId = mainShellId(display);
             serializeAndSend("Display/" + vd.id, vd);
             FlutterBridge.displayBootstrapped = true;
         } catch (Exception e) {
@@ -348,6 +349,14 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      *  (and is slaved to) the native/host window. */
     protected boolean isMainShell(DartDisplay display, Shell shell) {
         return shell != null && !shell.isDisposed() && shell == mainShell(display);
+    }
+
+    /** {@link #mainShell} as the client sees it: its id, or 0 when it is not among the shells
+     *  {@link VDisplay#of} sends (only visible shells are serialized, so an invisible one would
+     *  name a shell the client does not have). */
+    private long mainShellId(DartDisplay display) {
+        Shell shell = mainShell(display);
+        return (shell != null && !shell.isDisposed() && shell.getVisible()) ? shell.hashCode() : 0;
     }
 
     protected boolean shouldTrackDisplayBounds(Shell shell) {

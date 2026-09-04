@@ -20,6 +20,10 @@ class VDisplay {
   /// when it is named here — see [ShellImpl].
   int? activeShellId;
 
+  /// The shell that drives (and is slaved to) the viewport, or null/0 when Java named none. Only
+  /// this shell renders full-bleed; every other one is a window with its own chrome.
+  int? mainShellId;
+
   VDisplay();
 
   factory VDisplay.fromJson(Map<String, dynamic> json) =>

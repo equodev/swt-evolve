@@ -101,7 +101,19 @@ class _DisplaySwtState extends State<DisplaySwt> {
 
   final Map<int, bool> _shellIsMainCache = {};
 
-  bool _isMainShell(VShell s, BoxConstraints constraints) {
+  /// The shell Java named as main, or null when it named none — or named one this update does not
+  /// carry, which is a gap in what reached the client rather than an answer about these shells.
+  int? _namedMainShell(List<VShell> shells) {
+    final id = _display.mainShellId;
+    if (id == null || id == 0) return null;
+    return shells.any((s) => s.id == id) ? id : null;
+  }
+
+  /// [named] is [_namedMainShell] for this build. Java decides it from parentage, modality, trim and
+  /// the e4 workbench layout, none of which reach the client, so its verdict replaces the geometry
+  /// heuristic below instead of refining it.
+  bool _isMainShell(VShell s, BoxConstraints constraints, int? named) {
+    if (named != null) return s.id == named;
     // The verdict is cached for the shell's whole life, so it must not be taken against bounds
     // Java has not sent yet — a shell reaching its first build unsized would be pinned as a dialog.
     if (_isUnsized(s)) return false;
@@ -116,6 +128,9 @@ class _DisplaySwtState extends State<DisplaySwt> {
     return b == null || b.width <= 0 || b.height <= 0;
   }
 
+  /// Geometry fallback for a Display update that names no main shell. It cannot see parentage or
+  /// the workbench layout, so it can only ask whether a shell is shaped like the one that tracks
+  /// the viewport.
   bool _computeIsMainShell(VShell s, BoxConstraints constraints) {
     final b = s.bounds;
     if (b == null || b.x != 0 || b.y != 0) return false;
@@ -177,18 +192,20 @@ class _DisplaySwtState extends State<DisplaySwt> {
         child: LayoutBuilder(builder: (context, constraints) {
       final mainShells = <VShell>[];
       final dialogShells = <VShell>[];
+      final named = _namedMainShell(shells);
       VShell? loneMainCandidate;
       var loneMainArea = -1;
       for (var s in shells) {
         print("Shell text: ${s.text} ${s.bounds?.x},${s.bounds?.y},${s.bounds?.width},${s.bounds?.height}");
-        if (_isMainShell(s, constraints)) {
+        if (_isMainShell(s, constraints, named)) {
           mainShells.add(s);
           continue;
         }
         dialogShells.add(s);
         // Ranked among the shells that could be promoted: unsized shells all tie on area, so
-        // ranking every shell would let whichever arrives first take the slot.
-        if (_qualifiesAsLoneMain(s, constraints)) {
+        // ranking every shell would let whichever arrives first take the slot. Skipped once Java
+        // has named a main shell — "none of them is it" is then an answer, not a gap to fill.
+        if (named == null && _qualifiesAsLoneMain(s, constraints)) {
           final area = _shellArea(s);
           if (area > loneMainArea) {
             loneMainArea = area;

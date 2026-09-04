@@ -24,7 +24,8 @@ VDisplay _$VDisplayFromJson(Map<String, dynamic> json) => VDisplay()
   ..config = json['config'] == null
       ? null
       : ConfigFlags.fromJson(json['config'] as Map<String, dynamic>)
-  ..activeShellId = (json['activeShellId'] as num?)?.toInt();
+  ..activeShellId = (json['activeShellId'] as num?)?.toInt()
+  ..mainShellId = (json['mainShellId'] as num?)?.toInt();
 
 Map<String, dynamic> _$VDisplayToJson(VDisplay instance) => <String, dynamic>{
   'swt': ?instance.swt,
@@ -35,4 +36,5 @@ Map<String, dynamic> _$VDisplayToJson(VDisplay instance) => <String, dynamic>{
   'tooltips': ?instance.tooltips,
   'config': ?instance.config,
   'activeShellId': ?instance.activeShellId,
+  'mainShellId': ?instance.mainShellId,
 };
