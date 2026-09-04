@@ -32,7 +32,7 @@ class GCDrawer extends GCDrawerBase {
   // removed by token so a stale drawer can't unregister a newer one's handler.
   final Map<String, Object> _localTokens = {};
 
-  final List<ImageShape> _lateLoadedImages = [];
+  final List<Shape> _lateLoadedImages = [];
 
 
   // BuildContext for text style resolution (widget mode only, null in image mode).
@@ -295,6 +295,10 @@ class GCDrawer extends GCDrawerBase {
     );
   }
 
+  // SWT reports the clip in device space, so under a transform it rides on the wrapper _addShape
+  // builds; clipping again inside the matrix would scale the clip rectangle along with the shape.
+  Rect? get _childClip => currentTransform != null ? null : clipping;
+
   Color applyAlpha(Color color) {
     final alpha = state.alpha ?? 255;
     if (alpha == 255) return color;
@@ -316,7 +320,10 @@ class GCDrawer extends GCDrawerBase {
   }
 
   void _addShape(Shape shape) {
-    _staging.add(shape);
+    final transform = currentTransform;
+    _staging.add(transform == null
+        ? shape
+        : TransformShape(transform, [shape], clipping));
   }
 
   Rect _getRectFromArgs(int? x, int? y, int? w, int? h) => Rect.fromLTWH(
@@ -342,7 +349,7 @@ class GCDrawer extends GCDrawerBase {
     final strokeWidth = isFilled ? 0.0 : lineWidth;
     _addShape(RoundRectShape(
         rect, arcWidth / 2.0, arcHeight / 2.0, color, strokeWidth, lineCap, lineJoin,
-        isFilled: isFilled, clipRect: clipping));
+        isFilled: isFilled, clipRect: _childClip));
   }
 
   void _addOvalShape({
@@ -356,7 +363,7 @@ class GCDrawer extends GCDrawerBase {
     final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
     final strokeWidth = isFilled ? 0.0 : lineWidth;
     _addShape(OvalShape(rect, color, strokeWidth,
-        isFilled: isFilled, clipRect: clipping));
+        isFilled: isFilled, clipRect: _childClip));
   }
 
   void _addRectShape({
@@ -377,12 +384,12 @@ class GCDrawer extends GCDrawerBase {
           pattern.startX ?? 0, pattern.startY ?? 0, rect);
       final end = _patternAlignment(
           pattern.endX ?? 0, pattern.endY ?? 0, rect);
-      _addShape(GradientRectShape.aligned(rect, c1, c2, begin, end, clipping));
+      _addShape(GradientRectShape.aligned(rect, c1, c2, begin, end, _childClip));
     } else {
       final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
       final strokeWidth = isFilled ? 0.0 : lineWidth;
       _addShape(RectShape(rect, color, strokeWidth, lineCap, lineJoin,
-          isFilled: isFilled, clipRect: clipping));
+          isFilled: isFilled, clipRect: _childClip));
     }
   }
 
@@ -395,7 +402,7 @@ class GCDrawer extends GCDrawerBase {
       final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
       final strokeWidth = isFilled ? 0.0 : lineWidth;
       _addShape(PolygonShape(points, color, strokeWidth, lineCap, lineJoin,
-          isFilled: isFilled, clipRect: clipping));
+          isFilled: isFilled, clipRect: _childClip));
     }
   }
 
@@ -408,7 +415,7 @@ class GCDrawer extends GCDrawerBase {
       final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
       final strokeWidth = isFilled ? 0.0 : lineWidth;
       _addShape(PolylineShape(points, color, strokeWidth, lineCap, lineJoin,
-          isFilled: isFilled, clipRect: clipping));
+          isFilled: isFilled, clipRect: _childClip));
     }
   }
 
@@ -433,7 +440,7 @@ class GCDrawer extends GCDrawerBase {
         lineCap,
         lineJoin,
         isFilled: isFilled,
-        clipRect: clipping));
+        clipRect: _childClip));
   }
 
   void _drawText({
@@ -453,26 +460,18 @@ class GCDrawer extends GCDrawerBase {
       applyDpiScaling: true,
     );
 
-    final transform = currentTransform;
-    final childClip = transform != null ? null : clipping;
+    final childClip = _childClip;
 
-    final shapes = <Shape>[];
     if (!transparent) {
       final tp = TextPainter(
         text: TextSpan(text: processedText, style: textStyle),
         textDirection: TextDirection.ltr,
       )..layout();
-      shapes.add(RectShape(Rect.fromLTWH(x, y, tp.width, tp.height),
+      _addShape(RectShape(Rect.fromLTWH(x, y, tp.width, tp.height),
           applyAlpha(textBackgroundColor), 0, lineCap, lineJoin,
           isFilled: true, clipRect: childClip));
     }
-    shapes.add(TextShape(processedText, Offset(x, y), textStyle, childClip));
-
-    if (transform != null) {
-      _addShape(TransformShape(transform, shapes, clipping));
-    } else {
-      for (final s in shapes) { _addShape(s); }
-    }
+    _addShape(TextShape(processedText, Offset(x, y), textStyle, childClip));
   }
 
   String _processTextFlags(String text, int flags) {
@@ -654,8 +653,18 @@ class GCDrawer extends GCDrawerBase {
       ImageShape s when s.type == ImageType.svg => ImageShape.svg(
           s.pictureInfo!, s.destRect.translate(offset.dx, offset.dy),
           clipRect: clipArea, colorFilter: s.colorFilter),
+      // copyArea shifts by a device-space offset, so it goes on the matrix's translation column
+      // rather than on children that are drawing in the transform's own coordinates.
+      TransformShape s =>
+        TransformShape(_translatedMatrix(s.matrix, offset), s.children, clipArea),
       _ => shape,
     };
+  }
+
+  static Float64List _translatedMatrix(Float64List matrix, Offset offset) {
+    return Float64List.fromList(matrix)
+      ..[12] += offset.dx
+      ..[13] += offset.dy;
   }
 
   static List<int> _translatePoints(List<int> points, Offset offset) {
@@ -696,7 +705,7 @@ class GCDrawer extends GCDrawerBase {
   @override
   void onDrawFocusintintintint(VGCDrawFocusintintintint o) {
     final rect = _getRectFromArgs(o.x, o.y, o.width, o.height);
-    _addShape(FocusRectShape(rect, applyAlpha(focusColor), clipping));
+    _addShape(FocusRectShape(rect, applyAlpha(focusColor), _childClip));
   }
 
   @override
@@ -708,7 +717,7 @@ class GCDrawer extends GCDrawerBase {
       srcX: 0, srcY: 0, srcWidth: -1, srcHeight: -1,
     );
     opArgs.image = o.image;
-    _processImageAsync(o.image!, opArgs, clipping);
+    _processImageAsync(o.image!, opArgs);
   }
 
   @override
@@ -719,46 +728,41 @@ class GCDrawer extends GCDrawerBase {
       srcX: 0, srcY: 0, srcWidth: -1, srcHeight: -1,
     );
     opArgs.image = o.image;
-    _processImageAsync(o.image!, opArgs, clipping);
+    _processImageAsync(o.image!, opArgs);
   }
 
   @override
   void onDrawImageImageintintintintintintintint(
       VGCDrawImageImageintintintintintintintint o) {
     if (o.image == null) return;
-    final capturedClipping = clipping;
+    _processImageAsync(o.image!, o);
+  }
+
+  void _processImageAsync(
+      VImage vImage, VGCDrawImageImageintintintintintintintint opArgs) {
     // Capture the staging list this op belongs to: gcDispose() may reassign
     // `_staging` to a fresh list for the next paint cycle before this image
     // finishes decoding, and _onImageLoaded must write back into the list it
     // was scheduled against, not whatever `_staging` points to when it fires.
     final stagingList = _staging;
+    // The placeholder stays unwrapped so gcDispose still finds it; the transform in force at op
+    // time wraps the decoded image, since state may have moved on by the time it resolves.
+    final transform = currentTransform;
+    final deviceClip = transform == null ? null : clipping;
     final idx = stagingList.length;
     stagingList.add(_PlaceholderShape());
-    final f = ImageShape.fromVImageDetailed(o.image!, o, capturedClipping,
-        tint: imageTintColor, glyphLimits: glyphTintLimits);
-    _pendingImages.add(f);
-    f.then((s) {
-      _onImageLoaded(stagingList, idx, s);
-    });
-  }
-
-  void _processImageAsync(
-    VImage vImage,
-    VGCDrawImageImageintintintintintintintint opArgs,
-    Rect? capturedClipping,
-  ) {
-    final stagingList = _staging;
-    final idx = stagingList.length;
-    stagingList.add(_PlaceholderShape());
-    final f = ImageShape.fromVImageDetailed(vImage, opArgs, capturedClipping,
+    final f = ImageShape.fromVImageDetailed(vImage, opArgs, _childClip,
         tint: imageTintColor, glyphLimits: glyphTintLimits);
     _pendingImages.add(f);
     f.then((imageShape) {
-      _onImageLoaded(stagingList, idx, imageShape);
+      _onImageLoaded(stagingList, idx,
+          transform == null
+              ? imageShape
+              : TransformShape(transform, [imageShape], deviceClip));
     });
   }
 
-  void _onImageLoaded(List<Shape> stagingList, int idx, ImageShape shape) {
+  void _onImageLoaded(List<Shape> stagingList, int idx, Shape shape) {
     if (idx < stagingList.length) {
       stagingList[idx] = shape;
     } else {
@@ -771,7 +775,7 @@ class GCDrawer extends GCDrawerBase {
     _addShape(LineShape(
         Offset(o.x1.toDouble(), o.y1.toDouble()),
         Offset(o.x2.toDouble(), o.y2.toDouble()),
-        applyAlpha(lineColor), lineWidth, lineCap, lineJoin, clipping));
+        applyAlpha(lineColor), lineWidth, lineCap, lineJoin, _childClip));
   }
 
   @override
@@ -788,7 +792,7 @@ class GCDrawer extends GCDrawerBase {
   void onDrawPointintint(VGCDrawPointintint o) {
     _addShape(PointShape(
         Offset(o.x.toDouble(), o.y.toDouble()),
-        applyAlpha(pointColor), clipping));
+        applyAlpha(pointColor), _childClip));
   }
 
   @override
@@ -872,7 +876,7 @@ class GCDrawer extends GCDrawerBase {
     final rect = _getRectFromArgs(o.x, o.y, o.width, o.height);
     _addShape(GradientRectShape(
         rect, applyAlpha(gradientStartColor), applyAlpha(gradientEndColor),
-        o.vertical, clipping));
+        o.vertical, _childClip));
   }
 
   @override
