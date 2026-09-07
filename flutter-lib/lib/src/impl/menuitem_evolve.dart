@@ -241,6 +241,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
       _localSelection = !(_localSelection ?? false);
     });
     _sendSelectionEvent();
+    MenuChangeNotifier.of(context)?.closeMenu();
   }
 
   void _onRadioPressed() {
@@ -252,6 +253,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
       _localSelection = true;
     });
     _sendSelectionEvent();
+    notifier?.closeMenu();
   }
 
   void _sendSelectionEvent() {
