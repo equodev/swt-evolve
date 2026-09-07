@@ -366,8 +366,23 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     final vBar = state.verticalBar;
     final showHBar = hBar != null && hBar.visible != false && _isScrollable(hBar);
     final showVBar = vBar != null && vBar.visible != false && _isScrollable(vBar);
-
-    if (!showVBar && !showHBar) return base;
+    
+    if (!showVBar && !showHBar) {
+      return Listener(
+        onPointerSignal: (event) {
+          if (event is PointerScrollEvent) {
+            widget.sendMouseWheelMouseWheel(
+              state,
+              VEvent()
+                ..x = event.localPosition.dx.round()
+                ..y = event.localPosition.dy.round()
+                ..count = event.scrollDelta.dy > 0 ? -3 : 3,
+            );
+          }
+        },
+        child: base,
+      );
+    }
 
     void onDragStateChanged(bool dragging) {
       _scrollbarDragging = dragging;
