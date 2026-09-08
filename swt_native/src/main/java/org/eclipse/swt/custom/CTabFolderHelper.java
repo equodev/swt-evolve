@@ -8,6 +8,9 @@ import org.eclipse.swt.graphics.GraphicsUtils;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import dev.equo.swt.FlutterBridge;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.DartControl;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 
@@ -29,6 +32,31 @@ public class CTabFolderHelper {
     private static final int FLAGS = SWT.DRAW_TRANSPARENT | SWT.DRAW_MNEMONIC | SWT.DRAW_DELIMITER;
     private static final String ELLIPSIS = "...";
     private static final String CHEVRON_ELLIPSIS = "99+";
+
+    /**
+     * A tab click from Flutter. setSelection(int, boolean) notifies only when the index actually
+     * changes, so a click on the already-selected tab would leave no trace at all — while a native
+     * one still moves focus onto the tab (SwtCTabFolder.onMouse, SWT.MouseDown) and so still reaches
+     * anything that tracks which tab's content the user is working in. Focus takes the same route it
+     * takes when the render side reports it, since that is what announces activation here.
+     */
+    public static void handleTabClick(DartCTabFolder obj, Event e) {
+        if (obj.isDisposed()) return;
+        int previous = obj.getSelectionIndex();
+        obj.setSelection(e.index, true);
+        if (obj.isDisposed() || previous != obj.getSelectionIndex()) return;
+        CTabItem selected = obj.getSelection();
+        Control content = selected == null || selected.isDisposed() ? null : selected.getControl();
+        DartControl target = content != null && !content.isDisposed() && content.getImpl() instanceof DartControl dart
+                ? dart
+                : obj;
+        FlutterBridge bridge = target.getBridge();
+        if (bridge != null && bridge.hasFocus(target)) return;
+        // Taking the focus is what announces the activation here (ControlHelper.takeFocus), and
+        // Composite.setFocus() hands it to a descendant, so the announcement starts deep enough to
+        // pass through every control in between — which is where an embedder hangs its listener.
+        target.getApi().setFocus();
+    }
 
     public static void handleReorderItems(DartCTabFolder obj, Event e) {
         if (obj.isDisposed()) return;

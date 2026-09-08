@@ -474,6 +474,16 @@ public class ControlHelper {
      * Ancestors that are not part containers simply have no listener and ignore the event.
      */
     public static void sendActivateToAncestors(DartControl control) {
+        sendActivateToAncestors(control, SWT.None);
+    }
+
+    /**
+     * [detail] carries what caused the activation, the way Shell.setActiveControl(control, type)
+     * stamps it natively. A listener is allowed to react only to a user click — Eclipse's stack
+     * renderer activates a tab's part solely for SWT.MouseDown — so a click reported by the render
+     * side has to say so, or it is indistinguishable from a programmatic focus change and ignored.
+     */
+    public static void sendActivateToAncestors(DartControl control, int detail) {
         if (control == null || control.getApi() == null || control.getApi().isDisposed())
             return;
         for (Widget widget = control.getApi(); widget != null; ) {
@@ -481,8 +491,11 @@ public class ControlHelper {
                 return;
             // A Dart control can sit inside a natively-backed ancestor; that one already gets its
             // activation from the OS, so walk past it rather than assuming the whole chain is ours.
-            if (widget.getImpl() instanceof DartWidget impl)
-                impl.sendEvent(SWT.Activate);
+            if (widget.getImpl() instanceof DartWidget impl) {
+                Event event = new Event();
+                event.detail = detail;
+                impl.sendEvent(SWT.Activate, event);
+            }
             if (widget instanceof Shell)
                 return;
             widget = (widget instanceof Control c) ? c.getParent() : null;

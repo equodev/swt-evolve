@@ -1241,6 +1241,9 @@ public class DartToolItem extends DartItem implements IToolItem {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
+                ToolItemHelper.announceActivation(this);
+                if (isDisposed())
+                    return;
                 sendEvent(SWT.Selection, e);
             });
         });

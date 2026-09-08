@@ -4832,9 +4832,9 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         });
         FlutterBridge.on(this, "Selection", "Selection", e -> {
             getDisplay().asyncExec(() -> {
-                if (!isDisposed()) {
-                    setSelection(e.index, true);
-                }
+                if (isDisposed())
+                    return;
+                CTabFolderHelper.handleTabClick(this, e);
             });
         });
     }
