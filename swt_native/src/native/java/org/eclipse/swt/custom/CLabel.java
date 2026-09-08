@@ -225,7 +225,7 @@ public class CLabel extends Canvas {
      *  </ul>
      */
     public void setBackground(Color[] colors, int[] percents) {
-        getImpl().setBackground(colors, percents);
+        setBackground(colors, percents, false);
     }
 
     /**

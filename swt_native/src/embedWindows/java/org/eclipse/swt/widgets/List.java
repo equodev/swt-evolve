@@ -415,7 +415,7 @@ public class List extends Scrollable {
      * </ul>
      */
     public int indexOf(String string) {
-        return getImpl().indexOf(string);
+        return indexOf(string, 0);
     }
 
     /**

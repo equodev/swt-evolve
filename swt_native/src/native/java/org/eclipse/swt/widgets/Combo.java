@@ -644,7 +644,7 @@ public class Combo extends Composite {
      * </ul>
      */
     public int indexOf(String string) {
-        return getImpl().indexOf(string);
+        return indexOf(string, 0);
     }
 
     /**

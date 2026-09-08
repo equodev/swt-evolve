@@ -485,7 +485,7 @@ public abstract class Control extends Widget implements Drawable {
      * @see "computeTrim, getClientArea for controls that implement them"
      */
     public Point computeSize(int wHint, int hHint) {
-        return getImpl().computeSize(wHint, hHint);
+        return computeSize(wHint, hHint, true);
     }
 
     /**
@@ -1731,7 +1731,7 @@ public abstract class Control extends Widget implements Drawable {
      * </ul>
      */
     public void setBounds(int x, int y, int width, int height) {
-        getImpl().setBounds(x, y, width, height);
+        setBounds(new Rectangle(x, y, width, height));
     }
 
     /**

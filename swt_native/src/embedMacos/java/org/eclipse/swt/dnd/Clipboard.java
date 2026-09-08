@@ -125,7 +125,7 @@ public class Clipboard {
      * @since 3.1
      */
     public void clearContents() {
-        getImpl().clearContents();
+        clearContents(DND.CLIPBOARD);
     }
 
     /**
@@ -212,7 +212,7 @@ public class Clipboard {
      * @see #getContentsAsync(Transfer)
      */
     public Object getContents(Transfer transfer) {
-        return getImpl().getContents(transfer);
+        return getContents(transfer, DND.CLIPBOARD);
     }
 
     /**
@@ -301,7 +301,7 @@ public class Clipboard {
      * @since 3.132
      */
     public CompletableFuture<Object> getContentsAsync(Transfer transfer) {
-        return getImpl().getContentsAsync(transfer);
+        return getContentsAsync(transfer, DND.CLIPBOARD);
     }
 
     /**
@@ -416,7 +416,7 @@ public class Clipboard {
      *  recoverable error, but can not be changed due to backward compatibility.</p>
      */
     public void setContents(Object[] data, Transfer[] dataTypes) {
-        getImpl().setContents(data, dataTypes);
+        setContents(data, dataTypes, DND.CLIPBOARD);
     }
 
     /**
@@ -498,7 +498,7 @@ public class Clipboard {
      * @since 3.0
      */
     public TransferData[] getAvailableTypes() {
-        return getImpl().getAvailableTypes();
+        return getAvailableTypes(DND.CLIPBOARD);
     }
 
     /**

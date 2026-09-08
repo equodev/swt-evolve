@@ -3114,7 +3114,8 @@ public class StyledText extends Canvas {
      * </ul>
      */
     public void setSelection(int start) {
-        getImpl().setSelection(start);
+        // checkWidget test done in setSelectionRange
+        setSelection(start, start);
     }
 
     /**

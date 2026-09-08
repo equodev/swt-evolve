@@ -756,7 +756,7 @@ public class Shell extends Decorations {
     }
 
     public void setLocation(int x, int y) {
-        getImpl().setLocation(x, y);
+        setLocation(new Point(x, y));
     }
 
     public void setBounds(Rectangle rect) {
@@ -764,7 +764,7 @@ public class Shell extends Decorations {
     }
 
     public void setBounds(int x, int y, int width, int height) {
-        getImpl().setBounds(x, y, width, height);
+        setBounds(new Rectangle(x, y, width, height));
     }
 
     public void setEnabled(boolean enabled) {

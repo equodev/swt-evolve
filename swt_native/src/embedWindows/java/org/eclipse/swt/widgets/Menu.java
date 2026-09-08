@@ -695,7 +695,7 @@ public class Menu extends Widget {
      * </ul>
      */
     public void setLocation(int x, int y) {
-        getImpl().setLocation(x, y);
+        setLocation(new Point(x, y));
     }
 
     /**

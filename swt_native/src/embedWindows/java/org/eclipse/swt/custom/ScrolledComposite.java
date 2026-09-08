@@ -282,7 +282,7 @@ public class ScrolledComposite extends Composite {
      * @since 2.0
      */
     public void setOrigin(Point origin) {
-        getImpl().setOrigin(origin);
+        setOrigin(origin.x, origin.y);
     }
 
     /**

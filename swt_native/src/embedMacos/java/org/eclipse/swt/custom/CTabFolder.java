@@ -780,7 +780,7 @@ public class CTabFolder extends Composite {
      *  @since 3.6
      */
     public void setBackground(Color[] colors, int[] percents) {
-        getImpl().setBackground(colors, percents);
+        setBackground(colors, percents, false);
     }
 
     /**
@@ -1133,7 +1133,7 @@ public class CTabFolder extends Composite {
      * 	</ul>
      */
     public void setSelectionBackground(Color[] colors, int[] percents) {
-        getImpl().setSelectionBackground(colors, percents);
+        setSelectionBackground(colors, percents, false);
     }
 
     /**
@@ -1301,7 +1301,7 @@ public class CTabFolder extends Composite {
      * @since 2.1
      */
     public void setTopRight(Control control) {
-        getImpl().setTopRight(control);
+        setTopRight(control, SWT.RIGHT);
     }
 
     /**
