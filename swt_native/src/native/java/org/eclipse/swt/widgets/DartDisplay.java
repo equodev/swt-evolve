@@ -1588,13 +1588,23 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
             case SWT.COLOR_WIDGET_FOREGROUND ->
                 new Color(this.getApi(), 0, 0, 0);
             case SWT.COLOR_WIDGET_BACKGROUND ->
-                new Color(this.getApi(), 240, 240, 240);
+                {
+                    if (!isSystemDarkTheme())
+                        yield new Color(this.getApi(), 240, 240, 240);
+                    dev.equo.swt.size.CanvasTheme t = dev.equo.swt.size.CanvasTheme.getDarkSurface();
+                    yield new Color(this.getApi(), t.red(), t.green(), t.blue());
+                }
             case SWT.COLOR_WIDGET_BORDER ->
                 new Color(this.getApi(), 0, 0, 0);
             case SWT.COLOR_LIST_FOREGROUND ->
                 new Color(this.getApi(), 0, 0, 0);
             case SWT.COLOR_LIST_BACKGROUND ->
-                new Color(this.getApi(), 255, 255, 255);
+                {
+                    if (!isSystemDarkTheme())
+                        yield new Color(this.getApi(), 255, 255, 255);
+                    dev.equo.swt.size.CanvasTheme t = dev.equo.swt.size.CanvasTheme.getDarkSurface();
+                    yield new Color(this.getApi(), t.red(), t.green(), t.blue());
+                }
             case SWT.COLOR_LIST_SELECTION ->
                 new Color(this.getApi(), 51, 153, 255);
             case SWT.COLOR_LIST_SELECTION_TEXT ->

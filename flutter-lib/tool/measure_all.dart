@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:swtflutter/src/theme/theme.dart';
 import './measure.dart';
 import './measure_button.dart' as button;
+import './measure_canvas.dart' as canvas;
 import './measure_ccombo.dart' as ccombo;
 import './measure_clabel.dart' as clabel;
 import './measure_combo.dart' as combo;
@@ -18,6 +19,10 @@ import './measure_tree.dart' as tree;
 import './measure_treeitem.dart' as treeitem;
 
 void main() {
+  // Canvas has no TextStyle to measure -- it reads ColorScheme directly and writes its Java file
+  // immediately, independent of the WidgetMeasurer/MeasurementApp cases below.
+  canvas.writeCanvasThemeFile();
+
   final measurer = WidgetMeasurer();
 
   button.setupCases(measurer);
