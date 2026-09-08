@@ -217,6 +217,9 @@ public class Mocks implements BeforeEachCallback, AfterEachCallback {
         when(impl._display()).thenReturn(display);
         when(impl._getChildren()).thenReturn(new Control[0]);
         doNothing().when(impl).createItem(any(TabItem.class), anyInt());
+        // Pre-3.117 GTK TabItem.setToolTipText reaches a Shell via parent.getImpl()._getShell()
+        // (see the same stub on table()/tree()); absent on other versions, hence the reflection guard.
+        whenInvokedReturn(DartControl.class, "_getShell", impl, swtShell());
         return w;
     }
 
@@ -258,6 +261,9 @@ public class Mocks implements BeforeEachCallback, AfterEachCallback {
         Display display = swtDisplay();
         when(w.getDisplay()).thenReturn(display);
         when(impl._display()).thenReturn(display);
+        // Pre-3.117 GTK TableColumn.setToolTipText reaches a Shell via parent.getImpl()._getShell()
+        // (dropped upstream in 3.117); absent on other versions, hence the reflection guard.
+        whenInvokedReturn(DartControl.class, "_getShell", impl, swtShell());
         return w;
     }
 
@@ -277,6 +283,9 @@ public class Mocks implements BeforeEachCallback, AfterEachCallback {
         Display display = swtDisplay();
         when(w.getDisplay()).thenReturn(display);
         when(impl._display()).thenReturn(display);
+        // Pre-3.117 GTK TreeColumn.setToolTipText reaches a Shell via parent.getImpl()._getShell()
+        // (same upstream boundary as TableColumn); absent on other versions, hence the reflection guard.
+        whenInvokedReturn(DartControl.class, "_getShell", impl, swtShell());
         return w;
     }
 

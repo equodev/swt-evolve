@@ -7,8 +7,6 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.gtk.GDK;
 import org.eclipse.swt.internal.gtk.GTK;
 import org.eclipse.swt.internal.gtk.OS;
-import org.eclipse.swt.internal.gtk3.GTK3;
-import org.eclipse.swt.internal.gtk4.GTK4;
 
 public class SwtEmbeddedBridge extends EmbeddedBridge {
     public SwtEmbeddedBridge(DartWidget widget) {
@@ -40,18 +38,18 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
         if (fixedHandle == 0)
             SWT.error(SWT.ERROR_NO_HANDLES);
         if (!GTK.GTK4)
-            GTK3.gtk_widget_set_has_window(fixedHandle, true);
-        
+            GTKWrapper.gtk_widget_set_has_window(fixedHandle, true);
+
         long parentHandle = control.parent.handle;
         if (GTK.GTK4)
             OS.swt_fixed_add(parentHandle, fixedHandle);
         else
-            GTK3.gtk_container_add(parentHandle, fixedHandle);
+            GTKWrapper.gtk_container_add(parentHandle, fixedHandle);
 
         if (GTK.GTK4)
             OS.swt_fixed_add(fixedHandle, view);
         else
-            GTK3.gtk_container_add(fixedHandle, view);
+            GTKWrapper.gtk_container_add(fixedHandle, view);
         GTKWrapper.gtk_widget_show(view);
 
         control.getApi().handle = fixedHandle;
@@ -117,7 +115,7 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
             if (GTK.GTK4) {
                 GTK.gtk_widget_unparent(control.getApi().handle);
             } else {
-                GTK3.gtk_widget_destroy(control.getApi().handle);
+                GTKWrapper.gtk_widget_destroy(control.getApi().handle);
             }
             control.getApi().handle = 0;
         }
@@ -127,7 +125,7 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
     public Point getWindowOrigin(DartControl control) {
         if (GTK.GTK4) {
             double[] originX = new double[1], originY = new double[1];
-            boolean success = GTK4.gtk_widget_translate_coordinates(control.getApi().handle, ((SwtShell) control.getShell().getImpl()).shellHandle, 0, 0, originX, originY);
+            boolean success = GTKWrapper.gtk_widget_translate_coordinates(control.getApi().handle, ((SwtShell) control.getShell().getImpl()).shellHandle, 0, 0, originX, originY);
             return success ? new Point((int) originX[0], (int) originY[0]) : new Point(0, 0);
         } else {
             int[] x = new int[1];
@@ -142,7 +140,7 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
     public void setCursor(DartControl control, long cursor) {
         if (GTK.GTK4) {
             long eventHandle = eventWindow(control);
-            GTK4.gtk_widget_set_cursor(eventHandle, cursor);
+            GTKWrapper.gtk_widget_set_cursor(eventHandle, cursor);
         } else {
             long window = eventWindow(control);
             if (window != 0) {
@@ -155,7 +153,7 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
     long eventWindow(DartControl control) {
         long eventHandle = control.getApi().handle;
         GTK.gtk_widget_realize(eventHandle);
-        return GTK3.gtk_widget_get_window(eventHandle);
+        return GTKWrapper.gtk_widget_get_window(eventHandle);
     }
 
     @Override
@@ -172,7 +170,7 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
             if (GTK.GTK4) {
                 GTK.gtk_widget_unparent(controlHandle);
             } else {
-                GTK3.gtk_container_remove(oldParent, controlHandle);
+                GTKWrapper.gtk_container_remove(oldParent, controlHandle);
             }
         }
 
@@ -181,7 +179,7 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
         if (GTK.GTK4) {
             OS.swt_fixed_add(newParentHandle, controlHandle);
         } else {
-            GTK3.gtk_container_add(newParentHandle, controlHandle);
+            GTKWrapper.gtk_container_add(newParentHandle, controlHandle);
         }
     }
 
