@@ -53,6 +53,9 @@ public class DartBrowser extends DartComposite implements IBrowser {
     /** Style constant for IE browser type (same as SWT.IE, added in SWT 3.129). */
     private static final int SWT_IE = 1 << 19;
 
+    /** Style constant for the Edge browser type (same value as SWT.EDGE). */
+    private static final int SWT_EDGE = 1 << 18;
+
     WebBrowser webBrowser;
 
     int userStyle;
@@ -217,7 +220,7 @@ public class DartBrowser extends DartComposite implements IBrowser {
                         DefaultType = SWT_IE;
                     } else if (current.equalsIgnoreCase("edge") && "win32".equals(platform)) {
                         //$NON-NLS-1$ //$NON-NLS-2$
-                        DefaultType = SWT.EDGE;
+                        DefaultType = SWT_EDGE;
                         break;
                     }
                     index = newIndex + 1;
@@ -228,10 +231,10 @@ public class DartBrowser extends DartComposite implements IBrowser {
             }
         }
         /* If particular backend isn't specified, use the value from the system property. */
-        if ((style & (SWT.WEBKIT | SWT_IE | SWT.EDGE)) == 0) {
+        if ((style & (SWT.WEBKIT | SWT_IE | SWT_EDGE)) == 0) {
             style |= DefaultType;
         }
-        if ("win32".equals(platform) && (style & SWT.EDGE) != 0) {
+        if ("win32".equals(platform) && (style & SWT_EDGE) != 0) {
             //$NON-NLS-1$
             /* Hack to enable Browser to receive focus. */
             style |= SWT.EMBEDDED;

@@ -292,7 +292,7 @@ public class DartToolBar extends DartComposite implements IToolBar {
         if (items == null) {
             items = new ToolItem[0];
         }
-        return Arrays.copyOf(items, items.length);
+        return java.util.Arrays.copyOf(items, items.length);
     }
 
     /**

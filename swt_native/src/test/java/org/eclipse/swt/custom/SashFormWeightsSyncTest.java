@@ -64,7 +64,9 @@ class SashFormWeightsSyncTest {
         SashForm form = new SashForm(shell, SWT.HORIZONTAL);
         new Composite(form, SWT.NONE);
         new Composite(form, SWT.NONE);
-        form.setWeights(1, 1);
+        // Explicit array: setWeights takes int[] in older SWT and int... in newer ones, and the
+        // array form is the call that compiles against both.
+        form.setWeights(new int[] { 1, 1 });
         return form;
     }
 

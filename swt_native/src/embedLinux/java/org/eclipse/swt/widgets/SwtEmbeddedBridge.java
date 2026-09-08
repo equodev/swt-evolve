@@ -113,7 +113,7 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
             ((SwtDisplay) control.display.getImpl()).removeWidget(control.getApi().handle);
             // Destroy the SWT fixed container - GTK will automatically
             if (GTK.GTK4) {
-                GTK.gtk_widget_unparent(control.getApi().handle);
+                GTKWrapper.gtk_widget_unparent(control.getApi().handle);
             } else {
                 GTKWrapper.gtk_widget_destroy(control.getApi().handle);
             }
@@ -168,7 +168,7 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
         long oldParent = GTK.gtk_widget_get_parent(controlHandle);
         if (oldParent != 0) {
             if (GTK.GTK4) {
-                GTK.gtk_widget_unparent(controlHandle);
+                GTKWrapper.gtk_widget_unparent(controlHandle);
             } else {
                 GTKWrapper.gtk_container_remove(oldParent, controlHandle);
             }
