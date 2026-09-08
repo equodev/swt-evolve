@@ -116,9 +116,6 @@ VStyledText _$VStyledTextFromJson(Map<String, dynamic> json) => VStyledText()
       ?.map((e) => (e as num).toInt())
       .toList()
   ..styleRange = (json['styleRange'] as num?)?.toInt()
-  ..styleRanges = (json['styleRanges'] as List<dynamic>?)
-      ?.map((e) => VStyleRange.fromJson(e as Map<String, dynamic>))
-      .toList()
   ..tabStops = (json['tabStops'] as List<dynamic>?)
       ?.map((e) => (e as num).toInt())
       .toList()
@@ -197,7 +194,6 @@ Map<String, dynamic> _$VStyledTextToJson(VStyledText instance) =>
       'selectionRange': ?instance.selectionRange,
       'selectionRanges': ?instance.selectionRanges,
       'styleRange': ?instance.styleRange,
-      'styleRanges': ?instance.styleRanges,
       'tabStops': ?instance.tabStops,
       'tabs': ?instance.tabs,
       'text': ?instance.text,

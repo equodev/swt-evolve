@@ -113,7 +113,6 @@ class VStyledText extends VCanvas {
   VPoint? selectionRange;
   List<int>? selectionRanges;
   int? styleRange;
-  List<VStyleRange>? styleRanges;
   List<int>? tabStops;
   int? tabs;
   String? text;

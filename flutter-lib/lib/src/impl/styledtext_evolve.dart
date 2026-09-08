@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui' show LineMetrics;
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -715,12 +716,21 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   // first state push has built a text shape. build() therefore drives the hook too,
   // so a layout that changes after mount is still described.
   //
-  // Gate on the shape's layout holder, not the shape reference: caret-blink and
-  // selection copies share the holder (their geometry is unchanged), while any copy
-  // that changes a layout input carries a fresh one. The payload is one layout per
-  // line plus a per-character x array for the document, so an ungated push per frame
-  // would serialize the whole document on every caret blink.
+  // Two gates, because the payload is one layout per line plus a per-character x array
+  // for the document — O(document) on every push.
+  //
+  // The holder gate is the cheap one and skips the compute: caret-blink and selection
+  // copies share the layout holder, so a blink tick does no work at all. It only holds
+  // for copies, though — a state push from Java rebuilds the text shape from scratch and
+  // always mints a fresh holder, so a sash drag (which pushes bounds every frame) misses
+  // it on every frame while producing the geometry Java already has.
+  //
+  // The payload gate covers that: the table is a pure function of its layout inputs, so
+  // comparing it against the last one sent is exact, and cheap next to serializing and
+  // transferring the document. A width change with wrapping off is the common case — it
+  // changes no layout input, and the compute is warm from the per-line layout memo.
   _LineTopsCache? _geometrySentForLayout;
+  Map<String, dynamic>? _geometrySent;
 
   /// Test seam: the transport is a no-op in a widget test, so a push is otherwise
   /// unobservable. Counts every payload pushed and keeps the last one.
@@ -739,6 +749,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final geometry = shape.computeGeometry();
     if (geometry == null) return;
     _geometrySentForLayout = shape._lineTopsCache;
+    if (const DeepCollectionEquality().equals(geometry, _geometrySent)) return;
+    _geometrySent = geometry;
     debugGeometryPushes++;
     debugLastGeometry = geometry;
     EquoCommService.sendPayload(
@@ -1974,20 +1986,6 @@ class TextShape extends Shape {
       c.clipRect(clipRect!);
     }
 
-    TextSpan effectiveTextSpan;
-
-    if (editingState != null) {
-      effectiveTextSpan = TextRenderer.buildFinalTextSpan(
-        text,
-        editingState!,
-        style,
-      );
-    } else if (textSpan != null) {
-      effectiveTextSpan = textSpan!;
-    } else {
-      effectiveTextSpan = TextSpan(text: text, style: style);
-    }
-
     final lines = text.split('\n');
     final paintOffset = off;
     double currentY = paintOffset.dy;
@@ -2023,7 +2021,6 @@ class TextShape extends Shape {
       final tp = _layoutLine(
         line,
         i,
-        effectiveTextSpan,
         align: effectiveAlign,
         maxWidth: maxW,
       );
@@ -2204,11 +2201,10 @@ class TextShape extends Shape {
     };
   }
 
-  TextSpan _getTextSpanForLine(
-    String lineText,
-    int lineIndex,
-    TextSpan unifiedTextSpan,
-  ) {
+  /// The span for one logical line. Deliberately built per line rather than sliced out
+  /// of a document-wide span: building that span is O(lines x styleRanges) and every
+  /// caller here needs one line, so the whole-document form was pure waste per paint.
+  TextSpan _getTextSpanForLine(String lineText, int lineIndex) {
     if (editingState != null) {
       return _buildLineTextSpanFromState(lineText, lineIndex);
     } else {
@@ -2235,7 +2231,7 @@ class TextShape extends Shape {
     required bool wantCaretX,
   }) {
     final key = _LineLayoutKey(
-      _getTextSpanForLine(lineText, lineIndex, TextSpan(text: text, style: style)),
+      _getTextSpanForLine(lineText, lineIndex),
       style,
       align,
       maxWidth,
@@ -2295,15 +2291,12 @@ class TextShape extends Shape {
   // tab stops (see _expandTabStops).
   TextPainter _layoutLine(
     String lineText,
-    int lineIndex,
-    TextSpan unifiedTextSpan, {
+    int lineIndex, {
     required TextAlign align,
     required double maxWidth,
   }) {
     debugLayoutLineCalls++;
-    final line = _expandTabStops(
-      _getTextSpanForLine(lineText, lineIndex, unifiedTextSpan),
-    );
+    final line = _expandTabStops(_getTextSpanForLine(lineText, lineIndex));
     final tp = TextPainter(
       text: line.span,
       textAlign: align,
@@ -2582,7 +2575,6 @@ class TextShape extends Shape {
     final tp = _layoutLine(
       currentLine,
       currentLineIndex,
-      TextSpan(text: text, style: style),
       align: props.align,
       maxWidth: maxW,
     );
@@ -2691,8 +2683,7 @@ class TextShape extends Shape {
       final tp = _layoutLine(
         line,
         lineIndex,
-        TextSpan(text: text, style: style),
-        align: props.align,
+          align: props.align,
         maxWidth: _lineMaxWidth(props.indent),
       );
 
@@ -3046,7 +3037,6 @@ class TextShape extends Shape {
     final tp = _layoutLine(
       line,
       lineIndex,
-      TextSpan(text: text, style: style),
       align: props.align,
       maxWidth: maxW,
     );

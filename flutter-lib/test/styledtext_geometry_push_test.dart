@@ -7,8 +7,9 @@
 // is every editor, therefore never delivers its geometry at all, and with word wrap on JFace's
 // line-number ruler advances one row per logical line and numbers every wrapped visual row.
 //
-// The layout must also be pushed again when it changes (a wrap toggle here), and not when only
-// the caret blinks: the payload is O(document).
+// The layout must also be pushed again when it changes (a wrap toggle here), and not when the
+// layout is unchanged — a caret blink, or a Java state push that only moves the control's
+// bounds: the payload is O(document), and a sash drag pushes state on every frame.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,10 +25,11 @@ const _longLine =
     'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
 const _text = 'aaaa\n$_longLine\ncccc';
 const _logicalLines = 3;
-const _size = Size(200, 400);
+const _width = 200.0;
+const _height = 400.0;
 
 void main() {
-  VStyledText value({required bool wrap}) => VStyledText()
+  VStyledText value({required bool wrap, double width = _width}) => VStyledText()
     ..swt = 'StyledText'
     ..id = 1
     ..style = SWT.H_SCROLL | SWT.V_SCROLL
@@ -39,14 +41,16 @@ void main() {
     ..bounds = (VRectangle()
       ..x = 0
       ..y = 0
-      ..width = _size.width.toInt()
-      ..height = _size.height.toInt());
+      ..width = width.toInt()
+      ..height = _height.toInt());
 
-  Widget appWith(GlobalKey<StyledTextImpl> key, VStyledText v) => EvolveApp(
+  Widget appWith(GlobalKey<StyledTextImpl> key, VStyledText v,
+          {double width = _width}) =>
+      EvolveApp(
         theme: ThemeMode.light,
         contentWidget: SizedBox(
-          width: _size.width,
-          height: _size.height,
+          width: width,
+          height: _height,
           child: StyledTextSwt<VStyledText>(key: key, value: v),
         ),
       );
@@ -120,6 +124,34 @@ void main() {
       0,
       reason: 'a caret-visibility flip changes no geometry, and the payload is '
           'one layout per line plus a per-character x array for the document',
+    );
+  }, timeout: const Timeout(Duration(minutes: 2)));
+
+  testWidgets('a width-only resize with wrapping off pushes nothing',
+      (tester) async {
+    final key = GlobalKey<StyledTextImpl>();
+    await tester.pumpWidget(appWith(key, value(wrap: false)));
+    await tester.pumpWidget(appWith(key, value(wrap: false)));
+    await tester.pump();
+
+    StyledTextImpl.debugGeometryPushes = 0;
+
+    // Dragging a sash moves the editor's bounds, so Java pushes state on every frame,
+    // and every push builds a fresh text shape. With wrapping off the width is not a
+    // layout input, so all of these describe the same document geometry.
+    for (final width in [210.0, 220.0, 230.0, 240.0]) {
+      await tester.pumpWidget(
+        appWith(key, value(wrap: false, width: width), width: width),
+      );
+      await tester.pump();
+    }
+
+    expect(
+      StyledTextImpl.debugGeometryPushes,
+      0,
+      reason: 'the geometry these frames produce is the one Java already has, '
+          'and the payload is one layout per line plus a per-character x array '
+          'for the document',
     );
   }, timeout: const Timeout(Duration(minutes: 2)));
 }

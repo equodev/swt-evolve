@@ -251,6 +251,7 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).columnX = value;
     }
 
+    @JsonAttribute(ignore = true)
     public StyleRange[] getStyleRanges() {
         StyleRange[] values = ((DartStyledText) impl).getStyleRanges();
         if (values == null)
