@@ -33,6 +33,7 @@ public class VGC extends VResource {
         ((DartGC) impl).advanced = value;
     }
 
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public int getAlpha() {
         return ((DartGC) impl).getAlpha();
     }

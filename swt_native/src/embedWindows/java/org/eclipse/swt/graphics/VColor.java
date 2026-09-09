@@ -15,6 +15,7 @@ public class VColor extends VResource {
         super(impl);
     }
 
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public int getAlpha() {
         return ((IColor) impl).getAlpha();
     }

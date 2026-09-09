@@ -18,6 +18,7 @@ public class VShell extends VDecorations {
         super(impl);
     }
 
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public int getAlpha() {
         return ((DartShell) impl).getAlpha();
     }

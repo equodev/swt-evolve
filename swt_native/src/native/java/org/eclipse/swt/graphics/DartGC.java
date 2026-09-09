@@ -3058,7 +3058,7 @@ public final class DartGC extends DartResource implements IGC {
 
     boolean advanced;
 
-    int alpha;
+    int alpha = 255;
 
     int antialias;
 

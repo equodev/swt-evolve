@@ -649,10 +649,10 @@ class GCDrawer extends GCDrawerBase {
           s.rect.translate(offset.dx, offset.dy), s.color, clipArea),
       ImageShape s when s.type == ImageType.raster => ImageShape.raster(
           s.image!, s.srcRect!, s.destRect.translate(offset.dx, offset.dy),
-          clipRect: clipArea, colorFilter: s.colorFilter),
+          clipRect: clipArea, colorFilter: s.colorFilter, alpha: s.alpha),
       ImageShape s when s.type == ImageType.svg => ImageShape.svg(
           s.pictureInfo!, s.destRect.translate(offset.dx, offset.dy),
-          clipRect: clipArea, colorFilter: s.colorFilter),
+          clipRect: clipArea, colorFilter: s.colorFilter, alpha: s.alpha),
       // copyArea shifts by a device-space offset, so it goes on the matrix's translation column
       // rather than on children that are drawing in the transform's own coordinates.
       TransformShape s =>
@@ -752,7 +752,8 @@ class GCDrawer extends GCDrawerBase {
     final idx = stagingList.length;
     stagingList.add(_PlaceholderShape());
     final f = ImageShape.fromVImageDetailed(vImage, opArgs, _childClip,
-        tint: imageTintColor, glyphLimits: glyphTintLimits);
+        tint: imageTintColor, glyphLimits: glyphTintLimits,
+        alpha: state.alpha ?? 255);
     _pendingImages.add(f);
     f.then((imageShape) {
       _onImageLoaded(stagingList, idx,
@@ -1496,20 +1497,23 @@ class ImageShape extends Shape {
     this.pictureInfo,
     this.clipRect,
     this.colorFilter,
+    this.alpha = 255,
   });
 
   factory ImageShape.raster(ui.Image image, Rect srcRect, Rect destRect,
-      {Rect? clipRect, ColorFilter? colorFilter}) {
+      {Rect? clipRect, ColorFilter? colorFilter, int alpha = 255}) {
     return ImageShape._(
         type: ImageType.raster, image: image, srcRect: srcRect,
-        destRect: destRect, clipRect: clipRect, colorFilter: colorFilter);
+        destRect: destRect, clipRect: clipRect, colorFilter: colorFilter,
+        alpha: alpha);
   }
 
   factory ImageShape.svg(PictureInfo pictureInfo, Rect destRect,
-      {Rect? clipRect, ColorFilter? colorFilter}) {
+      {Rect? clipRect, ColorFilter? colorFilter, int alpha = 255}) {
     return ImageShape._(
         type: ImageType.svg, pictureInfo: pictureInfo,
-        destRect: destRect, clipRect: clipRect, colorFilter: colorFilter);
+        destRect: destRect, clipRect: clipRect, colorFilter: colorFilter,
+        alpha: alpha);
   }
 
   // Whether a blitted image reads as a glyph, by pixels — nothing here matches an image by name.
@@ -1565,7 +1569,7 @@ class ImageShape extends Shape {
 
   static Future<ImageShape> fromVImageDetailed(VImage vImage,
       VGCDrawImageImageintintintintintintintint opArgs, Rect? clipRect,
-      {Color? tint, GlyphTintLimits? glyphLimits}) async {
+      {Color? tint, GlyphTintLimits? glyphLimits, int alpha = 255}) async {
     final preserveColors = preserveIconColors;
     final colorFilter = preserveColors
         ? null
@@ -1597,7 +1601,7 @@ class ImageShape extends Shape {
             opArgs.destHeight == -1 ? pictureInfo.size.height : (opArgs.destHeight).toDouble(),
           );
           return ImageShape.svg(pictureInfo, destRect,
-              clipRect: clipRect, colorFilter: colorFilter);
+              clipRect: clipRect, colorFilter: colorFilter, alpha: alpha);
         } catch (e) {
           // SVG failed to load, fall through to raster
         }
@@ -1617,6 +1621,7 @@ class ImageShape extends Shape {
           image: null,
           srcRect: null,
           clipRect: clipRect,
+          alpha: alpha,
         );
       }
 
@@ -1646,7 +1651,7 @@ class ImageShape extends Shape {
               ? ColorFilter.mode(tint ?? AppColors.getColor(true), BlendMode.srcIn)
               : null);
       return ImageShape.raster(uiImage, srcRect, destRect,
-          clipRect: clipRect, colorFilter: rasterFilter);
+          clipRect: clipRect, colorFilter: rasterFilter, alpha: alpha);
     } catch (e) {
       return ImageShape._(
         type: ImageType.raster,
@@ -1654,6 +1659,7 @@ class ImageShape extends Shape {
         image: null,
         srcRect: null,
         clipRect: clipRect,
+        alpha: alpha,
       );
     }
   }
@@ -1664,6 +1670,7 @@ class ImageShape extends Shape {
   final Rect? srcRect;
   final PictureInfo? pictureInfo;
   final ColorFilter? colorFilter;
+  final int alpha;
   @override
   final Rect? clipRect;
 
@@ -1691,6 +1698,8 @@ class ImageShape extends Shape {
         Paint()
           ..filterQuality = isScaled ? FilterQuality.high : FilterQuality.none
           ..isAntiAlias = isScaled
+          // Skia scales the blit by the paint's alpha; the RGB channels are unused for an image.
+          ..color = Color.fromRGBO(0, 0, 0, alpha / 255.0)
           ..colorFilter = colorFilter);
   }
 
@@ -1699,13 +1708,18 @@ class ImageShape extends Shape {
     final scaleX = destRect.width / pictureInfo!.size.width;
     final scaleY = destRect.height / pictureInfo!.size.height;
     c.save();
-    if (colorFilter != null) {
-      c.saveLayer(destRect, Paint()..colorFilter = colorFilter);
+    final layered = colorFilter != null || alpha != 255;
+    if (layered) {
+      c.saveLayer(
+          destRect,
+          Paint()
+            ..color = Color.fromRGBO(0, 0, 0, alpha / 255.0)
+            ..colorFilter = colorFilter);
     }
     c.translate(destRect.left, destRect.top);
     c.scale(scaleX, scaleY);
     c.drawPicture(pictureInfo!.picture);
-    if (colorFilter != null) c.restore();
+    if (layered) c.restore();
     c.restore();
   }
 
