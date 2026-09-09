@@ -22,15 +22,34 @@ public class TableHelper {
     }
 
     /**
-     * Hooks {@link ClickSelection} the first time the Table sees a click. The generated hook runs
-     * this before anything the application registered, which is exactly why it must not select
-     * here: JFace's default cell-editor activation strategy is a MouseDown listener that reads the
-     * table's selection to decide whether the click edits the clicked cell or only selects the row,
-     * and native SWT reports MouseDown with the selection the click has not moved yet.
+     * Hooks {@link ClickSelection} the first time the Table sees a click, and -- when replacing an
+     * *existing* single-row selection with a different row -- moves the raw selection array to the
+     * clicked row right away, matching native SWT. A hand-rolled {@code MouseDown} listener that
+     * resolves "which row" via {@code getSelection()} instead of hit-testing its own coordinates
+     * depends on this.
+     * <p>
+     * A cold start (no selection yet) must stay deferred instead: JFace's default cell-editor
+     * activation strategy is an equally early {@code MouseDown} listener gated on
+     * {@code getStructuredSelection().size() == 1}, and moving the array eagerly here would flip
+     * that count from 0 to 1 before JFace's listener sees it -- see {@link ClickSelection}.
      */
     public static void handleMouseDownSelection(DartTable table, Event event) {
         if (table == null || table.isDisposed())
             return;
+        if (event == null || (event.button != 1 && event.button != 3))
+            return;
+        if (event.segments == null || event.segments.length == 0)
+            return;
+        int index = event.segments[0];
+        if (table.items == null || index < 0 || index >= table.items.length)
+            return;
+        int[] current = table.selection;
+        boolean sameSingleRow = current != null && current.length == 1 && current[0] == index;
+        boolean hadExistingSelection = current != null && current.length > 0;
+        event.data = sameSingleRow;
+        if (!sameSingleRow && hadExistingSelection) {
+            table.setSelection(new int[] { index });
+        }
         Table api = table.getApi();
         for (Listener listener : api.getListeners(SWT.MouseDown)) {
             if (listener instanceof ClickSelection)
@@ -42,8 +61,11 @@ public class TableHelper {
     }
 
     /**
-     * Moves the selection to the row a click landed on, behind every MouseDown listener the
-     * application put on the Table -- see {@link #handleMouseDownSelection}.
+     * Fires the Selection event for the row a click landed on, behind every MouseDown listener the
+     * application put on the Table -- see {@link #handleMouseDownSelection}. Covers the cold-start
+     * case that method deliberately leaves alone: table.selection may still be empty here, so
+     * sendSelection() below both applies it and fires the notification, same as before this class
+     * existed at all.
      */
     private static final class ClickSelection implements Listener {
 
@@ -64,9 +86,7 @@ public class TableHelper {
             int index = event.segments[0];
             if (table.items == null || index < 0 || index >= table.items.length)
                 return;
-            int[] current = table.selection;
-            boolean sameSingleRow = current != null && current.length == 1 && current[0] == index;
-            if (sameSingleRow)
+            if (Boolean.TRUE.equals(event.data))
                 return;
             // The Selection rides on its own Event: sendSelectionEvent() rewrites the type of the
             // Event it is handed and EventTable's send loop re-reads that type on every step, so
