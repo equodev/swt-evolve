@@ -523,6 +523,7 @@ public class StyledTextHelper {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> fg = (Map<String, Object>) range.get("foreground");
                     style.foreground = new Color(
+                        display,
                         ((Number) fg.get("red")).intValue(),
                         ((Number) fg.get("green")).intValue(),
                         ((Number) fg.get("blue")).intValue()
@@ -533,6 +534,7 @@ public class StyledTextHelper {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> bg = (Map<String, Object>) range.get("background");
                     style.background = new Color(
+                        display,
                         ((Number) bg.get("red")).intValue(),
                         ((Number) bg.get("green")).intValue(),
                         ((Number) bg.get("blue")).intValue()

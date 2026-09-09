@@ -42,12 +42,12 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
 
         long parentHandle = control.parent.handle;
         if (GTK.GTK4)
-            OS.swt_fixed_add(parentHandle, fixedHandle);
+            GTKWrapper.swt_fixed_add(parentHandle, fixedHandle);
         else
             GTKWrapper.gtk_container_add(parentHandle, fixedHandle);
 
         if (GTK.GTK4)
-            OS.swt_fixed_add(fixedHandle, view);
+            GTKWrapper.swt_fixed_add(fixedHandle, view);
         else
             GTKWrapper.gtk_container_add(fixedHandle, view);
         GTKWrapper.gtk_widget_show(view);
@@ -177,7 +177,7 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
         // Add to new parent
         long newParentHandle = newParent.handle;
         if (GTK.GTK4) {
-            OS.swt_fixed_add(newParentHandle, controlHandle);
+            GTKWrapper.swt_fixed_add(newParentHandle, controlHandle);
         } else {
             GTKWrapper.gtk_container_add(newParentHandle, controlHandle);
         }

@@ -94,7 +94,7 @@ public class Mocks implements BeforeEachCallback, AfterEachCallback {
         when(shell.getDisplay()).thenReturn(display);
         when(shell.getShell()).thenReturn(shell);
         when(shell.isEnabled()).thenReturn(true);
-        Color bg = new Color(red(), green(), blue());
+        Color bg = new Color(display, red(), green(), blue());
         when(shell.getBackground()).thenReturn(bg);
         whenInvokedReturn(SwtControl.class, "getBackgroundColor", shell.getImpl(), bg); // Windows and macOS
         when(swtShell._display()).thenCallRealMethod();
@@ -125,10 +125,12 @@ public class Mocks implements BeforeEachCallback, AfterEachCallback {
         when(display.getImpl()).thenReturn(swtDisplay);
         try { // mac only
             Method getSystemColor = SwtDisplay.class.getDeclaredMethod("getWidgetColor", int.class);
-            when(getSystemColor.invoke(swtDisplay, anyInt())).thenReturn(new Color(10, 10, 10));
+            Color widgetColor = new Color(display, 10, 10, 10);
+            when(getSystemColor.invoke(swtDisplay, anyInt())).thenReturn(widgetColor);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
         when(display.getDPI()).thenReturn(new Point(96, 96));
-        when(display.getSystemColor(anyInt())).thenReturn(new Color(red(), green(), blue()));
+        Color systemColor = new Color(display, red(), green(), blue());
+        when(display.getSystemColor(anyInt())).thenReturn(systemColor);
         when(display.getSystemCursor(anyInt())).thenReturn(mock(Cursor.class));
         when(swtDisplay.getThread()).thenCallRealMethod();
         Monitor monitor = mock(Monitor.class);

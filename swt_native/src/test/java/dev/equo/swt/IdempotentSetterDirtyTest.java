@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.eclipse.swt.widgets.Mocks.device;
 import static org.eclipse.swt.widgets.Mocks.swtShell;
 
 /**
@@ -26,10 +27,10 @@ public class IdempotentSetterDirtyTest extends SerializeTestBase {
     @Test
     void idempotentCTabFolderBackgroundDoesNotDirty() {
         CTabFolder folder = new CTabFolder(swtShell(), SWT.BORDER);
-        folder.setBackground(new Color(10, 20, 30));
+        folder.setBackground(new Color(device(), 10, 20, 30));
 
         FlutterBridge.clearDirty();
-        folder.setBackground(new Color(10, 20, 30));
+        folder.setBackground(new Color(device(), 10, 20, 30));
 
         assertThat(FlutterBridge.isDirty(folder.getImpl())).isFalse();
     }
@@ -37,10 +38,10 @@ public class IdempotentSetterDirtyTest extends SerializeTestBase {
     @Test
     void changedCTabFolderBackgroundStillDirties() {
         CTabFolder folder = new CTabFolder(swtShell(), SWT.BORDER);
-        folder.setBackground(new Color(10, 20, 30));
+        folder.setBackground(new Color(device(), 10, 20, 30));
 
         FlutterBridge.clearDirty();
-        folder.setBackground(new Color(40, 50, 60));
+        folder.setBackground(new Color(device(), 40, 50, 60));
 
         assertThat(FlutterBridge.isDirty(folder.getImpl())).isTrue();
     }

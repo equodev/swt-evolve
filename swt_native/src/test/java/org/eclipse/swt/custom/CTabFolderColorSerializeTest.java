@@ -24,7 +24,7 @@ class CTabFolderColorSerializeTest extends SerializeTestBase {
     void should_serialize_CTabFolder_with_swtColor() {
         CTabFolder w = new CTabFolder(swtShell(), SWT.NONE);
         Config.useEclipse(Color.class);
-        Color color = new Color(red(), green(), blue());
+        Color color = new Color(device(), red(), green(), blue());
         w.setSelectionBackground(color);
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();

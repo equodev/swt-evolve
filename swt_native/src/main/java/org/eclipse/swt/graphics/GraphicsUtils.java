@@ -110,7 +110,7 @@ public class GraphicsUtils {
         if (color.isDisposed()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        DartColor copy = new DartColor(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha(), null);
+        DartColor copy = new DartColor(color.getDevice(), color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha(), null);
         return copy.getApi();
     }
 

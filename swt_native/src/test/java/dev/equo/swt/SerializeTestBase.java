@@ -106,7 +106,7 @@ public class SerializeTestBase {
             inst = inst.generate(Select.all(Font.class), gen -> gen.oneOf(new Font(Mocks.device(), Mocks.fontData())));
         }
         if (!(w instanceof Caret) && !(w instanceof TreeColumn) && !(w instanceof TableColumn) && !(w instanceof CoolItem)) {
-            inst = inst.generate(Select.all(Color.class), gen -> gen.oneOf(new Color(Mocks.red(), Mocks.green(), Mocks.blue())));
+            inst = inst.generate(Select.all(Color.class), gen -> gen.oneOf(new Color(Mocks.device(), Mocks.red(), Mocks.green(), Mocks.blue())));
         }
         if (w instanceof Canvas c)
             inst.generate(Select.all(Caret.class), gen -> gen.oneOf(new Caret(c, SWT.NONE)));
@@ -185,7 +185,7 @@ public class SerializeTestBase {
                 .generate(Select.all(int.class), gen -> gen.ints().range(1, 40))
                 .ignore(Select.all(int[].class))
                 .ignore(Select.field(GCData.class, "lineDashes"))
-                .generate(Select.all(Color.class), gen -> gen.oneOf(new Color(Mocks.red(), Mocks.green(), Mocks.blue())));
+                .generate(Select.all(Color.class), gen -> gen.oneOf(new Color(Mocks.device(), Mocks.red(), Mocks.green(), Mocks.blue())));
         inst.fill();
     }
 
@@ -212,7 +212,7 @@ public class SerializeTestBase {
                 .generate(Select.all(boolean.class), gen -> gen.booleans().probability(1.0))
                 .generate(Select.all(int.class), gen -> gen.ints().range(1, 1000))
                 .generate(Select.all(String.class), gen -> gen.oneOf("one", "two", "three"))
-                .generate(Select.all(Color.class), gen -> gen.oneOf(new Color(Mocks.red(), Mocks.green(), Mocks.blue())))
+                .generate(Select.all(Color.class), gen -> gen.oneOf(new Color(Mocks.device(), Mocks.red(), Mocks.green(), Mocks.blue())))
                 .generate(Select.all(Font.class), gen -> gen.oneOf(new Font(Mocks.device(), Mocks.fontData())))
                 .generate(Select.all(Image.class), gen -> gen.oneOf(createTestImage()));
         inst.fill();
@@ -234,7 +234,7 @@ public class SerializeTestBase {
     }
 
     protected void setAll(Image i) {
-        i.setBackground(new Color(Mocks.red(), Mocks.green(), Mocks.blue()));
+        i.setBackground(new Color(Mocks.device(), Mocks.red(), Mocks.green(), Mocks.blue()));
     }
 
     protected void setAll(Font f) {

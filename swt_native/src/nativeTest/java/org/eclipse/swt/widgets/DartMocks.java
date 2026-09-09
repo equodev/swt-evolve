@@ -41,7 +41,7 @@ public class DartMocks {
         dartShell.display = display;
         when(shell.getDisplay()).thenReturn(display);
         when(shell.getShell()).thenReturn(shell);
-        Color bg = new Color(red(), green(), blue());
+        Color bg = new Color(display, red(), green(), blue());
         when(shell.getBackground()).thenReturn(bg);
         when(dartShell.getBackgroundColor()).thenReturn(bg);
         when(dartShell._display()).thenCallRealMethod();
@@ -59,7 +59,8 @@ public class DartMocks {
         when(d.getThread()).thenCallRealMethod();
         when(d.getImpl()).thenReturn(dartDisplay);
         when(d.getDPI()).thenReturn(new Point(96, 96));
-        when(d.getSystemColor(anyInt())).thenReturn(new Color(red(), green(), blue()));
+        Color systemColor = new Color(d, red(), green(), blue());
+        when(d.getSystemColor(anyInt())).thenReturn(systemColor);
         when(d.getSystemCursor(anyInt())).thenReturn(mock(Cursor.class));
         when(dartDisplay.getThread()).thenCallRealMethod();
         Monitor monitor = mock(Monitor.class);
