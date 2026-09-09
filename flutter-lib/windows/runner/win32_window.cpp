@@ -98,7 +98,10 @@ const wchar_t* WindowClassRegistrar::GetWindowClass() {
     window_class.hInstance = GetModuleHandle(nullptr);
     window_class.hIcon =
         LoadIcon(window_class.hInstance, MAKEINTRESOURCE(IDI_APP_ICON));
-    window_class.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
+    // No erase brush (as in Flutter's own runner template): Flutter owns every pixel, and with
+    // the frameless window that now includes the title strip. A system brush here would repaint
+    // the whole window before the engine draws, flashing on every resize.
+    window_class.hbrBackground = 0;
     window_class.lpszMenuName = nullptr;
     window_class.lpfnWndProc = Win32Window::WndProc;
     RegisterClass(&window_class);
@@ -174,12 +177,26 @@ bool Win32Window::Create(const std::wstring& title,
 
   ++g_active_window_count;
 
+  if (frameless_) {
+    // Windows computed this window's frame while creating it, and keeps that result until
+    // something forces a WM_NCCALCSIZE recalculation -- so the OS title bar would otherwise
+    // survive until the first resize or maximize. SWP_FRAMECHANGED asks for that recalculation
+    // now, which is when the handler below actually drops the frame.
+    ::SetWindowPos(window, nullptr, 0, 0, 0, 0,
+                   SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
+                       SWP_NOACTIVATE);
+  }
+
   UpdateTheme(window);
 
   if (parentWnd)
       ShowWindow(window, showCmd);
 
   return OnCreate();
+}
+
+void Win32Window::SetFrameless(bool frameless) {
+  frameless_ = frameless;
 }
 
 bool Win32Window::Show() {
@@ -223,6 +240,29 @@ Win32Window::MessageHandler(HWND hwnd,
                             WPARAM const wparam,
                             LPARAM const lparam) noexcept {
     switch (message) {
+        case WM_NCCALCSIZE: {
+            // Frameless (CSD) window: report the whole window rect as client area, so the OS frame
+            // -- title bar and borders -- is gone and Flutter paints the window edge to edge. The
+            // style still carries WS_OVERLAPPEDWINDOW, so snapping, the maximize animation and the
+            // taskbar entry behave as usual; resizing is driven by the Flutter edge handles, which
+            // call back in through the CSD channel's beginResize.
+            if (frameless_ && wparam == TRUE) {
+                NCCALCSIZE_PARAMS* params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lparam);
+                if (::IsZoomed(hwnd)) {
+                    // Windows expands a maximized window by the frame thickness on every side.
+                    // Without insetting it back, the client area spills past the work area and the
+                    // taskbar ends up covered.
+                    int border_x = ::GetSystemMetrics(SM_CXSIZEFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER);
+                    int border_y = ::GetSystemMetrics(SM_CYSIZEFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER);
+                    params->rgrc[0].left += border_x;
+                    params->rgrc[0].right -= border_x;
+                    params->rgrc[0].top += border_y;
+                    params->rgrc[0].bottom -= border_y;
+                }
+                return 0;
+            }
+            break;
+        }
         case WM_DESTROY: {
             OnDestroy();
             std::cout << "Win32Window: WM_DESTROY" << std::endl;

@@ -155,8 +155,10 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
     private var flutterViewController: FlutterViewController?
     private var window: NSWindow?
     private var closed = false
+    /// The CSD window channel; held so it outlives initialize() and can push focus changes.
+    private var windowChannel: FlutterMethodChannel?
 
-    func initialize(port: Int32, displayId: Int64, widgetName: String, theme: String, backgroundColor: Int32, width: Int32, height: Int32) {
+    func initialize(port: Int32, displayId: Int64, widgetName: String, theme: String, backgroundColor: Int32, width: Int32, height: Int32, csdEnabled: Bool) {
         print("FlutterDisplayWindowController.initialize port:\(port) id:\(displayId) name:\(widgetName) \(width)x\(height)")
 
         let app = NSApplication.shared
@@ -176,12 +178,31 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         let fvc = FlutterViewController(project: project)
         self.flutterViewController = fvc
 
+        // .fullSizeContentView only when Flutter draws the title bar: it extends the content under
+        // the title bar area, which is what CSD needs and what would otherwise leave the system
+        // title bar covering the top of the app.
+        var styleMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .resizable]
+        if csdEnabled {
+            styleMask.insert(.fullSizeContentView)
+        }
         let win = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: CGFloat(width), height: CGFloat(height)),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            styleMask: styleMask,
             backing: .buffered,
             defer: false)
         win.title = widgetName
+        // Client-Side Decorations: when Flutter draws the title bar itself (csd_scaffold.dart) the
+        // system one is hidden rather than removed — the window stays .titled/.resizable, which
+        // keeps the native resize edges, zoom semantics and window management a .borderless window
+        // would lose. .fullSizeContentView lets Flutter paint up to the top edge. With CSD off
+        // nothing would draw a replacement, so the system title bar and its buttons stay.
+        if csdEnabled {
+            win.titlebarAppearsTransparent = true
+            win.titleVisibility = .hidden
+            win.standardWindowButton(.closeButton)?.isHidden = true
+            win.standardWindowButton(.miniaturizeButton)?.isHidden = true
+            win.standardWindowButton(.zoomButton)?.isHidden = true
+        }
         // Match the window chrome to the Flutter background so there is no black flash before the
         // first frame is rendered.
         win.backgroundColor = NSColor(
@@ -196,6 +217,7 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         self.window = win
 
         RegisterGeneratedPlugins(registry: fvc)
+        setupWindowChannel(fvc)
 
         // Bootstrap the app without entering the modal run loop (so this JNI call returns to Java).
         // The SWT event loop then services Cocoa via pump().
@@ -271,7 +293,52 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         }
     }
 
+    /// Registers the Client-Side-Decorations window channel the Flutter title bar drives. This is
+    /// the desktop counterpart of the browser's injected `window.equo.*` host API: the Dart side
+    /// (equo_window_stub.dart) calls in here when a window control is hit or the strip is dragged.
+    private func setupWindowChannel(_ fvc: FlutterViewController) {
+        let channel = FlutterMethodChannel(
+            name: "dev.equo.swt/window",
+            binaryMessenger: fvc.engine.binaryMessenger)
+        channel.setMethodCallHandler { [weak self] call, result in
+            MainActor.assumeIsolated {
+                guard let win = self?.window else {
+                    result(nil)
+                    return
+                }
+                switch call.method {
+                case "minimize":
+                    win.miniaturize(nil)
+                case "maximize":
+                    if !win.isZoomed { win.zoom(nil) }
+                case "restore":
+                    if win.isZoomed { win.zoom(nil) }
+                case "close":
+                    // Goes through the delegate, so windowWillClose still flags `closed` and the
+                    // next pump() reports -1 to Java — the same teardown as an OS-driven close.
+                    win.performClose(nil)
+                case "beginMove":
+                    // Hand the in-flight mouse-down to the OS drag loop, exactly as the system
+                    // title bar would. Native SWT blocks in this same loop while a shell is
+                    // dragged, so the paused pump matches platform behaviour.
+                    if let event = NSApp.currentEvent { win.performDrag(with: event) }
+                case "beginResize":
+                    // The window keeps its native resizable edges, so the Flutter resize handles
+                    // are not mounted on macOS (see CsdShell) and this never arrives.
+                    break
+                default:
+                    result(FlutterMethodNotImplemented)
+                    return
+                }
+                result(nil)
+            }
+        }
+        self.windowChannel = channel
+    }
+
     override func dispose() {
+        windowChannel?.setMethodCallHandler(nil)
+        windowChannel = nil
         flutterViewController?.engine.shutDownEngine()
         window?.delegate = nil
         window?.close()
@@ -281,6 +348,16 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         closed = true
+    }
+
+    // The macOS traffic lights grey out when the window is not key; the Dart controls mirror that
+    // through csdWindowActive (see equo_window_stub.installWindowStateListeners).
+    func windowDidBecomeKey(_ notification: Notification) {
+        windowChannel?.invokeMethod("active", arguments: true)
+    }
+
+    func windowDidResignKey(_ notification: Notification) {
+        windowChannel?.invokeMethod("active", arguments: false)
     }
 
     private func setupMainMenuIfNeeded(_ app: NSApplication) {
@@ -315,13 +392,13 @@ private func surfaceFrom(_ context: jlong) -> FlutterSurface? {
 // =================================================================================================
 
 @MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_Initialize")
-public func FlutterNative_initialize(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, port: jint, parent: jlong, widget_id: jlong, widget_name: jstring, theme: jstring, background_color: jint, parent_background_color: jint, width: jint, height: jint) -> jlong {
+public func FlutterNative_initialize(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, port: jint, parent: jlong, widget_id: jlong, widget_name: jstring, theme: jstring, background_color: jint, parent_background_color: jint, width: jint, height: jint, csd_enabled: jboolean) -> jlong {
     let name = jstringToSwift(env, widget_name)
     let themeString = jstringToSwift(env, theme)
     let surface: FlutterSurface
     if width > 0 && height > 0 {
         let c = FlutterDisplayWindowController()
-        c.initialize(port: port, displayId: Int64(widget_id), widgetName: name, theme: themeString, backgroundColor: background_color, width: width, height: height)
+        c.initialize(port: port, displayId: Int64(widget_id), widgetName: name, theme: themeString, backgroundColor: background_color, width: width, height: height, csdEnabled: csd_enabled == 1)
         surface = c
     } else {
         let parentView = parent != 0 ? unsafeBitCast(UInt(parent), to: NSView.self) : nil

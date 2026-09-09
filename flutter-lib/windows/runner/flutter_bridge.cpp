@@ -155,7 +155,7 @@ void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::
 }
 
 // Creates a visible top-level window hosting the whole Display (desktop-native, 100% Flutter).
-FlutterWindow* createDisplayWindow(int port, int64_t displayId, std::string widgetName, std::string theme, int backgroundColor, int width, int height) {
+FlutterWindow* createDisplayWindow(int port, int64_t displayId, std::string widgetName, std::string theme, int backgroundColor, int width, int height, bool csdEnabled) {
     std::cout << "FlutterNative.createDisplayWindow port:" << port << " id:" << displayId
               << " name:" << widgetName << " " << width << "x" << height << std::endl;
 
@@ -180,6 +180,11 @@ FlutterWindow* createDisplayWindow(int port, int64_t displayId, std::string widg
 
     Win32Window::Point origin(10, 10);
     Win32Window::Size size(width, height);
+    // Client-Side Decorations: when Flutter draws this window's title bar (csd_scaffold.dart),
+    // the OS frame is dropped in WM_NCCALCSIZE. Only the top-level Display window is frameless --
+    // embedded views have no chrome to begin with. With CSD off nothing would draw a replacement,
+    // so the OS frame has to stay.
+    window->SetFrameless(csdEnabled);
     // parentWnd = nullptr, headless = false -> a visible top-level window (WS_OVERLAPPEDWINDOW). The
     // window shows itself once Flutter's first frame is ready (FlutterWindow::OnCreate -> Show()).
     if (!window->Create(Utf16FromUtf8(widgetName), origin, size, nullptr, false)) {
@@ -202,7 +207,7 @@ struct Surface {
 // JNI entry points (dev.equo.swt.FlutterNative). One set of functions for both surface kinds.
 // =================================================================================================
 
-JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv* env, jclass cls, jint port, jlong parent, jlong widget_id, jstring widget_name, jstring theme, jint background_color, jint parent_background_color, jint width, jint height) {
+JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv* env, jclass cls, jint port, jlong parent, jlong widget_id, jstring widget_name, jstring theme, jint background_color, jint parent_background_color, jint width, jint height, jboolean csd_enabled) {
     const char* name_c = env->GetStringUTFChars(widget_name, nullptr);
     std::string nameStr(name_c);
     env->ReleaseStringUTFChars(widget_name, name_c);
@@ -214,7 +219,7 @@ JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv* env, 
     FlutterWindow* window;
     bool isWindow;
     if (width > 0 && height > 0) {
-        window = createDisplayWindow(port, widget_id, nameStr, themeStr, background_color, width, height);
+        window = createDisplayWindow(port, widget_id, nameStr, themeStr, background_color, width, height, csd_enabled == JNI_TRUE);
         isWindow = true;
     } else {
         window = reinterpret_cast<FlutterWindow*>(initializeFlutterWindow(port, (void*)parent, widget_id, nameStr, themeStr, background_color, parent_background_color));

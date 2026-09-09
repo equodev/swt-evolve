@@ -8,12 +8,23 @@ class NamedTheme {
   final ColorSchemeExtension? lightColorSchemeExtension;
   final ColorSchemeExtension? darkColorSchemeExtension;
 
+  /// Colour for the Client-Side-Decorations title bar, per brightness. A theme that wants a
+  /// specific title bar sets these; leaving them null derives one from the colour scheme
+  /// instead (see CsdOverlayStrip). The `csd_titlebar_color` flag overrides both.
+  final Color? lightTitleBarColor;
+  final Color? darkTitleBarColor;
+
   const NamedTheme({
     required this.lightColorScheme,
     this.darkColorScheme,
     this.lightColorSchemeExtension,
     this.darkColorSchemeExtension,
+    this.lightTitleBarColor,
+    this.darkTitleBarColor,
   });
+
+  /// The title-bar colour for [dark], or null when this theme does not specify one.
+  Color? titleBarColor(bool dark) => dark ? darkTitleBarColor : lightTitleBarColor;
 }
 
 final Map<String, NamedTheme> kNamedThemes = {

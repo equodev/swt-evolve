@@ -32,8 +32,12 @@ public final class FlutterNative {
     public static long initialize(int port, long parent, long widgetId, String widgetName,
                                   String theme, int backgroundColor, int parentBackgroundColor,
                                   int width, int height) {
+        // A frameless/undecorated window is only usable when Flutter draws the replacement
+        // chrome, so the native side must not strip the OS one when CSD is off -- that would
+        // leave a window with no title bar, no buttons and nothing to drag.
+        boolean csdEnabled = !"false".equals(Config.getConfigFlags().csd_placement);
         return Initialize(port, parent, widgetId, widgetName, theme,
-                backgroundColor, parentBackgroundColor, width, height);
+                backgroundColor, parentBackgroundColor, width, height, csdEnabled);
     }
 
     /** Native view handle of an embedded surface (0 for a window surface). */
@@ -104,7 +108,7 @@ public final class FlutterNative {
 
     private static native long Initialize(int port, long parent, long widgetId, String widgetName,
                                            String theme, int backgroundColor, int parentBackgroundColor,
-                                           int width, int height);
+                                           int width, int height, boolean csdEnabled);
 
     private static native long GetView(long context);
 

@@ -2,6 +2,7 @@ package dev.equo;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -678,7 +679,13 @@ public class GallerySnippet {
             throw new IllegalArgumentException("Resource not found: " + imageName);
         }
         if ("file".equals(resourceUrl.getProtocol())) {
-            return Paths.get(resourceUrl.getPath()).toString();
+            // Via toURI(), not getPath(): on Windows getPath() yields a leading-slash, still
+            // URL-encoded form ("/C:/dir%20name/x.png") that Paths.get rejects.
+            try {
+                return Paths.get(resourceUrl.toURI()).toString();
+            } catch (URISyntaxException e) {
+                throw new IOException("Cannot resolve resource: " + imageName, e);
+            }
         } else {
             InputStream is = GallerySnippet.class.getResourceAsStream("/" + imageName);
             Path tmpDir = Files.createTempDirectory("swt-evolve-images-");

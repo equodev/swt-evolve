@@ -3,6 +3,8 @@
 
 #include <flutter/dart_project.h>
 #include <flutter/flutter_view_controller.h>
+#include <flutter/method_channel.h>
+#include <flutter/standard_method_codec.h>
 
 #include <memory>
 
@@ -23,11 +25,19 @@ class FlutterWindow : public Win32Window {
                          LPARAM const lparam) noexcept override;
 
  private:
+  // Registers the Client-Side-Decorations window channel (dev.equo.swt/window) that the
+  // Flutter-drawn title bar drives -- its minimize/maximize/close buttons and its drag and
+  // resize handles. The desktop counterpart of the browser's injected `window.equo.*`.
+  void SetupWindowChannel();
+
   // The project to run.
   flutter::DartProject project_;
 
   // The Flutter instance hosted by this window.
   std::unique_ptr<flutter::FlutterViewController> flutter_controller_;
+
+  // The CSD window channel; null for embedded/headless surfaces that have no window chrome.
+  std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> window_channel_;
 };
 
 #endif  // RUNNER_FLUTTER_WINDOW_H_

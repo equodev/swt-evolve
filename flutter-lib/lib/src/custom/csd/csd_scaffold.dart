@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../../impl/widget_config.dart';
+import '../../theme/named_themes.dart';
+import '../../theme/theme.dart' show parseThemeColorFromHex;
 import 'csd_drag_view.dart';
 import 'equo_window.dart';
 import 'csd_state.dart';
@@ -35,6 +38,13 @@ class CsdShell extends StatelessWidget {
     final os = flags.csd_os ?? 'linux';
     final controlsLeading = os == 'mac';
 
+    // The desktop-native macOS window keeps its real frame — we only hide the title bar chrome
+    // and draw our own controls — so its resizable edges are still the OS's. Mounting the
+    // Flutter resize handles there would sit them over those edges and swallow the resize.
+    // Scoped to non-web on purpose: the Chromium standalone window IS frameless on macOS too,
+    // and does need the handles.
+    final nativeFrameOwnsResize = !kIsWeb && os == 'mac';
+
     Widget content = child;
 
     if (placement == 'overlay') {
@@ -56,9 +66,8 @@ class CsdShell extends StatelessWidget {
             right: controlsLeading ? null : 4,
             child: const WindowControls(),
           ),
-        if (csdEnabled) const CsdResizeEdges(),
-        if (csdEnabled)
-          const Positioned.fill(child: IgnorePointer(child: _CsdWindowBorder())),
+        if (csdEnabled && !nativeFrameOwnsResize) const CsdResizeEdges(),
+        if (csdEnabled && !nativeFrameOwnsResize) ..._csdWindowBorderEdges(),
       ],
     );
   }
@@ -67,42 +76,128 @@ class CsdShell extends StatelessWidget {
 /// A thin 1px window border so the frameless window's edges (and the resize zone) are
 /// visible. Hidden while maximized. Isolated behind an [IgnorePointer] + its own
 /// [ValueListenableBuilder] so toggling it never disturbs the resize-edge MouseRegions.
-class _CsdWindowBorder extends StatelessWidget {
-  const _CsdWindowBorder();
-
-  @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: csdMaximized,
-      builder: (context, maximized, _) {
-        if (maximized) return const SizedBox.shrink();
-        final dark = Theme.of(context).brightness == Brightness.dark;
-        final color = dark ? const Color(0x40FFFFFF) : const Color(0x26000000);
-        return DecoratedBox(
-          decoration: BoxDecoration(border: Border.all(color: color, width: 1)),
-        );
-      },
+/// The four 1px edges, each its own [Positioned] in the CSD [Stack] rather than one
+/// window-filling box. A filling overlay sits above the whole scene, and the Browser is a
+/// [Texture] on Windows: with anything layered over it the compositor has to blend on every
+/// frame, which shows as the texture blanking on each repaint (a click inside the page was
+/// enough). Edge strips leave the content area clear.
+///
+/// The left/right strips are inset by 1px vertically so they do not overlap the top/bottom
+/// ones -- the colour is translucent, and doubling it would darken the corners.
+List<Widget> _csdWindowBorderEdges() {
+  Widget edge({double? top, double? bottom, double? left, double? right,
+      double? width, double? height}) {
+    return Positioned(
+      top: top,
+      bottom: bottom,
+      left: left,
+      right: right,
+      width: width,
+      height: height,
+      child: IgnorePointer(
+        child: ValueListenableBuilder<bool>(
+          valueListenable: csdMaximized,
+          builder: (context, maximized, _) {
+            if (maximized) return const SizedBox.shrink();
+            final dark = Theme.of(context).brightness == Brightness.dark;
+            final color =
+                dark ? const Color(0x40FFFFFF) : const Color(0x26000000);
+            return ColoredBox(color: color);
+          },
+        ),
+      ),
     );
   }
+
+  return [
+    edge(top: 0, left: 0, right: 0, height: 1),
+    edge(bottom: 0, left: 0, right: 0, height: 1),
+    edge(top: 1, bottom: 1, left: 0, width: 1),
+    edge(top: 1, bottom: 1, right: 0, width: 1),
+  ];
 }
 
 /// Slim draggable title strip used by the `overlay` placement when the app has no
 /// MainToolbar. Window controls (leading on macOS, trailing elsewhere), the window title,
 /// and a [CsdDragView] filling the rest so the strip drags the window.
+/// Height of the [CsdOverlayStrip]. The strip takes this off the top of the content, so the
+/// viewport reported to the SWT side has to exclude it (see csdContentInsetTop) -- otherwise
+/// SWT lays the shell out for the whole window and its bottom trim falls off the screen.
+const double kCsdOverlayStripHeight = 32;
+
+/// Vertical space the CSD chrome takes away from the app content. Only the `overlay` placement
+/// puts the strip in the layout; `toolbar` hosts the controls inside the MainToolbar and
+/// `floating` draws over the content, so neither costs any.
+double csdContentInsetTop() =>
+    (getConfigFlags().csd_placement ?? 'toolbar') == 'overlay'
+        ? kCsdOverlayStripHeight
+        : 0;
+
 class CsdOverlayStrip extends StatelessWidget {
   final bool controlsLeading;
   final double height;
   const CsdOverlayStrip({
     super.key,
     required this.controlsLeading,
-    this.height = 32,
+    this.height = kCsdOverlayStripHeight,
   });
+
+  /// [preferred] when it is legible against [background], else plain white/black. The 4.5:1
+  /// threshold is WCAG AA for text this size (12px).
+  static Color _readableOn(Color background, Color? preferred) {
+    if (preferred != null && _contrastRatio(preferred, background) >= 4.5) {
+      return preferred;
+    }
+    return ThemeData.estimateBrightnessForColor(background) == Brightness.dark
+        ? Colors.white
+        : Colors.black87;
+  }
+
+  static double _contrastRatio(Color a, Color b) {
+    final la = a.computeLuminance();
+    final lb = b.computeLuminance();
+    final lighter = la > lb ? la : lb;
+    final darker = la > lb ? lb : la;
+    return (lighter + 0.05) / (darker + 0.05);
+  }
+
+  /// The title-bar colour set explicitly — by the `csd_titlebar_color` flag, else by the active
+  /// named theme. Null means nothing was specified and the colour scheme should decide.
+  Color? _explicitBarColor(Brightness brightness) {
+    final flags = getConfigFlags();
+    final fromFlag = parseThemeColorFromHex(flags.csd_titlebar_color);
+    if (fromFlag != null) return fromFlag;
+    final name = flags.theme_name?.trim();
+    if (name == null || name.isEmpty) return null;
+    return kNamedThemes[name]?.titleBarColor(brightness == Brightness.dark);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final bg = dark ? const Color(0xFF2B2B2B) : const Color(0xFFF2F2F2);
-    final titleColor = dark ? const Color(0xFFE0E0E0) : const Color(0xFF333333);
+    final theme = Theme.of(context);
+    // Title-bar colour, most specific first: the explicit flag, then a colour the active named
+    // theme declares for its title bar, then the scheme's `primaryContainer`. That last one is
+    // the tinted-surface role — clearly the theme's hue, yet dark in a dark theme and light in
+    // a light one, unlike `primary`, which would paint a bright pastel bar over a dark app.
+    final explicit = _explicitBarColor(theme.brightness);
+    // Neutral surface roles, not an accent pair: a title bar is a surface, and the named themes
+    // customise their accents without touching primaryContainer -- so reading that role painted
+    // the *base* scheme's colour rather than the active theme's (a red theme got a blue title).
+    // A theme that wants a branded bar declares one, or the flag sets it.
+    final bg = explicit ?? theme.colorScheme.surfaceContainerHigh;
+    // Prefer the scheme's matching "on" role, but only when it actually reads against the bar:
+    // these schemes are hand-written, so the pairing is not guaranteed to contrast the way a
+    // generated scheme's would, and a title that fails is unreadable rather than off-palette.
+    final titleColor =
+        _readableOn(bg, explicit == null ? theme.colorScheme.onSurface : null);
+    // The Windows/GNOME controls pick their glyph colour from the ambient brightness, which is
+    // the *app's*, not the bar's. Hand them the bar's own brightness so the glyphs keep
+    // contrast whatever hue the theme paints here.
+    final barBrightness = ThemeData.estimateBrightnessForColor(bg);
+    final barTheme = theme.copyWith(
+      brightness: barBrightness,
+      colorScheme: theme.colorScheme.copyWith(brightness: barBrightness),
+    );
 
     final title = ValueListenableBuilder<String>(
       valueListenable: csdWindowTitle,
@@ -127,7 +222,7 @@ class CsdOverlayStrip extends StatelessWidget {
       height: height,
       child: ColoredBox(
         color: bg,
-        child: Row(children: children),
+        child: Theme(data: barTheme, child: Row(children: children)),
       ),
     );
   }

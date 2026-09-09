@@ -15,7 +15,7 @@ extern "C" {
 
 // JNI entry points (dev.equo.swt.FlutterNative). One set of functions for both surface kinds —
 // an embedded view inside a native SWT parent, or a standalone top-level Display window.
-JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv* env, jclass cls, jint port, jlong parent, jlong widget_id, jstring widget_name, jstring theme, jint background_color, jint parent_background_color, jint width, jint height);
+JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv* env, jclass cls, jint port, jlong parent, jlong widget_id, jstring widget_name, jstring theme, jint background_color, jint parent_background_color, jint width, jint height, jboolean csd_enabled);
 
 JNIEXPORT jlong JNICALL Java_dev_equo_swt_FlutterNative_GetView(JNIEnv* env, jclass cls, jlong context);
 

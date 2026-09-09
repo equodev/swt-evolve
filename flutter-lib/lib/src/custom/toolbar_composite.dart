@@ -327,12 +327,16 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
   /// beginMove from Flutter-synthesized events.
   Widget _withCsdMove(bool active, Widget content) {
     if (!active) return content;
+    // Web keeps the drag surface *behind*: it is a real DOM element and the transparent canvas
+    // lets the mousedown through. On desktop it is a Flutter Listener, and behind means it only
+    // ever sees the gaps between toolbar items -- the bare-looking stretches are covered by item
+    // widgets whose bounds are wider than their icons. In front, translucent, it sees the whole
+    // bar; it does not steal the buttons' clicks because it only starts the drag once the
+    // pointer actually moves (see CsdDragView).
+    const drag = Positioned.fill(child: CsdDragView());
     return Stack(
       fit: StackFit.passthrough,
-      children: [
-        const Positioned.fill(child: CsdDragView()),
-        content,
-      ],
+      children: kIsWeb ? [drag, content] : [content, drag],
     );
   }
 

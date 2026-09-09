@@ -37,6 +37,11 @@ class Win32Window {
   // If |headless| is true, the window will not be shown (for test mode).
   bool Create(const std::wstring& title, const Point& origin, const Size& size, const HWND parentWnd, bool headless = false);
 
+  // Drops the OS frame (title bar and borders) so the Flutter view fills the whole window and
+  // draws its own Client-Side Decorations instead. The window style is unchanged, so resizing,
+  // snapping and the maximize animation keep working. Must be called before |Create|.
+  void SetFrameless(bool frameless);
+
   // Show the current window. Returns true if the window was successfully shown.
   bool Show();
 
@@ -100,6 +105,9 @@ class Win32Window {
   bool quit_on_close_ = false;
 
   bool headless_ = false;
+
+  // True for the desktop-native Display window, whose title bar is drawn by Flutter (CSD).
+  bool frameless_ = false;
 
   // DPI of the monitor this window is on. Set in Create(), updated on
   // WM_DPICHANGED. Used in Move() to scale logical pixels to physical pixels.

@@ -123,6 +123,8 @@ void setConfigFlags(ConfigFlags newFlags) {
   // later partial re-broadcast so the controls don't flicker off/restyle mid-session.
   newFlags.csd_placement = mergeString(newFlags.csd_placement, prev.csd_placement);
   newFlags.csd_os = mergeString(newFlags.csd_os, prev.csd_os);
+  newFlags.csd_titlebar_color =
+      mergeString(newFlags.csd_titlebar_color, prev.csd_titlebar_color);
   configFlags = newFlags;
 }
 

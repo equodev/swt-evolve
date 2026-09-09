@@ -664,12 +664,16 @@ public class Config {
             configFlags.theme_color = System.getProperty("swt.evolve.theme_color");
             // Client-Side Decorations: a single property selects placement and on/off
             //   -Ddev.equo.swt.csd=toolbar|overlay|floating  or =false to disable.
-            // Defaults to "toolbar" ONLY under the Chromium standalone (the only mode with a
-            // frameless window to decorate); off everywhere else. Drives both the frameless
-            // native window (launcher) and the Flutter controls.
+            // Defaults on for the two modes that own a frameless top-level window: "toolbar"
+            // under the Chromium standalone, and "overlay" under the desktop-native window --
+            // which has no MainToolbar to host the controls, so it needs its own title strip.
+            // Off everywhere else (embedded views, plain browser). Drives both the frameless
+            // native window (launcher / native runner) and the Flutter controls.
             boolean chromiumMode = ConfigFlags.isChromiumMode();
+            boolean desktopMode = ConfigFlags.isDesktopMode();
+            String csdDefault = chromiumMode ? "toolbar" : desktopMode ? "overlay" : "false";
             configFlags.csd_placement = System.getProperty(
-                    "dev.equo.swt.csd", chromiumMode ? "toolbar" : "false").toLowerCase();
+                    "dev.equo.swt.csd", csdDefault).toLowerCase();
             // OS picks the native control styling; override to test other platforms:
             //   -Ddev.equo.swt.csd.os=mac|windows|linux
             configFlags.csd_os = normalizeOs(System.getProperty("dev.equo.swt.csd.os", os));
@@ -682,6 +686,10 @@ public class Config {
             // Flutter's kDoubleTapTimeout; a test harness whose synthetic click pairs land further
             // apart than a real user's widens it without a rebuild.
             configFlags.double_click_timeout_ms = Integer.getInteger("swt.evolve.double_click_timeout_ms", 0);
+            // Paints the CSD title bar a fixed colour, overriding whatever the theme would pick:
+            //   -Ddev.equo.swt.csd.titlebar_color=RRGGBB (or AARRGGBB)
+            // Unset lets the theme decide (its own title-bar colour, else the scheme surface).
+            configFlags.csd_titlebar_color = System.getProperty("dev.equo.swt.csd.titlebar_color");
             applyThemeColorsByWidgetFromProperties(configFlags);
             applyThemePresets(configFlags);
         }

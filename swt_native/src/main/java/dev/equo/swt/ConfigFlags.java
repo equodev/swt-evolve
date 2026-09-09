@@ -103,6 +103,8 @@ public class ConfigFlags {
      *  side. 0 (the default) keeps Flutter's kDoubleTapTimeout; a positive value overrides it, e.g.
      *  for a test harness whose synthetic click pairs land further apart than a real user's. */
     public int double_click_timeout_ms;
+    /** Explicit CSD title-bar colour (RRGGBB/AARRGGBB hex); overrides the theme's own. */
+    public String csd_titlebar_color;
 
     public static ConfigFlags use_swt_fonts(boolean v) {
         ConfigFlags configFlags = new ConfigFlags();
@@ -134,6 +136,7 @@ public class ConfigFlags {
                 ", csd_os='" + csd_os + '\'' +
                 ", csd_maximize='" + csd_maximize + '\'' +
                 ", double_click_timeout_ms=" + double_click_timeout_ms +
+                ", csd_titlebar_color='" + csd_titlebar_color + '\'' +
                 '}';
     }
 }

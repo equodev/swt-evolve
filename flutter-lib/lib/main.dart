@@ -203,6 +203,9 @@ class _DisplayMetricsReporter {
     observeViewportChanges(_sendCurrentSize);
     observeWindowClose(_sendWindowClose);
     EquoCommService.onReconnect(_resyncAfterReconnect);
+    // Config flags land after the first frame, so the first report is made before
+    // csd_placement is known. Re-report when they arrive, or the inset above is missed.
+    configFlagsVersion.addListener(_sendCurrentSize);
   }
 
   final int widgetId;
@@ -246,14 +249,20 @@ class _DisplayMetricsReporter {
 bool _isFinitePositiveSize(double w, double h) =>
     w.isFinite && h.isFinite && w > 0 && h > 0;
 
+/// Takes the CSD chrome off a raw view size. The strip sits above the app content, so the
+/// SWT side must be told the area it actually gets -- reporting the whole window pushes the
+/// shell's bottom trim (the status bar) off the screen by exactly the strip's height.
+Size _withoutCsdChrome(double width, double height) {
+  final inset = csdContentInsetTop();
+  final h = height - inset;
+  return Size(width.roundToDouble(), (h > 0 ? h : height).roundToDouble());
+}
+
 Size? _currentLogicalViewSize() {
   final viewportSize = getViewportSize();
   if (viewportSize != null &&
       _isFinitePositiveSize(viewportSize.width, viewportSize.height)) {
-    return Size(
-      viewportSize.width.roundToDouble(),
-      viewportSize.height.roundToDouble(),
-    );
+    return _withoutCsdChrome(viewportSize.width, viewportSize.height);
   }
   final dispatcher = WidgetsBinding.instance.platformDispatcher;
   if (dispatcher.views.isEmpty) {
@@ -267,7 +276,7 @@ Size? _currentLogicalViewSize() {
   if (!_isFinitePositiveSize(size.width, size.height)) {
     return null;
   }
-  return Size(size.width.roundToDouble(), size.height.roundToDouble());
+  return _withoutCsdChrome(size.width, size.height);
 }
 
 /// The logical size of the monitor the window is currently on. Drives the SWT

@@ -32,6 +32,10 @@ class ConfigFlags {
   String? csd_maximize;
   int? double_click_timeout_ms;
 
+  /// Explicit CSD title-bar colour as RRGGBB/AARRGGBB hex. Overrides the theme's own
+  /// title-bar colour; unset falls back to the theme (see CsdOverlayStrip).
+  String? csd_titlebar_color;
+
   factory ConfigFlags.fromJson(Map<String, dynamic> json) =>
       _$ConfigFlagsFromJson(json);
   Map<String, dynamic> toJson() => _$ConfigFlagsToJson(this);

@@ -6,6 +6,7 @@
 #include <glib-object.h>
 #include <gtk/gtk.h>
 
+#include <cstring>    // strcmp
 #include <dlfcn.h>    // dladdr
 #include <filesystem> // std::filesystem
 #include <stdlib.h>   // setenv
@@ -34,6 +35,7 @@ struct FlutterWindow {
   GtkWidget *headless_window;  // Only used in headless mode
   GtkWidget *top_window;       // Desktop-native (100% Flutter) top-level window
   bool closed;                 // Set when the desktop-native window is closed by the user
+  FlMethodChannel *window_channel;  // CSD window channel; top-level window only
 };
 
 extern "C" void DummyExportedFunction() {
@@ -127,6 +129,7 @@ uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
   widget_context->headless_window = nullptr;
   widget_context->top_window = nullptr;
   widget_context->closed = false;
+  widget_context->window_channel = nullptr;
 
   // Headless mode: create a hidden window to host Flutter
   if (!parentWnd) {
@@ -218,9 +221,109 @@ static void on_display_window_destroy(GtkWidget * /*widget*/, gpointer data) {
   }
 }
 
+// Maps a CSD edge name (see CsdResizeEdges in csd_scaffold.dart) to the GDK edge that starts
+// the matching window-manager resize drag. Returns false for an unknown edge.
+static bool gdk_edge_for_name(const gchar *name, GdkWindowEdge *out) {
+  if (name == nullptr) return false;
+  if (strcmp(name, "LEFT") == 0) { *out = GDK_WINDOW_EDGE_WEST; return true; }
+  if (strcmp(name, "RIGHT") == 0) { *out = GDK_WINDOW_EDGE_EAST; return true; }
+  if (strcmp(name, "TOP") == 0) { *out = GDK_WINDOW_EDGE_NORTH; return true; }
+  if (strcmp(name, "BOTTOM") == 0) { *out = GDK_WINDOW_EDGE_SOUTH; return true; }
+  if (strcmp(name, "TOP_LEFT") == 0) { *out = GDK_WINDOW_EDGE_NORTH_WEST; return true; }
+  if (strcmp(name, "TOP_RIGHT") == 0) { *out = GDK_WINDOW_EDGE_NORTH_EAST; return true; }
+  if (strcmp(name, "BOTTOM_LEFT") == 0) { *out = GDK_WINDOW_EDGE_SOUTH_WEST; return true; }
+  if (strcmp(name, "BOTTOM_RIGHT") == 0) { *out = GDK_WINDOW_EDGE_SOUTH_EAST; return true; }
+  return false;
+}
+
+// Current pointer position in root coordinates — what the GTK move/resize drag APIs expect as
+// the grab origin.
+static void pointer_root_position(GtkWindow *win, gint *root_x, gint *root_y) {
+  *root_x = 0;
+  *root_y = 0;
+  GdkDisplay *display = gtk_widget_get_display(GTK_WIDGET(win));
+  if (display == nullptr) return;
+  GdkSeat *seat = gdk_display_get_default_seat(display);
+  if (seat == nullptr) return;
+  GdkDevice *pointer = gdk_seat_get_pointer(seat);
+  if (pointer == nullptr) return;
+  gdk_device_get_position(pointer, nullptr, root_x, root_y);
+}
+
+// Handles the Client-Side-Decorations window channel (dev.equo.swt/window) the Flutter-drawn
+// title bar drives: its minimize/maximize/close buttons and its drag and resize handles. The
+// desktop counterpart of the browser's injected `window.equo.*`.
+static void window_method_call_handler(FlMethodChannel * /*channel*/,
+                                       FlMethodCall *method_call, gpointer user_data) {
+  FlutterWindow *ctx = static_cast<FlutterWindow *>(user_data);
+  const gchar *method = fl_method_call_get_name(method_call);
+  g_autoptr(FlMethodResponse) response = nullptr;
+
+  GtkWindow *win = (ctx != nullptr && ctx->top_window != nullptr && GTK_IS_WINDOW(ctx->top_window))
+                       ? GTK_WINDOW(ctx->top_window)
+                       : nullptr;
+  if (win == nullptr) {
+    response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+    fl_method_call_respond(method_call, response, nullptr);
+    return;
+  }
+
+  if (strcmp(method, "minimize") == 0) {
+    gtk_window_iconify(win);
+  } else if (strcmp(method, "maximize") == 0) {
+    gtk_window_maximize(win);
+  } else if (strcmp(method, "restore") == 0) {
+    gtk_window_unmaximize(win);
+  } else if (strcmp(method, "close") == 0) {
+    // Emits "destroy" through the normal path, so pump() reports -1 and the SWT side tears
+    // down exactly as it does for a window-manager close.
+    gtk_window_close(win);
+  } else if (strcmp(method, "beginMove") == 0) {
+    // Hands the drag to the window manager, as dragging a server-side title bar would. Unlike
+    // Windows/macOS this returns immediately — the WM owns the drag from here.
+    gint root_x = 0, root_y = 0;
+    pointer_root_position(win, &root_x, &root_y);
+    gtk_window_begin_move_drag(win, GDK_BUTTON_PRIMARY, root_x, root_y,
+                               gtk_get_current_event_time());
+  } else if (strcmp(method, "beginResize") == 0) {
+    GdkWindowEdge edge;
+    FlValue *args = fl_method_call_get_args(method_call);
+    const gchar *edge_name = nullptr;
+    if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue *value = fl_value_lookup_string(args, "edge");
+      if (value != nullptr && fl_value_get_type(value) == FL_VALUE_TYPE_STRING) {
+        edge_name = fl_value_get_string(value);
+      }
+    }
+    if (gdk_edge_for_name(edge_name, &edge)) {
+      gint root_x = 0, root_y = 0;
+      pointer_root_position(win, &root_x, &root_y);
+      gtk_window_begin_resize_drag(win, edge, GDK_BUTTON_PRIMARY, root_x, root_y,
+                                   gtk_get_current_event_time());
+    }
+  } else {
+    response = FL_METHOD_RESPONSE(fl_method_not_implemented_response_new());
+    fl_method_call_respond(method_call, response, nullptr);
+    return;
+  }
+
+  response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+  fl_method_call_respond(method_call, response, nullptr);
+}
+
+// The CSD title-bar glyphs lighten when the window is inactive, mirroring a server-side one.
+static void on_display_window_active(GObject *object, GParamSpec * /*pspec*/, gpointer data) {
+  FlutterWindow *ctx = static_cast<FlutterWindow *>(data);
+  if (ctx == nullptr || ctx->window_channel == nullptr) return;
+  gboolean active = gtk_window_is_active(GTK_WINDOW(object));
+  g_autoptr(FlValue) args = fl_value_new_bool(active);
+  fl_method_channel_invoke_method(ctx->window_channel, "active", args, nullptr, nullptr, nullptr);
+}
+
 // Creates a visible top-level GtkWindow hosting one FlView for the whole Display.
 FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widget_name,
-                                   const char *theme, int backgroundColor, int width, int height) {
+                                   const char *theme, int backgroundColor, int width, int height,
+                                   bool csdEnabled) {
   FlDartProject *project = fl_dart_project_new();
   std::string base_path = GetSharedLibraryPath();
   // See note above: skip the AOT library in --debug (JIT) builds so the engine runs the kernel
@@ -259,11 +362,18 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
   ctx->top_window = nullptr;
   ctx->view = nullptr;
   ctx->closed = false;
+  ctx->window_channel = nullptr;
 
   GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title(GTK_WINDOW(window), widget_name);
   gtk_window_set_default_size(GTK_WINDOW(window), width, height);
+  // Client-Side Decorations: when Flutter draws this window's title bar (csd_scaffold.dart) the
+  // window manager must not add its own, and resizing is driven by the Flutter edge handles that
+  // call back in through the CSD channel's beginResize. With CSD off nothing would draw a
+  // replacement, so the WM decoration has to stay.
+  gtk_window_set_decorated(GTK_WINDOW(window), csdEnabled ? FALSE : TRUE);
   g_signal_connect(window, "destroy", G_CALLBACK(on_display_window_destroy), ctx);
+  g_signal_connect(window, "notify::is-active", G_CALLBACK(on_display_window_active), ctx);
 
   FlView *view = fl_view_new(project);
   GtkWidget *view_widget = GTK_WIDGET(view);
@@ -283,6 +393,13 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
   ctx->top_window = window;
 
   EquoRegisterPlugins(view);
+
+  g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
+  ctx->window_channel = fl_method_channel_new(
+      fl_engine_get_binary_messenger(fl_view_get_engine(view)), "dev.equo.swt/window",
+      FL_METHOD_CODEC(codec));
+  fl_method_channel_set_method_call_handler(ctx->window_channel, window_method_call_handler,
+                                            ctx, nullptr);
   g_print("FlutterNative.createDisplayWindow port:%d id:%ld name:%s %dx%d\n",
           port, (long)displayId, widget_name, width, height);
   return ctx;
@@ -307,12 +424,13 @@ JNIEXPORT jlong JNICALL
 Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv *env, jclass cls, jint port, jlong parent,
                                            jlong widget_id, jstring widget_name, jstring theme,
                                            jint background_color, jint parent_background_color,
-                                           jint width, jint height) {
+                                           jint width, jint height, jboolean csd_enabled) {
   const char *name = env->GetStringUTFChars(widget_name, NULL);
   const char *th = env->GetStringUTFChars(theme, NULL);
   FlutterWindow *w;
   if (width > 0 && height > 0) {
-    w = createDisplayWindow(port, widget_id, name, th, background_color, width, height);
+    w = createDisplayWindow(port, widget_id, name, th, background_color, width, height,
+                            csd_enabled == JNI_TRUE);
   } else {
     w = reinterpret_cast<FlutterWindow *>(
         InitializeFlutterWindow(port, (void *)parent, widget_id, name, th, background_color, parent_background_color));
@@ -332,6 +450,10 @@ JNIEXPORT void JNICALL
 Java_dev_equo_swt_FlutterNative_Dispose(JNIEnv *env, jclass cls, jlong context) {
   FlutterWindow *w = reinterpret_cast<FlutterWindow *>(context);
   if (!w) return;
+  if (w->window_channel) {
+    fl_method_channel_set_method_call_handler(w->window_channel, nullptr, nullptr, nullptr);
+    g_clear_object(&w->window_channel);
+  }
   if (w->top_window) {
     // window surface: destroying the toplevel destroys the FlView and shuts the engine down. Our
     // "destroy" handler nulls top_window/view, so the drain below won't touch freed widgets.
@@ -388,6 +510,10 @@ Java_dev_equo_swt_FlutterNative_Pump(JNIEnv *env, jclass cls, jlong context) {
     }
   }
   if (ctx && ctx->closed) {
+    if (ctx->window_channel) {
+      fl_method_channel_set_method_call_handler(ctx->window_channel, nullptr, nullptr, nullptr);
+      g_clear_object(&ctx->window_channel);
+    }
     delete ctx;  // safe: Java zeroes windowContext after a -1 and makes no further calls with it
     return -1;
   }
