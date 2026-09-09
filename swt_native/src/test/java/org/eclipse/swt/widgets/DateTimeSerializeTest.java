@@ -26,13 +26,13 @@ class DateTimeSerializeTest extends SerializeTestBase {
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "DateTime")
+               .containsEntry("hours", w.getHours())
+               .containsEntry("minutes", w.getMinutes())
+               .containsEntry("month", w.getMonth())
+               .containsEntry("seconds", w.getSeconds())
                .containsEntry("toolTipText", json(w.getToolTipText()))
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("day").equalsTo(w.getDay(), orAbsentIf0));
-        assertJ.satisfies(node("hours").equalsTo(w.getHours(), orAbsentIf0));
-        assertJ.satisfies(node("minutes").equalsTo(w.getMinutes(), orAbsentIf0));
-        assertJ.satisfies(node("month").equalsTo(w.getMonth(), orAbsentIf0));
-        assertJ.satisfies(node("seconds").equalsTo(w.getSeconds(), orAbsentIf0));
         assertJ.satisfies(node("year").equalsTo(w.getYear(), orAbsentIf0));
         assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
         assertJ.satisfies(node("layoutDeferred").equalsTo(w.getLayoutDeferred(), orAbsentIfFalse));

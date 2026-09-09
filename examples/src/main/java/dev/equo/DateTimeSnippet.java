@@ -25,6 +25,16 @@ import org.eclipse.swt.widgets.*;
  */
 public class DateTimeSnippet {
 
+    // A DateTime defaults to now, so the snippet's screenshot changed with the clock and its
+    // baseline expired daily. Pinned to a fixed instant; every style below still renders the same
+    // way, just not today's.
+    private static final int FIXED_YEAR = 2000;
+    private static final int FIXED_MONTH = 5; // June — SWT months are zero-based
+    private static final int FIXED_DAY = 15;
+    private static final int FIXED_HOUR = 10;
+    private static final int FIXED_MINUTE = 30;
+    private static final int FIXED_SECOND = 0;
+
     public static void main(String[] args) {
         Config.useEquo(DateTime.class);
 
@@ -43,6 +53,7 @@ public class DateTimeSnippet {
         // ── DATE | MEDIUM ────────────────────────────────────────────────
         addSectionLabel(shell, "DATE | MEDIUM (default):");
         DateTime dateMedium = new DateTime(shell, SWT.DATE | SWT.MEDIUM | SWT.BORDER);
+        dateMedium.setDate(FIXED_YEAR, FIXED_MONTH, FIXED_DAY);
         dateMedium.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -56,6 +67,7 @@ public class DateTimeSnippet {
         // ── DATE | SHORT ─────────────────────────────────────────────────
         addSectionLabel(shell, "DATE | SHORT (MM/YYYY):");
         DateTime dateShort = new DateTime(shell, SWT.DATE | SWT.SHORT | SWT.BORDER);
+        dateShort.setDate(FIXED_YEAR, FIXED_MONTH, FIXED_DAY);
         dateShort.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -68,6 +80,7 @@ public class DateTimeSnippet {
         // ── DATE | LONG ──────────────────────────────────────────────────
         addSectionLabel(shell, "DATE | LONG (MM/DD/YYYY):");
         DateTime dateLong = new DateTime(shell, SWT.DATE | SWT.LONG | SWT.BORDER);
+        dateLong.setDate(FIXED_YEAR, FIXED_MONTH, FIXED_DAY);
         dateLong.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -81,6 +94,7 @@ public class DateTimeSnippet {
         // ── DATE | DROP_DOWN ─────────────────────────────────────────────
         addSectionLabel(shell, "DATE | DROP_DOWN (with calendar):");
         DateTime dateDropDown = new DateTime(shell, SWT.DATE | SWT.DROP_DOWN | SWT.BORDER);
+        dateDropDown.setDate(FIXED_YEAR, FIXED_MONTH, FIXED_DAY);
         dateDropDown.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -94,6 +108,7 @@ public class DateTimeSnippet {
         // ── TIME | MEDIUM ────────────────────────────────────────────────
         addSectionLabel(shell, "TIME | MEDIUM (HH:MM:SS):");
         DateTime timeMedium = new DateTime(shell, SWT.TIME | SWT.MEDIUM | SWT.BORDER);
+        timeMedium.setTime(FIXED_HOUR, FIXED_MINUTE, FIXED_SECOND);
         timeMedium.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -114,6 +129,7 @@ public class DateTimeSnippet {
         // ── TIME | SHORT ─────────────────────────────────────────────────
         addSectionLabel(shell, "TIME | SHORT (HH:MM):");
         DateTime timeShort = new DateTime(shell, SWT.TIME | SWT.SHORT | SWT.BORDER);
+        timeShort.setTime(FIXED_HOUR, FIXED_MINUTE, FIXED_SECOND);
         timeShort.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -126,6 +142,7 @@ public class DateTimeSnippet {
         // ── CALENDAR ─────────────────────────────────────────────────────
         addSectionLabel(shell, "CALENDAR:");
         DateTime calendar = new DateTime(shell, SWT.CALENDAR | SWT.BORDER);
+        calendar.setDate(FIXED_YEAR, FIXED_MONTH, FIXED_DAY);
         calendar.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -139,6 +156,7 @@ public class DateTimeSnippet {
         // ── CALENDAR | CALENDAR_WEEKNUMBERS ──────────────────────────────
         addSectionLabel(shell, "CALENDAR | CALENDAR_WEEKNUMBERS:");
         DateTime calendarWk = new DateTime(shell, SWT.CALENDAR | SWT.CALENDAR_WEEKNUMBERS | SWT.BORDER);
+        calendarWk.setDate(FIXED_YEAR, FIXED_MONTH, FIXED_DAY);
         calendarWk.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {

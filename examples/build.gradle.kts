@@ -244,6 +244,30 @@ fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = f
             jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
     }
 
+// The screenshot capture forks one JVM per snippet. Resolving the classpath once and reusing it for
+// all of them saves a whole nested Gradle build each time, which dominated that job's runtime.
+tasks.register("webExampleClasspath") {
+    group = "examples"
+    description = "Writes runWebExample's browser-only runtime classpath to a file, one entry per line."
+    val jar = project(":swt_native").tasks.named<Jar>("webJar")
+    dependsOn(jar)
+    // The snippet classes are read out of sourceSets in doLast, which carries no task dependency of
+    // its own, so without this the file names a classes directory nothing ever compiled.
+    dependsOn(tasks.named("classes"))
+    val runtimeClasspathWithoutSwtNative = configurations["runtimeClasspath"].copyRecursive { dep ->
+        !(dep is ProjectDependency && dep.path == ":swt_native")
+    }
+    val mainOutput = sourceSets["main"].output
+    val outputFile = layout.buildDirectory.file("web-example-classpath.txt")
+    outputs.file(outputFile)
+    doLast {
+        val entries = files(jar.map { it.archiveFile }) + mainOutput + runtimeClasspathWithoutSwtNative
+        val file = outputFile.get().asFile
+        file.parentFile.mkdirs()
+        file.writeText(entries.files.joinToString("\n") { it.absolutePath })
+    }
+}
+
 registerFlutterExample("runWebExample", if (chromiumMode) "chromium" else "web", webOnlyAware = true)
 registerFlutterExample("runDeskExample", "desktop")
 

@@ -25,6 +25,7 @@ public class VDateTime extends VComposite {
         ((DartDateTime) impl).day = value;
     }
 
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public int getHours() {
         return ((DartDateTime) impl).getHours();
     }
@@ -33,6 +34,7 @@ public class VDateTime extends VComposite {
         ((DartDateTime) impl).hours = value;
     }
 
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public int getMinutes() {
         return ((DartDateTime) impl).getMinutes();
     }
@@ -41,6 +43,7 @@ public class VDateTime extends VComposite {
         ((DartDateTime) impl).minutes = value;
     }
 
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public int getMonth() {
         return ((DartDateTime) impl).getMonth();
     }
@@ -49,6 +52,7 @@ public class VDateTime extends VComposite {
         ((DartDateTime) impl).month = value;
     }
 
+    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public int getSeconds() {
         return ((DartDateTime) impl).getSeconds();
     }

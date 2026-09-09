@@ -6,7 +6,7 @@ import org.eclipse.swt.widgets.*;
 
 /**
  * Demonstrates SWT ProgressBar widget with different configurations.
- * Shows horizontal, vertical, determinate, and indeterminate progress bars.
+ * Shows horizontal and vertical determinate progress bars.
  */
 public class ProgressBarSnippet {
     public static void main(String[] args) {
@@ -33,13 +33,18 @@ public class ProgressBarSnippet {
         percentageLabel.setText("0%");
         percentageLabel.setBounds(330, 50, 50, 20);
 
-        // Horizontal Indeterminate ProgressBar
-        Label indeterminateLabel = new Label(shell, SWT.NONE);
-        indeterminateLabel.setText("Horizontal Progress (Indeterminate):");
-        indeterminateLabel.setBounds(20, 100, 250, 20);
+        // An INDETERMINATE bar animates forever, so this snippet's screenshot never settled and its
+        // baseline could not hold. Determinate at a fixed selection instead; the indeterminate style
+        // has no still frame to capture and is not covered here.
+        Label secondLabel = new Label(shell, SWT.NONE);
+        secondLabel.setText("Horizontal Progress (75%):");
+        secondLabel.setBounds(20, 100, 250, 20);
 
-        ProgressBar indeterminateProgress = new ProgressBar(shell, SWT.HORIZONTAL | SWT.INDETERMINATE);
-        indeterminateProgress.setBounds(20, 130, 300, 20);
+        ProgressBar secondProgress = new ProgressBar(shell, SWT.HORIZONTAL);
+        secondProgress.setMinimum(0);
+        secondProgress.setMaximum(100);
+        secondProgress.setSelection(75);
+        secondProgress.setBounds(20, 130, 300, 20);
 
         // Vertical Determinate ProgressBar
         Label verticalLabel = new Label(shell, SWT.NONE);
