@@ -44,6 +44,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   Offset? _lastClickPosition;
   int _lastMouseMoveMs = 0;
   int _lastDragMoveMs = 0;
+  // Shared by every ControlImpl: the pointer whose MenuDetect walk up the parent chain has
+  // already been stopped by a control owning a menu (see [handleMenuDetect]).
+  static int? _menuDetectHandledPointer;
   static const int _mouseMoveThrottleMs = 15;
   static const int _dragMoveThrottleMs = 15;
   // Matches DartDisplay.getToolTipTime() — fires SWT.MouseHover after stillness
@@ -190,6 +193,39 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       widget.sendMouseMoveMouseMove(state, event);
     }
   }
+
+  /// Delivers SWT.MenuDetect for a context-menu request at [localPosition].
+  ///
+  /// SWT sends MenuDetect to the control under the pointer whether or not that control has
+  /// a Menu attached, and applications rely on it to build the menu lazily: a diagram
+  /// editor paints its whole scene into a single Canvas and only populates its menu once
+  /// MenuDetect has run, so a Canvas that never sends it has a dead right-click.
+  ///
+  /// A control that owns a menu ends the walk up the parent chain, because natively the
+  /// parent is only reached when nothing below handled the request. Flutter delivers a
+  /// pointer to every control under it, innermost first, so the walk itself comes for free
+  /// and this only has to stop it.
+  void handleMenuDetect(int pointer, Offset localPosition) {
+    if (_menuDetectHandledPointer == pointer) return;
+    if (state.menu != null) _menuDetectHandledPointer = pointer;
+    // Table drives MenuDetect from its own per-cell and per-header detectors, which carry
+    // the coordinates of the cell that was hit; this would add a second event.
+    if (!forwardsControlMouseDown) return;
+    widget.sendMenuDetectMenuDetect(
+      state,
+      VEvent()
+        ..x = localPosition.dx.round()
+        ..y = localPosition.dy.round()
+        ..button = 3,
+    );
+  }
+
+  /// Whether a press of [button] is the platform's context-menu trigger: the secondary
+  /// button anywhere, plus Ctrl+Click on macOS — the same pair [applyMenu] opens on.
+  static bool isMenuDetectTrigger(int button) =>
+      button == 3 ||
+      (defaultTargetPlatform == TargetPlatform.macOS &&
+          HardwareKeyboard.instance.isControlPressed);
 
   void openContextMenu(Offset globalPosition) {
     final menuState = _menuKey.currentState;
@@ -404,6 +440,12 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
             ..count = _clickCount;
           this.widget.sendMouseMouseDown(state, event);
         }
+        // After MouseDown, never before: a tool that tracks the secondary press picks the
+        // item under the cursor there, and a menu built ahead of it describes the previous
+        // selection. Still ahead of the menu opening, which applyMenu does on the release.
+        if (isMenuDetectTrigger(button)) {
+          handleMenuDetect(e.pointer, e.localPosition);
+        }
       },
       onPointerUp: (e) {
         final event = VEvent()
@@ -515,6 +557,12 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     }
 
     return GestureDetector(
+      // A control that paints itself rather than composing hit-testable children -- a Canvas
+      // draws its whole scene through the GC overlay, which is an IgnorePointer over an empty
+      // box -- offers nothing for the default deferToChild to land on, so the detector never
+      // joined the gesture arena and its menu could not open. Translucent keeps the hit passing
+      // through to whatever is behind, so a nested control still wins the arena over its parent.
+      behavior: HitTestBehavior.translucent,
       onSecondaryTapUp: (details) => openMenuAt(details.localPosition),
       onTapUp: (details) {
         // macOS treats Ctrl+Click as a secondary click.

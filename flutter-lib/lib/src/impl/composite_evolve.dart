@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import '../nolayout.dart';
@@ -8,6 +9,7 @@ import '../gen/gc.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../styles.dart';
+import '../impl/control_evolve.dart';
 import '../impl/gc_evolve.dart';
 import '../impl/scrollable_evolve.dart';
 import '../custom/toolbar_composite.dart';
@@ -82,6 +84,14 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
             ..y = pos.dy.round()
             ..button = 1,
         );
+        // A childless Composite reaches ControlImpl.wrap() (which already sends this); this
+        // "has children" path bypasses it, so MenuDetect never fired over the composite's
+        // own area -- the gap a container with a lazily-built context menu falls into.
+        // Ordered after MouseDown for the reason ControlImpl.wrap() gives.
+        if (ControlImpl.isMenuDetectTrigger(
+            e.buttons == kSecondaryMouseButton ? 3 : 1)) {
+          impl.handleMenuDetect(e.pointer, e.localPosition);
+        }
         if (!impl.forwardsCompositeDoubleClick) return;
         if (impl.dblTap.registerTap(position: pos) == 2) {
           impl.widget.sendMouseMouseDoubleClick(
