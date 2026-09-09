@@ -1633,8 +1633,9 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
                 new Color(this.getApi(), 240, 240, 240);
             case SWT.COLOR_WIDGET_DISABLED_FOREGROUND ->
                 new Color(this.getApi(), 128, 128, 128);
+            // Device.getSystemColor falls back to black for any id it does not map; throwing here would escape into the caller's listener.
             default ->
-                throw new IllegalStateException("Unexpected color: " + id);
+                new Color(this.getApi(), 0, 0, 0);
         };
     }
 
