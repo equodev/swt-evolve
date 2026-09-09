@@ -409,6 +409,10 @@ public final class DartGC extends DartResource implements IGC {
         drawable = null;
         data.image = null;
         data = null;
+        if (ownedTransform != null) {
+            ownedTransform.dispose();
+            ownedTransform = null;
+        }
     }
 
     /**
@@ -1810,13 +1814,19 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void getTransform(Transform transform) {
+        if (isDisposed())
+            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (transform == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (transform.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        {
+        if (this.transform == null || this.transform.isDisposed()) {
             transform.setElements(1, 0, 0, 1, 0, 0);
+            return;
         }
+        float[] elements = new float[6];
+        this.transform.getElements(elements);
+        transform.setElements(elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]);
     }
 
     /**
@@ -2944,7 +2954,7 @@ public final class DartGC extends DartResource implements IGC {
         if (transform != null) {
         } else {
         }
-        this.transform = newValue;
+        this.transform = snapshotTransform(newValue);
         data.state &= ~(TRANSFORM | DRAW_OFFSET);
     }
 
@@ -3217,6 +3227,24 @@ public final class DartGC extends DartResource implements IGC {
         Rectangle confined = new Rectangle(rect.x, rect.y, rect.width, rect.height);
         confined.intersect(paintDamage);
         return confined;
+    }
+
+    private Transform ownedTransform;
+
+    /**
+     * SWT callers may dispose a Transform as soon as setTransform returns; this backend
+     * reads the matrix at the next draw instead, so the GC keeps its own copy of it.
+     */
+    private Transform snapshotTransform(Transform source) {
+        if (source == null)
+            return null;
+        float[] elements = new float[6];
+        source.getElements(elements);
+        if (ownedTransform == null || ownedTransform.isDisposed())
+            ownedTransform = new Transform(device, elements);
+        else
+            ownedTransform.setElements(elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]);
+        return ownedTransform;
     }
 
     private Display display;
