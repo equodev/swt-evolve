@@ -142,6 +142,23 @@ class FlutterBridgeController: FlutterSurface {
     }
 }
 
+/// Runs `body` as if already on the main actor, without hopping.
+///
+/// `MainActor.assumeIsolated` is macOS 14+ and the runner deploys back to 11.5, so calling it
+/// unguarded fails the build. Flutter always delivers platform-channel calls on the main thread —
+/// the very precondition `assumeIsolated` checks — so on older systems we assert that ourselves and
+/// cross into the actor the same way. Staying synchronous is the point: `beginMove` hands the
+/// in-flight mouse-down to the OS drag loop and `NSApp.currentEvent` is already gone by the next
+/// turn of the run loop.
+@inline(__always)
+private func assumingMainActor<T>(_ body: @MainActor () -> T) -> T {
+    if #available(macOS 14.0, *) {
+        return MainActor.assumeIsolated(body)
+    }
+    precondition(Thread.isMainThread, "window channel call delivered off the main thread")
+    return withoutActuallyEscaping(body) { unsafeBitCast($0, to: (() -> T).self)() }
+}
+
 // =================================================================================================
 // Window surface (desktop-native, 100% Flutter): the ENTIRE Dart-backed SWT tree in one top-level
 // window. A single FlutterViewController fills an NSWindow and connects back over the comm port,
@@ -301,7 +318,7 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
             name: "dev.equo.swt/window",
             binaryMessenger: fvc.engine.binaryMessenger)
         channel.setMethodCallHandler { [weak self] call, result in
-            MainActor.assumeIsolated {
+            assumingMainActor {
                 guard let win = self?.window else {
                     result(nil)
                     return
