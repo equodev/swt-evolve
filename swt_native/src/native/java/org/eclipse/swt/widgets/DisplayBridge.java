@@ -399,10 +399,15 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     }
 
     /**
-     * Drives the surface's event loop once per {@code DartDisplay.readAndDispatch()}. No-op by
-     * default; overridden by the surfaces that own an event loop (Chromium / native window).
+     * Drives the surface's event loop once per {@code DartDisplay.readAndDispatch()}. The surfaces
+     * that own an event loop (Chromium / native window) override this and pump it; both call up,
+     * because the work below belongs to every surface that owns a window.
      */
     public void onUpdate() {
+        // Where the menu bar belongs to the OS (macOS) it is outside the Flutter tree, so nothing
+        // else carries a change to it: adding a menu is as invisible as removing one. Rate-limited,
+        // and a no-op wherever the menu bar belongs in the window -- see MacMenuBar#sync.
+        DisplayBridgePlatform.syncMenuBar();
     }
 
     /**
@@ -474,6 +479,26 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         if (forDisplay == null || activeShellId() == publishedActiveShell)
             return;
         sendDisplayUpdate(forDisplay);
+        publishMenuBar();
+    }
+
+    /**
+     * Hands the newly active shell's menu bar to the platform. {@code Shell.setMenuBar} only reaches
+     * the Display while that shell is already the active one, which it is not yet when an
+     * application builds its bar before {@code open()} — so on a platform whose menu bar is owned by
+     * the OS (macOS) that first bar would never be published without this.
+     *
+     * <p>A shell with no menu bar of its own — every dialog — publishes nothing rather than a null:
+     * on macOS the menu bar is the application's, not the window's, so it has to outlive whatever
+     * dialog is in front of it.
+     */
+    private void publishMenuBar() {
+        Shell active = forDisplay.getApi().getActiveShell();
+        if (active == null || active.isDisposed())
+            return;
+        Menu bar = active.getMenuBar();
+        if (bar != null && !bar.isDisposed())
+            forDisplay.setMenuBar(bar);
     }
 
     /**

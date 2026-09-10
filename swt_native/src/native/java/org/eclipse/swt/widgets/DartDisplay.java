@@ -1397,7 +1397,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     int getLastEventTime() {
-        return 0;
+        return (int) (System.nanoTime() / 1000_000L);
     }
 
     Menu[] getMenus(Decorations shell) {
@@ -3304,27 +3304,12 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     void setMenuBar(Menu menu) {
-        // If passed a null menu bar don't clear out the menu bar, but switch back to the
-        // application menu bar instead, if it exists.  If the app menu bar is already active
-        // we jump out without harming the current menu bar.
         if (menu == null)
             menu = appMenuBar;
         if (menu == menuBar)
             return;
         menuBar = menu;
-        /*
-	* For some reason, NSMenu.cancelTracking() does not dismisses
-	* the menu right away when the menu bar is set in a stacked
-	* event loop. The fix is to use CancelMenuTracking() instead.
-	*/
-        //	menubar.cancelTracking();
-        cancelRootMenuTracking();
-        //set parent of each item to NULL and add them to menubar
-        if (menu != null) {
-            MenuItem[] items = menu.getItems();
-            for (int i = 0; i < items.length; i++) {
-            }
-        }
+        DisplayBridgePlatform.setMenuBar(menu);
     }
 
     void setModalDialog(Dialog modalDialog) {

@@ -24,8 +24,12 @@ class DecorationsMenuData extends InheritedWidget {
   });
 
   /// The Shell's own menus plus, ahead of them, the application menu -- on macOS that one lives in
-  /// the system menu bar, which a browser tab cannot reach.
-  List<VMenuItem> get items => [...applicationMenuItems(), ...?menuBar?.items];
+  /// the system menu bar, which a browser tab cannot reach. Empty when the OS owns the menu bar:
+  /// every menu is in the system bar there, so drawing any of them here would put the same menu in
+  /// two places. `DartMainToolbar` mirrors this on the Java side.
+  List<VMenuItem> get items => getConfigFlags().system_menu_bar == true
+      ? const []
+      : [...applicationMenuItems(), ...?menuBar?.items];
 
   /// A menu bar with nothing in it must not be shown at all -- neither as the horizontal strip
   /// above the toolbar nor as the vertical hamburger button inside it. `DartMainToolbar` mirrors

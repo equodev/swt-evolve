@@ -693,7 +693,24 @@ public class Config {
             applyThemeColorsByWidgetFromProperties(configFlags);
             applyThemePresets(configFlags);
         }
+        // Derived, not configured: it follows the rendering mode, which the desktop bridge sets
+        // after the flags above are first read, so it is refreshed on every read.
+        configFlags.system_menu_bar = systemMenuBar();
         return configFlags;
+    }
+
+    /**
+     * Whether the Shell's menu bar goes to the OS menu bar instead of being drawn in the window.
+     * macOS is the only platform with one, and it is ours only where this process owns the window
+     * it belongs to: the native window and the Chromium standalone one. In a plain browser tab that
+     * bar is the browser's. Override with {@code -Ddev.equo.swt.systemMenuBar=true|false}.
+     */
+    private static boolean systemMenuBar() {
+        String override = System.getProperty("dev.equo.swt.systemMenuBar");
+        if (override != null)
+            return Boolean.parseBoolean(override);
+        return (ConfigFlags.isDesktopMode() || ConfigFlags.isChromiumMode())
+                && "mac".equals(normalizeOs(System.getProperty("os.name")));
     }
 
     /** Maps a raw {@code os.name} to the CSD styling key the Flutter side understands. */

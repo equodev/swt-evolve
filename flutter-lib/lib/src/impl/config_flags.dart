@@ -35,6 +35,8 @@ class ConfigFlags {
   /// Explicit CSD title-bar colour as RRGGBB/AARRGGBB hex. Overrides the theme's own
   /// title-bar colour; unset falls back to the theme (see CsdOverlayStrip).
   String? csd_titlebar_color;
+  /// True when the OS owns the menu bar (macOS desktop) and this side must not draw one.
+  bool? system_menu_bar;
 
   factory ConfigFlags.fromJson(Map<String, dynamic> json) =>
       _$ConfigFlagsFromJson(json);

@@ -38,7 +38,9 @@ import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
  * ./gradlew :examples:runDeskExample -PmainClass=dev.equo.DecorationsAlignMenuSnippet --args=vright
  * </pre>
  *
- * <p>Use {@code runWebExample} instead to render in a browser. The "Fill / Clear menu bar" buttons
+ * <p>Use {@code runWebExample} instead to render in a browser. On macOS {@code runDeskExample}
+ * puts the whole menu bar in the system bar instead of in the window, so every alignment reports
+ * the same geometry an empty bar does -- {@link SystemMenuBarSnippet} is the snippet for that case. The "Fill / Clear menu bar" buttons
  * flip the menu between its two states; every flip prints the measured geometry next to what it
  * should be, so the run either says PASS on each line or shows exactly which number is off.
  *
@@ -160,7 +162,9 @@ public class DecorationsAlignMenuSnippet {
                                String align, boolean vertical, boolean atStart) {
         shell.layout(true, true);
 
-        boolean hasItems = menuBar.getItemCount() > 0;
+        // Where the OS owns the menu bar (macOS desktop) nothing is drawn in the window, so a bar
+        // with items costs the toolbar exactly what an empty one does.
+        boolean hasItems = menuBar.getItemCount() > 0 && !Config.getConfigFlags().system_menu_bar;
         boolean hasStrip = !vertical && hasItems;
         int expectedHeight = hasStrip
                 ? MenuSizes.HEIGHT_HORIZONTAL_MENU

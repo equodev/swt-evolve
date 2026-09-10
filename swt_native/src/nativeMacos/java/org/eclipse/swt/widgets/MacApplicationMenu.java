@@ -36,12 +36,19 @@ final class MacApplicationMenu {
     /** The NSApp main menu is process-global, so it is built once even if Displays come and go. */
     private static boolean installed;
 
-    /** Both are held for the process lifetime: the native trampoline and the Obj-C target the menu
-     * item points at are only weakly referenced from Cocoa, so dropping these would leave the Quit
-     * item calling into freed memory. */
+    /** All held for the process lifetime: the native trampolines and the Obj-C target the menu items
+     * point at are only weakly referenced from Cocoa, so dropping these would leave an item calling
+     * into freed memory. */
     private static Callback quitCallback;
 
-    private static id quitTarget;
+    private static Callback contributedCallback;
+
+    private static id target;
+
+    private static long contributedSelector;
+
+    /** The application menu as SWT widgets: where an application hooks About and Settings. */
+    private static Menu contributions;
 
     /** Cached because the Display value object is rebuilt on every update. */
     private static Menu systemMenu;
@@ -74,12 +81,13 @@ final class MacApplicationMenu {
         // Tells Cocoa which submenu is the application menu, so it gets the bold app-name styling.
         OS.objc_msgSend(application.id, OS.sel_registerName("setAppleMenu:"), appMenu.id);
 
-        add(appMenu, SWT.getMessage("SWT_About") + " " + appName,
-                OS.sel_orderFrontStandardAboutPanel_, empty, SWT.ID_ABOUT);
+        // About and Settings are the two the application contributes to, and it does so by hooking
+        // the SWT MenuItem carrying the matching id in the mirror below -- which is a different
+        // object from this native item, unlike in native SWT where they are one and the same. So
+        // both carry an action that looks the contribution up and raises SWT.Selection on it.
+        contributed(add(appMenu, SWT.getMessage("SWT_About") + " " + appName, 0, empty, SWT.ID_ABOUT));
         appMenu.addItem(NSMenuItem.separatorItem());
-        // No action: the preference page is contributed by the application (JFace hooks it through
-        // the item's SWT.ID_PREFERENCES tag), exactly as in native SWT.
-        add(appMenu, SWT.getMessage("SWT_Preferences"), 0, NSString.stringWith(","), SWT.ID_PREFERENCES);
+        contributed(add(appMenu, SWT.getMessage("SWT_Preferences"), 0, NSString.stringWith(","), SWT.ID_PREFERENCES));
         appMenu.addItem(NSMenuItem.separatorItem());
 
         NSMenuItem servicesItem = add(appMenu, SWT.getMessage("SWT_Services"), 0, empty, 0);
@@ -101,7 +109,7 @@ final class MacApplicationMenu {
 
         NSMenuItem quit = add(appMenu, SWT.getMessage("SWT_Quit") + " " + appName,
                 quitSelector(), NSString.stringWith("q"), SWT.ID_QUIT);
-        quit.setTarget(quitTarget);
+        quit.setTarget(target());
 
         mainMenu.setSubmenu(appMenu, appItem);
         appMenu.release();
@@ -144,6 +152,7 @@ final class MacApplicationMenu {
         action(appMenu, SWT.getMessage("SWT_Quit") + " " + appName, SWT.ID_QUIT, null);
 
         ((DartDisplay) display.getImpl()).appMenu = appMenu;
+        contributions = appMenu;
         systemMenu = holder;
         return systemMenu;
     }
@@ -164,22 +173,65 @@ final class MacApplicationMenu {
         return item;
     }
 
+    /** Points a standard item at {@link #contributedProc}, keyed by the id it already carries. */
+    private static void contributed(NSMenuItem item) {
+        item.setTarget(target());
+        item.setAction(contributedSelector);
+    }
+
     /**
-     * Registers the Objective-C class backing the Quit item and returns its action selector. A
-     * dedicated selector rather than {@code terminate:} keeps the item off NSApp's own hard
-     * terminate, which would kill the process before SWT could raise {@code SWT.Close}.
+     * Registers the Objective-C class backing the items SWT drives, and returns the shared target.
+     * Quit gets a dedicated selector rather than {@code terminate:}, which keeps it off NSApp's own
+     * hard terminate -- that would kill the process before SWT could raise {@code SWT.Close}.
      */
-    private static long quitSelector() {
-        long selector = OS.sel_registerName("evolveQuit:");
+    private static id target() {
+        if (target != null)
+            return target;
+        long quitSelector = OS.sel_registerName("evolveQuit:");
+        contributedSelector = OS.sel_registerName("evolveAppMenuItem:");
         quitCallback = new Callback(MacApplicationMenu.class, "quitProc", 3);
+        contributedCallback = new Callback(MacApplicationMenu.class, "contributedProc", 3);
         long cls = OS.objc_lookUpClass(DELEGATE_CLASS);
         if (cls == 0) {
             cls = OS.objc_allocateClassPair(OS.class_NSObject, DELEGATE_CLASS, 0);
-            OS.class_addMethod(cls, selector, quitCallback.getAddress(), "@:@");
+            OS.class_addMethod(cls, quitSelector, quitCallback.getAddress(), "@:@");
+            OS.class_addMethod(cls, contributedSelector, contributedCallback.getAddress(), "@:@");
             OS.objc_registerClassPair(cls);
         }
-        quitTarget = new id(OS.objc_msgSend(OS.objc_msgSend(cls, OS.sel_alloc), OS.sel_init));
-        return selector;
+        target = new id(OS.objc_msgSend(OS.objc_msgSend(cls, OS.sel_alloc), OS.sel_init));
+        return target;
+    }
+
+    private static long quitSelector() {
+        target();
+        return OS.sel_registerName("evolveQuit:");
+    }
+
+    /**
+     * Raises {@code SWT.Selection} on the SWT item the application hooked, if it hooked one. About
+     * falls back to Cocoa's own panel, which is what an application contributing no About gets on
+     * every platform; Settings has no fallback, since only the application can open it.
+     */
+    static long contributedProc(long targetId, long sel, long sender) {
+        MenuItem item = contribution((int) new NSMenuItem(sender).tag());
+        if (item != null && item.getImpl() instanceof DartMenuItem dart) {
+            dart.sendSelection();
+            return 0;
+        }
+        if (new NSMenuItem(sender).tag() == SWT.ID_ABOUT)
+            NSApplication.sharedApplication().orderFrontStandardAboutPanel(null);
+        return 0;
+    }
+
+    private static MenuItem contribution(int id) {
+        if (contributions == null || contributions.isDisposed())
+            return null;
+        for (MenuItem item : contributions.getItems()) {
+            if (item != null && !item.isDisposed() && item.getID() == id
+                    && item.isListening(SWT.Selection))
+                return item;
+        }
+        return null;
     }
 
     static long quitProc(long targetId, long sel, long arg0) {

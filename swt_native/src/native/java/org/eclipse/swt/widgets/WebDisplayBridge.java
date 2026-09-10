@@ -223,6 +223,7 @@ public class WebDisplayBridge extends DisplayBridge {
 
     @Override
     public void onUpdate() {
+        super.onUpdate();
         if (chromiumLauncher != null)
             chromiumLauncher.pump();
     }

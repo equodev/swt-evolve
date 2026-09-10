@@ -98,6 +98,9 @@ public class DeskDisplayBridge extends DisplayBridge {
         if (!hasNativeWindow()) {
             return;
         }
+        super.onUpdate();
+        if (boundShell == null || boundShell.isDisposed())
+            bindWindowView();
         int status = pumpWindow();
         if (status == FlutterNative.PUMP_CLOSE_REQUESTED) {
             onWindowCloseRequested();
@@ -291,6 +294,24 @@ public class DeskDisplayBridge extends DisplayBridge {
         return hasNativeWindow()
                 && control instanceof DartShell dartShell
                 && isMainShell(forDisplay, (Shell) dartShell.getApi());
+    }
+
+    /** The Shell already given the window's view, so this is done once and not on every pass. */
+    private Shell boundShell;
+
+    /**
+     * Hands the native window's view to the Shell filling it. Nothing on this backend does so
+     * otherwise -- a Dart-backed Control has no native handle -- and an application reaching for it
+     * gets an empty one, which silently swallows whatever it asks the window to do.
+     */
+    private void bindWindowView() {
+        if (windowContext == 0 || windowClosed)
+            return;
+        Shell shell = mainShell(forDisplay);
+        if (shell == null || shell.isDisposed())
+            return;
+        boundShell = shell;
+        DisplayBridgePlatform.bindWindowView(shell, FlutterNative.getView(windowContext));
     }
 
     @Override

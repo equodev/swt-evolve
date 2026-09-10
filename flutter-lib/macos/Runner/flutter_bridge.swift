@@ -284,6 +284,14 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
                             dequeue: false)
     }
 
+    /// The window's content view. There is no native SWT here to give a Shell a view of its own, and
+    /// an application that reaches for one gets nil and silently does nothing -- Eclipse's macOS
+    /// Minimize, Zoom and Bring All to Front all go through `Shell.view.window()`. Handing out the
+    /// content view gives them the real NSWindow to act on.
+    override func getView() -> NSView? {
+        return window?.contentView
+    }
+
     override func setTitle(_ title: String) {
         window?.title = title
     }

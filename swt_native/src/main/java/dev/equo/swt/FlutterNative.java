@@ -49,7 +49,7 @@ public final class FlutterNative {
                 backgroundColor, parentBackgroundColor, width, height, csdEnabled);
     }
 
-    /** Native view handle of an embedded surface (0 for a window surface). */
+    /** Native view handle of a surface: the embedded view, or a window's content view. */
     public static long getView(long context) {
         return GetView(context);
     }

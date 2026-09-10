@@ -20,4 +20,16 @@ final class DisplayBridgePlatform {
     static Menu systemMenu(Display display) {
         return null;
     }
+
+    /** The menu bar belongs in the window on this platform; only macOS has an OS-owned one. */
+    static void setMenuBar(Menu menu) {
+    }
+
+    /** Nothing to keep in step: the menu bar is drawn inside the window on this platform. */
+    static void syncMenuBar() {
+    }
+
+    /** Nothing to bind: a Shell here is drawn by Flutter and has no native view of its own. */
+    static void bindWindowView(Control control, long view) {
+    }
 }

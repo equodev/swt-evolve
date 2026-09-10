@@ -99,6 +99,12 @@ public class ConfigFlags {
      *  "native", or "fullscreen" (the last three delegate to the SWT bridge). */
     public String csd_maximize;
 
+    /** True when the Shell's menu bar is published to an OS-owned menu bar instead of drawn inside
+     *  the window, so the Flutter side must not draw one of its own. macOS only, and only where this
+     *  process owns the window: elsewhere the menu bar belongs in the window, and in a browser tab
+     *  the system bar belongs to the browser. */
+    public boolean system_menu_bar;
+
     /** Double-click pairing window in milliseconds for the shared DoubleTapDetector on the Flutter
      *  side. 0 (the default) keeps Flutter's kDoubleTapTimeout; a positive value overrides it, e.g.
      *  for a test harness whose synthetic click pairs land further apart than a real user's. */
@@ -137,6 +143,7 @@ public class ConfigFlags {
                 ", csd_maximize='" + csd_maximize + '\'' +
                 ", double_click_timeout_ms=" + double_click_timeout_ms +
                 ", csd_titlebar_color='" + csd_titlebar_color + '\'' +
+                ", system_menu_bar=" + system_menu_bar +
                 '}';
     }
 }

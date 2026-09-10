@@ -51,8 +51,10 @@ void applySystemMenu(VMenu? menu) {
   _systemMenu = menu;
 }
 
-/// The application menu's top-level entries, to be shown ahead of the Shell's own menus.
-List<VMenuItem> applicationMenuItems() => _systemMenu?.items ?? const [];
+/// The application menu's top-level entries, to be shown ahead of the Shell's own menus. Empty when
+/// the OS owns the menu bar: the same items are already in the system bar there.
+List<VMenuItem> applicationMenuItems() =>
+    configFlags.system_menu_bar == true ? const [] : (_systemMenu?.items ?? const []);
 
 @visibleForTesting
 void resetConfigFlags() {

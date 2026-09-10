@@ -226,9 +226,12 @@ public class DartMainToolbar extends DartComposite {
      * Flutter side), so it must not reserve layout space here either: no button width for a
      * vertical alignment, no menu strip height for a horizontal one. The application menu counts
      * too: the client draws it ahead of the Shell's own menus, so it fills a bar that is otherwise
-     * empty.
+     * empty. Neither counts once the OS owns the menu bar: the client draws no bar at all there, so
+     * an itemful one costs nothing here.
      */
     private boolean hasMenuBarItems() {
+        ConfigFlags flags = Config.getConfigFlags();
+        if (flags != null && flags.system_menu_bar) return false;
         Shell shell = getApi().getShell();
         if (shell == null || shell.isDisposed()) return false;
         if (hasApplicationMenu(shell)) return true;
