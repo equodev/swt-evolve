@@ -37,6 +37,14 @@ public class DeskDisplayBridge extends DisplayBridge {
      */
     private boolean windowClosed;
 
+    /**
+     * True only while the shell close that {@link #onWindowCloseRequested} asked for is running.
+     * The window follows an <em>accepted close gesture</em>, never the mere absence of shells: an
+     * application that disposes a splash before opening its real shell leaves no top-level shell for
+     * an instant, and tearing the window down there strands the app with no window at all.
+     */
+    private boolean closingOnRequest;
+
     DeskDisplayBridge(DartDisplay display) {
         super(display);
         // The native window is the client; never fall back to a browser/chromium launch.
@@ -70,11 +78,6 @@ public class DeskDisplayBridge extends DisplayBridge {
     }
 
     /**
-     * Pumps the native window's event loop. Driven from {@code DartDisplay.readAndDispatch()}. When
-     * the native side reports the window was closed, dispose the SWT side to match (close the
-     * top-level shells) so snippet event loops shut down cleanly instead of spinning with no window.
-     */
-    /**
      * The native window is pull-driven: its OS event loop only advances while {@code DartDisplay.sleep()}
      * blocks in {@link #sleep(int)} ({@code FlutterNative.waitEvents}) and {@link #onUpdate()} pumps it.
      * So the idle wait must go through the bridge rather than parking on the wake permit.
@@ -84,15 +87,28 @@ public class DeskDisplayBridge extends DisplayBridge {
         return true;
     }
 
+    /**
+     * Pumps the native window's event loop. Driven from {@code DartDisplay.readAndDispatch()}. The
+     * window reports two different things: a close the user <em>asked</em> for, which SWT still gets to
+     * refuse ({@link #onWindowCloseRequested}), and a window that is already gone, which it can only
+     * be told about ({@link #onWindowClosed}).
+     */
     @Override
     public void onUpdate() {
-        if (windowContext == 0 || windowClosed) {
+        if (!hasNativeWindow()) {
             return;
         }
-        int status = FlutterNative.pump(windowContext);
-        if (status < 0) {
+        int status = pumpWindow();
+        if (status == FlutterNative.PUMP_CLOSE_REQUESTED) {
+            onWindowCloseRequested();
+        } else if (status < 0) {
             onWindowClosed();
         }
+    }
+
+    /** Pumps the native window once. Seam for tests to script what the window reports. */
+    protected int pumpWindow() {
+        return FlutterNative.pump(windowContext);
     }
 
     /**
@@ -103,11 +119,45 @@ public class DeskDisplayBridge extends DisplayBridge {
      */
     @Override
     public void sleep(int millis) throws InterruptedException {
-        if (windowContext != 0 && !windowClosed) {
+        if (hasNativeWindow()) {
             FlutterNative.waitEvents(windowContext, millis);
         } else {
             Thread.sleep(millis);
         }
+    }
+
+    /**
+     * The user asked the OS window to close (title-bar X, Alt+F4, Cmd+W) and the runner vetoed the OS
+     * teardown, so the window is <em>still up</em>. Answer with SWT's contract on the main shell:
+     * {@code Shell.close()} fires {@code SWT.Close} while there is still a window to render into, so an
+     * application can put up "Save changes before exiting?" and keep everything alive with
+     * {@code doit = false}. The window follows the gesture, not the shell count — it is torn down from
+     * {@link #destroy} only if this close is accepted and disposes the shell.
+     */
+    private void onWindowCloseRequested() {
+        DartDisplay display = forDisplay;
+        if (display == null) {
+            return;
+        }
+        Display api = display.getApi();
+        if (api == null || api.isDisposed()) {
+            return;
+        }
+        api.asyncExec(() -> {
+            if (api.isDisposed()) {
+                return;
+            }
+            Shell main = mainShell(display);
+            if (main == null || main.isDisposed()) {
+                return;
+            }
+            closingOnRequest = true;
+            try {
+                main.close();
+            } finally {
+                closingOnRequest = false;
+            }
+        });
     }
 
     private void onWindowClosed() {
@@ -137,13 +187,38 @@ public class DeskDisplayBridge extends DisplayBridge {
         });
     }
 
+    /**
+     * Takes the window down once the close the user asked for has actually been accepted — the shell
+     * is disposed and no other top-level shell is left to host. This is the only route by which a
+     * user-driven close destroys the window: the gesture itself is just a request
+     * ({@link #onWindowCloseRequested}), and a vetoed one must leave the window standing.
+     *
+     * <p>A shell disposed <em>outside</em> that flow never takes the window with it, however briefly
+     * it leaves the Display with no top-level shell — a splash disposed before the real shell opens
+     * is the case that matters, and destroying the window there leaves the application running with
+     * no window it can ever show.
+     */
+    @Override
+    public void destroy(DartWidget control) {
+        super.destroy(control);
+        if (closingOnRequest && control instanceof DartShell && hasNativeWindow()
+                && forDisplay != null && mainShell(forDisplay) == null) {
+            disposeNativeWindow();
+        }
+    }
+
     @Override
     public void destroyDisplay() {
+        disposeNativeWindow();
+        super.destroyDisplay();
+    }
+
+    /** Shuts the native window and its Flutter engine down. Seam for tests to observe the teardown. */
+    protected void disposeNativeWindow() {
         if (windowContext != 0) {
             FlutterNative.dispose(windowContext);
             windowContext = 0;
         }
-        super.destroyDisplay();
     }
 
     /**
@@ -194,7 +269,12 @@ public class DeskDisplayBridge extends DisplayBridge {
     /** Whether a live native top-level window backs this Display (false in headless tests, and once
      *  the user has closed the window — so window ops aren't forwarded to a closing/gone window). */
     protected boolean hasNativeWindow() {
-        return windowContext != 0 && !windowClosed;
+        return hasWindowSurface() && !windowClosed;
+    }
+
+    /** Whether a native window surface was created at all. Seam: tests stand one in without JNI. */
+    protected boolean hasWindowSurface() {
+        return windowContext != 0;
     }
 
     /** Pushes a genuine, user-/app-driven geometry to the native window. Seam for tests to observe. */

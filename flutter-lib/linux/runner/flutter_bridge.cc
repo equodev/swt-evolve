@@ -35,6 +35,7 @@ struct FlutterWindow {
   GtkWidget *headless_window;  // Only used in headless mode
   GtkWidget *top_window;       // Desktop-native (100% Flutter) top-level window
   bool closed;                 // Set when the desktop-native window is closed by the user
+  bool close_requested;        // Set when the user asked to close and the teardown was vetoed
   FlMethodChannel *window_channel;  // CSD window channel; top-level window only
 };
 
@@ -210,7 +211,19 @@ uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
 // FlutterWindow* either way, and top_window != null selects the window behaviour.
 // =================================================================================================
 
-// "destroy" handler: the user closed the top-level window. Flag it so pump() reports back.
+// "delete-event" handler: the user asked to close the top-level window. Returning TRUE vetoes GTK's
+// default handler, which would destroy the window outright — SWT.Close must run while the window is
+// still up, or a doit = false veto has nothing to keep and an exit confirmation nothing to render
+// into. Flag it for pump(); the window is destroyed later, from the shell-dispose path.
+static gboolean on_display_window_delete(GtkWidget * /*widget*/, GdkEvent * /*event*/, gpointer data) {
+  FlutterWindow *ctx = static_cast<FlutterWindow *>(data);
+  if (ctx) {
+    ctx->close_requested = true;
+  }
+  return TRUE;
+}
+
+// "destroy" handler: the window really is gone. Flag it so pump() reports back.
 static void on_display_window_destroy(GtkWidget * /*widget*/, gpointer data) {
   FlutterWindow *ctx = static_cast<FlutterWindow *>(data);
   if (ctx) {
@@ -275,8 +288,8 @@ static void window_method_call_handler(FlMethodChannel * /*channel*/,
   } else if (strcmp(method, "restore") == 0) {
     gtk_window_unmaximize(win);
   } else if (strcmp(method, "close") == 0) {
-    // Emits "destroy" through the normal path, so pump() reports -1 and the SWT side tears
-    // down exactly as it does for a window-manager close.
+    // Emits "delete-event", which is vetoed, so pump() reports -2 — the CSD button asks SWT to
+    // close exactly as a window-manager close does, and a doit = false listener keeps the window.
     gtk_window_close(win);
   } else if (strcmp(method, "beginMove") == 0) {
     // Hands the drag to the window manager, as dragging a server-side title bar would. Unlike
@@ -362,6 +375,7 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
   ctx->top_window = nullptr;
   ctx->view = nullptr;
   ctx->closed = false;
+  ctx->close_requested = false;
   ctx->window_channel = nullptr;
 
   GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -372,6 +386,7 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
   // call back in through the CSD channel's beginResize. With CSD off nothing would draw a
   // replacement, so the WM decoration has to stay.
   gtk_window_set_decorated(GTK_WINDOW(window), csdEnabled ? FALSE : TRUE);
+  g_signal_connect(window, "delete-event", G_CALLBACK(on_display_window_delete), ctx);
   g_signal_connect(window, "destroy", G_CALLBACK(on_display_window_destroy), ctx);
   g_signal_connect(window, "notify::is-active", G_CALLBACK(on_display_window_active), ctx);
 
@@ -497,7 +512,9 @@ Java_dev_equo_swt_FlutterNative_PumpMessages(JNIEnv *env, jclass cls, jint maxMe
   return 0;
 }
 
-// Pumps a window surface's event loop; returns -1 once the window has been closed by the user.
+// Pumps a window surface's event loop. Returns -2 once per user close gesture (the window is still
+// up — "delete-event" was vetoed) and -1 once the window is really gone. Both are FlutterNative's
+// pump contract; -2 is PUMP_CLOSE_REQUESTED there.
 JNIEXPORT jint JNICALL
 Java_dev_equo_swt_FlutterNative_Pump(JNIEnv *env, jclass cls, jlong context) {
   FlutterWindow *ctx = reinterpret_cast<FlutterWindow *>(context);
@@ -516,6 +533,10 @@ Java_dev_equo_swt_FlutterNative_Pump(JNIEnv *env, jclass cls, jlong context) {
     }
     delete ctx;  // safe: Java zeroes windowContext after a -1 and makes no further calls with it
     return -1;
+  }
+  if (ctx && ctx->close_requested) {
+    ctx->close_requested = false;
+    return -2;
   }
   return count;
 }

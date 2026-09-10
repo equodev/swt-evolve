@@ -413,8 +413,17 @@ class DisplayResizeFlutterTest {
         }
 
         @Override
-        protected boolean hasNativeWindow() {
+        protected boolean hasWindowSurface() {
             return true;
+        }
+
+        @Override
+        protected int pumpWindow() {
+            return 0; // there is no native window here, so nothing to pump and nothing to report
+        }
+
+        @Override
+        protected void disposeNativeWindow() {
         }
 
         @Override

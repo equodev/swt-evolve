@@ -1931,7 +1931,7 @@ public class DartShell extends DartDecorations implements IShell {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
-                sendEvent(SWT.Close, e);
+                closeWidget(false);
             });
         });
         FlutterBridge.on(this, "Shell", "Deactivate", e -> {

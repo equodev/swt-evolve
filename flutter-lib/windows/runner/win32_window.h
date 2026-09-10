@@ -63,6 +63,11 @@ class Win32Window {
   // If true, closing this window will quit the application.
   void SetQuitOnClose(bool quit_on_close);
 
+  // Returns whether the user asked to close this window since the last call, clearing the flag.
+  // WM_CLOSE on such a window is vetoed rather than obeyed (see MessageHandler), so the owner can
+  // run its own close contract while the window is still up and destroy it only if that succeeds.
+  bool TakeCloseRequest();
+
   // Return a RECT representing the bounds of the current client area.
   RECT GetClientArea();
 
@@ -103,6 +108,8 @@ class Win32Window {
   static void UpdateTheme(HWND const window);
 
   bool quit_on_close_ = false;
+
+  bool close_requested_ = false;
 
   bool headless_ = false;
 

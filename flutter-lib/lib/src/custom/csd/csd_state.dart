@@ -82,8 +82,9 @@ void csdSetMaximized(bool maximize) {
 void csdToggleMaximize() => csdSetMaximized(!csdMaximized.value);
 
 /// Close. On desktop the native embedder owns the top-level window, so close it directly
-/// (closing it makes the native pump report back and tears the SWT side down — the same path
-/// as the OS window-manager close). On the web it is routed through the SWT bridge
+/// (the runner vetoes that and reports a close *request*, so SWT runs Shell.close() and a
+/// listener can still refuse — the same path as the OS window-manager close). On the web it is
+/// routed through the SWT bridge
 /// (`Display/$id/WinClose` → existing shell teardown) because `window.equo.close()` freezes
 /// the mac window; falls back to the direct API when the main window id is unknown.
 void csdClose() {

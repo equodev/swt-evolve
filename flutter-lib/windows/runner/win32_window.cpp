@@ -355,12 +355,26 @@ Win32Window::MessageHandler(HWND hwnd,
             return 0;
         case WM_CLOSE: {
             std::cout << "Win32Window: WM_CLOSE" << std::endl;
+            // A window whose close quits the app is owned by SWT: closing it is a *request*, not a
+            // fact. Destroying here would run SWT.Close against a window that no longer exists, so
+            // a doit = false veto could not put it back and an exit confirmation would have nothing
+            // to render into. Flag it for the pump instead; the owner destroys us via Destroy().
+            if (quit_on_close_) {
+                close_requested_ = true;
+                return 0;
+            }
             Destroy();
             return 0;
         }
     }
 
     return DefWindowProc(hwnd, message, wparam, lparam);
+}
+
+bool Win32Window::TakeCloseRequest() {
+  bool requested = close_requested_;
+  close_requested_ = false;
+  return requested;
 }
 
 void Win32Window::Destroy() {

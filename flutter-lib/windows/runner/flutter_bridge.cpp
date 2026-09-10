@@ -269,7 +269,9 @@ JNIEXPORT jint JNICALL Java_dev_equo_swt_FlutterNative_PumpMessages(JNIEnv* env,
     return pumpMessages(maxMessages);
 }
 
-// Pumps a window surface's event loop; returns -1 once the window has been closed (WM_QUIT seen).
+// Pumps a window surface's event loop. Returns -2 once per user close gesture (the window is still
+// up — WM_CLOSE was vetoed, see Win32Window::MessageHandler) and -1 once the window is really gone
+// (WM_QUIT seen). Both are FlutterNative's pump contract; -2 is PUMP_CLOSE_REQUESTED there.
 JNIEXPORT jint JNICALL Java_dev_equo_swt_FlutterNative_Pump(JNIEnv* env, jclass cls, jlong context) {
     MSG msg;
     int count = 0;
@@ -280,6 +282,10 @@ JNIEXPORT jint JNICALL Java_dev_equo_swt_FlutterNative_Pump(JNIEnv* env, jclass 
         ::TranslateMessage(&msg);
         ::DispatchMessage(&msg);
         count++;
+    }
+    Surface* s = reinterpret_cast<Surface*>(context);
+    if (s && s->window && s->window->TakeCloseRequest()) {
+        return -2;
     }
     return count;
 }

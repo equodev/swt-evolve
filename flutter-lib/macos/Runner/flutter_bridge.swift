@@ -172,6 +172,8 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
     private var flutterViewController: FlutterViewController?
     private var window: NSWindow?
     private var closed = false
+    private var closeRequested = false
+
     /// The CSD window channel; held so it outlives initialize() and can push focus changes.
     private var windowChannel: FlutterMethodChannel?
 
@@ -245,8 +247,9 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         app.activate(ignoringOtherApps: true)
     }
 
-    /// Drains all pending native events, then spins the run loop briefly. Returns a negative value
-    /// once the window has been closed.
+    /// Drains all pending native events, then spins the run loop briefly. Returns -2 once per user
+    /// close gesture (the window is still up — `windowShouldClose` vetoed it) and -1 once the window
+    /// is really gone. Both are FlutterNative's pump contract; -2 is `PUMP_CLOSE_REQUESTED` there.
     override func pump() -> Int32 {
         if closed { return -1 }
         while let event = NSApp.nextEvent(matching: NSEvent.EventTypeMask.any,
@@ -261,7 +264,12 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         // readAndDispatch loop would never let a frame render. Spin the run loop ~2ms so it does —
         // the same fix applied to PumpMessages for the size-test harness.
         RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.002))
-        return closed ? -1 : 0
+        if closed { return -1 }
+        if closeRequested {
+            closeRequested = false
+            return -2
+        }
+        return 0
     }
 
     /// Blocks until an event is available or up to `millis` ms, WITHOUT dequeuing it (the next
@@ -331,8 +339,9 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
                 case "restore":
                     if win.isZoomed { win.zoom(nil) }
                 case "close":
-                    // Goes through the delegate, so windowWillClose still flags `closed` and the
-                    // next pump() reports -1 to Java — the same teardown as an OS-driven close.
+                    // Goes through the delegate, so windowShouldClose vetoes it and the next pump()
+                    // reports -2 — the CSD button asks SWT to close exactly as the OS title bar does,
+                    // and a doit = false listener keeps the window.
                     win.performClose(nil)
                 case "beginMove":
                     // Hand the in-flight mouse-down to the OS drag loop, exactly as the system
@@ -361,6 +370,14 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         window?.close()
         window = nil
         flutterViewController = nil
+    }
+
+    /// The user asked to close (red button, Cmd+W). Refusing here keeps the window up so SWT.Close can
+    /// run against a live window — a doit = false veto has something to keep, and an exit confirmation
+    /// something to render into. The window is closed later, from the shell-dispose path via dispose().
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        closeRequested = true
+        return false
     }
 
     func windowWillClose(_ notification: Notification) {

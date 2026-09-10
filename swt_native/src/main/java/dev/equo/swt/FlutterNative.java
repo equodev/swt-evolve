@@ -21,6 +21,15 @@ public final class FlutterNative {
     }
 
     /**
+     * {@link #pump} status: the user asked the window to close (title-bar X, Alt+F4, Cmd+W) and the
+     * runner <em>vetoed</em> the OS teardown, so the window is still up. The bridge must answer with
+     * SWT's close contract — {@code SWT.Close}, then dispose only if no listener set
+     * {@code doit = false}. Reported once per gesture. Distinct from a negative status meaning the
+     * window is already gone, which admits no veto.
+     */
+    public static final int PUMP_CLOSE_REQUESTED = -2;
+
+    /**
      * Creates a Flutter surface and returns its native handle.
      * <ul>
      *   <li>{@code width > 0 && height > 0} → a top-level <b>window</b> hosting the whole Display
@@ -66,8 +75,9 @@ public final class FlutterNative {
     }
 
     /**
-     * Pumps a window surface's event loop once (driven from the SWT event loop). Returns a negative
-     * value once the window has been closed by the user, so the bridge can shut the SWT side down.
+     * Pumps a window surface's event loop once (driven from the SWT event loop). Returns
+     * {@link #PUMP_CLOSE_REQUESTED} when the user asked to close and the window is still up, and any
+     * other negative value once the window is gone, so the bridge can shut the SWT side down.
      */
     public static int pump(long context) {
         return Pump(context);
