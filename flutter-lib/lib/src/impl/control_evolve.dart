@@ -284,6 +284,78 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     return null;
   }
 
+  /// Records the SWT button/count pair a pointer-down carries, chaining consecutive same-button
+  /// downs inside the double-click window. Both interaction chromes funnel through here — [wrap]
+  /// below and wrapCompositeInteractionChrome() in composite_evolve.dart, which serves a Composite
+  /// or Canvas that has children — so a control reports the same pair whichever one owns its
+  /// pointer.
+  void registerPointerDown(PointerDownEvent e) {
+    final button = swtButtonOf(e.buttons);
+    final chained = _lastClickStamp != null &&
+        _lastClickPosition != null &&
+        button == _lastButton &&
+        e.timeStamp - _lastClickStamp! <= doubleClickTimeout &&
+        (e.position - _lastClickPosition!).distance <= kDoubleTapSlop;
+    _clickCount = chained ? _clickCount + 1 : 1;
+    _lastClickStamp = e.timeStamp;
+    _lastClickPosition = e.position;
+    _lastButton = button;
+  }
+
+  /// SWT's button number for a Flutter button bitfield: 1 left, 2 middle, 3 right, 4/5 the
+  /// side buttons — the numbering every native Control.sendMouseEvent produces.
+  static int swtButtonOf(int flutterButtons) => switch (flutterButtons) {
+        kSecondaryMouseButton => 3,
+        kMiddleMouseButton => 2,
+        kBackMouseButton => 4,
+        kForwardMouseButton => 5,
+        _ => 1,
+      };
+
+  static int _swtButtonBit(int swtButton) => switch (swtButton) {
+        1 => SWT.BUTTON1,
+        2 => SWT.BUTTON2,
+        3 => SWT.BUTTON3,
+        4 => SWT.BUTTON4,
+        5 => SWT.BUTTON5,
+        _ => 0,
+      };
+
+  static int _swtButtonsMask(int flutterButtons) {
+    var mask = 0;
+    if (flutterButtons & kPrimaryMouseButton != 0) mask |= SWT.BUTTON1;
+    if (flutterButtons & kMiddleMouseButton != 0) mask |= SWT.BUTTON2;
+    if (flutterButtons & kSecondaryMouseButton != 0) mask |= SWT.BUTTON3;
+    if (flutterButtons & kBackMouseButton != 0) mask |= SWT.BUTTON4;
+    if (flutterButtons & kForwardMouseButton != 0) mask |= SWT.BUTTON5;
+    return mask;
+  }
+
+  /// The stateMask a native Control puts on a mouse event: the modifiers held plus the buttons
+  /// down, and the platform asymmetry around the event's own button — cleared on the press
+  /// (the state *before* it), set on the release. Win32, Cocoa and GTK all do exactly this in
+  /// `Widget.setInputState`, so an application testing `stateMask & SWT.BUTTON1` on a mouseUp
+  /// gets the same answer here as it does natively.
+  int swtStateMask({required bool released, int flutterButtons = 0}) {
+    final keys = HardwareKeyboard.instance;
+    var mask = _swtButtonsMask(flutterButtons);
+    if (keys.isAltPressed) mask |= SWT.ALT;
+    if (keys.isShiftPressed) mask |= SWT.SHIFT;
+    if (keys.isControlPressed) mask |= SWT.CTRL;
+    if (keys.isMetaPressed) mask |= SWT.COMMAND;
+    final own = _swtButtonBit(_lastButton);
+    return released ? (mask | own) : (mask & ~own);
+  }
+
+  /// The SWT button number of the pointer-down still in flight. Held across the release so MouseUp
+  /// names the same button as MouseDown did, the way a native Display reports it — a
+  /// PointerUpEvent's own `buttons` is already 0 by then.
+  int get swtButton => _lastButton;
+
+  /// The click count of the pointer-down still in flight, never 0 — an application gating on
+  /// `count == 1` must see a plain click as one.
+  int get swtClickCount => _clickCount == 0 ? 1 : _clickCount;
+
   MouseCursor swtCursorToFlutter(int style) {
     switch (style) {
       case 0: return SystemMouseCursors.basic;           // CURSOR_ARROW
@@ -422,37 +494,30 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
     widget = Listener(
       onPointerDown: (e) {
-        final button = e.buttons == kSecondaryMouseButton ? 3 : e.buttons == kMiddleMouseButton ? 2 : 1;
-        final chained = _lastClickStamp != null &&
-            _lastClickPosition != null &&
-            button == _lastButton &&
-            e.timeStamp - _lastClickStamp! <= kDoubleTapTimeout &&
-            (e.position - _lastClickPosition!).distance <= kDoubleTapSlop;
-        _clickCount = chained ? _clickCount + 1 : 1;
-        _lastClickStamp = e.timeStamp;
-        _lastClickPosition = e.position;
-        _lastButton = button;
+        registerPointerDown(e);
         if (forwardsControlMouseDown) {
           final event = VEvent()
-            ..button = _lastButton
+            ..button = swtButton
             ..x = e.localPosition.dx.round()
             ..y = e.localPosition.dy.round()
-            ..count = _clickCount;
+            ..count = swtClickCount
+            ..stateMask = swtStateMask(released: false, flutterButtons: e.buttons);
           this.widget.sendMouseMouseDown(state, event);
         }
         // After MouseDown, never before: a tool that tracks the secondary press picks the
         // item under the cursor there, and a menu built ahead of it describes the previous
         // selection. Still ahead of the menu opening, which applyMenu does on the release.
-        if (isMenuDetectTrigger(button)) {
+        if (isMenuDetectTrigger(swtButton)) {
           handleMenuDetect(e.pointer, e.localPosition);
         }
       },
       onPointerUp: (e) {
         final event = VEvent()
-          ..button = _lastButton
+          ..button = swtButton
           ..x = e.localPosition.dx.round()
           ..y = e.localPosition.dy.round()
-          ..count = _clickCount == 0 ? 1 : _clickCount;
+          ..count = swtClickCount
+          ..stateMask = swtStateMask(released: true, flutterButtons: e.buttons);
         this.widget.sendMouseMouseUp(state, event);
       },
       onPointerMove: (e) {
