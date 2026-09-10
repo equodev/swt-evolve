@@ -113,18 +113,13 @@ public class DartPath extends DartResource implements IPath {
      */
     public DartPath(Device device, Path path, float flatness, Path api) {
         super(device, api);
-        try {
-            if (path == null)
-                SWT.error(SWT.ERROR_NULL_ARGUMENT);
-            if (path.isDisposed())
-                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-            flatness = Math.max(0, flatness);
-            if (flatness == 0) {
-            } else {
-            }
-            init();
-        } finally {
-        }
+        if (path == null)
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (path.isDisposed())
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        appendPathData(((DartPath) path.getImpl()).getPathData());
+        closed = ((DartPath) path.getImpl()).closed;
+        init();
     }
 
     /**
@@ -199,11 +194,10 @@ public class DartPath extends DartResource implements IPath {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (width == 0 || height == 0 || arcAngle == 0)
             return;
-        try {
-            if (closed = (Math.abs(arcAngle) >= 360)) {
-            }
-        } finally {
-        }
+        appendArc(x, y, width, height, startAngle, arcAngle);
+        closed = Math.abs(arcAngle) >= 360;
+        if (closed)
+            close();
     }
 
     /**
@@ -226,10 +220,9 @@ public class DartPath extends DartResource implements IPath {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (path.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        try {
-            closed = ((DartPath) path.getImpl()).closed;
-        } finally {
-        }
+        DartPath source = (DartPath) path.getImpl();
+        appendPathData(source.getPathData());
+        closed = source.closed;
     }
 
     /**
@@ -247,10 +240,11 @@ public class DartPath extends DartResource implements IPath {
     public void addRectangle(float x, float y, float width, float height) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        try {
-            closed = true;
-        } finally {
-        }
+        moveTo(x, y);
+        lineTo(x + width, y);
+        lineTo(x + width, y + height);
+        lineTo(x, y + height);
+        close();
     }
 
     /**
@@ -295,10 +289,12 @@ public class DartPath extends DartResource implements IPath {
     public void close() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        try {
-            closed = true;
-        } finally {
+        if (hasCurrentPoint) {
+            appendElement((byte) SWT.PATH_CLOSE);
+            currentX = startX;
+            currentY = startY;
         }
+        closed = true;
     }
 
     /**
@@ -375,10 +371,11 @@ public class DartPath extends DartResource implements IPath {
     public void cubicTo(float cx1, float cy1, float cx2, float cy2, float x, float y) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        try {
-            closed = false;
-        } finally {
-        }
+        ensureCurrentPoint();
+        appendElement((byte) SWT.PATH_CUBIC_TO, cx1, cy1, cx2, cy2, x, y);
+        currentX = x;
+        currentY = y;
+        closed = false;
     }
 
     @Override
@@ -433,9 +430,8 @@ public class DartPath extends DartResource implements IPath {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (point.length < 2)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        try {
-        } finally {
-        }
+        point[0] = currentX;
+        point[1] = currentY;
     }
 
     /**
@@ -452,11 +448,10 @@ public class DartPath extends DartResource implements IPath {
     public PathData getPathData() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        try {
-            PathData data = new PathData();
-            return data;
-        } finally {
-        }
+        PathData data = new PathData();
+        data.types = pathData == null ? new byte[0] : pathData.types.clone();
+        data.points = pathData == null ? new float[0] : pathData.points.clone();
+        return data;
     }
 
     void init(PathData data) {
@@ -515,10 +510,11 @@ public class DartPath extends DartResource implements IPath {
     public void lineTo(float x, float y) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        try {
-            closed = false;
-        } finally {
-        }
+        ensureCurrentPoint();
+        appendElement((byte) SWT.PATH_LINE_TO, x, y);
+        currentX = x;
+        currentY = y;
+        closed = false;
     }
 
     /**
@@ -536,10 +532,11 @@ public class DartPath extends DartResource implements IPath {
     public void moveTo(float x, float y) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        try {
-            closed = true;
-        } finally {
-        }
+        appendElement((byte) SWT.PATH_MOVE_TO, x, y);
+        currentX = startX = x;
+        currentY = startY = y;
+        hasCurrentPoint = true;
+        closed = true;
     }
 
     /**
@@ -557,10 +554,15 @@ public class DartPath extends DartResource implements IPath {
     public void quadTo(float cx, float cy, float x, float y) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        try {
-            closed = false;
-        } finally {
-        }
+        ensureCurrentPoint();
+        float c1x = currentX + 2 * (cx - currentX) / 3;
+        float c1y = currentY + 2 * (cy - currentY) / 3;
+        float c2x = c1x + (x - currentX) / 3;
+        float c2y = c1y + (y - currentY) / 3;
+        appendElement((byte) SWT.PATH_CUBIC_TO, c1x, c1y, c2x, c2y, x, y);
+        currentX = x;
+        currentY = y;
+        closed = false;
     }
 
     /**
@@ -584,6 +586,86 @@ public class DartPath extends DartResource implements IPath {
 
     public PathData _pathData() {
         return pathData;
+    }
+
+    float currentX, currentY, startX, startY;
+
+    boolean hasCurrentPoint;
+
+    void appendElement(byte type, float... coords) {
+        if (pathData == null) {
+            pathData = new PathData();
+            pathData.types = new byte[0];
+            pathData.points = new float[0];
+        }
+        byte[] types = new byte[pathData.types.length + 1];
+        System.arraycopy(pathData.types, 0, types, 0, pathData.types.length);
+        types[types.length - 1] = type;
+        pathData.types = types;
+        if (coords.length > 0) {
+            float[] points = new float[pathData.points.length + coords.length];
+            System.arraycopy(pathData.points, 0, points, 0, pathData.points.length);
+            System.arraycopy(coords, 0, points, pathData.points.length, coords.length);
+            pathData.points = points;
+        }
+    }
+
+    void ensureCurrentPoint() {
+        if (!hasCurrentPoint)
+            moveTo(0, 0);
+    }
+
+    void appendArc(float x, float y, float width, float height, float startAngle, float arcAngle) {
+        double rx = width / 2.0, ry = height / 2.0;
+        double cx = x + rx, cy = y + ry;
+        double start = Math.toRadians(startAngle);
+        double sweep = Math.toRadians(arcAngle);
+        if (closed) {
+            moveTo((float) (cx + rx * Math.cos(start)), (float) (cy - ry * Math.sin(start)));
+        } else {
+            lineTo((float) (cx + rx * Math.cos(start)), (float) (cy - ry * Math.sin(start)));
+        }
+        int segments = (int) Math.ceil(Math.abs(sweep) / (Math.PI / 2));
+        double step = sweep / segments;
+        double k = 4.0 / 3.0 * Math.tan(step / 4);
+        double a = start;
+        for (int i = 0; i < segments; i++) {
+            double b = a + step;
+            double cosA = Math.cos(a), sinA = Math.sin(a);
+            double cosB = Math.cos(b), sinB = Math.sin(b);
+            appendElement((byte) SWT.PATH_CUBIC_TO, (float) (cx + rx * (cosA - k * sinA)), (float) (cy - ry * (sinA + k * cosA)), (float) (cx + rx * (cosB + k * sinB)), (float) (cy - ry * (sinB - k * cosB)), (float) (cx + rx * cosB), (float) (cy - ry * sinB));
+            a = b;
+        }
+        currentX = (float) (cx + rx * Math.cos(a));
+        currentY = (float) (cy - ry * Math.sin(a));
+        hasCurrentPoint = true;
+    }
+
+    void appendPathData(PathData data) {
+        if (data == null || data.types == null)
+            return;
+        for (int i = 0, j = 0; i < data.types.length; i++) {
+            switch(data.types[i]) {
+                case SWT.PATH_MOVE_TO:
+                    if (closed)
+                        moveTo(data.points[j++], data.points[j++]);
+                    else
+                        lineTo(data.points[j++], data.points[j++]);
+                    break;
+                case SWT.PATH_LINE_TO:
+                    lineTo(data.points[j++], data.points[j++]);
+                    break;
+                case SWT.PATH_CUBIC_TO:
+                    cubicTo(data.points[j++], data.points[j++], data.points[j++], data.points[j++], data.points[j++], data.points[j++]);
+                    break;
+                case SWT.PATH_QUAD_TO:
+                    quadTo(data.points[j++], data.points[j++], data.points[j++], data.points[j++]);
+                    break;
+                case SWT.PATH_CLOSE:
+                    close();
+                    break;
+            }
+        }
     }
 
     public Path getApi() {

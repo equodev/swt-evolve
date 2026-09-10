@@ -700,14 +700,9 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void drawPath(Path path) {
-        if (path == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        try {
-            Pattern pattern = data.foregroundPattern;
-            if (pattern != null)
-                setPatternPhase(pattern);
-        } finally {
-        }
+        VGCDrawPathPath drawOp = new VGCDrawPathPath();
+        drawOp.path = path;
+        FlutterBridge.send(this, "drawPathPath", drawOp);
     }
 
     /**
@@ -1227,14 +1222,9 @@ public final class DartGC extends DartResource implements IGC {
      * @since 3.1
      */
     public void fillPath(Path path) {
-        if (path == null)
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        try {
-            Pattern pattern = data.backgroundPattern;
-            if (pattern != null)
-                setPatternPhase(pattern);
-        } finally {
-        }
+        VGCFillPathPath drawOp = new VGCFillPathPath();
+        drawOp.path = path;
+        FlutterBridge.send(this, "fillPathPath", drawOp);
     }
 
     /**
@@ -2249,6 +2239,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setClipping(int x, int y, int width, int height) {
+        clearClipShape();
         dirty();
         Rectangle newValue = new Rectangle(x, y, width, height);
         this.clipping = confineToPaint(newValue);
@@ -2293,13 +2284,9 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setClipping(Path path) {
         dirty();
-        Rectangle newValue = clipping;
         if (path != null && path.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        this.clipping = confineToPaint(newValue);
-        try {
-        } finally {
-        }
+        setClipShape(path);
     }
 
     /**
@@ -2316,6 +2303,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setClipping(Rectangle rect) {
+        clearClipShape();
         Rectangle newValue = rect;
         if (!java.util.Objects.equals(this.clipping, newValue)) {
             dirty();
@@ -2344,11 +2332,10 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setClipping(Region region) {
+        dirty();
         if (region != null && region.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        try {
-        } finally {
-        }
+        setClipShape(region);
     }
 
     /**
@@ -3068,6 +3055,10 @@ public final class DartGC extends DartResource implements IGC {
 
     Rectangle clipping;
 
+    PathData clippingPath;
+
+    int[] clippingRects = new int[0];
+
     int fillRule;
 
     Font font;
@@ -3150,6 +3141,14 @@ public final class DartGC extends DartResource implements IGC {
 
     public Rectangle _clipping() {
         return clipping;
+    }
+
+    public PathData _clippingPath() {
+        return clippingPath;
+    }
+
+    public int[] _clippingRects() {
+        return clippingRects;
     }
 
     public int _fillRule() {
@@ -3245,6 +3244,76 @@ public final class DartGC extends DartResource implements IGC {
         else
             ownedTransform.setElements(elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]);
         return ownedTransform;
+    }
+
+    /**
+     * Takes the shape of a clip set from a Path, as a snapshot: the caller may dispose the
+     * path as soon as this returns, long before the next drawing op serializes the GC state.
+     */
+    void setClipShape(Path path) {
+        clearClipShape();
+        PathData data = path == null ? null : path.getPathData();
+        // A path whose only content is a string reaches here empty: glyph outlines have no
+        // representation on this backend. Leaving it unclipped keeps drawing visible, where
+        // clipping to that empty shape would blank it.
+        if (data == null || data.types.length == 0) {
+            this.clipping = confineToPaint(null);
+            return;
+        }
+        clippingPath = data;
+        this.clipping = confineToPaint(pathBounds(data));
+    }
+
+    /**
+     * Takes the shape of a clip set from a Region: the rectangles it is the union of.
+     */
+    void setClipShape(Region region) {
+        clearClipShape();
+        if (region == null) {
+            this.clipping = confineToPaint(null);
+            return;
+        }
+        java.util.List<int[]> rects = ((DartRegion) region.getImpl()).rects;
+        int[] flattened = new int[rects.size() * 4];
+        int i = 0;
+        for (int[] rect : rects) {
+            flattened[i++] = rect[0];
+            flattened[i++] = rect[1];
+            flattened[i++] = rect[2];
+            flattened[i++] = rect[3];
+        }
+        clippingRects = flattened;
+        this.clipping = confineToPaint(region.getBounds());
+    }
+
+    /**
+     * A rectangular clip replaces any shape a previous setClipping put in force.
+     */
+    void clearClipShape() {
+        clippingPath = null;
+        clippingRects = null;
+    }
+
+    /**
+     * The rectangle SWT reports for a path clip. Bounded by the control points, so never
+     * smaller than the shape — the safe direction. The tolerance is why an arc edge landing
+     * 1e-15 below 0 does not floor to -1.
+     */
+    private static Rectangle pathBounds(PathData data) {
+        float[] points = data.points;
+        if (points.length == 0)
+            return new Rectangle(0, 0, 0, 0);
+        float minX = points[0], maxX = points[0], minY = points[1], maxY = points[1];
+        for (int i = 0; i < points.length; i += 2) {
+            minX = Math.min(minX, points[i]);
+            maxX = Math.max(maxX, points[i]);
+            minY = Math.min(minY, points[i + 1]);
+            maxY = Math.max(maxY, points[i + 1]);
+        }
+        float tolerance = 1e-4f;
+        int x = (int) Math.floor(minX + tolerance);
+        int y = (int) Math.floor(minY + tolerance);
+        return new Rectangle(x, y, (int) Math.ceil(maxX - tolerance) - x, (int) Math.ceil(maxY - tolerance) - y);
     }
 
     private Display display;

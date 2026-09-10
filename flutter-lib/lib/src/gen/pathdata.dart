@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import '../impl/utils/image_utils.dart';
 
 part 'pathdata.g.dart';
 
@@ -8,6 +9,10 @@ class VPathData {
   VPathData.empty();
 
   List<double>? points;
+  @JsonKey(
+    fromJson: ImageUtils.parseByteArray,
+    toJson: ImageUtils.serializeByteArray,
+  )
   List<int>? types;
 
   factory VPathData.fromJson(Map<String, dynamic> json) =>

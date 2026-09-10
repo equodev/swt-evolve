@@ -4,6 +4,8 @@ import 'package:json_annotation/json_annotation.dart';
 import '../gen/color.dart';
 import '../gen/font.dart';
 import '../gen/image.dart';
+import '../gen/path.dart';
+import '../gen/pathdata.dart';
 import '../gen/pattern.dart';
 import '../gen/rectangle.dart';
 import '../gen/transform.dart';
@@ -37,6 +39,8 @@ class VGC extends VWidget {
   VColor? background;
   VPattern? backgroundPattern;
   VRectangle? clipping;
+  VPathData? clippingPath;
+  List<int>? clippingRects;
   int? fillRule;
   VFont? font;
   VColor? foreground;
@@ -253,6 +257,17 @@ class VGCDrawOvalintintintint {
   factory VGCDrawOvalintintintint.fromJson(Map<String, dynamic> json) =>
       _$VGCDrawOvalintintintintFromJson(json);
   Map<String, dynamic> toJson() => _$VGCDrawOvalintintintintToJson(this);
+}
+
+@JsonSerializable()
+class VGCDrawPathPath {
+  VPath? path;
+
+  VGCDrawPathPath();
+
+  factory VGCDrawPathPath.fromJson(Map<String, dynamic> json) =>
+      _$VGCDrawPathPathFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCDrawPathPathToJson(this);
 }
 
 @JsonSerializable()
@@ -492,6 +507,17 @@ class VGCFillOvalintintintint {
   factory VGCFillOvalintintintint.fromJson(Map<String, dynamic> json) =>
       _$VGCFillOvalintintintintFromJson(json);
   Map<String, dynamic> toJson() => _$VGCFillOvalintintintintToJson(this);
+}
+
+@JsonSerializable()
+class VGCFillPathPath {
+  VPath? path;
+
+  VGCFillPathPath();
+
+  factory VGCFillPathPath.fromJson(Map<String, dynamic> json) =>
+      _$VGCFillPathPathFromJson(json);
+  Map<String, dynamic> toJson() => _$VGCFillPathPathToJson(this);
 }
 
 @JsonSerializable()

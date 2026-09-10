@@ -160,6 +160,8 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
           if (text.isNotEmpty) parts.add(text);
         } else if (shape is RegionShape) {
           collect(shape.ops);
+        } else if (shape is ClipPathShape) {
+          collect(shape.children);
         }
       }
     }

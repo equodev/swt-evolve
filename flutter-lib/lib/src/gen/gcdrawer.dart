@@ -88,6 +88,7 @@ abstract class GCDrawerBase {
       "drawOvalintintintint",
       (p) => onDrawOvalintintintint(VGCDrawOvalintintintint.fromJson(p)),
     );
+    _op("drawPathPath", (p) => onDrawPathPath(VGCDrawPathPath.fromJson(p)));
     _op(
       "drawPointintint",
       (p) => onDrawPointintint(VGCDrawPointintint.fromJson(p)),
@@ -154,6 +155,7 @@ abstract class GCDrawerBase {
       "fillOvalintintintint",
       (p) => onFillOvalintintintint(VGCFillOvalintintintint.fromJson(p)),
     );
+    _op("fillPathPath", (p) => onFillPathPath(VGCFillPathPath.fromJson(p)));
     _op(
       "fillPolygonint",
       (p) => onFillPolygonint(VGCFillPolygonint.fromJson(p)),
@@ -196,6 +198,7 @@ abstract class GCDrawerBase {
   );
   void onDrawLineintintintint(VGCDrawLineintintintint opArgs);
   void onDrawOvalintintintint(VGCDrawOvalintintintint opArgs);
+  void onDrawPathPath(VGCDrawPathPath opArgs);
   void onDrawPointintint(VGCDrawPointintint opArgs);
   void onDrawPolygonint(VGCDrawPolygonint opArgs);
   void onDrawPolylineint(VGCDrawPolylineint opArgs);
@@ -214,6 +217,7 @@ abstract class GCDrawerBase {
     VGCFillGradientRectangleintintintintboolean opArgs,
   );
   void onFillOvalintintintint(VGCFillOvalintintintint opArgs);
+  void onFillPathPath(VGCFillPathPath opArgs);
   void onFillPolygonint(VGCFillPolygonint opArgs);
   void onFillRectangleRectangle(VGCFillRectangleRectangle opArgs);
   void onFillRectangleintintintint(VGCFillRectangleintintintint opArgs);

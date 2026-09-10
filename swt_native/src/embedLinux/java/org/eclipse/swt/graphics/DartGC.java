@@ -2457,6 +2457,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setClipping(int x, int y, int width, int height) {
+        clearClipShape();
         dirty();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
@@ -2531,6 +2532,7 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void setClipping(Rectangle rect) {
+        clearClipShape();
         if (getApi().handle == 0)
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (rect == null) {
@@ -3361,6 +3363,10 @@ public final class DartGC extends DartResource implements IGC {
 
     Pattern backgroundPattern;
 
+    PathData clippingPath;
+
+    int[] clippingRects = new int[0];
+
     int fillRule;
 
     Font font;
@@ -3419,6 +3425,14 @@ public final class DartGC extends DartResource implements IGC {
 
     public Pattern _backgroundPattern() {
         return backgroundPattern;
+    }
+
+    public PathData _clippingPath() {
+        return clippingPath;
+    }
+
+    public int[] _clippingRects() {
+        return clippingRects;
     }
 
     public int _fillRule() {
@@ -3514,6 +3528,14 @@ public final class DartGC extends DartResource implements IGC {
         else
             ownedTransform.setElements(elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]);
         return ownedTransform;
+    }
+
+    /**
+     * A rectangular clip replaces any shape a previous setClipping put in force.
+     */
+    void clearClipShape() {
+        clippingPath = null;
+        clippingRects = null;
     }
 
     private Display display;

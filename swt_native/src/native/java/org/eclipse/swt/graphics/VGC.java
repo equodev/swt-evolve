@@ -77,6 +77,22 @@ public class VGC extends VResource {
         ((DartGC) impl).clipping = value;
     }
 
+    public PathData getClippingPath() {
+        return ((DartGC) impl).clippingPath;
+    }
+
+    public void setClippingPath(PathData value) {
+        ((DartGC) impl).clippingPath = value;
+    }
+
+    public int[] getClippingRects() {
+        return ((DartGC) impl).clippingRects;
+    }
+
+    public void setClippingRects(int[] value) {
+        ((DartGC) impl).clippingRects = value;
+    }
+
     public int getFillRule() {
         return ((DartGC) impl).getFillRule();
     }
@@ -343,6 +359,12 @@ public class VGC extends VResource {
     }
 
     @CompiledJson()
+    public static class VGCDrawPathPath {
+
+        public Path path;
+    }
+
+    @CompiledJson()
     public static class VGCDrawPointintint {
 
         public int x;
@@ -492,6 +514,12 @@ public class VGC extends VResource {
         public int width;
 
         public int height;
+    }
+
+    @CompiledJson()
+    public static class VGCFillPathPath {
+
+        public Path path;
     }
 
     @CompiledJson()

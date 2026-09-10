@@ -24,6 +24,12 @@ VGC _$VGCFromJson(Map<String, dynamic> json) => VGC()
   ..clipping = json['clipping'] == null
       ? null
       : VRectangle.fromJson(json['clipping'] as Map<String, dynamic>)
+  ..clippingPath = json['clippingPath'] == null
+      ? null
+      : VPathData.fromJson(json['clippingPath'] as Map<String, dynamic>)
+  ..clippingRects = (json['clippingRects'] as List<dynamic>?)
+      ?.map((e) => (e as num).toInt())
+      .toList()
   ..fillRule = (json['fillRule'] as num?)?.toInt()
   ..font = json['font'] == null
       ? null
@@ -58,6 +64,8 @@ Map<String, dynamic> _$VGCToJson(VGC instance) => <String, dynamic>{
   'background': ?instance.background,
   'backgroundPattern': ?instance.backgroundPattern,
   'clipping': ?instance.clipping,
+  'clippingPath': ?instance.clippingPath,
+  'clippingRects': ?instance.clippingRects,
   'fillRule': ?instance.fillRule,
   'font': ?instance.font,
   'foreground': ?instance.foreground,
@@ -287,6 +295,15 @@ Map<String, dynamic> _$VGCDrawOvalintintintintToJson(
   'height': instance.height,
 };
 
+VGCDrawPathPath _$VGCDrawPathPathFromJson(Map<String, dynamic> json) =>
+    VGCDrawPathPath()
+      ..path = json['path'] == null
+          ? null
+          : VPath.fromJson(json['path'] as Map<String, dynamic>);
+
+Map<String, dynamic> _$VGCDrawPathPathToJson(VGCDrawPathPath instance) =>
+    <String, dynamic>{'path': ?instance.path};
+
 VGCDrawPointintint _$VGCDrawPointintintFromJson(Map<String, dynamic> json) =>
     VGCDrawPointintint(
       x: (json['x'] as num?)?.toInt() ?? 0,
@@ -511,6 +528,15 @@ Map<String, dynamic> _$VGCFillOvalintintintintToJson(
   'width': instance.width,
   'height': instance.height,
 };
+
+VGCFillPathPath _$VGCFillPathPathFromJson(Map<String, dynamic> json) =>
+    VGCFillPathPath()
+      ..path = json['path'] == null
+          ? null
+          : VPath.fromJson(json['path'] as Map<String, dynamic>);
+
+Map<String, dynamic> _$VGCFillPathPathToJson(VGCFillPathPath instance) =>
+    <String, dynamic>{'path': ?instance.path};
 
 VGCFillPolygonint _$VGCFillPolygonintFromJson(Map<String, dynamic> json) =>
     VGCFillPolygonint()

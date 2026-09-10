@@ -12,6 +12,8 @@ import '../gen/color.dart';
 import '../gen/gc.dart';
 import '../gen/gcdrawer.dart';
 import '../gen/image.dart';
+import '../gen/path.dart';
+import '../gen/pathdata.dart';
 import '../gen/swt.dart';
 import '../theme/theme_extensions/canvas_theme_extension.dart';
 import 'assets_manager.dart';
@@ -299,6 +301,52 @@ class GCDrawer extends GCDrawerBase {
   // builds; clipping again inside the matrix would scale the clip rectangle along with the shape.
   Rect? get _childClip => currentTransform != null ? null : clipping;
 
+  VPathData? _clipShapePathKey;
+  List<int>? _clipShapeRectsKey;
+  int? _clipShapeFillRuleKey;
+  Path? _clipShape;
+
+  /// The clip set from a Path or a Region, or null when the clip is rectangular (or unset).
+  ///
+  /// [clipping] carries only the bounding box of such a clip, which for anything but a rectangle
+  /// lets drawing through where the shape does not reach. Rebuilt when the GC state that describes
+  /// it changes, not per op: one clip serves every op drawn under it.
+  Path? get clipShape {
+    final clipPath = state.clippingPath;
+    final rects = state.clippingRects;
+    final fillRule = state.fillRule;
+    if (identical(clipPath, _clipShapePathKey) &&
+        identical(rects, _clipShapeRectsKey) &&
+        fillRule == _clipShapeFillRuleKey) {
+      return _clipShape;
+    }
+    _clipShapePathKey = clipPath;
+    _clipShapeRectsKey = rects;
+    _clipShapeFillRuleKey = fillRule;
+    // A Path clip and a Region clip never arrive together — each setClipping overload replaces the
+    // other. A region is the union of its rectangles and they may overlap, so it fills by winding
+    // whatever rule the GC carries: even-odd would punch holes where two of them meet. A path clip
+    // keeps the GC's rule, the way the platforms clip with the path's own winding rule.
+    if (rects != null && rects.length >= 4) {
+      final path = Path()..fillType = PathFillType.nonZero;
+      for (var i = 0; i + 3 < rects.length; i += 4) {
+        path.addRect(Rect.fromLTWH(rects[i].toDouble(), rects[i + 1].toDouble(),
+            rects[i + 2].toDouble(), rects[i + 3].toDouble()));
+      }
+      _clipShape = path;
+    } else {
+      _clipShape = _buildPathData(clipPath);
+    }
+    return _clipShape;
+  }
+
+  /// Confines [shape] to a non-rectangular clip, if one is in force. The rectangular part of the
+  /// clip already rides on the shape itself (or on its transform wrapper) as a clipRect.
+  Shape _clipped(Shape shape) {
+    final shapeClip = clipShape;
+    return shapeClip == null ? shape : ClipPathShape(shapeClip, [shape]);
+  }
+
   Color applyAlpha(Color color) {
     final alpha = state.alpha ?? 255;
     if (alpha == 255) return color;
@@ -321,9 +369,9 @@ class GCDrawer extends GCDrawerBase {
 
   void _addShape(Shape shape) {
     final transform = currentTransform;
-    _staging.add(transform == null
+    _staging.add(_clipped(transform == null
         ? shape
-        : TransformShape(transform, [shape], clipping));
+        : TransformShape(transform, [shape], clipping)));
   }
 
   Rect _getRectFromArgs(int? x, int? y, int? w, int? h) => Rect.fromLTWH(
@@ -417,6 +465,54 @@ class GCDrawer extends GCDrawerBase {
       _addShape(PolylineShape(points, color, strokeWidth, lineCap, lineJoin,
           isFilled: isFilled, clipRect: _childClip));
     }
+  }
+
+  void _addPathShape(VPath? path, {required bool isFilled}) {
+    final built = _buildPath(path);
+    if (built == null) return;
+    final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
+    _addShape(PathShape(built, color, isFilled ? 0.0 : lineWidth, lineCap, lineJoin,
+        isFilled: isFilled, clipRect: _childClip));
+  }
+
+  /// A Dart-backed Path has no handle, so this points/types pair is the whole geometry.
+  ///
+  /// [fillType] overrides the GC's fill rule, for a caller whose shape fills by a rule of its own.
+  Path? _buildPath(VPath? vPath, {PathFillType? fillType}) =>
+      _buildPathData(vPath?.pathData, fillType: fillType);
+
+  Path? _buildPathData(VPathData? pathData, {PathFillType? fillType}) {
+    final types = pathData?.types;
+    final points = pathData?.points;
+    if (types == null || points == null || types.isEmpty) return null;
+    final path = Path()
+      ..fillType = fillType ??
+          ((state.fillRule ?? SWT.FILL_EVEN_ODD) == SWT.FILL_WINDING
+              ? PathFillType.nonZero
+              : PathFillType.evenOdd);
+    var i = 0;
+    bool has(int n) => i + n <= points.length;
+    for (final type in types) {
+      switch (type) {
+        case SWT.PATH_MOVE_TO:
+          if (!has(2)) return path;
+          path.moveTo(points[i++], points[i++]);
+        case SWT.PATH_LINE_TO:
+          if (!has(2)) return path;
+          path.lineTo(points[i++], points[i++]);
+        case SWT.PATH_QUAD_TO:
+          if (!has(4)) return path;
+          path.quadraticBezierTo(
+              points[i++], points[i++], points[i++], points[i++]);
+        case SWT.PATH_CUBIC_TO:
+          if (!has(6)) return path;
+          path.cubicTo(points[i++], points[i++], points[i++], points[i++],
+              points[i++], points[i++]);
+        case SWT.PATH_CLOSE:
+          path.close();
+      }
+    }
+    return path;
   }
 
   void _addArcShape({
@@ -642,6 +738,12 @@ class GCDrawer extends GCDrawerBase {
           s.rect.translate(offset.dx, offset.dy), s.radiusX, s.radiusY,
           s.color, s.strokeWidth, s.lineCap, s.lineJoin,
           isFilled: s.isFilled, clipRect: clipArea),
+      PathShape s => PathShape(
+          s.path.shift(offset), s.color, s.strokeWidth, s.lineCap, s.lineJoin,
+          isFilled: s.isFilled, clipRect: clipArea),
+      ClipPathShape s => ClipPathShape(
+          s.path.shift(offset)..fillType = s.path.fillType,
+          s.children.map((c) => _translateShapeWithClip(c, offset, srcArea)).toList()),
       GradientRectShape s => GradientRectShape.aligned(
           s.rect.translate(offset.dx, offset.dy),
           s.fromColor, s.toColor, s.begin, s.end, clipArea),
@@ -755,11 +857,14 @@ class GCDrawer extends GCDrawerBase {
         tint: imageTintColor, glyphLimits: glyphTintLimits,
         alpha: state.alpha ?? 255);
     _pendingImages.add(f);
+    // The clip is read at op time too: the state may have moved on by the time the image resolves.
+    final shapeClip = clipShape;
     f.then((imageShape) {
+      final Shape shape = transform == null
+          ? imageShape
+          : TransformShape(transform, [imageShape], deviceClip);
       _onImageLoaded(stagingList, idx,
-          transform == null
-              ? imageShape
-              : TransformShape(transform, [imageShape], deviceClip));
+          shapeClip == null ? shape : ClipPathShape(shapeClip, [shape]));
     });
   }
 
@@ -788,6 +893,12 @@ class GCDrawer extends GCDrawerBase {
   void onFillOvalintintintint(VGCFillOvalintintintint o) =>
       _addOvalShape(x: o.x, y: o.y, width: o.width,
           height: o.height, isFilled: true);
+
+  @override
+  void onDrawPathPath(VGCDrawPathPath o) => _addPathShape(o.path, isFilled: false);
+
+  @override
+  void onFillPathPath(VGCFillPathPath o) => _addPathShape(o.path, isFilled: true);
 
   @override
   void onDrawPointintint(VGCDrawPointintint o) {
@@ -1093,6 +1204,31 @@ class RegionShape extends Shape {
   String toString() => 'Region $rect [${ops.length} shapes]';
 }
 
+/// Drawing confined to a clip that is not a rectangle — a GC clipped to a Path or a Region.
+///
+/// A container rather than a field on every shape: the clip has to be applied around the ops, and
+/// a Region's several rectangles or a Path's curves have no place in the single clipRect a shape
+/// carries.
+class ClipPathShape extends Shape {
+  ClipPathShape(this.path, this.children);
+
+  final Path path;
+  final List<Shape> children;
+
+  @override
+  void draw(ui.Canvas c) {
+    c.save();
+    c.clipPath(path);
+    for (final s in children) {
+      s.draw(c);
+    }
+    c.restore();
+  }
+
+  @override
+  String toString() => 'ClipPath [${children.length} shapes]';
+}
+
 class TransformShape extends Shape {
   TransformShape(this.matrix, this.children, [this.clipRect]);
   final Float64List matrix;
@@ -1256,6 +1392,34 @@ class GradientRectShape extends Shape {
 
   @override
   String toString() => 'GradientRect $rect';
+}
+
+class PathShape extends Shape {
+  PathShape(this.path, this.color, this.strokeWidth, this.lineCap, this.lineJoin,
+      {this.isFilled = false, this.clipRect});
+  final Path path;
+  final Color color;
+  final double strokeWidth;
+  final int lineCap;
+  final int lineJoin;
+  final bool isFilled;
+  @override
+  final Rect? clipRect;
+
+  @override
+  void draw(ui.Canvas c) {
+    if (clipRect != null) { c.save(); c.clipRect(clipRect!); }
+    c.drawPath(path, Paint()
+      ..color = color
+      ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = getStrokeCap(lineCap)
+      ..strokeJoin = getStrokeJoin(lineJoin));
+    if (clipRect != null) c.restore();
+  }
+
+  @override
+  String toString() => '${isFilled ? "Fill" : "Draw"}Path';
 }
 
 class PolygonShape extends Shape {
