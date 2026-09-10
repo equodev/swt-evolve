@@ -43,4 +43,30 @@ public class ImageDataCodecCacheTest {
         assertThat(red).isNotSameAs(blue);
         assertThat(red).isNotEqualTo(blue);
     }
+
+    private static ImageData indexedImage(PaletteData palette) {
+        ImageData data = new ImageData(12, 12, 8, palette);
+        for (int y = 0; y < 12; y++) {
+            for (int x = 0; x < 12; x++) {
+                data.setPixel(x, y, 1);
+            }
+        }
+        return data;
+    }
+
+    @Test
+    public void a_repaletted_image_is_not_served_from_the_originals_cache_entry() {
+        // An indexed image stores palette indices, so graying it (IMAGE_GRAY) rewrites the palette
+        // and leaves the pixel bytes untouched. Keying only on those bytes hands back the colored PNG.
+        PaletteData colored = new PaletteData(new org.eclipse.swt.graphics.RGB[]{
+                new org.eclipse.swt.graphics.RGB(0, 0, 0), new org.eclipse.swt.graphics.RGB(200, 40, 10)});
+        PaletteData gray = new PaletteData(new org.eclipse.swt.graphics.RGB[]{
+                new org.eclipse.swt.graphics.RGB(0, 0, 0), new org.eclipse.swt.graphics.RGB(88, 88, 88)});
+
+        byte[] first = ImageDataCodec.encode(indexedImage(colored));
+        byte[] second = ImageDataCodec.encode(indexedImage(gray));
+
+        assertThat(second).isNotSameAs(first);
+        assertThat(second).isNotEqualTo(first);
+    }
 }

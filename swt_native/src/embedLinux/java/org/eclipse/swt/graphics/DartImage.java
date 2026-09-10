@@ -229,12 +229,17 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         this.imageData = GraphicsUtils.copyImageData(((DartImage) srcImage.getImpl()).imageData);
+        GraphicsUtils.applyImageStyleFlag(this, ((DartImage) srcImage.getImpl()).styleFlag | flag);
         device = this.device;
         this.getApi().type = srcImage.type;
         this.imageDataProvider = ((DartImage) srcImage.getImpl()).imageDataProvider;
         this.imageFileNameProvider = ((DartImage) srcImage.getImpl()).imageFileNameProvider;
         this.imageGcDrawer = ((DartImage) srcImage.getImpl()).imageGcDrawer;
         this.styleFlag = ((DartImage) srcImage.getImpl()).styleFlag | flag;
+        if (this.styleFlag != SWT.IMAGE_COPY) {
+            imageFileNameProvider = null;
+            imageDataProvider = null;
+        }
         this.currentDeviceZoom = ((DartImage) srcImage.getImpl()).currentDeviceZoom;
         if (flag != SWT.IMAGE_DISABLE)
             transparentPixel = srcImage.getImpl()._transparentPixel();
@@ -242,6 +247,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         this.height = srcImage.getImpl()._height();
         int dataWidth = DPIUtil.pointToPixel(this.width, DPIUtil.getDeviceZoom());
         int dataHeight = DPIUtil.pointToPixel(this.height, DPIUtil.getDeviceZoom());
+        getApi().surface = 1;
         if (getApi().surface == 0)
             SWT.error(SWT.ERROR_NO_HANDLES);
         if (flag != SWT.IMAGE_COPY) {

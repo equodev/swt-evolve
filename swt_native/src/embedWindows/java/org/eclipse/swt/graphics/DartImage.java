@@ -376,6 +376,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         this.imageData = GraphicsUtils.copyImageData(((DartImage) srcImage.getImpl()).imageData);
+        GraphicsUtils.applyImageStyleFlag(this, ((DartImage) srcImage.getImpl()).styleFlag | flag);
         init();
         ((SwtDevice) this.device.getImpl()).registerResourceWithZoomSupport(this.getApi());
     }

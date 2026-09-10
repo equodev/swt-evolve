@@ -256,6 +256,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         this.imageData = GraphicsUtils.copyImageData(((DartImage) srcImage.getImpl()).imageData);
+        GraphicsUtils.applyImageStyleFlag(this, ((DartImage) srcImage.getImpl()).styleFlag | flag);
         try {
             this.getApi().type = srcImage.type;
             /* Copy alpha information (transparent pixel and alpha data) for 100% & 200% image representations from source image*/
@@ -274,6 +275,10 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             init(this.imageData, 100);
             init();
         } finally {
+        }
+        if (this.styleFlag != SWT.IMAGE_COPY) {
+            imageFileNameProvider = null;
+            imageDataProvider = null;
         }
     }
 

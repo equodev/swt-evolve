@@ -310,6 +310,10 @@ sourceSets {
             // backend carries org.eclipse.swt.internal.cocoa. An @EnabledOnOs would skip the run
             // but the source still has to compile on every runner.
             if (currentOs != "macos") exclude("**/Mac*NativeTest.java")
+            // ImageDataAtSizeProvider and the at-size machinery it drives only exist from 3.132
+            // (absent in 3.131), so the test covering that path cannot compile against older SWT.
+            val swtMinorNative = swtVersion.split(".").getOrNull(1)?.toIntOrNull() ?: Int.MAX_VALUE
+            if (swtMinorNative < 132) exclude("org/eclipse/swt/graphics/ImageAtSizeProviderNativeTest.java")
         }
         resources {
             srcDirs("src/test/resources")

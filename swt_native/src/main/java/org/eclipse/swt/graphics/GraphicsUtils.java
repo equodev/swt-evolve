@@ -27,6 +27,176 @@ public class GraphicsUtils {
     }
 
     /**
+     * Applies an {@code SWT.IMAGE_DISABLE} / {@code SWT.IMAGE_GRAY} style flag to a Dart-backed
+     * image, in place.
+     * <p>
+     * Native SWT transforms the pixels of the platform image handle. There is no handle here, so
+     * the transform has to land on the {@link ImageData} that {@code VImage} puts on the wire —
+     * that data is the only description of the image Flutter can paint.
+     *
+     * @param image the image to transform (can be null)
+     * @param styleFlag the merged style flag, as {@code source.styleFlag | flag}
+     */
+    public static void applyImageStyleFlag(DartImage image, int styleFlag) {
+        if (image == null || image.imageData == null) {
+            return;
+        }
+        ImageData transformed;
+        switch (styleFlag) {
+            case SWT.IMAGE_DISABLE -> transformed = applyDisableImageData(image.imageData);
+            case SWT.IMAGE_GRAY -> transformed = applyGrayImageData(image.imageData);
+            default -> {
+                return;
+            }
+        }
+        image.imageData = transformed;
+        // image_utils.dart resolves an image by svgContent, then by filename (asset replacement and
+        // icon map), and only then by the pixel bytes. A transformed image that keeps either source
+        // would be painted from it — i.e. as the untransformed original.
+        image.filename = null;
+        image.svgContent = null;
+    }
+
+    private static ImageData applyDisableImageData(ImageData data) {
+        int width = data.width;
+        int height = data.height;
+        PaletteData palette = data.palette;
+        ImageData newData = new ImageData(width, height, 32, new PaletteData(0xFF, 0xFF00, 0xFF0000));
+        newData.alpha = data.alpha;
+        newData.alphaData = copyOf(data.alphaData);
+        newData.maskData = copyOf(data.maskData);
+        newData.maskPad = data.maskPad;
+        if (data.transparentPixel != -1)
+            newData.transparentPixel = 0;
+        int[] scanline = new int[width];
+        int[] maskScanline = null;
+        ImageData mask = null;
+        if (data.maskData != null)
+            mask = data.getTransparencyMask();
+        if (mask != null)
+            maskScanline = new int[width];
+        int redMask = palette.redMask;
+        int greenMask = palette.greenMask;
+        int blueMask = palette.blueMask;
+        int redShift = palette.redShift;
+        int greenShift = palette.greenShift;
+        int blueShift = palette.blueShift;
+        for (int y = 0; y < height; y++) {
+            data.getPixels(0, y, width, scanline, 0);
+            if (mask != null)
+                mask.getPixels(0, y, width, maskScanline, 0);
+            for (int x = 0; x < width; x++) {
+                int pixel = scanline[x];
+                if (!((data.transparentPixel != -1 && pixel == data.transparentPixel) || (mask != null && maskScanline[x] == 0))) {
+                    int red, green, blue;
+                    if (palette.isDirect) {
+                        red = pixel & redMask;
+                        red = (redShift < 0) ? red >>> -redShift : red << redShift;
+                        green = pixel & greenMask;
+                        green = (greenShift < 0) ? green >>> -greenShift : green << greenShift;
+                        blue = pixel & blueMask;
+                        blue = (blueShift < 0) ? blue >>> -blueShift : blue << blueShift;
+                    } else {
+                        red = palette.colors[pixel].red;
+                        green = palette.colors[pixel].green;
+                        blue = palette.colors[pixel].blue;
+                    }
+                    int value = disabledPixelValue(red, green, blue);
+                    newData.setAlpha(x, y, data.getAlpha(x, y));
+                    newData.setPixel(x, y, newData.palette.getPixel(new RGB(value, value, value)));
+                }
+            }
+        }
+        return newData;
+    }
+
+    private static ImageData applyGrayImageData(ImageData data) {
+        int pWidth = data.width;
+        int pHeight = data.height;
+        PaletteData palette = data.palette;
+        if (!palette.isDirect) {
+            /* Convert the palette entries to gray. The palette is shared with the source image
+             * (ImageData.clone() copies the pixels, not the palette), so build a fresh one. */
+            RGB[] source = palette.getRGBs();
+            RGB[] rgbs = new RGB[source.length];
+            for (int i = 0; i < source.length; i++) {
+                RGB color = source[i];
+                if (data.transparentPixel == i) {
+                    rgbs[i] = new RGB(color.red, color.green, color.blue);
+                    continue;
+                }
+                int red = color.red;
+                int green = color.green;
+                int blue = color.blue;
+                int intensity = (red + red + green + green + green + green + green + blue) >> 3;
+                rgbs[i] = new RGB(intensity, intensity, intensity);
+            }
+            data.palette = new PaletteData(rgbs);
+            return data;
+        }
+        /* Create an 8 bit depth image data with a gray palette. */
+        RGB[] rgbs = new RGB[256];
+        for (int i = 0; i < rgbs.length; i++) {
+            rgbs[i] = new RGB(i, i, i);
+        }
+        ImageData newData = new ImageData(pWidth, pHeight, 8, new PaletteData(rgbs));
+        newData.alpha = data.alpha;
+        newData.alphaData = copyOf(data.alphaData);
+        newData.maskData = copyOf(data.maskData);
+        newData.maskPad = data.maskPad;
+        if (data.transparentPixel != -1)
+            newData.transparentPixel = 254;
+        int[] scanline = new int[pWidth];
+        int redMask = palette.redMask;
+        int greenMask = palette.greenMask;
+        int blueMask = palette.blueMask;
+        int redShift = palette.redShift;
+        int greenShift = palette.greenShift;
+        int blueShift = palette.blueShift;
+        for (int y = 0; y < pHeight; y++) {
+            int offset = y * newData.bytesPerLine;
+            data.getPixels(0, y, pWidth, scanline, 0);
+            for (int x = 0; x < pWidth; x++) {
+                int pixel = scanline[x];
+                if (pixel != data.transparentPixel) {
+                    int red = pixel & redMask;
+                    red = (redShift < 0) ? red >>> -redShift : red << redShift;
+                    int green = pixel & greenMask;
+                    green = (greenShift < 0) ? green >>> -greenShift : green << greenShift;
+                    int blue = pixel & blueMask;
+                    blue = (blueShift < 0) ? blue >>> -blueShift : blue << blueShift;
+                    int intensity = (red + red + green + green + green + green + green + blue) >> 3;
+                    if (newData.transparentPixel == intensity)
+                        intensity = 255;
+                    newData.data[offset] = (byte) intensity;
+                } else {
+                    newData.data[offset] = (byte) 254;
+                }
+                offset++;
+            }
+        }
+        return newData;
+    }
+
+    /**
+     * The grayscaled contrast/brightness curve SWT's own disablement transformer defaults to
+     * (contrast 0.2, brightness 2.9).
+     * <p>
+     * Inlined rather than delegated: {@code ImageColorTransformer} only exists in recent SWT, and
+     * this class is compiled against every supported version. The consequence is that the
+     * {@code org.eclipse.swt.image.disablement} override is not honoured here — only the default
+     * algorithm, which is what an application gets unless it sets that property.
+     */
+    private static int disabledPixelValue(int red, int green, int blue) {
+        int gray = Math.min((77 * red + 151 * green + 28 * blue) / 255, 255);
+        return (int) Math.min(Math.max(0.2f * (gray * 2.9f - 128) + 128, 0), 255);
+    }
+
+    private static byte[] copyOf(byte[] bytes) {
+        return bytes == null ? null : bytes.clone();
+    }
+
+    /**
      * Creates a copy of an Image, converting from SWT to Dart implementation if needed.
      * If the image is already a DartImage, it is returned as-is.
      * If the image is a SwtImage, a new DartImage is created with the same image data.

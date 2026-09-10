@@ -33,7 +33,33 @@ public final class ImageDataCodec {
     private static long cacheKey(ImageData img) {
         CRC32 crc = new CRC32();
         crc.update(img.data);
+        // On an indexed image the pixel bytes are palette indices, so two different images can share
+        // them and differ only in the palette - a re-paletted ImageData, as the IMAGE_GRAY transform
+        // produces. The palette is part of the identity.
+        org.eclipse.swt.graphics.PaletteData palette = img.palette;
+        if (palette != null) {
+            if (palette.isDirect) {
+                updateInt(crc, palette.redMask);
+                updateInt(crc, palette.greenMask);
+                updateInt(crc, palette.blueMask);
+            } else if (palette.colors != null) {
+                for (org.eclipse.swt.graphics.RGB rgb : palette.colors) {
+                    if (rgb == null) continue;
+                    crc.update(rgb.red);
+                    crc.update(rgb.green);
+                    crc.update(rgb.blue);
+                }
+            }
+        }
+        updateInt(crc, img.transparentPixel);
         return (crc.getValue() << 24) ^ ((long) img.width << 12) ^ ((long) img.height << 1) ^ img.depth;
+    }
+
+    private static void updateInt(CRC32 crc, int value) {
+        crc.update(value & 0xFF);
+        crc.update((value >>> 8) & 0xFF);
+        crc.update((value >>> 16) & 0xFF);
+        crc.update((value >>> 24) & 0xFF);
     }
 
     public static byte[] encode(ImageData img) {
