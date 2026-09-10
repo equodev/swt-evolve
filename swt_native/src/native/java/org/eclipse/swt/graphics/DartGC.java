@@ -392,10 +392,11 @@ public final class DartGC extends DartResource implements IGC {
             if (image.getImpl() instanceof DartImage di) {
                 di.memGC = null;
                 if (bridge instanceof GCImageDrawer drawer) {
-                    drawer.sendGcDispose();
                     if (skipRenderOnDispose) {
+                        drawer.abandon();
                         di.cancelRenderFuture();
                     } else {
+                        drawer.sendGcDispose();
                         image.getImageData();
                     }
                     drawer.disposeView();

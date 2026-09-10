@@ -263,9 +263,12 @@ sourceSets {
         // 3.121+ (including the default) keep compiling bench unchanged.
         val swtMinor = swtVersion.split(".").getOrNull(1)?.toIntOrNull() ?: Int.MAX_VALUE
         if (swtMinor < 121) java { exclude("dev/equo/swt/bench/**") }
-        // ImageGcDrawer (and the Image constructor taking it) only exist from 3.129, so the test
+        // ImageGcDrawer (and the Image constructor taking it) only exist from 3.129, so the tests
         // covering that constructor cannot compile against older SWT.
-        if (swtMinor < 129) java { exclude("org/eclipse/swt/graphics/ImageGcDrawerFailureTest.java") }
+        if (swtMinor < 129) java {
+            exclude("org/eclipse/swt/graphics/ImageGcDrawerFailureTest.java")
+            exclude("org/eclipse/swt/graphics/ImageGcDrawerTrafficTest.java")
+        }
         // org.eclipse.swt.layout.BorderLayout was added in 3.119; the test that subclasses it
         // cannot compile against older baselines. Layout subclassing itself stays covered there by
         // LayoutSubclassTest, which does not touch BorderLayout.

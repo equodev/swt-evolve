@@ -590,7 +590,11 @@ public abstract class FlutterBridge {
 
     /** Puts a GC's buffered ops on the wire, for a caller about to block on an answer to one. */
     public static void flushOps(Object resource) {
-        if (resource instanceof DartGC gc) flushOpBatch(gc);
+        if (!(resource instanceof DartGC gc)) return;
+        flushOpBatch(gc);
+        // An Image-backed GC buffers its ops until the drawer is started, and only a caller
+        // wanting an answer starts it.
+        if (getBridge(gc) instanceof GCImageDrawer drawer) drawer.startForPendingReply();
     }
 
     private static void flushOpBatch(DartGC gc) {
@@ -661,6 +665,7 @@ public abstract class FlutterBridge {
      */
     protected <P> void onClientReady(String channel, Class<P> type, java.util.function.BiConsumer<P, Boolean> each) {
         comm().on(channel, type, p -> {
+            // A (re)attaching client cannot be assumed to hold anything already sent.
             boolean first = !clientReady.isDone();
             if (first) {
                 System.out.println("ClientReady " + channel);
@@ -694,6 +699,24 @@ public abstract class FlutterBridge {
             dirty(r);
     }
 
+    /** The widget whose state the client itself is currently reporting, if any. */
+    private static final ThreadLocal<DartWidget> dirtySuppressedFor = new ThreadLocal<>();
+
+    /**
+     * Applies a change that originated on the client without echoing {@code widget}'s state back to
+     * it. Wrap only the sync itself: anything the change triggers that the client does <em>not</em>
+     * already know about still has to go out.
+     */
+    public static void withoutDirty(DartWidget widget, Runnable body) {
+        DartWidget previous = dirtySuppressedFor.get();
+        dirtySuppressedFor.set(widget);
+        try {
+            body.run();
+        } finally {
+            dirtySuppressedFor.set(previous);
+        }
+    }
+
     public void dirty(DartResource resource) {
         if (resource == null)
             return;
@@ -706,6 +729,8 @@ public abstract class FlutterBridge {
 
     public void dirty(DartWidget widget) {
         if (widget == null)
+            return;
+        if (widget == dirtySuppressedFor.get())
             return;
         registerForRefresh(widget);
         synchronized (dirty) {

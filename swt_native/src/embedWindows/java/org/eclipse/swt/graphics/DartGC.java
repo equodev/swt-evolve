@@ -631,10 +631,11 @@ public final class DartGC extends DartResource implements IGC {
                     if (swtImageSource != null && swtImageSource.getImpl() instanceof SwtImage si) {
                         si.memGC = null;
                     }
-                    drawer.sendGcDispose();
                     if (skipRenderOnDispose) {
+                        drawer.abandon();
                         di.cancelRenderFuture();
                     } else {
+                        drawer.sendGcDispose();
                         image.getImageData();
                     }
                 }

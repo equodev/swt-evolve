@@ -250,7 +250,8 @@ public class StyledTextHelper {
 
     private static void repaintTree(Control control) {
         if (control.isDisposed()) return;
-        if (control.getImpl() instanceof org.eclipse.swt.widgets.DartControl dc) {
+        if (control.isListening(SWT.Paint)
+                && control.getImpl() instanceof org.eclipse.swt.widgets.DartControl dc) {
             ControlHelper.paint(dc);
         }
         if (control instanceof Composite composite) {
@@ -430,10 +431,12 @@ public class StyledTextHelper {
                 int topPixel = ((Number) stateUpdate.get("topPixel")).intValue();
                 styledText.topPixel = topPixel;
                 styledText.verticalScrollOffset = topPixel;
-                // Update topIndex so ruler reads correct line number.
+                // topIndexY carries the sub-line remainder topIndex's integer division drops;
+                // getVerticalScrollOffset() rebuilds the offset from both once the cache is dropped.
                 int lineHeight = styledText.getVerticalIncrement();
                 if (lineHeight > 0) {
                     styledText.topIndex = topPixel / lineHeight;
+                    styledText.topIndexY = -(topPixel % lineHeight);
                 }
                 // A render-side scroll must replay the signal a native scroll emits: the vertical
                 // scrollbar's Selection event is what JFace's viewport listeners (TextViewer,
@@ -442,10 +445,12 @@ public class StyledTextHelper {
                 // entirely when the bar already has this value to avoid re-serializing it.
                 org.eclipse.swt.widgets.ScrollBar verticalBar = styledText.getVerticalBar();
                 if (verticalBar != null && verticalBar.getSelection() != topPixel) {
-                    verticalBar.setSelection(topPixel);
+                    // The bar dirties its parent, whose value carries the whole document, so
+                    // echoing this back would cost a full-document push per scroll tick.
+                    dev.equo.swt.FlutterBridge.withoutDirty(styledText,
+                            () -> verticalBar.setSelection(topPixel));
                     verticalBar.notifyListeners(SWT.Selection, new Event());
                 }
-                repaintRulerSiblings(styledText);
             }
 
             if (stateUpdate.containsKey("horizontalPixel")) {

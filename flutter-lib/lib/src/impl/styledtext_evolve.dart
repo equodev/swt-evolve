@@ -76,8 +76,34 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   ScrollController _horizontalController = ScrollController();
   int _lastSentVerticalOffset = 0;
   int _lastSentHorizontalOffset = 0;
-  final Set<int> _pendingVerticalScrollValues = {};
-  final Set<int> _pendingHorizontalScrollValues = {};
+  // Java re-pushes the whole widget value on every paint, so these memos keep each push from
+  // rescanning the entire document. Keyed by the exact string they were computed from.
+  String? _metricsSource;
+  int _metricsLineCount = 1;
+  int _metricsMaxLineLength = 0;
+
+  String? _normalizedSource;
+  String? _normalizedResult;
+
+  // Offsets this client reported, oldest first. The comm is ordered, so a matching echo also
+  // retires everything queued before it; anything not in the queue is a real external scroll.
+  final List<int> _reportedVerticalOffsets = [];
+  final List<int> _reportedHorizontalOffsets = [];
+
+  /// Bounds the queue if echoes stop arriving at all.
+  static const int _maxReportedOffsets = 64;
+
+  static void _report(List<int> reported, int offset) {
+    reported.add(offset);
+    if (reported.length > _maxReportedOffsets) reported.removeAt(0);
+  }
+
+  static bool _isOwnEcho(List<int> reported, int offset) {
+    final i = reported.indexOf(offset);
+    if (i < 0) return false;
+    reported.removeRange(0, i + 1);
+    return true;
+  }
 
   StyledTextThemeExtension get _styledTextTheme =>
       Theme.of(context).extension<StyledTextThemeExtension>()!;
@@ -199,8 +225,14 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     _editable = state.editable ?? false;
     _wordWrap = state.wordWrap ?? false; // SWT default is no wrap; wrap only when explicitly set
 
+    _applyScrollFromState();
+
+    _buildTextShapeFromState();
+  }
+
+  void _applyScrollFromState() {
     final newTopPixel = state.topPixel ?? 0;
-    if (!_pendingVerticalScrollValues.remove(newTopPixel) &&
+    if (!_isOwnEcho(_reportedVerticalOffsets, newTopPixel) &&
         newTopPixel != _lastSentVerticalOffset) {
       _lastSentVerticalOffset = newTopPixel;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -212,7 +244,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     }
 
     final newHorizPixel = state.horizontalPixel ?? 0;
-    if (!_pendingHorizontalScrollValues.remove(newHorizPixel) &&
+    if (!_isOwnEcho(_reportedHorizontalOffsets, newHorizPixel) &&
         newHorizPixel != _lastSentHorizontalOffset) {
       _lastSentHorizontalOffset = newHorizPixel;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -222,14 +254,52 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         }
       });
     }
+  }
 
-    _buildTextShapeFromState();
+  /// Memoized: the string is usually the one already normalized for the previous push.
+  String _normalizedText(String original) {
+    if (identical(_normalizedSource, original)) return _normalizedResult!;
+    if (_normalizedSource == original) {
+      _normalizedSource = original;
+      return _normalizedResult!;
+    }
+    final normalized =
+        original.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    _normalizedSource = original;
+    _normalizedResult = normalized;
+    return normalized;
+  }
+
+  /// Line count and longest line in one pass, over code units — `text[i]` allocates a
+  /// one-character String per character.
+  void _ensureTextMetrics(String text) {
+    if (identical(_metricsSource, text) || _metricsSource == text) {
+      _metricsSource = text;
+      return;
+    }
+    const newline = 0x0A;
+    int lines = 1;
+    int longest = 0;
+    int lineStart = 0;
+    for (int i = 0; i < text.length; i++) {
+      if (text.codeUnitAt(i) == newline) {
+        final len = i - lineStart;
+        if (len > longest) longest = len;
+        lineStart = i + 1;
+        lines++;
+      }
+    }
+    final tailLength = text.length - lineStart;
+    if (tailLength > longest) longest = tailLength;
+    _metricsSource = text;
+    _metricsLineCount = lines;
+    _metricsMaxLineLength = longest;
   }
 
   /// Build TextShape from serialized state data
   void _buildTextShapeFromState() {
     final originalText = state.text ?? '';
-    final text = originalText.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    final text = _normalizedText(originalText);
 
     // While the user types, edits are applied optimistically on the client and only sent to
     // Java as async Modify events, so any full-state snapshot Java pushes mid-edit (e.g. from
@@ -633,7 +703,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final offset = _verticalController.offset.round();
     if (offset == _lastSentVerticalOffset) return;
     _lastSentVerticalOffset = offset;
-    _pendingVerticalScrollValues.add(offset);
+    _report(_reportedVerticalOffsets, offset);
     _sendScrollUpdate();
   }
 
@@ -641,7 +711,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final offset = _horizontalController.offset.round();
     if (offset == _lastSentHorizontalOffset) return;
     _lastSentHorizontalOffset = offset;
-    _pendingHorizontalScrollValues.add(offset);
+    _report(_reportedHorizontalOffsets, offset);
     _sendScrollUpdate();
   }
 
@@ -682,23 +752,15 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final lineHeight = (javaAscent + javaDescent) > 0
         ? (javaAscent + javaDescent).toDouble()
         : fontSize * 1.4;
-    final lineCount = '\n'.allMatches(text).length + 1;
+    _ensureTextMetrics(text);
     final totalHeight =
-        math.max(getBounds().height, lineCount * lineHeight);
+        math.max(getBounds().height, _metricsLineCount * lineHeight);
 
     double totalWidth = getBounds().width;
     if (_wordWrap != true) {
-      int maxLen = 0;
-      int start = 0;
-      for (int i = 0; i <= text.length; i++) {
-        if (i == text.length || text[i] == '\n') {
-          final len = i - start;
-          if (len > maxLen) maxLen = len;
-          start = i + 1;
-        }
-      }
       final charWidth = fontSize * 0.6;
-      totalWidth = math.max(getBounds().width, maxLen * charWidth + 20);
+      totalWidth =
+          math.max(getBounds().width, _metricsMaxLineLength * charWidth + 20);
     }
 
     return Size(totalWidth, totalHeight);

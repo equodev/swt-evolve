@@ -43,6 +43,10 @@ public class GCImageDrawer extends EmbeddedBridge {
     // comm that received GC/create/imageInit/ops — a fresh resolve could pick a different comm if
     // Display state changed meanwhile, stranding gcDispose on a channel nothing is listening on.
     private volatile CommService resolvedComm;
+    // Recorded by initFlutterView, consumed by start().
+    private volatile Image dartImage;
+    private volatile Consumer<byte[]> onImageResult;
+    private boolean started;
 
     /** Ops buffered until Flutter's GCDrawer listeners are registered. */
     private final List<Runnable> pendingOps = new ArrayList<>();
@@ -108,10 +112,29 @@ public class GCImageDrawer extends EmbeddedBridge {
 
     public void initFlutterView(long gcId, Image dartImage, Consumer<byte[]> onImageResult) {
         this.gcId = gcId;
+        this.dartImage = dartImage;
+        this.onImageResult = onImageResult;
         // Assigned synchronously, before any caller could possibly observe this drawer instance —
         // sendGcDispose() reads the same field later, with no window where it could be unset.
-        CommService comm = resolveSharedComm(dartImage);
-        resolvedComm = comm;
+        // Resolving is free; start() is what puts anything on the comm.
+        resolvedComm = resolveSharedComm(dartImage);
+    }
+
+    /**
+     * Stands the Flutter-side drawer up — ClientReady handshake, {@code GC/create},
+     * {@code imageInit}, then the buffered ops. Deferred until something actually needs the drawn
+     * pixels back, which is never before the GC is disposed (or a mid-draw snapshot is asked for):
+     * doing it at GC creation put a handshake and the image on the Display's shared comm — the
+     * channel the rest of the UI runs on — for every {@code new GC(image)}, even one whose drawing
+     * is abandoned. Idempotent.
+     */
+    private synchronized void start() {
+        if (started) return;
+        started = true;
+        long gcId = this.gcId;
+        Image dartImage = this.dartImage;
+        Consumer<byte[]> onImageResult = this.onImageResult;
+        CommService comm = resolvedComm;
         if (comm == null && !nativeWindowAvailable) {
             cancelAndWake(dartImage);
             return;
@@ -183,12 +206,38 @@ public class GCImageDrawer extends EmbeddedBridge {
     }
 
     /**
-     * Called from DartGC.destroy() — signals Flutter that GC operations are done.
+     * Called from DartGC.destroy() — signals Flutter that GC operations are done, which is what
+     * makes it render. Starts the drawer, since the caller is about to wait for that render.
      * Queued so it is sent after all other buffered ops have been flushed.
      */
     public void sendGcDispose() {
+        start();
         CommService c = resolvedComm != null ? resolvedComm : super.comm();
         queueOp(() -> c.send("GC/" + gcId + "/gcDispose"));
+    }
+
+    /**
+     * Starts the drawer because a caller is about to block waiting for Flutter to answer one of the
+     * buffered ops (see {@link FlutterBridge#flushOps}). Ops sit in {@code pendingOps} until the
+     * Flutter side exists, so without this the caller waits out its whole timeout for a request that
+     * never left Java — {@code GC.copyArea(Image, int, int)} is the one such op today.
+     */
+    public void startForPendingReply() {
+        start();
+    }
+
+    /**
+     * Called from DartGC.destroy() instead of {@link #sendGcDispose()} when the drawing was
+     * abandoned (the ImageGcDrawer threw): nothing will read the render, so an unstarted drawer
+     * stays unstarted and its buffered ops are dropped. A drawer that was started still has a
+     * Flutter-side counterpart, which only gcDispose tears down.
+     */
+    public synchronized void abandon() {
+        if (started) {
+            sendGcDispose();
+        } else {
+            pendingOps.clear();
+        }
     }
 
     /**
@@ -200,6 +249,7 @@ public class GCImageDrawer extends EmbeddedBridge {
      * immediately visible in the image.
      */
     public void requestRenderSnapshot(Consumer<byte[]> onSnapshot) {
+        start();
         CommService c = resolvedComm != null ? resolvedComm : super.comm();
         String snapshotEvent = "GC/" + gcId + "/imageSnapshotResult";
         c.on(snapshotEvent, byte[].class, bytes -> {
