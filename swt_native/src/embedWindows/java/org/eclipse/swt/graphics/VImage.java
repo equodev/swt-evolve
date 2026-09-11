@@ -36,6 +36,13 @@ public class VImage extends VResource {
         ((DartImage) impl).filename = value;
     }
 
+    public int getHeight() {
+        return ((DartImage) impl)._wireHeight();
+    }
+
+    public void setHeight(int value) {
+    }
+
     public ImageData getImageData() {
         return ((DartImage) impl)._imageDataForWire();
     }
@@ -59,6 +66,13 @@ public class VImage extends VResource {
 
     public void setSvgContent(String value) {
         ((DartImage) impl).svgContent = value;
+    }
+
+    public int getWidth() {
+        return ((DartImage) impl)._wireWidth();
+    }
+
+    public void setWidth(int value) {
     }
 
     @JsonConverter(target = Image.class)

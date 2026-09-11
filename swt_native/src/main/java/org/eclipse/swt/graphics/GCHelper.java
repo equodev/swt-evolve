@@ -182,6 +182,71 @@ public class GCHelper {
         updateImageFromPngBytes(dartImage, swtSource, java.util.Base64.getDecoder().decode(pngBase64));
     }
 
+    /**
+     * Identity for a rendered image living on the client. Minted here rather than learned from the
+     * client's answer, so a GC(Image) render finishes without waiting for anything to come back.
+     * Starts above zero: zero is the "unset" ref.
+     */
+    private static final java.util.concurrent.atomic.AtomicLong REMOTE_REF = new java.util.concurrent.atomic.AtomicLong(1);
+
+    public static long nextRemoteRef() {
+        return REMOTE_REF.getAndIncrement();
+    }
+
+    /**
+     * Pulls a client-owned image's pixels back over {@code comm} as PNG bytes, or {@code null} if
+     * nothing is registered under that ref or it did not answer in time. The one place rendered
+     * pixels cross back, reached only from {@code Image#getImageData()}.
+     */
+    public static byte[] fetchRemotePixels(Device device, dev.equo.swt.comm.CommService comm, long remoteRef, long timeoutMs) {
+        if (comm == null) return null;
+        Display display = device instanceof Display d ? d : Display.getCurrent();
+        String resultEvent = "Image/" + remoteRef + "/pixelsResult";
+        byte[][] result = new byte[1][];
+        var answered = new java.util.concurrent.CompletableFuture<Void>();
+        comm.on(resultEvent, byte[].class, bytes -> {
+            comm.remove(resultEvent);
+            result[0] = bytes;
+            answered.complete(null);
+            if (display != null && !display.isDisposed()) display.wake();
+        });
+        comm.send("Image/requestPixels", java.nio.ByteBuffer.allocate(8).putLong(remoteRef).array());
+        awaitOnDisplay(display, answered, timeoutMs);
+        if (!answered.isDone()) comm.remove(resultEvent);
+        return result[0];
+    }
+
+    /**
+     * Waits for {@code future} from the SWT UI thread. Desktop must keep dispatching — its
+     * off-screen engine needs SWT's event loop to start and render — while on web the engine runs
+     * in the browser and answers on its own thread, so dispatching would only sleep.
+     */
+    private static void awaitOnDisplay(Display display, java.util.concurrent.CompletableFuture<Void> future, long timeoutMs) {
+        if (display == null || display.isDisposed()) return;
+        if (!dev.equo.swt.ConfigFlags.isDesktopMode()) {
+            try {
+                future.get(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
+            }
+            return;
+        }
+        // Display#sleep() blocks with no timeout of its own, so a display with nothing else
+        // happening would never wake to re-check the deadline.
+        long deadline = System.nanoTime() + timeoutMs * 1_000_000L;
+        Runnable wakeOnTimeout = () -> {
+        };
+        display.timerExec((int) timeoutMs, wakeOnTimeout);
+        try {
+            while (!future.isDone() && !display.isDisposed() && System.nanoTime() < deadline) {
+                if (!display.readAndDispatch()) display.sleep();
+            }
+        } finally {
+            if (!display.isDisposed()) display.timerExec(-1, wakeOnTimeout);
+        }
+    }
+
     private static final String RESPONSE_SUFFIX = "Response";
 
     /**

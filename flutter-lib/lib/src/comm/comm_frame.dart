@@ -10,7 +10,9 @@ import 'comm_api.dart' show CommCallback;
 /// in one pass, no intermediate String. Shared by every transport.
 final _jsonBytes = json.fuse(utf8);
 
-typedef OnSuccessCallback<T> = void Function(T response);
+// FutureOr, not void: a handler that awaits (an image decode, a surface being created) has to be
+// awaitable, or the frame after it starts while it is still half-applied. See [_drainApplyQueue].
+typedef OnSuccessCallback<T> = FutureOr<void> Function(T response);
 typedef OnErrorCallback = void Function(SDKCommError error);
 typedef Payload = dynamic;
 
@@ -63,7 +65,7 @@ class UserEventCallback {
 abstract class EquoCommBase {
   final Map<String, UserEventCallback> _handlers = {};
   final Map<String, dynamic> _pending = {};
-  final Map<String, void Function(Uint8List)> _rawHandlers = {};
+  final Map<String, FutureOr<void> Function(Uint8List)> _rawHandlers = {};
   final Map<String, Uint8List> _rawPending = {};
   final List<Uint8List> _queue = [];
   bool _open = false;
@@ -170,12 +172,16 @@ abstract class EquoCommBase {
     final bodyLen = data.length - 2 - nameLen;
     final body = bodyLen > 0 ? Uint8List.sublistView(data, 2 + nameLen) : null;
 
+    // Which handler a frame belongs to is resolved at apply time, never at arrival: a frame
+    // routinely registers the handler the next frame needs (GC/create builds the drawer that owns
+    // the ops behind it).
+    _enqueueApply(actionId, () => _applyFrame(actionId, body));
+  }
+
+  FutureOr<void> _applyFrame(String actionId, Uint8List? body) {
     // Raw-bytes handlers skip JSON decode entirely.
     final rawHandler = _rawHandlers[actionId];
-    if (rawHandler != null) {
-      rawHandler(body ?? Uint8List(0));
-      return;
-    }
+    if (rawHandler != null) return rawHandler(body ?? Uint8List(0));
 
     dynamic payload;
     var jsonOk = true;
@@ -187,54 +193,95 @@ abstract class EquoCommBase {
       }
     }
 
-    // A run of frames fused into one: each entry is delivered on its own channel.
+    // A run of frames fused into one: each entry is delivered on its own channel, in order.
     if (jsonOk && actionId == batchEvent && payload is List) {
-      for (final entry in payload) {
-        if (entry is List && entry.length == 2 && entry[0] is String) {
-          final name = entry[0] as String;
-          if (!_deliverDecoded(name, entry[1])) _pending[name] = entry[1];
-        }
-      }
-      return;
+      return _applyBatch(payload);
     }
 
-    if (jsonOk && _deliverDecoded(actionId, payload)) return;
+    if (jsonOk) {
+      final delivered = _deliverDecoded(actionId, payload);
+      if (delivered != null) return delivered;
+    }
 
     // Neither on() nor onBytes() has registered yet for this actionId (or the body isn't valid
     // JSON, meaning it's a raw-bytes payload). Buffer both ways so whichever registers first
     // can claim it.
     if (jsonOk) _pending[actionId] = payload;
     _rawPending[actionId] = body ?? Uint8List(0);
+    return null;
+  }
+
+  Future<void> _applyBatch(List entries) async {
+    for (final entry in entries) {
+      if (entry is! List || entry.length != 2 || entry[0] is! String) continue;
+      final name = entry[0] as String;
+      final delivered = _deliverDecoded(name, entry[1]);
+      if (delivered == null) {
+        _pending[name] = entry[1];
+      } else {
+        await delivered;
+      }
+    }
   }
 
   /// Channel a fused run of frames arrives on.
   static const batchEvent = 'swt.evolve.batch';
 
-  /// Hands an already-decoded payload to [actionId]'s handler; false when none is registered.
-  bool _deliverDecoded(String actionId, dynamic payload) {
+  /// Runs [actionId]'s handler on an already-decoded payload, or null when none is registered.
+  FutureOr<void>? _deliverDecoded(String actionId, dynamic payload) {
     final callback = _handlers[actionId];
-    if (callback == null) return false;
+    if (callback == null) return null;
     if (callback.args?.once ?? false) _handlers.remove(actionId);
-    _deliver(actionId, callback.onSuccess, payload);
-    return true;
+    return callback.onSuccess(payload);
   }
 
-  /// Runs a handler off the current call stack with its errors isolated.
+  // Frames are applied one at a time, in arrival order, and a frame that awaits holds the queue
+  // until it is done. The transport already delivers in order; what did not was the applying — an
+  // async handler returns the moment it awaits, letting the next frame start against half-applied
+  // state.
+  final List<Future<void>? Function()> _applyQueue = [];
+  bool _applying = false;
+
+  /// Runs a handler off the current call stack with its errors isolated, after every frame already
+  /// queued has finished applying.
   ///
-  /// Uses [scheduleMicrotask], NOT `Future(...)`/`Timer`: on dart2js the latter
-  /// compile to `setTimeout(_, 0)`, which the browser clamps to ~4.7 ms — that
-  /// would re-impose a multi-millisecond delay on every received message (the exact
-  /// floor that killed the old web comm). A microtask defers past the current stack
-  /// (so a handler never runs synchronously inside [on]/[receiveBinary]) with no
-  /// timer clamp.
+  /// [scheduleMicrotask], never `Future(...)`/`Timer`: those compile to `setTimeout(_, 0)` on
+  /// dart2js, which the browser clamps to ~4.7 ms per received message.
   void _deliver(String actionId, OnSuccessCallback<dynamic> onSuccess, dynamic payload) {
-    scheduleMicrotask(() {
+    _enqueueApply(actionId, () => onSuccess(payload));
+  }
+
+  void _enqueueApply(String actionId, FutureOr<void> Function() apply) {
+    _applyQueue.add(() {
       try {
-        onSuccess(payload);
+        final applied = apply();
+        if (applied is Future) {
+          return applied.catchError((Object e, StackTrace st) {
+            print('[comm] Handler error for "$actionId": $e\n$st');
+          });
+        }
       } catch (e, st) {
         print('[comm] Handler error for "$actionId": $e\n$st');
       }
+      return null;
     });
+    if (!_applying) {
+      _applying = true;
+      scheduleMicrotask(_drainApplyQueue);
+    }
+  }
+
+  Future<void> _drainApplyQueue() async {
+    try {
+      while (_applyQueue.isNotEmpty) {
+        // Only a genuinely async handler yields: awaiting unconditionally would spend a microtask
+        // turn per frame, so a run of synchronous pushes would take a run of turns to settle.
+        final applied = _applyQueue.removeAt(0)();
+        if (applied != null) await applied;
+      }
+    } finally {
+      _applying = false;
+    }
   }
 
   Future send(String actionId, [Payload? payload]) {
@@ -303,18 +350,12 @@ abstract class EquoCommBase {
   }
 
   /// Raw-bytes receive: callback gets the raw frame body (no JSON decode).
-  void onBytes(String actionId, void Function(Uint8List) callback) {
+  void onBytes(String actionId, FutureOr<void> Function(Uint8List) callback) {
     _rawHandlers[actionId] = callback;
     final pending = _rawPending.remove(actionId);
-    if (pending != null) {
-      scheduleMicrotask(() {
-        try {
-          callback(pending);
-        } catch (e, st) {
-          print('[comm] Handler error for "$actionId": $e\n$st');
-        }
-      });
-    }
+    // A frame that arrived before anyone was listening replays through the queue, so it still
+    // lands ahead of whatever has arrived since.
+    if (pending != null) _enqueueApply(actionId, () => callback(pending));
   }
 
   void remove(String actionId, [Object? token]) {

@@ -4,17 +4,20 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.jupiter.api.*;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * The client recognises Java's echo of its own scroll by value and drops it. That only works while
- * the value survives the round trip.
+ * What a scroll performed on the render side owes Java: an echo the client can recognise by value
+ * and drop, and the repaint every platform emits when the viewport moves.
  */
 @Tag("flutter-it")
 class StyledTextScrollEchoFlutterTest {
@@ -78,5 +81,65 @@ class StyledTextScrollEchoFlutterTest {
         assertThat(wire().getTopPixel())
                 .as("recomputed from topIndex, which the handler set to topPixel/lineHeight")
                 .isEqualTo(137);
+    }
+
+    /**
+     * Records the damage of every Paint dispatched after this point. The listener must exist before
+     * the scroll — a control hooking no Paint listener is never damaged — and the full-area paint
+     * installing it schedules is drained here, so the test sees the scroll's damage, not the setup's.
+     */
+    private List<Rectangle> recordPaintsFromSettled() {
+        List<Rectangle> painted = new ArrayList<>();
+        styledText.addPaintListener(e -> painted.add(new Rectangle(e.x, e.y, e.width, e.height)));
+        while (display.readAndDispatch()) { }
+        painted.clear();
+        return painted;
+    }
+
+    @Test
+    @DisplayName("a scroll performed on the render side still repaints the text widget")
+    void clientScrollDamagesTheTextWidget() {
+        List<Rectangle> painted = recordPaintsFromSettled();
+
+        clientScrolledTo(40);
+
+        assertThat(painted)
+                .as("JFace's line-number ruler is keyed on a PaintListener on the text widget "
+                        + "(VisibleLinesTracker), so a scroll that dispatches no Paint leaves the "
+                        + "gutter standing still until something else repaints it")
+                .isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("the repaint is scoped to the band the scroll exposed")
+    void scrollDamageIsTheExposedBand() {
+        int clientHeight = styledText.getClientArea().height;
+        List<Rectangle> painted = recordPaintsFromSettled();
+
+        clientScrolledTo(40);
+
+        // What StyledText#scrollVertical invalidates natively: the pixels that stayed are blitted,
+        // and only the band the scroll uncovered is repainted. A full-area damage here would
+        // repaint the whole editor on every tick, and the render side scrolls a pixel at a time.
+        assertThat(painted).isNotEmpty();
+        assertThat(painted.get(0))
+                .as("scrolled down 40px, so the exposed band is the bottom 40px")
+                .isEqualTo(new Rectangle(painted.get(0).x, clientHeight - 40,
+                        painted.get(0).width, 40));
+    }
+
+    @Test
+    @DisplayName("a scroll the client performed does not echo the widget's state back")
+    void clientScrollDoesNotEchoState() {
+        recordPaintsFromSettled();
+        bridge.comm.sent.clear();
+
+        clientScrolledTo(40);
+
+        // Echoing would cost a full-document push per tick for news the client told us.
+        assertThat(bridge.comm.sent.stream().map(f -> f.event).toList())
+                .as("every frame the scroll produced")
+                .noneMatch(e -> e.startsWith("StyledText/")
+                        && e.chars().filter(ch -> ch == '/').count() == 1);
     }
 }

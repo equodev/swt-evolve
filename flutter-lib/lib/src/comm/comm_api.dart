@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import '../gen/widget.dart';
 
-typedef CommCallback<V> = void Function(V payload);
+// FutureOr so an awaiting handler can be awaited — see EquoCommBase's apply queue.
+typedef CommCallback<V> = FutureOr<void> Function(V payload);
 
 class EquoCommService {
   static Object on<V extends VWidget>(
@@ -21,7 +23,7 @@ class EquoCommService {
   static Future sendBytes(String userEventActionId, Uint8List bytes) =>
       throw UnsupportedError("EquoComm.sendBytes");
   static void onBytes(
-          String userEventActionId, void Function(Uint8List) callback) =>
+          String userEventActionId, FutureOr<void> Function(Uint8List) callback) =>
       throw UnsupportedError("EquoComm.onBytes");
   static Future setPort(int port) => throw UnsupportedError("EquoComm.setPort");
   static void onReconnect(void Function() callback) =>

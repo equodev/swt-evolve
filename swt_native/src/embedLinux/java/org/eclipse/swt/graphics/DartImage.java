@@ -1052,6 +1052,10 @@ public final class DartImage extends DartResource implements Drawable, IImage {
                 }
             }
         }
+        // Everything above settles a render that is already in flight. This is the other
+        // case: the render finished on the Flutter side and its pixels never crossed, so
+        // reading them is what pulls them over -- once, here, and nowhere else.
+        _ensureRemotePixels();
         // Return a defensive copy: getImageData() must not hand out the backing store, so a
         // caller mutating the returned data can't alter the image (changingImageDataDoesNotAffectImage).
         if (zoom == 100)
@@ -1455,11 +1459,45 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     }
 
     public ImageData _imageDataForWire() {
-        if (remoteRef != null)
-            return null;
-        if (memGC != null)
-            return imageData;
-        return getImageData();
+        return remoteRef != null ? null : imageData;
+    }
+
+    public int _wireWidth() {
+        if (width != -1)
+            return width;
+        return imageData != null ? imageData.width : 0;
+    }
+
+    public int _wireHeight() {
+        if (height != -1)
+            return height;
+        return imageData != null ? imageData.height : 0;
+    }
+
+    dev.equo.swt.comm.CommService remoteComm;
+
+    boolean remotePixelsStale;
+
+    public void _adoptRemoteRender(Long ref, dev.equo.swt.comm.CommService comm) {
+        remoteComm = comm;
+        remotePixelsStale = true;
+        _setRemoteRef(ref);
+    }
+
+    private void _ensureRemotePixels() {
+        if (!remotePixelsStale || remoteRef == null || remoteComm == null)
+            return;
+        byte[] png = GCHelper.fetchRemotePixels(device, remoteComm, remoteRef, 5000);
+        if (png == null || png.length == 0) {
+            System.err.println("[Image] Flutter returned no pixels for remoteRef " + remoteRef + "; getImageData() is answering with the last content this side saw");
+            return;
+        }
+        try {
+            this.imageData = new ImageData(new java.io.ByteArrayInputStream(png));
+            remotePixelsStale = false;
+        } catch (Exception e) {
+            System.err.println("[Image] Could not decode the pixels Flutter returned for remoteRef " + remoteRef + ": " + e.getMessage());
+        }
     }
 
     public void cancelRenderFuture() {
@@ -1475,6 +1513,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     public void _updateImageData(ImageData newData) {
         this.imageData = newData;
+        remotePixelsStale = false;
         pendingRenderFuture = null;
     }
 

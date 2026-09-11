@@ -398,9 +398,13 @@ public final class DartGC extends DartResource implements IGC {
                     if (skipRenderOnDispose) {
                         drawer.abandon();
                         di.cancelRenderFuture();
-                    } else {
-                        drawer.sendGcDispose();
+                    } else if (drawer.endDrawCycle(swtImageSource != null)) {
+                        // Pixels are crossing back, so this thread waits for them.
                         image.getImageData();
+                    } else {
+                        // The render stays on the Flutter side under the ref just handed
+                        // over, so nothing is in flight for anyone to wait on.
+                        di.cancelRenderFuture();
                     }
                 }
             }

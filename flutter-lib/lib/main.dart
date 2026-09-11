@@ -92,6 +92,11 @@ void main(List<String> args) async {
   if (enableTestSemantics) {
     SemanticsBinding.instance.ensureSemantics();
   }
+  // Every topology, not just under a Display: the Image channels are keyed by remoteRef rather than
+  // by widget, and an off-screen engine never reaches the Display branch below.
+  _registerImageReleaseListener();
+  _registerImagePixelsListener();
+
   if (widgetName == "FontMeasureBridge") {
     font_size.measureRequest(widgetName, widgetId);
     sendClientReady(widgetName, widgetId);
@@ -135,7 +140,6 @@ void main(List<String> args) async {
       (active) => csdWindowActive.value = active,
     );
     _registerGcCreateListener();
-    _registerImageReleaseListener();
   }
 
   Widget contentWidget = createContentWidget(widgetName!, widgetId!);
@@ -177,6 +181,16 @@ void _registerGcCreateListener() {
       onDisposed: () => _activeGcDrawers.remove(gcId),
     );
     sendClientReady("GCImageDrawer", gcId);
+  });
+}
+
+// The one path back to the pixels, for Image#getImageData() (see GCHelper#fetchRemotePixels).
+// The answer always goes out, empty included: the caller is blocked on it until its timeout.
+void _registerImagePixelsListener() {
+  EquoCommService.onBytes("Image/requestPixels", (bytes) async {
+    final ref = _readInt64BE(ByteData.sublistView(bytes), 0);
+    final png = await ImageUtils.encodeRemoteImagePng(ref);
+    EquoCommService.sendBytes("Image/$ref/pixelsResult", png ?? Uint8List(0));
   });
 }
 

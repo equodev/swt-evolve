@@ -34,6 +34,10 @@ class GCDrawer extends GCDrawerBase {
   // removed by token so a stale drawer can't unregister a newer one's handler.
   final Map<String, Object> _localTokens = {};
 
+  /// Marks a channel registered through [EquoCommService.onBytes], which hands back no token of its
+  /// own and holds one handler per channel, so it can only be removed by name.
+  static final Object _rawByteChannel = Object();
+
   final List<Shape> _lateLoadedImages = [];
 
 
@@ -79,8 +83,12 @@ class GCDrawer extends GCDrawerBase {
         onError: (e) => _baseImageCompleter!.completeError(e),
       );
     });
-    _localTokens["${state.swt}/${state.id}/gcDispose"] =
-        EquoCommService.onRaw("${state.swt}/${state.id}/gcDispose", (_) async {
+    // Java-minted remoteRef (8 big-endian bytes) plus one flag byte, set only when the Java side
+    // still needs the pixels themselves (a native SwtImage mirror to fill).
+    _localTokens["${state.swt}/${state.id}/gcDispose"] = _rawByteChannel;
+    EquoCommService.onBytes("${state.swt}/${state.id}/gcDispose", (payload) async {
+      final ref = _readInt64BE(ByteData.sublistView(payload), 0);
+      final wantPixels = payload.length > 8 && payload[8] != 0;
       final myGeneration = ++_gcDisposeGeneration;
       if (_baseImageCompleter != null) await _baseImageCompleter!.future;
       await Future.wait(_pendingImages);
@@ -89,7 +97,7 @@ class GCDrawer extends GCDrawerBase {
         ..clear()
         ..addAll(_staging);
       _staging = [];
-      await _renderAndSend();
+      await _renderAndSend(ref, wantPixels);
       onDisposed?.call();
       // One-shot drawer: nothing reuses this gcId after this point, so tear down now.
       dispose();
@@ -193,6 +201,8 @@ class GCDrawer extends GCDrawerBase {
         if (fullRepaint) {
           disposeShapeImages(shapes, keep: keep);
           shapes.clear();
+        } else {
+          _dropWhatThisCycleCovers(cycleStaging, keep);
         }
         shapes.addAll(cycleStaging);
         shapes.addAll(_lateLoadedImages);
@@ -201,6 +211,25 @@ class GCDrawer extends GCDrawerBase {
 
       if (shapes.isNotEmpty) onGCDispose?.call(List.from(shapes));
       onShapesUpdated?.call(shapes);
+    });
+  }
+
+  /// Drops what [cycle] paints over, so a control redrawn outside a Paint does not retain every
+  /// superseded cycle for its lifetime. Only *opaque* coverage counts, and only shapes whose own
+  /// area is known are dropped: anything unsure is kept, which costs retention, never correctness.
+  void _dropWhatThisCycleCovers(List<Shape> cycle, Set<ui.Image> keep) {
+    final covered = <Rect>[];
+    for (final s in cycle) {
+      final area = s.opaqueCoverage;
+      if (area != null && !area.isEmpty) covered.add(area);
+    }
+    if (covered.isEmpty) return;
+    shapes.removeWhere((s) {
+      final area = s.paintedBounds;
+      if (area == null) return false;
+      if (!covered.any((c) => _containsRect(c, area))) return false;
+      disposeShapeImages([s], keep: keep);
+      return true;
     });
   }
 
@@ -584,14 +613,14 @@ class GCDrawer extends GCDrawerBase {
     final vImage = VImage.fromJson(
         payload as Map<String, dynamic>);
     _baseImage = await ImageUtils.decodeVImageToUIImage(vImage);
-    // On a re-render of the same Image (remoteRef already set from a prior render), imageData is
-    // omitted on the wire — fall back to the resolved cached image's own dimensions.
-    _imgWidth = vImage.imageData?.width ?? _baseImage?.width ?? 0;
-    _imgHeight = vImage.imageData?.height ?? _baseImage?.height ?? 0;
+    // Size comes from the Image's own metadata, which rides every push. The pixel payload is
+    // omitted whenever Flutter already owns the content (remoteRef), so it cannot be the source of
+    // truth for how big the canvas is.
+    _imgWidth = vImage.width ?? vImage.imageData?.width ?? _baseImage?.width ?? 0;
+    _imgHeight = vImage.height ?? vImage.imageData?.height ?? _baseImage?.height ?? 0;
   }
 
-  Future<(ui.Image, Uint8List)?> _paintToImageAndPngBytes(
-      List<Shape> shapesToRender) async {
+  Future<ui.Image> _paintToImage(List<Shape> shapesToRender) async {
     final w = _imgWidth > 0 ? _imgWidth : 1;
     final h = _imgHeight > 0 ? _imgHeight : 1;
 
@@ -612,37 +641,43 @@ class GCDrawer extends GCDrawerBase {
     }
 
     final picture = recorder.endRecording();
-    final image = await picture.toImage(w, h);
-    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    final bytes = byteData?.buffer.asUint8List();
-    if (bytes == null) return null;
-    return (image, bytes);
+    return picture.toImage(w, h);
   }
 
   Future<Uint8List?> _paintToPngBytes(List<Shape> shapesToRender) async {
-    final result = await _paintToImageAndPngBytes(shapesToRender);
-    return result?.$2;
+    final image = await _paintToImage(shapesToRender);
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    image.dispose();
+    return byteData?.buffer.asUint8List();
   }
 
-  // Big-endian int64 write, matching main.dart's _readInt64BE on the Java read side.
-  Uint8List _int64BE(int value) {
-    final v = ByteData(8);
-    v.setUint32(0, value >> 32, Endian.big);
-    v.setUint32(4, value & 0xFFFFFFFF, Endian.big);
-    return v.buffer.asUint8List();
-  }
+  // ByteData.getInt64 throws "Int64 accessor not supported by dart2js" on web; read the hi/lo
+  // uint32 halves instead (same rationale as main.dart's copy).
+  static int _readInt64BE(ByteData v, int offset) =>
+      (v.getUint32(offset, Endian.big) << 32) | v.getUint32(offset + 4, Endian.big);
 
-  Future<void> _renderAndSend() async {
-    final result = await _paintToImageAndPngBytes(shapes);
-    if (result == null) return;
-    final (image, pngBytes) = result;
-    final ref = ImageUtils.registerRemoteImage(image);
-    // Desktop binary path: send remoteRef + raw PNG bytes as-is — no base64 (the binary comm
-    // channel carries them verbatim). Java reads them via onBytes (see GCImageDrawer.java).
-    final payload = Uint8List(8 + pngBytes.length)
-      ..setRange(0, 8, _int64BE(ref))
-      ..setRange(8, 8 + pngBytes.length, pngBytes);
-    EquoCommService.sendBytes('${state.swt}/${state.id}/imageResult', payload);
+  /// Renders the drawn state and keeps it here, registered under the ref Java minted. Nothing
+  /// crosses back unless [wantPixels] — the pixels are fetched later, and only if some Java caller
+  /// actually reads them (see `Image/requestPixels` in main.dart).
+  Future<void> _renderAndSend(int ref, bool wantPixels) async {
+    // Abandoned draw: nobody will ever read this render, so skip painting it. A hot path, since
+    // JFace rebuilds its buffer Image on every repaint.
+    if (ref == 0 && !wantPixels) {
+      _unregisterImageListeners();
+      return;
+    }
+    final image = await _paintToImage(shapes);
+    if (ref != 0) ImageUtils.registerRemoteImage(ref, image);
+    if (wantPixels) {
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final pngBytes = byteData?.buffer.asUint8List();
+      // Binary path: raw PNG bytes, no base64 (the comm channel carries them verbatim).
+      if (pngBytes != null) {
+        EquoCommService.sendBytes('${state.swt}/${state.id}/imageResult', pngBytes);
+      }
+    }
+    // Unregistered: nothing here owns it, so nothing would ever dispose it.
+    if (ref == 0) image.dispose();
     _unregisterImageListeners();
   }
 
@@ -660,7 +695,12 @@ class GCDrawer extends GCDrawerBase {
     for (final channel in const ['imageInit', 'gcDispose', 'renderSnapshot']) {
       final key = '${state.swt}/${state.id}/$channel';
       final token = _localTokens.remove(key);
-      if (token != null) EquoCommService.remove(key, token);
+      if (token == null) continue;
+      if (identical(token, _rawByteChannel)) {
+        EquoCommService.remove(key);
+      } else {
+        EquoCommService.remove(key, token);
+      }
     }
   }
 
@@ -751,7 +791,8 @@ class GCDrawer extends GCDrawerBase {
           s.rect.translate(offset.dx, offset.dy), s.color, clipArea),
       ImageShape s when s.type == ImageType.raster => ImageShape.raster(
           s.image!, s.srcRect!, s.destRect.translate(offset.dx, offset.dy),
-          clipRect: clipArea, colorFilter: s.colorFilter, alpha: s.alpha),
+          clipRect: clipArea, colorFilter: s.colorFilter, alpha: s.alpha,
+          opaqueSource: s.opaqueSource),
       ImageShape s when s.type == ImageType.svg => ImageShape.svg(
           s.pictureInfo!, s.destRect.translate(offset.dx, offset.dy),
           clipRect: clipArea, colorFilter: s.colorFilter, alpha: s.alpha),
@@ -999,8 +1040,8 @@ class GCDrawer extends GCDrawerBase {
   @override
   void onCopyAreaImageintint(VGCCopyAreaImageintint o) async {
     try {
-      final imgW = o.image?.imageData?.width ?? 0;
-      final imgH = o.image?.imageData?.height ?? 0;
+      final imgW = o.image?.width ?? o.image?.imageData?.width ?? 0;
+      final imgH = o.image?.height ?? o.image?.imageData?.height ?? 0;
       if (imgW <= 0 || imgH <= 0) return;
       final x = o.x.toDouble();
       final y = o.y.toDouble();
@@ -1167,7 +1208,27 @@ abstract class Shape {
   @override
   String toString();
   Rect? get clipRect => null;
+
+  /// The area this shape paints into, or null when it cannot be described cheaply. Null is always
+  /// the safe answer: a shape of unknown area is never treated as hidden.
+  Rect? get paintedBounds => null;
+
+  /// The area this shape paints *opaquely*, or null. Whatever falls entirely inside it is invisible
+  /// and can be dropped: a control repainted through a GC opened outside a Paint draws over what the
+  /// last cycle left, and keeping both means redrawing every cycle the control ever took.
+  ///
+  /// Conservative by construction — a shape only claims coverage when it is a filled, fully opaque,
+  /// unclipped (or clip-containing) paint of a known rectangle.
+  Rect? get opaqueCoverage => null;
 }
+
+/// Whether [outer] wholly contains [inner], edges included. Rect.contains excludes the right and
+/// bottom edges, so it never reports a rectangle as holding itself.
+bool _containsRect(Rect outer, Rect inner) =>
+    inner.left >= outer.left &&
+    inner.top >= outer.top &&
+    inner.right <= outer.right &&
+    inner.bottom <= outer.bottom;
 
 /// One scoped Paint: the ops it emitted, and the rectangle it was allowed to touch.
 ///
@@ -1177,6 +1238,13 @@ class RegionShape extends Shape {
   RegionShape(this.rect, this.ops);
   final Rect rect;
   final List<Shape> ops;
+
+  // A scoped Paint erases its rectangle before painting it, so it covers it outright.
+  @override
+  Rect? get paintedBounds => rect;
+
+  @override
+  Rect? get opaqueCoverage => rect;
 
   void drawOver(ui.Canvas c, ui.Color background) {
     c.save();
@@ -1337,6 +1405,15 @@ class RectShape extends Shape {
   final bool isFilled;
   @override
   final Rect? clipRect;
+
+  @override
+  Rect? get paintedBounds => isFilled ? rect : rect.inflate(strokeWidth);
+
+  @override
+  Rect? get opaqueCoverage =>
+      isFilled && color.alpha == 0xFF && (clipRect == null || _containsRect(clipRect!, rect))
+          ? rect
+          : null;
 
   @override
   void draw(ui.Canvas c) {
@@ -1662,15 +1739,33 @@ class ImageShape extends Shape {
     this.clipRect,
     this.colorFilter,
     this.alpha = 255,
+    this.opaqueSource = false,
   });
 
+  /// Whether every pixel of [image] is known opaque. Only set for a picture this side rendered
+  /// itself, which always starts from an opaque fill — an application bitmap may have alpha and
+  /// nothing here can tell cheaply.
+  final bool opaqueSource;
+
   factory ImageShape.raster(ui.Image image, Rect srcRect, Rect destRect,
-      {Rect? clipRect, ColorFilter? colorFilter, int alpha = 255}) {
+      {Rect? clipRect, ColorFilter? colorFilter, int alpha = 255, bool opaqueSource = false}) {
     return ImageShape._(
         type: ImageType.raster, image: image, srcRect: srcRect,
         destRect: destRect, clipRect: clipRect, colorFilter: colorFilter,
-        alpha: alpha);
+        alpha: alpha, opaqueSource: opaqueSource);
   }
+
+  @override
+  Rect? get paintedBounds => destRect;
+
+  @override
+  Rect? get opaqueCoverage => type == ImageType.raster &&
+          opaqueSource &&
+          alpha == 255 &&
+          colorFilter == null &&
+          (clipRect == null || _containsRect(clipRect!, destRect))
+      ? destRect
+      : null;
 
   factory ImageShape.svg(PictureInfo pictureInfo, Rect destRect,
       {Rect? clipRect, ColorFilter? colorFilter, int alpha = 255}) {
@@ -1815,7 +1910,10 @@ class ImageShape extends Shape {
               ? ColorFilter.mode(tint ?? AppColors.getColor(true), BlendMode.srcIn)
               : null);
       return ImageShape.raster(uiImage, srcRect, destRect,
-          clipRect: clipRect, colorFilter: rasterFilter, alpha: alpha);
+          clipRect: clipRect, colorFilter: rasterFilter, alpha: alpha,
+          // A remoteRef names a picture this side rendered, and those start from an opaque fill.
+          // An application bitmap carries no such promise.
+          opaqueSource: vImage.remoteRef != null);
     } catch (e) {
       return ImageShape._(
         type: ImageType.raster,

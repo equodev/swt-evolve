@@ -35,6 +35,12 @@ class DoubleTapDetector {
   /// given a [position]. Ignored when no position is supplied.
   final double slop;
 
+  /// Clock used to age a tap sequence. Widget tests pump a simulated clock, so without this a
+  /// multi-tap test measures how fast the machine ran the taps rather than the behaviour under
+  /// test, and pairs or fails to pair depending on load.
+  @visibleForTesting
+  static DateTime Function() clock = DateTime.now;
+
   int _tapCount = 0;
   DateTime? _lastTime;
   Object? _lastKey;
@@ -46,7 +52,7 @@ class DoubleTapDetector {
   /// After a triple (count == 3) the internal state is cleared so the next
   /// tap starts a fresh sequence.
   int registerTap({Object? key, Offset? position}) {
-    final now = DateTime.now();
+    final now = clock();
     final prevTime = _lastTime;
     final prevKey = _lastKey;
     final prevPos = _lastPos;

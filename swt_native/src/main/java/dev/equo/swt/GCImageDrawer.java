@@ -7,7 +7,6 @@ import org.eclipse.swt.widgets.*;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -133,12 +132,31 @@ public class GCImageDrawer extends EmbeddedBridge {
         started = true;
         long gcId = this.gcId;
         Image dartImage = this.dartImage;
-        Consumer<byte[]> onImageResult = this.onImageResult;
         CommService comm = resolvedComm;
         if (comm == null && !nativeWindowAvailable) {
             cancelAndWake(dartImage);
             return;
         }
+        // Serialized synchronously, before endDrawCycle mints this cycle's ref, so it captures the
+        // Image as the GC found it. Deferring it would describe the Image by the render it has not
+        // produced yet, leaving the render side waiting on its own output as its base.
+        byte[] initBytes;
+        try {
+            initBytes = serializer.to(dartImage);
+        } catch (Exception e) {
+            System.err.println("[GCImageDrawer] Failed to serialize imageInit: " + e.getMessage());
+            initBytes = null;
+        }
+        final byte[] imageInit = initBytes;
+        if (comm != null) {
+            // No handshake: frames apply one at a time in arrival order, so the GC/create handler
+            // has built the drawer before anything sent after it is applied.
+            comm.send("GC/create", ByteBuffer.allocate(8).putLong(gcId).array());
+            if (imageInit != null) comm.send("GC/" + gcId + "/imageInit", imageInit);
+            flushOps();
+            return;
+        }
+        // An isolated off-screen engine has to boot before it can be addressed at all.
         super.onReady(this, Void.class)
                 .orTimeout(CLIENT_READY_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .whenComplete((ignored, err) -> {
@@ -149,37 +167,14 @@ public class GCImageDrawer extends EmbeddedBridge {
                         return;
                     }
                     try {
-                        serializeAndSend("GC/" + gcId + "/imageInit", dartImage);
+                        if (imageInit != null) comm().send("GC/" + gcId + "/imageInit", imageInit);
                     } catch (Exception e) {
                         System.err.println("[GCImageDrawer] Failed to send imageInit: " + e.getMessage());
                     }
-                    String resultEvent = "GC/" + gcId + "/imageResult";
-                    // Desktop binary path: the rendered PNG arrives as raw bytes via sendBytes — no base64.
-                    // Payload is 8-byte remoteRef + PNG; only trust the ref on the shared-engine path.
-                    comm().on(resultEvent, byte[].class, bytes -> {
-                        comm().remove(resultEvent); // the shared comm outlives this one-shot render
-                        long remoteRef = ByteBuffer.wrap(bytes).getLong();
-                        byte[] pngBytes = Arrays.copyOfRange(bytes, 8, bytes.length);
-                        if (comm != null && dartImage != null) {
-                            if (dartImage.isDisposed()) {
-                                // The Image was disposed before its render came back — its constructor
-                                // threw and abandoned it, so nothing will call dispose() again to release
-                                // the ref this render just registered on the Dart side. Release it here.
-                                comm.send("Image/releaseRemoteRef", ByteBuffer.allocate(8).putLong(remoteRef).array());
-                            } else if (dartImage.getImpl() instanceof DartImage di) {
-                                di._setRemoteRef(remoteRef);
-                            }
-                        }
-                        onImageResult.accept(pngBytes);
-                    });
                     // Flush buffered GC ops (drawLine, drawRect, etc.) now that Flutter's
                     // GCDrawer.standalone has registered its listeners.
                     flushOps();
                 });
-        if (comm != null) {
-            comm.send("GC/create", ByteBuffer.allocate(8).putLong(gcId).array());
-            return;
-        }
         try {
             ctx = FlutterNative.initialize(comm().getPort(), 0, gcId, widgetName(this), "", 0, 0, 0, 0);
         } catch (Error e) {
@@ -207,13 +202,59 @@ public class GCImageDrawer extends EmbeddedBridge {
 
     /**
      * Called from DartGC.destroy() — signals Flutter that GC operations are done, which is what
-     * makes it render. Starts the drawer, since the caller is about to wait for that render.
-     * Queued so it is sent after all other buffered ops have been flushed.
+     * makes it render, and hands over the ref that render will live under. Starts the drawer, since
+     * nothing has stood it up before now. Nothing comes back and nothing is waited for: the ref is
+     * minted here, so the Image can treat the picture as Flutter-owned the moment this returns, and
+     * the pixels are pulled across later only if some caller reads them
+     * ({@link org.eclipse.swt.graphics.GCHelper#fetchRemotePixels}).
+     *
+     * @param needsPixelsForMirror this side has a native {@code SwtImage} mirror that has to be
+     *                             filled with real bytes, so ask for the PNG anyway.
+     * @return whether pixels are on their way back, i.e. whether the caller must wait for them.
+     */
+    public boolean endDrawCycle(boolean needsPixelsForMirror) {
+        start();
+        // Only the shared engine can own the picture: an isolated off-screen engine has its own
+        // image cache, which the Display's engine cannot resolve a ref against.
+        boolean flutterOwns = resolvedComm != null;
+        boolean wantPixels = needsPixelsForMirror || !flutterOwns;
+        CommService c = flutterOwns ? resolvedComm : super.comm();
+        // Ref 0 means retain nothing there, since nothing here could read or release it.
+        long remoteRef = flutterOwns ? org.eclipse.swt.graphics.GCHelper.nextRemoteRef() : 0L;
+        if (wantPixels) {
+            String resultEvent = "GC/" + gcId + "/imageResult";
+            c.on(resultEvent, byte[].class, bytes -> {
+                c.remove(resultEvent); // the shared comm outlives this one-shot render
+                Consumer<byte[]> sink = onImageResult;
+                if (sink != null) sink.accept(bytes);
+            });
+        }
+        byte[] payload = ByteBuffer.allocate(9)
+                .putLong(remoteRef)
+                .put((byte) (wantPixels ? 1 : 0))
+                .array();
+        queueOp(() -> c.send("GC/" + gcId + "/gcDispose", payload));
+        Image image = dartImage;
+        if (image == null || remoteRef == 0) return wantPixels;
+        if (image.isDisposed()) {
+            // The Image was abandoned mid-construction (its drawer threw), so nothing will ever
+            // dispose it and release the ref the render is about to register. Release it here.
+            queueOp(() -> c.send("Image/releaseRemoteRef", ByteBuffer.allocate(8).putLong(remoteRef).array()));
+        } else if (image.getImpl() instanceof DartImage di) {
+            di._adoptRemoteRender(remoteRef, c);
+        }
+        return wantPixels;
+    }
+
+    /**
+     * Ends the cycle without adopting a render: ref 0 tells the Flutter side to render nothing and
+     * tear itself down. Used when the drawing was abandoned but the drawer was already started.
      */
     public void sendGcDispose() {
         start();
         CommService c = resolvedComm != null ? resolvedComm : super.comm();
-        queueOp(() -> c.send("GC/" + gcId + "/gcDispose"));
+        byte[] payload = ByteBuffer.allocate(9).putLong(0L).put((byte) 0).array();
+        queueOp(() -> c.send("GC/" + gcId + "/gcDispose", payload));
     }
 
     /**

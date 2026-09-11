@@ -13,6 +13,7 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/styledtext.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart' show ScenePainter;
 import 'package:swtflutter/src/impl/styledtext_evolve.dart';
+import 'package:swtflutter/src/impl/utils/double_tap_detector.dart';
 
 const double _kWidth = 300;
 const double _kHeight = 160;
@@ -21,6 +22,8 @@ const double _kHeight = 160;
 const String _kText = 'alpha beta\ngamma delta\nepsilon';
 
 void main() {
+  tearDown(() => DoubleTapDetector.clock = DateTime.now);
+
   VStyledText value({bool? doubleClickEnabled}) => VStyledText()
     ..doubleClickEnabled = doubleClickEnabled
     ..swt = 'StyledText'
@@ -76,9 +79,15 @@ void main() {
   /// Three taps at the same point inside the DoubleTapDetector window.
   Future<void> tripleTapAt(WidgetTester tester, Offset local) async {
     final at = tester.getTopLeft(editor()) + local;
+    // Step the detector's clock by a fixed amount per tap. Left on the wall clock, this measures
+    // how long the harness took to run three taps — under load that exceeds the pairing window and
+    // the third tap opens a new sequence, turning a line select into a word select.
+    var fake = DateTime(2020);
+    DoubleTapDetector.clock = () => fake;
     for (var i = 0; i < 3; i++) {
       await tester.tapAt(at);
       await tester.pump();
+      fake = fake.add(const Duration(milliseconds: 20));
     }
     await tester.pump();
   }

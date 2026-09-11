@@ -9,6 +9,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.DartFont;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Composite;
@@ -429,6 +430,7 @@ public class StyledTextHelper {
 
             if (stateUpdate.containsKey("topPixel")) {
                 int topPixel = ((Number) stateUpdate.get("topPixel")).intValue();
+                int scrolledBy = topPixel - styledText.topPixel;
                 styledText.topPixel = topPixel;
                 styledText.verticalScrollOffset = topPixel;
                 // topIndexY carries the sub-line remainder topIndex's integer division drops;
@@ -450,6 +452,19 @@ public class StyledTextHelper {
                     dev.equo.swt.FlutterBridge.withoutDirty(styledText,
                             () -> verticalBar.setSelection(topPixel));
                     verticalBar.notifyListeners(SWT.Selection, new Event());
+                }
+                // A render-side scroll moves no pixels here, so nothing requests the Paint that
+                // StyledText#scrollVertical would. JFace's line-number ruler is keyed on it —
+                // VisibleLinesTracker is a PaintListener on the text widget — so without this the
+                // gutter stands still. Scoped to the exposed band, as the platform scopes it.
+                if (scrolledBy != 0) {
+                    Rectangle client = styledText.getApi().getClientArea();
+                    int exposed = Math.min(Math.abs(scrolledBy), client.height);
+                    if (exposed > 0) {
+                        int y = scrolledBy > 0 ? client.height - exposed : 0;
+                        org.eclipse.swt.widgets.ControlHelper.markDamagedWithoutStateEcho(
+                                styledText, client.x, y, client.width, exposed);
+                    }
                 }
             }
 

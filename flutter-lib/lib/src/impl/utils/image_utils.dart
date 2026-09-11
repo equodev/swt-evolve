@@ -39,13 +39,26 @@ class ImageUtils {
 
   // ui.Image instances rendered by GCDrawer.standalone, keyed by the remoteRef Java holds so a
   // later drawImage() can reuse them instead of round-tripping PNG bytes (see GCImageDrawer.java).
+  // Java mints the refs and hands one down with gcDispose, so it can treat a render as owned by
+  // Flutter without waiting for an answer.
   static final Map<int, ui.Image> _remoteImageCache = {};
-  static int _nextRemoteRef = 1;
 
-  static int registerRemoteImage(ui.Image image) {
-    final ref = _nextRemoteRef++;
+  static void registerRemoteImage(int ref, ui.Image image) {
+    final previous = _remoteImageCache[ref];
     _remoteImageCache[ref] = image;
-    return ref;
+    previous?.dispose();
+  }
+
+  /// The rendered pixels behind [ref], PNG-encoded — the answer to Java's explicit
+  /// `Image/requestPixels`. Null when nothing is registered under that ref.
+  static Future<Uint8List?> encodeRemoteImagePng(int ref) async {
+    final image = _remoteImageCache[ref];
+    if (image == null) {
+      print('[Image] no ui.Image registered for remoteRef $ref');
+      return null;
+    }
+    final data = await image.toByteData(format: ui.ImageByteFormat.png);
+    return data?.buffer.asUint8List();
   }
 
   static void releaseRemoteImage(int ref) {

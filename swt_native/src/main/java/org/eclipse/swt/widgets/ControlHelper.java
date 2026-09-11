@@ -6,10 +6,8 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import java.util.Collections;
-import java.util.Set;
-import java.util.WeakHashMap;
-
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 
 public class ControlHelper {
@@ -293,14 +291,37 @@ public class ControlHelper {
      * package, unlike Widget.hooks(int).
      */
     public static void markDamaged(DartControl c) {
-        if (c.hooks(SWT.Paint))
+        if (c.hooks(SWT.Paint)) {
+            skipStateEchoAfterPaint.remove(c);
             paint(c);
+        }
     }
 
     /** As {@link #markDamaged(DartControl)}, for an invalidation that named the area it dirtied. */
     public static void markDamaged(DartControl c, int x, int y, int width, int height) {
-        if (c.hooks(SWT.Paint))
+        if (c.hooks(SWT.Paint)) {
+            skipStateEchoAfterPaint.remove(c);
             paint(c, x, y, width, height);
+        }
+    }
+
+    // Controls whose next scheduled Paint must not echo their state back to the client.
+    private static final Set<DartControl> skipStateEchoAfterPaint =
+            Collections.newSetFromMap(new WeakHashMap<>());
+
+    /**
+     * Repaints without serializing the widget back, for an invalidation the client provoked by
+     * reporting something it is already showing. {@link dev.equo.swt.FlutterBridge#withoutDirty}
+     * applied to the Paint this schedules rather than to the calling stack.
+     */
+    public static void markDamagedWithoutStateEcho(DartControl c, int x, int y, int width, int height) {
+        if (!c.hooks(SWT.Paint)) return;
+        synchronized (pendingDamage) {
+            if (!paintQueued.contains(c) || skipStateEchoAfterPaint.contains(c)) {
+                skipStateEchoAfterPaint.add(c);
+            }
+        }
+        paint(c, x, y, width, height);
     }
 
     public static void paint(DartControl c) {
@@ -354,7 +375,8 @@ public class ControlHelper {
             if (c.drawCount > 0)
                 return;
             firePaint(c);
-            c.dirty();
+            if (!skipStateEchoAfterPaint.remove(c))
+                c.dirty();
         });
     }
 

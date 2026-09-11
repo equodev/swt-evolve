@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -67,7 +68,7 @@ class EquoCommService {
       _comm.sendBytes(userEventActionId, bytes);
 
   static void onBytes(
-          String userEventActionId, void Function(Uint8List) callback) =>
+          String userEventActionId, FutureOr<void> Function(Uint8List) callback) =>
       _comm.onBytes(userEventActionId, callback);
 
   static void remove(eventName, [Object? token]) => _comm.remove(eventName, token);

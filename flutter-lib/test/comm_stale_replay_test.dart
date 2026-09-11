@@ -48,7 +48,10 @@ void main() {
 
     // Buffered while the widget is unmounted (no handler). Whether it is stale
     // or fresh (dialog content) cannot be known here.
+    // A frame is routed when it is applied, not when it arrives, so let it apply: that is the
+    // moment "no handler" is decided, and the moment the payload becomes a buffered one.
     comm.receiveJson('Table/123', {'width': -1});
+    await _drainMicrotasks();
 
     final received = <dynamic>[];
     comm.on('Table/123', received.add);
@@ -70,6 +73,8 @@ void main() {
     final comm = _TestComm();
     comm.receiveJson('swt.evolve.properties', {'theme_name': 'dark'});
     comm.receiveJson('Display/7', {'bounds': null});
+    // As above: applied first, so both are genuinely buffered when the handlers register.
+    await _drainMicrotasks();
 
     final props = <dynamic>[];
     final display = <dynamic>[];
