@@ -53,6 +53,11 @@ TableThemeExtension _$TableThemeExtensionFromJson(
   borderColor: const ColorConverter().fromJson(json['borderColor'] as String),
   linesColor: const ColorConverter().fromJson(json['linesColor'] as String),
   rowHeight: (json['rowHeight'] as num).toDouble(),
+  cellHoverZoomEnabled: json['cellHoverZoomEnabled'] as bool,
+  cellHoverZoomScale: (json['cellHoverZoomScale'] as num).toDouble(),
+  cellHoverZoomDuration: Duration(
+    microseconds: (json['cellHoverZoomDuration'] as num).toInt(),
+  ),
   headerHeight: (json['headerHeight'] as num).toDouble(),
   rowPadding: const EdgeInsetsConverter().fromJson(
     json['rowPadding'] as Map<String, dynamic>,
@@ -165,6 +170,9 @@ Map<String, dynamic> _$TableThemeExtensionToJson(
   'borderColor': const ColorConverter().toJson(instance.borderColor),
   'linesColor': const ColorConverter().toJson(instance.linesColor),
   'rowHeight': instance.rowHeight,
+  'cellHoverZoomEnabled': instance.cellHoverZoomEnabled,
+  'cellHoverZoomScale': instance.cellHoverZoomScale,
+  'cellHoverZoomDuration': instance.cellHoverZoomDuration.inMicroseconds,
   'headerHeight': instance.headerHeight,
   'rowPadding': const EdgeInsetsConverter().toJson(instance.rowPadding),
   'headerPadding': const EdgeInsetsConverter().toJson(instance.headerPadding),

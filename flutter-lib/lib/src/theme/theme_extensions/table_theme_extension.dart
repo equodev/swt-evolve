@@ -41,6 +41,11 @@ class TableThemeExtension extends ThemeExtension<TableThemeExtension> with _$Tab
   
   // Sizes
   final double rowHeight;
+
+  /// Grows the content of the cell under the pointer, the same feedback a hovered ToolItem gives.
+  final bool cellHoverZoomEnabled;
+  final double cellHoverZoomScale;
+  final Duration cellHoverZoomDuration;
   final double headerHeight;
   
   // Spacing and padding
@@ -110,6 +115,9 @@ class TableThemeExtension extends ThemeExtension<TableThemeExtension> with _$Tab
     required this.borderColor,
     required this.linesColor,
     required this.rowHeight,
+    required this.cellHoverZoomEnabled,
+    required this.cellHoverZoomScale,
+    required this.cellHoverZoomDuration,
     required this.headerHeight,
     required this.rowPadding,
     required this.headerPadding,

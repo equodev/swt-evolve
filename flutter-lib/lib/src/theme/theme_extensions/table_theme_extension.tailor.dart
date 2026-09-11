@@ -28,6 +28,9 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
   Color get borderColor;
   Color get linesColor;
   double get rowHeight;
+  bool get cellHoverZoomEnabled;
+  double get cellHoverZoomScale;
+  Duration get cellHoverZoomDuration;
   double get headerHeight;
   EdgeInsets get rowPadding;
   EdgeInsets get headerPadding;
@@ -82,6 +85,9 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
     Color? borderColor,
     Color? linesColor,
     double? rowHeight,
+    bool? cellHoverZoomEnabled,
+    double? cellHoverZoomScale,
+    Duration? cellHoverZoomDuration,
     double? headerHeight,
     EdgeInsets? rowPadding,
     EdgeInsets? headerPadding,
@@ -142,6 +148,10 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
       borderColor: borderColor ?? this.borderColor,
       linesColor: linesColor ?? this.linesColor,
       rowHeight: rowHeight ?? this.rowHeight,
+      cellHoverZoomEnabled: cellHoverZoomEnabled ?? this.cellHoverZoomEnabled,
+      cellHoverZoomScale: cellHoverZoomScale ?? this.cellHoverZoomScale,
+      cellHoverZoomDuration:
+          cellHoverZoomDuration ?? this.cellHoverZoomDuration,
       headerHeight: headerHeight ?? this.headerHeight,
       rowPadding: rowPadding ?? this.rowPadding,
       headerPadding: headerPadding ?? this.headerPadding,
@@ -258,6 +268,15 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
       borderColor: Color.lerp(borderColor, other.borderColor, t)!,
       linesColor: Color.lerp(linesColor, other.linesColor, t)!,
       rowHeight: t < 0.5 ? rowHeight : other.rowHeight,
+      cellHoverZoomEnabled: t < 0.5
+          ? cellHoverZoomEnabled
+          : other.cellHoverZoomEnabled,
+      cellHoverZoomScale: t < 0.5
+          ? cellHoverZoomScale
+          : other.cellHoverZoomScale,
+      cellHoverZoomDuration: t < 0.5
+          ? cellHoverZoomDuration
+          : other.cellHoverZoomDuration,
       headerHeight: t < 0.5 ? headerHeight : other.headerHeight,
       rowPadding: t < 0.5 ? rowPadding : other.rowPadding,
       headerPadding: t < 0.5 ? headerPadding : other.headerPadding,
@@ -412,6 +431,18 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
               other.linesColor,
             ) &&
             const DeepCollectionEquality().equals(rowHeight, other.rowHeight) &&
+            const DeepCollectionEquality().equals(
+              cellHoverZoomEnabled,
+              other.cellHoverZoomEnabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              cellHoverZoomScale,
+              other.cellHoverZoomScale,
+            ) &&
+            const DeepCollectionEquality().equals(
+              cellHoverZoomDuration,
+              other.cellHoverZoomDuration,
+            ) &&
             const DeepCollectionEquality().equals(
               headerHeight,
               other.headerHeight,
@@ -568,6 +599,9 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
       const DeepCollectionEquality().hash(borderColor),
       const DeepCollectionEquality().hash(linesColor),
       const DeepCollectionEquality().hash(rowHeight),
+      const DeepCollectionEquality().hash(cellHoverZoomEnabled),
+      const DeepCollectionEquality().hash(cellHoverZoomScale),
+      const DeepCollectionEquality().hash(cellHoverZoomDuration),
       const DeepCollectionEquality().hash(headerHeight),
       const DeepCollectionEquality().hash(rowPadding),
       const DeepCollectionEquality().hash(headerPadding),
@@ -632,6 +666,12 @@ extension TableThemeExtensionBuildContextProps on BuildContext {
   Color get borderColor => tableThemeExtension.borderColor;
   Color get linesColor => tableThemeExtension.linesColor;
   double get rowHeight => tableThemeExtension.rowHeight;
+
+  /// Grows the content of the cell under the pointer, the same feedback a hovered ToolItem gives.
+  bool get cellHoverZoomEnabled => tableThemeExtension.cellHoverZoomEnabled;
+  double get cellHoverZoomScale => tableThemeExtension.cellHoverZoomScale;
+  Duration get cellHoverZoomDuration =>
+      tableThemeExtension.cellHoverZoomDuration;
   double get headerHeight => tableThemeExtension.headerHeight;
   EdgeInsets get rowPadding => tableThemeExtension.rowPadding;
   EdgeInsets get headerPadding => tableThemeExtension.headerPadding;

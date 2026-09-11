@@ -27,6 +27,9 @@ class ToolItemThemeExtension extends ThemeExtension<ToolItemThemeExtension> with
   final double separatorIndent;
   final TextStyle? fontStyle;
   final double defaultIconSize;
+  final bool hoverZoomEnabled;
+  final double hoverZoomScale;
+  final Duration hoverZoomDuration;
   final double iconSize;
   final double emptyButtonSize;
   final double dropdownArrowSize;
@@ -77,6 +80,9 @@ class ToolItemThemeExtension extends ThemeExtension<ToolItemThemeExtension> with
     required this.separatorThickness,
     required this.separatorIndent,
     required this.defaultIconSize,
+    required this.hoverZoomEnabled,
+    required this.hoverZoomScale,
+    required this.hoverZoomDuration,
     required this.iconSize,
     required this.emptyButtonSize,
     required this.dropdownArrowSize,

@@ -81,6 +81,9 @@ TableThemeExtension _getTableTheme({
     
     // Sizes - calculated dynamically based on text and font
     rowHeight: 0.0,
+    cellHoverZoomEnabled: hoverZoom,
+    cellHoverZoomScale: 1.25,
+    cellHoverZoomDuration: const Duration(milliseconds: 70),
     headerHeight: 0.0,
     
     // Spacing and padding

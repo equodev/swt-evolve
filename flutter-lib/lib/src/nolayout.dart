@@ -8,6 +8,20 @@ import 'gen/widget.dart';
 import 'gen/widgets.dart';
 import 'gen/widgets.dart' as gen;
 import 'theme/theme_extensions/composite_theme_extension.dart';
+import 'theme/theme_extensions/toolitem_theme_extension.dart';
+
+/// The child's own bounds grown by [margin] on every side.
+class _InflatedBounds extends CustomClipper<Rect> {
+  const _InflatedBounds(this.margin);
+
+  final double margin;
+
+  @override
+  Rect getClip(Size size) => (Offset.zero & size).inflate(margin);
+
+  @override
+  bool shouldReclip(_InflatedBounds oldClipper) => oldClipper.margin != margin;
+}
 
 
 class NoLayout extends StatelessWidget {
@@ -41,9 +55,24 @@ class NoLayout extends StatelessWidget {
               id: child.id,
               child: isPanelLayout
                   ? _wrapAsPanel(_buildChild(child), theme!)
-                  : ClipRect(child: _buildChild(child)),
+                  : _clipToBounds(context, _buildChild(child)),
             )
         ]);
+  }
+
+  /// A control is clipped to its own bounds, which is what SWT does. The hover zoom is a paint-time
+  /// transform, so a control sized to exactly its icon -- a one-item ToolBar in a GridLayout cell,
+  /// say -- would have the grown icon cut off at that boundary instead of growing. With the zoom on,
+  /// the clip is inflated by the room the zoom needs, so the icon reaches into the surrounding
+  /// pixels the way an icon with padding to spare already does. Still a clip, so a control cannot
+  /// bleed arbitrarily.
+  static Widget _clipToBounds(BuildContext context, Widget child) {
+    final theme = Theme.of(context).extension<ToolItemThemeExtension>();
+    if (theme == null || !theme.hoverZoomEnabled) return ClipRect(child: child);
+    return ClipRect(
+      clipper: _InflatedBounds(theme.defaultIconSize * (theme.hoverZoomScale - 1) / 2),
+      child: child,
+    );
   }
 
   Widget _buildChild(VControl child) {

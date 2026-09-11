@@ -88,6 +88,11 @@ bool get useEvolveIcons => !(getConfigFlags().disable_evolve_icons ?? false);
 /// theme color. Both fall back to the same value the Java side sends when no config arrived yet.
 bool get preserveIconColors => getConfigFlags().preserve_icon_colors ?? false;
 
+/// True when Evolve grows what the pointer is over -- a ToolItem's icon, a Table cell's content --
+/// which it does unless the application opts out. How far and how fast are theme values, per widget:
+/// ToolItemThemeExtension.hoverZoom* and TableThemeExtension.cellHoverZoom*.
+bool get hoverZoom => !(getConfigFlags().disable_hover_zoom ?? false);
+
 /// True when the bundled icon set may stand in for an image the application blits with
 /// `GC#drawImage`. Off by default: the set is keyed by the bare filename stem, so an application
 /// image sharing a name with one of ours would otherwise be replaced by it.

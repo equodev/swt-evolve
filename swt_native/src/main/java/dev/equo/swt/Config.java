@@ -651,6 +651,9 @@ public class Config {
             configFlags.disable_swt_canvas_colors = Boolean.getBoolean("swt.evolve.disable_swt_canvas_colors");
             configFlags.use_swt_fonts = Boolean.getBoolean("swt.use_swt_fonts");
             configFlags.preserve_icon_colors = Boolean.parseBoolean(System.getProperty("swt.evolve.preserve_icon_colors", "false"));
+            // Toolbar icons and table cells grow under the pointer by default; opt out to render
+            // like native SWT:  -Dswt.evolve.disable_hover_zoom=true
+            configFlags.disable_hover_zoom = Boolean.getBoolean("swt.evolve.disable_hover_zoom");
             configFlags.show_theme_color_palette = Boolean.getBoolean("swt.evolve.show_theme_color_palette");
             configFlags.show_scaling_control = Boolean.getBoolean("swt.evolve.show_scaling_control");
             configFlags.decorations_align = DecorationsAlign.fromString(System.getProperty("swt.evolve.decorations_align", "vleft"));

@@ -249,7 +249,10 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
           padding: cellPadding,
           alignment: checkboxOnly || imageOnly ? cellAlignment : Alignment.centerLeft,
           color: cellBackgroundColor,
-          child: checkboxOnly
+          child: _CellHoverZoom(
+            theme: theme,
+            alignment: checkboxOnly || imageOnly ? cellAlignment : Alignment.centerLeft,
+            child: checkboxOnly
               ? buildCheckbox(theme, enabled)
               : imageOnly
                   ? buildImageIcon(cellImage!, enabled, textStyle, theme)
@@ -272,6 +275,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
                         ),
                       ],
                     ),
+          ),
         ),
       ),
     );
@@ -488,5 +492,129 @@ class _TableCheckboxButton extends ButtonSwt<VButton> {
   @override
   void sendSelectionSelection(VButton val, VEvent? payload) {
     onChanged();
+  }
+}
+
+/// Grows a cell's content while the pointer is over that cell, the feedback a hovered ToolItem
+/// gives. Layout never changes: the in-place content keeps its box and the grown copy is drawn in
+/// the [Overlay].
+///
+/// The overlay is what puts the grown content in front of the column divider. A cell cannot do that
+/// on its own -- RenderTable paints every child first and its TableBorder last, so anything a cell
+/// paints is under the lines. The overlay sits above the whole table, so the copy clears them.
+class _CellHoverZoom extends StatefulWidget {
+  const _CellHoverZoom({
+    required this.theme,
+    required this.alignment,
+    required this.child,
+  });
+
+  final TableThemeExtension theme;
+  final Alignment alignment;
+  final Widget child;
+
+  @override
+  State<_CellHoverZoom> createState() => _CellHoverZoomState();
+}
+
+class _CellHoverZoomState extends State<_CellHoverZoom> {
+  OverlayEntry? _entry;
+
+  bool get _showing => _entry != null;
+
+  @override
+  void dispose() {
+    _remove();
+    super.dispose();
+  }
+
+  void _remove() {
+    _entry?.remove();
+    _entry = null;
+  }
+
+  void _show() {
+    if (_showing) return;
+    final overlay = Overlay.maybeOf(context);
+    final box = context.findRenderObject() as RenderBox?;
+    final overlayBox = overlay?.context.findRenderObject() as RenderBox?;
+    if (overlay == null || box == null || overlayBox == null || !box.hasSize) return;
+
+    final origin = overlayBox.globalToLocal(box.localToGlobal(Offset.zero));
+    final size = box.size;
+    final entry = OverlayEntry(
+      builder: (_) => Positioned(
+        left: origin.dx,
+        top: origin.dy,
+        width: size.width,
+        height: size.height,
+        // The real cell underneath still owns every gesture; this is paint only.
+        child: IgnorePointer(
+          // The overlay is outside any Material, where the inherited DefaultTextStyle is the
+          // debug one that underlines text in yellow. A transparent Material restores the
+          // theme's own text style without painting anything.
+          child: Material(
+            type: MaterialType.transparency,
+            child: _GrowIn(
+              scale: widget.theme.cellHoverZoomScale,
+              duration: widget.theme.cellHoverZoomDuration,
+              alignment: widget.alignment,
+              child: widget.child,
+            ),
+          ),
+        ),
+      ),
+    );
+    overlay.insert(entry);
+    setState(() => _entry = entry);
+  }
+
+  void _hide() {
+    if (!_showing) return;
+    _remove();
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.theme.cellHoverZoomEnabled) return widget.child;
+    return MouseRegion(
+      onEnter: (_) => _show(),
+      onExit: (_) => _hide(),
+      // Keeps the cell's box -- and so the row's layout -- while the grown copy is on screen.
+      child: Opacity(opacity: _showing ? 0.0 : 1.0, child: widget.child),
+    );
+  }
+}
+
+/// Animates from the cell's own size up to [scale] as soon as it is mounted, so the overlay copy
+/// grows instead of appearing at full size. [TweenAnimationBuilder] starts on its first build, which
+/// a post-frame callback would delay by a frame -- noticeable at these durations.
+class _GrowIn extends StatelessWidget {
+  const _GrowIn({
+    required this.scale,
+    required this.duration,
+    required this.alignment,
+    required this.child,
+  });
+
+  final double scale;
+  final Duration duration;
+  final Alignment alignment;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 1.0, end: scale),
+      duration: duration,
+      curve: Curves.easeOut,
+      builder: (_, value, kid) => Transform.scale(
+        scale: value,
+        alignment: alignment,
+        child: kid,
+      ),
+      child: child,
+    );
   }
 }

@@ -78,6 +78,14 @@ public class ConfigFlags {
     public boolean use_special_dropdown_button;
 
     public boolean preserve_icon_colors;
+
+    /**
+     * Turns off the hover zoom Evolve does by default -- a {@code ToolItem} grows its icon, a Table
+     * cell grows its content. Native SWT has no such feedback, so an application that wants to
+     * render exactly like it sets this. How far and how fast things grow are theme values, not
+     * flags.
+     */
+    public boolean disable_hover_zoom;
     
     public String force_theme;
     public String theme_name;
@@ -136,6 +144,7 @@ public class ConfigFlags {
                 ", theme_colors_by_widget=" + theme_colors_by_widget +
                 ", show_theme_color_palette=" + show_theme_color_palette +
                 ", preserve_icon_colors=" + preserve_icon_colors +
+                ", disable_hover_zoom=" + disable_hover_zoom +
                 ", show_scaling_control=" + show_scaling_control +
                 ", decorations_align='" + decorations_align + '\'' +
                 ", csd_placement='" + csd_placement + '\'' +

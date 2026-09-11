@@ -34,7 +34,34 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     return math.min(defaultSize, cap);
   }
 
+  /// Hover feedback asked for by applications whose toolbars are dense enough that the background
+  /// highlight alone is easy to miss. A paint-time [Transform.scale], so the item keeps the box
+  /// `Sizes.computeSize` laid the toolbar out from and hovering never reflows it.
+  Widget _applyHoverZoom(Widget icon, bool enabled) {
+    final theme = Theme.of(context).extension<ToolItemThemeExtension>()!;
+    if (!theme.hoverZoomEnabled) return icon;
+    return AnimatedScale(
+      scale: enabled && _isHovered ? theme.hoverZoomScale : 1.0,
+      duration: theme.hoverZoomDuration,
+      curve: Curves.easeOut,
+      child: icon,
+    );
+  }
+
   Widget _buildImageWidget(
+    VImage? image,
+    bool enabled,
+    BoxConstraints? constraints,
+    double defaultIconSize,
+    Color iconColor,
+    ToolItemThemeExtension widgetTheme,
+  ) =>
+      _applyHoverZoom(
+        _buildImage(image, enabled, constraints, defaultIconSize, iconColor, widgetTheme),
+        enabled,
+      );
+
+  Widget _buildImage(
     VImage? image,
     bool enabled,
     BoxConstraints? constraints,
@@ -443,10 +470,13 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
               widgetTheme,
             );
           } else {
-            iconOrImage = Icon(
-              isChecked ? Icons.check_box : Icons.check_box_outline_blank,
-              size: widgetTheme.iconSize,
-              color: textColor,
+            iconOrImage = _applyHoverZoom(
+              Icon(
+                isChecked ? Icons.check_box : Icons.check_box_outline_blank,
+                size: widgetTheme.iconSize,
+                color: textColor,
+              ),
+              enabled,
             );
           }
 
@@ -509,12 +539,15 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
               widgetTheme,
             );
           } else {
-            iconOrImage = Icon(
-              isSelected
-                  ? Icons.radio_button_checked
-                  : Icons.radio_button_unchecked,
-              size: widgetTheme.iconSize,
-              color: textColor,
+            iconOrImage = _applyHoverZoom(
+              Icon(
+                isSelected
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+                size: widgetTheme.iconSize,
+                color: textColor,
+              ),
+              enabled,
             );
           }
 

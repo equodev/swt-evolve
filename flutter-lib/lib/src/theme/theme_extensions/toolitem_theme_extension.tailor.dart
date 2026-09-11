@@ -25,6 +25,9 @@ mixin _$ToolItemThemeExtensionTailorMixin
   double get separatorIndent;
   TextStyle? get fontStyle;
   double get defaultIconSize;
+  bool get hoverZoomEnabled;
+  double get hoverZoomScale;
+  Duration get hoverZoomDuration;
   double get iconSize;
   double get emptyButtonSize;
   double get dropdownArrowSize;
@@ -77,6 +80,9 @@ mixin _$ToolItemThemeExtensionTailorMixin
     double? separatorIndent,
     TextStyle? fontStyle,
     double? defaultIconSize,
+    bool? hoverZoomEnabled,
+    double? hoverZoomScale,
+    Duration? hoverZoomDuration,
     double? iconSize,
     double? emptyButtonSize,
     double? dropdownArrowSize,
@@ -129,6 +135,9 @@ mixin _$ToolItemThemeExtensionTailorMixin
       separatorIndent: separatorIndent ?? this.separatorIndent,
       fontStyle: fontStyle ?? this.fontStyle,
       defaultIconSize: defaultIconSize ?? this.defaultIconSize,
+      hoverZoomEnabled: hoverZoomEnabled ?? this.hoverZoomEnabled,
+      hoverZoomScale: hoverZoomScale ?? this.hoverZoomScale,
+      hoverZoomDuration: hoverZoomDuration ?? this.hoverZoomDuration,
       iconSize: iconSize ?? this.iconSize,
       emptyButtonSize: emptyButtonSize ?? this.emptyButtonSize,
       dropdownArrowSize: dropdownArrowSize ?? this.dropdownArrowSize,
@@ -219,6 +228,9 @@ mixin _$ToolItemThemeExtensionTailorMixin
       separatorIndent: t < 0.5 ? separatorIndent : other.separatorIndent,
       fontStyle: TextStyle.lerp(fontStyle, other.fontStyle, t),
       defaultIconSize: t < 0.5 ? defaultIconSize : other.defaultIconSize,
+      hoverZoomEnabled: t < 0.5 ? hoverZoomEnabled : other.hoverZoomEnabled,
+      hoverZoomScale: t < 0.5 ? hoverZoomScale : other.hoverZoomScale,
+      hoverZoomDuration: t < 0.5 ? hoverZoomDuration : other.hoverZoomDuration,
       iconSize: t < 0.5 ? iconSize : other.iconSize,
       emptyButtonSize: t < 0.5 ? emptyButtonSize : other.emptyButtonSize,
       dropdownArrowSize: t < 0.5 ? dropdownArrowSize : other.dropdownArrowSize,
@@ -379,6 +391,18 @@ mixin _$ToolItemThemeExtensionTailorMixin
               defaultIconSize,
               other.defaultIconSize,
             ) &&
+            const DeepCollectionEquality().equals(
+              hoverZoomEnabled,
+              other.hoverZoomEnabled,
+            ) &&
+            const DeepCollectionEquality().equals(
+              hoverZoomScale,
+              other.hoverZoomScale,
+            ) &&
+            const DeepCollectionEquality().equals(
+              hoverZoomDuration,
+              other.hoverZoomDuration,
+            ) &&
             const DeepCollectionEquality().equals(iconSize, other.iconSize) &&
             const DeepCollectionEquality().equals(
               emptyButtonSize,
@@ -536,6 +560,9 @@ mixin _$ToolItemThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(separatorIndent),
       const DeepCollectionEquality().hash(fontStyle),
       const DeepCollectionEquality().hash(defaultIconSize),
+      const DeepCollectionEquality().hash(hoverZoomEnabled),
+      const DeepCollectionEquality().hash(hoverZoomScale),
+      const DeepCollectionEquality().hash(hoverZoomDuration),
       const DeepCollectionEquality().hash(iconSize),
       const DeepCollectionEquality().hash(emptyButtonSize),
       const DeepCollectionEquality().hash(dropdownArrowSize),
@@ -593,6 +620,9 @@ extension ToolItemThemeExtensionBuildContextProps on BuildContext {
   double get separatorIndent => toolItemThemeExtension.separatorIndent;
   TextStyle? get fontStyle => toolItemThemeExtension.fontStyle;
   double get defaultIconSize => toolItemThemeExtension.defaultIconSize;
+  bool get hoverZoomEnabled => toolItemThemeExtension.hoverZoomEnabled;
+  double get hoverZoomScale => toolItemThemeExtension.hoverZoomScale;
+  Duration get hoverZoomDuration => toolItemThemeExtension.hoverZoomDuration;
   double get iconSize => toolItemThemeExtension.iconSize;
   double get emptyButtonSize => toolItemThemeExtension.emptyButtonSize;
   double get dropdownArrowSize => toolItemThemeExtension.dropdownArrowSize;

@@ -28,6 +28,7 @@ ConfigFlags _$ConfigFlagsFromJson(Map<String, dynamic> json) => ConfigFlags()
   ..show_theme_color_palette = json['show_theme_color_palette'] as bool?
   ..use_special_dropdown_button = json['use_special_dropdown_button'] as bool?
   ..preserve_icon_colors = json['preserve_icon_colors'] as bool?
+  ..disable_hover_zoom = json['disable_hover_zoom'] as bool?
   ..show_scaling_control = json['show_scaling_control'] as bool?
   ..decorations_align = DecorationsAlign.fromJson(
     json['decorations_align'] as String?,
@@ -59,6 +60,7 @@ Map<String, dynamic> _$ConfigFlagsToJson(
   'show_theme_color_palette': ?instance.show_theme_color_palette,
   'use_special_dropdown_button': ?instance.use_special_dropdown_button,
   'preserve_icon_colors': ?instance.preserve_icon_colors,
+  'disable_hover_zoom': ?instance.disable_hover_zoom,
   'show_scaling_control': ?instance.show_scaling_control,
   'decorations_align': ?DecorationsAlign.toJson(instance.decorations_align),
   'print_move': ?instance.print_move,
