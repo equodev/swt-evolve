@@ -1,5 +1,7 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.AppMenuMessages;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.internal.Callback;
 import org.eclipse.swt.internal.cocoa.NSApplication;
@@ -85,12 +87,12 @@ final class MacApplicationMenu {
         // the SWT MenuItem carrying the matching id in the mirror below -- which is a different
         // object from this native item, unlike in native SWT where they are one and the same. So
         // both carry an action that looks the contribution up and raises SWT.Selection on it.
-        contributed(add(appMenu, SWT.getMessage("SWT_About") + " " + appName, 0, empty, SWT.ID_ABOUT));
+        contributed(add(appMenu, AppMenuMessages.label("SWT_About") + " " + appName, 0, empty, SWT.ID_ABOUT));
         appMenu.addItem(NSMenuItem.separatorItem());
-        contributed(add(appMenu, SWT.getMessage("SWT_Preferences"), 0, NSString.stringWith(","), SWT.ID_PREFERENCES));
+        contributed(add(appMenu, AppMenuMessages.label("SWT_Preferences"), 0, NSString.stringWith(","), SWT.ID_PREFERENCES));
         appMenu.addItem(NSMenuItem.separatorItem());
 
-        NSMenuItem servicesItem = add(appMenu, SWT.getMessage("SWT_Services"), 0, empty, 0);
+        NSMenuItem servicesItem = add(appMenu, AppMenuMessages.label("SWT_Services"), 0, empty, 0);
         NSMenu servicesMenu = (NSMenu) new NSMenu().alloc();
         servicesMenu.initWithTitle(empty);
         appMenu.setSubmenu(servicesMenu, servicesItem);
@@ -98,16 +100,16 @@ final class MacApplicationMenu {
         application.setServicesMenu(servicesMenu);
         appMenu.addItem(NSMenuItem.separatorItem());
 
-        add(appMenu, SWT.getMessage("SWT_Hide") + " " + appName,
+        add(appMenu, AppMenuMessages.label("SWT_Hide") + " " + appName,
                 OS.sel_hide_, NSString.stringWith("h"), SWT.ID_HIDE);
-        NSMenuItem hideOthers = add(appMenu, SWT.getMessage("SWT_HideOthers"),
+        NSMenuItem hideOthers = add(appMenu, AppMenuMessages.label("SWT_HideOthers"),
                 OS.sel_hideOtherApplications_, NSString.stringWith("h"), SWT.ID_HIDE_OTHERS);
         hideOthers.setKeyEquivalentModifierMask(OS.NSCommandKeyMask | OS.NSAlternateKeyMask);
-        add(appMenu, SWT.getMessage("SWT_ShowAll"),
+        add(appMenu, AppMenuMessages.label("SWT_ShowAll"),
                 OS.sel_unhideAllApplications_, empty, SWT.ID_SHOW_ALL);
         appMenu.addItem(NSMenuItem.separatorItem());
 
-        NSMenuItem quit = add(appMenu, SWT.getMessage("SWT_Quit") + " " + appName,
+        NSMenuItem quit = add(appMenu, AppMenuMessages.label("SWT_Quit") + " " + appName,
                 quitSelector(), NSString.stringWith("q"), SWT.ID_QUIT);
         quit.setTarget(target());
 
@@ -138,18 +140,18 @@ final class MacApplicationMenu {
         // application contributes to, keyed by the ids below, and native SWT leaves them alone for
         // the same reason. The window actions are the opposite case — only Cocoa can perform them
         // and nothing contributes to them.
-        action(appMenu, SWT.getMessage("SWT_About") + " " + appName, SWT.ID_ABOUT, null);
+        action(appMenu, AppMenuMessages.label("SWT_About") + " " + appName, SWT.ID_ABOUT, null);
         new MenuItem(appMenu, SWT.SEPARATOR);
-        action(appMenu, SWT.getMessage("SWT_Preferences"), SWT.ID_PREFERENCES, null);
+        action(appMenu, AppMenuMessages.label("SWT_Preferences"), SWT.ID_PREFERENCES, null);
         new MenuItem(appMenu, SWT.SEPARATOR);
-        action(appMenu, SWT.getMessage("SWT_Hide") + " " + appName, SWT.ID_HIDE,
+        action(appMenu, AppMenuMessages.label("SWT_Hide") + " " + appName, SWT.ID_HIDE,
                 () -> application.hide(null));
-        action(appMenu, SWT.getMessage("SWT_HideOthers"), SWT.ID_HIDE_OTHERS,
+        action(appMenu, AppMenuMessages.label("SWT_HideOthers"), SWT.ID_HIDE_OTHERS,
                 () -> application.hideOtherApplications(null));
-        action(appMenu, SWT.getMessage("SWT_ShowAll"), SWT.ID_SHOW_ALL,
+        action(appMenu, AppMenuMessages.label("SWT_ShowAll"), SWT.ID_SHOW_ALL,
                 () -> application.unhideAllApplications(null));
         new MenuItem(appMenu, SWT.SEPARATOR);
-        action(appMenu, SWT.getMessage("SWT_Quit") + " " + appName, SWT.ID_QUIT, null);
+        action(appMenu, AppMenuMessages.label("SWT_Quit") + " " + appName, SWT.ID_QUIT, null);
 
         ((DartDisplay) display.getImpl()).appMenu = appMenu;
         contributions = appMenu;

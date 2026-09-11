@@ -62,4 +62,40 @@ public class MacApplicationMenuNativeTest {
         assertThat(tags).containsExactly((long) SWT.ID_ABOUT, (long) SWT.ID_PREFERENCES, (long) SWT.ID_HIDE,
                 (long) SWT.ID_HIDE_OTHERS, (long) SWT.ID_SHOW_ALL, (long) SWT.ID_QUIT);
     }
+
+    /**
+     * The item titles, read back off the live NSMenu. The {@code SWT_*} keys the menu labels from
+     * only entered {@code SWTMessages} in SWT 3.119, so an older build -- and a classpath carrying
+     * no bundle at all, which is this suite's -- renders the keys themselves as the item text.
+     */
+    @Test
+    void labelsTheStandardItems() {
+        NSApplication application;
+        try {
+            application = NSApplication.sharedApplication();
+        } catch (Throwable notAvailable) {
+            Assumptions.abort("no native SWT library on this runner: " + notAvailable);
+            return;
+        }
+
+        String loadLibrary = System.getProperty(LOAD_LIBRARY);
+        System.clearProperty(LOAD_LIBRARY);
+        try {
+            DisplayBridgePlatform.init();
+        } finally {
+            if (loadLibrary != null)
+                System.setProperty(LOAD_LIBRARY, loadLibrary);
+        }
+
+        NSMenu appMenu = application.mainMenu().itemAtIndex(0).submenu();
+        List<String> titles = new ArrayList<>();
+        for (int i = 0; i < appMenu.numberOfItems(); i++) {
+            NSMenuItem item = appMenu.itemAtIndex(i);
+            if (!item.isSeparatorItem())
+                titles.add(item.title().getString());
+        }
+        assertThat(titles).allSatisfy(title -> assertThat(title).doesNotStartWith("SWT_"));
+        assertThat(titles).contains("Preferences...", "Services", "Hide Others", "Show All");
+        assertThat(titles.get(0)).startsWith("About ");
+    }
 }
