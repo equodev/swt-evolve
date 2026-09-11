@@ -55,6 +55,18 @@ final Map<String, NamedTheme> kNamedThemes = {
       onSurfaceVariantDisabled: const Color(0xFF4A4A4A),
     ),
   ),
+  'pinkFd': NamedTheme(
+    lightColorScheme: _pinkFdLightScheme(),
+    darkColorScheme: _pinkFdDarkScheme(),
+    // primaryHovered is the one slot createColorSchemeExtension does not derive from the
+    // scheme — it returns a fixed blue, which is what push buttons hover to.
+    lightColorSchemeExtension: createColorSchemeExtension(_pinkFdLightScheme()).copyWith(
+      primaryHovered: const Color(0xFFC72E73),
+    ),
+    darkColorSchemeExtension: createColorSchemeExtension(_pinkFdDarkScheme()).copyWith(
+      primaryHovered: const Color(0xFFF591BC),
+    ),
+  ),
   'yellowk': NamedTheme(
     lightColorScheme: _yellowkLightScheme(),
     darkColorScheme: _yellowkDarkScheme(),
@@ -104,6 +116,29 @@ ColorScheme _hbDarkScheme() => createDarkColorScheme().copyWith(
   onSecondary: const Color(0xFFFFFFFF),
   secondaryContainer: const Color(0xFF5A1219),
   onSecondaryContainer: const Color(0xFFF9DEDE),
+);
+
+// Same neutral scheme as 'nondefault', with its violet accents swapped for the pinkFd brand
+// pink (#E83E8C). onPrimary is near-black rather than white: white on this pink is a ~3.8:1
+// contrast ratio (fails WCAG AA's 4.5:1 for text), near-black reaches ~5.5:1.
+// Dark mode lifts the primary so it reads on a dark surface.
+ColorScheme _pinkFdLightScheme() => createLightColorScheme().copyWith(
+  primary: const Color(0xFFE83E8C),
+  onPrimary: const Color(0xFF171819),
+  secondary: const Color(0xFFFBE0EF),
+  onSecondary: const Color(0xFF99195B),
+  secondaryContainer: const Color(0xFFFBE0EF),
+  onSecondaryContainer: const Color(0xFF99195B),
+  onTertiary: const Color(0xFF43494E),
+);
+
+ColorScheme _pinkFdDarkScheme() => createDarkColorScheme().copyWith(
+  primary: const Color(0xFFF06FA9),
+  onPrimary: const Color(0xFF141414),
+  secondary: const Color(0xFF8A0F48),
+  onSecondary: const Color(0xFFFFFFFF),
+  secondaryContainer: const Color(0xFF52092C),
+  onSecondaryContainer: const Color(0xFFF8D5E4),
 );
 
 ColorScheme _cursorLightScheme() => ColorScheme.fromSeed(
