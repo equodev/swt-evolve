@@ -74,6 +74,7 @@ VCTabFolder _$VCTabFolderFromJson(Map<String, dynamic> json) => VCTabFolder()
       ?.map((e) => (e as num).toInt())
       .toList()
   ..gradientVertical = json['gradientVertical'] as bool?
+  ..highlight = json['highlight'] as bool?
   ..highlightEnabled = json['highlightEnabled'] as bool?
   ..items = (json['items'] as List<dynamic>?)
       ?.map((e) => VCTabItem.fromJson(e as Map<String, dynamic>))
@@ -157,6 +158,7 @@ Map<String, dynamic> _$VCTabFolderToJson(VCTabFolder instance) =>
       'gradientColors': ?instance.gradientColors,
       'gradientPercents': ?instance.gradientPercents,
       'gradientVertical': ?instance.gradientVertical,
+      'highlight': ?instance.highlight,
       'highlightEnabled': ?instance.highlightEnabled,
       'items': ?instance.items,
       'maximizeVisible': ?instance.maximizeVisible,

@@ -25,6 +25,10 @@ public class ControlHelper {
     // the paint that follows. Absent, or a null value, means the whole client area.
     private static final Map<DartControl, Rectangle> pendingDamage = new WeakHashMap<>();
 
+    // The control each Shell last announced as activated, so the next announcement can end it.
+    private static final Map<Shell, Control> lastActivated =
+            Collections.synchronizedMap(new WeakHashMap<>());
+
     // Area the Paint being dispatched is scoped to, null when it covers the whole client area. A GC
     // opened during that dispatch carries it to Flutter, which composites within it.
     private static Rectangle paintDamage;
@@ -486,6 +490,7 @@ public class ControlHelper {
     public static void sendActivateToAncestors(DartControl control, int detail) {
         if (control == null || control.getApi() == null || control.getApi().isDisposed())
             return;
+        deactivatePreviouslyActive(control, detail);
         for (Widget widget = control.getApi(); widget != null; ) {
             if (widget.isDisposed())
                 return;
@@ -500,5 +505,46 @@ public class ControlHelper {
                 return;
             widget = (widget instanceof Control c) ? c.getParent() : null;
         }
+    }
+
+    /**
+     * Send SWT.Deactivate to the chain that was active until now, up to the first ancestor the new
+     * control shares with it. Natively that is the Shell's own enter/leave bookkeeping, driven by
+     * an OS focus event this backend has no equivalent of, so the walk above only ever announces
+     * the arrival -- nothing announces the departure, and every chain the user has focused stays
+     * marked active. A CTabFolder is where that shows: it keeps painting itself as the focused
+     * stack, so with several stacks open none of them is distinguishable from the active one.
+     *
+     * The previous control is tracked here rather than read from Shell.lastActive because the
+     * Shell may be a native one (the embedded backend has no Dart Shell at all), and because the
+     * walk above, not setActiveControl, owns the Activate half.
+     */
+    private static void deactivatePreviouslyActive(DartControl control, int detail) {
+        Control now = control.getApi();
+        Shell shell = now.getShell();
+        if (shell == null || shell.isDisposed())
+            return;
+        Control previous = lastActivated.put(shell, now);
+        if (previous == null || previous.isDisposed() || previous == now)
+            return;
+        for (Widget widget = previous; widget != null; ) {
+            if (widget.isDisposed() || isAncestorOfOrSame(widget, now))
+                return;
+            if (widget.getImpl() instanceof DartWidget impl) {
+                Event event = new Event();
+                event.detail = detail;
+                impl.sendEvent(SWT.Deactivate, event);
+            }
+            if (widget instanceof Shell)
+                return;
+            widget = (widget instanceof Control c) ? c.getParent() : null;
+        }
+    }
+
+    private static boolean isAncestorOfOrSame(Widget candidate, Control control) {
+        for (Control c = control; c != null; c = c.getParent())
+            if (c == candidate)
+                return true;
+        return false;
     }
 }

@@ -83,6 +83,13 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).gradientVertical = value;
     }
 
+    public boolean getHighlight() {
+        return ((DartCTabFolder) impl).highlight;
+    }
+
+    public void setHighlight(boolean value) {
+    }
+
     public boolean getHighlightEnabled() {
         return ((DartCTabFolder) impl).getHighlightEnabled();
     }

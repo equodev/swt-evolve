@@ -162,11 +162,31 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
       ],
     );
 
+    // Upstream's shouldHighlight(): with several stacks open, the frame is the only cue for
+    // which one keyboard input will reach. foregroundDecoration so it is painted over the
+    // folder instead of taking a border's worth of space away from its content.
+    final widgetTheme = Theme.of(context).extension<CTabFolderThemeExtension>()!;
+    final isActive =
+        (state.highlight ?? false) && (state.highlightEnabled ?? false);
+    Widget framed = Container(
+      foregroundDecoration: isActive
+          ? BoxDecoration(
+              border: Border.all(
+                color: widgetTheme.tabHighlightColor,
+                width: widgetTheme.tabHighlightBorderWidth,
+              ),
+            )
+          : null,
+      child: column,
+    );
+
     if (constraints != null) {
-      return tagSemantics(ConstrainedBox(constraints: constraints, child: column));
+      return tagSemantics(
+        ConstrainedBox(constraints: constraints, child: framed),
+      );
     }
 
-    return tagSemantics(column);
+    return tagSemantics(framed);
   }
 
   void _handleTabSelection(int index) {
