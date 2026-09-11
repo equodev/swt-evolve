@@ -27,6 +27,11 @@ VTreeItem _$VTreeItemFromJson(Map<String, dynamic> json) => VTreeItem()
       ? null
       : VColor.fromJson(json['foreground'] as Map<String, dynamic>)
   ..grayed = json['grayed'] as bool?
+  ..images = (json['images'] as List<dynamic>?)
+      ?.map(
+        (e) => e == null ? null : VImage.fromJson(e as Map<String, dynamic>),
+      )
+      .toList()
   ..items = (json['items'] as List<dynamic>?)
       ?.map((e) => VTreeItem.fromJson(e as Map<String, dynamic>))
       .toList()
@@ -46,6 +51,7 @@ Map<String, dynamic> _$VTreeItemToJson(VTreeItem instance) => <String, dynamic>{
   'font': ?instance.font,
   'foreground': ?instance.foreground,
   'grayed': ?instance.grayed,
+  'images': ?instance.images,
   'items': ?instance.items,
   'texts': ?instance.texts,
 };

@@ -1501,6 +1501,8 @@ public class DartTreeItem extends DartItem implements ITreeItem {
 
     Color foreground;
 
+    Image[] images = new Image[0];
+
     TreeItem[] items = new TreeItem[0];
 
     public Tree _parent() {
@@ -1551,12 +1553,28 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         return foreground;
     }
 
+    public Image[] _images() {
+        return images;
+    }
+
     public TreeItem[] _items() {
         return items;
     }
 
     public Font getExplicitFont() {
         return font;
+    }
+
+    public Image[] getImages() {
+        return TreeHelper.getImages(this);
+    }
+
+    public String[] getTexts() {
+        return TreeHelper.getTexts(this);
+    }
+
+    public void setImages(Image[] value) {
+        TreeHelper.setImages(value, this);
     }
 
     public void updateChildItems() {

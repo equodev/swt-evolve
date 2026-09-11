@@ -1,6 +1,12 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.DartGC;
+import org.eclipse.swt.graphics.DartImage;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
+
+import dev.equo.swt.Serializer;
 
 public class TreeHelper {
 
@@ -424,4 +430,177 @@ public class TreeHelper {
         }
     }
 
+    public static Image[] getImages(DartTreeItem item) {
+        int count = Math.max(1, item.parent.getColumnCount());
+        Image[] result = ownImages(item, count);
+        OwnerDraw drawn = ownerDraw(item);
+        if (drawn != null) {
+            for (int i = 0; i < count; i++) {
+                if (drawn.suppressed[i] || result[i] == null) {
+                    result[i] = dartImageOrNull(drawn.images[i]);
+                }
+            }
+        }
+        return result;
+    }
+
+    public static String[] getTexts(DartTreeItem item) {
+        String[] model = item.strings;
+        OwnerDraw drawn = ownerDraw(item);
+        if (drawn == null) {
+            return model;
+        }
+        String[] result = new String[drawn.suppressed.length];
+        for (int i = 0; i < result.length; i++) {
+            String own = model != null && i < model.length ? model[i] : null;
+            // An empty cell is the absence of a model value, not a value of "". setText(1, s) on a
+            // fresh item builds the whole array and seeds strings[0] from the (empty) text, so an
+            // owner-drawn column 0 always has one -- treating it as a value would let it outrank
+            // what the PaintItem listener drew, which is the only content such a cell ever has.
+            if (own != null && own.isEmpty()) {
+                own = null;
+            }
+            // setText(0, s) leaves `strings` null and keeps the label in `text`, so column 0's model
+            // value can live there alone.
+            if (i == 0 && own == null && item.text != null && !item.text.isEmpty()) {
+                own = item.text;
+            }
+            // Model wins only when not suppressed AND it has its own text; otherwise use what PaintItem drew.
+            if (!drawn.suppressed[i] && own != null) {
+                result[i] = own;
+                continue;
+            }
+            String captured = drawn.texts[i];
+            if ((captured == null || captured.isEmpty()) && drawn.textDrawn[i] && own != null && !own.isEmpty()) {
+                result[i] = own;
+            } else {
+                result[i] = captured;
+            }
+        }
+        return result;
+    }
+
+    public static void setImages(Image[] value, DartTreeItem item) {
+        item.images = value;
+        if (value != null && value.length > 0) {
+            item.image = value[0];
+        }
+    }
+
+    private static Image[] ownImages(DartTreeItem item, int count) {
+        Image[] result = new Image[count];
+        Image[] rowImages = item.images;
+        if (rowImages != null) {
+            for (int i = 0; i < count; i++) {
+                result[i] = dartImageOrNull(i < rowImages.length ? rowImages[i] : null);
+            }
+        } else {
+            result[0] = dartImageOrNull(item.image);
+        }
+        return result;
+    }
+
+    /** What an SWT.PaintItem listener actually drew into each cell of one item. */
+    private static final class OwnerDraw {
+
+        final String[] texts;
+
+        final boolean[] textDrawn;
+
+        final Image[] images;
+
+        final boolean[] suppressed;
+
+        OwnerDraw(String[] texts, boolean[] textDrawn, Image[] images, boolean[] suppressed) {
+            this.texts = texts;
+            this.textDrawn = textDrawn;
+            this.images = images;
+            this.suppressed = suppressed;
+        }
+    }
+
+    private static OwnerDraw ownerDraw(DartTreeItem item) {
+        if (!((DartWidget) item.parent.getImpl()).hooks(SWT.PaintItem)) {
+            return null;
+        }
+        // Capturing runs the app's SWT.PaintItem listener once per cell. Native SWT runs it once per
+        // cell per paint; both texts and images are derived from one capture, so one payload gets one.
+        return Serializer.oncePerPayload(item, () -> captureOwnerDraw(item));
+    }
+
+    private static OwnerDraw captureOwnerDraw(DartTreeItem item) {
+        int count = Math.max(1, item.parent.getColumnCount());
+        DartWidget parent = (DartWidget) item.parent.getImpl();
+        Image[] own = ownImages(item, count);
+        boolean[] suppressed = suppressedForegrounds(item, parent, count);
+
+        String[] texts = new String[count];
+        boolean[] textDrawn = new boolean[count];
+        Image[] images = new Image[count];
+        GC gc = new GC(item.parent);
+        DartGC dartGc = (DartGC) gc.getImpl();
+        // This GC only ever draws through textCapture/imageCapture below -- Flutter never
+        // learns it exists, so its dispose must not tell Flutter otherwise.
+        dartGc.silentDispose = true;
+        int itemHeight = ((DartTree) item.parent.getImpl()).getItemHeight();
+        try {
+            for (int i = 0; i < count; i++) {
+                if (!suppressed[i] && own[i] != null) {
+                    continue;
+                }
+                StringBuilder text = new StringBuilder();
+                boolean[] drewText = new boolean[1];
+                Image[] image = new Image[1];
+                dartGc.textCapture = drawn -> {
+                    drewText[0] = true;
+                    if (drawn != null)
+                        text.append(drawn);
+                };
+                dartGc.imageCapture = drawn -> image[0] = drawn;
+                Event event = new Event();
+                event.item = item.getApi();
+                event.index = i;
+                event.gc = gc;
+                event.height = itemHeight;
+                parent.sendEvent(SWT.PaintItem, event);
+                texts[i] = text.toString();
+                textDrawn[i] = drewText[0];
+                images[i] = image[0];
+            }
+        } finally {
+            dartGc.textCapture = null;
+            dartGc.imageCapture = null;
+            gc.dispose();
+        }
+        return new OwnerDraw(texts, textDrawn, images, suppressed);
+    }
+
+    /**
+     * Asks the SWT.EraseItem listeners which cells they paint themselves. An owner-drawing app
+     * clears SWT.FOREGROUND there to mean "do not paint this item's own text/image, I will paint
+     * it" -- Eclipse's QuickAccessEntry.erase() does exactly {@code detail &= ~SWT.FOREGROUND}.
+     */
+    private static boolean[] suppressedForegrounds(DartTreeItem item, DartWidget parent, int count) {
+        boolean[] suppressed = new boolean[count];
+        if (!parent.hooks(SWT.EraseItem)) {
+            return suppressed;
+        }
+        for (int i = 0; i < count; i++) {
+            Event event = new Event();
+            event.item = item.getApi();
+            event.index = i;
+            event.detail = SWT.FOREGROUND | SWT.BACKGROUND;
+            parent.sendEvent(SWT.EraseItem, event);
+            suppressed[i] = (event.detail & SWT.FOREGROUND) == 0;
+        }
+        return suppressed;
+    }
+
+    private static Image dartImageOrNull(Image img) {
+        if (img == null)
+            return null;
+        if (img.getImpl() instanceof DartImage)
+            return img;
+        return img;
+    }
 }

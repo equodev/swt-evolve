@@ -89,12 +89,15 @@ MeasurementCase createCase(
     ..font = fontSize != null
         ? (VFont.empty()..fontData = [VFontData.empty()..height = fontSize])
         : null
-    ..image = image != null
-        ? (VImage.empty()
-            ..filename = '../swt_native/src/test/resources/images/${w}x${h}.png'
-            ..imageData = (VImageData.empty()
-              ..width = w
-              ..height = h))
+    ..images = image != null
+        ? [
+            (VImage.empty()
+              ..filename =
+                  '../swt_native/src/test/resources/images/${w}x${h}.png'
+              ..imageData = (VImageData.empty()
+                ..width = w
+                ..height = h)),
+          ]
         : null;
 
   final expectedComponents = <String, dynamic>{'text': text, 'image': image};

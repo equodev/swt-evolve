@@ -172,7 +172,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     if (_context == null) {
       // Standalone mode used by the measure tool — render as a single row without tree context.
       final textColor = getTreeItemTextColor(state, widgetTheme, false, true);
-      final image = state.image;
+      final image = _treeColumnImage() ?? state.image;
       return Container(
         padding: widgetTheme.itemPadding,
         child: Row(
@@ -202,6 +202,13 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     return tagSemantics(buildTreeItemContent(context));
   }
 
+  /// The icon for the tree column, which is the only column a tree row draws one in.
+  VImage? _treeColumnImage() {
+    final images = state.images;
+    if (images == null || images.isEmpty) return null;
+    return images[0];
+  }
+
   Widget buildTreeItemContent(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<TreeThemeExtension>();
     if (widgetTheme == null) {
@@ -216,7 +223,9 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     final bool checked = state.checked ?? false;
     final bool grayed = state.grayed ?? false;
     final int level = _context?.level ?? 0;
-    final VImage? image = state.image;
+    // An owner-drawn cell's icon only ever exists as what the SWT.PaintItem listener drew, which
+    // Java reports in images[0]; a cell that set one the ordinary way reports it in both.
+    final VImage? image = _treeColumnImage() ?? state.image;
 
     final bool selected = _context?.treeImpl?.isItemSelected(state.id) ?? false;
     final bool enabled = _context?.parentTreeValue.enabled ?? true;
@@ -780,16 +789,17 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       enabled: enabled,
     );
 
-    final icon = hasMultiColumn
-        ? null
-        : _buildItemIcon(
-            theme,
-            enabled,
-            selected,
-            hasChildren,
-            expanded,
-            image,
-          );
+    // A columned tree still draws the item's image in the tree column -- that is where native SWT
+    // puts it, next to the twistie. _buildItemIcon already yields null when there is no image, so
+    // the column count has no say in it.
+    final icon = _buildItemIcon(
+      theme,
+      enabled,
+      selected,
+      hasChildren,
+      expanded,
+      image,
+    );
 
     return Row(
       children: [

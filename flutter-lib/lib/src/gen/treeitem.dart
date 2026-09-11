@@ -30,6 +30,7 @@ class VTreeItem extends VItem {
   VFont? font;
   VColor? foreground;
   bool? grayed;
+  List<VImage?>? images;
   List<VTreeItem>? items;
   List<String?>? texts;
 

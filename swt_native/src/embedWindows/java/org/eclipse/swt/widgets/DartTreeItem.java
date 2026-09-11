@@ -1574,6 +1574,18 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         return font;
     }
 
+    public Image[] getImages() {
+        return TreeHelper.getImages(this);
+    }
+
+    public String[] getTexts() {
+        return TreeHelper.getTexts(this);
+    }
+
+    public void setImages(Image[] value) {
+        TreeHelper.setImages(value, this);
+    }
+
     public void updateChildItems() {
         if (items == null)
             return;

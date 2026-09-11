@@ -68,6 +68,14 @@ public class VTreeItem extends VItem {
         ((DartTreeItem) impl).grayed = value;
     }
 
+    public Image[] getImages() {
+        return ((DartTreeItem) impl).getImages();
+    }
+
+    public void setImages(Image[] value) {
+        ((DartTreeItem) impl).setImages(value);
+    }
+
     public TreeItem[] getItems() {
         TreeItem[] values = ((DartTreeItem) impl).items;
         if (values == null)
@@ -83,7 +91,7 @@ public class VTreeItem extends VItem {
     }
 
     public String[] getTexts() {
-        return ((DartTreeItem) impl).strings;
+        return ((DartTreeItem) impl).getTexts();
     }
 
     public void setTexts(String[] value) {
