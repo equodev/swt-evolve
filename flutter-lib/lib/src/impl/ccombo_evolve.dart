@@ -12,7 +12,6 @@ import '../theme/theme_settings/ccombo_theme_settings.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 import 'utils/pending_text_echoes.dart';
-import 'color_utils.dart';
 
 class CComboImpl<T extends CComboSwt, V extends VCCombo>
     extends CompositeImpl<T, V> with PendingTextEchoes {
@@ -51,24 +50,15 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     final bool isEnabled = state.enabled ?? true;
     final bool listVisible = state.listVisible ?? false;
 
-    // Custom colors support
-    final customBg = state.background != null
-        ? colorFromVColor(
-            state.background!,
-            defaultColor: widgetTheme.backgroundColor,
-          )
-        : null;
-    final customFg = state.foreground != null
-        ? colorFromVColor(
-            state.foreground!,
-            defaultColor: widgetTheme.textColor,
-          )
-        : null;
-
     final bool isActive = _isFocused || _isHovered;
     final Color currentBg = !isEnabled
         ? widgetTheme.disabledBackgroundColor
-        : customBg ?? widgetTheme.backgroundColor;
+        : getBackgroundColor(
+              background: state.background,
+              defaultColor: widgetTheme.backgroundColor,
+              context: context,
+            ) ??
+            widgetTheme.backgroundColor;
 
     final Color currentBorderColor = !isEnabled
         ? widgetTheme.disabledBorderColor
@@ -76,7 +66,11 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
 
     final textColor = !isEnabled
         ? widgetTheme.disabledTextColor
-        : customFg ?? widgetTheme.textColor;
+        : getForegroundColor(
+            foreground: state.foreground,
+            defaultColor: widgetTheme.textColor,
+            context: context,
+          );
 
     final textStyle = getTextStyle(
       context: context,
