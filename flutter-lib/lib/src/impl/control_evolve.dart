@@ -20,6 +20,7 @@ import '../impl/focus_requests.dart';
 import '../impl/key_forwarding.dart';
 import '../impl/key_mapping.dart';
 import '../impl/menu_evolve.dart';
+import 'utils/hosted_context_menu.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
 import '../theme/theme_extensions/tooltip_theme_extension.dart';
 import 'utils/dnd_session.dart';
@@ -639,7 +640,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       child: Stack(
         children: [
           child,
-          MenuSwt(key: _menuKey, value: menu),
+          HostedContextMenu(child: MenuSwt(key: _menuKey, value: menu)),
         ],
       ),
     );

@@ -22,6 +22,8 @@ import 'package:swtflutter/src/gen/toolitem.dart';
 import 'package:swtflutter/src/impl/toolbar_evolve.dart';
 import 'package:swtflutter/src/theme/theme_extensions/toolbar_theme_extension.dart';
 
+import 'support/menu_shown_ack.dart';
+
 class _CapturingToolItemSwt extends ToolItemSwt<VToolItem> {
   const _CapturingToolItemSwt({required super.value, required this.onEvent});
 
@@ -134,6 +136,10 @@ void main() {
       ),
     ));
     await tester.pumpAndSettle();
+    // A menu shown from Java is filled before it opens, the same as one opened by right-click:
+    // SWT.Show empties and refills a setRemoveAllWhenShown manager, so the client asks for the
+    // fill and waits for this ack. A test standing in for Java has to send it.
+    await ackMenuShown(tester, 10);
 
     expect(find.text('Op A'), findsOneWidget,
         reason: 'the popup must be open before the toggle click');

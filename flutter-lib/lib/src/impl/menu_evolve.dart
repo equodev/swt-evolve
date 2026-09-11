@@ -8,6 +8,7 @@ import '../styles.dart';
 import '../theme/theme_extensions/menu_theme_extension.dart';
 import 'decorations_align.dart';
 import 'widget_config.dart';
+import 'utils/hosted_context_menu.dart';
 import 'utils/text_utils.dart';
 import 'utils/pointer.dart';
 
@@ -81,6 +82,13 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   // as a Java-driven setVisible(false) — otherwise the first state push after SWT.Show closes the
   // menu the instant it appears (the context-menu flicker regression).
   bool _openedFromVisibleFlag = false;
+  // Set while the pending fill was asked for by Java's visible flag rather than by a right-click,
+  // so the symmetric Java-driven close still recognises the popup as its own.
+  bool _pendingOpenFromVisibleFlag = false;
+  // A Show is already on its way to Java for this opening. The anchor reports onOpen once we act on
+  // the answer to that Show, and reporting it again made the application empty and refill a menu
+  // that was already on screen -- the second fill is what left the redundant separators visible.
+  bool _showSent = false;
   // One setVisible(true) puts a popup up once. It stays up until something takes it down, and
   // showing it again means putting it up again — which arrives as a fresh mount, because Java
   // drops a hidden popup from the display's popup set and re-adds it on the next show. Latching
@@ -106,6 +114,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       _unsubscribeRawChannels();
       _subscribeRawChannels();
       _pendingContextMenuPosition = null;
+      _pendingOpenFromVisibleFlag = false;
     }
   }
 
@@ -147,6 +156,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   void openContextMenuAt(BuildContext context, Offset position) {
     if (_menuController.isOpen || _pendingContextMenuPosition != null) return;
     _pendingContextMenuPosition = position;
+    _showSent = true;
     widget.sendMenuShow(state, null);
   }
 
@@ -156,7 +166,8 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
     _pendingContextMenuPosition = null;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _menuController.isOpen) return;
-      _openedFromVisibleFlag = false;
+      _openedFromVisibleFlag = _pendingOpenFromVisibleFlag;
+      _pendingOpenFromVisibleFlag = false;
       _menuController.open(position: position);
       _focusFirstItemNextFrame();
     });
@@ -290,18 +301,22 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       _shownOnce = false;
     }
 
-    if (visible && !_menuController.isOpen && !_shownOnce) {
+    if (visible && !_menuController.isOpen && !_shownOnce &&
+        !HostedContextMenu.wraps(context)) {
       _shownOnce = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && !_menuController.isOpen && visible) {
-          final menuPosition = location != null
-              ? Offset(location.x.toDouble(), location.y.toDouble())
-              : const Offset(100, 100);
-          _menuController.open(position: menuPosition);
-          _openedFromVisibleFlag = true;
-          _focusFirstItemNextFrame();
-        }
-      });
+      // Ask Java to fill the menu before opening it. SWT.Show is what a MenuManager with
+      // setRemoveAllWhenShown empties and refills the menu on, and only the client fires it --
+      // so opening straight from the flag paints whatever the last fill left behind, or a fill
+      // still in progress: too many separators, or nothing at all when the removeAll has landed
+      // and the refill has not. Natively the platform fires Show as part of showing the menu
+      // (win32 does it from WM_INITMENUPOPUP, inside TrackPopupMenu), which is the order this
+      // restores. The right-click path already worked this way.
+      _pendingContextMenuPosition = location != null
+          ? Offset(location.x.toDouble(), location.y.toDouble())
+          : const Offset(100, 100);
+      _pendingOpenFromVisibleFlag = true;
+      _showSent = true;
+      widget.sendMenuShow(state, null);
     } else if (_openedFromVisibleFlag && !visible && _menuController.isOpen) {
       // Symmetric Java-driven close (Menu.setVisible(false)): the open above is imperative, so
       // the close must be too — without it a popup opened from Java can never be closed from
@@ -332,19 +347,30 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       ),
       alignmentOffset: Offset.zero,
       consumeOutsideTap: true,
-      onOpen: () => widget.sendMenuShow(state, null),
+      onOpen: () {
+        if (_showSent) return;
+        _showSent = true;
+        widget.sendMenuShow(state, null);
+      },
       onClose: () {
         _sendPendingChanges();
         _openedFromVisibleFlag = false;
+        _pendingContextMenuPosition = null;
+        _pendingOpenFromVisibleFlag = false;
+        _shownOnce = false;
+        _showSent = false;
         if (visible) {
-          visible = false;
           // Sync the SERIALIZED state too: build() reads state.visible, and with it stuck true
           // the open guard re-opens the menu on every rebuild (Java can't help — its own field
           // already went false on the Hide event, so a later setVisible(false) is a no-op that
           // never serializes).
+          visible = false;
           state.visible = false;
-          widget.sendMenuHide(state, null);
         }
+        // Sent whichever path opened it. A right-click leaves state.visible false, so gating this
+        // on it left Java believing the popup was still up — and the Display skips re-showing a
+        // popup it still counts as shown, which killed every later opening of that menu.
+        widget.sendMenuHide(state, null);
       },
       menuChildren: [
         pointerInterceptor(MenuChangeNotifier(
@@ -407,7 +433,32 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
     if ((state.style & SWT.BAR) != 0) {
       return [...applicationMenuItems(), ...items];
     }
-    return items;
+    return _withoutRedundantSeparators(items);
+  }
+
+  /// Drops separators that separate nothing: leading, trailing, and runs of them.
+  ///
+  /// A menu assembled from contributions routinely ends up with them -- each contributor adds its own
+  /// trailing separator, and whichever groups turn out empty leave theirs behind. A platform menu does
+  /// not draw those, so neither does this one: the same menu on native SWT shows four lines where the
+  /// item list carries seven.
+  static List<VMenuItem> _withoutRedundantSeparators(List<VMenuItem> items) {
+    final out = <VMenuItem>[];
+    VMenuItem? pending;
+    for (final item in items) {
+      if ((item.style & SWT.SEPARATOR) != 0) {
+        // Held rather than dropped: a separator earns its place only once a real item follows it.
+        // Keeping the first of a run keeps the ids the client renders stable.
+        if (out.isNotEmpty) pending ??= item;
+        continue;
+      }
+      if (pending != null) {
+        out.add(pending);
+        pending = null;
+      }
+      out.add(item);
+    }
+    return out;
   }
 }
 

@@ -2791,6 +2791,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     void removePopup(Menu menu) {
+        unmarkPopupShown(menu);
         if (popups == null)
             return;
         for (int i = 0; i < popups.length; i++) {
@@ -4047,6 +4048,21 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
                 return true;
         }
         return false;
+    }
+
+    void unmarkPopupShown(Menu menu) {
+        int live = 0;
+        for (Menu m : shownPopups) {
+            if (m != null && !m.isDisposed() && m != menu)
+                live++;
+        }
+        Menu[] kept = new Menu[live];
+        int i = 0;
+        for (Menu m : shownPopups) {
+            if (m != null && !m.isDisposed() && m != menu)
+                kept[i++] = m;
+        }
+        shownPopups = kept;
     }
 
     void markPopupShown(Menu menu) {
