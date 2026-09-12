@@ -25,6 +25,9 @@ class EquoCommService {
   static void onBytes(
           String userEventActionId, FutureOr<void> Function(Uint8List) callback) =>
       throw UnsupportedError("EquoComm.onBytes");
+  static void onArrival(
+          String userEventActionId, bool Function(Uint8List) handler) =>
+      throw UnsupportedError("EquoComm.onArrival");
   static Future setPort(int port) => throw UnsupportedError("EquoComm.setPort");
   static void onReconnect(void Function() callback) =>
       throw UnsupportedError("EquoComm.onReconnect");

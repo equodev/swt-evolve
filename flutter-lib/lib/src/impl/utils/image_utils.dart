@@ -43,6 +43,11 @@ class ImageUtils {
   // Flutter without waiting for an answer.
   static final Map<int, ui.Image> _remoteImageCache = {};
 
+  /// Whether [ref]'s picture is already rendered and held here. A ref is minted once per render
+  /// and never reused, so a hit can only be that render's own output — nothing still queued can
+  /// change it.
+  static bool hasRemoteImage(int ref) => _remoteImageCache.containsKey(ref);
+
   static void registerRemoteImage(int ref, ui.Image image) {
     final previous = _remoteImageCache[ref];
     _remoteImageCache[ref] = image;

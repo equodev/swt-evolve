@@ -1352,7 +1352,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             return;
         byte[] png = GCHelper.fetchRemotePixels(device, remoteComm, remoteRef, 5000);
         if (png == null || png.length == 0) {
-            System.err.println("[Image] Flutter returned no pixels for remoteRef " + remoteRef + "; getImageData() is answering with the last content this side saw");
+            SWT.error(SWT.ERROR_IO, null, " [the render side did not return the pixels for image " + remoteRef + "]");
             return;
         }
         try {

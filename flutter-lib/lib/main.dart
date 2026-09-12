@@ -95,7 +95,7 @@ void main(List<String> args) async {
   // Every topology, not just under a Display: the Image channels are keyed by remoteRef rather than
   // by widget, and an off-screen engine never reaches the Display branch below.
   _registerImageReleaseListener();
-  _registerImagePixelsListener();
+  registerImagePixelsListener();
 
   if (widgetName == "FontMeasureBridge") {
     font_size.measureRequest(widgetName, widgetId);
@@ -186,11 +186,26 @@ void _registerGcCreateListener() {
 
 // The one path back to the pixels, for Image#getImageData() (see GCHelper#fetchRemotePixels).
 // The answer always goes out, empty included: the caller is blocked on it until its timeout.
-void _registerImagePixelsListener() {
-  EquoCommService.onBytes("Image/requestPixels", (bytes) async {
-    final ref = _readInt64BE(ByteData.sublistView(bytes), 0);
+void registerImagePixelsListener() {
+  Future<void> answer(int ref) async {
     final png = await ImageUtils.encodeRemoteImagePng(ref);
     EquoCommService.sendBytes("Image/$ref/pixelsResult", png ?? Uint8List(0));
+  }
+
+  // The caller blocks on this with a timeout, so making it wait out a queue of unrelated frames is
+  // what turns a read into a timeout — and an unanswered read is indistinguishable from a black
+  // image. When the picture is already rendered, answer without queueing; the encode runs detached
+  // so it does not hold the queue either.
+  EquoCommService.onArrival("Image/requestPixels", (bytes) {
+    final ref = _readInt64BE(ByteData.sublistView(bytes), 0);
+    if (!ImageUtils.hasRemoteImage(ref)) return false;
+    unawaited(answer(ref));
+    return true;
+  });
+
+  // Not rendered yet: the render is a frame still in the queue, so this has to take its turn.
+  EquoCommService.onBytes("Image/requestPixels", (bytes) async {
+    await answer(_readInt64BE(ByteData.sublistView(bytes), 0));
   });
 }
 

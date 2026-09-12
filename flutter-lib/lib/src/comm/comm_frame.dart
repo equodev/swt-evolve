@@ -67,6 +67,7 @@ abstract class EquoCommBase {
   final Map<String, dynamic> _pending = {};
   final Map<String, FutureOr<void> Function(Uint8List)> _rawHandlers = {};
   final Map<String, Uint8List> _rawPending = {};
+  final Map<String, bool Function(Uint8List)> _arrivalHandlers = {};
   final List<Uint8List> _queue = [];
   bool _open = false;
   bool _everOpened = false;
@@ -171,6 +172,11 @@ abstract class EquoCommBase {
     final actionId = utf8.decoder.convert(data, 2, 2 + nameLen);
     final bodyLen = data.length - 2 - nameLen;
     final body = bodyLen > 0 ? Uint8List.sublistView(data, 2 + nameLen) : null;
+
+    // A channel that can answer from already-applied state skips the queue entirely; returning
+    // false means it could not, and the frame takes its turn like any other.
+    final arrival = _arrivalHandlers[actionId];
+    if (arrival != null && arrival(body ?? Uint8List(0))) return;
 
     // Which handler a frame belongs to is resolved at apply time, never at arrival: a frame
     // routinely registers the handler the next frame needs (GC/create builds the drawer that owns
@@ -347,6 +353,19 @@ abstract class EquoCommBase {
   /// Typed handler: decodes the payload into the widget value object before delivery.
   Object onWidget<V extends VWidget>(String actionId, CommCallback<V> onSuccess) {
     return on(actionId, (payload) => onSuccess(mapWidgetValue(payload) as V));
+  }
+
+  /// Answers [actionId] at arrival, ahead of the apply queue, when it can.
+  ///
+  /// The handler returns true once it has answered and false to let the frame queue normally. Only
+  /// for a request whose answer, when it is available at all, cannot be changed by anything still
+  /// queued — a read of state already applied. A request that depends on a queued frame must
+  /// return false, or it races the very frame it needs.
+  ///
+  /// Exists because a blocking caller on the other side is timed: making it wait out a queue of
+  /// unrelated frame work is what turns a read into a timeout.
+  void onArrival(String actionId, bool Function(Uint8List) handler) {
+    _arrivalHandlers[actionId] = handler;
   }
 
   /// Raw-bytes receive: callback gets the raw frame body (no JSON decode).

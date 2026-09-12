@@ -71,6 +71,10 @@ class EquoCommService {
           String userEventActionId, FutureOr<void> Function(Uint8List) callback) =>
       _comm.onBytes(userEventActionId, callback);
 
+  static void onArrival(
+          String userEventActionId, bool Function(Uint8List) handler) =>
+      _comm.onArrival(userEventActionId, handler);
+
   static void remove(eventName, [Object? token]) => _comm.remove(eventName, token);
 
   /// Registers the callback fired when the socket comes back after a drop. Never fires on
