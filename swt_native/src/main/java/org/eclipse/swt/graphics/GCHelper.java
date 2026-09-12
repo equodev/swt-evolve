@@ -199,6 +199,19 @@ public class GCHelper {
      * pixels cross back, reached only from {@code Image#getImageData()}.
      */
     public static byte[] fetchRemotePixels(Device device, dev.equo.swt.comm.CommService comm, long remoteRef, long timeoutMs) {
+        byte[] png = requestRemotePixels(device, comm, remoteRef, timeoutMs);
+        if (png != null && png.length > 0)
+            return png;
+        // The render side answers requestPixels from its frame-apply queue, one frame at a time, so
+        // a request issued while that queue is busy can outlast the bound and still be served right
+        // after it; a second one then finds the queue drained. Worth the retry because an
+        // unanswered read is indistinguishable downstream from a legitimately black image: the
+        // caller keeps the buffer it already had, which for an image that was just drawn and never
+        // read is all zeros.
+        return requestRemotePixels(device, comm, remoteRef, timeoutMs);
+    }
+
+    private static byte[] requestRemotePixels(Device device, dev.equo.swt.comm.CommService comm, long remoteRef, long timeoutMs) {
         if (comm == null) return null;
         Display display = device instanceof Display d ? d : Display.getCurrent();
         String resultEvent = "Image/" + remoteRef + "/pixelsResult";
