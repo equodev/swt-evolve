@@ -181,12 +181,21 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     );
 
     if (constraints != null) {
-      return tagSemantics(
-        ConstrainedBox(constraints: constraints, child: framed),
-      );
+      return tagSemantics(ParentForegroundScope(
+        foreground: state.foreground,
+        font: state.font,
+        selectionForeground: state.selectionForeground,
+        child: ConstrainedBox(constraints: constraints, child: framed),
+      ));
     }
 
-    return tagSemantics(framed);
+    // The tabs letter and colour in the folder's own font/foreground when they carry none.
+    return tagSemantics(ParentForegroundScope(
+      foreground: state.foreground,
+      font: state.font,
+      selectionForeground: state.selectionForeground,
+      child: framed,
+    ));
   }
 
   void _handleTabSelection(int index) {
@@ -681,22 +690,78 @@ class _CTabBarState extends State<_CTabBar> {
       defaultColor: widgetTheme.tabSelectedBackgroundColor,
     ) ?? widgetTheme.tabSelectedBackgroundColor;
 
-    final textColor = getCTabTextColor(
+    final themeTextColor = getCTabTextColor(
       widgetTheme,
       isSelected,
       enabled,
       resolvedSelectionForeground: resolvedSelectionForeground,
       isHovered: isHovered,
     );
-    final backgroundColor = getCTabBackgroundColor(
+    // The folder's own colours win over the theme's when the application set them.
+    final textColor = getForegroundColor(
+      foreground: widget.state.foreground,
+      defaultColor: themeTextColor,
+      context: context,
+    );
+    final themeBackground = getCTabBackgroundColor(
       widgetTheme,
       isSelected,
       enabled,
       resolvedSelectionBackground: resolvedSelectionBackground,
       isHovered: isHovered,
     );
+    final backgroundColor = isSelected
+        ? themeBackground
+        : (getBackgroundColor(
+              background: widget.state.background,
+              defaultColor: themeBackground,
+              context: context,
+            ) ??
+            themeBackground);
     final borderColor = getCTabBorderColor(widgetTheme, enabled, isHovered: isHovered);
-    final textStyle = getCTabTextStyle(widgetTheme, isSelected, enabled);
+    final textStyle = getTextStyle(
+      context: context,
+      font: widget.state.font,
+      textColor: textColor,
+      baseTextStyle: getCTabTextStyle(widgetTheme, isSelected, enabled),
+    );
+
+    final border = Border(
+      right: BorderSide(
+        color: borderColor,
+        width: widgetTheme.tabBorderWidth,
+      ),
+      bottom: !isTabBottom && isSelected && enabled
+          ? BorderSide(
+              color: backgroundColor,
+              width:
+                  (widget.state.selectionBarThickness != null &&
+                      widget.state.selectionBarThickness! > 0)
+                  ? widget.state.selectionBarThickness!.toDouble()
+                  : widgetTheme.tabSelectedBorderWidth,
+            )
+          : !isTabBottom
+          ? BorderSide(
+              color: borderColor,
+              width: widgetTheme.tabBorderWidth,
+            )
+          : BorderSide.none,
+      top: isTabBottom && isSelected && enabled
+          ? BorderSide(
+              color: backgroundColor,
+              width:
+                  (widget.state.selectionBarThickness != null &&
+                      widget.state.selectionBarThickness! > 0)
+                  ? widget.state.selectionBarThickness!.toDouble()
+                  : widgetTheme.tabSelectedBorderWidth,
+            )
+          : isTabBottom
+          ? BorderSide(
+              color: borderColor,
+              width: widgetTheme.tabBorderWidth,
+            )
+          : BorderSide.none,
+    );
 
     return Semantics(identifier: '${tab.vItem.swt}/${tab.vItem.id}', child: MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
@@ -706,14 +771,16 @@ class _CTabBarState extends State<_CTabBar> {
         onTap: onTap,
         onSecondaryTapDown: (details) =>
             widget.onSecondaryTap?.call(details.globalPosition),
-        child: AnimatedContainer(
+        child: CustomPaint(
+          foregroundPainter: _RectangularSides(border),
+          child: AnimatedContainer(
           duration: widgetTheme.hoverRevealDuration,
           curve: Curves.easeOut,
           height: double.infinity,
           padding: EdgeInsets.symmetric(
             horizontal: widgetTheme.tabHorizontalPadding,
             vertical: widgetTheme.tabVerticalPadding,
-          ),
+          ).add(border.dimensions),
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: isTabBottom
@@ -725,42 +792,6 @@ class _CTabBarState extends State<_CTabBar> {
                     topLeft: Radius.circular(widgetTheme.tabBorderRadius),
                     topRight: Radius.circular(widgetTheme.tabBorderRadius),
                   ),
-            border: Border(
-              right: BorderSide(
-                color: borderColor,
-                width: widgetTheme.tabBorderWidth,
-              ),
-              bottom: !isTabBottom && isSelected && enabled
-                  ? BorderSide(
-                      color: backgroundColor,
-                      width:
-                          (widget.state.selectionBarThickness != null &&
-                              widget.state.selectionBarThickness! > 0)
-                          ? widget.state.selectionBarThickness!.toDouble()
-                          : widgetTheme.tabSelectedBorderWidth,
-                    )
-                  : !isTabBottom
-                  ? BorderSide(
-                      color: borderColor,
-                      width: widgetTheme.tabBorderWidth,
-                    )
-                  : BorderSide.none,
-              top: isTabBottom && isSelected && enabled
-                  ? BorderSide(
-                      color: backgroundColor,
-                      width:
-                          (widget.state.selectionBarThickness != null &&
-                              widget.state.selectionBarThickness! > 0)
-                          ? widget.state.selectionBarThickness!.toDouble()
-                          : widgetTheme.tabSelectedBorderWidth,
-                    )
-                  : isTabBottom
-                  ? BorderSide(
-                      color: borderColor,
-                      width: widgetTheme.tabBorderWidth,
-                    )
-                  : BorderSide.none,
-            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -784,6 +815,7 @@ class _CTabBarState extends State<_CTabBar> {
                 ),
               ],
             ],
+          ),
           ),
         ),
       ),
@@ -825,14 +857,20 @@ class _CTabBarState extends State<_CTabBar> {
       defaultColor: widgetTheme.tabSelectedBackgroundColor,
     ) ?? widgetTheme.tabSelectedBackgroundColor;
 
-    final textColor = getCTabTextColor(
+    final themeTextColor = getCTabTextColor(
       widgetTheme,
       isSelected,
       enabled,
       resolvedSelectionForeground: resolvedSelectionForeground,
       isHovered: isHovered,
     );
-    final backgroundColor = getCTabBackgroundColor(
+    // The folder's own colours win over the theme's when the application set them.
+    final textColor = getForegroundColor(
+      foreground: widget.state.foreground,
+      defaultColor: themeTextColor,
+      context: context,
+    );
+    final themeBackground = getCTabBackgroundColor(
       widgetTheme,
       isSelected,
       enabled,
@@ -840,8 +878,74 @@ class _CTabBarState extends State<_CTabBar> {
       useDefaultTheme: useDefaultTheme,
       isHovered: isHovered,
     );
+    final backgroundColor = isSelected
+        ? themeBackground
+        : (getBackgroundColor(
+              background: widget.state.background,
+              defaultColor: themeBackground,
+              context: context,
+            ) ??
+            themeBackground);
     final borderColor = getCTabBorderColor(widgetTheme, enabled, isHovered: isHovered);
-    final textStyle = getCTabTextStyle(widgetTheme, isSelected, enabled);
+    final textStyle = getTextStyle(
+      context: context,
+      font: widget.state.font,
+      textColor: textColor,
+      baseTextStyle: getCTabTextStyle(widgetTheme, isSelected, enabled),
+    );
+
+    final border = Border(
+      top: !isTabBottom && isSelected && enabled && showHighlight
+          ? BorderSide(
+              color: widgetTheme.tabHighlightColor,
+              width: widgetTheme.tabHighlightBorderWidth,
+            )
+          : isTabBottom && isSelected && enabled
+          ? BorderSide(
+              color: backgroundColor,
+              width:
+                  (widget.state.selectionBarThickness != null &&
+                      widget.state.selectionBarThickness! > 0)
+                  ? widget.state.selectionBarThickness!.toDouble()
+                  : widgetTheme.tabSelectedBorderWidth,
+            )
+          : isTabBottom
+          ? BorderSide(
+              color: borderColor,
+              width: widgetTheme.tabBorderWidth,
+            )
+          : BorderSide.none,
+      right: BorderSide(
+        color: borderColor,
+        width: widgetTheme.tabBorderWidth,
+      ),
+      left: isSelected && enabled
+          ? BorderSide(
+              color: borderColor,
+              width: widgetTheme.tabBorderWidth,
+            )
+          : BorderSide.none,
+      bottom: !isTabBottom && isSelected && enabled
+          ? BorderSide(
+              color: backgroundColor,
+              width:
+                  (widget.state.selectionBarThickness != null &&
+                      widget.state.selectionBarThickness! > 0)
+                  ? widget.state.selectionBarThickness!.toDouble()
+                  : widgetTheme.tabSelectedBorderWidth,
+            )
+          : !isTabBottom
+          ? BorderSide(
+              color: borderColor,
+              width: widgetTheme.tabBorderWidth,
+            )
+          : isTabBottom && isSelected && enabled && showHighlight
+          ? BorderSide(
+              color: widgetTheme.tabHighlightColor,
+              width: widgetTheme.tabHighlightBorderWidth,
+            )
+          : BorderSide.none,
+    );
 
     return Semantics(identifier: '${tab.vItem.swt}/${tab.vItem.id}', child: MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
@@ -851,14 +955,16 @@ class _CTabBarState extends State<_CTabBar> {
         onTap: onTap,
         onSecondaryTapDown: (details) =>
             widget.onSecondaryTap?.call(details.globalPosition),
-        child: AnimatedContainer(
+        child: CustomPaint(
+          foregroundPainter: _RectangularSides(border),
+          child: AnimatedContainer(
           duration: widgetTheme.hoverRevealDuration,
           curve: Curves.easeOut,
           height: double.infinity,
           padding: EdgeInsets.symmetric(
             horizontal: widgetTheme.tabHorizontalPadding,
             vertical: widgetTheme.tabVerticalPadding,
-          ),
+          ).add(border.dimensions),
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: isTabBottom
@@ -871,58 +977,6 @@ class _CTabBarState extends State<_CTabBar> {
                     topRight: Radius.circular(widgetTheme.tabBorderRadius),
                   ),
             image: isSelected && enabled ? _buildSelectionBgImage() : null,
-            border: Border(
-              top: !isTabBottom && isSelected && enabled && showHighlight
-                  ? BorderSide(
-                      color: widgetTheme.tabHighlightColor,
-                      width: widgetTheme.tabHighlightBorderWidth,
-                    )
-                  : isTabBottom && isSelected && enabled
-                  ? BorderSide(
-                      color: backgroundColor,
-                      width:
-                          (widget.state.selectionBarThickness != null &&
-                              widget.state.selectionBarThickness! > 0)
-                          ? widget.state.selectionBarThickness!.toDouble()
-                          : widgetTheme.tabSelectedBorderWidth,
-                    )
-                  : isTabBottom
-                  ? BorderSide(
-                      color: borderColor,
-                      width: widgetTheme.tabBorderWidth,
-                    )
-                  : BorderSide.none,
-              right: BorderSide(
-                color: borderColor,
-                width: widgetTheme.tabBorderWidth,
-              ),
-              left: isSelected && enabled
-                  ? BorderSide(
-                      color: borderColor,
-                      width: widgetTheme.tabBorderWidth,
-                    )
-                  : BorderSide.none,
-              bottom: !isTabBottom && isSelected && enabled
-                  ? BorderSide(
-                      color: backgroundColor,
-                      width:
-                          (widget.state.selectionBarThickness != null &&
-                              widget.state.selectionBarThickness! > 0)
-                          ? widget.state.selectionBarThickness!.toDouble()
-                          : widgetTheme.tabSelectedBorderWidth,
-                    )
-                  : !isTabBottom
-                  ? BorderSide(
-                      color: borderColor,
-                      width: widgetTheme.tabBorderWidth,
-                    )
-                  : isTabBottom && isSelected && enabled && showHighlight
-                  ? BorderSide(
-                      color: widgetTheme.tabHighlightColor,
-                      width: widgetTheme.tabHighlightBorderWidth,
-                    )
-                  : BorderSide.none,
-            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -1002,6 +1056,7 @@ class _CTabBarState extends State<_CTabBar> {
                 ),
               ],
             ],
+          ),
           ),
         ),
       ),
@@ -1209,7 +1264,14 @@ class _CTabBarState extends State<_CTabBar> {
   }) {
     final borderVisible = widget.state.borderVisible ?? true;
     final decoration = BoxDecoration(
-      color: widgetTheme.tabBarBackgroundColor,
+      // The band the tabs sit on is the folder's own ground: an application that coloured the
+      // CTabFolder expects it here, not just behind the selected tab.
+      color: getBackgroundColor(
+            background: widget.state.background,
+            defaultColor: widgetTheme.tabBarBackgroundColor,
+            context: context,
+          ) ??
+          widgetTheme.tabBarBackgroundColor,
       border: borderVisible
           ? (isTabBottom
                 ? Border(
@@ -1707,4 +1769,26 @@ class TabItemContextProvider extends InheritedWidget {
     return context.isSelected != oldWidget.context.isSelected ||
         context.isEnabled != oldWidget.context.isEnabled;
   }
+}
+
+/// The tab's sides, drawn as straight strips the way Flutter's release build draws a
+/// non-uniform Border under a rounded corner (it ignores the radius for the sides); the debug
+/// build refuses that combination in a BoxDecoration, so the sides are painted here instead.
+class _RectangularSides extends CustomPainter {
+  final Border border;
+
+  const _RectangularSides(this.border);
+
+  @override
+  void paint(Canvas canvas, Size size) => paintBorder(
+        canvas,
+        Offset.zero & size,
+        top: border.top,
+        right: border.right,
+        bottom: border.bottom,
+        left: border.left,
+      );
+
+  @override
+  bool shouldRepaint(_RectangularSides oldDelegate) => oldDelegate.border != border;
 }

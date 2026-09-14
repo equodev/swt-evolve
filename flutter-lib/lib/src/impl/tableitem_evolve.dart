@@ -394,7 +394,8 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
 
     final cellForeground = getCellForeground(columnIndex);
     return getForegroundColor(
-      foreground: cellForeground ?? state.foreground,
+      // Cell, else row, else the Table's own -- the cascade SWT resolves.
+      foreground: cellForeground ?? state.foreground ?? _context?.tableForeground,
       defaultColor: defaultColor,
     );
   }

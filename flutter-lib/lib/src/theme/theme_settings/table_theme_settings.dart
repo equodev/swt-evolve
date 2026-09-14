@@ -164,10 +164,13 @@ Color getTableRowTextColor(
   VTableItem state,
   TableThemeExtension widgetTheme,
   bool selected,
-  bool enabled,
-) {
+  bool enabled, {
+  VColor? parentForeground,
+}) {
   return getForegroundColor(
-    foreground: state.foreground,
+    // The row's own colour, else the Table's: an item with no colour of its own takes the
+    // control's, the way SWT resolves it.
+    foreground: state.foreground ?? parentForeground,
     defaultColor: getTableCellDefaultTextColor(widgetTheme, selected, enabled),
   );
 }

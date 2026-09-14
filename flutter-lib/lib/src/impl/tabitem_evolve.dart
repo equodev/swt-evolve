@@ -32,11 +32,20 @@ class TabItemImpl<T extends TabItemSwt, V extends VTabItem>
 
     final tabItemContext = TabItemContext.of(context);
     final isEnabled = tabItemContext?.isEnabled ?? true;
-    final textColor = isEnabled
-        ? widgetTheme.textColor
-        : widgetTheme.disabledTextColor;
-    final textStyle = (widgetTheme.textStyle ?? const TextStyle()).copyWith(
-      color: textColor,
+    final isSelected = tabItemContext?.isSelected ?? false;
+    // VTabItem carries no colour or font of its own, so a tab takes the TabFolder's -- except
+    // the selected one, whose surface stays the theme's: the folder's foreground was chosen
+    // against the folder's background, and applying it there is what leaves text unreadable.
+    final textColor = getForegroundColor(
+      foreground: isSelected ? null : ParentForegroundScope.of(context),
+      defaultColor: isEnabled ? widgetTheme.textColor : widgetTheme.disabledTextColor,
+      context: context,
+    );
+    final textStyle = getTextStyle(
+      context: context,
+      font: ParentForegroundScope.fontOf(context),
+      textColor: textColor,
+      baseTextStyle: widgetTheme.textStyle,
     );
 
     final alignment = getMainAxisAlignmentFromTextAlign(

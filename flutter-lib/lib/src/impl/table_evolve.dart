@@ -1,3 +1,4 @@
+import '../gen/color.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -240,7 +241,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final rowTextStyle = getTextStyle(
       context: context,
       font: state.font,
-      textColor: widgetTheme.rowTextColor,
+      // The Table's own colour when the application set one, else the theme's row colour.
+      textColor: getForegroundColor(
+        foreground: state.foreground,
+        defaultColor: widgetTheme.rowTextColor,
+        context: context,
+      ),
       baseTextStyle: widgetTheme.rowTextStyle,
     );
     _cachedRowHeight = calculateRowHeight(rowTextStyle, widgetTheme);
@@ -552,7 +558,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final rowTextStyle = getTextStyle(
       context: context,
       font: state.font,
-      textColor: theme.rowTextColor,
+      // The Table's own colour when the application set one, else the theme's row colour.
+      textColor: getForegroundColor(
+        foreground: state.foreground,
+        defaultColor: theme.rowTextColor,
+        context: context,
+      ),
       baseTextStyle: theme.rowTextStyle,
     );
     final totalRows = rowCount(items);
@@ -689,6 +700,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
       parentTable: widget,
       parentTableValue: state,
       tableFont: state.font,
+      tableForeground: state.foreground,
     ).buildCells(context, theme);
 
     return TableRow(
@@ -849,7 +861,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final rowTextStyle = getTextStyle(
       context: context,
       font: state.font,
-      textColor: theme.rowTextColor,
+      // The Table's own colour when the application set one, else the theme's row colour.
+      textColor: getForegroundColor(
+        foreground: state.foreground,
+        defaultColor: theme.rowTextColor,
+        context: context,
+      ),
       baseTextStyle: theme.rowTextStyle,
     );
     final rowHeight = calculateRowHeight(rowTextStyle, theme);
@@ -1148,7 +1165,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final rowTextStyle = getTextStyle(
       context: context,
       font: state.font,
-      textColor: theme.rowTextColor,
+      // The Table's own colour when the application set one, else the theme's row colour.
+      textColor: getForegroundColor(
+        foreground: state.foreground,
+        defaultColor: theme.rowTextColor,
+        context: context,
+      ),
       baseTextStyle: theme.rowTextStyle,
     );
 
@@ -1182,7 +1204,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final rowTextStyle = getTextStyle(
       context: context,
       font: state.font,
-      textColor: theme.rowTextColor,
+      // The Table's own colour when the application set one, else the theme's row colour.
+      textColor: getForegroundColor(
+        foreground: state.foreground,
+        defaultColor: theme.rowTextColor,
+        context: context,
+      ),
       baseTextStyle: theme.rowTextStyle,
     );
     final items = getItems();
@@ -1252,7 +1279,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final cellTextStyle = getTextStyle(
       context: context,
       font: cellFont,
-      textColor: getTableRowTextColor(item, theme, false, true),
+      textColor: getTableRowTextColor(item, theme, false, true,
+          parentForeground: state.foreground),
       baseTextStyle: rowTextStyle,
     );
 
@@ -1325,6 +1353,8 @@ class TableItemSwtWrapper {
   final TableSwt parentTable;
   final VTable parentTableValue;
   final VFont? tableFont;
+  /// The Table's own foreground: a row with none of its own takes it.
+  final VColor? tableForeground;
 
   TableItemSwtWrapper({
     required this.item,
@@ -1333,6 +1363,7 @@ class TableItemSwtWrapper {
     required this.parentTable,
     required this.parentTableValue,
     this.tableFont,
+    this.tableForeground,
   });
 
   List<Widget> buildCells(BuildContext context, TableThemeExtension theme) {
@@ -1345,6 +1376,7 @@ class TableItemSwtWrapper {
         parentTableValue: parentTableValue,
         tableImpl: tableImpl,
         tableFont: tableFont,
+        tableForeground: tableForeground,
       ),
     );
     return tableItemImpl.buildCells(context, theme);
@@ -1378,6 +1410,8 @@ class TableItemContext {
   final VTable parentTableValue;
   final TableImpl? tableImpl;
   final VFont? tableFont;
+  /// The Table's own foreground: a row with none of its own takes it.
+  final VColor? tableForeground;
 
   TableItemContext({
     required this.rowIndex,
@@ -1385,6 +1419,7 @@ class TableItemContext {
     required this.parentTableValue,
     this.tableImpl,
     this.tableFont,
+    this.tableForeground,
   });
 
   static TableItemContext? of(BuildContext context) {

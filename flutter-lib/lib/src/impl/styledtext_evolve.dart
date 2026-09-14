@@ -108,6 +108,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   StyledTextThemeExtension get _styledTextTheme =>
       Theme.of(context).extension<StyledTextThemeExtension>()!;
 
+  /// The text colour: the application's own when it set one, else the theme's.
+  Color get _textColor => getForegroundColor(
+        foreground: state.foreground,
+        defaultColor: _styledTextTheme.foregroundColor,
+      );
+
   final FocusNode _focusNode = FocusNode();
 
   /// Held open while the editor is in edit mode so the platform has somewhere to compose; the
@@ -333,7 +339,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final defaultStyle = _getDefaultTextStyle();
 
     // Build caret info
-    final caretColor = applyAlpha(_styledTextTheme.foregroundColor);
+    final caretColor = applyAlpha(_textColor);
     final caretHeight = (defaultStyle.fontSize ?? 12.0) * 1.2;
     final caretInfo = CaretInfo(
       offset: caretOffset,
@@ -349,7 +355,10 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     SelectionInfo? selectionFromState;
     final sr = state.selectionRange;
     if (sr != null && sr.x != sr.y) {
-      selectionFromState = SelectionInfo.fromRange(sr.x, sr.y);
+      selectionFromState = SelectionInfo.fromRange(sr.x, sr.y).copyWith(
+        selectionColor: _selectionColor,
+        selectionForeground: _selectionForeground,
+      );
     }
 
     final topMargin = (state.topMargin ?? 0).toDouble();
@@ -523,8 +532,29 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   }
 
   /// Convert VStyleRange to Flutter TextStyle
+  /// StyledText#setSelectionBackground is a real SWT setter the CSS engine drives, so the
+  /// application's choice replaces the built-in highlight.
+  Color get _selectionColor =>
+      getBackgroundColor(
+        background: state.selectionBackground,
+        defaultColor: const Color(0xFF3399FF),
+      ) ??
+      const Color(0xFF3399FF);
+
+  /// StyledText#setSelectionForeground, the CSS engine's other selection setter: the selected
+  /// glyphs are repainted in it over the highlight. Null keeps the glyphs as they are.
+  Color? get _selectionForeground {
+    if (state.selectionForeground == null) return null;
+    const unset = Color(0x00000000);
+    final resolved = getForegroundColor(
+      foreground: state.selectionForeground,
+      defaultColor: unset,
+    );
+    return identical(resolved, unset) ? null : resolved;
+  }
+
   TextStyle _convertVStyleRangeToTextStyle(VStyleRange vRange) {
-    final defaultTextColor = applyAlpha(_styledTextTheme.foregroundColor);
+    final defaultTextColor = applyAlpha(_textColor);
     final baseStyle = _getDefaultTextStyle();
 
     Color? foreground;
@@ -571,13 +601,22 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       color: foreground ?? defaultTextColor,
       backgroundColor: background,
       decoration: decoration,
-      decorationColor: foreground ?? defaultTextColor,
+      // SWT lets a run colour its underline and strikeout apart from its text; only one of the
+      // two can reach a Flutter TextStyle, so the underline's colour wins when both are set.
+      decorationColor: (vRange.underline == true
+              ? colorFromVColor(vRange.underlineColor)
+              : null) ??
+          (vRange.strikeout == true
+              ? colorFromVColor(vRange.strikeoutColor)
+              : null) ??
+          foreground ??
+          defaultTextColor,
     );
   }
 
   /// Get default text style from state.font or fallback
   TextStyle _getDefaultTextStyle() {
-    final defaultTextColor = applyAlpha(_styledTextTheme.foregroundColor);
+    final defaultTextColor = applyAlpha(_textColor);
 
     if (state.font != null) {
        return FontUtils.textStyleFromVFont(
@@ -691,12 +730,37 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
           child: Stack(
             children: [
               Positioned.fill(child: contentLayer),
+              ..._marginStrips(hasVScroll ? trackSize : 0, hasHScroll ? trackSize : 0),
               Positioned.fill(child: interactionLayer),
             ],
           ),
         ),
       ),
     );
+  }
+
+  /// StyledText#setMarginColor: the four margins painted in the application's colour, over the
+  /// content so they stay put while the text scrolls. Nothing when the application set none.
+  List<Widget> _marginStrips(double vTrack, double hTrack) {
+    final color = getBackgroundColor(
+      background: state.marginColor,
+      defaultColor: null,
+      context: context,
+    );
+    if (color == null) return const [];
+    final left = (state.leftMargin ?? 0).toDouble();
+    final top = (state.topMargin ?? 0).toDouble();
+    final right = (state.rightMargin ?? 0).toDouble();
+    final bottom = (state.bottomMargin ?? 0).toDouble();
+    Widget strip(double? l, double? t, double? r, double? b, double? w, double? h) =>
+        Positioned(left: l, top: t, right: r, bottom: b, width: w, height: h,
+            child: ColoredBox(color: color));
+    return [
+      if (left > 0) strip(0, 0, null, hTrack, left, null),
+      if (top > 0) strip(0, 0, vTrack, null, null, top),
+      if (right > 0) strip(null, 0, vTrack, hTrack, right, null),
+      if (bottom > 0) strip(0, null, vTrack, hTrack, null, bottom),
+    ];
   }
 
   void _onVerticalScroll() {
@@ -1538,7 +1602,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         0,
       );
     } else {
-      final defaultTextColor = _styledTextTheme.foregroundColor;
+      final defaultTextColor = _textColor;
 
       characterRanges.add(
         StyleRange(
@@ -2784,9 +2848,47 @@ class TextShape extends Shape {
               ..style = PaintingStyle.fill,
           );
         }
+
+        final selectionForeground = selectionInfo!.selectionForeground;
+        if (selectionForeground != null && boxes.isNotEmpty) {
+          final recoloured = TextPainter(
+            text: _recolour(tp.text!, selectionForeground),
+            textAlign: tp.textAlign,
+            textDirection: TextDirection.ltr,
+          );
+          if (tp.inlinePlaceholderBoxes != null) {
+            recoloured.setPlaceholderDimensions(_placeholderDimensionsOf(tp));
+          }
+          recoloured.layout(maxWidth: _lineMaxWidth(props.indent));
+          c.save();
+          c.clipRect(boxes
+              .map((b) => Rect.fromLTRB(
+                  off.dx + props.indent + b.left, currentY + b.top,
+                  off.dx + props.indent + b.right, currentY + b.bottom))
+              .reduce((a, b) => a.expandToInclude(b)));
+          recoloured.paint(c, Offset(off.dx + props.indent.toDouble(), currentY));
+          c.restore();
+        }
       }
     }
   }
+
+  InlineSpan _recolour(InlineSpan span, Color color) {
+    if (span is! TextSpan) return span;
+    return TextSpan(
+      text: span.text,
+      style: (span.style ?? const TextStyle()).copyWith(color: color),
+      children: span.children?.map((s) => _recolour(s, color)).toList(),
+    );
+  }
+
+  List<PlaceholderDimensions> _placeholderDimensionsOf(TextPainter tp) =>
+      tp.inlinePlaceholderBoxes!
+          .map((b) => PlaceholderDimensions(
+              size: Size(b.right - b.left, b.bottom - b.top),
+              alignment: PlaceholderAlignment.baseline,
+              baseline: TextBaseline.alphabetic))
+          .toList();
 
   TextShape copyWithSelection(SelectionInfo? selection) {
     return TextShape(
@@ -3286,12 +3388,15 @@ class SelectionInfo {
   final int start;
   final int end;
   final Color selectionColor;
+  /// Colour the selected glyphs are repainted in; null leaves them in their own colour.
+  final Color? selectionForeground;
   final bool isActive;
 
   SelectionInfo({
     required this.start,
     required this.end,
     this.selectionColor = const Color(0xFF3399FF),
+    this.selectionForeground,
     this.isActive = false,
   });
 
@@ -3304,12 +3409,14 @@ class SelectionInfo {
     int? start,
     int? end,
     Color? selectionColor,
+    Color? selectionForeground,
     bool? isActive,
   }) {
     return SelectionInfo(
       start: start ?? this.start,
       end: end ?? this.end,
       selectionColor: selectionColor ?? this.selectionColor,
+      selectionForeground: selectionForeground ?? this.selectionForeground,
       isActive: isActive ?? this.isActive,
     );
   }

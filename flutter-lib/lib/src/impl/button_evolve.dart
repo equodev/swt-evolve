@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../gen/button.dart';
+import '../gen/color.dart';
 import '../gen/swt.dart';
 import '../impl/composite_evolve.dart';
 import '../impl/control_evolve.dart';
@@ -27,6 +28,16 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     }
   }
 
+  /// A push, toggle or arrow button draws its own surface, which stays the theme's (SWT calls
+  /// setBackground a hint and Win32 ignores it on buttons), so its text stays the theme's too:
+  /// the application's foreground was chosen against the application's background, and applying
+  /// one without the other is what leaves white text on a light surface. Check and radio text sits
+  /// on the parent's ground, which is the application's, so their foreground is honoured.
+  VColor? get _ownForeground =>
+      hasStyle(state.style, SWT.CHECK) || hasStyle(state.style, SWT.RADIO)
+          ? state.foreground
+          : null;
+
   Widget _wrapWithSwtBackground(BuildContext context, Widget button) {
     final useSwtColors = getConfigFlags().use_swt_colors ?? false;
 
@@ -45,11 +56,11 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       );
     }
 
-    final swtBackgroundColor = getSwtBackgroundColor(context);
-    if (swtBackgroundColor != null) {
-      return Container(color: swtBackgroundColor, child: button);
-    }
-
+    // Nothing is filled behind the button: its own colour is the button's, not the ground around
+    // it, and painting it into the square box under a rounded button only ever showed at the four
+    // corners. The parent's ground shows through instead, which is what surrounds a button.
+    // The surface itself stays the theme's -- SWT calls setBackground a hint the platform may
+    // override, and Win32 ignores it on Buttons.
     return button;
   }
 
@@ -422,7 +433,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
             size: widgetTheme.dropdownButtonIconSize,
             color: enabled
                 ? getForegroundColor(
-                    foreground: state.foreground,
+                    foreground: _ownForeground,
                     defaultColor: widgetTheme.pushButtonTextColor,
                     context: context,
                   )
@@ -485,7 +496,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         : MainAxisAlignment.center;
 
     final textColor = getForegroundColor(
-      foreground: state.foreground,
+      foreground: _ownForeground,
       defaultColor: defaultTextColor,
       context: context,
     );

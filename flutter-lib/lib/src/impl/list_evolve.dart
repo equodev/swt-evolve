@@ -128,9 +128,15 @@ class _StyledListState extends State<_StyledList> {
   @override
   Widget build(BuildContext context) {
     final theme = widget.widgetTheme;
-    final backgroundColor = widget.enabled
+    final themeBackground = widget.enabled
         ? theme.backgroundColor
         : theme.disabledBackgroundColor;
+    final backgroundColor = getBackgroundColor(
+          background: widget.state.background,
+          defaultColor: themeBackground,
+          context: context,
+        ) ??
+        themeBackground;
 
     final borderColor = _isFocused
         ? theme.focusedBorderColor
@@ -253,14 +259,21 @@ class _ListItemState extends State<_ListItem> {
   Widget build(BuildContext context) {
     final theme = widget.widgetTheme;
 
-    final baseBackgroundColor = !widget.enabled
+    final themeBase = !widget.enabled
         ? theme.disabledBackgroundColor
         : theme.backgroundColor;
+    final baseBackgroundColor = getBackgroundColor(
+          background: widget.state.background,
+          defaultColor: themeBase,
+          context: context,
+        ) ??
+        themeBase;
 
     final selectedOverlayColor = theme.selectedItemBackgroundColor;
     final hoverOverlayColor = theme.hoverItemBackgroundColor;
 
-    final textColor = getListItemTextColor(theme, widget.isSelected, widget.enabled);
+    final textColor = getListItemTextColor(theme, widget.isSelected, widget.enabled,
+        foreground: widget.state.foreground);
 
     final textStyle = getTextStyle(
       context: context,

@@ -253,12 +253,13 @@ class _ExpandItemWidgetState extends State<_ExpandItemWidget>
     final itemTheme = widget.itemTheme;
     final expandItem = widget.expandItem;
 
-    final textColor = _isExpanded
-        ? itemTheme.foregroundExpandedColor
-        : getForegroundColor(
-            foreground: widget.parentForeground,
-            defaultColor: itemTheme.foregroundColor,
-          );
+    // Both states take the application's colour when it set one; only the theme default differs.
+    final textColor = getForegroundColor(
+      foreground: widget.parentForeground,
+      defaultColor: _isExpanded
+          ? itemTheme.foregroundExpandedColor
+          : itemTheme.foregroundColor,
+    );
 
     final iconColor = _isExpanded
         ? itemTheme.iconExpandedColor

@@ -51,6 +51,14 @@ class EclipseWorkspaceThemeTest {
     }
 
     @Test
+    void only_the_platforms_own_namespace_counts_as_a_built_in_theme() {
+        assertThat(EclipseWorkspaceTheme.isBuiltIn("org.eclipse.e4.ui.css.theme.e4_dark")).isTrue();
+        // A product is free to call its own theme "dark"; the name is not what identifies it.
+        assertThat(EclipseWorkspaceTheme.isBuiltIn("com.acme.rcp.theme.dark")).isFalse();
+        assertThat(EclipseWorkspaceTheme.isBuiltIn(null)).isFalse();
+    }
+
+    @Test
     void an_unknown_theme_reports_nothing() {
         assertThat(EclipseWorkspaceTheme.classify("com.acme.solarized")).isNull();
         assertThat(EclipseWorkspaceTheme.classify(null)).isNull();

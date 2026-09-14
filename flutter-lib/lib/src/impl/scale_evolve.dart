@@ -1,3 +1,4 @@
+import '../gen/color.dart';
 import 'package:flutter/material.dart';
 import '../gen/event.dart';
 import '../gen/scale.dart';
@@ -25,6 +26,8 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
 
     return wrap(
       _ThemedScale(
+        background: state.background,
+        foreground: state.foreground,
         value: currentValue,
         min: minimum.toDouble(),
         max: maximum.toDouble(),
@@ -60,6 +63,10 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
 }
 
 class _ThemedScale extends StatefulWidget {
+  /// The application's own ground, when it set one.
+  final VColor? background;
+  /// The application's own foreground: the track and thumb follow it, as Slider's does.
+  final VColor? foreground;
   final double value;
   final double min;
   final double max;
@@ -73,6 +80,8 @@ class _ThemedScale extends StatefulWidget {
   final ValueChanged<bool> onHover;
 
   const _ThemedScale({
+    this.background,
+    this.foreground,
     required this.value,
     required this.min,
     required this.max,
@@ -147,6 +156,7 @@ class _ThemedScaleState extends State<_ThemedScale> {
     final activeTrackColor = getScaleActiveTrackColor(
       widget.widgetTheme,
       isEnabled: widget.enabled,
+      foreground: widget.foreground,
     );
     final inactiveTrackColor = getScaleInactiveTrackColor(
       widget.widgetTheme,
@@ -156,6 +166,7 @@ class _ThemedScaleState extends State<_ThemedScale> {
       widget.widgetTheme,
       isEnabled: widget.enabled,
       isHovered: _isHovered,
+      foreground: widget.foreground,
     );
 
     return SliderTheme(
@@ -187,15 +198,24 @@ class _ThemedScaleState extends State<_ThemedScale> {
       duration: widget.widgetTheme.animationDuration,
       width: widget.width,
       height: widget.height,
+      color: _appBackground(context),
       child: scale,
     );
   }
+
+  /// The ground the application gave the Scale, when the product owns the theme.
+  Color? _appBackground(BuildContext context) => getBackgroundColor(
+        background: widget.background,
+        defaultColor: null,
+        context: context,
+      );
 
   Widget _buildVerticalScale(Widget scale) {
     return AnimatedContainer(
       duration: widget.widgetTheme.animationDuration,
       width: widget.width,
       height: widget.height,
+      color: _appBackground(context),
       child: RotatedBox(
         quarterTurns: 3,
         child: SizedBox(

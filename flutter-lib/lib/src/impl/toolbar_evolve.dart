@@ -207,7 +207,13 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
                 // themselves on the default surface, a white slab on top of the toolbar band.
                 child: ParentBackgroundScope(
                   background: backgroundColor,
-                  child: bar,
+                  // The items letter and colour in the ToolBar's own font/foreground: VToolItem
+                  // carries no font of its own, and an item without a colour takes the bar's.
+                  child: ParentForegroundScope(
+                    foreground: state.foreground,
+                    font: state.font,
+                    child: bar,
+                  ),
                 ),
               ),
             ),

@@ -9,9 +9,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
- * Reads the active Eclipse workbench theme ("dark"/"light") from the running workspace's e4 CSS
- * theme preferences, so swt-evolve's own Flutter rendering can match the theme the host IDE
- * actually has configured, instead of guessing independently.
+ * Reads the active Eclipse workbench theme from the running workspace's e4 CSS theme preferences,
+ * so swt-evolve's own Flutter rendering can match the theme the host application actually has
+ * configured, instead of guessing independently. Two answers come out of the same preference: the
+ * light/dark variant, and whether the theme is one of the platform's or one the product brought
+ * itself -- see {@link #isBuiltIn(String)}.
  */
 public final class EclipseWorkspaceTheme {
     private EclipseWorkspaceTheme() {
@@ -22,6 +24,15 @@ public final class EclipseWorkspaceTheme {
 
     /** Returns "dark", "light", or null if no Eclipse workspace/theme preference is found. */
     public static String detect() {
+        return classify(detectThemeId());
+    }
+
+    /**
+     * The raw e4 theme id the running workspace is configured with, or null when there is no
+     * workspace to read one from. Kept separate from {@link #detect()} because an id Evolve has no
+     * theme for still carries information: it means the product brought its own CSS theme.
+     */
+    public static String detectThemeId() {
         try {
             String workspaceLocation = System.getProperty("osgi.instance.area");
             if (workspaceLocation == null) {
@@ -39,10 +50,24 @@ public final class EclipseWorkspaceTheme {
             try (FileInputStream fis = new FileInputStream(prefsFile)) {
                 props.load(fis);
             }
-            return classify(props.getProperty("themeid"));
+            String themeId = props.getProperty("themeid");
+            return themeId == null || themeId.isBlank() ? null : themeId;
         } catch (Exception e) {
             return null;
         }
+    }
+
+    /**
+     * True when the workbench theme is one of the platform's own, which Evolve ships a matching
+     * theme for. False for a product's own CSS theme: there Evolve has nothing that can match it,
+     * and the colors the CSS engine sets on the widgets are the only description of it.
+     * <p>
+     * The test is the id's namespace, not its name: every platform theme is contributed under
+     * {@code org.eclipse.}, while a product names its themes in its own namespace -- and it may
+     * well call one of them "dark", which a name-based test would read as the platform's.
+     */
+    public static boolean isBuiltIn(String themeId) {
+        return themeId != null && themeId.startsWith("org.eclipse.");
     }
 
     /** Maps an e4 theme id to "dark"/"light", or null when it carries no usable variant. */

@@ -639,12 +639,17 @@ public class Config {
     public static ConfigFlags getConfigFlags() {
         if (configFlags == null) {
             configFlags = new ConfigFlags();
+            String eclipseThemeId = EclipseWorkspaceTheme.detectThemeId();
             configFlags.ctabfolder_visible_controls = Boolean.getBoolean("swt.evolve.ctabfolder_visible_controls");
             configFlags.ctabfolder_topright_auto_hide = Boolean.parseBoolean(System.getProperty("swt.evolve.ctabfolder_topright_auto_hide", "true"));
             configFlags.image_disable_icons_replacement = Boolean.getBoolean("swt.evolve.image_disable_icons_replacement");
             configFlags.assets_path = System.getProperty("swt.evolve.assets_path");
             configFlags.disable_evolve_icons = Boolean.getBoolean("swt.evolve.disable_evolve_icons");
             configFlags.gc_icons_replacement = Boolean.getBoolean("swt.evolve.gc_icons_replacement");
+            // Evolve's theme is the source of colors and fonts; an application that wants its own
+            // (an e4 CSS stylesheet reaches SWT only through setBackground/setForeground/setFont)
+            // opts in with these two switches. Off unless asked for, whatever theme the workspace
+            // names.
             configFlags.use_swt_colors = Boolean.getBoolean("swt.use_swt_colors");
             // Drops the colors an application paints with in Canvas/GC drawing, so the theme
             // colors it instead. Off by default; use_swt_colors wins over it.
@@ -660,7 +665,14 @@ public class Config {
             configFlags.print_move = Boolean.getBoolean("dev.equo.swt.printMove");
             String forceTheme = System.getProperty("swt.evolve.force_theme");
             if (forceTheme == null) {
-                forceTheme = EclipseWorkspaceTheme.detect();
+                forceTheme = EclipseWorkspaceTheme.classify(eclipseThemeId);
+            }
+            if (forceTheme == null && eclipseThemeId != null
+                    && !EclipseWorkspaceTheme.isBuiltIn(eclipseThemeId)) {
+                // The id names a theme only the product knows, so the desktop is the closest thing
+                // to an answer; falling through to the "dark" default below would show a dark UI to
+                // a product whose own theme is light.
+                forceTheme = EclipseWorkspaceTheme.osAppearance.get();
             }
             configFlags.force_theme = forceTheme != null ? forceTheme : "dark";
             configFlags.theme_name = System.getProperty("swt.evolve.theme_name", "equo");
@@ -728,8 +740,14 @@ public class Config {
         if (!"marketplace".equals(flags.theme_name)) return;
         flags.theme_name = "equo";
         flags.show_theme_color_palette = true;
-        flags.use_swt_colors = false;
-        flags.use_swt_fonts = false;
+        // Same rule as force_theme below: the preset supplies a look, not a veto. An application
+        // that asked for its own colors said so explicitly, and that outranks the preset.
+        if (System.getProperty("swt.use_swt_colors") == null) {
+            flags.use_swt_colors = false;
+        }
+        if (System.getProperty("swt.use_swt_fonts") == null) {
+            flags.use_swt_fonts = false;
+        }
         // Dark is the preset's own default, not a veto: an explicitly configured
         // swt.evolve.force_theme is the product's own choice and outranks it.
         String configuredTheme = System.getProperty("swt.evolve.force_theme");

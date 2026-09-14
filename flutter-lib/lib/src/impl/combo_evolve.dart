@@ -404,7 +404,13 @@ class _DropdownComboLayout extends StatelessWidget {
           child: Container(
             width: width,
             decoration: BoxDecoration(
-              color: theme.backgroundColor,
+              // The drop-down is part of the Combo, so it carries the Combo's own ground: the
+              // closed field already did, and the list looked like a different widget.
+              color: getBackgroundColor(
+                    background: state.background,
+                    defaultColor: theme.backgroundColor,
+                  ) ??
+                  theme.backgroundColor,
               borderRadius: BorderRadius.circular(theme.borderRadius),
               border: Border.all(
                 color: theme.dividerColor,

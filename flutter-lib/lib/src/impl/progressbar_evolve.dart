@@ -1,3 +1,4 @@
+import '../gen/color.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../gen/progressbar.dart';
@@ -42,6 +43,7 @@ class ProgressBarImpl<T extends ProgressBarSwt, V extends VProgressBar>
 
     return wrap(
       _StyledProgressBar(
+        background: state.background,
         widgetTheme: widgetTheme,
         progress: progress,
         width: width,
@@ -56,6 +58,8 @@ class ProgressBarImpl<T extends ProgressBarSwt, V extends VProgressBar>
 
 class _StyledProgressBar extends StatefulWidget {
   final ProgressBarThemeExtension widgetTheme;
+  /// The application's own ground, when it set one.
+  final VColor? background;
   final double progress;
   final double width;
   final double height;
@@ -65,6 +69,7 @@ class _StyledProgressBar extends StatefulWidget {
 
   const _StyledProgressBar({
     required this.widgetTheme,
+    this.background,
     required this.progress,
     required this.width,
     required this.height,
@@ -137,7 +142,12 @@ class _StyledProgressBarState extends State<_StyledProgressBar>
       width: widget.isVertical ? widget.width : widget.width,
       height: widget.isVertical ? widget.height : widget.height,
       decoration: BoxDecoration(
-        color: theme.backgroundColor,
+        color: getBackgroundColor(
+              background: widget.background,
+              defaultColor: theme.backgroundColor,
+              context: context,
+            ) ??
+            theme.backgroundColor,
         border: Border.all(color: theme.borderColor, width: theme.borderWidth),
         borderRadius: BorderRadius.circular(theme.borderRadius),
       ),

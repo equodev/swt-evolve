@@ -195,6 +195,17 @@ fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = f
         System.getProperty("dev.equo.swt.web.httpPort")?.let { systemProperty("dev.equo.swt.web.httpPort", it) }
         // Forward the runtime (no-rebuild) semantics toggle — see WebFlutterServer.Builder#enableTestSemantics.
         System.getProperty("dev.equo.swt.web.enableTestSemantics")?.let { systemProperty("dev.equo.swt.web.enableTestSemantics", it) }
+        // Forward the theming switches, so a snippet can be run the way a themed product runs:
+        // an application that paints itself (e4 CSS) needs its own colors/fonts, not Evolve's theme.
+        // theme_color_* is a prefix -- one property per widget -- so it is matched, not listed.
+        for (name in listOf("swt.use_swt_colors", "swt.use_swt_fonts", "swt.evolve.force_theme",
+                "swt.evolve.theme_color", "swt.evolve.theme_name",
+                "swt.evolve.preserve_icon_colors", "swt.evolve.disable_evolve_icons")) {
+            System.getProperty(name)?.let { systemProperty(name, it) }
+        }
+        System.getProperties().stringPropertyNames()
+            .filter { it.startsWith("swt.evolve.theme_color_") }
+            .forEach { systemProperty(it, System.getProperty(it)) }
         // Forward the double-click window (ms) an external driver needs — see ConfigFlags#double_click_timeout_ms.
         System.getProperty("swt.evolve.double_click_timeout_ms")?.let { systemProperty("swt.evolve.double_click_timeout_ms", it) }
         // -PdartDebug: run the Dart/Flutter rendering side in debug so its Dart VM Service is available

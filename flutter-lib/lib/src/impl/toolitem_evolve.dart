@@ -249,18 +249,20 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     bool selected = false,
   }) {
     final textColor = getForegroundColor(
-      foreground: state.foreground,
+      foreground: state.foreground ?? ParentForegroundScope.of(context),
       defaultColor: enabled
           ? widgetTheme.enabledColor
           : widgetTheme.disabledColor,
+      context: context,
     );
 
     final toolbarTheme = Theme.of(context).extension<ToolBarThemeExtension>();
     final defaultBackgroundColor =
         toolbarTheme?.toolbarBackgroundColor ?? Colors.white;
     final bgColor = getBackgroundColor(
-      background: null,
+      background: state.background,
       defaultColor: backgroundColor ?? Colors.transparent,
+      context: context,
     );
 
     Widget buildHoverable(double availableWidth) {
@@ -435,15 +437,18 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     }
 
     final textColor = getForegroundColor(
-      foreground: state.foreground,
+      // A ToolItem with no colour of its own takes the ToolBar's.
+      foreground: state.foreground ?? ParentForegroundScope.of(context),
       defaultColor: enabled
           ? widgetTheme.enabledColor
           : widgetTheme.disabledColor,
+      context: context,
     );
 
     final textStyle = getTextStyle(
       context: context,
-      font: null,
+      // VToolItem carries no font: the item letters in the ToolBar's.
+      font: ParentForegroundScope.fontOf(context),
       textColor: textColor,
       baseTextStyle: widgetTheme.fontStyle,
     );

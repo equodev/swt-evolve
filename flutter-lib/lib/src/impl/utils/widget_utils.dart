@@ -215,6 +215,41 @@ class SwtColorScope extends InheritedWidget {
   bool updateShouldNotify(SwtColorScope oldWidget) => false;
 }
 
+/// Carries a container's own foreground down to the items it draws inline. An item with no
+/// colour of its own takes the control's, the way SWT resolves it, and an item is built far
+/// enough from its parent's build() that passing it by argument reaches only some of the paths.
+class ParentForegroundScope extends InheritedWidget {
+  final VColor? foreground;
+  final VFont? font;
+  /// What a container that draws its selected item in a colour of its own (CTabFolder) gives
+  /// that item instead of [foreground].
+  final VColor? selectionForeground;
+
+  const ParentForegroundScope({
+    super.key,
+    required this.foreground,
+    this.font,
+    this.selectionForeground,
+    required super.child,
+  });
+
+  static VColor? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ParentForegroundScope>()?.foreground;
+
+  static VFont? fontOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ParentForegroundScope>()?.font;
+
+  static VColor? selectionForegroundOf(BuildContext context) => context
+      .dependOnInheritedWidgetOfExactType<ParentForegroundScope>()
+      ?.selectionForeground;
+
+  @override
+  bool updateShouldNotify(ParentForegroundScope oldWidget) =>
+      oldWidget.foreground != foreground ||
+      oldWidget.font != font ||
+      oldWidget.selectionForeground != selectionForeground;
+}
+
 class ParentBackgroundScope extends InheritedWidget {
   final Color? background;
   final VImage? backgroundImage;

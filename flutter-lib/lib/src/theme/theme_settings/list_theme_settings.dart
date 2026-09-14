@@ -1,3 +1,5 @@
+import '../../impl/utils/widget_utils.dart';
+import '../../gen/color.dart';
 import 'package:flutter/material.dart';
 import '../theme_extensions/list_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
@@ -66,7 +68,10 @@ ListThemeExtension _getListTheme({
   );
 }
 
-Color getListItemTextColor(ListThemeExtension widgetTheme, bool isSelected, bool enabled) {
+Color getListItemTextColor(ListThemeExtension widgetTheme, bool isSelected, bool enabled,
+    {VColor? foreground}) {
   if (!enabled) return widgetTheme.disabledTextColor;
-  return isSelected ? widgetTheme.selectedItemTextColor : widgetTheme.textColor;
+  final defaultColor =
+      isSelected ? widgetTheme.selectedItemTextColor : widgetTheme.textColor;
+  return getForegroundColor(foreground: foreground, defaultColor: defaultColor);
 }

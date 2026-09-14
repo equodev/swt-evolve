@@ -188,7 +188,10 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   @override
   Widget build(BuildContext context) {
     _cachedWidgetTheme = Theme.of(context).extension<TreeThemeExtension>();
-    return super.wrap(wrapTreeForDrop(createTreeView()));
+    return super.wrap(ParentForegroundScope(
+      foreground: state.foreground,
+      child: wrapTreeForDrop(createTreeView()),
+    ));
   }
 
   @override
@@ -301,9 +304,17 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         _cachedEffectiveWidths = effectiveWidths;
 
         final enabled = state.enabled ?? true;
-        final backgroundColor = enabled
+        final themeBackground = enabled
             ? widgetTheme!.backgroundColor
             : widgetTheme!.disabledBackgroundColor;
+        // The application's own colour wins when the product owns the theme, the way Table
+        // already resolves it (getTableBackgroundColor).
+        final backgroundColor = getBackgroundColor(
+              background: state.background,
+              defaultColor: themeBackground,
+              context: context,
+            ) ??
+            themeBackground;
 
         final bool hasVScroll = StyleBits(state.style).has(SWT.V_SCROLL);
         final bool hasHScroll = StyleBits(state.style).has(SWT.H_SCROLL);
@@ -463,7 +474,12 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         final textStyle = getTextStyle(
           context: context,
           font: itemFont,
-          textColor: theme.itemTextColor,
+          // The item's own colour, else the Tree's -- the same cascade the font above uses.
+          textColor: getForegroundColor(
+            foreground: item.foreground ?? state.foreground,
+            defaultColor: theme.itemTextColor,
+            context: context,
+          ),
           baseTextStyle: theme.itemTextStyle,
         );
 
@@ -529,7 +545,12 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
           style: getTextStyle(
             context: context,
             font: item.font ?? state.font,
-            textColor: theme.itemTextColor,
+            // The item's own colour, else the Tree's -- the same cascade the font above uses.
+          textColor: getForegroundColor(
+            foreground: item.foreground ?? state.foreground,
+            defaultColor: theme.itemTextColor,
+            context: context,
+          ),
             baseTextStyle: theme.itemTextStyle,
           ),
         ),
@@ -762,9 +783,17 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     final double headerHeight = hasMultiColumn
         ? widgetTheme.headerHeightWithCols
         : widgetTheme.headerHeight;
-    final Color headerBgColor = hasMultiColumn
+    final Color themeHeaderBg = hasMultiColumn
         ? widgetTheme.headerBackgroundColorWithCols
         : widgetTheme.headerBackgroundColor;
+    // Tree.setHeaderBackground is a real SWT setter the CSS engine drives, so the application's
+    // choice wins over the theme's.
+    final Color headerBgColor = getBackgroundColor(
+          background: state.headerBackground,
+          defaultColor: themeHeaderBg,
+          context: context,
+        ) ??
+        themeHeaderBg;
     final double effectiveHeaderBorderWidth = hasMultiColumn
         ? widgetTheme.headerBorderWidthWithCols
         : widgetTheme.headerBorderWidth;

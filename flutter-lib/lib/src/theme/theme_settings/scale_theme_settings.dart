@@ -1,3 +1,4 @@
+import '../../gen/color.dart';
 import 'package:flutter/material.dart';
 import '../theme_extensions/scale_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
@@ -92,11 +93,17 @@ ScaleThemeExtension _getScaleTheme({
 Color getScaleActiveTrackColor(
   ScaleThemeExtension widgetTheme, {
   required bool isEnabled,
+  VColor? foreground,
 }) {
   if (!isEnabled) {
     return widgetTheme.disabledActiveTrackColor;
   }
-  return widgetTheme.activeTrackColor;
+  // Follows the application's foreground the way Slider's thumb already does: the two are
+  // sibling widgets and looked like they belonged to different themes.
+  return getForegroundColor(
+    foreground: foreground,
+    defaultColor: widgetTheme.activeTrackColor,
+  );
 }
 
 Color getScaleInactiveTrackColor(
@@ -114,14 +121,15 @@ Color getScaleThumbColor(
   ScaleThemeExtension widgetTheme, {
   required bool isEnabled,
   required bool isHovered,
+  VColor? foreground,
 }) {
   if (!isEnabled) {
     return widgetTheme.disabledThumbColor;
   }
-  if (isHovered) {
-    return widgetTheme.thumbHoverColor;
-  }
-  return widgetTheme.thumbColor;
+  return getForegroundColor(
+    foreground: foreground,
+    defaultColor: isHovered ? widgetTheme.thumbHoverColor : widgetTheme.thumbColor,
+  );
 }
 
 // Helper to get tick mark color based on state

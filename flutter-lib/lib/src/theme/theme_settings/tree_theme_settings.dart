@@ -201,8 +201,9 @@ Color getTreeItemTextColor(
   VTreeItem state,
   TreeThemeExtension widgetTheme,
   bool selected,
-  bool enabled,
-) {
+  bool enabled, {
+  VColor? parentForeground,
+}) {
   final defaultColor = enabled
       ? (selected
           ? widgetTheme.itemSelectedTextColor
@@ -210,7 +211,9 @@ Color getTreeItemTextColor(
       : widgetTheme.itemDisabledTextColor;
   
   return getForegroundColor(
-    foreground: state.foreground,
+    // The item's own colour, else the Tree's: an item with no colour of its own takes the
+    // control's, the way SWT resolves it.
+    foreground: state.foreground ?? parentForeground,
     defaultColor: defaultColor,
   );
 }

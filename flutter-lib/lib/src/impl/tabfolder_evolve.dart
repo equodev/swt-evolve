@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import '../gen/event.dart';
 import '../gen/swt.dart';
@@ -75,10 +76,19 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     );
 
     if (hasValidBounds) {
-      return tagSemantics(ConstrainedBox(constraints: constraints!, child: content));
+      return tagSemantics(ParentForegroundScope(
+        foreground: state.foreground,
+        font: state.font,
+        child: ConstrainedBox(constraints: constraints!, child: content),
+      ));
     }
 
-    return tagSemantics(content);
+    // The tabs letter and colour in the folder's own font/foreground: VTabItem has neither.
+    return tagSemantics(ParentForegroundScope(
+      foreground: state.foreground,
+      font: state.font,
+      child: content,
+    ));
   }
 
   Widget _buildTabContent(List<Widget> tabBodies) {
@@ -98,7 +108,13 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     return Container(
       width: hasValidBounds ? double.infinity : null,
       decoration: BoxDecoration(
-        color: widgetTheme.tabBarBackgroundColor,
+        // The band the tabs sit on is the folder's own ground.
+        color: getBackgroundColor(
+              background: state.background,
+              defaultColor: widgetTheme.tabBarBackgroundColor,
+              context: context,
+            ) ??
+            widgetTheme.tabBarBackgroundColor,
         border: Border(
           bottom: BorderSide(
             color: widgetTheme.tabBarBorderColor,
@@ -166,11 +182,10 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
         color: Colors.transparent,
         child: InkWell(
           onTap: enabled ? () => _handleTabTap(index, onTap) : null,
-          child: Container(
+          child: _Overhang(
+            bottom: isSelected && enabled ? widgetTheme.tabSelectedBorderWidth : 0,
+            child: Container(
             padding: EdgeInsets.symmetric(horizontal: widgetTheme.tabPadding),
-            margin: isSelected && enabled
-                ? EdgeInsets.only(bottom: -widgetTheme.tabSelectedBorderWidth)
-                : EdgeInsets.zero,
             constraints: const BoxConstraints(minHeight: 0),
             decoration: BoxDecoration(
               color: backgroundColor,
@@ -207,6 +222,7 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
                                 .copyWith(color: textColor),
                     ),
             ),
+          ),
           ),
         ),
       ),
@@ -279,4 +295,49 @@ class TabItem {
   final String? toolTipText;
 
   TabItem({required this.label, this.customContent, this.toolTipText});
+}
+
+/// Lays its child out at full height and reports [bottom] less, so the child hangs over whatever
+/// is laid out below it: the selected tab's bottom border covering the bar's border line. A
+/// negative margin does the same and is refused in debug.
+class _Overhang extends SingleChildRenderObjectWidget {
+  final double bottom;
+
+  const _Overhang({required this.bottom, required super.child});
+
+  @override
+  RenderObject createRenderObject(BuildContext context) => _RenderOverhang(bottom);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderOverhang renderObject) {
+    renderObject.bottom = bottom;
+  }
+}
+
+class _RenderOverhang extends RenderShiftedBox {
+  _RenderOverhang(this._bottom) : super(null);
+
+  double _bottom;
+  double get bottom => _bottom;
+  set bottom(double value) {
+    if (value == _bottom) return;
+    _bottom = value;
+    markNeedsLayout();
+  }
+
+  @override
+  void performLayout() {
+    final child = this.child;
+    if (child == null) {
+      size = constraints.smallest;
+      return;
+    }
+    final inner = constraints.copyWith(
+      minHeight: 0,
+      maxHeight: constraints.maxHeight.isFinite ? constraints.maxHeight + _bottom : null,
+    );
+    child.layout(inner, parentUsesSize: true);
+    (child.parentData as BoxParentData).offset = Offset.zero;
+    size = constraints.constrain(Size(child.size.width, child.size.height - _bottom));
+  }
 }

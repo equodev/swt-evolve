@@ -171,7 +171,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
     if (_context == null) {
       // Standalone mode used by the measure tool — render as a single row without tree context.
-      final textColor = getTreeItemTextColor(state, widgetTheme, false, true);
+      final textColor = getTreeItemTextColor(state, widgetTheme, false, true,
+          parentForeground: ParentForegroundScope.of(context));
       final image = _treeColumnImage() ?? state.image;
       return Container(
         padding: widgetTheme.itemPadding,
@@ -237,6 +238,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       widgetTheme,
       selected,
       enabled,
+      parentForeground: ParentForegroundScope.of(context),
     );
     final bgColor = getTreeItemBackgroundColor(
       state,

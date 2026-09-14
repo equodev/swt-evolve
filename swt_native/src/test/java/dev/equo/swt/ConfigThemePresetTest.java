@@ -16,6 +16,7 @@ class ConfigThemePresetTest {
     private ConfigFlags savedFlags;
     private String savedForceTheme;
     private String savedThemeName;
+    private String savedUseColors;
 
     @BeforeEach
     void captureState() {
@@ -24,6 +25,8 @@ class ConfigThemePresetTest {
         savedFlags = Config.getConfigFlags();
         savedForceTheme = System.getProperty("swt.evolve.force_theme");
         savedThemeName = System.getProperty("swt.evolve.theme_name");
+        savedUseColors = System.getProperty("swt.use_swt_colors");
+        System.clearProperty("swt.use_swt_colors");
         Config.setConfigFlags(null);
     }
 
@@ -31,12 +34,21 @@ class ConfigThemePresetTest {
     void restoreState() {
         restore("swt.evolve.force_theme", savedForceTheme);
         restore("swt.evolve.theme_name", savedThemeName);
+        restore("swt.use_swt_colors", savedUseColors);
         Config.setConfigFlags(savedFlags);
     }
 
     private static void restore(String key, String value) {
         if (value == null) System.clearProperty(key);
         else System.setProperty(key, value);
+    }
+
+    @Test
+    void marketplace_preset_keeps_explicitly_requested_application_colors() {
+        System.setProperty("swt.evolve.theme_name", "marketplace");
+        System.setProperty("swt.use_swt_colors", "true");
+
+        assertThat(Config.getConfigFlags().use_swt_colors).isTrue();
     }
 
     @Test

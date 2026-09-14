@@ -344,8 +344,12 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
                 ),
                 child: Text(
                   fields[i].format(fields[i].value),
-                  style: (theme.textStyle ?? const TextStyle())
-                      .copyWith(color: textColor),
+                  style: getTextStyle(
+                    context: context,
+                    font: state.font,
+                    textColor: textColor,
+                    baseTextStyle: theme.textStyle,
+                  ),
                 ),
               ),
             ),

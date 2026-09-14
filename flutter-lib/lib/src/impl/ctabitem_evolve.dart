@@ -65,17 +65,30 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     final tabItemContext = TabItemContext.of(context);
     final isSelected = tabItemContext?.isSelected ?? false;
     final isEnabled = tabItemContext?.isEnabled ?? true;
-    final textColor = !isEnabled
+    final themeTextColor = !isEnabled
         ? itemTheme.tabItemDisabledTextColor
         : (isSelected
               ? itemTheme.tabItemSelectedTextColor
               : itemTheme.tabItemTextColor);
+    // SWT draws a selected tab in selectionForeground only -- the folder's foreground was chosen
+    // against the folder's background, and the selected tab does not sit on it. An unselected
+    // tab takes its own colour, else the folder's.
+    final textColor = getForegroundColor(
+      foreground: isSelected
+          ? state.selectionForeground ?? ParentForegroundScope.selectionForegroundOf(context)
+          : state.foreground ?? ParentForegroundScope.of(context),
+      defaultColor: themeTextColor,
+      context: context,
+    );
     final baseStyle = isSelected
         ? folderTheme.tabSelectedTextStyle
         : folderTheme.tabTextStyle;
-    final textStyle = baseStyle?.copyWith(color: textColor) ??
-        itemTheme.tabItemTextStyle?.copyWith(color: textColor) ??
-        TextStyle(color: textColor);
+    final textStyle = getTextStyle(
+      context: context,
+      font: state.font ?? ParentForegroundScope.fontOf(context),
+      textColor: textColor,
+      baseTextStyle: baseStyle ?? itemTheme.tabItemTextStyle,
+    );
     final imageWidget = _buildImageWidget(
       context,
       itemTheme,
