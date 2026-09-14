@@ -15,6 +15,8 @@ import '../impl/colordialog_evolve.dart';
 import '../impl/decorations_evolve.dart';
 import '../impl/messagebox_evolve.dart';
 import '../impl/utils/image_utils.dart';
+import '../impl/utils/region_clip.dart';
+import '../impl/utils/tracker_session.dart';
 import '../impl/utils/widget_utils.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
 import 'utils/pointer.dart';
@@ -49,6 +51,11 @@ class FloatingShellChromeScope extends InheritedWidget {
 
 class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T, V> {
   Offset? _offset;
+
+  /// How much frame this Shell draws above its content, which a pointer position has to be
+  /// measured past: it arrives global to the window, and the bounds Java sends start at the
+  /// content. Kept from the last build, which is where the layout decides it.
+  double _headerH = 0;
   Size? _size;
   bool _maximized = false;
   bool _interacting = false;
@@ -65,6 +72,36 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     super.initState();
     _opacityNotifier.value = (state.alpha ?? 255) / 255.0;
     _focusScopeNode.addListener(_handleFocusScopeChange);
+    // A Tracker is opened on a Shell but is not a Control, so it has no State of its own to receive
+    // on -- the Shell it belongs to carries its channel.
+    TrackerSession.attachHost(state.swt, state.id, toDisplay: _toDisplay);
+  }
+
+  /// Where a window-global pointer position falls in the coordinate space Java works in: measured
+  /// from the content's own origin, then shifted by where this Shell sits. Read from the render
+  /// tree rather than derived from the frame's parts, so border, title bar and maximized state are
+  /// all already accounted for.
+  Offset _toDisplay(Offset windowPosition) {
+    if (!mounted) return windowPosition;
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return windowPosition;
+    // The Shell's own top-left, plus whatever frame it draws above its content: what is left is
+    // measured from the same origin the bounds Java sends are measured from.
+    final content = box.localToGlobal(Offset.zero) + Offset(0, _headerH);
+    final local = windowPosition - content;
+    final b = state.bounds;
+    if (b == null) return local;
+    return Offset(local.dx + b.x.toDouble(), local.dy + b.y.toDouble());
+  }
+
+  @override
+  void extraSetState() {
+    super.extraSetState();
+    // Again on every update, because the channel is keyed by id and this State outlives a change
+    // of it: subscribing once at mount leaves the Shell listening on an id Java no longer sends
+    // to, and a Tracker opened after that is never driven -- it just times out and its drop is
+    // discarded. attachHost is a no-op for an id already subscribed.
+    TrackerSession.attachHost(state.swt, state.id, toDisplay: _toDisplay);
   }
 
   @override
@@ -241,6 +278,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
     final titleBarH = _isTool ? theme.toolWindowTitleBarHeight : theme.titleBarHeight;
     final headerH = _showTitleBar ? titleBarH : 0.0;
+    _headerH = headerH;
 
     final w = (isFullScreen || _maximized) ? viewport.maxWidth : bodyW;
     final h = (isFullScreen || _maximized) ? viewport.maxHeight : bodyH;
@@ -250,6 +288,13 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       if (isFullScreen || _maximized) return Offset.zero;
       if (_offset != null) return _offset!;
       if (b != null && (b.x != 0 || b.y != 0)) {
+        return Offset(b.x.toDouble(), b.y.toDouble());
+      }
+      // A shell clipped to a region means its position, including the origin: the region's
+      // rectangles are given in this shell's own coordinates and describe areas of the window
+      // behind it. Centring one larger than the viewport -- the workbench sizes its drop feedback
+      // to its own window, not to the client's -- moves those rectangles off the zone they mark.
+      if (b != null && state.region != null) {
         return Offset(b.x.toDouble(), b.y.toDouble());
       }
       return Offset(
@@ -397,15 +442,19 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       framed = ParentBackgroundScope(background: shellBg, child: framed);
     }
 
+    // A region is the window's shape, so the frame it describes is all there is to this shell: a
+    // border, a shadow or a rounded corner would be drawn around the full rectangle the region
+    // carves that frame out of, not around the frame.
+    final isShaped = state.region != null;
     Widget dialog = Container(
       clipBehavior: Clip.none,
       decoration: BoxDecoration(
         color: shellBg ?? theme.dialogBackgroundColor,
-        borderRadius: BorderRadius.circular(borderRadius),
-        border: _showFloatingBorder
+        borderRadius: BorderRadius.circular(isShaped ? 0 : borderRadius),
+        border: _showFloatingBorder && !isShaped
             ? Border.all(color: theme.dialogBorderColor, width: theme.dialogBorderWidth)
             : null,
-        boxShadow: _showFloatingBorder
+        boxShadow: _showFloatingBorder && !isShaped
             ? [
                 BoxShadow(
                   color: theme.dialogShadowColor,
@@ -450,7 +499,14 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       builder: (context, opacity, child) => Opacity(opacity: opacity, child: child),
     );
 
-    return Positioned(left: offset.dx, top: offset.dy, child: pointerInterceptor(opacityWrapped));
+    // Clipped out here rather than around the shell's content: a region shapes the window itself,
+    // and the shell's own background is what fills the frame, so clipping only what the shell
+    // contains would still paint that background over everything the frame is meant to reveal.
+    return Positioned(
+      left: offset.dx,
+      top: offset.dy,
+      child: pointerInterceptor(RegionClip.maybe(state.region, opacityWrapped)),
+    );
   }
 }
 

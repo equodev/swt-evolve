@@ -28,6 +28,24 @@ public class RegionHelper {
         rects.addAll(result);
     }
 
+    /**
+     * The region's rectangles as one flat {@code x, y, width, height, x, y, ...} run, which is what
+     * reaches Flutter. A region is a set of disjoint rectangles rather than a single one — clipping
+     * to its bounds instead would fill the hole a {@code subtract} punched, and the shapes that
+     * matter here are frames, which are all hole.
+     */
+    public static int[] flatten(List<int[]> rects) {
+        int[] flat = new int[rects.size() * 4];
+        int at = 0;
+        for (int[] r : rects) {
+            flat[at++] = r[0];
+            flat[at++] = r[1];
+            flat[at++] = r[2];
+            flat[at++] = r[3];
+        }
+        return flat;
+    }
+
     public static Rectangle getBounds(List<int[]> rects) {
         if (rects.isEmpty()) return new Rectangle(0, 0, 0, 0);
         int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;

@@ -44,6 +44,11 @@ class DisplayThemeExtension extends ThemeExtension<DisplayThemeExtension>
 
   final Color modalOverlayColor;
 
+  /// Fills the shape of a control the application clipped to a region — which is how the workbench
+  /// outlines where a dragged view would dock. It has to read against the application behind it,
+  /// so it cannot fall back to a window background the way an ordinary control does.
+  final Color dragFeedbackColor;
+
   final TextStyle? titleTextStyle;
   final TextStyle? toolWindowTitleTextStyle;
 
@@ -75,6 +80,7 @@ class DisplayThemeExtension extends ThemeExtension<DisplayThemeExtension>
     required this.dialogBackgroundColor,
     required this.tooltipShellBackgroundColor,
     required this.modalOverlayColor,
+    required this.dragFeedbackColor,
     this.titleTextStyle,
     this.toolWindowTitleTextStyle,
   });

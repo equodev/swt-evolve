@@ -66,6 +66,8 @@ DisplayThemeExtension _getDisplayTheme({
 
     modalOverlayColor: colorScheme.scrim.withOpacity(0.32),
 
+    dragFeedbackColor: colorScheme.primary,
+
     titleTextStyle: textTheme.bodyMedium?.copyWith(
       color: titleBarText,
       fontWeight: FontWeight.w500,

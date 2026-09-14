@@ -634,6 +634,23 @@ public abstract class FlutterBridge {
         return CompletableFuture.allOf(pendingDeferredSends.toArray(new CompletableFuture[0]));
     }
 
+    /**
+     * Sends without waiting for a pending update to flush first.
+     *
+     * {@link #send(DartWidget, String, Object)} defers behind {@link #update()} when the widget is
+     * dirty, which is right for state that must not overtake the snapshot it belongs to. It is wrong
+     * for a message announcing that a blocking event loop has started — {@code Tracker.open()} —
+     * because the loop is what stops that update from ever completing, so the message would never
+     * leave and the loop would never be told to end.
+     */
+    public static void sendNow(DartWidget resource, String event, Object args) {
+        try {
+            serializeAndSend(commFor(resource), eventName(resource, event), args);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void send(DartWidget resource, String event, Object args) {
         CommService comm = commFor(resource);
         if (dirty.contains(resource)) {

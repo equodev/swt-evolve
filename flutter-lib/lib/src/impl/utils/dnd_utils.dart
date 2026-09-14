@@ -48,13 +48,25 @@ Widget wrapDraggable<T extends Object>({
   Widget Function(Widget child)? feedbackBuilder,
   Widget Function(Widget child)? childWhenDraggingBuilder,
   bool useLongPress = false,
+  bool alwaysDraggable = false,
+  VEvent Function()? dragDetectEvent,
 }) {
-  if (state.dragSource != true) return child;
+  // alwaysDraggable: a CTabFolder tab is draggable for the folder's own tab reordering even when
+  // the application installed no DragSource.
+  final hasDragSource = state.dragSource == true;
+  if (!hasDragSource && !alwaysDraggable) return child;
 
   void fireDragDetect() {
-    DragStartVeto.begin(state.swt, state.id);
+    if (hasDragSource) {
+      DragStartVeto.begin(state.swt, state.id);
+    } else {
+      DragStartVeto.reset();
+    }
     onDragStarted?.call();
-    widget.sendDragDetectDragDetect(state, VEvent());
+    // DragDetect goes out either way: native SWT raises it for any drag over a control, and an
+    // application can listen for it without a DragSource. The Eclipse workbench does exactly that
+    // to start moving a view, so withholding it left every view stack immovable.
+    widget.sendDragDetectDragDetect(state, dragDetectEvent?.call() ?? VEvent());
   }
 
   final feedback = feedbackBuilder != null
@@ -94,6 +106,8 @@ Widget wrapDropTarget<T extends Object>({
   int Function(DragTargetDetails<T> details)? resolveItemId,
   Offset Function(DragTargetDetails<T> details)? resolvePosition,
   Widget Function(BuildContext context, Widget child, DndNegotiationState negotiation, bool isHovering)? builder,
+  bool alwaysAccepts = false,
+  bool alwaysResolves = false,
 }) {
   // Always return _DropTargetNegotiator, even while dropTargetId is still null (it can
   // resolve later, e.g. a Composite whose SWT DropTarget attaches after first serialize).
@@ -106,6 +120,8 @@ Widget wrapDropTarget<T extends Object>({
     resolvePosition: resolvePosition,
     onDrop: onDrop,
     builder: builder,
+    alwaysAccepts: alwaysAccepts,
+    alwaysResolves: alwaysResolves,
     child: child,
   );
 }
@@ -117,6 +133,16 @@ class _DropTargetNegotiator<T extends Object> extends StatefulWidget {
   final Offset Function(DragTargetDetails<T> details)? resolvePosition;
   final void Function(T data, int? index, int? itemId, Offset position) onDrop;
   final Widget Function(BuildContext context, Widget child, DndNegotiationState negotiation, bool isHovering)? builder;
+
+  /// Accept the drag and call [onDrop] even with no SWT DropTarget attached, for a widget that
+  /// handles some drops itself (a CTabFolder reordering its own tabs).
+  final bool alwaysAccepts;
+
+  /// Resolve the drop position on every move, not only when an SWT DropTarget is attached — for a
+  /// widget that draws its own feedback from it. The resolvers are free to have side effects, so
+  /// this stays opt-in: a widget that only feeds Java must not run them for a drag it can never
+  /// receive, or it paints drop feedback for gestures that are not headed its way.
+  final bool alwaysResolves;
   final Widget child;
 
   const _DropTargetNegotiator({
@@ -127,6 +153,8 @@ class _DropTargetNegotiator<T extends Object> extends StatefulWidget {
     required this.resolvePosition,
     required this.onDrop,
     required this.builder,
+    required this.alwaysAccepts,
+    required this.alwaysResolves,
     required this.child,
   });
 
@@ -175,8 +203,9 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
 
   void _sendNegotiation(String ev, DragTargetDetails<T>? details) {
     final id = widget.dropTargetId;
-    if (id == null) return;
-    final dropTargetValue = VDropTarget()..id = id;
+    // Nothing to tell Java, and the resolvers have side effects, so run them only for a widget
+    // that asked to draw its own feedback without a DropTarget of its own.
+    if (id == null && !widget.alwaysResolves) return;
     final event = VEvent();
     if (details != null) {
       final position = _resolvePosition(details);
@@ -189,6 +218,8 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
         event.itemId = widget.resolveItemId!(details);
       }
     }
+    if (id == null) return;
+    final dropTargetValue = VDropTarget()..id = id;
     DropTargetSwt<VDropTarget>(value: dropTargetValue)
         .sendEvent(dropTargetValue, "Drop/$ev", event);
   }
@@ -197,7 +228,7 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
   Widget build(BuildContext context) {
     return DragTarget<T>(
       onWillAcceptWithDetails: (details) {
-        if (widget.dropTargetId == null) return false;
+        if (widget.dropTargetId == null) return widget.alwaysAccepts;
         _sendNegotiation("dragEnter", details);
         return true;
       },
@@ -207,7 +238,7 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
         _sendNegotiation("dragLeave", null);
       },
       onAcceptWithDetails: (details) {
-        if (widget.dropTargetId == null) return;
+        if (widget.dropTargetId == null && !widget.alwaysAccepts) return;
         if (DragStartVeto.isVetoed) return;
         final index = widget.resolveIndex != null ? widget.resolveIndex!(details) : null;
         final itemId = widget.resolveItemId != null ? widget.resolveItemId!(details) : null;

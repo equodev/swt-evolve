@@ -38,6 +38,7 @@ mixin _$DisplayThemeExtensionTailorMixin
   Color get dialogBackgroundColor;
   Color get tooltipShellBackgroundColor;
   Color get modalOverlayColor;
+  Color get dragFeedbackColor;
   TextStyle? get titleTextStyle;
   TextStyle? get toolWindowTitleTextStyle;
 
@@ -70,6 +71,7 @@ mixin _$DisplayThemeExtensionTailorMixin
     Color? dialogBackgroundColor,
     Color? tooltipShellBackgroundColor,
     Color? modalOverlayColor,
+    Color? dragFeedbackColor,
     TextStyle? titleTextStyle,
     TextStyle? toolWindowTitleTextStyle,
   }) {
@@ -113,6 +115,7 @@ mixin _$DisplayThemeExtensionTailorMixin
       tooltipShellBackgroundColor:
           tooltipShellBackgroundColor ?? this.tooltipShellBackgroundColor,
       modalOverlayColor: modalOverlayColor ?? this.modalOverlayColor,
+      dragFeedbackColor: dragFeedbackColor ?? this.dragFeedbackColor,
       titleTextStyle: titleTextStyle ?? this.titleTextStyle,
       toolWindowTitleTextStyle:
           toolWindowTitleTextStyle ?? this.toolWindowTitleTextStyle,
@@ -227,6 +230,11 @@ mixin _$DisplayThemeExtensionTailorMixin
       modalOverlayColor: Color.lerp(
         modalOverlayColor,
         other.modalOverlayColor,
+        t,
+      )!,
+      dragFeedbackColor: Color.lerp(
+        dragFeedbackColor,
+        other.dragFeedbackColor,
         t,
       )!,
       titleTextStyle: TextStyle.lerp(titleTextStyle, other.titleTextStyle, t),
@@ -352,6 +360,10 @@ mixin _$DisplayThemeExtensionTailorMixin
               other.modalOverlayColor,
             ) &&
             const DeepCollectionEquality().equals(
+              dragFeedbackColor,
+              other.dragFeedbackColor,
+            ) &&
+            const DeepCollectionEquality().equals(
               titleTextStyle,
               other.titleTextStyle,
             ) &&
@@ -392,6 +404,7 @@ mixin _$DisplayThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(dialogBackgroundColor),
       const DeepCollectionEquality().hash(tooltipShellBackgroundColor),
       const DeepCollectionEquality().hash(modalOverlayColor),
+      const DeepCollectionEquality().hash(dragFeedbackColor),
       const DeepCollectionEquality().hash(titleTextStyle),
       const DeepCollectionEquality().hash(toolWindowTitleTextStyle),
     ]);
@@ -439,6 +452,11 @@ extension DisplayThemeExtensionBuildContextProps on BuildContext {
   Color get tooltipShellBackgroundColor =>
       displayThemeExtension.tooltipShellBackgroundColor;
   Color get modalOverlayColor => displayThemeExtension.modalOverlayColor;
+
+  /// Fills the shape of a control the application clipped to a region — which is how the workbench
+  /// outlines where a dragged view would dock. It has to read against the application behind it,
+  /// so it cannot fall back to a window background the way an ordinary control does.
+  Color get dragFeedbackColor => displayThemeExtension.dragFeedbackColor;
   TextStyle? get titleTextStyle => displayThemeExtension.titleTextStyle;
   TextStyle? get toolWindowTitleTextStyle =>
       displayThemeExtension.toolWindowTitleTextStyle;

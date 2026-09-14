@@ -71,6 +71,9 @@ DisplayThemeExtension _$DisplayThemeExtensionFromJson(
   modalOverlayColor: const ColorConverter().fromJson(
     json['modalOverlayColor'] as String,
   ),
+  dragFeedbackColor: const ColorConverter().fromJson(
+    json['dragFeedbackColor'] as String,
+  ),
   titleTextStyle: const TextStyleConverter().fromJson(
     json['titleTextStyle'] as Map<String, dynamic>?,
   ),
@@ -135,6 +138,9 @@ Map<String, dynamic> _$DisplayThemeExtensionToJson(
   ),
   'modalOverlayColor': const ColorConverter().toJson(
     instance.modalOverlayColor,
+  ),
+  'dragFeedbackColor': const ColorConverter().toJson(
+    instance.dragFeedbackColor,
   ),
   'titleTextStyle': ?const TextStyleConverter().toJson(instance.titleTextStyle),
   'toolWindowTitleTextStyle': ?const TextStyleConverter().toJson(

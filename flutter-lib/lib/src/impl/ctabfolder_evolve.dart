@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
@@ -10,6 +11,7 @@ import '../gen/composite.dart';
 import '../gen/control.dart';
 import '../gen/ctabfolder.dart';
 import '../gen/ctabitem.dart';
+import '../gen/droptarget.dart';
 import '../gen/event.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
@@ -21,6 +23,8 @@ import 'composite_evolve.dart';
 import 'widget_config.dart';
 import '../theme/theme_extensions/ctabfolder_theme_extension.dart';
 import '../theme/theme_settings/ctabfolder_theme_settings.dart';
+import 'utils/dnd_utils.dart';
+import 'utils/tracker_session.dart';
 import 'utils/image_utils.dart';
 import 'utils/widget_utils.dart';
 import 'color_utils.dart';
@@ -120,6 +124,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
         if (!isTabBottom)
           _CTabBar(
             state: state,
+            folderWidget: widget,
             selectedIndex: _selectedIndex,
             tabItems: tabItems,
             tabHeight: tabHeight,
@@ -131,6 +136,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onMaximize: _toggleMaximize,
             onSecondaryTap: _handleTabSecondaryTap,
             onTabReorder: _handleTabReorder,
+            onTabDrop: _handleTabDrop,
+            onTabDragStarted: _handleTabDragStarted,
             onChevronShowList: _handleChevronShowList,
           ),
         // Render the body regardless of `minimized`: native SWT's `minimized` only
@@ -146,6 +153,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
         if (isTabBottom)
           _CTabBar(
             state: state,
+            folderWidget: widget,
             selectedIndex: _selectedIndex,
             tabItems: tabItems,
             tabHeight: tabHeight,
@@ -157,6 +165,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onMaximize: _toggleMaximize,
             onSecondaryTap: _handleTabSecondaryTap,
             onTabReorder: _handleTabReorder,
+            onTabDrop: _handleTabDrop,
+            onTabDragStarted: _handleTabDragStarted,
             onChevronShowList: _handleChevronShowList,
           ),
       ],
@@ -353,6 +363,28 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     widget.sendCTabFolderitemClosed(state, e);
   }
 
+  /// An application's `dragSetData` identifies the tab being moved through
+  /// `folder.getSelection()` — the same idiom Table/Tree DND uses — so the drag has to select
+  /// it first. Without an application DragSource there is no such listener and the folder's
+  /// own reordering must not steal the selection.
+  void _handleTabDragStarted(int index) {
+    if (state.dragSource != true) return;
+    _handleTabSelection(index);
+  }
+
+  void _handleTabDrop(int insertIndex, int? targetItemId, Offset position) {
+    final dropTargetId = state.dropTargetId;
+    if (dropTargetId == null) return;
+    final dropTargetValue = VDropTarget()..id = dropTargetId;
+    final e = VEvent()
+      ..x = position.dx.round()
+      ..y = position.dy.round()
+      ..index = insertIndex;
+    if (targetItemId != null) e.itemId = targetItemId;
+    DropTargetSwt<VDropTarget>(value: dropTargetValue)
+        .sendDropdrop(dropTargetValue, e);
+  }
+
   void _handleTabReorder(int fromIndex, int toIndex) {
     if (state.enabled != true) return;
     if (fromIndex == toIndex) return;
@@ -382,6 +414,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
 class _CTabBar extends StatefulWidget {
   final VCTabFolder state;
+  final CTabFolderSwt folderWidget;
   final int selectedIndex;
   final List<CTabItem> tabItems;
   final double? tabHeight;
@@ -393,10 +426,13 @@ class _CTabBar extends StatefulWidget {
   final VoidCallback onMaximize;
   final void Function(Offset globalPosition)? onSecondaryTap;
   final void Function(int fromIndex, int toIndex)? onTabReorder;
+  final void Function(int insertIndex, int? targetItemId, Offset position)? onTabDrop;
+  final ValueChanged<int>? onTabDragStarted;
   final void Function(BuildContext, CTabFolderThemeExtension widgetTheme)? onChevronShowList;
 
   const _CTabBar({
     required this.state,
+    required this.folderWidget,
     required this.selectedIndex,
     required this.tabItems,
     required this.tabHeight,
@@ -408,6 +444,8 @@ class _CTabBar extends StatefulWidget {
     required this.onMaximize,
     this.onSecondaryTap,
     this.onTabReorder,
+    this.onTabDrop,
+    this.onTabDragStarted,
     this.onChevronShowList,
   });
 
@@ -596,19 +634,15 @@ class _CTabBarState extends State<_CTabBar> {
       );
     }).toList();
 
-    final tabRowWithDrag = DragReorderRow(
+    final tabRowWithDrag = TabDragRow(
       children: tabChildren,
-      overlayBuilder: (index) => _buildAdvancedTab(
-        context: context,
+      tabs: displayTabs,
+      folderState: widget.state,
+      folderWidget: widget.folderWidget,
+      tabHeight: widget.tabHeight,
+      rowWrapper: (row) => _buildHorizontalScrollableTabs(
         widgetTheme: widgetTheme,
-        isSelected: index == effectiveSelected,
-        isHovered: false,
-        tab: displayTabs[index],
-        onTap: () {},
-        onClose: null,
-        isTabBottom: isTabBottom,
-        onHoverEnter: () {},
-        onHoverExit: () {},
+        child: row,
       ),
       onReorder: (from, to) {
         setState(() {
@@ -617,16 +651,12 @@ class _CTabBarState extends State<_CTabBar> {
         });
         widget.onTabReorder?.call(from, to);
       },
+      onDrop: widget.onTabDrop,
+      onTabDragStarted: widget.onTabDragStarted,
       onDragStart: () => setState(() => _hoveredTabIndex = null),
-      dragThreshold: widgetTheme.tabDragThreshold,
     );
 
-    final scrollableTabs = Expanded(
-      child: _buildHorizontalScrollableTabs(
-        widgetTheme: widgetTheme,
-        child: tabRowWithDrag,
-      ),
-    );
+    final scrollableTabs = Expanded(child: tabRowWithDrag);
 
     final topRightControls = _buildTopRightControls(
       context: context,
@@ -1443,49 +1473,114 @@ class _CTabBarState extends State<_CTabBar> {
   }
 }
 
-class DragReorderRow extends StatefulWidget {
-  final List<Widget> children;
-  final Widget Function(int index)? overlayBuilder;
-  final void Function(int from, int to)? onReorder;
-  final VoidCallback? onDragStart;
-  final double dragThreshold;
+/// Where a dragged tab would land, drawn on the folder that would receive it.
+///
+/// Caret heads, not a bare rule: the mark sits in the gap between two tabs, and a plain line there
+/// reads as a tab border as easily as an insertion point. The heads overhang the row, so the width
+/// is wider than the bar and the marker is positioned by its bar rather than by its box.
+class CTabInsertionMarker extends StatelessWidget {
+  const CTabInsertionMarker({super.key, required this.color});
 
-  const DragReorderRow({
+  final Color color;
+
+  static const double barWidth = 3;
+  static const double caretWidth = 4;
+  static const double caretHeight = 4;
+
+  /// How far left of the insertion point the widget starts, its bar being what must land there.
+  static const double overhang = caretWidth + barWidth / 2;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: caretWidth * 2 + barWidth,
+        child: CustomPaint(painter: _CTabInsertionMarkerPainter(color)),
+      );
+}
+
+class _CTabInsertionMarkerPainter extends CustomPainter {
+  const _CTabInsertionMarkerPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    final centre = size.width / 2;
+    final half = CTabInsertionMarker.barWidth / 2;
+    canvas.drawRect(
+      Rect.fromLTRB(centre - half, 0, centre + half, size.height),
+      paint,
+    );
+    const caret = CTabInsertionMarker.caretWidth;
+    const height = CTabInsertionMarker.caretHeight;
+    canvas.drawPath(
+      Path()
+        ..moveTo(centre - caret - half, 0)
+        ..lineTo(centre + caret + half, 0)
+        ..lineTo(centre, height)
+        ..close(),
+      paint,
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(centre - caret - half, size.height)
+        ..lineTo(centre + caret + half, size.height)
+        ..lineTo(centre, size.height - height)
+        ..close(),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_CTabInsertionMarkerPainter oldDelegate) =>
+      oldDelegate.color != color;
+}
+
+/// A CTabFolder's tab row. Every tab is a Flutter [Draggable] carrying a [DndDragPayload] and
+/// the row itself is a drop target, so a tab dropped on a *different* folder's row resolves
+/// there and reaches Java as a real `DND.Drop`.
+///
+/// A folder that has an application `DropTarget` hands the drop to it and does not reorder
+/// itself: native CTabFolder has no built-in reordering, so running both would move the tab
+/// twice and diverge from the native backend.
+class TabDragRow extends StatefulWidget {
+  final List<Widget> children;
+  final List<CTabItem> tabs;
+  final VCTabFolder folderState;
+  final CTabFolderSwt folderWidget;
+  final double? tabHeight;
+
+  /// Wraps the tab row in the folder's scroll view. The drop target goes *outside* it, so the
+  /// whole tab strip accepts a drop and not just the width the tabs happen to occupy —
+  /// otherwise a tab released over a folder's empty strip resolves to no target at all.
+  final Widget Function(Widget row) rowWrapper;
+  final void Function(int from, int to)? onReorder;
+  final void Function(int insertIndex, int? targetItemId, Offset position)? onDrop;
+  final ValueChanged<int>? onTabDragStarted;
+  final VoidCallback? onDragStart;
+
+  const TabDragRow({
     super.key,
     required this.children,
-    this.overlayBuilder,
+    required this.tabs,
+    required this.folderState,
+    required this.folderWidget,
+    required this.rowWrapper,
+    this.tabHeight,
     this.onReorder,
+    this.onDrop,
+    this.onTabDragStarted,
     this.onDragStart,
-    this.dragThreshold = 8.0,
   });
 
   @override
-  State<DragReorderRow> createState() => _DragReorderRowState();
+  State<TabDragRow> createState() => _TabDragRowState();
 }
 
-class _DragReorderRowState extends State<DragReorderRow> {
+class _TabDragRowState extends State<TabDragRow> {
   final GlobalKey _rowKey = GlobalKey();
   final List<GlobalKey> _itemKeys = [];
-  List<GlobalKey> _orderedItemKeys = [];
-
-  int? _draggingIndex;
-  int? _draggedToIndex;
-  double? _dragStartX;
-  bool _dragActive = false;
-  List<double>? _cachedItemRights;
-  double? _dragCurrentX;
-  double? _dragOffsetX;
-
-  @override
-  void didUpdateWidget(DragReorderRow oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.children.length != oldWidget.children.length &&
-        _draggingIndex != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _resetDrag();
-      });
-    }
-  }
+  final HoverTracker<int> _insertHover = HoverTracker<int>();
 
   void _ensureItemKeys(int count) {
     while (_itemKeys.length < count) {
@@ -1493,199 +1588,212 @@ class _DragReorderRowState extends State<DragReorderRow> {
     }
   }
 
-  RenderBox? _itemBox(int displayIndex) {
-    if (displayIndex >= _orderedItemKeys.length) return null;
-    return _orderedItemKeys[displayIndex].currentContext
-        ?.findRenderObject() as RenderBox?;
+  RenderBox? get _row => _rowKey.currentContext?.findRenderObject() as RenderBox?;
+
+  RenderBox? _itemBox(int index) => index < _itemKeys.length
+      ? _itemKeys[index].currentContext?.findRenderObject() as RenderBox?
+      : null;
+
+  double? _itemLeft(RenderBox row, int index) {
+    final box = _itemBox(index);
+    if (box == null) return null;
+    return row.globalToLocal(box.localToGlobal(Offset.zero)).dx;
   }
 
-  int? _hitTest(double localX, int count) {
-    final row = _rowKey.currentContext?.findRenderObject() as RenderBox?;
-    if (row == null) return null;
+  /// The gap the pointer sits at, in `[0, tab count]`.
+  int _insertIndexAt(Offset globalPosition) {
+    final count = widget.children.length;
+    final row = _row;
+    if (row == null) return count;
+    final x = row.globalToLocal(globalPosition).dx;
     for (int i = 0; i < count; i++) {
       final box = _itemBox(i);
-      if (box == null) continue;
-      final left = row.globalToLocal(box.localToGlobal(Offset.zero)).dx;
-      if (localX >= left && localX < left + box.size.width) return i;
+      final left = _itemLeft(row, i);
+      if (box == null || left == null) continue;
+      if (x < left + box.size.width / 2) return i;
+    }
+    return count;
+  }
+
+  /// The tab under the pointer, or null past the last one.
+  int? _itemIdAt(Offset globalPosition) {
+    final row = _row;
+    if (row == null) return null;
+    final x = row.globalToLocal(globalPosition).dx;
+    final count = math.min(widget.children.length, widget.tabs.length);
+    for (int i = 0; i < count; i++) {
+      final box = _itemBox(i);
+      final left = _itemLeft(row, i);
+      if (box == null || left == null) continue;
+      if (x >= left && x < left + box.size.width) return widget.tabs[i].vItem.id;
     }
     return null;
   }
 
-  int _destFromX(double localX, int count) {
-    if (count == 0) return 0;
-    final rights = _cachedItemRights;
-    if (rights == null || rights.length != count) return _draggedToIndex ?? 0;
-    for (int i = 0; i < count; i++) {
-      if (localX < rights[i]) return i;
-    }
-    return count - 1;
-  }
-
-  int _originalFromDisplay(int d) {
-    final from = _draggingIndex;
-    final to = _draggedToIndex;
-    if (from == null || to == null || from == to) return d;
-    if (d == to) return from;
-    if (from < to && d >= from && d < to) return d + 1;
-    if (from > to && d > to && d <= from) return d - 1;
-    return d;
-  }
-
-  void _onPointerDown(PointerDownEvent event) {
-    if (event.buttons != 1) return;
+  void _handleDrop(DndDragPayload payload, int? index, int? itemId, Offset position) {
+    _insertHover.update(null);
+    // An application that answered DragDetect by opening a Tracker owns this gesture -- the Eclipse
+    // workbench moves the whole view that way. Reordering here as well would move the tab twice.
+    if (TrackerSession.isTracking) return;
     final count = widget.children.length;
-    final index = _hitTest(event.localPosition.dx, count);
-    if (index == null) return;
-    final row = _rowKey.currentContext?.findRenderObject() as RenderBox?;
-    if (row != null) {
-      _cachedItemRights = List.generate(count, (i) {
-        final box = _itemBox(i);
-        if (box == null) return 0.0;
-        return row.globalToLocal(box.localToGlobal(Offset.zero)).dx +
-            box.size.width;
-      });
-      final box = _itemBox(index);
-      if (box != null) {
-        _dragOffsetX = event.localPosition.dx -
-            row.globalToLocal(box.localToGlobal(Offset.zero)).dx;
+    final insertIndex = (index ?? count).clamp(0, count);
+    if (widget.folderState.dropTargetId != null) {
+      widget.onDrop?.call(insertIndex, (itemId ?? 0) != 0 ? itemId : null, position);
+      return;
+    }
+    if (payload.sourceControlId != widget.folderState.id) return;
+    final from = payload.index;
+    if (from == null || from >= count) return;
+    final to = insertIndex > from ? insertIndex - 1 : insertIndex;
+    if (to != from) widget.onReorder?.call(from, to);
+  }
+
+  Widget _draggableTab(int index) {
+    return wrapDraggable<DndDragPayload>(
+      child: widget.children[index],
+      data: DndDragPayload(
+        sourceControlId: widget.folderState.id,
+        index: index,
+        itemId: index < widget.tabs.length ? widget.tabs[index].vItem.id : null,
+      ),
+      widget: widget.folderWidget,
+      state: widget.folderState,
+      alwaysDraggable: true,
+      // The workbench reads DragDetect's x/y to work out which tab is being dragged, so the event
+      // has to carry the tab's own position rather than an empty one. The tab strip starts at the
+      // folder's own origin, so the row's coordinates are the folder's for this purpose.
+      dragDetectEvent: () {
+        final box = _itemBox(index);
+        final row = _row;
+        final centre = (box != null && row != null)
+            ? row.globalToLocal(box.localToGlobal(box.size.center(Offset.zero)))
+            : Offset.zero;
+        return VEvent()
+          ..x = centre.dx.round()
+          ..y = centre.dy.round();
+      },
+      onDragStarted: () {
+        widget.onDragStart?.call();
+        widget.onTabDragStarted?.call(index);
+      },
+      // Built lazily: the drag feedback renders in the Overlay, which gives it unbounded
+      // height, while a tab's own container asks for `double.infinity`. The measurement is
+      // only available once the row has laid out, which is the case by the time a drag starts.
+      feedbackBuilder: (child) => Builder(builder: (_) {
+        final size = _itemBox(index)?.size;
+        return Material(
+          elevation: 4,
+          child: SizedBox(
+            width: size?.width,
+            height: size?.height ?? widget.tabHeight,
+            child: Opacity(opacity: 0.85, child: child),
+          ),
+        );
+      }),
+      childWhenDraggingBuilder: (child) => Opacity(opacity: 0.3, child: child),
+    );
+  }
+
+  Widget _insertionMarker(int index, Color color) {
+    double left = 0;
+    final row = _row;
+    if (row != null && widget.children.isNotEmpty) {
+      if (index < widget.children.length) {
+        left = _itemLeft(row, index) ?? 0;
+      } else {
+        final last = widget.children.length - 1;
+        final lastLeft = _itemLeft(row, last);
+        final box = _itemBox(last);
+        if (lastLeft != null && box != null) left = lastLeft + box.size.width;
       }
     }
-    setState(() {
-      _draggingIndex = index;
-      _draggedToIndex = index;
-      _dragStartX = event.localPosition.dx;
-      _dragActive = false;
-    });
+    // Animated so the mark slides between the gaps it can occupy: dragging along a row of tabs
+    // otherwise reads as the marker blinking out and back rather than as one thing moving.
+    return AnimatedPositioned(
+      key: _insertionMarkerKey,
+      duration: const Duration(milliseconds: 90),
+      curve: Curves.easeOut,
+      left: left - CTabInsertionMarker.overhang,
+      top: 0,
+      bottom: 0,
+      child: CTabInsertionMarker(color: color),
+    );
   }
 
-  void _onPointerMove(PointerMoveEvent event) {
-    if (_draggingIndex == null) return;
-    final count = widget.children.length;
-    final dx =
-        event.localPosition.dx - (_dragStartX ?? event.localPosition.dx);
-    if (!_dragActive && dx.abs() >= widget.dragThreshold) {
-      _dragActive = true;
-      widget.onDragStart?.call();
-    }
-    if (_dragActive) {
-      setState(() {
-        _dragCurrentX = event.localPosition.dx;
-        _draggedToIndex = _destFromX(event.localPosition.dx, count);
-      });
-    }
-  }
-
-  void _onPointerUp(PointerUpEvent event) {
-    if (_draggingIndex == null) return;
-    if (_dragActive) {
-      final from = _draggingIndex!;
-      final to = _draggedToIndex ?? from;
-      if (from != to) widget.onReorder?.call(from, to);
-    }
-    _resetDrag();
-  }
-
-  void _onPointerCancel(PointerCancelEvent event) {
-    if (_draggingIndex == null) return;
-    _resetDrag();
-  }
-
-  void _resetDrag() {
-    setState(() {
-      _draggingIndex = null;
-      _draggedToIndex = null;
-      _dragStartX = null;
-      _dragActive = false;
-      _cachedItemRights = null;
-      _dragCurrentX = null;
-      _dragOffsetX = null;
-    });
-  }
+  static const Key _insertionMarkerKey = ValueKey('ctab-insertion-marker');
 
   @override
   Widget build(BuildContext context) {
     final count = widget.children.length;
     _ensureItemKeys(count);
 
-    final isDragging =
-        _dragActive && _draggingIndex != null && _draggedToIndex != null;
+    // mainAxisSize.min so the row takes its natural width and the scroll view overflows when
+    // tabs don't fit; the default (max) fills and clips instead.
+    final row = Row(
+      key: _rowKey,
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(
+        count,
+        (i) => KeyedSubtree(key: _itemKeys[i], child: _draggableTab(i)),
+      ),
+    );
 
-    _orderedItemKeys = List.generate(count, (d) {
-      final original = isDragging ? _originalFromDisplay(d) : d;
-      return _itemKeys[original.clamp(0, _itemKeys.length - 1)];
-    });
-
-    final rowItems = List.generate(count, (d) {
-      if (isDragging && d == _draggedToIndex) {
-        // Invisible placeholder — preserves the tab's natural height so the
-        // Stack doesn't collapse to zero (which would hide the overlay too).
-        final original = _originalFromDisplay(d);
-        return KeyedSubtree(
-          key: _orderedItemKeys[d],
-          child: Opacity(opacity: 0, child: widget.children[original]),
-        );
-      }
-      final original = isDragging ? _originalFromDisplay(d) : d;
-      return KeyedSubtree(
-        key: _orderedItemKeys[d],
-        child: widget.children[original],
-      );
-    });
-
-    Widget? dragOverlay;
-    if (isDragging &&
-        _dragCurrentX != null &&
-        _draggingIndex! < count &&
-        widget.overlayBuilder != null) {
-      dragOverlay = Positioned(
-        left: _dragCurrentX! - (_dragOffsetX ?? 0),
-        top: 0,
-        bottom: 0,
-        child: DecoratedBox(
-          decoration: const BoxDecoration(
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 6,
-                offset: Offset(2, 2),
-              ),
-            ],
+    return wrapDropTarget<DndDragPayload>(
+      state: widget.folderState,
+      alwaysAccepts: true,
+      // The insertion mark is drawn from the resolved index, and the folders that most need it —
+      // the Eclipse workbench's view stacks — have no application DropTarget: the workbench moves
+      // a view with a Tracker rather than through DND.
+      alwaysResolves: true,
+      resolveIndex: (details) {
+        final index = _insertIndexAt(details.offset);
+        _insertHover.update(index);
+        return index;
+      },
+      resolveItemId: (details) => _itemIdAt(details.offset) ?? 0,
+      resolvePosition: (details) =>
+          _row?.globalToLocal(details.offset) ?? details.offset,
+      onDrop: _handleDrop,
+      builder: (context, child, negotiation, isHovering) {
+        if (!isHovering) _insertHover.update(null);
+        return child;
+      },
+      child: widget.rowWrapper(
+        // A Row with no children is zero-high, which would stop the strip hit-testing and leave
+        // a folder that lost its last tab unable to be given one back. Hold the strip's height.
+        ConstrainedBox(
+          constraints: BoxConstraints(minHeight: widget.tabHeight ?? 0),
+          child: ValueListenableBuilder<int?>(
+            valueListenable: _insertHover.notifier,
+            builder: (context, index, child) {
+              final marker = Theme.of(context)
+                  .extension<CTabFolderThemeExtension>()!
+                  .tabHighlightColor;
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // Tinted while this folder is the one under the pointer: with several folders
+                  // on screen the marker alone says where in a row the tab lands, not which row.
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 90),
+                    color: index == null
+                        ? null
+                        : marker.withValues(alpha: _receivingStripTint),
+                    child: child,
+                  ),
+                  if (index != null) _insertionMarker(index, marker),
+                ],
+              );
+            },
+            child: row,
           ),
-          child: widget.overlayBuilder!(_draggingIndex!),
-        ),
-      );
-    }
-
-    return MouseRegion(
-      cursor: _dragActive
-          ? SystemMouseCursors.grabbing
-          : _draggingIndex != null
-              ? SystemMouseCursors.grab
-              : MouseCursor.defer,
-      child: Listener(
-        onPointerDown: _onPointerDown,
-        onPointerMove: _onPointerMove,
-        onPointerUp: _onPointerUp,
-        onPointerCancel: _onPointerCancel,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            AbsorbPointer(
-              absorbing: _dragActive,
-              // mainAxisSize.min so the row takes its natural width and the scroll view
-              // overflows when tabs don't fit; the default (max) fills and clips instead.
-              child: Row(
-                key: _rowKey,
-                mainAxisSize: MainAxisSize.min,
-                children: rowItems,
-              ),
-            ),
-            if (dragOverlay != null) dragOverlay,
-          ],
         ),
       ),
     );
   }
+
+  /// Enough to read as "this row", not enough to fight the tabs drawn on it.
+  static const double _receivingStripTint = 0.12;
 }
 
 class CTabItem {

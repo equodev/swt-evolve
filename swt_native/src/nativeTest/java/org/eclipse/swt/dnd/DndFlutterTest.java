@@ -3,6 +3,8 @@ package org.eclipse.swt.dnd;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.WidgetFlutterHarness;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CTabFolder;
+import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -195,6 +197,50 @@ class DndFlutterTest {
         dragAndDrop(dragSource, dropTarget, e -> e.itemId = childId);
 
         assertThat(resolvedItems).containsExactly(child);
+    }
+
+    @Test
+    @DisplayName("a tab dropped on another CTabFolder resolves the CTabItem under the cursor there")
+    void dropResolvesCTabItemOnAnotherFolder() {
+        CTabFolder from = new CTabFolder(shell, SWT.NONE);
+        CTabItem moving = new CTabItem(from, SWT.NONE);
+        moving.setText("moving");
+
+        CTabFolder to = new CTabFolder(shell, SWT.NONE);
+        CTabItem first = new CTabItem(to, SWT.NONE);
+        first.setText("first");
+        CTabItem second = new CTabItem(to, SWT.NONE);
+        second.setText("second");
+
+        DragSource dragSource = new DragSource(from, DND.DROP_MOVE);
+        dragSource.setTransfer(TextTransfer.getInstance());
+        dragSource.addDragListener(new DragSourceAdapter() {
+            @Override
+            public void dragSetData(DragSourceEvent event) {
+                event.data = moving.getText();
+            }
+        });
+
+        DropTarget dropTarget = new DropTarget(to, DND.DROP_MOVE);
+        dropTarget.setTransfer(TextTransfer.getInstance());
+
+        List<Object> resolvedItems = new ArrayList<>();
+        List<Object> droppedData = new ArrayList<>();
+        dropTarget.addDropListener(new DropTargetAdapter() {
+            @Override
+            public void drop(DropTargetEvent event) {
+                resolvedItems.add(event.item);
+                droppedData.add(event.data);
+            }
+        });
+
+        shell.open();
+        dragAndDrop(dragSource, dropTarget, e -> e.itemId = FlutterBridge.id(second));
+
+        assertThat(resolvedItems).as("event.item must be the target folder's own CTabItem")
+                .containsExactly(second);
+        assertThat(droppedData).as("the source folder's dragSetData must reach the other folder")
+                .containsExactly("moving");
     }
 
     @Test

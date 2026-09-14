@@ -15,6 +15,14 @@ public class VRegion extends VResource {
         super(impl);
     }
 
+    @JsonAttribute(nullable = false)
+    public int[] getRects() {
+        return org.eclipse.swt.graphics.RegionHelper.flatten(((DartRegion) impl).rects);
+    }
+
+    public void setRects(int[] value) {
+    }
+
     @JsonConverter(target = Region.class)
     public static class RegionJson implements Configuration {
 

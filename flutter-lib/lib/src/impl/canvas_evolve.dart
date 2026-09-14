@@ -22,6 +22,7 @@ import 'color_utils.dart';
 import 'utils/double_tap_detector.dart';
 import 'utils/image_utils.dart';
 import 'utils/widget_utils.dart';
+import '../theme/theme_extensions/display_theme_extension.dart';
 import 'widget_config.dart';
 import '../theme/theme_extensions/canvas_theme_extension.dart';
 import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
@@ -44,9 +45,16 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   CanvasThemeExtension get _theme =>
       Theme.of(context).extension<CanvasThemeExtension>()!;
 
+  /// A control clipped to a region takes a different colour from the theme, not a different rule:
+  /// the shape is the whole drawing, and the window background an ordinary control falls back to
+  /// would paint it in the colour of the application behind it. The workbench outlines where a
+  /// dragged view would dock this way — a window-sized shell with no children whose region is a
+  /// few thin bars — so the bars would simply disappear.
   Color get bg => getBackgroundColor(
         background: state.background,
-        defaultColor: _theme.backgroundColor,
+        defaultColor: state.region != null
+            ? Theme.of(context).extension<DisplayThemeExtension>()!.dragFeedbackColor
+            : _theme.backgroundColor,
       )!;
   Color get fg => _theme.foregroundColor;
   Color gcBg = Colors.transparent;

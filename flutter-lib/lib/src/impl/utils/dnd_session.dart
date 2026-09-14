@@ -95,6 +95,14 @@ class DragStartVeto {
 
   static bool get isVetoed => _vetoed;
 
+  /// Clears the verdict for a gesture that has none to wait for — a drag started on a control
+  /// with no SWT DragSource (a CTabFolder reordering its own tabs). Without this it would
+  /// inherit whatever the previous drag was told.
+  static void reset() {
+    _vetoed = false;
+    _inFlight = null;
+  }
+
   static void begin(String controlSwt, int controlId) {
     _vetoed = false;
     final gate = _gates.putIfAbsent('$controlSwt/$controlId', () {

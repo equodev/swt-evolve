@@ -760,6 +760,8 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
             return table.getItem(e.index);
         } else if (control instanceof Tree tree && e.index >= 0 && e.index < tree.getItemCount()) {
             return tree.getItem(e.index);
+        } else if (control instanceof org.eclipse.swt.custom.CTabFolder folder && e.index >= 0 && e.index < folder.getItemCount()) {
+            return folder.getItem(e.index);
         }
         return null;
     }
@@ -775,6 +777,11 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
                 Widget found = findTreeItemById(item, id);
                 if (found != null)
                     return found;
+            }
+        } else if (control instanceof org.eclipse.swt.custom.CTabFolder folder) {
+            for (org.eclipse.swt.custom.CTabItem item : folder.getItems()) {
+                if (FlutterBridge.id(item) == id)
+                    return item;
             }
         }
         return null;

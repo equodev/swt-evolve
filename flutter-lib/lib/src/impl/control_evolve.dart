@@ -26,6 +26,7 @@ import '../theme/theme_extensions/tooltip_theme_extension.dart';
 import 'utils/dnd_session.dart';
 import 'utils/dnd_utils.dart';
 import 'utils/hover_arbiter.dart';
+import 'utils/region_clip.dart';
 import 'utils/widget_utils.dart';
 import 'widget_config.dart';
 
@@ -487,8 +488,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       // widget's GC channels whatever its enablement, so the GC has to be mounted and subscribed on
       // this branch too. Without it, everything a Canvas draws for itself is dropped -- a ui.forms
       // Hyperlink, which applications create disabled, renders as an empty row.
-      return blockWhenDisabled(
-          Opacity(opacity: AppOpacities.disabled, child: wrapWithGCOverlay(widget)));
+      return RegionClip.maybe(
+          state.region,
+          blockWhenDisabled(
+              Opacity(opacity: AppOpacities.disabled, child: wrapWithGCOverlay(widget))));
     }
 
     if (state.menu != null) {
@@ -576,7 +579,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
     return ControlNestingScope(
       depth: hoverDepth + 1,
-      child: blockWhenDisabled(widget),
+      child: RegionClip.maybe(state.region, blockWhenDisabled(widget)),
     );
   }
 
