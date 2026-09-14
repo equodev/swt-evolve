@@ -96,6 +96,33 @@ final Map<String, NamedTheme> kNamedThemes = {
       neutral: const Color(0xFF1A2035),
     ),
   ),
+  // Reusable green theme (seed #84C145). Vendor-neutral name on purpose: any
+  // green-branded POC can select it with -Dswt.evolve.theme_name=green.
+  'green': NamedTheme(
+    lightColorScheme: _greenLightScheme(),
+    darkColorScheme: _greenDarkScheme(),
+    lightColorSchemeExtension: createColorSchemeExtension(_greenLightScheme()).copyWith(
+      primaryHovered: const Color(0xFF6C9E39),
+      surfaceBorderFocused: const Color(0xFF84C145),
+      surfaceToolbar: const Color(0xFFF3F8EA),
+      toolbarDivider: const Color(0xFFCFE3AF),
+      ctabFolderHighlightColor: const Color(0xFF84C145),
+      ctabFolderSelectedTextColor: const Color(0xFF1B2410),
+      ctabFolderUnselectedColor: const Color(0xFFE4F1CE),
+      neutral: const Color(0xFFEFF6E4),
+    ),
+    darkColorSchemeExtension: createColorSchemeExtension(_greenDarkScheme()).copyWith(
+      primaryHovered: const Color(0xFF9BD05F),
+      surfaceBorderFocused: const Color(0xFF84C145),
+      surfaceToolbar: const Color(0xFF1A2113),
+      toolbarDivider: const Color(0xFF37481F),
+      ctabFolderHighlightColor: const Color(0xFF84C145),
+      ctabFolderSelectedTextColor: const Color(0xFFF0F8E6),
+      ctabFolderUnselectedColor: const Color(0xFF1A2314),
+      onSurfaceVariantDisabled: const Color(0xFF4E6236),
+      neutral: const Color(0xFF1A2314),
+    ),
+  ),
 };
 
 // Same neutral scheme as 'nondefault', with its violet accents swapped for reds.
@@ -347,6 +374,82 @@ ColorScheme _yellowkDarkScheme() => ColorScheme.fromSeed(
   onInverseSurface: const Color(0xFF1F2937),
   inversePrimary: const Color(0xFFFDD800),
   surfaceTint: const Color(0xFFFDD800),
+  shadow: const Color(0xFF000000),
+  scrim: const Color(0xFF000000),
+);
+
+// Seeded from the lime brand green #84C145. Like yellowk, the primary is bright,
+// so onPrimary is near-black (contrast ~9.7:1) rather than white.
+ColorScheme _greenLightScheme() => ColorScheme.fromSeed(
+  seedColor: const Color(0xFF84C145),
+  brightness: Brightness.light,
+).copyWith(
+  // Primary: brand green — buttons, checkboxes, radios, selected tabs, focus borders
+  primary: const Color(0xFF84C145),
+  onPrimary: const Color(0xFF17240A), // near-black — green is bright
+  // primaryContainer: deeper green — menu item selected, table row selected
+  primaryContainer: const Color(0xFF5C8730),
+  onPrimaryContainer: const Color(0xFFF0F8E6),
+  // secondary: very light green tint — secondary button background
+  secondary: const Color(0xFFEFF6E4),
+  onSecondary: const Color(0xFF2C3F14),
+  secondaryContainer: const Color(0xFFDCEBC4),
+  onSecondaryContainer: const Color(0xFF2C3F14),
+  tertiary: const Color(0x00FFFFFF),
+  onTertiary: const Color(0xFF2C3F14),
+  error: const Color(0xFFDC0A56),
+  onError: const Color(0xFFFFFFFF),
+  errorContainer: const Color(0xFFFAF2F4),
+  onErrorContainer: const Color(0xFF59040D),
+  surface: const Color(0xFFFFFFFF),
+  onSurface: const Color(0xFF1B2410), // near-black green-tinted — body text
+  onSurfaceVariant: const Color(0xFF5E6B4C), // muted green-gray — secondary icons/text
+  surfaceVariant: const Color(0xFFF3F8EA),
+  surfaceContainerHighest: const Color(0xFFFAFCF6),
+  surfaceContainerHigh: const Color(0xFFF6FAEF),
+  surfaceContainerLow: const Color(0xFFF1F7E7),
+  outline: const Color(0x1A1B2410),
+  outlineVariant: const Color(0x4D1B2410),
+  inverseSurface: const Color(0xFF2A3818),
+  onInverseSurface: const Color(0xFFF0F8E6),
+  inversePrimary: const Color(0xFF84C145),
+  surfaceTint: const Color(0xFF84C145),
+  shadow: const Color(0xFF000000),
+  scrim: const Color(0xFF000000),
+);
+
+ColorScheme _greenDarkScheme() => ColorScheme.fromSeed(
+  seedColor: const Color(0xFF84C145),
+  brightness: Brightness.dark,
+).copyWith(
+  // Keep brand green in dark mode — high-contrast on dark surfaces
+  primary: const Color(0xFF84C145),
+  onPrimary: const Color(0xFF17240A), // black text on green button
+  primaryContainer: const Color(0xFF4D7028),
+  onPrimaryContainer: const Color(0xFFE4F3CE),
+  secondary: const Color(0xFF28351A),
+  onSecondary: const Color(0xFFDCEBC4),
+  secondaryContainer: const Color(0xFF37481F),
+  onSecondaryContainer: const Color(0xFFE4F3CE),
+  tertiary: const Color(0x00FFFFFF),
+  onTertiary: const Color(0xFFE4F3CE),
+  error: const Color(0xFFF87171),
+  onError: const Color(0xFFFFFFFF),
+  errorContainer: const Color(0xFF7F1D1D),
+  onErrorContainer: const Color(0xFFFCA5A5),
+  surface: const Color(0xFF1E241A),
+  onSurface: const Color(0xFFF0F8E6),
+  onSurfaceVariant: const Color(0xFF9CB07E),
+  surfaceVariant: const Color(0xFF28351A),
+  surfaceContainerHighest: const Color(0xFF141A10),
+  surfaceContainerHigh: const Color(0xFF191F14),
+  surfaceContainerLow: const Color(0xFF1D2418),
+  outline: const Color(0xFF3D4E28),
+  outlineVariant: const Color(0xFF2A3818),
+  inverseSurface: const Color(0xFFDDECC8),
+  onInverseSurface: const Color(0xFF1E241A),
+  inversePrimary: const Color(0xFF84C145),
+  surfaceTint: const Color(0xFF84C145),
   shadow: const Color(0xFF000000),
   scrim: const Color(0xFF000000),
 );
