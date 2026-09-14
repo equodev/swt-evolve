@@ -1067,7 +1067,8 @@ public class DartComposite extends DartScrollable implements IComposite {
             return setTabItemFocus();
         boolean takeFocus = (getApi().style & SWT.NO_FOCUS) == 0;
         if ((getApi().state & CANVAS) != 0) {
-            takeFocus = hooksKeys();
+            //takeFocus = hooksKeys();
+            ;
             if ((getApi().style & SWT.EMBEDDED) != 0)
                 takeFocus = true;
         }
