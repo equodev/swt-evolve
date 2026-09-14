@@ -271,6 +271,12 @@ public class DartGroup extends DartComposite implements IGroup {
     }
 
     @Override
+    void createWidget() {
+        super.createWidget();
+        getApi().state &= ~CANVAS;
+    }
+
+    @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
         return Sizes.computeTrim(this, x, y, width, height);
     }

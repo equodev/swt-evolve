@@ -1432,6 +1432,12 @@ public class DartComposite extends DartScrollable implements IComposite {
         return layoutDeferred;
     }
 
+    @Override
+    void createWidget(int index) {
+        getApi().state |= CANVAS;
+        super.createWidget(index);
+    }
+
     Object contentView() {
         return getBridge().container(this);
     }

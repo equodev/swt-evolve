@@ -365,13 +365,6 @@ public class DartCanvas extends DartComposite implements ICanvas {
     }
 
     @Override
-    void checkBuffered() {
-        if ((getApi().state & CANVAS) == 0) {
-            getApi().style &= ~SWT.DOUBLE_BUFFERED;
-        }
-    }
-
-    @Override
     public Color getBackground() {
         checkWidget();
         return _background != null ? _background : defaultBackground();

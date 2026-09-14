@@ -256,6 +256,7 @@ public class DartToolBar extends DartComposite implements IToolBar {
     @Override
     void createWidget() {
         super.createWidget();
+        getApi().state &= ~CANVAS;
         items = new ToolItem[4];
         lastFocusId = lastArrowId = lastHotId = -1;
     }

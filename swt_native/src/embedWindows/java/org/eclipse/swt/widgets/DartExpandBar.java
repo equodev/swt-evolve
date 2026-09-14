@@ -158,6 +158,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
     @Override
     void createWidget() {
         super.createWidget();
+        getApi().state &= ~CANVAS;
         items = new ExpandItem[4];
         if (!isAppThemed()) {
             backgroundMode = SWT.INHERIT_DEFAULT;
