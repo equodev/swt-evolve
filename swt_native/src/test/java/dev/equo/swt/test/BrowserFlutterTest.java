@@ -917,6 +917,94 @@ class BrowserFlutterTest {
     }
 
     /**
+     * Scripting a {@code setText} document. Unlike the {@link Scripting} group (a served page,
+     * scriptable only through the same-origin proxy), inline content is the application's own and
+     * must be scriptable in every variant: an application that draws its UI with {@code setText}
+     * and then drives it with {@code evaluate} has no other channel into the page.
+     */
+    @Nested
+    @Order(13)
+    @DisplayName("setText scripting")
+    class SetTextScripting {
+
+        private void loadInlinePage(String title, String inner) {
+            flutter.clearIframeLoads();
+            browser.setText(taggedHtml(title, inner));
+            flutter.flush();
+            assertThat(flutter.awaitIframeRendered(title, IFRAME_LOAD_TIMEOUT))
+                    .as("setText content rendered in the iframe (on-load ping received)").isTrue();
+        }
+
+        @Test
+        void setText_thenEvaluate_readsTheDocument() throws Exception {
+            loadInlinePage("Inline Eval", "<p id='m'>INLINE-42</p>");
+            assertThat(browser.evaluate("return document.getElementById('m').textContent"))
+                    .isEqualTo("INLINE-42");
+        }
+
+        @Test
+        void setText_thenExecute_mutatesTheDocument() throws Exception {
+            loadInlinePage("Inline Exec", "<p id='m'>before</p>");
+            assertThat(browser.execute("document.getElementById('m').textContent = 'after';")).isTrue();
+            flutter.pumpClient();
+            assertThat(browser.evaluate("return document.getElementById('m').textContent"))
+                    .isEqualTo("after");
+        }
+
+        /** The common shape: the script runs from {@code ProgressListener.completed}. */
+        @Test
+        void setText_evaluateFromCompletedListener() throws Exception {
+            AtomicReference<Object> result = new AtomicReference<>();
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            CountDownLatch done = new CountDownLatch(1);
+            ProgressListener pl = ProgressListener.completedAdapter(e -> {
+                try {
+                    result.set(browser.evaluate("return document.title"));
+                } catch (Throwable t) {
+                    failure.set(t);
+                } finally {
+                    done.countDown();
+                }
+            });
+            browser.addProgressListener(pl);
+            try {
+                browser.setText(taggedHtml("Inline Completed", "<p>x</p>"));
+                flutter.flush();
+                assertThat(awaitLatch(done, ACTION_TIMEOUT)).as("completed fired").isTrue();
+            } finally {
+                browser.removeProgressListener(pl);
+            }
+            assertThat(failure.get()).as("evaluate() from completed").isNull();
+            assertThat(result.get()).isEqualTo("Inline Completed");
+        }
+
+        @Test
+        void setText_getUrl_isAboutBlank() {
+            loadInlinePage("Inline Url", "<p>x</p>");
+            pumpUntil(() -> "about:blank".equals(browser.getUrl()), ACTION_TIMEOUT);
+            assertThat(browser.getUrl()).isEqualTo("about:blank");
+        }
+
+        @Test
+        void setText_browserFunction_callableFromInlineContent() throws Exception {
+            loadInlinePage("Inline Fn", "<p>x</p>");
+            AtomicBoolean fired = new AtomicBoolean();
+            BrowserKit.Fn fn = browser.newFunction("equoInlineFn", a -> {
+                fired.set(true);
+                return "ok";
+            });
+            try {
+                flutter.pumpClient();
+                assertThat(browser.evaluate("return window.equoInlineFn ? window.equoInlineFn() : 'NONE'"))
+                        .isEqualTo("ok");
+                assertThat(fired).as("BrowserFunction invoked from inline content").isTrue();
+            } finally {
+                fn.dispose();
+            }
+        }
+    }
+
+    /**
      * {@code close()}/{@code dispose()} are pure Java widget-lifecycle operations (no render or
      * navigation needed), so these use a <em>transient</em> Browser rather than the shared one — which
      * must stay alive for the other groups. {@code addMenuDetectListener} is a registration smoke

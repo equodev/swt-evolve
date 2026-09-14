@@ -212,7 +212,7 @@ public class EvolveBrowser extends WebBrowser {
         java.util.Map<String, Object> args = new java.util.HashMap<>();
         args.put("text", html == null ? "" : html);
         args.put("seq", ++navSeq);
-        // The web target renders setText content from a data: URL, which may not load the file:
+        // The web target serves setText content from its own origin, which cannot load the file:
         // sub-resources an application embeds -- see LocalFileServing. The rewritten copy travels
         // alongside the original, which the desktop webviews (where file: works) keep using.
         dev.equo.swt.LocalFileServing.ServedHtml served =

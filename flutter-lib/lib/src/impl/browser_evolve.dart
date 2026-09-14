@@ -49,6 +49,8 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   // is unconditionally unsupported, so DOM-level eval is the only option, and it
   // only works when the content is same-origin (or served through the proxy).
   PlatformWebViewControllerCreationParams? _params;
+  // Web: the same-origin blob: URL the current setText document is served from (see _loadText).
+  String? _inlineDocumentUrl;
   // Names of registered BrowserFunctions. Each is exposed in the iframe page as
   // a JS shim that round-trips to Java; they must be re-injected after every
   // navigation (a fresh document loses the previous window's globals).
@@ -211,18 +213,17 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
         }
       } else if (text != null) {
         _loadedLocalFile = false;
-        _expectSameOrigin = false;
         _loadedText = text;
         _loadedUrl = null;
-        // On web the document is rendered from a data: URL, which refuses the file:
-        // sub-resources an application may embed; Java sends a copy with those rewritten to
-        // /local-file/ paths, loaded against this origin so they resolve.
+        // On web the document cannot reach the file: sub-resources an application may embed;
+        // Java sends a copy with those rewritten to /local-file/ paths, loaded against this
+        // origin so they resolve.
         final localFileText = m["localFileText"] as String?;
         if (kIsWeb && localFileText != null && localFileText.isNotEmpty) {
-          _controller.loadHtmlString(localFileText,
+          _loadText(localFileText,
               baseUrl: localFileBaseRewrite(m["localFileBase"] as String?));
         } else {
-          _controller.loadHtmlString(text);
+          _loadText(text);
         }
       }
     });
@@ -301,6 +302,35 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     });
   }
 
+  /// Loads a `setText` document. On web it is served from a same-origin `blob:` URL so the page
+  /// is scriptable (execute/evaluate/BrowserFunction) — see `browserInlineDocumentUrl`; the native
+  /// webviews render the string directly.
+  void _loadText(String html, {String? baseUrl}) {
+    final url = browserInlineDocumentUrl(html, baseUrl);
+    if (url == null) {
+      _expectSameOrigin = false;
+      _controller.loadHtmlString(html, baseUrl: baseUrl);
+      return;
+    }
+    _releaseInlineDocument();
+    _inlineDocumentUrl = url;
+    _expectSameOrigin = true;
+    _controller.loadRequest(Uri.parse(url));
+  }
+
+  void _releaseInlineDocument() {
+    final url = _inlineDocumentUrl;
+    if (url == null) return;
+    _inlineDocumentUrl = null;
+    browserRevokeInlineDocumentUrl(url);
+  }
+
+  @override
+  void dispose() {
+    _releaseInlineDocument();
+    super.dispose();
+  }
+
   // Every navigation path records its target before handing it to the webview.
   bool get _navigationRequested => _loadedUrl != null || _loadedText != null;
 
@@ -335,8 +365,8 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   bool _isPlaceholderLoad(String? reportedUrl) {
     if (!_navigationRequested) return true;
     // A late placeholder load can still land just after a real navigation
-    // started. setText is reported under about:blank too (it loads from a
-    // data: URL whose location can't be read back), so only URLs are checked.
+    // started. The native webviews report a setText document under about:blank
+    // too, so only URLs are checked.
     return reportedUrl == 'about:blank' &&
         _loadedText == null &&
         _loadedUrl != 'about:blank';
@@ -442,9 +472,12 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
 
   /// Reverses [_resolveLoadUri]: if [url] is one of our `/proxy?url=<orig>`
   /// URLs, returns the original target so Location events report the real URL
-  /// rather than the proxy wrapper. Pass-through otherwise.
+  /// rather than the proxy wrapper. A `setText` document is reported as
+  /// `about:blank`, as native SWT does, not as the blob: URL it is served from.
+  /// Pass-through otherwise.
   String? _unproxyUrl(String? url) {
     if (url == null) return null;
+    if (url == _inlineDocumentUrl) return 'about:blank';
     final uri = Uri.tryParse(url);
     final orig = uri?.queryParameters['url'];
     if (uri != null && uri.path.endsWith('/proxy') && orig != null && orig.isNotEmpty) {
@@ -541,10 +574,9 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       // the rewritten form the navigate op carries, so leave it to the op rather than rendering
       // the raw one -- which paints a resource-less page the op then has to replace.
       if (kIsWeb && state.text!.contains('file:')) return;
-      _expectSameOrigin = false;
       _loadedText = state.text;
       _loadedUrl = null;
-      _controller.loadHtmlString(state.text!);
+      _loadText(state.text!);
     }
   }
 

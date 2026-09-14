@@ -19,6 +19,12 @@ Object? browserEvalInFrame(
         PlatformWebViewControllerCreationParams? params, String script) =>
     null;
 
+/// Only the web iframe needs a same-origin URL for inline content; native webviews render
+/// `loadHtmlString` scriptably on their own.
+String? browserInlineDocumentUrl(String html, String? baseUrl) => null;
+
+void browserRevokeInlineDocumentUrl(String url) {}
+
 /// No iframe to listen to on non-web platforms; desktop webviews get their
 /// re-injection from the `onPageFinished` navigation delegate instead.
 void browserOnFrameLoad(dynamic params, void Function() onLoad) {}

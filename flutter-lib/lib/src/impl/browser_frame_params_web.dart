@@ -72,6 +72,34 @@ String localFileBaseRewrite(String? basePath) {
   return basePath == null || basePath.isEmpty ? '$origin/' : '$origin$basePath';
 }
 
+/// Same-origin URL for a `setText` document. Rendering it from a `data:` URL (what the webview
+/// plugin's `loadHtmlString` does) gives the frame an opaque origin, so the embedding page cannot
+/// script it: execute/evaluate/BrowserFunction all fail with a cross-origin SecurityError. A `blob:`
+/// URL minted here carries this page's origin instead, and inside the document `location.origin` is
+/// the app's — which the BrowserFunction shim posts to (an `srcdoc` frame is scriptable too, but its
+/// `location.origin` is "null"). [baseUrl], when given, is injected as the document's `<base href>`,
+/// as `loadHtmlString` would.
+///
+/// The caller owns the URL: revoke it with [browserRevokeInlineDocumentUrl] once replaced.
+String browserInlineDocumentUrl(String html, String? baseUrl) {
+  final blob = web.Blob(
+      [_injectBaseUrl(html, baseUrl).toJS as JSAny].toJS,
+      web.BlobPropertyBag(type: 'text/html;charset=utf-8'));
+  return web.URL.createObjectURL(blob);
+}
+
+void browserRevokeInlineDocumentUrl(String url) => web.URL.revokeObjectURL(url);
+
+final RegExp _headTag = RegExp(r'<head[^>]*>', caseSensitive: false);
+
+String _injectBaseUrl(String html, String? baseUrl) {
+  if (baseUrl == null || baseUrl.isEmpty) return html;
+  final baseTag = '<base href="$baseUrl">';
+  final match = _headTag.firstMatch(html);
+  if (match != null) return html.replaceRange(match.end, match.end, baseTag);
+  return '<head>$baseTag</head>$html';
+}
+
 /// Listens for the iframe's native `load` DOM event, fired every time it lands
 /// a new document (navigation, back/forward, reload) -- the real signal that
 /// was missing when this was written, versus guessing with a retry loop.

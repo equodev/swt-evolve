@@ -113,8 +113,8 @@ class BrowserProgressPlaceholderFlutterTest {
     @Test
     @DisplayName("setText content reports completed")
     void completed_firesForSetText() {
-        // setText is loaded from a data: URL whose location the web backend cannot read back, so it
-        // is reported under about:blank too — the placeholder check must not swallow it.
+        // A setText document is reported under about:blank too (as native SWT does), so the
+        // placeholder check must not swallow it.
         browser.setText("<!doctype html><html><head><title>InlinePage</title></head>"
                 + "<body><h1>inline</h1></body></html>");
         flutter.flush();
