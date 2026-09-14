@@ -1,14 +1,19 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.PaletteData;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import dev.equo.swt.SerializeTestBase;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.*;
 import static org.mockito.Mockito.*;
 
@@ -113,6 +118,67 @@ class TreeOwnerDrawSerializeTest extends SerializeTestBase {
 
         assertThatJson(json).node("texts[0]").isEqualTo("Vendor");
         assertThatJson(json).node("texts[1]").isEqualTo("6.5.0");
+    }
+
+    /**
+     * An owner-drawing app may read the GC inside {@code erase()} before deciding what it paints,
+     * and native SWT always supplies one. Capturing a cell must hand the EraseItem listener the
+     * same GC the PaintItem listener already gets: a null one throws inside the app's listener,
+     * mid-serialization of the very first frame, so nothing ever reaches Flutter.
+     */
+    @Test
+    void eraseItemListener_getsAGc_likePaintItemDoes() {
+        Tree tree = tree();
+        DartTree treeImpl = ownerDrawnTree(tree, 2);
+
+        List<GC> erased = new ArrayList<>();
+        doAnswer(invocation -> {
+            Event event = invocation.getArgument(1);
+            erased.add(event.gc);
+            event.gc.isClipped();
+            return null;
+        }).when(treeImpl).sendEvent(eq(SWT.EraseItem), any(Event.class));
+        doAnswer(invocation -> null).when(treeImpl).sendEvent(eq(SWT.PaintItem), any(Event.class));
+
+        TreeItem item = new TreeItem(tree, SWT.NONE);
+        item.setText(new String[] { "Vendor", "6.5.0" });
+
+        serialize(item);
+
+        assertThat(erased).isNotEmpty().doesNotContainNull();
+    }
+
+    /**
+     * Native SWT measures a cell before painting it, and an owner-drawing app may compute its cell
+     * layout in {@code measure()} for {@code paint()} to read back. Capturing a cell must keep that
+     * order, or the app paints against state its own measure pass never filled in.
+     */
+    @Test
+    void measureItem_runsBeforePaintItem_withAGc() {
+        Tree tree = tree();
+        DartTree treeImpl = ownerDrawnTree(tree, 2);
+        when(treeImpl.hooks(SWT.MeasureItem)).thenReturn(true);
+
+        List<String> order = new ArrayList<>();
+        List<GC> measured = new ArrayList<>();
+        doAnswer(invocation -> {
+            Event event = invocation.getArgument(1);
+            order.add("measure");
+            measured.add(event.gc);
+            return null;
+        }).when(treeImpl).sendEvent(eq(SWT.MeasureItem), any(Event.class));
+        doAnswer(invocation -> {
+            order.add("paint");
+            return null;
+        }).when(treeImpl).sendEvent(eq(SWT.PaintItem), any(Event.class));
+
+        TreeItem item = new TreeItem(tree, SWT.NONE);
+        item.setText(new String[] { "Vendor", "6.5.0" });
+
+        serialize(item);
+
+        assertThat(order).containsSubsequence("measure", "paint");
+        assertThat(measured).isNotEmpty().doesNotContainNull();
     }
 
     private Image solidImage(int width, int height) {

@@ -558,11 +558,11 @@ public class TableHelper {
         int count = Math.max(1, item.parent.getColumnCount());
         DartWidget parent = (DartWidget) item.parent.getImpl();
         Image[] own = ownImages(item, count);
-        boolean[] suppressed = suppressedForegrounds(item, parent, count);
 
         String[] texts = new String[count];
         boolean[] textDrawn = new boolean[count];
         Image[] images = new Image[count];
+        boolean[] suppressed;
         GC gc = new GC(item.parent);
         DartGC dartGc = (DartGC) gc.getImpl();
         // This GC only ever draws through textCapture/imageCapture below — Flutter never
@@ -570,6 +570,8 @@ public class TableHelper {
         dartGc.silentDispose = true;
         int itemHeight = ((DartTable) item.parent.getImpl()).getItemHeight();
         try {
+            measureCells(item, parent, count, gc, itemHeight);
+            suppressed = suppressedForegrounds(item, parent, count, gc);
             for (int i = 0; i < count; i++) {
                 if (!suppressed[i] && own[i] != null) {
                     continue;
@@ -602,11 +604,33 @@ public class TableHelper {
     }
 
     /**
+     * Native SWT measures a cell before it erases or paints it, so an owner-drawing app is free to
+     * compute its cell layout in {@code measure()} and read it back in {@code paint()}. A capture
+     * that only paints leaves that layout uninitialised and the app's own paint code fails on it.
+     *
+     * <p>What the listener writes back is discarded: a Dart widget's size comes from Sizes, not
+     * from the row metrics native SWT would derive here.
+     */
+    private static void measureCells(DartTableItem item, DartWidget parent, int count, GC gc, int itemHeight) {
+        if (!parent.hooks(SWT.MeasureItem)) {
+            return;
+        }
+        for (int i = 0; i < count; i++) {
+            Event event = new Event();
+            event.item = item.getApi();
+            event.index = i;
+            event.gc = gc;
+            event.height = itemHeight;
+            parent.sendEvent(SWT.MeasureItem, event);
+        }
+    }
+
+    /**
      * Asks the SWT.EraseItem listeners which cells they paint themselves. An owner-drawing app
      * clears SWT.FOREGROUND there to mean "do not paint this item's own text/image, I will paint
      * it" -- Eclipse's QuickAccessEntry.erase() does exactly {@code detail &= ~SWT.FOREGROUND}.
      */
-    private static boolean[] suppressedForegrounds(DartTableItem item, DartWidget parent, int count) {
+    private static boolean[] suppressedForegrounds(DartTableItem item, DartWidget parent, int count, GC gc) {
         boolean[] suppressed = new boolean[count];
         if (!parent.hooks(SWT.EraseItem)) {
             return suppressed;
@@ -615,6 +639,9 @@ public class TableHelper {
             Event event = new Event();
             event.item = item.getApi();
             event.index = i;
+            // Native SWT always hands an EraseItem listener a GC, and an owner-drawing app is
+            // free to read it (gc.isClipped(), gc.getClipping()) before answering.
+            event.gc = gc;
             event.detail = SWT.FOREGROUND | SWT.BACKGROUND;
             parent.sendEvent(SWT.EraseItem, event);
             suppressed[i] = (event.detail & SWT.FOREGROUND) == 0;
