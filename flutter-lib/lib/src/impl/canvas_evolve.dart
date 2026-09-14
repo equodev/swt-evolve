@@ -523,6 +523,20 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   );
 }
 
+/// [value] held between [lo] and [hi], tolerating a [hi] below [lo].
+///
+/// Every scrollbar dimension here is an upper bound taken from the live track size, so a Canvas
+/// laid out shorter than a thumb's floor (a collapsed sash pane, a zero-sized first layout pass)
+/// inverts the pair. num.clamp answers that with an ArgumentError, and these calls sit inside
+/// LayoutBuilder's builder and CustomPainter.paint -- the throw escapes into the pipeline and
+/// aborts the frame's whole layout/paint pass, freezing every widget in it, not just this
+/// scrollbar. A track too short for the thumb is not an error; the thumb just fills it.
+double _confine(double value, double lo, double hi) {
+  if (hi <= 0) return 0;
+  if (hi <= lo) return hi;
+  return value.clamp(lo, hi);
+}
+
 class _CanvasScrollBar extends StatefulWidget {
   final VScrollBar bar;
   final bool vertical;
@@ -601,18 +615,21 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
 
   int get _displaySelection => _currentDragSelection ?? _selection;
 
+  /// The 16px floor a thumb is never drawn below, so it stays grabbable.
+  static const double _minThumbSize = 16.0;
+
   double _thumbSize(double trackSize) {
     final range = (_maximum - _minimum).toDouble();
-    if (range <= 0) return trackSize;
-    return (trackSize * (_thumb / range)).clamp(16.0, trackSize);
+    if (range <= 0) return trackSize < 0 ? 0 : trackSize;
+    return _confine(trackSize * (_thumb / range), _minThumbSize, trackSize);
   }
 
   double _thumbOffset(double trackSize) {
     final thumbSz = _thumbSize(trackSize);
     final scrollRange = (_maximum - _minimum - _thumb).toDouble();
     if (scrollRange <= 0) return 0;
-    return ((_displaySelection - _minimum) / scrollRange * (trackSize - thumbSz))
-        .clamp(0.0, trackSize - thumbSz);
+    return _confine((_displaySelection - _minimum) / scrollRange * (trackSize - thumbSz),
+        0.0, trackSize - thumbSz);
   }
 
   void _onDragStart(DragStartDetails details) {
@@ -777,14 +794,14 @@ class _ScrollBarPainter extends CustomPainter {
         x,
         thumbOffset,
         thickness,
-        thumbSize.clamp(8.0, size.height),
+        _confine(thumbSize, 8.0, size.height),
       );
     } else {
       final y = (size.height - thickness) / 2;
       thumbRect = Rect.fromLTWH(
         thumbOffset,
         y,
-        thumbSize.clamp(8.0, size.width),
+        _confine(thumbSize, 8.0, size.width),
         thickness,
       );
     }

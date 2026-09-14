@@ -64,10 +64,15 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
     onExit: (_) =>
         HoverExclusivityArbiter.instance.setActive(impl, hoverDepth, false),
     onHover: (e) {
+      // Only the control under the pointer reports the move; its ancestors stay silent.
+      // Nested MouseRegions all fire onHover for the same point, which is the very thing
+      // HoverExclusivityArbiter exists to undo for MouseEnter/MouseExit -- MouseMove needs
+      // the same rule. See onPointerMove below for what leaving it out costs.
+      if (_hitsAnyChild(state, e.localPosition)) return;
       final event = VEvent()
         ..x = e.localPosition.dx.round()
         ..y = e.localPosition.dy.round();
-      impl.sendThrottledMouseMove(state, event);
+      impl.sendThrottledMouseMove(state, event, e.buttons);
     },
     child: Listener(
       behavior: HitTestBehavior.translucent,
@@ -123,10 +128,24 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         impl.capturedPointerDowns.remove(e.pointer);
       },
       onPointerMove: (e) {
+        // Same exclusivity as onPointerDown above, which already refuses a press that landed
+        // on a child. Without it every composite between the Shell and the control under the
+        // pointer forwarded its own copy of each move: measured on a workbench diagram, 274
+        // pointer moves during one drag arrived at Java as 3822 SWT.MouseMove events, 12 per
+        // move. Dispatching that flood leaves the UI thread no idle turn for the asyncExec
+        // work draw2d's DeferredUpdateManager queues its repaints on, so a drag that should
+        // repaint per frame repainted four times in total and its feedback never appeared.
+        // A pointer this composite captured keeps reporting wherever it travels, mirroring
+        // onPointerUp: SWT sends moves to the control holding the capture, not to whatever
+        // the pointer has since wandered over.
+        if (!impl.capturedPointerDowns.contains(e.pointer) &&
+            _hitsAnyChild(state, e.localPosition)) {
+          return;
+        }
         final event = VEvent()
           ..x = e.localPosition.dx.round()
           ..y = e.localPosition.dy.round();
-        impl.sendThrottledDragMove(state, event);
+        impl.sendThrottledDragMove(state, event, e.buttons);
       },
       child: ControlNestingScope(depth: hoverDepth + 1, child: content),
     ),

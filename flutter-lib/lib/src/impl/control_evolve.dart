@@ -135,10 +135,32 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     _publishBounds();
   }
 
-  void sendThrottledMouseMove(V state, VEvent event) {
+  /// SWT's `stateMask` for a pointer event: the buttons held during the move, plus the live
+  /// modifier keys.
+  ///
+  /// draw2d and GEF both decide drag-vs-hover from this field alone —
+  /// `SWTEventDispatcher.dispatchMouseMoved` reaches `handleMouseDragged`, and
+  /// `DomainEventDispatcher.dispatchMouseMoved` reaches `EditDomain.mouseDrag`, only when a button
+  /// bit is set. A move sent without it is delivered as a hover, so no diagram tool ever sees a
+  /// drag and no drag feedback is ever drawn.
+  ///
+  /// A move presses and releases nothing, so it carries the buttons held unadjusted: neither of
+  /// [swtStateMask]'s own-button corrections applies to it.
+  int moveStateMask(int buttons) {
+    final keys = HardwareKeyboard.instance;
+    var mask = _swtButtonsMask(buttons);
+    if (keys.isAltPressed) mask |= SWT.ALT;
+    if (keys.isShiftPressed) mask |= SWT.SHIFT;
+    if (keys.isControlPressed) mask |= SWT.CTRL;
+    if (keys.isMetaPressed) mask |= SWT.COMMAND;
+    return mask;
+  }
+
+  void sendThrottledMouseMove(V state, VEvent event, int buttons) {
     final now = DateTime.now().millisecondsSinceEpoch;
     if (now - _lastMouseMoveMs >= _mouseMoveThrottleMs) {
       _lastMouseMoveMs = now;
+      event.stateMask = moveStateMask(buttons);
       widget.sendMouseMoveMouseMove(state, event);
     }
   }
@@ -187,10 +209,11 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     super.dispose();
   }
 
-  void sendThrottledDragMove(V state, VEvent event) {
+  void sendThrottledDragMove(V state, VEvent event, int buttons) {
     final now = DateTime.now().millisecondsSinceEpoch;
     if (now - _lastDragMoveMs >= _dragMoveThrottleMs) {
       _lastDragMoveMs = now;
+      event.stateMask = moveStateMask(buttons);
       widget.sendMouseMoveMouseMove(state, event);
     }
   }
@@ -525,7 +548,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         final event = VEvent()
           ..x = e.localPosition.dx.round()
           ..y = e.localPosition.dy.round();
-        sendThrottledDragMove(state, event);
+        sendThrottledDragMove(state, event, e.buttons);
       },
       child: MouseRegion(
         onEnter: (_) {
@@ -544,7 +567,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
             ..y = e.localPosition.dy.round();
           _lastHoverPosition = e.position;
           _removeTooltip();
-          sendThrottledMouseMove(state, event);
+          sendThrottledMouseMove(state, event, e.buttons);
           _resetHoverTimer(state, event);
         },
         child: widget,

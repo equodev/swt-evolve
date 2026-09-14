@@ -59,14 +59,18 @@ class GCDrawer extends GCDrawerBase {
 
   List<Shape> _staging = [];
 
-  // Two gcDispose cycles can be in flight at once (e.g. a hover-driven redraw
-  // firing again before a previous cycle's image decode resolves). Whichever
-  // *finishes* last wins today, but finish order doesn't track start order —
-  // a cycle with no pending images can complete before an older, slower one,
-  // so the older cycle's late completion would clobber newer, correct shapes
-  // with stale/incomplete ones. Only the most-recently-*started* cycle may
-  // commit; anything superseded by a newer start discards itself.
+  // Standalone mode is one-shot: the drawer tears itself down after the cycle it renders, so a
+  // second cycle overtaking the first has nothing to reconcile and simply discards itself.
   int _gcDisposeGeneration = 0;
+
+  // Two gcDispose cycles can be in flight at once (e.g. a hover-driven redraw firing again before
+  // a previous cycle's image decode resolves), and finish order doesn't track start order — a
+  // cycle with no pending images completes before an older, slower one. Committing on completion
+  // would let the older cycle clobber newer, correct shapes; the commit phase is therefore chained
+  // so cycles apply in the order they started. Discarding the superseded cycle instead is not an
+  // option: an incremental cycle composites onto the previous frame, so its content is never
+  // resent and the region it covered would stay unpainted until an unrelated full repaint.
+  Future<void> _commitChain = Future<void>.value();
 
   /// Standalone mode: registers comm listeners for state + all draw ops + imageInit/gcDispose.
   /// Used for headless image rendering (new GC(image)). [onDisposed] fires once the render is sent.
@@ -157,60 +161,64 @@ class GCDrawer extends GCDrawerBase {
       // a FigureCanvas). Malformed/missing payload defaults to true (replace).
       final fullRepaint =
           !(payload is Map && payload['fullRepaint'] == false);
-      final myGeneration = ++_gcDisposeGeneration;
       final cycleStaging = _staging;
       _staging = [];
 
       final pending = List<Future<ImageShape>>.from(_pendingImages);
       _pendingImages.clear();
 
-      if (pending.isNotEmpty) {
-        try {
-          await Future.wait(pending);
-        } catch (e) {
-          // Failed images will be replaced with fallback shapes
+      final previousCommit = _commitChain;
+      final thisCommit = Completer<void>();
+      _commitChain = thisCommit.future;
+      try {
+        if (pending.isNotEmpty) {
+          try {
+            await Future.wait(pending);
+          } catch (e) {
+            // Failed images will be replaced with fallback shapes
+          }
         }
-      }
+        // Decoding runs concurrently across cycles; only the commit is serialized.
+        await previousCommit;
 
-      cycleStaging.removeWhere((s) => s is _PlaceholderShape);
+        cycleStaging.removeWhere((s) => s is _PlaceholderShape);
 
-      if (myGeneration != _gcDisposeGeneration) {
-        return;
-      }
-
-      final keep = <ui.Image>{};
-      collectShapeImages(cycleStaging, keep);
-      collectShapeImages(_lateLoadedImages, keep);
-      final damage = _damageOf(payload);
-      if (damage != null) {
-        // A scoped Paint leaves every pixel outside its rectangle alone, so the previous frame
-        // stays and this cycle becomes a layer over it, superseding any layer it covers.
-        shapes.removeWhere((s) {
-          if (s is! RegionShape || !_covers(damage, s.rect)) return false;
-          disposeShapeImages(s.ops, keep: keep);
-          return true;
-        });
-        shapes.add(RegionShape(damage, [...cycleStaging, ..._lateLoadedImages]));
-        _lateLoadedImages.clear();
-        if (shapes.whereType<RegionShape>().length > _maxRegionLayers) {
-          onFullRepaintNeeded?.call();
-        }
-      } else {
-        // A full-area Paint repaints the whole client area, so nothing the previous cycle left
-        // survives it; a GC opened outside one (draw2d/GEF feedback) composites on top instead.
-        if (fullRepaint) {
-          disposeShapeImages(shapes, keep: keep);
-          shapes.clear();
+        final keep = <ui.Image>{};
+        collectShapeImages(cycleStaging, keep);
+        collectShapeImages(_lateLoadedImages, keep);
+        final damage = _damageOf(payload);
+        if (damage != null) {
+          // A scoped Paint leaves every pixel outside its rectangle alone, so the previous frame
+          // stays and this cycle becomes a layer over it, superseding any layer it covers.
+          shapes.removeWhere((s) {
+            if (s is! RegionShape || !_covers(damage, s.rect)) return false;
+            disposeShapeImages(s.ops, keep: keep);
+            return true;
+          });
+          shapes.add(RegionShape(damage, [...cycleStaging, ..._lateLoadedImages]));
+          _lateLoadedImages.clear();
+          if (shapes.whereType<RegionShape>().length > _maxRegionLayers) {
+            onFullRepaintNeeded?.call();
+          }
         } else {
-          _dropWhatThisCycleCovers(cycleStaging, keep);
+          // A full-area Paint repaints the whole client area, so nothing the previous cycle left
+          // survives it; a GC opened outside one (draw2d/GEF feedback) composites on top instead.
+          if (fullRepaint) {
+            disposeShapeImages(shapes, keep: keep);
+            shapes.clear();
+          } else {
+            _dropWhatThisCycleCovers(cycleStaging, keep);
+          }
+          shapes.addAll(cycleStaging);
+          shapes.addAll(_lateLoadedImages);
+          _lateLoadedImages.clear();
         }
-        shapes.addAll(cycleStaging);
-        shapes.addAll(_lateLoadedImages);
-        _lateLoadedImages.clear();
-      }
 
-      if (shapes.isNotEmpty) onGCDispose?.call(List.from(shapes));
-      onShapesUpdated?.call(shapes);
+        if (shapes.isNotEmpty) onGCDispose?.call(List.from(shapes));
+        onShapesUpdated?.call(shapes);
+      } finally {
+        thisCommit.complete();
+      }
     });
   }
 
@@ -398,10 +406,18 @@ class GCDrawer extends GCDrawerBase {
 
   void _addShape(Shape shape) {
     final transform = currentTransform;
-    _staging.add(_clipped(transform == null
+    _staging.add(_clipped(_xored(transform == null
         ? shape
-        : TransformShape(transform, [shape], clipping)));
+        : TransformShape(transform, [shape], clipping))));
   }
+
+  /// Wraps [shape] when the GC is in XOR mode, which is how draw2d and GEF draw every piece of
+  /// transient feedback: the marquee rubber band, for one, is painted in *white* and relies on the
+  /// XOR to invert it against whatever is underneath (`MarqueeSelectionTool.MarqueeRectangleFigure`
+  /// does `setXORMode(true)` then `setForegroundColor(white)`). Drawn without it, that feedback is
+  /// opaque white on a light canvas — invisible.
+  Shape _xored(Shape shape) =>
+      state.XORMode == true ? XorShape([shape]) : shape;
 
   Rect _getRectFromArgs(int? x, int? y, int? w, int? h) => Rect.fromLTWH(
         (x ?? 0).toDouble(),
@@ -1149,6 +1165,8 @@ void disposeShapeImages(List<Shape> shapes, {Set<ui.Image>? seen, Set<ui.Image>?
       disposeShapeImages(s.children, seen: disposed, keep: keep);
     } else if (s is RegionShape) {
       disposeShapeImages(s.ops, seen: disposed, keep: keep);
+    } else if (s is XorShape) {
+      disposeShapeImages(s.children, seen: disposed, keep: keep);
     }
   }
 }
@@ -1161,6 +1179,8 @@ void collectShapeImages(List<Shape> shapes, Set<ui.Image> out) {
       collectShapeImages(s.children, out);
     } else if (s is RegionShape) {
       collectShapeImages(s.ops, out);
+    } else if (s is XorShape) {
+      collectShapeImages(s.children, out);
     }
   }
 }
@@ -1270,6 +1290,36 @@ class RegionShape extends Shape {
 
   @override
   String toString() => 'Region $rect [${ops.length} shapes]';
+}
+
+/// Ops drawn while `GC.setXORMode(true)` was in force.
+///
+/// SWT's XOR combines source and destination bitwise. Flutter has no bitwise blend, but
+/// [BlendMode.difference] is `|dst - src|`, which is *exactly* XOR for a pure black or white
+/// source — and black and white are what the idiom uses, because the point of drawing in XOR is to
+/// invert. Anything in between only approximates.
+///
+/// The layer is what makes it correct: the blend has to combine with the scene already painted,
+/// not with this shape's own backdrop.
+class XorShape extends Shape {
+  XorShape(this.children);
+
+  final List<Shape> children;
+
+  @override
+  void draw(ui.Canvas c) {
+    c.saveLayer(null, Paint()..blendMode = BlendMode.difference);
+    for (final s in children) {
+      s.draw(c);
+    }
+    c.restore();
+  }
+
+  // No paintedBounds and no opaqueCoverage on purpose: XOR feedback never hides what is under it,
+  // so a cycle carrying it must not be treated as covering an earlier one.
+
+  @override
+  String toString() => 'Xor [${children.length} shapes]';
 }
 
 /// Drawing confined to a clip that is not a rectangle — a GC clipped to a Path or a Region.
