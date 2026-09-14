@@ -118,6 +118,14 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   Color get canvasBg {
     final canvas = context.findAncestorWidgetOfExactType<CanvasSwt>();
     if (canvas != null && canvas.value.id == state.id) {
+      // The backdrop stands in for SWT's erase-to-background. A Canvas with no background of
+      // its own under an ancestor's backgroundImage erases to that image, which the ancestor
+      // already painted underneath -- an opaque erase here would hide it.
+      if (!(canvas.value.hasOwnBackground ?? false) &&
+          canvas.value.backgroundImage == null &&
+          ParentBackgroundScope.backgroundImageOf(context) != null) {
+        return Colors.transparent;
+      }
       final forced = ParentBackgroundScope.backgroundOf(context);
       if (forced != null) return forced;
       if (state.background != null) return _drawer.bg;

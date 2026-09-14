@@ -61,9 +61,9 @@ void main() {
         {'x': 100, 'y': 0, 'width': 99, 'height': 39});
   }
 
-  Future<Uint8List> rasterize(List<Shape> shapes) async {
+  Future<Uint8List> rasterize(List<Shape> shapes, {Color bg = canvasBg}) async {
     final recorder = ui.PictureRecorder();
-    ScenePainter(canvasBg, shapes)
+    ScenePainter(bg, shapes)
         .paint(Canvas(recorder), canvasSize);
     final image = await recorder
         .endRecording()
@@ -112,6 +112,47 @@ void main() {
     expect(differingPixels(reference, scoped), 0,
         reason: 'compositing the hover as a layer over the previous frame must be '
             'indistinguishable from repainting the whole canvas with the hover on');
+  });
+
+  test('a scoped repaint over a transparent erase still replaces the previous frame', () async {
+    // A Canvas showing an ancestor's backgroundImage through erases to transparent; the scoped
+    // cycle must still clear what the retained frame painted inside its rectangle, or the two
+    // frames composite on top of each other there.
+    const transparent = Color(0x00000000);
+    void fillCell(int id, {required int width, required int height}) {
+      deliver('GC/$id/setBackgroundColor', {'color': {'red': 200, 'green': 0, 'blue': 0}});
+      deliver('GC/$id/fillRectangleintintintint',
+          {'x': 100, 'y': 0, 'width': width, 'height': height});
+    }
+
+    Future<List<Shape>> cycles(int id, {required bool fullCellFirst}) async {
+      final state = VGC.empty()..id = id;
+      final drawer = GCDrawer.embedded(state, onShapesUpdated: (_) {});
+      addTearDown(drawer.dispose);
+      if (fullCellFirst) {
+        fillCell(id, width: 100, height: 40);
+        deliver('GC/$id/gcDispose', {'fullRepaint': true});
+        await settle();
+      }
+      fillCell(id, width: 10, height: 10);
+      deliver('GC/$id/gcDispose', {
+        'fullRepaint': true,
+        'damage': {'x': 100, 'y': 0, 'width': 100, 'height': 40},
+      });
+      await settle();
+      return List<Shape>.from(drawer.shapes);
+    }
+
+    final reference =
+        await rasterize(await cycles(830008, fullCellFirst: false), bg: transparent);
+    final scoped = await rasterize(await cycles(830009, fullCellFirst: true), bg: transparent);
+
+    expect(differingPixels(reference, scoped), 0,
+        reason: 'the full-cell fill of the retained frame must be gone where the scoped '
+            'repaint painted only a corner of the cell');
+    for (var i = 3; i < reference.length; i += 4) {
+      expect(scoped[i], reference[i], reason: 'alpha of pixel ${i ~/ 4}');
+    }
   });
 
   test('a scoped repaint leaves the pixels outside its rectangle untouched', () async {

@@ -1203,6 +1203,11 @@ class ScenePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // A transparent erase (the Canvas shows an ancestor's backgroundImage through) still has to
+    // clear the retained frame under a scoped repaint; BlendMode.clear would punch through
+    // whatever is painted below unless this scene sits in its own layer.
+    final ownLayer = bg.alpha == 0 && shapes.any((s) => s is RegionShape);
+    if (ownLayer) canvas.saveLayer(Offset.zero & size, Paint());
     canvas.drawRect(Offset.zero & size, Paint()..color = bg);
     canvas.save();
     for (final s in shapes) {
@@ -1213,6 +1218,7 @@ class ScenePainter extends CustomPainter {
       }
     }
     canvas.restore();
+    if (ownLayer) canvas.restore();
   }
 
   @override
@@ -1270,7 +1276,9 @@ class RegionShape extends Shape {
     c.save();
     // Hard-edged: an antialiased clip leaves the boundary pixels a blend of both frames.
     c.clipRect(rect, doAntiAlias: false);
-    c.drawRect(rect, ui.Paint()..color = background);
+    final erase = ui.Paint()..color = background;
+    if (background.alpha == 0) erase.blendMode = ui.BlendMode.clear;
+    c.drawRect(rect, erase);
     for (final s in ops) {
       s.draw(c);
     }
