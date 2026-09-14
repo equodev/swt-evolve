@@ -184,17 +184,15 @@ public class Sizes {
             size = Sizes.minimumSize(composite, wHint, hHint, changed);
             if (size.x == 0)
                 size.x = DartWidget.DEFAULT_WIDTH;
-            if (size.y == 0)
+            if (size.y == 0) {
                 size.y = DartWidget.DEFAULT_HEIGHT;
+            }
         }
         if (wHint != SWT.DEFAULT)
             size.x = wHint;
         if (hHint != SWT.DEFAULT)
             size.y = hHint;
         Rectangle trim = composite.computeTrim(0, 0, size.x, size.y);
-        // Matches SwtComposite.computeSize(): halve the DEFAULT_HEIGHT fallback's trim.
-        if (size.y == 64)
-            trim.height = 32;
         return new Point(trim.width, trim.height);
     }
 

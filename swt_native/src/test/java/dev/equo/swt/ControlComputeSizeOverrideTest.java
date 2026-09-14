@@ -58,9 +58,10 @@ public class ControlComputeSizeOverrideTest {
     }
 
     @Test
-    public void twoArgComputeSize_keepsTheDefaultForACompositeThatOverridesNothing() {
+    public void twoArgComputeSize_returnsTheNativeDefaultForACompositeThatOverridesNothing() {
         Composite plain = new Composite(swtShell(), SWT.NONE);
 
-        assertThat(plain.computeSize(SWT.DEFAULT, SWT.DEFAULT)).isEqualTo(new Point(64, 32));
+        // DEFAULT_WIDTH x DEFAULT_HEIGHT, exactly what SwtComposite.computeSizeInPixels hands back.
+        assertThat(plain.computeSize(SWT.DEFAULT, SWT.DEFAULT)).isEqualTo(new Point(64, 64));
     }
 }
