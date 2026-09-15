@@ -19,7 +19,7 @@ import static dev.equo.swt.Styles.hasFlags;
  */
 public class LabelSizes {
 
-    static class HORIZONTAL {
+    static class NONE {
         static final double MIN_WIDTH = 8.0;
         static final double MIN_HEIGHT = 4.0;
         static final double HORIZONTAL_PADDING = 8.0;
@@ -31,15 +31,6 @@ public class LabelSizes {
     static class HORIZONTAL_SEPARATOR {
         static final double MIN_WIDTH = 7.0;
         static final double MIN_HEIGHT = 0.0;
-    }
-
-    static class VERTICAL {
-        static final double MIN_WIDTH = 8.0;
-        static final double MIN_HEIGHT = 4.0;
-        static final double HORIZONTAL_PADDING = 8.0;
-        static final double VERTICAL_PADDING = 4.0;
-        static final double IMAGE_SPACING = 8.0;
-        static final boolean EMPTY_TEXT_AFFECTS_SIZING = false;
     }
 
     static class VERTICAL_SEPARATOR {
@@ -73,11 +64,6 @@ public class LabelSizes {
         } else if (hasFlags(style, (SWT.VERTICAL | SWT.SEPARATOR))) {
             width = wHint != SWT.DEFAULT ? wHint : VERTICAL_SEPARATOR.MIN_WIDTH;
             height = hHint != SWT.DEFAULT ? hHint : VERTICAL_SEPARATOR.MIN_HEIGHT;
-        } else if (hasFlags(style, SWT.VERTICAL)) {
-            m.text = computeText(widget, m, VERTICAL.EMPTY_TEXT_AFFECTS_SIZING);
-            m.image = computeImage(widget);
-            width = wHint != SWT.DEFAULT ? wHint : ((m.text.y() > 0 || m.image.x() > 0) ? Math.max((m.text.y() + m.image.x() + (m.image.x() > 0 ? VERTICAL.IMAGE_SPACING : 0)) + ((m.text.y() > 0 || m.image.x() > 0) ? VERTICAL.HORIZONTAL_PADDING : 0), VERTICAL.MIN_WIDTH) : 0.0);
-            height = hHint != SWT.DEFAULT ? hHint : Math.max(Math.max(m.text.x(), m.image.y()) + ((m.text.x() > 0 || m.image.y() > 0) ? VERTICAL.VERTICAL_PADDING : 0), VERTICAL.MIN_HEIGHT);
         } else if (hasFlags(style, SWT.WRAP)) {
             m.text = computeText(widget, m, WRAP.EMPTY_TEXT_AFFECTS_SIZING);
             m.image = computeImage(widget);
@@ -94,11 +80,11 @@ public class LabelSizes {
             } else {
                 height = Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? WRAP.VERTICAL_PADDING : 0), WRAP.MIN_HEIGHT);
             }
-        } else { // HORIZONTAL
-            m.text = computeText(widget, m, HORIZONTAL.EMPTY_TEXT_AFFECTS_SIZING);
+        } else { // NONE
+            m.text = computeText(widget, m, NONE.EMPTY_TEXT_AFFECTS_SIZING);
             m.image = computeImage(widget);
-            width = wHint != SWT.DEFAULT ? wHint : ((m.text.x() > 0 || m.image.x() > 0) ? Math.max((m.text.x() + m.image.x() + (m.image.x() > 0 ? HORIZONTAL.IMAGE_SPACING : 0)) + ((m.text.x() > 0 || m.image.x() > 0) ? HORIZONTAL.HORIZONTAL_PADDING : 0), HORIZONTAL.MIN_WIDTH) : 0.0);
-            height = hHint != SWT.DEFAULT ? hHint : Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? HORIZONTAL.VERTICAL_PADDING : 0), HORIZONTAL.MIN_HEIGHT);
+            width = wHint != SWT.DEFAULT ? wHint : ((m.text.x() > 0 || m.image.x() > 0) ? Math.max((m.text.x() + m.image.x() + (m.image.x() > 0 ? NONE.IMAGE_SPACING : 0)) + ((m.text.x() > 0 || m.image.x() > 0) ? NONE.HORIZONTAL_PADDING : 0), NONE.MIN_WIDTH) : 0.0);
+            height = hHint != SWT.DEFAULT ? hHint : Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? NONE.VERTICAL_PADDING : 0), NONE.MIN_HEIGHT);
         }
 
         m.widget = new Point((int) Math.ceil(width), (int) Math.ceil(height));

@@ -97,9 +97,8 @@ class LabelSizeTest extends SizeTestBase {
 
     static Stream<Style> getStyles() {
         return Stream.of(//
-        s(SWT.HORIZONTAL, "HORIZONTAL"), //
+        s(SWT.NONE, "NONE"), //
         s(SWT.HORIZONTAL | SWT.SEPARATOR, "HORIZONTAL|SEPARATOR"), //
-        s(SWT.VERTICAL, "VERTICAL"), //
         s(SWT.VERTICAL | SWT.SEPARATOR, "VERTICAL|SEPARATOR"), //
         s(SWT.WRAP, "WRAP"));
     }

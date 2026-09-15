@@ -18,7 +18,8 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
 
     final enabled = state.enabled ?? true;
 
-    // Handle separator style
+    // SWT.VERTICAL is the same bit as SWT.V_SCROLL, and a Label reads it only for
+    // separators -- a text label can carry it without ever having asked for it.
     if (hasStyle(state.style, SWT.SEPARATOR)) {
       return _buildSeparator(context, widgetTheme);
     }
@@ -106,7 +107,6 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     if (hasValidBounds &&
         !shouldWrap &&
         !hasLineDelimiter(text) &&
-        !hasStyle(state.style, SWT.VERTICAL) &&
         text.isNotEmpty &&
         state.image == null) {
       final painter = TextPainter(
@@ -211,8 +211,6 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     TextStyle textStyle,
     bool fitTextToBounds,
   ) {
-    final isVertical = hasStyle(state.style, SWT.VERTICAL);
-
     final shouldWrap = shouldWrapText(
       style: state.style,
       hasValidBounds: hasValidBounds,
@@ -239,10 +237,6 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
         alignment: getAlignmentFromTextAlign(textAlign),
         child: textWidget,
       );
-    }
-
-    if (isVertical) {
-      textWidget = RotatedBox(quarterTurns: 3, child: textWidget);
     }
 
     // Handle image

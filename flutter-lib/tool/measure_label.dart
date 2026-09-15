@@ -19,9 +19,8 @@ void main() {
 
 void setupCases(WidgetMeasurer measurer) {
   final styles = [
-    ('HORIZONTAL', SWT.HORIZONTAL),
+    ('NONE', SWT.NONE),
     ('HORIZONTAL|SEPARATOR', SWT.HORIZONTAL | SWT.SEPARATOR),
-    ('VERTICAL', SWT.VERTICAL),
     ('VERTICAL|SEPARATOR', SWT.VERTICAL | SWT.SEPARATOR),
     ('WRAP', SWT.WRAP),
   ];
