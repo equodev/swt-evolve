@@ -41,7 +41,7 @@ public class VRegion extends VResource {
         @Override
         public void configure(DslJson json) {
             json.registerWriter(DartRegion.class, (JsonWriter.WriteObject<DartRegion>) (writer, impl) -> {
-                if (impl == null)
+                if (impl == null || impl.isDisposed())
                     writer.writeNull();
                 else
                     writer.serializeObject(impl.getValue());

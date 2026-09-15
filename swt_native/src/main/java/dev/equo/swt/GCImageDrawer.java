@@ -53,6 +53,14 @@ public class GCImageDrawer extends EmbeddedBridge {
 
     public GCImageDrawer() {
         super(null);
+    }
+
+    /**
+     * Loads the native library the isolated off-screen engine runs on. Only that engine needs it: a
+     * drawer on the Display's shared comm never touches it, and extracting it costs the first GC close
+     * to a second.
+     */
+    private static boolean loadNativeLibrary() {
         // Headless web/test mode (-Ddev.equo.swt.loadLibrary=false): do NOT spin up the native off-screen
         // Flutter engine. On the Linux CI container the library is simply absent (initialize() throws), but
         // on a macOS dev machine it IS present and its IOSurface init intermittently hard-aborts the JVM
@@ -61,17 +69,17 @@ public class GCImageDrawer extends EmbeddedBridge {
         // tests are method-blacklisted). Desk mode leaves loadLibrary unset, so it still loads normally.
         if ("false".equals(System.getProperty("dev.equo.swt.loadLibrary"))) {
             nativeWindowAvailable = false;
-            return;
+            return false;
         }
         try {
             FlutterLibraryLoader.initialize();
         } catch (Throwable t) {
             // The native Flutter GC library isn't available (e.g. the headless CI container). Degrade
             // gracefully so GC-to-Image operations cancel instead of throwing; results that depend on
-            // actual off-screen rendering (pixel readback) simply won't be produced. No effect in desk
-            // mode, where initialize() succeeds.
+            // actual off-screen rendering (pixel readback) simply won't be produced.
             nativeWindowAvailable = false;
         }
+        return nativeWindowAvailable;
     }
 
     @Override
@@ -133,7 +141,7 @@ public class GCImageDrawer extends EmbeddedBridge {
         long gcId = this.gcId;
         Image dartImage = this.dartImage;
         CommService comm = resolvedComm;
-        if (comm == null && !nativeWindowAvailable) {
+        if (comm == null && (!nativeWindowAvailable || !loadNativeLibrary())) {
             cancelAndWake(dartImage);
             return;
         }
@@ -296,6 +304,11 @@ public class GCImageDrawer extends EmbeddedBridge {
         c.on(snapshotEvent, byte[].class, bytes -> {
             c.remove(snapshotEvent);
             onSnapshot.accept(bytes);
+            // The UI thread is parked waiting for this answer; without a wake it only notices on its
+            // next timed park.
+            Image image = dartImage;
+            if (image != null && image.getDevice() instanceof Display display && !display.isDisposed())
+                display.wake();
         });
         queueOp(() -> c.send("GC/" + gcId + "/renderSnapshot"));
     }

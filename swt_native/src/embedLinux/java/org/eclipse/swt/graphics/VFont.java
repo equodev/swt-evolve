@@ -48,7 +48,7 @@ public class VFont extends VResource {
         @Override
         public void configure(DslJson json) {
             json.registerWriter(DartFont.class, (JsonWriter.WriteObject<DartFont>) (writer, impl) -> {
-                if (impl == null)
+                if (impl == null || impl.isDisposed())
                     writer.writeNull();
                 else
                     writer.serializeObject(impl.getValue());

@@ -54,7 +54,7 @@ public class VCursor extends VResource {
         @Override
         public void configure(DslJson json) {
             json.registerWriter(DartCursor.class, (JsonWriter.WriteObject<DartCursor>) (writer, impl) -> {
-                if (impl == null)
+                if (impl == null || impl.isDisposed())
                     writer.writeNull();
                 else
                     writer.serializeObject(impl.getValue());

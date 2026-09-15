@@ -77,7 +77,7 @@ public class VColor extends VResource {
         @Override
         public void configure(DslJson json) {
             json.registerWriter(DartColor.class, (JsonWriter.WriteObject<DartColor>) (writer, impl) -> {
-                if (impl == null)
+                if (impl == null || impl.isDisposed())
                     writer.writeNull();
                 else
                     writer.serializeObject(impl.getValue());

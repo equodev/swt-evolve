@@ -41,7 +41,7 @@ public class VPath extends VResource {
         @Override
         public void configure(DslJson json) {
             json.registerWriter(DartPath.class, (JsonWriter.WriteObject<DartPath>) (writer, impl) -> {
-                if (impl == null)
+                if (impl == null || impl.isDisposed())
                     writer.writeNull();
                 else
                     writer.serializeObject(impl.getValue());

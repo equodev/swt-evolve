@@ -180,7 +180,6 @@ void _registerGcCreateListener() {
       state,
       onDisposed: () => _activeGcDrawers.remove(gcId),
     );
-    sendClientReady("GCImageDrawer", gcId);
   });
 }
 

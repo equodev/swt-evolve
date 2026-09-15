@@ -998,10 +998,6 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         init(imageData, 100);
-        ImageData imageData2x = imageDataProvider.getImageData(200);
-        if (imageData2x != null) {
-            alphaInfo_200 = new AlphaInfo();
-        }
     }
 
     void initNative(String filename) {

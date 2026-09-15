@@ -101,7 +101,7 @@ public class VResource {
         @Override
         public void configure(DslJson json) {
             json.registerWriter(DartResource.class, (JsonWriter.WriteObject<DartResource>) (writer, impl) -> {
-                if (impl == null)
+                if (impl == null || impl.isDisposed())
                     writer.writeNull();
                 else
                     writer.serializeObject(impl.getValue());

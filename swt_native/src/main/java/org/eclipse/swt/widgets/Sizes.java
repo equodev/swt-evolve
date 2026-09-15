@@ -514,7 +514,7 @@ public class Sizes {
         int width = 0, height = 0;
         boolean isSeparator = (w.getApi().style & SWT.SEPARATOR) != 0;
         boolean hasText = w.text != null && w.text.length() != 0;
-        boolean hasImage = w.image != null;
+        boolean hasImage = w.image != null && !w.image.isDisposed();
 
         if (isSeparator) {
             // In the unified toolbar case the width is ignored if 0, DEFAULT, or SEPARATOR_FILL.
