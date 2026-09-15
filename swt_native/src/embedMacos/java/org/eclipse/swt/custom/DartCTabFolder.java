@@ -406,7 +406,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             return;
         }
         this.highlight = false;
-        redraw();
+        CTabFolderHelper.redrawActivation(this);
     }
 
     void onActivate(Event event) {
@@ -414,7 +414,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             return;
         }
         this.highlight = true;
-        redraw();
+        CTabFolderHelper.redrawActivation(this);
     }
 
     static int checkStyle(Composite parent, int style) {

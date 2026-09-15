@@ -34,6 +34,17 @@ public class CTabFolderHelper {
     private static final String CHEVRON_ELLIPSIS = "99+";
 
     /**
+     * The repaint upstream does on Activate/Deactivate. A whole-tree render side gets only the flag:
+     * a redraw would re-send the folder with the whole view nested in it, twice per focus change.
+     */
+    static void redrawActivation(DartCTabFolder folder) {
+        if (folder.getBridge() instanceof org.eclipse.swt.widgets.EmbeddedBridge)
+            folder.redraw();
+        else
+            FlutterBridge.send(folder, "activation", java.util.Map.of("active", folder._highlight()));
+    }
+
+    /**
      * A tab click from Flutter. setSelection(int, boolean) notifies only when the index actually
      * changes, so a click on the already-selected tab would leave no trace at all — while a native
      * one still moves focus onto the tab (SwtCTabFolder.onMouse, SWT.MouseDown) and so still reaches

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui';
@@ -7,6 +8,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:swtflutter/main.dart';
+import '../comm/comm.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
 import '../gen/ctabfolder.dart';
@@ -34,6 +36,11 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   late int _selectedIndex;
   int? _lastShowListPopupSeq;
   int? _pendingTabIndex;
+  // Activation also arrives on its own channel, so the frame repaints without re-sending the folder.
+  final ValueNotifier<bool> _active = ValueNotifier(false);
+  Object? _activationToken;
+
+  String get _activationChannel => "${state.swt}/${state.id}/activation";
 
   @override
   void initState() {
@@ -41,11 +48,28 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     // -1 means genuinely unselected (not Java's skipDefaultValues null=0); fall back to item 0.
     final selection = state.selection;
     _selectedIndex = (selection != null && selection >= 0) ? selection : 0;
+    _active.value = state.highlight ?? false;
+    _activationToken = EquoCommService.onRaw(_activationChannel, (args) {
+      final decoded = args is String ? jsonDecode(args) : args;
+      if (mounted && decoded is Map && decoded['active'] is bool) {
+        // Kept on the state too, or a rebuild re-reads the last push's stale flag in extraSetState.
+        state.highlight = decoded['active'] as bool;
+        _active.value = state.highlight!;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    EquoCommService.remove(_activationChannel, _activationToken);
+    _active.dispose();
+    super.dispose();
   }
 
   @override
   void extraSetState() {
     super.extraSetState();
+    _active.value = state.highlight ?? false;
     final itemCount = state.items?.length ?? 0;
 
     if (_pendingTabIndex != null) {
@@ -176,18 +200,26 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     // which one keyboard input will reach. foregroundDecoration so it is painted over the
     // folder instead of taking a border's worth of space away from its content.
     final widgetTheme = Theme.of(context).extension<CTabFolderThemeExtension>()!;
-    final isActive =
-        (state.highlight ?? false) && (state.highlightEnabled ?? false);
-    Widget framed = Container(
-      foregroundDecoration: isActive
-          ? BoxDecoration(
-              border: Border.all(
-                color: widgetTheme.tabHighlightColor,
-                width: widgetTheme.tabHighlightBorderWidth,
-              ),
-            )
-          : null,
+    final highlightEnabled = state.highlightEnabled ?? false;
+    // Only the frame listens to activation, so it never rebuilds the folder's content.
+    Widget framed = ValueListenableBuilder<bool>(
+      valueListenable: _active,
       child: column,
+      builder: (context, active, column) {
+        final isActive = highlightEnabled && active;
+        // Never null: toggling it inserts a DecoratedBox, remounting the content and dropping its focus.
+        return Container(
+          foregroundDecoration: BoxDecoration(
+            border: isActive
+                ? Border.all(
+                    color: widgetTheme.tabHighlightColor,
+                    width: widgetTheme.tabHighlightBorderWidth,
+                  )
+                : null,
+          ),
+          child: column,
+        );
+      },
     );
 
     // SWT reads enablement down the parent chain - `isEnabled()` is this control's own flag and

@@ -16,9 +16,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Which stack has focus is carried by CTabFolder's {@code highlight} flag, which upstream toggles
- * on Activate/Deactivate and reads back through {@code shouldHighlight()}. It has to reach the
- * render side and be pushed when it changes: without it every open stack paints its selected tab
- * identically and the user cannot tell where keyboard input will land.
+ * on Activate/Deactivate and reads back through {@code shouldHighlight()}. A change reaches the
+ * render side on its own channel, so it does not re-send the folder and the view nested in it.
  */
 @Tag("flutter-it")
 class CTabFolderActiveHighlightFlutterTest {
@@ -105,24 +104,38 @@ class CTabFolderActiveHighlightFlutterTest {
 
     /**
      * Focus moving between two stacks without touching a tab -- the user clicking inside a view.
-     * Nothing else about either folder changes, so the new activation reaches the render side only
-     * if activation itself pushes; upstream just redraws.
+     * Only the activation travels: re-sending either folder would carry the whole view nested under it.
      */
     @Test
-    @DisplayName("a change of active stack is pushed to the render side")
-    void theChangeReachesTheWire() {
+    @DisplayName("a change of active stack sends the activation, not the folders")
+    void onlyTheActivationReachesTheWire() {
         focusInside(left);
         bridge.comm.sent.clear();
 
         focusInside(right);
 
-        assertThat(lastPushOf(right))
+        assertThat(lastActivationOf(right))
                 .as("the stack that gained focus has to announce it; wire was %s", bridge.comm.sent)
-                .contains("\"highlight\":true");
+                .contains("\"active\":true");
+        assertThat(lastActivationOf(left))
+                .as("the stack that lost focus has to announce it too")
+                .contains("\"active\":false");
+        assertThat(lastPushOf(right))
+                .as("the stack that gained focus must not be re-sent")
+                .isEmpty();
         assertThat(lastPushOf(left))
-                .as("the stack that lost focus has to be re-sent without the flag")
-                .isNotEmpty()
-                .doesNotContain("\"highlight\":true");
+                .as("the stack that lost focus must not be re-sent")
+                .isEmpty();
+    }
+
+    /** The last activation this folder put on the wire, as JSON. */
+    private String lastActivationOf(CTabFolder folder) {
+        String event = FlutterBridge.event((DartWidget) folder.getImpl(), "activation");
+        return bridge.comm.sent.stream()
+                .filter(f -> f.event.equals(event))
+                .map(f -> f.json)
+                .reduce((first, second) -> second)
+                .orElse("");
     }
 
     private boolean highlightOf(CTabFolder folder) {
