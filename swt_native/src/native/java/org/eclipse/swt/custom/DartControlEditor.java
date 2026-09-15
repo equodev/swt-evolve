@@ -233,6 +233,14 @@ public class DartControlEditor implements IControlEditor {
         return editor;
     }
 
+    public boolean releaseEditor(Control control) {
+        if (control == null || editor != control) {
+            return false;
+        }
+        editor = null;
+        return true;
+    }
+
     public ControlEditor getApi() {
         if (api == null)
             api = ControlEditor.createApi(this);

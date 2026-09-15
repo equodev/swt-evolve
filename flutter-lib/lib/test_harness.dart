@@ -81,11 +81,29 @@ void registerTestQueryChannel() {
   );
 }
 
-/// Debug description of whichever [FocusNode] currently holds primary keyboard focus --
-/// diagnostic-only, for tests narrowing down why a key press did not reach the widget they
-/// expected.
+/// Which SWT widget currently holds primary keyboard focus, as its `{swt}/{id}` semantics
+/// identifier -- for tests narrowing down why a key press did not reach the widget they expected,
+/// and for the ones that wait on focus actually moving before typing.
+///
+/// The node's own `toString()` cannot be used: a release web build is minified, so every FocusNode
+/// renders as the same `Instance of 'minified:XX'` and two different nodes compare equal.
 String queryPrimaryFocus() {
-  return FocusManager.instance.primaryFocus?.toString() ?? '<none>';
+  final FocusNode? node = FocusManager.instance.primaryFocus;
+  if (node == null) return '<none>';
+  final BuildContext? context = node.context;
+  if (context == null || !context.mounted) return '<detached>';
+  String? owner;
+  context.visitAncestorElements((Element el) {
+    if (el is StatefulElement && el.state is WidgetSwtState) {
+      final dynamic vstate = (el.state as WidgetSwtState).state;
+      if (vstate != null) {
+        owner = '${vstate.swt}/${vstate.id}';
+        return false;
+      }
+    }
+    return true;
+  });
+  return owner ?? '<unowned>';
 }
 
 /// The widget's live `V*.toJson()` as a JSON string, or null if not mounted. Shared by

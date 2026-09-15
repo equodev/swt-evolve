@@ -2415,6 +2415,14 @@ public class DartTree extends DartComposite implements ITree {
         }
     }
 
+    @Override
+    public void removeControl(Control control) {
+        super.removeControl(control);
+        if (ControlEditorHelper.releaseEditorControl(editors, control)) {
+            getValue().markDirty(VTree.EDITORS);
+        }
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
         FlutterBridge.on(this, "Scroll", "Scroll", e -> {

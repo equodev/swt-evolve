@@ -1,10 +1,32 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.custom.ControlEditor;
+import org.eclipse.swt.custom.DartControlEditor;
 
 import java.lang.reflect.Array;
 
 public class ControlEditorHelper {
+
+    /**
+     * Drops every association in {@code editors} that points at {@code control}, answering whether
+     * any did. Called when the control leaves its parent — which, for a cell editor, is how an
+     * application closes one: it disposes the control it put over the cell. The editor outlives
+     * that (it is reused for the next cell), so nothing else clears the reference, and the dead
+     * control would go on being serialized under the parent's {@code editors} — leaving the client
+     * with an overlay it can never take down over a control that no longer exists.
+     */
+    public static <T extends ControlEditor> boolean releaseEditorControl(T[] editors, Control control) {
+        if (editors == null || control == null)
+            return false;
+        boolean released = false;
+        for (T editor : editors) {
+            if (editor != null && editor.getImpl() instanceof DartControlEditor impl
+                    && impl.releaseEditor(control)) {
+                released = true;
+            }
+        }
+        return released;
+    }
 
     @SuppressWarnings("unchecked")
     public static <T extends ControlEditor> T[] addEditor(T[] editors, T value, Class<T> type) {
