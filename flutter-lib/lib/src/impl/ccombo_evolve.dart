@@ -309,11 +309,14 @@ class _StyledDropdownCCombo extends StatelessWidget {
     }
 
     // The border is painted by the container wrapping this widget, so a pinned outer
-    // width reaches the menu already reduced by it.
+    // size reaches the menu already reduced by it.
     final bool hasFixedWidth = hasBounds(state.bounds);
     final double width = hasFixedWidth
         ? state.bounds!.width.toDouble() - borderWidth * 2
         : _calculateMinWidth();
+    final double? fieldHeight = controlHeight == null
+        ? null
+        : (controlHeight! - borderWidth * 2).clamp(0.0, double.infinity);
 
     // The value on display keeps its whole width and the padding absorbs whatever a
     // pinned width leaves short, down to none; a preferred-width combo keeps it all.
@@ -335,7 +338,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
     );
 
     final BoxConstraints? inputConstraints = controlHeight != null
-        ? BoxConstraints.tightFor(height: controlHeight)
+        ? BoxConstraints.tightFor(height: fieldHeight)
         : null;
 
     final dropdown = DropdownMenu<String>(
@@ -358,13 +361,15 @@ class _StyledDropdownCCombo extends StatelessWidget {
         // budgets; the arrow's hit area is the Positioned.fill overlay below.
         suffixIconConstraints: BoxConstraints.tightFor(
           width: widgetTheme.iconSize,
-          height: controlHeight ?? widgetTheme.iconSize,
+          height: fieldHeight ?? widgetTheme.iconSize,
         ),
       ),
       menuStyle: MenuStyle(
         backgroundColor: WidgetStateProperty.all(widgetTheme.backgroundColor),
         alignment: _getMenuAlignment(),
       ),
+      // The menu anchors inside the border painted around this widget; clear it on either side.
+      alignmentOffset: Offset(0, borderWidth),
       trailingIcon: Icon(
         Icons.arrow_drop_down,
         color: enabled ? widgetTheme.iconColor : widgetTheme.disabledIconColor,
