@@ -19,8 +19,10 @@ import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.custom.StyledText;
+import org.eclipse.swt.custom.TableEditor;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -52,6 +54,12 @@ import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
  * content's uncompressed preferred width, which easily exceeds the actual window.
  */
 public class GallerySnippet {
+
+    /** Baseline text of the editable Combo, restored by the "Reset Gallery" listener. */
+    private static final String EDITABLE_COMBO_BASELINE = "Typed A";
+
+    /** Baseline Value cells of the OwnerDraw Table, restored by the "Reset Gallery" listener. */
+    private static final String[] OWNER_DRAW_BASELINE = {"alpha", "beta"};
     public static void main(String[] args) throws IOException {
         Config.forceEquo();
 
@@ -152,6 +160,12 @@ public class GallerySnippet {
         Combo combo = new Combo(selectGroup, SWT.READ_ONLY);
         combo.setItems("Combo A", "Combo B", "Combo C");
         combo.select(0);
+        // The editable counterpart: a read-only Combo never reaches the text-entry path, so
+        // without this instance nothing exercises a Combo's Modify event.
+        Combo editableCombo = new Combo(selectGroup, SWT.DROP_DOWN);
+        editableCombo.setItems("Typed A", "Typed B");
+        editableCombo.setText(EDITABLE_COMBO_BASELINE);
+        editableCombo.addModifyListener(e -> status.setText("Combo modified: " + editableCombo.getText()));
         CCombo ccombo = new CCombo(selectGroup, SWT.BORDER);
         ccombo.setItems(new String[] {"CCombo A", "CCombo B", "CCombo C"});
         // Per-item tooltips delivered via setData (issue #610).
@@ -187,6 +201,84 @@ public class GallerySnippet {
         // asserted directly against live Dart `selection` state, and adding a Selection listener
         // here too would make the status label race between the two events on a double-click.
         table.addSelectionListener(widgetDefaultSelectedAdapter(e -> status.setText("Table row default-selected")));
+
+        // OwnerDraw Cells — two mechanisms the plain Table above does not reach, both of which
+        // applications get through JFace (OwnerDrawLabelProvider, TableViewerEditor) and which are
+        // plain SWT underneath: a cell whose content exists only as SWT.PaintItem pixels, and a
+        // Text parented on the Table and overlaid on a cell to edit it.
+        Group ownerDrawGroup = section(root, "OwnerDraw Cells");
+        ownerDrawGroup.setLayout(new FillLayout());
+        GridData ownerDrawData = new GridData(SWT.FILL, SWT.CENTER, false, false);
+        ownerDrawData.widthHint = SECTION_WIDTH;
+        ownerDrawData.heightHint = 90;
+        ownerDrawGroup.setLayoutData(ownerDrawData);
+        Table ownerDrawTable = new Table(ownerDrawGroup, SWT.BORDER | SWT.FULL_SELECTION);
+        ownerDrawTable.setHeaderVisible(true);
+        ownerDrawTable.setLinesVisible(true);
+        int[] ownerDrawWidths = {70, 200};
+        String[] ownerDrawHeaders = {"Done", "Value"};
+        for (int i = 0; i < ownerDrawHeaders.length; i++) {
+            TableColumn c = new TableColumn(ownerDrawTable, SWT.NONE);
+            c.setText(ownerDrawHeaders[i]);
+            c.setWidth(ownerDrawWidths[i]);
+        }
+        for (String value : OWNER_DRAW_BASELINE) {
+            new TableItem(ownerDrawTable, SWT.NONE).setText(new String[] {"", value});
+        }
+        // The tick lives only in this paint callback, drawn as an image the way an owner-drawing
+        // application does: the item carries no image of its own, so the render side has nothing
+        // but what the capture takes from here.
+        Image tickOn = new Image(display, 12, 12);
+        GC tickOnGc = new GC(tickOn);
+        tickOnGc.drawLine(2, 6, 5, 9);
+        tickOnGc.drawLine(5, 9, 10, 2);
+        tickOnGc.dispose();
+        Image tickOff = new Image(display, 12, 12);
+        GC tickOffGc = new GC(tickOff);
+        tickOffGc.drawRectangle(1, 1, 9, 9);
+        tickOffGc.dispose();
+        boolean[] ownerDrawTicks = new boolean[OWNER_DRAW_BASELINE.length];
+        ownerDrawTable.addListener(SWT.PaintItem, e -> {
+            if (e.index != 0) return;
+            int row = ownerDrawTable.indexOf((TableItem) e.item);
+            e.gc.drawImage(ownerDrawTicks[row] ? tickOn : tickOff, e.x + 2, e.y + 2);
+        });
+        ownerDrawTable.addListener(SWT.MouseDown, e -> {
+            if (e.x > ownerDrawWidths[0]) return;
+            TableItem item = ownerDrawTable.getItem(new Point(e.x, e.y));
+            if (item == null) return;
+            int row = ownerDrawTable.indexOf(item);
+            ownerDrawTicks[row] = !ownerDrawTicks[row];
+            ownerDrawTable.redraw();
+            status.setText("OwnerDraw cell toggled to " + ownerDrawTicks[row]);
+        });
+        // Cell editor: a double-click puts a Text over the Value cell through a TableEditor, which
+        // is the mechanism JFace's TableViewerEditor uses (it holds one internally). Held in an
+        // array so the reset listener can drop a scenario's leftover editor.
+        TableEditor ownerDrawCellEditor = new TableEditor(ownerDrawTable);
+        ownerDrawCellEditor.grabHorizontal = true;
+        Text[] cellEditor = new Text[1];
+        ownerDrawTable.addListener(SWT.MouseDoubleClick, e -> {
+            TableItem item = ownerDrawTable.getItem(new Point(e.x, e.y));
+            if (item == null) return;
+            if (cellEditor[0] != null && !cellEditor[0].isDisposed()) cellEditor[0].dispose();
+            Text editor = new Text(ownerDrawTable, SWT.SINGLE);
+            editor.setText(item.getText(1));
+            editor.selectAll();
+            editor.addListener(SWT.DefaultSelection, ev -> {
+                item.setText(1, editor.getText());
+                status.setText("OwnerDraw cell committed " + editor.getText());
+                editor.dispose();
+            });
+            // A real cell editor leaves on Escape and on focus loss, and so must this one: an editor
+            // left open holds the keyboard, and the gallery is one shared app the next scenario
+            // types into.
+            editor.addListener(SWT.FocusOut, ev -> editor.dispose());
+            cellEditor[0] = editor;
+            ownerDrawCellEditor.setEditor(editor, item, 1);
+            editor.setFocus();
+            status.setText("OwnerDraw cell editor opened");
+        });
 
         // Tree
         Group treeGroup = section(root, "Tree");
@@ -604,6 +696,12 @@ public class GallerySnippet {
             toolCheck.setSelection(false);
             toolRadio.setSelection(false);
             combo.select(0);
+            // Only when a scenario changed it: setText fires the ModifyListener above, and its
+            // web round-trip echo can land after the baseline status below and clobber the next
+            // scenario.
+            if (!EDITABLE_COMBO_BASELINE.equals(editableCombo.getText())) {
+                editableCombo.setText(EDITABLE_COMBO_BASELINE);
+            }
             ccombo.select(0);
             list.deselectAll();
             text.setText("Editable text field");
@@ -615,6 +713,15 @@ public class GallerySnippet {
                 styledText.setText(styledBaseline);
             }
             table.deselectAll();
+            // A scenario may leave the cell editor open, and its ticks toggled; both are this
+            // section's whole observable state, so the next scenario needs them back.
+            if (cellEditor[0] != null && !cellEditor[0].isDisposed()) cellEditor[0].dispose();
+            for (int i = 0; i < OWNER_DRAW_BASELINE.length; i++) {
+                ownerDrawTicks[i] = false;
+                ownerDrawTable.getItem(i).setText(1, OWNER_DRAW_BASELINE[i]);
+            }
+            ownerDrawTable.deselectAll();
+            ownerDrawTable.redraw();
             tree.deselectAll();
             for (TreeItem branch : tree.getItems()) {
                 branch.setExpanded(false);

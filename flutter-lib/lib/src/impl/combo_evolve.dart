@@ -353,18 +353,26 @@ class _DropdownComboLayout extends StatelessWidget {
                       : (isEnabled ? onToggleOverlay : null),
                   child: Padding(
                     padding: textPadding,
+                    // The DOM <input> Flutter Web builds for a text field's semantics node is
+                    // disabled unless that node carries SemanticsFlag.isEnabled, and a disabled
+                    // input can never take DOM focus, so no keystroke ever reaches the field. A
+                    // bare EditableText does not set the flag (TextField is what normally does),
+                    // hence this annotation.
                     child: IgnorePointer(
                       ignoring: isReadOnly,
-                      child: EditableText(
-                        controller: controller,
-                        focusNode: focusNode,
-                        readOnly: isReadOnly,
-                        onChanged: onTextChanged,
-                        style: textStyle,
-                        cursorColor: textStyle.color ?? theme.textColor,
-                        backgroundCursorColor: bgColor,
-                        selectionColor: DefaultSelectionStyle.of(context).selectionColor ??
-                            Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                      child: Semantics(
+                        enabled: isEnabled,
+                        child: EditableText(
+                          controller: controller,
+                          focusNode: focusNode,
+                          readOnly: isReadOnly,
+                          onChanged: onTextChanged,
+                          style: textStyle,
+                          cursorColor: textStyle.color ?? theme.textColor,
+                          backgroundCursorColor: bgColor,
+                          selectionColor: DefaultSelectionStyle.of(context).selectionColor ??
+                              Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                        ),
                       ),
                     ),
                   ),
@@ -481,16 +489,21 @@ class _SimpleComboLayout extends StatelessWidget {
         children: [
           Padding(
             padding: theme.textFieldPadding,
-            child: EditableText(
-              controller: controller,
-              focusNode: focusNode,
-              readOnly: isReadOnly,
-              onChanged: onTextChanged,
-              style: textStyle,
-              cursorColor: textStyle.color ?? theme.textColor,
-              backgroundCursorColor: bgColor,
-              selectionColor: DefaultSelectionStyle.of(context).selectionColor ??
-                  Theme.of(context).colorScheme.primary.withOpacity(0.4),
+            // See _DropdownComboLayout: without isEnabled on the semantics node the
+            // DOM <input> Flutter Web builds for it is disabled and cannot be focused.
+            child: Semantics(
+              enabled: isEnabled,
+              child: EditableText(
+                controller: controller,
+                focusNode: focusNode,
+                readOnly: isReadOnly,
+                onChanged: onTextChanged,
+                style: textStyle,
+                cursorColor: textStyle.color ?? theme.textColor,
+                backgroundCursorColor: bgColor,
+                selectionColor: DefaultSelectionStyle.of(context).selectionColor ??
+                    Theme.of(context).colorScheme.primary.withOpacity(0.4),
+              ),
             ),
           ),
           Divider(

@@ -544,6 +544,33 @@ public class TableHelper {
         }
     }
 
+    /**
+     * Names the cell content an owner-drawing table derives from its own paint listener, for every
+     * row that exists.
+     *
+     * <p>That content is not stored anywhere: it is produced by running the application's
+     * {@code SWT.PaintItem} listener at serialization time, so a repaint is the only signal that it
+     * changed, and an update carries only the properties something named. Without this a cell keeps
+     * whatever was captured the first time — the row still renders, and its drawn content never
+     * changes again.
+     *
+     * <p>Only rows already materialised: reading {@code getItems()} on a virtual table would create
+     * every one of them, which is the cost that style exists to avoid.
+     */
+    static void nameOwnerDrawnCells(DartTable table) {
+        TableItem[] rows = table.items;
+        if (rows == null) {
+            return;
+        }
+        for (TableItem row : rows) {
+            if (row == null || row.isDisposed() || !(row.getImpl() instanceof DartTableItem item)) {
+                continue;
+            }
+            item.getValue().markDirty(VTableItem.IMAGES);
+            item.getValue().markDirty(VTableItem.TEXTS);
+        }
+    }
+
     private static OwnerDraw ownerDraw(DartTableItem item) {
         if (!((DartWidget) item.parent.getImpl()).hooks(SWT.PaintItem)) {
             return null;

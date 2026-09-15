@@ -295,6 +295,7 @@ public class ControlHelper {
             skipStateEchoAfterPaint.remove(c);
             paint(c);
         }
+        markOwnerDrawnCellsDamaged(c);
     }
 
     /** As {@link #markDamaged(DartControl)}, for an invalidation that named the area it dirtied. */
@@ -302,6 +303,24 @@ public class ControlHelper {
         if (c.hooks(SWT.Paint)) {
             skipStateEchoAfterPaint.remove(c);
             paint(c, x, y, width, height);
+        }
+        markOwnerDrawnCellsDamaged(c);
+    }
+
+    /**
+     * A control that draws its own cells derives their content by running the application's
+     * {@code SWT.PaintItem} listener, so a repaint is the only announcement that the derived content
+     * changed — nothing else names those properties, and an update carries only what it names.
+     *
+     * <p>Area-scoped invalidations name their rows too: the cost is one dirty flag per existing row,
+     * and narrowing it to the rows the rectangle covers would mean mapping pixels back to rows here.
+     */
+    private static void markOwnerDrawnCellsDamaged(DartControl c) {
+        if (!c.hooks(SWT.PaintItem)) {
+            return;
+        }
+        if (c instanceof DartTable table) {
+            TableHelper.nameOwnerDrawnCells(table);
         }
     }
 

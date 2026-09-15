@@ -67,9 +67,15 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
   bool _hasFocus = false;
   bool _autoFocusRequested = false;
 
+  /// Whether the Shell was visible as of the last state rendered here. Remembered rather than read
+  /// off the arriving value: a value is changed in place, so by the time an update is handled the
+  /// object no longer holds what it held before and there is no earlier copy to compare against.
+  late bool _wasVisible;
+
   @override
   void initState() {
     super.initState();
+    _wasVisible = state.visible ?? true;
     _opacityNotifier.value = (state.alpha ?? 255) / 255.0;
     _focusScopeNode.addListener(_handleFocusScopeChange);
     // A Tracker is opened on a Shell but is not a Control, so it has no State of its own to receive
@@ -146,8 +152,6 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     // did not change them; one that mentions nothing was a whole widget, and then anything may have.
     final prevDialogs =
         (change != null && !change.touches('dialogs')) ? (value.dialogs ?? []) : const <VDialog>[];
-    final wasVisible =
-        (change != null && change.touches('visible')) ? false : (value.visible ?? true);
     super.setValue(value);
     final newDialogs = value.dialogs ?? [];
     _openedDialogIds.removeWhere((id) => !newDialogs.any((d) => d.id == id));
@@ -159,19 +163,23 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
         });
       }
     }
-    if (!wasVisible && (value.visible ?? true)) {
-      _autoFocusRequested = false;
-    }
+    _noteVisibility(value.visible ?? true);
+  }
+
+  /// A Shell shown after being hidden is opened again, so it takes its initial focus again. Only
+  /// that transition may re-arm it: re-arming on any update the Shell happens to receive would
+  /// send [nextFocus] round the Shell's controls on every delivery, moving the keyboard off
+  /// whatever the user is typing into.
+  void _noteVisibility(bool visible) {
+    if (!_wasVisible && visible) _autoFocusRequested = false;
+    _wasVisible = visible;
   }
 
   @override
   void didUpdateWidget(covariant T oldWidget) {
-    final wasVisible = oldWidget.value.visible ?? true;
     super.didUpdateWidget(oldWidget);
     _opacityNotifier.value = (state.alpha ?? 255) / 255.0;
-    if (!wasVisible && (state.visible ?? true)) {
-      _autoFocusRequested = false;
-    }
+    _noteVisibility(state.visible ?? true);
     if (_interacting) return;
     _size = null;
   }

@@ -545,12 +545,27 @@ public class Serializer {
         // Use the actual class name (TreeEditor, TableEditor, etc.) instead of always "ControlEditor"
         Class<? extends ControlEditor> apiClass = api.getClass();
         String editorName = apiClass.isAnonymousClass() ? Config.getSwtBaseClassName(apiClass) : apiClass.getSimpleName();
+        // Stamped: an editor is re-sent whenever it moves to another cell or takes another control,
+        // and without a stamp the receiver cannot tell that description from the one it already has.
         writeBodyWithId(json, writer, FlutterBridge.id(impl), editorName,
-                (FormatConverter) json.tryFindWriter(value.getClass()), value, 0);
+                (FormatConverter) json.tryFindWriter(value.getClass()), value, 0, true);
     }
 
     private static void writeBodyWithId(DslJson json, JsonWriter writer, long id, String swtName,
                                          FormatConverter converter, Object value, Integer style) {
+        writeBodyWithId(json, writer, id, swtName, converter, value, style, false);
+    }
+
+    /**
+     * @param stamped whether to give this body a write stamp of its own. Something delivered only
+     *     inside another's payload has no stamp, and the receiver holds one object per id: with
+     *     nothing to order two copies by, it keeps the one it has and every later description of
+     *     the same id is dropped. A body that changes after it is first sent therefore needs a
+     *     stamp; one that never changes does not, and is cheaper without.
+     */
+    private static void writeBodyWithId(DslJson json, JsonWriter writer, long id, String swtName,
+                                         FormatConverter converter, Object value, Integer style,
+                                         boolean stamped) {
         boolean alwaysSerialize = !json.omitDefaults;
         writer.writeByte((byte)'{');
         writer.writeByte((byte)'"'); writer.writeAscii(name_id); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
@@ -558,6 +573,11 @@ public class Serializer {
         writer.writeByte((byte)',');
         writer.writeByte((byte)'"'); writer.writeAscii(name_swt); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
         StringConverter.serialize(swtName, writer);
+        if (stamped) {
+            writer.writeByte((byte)',');
+            writer.writeByte((byte)'"'); writer.writeAscii(name_seq); writer.writeByte((byte)'"'); writer.writeByte((byte)':');
+            NumberConverter.serialize(writeSeq.incrementAndGet(), writer);
+        }
         if (converter == null) {
             writer.writeByte((byte)'}');
             return;
