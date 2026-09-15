@@ -5,6 +5,7 @@ void registerTestQueryJsApi({
   required String? Function(int) renderFactsJson,
   required String? Function(int) queryStateJson,
   required String Function() queryAllStatesJson,
+  required String Function() queryPaintOpsJson,
   required String Function() queryTreeItemsJson,
   required bool Function(String) expandTreeItem,
   required String Function() queryPrimaryFocus,

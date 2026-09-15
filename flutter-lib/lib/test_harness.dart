@@ -1,5 +1,8 @@
 import 'dart:convert';
 
+import 'src/impl/gc_evolve.dart';
+import 'src/impl/gcdrawer_evolve.dart';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -105,6 +108,7 @@ void registerTestQueryChannel() {
     },
     queryStateJson: queryStateJson,
     queryAllStatesJson: queryAllStatesJson,
+    queryPaintOpsJson: queryPaintOpsJson,
     queryTreeItemsJson: queryTreeItemsJson,
     expandTreeItem: expandTreeItem,
     queryPrimaryFocus: queryPrimaryFocus,
@@ -183,6 +187,48 @@ String queryAllStatesJson() {
       final dynamic vstate = (el.state as WidgetSwtState).state;
       if (vstate != null) {
         addWithItems(vstate.toJson() as Map<String, dynamic>);
+      }
+    }
+    el.visitChildren(visit);
+  }
+
+  root.visitChildren(visit);
+  return jsonEncode(all);
+}
+
+/// Every mounted GC's paint ops, keyed by `{swt}#{position in the widget tree}`, as a
+/// JSON-encoded object of string lists.
+///
+/// A GC's draw calls are not part of any widget's serialized state — they arrive on their own comm
+/// channel and end up in the drawer's shape list — so a control that paints through a PaintListener
+/// describes itself as an empty Canvas to [queryAllStatesJson]. This is the assertable form of what
+/// it actually drew, which a screenshot can otherwise only show as pixels.
+///
+/// Keyed by tree position rather than by widget id on purpose: ids are assigned per run, so an id
+/// would make two runs of the same snippet disagree on content that is identical. Callers that need
+/// the id have it from [queryAllStatesJson].
+String queryPaintOpsJson() {
+  final root = WidgetsBinding.instance.rootElement;
+  final Map<String, List<String>> all = {};
+  if (root == null) return jsonEncode(all);
+  int seen = 0;
+
+  void visit(Element el) {
+    if (el is StatefulElement && el.state is GCImpl) {
+      final GCImpl gc = el.state as GCImpl;
+      final dynamic vstate = gc.state;
+      if (vstate != null) {
+        final List<String> ops = [for (final Shape s in gc.paintOps) s.describe()];
+        // The key carries where this GC sits on screen, because its ops are in its own
+        // coordinates: without the origin a reader cannot place them on a screenshot, and a
+        // control that moved would describe itself exactly as one that did not.
+        final RenderObject? box = el.findRenderObject();
+        final Offset origin = box is RenderBox && box.hasSize
+            ? box.localToGlobal(Offset.zero)
+            : Offset.zero;
+        if (ops.isNotEmpty) {
+          all['${vstate.swt}#${seen++}@${origin.dx.round()},${origin.dy.round()}'] = ops;
+        }
       }
     }
     el.visitChildren(visit);

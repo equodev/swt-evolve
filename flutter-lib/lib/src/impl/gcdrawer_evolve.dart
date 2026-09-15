@@ -1436,6 +1436,9 @@ class _PlaceholderShape extends Shape {
   void draw(ui.Canvas c) {}
   @override
   String toString() => 'Placeholder';
+
+  @override
+  String describe() => 'Placeholder';
 }
 
 // ─────────────────────────────────────────────
@@ -1492,6 +1495,17 @@ class ScenePainter extends CustomPainter {
 // Shape classes
 // ─────────────────────────────────────────────
 
+/// Formatting helpers for [Shape.describe]. Coordinates are rounded: SWT hands the GC integers,
+/// and a fractional value here would only carry rasterization noise into the description.
+String _dr(Rect? r) => r == null
+    ? '-'
+    : '${r.left.round()},${r.top.round()} ${r.width.round()}x${r.height.round()}';
+String _do(Offset o) => '${o.dx.round()},${o.dy.round()}';
+// ignore: deprecated_member_use
+String _dc(Color c) => '#${c.value.toRadixString(16).padLeft(8, '0')}';
+String _dk(Rect? c) => c == null ? '' : ' clip=${_dr(c)}';
+String _dn(List<Shape> children) => children.map((s) => s.describe()).join('; ');
+
 abstract class Shape {
   void draw(ui.Canvas c);
 
@@ -1500,6 +1514,16 @@ abstract class Shape {
   bool paintsSameAs(Shape other) => identical(this, other);
   @override
   String toString();
+
+  /// A complete description of what this shape paints: geometry, colour, and the flags that
+  /// change the result.
+  ///
+  /// Separate from [toString], which is shaped for reading in a debugger and leaves out colour
+  /// entirely. This one is an assertion surface — a test compares these strings to decide whether
+  /// two paints are the same, so anything that would make the result look different has to appear
+  /// here, and nothing that only reflects how it was rasterized may.
+  String describe();
+
   Rect? get clipRect => null;
 
   /// The area this shape paints into, or null when it cannot be described cheaply. Null is always
@@ -1565,6 +1589,9 @@ class RegionShape extends Shape {
 
   @override
   String toString() => 'Region $rect [${ops.length} shapes]';
+
+  @override
+  String describe() => 'Region ${_dr(rect)} [${_dn(ops)}]';
 }
 
 /// Ops drawn while `GC.setXORMode(true)` was in force.
@@ -1595,6 +1622,9 @@ class XorShape extends Shape {
 
   @override
   String toString() => 'Xor [${children.length} shapes]';
+
+  @override
+  String describe() => 'Xor [${_dn(children)}]';
 }
 
 /// Drawing confined to a clip that is not a rectangle — a GC clipped to a Path or a Region.
@@ -1620,6 +1650,9 @@ class ClipPathShape extends Shape {
 
   @override
   String toString() => 'ClipPath [${children.length} shapes]';
+
+  @override
+  String describe() => 'ClipPath [${_dn(children)}]';
 }
 
 /// Strokes where SWT does: an odd-width or hairline stroke sits on pixel centres, so a 1-pixel
@@ -1658,6 +1691,9 @@ class TransformShape extends Shape {
 
   @override
   String toString() => 'Transform [${children.length} shapes]';
+
+  @override
+  String describe() => 'Transform ${matrix.map((v) => v.toStringAsFixed(3)).join(",")} [${_dn(children)}]${_dk(clipRect)}';
 }
 
 class TextShape extends Shape {
@@ -1683,6 +1719,14 @@ class TextShape extends Shape {
 
   @override
   String toString() => 'Text "$text" @ $off${clipRect != null ? " [clipped]" : ""}';
+
+  @override
+  String describe() => 'Text "$text" @ ${_do(off)} '
+      // The laid-out extent, so a reader of these ops knows which pixels this text owns without
+      // measuring the font itself. Comes from the same cached layout draw() uses.
+      'size=${painter.width.round()}x${painter.height.round()} '
+      'font=${style.fontFamily}/${style.fontSize}/${style.fontWeight?.value}/${style.fontStyle?.name} '
+      'color=${style.color == null ? "-" : _dc(style.color!)}${_dk(clipRect)}';
 }
 
 /// LRU of laid-out text for [TextShape]. Eviction is safe because a recorded picture keeps its own
@@ -1746,6 +1790,9 @@ class LineShape extends Shape {
 
   @override
   String toString() => 'Line $p1 → $p2${clipRect != null ? " [clipped]" : ""}';
+
+  @override
+  String describe() => 'Line ${_do(p1)}->${_do(p2)} ${_dc(color)} w=$strokeWidth cap=$lineCap join=$lineJoin${_dk(clipRect)}';
 }
 
 class OvalShape extends Shape {
@@ -1770,6 +1817,9 @@ class OvalShape extends Shape {
 
   @override
   String toString() => '${isFilled ? "Fill" : ""}Oval $rect';
+
+  @override
+  String describe() => '${isFilled ? "Fill" : "Draw"}Oval ${_dr(rect)} ${_dc(color)} w=$strokeWidth${_dk(clipRect)}';
 }
 
 class RectShape extends Shape {
@@ -1812,6 +1862,9 @@ class RectShape extends Shape {
 
   @override
   String toString() => '${isFilled ? "Fill" : ""}Rect $rect';
+
+  @override
+  String describe() => '${isFilled ? "Fill" : "Draw"}Rect ${_dr(rect)} ${_dc(color)} w=$strokeWidth cap=$lineCap join=$lineJoin${_dk(clipRect)}';
 }
 
 class GradientRectShape extends Shape {
@@ -1847,11 +1900,18 @@ class GradientRectShape extends Shape {
 
   @override
   String toString() => 'GradientRect $rect';
+
+  @override
+  String describe() => 'GradientRect ${_dr(rect)} ${_dc(fromColor)}->${_dc(toColor)} $begin->$end${_dk(clipRect)}';
 }
 
 /// A fill painted with a GC pattern. The shader is laid out in GC coordinates, as the native
 /// backends lay out theirs, so the pattern does not move with the shape it fills.
 class PatternFillShape extends Shape {
+  @override
+  String describe() => 'PatternFill ${_dr(path.getBounds())} @ ${_do(offset)} '
+      'alpha=$alpha${_dk(clipRect)}';
+
   PatternFillShape(this.path, this.shader, this.alpha, this.clipRect,
       {this.image, this.offset = Offset.zero});
 
@@ -1921,6 +1981,9 @@ class PathShape extends Shape {
 
   @override
   String toString() => '${isFilled ? "Fill" : "Draw"}Path';
+
+  @override
+  String describe() => '${isFilled ? "Fill" : "Draw"}Path ${_dr(path.getBounds())} ${_dc(color)} w=$strokeWidth${_dk(clipRect)}';
 }
 
 class PolygonShape extends Shape {
@@ -1961,6 +2024,9 @@ class PolygonShape extends Shape {
 
   @override
   String toString() => '${isFilled ? "Fill" : ""}Polygon ${points.length ~/ 2} pts';
+
+  @override
+  String describe() => '${isFilled ? "Fill" : "Draw"}Polygon ${points.join(",")} ${_dc(color)} w=$strokeWidth${_dk(clipRect)}';
 }
 
 class PolylineShape extends Shape {
@@ -1995,6 +2061,9 @@ class PolylineShape extends Shape {
 
   @override
   String toString() => 'Polyline ${points.length ~/ 2} pts';
+
+  @override
+  String describe() => 'Polyline ${points.join(",")} ${_dc(color)} w=$strokeWidth${_dk(clipRect)}';
 }
 
 class ArcShape extends Shape {
@@ -2038,6 +2107,9 @@ class ArcShape extends Shape {
 
   @override
   String toString() => '${isFilled ? "Fill" : "Draw"}Arc $rect';
+
+  @override
+  String describe() => '${isFilled ? "Fill" : "Draw"}Arc ${_dr(rect)} ${startAngle.toStringAsFixed(4)}+${sweepAngle.toStringAsFixed(4)} ${_dc(color)} w=$strokeWidth${_dk(clipRect)}';
 }
 
 class RoundRectShape extends Shape {
@@ -2074,6 +2146,9 @@ class RoundRectShape extends Shape {
 
   @override
   String toString() => '${isFilled ? "Fill" : ""}RoundRect $rect';
+
+  @override
+  String describe() => '${isFilled ? "Fill" : "Draw"}RoundRect ${_dr(rect)} r=$radiusX,$radiusY ${_dc(color)} w=$strokeWidth${_dk(clipRect)}';
 }
 
 class PointShape extends Shape {
@@ -2093,6 +2168,9 @@ class PointShape extends Shape {
 
   @override
   String toString() => 'Point $point';
+
+  @override
+  String describe() => 'Point ${_do(point)} ${_dc(color)}${_dk(clipRect)}';
 }
 
 class FocusRectShape extends Shape {
@@ -2141,6 +2219,9 @@ class FocusRectShape extends Shape {
 
   @override
   String toString() => 'FocusRect $rect';
+
+  @override
+  String describe() => 'FocusRect ${_dr(rect)} ${_dc(color)}${_dk(clipRect)}';
 }
 
 enum ImageType { raster, svg, picture }
@@ -2520,6 +2601,9 @@ class ImageShape extends Shape {
 
   @override
   String toString() => 'ImageShape($type) dest:$destRect';
+
+  @override
+  String describe() => 'Image(${type.name}) dest=${_dr(destRect)} src=${_dr(srcRect)} alpha=$alpha tinted=${colorFilter != null}${_dk(clipRect)}';
 }
 
 StrokeCap getStrokeCap(int swtCap) {

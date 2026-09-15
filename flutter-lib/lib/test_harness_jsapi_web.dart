@@ -10,12 +10,14 @@ import 'dart:js_interop_unsafe';
 /// JS usage:
 ///   const json = window.evolveTest.queryState(targetId);   // String | null, JSON-encoded V*
 ///   const all  = window.evolveTest.queryAllStates();        // String, JSON map {swt/id: V*}
+///   const ops  = window.evolveTest.queryPaintOps();         // String, JSON map {swt/id: [op, ...]}
 ///   await new Promise(r => window.evolveTest.waitForFrame(r));
 void registerTestQueryJsApi({
   required String Function() styledTextPerfJson,
   required String? Function(int) renderFactsJson,
   required String? Function(int) queryStateJson,
   required String Function() queryAllStatesJson,
+  required String Function() queryPaintOpsJson,
   required String Function() queryTreeItemsJson,
   required bool Function(String) expandTreeItem,
   required String Function() queryPrimaryFocus,
@@ -37,6 +39,10 @@ void registerTestQueryJsApi({
   api.setProperty(
     'queryAllStates'.toJS,
     (() => queryAllStatesJson().toJS).toJS,
+  );
+  api.setProperty(
+    'queryPaintOps'.toJS,
+    (() => queryPaintOpsJson().toJS).toJS,
   );
   api.setProperty(
     'queryTreeItems'.toJS,

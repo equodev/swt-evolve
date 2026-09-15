@@ -80,6 +80,12 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     super.dispose();
   }
 
+  /// What this GC currently paints, innermost shapes included. Read by the test harness: GC
+  /// content reaches the screen as pixels and appears in no widget's serialized state, so without
+  /// this a PaintListener's whole output is invisible to anything but a screenshot.
+  List<Shape> get paintOps =>
+      _drawer.shapes.isNotEmpty ? List.unmodifiable(_drawer.shapes) : List.unmodifiable(_snapshot);
+
   void clearShapes() {
     if (mounted) {
       setState(() {

@@ -1757,6 +1757,14 @@ void debugResetLineLayoutCache() {
 }
 
 class TextShape extends Shape {
+  @override
+  String describe() => 'StyledText "$text" @ ${off.dx.round()},${off.dy.round()} '
+      'font=${style.fontFamily}/${style.fontSize} '
+      'color=${style.color == null ? "-" : style.color!.toString()} '
+      'wrap=$wordWrap tabs=$tabs lineHeight=$lineHeight'
+      '${clipRect == null ? "" : " clip=${clipRect!.left.round()},${clipRect!.top.round()} "
+          "${clipRect!.width.round()}x${clipRect!.height.round()}"}';
+
   final String text;
   final Offset off;
   final TextStyle style;
@@ -3872,6 +3880,10 @@ class TextShape extends Shape {
 
 /// The rectangle a block selection covers, painted over the text it selects.
 class _BlockSelectionShape extends Shape {
+  @override
+  String describe() => 'BlockSelection ${bounds.left.round()},${bounds.top.round()} '
+      '${bounds.width.round()}x${bounds.height.round()} $color';
+
   _BlockSelectionShape(this.bounds, this.color);
 
   final Rect bounds;
