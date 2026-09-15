@@ -1,74 +1,116 @@
 package dev.equo.swt.comm;
 
-import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 
 /**
  * A run of frames sent as one. Payloads are carried verbatim, so a batched message is
  * byte-identical to the one it replaces and the far side dispatches it on its own channel.
+ *
+ * <p>The batch is written straight into its wire frame, {@code [header]["channel",payload],…]}, so
+ * sending it copies nothing, and {@link #clear()} keeps the buffer for the next run.
  */
 public final class MessageBatch {
 
     /** Channel a batched run travels on. */
     public static final String EVENT = "swt.evolve.batch";
 
-    private final List<String> events = new ArrayList<>();
-    private final List<byte[]> payloads = new ArrayList<>();
-    private int bytes;
+    private static final byte[] HEADER = CommService.frameHeader(EVENT);
+    private static final byte[] NULL = "null".getBytes(StandardCharsets.UTF_8);
+
+    private byte[] buffer = new byte[4096];
+    private int size;
+    private int count;
+    private String firstEvent;
+    private int firstPayloadStart;
+    private int firstPayloadLength;
+
+    public MessageBatch() {
+        clear();
+    }
 
     public void add(String event, byte[] payload) {
-        events.add(event);
-        payloads.add(payload);
-        bytes += event.length() + (payload != null ? payload.length : 0);
+        add(event, payload, 0, payload != null ? payload.length : 0);
+    }
+
+    /** Copies {@code payload[offset, offset + length)} in, so the caller may reuse its buffer after. */
+    public void add(String event, byte[] payload, int offset, int length) {
+        byte[] name = event.getBytes(StandardCharsets.UTF_8);
+        // Separator, brackets, quotes, comma and the closing ']' of the whole batch, plus every name
+        // byte escaped and a "null" in place of an empty payload.
+        ensure(size + 2 * name.length + Math.max(length, NULL.length) + 8);
+        if (count > 0) buffer[size++] = ',';
+        buffer[size++] = '[';
+        buffer[size++] = '"';
+        for (byte b : name) {
+            if (b == '"' || b == '\\') buffer[size++] = '\\';
+            buffer[size++] = b;
+        }
+        buffer[size++] = '"';
+        buffer[size++] = ',';
+        if (count == 0) {
+            firstEvent = event;
+            firstPayloadStart = size;
+            firstPayloadLength = length;
+        }
+        if (length == 0) {
+            System.arraycopy(NULL, 0, buffer, size, NULL.length);
+            size += NULL.length;
+        } else {
+            System.arraycopy(payload, offset, buffer, size, length);
+            size += length;
+        }
+        buffer[size++] = ']';
+        count++;
     }
 
     public boolean isEmpty() {
-        return events.isEmpty();
+        return count == 0;
     }
 
     public int size() {
-        return events.size();
+        return count;
     }
 
-    /** Roughly what this batch holds, so a caller can bound how much it buffers. */
+    /** What this batch holds on the wire, so a caller can bound how much it buffers. */
     public int byteSize() {
-        return bytes;
+        return size;
     }
 
-    public String event(int i) {
-        return events.get(i);
+    /** How much the batch can hold before it grows, so a caller can decide whether to keep it. */
+    public int capacity() {
+        return buffer.length;
     }
 
-    public byte[] payload(int i) {
-        return payloads.get(i);
+    /** Empties the batch, keeping its buffer. */
+    public void clear() {
+        System.arraycopy(HEADER, 0, buffer, 0, HEADER.length);
+        buffer[HEADER.length] = '[';
+        size = HEADER.length + 1;
+        count = 0;
+        firstEvent = null;
     }
 
-    /** {@code [["channel",payload],…]} — payloads spliced in as raw JSON, never re-encoded. */
-    public byte[] encode() {
-        ByteArrayOutputStream out = new ByteArrayOutputStream(bytes + 8 * events.size() + 2);
-        out.write('[');
-        for (int i = 0; i < events.size(); i++) {
-            if (i > 0) out.write(',');
-            out.write('[');
-            writeJsonString(out, events.get(i));
-            out.write(',');
-            byte[] payload = payloads.get(i);
-            if (payload == null || payload.length == 0) {
-                out.writeBytes("null".getBytes(StandardCharsets.UTF_8));
-            } else {
-                out.writeBytes(payload);
-            }
-            out.write(']');
+    /**
+     * Puts the batch on {@code comm} as one message, or a lone frame unwrapped. Either way the
+     * buffer is lent for the call, and the batch has to be cleared before it is added to again.
+     */
+    void sendTo(CommService comm) {
+        if (count == 0) return;
+        if (count == 1) {
+            // What precedes the payload - the batch header and ["channel", - is always longer than
+            // the frame's own header, so the lone frame is framed in place over it.
+            byte[] header = CommService.frameHeader(firstEvent);
+            int start = firstPayloadStart - header.length;
+            System.arraycopy(header, 0, buffer, start, header.length);
+            comm.sendFrame(buffer, start, header.length + firstPayloadLength);
+            return;
         }
-        out.write(']');
-        return out.toByteArray();
+        buffer[size] = ']';
+        comm.sendFrame(buffer, 0, size + 1);
     }
 
-    private static void writeJsonString(ByteArrayOutputStream out, String s) {
-        out.write('"');
-        out.writeBytes(s.replace("\\", "\\\\").replace("\"", "\\\"").getBytes(StandardCharsets.UTF_8));
-        out.write('"');
+    private void ensure(int needed) {
+        if (needed > buffer.length) buffer = Arrays.copyOf(buffer, Math.max(needed, buffer.length * 2));
     }
 }

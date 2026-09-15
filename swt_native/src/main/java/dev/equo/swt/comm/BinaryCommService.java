@@ -49,10 +49,11 @@ public class BinaryCommService extends AbstractBinaryCommService {
     }
 
     @Override
-    protected void broadcast(byte[] frame) {
+    protected void broadcast(byte[] frame, int offset, int length) {
         for (WebSocket s : sessions) {
             if (s.isOpen()) {
-                s.send(frame);
+                // Java-WebSocket copies the bytes into its own frame before send returns.
+                s.send(ByteBuffer.wrap(frame, offset, length));
             }
         }
     }

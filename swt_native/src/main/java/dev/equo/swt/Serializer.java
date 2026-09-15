@@ -162,29 +162,62 @@ public class Serializer {
         written.get().clear();
     }
 
+    /** Receives a serialized buffer that is only lent: it goes back to the pool once this returns. */
+    @FunctionalInterface
+    public interface Lent {
+        void accept(byte[] buffer, int length);
+    }
+
+    private static final byte[] NO_PREFIX = new byte[0];
+
     public byte[] to(Object p) throws IOException {
+        byte[][] copy = new byte[1][];
+        to(NO_PREFIX, p, (buffer, length) -> copy[0] = java.util.Arrays.copyOf(buffer, length));
+        return copy[0];
+    }
+
+    /** {@link #to(byte[], Object, Lent)} with nothing ahead of the value. */
+    public void to(Object p, Lent sink) throws IOException {
+        to(NO_PREFIX, p, sink);
+    }
+
+    /**
+     * Writes {@code prefix} and then {@code p}, and lends the buffer to {@code sink} before it goes
+     * back to the pool, so a caller that sends at once copies nothing. The prefix is where a frame
+     * header goes: written first, the frame never has to be reassembled around the payload.
+     */
+    public void to(byte[] prefix, Object p, Lent sink) throws IOException {
         written.get().clear();
         depth.get()[0] = 0;
-        java.util.ArrayDeque<JsonWriter> pool = writerPool.get();
-        JsonWriter writer = pool.pollFirst();
-        if (writer == null) {
-            writer = dsl.newWriter();
-        } else {
-            writer.reset();
-        }
-        java.util.Map<Object, Object> outerScope = payloadScope.get();
-        payloadScope.set(EMPTY_SCOPE);
+        JsonWriter writer = borrowWriter();
         try {
-            dsl.serialize(writer, p);
-            return writer.toByteArray();
-        } finally {
-            if (outerScope == null) {
-                payloadScope.remove();
-            } else {
-                payloadScope.set(outerScope);
+            java.util.Map<Object, Object> outerScope = payloadScope.get();
+            payloadScope.set(EMPTY_SCOPE);
+            try {
+                writePrefix(writer, prefix);
+                dsl.serialize(writer, p);
+            } finally {
+                if (outerScope == null) {
+                    payloadScope.remove();
+                } else {
+                    payloadScope.set(outerScope);
+                }
             }
-            pool.addFirst(writer);
+            sink.accept(writer.getByteBuffer(), writer.size());
+        } finally {
+            writerPool.get().addFirst(writer);
         }
+    }
+
+    private JsonWriter borrowWriter() {
+        JsonWriter writer = writerPool.get().pollFirst();
+        if (writer == null) return dsl.newWriter();
+        writer.reset();
+        return writer;
+    }
+
+    private static void writePrefix(JsonWriter writer, byte[] prefix) {
+        for (byte b : prefix) writer.writeByte(b);
     }
 
     // Null: no payload in flight. EMPTY_SCOPE: one is, and nothing has asked to be cached yet — so a
@@ -392,13 +425,18 @@ public class Serializer {
      * change the far side can apply.
      */
     public byte[] toDiff(DartWidget impl) {
+        byte[][] copy = new byte[1][];
+        toDiff(NO_PREFIX, impl, (buffer, length) -> copy[0] = java.util.Arrays.copyOf(buffer, length));
+        return copy[0];
+    }
+
+    /** {@link #toDiff(DartWidget)} behind {@code prefix}, lent to {@code sink} as {@link #to(byte[], Object, Lent)} does. */
+    public void toDiff(byte[] prefix, DartWidget impl, Lent sink) {
         written.get().clear();
         depth.get()[0] = 0;
-        java.util.ArrayDeque<JsonWriter> pool = writerPool.get();
-        JsonWriter writer = pool.pollFirst();
-        if (writer == null) writer = dsl.newWriter();
-        else writer.reset();
+        JsonWriter writer = borrowWriter();
         try {
+            writePrefix(writer, prefix);
             VWidget value = impl.getValue();
             long seq = writeSeq.incrementAndGet();
             writer.writeByte((byte) '{');
@@ -426,9 +464,9 @@ public class Serializer {
             // Every pair leaves a trailing comma; the last one becomes the closing brace.
             writer.getByteBuffer()[writer.size() - 1] = '}';
             noteWritten(impl, value, seq);
-            return writer.toByteArray();
+            sink.accept(writer.getByteBuffer(), writer.size());
         } finally {
-            pool.addFirst(writer);
+            writerPool.get().addFirst(writer);
         }
     }
 

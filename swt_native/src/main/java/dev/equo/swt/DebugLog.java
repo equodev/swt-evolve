@@ -61,23 +61,24 @@ final class DebugLog {
     }
 
     /** Prints a {@code send:} line for this event/payload when debugging is on and the event passes filters. */
-    static void logSend(String eventName, byte[] bytes) {
+    static void logSend(String eventName, byte[] bytes, int offset, int length) {
         if (!shouldLog(eventName)) return;
+        String raw = new String(bytes, offset, length, StandardCharsets.UTF_8);
         String body;
         try {
-            Object tree = new JsonParser(new String(bytes, StandardCharsets.UTF_8)).parse();
+            Object tree = new JsonParser(raw).parse();
             prune(tree);
             StringBuilder sb = new StringBuilder();
             render(tree, 0, sb);
             body = sb.toString();
         } catch (RuntimeException e) {
             // Never let debug logging break a send; fall back to the raw payload.
-            body = new String(bytes, StandardCharsets.UTF_8);
+            body = raw;
         }
         if (MAX_LEN > 0 && body.length() > MAX_LEN) {
             body = body.substring(0, MAX_LEN) + "…(+" + (body.length() - MAX_LEN) + " chars)";
         }
-        String size = SUMMARY ? " (" + bytes.length + " B)" : "";
+        String size = SUMMARY ? " (" + length + " B)" : "";
         System.out.println("send: " + eventName + size + ": " + body);
     }
 

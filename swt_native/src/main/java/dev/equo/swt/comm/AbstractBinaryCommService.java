@@ -3,7 +3,6 @@ package dev.equo.swt.comm;
 import dev.equo.swt.Serializer;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,8 +20,6 @@ import java.util.function.Consumer;
  * first client connects are buffered and flushed on connect (see {@link #onClientConnected}).
  */
 public abstract class AbstractBinaryCommService implements CommService {
-
-    protected static final int HEADER_LEN = 2;
 
     protected final Serializer serializer = new Serializer();
     private final Map<String, TypedHandler<?>> typedHandlers = new ConcurrentHashMap<>();
@@ -51,27 +48,32 @@ public abstract class AbstractBinaryCommService implements CommService {
     @Override
     public void send(String eventName, byte[] payload) {
         byte[] frame = encodeFrame(eventName, payload);
-        if (!firstClientConnected) {
-            synchronized (pendingFrames) {
-                if (!firstClientConnected) {
-                    pendingFrames.add(frame);
-                    return;
-                }
-            }
+        if (heldForFirstClient(frame, 0, frame.length, false)) return;
+        broadcast(frame, 0, frame.length);
+    }
+
+    @Override
+    public void sendFrame(byte[] frame, int offset, int length) {
+        if (heldForFirstClient(frame, offset, length, true)) return;
+        broadcast(frame, offset, length);
+    }
+
+    /** Keeps a frame until the first client connects; a lent one is copied, since it outlives the call. */
+    private boolean heldForFirstClient(byte[] frame, int offset, int length, boolean lent) {
+        if (firstClientConnected) return false;
+        synchronized (pendingFrames) {
+            if (firstClientConnected) return false;
+            pendingFrames.add(lent ? Arrays.copyOfRange(frame, offset, offset + length) : frame);
+            return true;
         }
-        broadcast(frame);
     }
 
     private static byte[] encodeFrame(String eventName, byte[] payload) {
-        byte[] nameBytes = eventName.getBytes(StandardCharsets.UTF_8);
-        int totalLen = HEADER_LEN + nameBytes.length + (payload != null ? payload.length : 0);
-        ByteBuffer buf = ByteBuffer.allocate(totalLen);
-        buf.putShort((short) nameBytes.length);
-        buf.put(nameBytes);
-        if (payload != null) {
-            buf.put(payload);
-        }
-        return buf.array();
+        byte[] header = CommService.frameHeader(eventName);
+        int payloadLength = payload != null ? payload.length : 0;
+        byte[] frame = Arrays.copyOf(header, header.length + payloadLength);
+        if (payloadLength > 0) System.arraycopy(payload, 0, frame, header.length, payloadLength);
+        return frame;
     }
 
     @Override
@@ -109,12 +111,12 @@ public abstract class AbstractBinaryCommService implements CommService {
 
     /** Subclasses call this with each received binary frame (which may be a slice of a buffer). */
     protected void onBinaryMessage(byte[] data, int offset, int length) {
-        if (length < HEADER_LEN) return;
+        if (length < NAME_LENGTH_BYTES) return;
         int nameLen = ((data[offset] & 0xFF) << 8) | (data[offset + 1] & 0xFF);
-        if (length < HEADER_LEN + nameLen) return;
-        String eventName = new String(data, offset + HEADER_LEN, nameLen, StandardCharsets.UTF_8);
-        int payloadStart = offset + HEADER_LEN + nameLen;
-        int payloadLen = length - HEADER_LEN - nameLen;
+        if (length < NAME_LENGTH_BYTES + nameLen) return;
+        String eventName = new String(data, offset + NAME_LENGTH_BYTES, nameLen, StandardCharsets.UTF_8);
+        int payloadStart = offset + NAME_LENGTH_BYTES + nameLen;
+        int payloadLen = length - NAME_LENGTH_BYTES - nameLen;
         dispatch(eventName, data, payloadStart, payloadLen);
     }
 
@@ -132,8 +134,11 @@ public abstract class AbstractBinaryCommService implements CommService {
                 .forEach(k -> System.err.println(logTag() + "   registered: " + k));
     }
 
-    /** Send an already-encoded frame to every currently-open session. */
-    protected abstract void broadcast(byte[] frame);
+    /**
+     * Sends {@code frame[offset, offset + length)} to every currently-open session. Lent, as in
+     * {@link #sendFrame}: a transport that finishes the send after returning must copy it first.
+     */
+    protected abstract void broadcast(byte[] frame, int offset, int length);
 
     /** Prefix for diagnostic logging; defaults to the concrete class' simple name. */
     protected String logTag() {

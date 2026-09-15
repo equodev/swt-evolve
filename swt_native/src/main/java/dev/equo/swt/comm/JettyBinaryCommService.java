@@ -10,6 +10,7 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -75,10 +76,11 @@ public class JettyBinaryCommService extends AbstractBinaryCommService {
     };
 
     @Override
-    protected void broadcast(byte[] frame) {
+    protected void broadcast(byte[] frame, int offset, int length) {
         for (Session s : sessions) {
             if (s.isOpen()) {
-                s.sendBinary(ByteBuffer.wrap(frame), SEND_CALLBACK);
+                // sendBinary completes after it returns, by when a lent buffer may hold another frame.
+                s.sendBinary(ByteBuffer.wrap(Arrays.copyOfRange(frame, offset, offset + length)), SEND_CALLBACK);
             }
         }
     }

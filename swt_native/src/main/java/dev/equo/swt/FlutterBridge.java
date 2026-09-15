@@ -468,7 +468,7 @@ public abstract class FlutterBridge {
         long now = System.nanoTime();
         // Everything this flush sends belongs to one moment, so it travels as one message. Only the
         // sends made inline are caught: a widget still waiting on clientReady sends when it can.
-        Map<CommService, PendingSends> batching = new java.util.LinkedHashMap<>();
+        Map<CommService, MessageBatch> batching = new java.util.LinkedHashMap<>();
         flushSends.set(batching);
         try {
         for (Object widget : flushOrder(filteredDirty)) {
@@ -513,9 +513,11 @@ public abstract class FlutterBridge {
                                     // payload is still written whole, since the far side has
                                     // nothing to merge a nested change into yet.
                                     if (widget instanceof DartWidget w && Serializer.canDiff(w)
-                                            && !carryingDescendants.contains(widget))
-                                        sendBytes(comm, event, serializer.toDiff(w));
-                                    else
+                                            && !carryingDescendants.contains(widget)) {
+                                        byte[] header = CommService.frameHeader(event);
+                                        serializer.toDiff(header, w, (buffer, length) ->
+                                                sendBytes(comm, event, buffer, header.length, length));
+                                    } else
                                         serializeAndSend(comm, event, getApi(widget));
                                 } catch (IOException e) {
                                     throw new java.io.UncheckedIOException(e);
@@ -537,8 +539,9 @@ public abstract class FlutterBridge {
         } finally {
             Serializer.describeNormally();
             flushSends.remove();
-            for (Map.Entry<CommService, PendingSends> entry : batching.entrySet()) {
-                entry.getValue().send(entry.getKey());
+            for (Map.Entry<CommService, MessageBatch> entry : batching.entrySet()) {
+                entry.getKey().send(entry.getValue());
+                releaseBatch(entry.getValue());
             }
         }
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
@@ -677,87 +680,83 @@ public abstract class FlutterBridge {
         // Named here as well as at the flush, so a send from anywhere else - an event reply, a
         // pre-connect push, a draw op - is credited to the client it actually goes to.
         if (Serializer.targetConnection() != 0) {
-            sendBytes(comm, eventName, serializer.to(args));
+            serializeFrameAndSend(comm, eventName, args);
             return;
         }
-        byte[][] bytes = new byte[1][];
         java.io.IOException[] failed = new java.io.IOException[1];
         Serializer.targeting(comm == null ? 0 : comm.connectionId(), () -> {
             try {
-                bytes[0] = serializer.to(args);
+                serializeFrameAndSend(comm, eventName, args);
             } catch (IOException e) {
                 failed[0] = e;
-                return;
             }
-            sendBytes(comm, eventName, bytes[0]);
         });
         if (failed[0] != null) throw failed[0];
     }
 
-    /** The tail of a send, for callers that already have the bytes. */
-    private static void sendBytes(CommService comm, String eventName, byte[] bytes) {
+    /** Serializes {@code args} behind its frame header, so the frame is sent from where it was written. */
+    private static void serializeFrameAndSend(CommService comm, String eventName, Object args) throws IOException {
+        byte[] header = CommService.frameHeader(eventName);
+        serializer.to(header, args, (buffer, length) -> sendBytes(comm, eventName, buffer, header.length, length));
+    }
+
+    /**
+     * The tail of a send. {@code buffer[0, length)} is a whole frame whose payload starts at
+     * {@code payloadStart}, lent by the serializer: anything that keeps it past this call copies it.
+     */
+    private static void sendBytes(CommService comm, String eventName, byte[] buffer, int payloadStart, int length) {
         // The bytes are going out, so what was written counts as delivered. Serializing on its own
         // does not: a widget can be written to be read rather than sent.
         Serializer.markDelivered();
-        DebugLog.logSend(eventName, bytes);
+        int payloadLength = length - payloadStart;
+        DebugLog.logSend(eventName, buffer, payloadStart, payloadLength);
         SendObserver observer = sendObserver;
-        if (observer != null) observer.onSend(eventName, bytes);
-        Map<CommService, PendingSends> open = flushSends.get();
+        if (observer != null) observer.onSend(eventName, java.util.Arrays.copyOfRange(buffer, payloadStart, length));
+        Map<CommService, MessageBatch> open = flushSends.get();
         if (open != null) {
-            open.computeIfAbsent(comm, c -> new PendingSends()).add(comm, eventName, bytes);
+            MessageBatch batch = open.computeIfAbsent(comm, c -> borrowBatch());
+            batch.add(eventName, buffer, payloadStart, payloadLength);
+            // A flush big enough to be worth splitting: one unbounded message would stall the
+            // client's decode as surely as the frames it replaced stalled its event loop.
+            if (batch.byteSize() >= MAX_BATCH_BYTES) {
+                comm.send(batch);
+                batch.clear();
+            }
             return;
         }
-        comm.send(eventName, bytes);
+        comm.sendFrame(buffer, 0, length);
     }
 
     /**
      * What one flush has produced so far, per comm, while that flush is running.
      *
+     * <p>A layout pass touches every child of a composite, and each of them is a frame. Sending
+     * them one at a time is one socket message, one handler dispatch and one rebuild each, for
+     * changes that all belong to the same moment, so they travel as one {@link MessageBatch}.
+     *
      * <p>Null outside a flush, which is what makes a send from anywhere else — an event reply, a
      * draw op, a pre-connect push finishing on another thread — go straight out as it always did.
      * Thread-local for the same reason: only the sends this flush makes inline belong to it.
      */
-    private static final ThreadLocal<Map<CommService, PendingSends>> flushSends = new ThreadLocal<>();
+    private static final ThreadLocal<Map<CommService, MessageBatch>> flushSends = new ThreadLocal<>();
 
-    /**
-     * A flush's frames on their way to one comm.
-     *
-     * <p>A layout pass touches every child of a composite, and each of them is a frame. Sending
-     * them one at a time is one socket message, one handler dispatch and one rebuild each, for
-     * changes that all belong to the same moment. Fusing them costs a few bytes of framing and
-     * saves all of that — but only from the second frame on, so a lone frame still travels alone
-     * rather than paying the wrapper for nothing.
-     */
-    private static final class PendingSends {
-        private String soloEvent;
-        private byte[] soloBytes;
-        private MessageBatch batch;
+    /** Batches already grown to a flush's size, reused so their buffer is not regrown every turn. */
+    private static final ThreadLocal<java.util.ArrayDeque<MessageBatch>> spareBatches =
+            ThreadLocal.withInitial(java.util.ArrayDeque::new);
 
-        void add(CommService comm, String eventName, byte[] bytes) {
-            if (batch == null && soloEvent == null) {
-                soloEvent = eventName;
-                soloBytes = bytes;
-                return;
-            }
-            if (batch == null) {
-                batch = new MessageBatch();
-                batch.add(soloEvent, soloBytes);
-                soloEvent = null;
-                soloBytes = null;
-            }
-            batch.add(eventName, bytes);
-            // A flush big enough to be worth splitting: one unbounded message would stall the
-            // client's decode as surely as the frames it replaced stalled its event loop.
-            if (batch.byteSize() >= MAX_BATCH_BYTES) send(comm);
-        }
+    /** Spares kept per thread; a batch released on a thread that never borrows must not pile up there. */
+    private static final int MAX_SPARE_BATCHES = 4;
 
-        void send(CommService comm) {
-            if (batch != null && !batch.isEmpty()) comm.send(batch);
-            else if (soloEvent != null) comm.send(soloEvent, soloBytes);
-            batch = null;
-            soloEvent = null;
-            soloBytes = null;
-        }
+    private static MessageBatch borrowBatch() {
+        MessageBatch batch = spareBatches.get().pollFirst();
+        return batch != null ? batch : new MessageBatch();
+    }
+
+    private static void releaseBatch(MessageBatch batch) {
+        batch.clear();
+        java.util.ArrayDeque<MessageBatch> spares = spareBatches.get();
+        // One outsized frame must not pin its buffer for the life of the thread.
+        if (spares.size() < MAX_SPARE_BATCHES && batch.capacity() <= 2 * MAX_BATCH_BYTES) spares.addFirst(batch);
     }
 
     private static void setNotNew(Object control) {
@@ -896,13 +895,13 @@ public abstract class FlutterBridge {
     private static final int MAX_BATCH_BYTES = 1 << 20;
 
     private static void bufferOp(CommService comm, DartGC gc, String event, Object args) {
-        MessageBatch batch = opBatches.computeIfAbsent(gc, g -> new MessageBatch());
+        MessageBatch batch = opBatches.computeIfAbsent(gc, g -> borrowBatch());
         try {
             // The GC's state has to precede the op drawn with it, and on the same frame.
             synchronized (dirty) {
-                if (dirty.remove(gc)) addToBatch(batch, event(gc), serializer.to(getApi(gc)));
+                if (dirty.remove(gc)) addToBatch(batch, event(gc), getApi(gc));
             }
-            addToBatch(batch, eventName(gc, event), serializer.to(args));
+            addToBatch(batch, eventName(gc, event), args);
         } catch (IOException e) {
             e.printStackTrace();
             return;
@@ -913,9 +912,11 @@ public abstract class FlutterBridge {
     /** Terminates a paint: Flutter commits the staged ops when it arrives. */
     private static final String GC_DISPOSE = "gcDispose";
 
-    private static void addToBatch(MessageBatch batch, String event, byte[] bytes) {
-        DebugLog.logSend(event, bytes);
-        batch.add(event, bytes);
+    private static void addToBatch(MessageBatch batch, String event, Object args) throws IOException {
+        serializer.to(args, (buffer, length) -> {
+            DebugLog.logSend(event, buffer, 0, length);
+            batch.add(event, buffer, 0, length);
+        });
     }
 
     /** Puts a GC's buffered ops on the wire, for a caller about to block on an answer to one. */
@@ -929,7 +930,9 @@ public abstract class FlutterBridge {
 
     private static void flushOpBatch(DartGC gc) {
         MessageBatch batch = opBatches.remove(gc);
-        if (batch != null && !batch.isEmpty()) commFor(gc).send(batch);
+        if (batch == null) return;
+        if (!batch.isEmpty()) commFor(gc).send(batch);
+        releaseBatch(batch);
     }
 
     /** Nothing may stay buffered across an event-loop turn, whatever disposed the GC or didn't. */
