@@ -27,6 +27,7 @@ class TreeEditorSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("column").equalsTo(w.getColumn(), orAbsentIf0));
         assertJ.satisfies(node("editor").equalsTo(value(w).getEditor(), orAbsentIfNull));
         assertJ.satisfies(node("item").equalsTo(value(w).getItem(), orAbsentIfNull));
+        assertJ.satisfies(node("editor").equalsTo(w.getEditor(), orAbsentIfNull));
     }
 
     VTreeEditor value(TreeEditor w) {
