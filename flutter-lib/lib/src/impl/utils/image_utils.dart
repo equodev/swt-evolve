@@ -27,7 +27,7 @@ class ImageUtils {
     if (cached != null) return cached;
 
     final decorationImage = DecorationImage(
-      image: MemoryImage(Uint8List.fromList(data)),
+      image: MemoryImage(asBytes(data)),
       repeat: ImageRepeat.repeat,
       alignment: Alignment.topLeft,
       // Without an explicit fit, repeat defaults to BoxFit.scaleDown per tile.
@@ -556,7 +556,7 @@ class ImageUtils {
     // Try binary image data (encoded PNG/JPG bytes sent from Java)
     if (useBinaryImage && image.imageData?.data != null) {
       return _buildBinaryImage(
-        bytes: Uint8List.fromList(image.imageData!.data!),
+        bytes: asBytes(image.imageData!.data!),
         size: size,
         width: width,
         height: height,
@@ -617,7 +617,7 @@ class ImageUtils {
       );
       if (syncFallback == null && useBinaryImage && image.imageData?.data != null) {
         syncFallback = _buildBinaryImage(
-          bytes: Uint8List.fromList(image.imageData!.data!),
+          bytes: asBytes(image.imageData!.data!),
           file: filename,
           size: size, width: width, height: height,
           color: color, enabled: enabled,
@@ -646,7 +646,7 @@ class ImageUtils {
 
     if (useBinaryImage && image.imageData?.data != null) {
       return _buildBinaryImage(
-        bytes: Uint8List.fromList(image.imageData!.data!),
+        bytes: asBytes(image.imageData!.data!),
         file: image.filename,
         size: size, width: width, height: height,
         color: color, enabled: enabled,
@@ -700,7 +700,7 @@ class ImageUtils {
 
     if (value is String) {
       try {
-        return base64Decode(value).toList();
+        return base64Decode(value);
       } catch (e) {
         return null;
       }
@@ -715,10 +715,11 @@ class ImageUtils {
 
   static String? serializeByteArray(List<int>? value) {
     if (value == null) return null;
-
-    final bytes = Uint8List.fromList(value);
-    return base64Encode(bytes);
+    return base64Encode(asBytes(value));
   }
+
+  /// [data] as bytes, copied only when it is not bytes already.
+  static Uint8List asBytes(List<int> data) => data is Uint8List ? data : Uint8List.fromList(data);
 
   static Future<ui.Image?> decodeVImageToUIImage(VImage? image) async {
     final remoteRef = image?.remoteRef;
@@ -737,7 +738,7 @@ class ImageUtils {
       final data = image!.imageData!.data!;
       final bytes = data is String
           ? base64Decode(data as String)
-          : Uint8List.fromList((data as List).cast<int>());
+          : asBytes(data);
 
       final codec = await ui.instantiateImageCodec(bytes);
       final frame = await codec.getNextFrame();
