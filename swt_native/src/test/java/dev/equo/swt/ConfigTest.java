@@ -21,6 +21,20 @@ import static org.mockito.Mockito.*;
 
 public class ConfigTest {
 
+    private static Config.Impl initialDefault;
+
+    @BeforeAll
+    static void keep_the_process_default() {
+        // Config.defaultImpl is process-wide state, and the per-test hooks below pin it to `eclipse`.
+        // Restoring it after the class keeps later test classes on the default they were written for.
+        initialDefault = Config.defaultImpl;
+    }
+
+    @AfterAll
+    static void restore_the_process_default() {
+        Config.defaultImpl = initialDefault;
+    }
+
     @BeforeEach
     void defaults_swt() {
         // Reset the global default too (not just the per-widget map): its static initial value is

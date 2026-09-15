@@ -6,6 +6,8 @@ import 'package:swtflutter/src/gen/label.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 
+import 'delivery/support/deliver.dart';
+
 // A plain SWT Label (no SWT.WRAP) still honours the line delimiters inside its
 // text -- it just never wraps on its own. lsp4e's Folding preference page relies
 // on that: it labels the checkbox group with "\nInitially fold these elements:",
@@ -64,6 +66,9 @@ void main() {
     // Two lines of text must be taller than a single line of the same style.
     final multiline = tester.getSize(find.byType(Text).first);
 
+    // A separate label rendered from scratch, not an update to the one above: the two are being
+    // compared, and a widget's state does not come from whoever last built a tree around it.
+    freshClient();
     await tester.pumpWidget(_wrap(
       _label('Initially fold these elements:', width: 240, height: 42),
       width: 300,

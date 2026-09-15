@@ -21,6 +21,8 @@ import 'package:swtflutter/src/gen/styledtext.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/styledtext_evolve.dart';
 
+import 'delivery/support/deliver.dart';
+
 // Three canvas widths wide: wrapped it takes four visual rows, unwrapped one.
 const _longLine =
     'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
@@ -64,7 +66,7 @@ void main() {
     await tester.pump();
 
     // Toggle Word Wrap: Java pushes the same text back with wordWrap on.
-    await tester.pumpWidget(appWith(key, value(wrap: true)));
+    await deliverWhole(value(wrap: true)..seq = 2);
     await tester.pump();
 
     // y = 40 is the long line's third wrapped row when the wrap took effect, and past the end of

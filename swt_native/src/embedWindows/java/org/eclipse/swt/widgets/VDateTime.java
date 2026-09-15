@@ -69,6 +69,43 @@ public class VDateTime extends VComposite {
         ((DartDateTime) impl).year = value;
     }
 
+    public static final String DAY = "day";
+
+    public static final String HOURS = "hours";
+
+    public static final String MINUTES = "minutes";
+
+    public static final String MONTH = "month";
+
+    public static final String SECONDS = "seconds";
+
+    public static final String YEAR = "year";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "day":
+                Serializer.writeKeyValue(writer, "day", getDay());
+                return;
+            case "hours":
+                Serializer.writeKeyValue(writer, "hours", getHours());
+                return;
+            case "minutes":
+                Serializer.writeKeyValue(writer, "minutes", getMinutes());
+                return;
+            case "month":
+                Serializer.writeKeyValue(writer, "month", getMonth());
+                return;
+            case "seconds":
+                Serializer.writeKeyValue(writer, "seconds", getSeconds());
+                return;
+            case "year":
+                Serializer.writeKeyValue(writer, "year", getYear());
+                return;
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = DateTime.class)
     public static class DateTimeJson implements Configuration {
 

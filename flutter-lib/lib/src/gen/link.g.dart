@@ -9,8 +9,8 @@ part of 'link.dart';
 VLink _$VLinkFromJson(Map<String, dynamic> json) => VLink()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
-  ..seq = (json['seq'] as num?)?.toInt() ?? 0
-  ..style = (json['style'] as num).toInt()
+  ..seq = (json['_s'] as num?)?.toInt() ?? 0
+  ..style = (json['style'] as num?)?.toInt() ?? 0
   ..background = json['background'] == null
       ? null
       : VColor.fromJson(json['background'] as Map<String, dynamic>)
@@ -20,15 +20,12 @@ VLink _$VLinkFromJson(Map<String, dynamic> json) => VLink()
   ..bounds = json['bounds'] == null
       ? null
       : VRectangle.fromJson(json['bounds'] as Map<String, dynamic>)
-  ..capture = json['capture'] as bool?
   ..cursor = json['cursor'] == null
       ? null
       : VCursor.fromJson(json['cursor'] as Map<String, dynamic>)
-  ..dragDetect = json['dragDetect'] as bool?
   ..dragSource = json['dragSource'] as bool?
   ..dropTargetId = (json['dropTargetId'] as num?)?.toInt()
   ..enabled = json['enabled'] as bool?
-  ..enabledEffective = json['enabledEffective'] as bool?
   ..font = json['font'] == null
       ? null
       : VFont.fromJson(json['font'] as Map<String, dynamic>)
@@ -39,14 +36,10 @@ VLink _$VLinkFromJson(Map<String, dynamic> json) => VLink()
   ..menu = json['menu'] == null
       ? null
       : VMenu.fromJson(json['menu'] as Map<String, dynamic>)
-  ..orientation = (json['orientation'] as num?)?.toInt()
-  ..redraw = json['redraw'] as bool?
   ..region = json['region'] == null
       ? null
       : VRegion.fromJson(json['region'] as Map<String, dynamic>)
-  ..textDirection = (json['textDirection'] as num?)?.toInt()
   ..toolTipText = json['toolTipText'] as String?
-  ..touchEnabled = json['touchEnabled'] as bool?
   ..visible = json['visible'] as bool?
   ..linkForeground = json['linkForeground'] == null
       ? null
@@ -60,23 +53,16 @@ Map<String, dynamic> _$VLinkToJson(VLink instance) => <String, dynamic>{
   'background': ?instance.background,
   'backgroundImage': ?instance.backgroundImage,
   'bounds': ?instance.bounds,
-  'capture': ?instance.capture,
   'cursor': ?instance.cursor,
-  'dragDetect': ?instance.dragDetect,
   'dragSource': ?instance.dragSource,
   'dropTargetId': ?instance.dropTargetId,
   'enabled': ?instance.enabled,
-  'enabledEffective': ?instance.enabledEffective,
   'font': ?instance.font,
   'foreground': ?instance.foreground,
   'hasOwnBackground': ?instance.hasOwnBackground,
   'menu': ?instance.menu,
-  'orientation': ?instance.orientation,
-  'redraw': ?instance.redraw,
   'region': ?instance.region,
-  'textDirection': ?instance.textDirection,
   'toolTipText': ?instance.toolTipText,
-  'touchEnabled': ?instance.touchEnabled,
   'visible': ?instance.visible,
   'linkForeground': ?instance.linkForeground,
   'text': ?instance.text,

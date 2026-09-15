@@ -73,6 +73,48 @@ public class VSpinner extends VComposite {
         ((DartSpinner) impl).textLimit = value;
     }
 
+    public static final String DIGITS = "digits";
+
+    public static final String INCREMENT = "increment";
+
+    public static final String MAXIMUM = "maximum";
+
+    public static final String MINIMUM = "minimum";
+
+    public static final String PAGE_INCREMENT = "pageIncrement";
+
+    public static final String SELECTION = "selection";
+
+    public static final String TEXT_LIMIT = "textLimit";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "digits":
+                Serializer.writeKeyValue(writer, "digits", getDigits());
+                return;
+            case "increment":
+                Serializer.writeKeyValue(writer, "increment", getIncrement());
+                return;
+            case "maximum":
+                Serializer.writeKeyValue(writer, "maximum", getMaximum());
+                return;
+            case "minimum":
+                Serializer.writeKeyValue(writer, "minimum", getMinimum());
+                return;
+            case "pageIncrement":
+                Serializer.writeKeyValue(writer, "pageIncrement", getPageIncrement());
+                return;
+            case "selection":
+                Serializer.writeKeyValue(writer, "selection", getSelection());
+                return;
+            case "textLimit":
+                Serializer.writeKeyValue(writer, "textLimit", getTextLimit());
+                return;
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = Spinner.class)
     public static class SpinnerJson implements Configuration {
 

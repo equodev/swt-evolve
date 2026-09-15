@@ -212,7 +212,6 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public Point getSize() {
-        dirty();
         checkWidget();
         setBounds(x, y, width, height);
         return new Point(width, height);
@@ -372,7 +371,6 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setBounds(int x, int y, int width, int height) {
-        dirty();
         checkWidget();
         boolean samePosition = this.x == x && this.y == y;
         boolean sameExtent = this.width == width && this.height == height;
@@ -442,9 +440,6 @@ public class DartCaret extends DartWidget implements ICaret {
     public void setFont(Font font) {
         font = GraphicsUtils.copyFont(font);
         checkWidget();
-        if (!java.util.Objects.equals(this.font, font)) {
-            dirty();
-        }
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -471,9 +466,6 @@ public class DartCaret extends DartWidget implements ICaret {
     public void setImage(Image image) {
         image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
-        if (!java.util.Objects.equals(this.image, image)) {
-            dirty();
-        }
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -502,7 +494,6 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setLocation(int x, int y) {
-        dirty();
         checkWidget();
         if (this.x == x && this.y == y && isCurrentCaret())
             return;
@@ -552,7 +543,6 @@ public class DartCaret extends DartWidget implements ICaret {
      * </ul>
      */
     public void setSize(int width, int height) {
-        dirty();
         checkWidget();
         if (this.width == width && this.height == height && isCurrentCaret())
             return;
@@ -601,9 +591,6 @@ public class DartCaret extends DartWidget implements ICaret {
      */
     public void setVisible(boolean visible) {
         checkWidget();
-        if (!java.util.Objects.equals(this.isVisible, visible)) {
-            dirty();
-        }
         if (visible == isVisible)
             return;
         isVisible = visible;

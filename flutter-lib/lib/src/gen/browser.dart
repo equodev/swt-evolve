@@ -11,6 +11,7 @@ import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
+import '../gen/widget.dart';
 import '../impl/browser_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
@@ -80,7 +81,36 @@ class VBrowser extends VComposite {
   String? text;
   String? url;
 
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VBrowser) {
+      javascriptEnabled = other.javascriptEnabled;
+      text = other.text;
+      url = other.url;
+      functionNames = other.functionNames;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'javascriptEnabled':
+        javascriptEnabled = json['javascriptEnabled'] as bool?;
+      case 'text':
+        text = json['text'] as String?;
+      case 'url':
+        url = json['url'] as String?;
+      case 'functionNames':
+        functionNames = (json['functionNames'] as List<dynamic>?)
+            ?.map((e) => e as String)
+            .toList();
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
   factory VBrowser.fromJson(Map<String, dynamic> json) =>
-      _$VBrowserFromJson(json);
+      _$VBrowserFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VBrowserToJson(this);
 }

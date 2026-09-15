@@ -10,6 +10,7 @@ import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
+import '../gen/widget.dart';
 import '../impl/sashform_evolve.dart';
 import 'widgets.dart';
 
@@ -33,7 +34,43 @@ class VSashForm extends VComposite {
   int? sashWidth;
   List<int>? weights;
 
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VSashForm) {
+      maximizedControl = other.maximizedControl;
+      sashWidth = other.sashWidth;
+      weights = other.weights;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'maximizedControl':
+        maximizedControl = json['maximizedControl'] == null
+            ? null
+            : VControl.fromJson(
+                json['maximizedControl'] as Map<String, dynamic>,
+              );
+      case 'sashWidth':
+        sashWidth = (json['sashWidth'] as num?)?.toInt();
+      case 'weights':
+        weights = (json['weights'] as List<dynamic>?)
+            ?.map((e) => (e as num).toInt())
+            .toList();
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
+  @override
+  void adoptChildren(VWidget Function(VWidget) adopt) {
+    super.adoptChildren(adopt);
+    maximizedControl = VWidget.adoptOne(maximizedControl, adopt);
+  }
+
   factory VSashForm.fromJson(Map<String, dynamic> json) =>
-      _$VSashFormFromJson(json);
+      _$VSashFormFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VSashFormToJson(this);
 }

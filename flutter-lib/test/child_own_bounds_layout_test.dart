@@ -22,6 +22,8 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/widget.dart';
 
+import 'delivery/support/deliver.dart';
+
 VRectangle _rect(int x, int y, int width, int height) => VRectangle()
   ..x = x
   ..y = y
@@ -64,9 +66,7 @@ void main() {
     // Java lays the example out and the child's own state channel delivers its real bounds. No
     // parent payload follows (that is the failure being reproduced), so this update is all Flutter
     // gets.
-    final childState = tester.state(find.byType(CanvasSwt<VCanvas>)) as WidgetSwtState;
-    // ignore: invalid_use_of_protected_member
-    childState.setValue(_canvas(933297292, _rect(5, 5, 960, 816)));
+    await deliverWhole(_canvas(933297292, _rect(5, 5, 960, 816))..seq = 2);
     await tester.pumpAndSettle();
 
     expect(tester.getSize(find.byType(CanvasSwt<VCanvas>)), const Size(960, 816),

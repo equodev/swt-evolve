@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/v_registry.dart';
+import '../gen/widget.dart';
 import '../impl/gc_evolve.dart';
 import 'event.dart';
 import 'gc.dart';
@@ -28,37 +30,73 @@ abstract class WidgetSwt<V extends VWidget> extends StatefulWidget {
 
 abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
     extends State<T> {
-  late V state;
+  /// Set only for an impl driven by hand rather than mounted in the tree - a row
+  /// rendered by its table, which has no channel of its own to read from.
+  V? _override;
+
+  /// The widget's state, read from where it lives rather than stored here.
+  ///
+  /// A parent passes its own copy of every child down, and that copy is whatever Java
+  /// last told the *parent* - older than anything the child has since been told
+  /// directly. Reading through the registry makes the passed value carry identity only:
+  /// which widget this is, never what it holds. A parent rebuilding, by update or by
+  /// remount, then has nothing stale to hand over.
+  V get state =>
+      _override ??
+      (VRegistry.instance.valueOn(_onChangeChannel ?? '') as V?) ??
+      (widget.value as V);
+
+  set state(V value) => _override = value;
 
   // GC support - any widget can have a GC overlay
   VGC? gcOverlay;
   final GlobalKey<GCImpl> gcOverlayKey = GlobalKey<GCImpl>();
   GlobalKey? widgetBoundaryKey;
 
-  Object? _onChangeToken;
   String? _onChangeChannel;
 
   @override
   void initState() {
     super.initState();
-    state = widget.value as V;
-    _subscribeToState();
+    _register();
   }
 
-  /// Remembers the exact channel name: [state] is replaced in didUpdateWidget, so
-  /// deriving it a second time can name a different channel than the one subscribed.
-  void _subscribeToState() {
-    _onChangeChannel = "${state.swt}/${state.id}";
-    _onChangeToken = EquoCommService.on(_onChangeChannel!, _onChange);
+  /// Puts this widget's value where values live, and asks to be told when it changes.
+  ///
+  /// The channel is remembered rather than derived on demand: [state] resolves through
+  /// it, so deriving it from the state would be circular.
+  void _register() {
+    final value = widget.value as V;
+    _onChangeChannel = VRegistry.channelOf(value);
+    VRegistry.instance.register(value);
+    VRegistry.instance.watch(_onChangeChannel!, _onRegistryChanged);
   }
 
+  /// The value this widget renders changed. Nothing is adopted here - the registry has
+  /// already applied it - so this hands the new state to [setValue], which is still
+  /// where an impl hooks an arriving value.
+  void _onRegistryChanged(VChange change) {
+    if (!mounted) return;
+    _lastChange = change;
+    setValue(state);
+  }
+
+  VChange? _lastChange;
+
+  /// What the delivery currently being handled did: the value it replaced, or the
+  /// properties it named. Read by an impl that has to tell what actually moved -
+  /// null outside a delivery, when nothing is being handled.
+  VChange? get lastChange => _lastChange;
+
+  /// Stops listening. Deliberately does not evict: the widget is going away, its state
+  /// is not. A hidden subtree keeps receiving while nothing renders it, which is the
+  /// whole reason the value does not live here.
   void _unsubscribeFromState() {
     final channel = _onChangeChannel;
     if (channel != null) {
-      EquoCommService.remove(channel, _onChangeToken);
+      VRegistry.instance.unwatch(channel, _onRegistryChanged);
     }
     _onChangeChannel = null;
-    _onChangeToken = null;
   }
 
   /// Called by GCSwt when it receives state from Java.
@@ -99,18 +137,15 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   void didUpdateWidget(covariant T oldWidget) {
     super.didUpdateWidget(oldWidget);
     final incoming = widget.value as V;
-    // An ancestor rebuild hands down the copy nested in the ancestor's payload, which
-    // can be older than one already applied from this widget's own channel. Flutter
-    // rebuilds top-down, so adopting it unconditionally rewinds the widget one update.
-    if (incoming.id != state.id || incoming.seq >= state.seq) {
-      state = incoming;
-    }
-    // The state was just replaced; keeping the old subscription would leave the widget
-    // listening on a dead channel and silently not repainting.
-    final channel = "${state.swt}/${state.id}";
+    // Nothing is adopted from the parent any more. The value it hands down is its own
+    // copy of this widget, as of whenever Java last described the parent - which is why
+    // a rebuild used to be able to push a child backwards. Only the identity is taken.
+    final channel = VRegistry.channelOf(incoming);
     if (channel != _onChangeChannel) {
       _unsubscribeFromState();
-      _subscribeToState();
+      _onChangeChannel = channel;
+      VRegistry.instance.register(incoming);
+      VRegistry.instance.watch(channel, _onRegistryChanged);
     }
     extraSetState();
   }
@@ -121,44 +156,18 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
     super.dispose();
   }
 
+  /// An arriving value, already the widget's state by the time this runs: the registry
+  /// applied it before telling anyone. This stays the hook an impl overrides, and the
+  /// one place the rebuild happens.
   @protected
   void setValue(V value) {
     if (!mounted) return;
-    // Skip redundant rebuilds: identical state still regenerates Flutter Web
-    // semantics nodes and can detach E2E locators mid-action. That is purely an E2E
-    // concern, and the JSON compare in _isSameValue is too expensive to run on every
-    // update — so only pay it when the semantics tree is actually on (test mode /
-    // screen reader). Normal rendering rebuilds unconditionally, as before.
-    if (WidgetsBinding.instance.semanticsEnabled &&
-        _isSameValue(state, value)) {
-      // Skipping the rebuild must not skip the stamp: the state keeps the seq of the
-      // update before this one, and didUpdateWidget then reads an older ancestor
-      // snapshot as the newer one and rewinds the value this widget already holds.
-      if (value.seq > state.seq) state.seq = value.seq;
-      return;
-    }
     setState(() {
-      state = value;
       extraSetState();
     });
   }
 
-  /// Structural equality between two value objects via their JSON form.
-  /// Falls back to "not equal" (i.e. rebuild) if either can't be serialized,
-  /// so we never drop a legitimate update.
-  bool _isSameValue(V a, V b) {
-    if (identical(a, b)) return true;
-    try {
-      return jsonEncode(a.toJson()) == jsonEncode(b.toJson());
-    } catch (_) {
-      return false;
-    }
-  }
-
-  void _onChange(V payload) {
-    setValue(payload);
-  }
-
+  /// An impl's chance to react to the state it is about to render.
   void extraSetState() {}
 
   void onOp(String op, void Function(dynamic) handler) {
@@ -219,9 +228,75 @@ class VWidget {
 
   /// Write stamp from the Java serializer; a lower value is an older snapshot.
   /// Out of toJson so it never affects value equality or round-trips.
-  @JsonKey(includeToJson: false, defaultValue: 0)
+  @JsonKey(name: '_s', includeToJson: false, defaultValue: 0)
   int seq = 0;
+
+  /// True when this object arrived as a name rather than as a description: the sender said
+  /// which widget it is and nothing about what it holds, because the widget was already
+  /// delivered and had not changed. Read by the registry, which answers with the object it
+  /// already holds; nothing here is state, so copying any of it over that would be a loss.
+  ///
+  /// Out of the JSON both ways: it is a fact about one message, not about the widget.
+  @JsonKey(includeToJson: false, includeFromJson: false)
+  bool isReference = false;
+  @JsonKey(defaultValue: 0)
   int style;
+
+  /// Applies a partial update: the properties it names replace what is held here, in place.
+  ///
+  /// Costs what the update names, not what the widget holds. Reading the whole value back
+  /// to write one field made a change on a widget with many children cost the children.
+  void mergeJson(Map<String, dynamic> json) {
+    for (final key in json.keys) {
+      readProperty(key, json);
+    }
+  }
+
+  /// Reads one named property out of [json] into this object.
+  ///
+  /// A key this class does not declare goes up to the class that does; one nothing declares
+  /// - a protocol key, or a property this build has never heard of - is ignored.
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'swt':
+        swt = json['swt'] as String;
+      case 'id':
+        id = (json['id'] as num).toInt();
+      case 'style':
+        style = (json['style'] as num).toInt();
+    }
+  }
+
+  /// Copies the properties this class declares from [other].
+  void copyFrom(VWidget other) {
+    style = other.style;
+  }
+
+  /// Hands every widget this one references to [adopt], keeping whatever comes back.
+  ///
+  /// A value that arrives inside another - a child in a composite, an item in a table -
+  /// describes a widget that exists in its own right and may already be held elsewhere,
+  /// possibly in a newer state than the copy that just arrived. Substituting what comes
+  /// back is what makes a parent's child list a list of the actual widgets rather than of
+  /// snapshots taken whenever the parent was last written.
+  void adoptChildren(VWidget Function(VWidget) adopt) {}
+
+  /// [adoptChildren] for a single reference. Returns what to keep.
+  static T adoptOne<T extends VWidget?>(
+    T value,
+    VWidget Function(VWidget) adopt,
+  ) => value == null ? value : adopt(value) as T;
+
+  /// [adoptChildren] for a list of them, substituted in place.
+  static void adoptEach<T extends VWidget>(
+    List<T>? values,
+    VWidget Function(VWidget) adopt,
+  ) {
+    if (values == null) return;
+    for (var i = 0; i < values.length; i++) {
+      values[i] = adopt(values[i]) as T;
+    }
+  }
 
   factory VWidget.fromJson(Map<String, dynamic> json) => mapWidgetValue(json);
   Map<String, dynamic> toJson() =>

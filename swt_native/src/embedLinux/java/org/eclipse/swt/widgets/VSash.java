@@ -17,6 +17,13 @@ public class VSash extends VControl {
         super(impl);
     }
 
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = Sash.class)
     public static class SashJson implements Configuration {
 

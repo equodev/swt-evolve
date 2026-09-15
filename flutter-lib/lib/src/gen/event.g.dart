@@ -13,47 +13,24 @@ VEvent _$VEventFromJson(Map<String, dynamic> json) => VEvent()
   ..currentDataTypeId = (json['currentDataTypeId'] as num?)?.toInt()
   ..detail = (json['detail'] as num?)?.toInt()
   ..doit = json['doit'] as bool?
-  ..dragImage = json['dragImage'] == null
-      ? null
-      : VImage.fromJson(json['dragImage'] as Map<String, dynamic>)
   ..end = (json['end'] as num?)?.toInt()
   ..feedback = (json['feedback'] as num?)?.toInt()
-  ..gc = json['gc'] == null
-      ? null
-      : VGC.fromJson(json['gc'] as Map<String, dynamic>)
   ..height = (json['height'] as num?)?.toInt()
   ..index = (json['index'] as num?)?.toInt()
-  ..item = json['item'] == null
-      ? null
-      : VWidget.fromJson(json['item'] as Map<String, dynamic>)
   ..itemId = (json['itemId'] as num?)?.toInt()
   ..keyCode = (json['keyCode'] as num?)?.toInt()
   ..keyLocation = (json['keyLocation'] as num?)?.toInt()
-  ..magnification = (json['magnification'] as num?)?.toDouble()
-  ..operations = (json['operations'] as num?)?.toInt()
-  ..rotation = (json['rotation'] as num?)?.toDouble()
   ..segments = (json['segments'] as List<dynamic>?)
-      ?.map((e) => (e as num).toInt())
-      .toList()
-  ..segmentsChars = (json['segmentsChars'] as List<dynamic>?)
       ?.map((e) => (e as num).toInt())
       .toList()
   ..start = (json['start'] as num?)?.toInt()
   ..stateMask = (json['stateMask'] as num?)?.toInt()
   ..text = json['text'] as String?
   ..time = (json['time'] as num?)?.toInt()
-  ..touches = (json['touches'] as List<dynamic>?)
-      ?.map((e) => VTouch.fromJson(e as Map<String, dynamic>))
-      .toList()
   ..type = (json['type'] as num?)?.toInt()
-  ..widget = json['widget'] == null
-      ? null
-      : VWidget.fromJson(json['widget'] as Map<String, dynamic>)
   ..width = (json['width'] as num?)?.toInt()
   ..x = (json['x'] as num?)?.toInt()
-  ..xDirection = (json['xDirection'] as num?)?.toInt()
-  ..y = (json['y'] as num?)?.toInt()
-  ..yDirection = (json['yDirection'] as num?)?.toInt();
+  ..y = (json['y'] as num?)?.toInt();
 
 Map<String, dynamic> _$VEventToJson(VEvent instance) => <String, dynamic>{
   'button': ?instance.button,
@@ -62,31 +39,20 @@ Map<String, dynamic> _$VEventToJson(VEvent instance) => <String, dynamic>{
   'currentDataTypeId': ?instance.currentDataTypeId,
   'detail': ?instance.detail,
   'doit': ?instance.doit,
-  'dragImage': ?instance.dragImage,
   'end': ?instance.end,
   'feedback': ?instance.feedback,
-  'gc': ?instance.gc,
   'height': ?instance.height,
   'index': ?instance.index,
-  'item': ?instance.item,
   'itemId': ?instance.itemId,
   'keyCode': ?instance.keyCode,
   'keyLocation': ?instance.keyLocation,
-  'magnification': ?instance.magnification,
-  'operations': ?instance.operations,
-  'rotation': ?instance.rotation,
   'segments': ?instance.segments,
-  'segmentsChars': ?instance.segmentsChars,
   'start': ?instance.start,
   'stateMask': ?instance.stateMask,
   'text': ?instance.text,
   'time': ?instance.time,
-  'touches': ?instance.touches,
   'type': ?instance.type,
-  'widget': ?instance.widget,
   'width': ?instance.width,
   'x': ?instance.x,
-  'xDirection': ?instance.xDirection,
   'y': ?instance.y,
-  'yDirection': ?instance.yDirection,
 };

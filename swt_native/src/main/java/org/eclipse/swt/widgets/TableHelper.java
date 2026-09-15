@@ -18,7 +18,7 @@ public class TableHelper {
         for (int i = 0; i < itemCount; i++) {
             table.selection[i] = i;
         }
-        table.dirty();
+        table.getValue().markDirty(VTable.SELECTION);
     }
 
     /**
@@ -140,7 +140,6 @@ public class TableHelper {
                 TableItem item = items[rowIndex];
                 if (item != null) {
                     item.setText(columnIndex, event.text);
-                    table.dirty();
                 }
             }
         }
@@ -165,7 +164,7 @@ public class TableHelper {
         if (found && count < currentSelection.length) {
             int[] finalSelection = new int[count];
             System.arraycopy(newSelection, 0, finalSelection, 0, count);
-            table.dirty();
+            table.getValue().markDirty(VTable.SELECTION);
             table.selection = finalSelection;
         }
     }
@@ -186,7 +185,7 @@ public class TableHelper {
         if (count < currentSelection.length) {
             int[] finalSelection = new int[count];
             System.arraycopy(newSelection, 0, finalSelection, 0, count);
-            table.dirty();
+            table.getValue().markDirty(VTable.SELECTION);
             table.selection = finalSelection;
         }
     }
@@ -217,7 +216,7 @@ public class TableHelper {
         if (count < currentSelection.length) {
             int[] finalSelection = new int[count];
             System.arraycopy(newSelection, 0, finalSelection, 0, count);
-            table.dirty();
+            table.getValue().markDirty(VTable.SELECTION);
             table.selection = finalSelection;
         }
     }
@@ -237,7 +236,7 @@ public class TableHelper {
         }
 
         if ((style & SWT.SINGLE) != 0) {
-            table.dirty();
+            table.getValue().markDirty(VTable.SELECTION);
             table.selection = new int[] { index };
         } else {
             int[] currentSelection = table.selection != null ? table.selection : new int[0];
@@ -253,7 +252,7 @@ public class TableHelper {
             newSelection[currentSelection.length] = index;
             Arrays.sort(newSelection);
 
-            table.dirty();
+            table.getValue().markDirty(VTable.SELECTION);
             table.selection = newSelection;
         }
     }
@@ -268,7 +267,7 @@ public class TableHelper {
         end = Math.min(end, itemCount - 1);
 
         if ((style & SWT.SINGLE) != 0) {
-            table.dirty();
+            table.getValue().markDirty(VTable.SELECTION);
             table.selection = new int[] { start };
         } else {
             int[] currentSelection = table.selection != null ? table.selection : new int[0];
@@ -293,7 +292,7 @@ public class TableHelper {
             int[] finalSelection = new int[newCount];
             System.arraycopy(newSelection, 0, finalSelection, 0, newCount);
 
-            table.dirty();
+            table.getValue().markDirty(VTable.SELECTION);
             table.selection = finalSelection;
         }
     }
@@ -342,7 +341,7 @@ public class TableHelper {
             }
 
             if (!java.util.Objects.equals(table.selection, finalSelection)) {
-                table.dirty();
+                table.getValue().markDirty(VTable.SELECTION);
             }
             table.selection = finalSelection;
         }
@@ -399,7 +398,7 @@ public class TableHelper {
         if (fix) {
             int[] newSelection = new int[newCount];
             System.arraycopy(selection, 0, newSelection, 0, newCount);
-            table.dirty();
+            table.getValue().markDirty(VTable.SELECTION);
             table.selection = newSelection;
         }
     }
@@ -425,7 +424,7 @@ public class TableHelper {
         if (fix) {
             int[] newSelection = new int[newCount];
             System.arraycopy(selection, 0, newSelection, 0, newCount);
-            table.dirty();
+            table.getValue().markDirty(VTable.SELECTION);
             table.selection = newSelection;
         }
     }
@@ -651,13 +650,16 @@ public class TableHelper {
 
     public static void setImages(Image[] value, DartTableItem item) {
         item.images = value;
+        item.getValue().markDirty(VTableItem.IMAGES);
         if (value != null && value.length > 0) {
             item.image = value[0];
+            item.getValue().markDirty(VTableItem.IMAGE);
         }
     }
 
     public static boolean setImage(DartTableItem item, int index, Image image, boolean initializeFromPrimaryImage, boolean[] drawTextOut) {
-        item.dirty();
+        item.getValue().markDirty(VTableItem.IMAGES);
+        item.getValue().markDirty(VTableItem.IMAGE);
         item.checkWidget();
         if (image != null && image.isDisposed()) {
             item.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -736,6 +738,6 @@ public class TableHelper {
             table.loadingVirtualData = false;
         }
         table.virtualWindowEnd = end;
-        if (loadedAny) table.dirty();
+        if (loadedAny) table.getValue().markDirty(VTable.ITEMS);
     }
 }

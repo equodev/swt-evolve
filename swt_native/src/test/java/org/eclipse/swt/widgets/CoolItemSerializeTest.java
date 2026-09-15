@@ -28,9 +28,14 @@ class CoolItemSerializeTest extends SerializeTestBase {
                .containsEntry("swt", "CoolItem")
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("control").equalsTo(w.getControl(), orAbsentIfNull));
-        assertJ.satisfies(node("minimumSize").equalsTo(value(w).getMinimumSize(), orAbsentIfNull));
         assertJ.satisfies(node("preferredSize").equalsTo(value(w).getPreferredSize(), orAbsentIfNull));
         assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
+    }
+
+    @Test
+    void should_name_every_change_CoolItem() {
+        CoolItem w = new CoolItem(coolBar(), SWT.NONE);
+        assertNamesEveryChange(w);
     }
 
     VCoolItem value(CoolItem w) {

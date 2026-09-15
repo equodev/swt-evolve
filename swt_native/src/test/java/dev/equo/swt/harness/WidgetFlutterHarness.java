@@ -139,6 +139,23 @@ public class WidgetFlutterHarness extends FlutterHarness {
         return awaitFuture(f, QUERY_TIMEOUT_MS, "query for id " + w.hashCode());
     }
 
+    /**
+     * Whether Flutter currently lets {@code w} be reached by a pointer or by focus traversal where
+     * it is rendered — SWT's {@code isEnabled()} (own flag AND every ancestor's) as the user meets
+     * it.
+     *
+     * <p>Read from the render tree, not from a property: a disabled control is wrapped in
+     * {@code ExcludeFocus} + {@code IgnorePointer}, and one under a disabled ancestor is covered by
+     * that ancestor's pair, so this reports the enforcement rather than the flag that decided it
+     * (see {@code flutter-lib/lib/test_harness.dart}).
+     */
+    @SuppressWarnings("unchecked")
+    public boolean renderedTakesInput(Widget w) {
+        Map<String, Object> resp = queryState(w);
+        Map<String, Object> render = (Map<String, Object>) resp.get("render");
+        return render != null && Boolean.TRUE.equals(render.get("takesInput"));
+    }
+
     /** Convenience: the rendered selection of a Check/Radio/Toggle Button (false if absent/null). */
     @SuppressWarnings("unchecked")
     public boolean renderedSelection(Button b) {

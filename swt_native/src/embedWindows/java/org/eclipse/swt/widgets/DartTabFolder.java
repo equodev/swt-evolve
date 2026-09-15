@@ -162,6 +162,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
             items = newItems;
         }
         items[index] = item;
+        getValue().markDirty(VTabFolder.ITEMS);
     }
 
     @Override
@@ -172,9 +173,11 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
     void createWidget() {
         super.createWidget();
         items = new TabItem[4];
+        getValue().markDirty(VTabFolder.ITEMS);
     }
 
     void destroyItem(TabItem item) {
+        getValue().markDirty(VTabFolder.ITEMS);
     }
 
     @Override
@@ -490,7 +493,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
     public void setSelection(TabItem[] items) {
         TabItem[] newValue = items;
         if (!java.util.Objects.equals(this.selection, newValue)) {
-            dirty();
+            getValue().markDirty(VTabFolder.SELECTION);
         }
         checkWidget();
         if (items == null)
@@ -542,7 +545,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
         } else {
             this.selection = new TabItem[] { items[index] };
         }
-        dirty();
+        getValue().markDirty(VTabFolder.SELECTION);
     }
 
     @Override

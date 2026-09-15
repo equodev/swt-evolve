@@ -44,6 +44,33 @@ public class VColor extends VResource {
     public void setRed(int value) {
     }
 
+    public static final String ALPHA = "alpha";
+
+    public static final String BLUE = "blue";
+
+    public static final String GREEN = "green";
+
+    public static final String RED = "red";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "alpha":
+                Serializer.writeKeyValue(writer, "alpha", getAlpha());
+                return;
+            case "blue":
+                Serializer.writeKeyValue(writer, "blue", getBlue());
+                return;
+            case "green":
+                Serializer.writeKeyValue(writer, "green", getGreen());
+                return;
+            case "red":
+                Serializer.writeKeyValue(writer, "red", getRed());
+                return;
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = Color.class)
     public static class ColorJson implements Configuration {
 

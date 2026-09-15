@@ -23,12 +23,14 @@ part 'test_harness_actions.dart';
 /// Protocol (JSON):
 ///   request  on `evolve.test.query`         : { "queryId": int, "targetId": int }
 ///   response on `evolve.test.queryResponse`  : { "queryId": int, "found": bool,
-///                                                "state": the widget's `V*.toJson()` or null }
+///                                                "state": the widget's `V*.toJson()` or null,
+///                                                "render": render-tree facts or null }
 ///
 /// `targetId` is the SWT widget id (Java `widget.hashCode()` == `V*.id`). The
 /// returned `state` is exactly what the widget's [WidgetSwtState] currently
 /// holds — i.e. what Flutter would paint — so a test can assert that a state
-/// pushed from Java actually reached and updated the rendered widget.
+/// pushed from Java actually reached and updated the rendered widget. `render`
+/// reports what only the rendered tree can answer; see [_renderFacts].
 void registerTestQueryChannel() {
   EquoCommService.onRaw("evolve.test.query", (dynamic req) {
     final map = (req as Map).cast<String, dynamic>();
@@ -39,6 +41,7 @@ void registerTestQueryChannel() {
       'queryId': queryId,
       'found': vstate != null,
       'state': vstate,
+      'render': _renderFacts(targetId),
     });
   });
   // Frame barrier: ack once the next frame has been built + painted, so a test can wait for pushed
@@ -150,6 +153,90 @@ List<Map<String, dynamic>> _itemsOf(Map<String, dynamic> node) {
 void scheduleFrameSync(void Function() onSynced) {
   WidgetsBinding.instance.addPostFrameCallback((_) => onSynced());
   WidgetsBinding.instance.scheduleFrame();
+}
+
+/// What only the rendered tree can answer about [targetId], or null when it is not mounted.
+///
+/// Keys:
+///   `takesInput` — whether the widget can be reached by a pointer or by focus traversal where it
+///     stands. This is the enforcement itself, not the flag behind it: a disabled control is
+///     wrapped in `ExcludeFocus` + `IgnorePointer` (`ControlImpl.blockWhenDisabled`), and one under
+///     a disabled ancestor is covered by that ancestor's pair. So it reports SWT's `isEnabled()` as
+///     the user meets it, without asking the code under test what it computed. A widget can still
+///     decline a gesture on its own (an Item's `build()` drops its `onTap`); that is not a refusal
+///     by the tree and is not reported here — read the widget's own `enabled` off `state` for it.
+Map<String, dynamic>? _renderFacts(int targetId) {
+  final bool? takesInput = _takesInput(targetId);
+  if (takesInput == null) return null;
+  return {'takesInput': takesInput};
+}
+
+/// True when nothing between the root and [targetId]'s rendered position refuses pointers or
+/// focus, null when it is not mounted.
+bool? _takesInput(int targetId) {
+  final root = WidgetsBinding.instance.rootElement;
+  if (root == null) return null;
+  // The widget's own element is where it stands. An Item drawn inline by its owner's build() has
+  // none, and stands where its owner does — so that is the fallback, not the first choice.
+  return _takesInputWhere(root, (json) => json['id'] == targetId) ??
+      _takesInputWhere(root, (json) => _findItemById(json, targetId) != null);
+}
+
+bool _refusesInput(Widget w) =>
+    (w is IgnorePointer && w.ignoring) || (w is ExcludeFocus && w.excluding);
+
+/// Walks down from [root] to the first [WidgetSwtState] whose serialized state satisfies [matches],
+/// answering whether input reaches it: no refusing wrapper on the way down, and none in the
+/// wrapper chain the widget puts above its own content.
+bool? _takesInputWhere(
+    Element root, bool Function(Map<String, dynamic> json) matches) {
+  bool? answer;
+
+  void visit(Element el, bool refused) {
+    if (answer != null) return;
+    if (_refusesInput(el.widget)) refused = true;
+    if (el is StatefulElement && el.state is WidgetSwtState) {
+      final dynamic vstate = (el.state as WidgetSwtState).state;
+      if (vstate != null && matches(vstate.toJson() as Map<String, dynamic>)) {
+        answer = !refused && !_ownWrapperRefuses(el);
+        return;
+      }
+    }
+    final bool inherited = refused;
+    el.visitChildren((child) => visit(child, inherited));
+  }
+
+  visit(root, false);
+  return answer;
+}
+
+/// Whether the widget's own build() blocked itself. Only the single-child wrapper chain directly
+/// under [el] is inspected: `blockWhenDisabled` is applied at the top of every build path that uses
+/// it, while anything past the first branching widget is content — including sibling overlays that
+/// legitimately ignore pointers.
+bool _ownWrapperRefuses(Element el) {
+  for (Element? e = _onlyChildOf(el); e != null; e = _onlyChildOf(e)) {
+    if (e is StatefulElement && e.state is WidgetSwtState) return false;
+    if (_refusesInput(e.widget)) return true;
+  }
+  return false;
+}
+
+/// [el]'s single child, or null when it has none or branches.
+Element? _onlyChildOf(Element el) {
+  final List<Element> children = [];
+  el.visitChildren(children.add);
+  return children.length == 1 ? children.first : null;
+}
+
+/// The item with [targetId] anywhere under [node]'s `items`, or null.
+Map<String, dynamic>? _findItemById(Map<String, dynamic> node, int targetId) {
+  for (final item in _itemsOf(node)) {
+    if (item['id'] == targetId) return item;
+    final Map<String, dynamic>? nested = _findItemById(item, targetId);
+    if (nested != null) return nested;
+  }
+  return null;
 }
 
 /// Walk the live element tree and return the serialized (`toJson`) state of the

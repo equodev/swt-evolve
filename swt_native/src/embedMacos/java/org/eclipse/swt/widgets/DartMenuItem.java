@@ -628,7 +628,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     public void setAccelerator(int accelerator) {
         checkWidget();
         if (!java.util.Objects.equals(this.accelerator, accelerator)) {
-            dirty();
+            getValue().markDirty(VMenuItem.ACCELERATOR);
         }
         if (this.accelerator == accelerator)
             return;
@@ -656,7 +656,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
         if (!java.util.Objects.equals(this.enabled, newValue)) {
-            dirty();
+            getValue().markDirty(VMenuItem.ENABLED);
         }
         checkWidget();
         if (enabled) {
@@ -682,9 +682,6 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      */
     public void setID(int id) {
         int newValue = id;
-        if (!java.util.Objects.equals(this.ID, newValue)) {
-            dirty();
-        }
         checkWidget();
         this.ID = newValue;
     }
@@ -743,7 +740,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     public void setMenu(Menu menu) {
         checkWidget();
         if (!java.util.Objects.equals(this.menu, menu)) {
-            dirty();
+            getValue().markDirty(VMenuItem.MENU);
         }
         /* Check to make sure the new menu is valid */
         if ((getApi().style & SWT.CASCADE) == 0) {
@@ -804,7 +801,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     public void setSelection(boolean selected) {
         boolean newValue = selected;
         if (!java.util.Objects.equals(this.selection, newValue)) {
-            dirty();
+            getValue().markDirty(VMenuItem.SELECTION);
         }
         checkWidget();
         if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
@@ -895,7 +892,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     public void setToolTipText(String toolTip) {
         checkWidget();
         if (!java.util.Objects.equals(this.toolTipText, toolTip)) {
-            dirty();
+            getValue().markDirty(VMenuItem.TOOL_TIP_TEXT);
         }
         if (toolTip == null && toolTipText != null) {
             toolTipText = null;

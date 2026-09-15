@@ -28,9 +28,7 @@ class CTabFolderSerializeTest extends SerializeTestBase {
                .containsEntry("swt", "CTabFolder")
                .containsEntry("toolTipText", json(w.getToolTipText()))
                .containsEntry("style", w.getStyle());
-        assertJ.satisfies(node("MRUVisible").equalsTo(w.getMRUVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("borderVisible").equalsTo(w.getBorderVisible(), orAbsentIfFalse));
-        assertJ.satisfies(node("dirtyIndicatorStyle").equalsTo(w.getDirtyIndicatorStyle(), orAbsentIfFalse));
         assertJ.satisfies(node("highlightEnabled").equalsTo(w.getHighlightEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("maximizeVisible").equalsTo(w.getMaximizeVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("maximized").equalsTo(w.getMaximized(), orAbsentIfFalse));
@@ -43,31 +41,27 @@ class CTabFolderSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("selectionBarThickness").equalsTo(value(w).getSelectionBarThickness(), orAbsentIf0));
         assertJ.satisfies(node("selectionBgImage").equalsTo(value(w).getSelectionBgImage(), orAbsentIfNull));
         assertJ.satisfies(node("selectionForeground").equalsTo(w.getSelectionForeground(), orAbsentIfNull));
-        assertJ.satisfies(node("simple").equalsTo(w.getSimple(), orAbsentIfFalse));
         assertJ.satisfies(node("single").equalsTo(w.getSingle(), orAbsentIfFalse));
-        assertJ.satisfies(node("tabHeight").equalsTo(w.getTabHeight(), orAbsentIf0));
         assertJ.satisfies(node("tabPosition").equalsTo(w.getTabPosition(), orAbsentIf0));
         assertJ.satisfies(node("topRight").equalsTo(w.getTopRight(), orAbsentIfNull));
         assertJ.satisfies(node("unselectedCloseVisible").equalsTo(w.getUnselectedCloseVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("unselectedImageVisible").equalsTo(w.getUnselectedImageVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
-        assertJ.satisfies(node("layoutDeferred").equalsTo(w.getLayoutDeferred(), orAbsentIfFalse));
-        assertJ.satisfies(node("scrollbarsMode").equalsTo(w.getScrollbarsMode(), orAbsentIf0));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));
         assertJ.satisfies(node("bounds").equalsTo(value(w).getBounds(), orAbsentIfNull));
-        assertJ.satisfies(node("capture").equalsTo(value(w).getCapture(), orAbsentIfFalse));
         assertJ.satisfies(node("cursor").equalsTo(w.getCursor(), orAbsentIfNull));
-        assertJ.satisfies(node("dragDetect").equalsTo(w.getDragDetect(), orAbsentIfFalse));
         assertJ.satisfies(node("enabled").equalsTo(w.getEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("orientation").equalsTo(w.getOrientation(), orAbsentIf0));
-        assertJ.satisfies(node("redraw").equalsTo(value(w).getRedraw(), orAbsentIfFalse));
-        assertJ.satisfies(node("textDirection").equalsTo(w.getTextDirection(), orAbsentIf0));
-        assertJ.satisfies(node("touchEnabled").equalsTo(w.getTouchEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
+    }
+
+    @Test
+    void should_name_every_change_CTabFolder() {
+        CTabFolder w = new CTabFolder(swtShell(), SWT.NONE);
+        assertNamesEveryChange(w);
     }
 
     VCTabFolder value(CTabFolder w) {

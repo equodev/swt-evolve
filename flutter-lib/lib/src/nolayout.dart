@@ -3,10 +3,11 @@ import '../main.dart';
 import 'gen/composite.dart';
 import 'gen/control.dart';
 import 'gen/rectangle.dart';
-import 'live_bounds.dart';
+import 'comm/v_registry.dart';
 import 'gen/widget.dart';
 import 'gen/widgets.dart';
 import 'gen/widgets.dart' as gen;
+import 'impl/utils/widget_utils.dart';
 import 'theme/theme_extensions/composite_theme_extension.dart';
 import 'theme/theme_extensions/toolitem_theme_extension.dart';
 
@@ -42,9 +43,15 @@ class NoLayout extends StatelessWidget {
     final theme = isPanelLayout
         ? Theme.of(context).extension<CompositeThemeExtension>()!
         : null;
-    return CustomMultiChildLayout(
+    // Where a composite's children stand. A container whose build() never reaches
+    // ControlImpl.blockWhenDisabled (Group lays its children out itself) would otherwise leave
+    // them reading an enclosing answer that skips the container's own flag.
+    return EnabledScope(
+      enabled: (composite?.enabled ?? true) && EnabledScope.of(context),
+      child: CustomMultiChildLayout(
         delegate: _AbsoluteLayoutDelegate(children, composite,
-            relayout: LiveBounds.relayoutFor(children.map((child) => child.id))),
+            relayout: VRegistry.instance
+                .changesOn(children.map(VRegistry.channelOf))),
         children: [
           for (var child in children.reversed)
             LayoutId(
@@ -57,7 +64,9 @@ class NoLayout extends StatelessWidget {
                   ? _wrapAsPanel(_buildChild(child), theme!)
                   : _clipToBounds(context, _buildChild(child)),
             )
-        ]);
+        ],
+      ),
+    );
   }
 
   /// A control is clipped to its own bounds, which is what SWT does. The hover zoom is a paint-time
@@ -116,20 +125,13 @@ class _AbsoluteLayoutDelegate extends MultiChildLayoutDelegate {
 
   _AbsoluteLayoutDelegate(this.children, this.composite, {super.relayout});
 
-  /// The bounds to lay [child] out at: the parent's own copy, except when that copy is 0x0 and the
-  /// child itself reports otherwise ([LiveBounds]) — a stale copy must not pin a live child at zero
-  /// size. A child that is genuinely 0x0 publishes 0x0 too, so it stays 0x0.
-  VRectangle? _boundsOf(VControl child) {
-    final fromParent = child.bounds;
-    if (fromParent != null && (fromParent.width != 0 || fromParent.height != 0)) {
-      return fromParent;
-    }
-    final ownBounds = LiveBounds.of(child.id);
-    if (ownBounds != null && (ownBounds.width != 0 || ownBounds.height != 0)) {
-      return ownBounds;
-    }
-    return fromParent;
-  }
+  /// The bounds to lay [child] out at.
+  ///
+  /// [child] is the widget itself, not a copy of it: the list this delegate was built from holds
+  /// the objects the registry holds, so what it reads here is whatever that child was last told —
+  /// including by an update the composite never heard about. Keeping up with those is what
+  /// [VRegistry.changesOn] is passed as `relayout` for.
+  VRectangle? _boundsOf(VControl child) => child.bounds;
 
   /// The declared bounds, grown to at least cover every child's own bottom-right
   /// corner. A parent's declared size can understate what it actually needs (e.g.

@@ -16,6 +16,7 @@ public class VTray extends VWidget {
         super(impl);
     }
 
+    @JsonAttribute(ignore = true)
     public TrayItem[] getItems() {
         TrayItem[] values = ((DartTray) impl).items;
         if (values == null)
@@ -28,6 +29,13 @@ public class VTray extends VWidget {
 
     public void setItems(TrayItem[] value) {
         ((DartTray) impl).items = value;
+    }
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = Tray.class)

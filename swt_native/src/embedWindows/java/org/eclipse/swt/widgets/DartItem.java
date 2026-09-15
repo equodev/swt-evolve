@@ -182,7 +182,7 @@ public abstract class DartItem extends DartWidget implements IItem {
         image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
         if (!java.util.Objects.equals(this.image, image)) {
-            dirty();
+            getValue().markDirty(VItem.IMAGE);
         }
         if (this.image == image)
             return;
@@ -210,7 +210,7 @@ public abstract class DartItem extends DartWidget implements IItem {
     public void setText(String string) {
         checkWidget();
         if (!java.util.Objects.equals(this.text, string)) {
-            dirty();
+            getValue().markDirty(VItem.TEXT);
         }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);

@@ -9,12 +9,10 @@ part of 'gc.dart';
 VGC _$VGCFromJson(Map<String, dynamic> json) => VGC()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
-  ..seq = (json['seq'] as num?)?.toInt() ?? 0
-  ..style = (json['style'] as num).toInt()
+  ..seq = (json['_s'] as num?)?.toInt() ?? 0
+  ..style = (json['style'] as num?)?.toInt() ?? 0
   ..XORMode = json['XORMode'] as bool?
-  ..advanced = json['advanced'] as bool?
   ..alpha = (json['alpha'] as num?)?.toInt()
-  ..antialias = (json['antialias'] as num?)?.toInt()
   ..background = json['background'] == null
       ? null
       : VColor.fromJson(json['background'] as Map<String, dynamic>)
@@ -37,18 +35,9 @@ VGC _$VGCFromJson(Map<String, dynamic> json) => VGC()
   ..foreground = json['foreground'] == null
       ? null
       : VColor.fromJson(json['foreground'] as Map<String, dynamic>)
-  ..foregroundPattern = json['foregroundPattern'] == null
-      ? null
-      : VPattern.fromJson(json['foregroundPattern'] as Map<String, dynamic>)
-  ..interpolation = (json['interpolation'] as num?)?.toInt()
   ..lineCap = (json['lineCap'] as num?)?.toInt()
-  ..lineDash = (json['lineDash'] as List<dynamic>?)
-      ?.map((e) => (e as num).toInt())
-      .toList()
   ..lineJoin = (json['lineJoin'] as num?)?.toInt()
-  ..lineStyle = (json['lineStyle'] as num?)?.toInt()
   ..lineWidth = (json['lineWidth'] as num?)?.toInt()
-  ..textAntialias = (json['textAntialias'] as num?)?.toInt()
   ..transform = json['transform'] == null
       ? null
       : VTransform.fromJson(json['transform'] as Map<String, dynamic>);
@@ -58,9 +47,7 @@ Map<String, dynamic> _$VGCToJson(VGC instance) => <String, dynamic>{
   'id': instance.id,
   'style': instance.style,
   'XORMode': ?instance.XORMode,
-  'advanced': ?instance.advanced,
   'alpha': ?instance.alpha,
-  'antialias': ?instance.antialias,
   'background': ?instance.background,
   'backgroundPattern': ?instance.backgroundPattern,
   'clipping': ?instance.clipping,
@@ -69,14 +56,9 @@ Map<String, dynamic> _$VGCToJson(VGC instance) => <String, dynamic>{
   'fillRule': ?instance.fillRule,
   'font': ?instance.font,
   'foreground': ?instance.foreground,
-  'foregroundPattern': ?instance.foregroundPattern,
-  'interpolation': ?instance.interpolation,
   'lineCap': ?instance.lineCap,
-  'lineDash': ?instance.lineDash,
   'lineJoin': ?instance.lineJoin,
-  'lineStyle': ?instance.lineStyle,
   'lineWidth': ?instance.lineWidth,
-  'textAntialias': ?instance.textAntialias,
   'transform': ?instance.transform,
 };
 

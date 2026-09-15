@@ -279,7 +279,41 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         }
     }
 
+    /**
+     * The Display's entry in the shared dirty set. A record so repeated enrolments of the same
+     * Display collapse to one entry, which is what lets several state changes in a turn produce one
+     * frame once these stop being flushed on the spot.
+     */
+    private record DisplayFlush(DisplayBridge bridge, DartDisplay display)
+            implements FlutterBridge.DirtyState {
+
+        @Override
+        public boolean isStale() {
+            Display api = display.getApi();
+            return api == null || api.isDisposed();
+        }
+
+        @Override
+        public void flush() {
+            bridge.pushDisplayState(display);
+        }
+    }
+
+    /**
+     * Marks the Display as having state to send, then sends it.
+     *
+     * <p>The immediate flush keeps every caller's timing exactly as it was; the enrolment is the
+     * point, putting the Display in the same dirty set as everything else so it inherits the
+     * per-property delivery being built there rather than needing its own copy of it. Dropping the
+     * flush is what later lets a turn's worth of changes coalesce into one frame — a separate
+     * change, because it moves when a client learns, and some callers push and then block.
+     */
     public void sendDisplayUpdate(DartDisplay display) {
+        FlutterBridge.dirty(new DisplayFlush(this, display));
+        FlutterBridge.flushDirtyStates();
+    }
+
+    void pushDisplayState(DartDisplay display) {
         // NOTE: no `clientReady` gate here. A Display update produced before the Flutter client has
         // connected (e.g. the E4 workbench shows its top-level Shell during startup, long before the
         // native window's Flutter engine connects) must still be serialized and sent — the comm layer

@@ -9,16 +9,14 @@ part of 'tablecolumn.dart';
 VTableColumn _$VTableColumnFromJson(Map<String, dynamic> json) => VTableColumn()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
-  ..seq = (json['seq'] as num?)?.toInt() ?? 0
-  ..style = (json['style'] as num).toInt()
+  ..seq = (json['_s'] as num?)?.toInt() ?? 0
+  ..style = (json['style'] as num?)?.toInt() ?? 0
   ..image = json['image'] == null
       ? null
       : VImage.fromJson(json['image'] as Map<String, dynamic>)
   ..text = json['text'] as String?
   ..alignment = (json['alignment'] as num?)?.toInt()
-  ..moveable = json['moveable'] as bool?
   ..resizable = json['resizable'] as bool?
-  ..toolTipText = json['toolTipText'] as String?
   ..width = (json['width'] as num?)?.toInt();
 
 Map<String, dynamic> _$VTableColumnToJson(VTableColumn instance) =>
@@ -29,8 +27,6 @@ Map<String, dynamic> _$VTableColumnToJson(VTableColumn instance) =>
       'image': ?instance.image,
       'text': ?instance.text,
       'alignment': ?instance.alignment,
-      'moveable': ?instance.moveable,
       'resizable': ?instance.resizable,
-      'toolTipText': ?instance.toolTipText,
       'width': ?instance.width,
     };

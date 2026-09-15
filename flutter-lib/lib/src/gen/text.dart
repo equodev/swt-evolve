@@ -11,6 +11,7 @@ import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollable.dart';
 import '../gen/scrollbar.dart';
+import '../gen/widget.dart';
 import '../impl/text_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
@@ -52,18 +53,52 @@ class VText extends VScrollable {
   }
 
   int? caretPosition;
-  bool? doubleClickEnabled;
   int? echoCharacter;
   bool? editable;
-  List<int>? hiddenText;
   String? message;
   VPoint? selection;
-  int? tabs;
   String? text;
-  List<int>? textChars;
   int? textLimit;
-  int? topIndex;
 
-  factory VText.fromJson(Map<String, dynamic> json) => _$VTextFromJson(json);
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VText) {
+      caretPosition = other.caretPosition;
+      echoCharacter = other.echoCharacter;
+      editable = other.editable;
+      message = other.message;
+      selection = other.selection;
+      text = other.text;
+      textLimit = other.textLimit;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'caretPosition':
+        caretPosition = (json['caretPosition'] as num?)?.toInt();
+      case 'echoCharacter':
+        echoCharacter = (json['echoCharacter'] as num?)?.toInt();
+      case 'editable':
+        editable = json['editable'] as bool?;
+      case 'message':
+        message = json['message'] as String?;
+      case 'selection':
+        selection = json['selection'] == null
+            ? null
+            : VPoint.fromJson(json['selection'] as Map<String, dynamic>);
+      case 'text':
+        text = json['text'] as String?;
+      case 'textLimit':
+        textLimit = (json['textLimit'] as num?)?.toInt();
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
+  factory VText.fromJson(Map<String, dynamic> json) =>
+      _$VTextFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VTextToJson(this);
 }

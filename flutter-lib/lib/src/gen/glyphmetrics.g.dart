@@ -7,14 +7,7 @@ part of 'glyphmetrics.dart';
 // **************************************************************************
 
 VGlyphMetrics _$VGlyphMetricsFromJson(Map<String, dynamic> json) =>
-    VGlyphMetrics()
-      ..ascent = (json['ascent'] as num).toInt()
-      ..descent = (json['descent'] as num).toInt()
-      ..width = (json['width'] as num).toInt();
+    VGlyphMetrics();
 
 Map<String, dynamic> _$VGlyphMetricsToJson(VGlyphMetrics instance) =>
-    <String, dynamic>{
-      'ascent': instance.ascent,
-      'descent': instance.descent,
-      'width': instance.width,
-    };
+    <String, dynamic>{};

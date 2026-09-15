@@ -9,23 +9,20 @@ part of 'clabel.dart';
 VCLabel _$VCLabelFromJson(Map<String, dynamic> json) => VCLabel()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
-  ..seq = (json['seq'] as num?)?.toInt() ?? 0
-  ..style = (json['style'] as num).toInt()
+  ..seq = (json['_s'] as num?)?.toInt() ?? 0
+  ..style = (json['style'] as num?)?.toInt() ?? 0
   ..background = json['background'] == null
       ? null
       : VColor.fromJson(json['background'] as Map<String, dynamic>)
   ..bounds = json['bounds'] == null
       ? null
       : VRectangle.fromJson(json['bounds'] as Map<String, dynamic>)
-  ..capture = json['capture'] as bool?
   ..cursor = json['cursor'] == null
       ? null
       : VCursor.fromJson(json['cursor'] as Map<String, dynamic>)
-  ..dragDetect = json['dragDetect'] as bool?
   ..dragSource = json['dragSource'] as bool?
   ..dropTargetId = (json['dropTargetId'] as num?)?.toInt()
   ..enabled = json['enabled'] as bool?
-  ..enabledEffective = json['enabledEffective'] as bool?
   ..font = json['font'] == null
       ? null
       : VFont.fromJson(json['font'] as Map<String, dynamic>)
@@ -36,19 +33,14 @@ VCLabel _$VCLabelFromJson(Map<String, dynamic> json) => VCLabel()
   ..menu = json['menu'] == null
       ? null
       : VMenu.fromJson(json['menu'] as Map<String, dynamic>)
-  ..orientation = (json['orientation'] as num?)?.toInt()
-  ..redraw = json['redraw'] as bool?
   ..region = json['region'] == null
       ? null
       : VRegion.fromJson(json['region'] as Map<String, dynamic>)
-  ..textDirection = (json['textDirection'] as num?)?.toInt()
   ..toolTipText = json['toolTipText'] as String?
-  ..touchEnabled = json['touchEnabled'] as bool?
   ..visible = json['visible'] as bool?
   ..horizontalBar = json['horizontalBar'] == null
       ? null
       : VScrollBar.fromJson(json['horizontalBar'] as Map<String, dynamic>)
-  ..scrollbarsMode = (json['scrollbarsMode'] as num?)?.toInt()
   ..verticalBar = json['verticalBar'] == null
       ? null
       : VScrollBar.fromJson(json['verticalBar'] as Map<String, dynamic>)
@@ -56,28 +48,11 @@ VCLabel _$VCLabelFromJson(Map<String, dynamic> json) => VCLabel()
   ..children = (json['children'] as List<dynamic>?)
       ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
       .toList()
-  ..layoutDeferred = json['layoutDeferred'] as bool?
-  ..tabList = (json['tabList'] as List<dynamic>?)
-      ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
-      .toList()
-  ..IME = json['IME'] == null
-      ? null
-      : VIME.fromJson(json['IME'] as Map<String, dynamic>)
-  ..caret = json['caret'] == null
-      ? null
-      : VCaret.fromJson(json['caret'] as Map<String, dynamic>)
   ..alignment = (json['alignment'] as num?)?.toInt()
   ..backgroundImage = json['backgroundImage'] == null
       ? null
       : VImage.fromJson(json['backgroundImage'] as Map<String, dynamic>)
   ..bottomMargin = (json['bottomMargin'] as num?)?.toInt()
-  ..gradientColors = (json['gradientColors'] as List<dynamic>?)
-      ?.map((e) => VColor.fromJson(e as Map<String, dynamic>))
-      .toList()
-  ..gradientPercents = (json['gradientPercents'] as List<dynamic>?)
-      ?.map((e) => (e as num).toInt())
-      .toList()
-  ..gradientVertical = json['gradientVertical'] as bool?
   ..image = json['image'] == null
       ? null
       : VImage.fromJson(json['image'] as Map<String, dynamic>)
@@ -92,39 +67,24 @@ Map<String, dynamic> _$VCLabelToJson(VCLabel instance) => <String, dynamic>{
   'style': instance.style,
   'background': ?instance.background,
   'bounds': ?instance.bounds,
-  'capture': ?instance.capture,
   'cursor': ?instance.cursor,
-  'dragDetect': ?instance.dragDetect,
   'dragSource': ?instance.dragSource,
   'dropTargetId': ?instance.dropTargetId,
   'enabled': ?instance.enabled,
-  'enabledEffective': ?instance.enabledEffective,
   'font': ?instance.font,
   'foreground': ?instance.foreground,
   'hasOwnBackground': ?instance.hasOwnBackground,
   'menu': ?instance.menu,
-  'orientation': ?instance.orientation,
-  'redraw': ?instance.redraw,
   'region': ?instance.region,
-  'textDirection': ?instance.textDirection,
   'toolTipText': ?instance.toolTipText,
-  'touchEnabled': ?instance.touchEnabled,
   'visible': ?instance.visible,
   'horizontalBar': ?instance.horizontalBar,
-  'scrollbarsMode': ?instance.scrollbarsMode,
   'verticalBar': ?instance.verticalBar,
   'backgroundMode': ?instance.backgroundMode,
   'children': ?instance.children,
-  'layoutDeferred': ?instance.layoutDeferred,
-  'tabList': ?instance.tabList,
-  'IME': ?instance.IME,
-  'caret': ?instance.caret,
   'alignment': ?instance.alignment,
   'backgroundImage': ?instance.backgroundImage,
   'bottomMargin': ?instance.bottomMargin,
-  'gradientColors': ?instance.gradientColors,
-  'gradientPercents': ?instance.gradientPercents,
-  'gradientVertical': ?instance.gradientVertical,
   'image': ?instance.image,
   'leftMargin': ?instance.leftMargin,
   'rightMargin': ?instance.rightMargin,

@@ -337,7 +337,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
         System.arraycopy(items, index, newItems, index + 1, items.length - index);
         items = newItems;
         list.add(string);
-        dirty();
+        getValue().markDirty(VCCombo.ITEMS);
     }
 
     /**
@@ -1488,7 +1488,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
         System.arraycopy(items, 0, newItems, 0, index);
         System.arraycopy(items, index + 1, newItems, index, items.length - index - 1);
         items = newItems;
-        dirty();
+        getValue().markDirty(VCCombo.ITEMS);
     }
 
     /**
@@ -1518,7 +1518,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
         System.arraycopy(items, 0, newItems, 0, start);
         System.arraycopy(items, end + 1, newItems, start, items.length - end - 1);
         items = newItems;
-        dirty();
+        getValue().markDirty(VCCombo.ITEMS);
     }
 
     /**
@@ -1562,7 +1562,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
         text.setText("");
         _text = "";
         items = new String[0];
-        dirty();
+        getValue().markDirty(VCCombo.ITEMS);
     }
 
     /**
@@ -1659,7 +1659,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
             //$NON-NLS-1$
             text.setText("");
             _text = "";
-            dirty();
+            getValue().markDirty(VCCombo.SELECTION);
             return;
         }
         if (0 <= index && index < items.length) {
@@ -1673,7 +1673,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
                 list.showSelection();
             }
         }
-        dirty();
+        getValue().markDirty(VCCombo.SELECTION);
     }
 
     /**
@@ -1691,7 +1691,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
      */
     public void setAlignment(int align) {
         if (this.alignment != align) {
-            dirty();
+            getValue().markDirty(VCCombo.ALIGNMENT);
             checkWidget();
             int styleWithoutAlign = getStyle() & ~(SWT.LEFT | SWT.CENTER | SWT.RIGHT);
             createText(styleWithoutAlign | align);
@@ -1725,9 +1725,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
      */
     public void setEditable(boolean editable) {
         boolean newValue = editable;
-        if (!java.util.Objects.equals(this.editable, newValue)) {
-            dirty();
-        }
         checkWidget();
         this.editable = newValue;
         text.setEditable(editable);
@@ -1798,7 +1795,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
         if (index < 0 || index >= items.length)
             SWT.error(SWT.ERROR_INVALID_RANGE);
         items[index] = string;
-        dirty();
+        getValue().markDirty(VCCombo.ITEMS);
     }
 
     /**
@@ -1828,7 +1825,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
         //$NON-NLS-1$
         if (!text.getEditable())
             text.setText("");
-        dirty();
+        getValue().markDirty(VCCombo.ITEMS);
     }
 
     /**
@@ -1873,7 +1870,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
     public void setListVisible(boolean visible) {
         boolean newValue = visible;
         if (!java.util.Objects.equals(this.listVisible, newValue)) {
-            dirty();
+            getValue().markDirty(VCCombo.LIST_VISIBLE);
         }
         checkWidget();
         this.listVisible = newValue;
@@ -1882,7 +1879,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
 
     @Override
     public void setMenu(Menu menu) {
-        dirty();
+        getValue().markDirty(VCCombo.MENU);
         text.setMenu(menu);
     }
 
@@ -1908,7 +1905,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         text.setSelection(selection.x, selection.y);
         this.selection = text.getSelection();
-        dirty();
+        getValue().markDirty(VCCombo.SELECTION);
     }
 
     /**
@@ -1945,7 +1942,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
             list.deselectAll();
             text.setText(string);
             this._text = string;
-            dirty();
+            getValue().markDirty(VCCombo.TEXT);
             return;
         }
         text.setText(string);
@@ -1954,7 +1951,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
         list.setSelection(index);
         list.showSelection();
         this._text = string;
-        dirty();
+        getValue().markDirty(VCCombo.TEXT);
     }
 
     /**
@@ -1974,7 +1971,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
     public void setTextLimit(int limit) {
         int newValue = limit;
         if (!java.util.Objects.equals(this.textLimit, newValue)) {
-            dirty();
+            getValue().markDirty(VCCombo.TEXT_LIMIT);
         }
         checkWidget();
         this.textLimit = newValue;
@@ -2015,9 +2012,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
      */
     public void setVisibleItemCount(int count) {
         checkWidget();
-        if (!java.util.Objects.equals(this.visibleItemCount, count)) {
-            dirty();
-        }
         if (count < 0)
             return;
         visibleItemCount = count;
@@ -2396,7 +2390,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
     public void setData(String key, Object value) {
         if ("org.eclipse.swt.custom.CCombo.itemToolTips".equals(key)) {
             this.itemTooltips = value instanceof String[] ? (String[]) value : null;
-            dirty();
+            getValue().markDirty(VCCombo.ITEM_TOOLTIPS);
             return;
         }
         super.setData(key, value);

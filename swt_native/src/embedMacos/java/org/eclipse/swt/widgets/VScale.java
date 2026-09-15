@@ -17,6 +17,7 @@ public class VScale extends VControl {
         super(impl);
     }
 
+    @JsonAttribute(ignore = true)
     public int getIncrement() {
         return ((DartScale) impl).getIncrement();
     }
@@ -41,6 +42,7 @@ public class VScale extends VControl {
         ((DartScale) impl).minimum = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getPageIncrement() {
         return ((DartScale) impl).getPageIncrement();
     }
@@ -55,6 +57,28 @@ public class VScale extends VControl {
 
     public void setSelection(int value) {
         ((DartScale) impl).selection = value;
+    }
+
+    public static final String MAXIMUM = "maximum";
+
+    public static final String MINIMUM = "minimum";
+
+    public static final String SELECTION = "selection";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "maximum":
+                Serializer.writeKeyValue(writer, "maximum", getMaximum());
+                return;
+            case "minimum":
+                Serializer.writeKeyValue(writer, "minimum", getMinimum());
+                return;
+            case "selection":
+                Serializer.writeKeyValue(writer, "selection", getSelection());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = Scale.class)

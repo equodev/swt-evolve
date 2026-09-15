@@ -158,6 +158,7 @@ public class DartTableItem extends DartItem implements ITableItem {
         cellBackground = cellForeground = null;
         if ((parent.style & SWT.VIRTUAL) != 0)
             cached = false;
+        dirty();
     }
 
     @Override
@@ -626,7 +627,7 @@ public class DartTableItem extends DartItem implements ITableItem {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
         if (!java.util.Objects.equals(this._background, newValue)) {
-            dirty();
+            getValue().markDirty(VTableItem.BACKGROUND);
         }
         checkWidget();
         if (color != null && color.isDisposed()) {
@@ -714,7 +715,7 @@ public class DartTableItem extends DartItem implements ITableItem {
     void setChecked(boolean checked, boolean notify) {
         this.checked = checked;
         if (!java.util.Objects.equals(this.checked, checked)) {
-            dirty();
+            getValue().markDirty(VTableItem.CHECKED);
         }
         if ((parent.style & SWT.VIRTUAL) != 0)
             cached = true;
@@ -748,7 +749,7 @@ public class DartTableItem extends DartItem implements ITableItem {
         font = GraphicsUtils.copyFont(font);
         checkWidget();
         if (!java.util.Objects.equals(this.font, font)) {
-            dirty();
+            getValue().markDirty(VTableItem.FONT);
         }
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -805,7 +806,7 @@ public class DartTableItem extends DartItem implements ITableItem {
      * @since 3.0
      */
     public void setFont(int index, Font font) {
-        dirty();
+        getValue().markDirty(VTableItem.FONT);
         checkWidget();
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -872,7 +873,7 @@ public class DartTableItem extends DartItem implements ITableItem {
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
         if (!java.util.Objects.equals(this._foreground, newValue)) {
-            dirty();
+            getValue().markDirty(VTableItem.FOREGROUND);
         }
         checkWidget();
         if (color != null && color.isDisposed()) {
@@ -951,7 +952,7 @@ public class DartTableItem extends DartItem implements ITableItem {
     public void setGrayed(boolean grayed) {
         checkWidget();
         if (!java.util.Objects.equals(this.grayed, grayed)) {
-            dirty();
+            getValue().markDirty(VTableItem.GRAYED);
         }
         if ((parent.style & SWT.CHECK) == 0)
             return;
@@ -984,6 +985,7 @@ public class DartTableItem extends DartItem implements ITableItem {
         for (int i = 0; i < images.length; i++) {
             setImage(i, images[i]);
         }
+        getValue().markDirty(VTableItem.IMAGES);
     }
 
     /**
@@ -1008,12 +1010,15 @@ public class DartTableItem extends DartItem implements ITableItem {
         if (index == 0)
             ((DartTable) parent.getImpl()).setScrollWidth(this.getApi(), false);
         redraw(index, drawText[0], true);
+        getValue().markDirty(VTableItem.IMAGES);
+        getValue().markDirty(VTableItem.IMAGE);
     }
 
     @Override
     public void setImage(Image image) {
         checkWidget();
         setImage(0, image);
+        getValue().markDirty(VTableItem.IMAGES);
     }
 
     /**
@@ -1031,9 +1036,6 @@ public class DartTableItem extends DartItem implements ITableItem {
     @Deprecated
     public void setImageIndent(int indent) {
         checkWidget();
-        if (!java.util.Objects.equals(this.imageIndent, indent)) {
-            dirty();
-        }
         if (indent < 0)
             return;
         if (imageIndent == indent)
@@ -1075,6 +1077,7 @@ public class DartTableItem extends DartItem implements ITableItem {
             if (string != null)
                 setText(i, string);
         }
+        getValue().markDirty(VTableItem.TEXTS);
     }
 
     /**
@@ -1106,6 +1109,8 @@ public class DartTableItem extends DartItem implements ITableItem {
                 strings = new String[count];
             }
             strings[0] = string;
+            getValue().markDirty(VTableItem.TEXT);
+            getValue().markDirty(VTableItem.TEXTS);
             super.setText(string);
         }
         int count = Math.max(1, parent.getColumnCount());
@@ -1114,12 +1119,17 @@ public class DartTableItem extends DartItem implements ITableItem {
         if (strings == null && index != 0) {
             strings = new String[count];
             strings[0] = text;
+            getValue().markDirty(VTableItem.TEXT);
+            getValue().markDirty(VTableItem.TEXTS);
         }
         if (strings != null) {
             if (string.equals(strings[index]))
                 return;
             strings[index] = string;
+            getValue().markDirty(VTableItem.TEXT);
+            getValue().markDirty(VTableItem.TEXTS);
         }
+        getValue().markDirty(VTableItem.TEXTS);
         if ((parent.style & SWT.VIRTUAL) != 0)
             cached = true;
         if (index == 0) {
@@ -1149,6 +1159,7 @@ public class DartTableItem extends DartItem implements ITableItem {
     public void setText(String string) {
         checkWidget();
         setText(0, string);
+        getValue().markDirty(VTableItem.TEXTS);
     }
 
     @Override
@@ -1248,12 +1259,10 @@ public class DartTableItem extends DartItem implements ITableItem {
 
     @Override
     protected void dirty() {
-        if (parent != null && !parent.isDisposed()) {
-            if (((DartTable) parent.getImpl()).loadingVirtualData) {
-                return;
-            }
-            ((DartWidget) parent.getImpl()).dirty();
+        if (parent != null && !parent.isDisposed() && ((DartTable) parent.getImpl()).loadingVirtualData) {
+            return;
         }
+        super.dirty();
     }
 
     public FlutterBridge getBridge() {

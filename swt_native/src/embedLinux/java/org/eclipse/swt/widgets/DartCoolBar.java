@@ -400,6 +400,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
         bounds = ((DartCoolItem) item.getImpl()).internalGetBounds();
         ((DartCoolItem) item.getImpl()).requestedWidth = bounds.width;
         internalRedraw(bounds.x, bounds.y, ((DartCoolItem) item.getImpl()).internalGetMinimumWidth(), bounds.height);
+        getValue().markDirty(VCoolBar.ITEMS);
         return height > oldRowHeight;
     }
 
@@ -461,6 +462,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
         newOriginals[insertIndex] = item;
         originalItems = newOriginals;
         layoutItems();
+        getValue().markDirty(VCoolBar.ITEMS);
     }
 
     void destroyItem(CoolItem item) {
@@ -484,6 +486,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
         originalItems = newOriginals;
         internalRedraw(bounds.x, bounds.y, DartCoolItem.MINIMUM_WIDTH, bounds.height);
         relayout();
+        getValue().markDirty(VCoolBar.ITEMS);
     }
 
     void moveDown(CoolItem item, int x_root) {
@@ -832,6 +835,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
         for (int i = 0; i < newLength; i++) {
             newRowHeight = Math.max(newRowHeight, ((DartCoolItem) items[rowIndex][i].getImpl()).preferredHeight);
         }
+        getValue().markDirty(VCoolBar.ITEMS);
         return newRowHeight != oldRowHeight;
     }
 
@@ -985,7 +989,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
     void setItemOrder(int[] itemOrder) {
         int[] newValue = itemOrder;
         if (!java.util.Objects.equals(this.itemOrder, newValue)) {
-            dirty();
+            getValue().markDirty(VCoolBar.ITEM_ORDER);
         }
         if (itemOrder == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -1036,7 +1040,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
     void setItemSizes(Point[] sizes) {
         Point[] newValue = sizes;
         if (!java.util.Objects.equals(this.itemSizes, newValue)) {
-            dirty();
+            getValue().markDirty(VCoolBar.ITEM_SIZES);
         }
         if (sizes == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -1120,9 +1124,6 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
      */
     public void setLocked(boolean locked) {
         checkWidget();
-        if (!java.util.Objects.equals(this.isLocked, locked)) {
-            dirty();
-        }
         if (isLocked != locked) {
             redraw();
         }
@@ -1147,7 +1148,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
     public void setWrapIndices(int[] indices) {
         int[] newValue = indices;
         if (!java.util.Objects.equals(this.wrapIndices, newValue)) {
-            dirty();
+            getValue().markDirty(VCoolBar.WRAP_INDICES);
         }
         checkWidget();
         if (indices == null)
@@ -1299,6 +1300,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
         } else {
             items = newItems;
         }
+        getValue().markDirty(VCoolBar.ITEMS);
     }
 
     int[] itemOrder = new int[0];

@@ -18,7 +18,6 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -274,9 +273,6 @@ public class DartViewForm extends DartComposite implements IViewForm {
      */
     public void setContent(Control content) {
         checkWidget();
-        if (!java.util.Objects.equals(this.content, content)) {
-            dirty();
-        }
         if (content != null && content.getParent() != this.getApi()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -334,9 +330,6 @@ public class DartViewForm extends DartComposite implements IViewForm {
      */
     public void setTopCenter(Control topCenter) {
         checkWidget();
-        if (!java.util.Objects.equals(this.topCenter, topCenter)) {
-            dirty();
-        }
         if (topCenter != null && topCenter.getParent() != this.getApi()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -364,9 +357,6 @@ public class DartViewForm extends DartComposite implements IViewForm {
      */
     public void setTopLeft(Control c) {
         checkWidget();
-        if (!java.util.Objects.equals(this.topLeft, c)) {
-            dirty();
-        }
         if (c != null && c.getParent() != this.getApi()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -394,9 +384,6 @@ public class DartViewForm extends DartComposite implements IViewForm {
      */
     public void setTopRight(Control c) {
         checkWidget();
-        if (!java.util.Objects.equals(this.topRight, c)) {
-            dirty();
-        }
         if (c != null && c.getParent() != this.getApi()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -420,9 +407,6 @@ public class DartViewForm extends DartComposite implements IViewForm {
      */
     public void setBorderVisible(boolean show) {
         checkWidget();
-        if (!java.util.Objects.equals(this.showBorder, show)) {
-            dirty();
-        }
         if (showBorder == show)
             return;
         showBorder = show;
@@ -452,9 +436,6 @@ public class DartViewForm extends DartComposite implements IViewForm {
      */
     public void setTopCenterSeparate(boolean show) {
         checkWidget();
-        if (!java.util.Objects.equals(this.separateTopCenter, show)) {
-            dirty();
-        }
         separateTopCenter = show;
         layout(false);
     }

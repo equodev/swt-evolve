@@ -176,9 +176,11 @@ public class DartProgressBar extends DartControl implements IProgressBar {
         checkWidget();
         if (minimum < value) {
             maximum = value;
-            if (selection > maximum)
+            getValue().markDirty(VProgressBar.MAXIMUM);
+            if (selection > maximum) {
                 selection = maximum;
-            dirty();
+                getValue().markDirty(VProgressBar.SELECTION);
+            }
         }
     }
 
@@ -199,9 +201,11 @@ public class DartProgressBar extends DartControl implements IProgressBar {
         checkWidget();
         if (0 <= value && value < maximum) {
             minimum = value;
-            if (selection < minimum)
+            getValue().markDirty(VProgressBar.MINIMUM);
+            if (selection < minimum) {
                 selection = minimum;
-            dirty();
+                getValue().markDirty(VProgressBar.SELECTION);
+            }
         }
     }
 
@@ -221,7 +225,7 @@ public class DartProgressBar extends DartControl implements IProgressBar {
         checkWidget();
         int clamped = Math.max(minimum, Math.min(maximum, value));
         if (this.selection != clamped)
-            dirty();
+            getValue().markDirty(VProgressBar.SELECTION);
         this.selection = clamped;
     }
 

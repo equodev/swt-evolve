@@ -6,6 +6,8 @@ import 'package:webview_all/webview_all.dart'
     show PlatformWebViewControllerCreationParams;
 import 'package:webview_all_web/webview_all_web.dart';
 
+import 'browser_app_base.dart';
+
 /// On web, stamps the WebView's `<iframe>` with a stable `name`
 /// (`equo-browser-<id>`) so a hosting Equo Chromium standalone window can
 /// identify this Browser's sub-frame in CEF's `onBeforeBrowse` (whose only
@@ -52,15 +54,22 @@ bool _isLoopbackUrl(String url) {
   return _loopbackV4.hasMatch(host);
 }
 
-/// Rewrites an absolute http(s) URL to go through this origin's /proxy endpoint.
+/// Root-absolute prefix the shell is served under (`/`, or `/prefix/` behind a reverse proxy),
+/// read from the shell document's `<base href>`.
+String browserAppBasePath() => appBasePath(web.document.baseURI);
+
+/// Absolute URL of the shell's own server root, prefix included: what every same-server URL the
+/// Browser builds must start with.
+String browserAppBaseUrl() =>
+    '${web.window.location.origin}${browserAppBasePath()}';
+
+/// Rewrites an absolute http(s) URL to go through the app server's /proxy endpoint.
 String browserProxyRewrite(String url) {
-  final origin = web.window.location.origin;
-  return '$origin/proxy?url=${Uri.encodeComponent(url)}';
+  return '${browserAppBaseUrl()}proxy?url=${Uri.encodeComponent(url)}';
 }
 
 String localFileRewrite(String tokenPath) {
-  final origin = web.window.location.origin;
-  return '$origin/local-file/$tokenPath';
+  return '${browserAppBaseUrl()}local-file/$tokenPath';
 }
 
 /// Base URL for a `setText` document whose `file:` sub-resources Java rewrote to root-absolute
@@ -68,8 +77,9 @@ String localFileRewrite(String tokenPath) {
 /// those to resolve against. [basePath] is the document's own `<base href>` once rewritten, so
 /// its relative URLs keep resolving where the application meant them to.
 String localFileBaseRewrite(String? basePath) {
+  if (basePath == null || basePath.isEmpty) return browserAppBaseUrl();
   final origin = web.window.location.origin;
-  return basePath == null || basePath.isEmpty ? '$origin/' : '$origin$basePath';
+  return '$origin${underAppBase(browserAppBasePath(), basePath)}';
 }
 
 /// Same-origin URL for a `setText` document. Rendering it from a `data:` URL (what the webview

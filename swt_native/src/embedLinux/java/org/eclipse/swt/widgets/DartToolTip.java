@@ -400,9 +400,6 @@ public class DartToolTip extends DartWidget implements IToolTip {
      */
     public void setAutoHide(boolean autoHide) {
         checkWidget();
-        if (!java.util.Objects.equals(this.autohide, autoHide)) {
-            dirty();
-        }
         this.autohide = autoHide;
         //TODO - update when visible
     }
@@ -425,7 +422,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
      * </ul>
      */
     public void setLocation(int x, int y) {
-        dirty();
+        getValue().markDirty(VToolTip.LOCATION);
         Point newValue = new Point(x, y);
         checkWidget();
         this.x = x;
@@ -480,7 +477,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
     public void setMessage(String string) {
         checkWidget();
         if (!java.util.Objects.equals(this.message, string)) {
-            dirty();
+            getValue().markDirty(VToolTip.MESSAGE);
         }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -508,7 +505,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
     public void setText(String string) {
         checkWidget();
         if (!java.util.Objects.equals(this.text, string)) {
-            dirty();
+            getValue().markDirty(VToolTip.TEXT);
         }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -539,7 +536,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
     public void setVisible(boolean visible) {
         boolean newValue = visible;
         if (!java.util.Objects.equals(this.visible, newValue)) {
-            dirty();
+            getValue().markDirty(VToolTip.VISIBLE);
         }
         checkWidget();
         timerId = 0;

@@ -35,7 +35,6 @@ void main() {
       ..id = 1
       ..style = SWT.SIMPLE
       ..enabled = true
-      ..editable = true
       ..items = const []
       ..text = text
       ..bounds = _bounds(200, 40);

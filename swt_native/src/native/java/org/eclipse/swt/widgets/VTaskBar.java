@@ -16,6 +16,7 @@ public class VTaskBar extends VWidget {
         super(impl);
     }
 
+    @JsonAttribute(ignore = true)
     public TaskItem[] getItems() {
         TaskItem[] values = ((DartTaskBar) impl).items;
         if (values == null)
@@ -28,6 +29,13 @@ public class VTaskBar extends VWidget {
 
     public void setItems(TaskItem[] value) {
         ((DartTaskBar) impl).items = value;
+    }
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = TaskBar.class)

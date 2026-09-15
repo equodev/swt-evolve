@@ -56,13 +56,6 @@ public class VToolItem extends VItem {
         ((DartToolItem) impl).enabled = value;
     }
 
-    public Boolean getEnabledEffective() {
-        return ((DartToolItem) impl).isEnabled();
-    }
-
-    public void setEnabledEffective(Boolean value) {
-    }
-
     public Color getForeground() {
         return ((DartToolItem) impl).getForeground();
     }
@@ -104,6 +97,58 @@ public class VToolItem extends VItem {
 
     public void setWidth(int value) {
         ((DartToolItem) impl).width = value;
+    }
+
+    public static final String BACKGROUND = "background";
+
+    public static final String CONTROL = "control";
+
+    public static final String DISABLED_IMAGE = "disabledImage";
+
+    public static final String ENABLED = "enabled";
+
+    public static final String FOREGROUND = "foreground";
+
+    public static final String HOT_IMAGE = "hotImage";
+
+    public static final String SELECTION = "selection";
+
+    public static final String TOOL_TIP_TEXT = "toolTipText";
+
+    public static final String WIDTH = "width";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "background":
+                Serializer.writeKeyValue(writer, "background", getBackground());
+                return;
+            case "control":
+                Serializer.writeKeyValue(writer, "control", getControl());
+                return;
+            case "disabledImage":
+                Serializer.writeKeyValue(writer, "disabledImage", getDisabledImage());
+                return;
+            case "enabled":
+                Serializer.writeKeyValue(writer, "enabled", getEnabled());
+                return;
+            case "foreground":
+                Serializer.writeKeyValue(writer, "foreground", getForeground());
+                return;
+            case "hotImage":
+                Serializer.writeKeyValue(writer, "hotImage", getHotImage());
+                return;
+            case "selection":
+                Serializer.writeKeyValue(writer, "selection", getSelection());
+                return;
+            case "toolTipText":
+                Serializer.writeKeyValue(writer, "toolTipText", getToolTipText());
+                return;
+            case "width":
+                Serializer.writeKeyValue(writer, "width", getWidth());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = ToolItem.class)

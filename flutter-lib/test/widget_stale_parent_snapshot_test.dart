@@ -1,8 +1,8 @@
-// A widget reaches Flutter twice: on its own channel, and nested inside an ancestor's
-// serialized tree. Flutter rebuilds top-down, so an ancestor rebuild can hand a child a copy
-// older than one the child already applied. Without the seq check the older copy wins and the
-// widget renders one update behind — a row added to a table stays invisible until something
-// unrelated repaints it.
+// A widget reaches Flutter twice: on its own channel, and nested inside an ancestor's serialized
+// tree. Which of the two descriptions counts is decided by when Java wrote it — every value carries
+// the stamp of its own write — so an ancestor's copy of a child is taken only when it is newer than
+// what the child already has. Without that, a table rewinds to the ancestor's snapshot and a row
+// that was just added stays invisible until something unrelated repaints it.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,7 +17,10 @@ import 'package:swtflutter/src/gen/tablecolumn.dart';
 import 'package:swtflutter/src/gen/tableitem.dart';
 import 'package:swtflutter/src/impl/table_evolve.dart';
 
+import 'delivery/support/deliver.dart';
+
 const int _tableId = 4242;
+const int _parentId = 1;
 
 VTable _table({required int seq, required List<String> rows}) => VTable()
   ..id = _tableId
@@ -44,9 +47,9 @@ VTable _table({required int seq, required List<String> rows}) => VTable()
     ..width = 200
     ..height = 300);
 
-VComposite _parent(List<VControl> children) => VComposite()
-  ..id = 1
-  ..seq = 1
+VComposite _parent(List<VControl> children, {required int seq}) => VComposite()
+  ..id = _parentId
+  ..seq = seq
   ..style = SWT.NONE
   ..children = children;
 
@@ -68,40 +71,41 @@ void main() {
   testWidgets('an older parent-carried snapshot does not rewind the table',
       (WidgetTester tester) async {
     // The table's own channel already delivered the row that was just added.
-    await tester.pumpWidget(host(_parent([_table(seq: 20, rows: ['GET', 'AAAA'])])));
+    await tester.pumpWidget(host(_parent([_table(seq: 20, rows: ['GET', 'AAAA'])], seq: 20)));
     await tester.pumpAndSettle();
     expect(_renderedRows(tester), ['GET', 'AAAA']);
 
-    // The ancestor now rebuilds carrying the snapshot it serialized *before* that add.
-    await tester.pumpWidget(host(_parent([_table(seq: 12, rows: ['GET'])])));
+    // The ancestor is described again for its own reasons, carrying the table as it was serialized
+    // *before* that add.
+    await deliverWhole(_parent([_table(seq: 12, rows: ['GET'])], seq: 25));
     await tester.pumpAndSettle();
 
     expect(_renderedRows(tester), ['GET', 'AAAA'],
-        reason: 'a lower seq is an older snapshot and must not replace newer state');
+        reason: 'a lower stamp is an older description and must not replace newer state');
   });
 
   testWidgets('a newer parent-carried snapshot is still adopted',
       (WidgetTester tester) async {
-    await tester.pumpWidget(host(_parent([_table(seq: 20, rows: ['GET', 'AAAA'])])));
+    await tester.pumpWidget(host(_parent([_table(seq: 20, rows: ['GET', 'AAAA'])], seq: 20)));
     await tester.pumpAndSettle();
 
-    await tester.pumpWidget(
-        host(_parent([_table(seq: 31, rows: ['GET', 'AAAA', 'BBBBB'])])));
+    // The shape of a folded delivery: a dirty table sent inside the dirty ancestor above it rather
+    // than on its own channel, so the ancestor's copy is the only description there is.
+    await deliverWhole(_parent([_table(seq: 31, rows: ['GET', 'AAAA', 'BBBBB'])], seq: 30));
     await tester.pumpAndSettle();
 
     expect(_renderedRows(tester), ['GET', 'AAAA', 'BBBBB']);
   });
 
-  testWidgets('unstamped payloads keep the previous adopt-always behaviour',
-      (WidgetTester tester) async {
-    // Nothing outside the Java serializer sets seq, so both sides stay at 0 and the
-    // comparison must not start dropping legitimate parent-driven updates.
-    await tester.pumpWidget(host(_parent([_table(seq: 0, rows: ['GET'])])));
+  testWidgets('the same stamp carries nothing new', (WidgetTester tester) async {
+    await tester.pumpWidget(host(_parent([_table(seq: 20, rows: ['GET'])], seq: 20)));
     await tester.pumpAndSettle();
 
-    await tester.pumpWidget(host(_parent([_table(seq: 0, rows: ['GET', 'AAAA'])])));
+    await deliverWhole(_parent([_table(seq: 20, rows: ['GET', 'AAAA'])], seq: 25));
     await tester.pumpAndSettle();
 
-    expect(_renderedRows(tester), ['GET', 'AAAA']);
+    expect(_renderedRows(tester), ['GET'],
+        reason: 'stamps come from one counter that moves on every write, so two descriptions '
+            'stamped alike are the same description and the held one already is it');
   });
 }

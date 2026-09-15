@@ -38,6 +38,12 @@ class TreeItemSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
     }
 
+    @Test
+    void should_name_every_change_TreeItem() {
+        TreeItem w = new TreeItem(tree(), SWT.NONE);
+        assertNamesEveryChange(w);
+    }
+
     VTreeItem value(TreeItem w) {
         return ((DartTreeItem) w.getImpl()).getValue();
     }

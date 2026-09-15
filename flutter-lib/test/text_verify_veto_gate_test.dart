@@ -22,6 +22,8 @@ import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/text.dart';
 
+import 'delivery/support/deliver.dart';
+
 VRectangle _bounds(int w, int h) => VRectangle()
   ..x = 0
   ..y = 0
@@ -114,7 +116,7 @@ void main() {
     // which the stale-echo guard would otherwise swallow (the focus baseline).
     _receiveJson('Text/1/modify/verdict', {'doit': false});
     await tester.pump();
-    await tester.pumpWidget(_appWith(_value('1234')));
+    await deliverWhole(_value('1234')..seq = 2);
     await tester.pump();
 
     expect(find.text('1234'), findsOneWidget,

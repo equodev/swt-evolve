@@ -1,8 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
-import '../gen/cursor.dart';
-import '../gen/rectangle.dart';
 import '../gen/widget.dart';
 import '../impl/tracker_evolve.dart';
 import 'event.dart';
@@ -40,11 +38,7 @@ class VTracker extends VWidget {
     swt = "Tracker";
   }
 
-  VCursor? cursor;
-  List<VRectangle>? rectangles;
-  bool? stippled;
-
   factory VTracker.fromJson(Map<String, dynamic> json) =>
-      _$VTrackerFromJson(json);
+      _$VTrackerFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VTrackerToJson(this);
 }

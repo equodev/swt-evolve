@@ -44,6 +44,28 @@ public class VSashForm extends VComposite {
         ((DartSashForm) impl).weights = value;
     }
 
+    public static final String MAXIMIZED_CONTROL = "maximizedControl";
+
+    public static final String SASH_WIDTH = "sashWidth";
+
+    public static final String WEIGHTS = "weights";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "maximizedControl":
+                Serializer.writeKeyValue(writer, "maximizedControl", getMaximizedControl());
+                return;
+            case "sashWidth":
+                Serializer.writeKeyValue(writer, "sashWidth", getSashWidth());
+                return;
+            case "weights":
+                Serializer.writeKeyValue(writer, "weights", getWeights());
+                return;
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = SashForm.class)
     public static class SashFormJson implements Configuration {
 

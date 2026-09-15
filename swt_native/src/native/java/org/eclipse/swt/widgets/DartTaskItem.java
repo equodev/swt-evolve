@@ -17,7 +17,6 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -249,9 +248,6 @@ public class DartTaskItem extends DartItem implements ITaskItem {
      */
     public void setMenu(Menu menu) {
         checkWidget();
-        if (!java.util.Objects.equals(this.menu, menu)) {
-            dirty();
-        }
         if (menu != null) {
             if (menu.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -292,9 +288,6 @@ public class DartTaskItem extends DartItem implements ITaskItem {
     public void setOverlayImage(Image overlayImage) {
         overlayImage = GraphicsUtils.copyImage(getDisplay(), overlayImage);
         checkWidget();
-        if (!java.util.Objects.equals(this.overlayImage, overlayImage)) {
-            dirty();
-        }
         if (overlayImage != null && overlayImage.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         this.overlayImage = overlayImage;
@@ -330,9 +323,6 @@ public class DartTaskItem extends DartItem implements ITaskItem {
      */
     public void setOverlayText(String overlayText) {
         checkWidget();
-        if (!java.util.Objects.equals(this.overlayText, overlayText)) {
-            dirty();
-        }
         if (overlayText == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         this.overlayText = overlayText;
@@ -367,9 +357,6 @@ public class DartTaskItem extends DartItem implements ITaskItem {
      */
     public void setProgress(int progress) {
         checkWidget();
-        if (!java.util.Objects.equals(this.progress, progress)) {
-            dirty();
-        }
         progress = Math.max(0, Math.min(progress, PROGRESS_MAX));
         if (this.progress == progress)
             return;
@@ -414,9 +401,6 @@ public class DartTaskItem extends DartItem implements ITaskItem {
      */
     public void setProgressState(int progressState) {
         checkWidget();
-        if (!java.util.Objects.equals(this.progressState, progressState)) {
-            dirty();
-        }
         if (this.progressState == progressState)
             return;
         this.progressState = progressState;

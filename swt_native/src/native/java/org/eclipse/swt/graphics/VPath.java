@@ -23,6 +23,18 @@ public class VPath extends VResource {
         ((DartPath) impl).pathData = value;
     }
 
+    public static final String PATH_DATA = "pathData";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "pathData":
+                Serializer.writeKeyValue(writer, "pathData", getPathData());
+                return;
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = Path.class)
     public static class PathJson implements Configuration {
 

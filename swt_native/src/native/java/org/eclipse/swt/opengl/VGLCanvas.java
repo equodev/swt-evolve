@@ -16,13 +16,20 @@ public class VGLCanvas extends VCanvas {
         super(impl);
     }
 
-    @JsonAttribute(name = "GLData")
+    @JsonAttribute(ignore = true)
     public GLData getGLData() {
         return ((DartGLCanvas) impl).GLData;
     }
 
     public void setGLData(GLData value) {
         ((DartGLCanvas) impl).GLData = value;
+    }
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = GLCanvas.class)

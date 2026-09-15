@@ -1,0 +1,125 @@
+{
+  "_comment": [
+    "Shared contract for the canonical form, read by BOTH the Dart canonicalizer test and the Java",
+    "one. The two implementations exist so neither side's equality check depends on the other's code;",
+    "this file is what stops them drifting apart. A case added here must pass in both languages.",
+    "",
+    "Canonical form, in full:",
+    "  R1  bookkeeping about the message is dropped anywhere it appears: the write stamp, and",
+    "      any key the underscore convention marks as protocol. A property name never starts with",
+    "      one, so this can never remove state.",
+    "  R2  a key whose value is a type default is dropped: null, false, numeric zero, empty array.",
+    "      Both codecs elide those when writing, so absent and default-valued must compare equal.",
+    "  R3  an empty string and an empty object are NOT dropped. A sender that writes one means",
+    "      something by it, and the bias rule says report unequal when unsure.",
+    "  R4  numbers compare by value: 1 and 1.0 are the same number.",
+    "  R5  object keys are sorted; key order carries nothing.",
+    "  R6  array order IS significant - it is child order - and arrays recurse elementwise.",
+    "  R7  everything else compares strictly.",
+    "",
+    "The bias rule behind R3 and R7: a canonicalizer that normalises away a real difference produces",
+    "silent false greens across every probe that depends on it. One that reports a spurious",
+    "difference only costs someone a look. When a rule is arguable, it goes the strict way."
+  ],
+  "equal": [
+    {
+      "why": "R1 - the keys describing an update are not part of the state it updates",
+      "a": {"swt": "Label", "id": 1, "_s": 5, "_b": 4, "_d": ["text"], "text": "x"},
+      "b": {"swt": "Label", "id": 1, "text": "x"}
+    },
+    {
+      "why": "R1 - a differing write stamp is not a differing state",
+      "a": {"swt": "Label", "id": 1, "_s": 4, "text": "x"},
+      "b": {"swt": "Label", "id": 1, "_s": 991, "text": "x"}
+    },
+    {
+      "why": "R2 - absent equals numeric zero",
+      "a": {"swt": "Label", "id": 1, "alignment": 0},
+      "b": {"swt": "Label", "id": 1}
+    },
+    {
+      "why": "R2 - absent equals false",
+      "a": {"swt": "Label", "id": 1, "visible": false},
+      "b": {"swt": "Label", "id": 1}
+    },
+    {
+      "why": "R2 - absent equals null",
+      "a": {"swt": "Label", "id": 1, "image": null},
+      "b": {"swt": "Label", "id": 1}
+    },
+    {
+      "why": "R2 - absent equals an empty list",
+      "a": {"swt": "Composite", "id": 1, "children": []},
+      "b": {"swt": "Composite", "id": 1}
+    },
+    {
+      "why": "R2 - defaults nested inside an object drop too",
+      "a": {"swt": "Label", "id": 1, "bounds": {"x": 0, "y": 0, "width": 10, "height": 4}},
+      "b": {"swt": "Label", "id": 1, "bounds": {"width": 10, "height": 4}}
+    },
+    {
+      "why": "R4 - integral double equals int",
+      "a": {"swt": "Scale", "id": 1, "selection": 3.0},
+      "b": {"swt": "Scale", "id": 1, "selection": 3}
+    },
+    {
+      "why": "R5 - key order carries nothing",
+      "a": {"text": "x", "id": 1, "swt": "Label"},
+      "b": {"swt": "Label", "id": 1, "text": "x"}
+    },
+    {
+      "why": "R1 + R2 together, nested in a child list",
+      "a": {"swt": "Composite", "id": 1, "_s": 2,
+            "children": [{"swt": "Label", "id": 9, "_s": 7, "text": "a", "enabled": false}]},
+      "b": {"swt": "Composite", "id": 1,
+            "children": [{"swt": "Label", "id": 9, "text": "a"}]}
+    }
+  ],
+  "differ": [
+    {
+      "why": "R3 - an empty string is not an absent value",
+      "a": {"swt": "Label", "id": 1, "text": ""},
+      "b": {"swt": "Label", "id": 1}
+    },
+    {
+      "why": "R3 - an empty object is not an absent value",
+      "a": {"swt": "Label", "id": 1, "bounds": {}},
+      "b": {"swt": "Label", "id": 1}
+    },
+    {
+      "why": "a non-default value against a dropped default - the cross-language default hazard",
+      "a": {"swt": "Label", "id": 1, "alignment": 16384},
+      "b": {"swt": "Label", "id": 1, "alignment": 0}
+    },
+    {
+      "why": "R6 - child order is state",
+      "a": {"swt": "Composite", "id": 1, "children": [{"swt": "Label", "id": 9}, {"swt": "Label", "id": 8}]},
+      "b": {"swt": "Composite", "id": 1, "children": [{"swt": "Label", "id": 8}, {"swt": "Label", "id": 9}]}
+    },
+    {
+      "why": "a real property change",
+      "a": {"swt": "Label", "id": 1, "text": "before"},
+      "b": {"swt": "Label", "id": 1, "text": "after"}
+    },
+    {
+      "why": "a property present on one side only, with a real value",
+      "a": {"swt": "Label", "id": 1, "text": "x", "toolTipText": "tip"},
+      "b": {"swt": "Label", "id": 1, "text": "x"}
+    },
+    {
+      "why": "a missing child is not an equal tree",
+      "a": {"swt": "Composite", "id": 1, "children": [{"swt": "Label", "id": 9}]},
+      "b": {"swt": "Composite", "id": 1, "children": []}
+    },
+    {
+      "why": "identity is state - the same shape under a different id is a different widget",
+      "a": {"swt": "Label", "id": 1, "text": "x"},
+      "b": {"swt": "Label", "id": 2, "text": "x"}
+    },
+    {
+      "why": "a number is not its string",
+      "a": {"swt": "Label", "id": 1, "text": "3"},
+      "b": {"swt": "Label", "id": 1, "text": 3}
+    }
+  ]
+}

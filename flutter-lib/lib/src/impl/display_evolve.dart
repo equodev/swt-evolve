@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../gen/display.dart';
+import '../gen/widget.dart';
 import '../gen/shell.dart';
 import '../gen/swt.dart';
 import '../gen/tooltip.dart';
@@ -14,6 +15,7 @@ import 'shell_evolve.dart';
 import 'utils/traversal_veto_scope.dart';
 import 'utils/veto_gate.dart';
 import 'widget_config.dart';
+import '../comm/v_registry.dart';
 
 class DisplaySwt extends StatefulWidget {
   final VDisplay value;
@@ -46,6 +48,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
     super.initState();
     _display = _lastDisplayState[widget.value.id] ?? widget.value;
     applySystemMenu(_display.systemMenu);
+    _publishHoldings();
     EquoCommService.onRaw('Display/${widget.value.id}', _onUpdate);
     // Single top-level keyboard capture for the whole-tree model: every physical key is forwarded
     // once, here, and Java routes it to the focused control (running Display.filterEvent, which is
@@ -93,10 +96,35 @@ class _DisplaySwtState extends State<DisplaySwt> {
       applyConfigFlags(updated.config);
       applySystemMenu(updated.systemMenu);
       _lastDisplayState[widget.value.id] = updated;
-      if (mounted) setState(() => _display = updated);
+      _display = updated;
+      _publishHoldings();
+      if (mounted) setState(() {});
     } catch (e) {
       print('DisplaySwt update error: $e');
     }
+  }
+
+  /// Tells the registry which top-level widgets the display is currently carrying.
+  ///
+  /// The display is the top of the tree and the only holder of the shells, so nothing else can
+  /// report that one has closed: a shell simply stops being listed. Without this, every shell ever
+  /// opened - and its whole subtree - would be kept for the life of the session.
+  ///
+  /// Each is registered as well as held, because holding records a channel while registering is
+  /// what puts the widget and everything beneath it in the registry. Rendering used to be what
+  /// registered a shell, which left a shell nothing draws - and its whole subtree - unknown here
+  /// while Java counted every one of them delivered, and then named them rather than describing
+  /// them. The display is not a widget itself, so this is the only place that walk can start.
+  void _publishHoldings() {
+    final held = <VWidget>[
+      ...?_display.shells,
+      ...?_display.popups,
+      ...?_display.tooltips,
+    ];
+    for (final value in held) {
+      VRegistry.instance.register(value);
+    }
+    VRegistry.instance.holds('Display/${widget.value.id}', held);
   }
 
   final Map<int, bool> _shellIsMainCache = {};
@@ -182,7 +210,10 @@ class _DisplaySwtState extends State<DisplaySwt> {
 
   @override
   Widget build(BuildContext context) {
-    final shells = _display.shells ?? [];
+    // Held is not drawn. The display carries every shell Java owns, so that a frame on a shell's
+    // own channel can always be placed and the widgets inside it are never named at a client that
+    // was not given them; a shell that is not visible simply is not built.
+    final shells = (_display.shells ?? []).where((s) => s.visible ?? true).toList();
     print("Dart Display.build shells: ${shells.length}");
     if (shells.isEmpty) return const SizedBox.shrink();
     _shellIsMainCache.removeWhere((id, _) => !shells.any((s) => s.id == id));

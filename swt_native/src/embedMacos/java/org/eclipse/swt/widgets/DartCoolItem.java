@@ -468,7 +468,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
     public void setControl(Control control) {
         checkWidget();
         if (!java.util.Objects.equals(this.control, control)) {
-            dirty();
+            getValue().markDirty(VCoolItem.CONTROL);
         }
         if (control != null) {
             if (control.isDisposed())
@@ -513,7 +513,6 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      * @since 2.0
      */
     public void setMinimumSize(int width, int height) {
-        dirty();
         Point newValue = new Point(width, height);
         checkWidget();
         Point point = ((DartCoolBar) parent.getImpl()).fixPoint(width, height);
@@ -557,7 +556,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      * </ul>
      */
     public void setPreferredSize(int width, int height) {
-        dirty();
+        getValue().markDirty(VCoolItem.PREFERRED_SIZE);
         Point newValue = new Point(width, height);
         checkWidget();
         ideal = true;
@@ -604,7 +603,6 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      * </ul>
      */
     public void setSize(int width, int height) {
-        dirty();
         checkWidget();
         Point point = ((DartCoolBar) parent.getImpl()).fixPoint(width, height);
         width = Math.max(point.x, minimumWidth + MINIMUM_WIDTH);

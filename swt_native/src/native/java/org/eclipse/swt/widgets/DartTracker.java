@@ -18,7 +18,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -691,9 +690,6 @@ public class DartTracker extends DartWidget implements ITracker {
      */
     public void setCursor(Cursor newCursor) {
         checkWidget();
-        if (!java.util.Objects.equals(this.clientCursor, newCursor)) {
-            dirty();
-        }
         clientCursor = newCursor;
         if (newCursor != null) {
             ((DartDisplay) display.getImpl()).lockCursor = false;
@@ -717,9 +713,6 @@ public class DartTracker extends DartWidget implements ITracker {
      */
     public void setRectangles(Rectangle[] rectangles) {
         checkWidget();
-        if (!java.util.Objects.equals(this.rectangles, rectangles)) {
-            dirty();
-        }
         if (rectangles == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         int length = rectangles.length;
@@ -745,9 +738,6 @@ public class DartTracker extends DartWidget implements ITracker {
      */
     public void setStippled(boolean stippled) {
         checkWidget();
-        if (!java.util.Objects.equals(this.stippled, stippled)) {
-            dirty();
-        }
         this.stippled = stippled;
     }
 

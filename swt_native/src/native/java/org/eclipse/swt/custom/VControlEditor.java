@@ -19,6 +19,7 @@ public class VControlEditor {
 
     protected DartControlEditor impl;
 
+    @JsonAttribute(ignore = true)
     public Control getEditor() {
         Control val = ((DartControlEditor) impl).editor;
         if (val != null && !(val.getImpl() instanceof DartControl))

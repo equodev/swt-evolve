@@ -12,6 +12,8 @@ import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 
+import 'delivery/support/deliver.dart';
+
 class _CapturingCanvasSwt extends CanvasSwt<VCanvas> {
   const _CapturingCanvasSwt({required super.value, required this.onEvent});
 
@@ -128,12 +130,12 @@ void main() {
     await _pumpCanvas(tester, _canvas(bounds: _rect(0, 0, 0, 0)), events);
     await _settle(tester);
 
-    await _pumpCanvas(tester, _canvas(bounds: _rect(0, 0, 200, 100)), events);
+    await deliverWhole(_canvas(bounds: _rect(0, 0, 200, 100))..seq = 10);
     await tester.pump();
     final int afterBounds = _paints(events);
     expect(afterBounds, greaterThan(1));
 
-    await _pumpCanvas(tester, _canvas(bounds: _rect(0, 0, 400, 300)), events);
+    await deliverWhole(_canvas(bounds: _rect(0, 0, 400, 300))..seq = 20);
     await tester.pump();
     expect(_paints(events), afterBounds);
   });

@@ -5,6 +5,7 @@ import '../gen/color.dart';
 import '../gen/control.dart';
 import '../gen/image.dart';
 import '../gen/item.dart';
+import '../gen/widget.dart';
 import '../impl/toolitem_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
@@ -41,14 +42,71 @@ class VToolItem extends VItem {
   VControl? control;
   VImage? disabledImage;
   bool? enabled;
-  bool? enabledEffective;
   VColor? foreground;
   VImage? hotImage;
   bool? selection;
   String? toolTipText;
   int? width;
 
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VToolItem) {
+      background = other.background;
+      control = other.control;
+      disabledImage = other.disabledImage;
+      enabled = other.enabled;
+      foreground = other.foreground;
+      hotImage = other.hotImage;
+      selection = other.selection;
+      toolTipText = other.toolTipText;
+      width = other.width;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'background':
+        background = json['background'] == null
+            ? null
+            : VColor.fromJson(json['background'] as Map<String, dynamic>);
+      case 'control':
+        control = json['control'] == null
+            ? null
+            : VControl.fromJson(json['control'] as Map<String, dynamic>);
+      case 'disabledImage':
+        disabledImage = json['disabledImage'] == null
+            ? null
+            : VImage.fromJson(json['disabledImage'] as Map<String, dynamic>);
+      case 'enabled':
+        enabled = json['enabled'] as bool?;
+      case 'foreground':
+        foreground = json['foreground'] == null
+            ? null
+            : VColor.fromJson(json['foreground'] as Map<String, dynamic>);
+      case 'hotImage':
+        hotImage = json['hotImage'] == null
+            ? null
+            : VImage.fromJson(json['hotImage'] as Map<String, dynamic>);
+      case 'selection':
+        selection = json['selection'] as bool?;
+      case 'toolTipText':
+        toolTipText = json['toolTipText'] as String?;
+      case 'width':
+        width = (json['width'] as num?)?.toInt();
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
+  @override
+  void adoptChildren(VWidget Function(VWidget) adopt) {
+    super.adoptChildren(adopt);
+    control = VWidget.adoptOne(control, adopt);
+  }
+
   factory VToolItem.fromJson(Map<String, dynamic> json) =>
-      _$VToolItemFromJson(json);
+      _$VToolItemFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VToolItemToJson(this);
 }

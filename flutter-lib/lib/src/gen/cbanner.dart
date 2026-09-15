@@ -7,10 +7,10 @@ import '../gen/cursor.dart';
 import '../gen/font.dart';
 import '../gen/image.dart';
 import '../gen/menu.dart';
-import '../gen/point.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
+import '../gen/widget.dart';
 import '../impl/cbanner_evolve.dart';
 import 'widgets.dart';
 
@@ -30,14 +30,7 @@ class VCBanner extends VComposite {
     swt = "CBanner";
   }
 
-  VControl? bottom;
-  VControl? left;
-  VControl? right;
-  VPoint? rightMinimumSize;
-  int? rightWidth;
-  bool? simple;
-
   factory VCBanner.fromJson(Map<String, dynamic> json) =>
-      _$VCBannerFromJson(json);
+      _$VCBannerFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VCBannerToJson(this);
 }

@@ -406,7 +406,7 @@ public class DartSashForm extends DartComposite implements ISashForm {
     public void setMaximizedControl(Control control) {
         checkWidget();
         if (!java.util.Objects.equals(this.maxControl, control)) {
-            dirty();
+            getValue().markDirty(VSashForm.MAXIMIZED_CONTROL);
         }
         if (control == null) {
             if (maxControl != null) {
@@ -441,7 +441,7 @@ public class DartSashForm extends DartComposite implements ISashForm {
     public void setSashWidth(int width) {
         checkWidget();
         if (!java.util.Objects.equals(this.getApi().SASH_WIDTH, width)) {
-            dirty();
+            getValue().markDirty(VSashForm.SASH_WIDTH);
         }
         if (getApi().SASH_WIDTH == width)
             return;
@@ -473,7 +473,7 @@ public class DartSashForm extends DartComposite implements ISashForm {
      * </ul>
      */
     public void setWeights(int... weights) {
-        dirty();
+        getValue().markDirty(VSashForm.WEIGHTS);
         int[] newValue = weights;
         checkWidget();
         Control[] cArray = getControls(false);

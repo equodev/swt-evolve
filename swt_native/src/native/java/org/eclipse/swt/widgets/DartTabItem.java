@@ -250,7 +250,7 @@ public class DartTabItem extends DartItem implements ITabItem {
     public void setControl(Control control) {
         checkWidget();
         if (!java.util.Objects.equals(this.control, control)) {
-            dirty();
+            getValue().markDirty(VTabItem.CONTROL);
         }
         if (control != null) {
             if (control.isDisposed())
@@ -368,7 +368,7 @@ public class DartTabItem extends DartItem implements ITabItem {
     public void setToolTipText(String string) {
         checkWidget();
         if (!java.util.Objects.equals(this.toolTipText, string)) {
-            dirty();
+            getValue().markDirty(VTabItem.TOOL_TIP_TEXT);
         }
         toolTipText = string;
         ((DartControl) parent.getImpl()).checkToolTip(this.getApi());

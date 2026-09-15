@@ -18,6 +18,13 @@ public class VAnimatedProgress extends VCanvas {
         super(impl);
     }
 
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = AnimatedProgress.class)
     public static class AnimatedProgressJson implements Configuration {
 

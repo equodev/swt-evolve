@@ -30,6 +30,18 @@ public class VFont extends VResource {
         ((DartFont) impl)._fontData = value;
     }
 
+    public static final String FONT_DATA = "fontData";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "fontData":
+                Serializer.writeKeyValue(writer, "fontData", getFontData());
+                return;
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = Font.class)
     public static class FontJson implements Configuration {
 

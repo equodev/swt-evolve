@@ -34,18 +34,18 @@ class ProgressBarSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));
         assertJ.satisfies(node("bounds").equalsTo(value(w).getBounds(), orAbsentIfNull));
-        assertJ.satisfies(node("capture").equalsTo(value(w).getCapture(), orAbsentIfFalse));
         assertJ.satisfies(node("cursor").equalsTo(w.getCursor(), orAbsentIfNull));
-        assertJ.satisfies(node("dragDetect").equalsTo(w.getDragDetect(), orAbsentIfFalse));
         assertJ.satisfies(node("enabled").equalsTo(w.getEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("orientation").equalsTo(w.getOrientation(), orAbsentIf0));
-        assertJ.satisfies(node("redraw").equalsTo(value(w).getRedraw(), orAbsentIfFalse));
-        assertJ.satisfies(node("textDirection").equalsTo(w.getTextDirection(), orAbsentIf0));
-        assertJ.satisfies(node("touchEnabled").equalsTo(w.getTouchEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
+    }
+
+    @Test
+    void should_name_every_change_ProgressBar() {
+        ProgressBar w = new ProgressBar(swtShell(), SWT.NONE);
+        assertNamesEveryChange(w);
     }
 
     VProgressBar value(ProgressBar w) {

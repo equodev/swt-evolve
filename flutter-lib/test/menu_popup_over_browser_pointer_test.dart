@@ -44,7 +44,6 @@ VMenu _dropDown(int id, String entry) => VMenu()
       ..id = id + 1
       ..style = SWT.PUSH
       ..enabled = true
-      ..enabledEffective = true
       ..text = entry,
   ];
 
@@ -57,7 +56,6 @@ VMenu _menuBar() => VMenu()
       ..id = 201
       ..style = SWT.CASCADE
       ..enabled = true
-      ..enabledEffective = true
       ..text = 'File'
       ..menu = _dropDown(300, 'Exit'),
   ];

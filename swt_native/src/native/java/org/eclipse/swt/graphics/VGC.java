@@ -25,6 +25,7 @@ public class VGC extends VResource {
         ((DartGC) impl).XORMode = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getAdvanced() {
         return ((DartGC) impl).getAdvanced();
     }
@@ -42,6 +43,7 @@ public class VGC extends VResource {
         ((DartGC) impl).alpha = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getAntialias() {
         return ((DartGC) impl).getAntialias();
     }
@@ -120,6 +122,7 @@ public class VGC extends VResource {
         ((DartGC) impl).foreground = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Pattern getForegroundPattern() {
         Pattern val = ((DartGC) impl).foregroundPattern;
         if (val != null && !(val.getImpl() instanceof DartPattern))
@@ -131,6 +134,7 @@ public class VGC extends VResource {
         ((DartGC) impl).foregroundPattern = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getInterpolation() {
         return ((DartGC) impl).getInterpolation();
     }
@@ -156,6 +160,7 @@ public class VGC extends VResource {
         ((DartGC) impl).lineCap = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int[] getLineDash() {
         return ((DartGC) impl).lineDash;
     }
@@ -172,6 +177,7 @@ public class VGC extends VResource {
         ((DartGC) impl).lineJoin = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getLineStyle() {
         return ((DartGC) impl).getLineStyle();
     }
@@ -197,6 +203,7 @@ public class VGC extends VResource {
         ((DartGC) impl).style = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getTextAntialias() {
         return ((DartGC) impl).getTextAntialias();
     }
@@ -560,6 +567,88 @@ public class VGC extends VResource {
         public int arcWidth;
 
         public int arcHeight;
+    }
+
+    public static final String XORMODE = "XORMode";
+
+    public static final String ALPHA = "alpha";
+
+    public static final String BACKGROUND = "background";
+
+    public static final String BACKGROUND_PATTERN = "backgroundPattern";
+
+    public static final String CLIPPING = "clipping";
+
+    public static final String CLIPPING_PATH = "clippingPath";
+
+    public static final String CLIPPING_RECTS = "clippingRects";
+
+    public static final String FILL_RULE = "fillRule";
+
+    public static final String FONT = "font";
+
+    public static final String FOREGROUND = "foreground";
+
+    public static final String LINE_CAP = "lineCap";
+
+    public static final String LINE_JOIN = "lineJoin";
+
+    public static final String LINE_WIDTH = "lineWidth";
+
+    public static final String STYLE = "style";
+
+    public static final String TRANSFORM = "transform";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "XORMode":
+                Serializer.writeKeyValue(writer, "XORMode", getXORMode());
+                return;
+            case "alpha":
+                Serializer.writeKeyValue(writer, "alpha", getAlpha());
+                return;
+            case "background":
+                Serializer.writeKeyValue(writer, "background", getBackground());
+                return;
+            case "backgroundPattern":
+                Serializer.writeKeyValue(writer, "backgroundPattern", getBackgroundPattern());
+                return;
+            case "clipping":
+                Serializer.writeKeyValue(writer, "clipping", getClipping());
+                return;
+            case "clippingPath":
+                Serializer.writeKeyValue(writer, "clippingPath", getClippingPath());
+                return;
+            case "clippingRects":
+                Serializer.writeKeyValue(writer, "clippingRects", getClippingRects());
+                return;
+            case "fillRule":
+                Serializer.writeKeyValue(writer, "fillRule", getFillRule());
+                return;
+            case "font":
+                Serializer.writeKeyValue(writer, "font", getFont());
+                return;
+            case "foreground":
+                Serializer.writeKeyValue(writer, "foreground", getForeground());
+                return;
+            case "lineCap":
+                Serializer.writeKeyValue(writer, "lineCap", getLineCap());
+                return;
+            case "lineJoin":
+                Serializer.writeKeyValue(writer, "lineJoin", getLineJoin());
+                return;
+            case "lineWidth":
+                Serializer.writeKeyValue(writer, "lineWidth", getLineWidth());
+                return;
+            case "style":
+                Serializer.writeKeyValue(writer, "style", getStyle());
+                return;
+            case "transform":
+                Serializer.writeKeyValue(writer, "transform", getTransform());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = GC.class)

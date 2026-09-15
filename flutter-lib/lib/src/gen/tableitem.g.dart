@@ -9,8 +9,8 @@ part of 'tableitem.dart';
 VTableItem _$VTableItemFromJson(Map<String, dynamic> json) => VTableItem()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
-  ..seq = (json['seq'] as num?)?.toInt() ?? 0
-  ..style = (json['style'] as num).toInt()
+  ..seq = (json['_s'] as num?)?.toInt() ?? 0
+  ..style = (json['style'] as num?)?.toInt() ?? 0
   ..image = json['image'] == null
       ? null
       : VImage.fromJson(json['image'] as Map<String, dynamic>)
@@ -26,7 +26,6 @@ VTableItem _$VTableItemFromJson(Map<String, dynamic> json) => VTableItem()
       ? null
       : VColor.fromJson(json['foreground'] as Map<String, dynamic>)
   ..grayed = json['grayed'] as bool?
-  ..imageIndent = (json['imageIndent'] as num?)?.toInt()
   ..images = (json['images'] as List<dynamic>?)
       ?.map(
         (e) => e == null ? null : VImage.fromJson(e as Map<String, dynamic>),
@@ -48,7 +47,6 @@ Map<String, dynamic> _$VTableItemToJson(VTableItem instance) =>
       'font': ?instance.font,
       'foreground': ?instance.foreground,
       'grayed': ?instance.grayed,
-      'imageIndent': ?instance.imageIndent,
       'images': ?instance.images,
       'texts': ?instance.texts,
     };

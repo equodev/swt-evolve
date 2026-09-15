@@ -9,7 +9,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import '../gen/control.dart';
 import '../gen/rectangle.dart';
-import '../live_bounds.dart';
 import '../gen/droptarget.dart';
 import '../gen/event.dart';
 import '../gen/menu.dart';
@@ -77,12 +76,6 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     }
   }
 
-  /// Publishes the bounds this control believes it has, so its parent's layout can prefer them
-  /// over a stale copy of this child (see [LiveBounds]).
-  void _publishBounds() {
-    LiveBounds.publish(state.id, state.bounds, this);
-  }
-
   @override
   void initState() {
     super.initState();
@@ -96,7 +89,6 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     });
     FocusRequests.instance.addListener(_applyFocusRequest);
     _applyFocusRequest();
-    _publishBounds();
     ActiveDragTracker.ensureInitialized();
   }
 
@@ -126,14 +118,14 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   void setValue(V value) {
     _resolveSentinelBounds(value);
     super.setValue(value);
-    _publishBounds();
   }
 
   @override
   void didUpdateWidget(covariant T oldWidget) {
-    _resolveSentinelBounds(widget.value as V);
+    // The parent's copy is identity only now; the bounds to resolve are the ones this widget
+    // actually holds.
+    _resolveSentinelBounds(state);
     super.didUpdateWidget(oldWidget);
-    _publishBounds();
   }
 
   /// SWT's `stateMask` for a pointer event: the buttons held during the move, plus the live
@@ -206,7 +198,6 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     _removeTooltip();
     FocusRequests.instance.removeListener(_applyFocusRequest);
     HoverExclusivityArbiter.instance.unregister(this);
-    LiveBounds.forget(state.id, this);
     super.dispose();
   }
 
@@ -445,15 +436,32 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     );
   }
 
-  /// Adding or removing these wrappers would change the widget type at the root of the subtree,
-  /// which deactivates every descendant element. Each one is then rebuilt from the copy of its
-  /// state nested in the parent's payload — an older snapshot than what the descendant may already
-  /// have applied from its own channel. Keep the wrappers mounted and toggle their flags instead.
+  /// This control's own flag combined with its ancestors', which is what SWT's `isEnabled()` means.
+  ///
+  /// Read from the tree rather than from the payload: it depends on where the widget sits, and the
+  /// only place that knows is here. [EnabledScope.of] reads the ancestors' answer — this control's
+  /// own scope is published below this context, so this cannot see itself.
+  bool get enabledEffective =>
+      (state.enabled ?? true) && EnabledScope.of(context);
+
+  /// Stops this control taking input while it is disabled, and publishes the same answer for
+  /// everything below it — a control that refuses input owes its subtree the reason, or a
+  /// descendant would go on rendering itself as enabled inside something that is not. Keeping the
+  /// two in one wrapper is also what keeps every build() path honest: several of them return early
+  /// and would otherwise each have to remember to tell the subtree.
+  ///
+  /// The wrappers stay mounted and only their flags change: adding or removing one would change
+  /// the widget type at the root of the subtree, deactivating every descendant element, which is
+  /// then rebuilt from the copy of its state nested in the parent's payload — an older snapshot
+  /// than what the descendant may already have applied from its own channel.
   Widget blockWhenDisabled(Widget child) {
-    final blocked = state.enabledEffective == false;
-    return ExcludeFocus(
-      excluding: blocked,
-      child: IgnorePointer(ignoring: blocked, child: child),
+    final effective = enabledEffective;
+    return EnabledScope(
+      enabled: effective,
+      child: ExcludeFocus(
+        excluding: !effective,
+        child: IgnorePointer(ignoring: !effective, child: child),
+      ),
     );
   }
 
@@ -481,7 +489,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     }
 
     if (state.visible != null && !state.visible!) {
-      return Visibility(visible: false, maintainState: true, child: widget);
+      // See CompositeImpl: a hidden control's state lives in the registry and keeps up without it.
+      return const SizedBox.shrink();
     }
     if (state.enabled != null && !state.enabled!) {
       // A disabled control still paints: Java dispatches SWT.Paint and emits the draw ops on this

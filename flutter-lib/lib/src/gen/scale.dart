@@ -9,6 +9,7 @@ import '../gen/image.dart';
 import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
+import '../gen/widget.dart';
 import '../impl/scale_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
@@ -37,12 +38,35 @@ class VScale extends VControl {
     swt = "Scale";
   }
 
-  int? increment;
   int? maximum;
   int? minimum;
-  int? pageIncrement;
   int? selection;
 
-  factory VScale.fromJson(Map<String, dynamic> json) => _$VScaleFromJson(json);
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VScale) {
+      maximum = other.maximum;
+      minimum = other.minimum;
+      selection = other.selection;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'maximum':
+        maximum = (json['maximum'] as num?)?.toInt();
+      case 'minimum':
+        minimum = (json['minimum'] as num?)?.toInt();
+      case 'selection':
+        selection = (json['selection'] as num?)?.toInt();
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
+  factory VScale.fromJson(Map<String, dynamic> json) =>
+      _$VScaleFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VScaleToJson(this);
 }

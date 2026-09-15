@@ -29,6 +29,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).ascent = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getAverageCharWidth() {
         return ((DartStyledTextRenderer) impl).averageCharWidth;
     }
@@ -37,6 +38,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).averageCharWidth = value;
     }
 
+    @JsonAttribute(ignore = true)
     public float getAverageLineHeight() {
         return ((DartStyledTextRenderer) impl).averageLineHeight;
     }
@@ -45,6 +47,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).averageLineHeight = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Font getBoldFont() {
         Font val = ((DartStyledTextRenderer) impl).boldFont;
         if (val != null && val.getImpl() instanceof SwtFont)
@@ -58,6 +61,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).boldFont = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Font getBoldItalicFont() {
         Font val = ((DartStyledTextRenderer) impl).boldItalicFont;
         if (val != null && val.getImpl() instanceof SwtFont)
@@ -86,6 +90,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).bullets = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int[] getBulletsIndices() {
         return ((DartStyledTextRenderer) impl).bulletsIndices;
     }
@@ -111,6 +116,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).descent = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getFixedPitch() {
         return ((DartStyledTextRenderer) impl).fixedPitch;
     }
@@ -119,6 +125,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).fixedPitch = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getHasLinks() {
         return ((DartStyledTextRenderer) impl).hasLinks;
     }
@@ -127,6 +134,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).hasLinks = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getIdleRunning() {
         return ((DartStyledTextRenderer) impl).idleRunning;
     }
@@ -135,6 +143,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).idleRunning = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Font getItalicFont() {
         Font val = ((DartStyledTextRenderer) impl).italicFont;
         if (val != null && val.getImpl() instanceof SwtFont)
@@ -163,6 +172,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).layouts = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getLineCount() {
         return ((DartStyledTextRenderer) impl).lineCount;
     }
@@ -171,6 +181,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).lineCount = value;
     }
 
+    @JsonAttribute(ignore = true)
     public VStyledTextRenderer.VLineSizeInfo[] getLineSizes() {
         DartStyledTextRenderer.LineSizeInfo[] values = ((DartStyledTextRenderer) impl).lineSizes;
         if (values == null)
@@ -197,6 +208,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).lineSizes = result;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getLineSpacingComputing() {
         return ((DartStyledTextRenderer) impl).lineSpacingComputing;
     }
@@ -239,6 +251,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).lines = result;
     }
 
+    @JsonAttribute(ignore = true)
     public int getLinesInAverageLineHeight() {
         return ((DartStyledTextRenderer) impl).linesInAverageLineHeight;
     }
@@ -247,6 +260,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).linesInAverageLineHeight = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getMaxWidth() {
         return ((DartStyledTextRenderer) impl).maxWidth;
     }
@@ -255,6 +269,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).maxWidth = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getMaxWidthLineIndex() {
         return ((DartStyledTextRenderer) impl).maxWidthLineIndex;
     }
@@ -271,6 +286,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).ranges = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int[] getRedrawLines() {
         return ((DartStyledTextRenderer) impl).redrawLines;
     }
@@ -326,6 +342,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).styles = value;
     }
 
+    @JsonAttribute(ignore = true)
     public StyleRange[] getStylesSet() {
         StyleRange[] values = ((DartStyledTextRenderer) impl).stylesSet;
         if (values == null)
@@ -340,6 +357,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).stylesSet = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getStylesSetCount() {
         return ((DartStyledTextRenderer) impl).stylesSetCount;
     }
@@ -348,6 +366,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).stylesSetCount = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getTabLength() {
         return ((DartStyledTextRenderer) impl).tabLength;
     }
@@ -356,6 +375,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).tabLength = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getTabWidth() {
         return ((DartStyledTextRenderer) impl).tabWidth;
     }
@@ -364,6 +384,7 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).tabWidth = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getTopIndex() {
         return ((DartStyledTextRenderer) impl).topIndex;
     }

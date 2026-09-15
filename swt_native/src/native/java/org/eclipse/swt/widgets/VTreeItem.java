@@ -98,6 +98,58 @@ public class VTreeItem extends VItem {
         ((DartTreeItem) impl).strings = value;
     }
 
+    public static final String BACKGROUND = "background";
+
+    public static final String CHECKED = "checked";
+
+    public static final String EXPANDED = "expanded";
+
+    public static final String FONT = "font";
+
+    public static final String FOREGROUND = "foreground";
+
+    public static final String GRAYED = "grayed";
+
+    public static final String IMAGES = "images";
+
+    public static final String ITEMS = "items";
+
+    public static final String TEXTS = "texts";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "background":
+                Serializer.writeKeyValue(writer, "background", getBackground());
+                return;
+            case "checked":
+                Serializer.writeKeyValue(writer, "checked", getChecked());
+                return;
+            case "expanded":
+                Serializer.writeKeyValue(writer, "expanded", getExpanded());
+                return;
+            case "font":
+                Serializer.writeKeyValue(writer, "font", getFont());
+                return;
+            case "foreground":
+                Serializer.writeKeyValue(writer, "foreground", getForeground());
+                return;
+            case "grayed":
+                Serializer.writeKeyValue(writer, "grayed", getGrayed());
+                return;
+            case "images":
+                Serializer.writeKeyValue(writer, "images", getImages());
+                return;
+            case "items":
+                Serializer.writeKeyValue(writer, "items", getItems());
+                return;
+            case "texts":
+                Serializer.writeKeyValue(writer, "texts", getTexts());
+                return;
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = TreeItem.class)
     public static class TreeItemJson implements Configuration {
 

@@ -18,6 +18,7 @@ public class VMenu extends VWidget {
         super(impl);
     }
 
+    @JsonAttribute(ignore = true)
     public MenuItem getDefaultItem() {
         MenuItem val = ((DartMenu) impl).defaultItem;
         if (val != null && !(val.getImpl() instanceof DartMenuItem))
@@ -36,13 +37,6 @@ public class VMenu extends VWidget {
 
     public void setEnabled(boolean value) {
         ((DartMenu) impl).enabled = value;
-    }
-
-    public Boolean getEnabledEffective() {
-        return ((DartMenu) impl).isEnabled();
-    }
-
-    public void setEnabledEffective(Boolean value) {
     }
 
     public MenuItem[] getItems() {
@@ -75,6 +69,7 @@ public class VMenu extends VWidget {
         ((DartMenu) impl)._setOrientation(value);
     }
 
+    @JsonAttribute(ignore = true)
     public Menu getParentMenu() {
         Menu val = ((DartMenu) impl).parentMenu;
         if (val != null && !(val.getImpl() instanceof DartMenu))
@@ -92,6 +87,38 @@ public class VMenu extends VWidget {
 
     public void setVisible(boolean value) {
         ((DartMenu) impl).visible = value;
+    }
+
+    public static final String ENABLED = "enabled";
+
+    public static final String ITEMS = "items";
+
+    public static final String LOCATION = "location";
+
+    public static final String ORIENTATION = "orientation";
+
+    public static final String VISIBLE = "visible";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "enabled":
+                Serializer.writeKeyValue(writer, "enabled", getEnabled());
+                return;
+            case "items":
+                Serializer.writeKeyValue(writer, "items", getItems());
+                return;
+            case "location":
+                Serializer.writeKeyValue(writer, "location", getLocation());
+                return;
+            case "orientation":
+                Serializer.writeKeyValue(writer, "orientation", getOrientation());
+                return;
+            case "visible":
+                Serializer.writeKeyValue(writer, "visible", getVisible());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = Menu.class)

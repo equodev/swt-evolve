@@ -10,20 +10,12 @@ VStyleRange _$VStyleRangeFromJson(Map<String, dynamic> json) => VStyleRange()
   ..background = json['background'] == null
       ? null
       : VColor.fromJson(json['background'] as Map<String, dynamic>)
-  ..borderColor = json['borderColor'] == null
-      ? null
-      : VColor.fromJson(json['borderColor'] as Map<String, dynamic>)
-  ..borderStyle = (json['borderStyle'] as num?)?.toInt()
   ..font = json['font'] == null
       ? null
       : VFont.fromJson(json['font'] as Map<String, dynamic>)
   ..foreground = json['foreground'] == null
       ? null
       : VColor.fromJson(json['foreground'] as Map<String, dynamic>)
-  ..metrics = json['metrics'] == null
-      ? null
-      : VGlyphMetrics.fromJson(json['metrics'] as Map<String, dynamic>)
-  ..rise = (json['rise'] as num?)?.toInt()
   ..strikeout = json['strikeout'] as bool?
   ..strikeoutColor = json['strikeoutColor'] == null
       ? null
@@ -40,12 +32,8 @@ VStyleRange _$VStyleRangeFromJson(Map<String, dynamic> json) => VStyleRange()
 Map<String, dynamic> _$VStyleRangeToJson(VStyleRange instance) =>
     <String, dynamic>{
       'background': ?instance.background,
-      'borderColor': ?instance.borderColor,
-      'borderStyle': ?instance.borderStyle,
       'font': ?instance.font,
       'foreground': ?instance.foreground,
-      'metrics': ?instance.metrics,
-      'rise': ?instance.rise,
       'strikeout': ?instance.strikeout,
       'strikeoutColor': ?instance.strikeoutColor,
       'underline': ?instance.underline,

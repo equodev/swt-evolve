@@ -291,7 +291,7 @@ public class DartText extends DartScrollable implements IText {
         insertEditText(string);
         applySegments();
         if (string.length() != 0) {
-            dirty();
+            getValue().markDirty(VText.TEXT);
             sendEvent(SWT.Modify);
         }
     }
@@ -1202,9 +1202,6 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setDoubleClickEnabled(boolean doubleClick) {
         checkWidget();
-        if (!java.util.Objects.equals(this.doubleClick, doubleClick)) {
-            dirty();
-        }
         this.doubleClick = doubleClick;
     }
 
@@ -1232,7 +1229,7 @@ public class DartText extends DartScrollable implements IText {
     public void setEchoChar(char echo) {
         char newValue = echo;
         if (!java.util.Objects.equals(this.echoCharacter, newValue)) {
-            dirty();
+            getValue().markDirty(VText.ECHO_CHARACTER);
         }
         checkWidget();
         if ((getApi().style & SWT.MULTI) != 0)
@@ -1255,7 +1252,7 @@ public class DartText extends DartScrollable implements IText {
     public void setEditable(boolean editable) {
         boolean newValue = editable;
         if (!java.util.Objects.equals(this.editable, newValue)) {
-            dirty();
+            getValue().markDirty(VText.EDITABLE);
         }
         checkWidget();
         getApi().style &= ~SWT.READ_ONLY;
@@ -1308,7 +1305,7 @@ public class DartText extends DartScrollable implements IText {
     public void setMessage(String message) {
         checkWidget();
         if (!java.util.Objects.equals(this.message, message)) {
-            dirty();
+            getValue().markDirty(VText.MESSAGE);
         }
         if (message == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -1402,7 +1399,7 @@ public class DartText extends DartScrollable implements IText {
         int max = Math.min(Math.max(Math.max(start, end), 0), length);
         Point newValue = new Point(min, max);
         if (!java.util.Objects.equals(this.selection, newValue)) {
-            dirty();
+            getValue().markDirty(VText.SELECTION);
         }
         this.selection = newValue;
         // the caret is in the start of the selection
@@ -1485,9 +1482,6 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setTabs(int tabs) {
         checkWidget();
-        if (!java.util.Objects.equals(this.tabs, tabs)) {
-            dirty();
-        }
         if (tabs < 0)
             return;
         setTabStops(this.tabs = tabs);
@@ -1517,7 +1511,7 @@ public class DartText extends DartScrollable implements IText {
     public void setText(String string) {
         String newValue = string;
         if (!java.util.Objects.equals(this.text, newValue)) {
-            dirty();
+            getValue().markDirty(VText.TEXT);
         }
         checkWidget();
         if (string == null)
@@ -1554,9 +1548,6 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setTextChars(char[] text) {
         char[] newValue = text;
-        if (!java.util.Objects.equals(this.textChars, newValue)) {
-            dirty();
-        }
         checkWidget();
         if (text == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -1598,7 +1589,7 @@ public class DartText extends DartScrollable implements IText {
     public void setTextLimit(int limit) {
         int newValue = limit;
         if (!java.util.Objects.equals(this.textLimit, newValue)) {
-            dirty();
+            getValue().markDirty(VText.TEXT_LIMIT);
         }
         checkWidget();
         if (limit == 0)
@@ -1624,15 +1615,12 @@ public class DartText extends DartScrollable implements IText {
     public void setTopIndex(int index) {
         //int newValue = index;
         ;
-        //if (!java.util.Objects.equals(this.topIndex, newValue)) {    dirty();}
-        ;
         checkWidget();
         if ((getApi().style & SWT.SINGLE) != 0)
             return;
         int count = getLineCount();
         int newValue = Math.min(Math.max(index, 0), count - 1);
         if (!java.util.Objects.equals(this.topIndex, newValue)) {
-            dirty();
         }
         this.topIndex = newValue;
     }

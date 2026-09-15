@@ -10,6 +10,7 @@ import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollable.dart';
 import '../gen/scrollbar.dart';
+import '../gen/widget.dart';
 import '../impl/list_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
@@ -40,8 +41,33 @@ class VList extends VScrollable {
 
   List<String>? items;
   List<int>? selection;
-  int? topIndex;
 
-  factory VList.fromJson(Map<String, dynamic> json) => _$VListFromJson(json);
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VList) {
+      items = other.items;
+      selection = other.selection;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'items':
+        items = (json['items'] as List<dynamic>?)
+            ?.map((e) => e as String)
+            .toList();
+      case 'selection':
+        selection = (json['selection'] as List<dynamic>?)
+            ?.map((e) => (e as num).toInt())
+            .toList();
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
+  factory VList.fromJson(Map<String, dynamic> json) =>
+      _$VListFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VListToJson(this);
 }

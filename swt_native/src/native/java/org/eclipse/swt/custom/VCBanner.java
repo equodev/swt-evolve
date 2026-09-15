@@ -17,6 +17,7 @@ public class VCBanner extends VComposite {
         super(impl);
     }
 
+    @JsonAttribute(ignore = true)
     public Control getBottom() {
         Control val = ((DartCBanner) impl).bottom;
         if (val != null && !(val.getImpl() instanceof DartControl))
@@ -28,6 +29,7 @@ public class VCBanner extends VComposite {
         ((DartCBanner) impl).bottom = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Control getLeft() {
         Control val = ((DartCBanner) impl).left;
         if (val != null && !(val.getImpl() instanceof DartControl))
@@ -39,6 +41,7 @@ public class VCBanner extends VComposite {
         ((DartCBanner) impl).left = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Control getRight() {
         Control val = ((DartCBanner) impl).right;
         if (val != null && !(val.getImpl() instanceof DartControl))
@@ -50,6 +53,7 @@ public class VCBanner extends VComposite {
         ((DartCBanner) impl).right = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Point getRightMinimumSize() {
         return ((DartCBanner) impl).rightMinimumSize;
     }
@@ -58,6 +62,7 @@ public class VCBanner extends VComposite {
         ((DartCBanner) impl).rightMinimumSize = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getRightWidth() {
         return ((DartCBanner) impl).getRightWidth();
     }
@@ -66,12 +71,20 @@ public class VCBanner extends VComposite {
         ((DartCBanner) impl).rightWidth = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getSimple() {
         return ((DartCBanner) impl).getSimple();
     }
 
     public void setSimple(boolean value) {
         ((DartCBanner) impl).simple = value;
+    }
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = CBanner.class)

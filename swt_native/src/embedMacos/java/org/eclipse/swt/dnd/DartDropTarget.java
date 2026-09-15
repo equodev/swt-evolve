@@ -412,7 +412,6 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
      *  </ul>
      */
     public void setTransfer(Transfer... transferAgents) {
-        dirty();
         if (transferAgents == null)
             DND.error(SWT.ERROR_NULL_ARGUMENT);
         this.transferAgents = transferAgents;

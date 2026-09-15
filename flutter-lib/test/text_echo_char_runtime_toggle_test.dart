@@ -6,6 +6,8 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/impl/text_evolve.dart';
 
+import 'delivery/support/deliver.dart';
+
 String _renderedText(WidgetTester tester) {
   final editable = find.byType(EditableText);
   expect(editable, findsOneWidget);
@@ -39,9 +41,7 @@ void main() {
     expect(_renderedText(tester), 'secret',
         reason: 'no echo char yet: the text starts readable');
 
-    final state = tester.state<TextImpl<TextSwt<VText>, VText>>(
-        find.byType(TextSwt<VText>));
-    state.setValue(_value('•'.codeUnitAt(0)));
+    await deliverWhole(_value('•'.codeUnitAt(0))..seq = 2);
     await tester.pumpAndSettle();
 
     expect(_renderedText(tester), '••••••',
@@ -53,9 +53,7 @@ void main() {
     await _pumpText(tester, _value('•'.codeUnitAt(0)));
     expect(_renderedText(tester), '••••••');
 
-    final state = tester.state<TextImpl<TextSwt<VText>, VText>>(
-        find.byType(TextSwt<VText>));
-    state.setValue(_value(0));
+    await deliverWhole(_value(0)..seq = 2);
     await tester.pumpAndSettle();
 
     expect(_renderedText(tester), 'secret',

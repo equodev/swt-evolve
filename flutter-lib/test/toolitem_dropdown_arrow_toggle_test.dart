@@ -90,14 +90,12 @@ VMenu _openPopup() => VMenu()
   ..id = 10
   ..style = SWT.POP_UP
   ..enabled = true
-  ..enabledEffective = true
   ..visible = true
   ..items = [
     VMenuItem()
       ..id = 11
       ..style = SWT.PUSH
       ..enabled = true
-      ..enabledEffective = true
       ..text = 'Op A',
   ];
 

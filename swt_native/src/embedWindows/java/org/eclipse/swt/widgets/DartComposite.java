@@ -861,7 +861,7 @@ public class DartComposite extends DartScrollable implements IComposite {
         resizeChildren();
         if (children != null) {
             children = java.util.Arrays.stream(children).filter(child -> child != control).toArray(Control[]::new);
-            dirty();
+            getValue().markDirty(VComposite.CHILDREN);
         }
     }
 
@@ -915,7 +915,7 @@ public class DartComposite extends DartScrollable implements IComposite {
     public void setBackgroundMode(int mode) {
         checkWidget();
         if (!java.util.Objects.equals(this.backgroundMode, mode)) {
-            dirty();
+            getValue().markDirty(VComposite.BACKGROUND_MODE);
         }
         backgroundMode = mode;
         for (Control element : _getChildren()) {
@@ -999,9 +999,6 @@ public class DartComposite extends DartScrollable implements IComposite {
      */
     public void setLayoutDeferred(boolean defer) {
         boolean newValue = defer;
-        if (!java.util.Objects.equals(this.layoutDeferred, newValue)) {
-            dirty();
-        }
         checkWidget();
         this.layoutDeferred = newValue;
         if (!defer) {
@@ -1032,9 +1029,6 @@ public class DartComposite extends DartScrollable implements IComposite {
      */
     public void setTabList(Control[] tabList) {
         checkWidget();
-        if (!java.util.Objects.equals(this.tabList, tabList)) {
-            dirty();
-        }
         if (tabList != null) {
             for (Control control : tabList) {
                 if (control == null)

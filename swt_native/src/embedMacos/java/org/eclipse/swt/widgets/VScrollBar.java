@@ -26,13 +26,6 @@ public class VScrollBar extends VWidget {
         ((DartScrollBar) impl).enabled = value;
     }
 
-    public Boolean getEnabledEffective() {
-        return ((DartScrollBar) impl).isEnabled();
-    }
-
-    public void setEnabledEffective(Boolean value) {
-    }
-
     public int getIncrement() {
         return ((DartScrollBar) impl).getIncrement();
     }
@@ -57,6 +50,7 @@ public class VScrollBar extends VWidget {
         ((DartScrollBar) impl).minimum = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getPageIncrement() {
         return ((DartScrollBar) impl).getPageIncrement();
     }
@@ -87,6 +81,48 @@ public class VScrollBar extends VWidget {
 
     public void setVisible(boolean value) {
         ((DartScrollBar) impl).visible = value;
+    }
+
+    public static final String ENABLED = "enabled";
+
+    public static final String INCREMENT = "increment";
+
+    public static final String MAXIMUM = "maximum";
+
+    public static final String MINIMUM = "minimum";
+
+    public static final String SELECTION = "selection";
+
+    public static final String THUMB = "thumb";
+
+    public static final String VISIBLE = "visible";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "enabled":
+                Serializer.writeKeyValue(writer, "enabled", getEnabled());
+                return;
+            case "increment":
+                Serializer.writeKeyValue(writer, "increment", getIncrement());
+                return;
+            case "maximum":
+                Serializer.writeKeyValue(writer, "maximum", getMaximum());
+                return;
+            case "minimum":
+                Serializer.writeKeyValue(writer, "minimum", getMinimum());
+                return;
+            case "selection":
+                Serializer.writeKeyValue(writer, "selection", getSelection());
+                return;
+            case "thumb":
+                Serializer.writeKeyValue(writer, "thumb", getThumb());
+                return;
+            case "visible":
+                Serializer.writeKeyValue(writer, "visible", getVisible());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = ScrollBar.class)

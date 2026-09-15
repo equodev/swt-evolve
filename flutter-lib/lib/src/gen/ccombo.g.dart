@@ -9,8 +9,8 @@ part of 'ccombo.dart';
 VCCombo _$VCComboFromJson(Map<String, dynamic> json) => VCCombo()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
-  ..seq = (json['seq'] as num?)?.toInt() ?? 0
-  ..style = (json['style'] as num).toInt()
+  ..seq = (json['_s'] as num?)?.toInt() ?? 0
+  ..style = (json['style'] as num?)?.toInt() ?? 0
   ..background = json['background'] == null
       ? null
       : VColor.fromJson(json['background'] as Map<String, dynamic>)
@@ -20,15 +20,12 @@ VCCombo _$VCComboFromJson(Map<String, dynamic> json) => VCCombo()
   ..bounds = json['bounds'] == null
       ? null
       : VRectangle.fromJson(json['bounds'] as Map<String, dynamic>)
-  ..capture = json['capture'] as bool?
   ..cursor = json['cursor'] == null
       ? null
       : VCursor.fromJson(json['cursor'] as Map<String, dynamic>)
-  ..dragDetect = json['dragDetect'] as bool?
   ..dragSource = json['dragSource'] as bool?
   ..dropTargetId = (json['dropTargetId'] as num?)?.toInt()
   ..enabled = json['enabled'] as bool?
-  ..enabledEffective = json['enabledEffective'] as bool?
   ..font = json['font'] == null
       ? null
       : VFont.fromJson(json['font'] as Map<String, dynamic>)
@@ -39,19 +36,14 @@ VCCombo _$VCComboFromJson(Map<String, dynamic> json) => VCCombo()
   ..menu = json['menu'] == null
       ? null
       : VMenu.fromJson(json['menu'] as Map<String, dynamic>)
-  ..orientation = (json['orientation'] as num?)?.toInt()
-  ..redraw = json['redraw'] as bool?
   ..region = json['region'] == null
       ? null
       : VRegion.fromJson(json['region'] as Map<String, dynamic>)
-  ..textDirection = (json['textDirection'] as num?)?.toInt()
   ..toolTipText = json['toolTipText'] as String?
-  ..touchEnabled = json['touchEnabled'] as bool?
   ..visible = json['visible'] as bool?
   ..horizontalBar = json['horizontalBar'] == null
       ? null
       : VScrollBar.fromJson(json['horizontalBar'] as Map<String, dynamic>)
-  ..scrollbarsMode = (json['scrollbarsMode'] as num?)?.toInt()
   ..verticalBar = json['verticalBar'] == null
       ? null
       : VScrollBar.fromJson(json['verticalBar'] as Map<String, dynamic>)
@@ -59,12 +51,7 @@ VCCombo _$VCComboFromJson(Map<String, dynamic> json) => VCCombo()
   ..children = (json['children'] as List<dynamic>?)
       ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
       .toList()
-  ..layoutDeferred = json['layoutDeferred'] as bool?
-  ..tabList = (json['tabList'] as List<dynamic>?)
-      ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
-      .toList()
   ..alignment = (json['alignment'] as num?)?.toInt()
-  ..editable = json['editable'] as bool?
   ..itemTooltips = (json['itemTooltips'] as List<dynamic>?)
       ?.map((e) => e as String)
       .toList()
@@ -74,8 +61,7 @@ VCCombo _$VCComboFromJson(Map<String, dynamic> json) => VCCombo()
       ? null
       : VPoint.fromJson(json['selection'] as Map<String, dynamic>)
   ..text = json['text'] as String?
-  ..textLimit = (json['textLimit'] as num?)?.toInt()
-  ..visibleItemCount = (json['visibleItemCount'] as num?)?.toInt();
+  ..textLimit = (json['textLimit'] as num?)?.toInt();
 
 Map<String, dynamic> _$VCComboToJson(VCCombo instance) => <String, dynamic>{
   'swt': instance.swt,
@@ -84,38 +70,26 @@ Map<String, dynamic> _$VCComboToJson(VCCombo instance) => <String, dynamic>{
   'background': ?instance.background,
   'backgroundImage': ?instance.backgroundImage,
   'bounds': ?instance.bounds,
-  'capture': ?instance.capture,
   'cursor': ?instance.cursor,
-  'dragDetect': ?instance.dragDetect,
   'dragSource': ?instance.dragSource,
   'dropTargetId': ?instance.dropTargetId,
   'enabled': ?instance.enabled,
-  'enabledEffective': ?instance.enabledEffective,
   'font': ?instance.font,
   'foreground': ?instance.foreground,
   'hasOwnBackground': ?instance.hasOwnBackground,
   'menu': ?instance.menu,
-  'orientation': ?instance.orientation,
-  'redraw': ?instance.redraw,
   'region': ?instance.region,
-  'textDirection': ?instance.textDirection,
   'toolTipText': ?instance.toolTipText,
-  'touchEnabled': ?instance.touchEnabled,
   'visible': ?instance.visible,
   'horizontalBar': ?instance.horizontalBar,
-  'scrollbarsMode': ?instance.scrollbarsMode,
   'verticalBar': ?instance.verticalBar,
   'backgroundMode': ?instance.backgroundMode,
   'children': ?instance.children,
-  'layoutDeferred': ?instance.layoutDeferred,
-  'tabList': ?instance.tabList,
   'alignment': ?instance.alignment,
-  'editable': ?instance.editable,
   'itemTooltips': ?instance.itemTooltips,
   'items': ?instance.items,
   'listVisible': ?instance.listVisible,
   'selection': ?instance.selection,
   'text': ?instance.text,
   'textLimit': ?instance.textLimit,
-  'visibleItemCount': ?instance.visibleItemCount,
 };

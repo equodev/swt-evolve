@@ -9,6 +9,7 @@ import '../gen/image.dart';
 import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
+import '../gen/widget.dart';
 import '../impl/button_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
@@ -44,7 +45,42 @@ class VButton extends VControl {
   bool? selection;
   String? text;
 
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VButton) {
+      alignment = other.alignment;
+      grayed = other.grayed;
+      image = other.image;
+      primary = other.primary;
+      selection = other.selection;
+      text = other.text;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'alignment':
+        alignment = (json['alignment'] as num?)?.toInt();
+      case 'grayed':
+        grayed = json['grayed'] as bool?;
+      case 'image':
+        image = json['image'] == null
+            ? null
+            : VImage.fromJson(json['image'] as Map<String, dynamic>);
+      case 'primary':
+        primary = json['primary'] as bool?;
+      case 'selection':
+        selection = json['selection'] as bool?;
+      case 'text':
+        text = json['text'] as String?;
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
   factory VButton.fromJson(Map<String, dynamic> json) =>
-      _$VButtonFromJson(json);
+      _$VButtonFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VButtonToJson(this);
 }

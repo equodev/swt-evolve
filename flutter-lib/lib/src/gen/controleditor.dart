@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
-import '../gen/control.dart';
+import '../gen/widget.dart';
 import '../impl/controleditor_evolve.dart';
 import 'widget.dart';
 import 'widgets.dart';
@@ -29,9 +29,7 @@ class VControlEditor extends VWidget {
     swt = "ControlEditor";
   }
 
-  VControl? editor;
-
   factory VControlEditor.fromJson(Map<String, dynamic> json) =>
-      _$VControlEditorFromJson(json);
+      _$VControlEditorFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VControlEditorToJson(this);
 }

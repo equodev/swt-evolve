@@ -9,9 +9,8 @@ part of 'tooltip.dart';
 VToolTip _$VToolTipFromJson(Map<String, dynamic> json) => VToolTip()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
-  ..seq = (json['seq'] as num?)?.toInt() ?? 0
-  ..style = (json['style'] as num).toInt()
-  ..autoHide = json['autoHide'] as bool?
+  ..seq = (json['_s'] as num?)?.toInt() ?? 0
+  ..style = (json['style'] as num?)?.toInt() ?? 0
   ..location = json['location'] == null
       ? null
       : VPoint.fromJson(json['location'] as Map<String, dynamic>)
@@ -23,7 +22,6 @@ Map<String, dynamic> _$VToolTipToJson(VToolTip instance) => <String, dynamic>{
   'swt': instance.swt,
   'id': instance.id,
   'style': instance.style,
-  'autoHide': ?instance.autoHide,
   'location': ?instance.location,
   'message': ?instance.message,
   'text': ?instance.text,

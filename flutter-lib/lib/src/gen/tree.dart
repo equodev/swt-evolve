@@ -14,6 +14,7 @@ import '../gen/scrollbar.dart';
 import '../gen/treecolumn.dart';
 import '../gen/treeeditor.dart';
 import '../gen/treeitem.dart';
+import '../gen/widget.dart';
 import '../impl/tree_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
@@ -54,19 +55,70 @@ class VTree extends VComposite {
     swt = "Tree";
   }
 
-  List<int>? columnOrder;
   List<VTreeColumn>? columns;
   List<VTreeEditor>? editors;
   VColor? headerBackground;
-  VColor? headerForeground;
   bool? headerVisible;
   List<VTreeItem>? items;
   bool? linesVisible;
   List<VTreeItem>? selection;
-  VTreeColumn? sortColumn;
-  int? sortDirection;
-  VTreeItem? topItem;
 
-  factory VTree.fromJson(Map<String, dynamic> json) => _$VTreeFromJson(json);
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VTree) {
+      columns = other.columns;
+      editors = other.editors;
+      headerBackground = other.headerBackground;
+      headerVisible = other.headerVisible;
+      items = other.items;
+      linesVisible = other.linesVisible;
+      selection = other.selection;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'columns':
+        columns = (json['columns'] as List<dynamic>?)
+            ?.map((e) => VTreeColumn.fromJson(e as Map<String, dynamic>))
+            .toList();
+      case 'editors':
+        editors = (json['editors'] as List<dynamic>?)
+            ?.map((e) => VTreeEditor.fromJson(e as Map<String, dynamic>))
+            .toList();
+      case 'headerBackground':
+        headerBackground = json['headerBackground'] == null
+            ? null
+            : VColor.fromJson(json['headerBackground'] as Map<String, dynamic>);
+      case 'headerVisible':
+        headerVisible = json['headerVisible'] as bool?;
+      case 'items':
+        items = (json['items'] as List<dynamic>?)
+            ?.map((e) => VTreeItem.fromJson(e as Map<String, dynamic>))
+            .toList();
+      case 'linesVisible':
+        linesVisible = json['linesVisible'] as bool?;
+      case 'selection':
+        selection = (json['selection'] as List<dynamic>?)
+            ?.map((e) => VTreeItem.fromJson(e as Map<String, dynamic>))
+            .toList();
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
+  @override
+  void adoptChildren(VWidget Function(VWidget) adopt) {
+    super.adoptChildren(adopt);
+    VWidget.adoptEach(columns, adopt);
+    VWidget.adoptEach(editors, adopt);
+    VWidget.adoptEach(items, adopt);
+    VWidget.adoptEach(selection, adopt);
+  }
+
+  factory VTree.fromJson(Map<String, dynamic> json) =>
+      _$VTreeFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VTreeToJson(this);
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
-import '../gen/taskitem.dart';
 import '../gen/widget.dart';
 import '../impl/taskbar_evolve.dart';
 import 'widgets.dart';
@@ -21,9 +20,7 @@ class VTaskBar extends VWidget {
     swt = "TaskBar";
   }
 
-  List<VTaskItem>? items;
-
   factory VTaskBar.fromJson(Map<String, dynamic> json) =>
-      _$VTaskBarFromJson(json);
+      _$VTaskBarFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VTaskBarToJson(this);
 }

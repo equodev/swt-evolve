@@ -444,9 +444,14 @@ public class ControlHelper {
     }
 
     public static void setEnabled(DartControl c, boolean enabled) {
-        boolean newValue = enabled;
-        if (!java.util.Objects.equals(c.enabled, newValue)) {
-            c.dirty();
+        // Compared against the state bit, which is what getEnabled() - and so the wire - reports.
+        // The `enabled` field is a different thing and the two can disagree, in which case a gate
+        // on the field says "unchanged" while the payload changes. That was harmless while every
+        // update carried the whole widget and simply re-sent the right value; once an update
+        // carries only what changed, it means the property stops being sent at all.
+        boolean wasEnabled = (c.getApi().state & DartWidget.DISABLED) == 0;
+        if (wasEnabled != enabled) {
+            c.getValue().markDirty(VControl.ENABLED);
         }
         c.checkWidget();
         if (((c.getApi().state & DartWidget.DISABLED) == 0) == enabled)
@@ -464,7 +469,7 @@ public class ControlHelper {
         } else {
             c.getApi().state |= DartWidget.DISABLED;
         }
-        c.enabled = newValue;
+        c.enabled = enabled;
         c.enableWidget(enabled);
         if (fixFocus)
             c.fixFocus(control);

@@ -20,20 +20,24 @@ import 'package:swtflutter/src/gen/control.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/button_evolve.dart';
 
-VButton _radio(int id, {required bool selected}) => VButton()
+import 'delivery/support/deliver.dart';
+
+VButton _radio(int id, {required bool selected, required int seq}) => VButton()
   ..id = id
+  ..seq = seq
   ..style = SWT.RADIO
   ..enabled = true
   ..selection = selected
   ..text = "Option $id";
 
-VComposite _composite(List<VControl> children) => VComposite()
+VComposite _composite(List<VControl> children, {required int seq}) => VComposite()
   ..id = 1000
+  ..seq = seq
   ..style = SWT.NONE
   ..children = children;
 
 void main() {
-  testWidgets('rebuilding a Composite with a flipped child selection updates the radio',
+  testWidgets('a Composite update carrying a flipped child selection updates the radio',
       (WidgetTester tester) async {
     // Stable key so the Composite State (and its children) is preserved across
     // rebuilds — exactly what happens when Java pushes a parent update.
@@ -52,17 +56,17 @@ void main() {
 
     // r1 selected, r2 not.
     await tester.pumpWidget(host(_composite([
-      _radio(1, selected: true),
-      _radio(2, selected: false),
-    ])));
+      _radio(1, selected: true, seq: 1),
+      _radio(2, selected: false, seq: 1),
+    ], seq: 1)));
     await tester.pumpAndSettle();
 
     // Parent update: r1 deselected, r2 selected (what Java sends after the user
-    // picks r2, carried via the Composite payload on web).
-    await tester.pumpWidget(host(_composite([
-      _radio(1, selected: false),
-      _radio(2, selected: true),
-    ])));
+    // picks r2, carried inside the Composite payload on web).
+    await deliverWhole(_composite([
+      _radio(1, selected: false, seq: 10),
+      _radio(2, selected: true, seq: 10),
+    ], seq: 10));
     await tester.pumpAndSettle();
 
     final r1 = find.descendant(

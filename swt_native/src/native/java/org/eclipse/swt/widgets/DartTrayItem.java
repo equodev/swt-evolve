@@ -18,7 +18,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -367,9 +366,6 @@ public class DartTrayItem extends DartItem implements ITrayItem {
     public void setHighlightImage(Image image) {
         image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
-        if (!java.util.Objects.equals(this.highlightImage, image)) {
-            dirty();
-        }
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         highlightImage = image;
@@ -391,9 +387,6 @@ public class DartTrayItem extends DartItem implements ITrayItem {
      */
     public void setToolTip(ToolTip toolTip) {
         checkWidget();
-        if (!java.util.Objects.equals(this.toolTip, toolTip)) {
-            dirty();
-        }
         ToolTip newTip = toolTip;
         this.toolTip = newTip;
     }
@@ -425,9 +418,6 @@ public class DartTrayItem extends DartItem implements ITrayItem {
      */
     public void setToolTipText(String string) {
         checkWidget();
-        if (!java.util.Objects.equals(this.toolTipText, string)) {
-            dirty();
-        }
         toolTipText = string;
         _setToolTipText(string);
     }
@@ -453,9 +443,6 @@ public class DartTrayItem extends DartItem implements ITrayItem {
      */
     public void setVisible(boolean visible) {
         checkWidget();
-        if (!java.util.Objects.equals(this.visible, visible)) {
-            dirty();
-        }
         if (this.visible == visible)
             return;
         if (visible) {

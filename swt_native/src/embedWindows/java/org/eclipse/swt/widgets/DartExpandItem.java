@@ -313,7 +313,7 @@ public class DartExpandItem extends DartItem implements IExpandItem {
      * </ul>
      */
     public void setControl(Control control) {
-        dirty();
+        getValue().markDirty(VExpandItem.CONTROL);
         checkWidget();
         if (control != null) {
             if (control.isDisposed())
@@ -352,7 +352,7 @@ public class DartExpandItem extends DartItem implements IExpandItem {
     public void setExpanded(boolean expanded) {
         checkWidget();
         if (!java.util.Objects.equals(this.expanded, expanded)) {
-            dirty();
+            getValue().markDirty(VExpandItem.EXPANDED);
         }
         this.expanded = expanded;
         ((DartExpandBar) parent.getImpl()).showItem(this.getApi());
@@ -378,7 +378,7 @@ public class DartExpandItem extends DartItem implements IExpandItem {
         if (height < 0)
             return;
         if (!java.util.Objects.equals(this.height, height)) {
-            dirty();
+            getValue().markDirty(VExpandItem.HEIGHT);
         }
         setBoundsInPixels(0, 0, width, height, false, true);
         if (expanded)

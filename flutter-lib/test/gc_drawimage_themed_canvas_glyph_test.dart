@@ -34,7 +34,6 @@ VImage _blittedImage(String png) => VImage()
   ..imageData = (VImageData()
     ..width = 16
     ..height = 16
-    ..depth = 24
     ..data = base64Decode(png));
 
 VGCDrawImageImageintintintintintintintint get _naturalSizeBlit =>

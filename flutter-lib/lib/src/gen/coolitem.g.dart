@@ -9,8 +9,8 @@ part of 'coolitem.dart';
 VCoolItem _$VCoolItemFromJson(Map<String, dynamic> json) => VCoolItem()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
-  ..seq = (json['seq'] as num?)?.toInt() ?? 0
-  ..style = (json['style'] as num).toInt()
+  ..seq = (json['_s'] as num?)?.toInt() ?? 0
+  ..style = (json['style'] as num?)?.toInt() ?? 0
   ..image = json['image'] == null
       ? null
       : VImage.fromJson(json['image'] as Map<String, dynamic>)
@@ -18,9 +18,6 @@ VCoolItem _$VCoolItemFromJson(Map<String, dynamic> json) => VCoolItem()
   ..control = json['control'] == null
       ? null
       : VControl.fromJson(json['control'] as Map<String, dynamic>)
-  ..minimumSize = json['minimumSize'] == null
-      ? null
-      : VPoint.fromJson(json['minimumSize'] as Map<String, dynamic>)
   ..preferredSize = json['preferredSize'] == null
       ? null
       : VPoint.fromJson(json['preferredSize'] as Map<String, dynamic>);
@@ -32,6 +29,5 @@ Map<String, dynamic> _$VCoolItemToJson(VCoolItem instance) => <String, dynamic>{
   'image': ?instance.image,
   'text': ?instance.text,
   'control': ?instance.control,
-  'minimumSize': ?instance.minimumSize,
   'preferredSize': ?instance.preferredSize,
 };

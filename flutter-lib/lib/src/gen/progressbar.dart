@@ -8,6 +8,7 @@ import '../gen/image.dart';
 import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
+import '../gen/widget.dart';
 import '../impl/progressbar_evolve.dart';
 import 'widgets.dart';
 
@@ -32,7 +33,31 @@ class VProgressBar extends VControl {
   int? minimum;
   int? selection;
 
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VProgressBar) {
+      maximum = other.maximum;
+      minimum = other.minimum;
+      selection = other.selection;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'maximum':
+        maximum = (json['maximum'] as num?)?.toInt();
+      case 'minimum':
+        minimum = (json['minimum'] as num?)?.toInt();
+      case 'selection':
+        selection = (json['selection'] as num?)?.toInt();
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
   factory VProgressBar.fromJson(Map<String, dynamic> json) =>
-      _$VProgressBarFromJson(json);
+      _$VProgressBarFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VProgressBarToJson(this);
 }

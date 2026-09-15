@@ -20,7 +20,7 @@ public class VCTabFolder extends VComposite {
         super(impl);
     }
 
-    @JsonAttribute(name = "MRUVisible")
+    @JsonAttribute(ignore = true)
     public boolean getMRUVisible() {
         return ((DartCTabFolder) impl).getMRUVisible();
     }
@@ -45,6 +45,7 @@ public class VCTabFolder extends VComposite {
     public void setChevronVisible(boolean value) {
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getDirtyIndicatorStyle() {
         return ((DartCTabFolder) impl).getDirtyIndicatorStyle();
     }
@@ -53,6 +54,7 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).dirtyIndicatorStyle = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Color[] getGradientColors() {
         Color[] values = ((DartCTabFolder) impl).gradientColors;
         if (values == null)
@@ -67,6 +69,7 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).gradientColors = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int[] getGradientPercents() {
         return ((DartCTabFolder) impl).gradientPercents;
     }
@@ -75,6 +78,7 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).gradientPercents = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getGradientVertical() {
         return ((DartCTabFolder) impl).gradientVertical;
     }
@@ -203,6 +207,7 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).selectionForeground = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Color[] getSelectionGradientColors() {
         Color[] values = ((DartCTabFolder) impl).selectionGradientColors;
         if (values == null)
@@ -217,6 +222,7 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).selectionGradientColors = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int[] getSelectionGradientPercents() {
         return ((DartCTabFolder) impl).selectionGradientPercents;
     }
@@ -225,6 +231,7 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).selectionGradientPercents = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getSelectionGradientVertical() {
         return ((DartCTabFolder) impl).selectionGradientVertical;
     }
@@ -247,6 +254,7 @@ public class VCTabFolder extends VComposite {
     public void setShowListPopupSeq(int value) {
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getSimple() {
         return ((DartCTabFolder) impl).getSimple();
     }
@@ -263,6 +271,7 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).single = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getTabHeight() {
         return ((DartCTabFolder) impl).getTabHeight();
     }
@@ -312,6 +321,133 @@ public class VCTabFolder extends VComposite {
 
     public void setUnselectedImageVisible(boolean value) {
         ((DartCTabFolder) impl).showUnselectedImage = value;
+    }
+
+    public static final String BORDER_VISIBLE = "borderVisible";
+
+    public static final String CHEVRON_VISIBLE = "chevronVisible";
+
+    public static final String HIGHLIGHT = "highlight";
+
+    public static final String HIGHLIGHT_ENABLED = "highlightEnabled";
+
+    public static final String ITEMS = "items";
+
+    public static final String MAXIMIZE_VISIBLE = "maximizeVisible";
+
+    public static final String MAXIMIZED = "maximized";
+
+    public static final String MINIMIZE_VISIBLE = "minimizeVisible";
+
+    public static final String MINIMIZED = "minimized";
+
+    public static final String MINIMUM_CHARACTERS = "minimumCharacters";
+
+    public static final String SELECTED_IMAGE_VISIBLE = "selectedImageVisible";
+
+    public static final String SELECTION = "selection";
+
+    public static final String SELECTION_BACKGROUND = "selectionBackground";
+
+    public static final String SELECTION_BAR_THICKNESS = "selectionBarThickness";
+
+    public static final String SELECTION_BG_IMAGE = "selectionBgImage";
+
+    public static final String SELECTION_FOREGROUND = "selectionForeground";
+
+    public static final String SHOW_CHEVRON = "showChevron";
+
+    public static final String SHOW_LIST_POPUP_SEQ = "showListPopupSeq";
+
+    public static final String SINGLE = "single";
+
+    public static final String TAB_POSITION = "tabPosition";
+
+    public static final String TOP_RIGHT = "topRight";
+
+    public static final String TOP_RIGHT_ALIGNMENT = "topRightAlignment";
+
+    public static final String UNSELECTED_CLOSE_VISIBLE = "unselectedCloseVisible";
+
+    public static final String UNSELECTED_IMAGE_VISIBLE = "unselectedImageVisible";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "borderVisible":
+                Serializer.writeKeyValue(writer, "borderVisible", getBorderVisible());
+                return;
+            case "chevronVisible":
+                Serializer.writeKeyValue(writer, "chevronVisible", getChevronVisible());
+                return;
+            case "highlight":
+                Serializer.writeKeyValue(writer, "highlight", getHighlight());
+                return;
+            case "highlightEnabled":
+                Serializer.writeKeyValue(writer, "highlightEnabled", getHighlightEnabled());
+                return;
+            case "items":
+                Serializer.writeKeyValue(writer, "items", getItems());
+                return;
+            case "maximizeVisible":
+                Serializer.writeKeyValue(writer, "maximizeVisible", getMaximizeVisible());
+                return;
+            case "maximized":
+                Serializer.writeKeyValue(writer, "maximized", getMaximized());
+                return;
+            case "minimizeVisible":
+                Serializer.writeKeyValue(writer, "minimizeVisible", getMinimizeVisible());
+                return;
+            case "minimized":
+                Serializer.writeKeyValue(writer, "minimized", getMinimized());
+                return;
+            case "minimumCharacters":
+                Serializer.writeKeyValue(writer, "minimumCharacters", getMinimumCharacters());
+                return;
+            case "selectedImageVisible":
+                Serializer.writeKeyValue(writer, "selectedImageVisible", getSelectedImageVisible());
+                return;
+            case "selection":
+                Serializer.writeKeyValue(writer, "selection", getSelection());
+                return;
+            case "selectionBackground":
+                Serializer.writeKeyValue(writer, "selectionBackground", getSelectionBackground());
+                return;
+            case "selectionBarThickness":
+                Serializer.writeKeyValue(writer, "selectionBarThickness", getSelectionBarThickness());
+                return;
+            case "selectionBgImage":
+                Serializer.writeKeyValue(writer, "selectionBgImage", getSelectionBgImage());
+                return;
+            case "selectionForeground":
+                Serializer.writeKeyValue(writer, "selectionForeground", getSelectionForeground());
+                return;
+            case "showChevron":
+                Serializer.writeKeyValue(writer, "showChevron", getShowChevron());
+                return;
+            case "showListPopupSeq":
+                Serializer.writeKeyValue(writer, "showListPopupSeq", getShowListPopupSeq());
+                return;
+            case "single":
+                Serializer.writeKeyValue(writer, "single", getSingle());
+                return;
+            case "tabPosition":
+                Serializer.writeKeyValue(writer, "tabPosition", getTabPosition());
+                return;
+            case "topRight":
+                Serializer.writeKeyValue(writer, "topRight", getTopRight());
+                return;
+            case "topRightAlignment":
+                Serializer.writeKeyValue(writer, "topRightAlignment", getTopRightAlignment());
+                return;
+            case "unselectedCloseVisible":
+                Serializer.writeKeyValue(writer, "unselectedCloseVisible", getUnselectedCloseVisible());
+                return;
+            case "unselectedImageVisible":
+                Serializer.writeKeyValue(writer, "unselectedImageVisible", getUnselectedImageVisible());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = CTabFolder.class)

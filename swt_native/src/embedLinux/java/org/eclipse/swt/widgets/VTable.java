@@ -19,6 +19,7 @@ public class VTable extends VComposite {
         super(impl);
     }
 
+    @JsonAttribute(ignore = true)
     public int[] getColumnOrder() {
         return ((DartTable) impl).columnOrder;
     }
@@ -103,6 +104,7 @@ public class VTable extends VComposite {
         ((DartTable) impl).selection = value;
     }
 
+    @JsonAttribute(ignore = true)
     public TableColumn getSortColumn() {
         TableColumn val = ((DartTable) impl).sortColumn;
         if (val != null && !(val.getImpl() instanceof DartTableColumn))
@@ -114,6 +116,7 @@ public class VTable extends VComposite {
         ((DartTable) impl).sortColumn = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getSortDirection() {
         return ((DartTable) impl).getSortDirection();
     }
@@ -122,6 +125,7 @@ public class VTable extends VComposite {
         ((DartTable) impl).sortDirection = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getTopIndex() {
         return ((DartTable) impl).getTopIndex();
     }
@@ -135,6 +139,58 @@ public class VTable extends VComposite {
     }
 
     public void setItemCount(int value) {
+    }
+
+    public static final String COLUMNS = "columns";
+
+    public static final String EDITORS = "editors";
+
+    public static final String HEADER_BACKGROUND = "headerBackground";
+
+    public static final String HEADER_FOREGROUND = "headerForeground";
+
+    public static final String HEADER_VISIBLE = "headerVisible";
+
+    public static final String ITEM_COUNT = "itemCount";
+
+    public static final String ITEMS = "items";
+
+    public static final String LINES_VISIBLE = "linesVisible";
+
+    public static final String SELECTION = "selection";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "columns":
+                Serializer.writeKeyValue(writer, "columns", getColumns());
+                return;
+            case "editors":
+                Serializer.writeKeyValue(writer, "editors", getEditors());
+                return;
+            case "headerBackground":
+                Serializer.writeKeyValue(writer, "headerBackground", getHeaderBackground());
+                return;
+            case "headerForeground":
+                Serializer.writeKeyValue(writer, "headerForeground", getHeaderForeground());
+                return;
+            case "headerVisible":
+                Serializer.writeKeyValue(writer, "headerVisible", getHeaderVisible());
+                return;
+            case "items":
+                Serializer.writeKeyValue(writer, "items", getItems());
+                return;
+            case "linesVisible":
+                Serializer.writeKeyValue(writer, "linesVisible", getLinesVisible());
+                return;
+            case "selection":
+                Serializer.writeKeyValue(writer, "selection", getSelection());
+                return;
+            case "itemCount":
+                Serializer.writeKeyValue(writer, "itemCount", getItemCount());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = Table.class)

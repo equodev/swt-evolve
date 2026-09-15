@@ -53,6 +53,7 @@ public class VCoolBar extends VComposite {
         ((DartCoolBar) impl).items = new CoolItem[][] { value };
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getLocked() {
         return ((DartCoolBar) impl).getLocked();
     }
@@ -67,6 +68,33 @@ public class VCoolBar extends VComposite {
 
     public void setWrapIndices(int[] value) {
         ((DartCoolBar) impl).wrapIndices = value;
+    }
+
+    public static final String ITEM_ORDER = "itemOrder";
+
+    public static final String ITEM_SIZES = "itemSizes";
+
+    public static final String ITEMS = "items";
+
+    public static final String WRAP_INDICES = "wrapIndices";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "itemOrder":
+                Serializer.writeKeyValue(writer, "itemOrder", getItemOrder());
+                return;
+            case "itemSizes":
+                Serializer.writeKeyValue(writer, "itemSizes", getItemSizes());
+                return;
+            case "items":
+                Serializer.writeKeyValue(writer, "items", getItems());
+                return;
+            case "wrapIndices":
+                Serializer.writeKeyValue(writer, "wrapIndices", getWrapIndices());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = CoolBar.class)

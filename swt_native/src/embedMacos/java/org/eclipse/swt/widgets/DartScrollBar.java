@@ -503,7 +503,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setIncrement(int value) {
         checkWidget();
         if (!java.util.Objects.equals(this.increment, value)) {
-            dirty();
+            getValue().markDirty(VScrollBar.INCREMENT);
         }
         if (value < 1)
             return;
@@ -526,7 +526,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
         if (!java.util.Objects.equals(this.enabled, newValue)) {
-            dirty();
+            getValue().markDirty(VScrollBar.ENABLED);
         }
         checkWidget();
         if (enabled) {
@@ -563,7 +563,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setMaximum(int value) {
         checkWidget();
         if (!java.util.Objects.equals(this.maximum, value)) {
-            dirty();
+            getValue().markDirty(VScrollBar.MAXIMUM);
         }
         if (value < 0)
             return;
@@ -593,7 +593,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setMinimum(int value) {
         checkWidget();
         if (!java.util.Objects.equals(this.minimum, value)) {
-            dirty();
+            getValue().markDirty(VScrollBar.MINIMUM);
         }
         if (value < 0)
             return;
@@ -622,9 +622,6 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setPageIncrement(int value) {
         checkWidget();
-        if (!java.util.Objects.equals(this.pageIncrement, value)) {
-            dirty();
-        }
         if (value < 1)
             return;
         pageIncrement = value;
@@ -646,7 +643,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         checkWidget();
         int clamped = Math.max(minimum, Math.min(maximum - thumb, selection));
         if (this.selection != clamped)
-            dirty();
+            getValue().markDirty(VScrollBar.SELECTION);
         this.selection = clamped;
     }
 
@@ -670,7 +667,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setThumb(int value) {
         checkWidget();
         if (!java.util.Objects.equals(this.thumb, value)) {
-            dirty();
+            getValue().markDirty(VScrollBar.THUMB);
         }
         if (value < 1)
             return;
@@ -703,19 +700,16 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setValues(int selection, int minimum, int maximum, int thumb, int increment, int pageIncrement) {
         checkWidget();
         if (!java.util.Objects.equals(this.thumb, thumb)) {
-            dirty();
-        }
-        if (!java.util.Objects.equals(this.pageIncrement, pageIncrement)) {
-            dirty();
+            getValue().markDirty(VScrollBar.THUMB);
         }
         if (!java.util.Objects.equals(this.minimum, minimum)) {
-            dirty();
+            getValue().markDirty(VScrollBar.MINIMUM);
         }
         if (!java.util.Objects.equals(this.maximum, maximum)) {
-            dirty();
+            getValue().markDirty(VScrollBar.MAXIMUM);
         }
         if (!java.util.Objects.equals(this.increment, increment)) {
-            dirty();
+            getValue().markDirty(VScrollBar.INCREMENT);
         }
         if (minimum < 0)
             return;
@@ -754,7 +748,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setVisible(boolean visible) {
         boolean newValue = visible;
         if (!java.util.Objects.equals(this.visible, newValue)) {
-            dirty();
+            getValue().markDirty(VScrollBar.VISIBLE);
         }
         checkWidget();
         this.visible = newValue;
@@ -764,7 +758,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     void updateBar(int selection, int minimum, int maximum, int thumb) {
         int clamped = Math.max(minimum, Math.min(maximum - thumb, selection));
         if (this.selection != clamped)
-            dirty();
+            getValue().markDirty(VScrollBar.SELECTION);
         this.selection = clamped;
     }
 
@@ -812,13 +806,6 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
 
     public boolean _visible() {
         return visible;
-    }
-
-    protected void dirty() {
-        super.dirty();
-        if (parent != null && parent.getImpl() instanceof DartControl) {
-            ((DartControl) parent.getImpl()).dirty();
-        }
     }
 
     public FlutterBridge getBridge() {

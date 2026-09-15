@@ -40,6 +40,7 @@ public class VCombo extends VComposite {
         ((DartCombo) impl).listVisible = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Point getSelection() {
         return ((DartCombo) impl).selection;
     }
@@ -57,6 +58,7 @@ public class VCombo extends VComposite {
         ((DartCombo) impl).text = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getTextLimit() {
         return ((DartCombo) impl).getTextLimit();
     }
@@ -65,12 +67,35 @@ public class VCombo extends VComposite {
         ((DartCombo) impl).textLimit = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getVisibleItemCount() {
         return ((DartCombo) impl).getVisibleItemCount();
     }
 
     public void setVisibleItemCount(int value) {
         ((DartCombo) impl).visibleItemCount = value;
+    }
+
+    public static final String ITEMS = "items";
+
+    public static final String LIST_VISIBLE = "listVisible";
+
+    public static final String TEXT = "text";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "items":
+                Serializer.writeKeyValue(writer, "items", getItems());
+                return;
+            case "listVisible":
+                Serializer.writeKeyValue(writer, "listVisible", getListVisible());
+                return;
+            case "text":
+                Serializer.writeKeyValue(writer, "text", getText());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = Combo.class)

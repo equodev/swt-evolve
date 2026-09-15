@@ -476,7 +476,6 @@ public class DartDragSource extends DartWidget implements IDragSource {
      * dragged from this source
      */
     public void setTransfer(Transfer... transferAgents) {
-        dirty();
         this.transferAgents = transferAgents;
     }
 

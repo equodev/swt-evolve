@@ -379,7 +379,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
     public void setControl(Control control) {
         checkWidget();
         if (!java.util.Objects.equals(this.control, control)) {
-            dirty();
+            getValue().markDirty(VCTabItem.CONTROL);
         }
         if (control != null) {
             if (control.isDisposed())
@@ -428,9 +428,6 @@ public class DartCTabItem extends DartItem implements ICTabItem {
     public void setDisabledImage(Image image) {
         image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
-        if (!java.util.Objects.equals(this.disabledImage, image)) {
-            dirty();
-        }
         if (image != null && image.isDisposed()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -462,7 +459,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
         font = GraphicsUtils.copyFont(font);
         checkWidget();
         if (!java.util.Objects.equals(this.font, font)) {
-            dirty();
+            getValue().markDirty(VCTabItem.FONT);
         }
         if (font != null && font.isDisposed()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -495,7 +492,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
         color = GraphicsUtils.copyColor(color);
         checkWidget();
         if (!java.util.Objects.equals(this.foreground, color)) {
-            dirty();
+            getValue().markDirty(VCTabItem.FOREGROUND);
         }
         if (color != null) {
             if (color.isDisposed())
@@ -527,7 +524,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
         color = GraphicsUtils.copyColor(color);
         checkWidget();
         if (!java.util.Objects.equals(this.selectionForeground, color)) {
-            dirty();
+            getValue().markDirty(VCTabItem.SELECTION_FOREGROUND);
         }
         if (color != null) {
             if (color.isDisposed())
@@ -571,7 +568,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
     public void setShowClose(boolean close) {
         checkWidget();
         if (!java.util.Objects.equals(this.showClose, close)) {
-            dirty();
+            getValue().markDirty(VCTabItem.SHOW_CLOSE);
         }
         if (showClose == close)
             return;
@@ -598,9 +595,6 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      */
     public void setShowDirty(boolean dirty) {
         checkWidget();
-        if (!java.util.Objects.equals(this.showDirty, dirty)) {
-            dirty();
-        }
         if (showDirty == dirty)
             return;
         showDirty = dirty;
@@ -654,7 +648,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
     public void setToolTipText(String string) {
         checkWidget();
         if (!java.util.Objects.equals(this.toolTipText, string)) {
-            dirty();
+            getValue().markDirty(VCTabItem.TOOL_TIP_TEXT);
         }
         toolTipText = string;
     }

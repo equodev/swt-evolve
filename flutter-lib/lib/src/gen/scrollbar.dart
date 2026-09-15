@@ -31,16 +31,50 @@ class VScrollBar extends VWidget {
   }
 
   bool? enabled;
-  bool? enabledEffective;
   int? increment;
   int? maximum;
   int? minimum;
-  int? pageIncrement;
   int? selection;
   int? thumb;
   bool? visible;
 
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VScrollBar) {
+      enabled = other.enabled;
+      increment = other.increment;
+      maximum = other.maximum;
+      minimum = other.minimum;
+      selection = other.selection;
+      thumb = other.thumb;
+      visible = other.visible;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'enabled':
+        enabled = json['enabled'] as bool?;
+      case 'increment':
+        increment = (json['increment'] as num?)?.toInt();
+      case 'maximum':
+        maximum = (json['maximum'] as num?)?.toInt();
+      case 'minimum':
+        minimum = (json['minimum'] as num?)?.toInt();
+      case 'selection':
+        selection = (json['selection'] as num?)?.toInt();
+      case 'thumb':
+        thumb = (json['thumb'] as num?)?.toInt();
+      case 'visible':
+        visible = json['visible'] as bool?;
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
   factory VScrollBar.fromJson(Map<String, dynamic> json) =>
-      _$VScrollBarFromJson(json);
+      _$VScrollBarFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VScrollBarToJson(this);
 }

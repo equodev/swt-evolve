@@ -141,7 +141,6 @@ void main() {
         ..imageData = (VImageData()
           ..width = 9
           ..height = 9
-          ..depth = 24
           ..data = base64Decode(_pngBase64))));
 
     final shapes = await committed(drawer, id);

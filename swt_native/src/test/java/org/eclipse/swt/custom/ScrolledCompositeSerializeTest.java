@@ -33,28 +33,23 @@ class ScrolledCompositeSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("expandHorizontal").equalsTo(w.getExpandHorizontal(), orAbsentIfFalse));
         assertJ.satisfies(node("expandVertical").equalsTo(w.getExpandVertical(), orAbsentIfFalse));
         assertJ.satisfies(node("minHeight").equalsTo(w.getMinHeight(), orAbsentIf0));
-        assertJ.satisfies(node("minSize").equalsTo(value(w).getMinSize(), orAbsentIf0));
         assertJ.satisfies(node("minWidth").equalsTo(w.getMinWidth(), orAbsentIf0));
-        assertJ.satisfies(node("origin").equalsTo(value(w).getOrigin(), orAbsentIfNull));
-        assertJ.satisfies(node("showFocusedControl").equalsTo(w.getShowFocusedControl(), orAbsentIfFalse));
         assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
-        assertJ.satisfies(node("layoutDeferred").equalsTo(w.getLayoutDeferred(), orAbsentIfFalse));
-        assertJ.satisfies(node("scrollbarsMode").equalsTo(w.getScrollbarsMode(), orAbsentIf0));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));
         assertJ.satisfies(node("bounds").equalsTo(value(w).getBounds(), orAbsentIfNull));
-        assertJ.satisfies(node("capture").equalsTo(value(w).getCapture(), orAbsentIfFalse));
         assertJ.satisfies(node("cursor").equalsTo(w.getCursor(), orAbsentIfNull));
-        assertJ.satisfies(node("dragDetect").equalsTo(w.getDragDetect(), orAbsentIfFalse));
         assertJ.satisfies(node("enabled").equalsTo(w.getEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
-        assertJ.satisfies(node("orientation").equalsTo(w.getOrientation(), orAbsentIf0));
-        assertJ.satisfies(node("redraw").equalsTo(value(w).getRedraw(), orAbsentIfFalse));
-        assertJ.satisfies(node("textDirection").equalsTo(w.getTextDirection(), orAbsentIf0));
-        assertJ.satisfies(node("touchEnabled").equalsTo(w.getTouchEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
+    }
+
+    @Test
+    void should_name_every_change_ScrolledComposite() {
+        ScrolledComposite w = new ScrolledComposite(swtShell(), SWT.NONE);
+        assertNamesEveryChange(w);
     }
 
     VScrolledComposite value(ScrolledComposite w) {

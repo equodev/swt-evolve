@@ -12,6 +12,8 @@ import 'package:swtflutter/src/gen/table.dart';
 import 'package:swtflutter/src/gen/tablecolumn.dart';
 import 'package:swtflutter/src/gen/tableitem.dart';
 
+import 'delivery/support/deliver.dart';
+
 const int _declaredRows = 50000;
 const int _loadedRows = 5000;
 const double _viewportHeight = 300;
@@ -86,6 +88,9 @@ void main() {
     await tester.pumpAndSettle();
     final loadedExtent = _maxScrollExtent(tester);
 
+    // A second table, built from scratch under the same id rather than an update to the first: the
+    // two are being compared, and a widget's state does not come from whoever built a tree over it.
+    freshClient();
     await tester.pumpWidget(_wrap(_virtualTable()));
     await tester.pumpAndSettle();
 

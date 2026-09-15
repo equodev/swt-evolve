@@ -52,6 +52,33 @@ public class VBrowser extends VComposite {
     public void setFunctionNames(String[] value) {
     }
 
+    public static final String FUNCTION_NAMES = "functionNames";
+
+    public static final String JAVASCRIPT_ENABLED = "javascriptEnabled";
+
+    public static final String TEXT = "text";
+
+    public static final String URL = "url";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "javascriptEnabled":
+                Serializer.writeKeyValue(writer, "javascriptEnabled", getJavascriptEnabled());
+                return;
+            case "text":
+                Serializer.writeKeyValue(writer, "text", getText());
+                return;
+            case "url":
+                Serializer.writeKeyValue(writer, "url", getUrl());
+                return;
+            case "functionNames":
+                Serializer.writeKeyValue(writer, "functionNames", getFunctionNames());
+                return;
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = Browser.class)
     public static class BrowserJson implements Configuration {
 

@@ -18,7 +18,6 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -406,9 +405,6 @@ public class DartCBanner extends DartComposite implements ICBanner {
      */
     public void setBottom(Control control) {
         checkWidget();
-        if (!java.util.Objects.equals(this.bottom, control)) {
-            dirty();
-        }
         if (control != null && control.getParent() != this.getApi()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -458,9 +454,6 @@ public class DartCBanner extends DartComposite implements ICBanner {
      */
     public void setLeft(Control control) {
         checkWidget();
-        if (!java.util.Objects.equals(this.left, control)) {
-            dirty();
-        }
         if (control != null && control.getParent() != this.getApi()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -489,9 +482,6 @@ public class DartCBanner extends DartComposite implements ICBanner {
      */
     public void setRight(Control control) {
         checkWidget();
-        if (!java.util.Objects.equals(this.right, control)) {
-            dirty();
-        }
         if (control != null && control.getParent() != this.getApi()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -518,9 +508,6 @@ public class DartCBanner extends DartComposite implements ICBanner {
      */
     public void setRightMinimumSize(Point size) {
         Point newValue = size;
-        if (!java.util.Objects.equals(this.rightMinimumSize, newValue)) {
-            dirty();
-        }
         checkWidget();
         if (size == null || size.x < SWT.DEFAULT || size.y < SWT.DEFAULT)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -545,9 +532,6 @@ public class DartCBanner extends DartComposite implements ICBanner {
      */
     public void setRightWidth(int width) {
         checkWidget();
-        if (!java.util.Objects.equals(this.rightWidth, width)) {
-            dirty();
-        }
         if (width < SWT.DEFAULT)
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         rightWidth = width;
@@ -568,9 +552,6 @@ public class DartCBanner extends DartComposite implements ICBanner {
      */
     public void setSimple(boolean simple) {
         checkWidget();
-        if (!java.util.Objects.equals(this.simple, simple)) {
-            dirty();
-        }
         if (this.simple != simple) {
             this.simple = simple;
             if (simple) {

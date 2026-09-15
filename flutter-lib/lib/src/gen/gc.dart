@@ -9,6 +9,7 @@ import '../gen/pathdata.dart';
 import '../gen/pattern.dart';
 import '../gen/rectangle.dart';
 import '../gen/transform.dart';
+import '../gen/widget.dart';
 import '../impl/gc_evolve.dart';
 import 'widget.dart';
 import 'widgets.dart';
@@ -33,9 +34,7 @@ class VGC extends VWidget {
   }
 
   bool? XORMode;
-  bool? advanced;
   int? alpha;
-  int? antialias;
   VColor? background;
   VPattern? backgroundPattern;
   VRectangle? clipping;
@@ -44,17 +43,88 @@ class VGC extends VWidget {
   int? fillRule;
   VFont? font;
   VColor? foreground;
-  VPattern? foregroundPattern;
-  int? interpolation;
   int? lineCap;
-  List<int>? lineDash;
   int? lineJoin;
-  int? lineStyle;
   int? lineWidth;
-  int? textAntialias;
   VTransform? transform;
 
-  factory VGC.fromJson(Map<String, dynamic> json) => _$VGCFromJson(json);
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VGC) {
+      XORMode = other.XORMode;
+      alpha = other.alpha;
+      background = other.background;
+      backgroundPattern = other.backgroundPattern;
+      clipping = other.clipping;
+      clippingPath = other.clippingPath;
+      clippingRects = other.clippingRects;
+      fillRule = other.fillRule;
+      font = other.font;
+      foreground = other.foreground;
+      lineCap = other.lineCap;
+      lineJoin = other.lineJoin;
+      lineWidth = other.lineWidth;
+      transform = other.transform;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'XORMode':
+        XORMode = json['XORMode'] as bool?;
+      case 'alpha':
+        alpha = (json['alpha'] as num?)?.toInt();
+      case 'background':
+        background = json['background'] == null
+            ? null
+            : VColor.fromJson(json['background'] as Map<String, dynamic>);
+      case 'backgroundPattern':
+        backgroundPattern = json['backgroundPattern'] == null
+            ? null
+            : VPattern.fromJson(
+                json['backgroundPattern'] as Map<String, dynamic>,
+              );
+      case 'clipping':
+        clipping = json['clipping'] == null
+            ? null
+            : VRectangle.fromJson(json['clipping'] as Map<String, dynamic>);
+      case 'clippingPath':
+        clippingPath = json['clippingPath'] == null
+            ? null
+            : VPathData.fromJson(json['clippingPath'] as Map<String, dynamic>);
+      case 'clippingRects':
+        clippingRects = (json['clippingRects'] as List<dynamic>?)
+            ?.map((e) => (e as num).toInt())
+            .toList();
+      case 'fillRule':
+        fillRule = (json['fillRule'] as num?)?.toInt();
+      case 'font':
+        font = json['font'] == null
+            ? null
+            : VFont.fromJson(json['font'] as Map<String, dynamic>);
+      case 'foreground':
+        foreground = json['foreground'] == null
+            ? null
+            : VColor.fromJson(json['foreground'] as Map<String, dynamic>);
+      case 'lineCap':
+        lineCap = (json['lineCap'] as num?)?.toInt();
+      case 'lineJoin':
+        lineJoin = (json['lineJoin'] as num?)?.toInt();
+      case 'lineWidth':
+        lineWidth = (json['lineWidth'] as num?)?.toInt();
+      case 'transform':
+        transform = json['transform'] == null
+            ? null
+            : VTransform.fromJson(json['transform'] as Map<String, dynamic>);
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
+  factory VGC.fromJson(Map<String, dynamic> json) =>
+      _$VGCFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VGCToJson(this);
 }
 

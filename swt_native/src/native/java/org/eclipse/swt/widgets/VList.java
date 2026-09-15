@@ -40,12 +40,30 @@ public class VList extends VScrollable {
         ((DartList) impl).selection = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getTopIndex() {
         return ((DartList) impl).getTopIndex();
     }
 
     public void setTopIndex(int value) {
         ((DartList) impl).topIndex = value;
+    }
+
+    public static final String ITEMS = "items";
+
+    public static final String SELECTION = "selection";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "items":
+                Serializer.writeKeyValue(writer, "items", getItems());
+                return;
+            case "selection":
+                Serializer.writeKeyValue(writer, "selection", getSelection());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = List.class)

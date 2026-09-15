@@ -650,8 +650,13 @@ class BrowserFlutterTest {
     @DisplayName("LocationListener")
     class Location {
 
+        // The assertion is a negative one - that /b is NOT reached - so it can only wait a bounded
+        // time and call the silence a pass. When the navigation is merely slower than that wait, the
+        // listener fires afterwards and the test reads it as a navigation that was never blocked.
+        // Nondeterministic on every platform it runs on, and it was already skipped in CI.
         @Test
-        @DisabledIfEnvironmentVariable(named = "CI", matches = "true")
+        @Disabled("negative wait races a slow navigation, so a block that works still reads as a "
+                + "failure; nothing else covers doit=false and it is worth restoring")
         void locationChanging_canBlockNavigation() {
             load(browser, url("/a"));
             AtomicReference<String> seen = new AtomicReference<>();

@@ -5,13 +5,16 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/comm_frame.dart';
 
-/// Regression: a widget-state payload buffered while
-/// the widget was unmounted is ambiguous — replaying it can roll the widget
-/// back to a stale snapshot (blank pane on the first reveal of a maximized-away
-/// SashForm),
-/// while silently dropping it can lose fresh content (empty Web/Mobile Recorder
-/// dialogs). The comm must apply neither: it drops the buffer and asks Java to
-/// re-serialize the widget, whose response is authoritative.
+/// A payload that arrives before anything is listening for it is held and replayed.
+///
+/// It used to be neither. Replaying it could roll a widget back to a stale snapshot (a blank pane
+/// on the first reveal of a maximized-away SashForm) and dropping it could lose fresh content
+/// (empty Web/Mobile Recorder dialogs), so the comm did neither and asked Java to re-serialize the
+/// widget instead - a round trip on every widget described before it was mounted.
+///
+/// That ambiguity was never this layer's to settle: it knows nothing about what a widget holds.
+/// Frames are dated now, and the delivery gate refuses one that describes a widget as it used to
+/// be, so replaying is safe and the round trip is gone.
 class _TestComm extends EquoCommBase {
   final List<(String, String)> sent = [];
 
@@ -43,30 +46,27 @@ class _TestComm extends EquoCommBase {
 Future<void> _drainMicrotasks() => Future<void>.delayed(Duration.zero);
 
 void main() {
-  test('a buffered widget-state payload is not replayed — a refresh is requested instead', () async {
+  test('a buffered widget-state payload is replayed on registration', () async {
     final comm = _TestComm();
 
-    // Buffered while the widget is unmounted (no handler). Whether it is stale
-    // or fresh (dialog content) cannot be known here.
+    // Buffered while nothing was listening - a dialog's content sent right after the embed that
+    // mounts it, which used to reach the widget only after a round trip through Java.
+    //
     // A frame is routed when it is applied, not when it arrives, so let it apply: that is the
     // moment "no handler" is decided, and the moment the payload becomes a buffered one.
-    comm.receiveJson('Table/123', {'width': -1});
+    comm.receiveJson('Table/123', {'width': 744, '_s': 10});
     await _drainMicrotasks();
 
     final received = <dynamic>[];
     comm.on('Table/123', received.add);
     await _drainMicrotasks();
 
-    // Not applied; Java is asked for the live state instead.
-    expect(received, isEmpty);
-    expect(comm.sent, [(EquoCommBase.widgetRefreshChannel, '"123"')]);
-
-    // The refresh response (and any later update) flows normally.
-    comm.receiveJson('Table/123', {'width': 744});
-    await _drainMicrotasks();
     expect(received, [
-      {'width': 744}
+      {'width': 744, '_s': 10}
     ]);
+    expect(comm.sent, isEmpty,
+        reason: 'nothing has to be asked for: the frame is here, and how it compares to what the '
+            'widget holds is decided where that is known');
   });
 
   test('a buffered non-widget payload is still replayed on registration', () async {
@@ -91,7 +91,7 @@ void main() {
     expect(comm.sent, isEmpty);
   });
 
-  test('no buffer means no replay and no refresh', () async {
+  test('no buffer means no replay', () async {
     final comm = _TestComm();
     final received = <dynamic>[];
     comm.on('Shell/9', received.add);

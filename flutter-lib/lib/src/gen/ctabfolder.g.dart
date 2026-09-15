@@ -9,8 +9,8 @@ part of 'ctabfolder.dart';
 VCTabFolder _$VCTabFolderFromJson(Map<String, dynamic> json) => VCTabFolder()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
-  ..seq = (json['seq'] as num?)?.toInt() ?? 0
-  ..style = (json['style'] as num).toInt()
+  ..seq = (json['_s'] as num?)?.toInt() ?? 0
+  ..style = (json['style'] as num?)?.toInt() ?? 0
   ..background = json['background'] == null
       ? null
       : VColor.fromJson(json['background'] as Map<String, dynamic>)
@@ -20,15 +20,12 @@ VCTabFolder _$VCTabFolderFromJson(Map<String, dynamic> json) => VCTabFolder()
   ..bounds = json['bounds'] == null
       ? null
       : VRectangle.fromJson(json['bounds'] as Map<String, dynamic>)
-  ..capture = json['capture'] as bool?
   ..cursor = json['cursor'] == null
       ? null
       : VCursor.fromJson(json['cursor'] as Map<String, dynamic>)
-  ..dragDetect = json['dragDetect'] as bool?
   ..dragSource = json['dragSource'] as bool?
   ..dropTargetId = (json['dropTargetId'] as num?)?.toInt()
   ..enabled = json['enabled'] as bool?
-  ..enabledEffective = json['enabledEffective'] as bool?
   ..font = json['font'] == null
       ? null
       : VFont.fromJson(json['font'] as Map<String, dynamic>)
@@ -39,19 +36,14 @@ VCTabFolder _$VCTabFolderFromJson(Map<String, dynamic> json) => VCTabFolder()
   ..menu = json['menu'] == null
       ? null
       : VMenu.fromJson(json['menu'] as Map<String, dynamic>)
-  ..orientation = (json['orientation'] as num?)?.toInt()
-  ..redraw = json['redraw'] as bool?
   ..region = json['region'] == null
       ? null
       : VRegion.fromJson(json['region'] as Map<String, dynamic>)
-  ..textDirection = (json['textDirection'] as num?)?.toInt()
   ..toolTipText = json['toolTipText'] as String?
-  ..touchEnabled = json['touchEnabled'] as bool?
   ..visible = json['visible'] as bool?
   ..horizontalBar = json['horizontalBar'] == null
       ? null
       : VScrollBar.fromJson(json['horizontalBar'] as Map<String, dynamic>)
-  ..scrollbarsMode = (json['scrollbarsMode'] as num?)?.toInt()
   ..verticalBar = json['verticalBar'] == null
       ? null
       : VScrollBar.fromJson(json['verticalBar'] as Map<String, dynamic>)
@@ -59,21 +51,8 @@ VCTabFolder _$VCTabFolderFromJson(Map<String, dynamic> json) => VCTabFolder()
   ..children = (json['children'] as List<dynamic>?)
       ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
       .toList()
-  ..layoutDeferred = json['layoutDeferred'] as bool?
-  ..tabList = (json['tabList'] as List<dynamic>?)
-      ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
-      .toList()
-  ..MRUVisible = json['MRUVisible'] as bool?
   ..borderVisible = json['borderVisible'] as bool?
   ..chevronVisible = json['chevronVisible'] as bool?
-  ..dirtyIndicatorStyle = json['dirtyIndicatorStyle'] as bool?
-  ..gradientColors = (json['gradientColors'] as List<dynamic>?)
-      ?.map((e) => VColor.fromJson(e as Map<String, dynamic>))
-      .toList()
-  ..gradientPercents = (json['gradientPercents'] as List<dynamic>?)
-      ?.map((e) => (e as num).toInt())
-      .toList()
-  ..gradientVertical = json['gradientVertical'] as bool?
   ..highlight = json['highlight'] as bool?
   ..highlightEnabled = json['highlightEnabled'] as bool?
   ..items = (json['items'] as List<dynamic>?)
@@ -96,20 +75,9 @@ VCTabFolder _$VCTabFolderFromJson(Map<String, dynamic> json) => VCTabFolder()
   ..selectionForeground = json['selectionForeground'] == null
       ? null
       : VColor.fromJson(json['selectionForeground'] as Map<String, dynamic>)
-  ..selectionGradientColors =
-      (json['selectionGradientColors'] as List<dynamic>?)
-          ?.map((e) => VColor.fromJson(e as Map<String, dynamic>))
-          .toList()
-  ..selectionGradientPercents =
-      (json['selectionGradientPercents'] as List<dynamic>?)
-          ?.map((e) => (e as num).toInt())
-          .toList()
-  ..selectionGradientVertical = json['selectionGradientVertical'] as bool?
   ..showChevron = json['showChevron'] as bool?
   ..showListPopupSeq = (json['showListPopupSeq'] as num?)?.toInt()
-  ..simple = json['simple'] as bool?
   ..single = json['single'] as bool?
-  ..tabHeight = (json['tabHeight'] as num?)?.toInt()
   ..tabPosition = (json['tabPosition'] as num?)?.toInt()
   ..topRight = json['topRight'] == null
       ? null
@@ -126,38 +94,23 @@ Map<String, dynamic> _$VCTabFolderToJson(VCTabFolder instance) =>
       'background': ?instance.background,
       'backgroundImage': ?instance.backgroundImage,
       'bounds': ?instance.bounds,
-      'capture': ?instance.capture,
       'cursor': ?instance.cursor,
-      'dragDetect': ?instance.dragDetect,
       'dragSource': ?instance.dragSource,
       'dropTargetId': ?instance.dropTargetId,
       'enabled': ?instance.enabled,
-      'enabledEffective': ?instance.enabledEffective,
       'font': ?instance.font,
       'foreground': ?instance.foreground,
       'hasOwnBackground': ?instance.hasOwnBackground,
       'menu': ?instance.menu,
-      'orientation': ?instance.orientation,
-      'redraw': ?instance.redraw,
       'region': ?instance.region,
-      'textDirection': ?instance.textDirection,
       'toolTipText': ?instance.toolTipText,
-      'touchEnabled': ?instance.touchEnabled,
       'visible': ?instance.visible,
       'horizontalBar': ?instance.horizontalBar,
-      'scrollbarsMode': ?instance.scrollbarsMode,
       'verticalBar': ?instance.verticalBar,
       'backgroundMode': ?instance.backgroundMode,
       'children': ?instance.children,
-      'layoutDeferred': ?instance.layoutDeferred,
-      'tabList': ?instance.tabList,
-      'MRUVisible': ?instance.MRUVisible,
       'borderVisible': ?instance.borderVisible,
       'chevronVisible': ?instance.chevronVisible,
-      'dirtyIndicatorStyle': ?instance.dirtyIndicatorStyle,
-      'gradientColors': ?instance.gradientColors,
-      'gradientPercents': ?instance.gradientPercents,
-      'gradientVertical': ?instance.gradientVertical,
       'highlight': ?instance.highlight,
       'highlightEnabled': ?instance.highlightEnabled,
       'items': ?instance.items,
@@ -172,14 +125,9 @@ Map<String, dynamic> _$VCTabFolderToJson(VCTabFolder instance) =>
       'selectionBarThickness': ?instance.selectionBarThickness,
       'selectionBgImage': ?instance.selectionBgImage,
       'selectionForeground': ?instance.selectionForeground,
-      'selectionGradientColors': ?instance.selectionGradientColors,
-      'selectionGradientPercents': ?instance.selectionGradientPercents,
-      'selectionGradientVertical': ?instance.selectionGradientVertical,
       'showChevron': ?instance.showChevron,
       'showListPopupSeq': ?instance.showListPopupSeq,
-      'simple': ?instance.simple,
       'single': ?instance.single,
-      'tabHeight': ?instance.tabHeight,
       'tabPosition': ?instance.tabPosition,
       'topRight': ?instance.topRight,
       'topRightAlignment': ?instance.topRightAlignment,

@@ -821,7 +821,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void enableWidget(boolean enabled) {
-        FlutterBridge.update();
     }
 
     public Control findBackgroundControl() {
@@ -2493,6 +2492,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void showWidget(boolean visible) {
+        getApi().state = visible ? getApi().state & ~HIDDEN : getApi().state | HIDDEN;
         getBridge().setVisible(this, visible);
     }
 
@@ -2589,7 +2589,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
         if (!java.util.Objects.equals(this._background, newValue)) {
-            dirty();
+            getValue().markDirty(VControl.BACKGROUND);
             ControlHelper.markDamaged(this);
         }
         int pixel = -1;
@@ -2637,7 +2637,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
         if (!java.util.Objects.equals(this.backgroundImage, image)) {
-            dirty();
+            getValue().markDirty(VControl.BACKGROUND_IMAGE);
             ControlHelper.markDamaged(this);
         }
         if (image != null) {
@@ -2656,7 +2656,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void setBackgroundImage(long hBitmap) {
-        dirty();
+        getValue().markDirty(VControl.BACKGROUND_IMAGE);
     }
 
     void setBackgroundPixel(int pixel) {
@@ -2691,7 +2691,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setBounds(int x, int y, int width, int height) {
-        dirty();
+        getValue().markDirty(VControl.BOUNDS);
         Rectangle newValue = new Rectangle(x, y, width, height);
         this.bounds = newValue;
         setBounds(new Rectangle(x, y, width, height));
@@ -2740,7 +2740,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setBounds(Rectangle rect) {
         Rectangle newValue = rect;
         if (!java.util.Objects.equals(this.bounds, newValue)) {
-            dirty();
+            getValue().markDirty(VControl.BOUNDS);
         }
         checkWidget();
         if (rect == null)
@@ -2798,7 +2798,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public boolean setAutoscalingMode(AutoscalingMode autoscalingMode) {
         AutoscalingMode newValue = autoscalingMode;
         if (!java.util.Objects.equals(this.autoscalingMode, newValue)) {
-            dirty();
         }
         this.autoscalingMode = newValue;
         return false;
@@ -2807,7 +2806,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     void setBoundsInPixels(Rectangle rect) {
         Rectangle newValue = rect;
         if (!java.util.Objects.equals(this.bounds, newValue)) {
-            dirty();
+            getValue().markDirty(VControl.BOUNDS);
         }
         this.bounds = newValue;
         setBoundsInPixels(rect.x, rect.y, rect.width, rect.height);
@@ -2829,9 +2828,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setCapture(boolean capture) {
         boolean newValue = capture;
-        if (!java.util.Objects.equals(this.capture, newValue)) {
-            dirty();
-        }
         checkWidget();
         this.capture = newValue;
         if (capture) {
@@ -2864,7 +2860,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setCursor(Cursor cursor) {
         checkWidget();
         if (!java.util.Objects.equals(this.cursor, cursor)) {
-            dirty();
+            getValue().markDirty(VControl.CURSOR);
         }
         if (cursor != null && cursor.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -2890,9 +2886,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setDragDetect(boolean dragDetect) {
         boolean newValue = dragDetect;
-        if (!java.util.Objects.equals(this.dragDetect, newValue)) {
-            dirty();
-        }
         checkWidget();
         if (dragDetect) {
             getApi().state |= DRAG_DETECT;
@@ -2960,7 +2953,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         font = GraphicsUtils.copyFont(font);
         checkWidget();
         if (!java.util.Objects.equals(this.font, font)) {
-            dirty();
+            getValue().markDirty(VControl.FONT);
             ControlHelper.markDamaged(this);
         }
         Font newFont = font;
@@ -3000,7 +2993,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
         if (!java.util.Objects.equals(this._foreground, newValue)) {
-            dirty();
+            getValue().markDirty(VControl.FOREGROUND);
             ControlHelper.markDamaged(this);
         }
         checkWidget();
@@ -3062,7 +3055,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void setLocationInPixels(int x, int y) {
-        dirty();
         this.bounds = new Rectangle(x, y, bounds.width, bounds.height);
         getBridge().setBounds(this, bounds);
     }
@@ -3119,7 +3111,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setMenu(Menu menu) {
         checkWidget();
         if (!java.util.Objects.equals(this.menu, menu)) {
-            dirty();
+            getValue().markDirty(VControl.MENU);
         }
         if (menu != null) {
             if (menu.isDisposed())
@@ -3151,7 +3143,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * @since 3.7
      */
     public void setOrientation(int orientation) {
-        dirty();
         checkWidget();
         int flags = SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT;
         if ((orientation & flags) == 0 || (orientation & flags) == flags)
@@ -3197,9 +3188,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setRedraw(boolean redraw) {
         boolean newValue = redraw;
-        if (!java.util.Objects.equals(this.redraw, newValue)) {
-            dirty();
-        }
         checkWidget();
         /*
 	 * Feature in Windows.  When WM_SETREDRAW is used to turn
@@ -3248,7 +3236,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setRegion(Region region) {
         checkWidget();
         if (!java.util.Objects.equals(this.region, region)) {
-            dirty();
             ControlHelper.markDamaged(this);
         }
         if (region != null && region.isDisposed())
@@ -3280,7 +3267,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setSize(int width, int height) {
-        dirty();
         checkWidget();
         int zoom = computeBoundsZoom();
         setSize(new Point(width, height), zoom);
@@ -3292,7 +3278,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         } else {
             this.bounds = new Rectangle(this.bounds.x, this.bounds.y, width, height);
         }
-        dirty();
+        getValue().markDirty(VControl.BOUNDS);
         getBridge().setBounds(this, bounds);
     }
 
@@ -3328,7 +3314,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     private void setSize(Point size, int zoom) {
-        dirty();
     }
 
     @Override
@@ -3367,9 +3352,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setTextDirection(int textDirection) {
         int newValue = textDirection;
-        if (!java.util.Objects.equals(this.textDirection, newValue)) {
-            dirty();
-        }
         checkWidget();
         textDirection &= (SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT);
         updateTextDirection(textDirection);
@@ -3409,7 +3391,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setToolTipText(String string) {
         checkWidget();
         if (!java.util.Objects.equals(this.toolTipText, string)) {
-            dirty();
+            getValue().markDirty(VControl.TOOL_TIP_TEXT);
         }
         if (!Objects.equals(string, toolTipText)) {
             toolTipText = string;
@@ -3418,7 +3400,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void setToolTipText(Shell shell, String string) {
-        dirty();
+        getValue().markDirty(VControl.TOOL_TIP_TEXT);
     }
 
     /**
@@ -3440,9 +3422,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setTouchEnabled(boolean enabled) {
         boolean newValue = enabled;
-        if (!java.util.Objects.equals(this.touchEnabled, newValue)) {
-            dirty();
-        }
         checkWidget();
         this.touchEnabled = newValue;
         if (enabled) {
@@ -3469,7 +3448,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setVisible(boolean visible) {
         boolean newValue = visible;
         if (!java.util.Objects.equals(getVisible(), newValue)) {
-            dirty();
+            getValue().markDirty(VControl.VISIBLE);
         }
         checkWidget();
         if (!getDrawing()) {

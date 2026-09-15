@@ -10,6 +10,7 @@ import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
+import '../gen/widget.dart';
 import '../impl/group_evolve.dart';
 import 'widgets.dart';
 
@@ -31,6 +32,25 @@ class VGroup extends VComposite {
 
   String? text;
 
-  factory VGroup.fromJson(Map<String, dynamic> json) => _$VGroupFromJson(json);
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VGroup) {
+      text = other.text;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'text':
+        text = json['text'] as String?;
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
+  factory VGroup.fromJson(Map<String, dynamic> json) =>
+      _$VGroupFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VGroupToJson(this);
 }

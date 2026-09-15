@@ -376,9 +376,6 @@ public class DartToolTip extends DartWidget implements IToolTip {
      */
     public void setAutoHide(boolean autoHide) {
         checkWidget();
-        if (!java.util.Objects.equals(this.autohide, autoHide)) {
-            dirty();
-        }
         this.autohide = autoHide;
         //TODO - update when visible
     }
@@ -401,7 +398,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
      * </ul>
      */
     public void setLocation(int x, int y) {
-        dirty();
+        getValue().markDirty(VToolTip.LOCATION);
         Point newValue = new Point(x, y);
         checkWidget();
         if (this.x == x && this.y == y)
@@ -410,7 +407,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
         this.y = y;
         this.location = newValue;
         ;
-        dirty();
+        getValue().markDirty(VToolTip.LOCATION);
         if (display != null) {
             ((DartDisplay) display.getImpl())._addActiveTooltip(this.getApi());
         }
@@ -461,7 +458,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
     public void setMessage(String string) {
         String newValue = string;
         if (!java.util.Objects.equals(this.message, newValue)) {
-            dirty();
+            getValue().markDirty(VToolTip.MESSAGE);
         }
         checkWidget();
         if (string == null)
@@ -494,7 +491,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
     public void setText(String string) {
         String newValue = string;
         if (!java.util.Objects.equals(this.text, newValue)) {
-            dirty();
+            getValue().markDirty(VToolTip.TEXT);
         }
         checkWidget();
         if (string == null)
@@ -538,7 +535,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
     public void setVisible(boolean visible) {
         boolean newValue = visible;
         if (!java.util.Objects.equals(this.visible, newValue)) {
-            dirty();
+            getValue().markDirty(VToolTip.VISIBLE);
         }
         checkWidget();
         ;
@@ -555,7 +552,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
             };
             display.timerExec(DELAY, runnable);
         }
-        dirty();
+        getValue().markDirty(VToolTip.VISIBLE);
         if (display != null) {
             ((DartDisplay) display.getImpl())._addActiveTooltip(this.getApi());
         }

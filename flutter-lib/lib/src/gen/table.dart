@@ -14,6 +14,7 @@ import '../gen/scrollbar.dart';
 import '../gen/tablecolumn.dart';
 import '../gen/tableeditor.dart';
 import '../gen/tableitem.dart';
+import '../gen/widget.dart';
 import '../impl/table_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
@@ -47,7 +48,6 @@ class VTable extends VComposite {
   }
 
   int? itemCount;
-  List<int>? columnOrder;
   List<VTableColumn>? columns;
   List<VTableEditor>? editors;
   VColor? headerBackground;
@@ -56,10 +56,70 @@ class VTable extends VComposite {
   List<VTableItem>? items;
   bool? linesVisible;
   List<int>? selection;
-  VTableColumn? sortColumn;
-  int? sortDirection;
-  int? topIndex;
 
-  factory VTable.fromJson(Map<String, dynamic> json) => _$VTableFromJson(json);
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VTable) {
+      columns = other.columns;
+      editors = other.editors;
+      headerBackground = other.headerBackground;
+      headerForeground = other.headerForeground;
+      headerVisible = other.headerVisible;
+      items = other.items;
+      linesVisible = other.linesVisible;
+      selection = other.selection;
+      itemCount = other.itemCount;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'columns':
+        columns = (json['columns'] as List<dynamic>?)
+            ?.map((e) => VTableColumn.fromJson(e as Map<String, dynamic>))
+            .toList();
+      case 'editors':
+        editors = (json['editors'] as List<dynamic>?)
+            ?.map((e) => VTableEditor.fromJson(e as Map<String, dynamic>))
+            .toList();
+      case 'headerBackground':
+        headerBackground = json['headerBackground'] == null
+            ? null
+            : VColor.fromJson(json['headerBackground'] as Map<String, dynamic>);
+      case 'headerForeground':
+        headerForeground = json['headerForeground'] == null
+            ? null
+            : VColor.fromJson(json['headerForeground'] as Map<String, dynamic>);
+      case 'headerVisible':
+        headerVisible = json['headerVisible'] as bool?;
+      case 'items':
+        items = (json['items'] as List<dynamic>?)
+            ?.map((e) => VTableItem.fromJson(e as Map<String, dynamic>))
+            .toList();
+      case 'linesVisible':
+        linesVisible = json['linesVisible'] as bool?;
+      case 'selection':
+        selection = (json['selection'] as List<dynamic>?)
+            ?.map((e) => (e as num).toInt())
+            .toList();
+      case 'itemCount':
+        itemCount = (json['itemCount'] as num?)?.toInt();
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
+  @override
+  void adoptChildren(VWidget Function(VWidget) adopt) {
+    super.adoptChildren(adopt);
+    VWidget.adoptEach(columns, adopt);
+    VWidget.adoptEach(editors, adopt);
+    VWidget.adoptEach(items, adopt);
+  }
+
+  factory VTable.fromJson(Map<String, dynamic> json) =>
+      _$VTableFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VTableToJson(this);
 }

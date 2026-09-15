@@ -51,7 +51,6 @@ void main() {
       ..imageData = (VImageData()
         ..width = 9
         ..height = 9
-        ..depth = 24
         ..data = base64Decode(_indicatorPng));
 
     final shape = await ImageShape.fromVImageDetailed(
@@ -75,7 +74,6 @@ void main() {
       ..imageData = (VImageData()
         ..width = 9
         ..height = 9
-        ..depth = 24
         ..data = base64Decode(_indicatorPng));
 
     final shape = await ImageShape.fromVImageDetailed(
@@ -91,7 +89,6 @@ void main() {
       ..imageData = (VImageData()
         ..width = 9
         ..height = 9
-        ..depth = 24
         ..data = base64Decode(_indicatorPng));
 
     final shape = await ImageShape.fromVImageDetailed(

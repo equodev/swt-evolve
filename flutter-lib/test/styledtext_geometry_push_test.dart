@@ -20,6 +20,8 @@ import 'package:swtflutter/src/gen/styledtext.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/styledtext_evolve.dart';
 
+import 'delivery/support/deliver.dart';
+
 // Three canvas widths wide, so wrapping splits it into several visual rows.
 const _longLine =
     'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
@@ -88,7 +90,7 @@ void main() {
     await tester.pump();
 
     StyledTextImpl.debugGeometryPushes = 0;
-    await tester.pumpWidget(appWith(key, value(wrap: true)));
+    await deliverWhole(value(wrap: true)..seq = 2);
     await tester.pump();
 
     expect(

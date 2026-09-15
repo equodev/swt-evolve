@@ -18,7 +18,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
-import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -304,9 +303,6 @@ public class DartIME extends DartWidget implements IIME {
      */
     public void setCompositionOffset(int offset) {
         checkWidget();
-        if (!java.util.Objects.equals(this.startOffset, offset)) {
-            dirty();
-        }
         if (offset < 0)
             return;
         if (startOffset != -1) {

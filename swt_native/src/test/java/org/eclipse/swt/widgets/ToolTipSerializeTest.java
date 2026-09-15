@@ -29,9 +29,14 @@ class ToolTipSerializeTest extends SerializeTestBase {
                .containsEntry("message", json(w.getMessage()))
                .containsEntry("text", json(w.getText()))
                .containsEntry("style", w.getStyle());
-        assertJ.satisfies(node("autoHide").equalsTo(w.getAutoHide(), orAbsentIfFalse));
         assertJ.satisfies(node("location").equalsTo(value(w).getLocation(), orAbsentIfNull));
         assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
+    }
+
+    @Test
+    void should_name_every_change_ToolTip() {
+        ToolTip w = new ToolTip(swtShell(), SWT.NONE);
+        assertNamesEveryChange(w);
     }
 
     VToolTip value(ToolTip w) {

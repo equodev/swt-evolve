@@ -8,34 +8,14 @@ class VImageData {
   VImageData() : this.empty();
   VImageData.empty();
 
-  int? alpha;
-  @JsonKey(
-    fromJson: ImageUtils.parseByteArray,
-    toJson: ImageUtils.serializeByteArray,
-  )
-  List<int>? alphaData;
-  int? bytesPerLine;
   @JsonKey(
     fromJson: ImageUtils.parseByteArray,
     toJson: ImageUtils.serializeByteArray,
   )
   List<int>? data;
-  int? delayTime;
   int? depth;
-  int? disposalMethod;
   int? height;
-  @JsonKey(
-    fromJson: ImageUtils.parseByteArray,
-    toJson: ImageUtils.serializeByteArray,
-  )
-  List<int>? maskData;
-  int? maskPad;
-  int? scanlinePad;
-  int? transparentPixel;
-  int? type;
   int? width;
-  int? x;
-  int? y;
 
   factory VImageData.fromJson(Map<String, dynamic> json) =>
       _$VImageDataFromJson(json);

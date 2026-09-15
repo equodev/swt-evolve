@@ -26,6 +26,7 @@ public class VCanvas extends VComposite {
         ((DartCanvas) impl).ime = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Caret getCaret() {
         Caret val = ((DartCanvas) impl).caret;
         if (val != null && !(val.getImpl() instanceof DartCaret))
@@ -35,6 +36,13 @@ public class VCanvas extends VComposite {
 
     public void setCaret(Caret value) {
         ((DartCanvas) impl).caret = value;
+    }
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = Canvas.class)

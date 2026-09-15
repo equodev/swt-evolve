@@ -11,6 +11,7 @@ import '../gen/browser.dart';
 import '../gen/event.dart';
 import '../gen/widget.dart';
 import '../impl/composite_evolve.dart';
+import 'browser_app_base.dart';
 import 'browser_frame_params_stub.dart'
     if (dart.library.js_interop) 'browser_frame_params_web.dart';
 import 'key_mapping.dart';
@@ -220,7 +221,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
         // origin so they resolve.
         final localFileText = m["localFileText"] as String?;
         if (kIsWeb && localFileText != null && localFileText.isNotEmpty) {
-          _loadText(localFileText,
+          _loadText(prefixLocalFilePaths(localFileText, browserAppBasePath()),
               baseUrl: localFileBaseRewrite(m["localFileBase"] as String?));
         } else {
           _loadText(text);
@@ -464,6 +465,13 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   /// content is scriptable for execute/evaluate/BrowserFunction); otherwise
   /// loads directly. No-op on non-web.
   Uri _resolveLoadUri(String url, Uri uri) {
+    // Content the app server itself serves (a /local-file/ document reported back as the
+    // Browser's location, say) is same-origin already; proxying it would only ask the server to
+    // fetch itself through whatever address the page was opened at.
+    final own = browserAppBaseUrl();
+    if (own.isNotEmpty && url.startsWith(own)) {
+      return uri;
+    }
     if (browserProxyEnabled(url) && (uri.scheme == 'http' || uri.scheme == 'https')) {
       return Uri.parse(browserProxyRewrite(url));
     }
@@ -498,7 +506,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       final script = '''
         window[$nameLit] = function() {
           var xhr = new XMLHttpRequest();
-          xhr.open('POST', location.origin + '/equo-browser-function', false);
+          xhr.open('POST', ${jsonEncode(browserAppBaseUrl())} + 'equo-browser-function', false);
           xhr.setRequestHeader('Content-Type', 'application/json');
           xhr.send(JSON.stringify({
             browserId: ${state.id},

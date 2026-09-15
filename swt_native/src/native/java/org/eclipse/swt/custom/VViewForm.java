@@ -17,6 +17,7 @@ public class VViewForm extends VComposite {
         super(impl);
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getBorderVisible() {
         return ((DartViewForm) impl).showBorder;
     }
@@ -25,6 +26,7 @@ public class VViewForm extends VComposite {
         ((DartViewForm) impl).showBorder = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Control getContent() {
         Control val = ((DartViewForm) impl).content;
         if (val != null && !(val.getImpl() instanceof DartControl))
@@ -36,6 +38,7 @@ public class VViewForm extends VComposite {
         ((DartViewForm) impl).content = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Control getTopCenter() {
         Control val = ((DartViewForm) impl).topCenter;
         if (val != null && !(val.getImpl() instanceof DartControl))
@@ -47,6 +50,7 @@ public class VViewForm extends VComposite {
         ((DartViewForm) impl).topCenter = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getTopCenterSeparate() {
         return ((DartViewForm) impl).separateTopCenter;
     }
@@ -55,6 +59,7 @@ public class VViewForm extends VComposite {
         ((DartViewForm) impl).separateTopCenter = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Control getTopLeft() {
         Control val = ((DartViewForm) impl).topLeft;
         if (val != null && !(val.getImpl() instanceof DartControl))
@@ -66,6 +71,7 @@ public class VViewForm extends VComposite {
         ((DartViewForm) impl).topLeft = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Control getTopRight() {
         Control val = ((DartViewForm) impl).topRight;
         if (val != null && !(val.getImpl() instanceof DartControl))
@@ -75,6 +81,13 @@ public class VViewForm extends VComposite {
 
     public void setTopRight(Control value) {
         ((DartViewForm) impl).topRight = value;
+    }
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = ViewForm.class)

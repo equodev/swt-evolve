@@ -475,7 +475,9 @@ public class DartDateTime extends DartComposite implements IDateTime {
         if (!org.eclipse.swt.widgets.DateTimeHelper.isValidDate(year, month, day))
             return;
         if (this.year != year || this.month != month || this.day != day) {
-            dirty();
+            getValue().markDirty(VDateTime.YEAR);
+            getValue().markDirty(VDateTime.MONTH);
+            getValue().markDirty(VDateTime.DAY);
         }
         this.year = year;
         this.month = month;
@@ -503,7 +505,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
         if (!org.eclipse.swt.widgets.DateTimeHelper.isValidDate(this.year, this.month, day))
             return;
         if (this.day != day)
-            dirty();
+            getValue().markDirty(VDateTime.DAY);
         this.day = day;
     }
 
@@ -533,7 +535,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
     public void setHours(int hours) {
         int newValue = hours;
         if (!java.util.Objects.equals(this.hours, newValue)) {
-            dirty();
+            getValue().markDirty(VDateTime.HOURS);
         }
         checkWidget();
         if (hours < 0 || hours > 23)
@@ -557,7 +559,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
     public void setMinutes(int minutes) {
         int newValue = minutes;
         if (!java.util.Objects.equals(this.minutes, newValue)) {
-            dirty();
+            getValue().markDirty(VDateTime.MINUTES);
         }
         checkWidget();
         if (minutes < 0 || minutes > 59)
@@ -586,7 +588,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
         if (!org.eclipse.swt.widgets.DateTimeHelper.isValidDate(this.year, month, this.day))
             return;
         if (this.month != month)
-            dirty();
+            getValue().markDirty(VDateTime.MONTH);
         this.month = month;
     }
 
@@ -606,7 +608,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
     public void setSeconds(int seconds) {
         int newValue = seconds;
         if (!java.util.Objects.equals(this.seconds, newValue)) {
-            dirty();
+            getValue().markDirty(VDateTime.SECONDS);
         }
         checkWidget();
         if (seconds < 0 || seconds > 59)
@@ -637,7 +639,9 @@ public class DartDateTime extends DartComposite implements IDateTime {
         if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59)
             return;
         if (this.hours != hours || this.minutes != minutes || this.seconds != seconds) {
-            dirty();
+            getValue().markDirty(VDateTime.HOURS);
+            getValue().markDirty(VDateTime.MINUTES);
+            getValue().markDirty(VDateTime.SECONDS);
         }
         this.hours = hours;
         this.minutes = minutes;
@@ -667,7 +671,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
         if (!org.eclipse.swt.widgets.DateTimeHelper.isValidDate(year, this.month, this.day))
             return;
         if (this.year != year)
-            dirty();
+            getValue().markDirty(VDateTime.YEAR);
         this.year = year;
     }
 

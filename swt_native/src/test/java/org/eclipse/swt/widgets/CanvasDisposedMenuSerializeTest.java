@@ -25,7 +25,7 @@ class CanvasDisposedMenuSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Canvas");
         assertThatJson(json).node("menu").isObject()
-               .containsOnlyKeys("id", "swt", "seq", "style")
+               .containsOnlyKeys("id", "swt", "style")
                .containsEntry("swt", "Menu");
     }
 }

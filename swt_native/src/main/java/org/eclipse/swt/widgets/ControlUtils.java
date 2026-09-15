@@ -14,7 +14,11 @@ public class ControlUtils {
             Control[] newArray = p.children != null ? Arrays.copyOf(p.children, p.children.length + 1) : new Control[1];
             newArray[newArray.length - 1] = obj.getApi();
             p.children = newArray;
-            obj.getBridge().dirty(p);
+            // A child can be added while the parent is still being constructed, before it has a
+            // value to record anything on. Scheduling it is all that can be done then, and all that
+            // is needed: a parent that new is sent whole.
+            if (p.getValue() != null) p.getValue().markDirty(VComposite.CHILDREN);
+            else obj.getBridge().dirty(p);
         }
     }
     
@@ -23,6 +27,7 @@ public class ControlUtils {
             Control[] newArray = p.children != null ? Arrays.copyOf(p.children, p.children.length + 1) : new Control[1];
             newArray[newArray.length - 1] = obj.getApi();
             p.children = newArray;
+            if (p.getValue() != null) p.getValue().markDirty(VComposite.CHILDREN);
         }
     }
 
@@ -109,7 +114,8 @@ public class ControlUtils {
         System.arraycopy(newChildren, newIndex, finalChildren, newIndex + 1, newChildren.length - newIndex);
 
         parentImpl.children = finalChildren;
-        ((DartControl) movedControl.getImpl()).getBridge().dirty(parentImpl);
+        if (parentImpl.getValue() != null) parentImpl.getValue().markDirty(VComposite.CHILDREN);
+        else ((DartControl) movedControl.getImpl()).getBridge().dirty(parentImpl);
     }
 
     private static void removeFromParentChildren(DartControl obj) {
@@ -123,7 +129,8 @@ public class ControlUtils {
                     break;
                 }
             }
-            obj.getBridge().dirty(p);
+            if (p.getValue() != null) p.getValue().markDirty(VComposite.CHILDREN);
+            else obj.getBridge().dirty(p);
         }
     }
 }

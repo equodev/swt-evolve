@@ -7,7 +7,7 @@ import dev.equo.swt.Serializer;
 import java.util.ArrayList;
 
 /**
- * Value object for Display — serializes the list of visible shells to Flutter.
+ * Value object for Display — serializes the display's shells to Flutter.
  * Display is NOT a Widget, so VDisplay does NOT extend VWidget.
  */
 public class VDisplay {
@@ -48,14 +48,21 @@ public class VDisplay {
         v.id = display.getApi().hashCode();
         v.swt = "Display";
         v.config = Config.getConfigFlags();
+        // Every shell, not only the ones on screen. This list is how the client knows a shell
+        // exists at all: a shell missing from it cannot be placed, so the frames this side sends on
+        // that shell's own channel land nowhere - while the widgets written inside them are counted
+        // delivered, and from then on named rather than described. A hidden shell is most of the
+        // trim during startup, which is why the client was being handed names for toolbars and menu
+        // items it had never been given. Whether a shell is drawn is decided from its own visible
+        // flag, on the side that draws.
         Shell[] all = display._shells();
-        ArrayList<Shell> visible = new ArrayList<>();
+        ArrayList<Shell> live = new ArrayList<>();
         for (Shell s : all) {
-            if (s != null && !s.isDisposed() && s.getVisible()) {
-                visible.add(s);
+            if (s != null && !s.isDisposed()) {
+                live.add(s);
             }
         }
-        v.shells = visible.toArray(Shell[]::new);
+        v.shells = live.toArray(Shell[]::new);
         Menu[] displayPopups = display.popups;
         ArrayList<Menu> popupList = new ArrayList<>();
         if (displayPopups != null) {

@@ -419,7 +419,7 @@ public class DartTableColumn extends DartItem implements ITableColumn {
      * </ul>
      */
     public void setAlignment(int alignment) {
-        dirty();
+        getValue().markDirty(VTableColumn.ALIGNMENT);
         checkWidget();
         if ((alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) == 0)
             return;
@@ -462,9 +462,6 @@ public class DartTableColumn extends DartItem implements ITableColumn {
      */
     public void setMoveable(boolean moveable) {
         checkWidget();
-        if (!java.util.Objects.equals(this.movable, moveable)) {
-            dirty();
-        }
         this.movable = moveable;
     }
 
@@ -485,7 +482,7 @@ public class DartTableColumn extends DartItem implements ITableColumn {
     public void setResizable(boolean resizable) {
         boolean newValue = resizable;
         if (!java.util.Objects.equals(this.resizable, newValue)) {
-            dirty();
+            getValue().markDirty(VTableColumn.RESIZABLE);
         }
         checkWidget();
         this.resizable = newValue;
@@ -532,9 +529,6 @@ public class DartTableColumn extends DartItem implements ITableColumn {
      */
     public void setToolTipText(String string) {
         checkWidget();
-        if (!java.util.Objects.equals(this.toolTipText, string)) {
-            dirty();
-        }
         toolTipText = string;
         ((DartControl) parent.getImpl()).checkToolTip(this.getApi());
     }
@@ -552,7 +546,7 @@ public class DartTableColumn extends DartItem implements ITableColumn {
     public void setWidth(int width) {
         int newValue = width;
         if (!java.util.Objects.equals(this.width, newValue)) {
-            dirty();
+            getValue().markDirty(VTableColumn.WIDTH);
         }
         checkWidget();
         if (width < 0)
@@ -593,15 +587,6 @@ public class DartTableColumn extends DartItem implements ITableColumn {
 
     public int _width() {
         return width;
-    }
-
-    @Override
-    protected void dirty() {
-        if (parent != null && !parent.isDisposed()) {
-            ((DartWidget) parent.getImpl()).dirty();
-            return;
-        }
-        super.dirty();
     }
 
     public FlutterBridge getBridge() {

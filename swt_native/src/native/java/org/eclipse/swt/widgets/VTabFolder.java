@@ -46,6 +46,23 @@ public class VTabFolder extends VComposite {
         ((DartTabFolder) impl).selection = value;
     }
 
+    public static final String ITEMS = "items";
+
+    public static final String SELECTION = "selection";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "items":
+                Serializer.writeKeyValue(writer, "items", getItems());
+                return;
+            case "selection":
+                Serializer.writeKeyValue(writer, "selection", getSelection());
+                return;
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = TabFolder.class)
     public static class TabFolderJson implements Configuration {
 

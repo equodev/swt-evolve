@@ -9,6 +9,7 @@ import '../gen/image.dart';
 import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
+import '../gen/widget.dart';
 import '../impl/slider_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
@@ -44,7 +45,40 @@ class VSlider extends VControl {
   int? selection;
   int? thumb;
 
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VSlider) {
+      increment = other.increment;
+      maximum = other.maximum;
+      minimum = other.minimum;
+      pageIncrement = other.pageIncrement;
+      selection = other.selection;
+      thumb = other.thumb;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'increment':
+        increment = (json['increment'] as num?)?.toInt();
+      case 'maximum':
+        maximum = (json['maximum'] as num?)?.toInt();
+      case 'minimum':
+        minimum = (json['minimum'] as num?)?.toInt();
+      case 'pageIncrement':
+        pageIncrement = (json['pageIncrement'] as num?)?.toInt();
+      case 'selection':
+        selection = (json['selection'] as num?)?.toInt();
+      case 'thumb':
+        thumb = (json['thumb'] as num?)?.toInt();
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
   factory VSlider.fromJson(Map<String, dynamic> json) =>
-      _$VSliderFromJson(json);
+      _$VSliderFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VSliderToJson(this);
 }

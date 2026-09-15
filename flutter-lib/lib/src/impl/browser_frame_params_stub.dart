@@ -9,6 +9,10 @@ PlatformWebViewControllerCreationParams? browserWebViewParams(int id) => null;
 /// backend; on native platforms the webview's own controller handles JS.
 bool browserProxyEnabled(String url) => false;
 
+String browserAppBasePath() => '/';
+
+String browserAppBaseUrl() => '';
+
 String browserProxyRewrite(String url) => url;
 
 String localFileRewrite(String tokenPath) => tokenPath;

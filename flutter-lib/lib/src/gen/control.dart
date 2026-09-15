@@ -111,24 +111,96 @@ class VControl extends VWidget {
   VColor? background;
   VImage? backgroundImage;
   VRectangle? bounds;
-  bool? capture;
   VCursor? cursor;
-  bool? dragDetect;
   bool? dragSource;
   int? dropTargetId;
   bool? enabled;
-  bool? enabledEffective;
   VFont? font;
   VColor? foreground;
   bool? hasOwnBackground;
   VMenu? menu;
-  int? orientation;
-  bool? redraw;
   VRegion? region;
-  int? textDirection;
   String? toolTipText;
-  bool? touchEnabled;
   bool? visible;
+
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VControl) {
+      background = other.background;
+      backgroundImage = other.backgroundImage;
+      bounds = other.bounds;
+      cursor = other.cursor;
+      dragSource = other.dragSource;
+      dropTargetId = other.dropTargetId;
+      enabled = other.enabled;
+      font = other.font;
+      foreground = other.foreground;
+      hasOwnBackground = other.hasOwnBackground;
+      menu = other.menu;
+      region = other.region;
+      toolTipText = other.toolTipText;
+      visible = other.visible;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'background':
+        background = json['background'] == null
+            ? null
+            : VColor.fromJson(json['background'] as Map<String, dynamic>);
+      case 'backgroundImage':
+        backgroundImage = json['backgroundImage'] == null
+            ? null
+            : VImage.fromJson(json['backgroundImage'] as Map<String, dynamic>);
+      case 'bounds':
+        bounds = json['bounds'] == null
+            ? null
+            : VRectangle.fromJson(json['bounds'] as Map<String, dynamic>);
+      case 'cursor':
+        cursor = json['cursor'] == null
+            ? null
+            : VCursor.fromJson(json['cursor'] as Map<String, dynamic>);
+      case 'dragSource':
+        dragSource = json['dragSource'] as bool?;
+      case 'dropTargetId':
+        dropTargetId = (json['dropTargetId'] as num?)?.toInt();
+      case 'enabled':
+        enabled = json['enabled'] as bool?;
+      case 'font':
+        font = json['font'] == null
+            ? null
+            : VFont.fromJson(json['font'] as Map<String, dynamic>);
+      case 'foreground':
+        foreground = json['foreground'] == null
+            ? null
+            : VColor.fromJson(json['foreground'] as Map<String, dynamic>);
+      case 'hasOwnBackground':
+        hasOwnBackground = json['hasOwnBackground'] as bool?;
+      case 'menu':
+        menu = json['menu'] == null
+            ? null
+            : VMenu.fromJson(json['menu'] as Map<String, dynamic>);
+      case 'region':
+        region = json['region'] == null
+            ? null
+            : VRegion.fromJson(json['region'] as Map<String, dynamic>);
+      case 'toolTipText':
+        toolTipText = json['toolTipText'] as String?;
+      case 'visible':
+        visible = json['visible'] as bool?;
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
+  @override
+  void adoptChildren(VWidget Function(VWidget) adopt) {
+    super.adoptChildren(adopt);
+    menu = VWidget.adoptOne(menu, adopt);
+  }
 
   factory VControl.fromJson(Map<String, dynamic> json) =>
       mapWidgetValue(json) as VControl;

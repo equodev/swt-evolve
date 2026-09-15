@@ -33,6 +33,7 @@ public class VComposite extends VScrollable {
         ((DartComposite) impl).children = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getLayoutDeferred() {
         return ((DartComposite) impl).getLayoutDeferred();
     }
@@ -41,12 +42,30 @@ public class VComposite extends VScrollable {
         ((DartComposite) impl).layoutDeferred = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Control[] getTabList() {
         return ((DartComposite) impl).tabList;
     }
 
     public void setTabList(Control[] value) {
         ((DartComposite) impl).tabList = value;
+    }
+
+    public static final String BACKGROUND_MODE = "backgroundMode";
+
+    public static final String CHILDREN = "children";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "backgroundMode":
+                Serializer.writeKeyValue(writer, "backgroundMode", getBackgroundMode());
+                return;
+            case "children":
+                Serializer.writeKeyValue(writer, "children", getChildren());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = Composite.class)

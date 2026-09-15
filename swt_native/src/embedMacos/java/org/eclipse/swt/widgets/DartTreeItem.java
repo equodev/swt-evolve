@@ -264,6 +264,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         font = null;
         cellFont = null;
         width = -1;
+        dirty();
     }
 
     /**
@@ -962,7 +963,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         color = GraphicsUtils.copyColor(color);
         checkWidget();
         if (!java.util.Objects.equals(this.background, color)) {
-            dirty();
+            getValue().markDirty(VTreeItem.BACKGROUND);
         }
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1031,7 +1032,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     public void setChecked(boolean checked) {
         checkWidget();
         if (!java.util.Objects.equals(this.checked, checked)) {
-            dirty();
+            getValue().markDirty(VTreeItem.CHECKED);
         }
         if ((parent.style & SWT.CHECK) == 0)
             return;
@@ -1055,7 +1056,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     public void setExpanded(boolean expanded) {
         checkWidget();
         if (!java.util.Objects.equals(this.expanded, expanded)) {
-            dirty();
+            getValue().markDirty(VTreeItem.EXPANDED);
         }
         /* Do nothing when the item is a leaf or already expanded */
         if (itemCount == 0 || expanded == getExpanded())
@@ -1095,7 +1096,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         font = GraphicsUtils.copyFont(font);
         checkWidget();
         if (!java.util.Objects.equals(this.font, font)) {
-            dirty();
+            getValue().markDirty(VTreeItem.FONT);
         }
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1131,7 +1132,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * @since 3.1
      */
     public void setFont(int index, Font font) {
-        dirty();
+        getValue().markDirty(VTreeItem.FONT);
         checkWidget();
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1176,7 +1177,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         color = GraphicsUtils.copyColor(color);
         checkWidget();
         if (!java.util.Objects.equals(this.foreground, color)) {
-            dirty();
+            getValue().markDirty(VTreeItem.FOREGROUND);
         }
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1246,7 +1247,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     public void setGrayed(boolean grayed) {
         checkWidget();
         if (!java.util.Objects.equals(this.grayed, grayed)) {
-            dirty();
+            getValue().markDirty(VTreeItem.GRAYED);
         }
         if ((parent.style & SWT.CHECK) == 0)
             return;
@@ -1280,6 +1281,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         for (int i = 0; i < images.length; i++) {
             setImage(i, images[i]);
         }
+        getValue().markDirty(VTreeItem.IMAGES);
     }
 
     /**
@@ -1322,6 +1324,8 @@ public class DartTreeItem extends DartItem implements ITreeItem {
                     return;
             }
             images[index] = image;
+            getValue().markDirty(VTreeItem.IMAGE);
+            getValue().markDirty(VTreeItem.IMAGES);
         }
         cached = true;
         if (index == 0)
@@ -1334,6 +1338,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     public void setImage(Image image) {
         checkWidget();
         setImage(0, image);
+        getValue().markDirty(VTreeItem.IMAGES);
     }
 
     /**
@@ -1387,6 +1392,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             if (string != null)
                 setText(i, string);
         }
+        getValue().markDirty(VTreeItem.TEXTS);
     }
 
     /**
@@ -1425,6 +1431,8 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             if (string.equals(strings[index]))
                 return;
             strings[index] = string;
+            getValue().markDirty(VTreeItem.TEXT);
+            getValue().markDirty(VTreeItem.TEXTS);
         }
         cached = true;
         if (index == 0)
@@ -1437,6 +1445,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     public void setText(String string) {
         checkWidget();
         setText(0, string);
+        getValue().markDirty(VTreeItem.TEXTS);
     }
 
     void updateExpanded() {

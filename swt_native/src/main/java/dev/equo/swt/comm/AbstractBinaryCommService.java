@@ -29,6 +29,20 @@ public abstract class AbstractBinaryCommService implements CommService {
     private final List<byte[]> pendingFrames = new ArrayList<>();
     private volatile boolean firstClientConnected = false;
 
+    /**
+     * The client frames are being written for. Starts at 1, not 0: frames sent before anyone
+     * connects are buffered and handed to the first client on connect, so they genuinely reach it
+     * and are rightly credited to it. Each session after that gets a fresh id, which is what makes
+     * a reconnecting client be described in full rather than referred to by name.
+     */
+    private final java.util.concurrent.atomic.AtomicInteger connection =
+            new java.util.concurrent.atomic.AtomicInteger(1);
+
+    @Override
+    public int connectionId() {
+        return connection.get();
+    }
+
     @Override
     public void send(String eventName) {
         send(eventName, (byte[]) null);
@@ -75,7 +89,12 @@ public abstract class AbstractBinaryCommService implements CommService {
      * before a client was connected, delivering them to the just-connected session.
      */
     protected void onClientConnected(Consumer<byte[]> sendToSession) {
-        if (firstClientConnected) return;
+        if (firstClientConnected) {
+            // A different client from the one everything so far was written for. It holds none of
+            // it, so it is given a new id and every widget is described to it in full again.
+            connection.incrementAndGet();
+            return;
+        }
         List<byte[]> drain;
         synchronized (pendingFrames) {
             if (firstClientConnected) return;

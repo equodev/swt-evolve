@@ -36,7 +36,7 @@ public class ListHelper {
             System.arraycopy(selection, 0, newSelection, 0, position);
             System.arraycopy(selection, position + 1, newSelection, position, selection.length - position - 1);
             list.selection = newSelection;
-            list.dirty();
+            list.getValue().markDirty(VList.SELECTION);
         }
     }
 
@@ -51,7 +51,7 @@ public class ListHelper {
         }
         if (count != selection.length) {
             list.selection = Arrays.copyOf(newSelection, count);
-            list.dirty();
+            list.getValue().markDirty(VList.SELECTION);
         }
     }
 
@@ -71,7 +71,7 @@ public class ListHelper {
         }
         if (count != selection.length) {
             list.selection = Arrays.copyOf(newSelection, count);
-            list.dirty();
+            list.getValue().markDirty(VList.SELECTION);
         }
     }
 
@@ -114,14 +114,14 @@ public class ListHelper {
         if (0 <= index && index < itemCount) {
             if ((style & SWT.SINGLE) != 0) {
                 list.selection = new int[] { index };
-                list.dirty();
+                list.getValue().markDirty(VList.SELECTION);
             } else if (!isIndexSelected(list, index)) {
                 int[] selection = list._selection();
                 int[] newSelection = new int[selection.length + 1];
                 System.arraycopy(selection, 0, newSelection, 0, selection.length);
                 newSelection[selection.length] = index;
                 list.selection = newSelection;
-                list.dirty();
+                list.getValue().markDirty(VList.SELECTION);
             }
         }
     }
@@ -137,7 +137,7 @@ public class ListHelper {
 
         if (isSingle) {
             list.selection = new int[] { start };
-            list.dirty();
+            list.getValue().markDirty(VList.SELECTION);
             return;
         }
 
@@ -154,7 +154,7 @@ public class ListHelper {
         }
         if (changed) {
             list.selection = currentSelection.stream().mapToInt(Integer::intValue).toArray();
-            list.dirty();
+            list.getValue().markDirty(VList.SELECTION);
         }
     }
 
@@ -168,7 +168,7 @@ public class ListHelper {
             int index = indices[0];
             if (index >= 0 && index < itemCount) {
                 list.selection = new int[] { index };
-                list.dirty();
+                list.getValue().markDirty(VList.SELECTION);
             }
             return;
         }
@@ -186,7 +186,7 @@ public class ListHelper {
         }
         if (changed) {
             list.selection = currentSelection.stream().mapToInt(Integer::intValue).toArray();
-            list.dirty();
+            list.getValue().markDirty(VList.SELECTION);
         }
     }
 
@@ -195,7 +195,7 @@ public class ListHelper {
         for (int i = 0; i < itemCount; i++) {
             allIndices[i] = i;
         }
-        list.dirty();
+        list.getValue().markDirty(VList.SELECTION);
         list.selection = allIndices;
     }
 
@@ -211,7 +211,7 @@ public class ListHelper {
             newSelection[i - start] = i;
         }
         list.selection = newSelection;
-        list.dirty();
+        list.getValue().markDirty(VList.SELECTION);
     }
 
     public static int setSelectionStrings(DartList list, String[] selectionItems, int itemCount, int style) {
@@ -224,7 +224,7 @@ public class ListHelper {
             int index = list.indexOf(selectionItems[0], 0);
             if (index != -1) {
                 list.selection = new int[] { index };
-                list.dirty();
+                list.getValue().markDirty(VList.SELECTION);
                 return index;
             }
             return -1;
@@ -248,7 +248,7 @@ public class ListHelper {
 
         if (!newSelection.isEmpty()) {
             list.selection = newSelection.stream().mapToInt(Integer::intValue).toArray();
-            list.dirty();
+            list.getValue().markDirty(VList.SELECTION);
         }
         return firstIndex;
     }
@@ -258,7 +258,6 @@ public class ListHelper {
             return;
         if (list._topIndex() != index) {
             list.topIndex = index;
-            list.dirty();
         }
     }
 

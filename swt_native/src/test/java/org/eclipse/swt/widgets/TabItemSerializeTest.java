@@ -32,6 +32,12 @@ class TabItemSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
     }
 
+    @Test
+    void should_name_every_change_TabItem() {
+        TabItem w = new TabItem(tabFolder(), SWT.NONE);
+        assertNamesEveryChange(w);
+    }
+
     VTabItem value(TabItem w) {
         return ((DartTabItem) w.getImpl()).getValue();
     }

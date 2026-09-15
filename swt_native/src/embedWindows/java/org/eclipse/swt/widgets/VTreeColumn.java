@@ -33,6 +33,7 @@ public class VTreeColumn extends VItem {
         ((DartTreeColumn) impl).moveable = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getResizable() {
         return ((DartTreeColumn) impl).getResizable();
     }
@@ -41,6 +42,7 @@ public class VTreeColumn extends VItem {
         ((DartTreeColumn) impl).resizable = value;
     }
 
+    @JsonAttribute(ignore = true)
     public String getToolTipText() {
         return ((DartTreeColumn) impl).getToolTipText();
     }
@@ -55,6 +57,28 @@ public class VTreeColumn extends VItem {
 
     public void setWidth(int value) {
         ((DartTreeColumn) impl).width = value;
+    }
+
+    public static final String ALIGNMENT = "alignment";
+
+    public static final String MOVEABLE = "moveable";
+
+    public static final String WIDTH = "width";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "alignment":
+                Serializer.writeKeyValue(writer, "alignment", getAlignment());
+                return;
+            case "moveable":
+                Serializer.writeKeyValue(writer, "moveable", getMoveable());
+                return;
+            case "width":
+                Serializer.writeKeyValue(writer, "width", getWidth());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = TreeColumn.class)

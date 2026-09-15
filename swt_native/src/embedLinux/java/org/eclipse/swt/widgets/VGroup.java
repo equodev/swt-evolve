@@ -25,6 +25,18 @@ public class VGroup extends VComposite {
         ((DartGroup) impl).text = value;
     }
 
+    public static final String TEXT = "text";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "text":
+                Serializer.writeKeyValue(writer, "text", getText());
+                return;
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = Group.class)
     public static class GroupJson implements Configuration {
 

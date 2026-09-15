@@ -343,7 +343,7 @@ public class DartText extends DartScrollable implements IText {
         setSelection(getCharCount());
         insertEditText(string);
         if (string.length() != 0) {
-            dirty();
+            getValue().markDirty(VText.TEXT);
             sendEvent(SWT.Modify);
         }
     }
@@ -1337,9 +1337,6 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setDoubleClickEnabled(boolean doubleClick) {
         checkWidget();
-        if (!java.util.Objects.equals(this.doubleClick, doubleClick)) {
-            dirty();
-        }
         this.doubleClick = doubleClick;
     }
 
@@ -1367,7 +1364,7 @@ public class DartText extends DartScrollable implements IText {
     public void setEchoChar(char echo) {
         char newValue = echo;
         if (!java.util.Objects.equals(this.echoCharacter, newValue)) {
-            dirty();
+            getValue().markDirty(VText.ECHO_CHARACTER);
         }
         checkWidget();
         this.echoCharacter = newValue;
@@ -1388,7 +1385,7 @@ public class DartText extends DartScrollable implements IText {
     public void setEditable(boolean editable) {
         boolean newValue = editable;
         if (!java.util.Objects.equals(this.editable, newValue)) {
-            dirty();
+            getValue().markDirty(VText.EDITABLE);
         }
         checkWidget();
         getApi().style &= ~SWT.READ_ONLY;
@@ -1428,7 +1425,7 @@ public class DartText extends DartScrollable implements IText {
     public void setMessage(String message) {
         checkWidget();
         if (!java.util.Objects.equals(this.message, message)) {
-            dirty();
+            getValue().markDirty(VText.MESSAGE);
         }
         if (message == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -1458,7 +1455,6 @@ public class DartText extends DartScrollable implements IText {
      */
     @Override
     public void setOrientation(int orientation) {
-        dirty();
         checkWidget();
     }
 
@@ -1516,7 +1512,7 @@ public class DartText extends DartScrollable implements IText {
      * </ul>
      */
     public void setSelection(int start, int end) {
-        dirty();
+        getValue().markDirty(VText.CARET_POSITION);
         checkWidget();
         int length = getCharCount();
         int min = Math.min(Math.max(Math.min(start, end), 0), length);
@@ -1580,9 +1576,6 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setTabs(int tabs) {
         checkWidget();
-        if (!java.util.Objects.equals(this.tabs, tabs)) {
-            dirty();
-        }
         if (tabs < 0)
             return;
         setTabStops(this.tabs = tabs);
@@ -1659,9 +1652,6 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setTextChars(char[] text) {
         char[] newValue = text;
-        if (!java.util.Objects.equals(this.textChars, newValue)) {
-            dirty();
-        }
         checkWidget();
         if (text == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -1682,7 +1672,7 @@ public class DartText extends DartScrollable implements IText {
     }
 
     void setText(char[] text) {
-        dirty();
+        getValue().markDirty(VText.TEXT);
         String newValue = new String(text);
         clearSegments(false);
         if ((getApi().style & SWT.SINGLE) != 0) {
@@ -1721,7 +1711,7 @@ public class DartText extends DartScrollable implements IText {
     public void setTextLimit(int limit) {
         int newValue = limit;
         if (!java.util.Objects.equals(this.textLimit, newValue)) {
-            dirty();
+            getValue().markDirty(VText.TEXT_LIMIT);
         }
         checkWidget();
         if (limit == 0)
@@ -1745,9 +1735,6 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setTopIndex(int index) {
         int newValue = index;
-        if (!java.util.Objects.equals(this.topIndex, newValue)) {
-            dirty();
-        }
         checkWidget();
         if ((getApi().style & SWT.SINGLE) != 0)
             return;

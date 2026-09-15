@@ -26,7 +26,6 @@ class TableEditorSerializeTest extends SerializeTestBase {
         assertJ.isNotEmpty();
         assertJ.satisfies(node("column").equalsTo(w.getColumn(), orAbsentIf0));
         assertJ.satisfies(node("item").equalsTo(value(w).getItem(), orAbsentIfNull));
-        assertJ.satisfies(node("editor").equalsTo(w.getEditor(), orAbsentIfNull));
     }
 
     VTableEditor value(TableEditor w) {

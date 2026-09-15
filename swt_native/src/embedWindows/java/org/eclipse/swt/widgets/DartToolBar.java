@@ -251,6 +251,7 @@ public class DartToolBar extends DartComposite implements IToolBar {
         items[((DartToolItem) item.getImpl()).id = id] = item;
         ((DartWidget) item.getImpl()).register();
         layoutItems();
+        getValue().markDirty(VToolBar.ITEMS);
     }
 
     @Override
@@ -259,6 +260,7 @@ public class DartToolBar extends DartComposite implements IToolBar {
         getApi().state &= ~CANVAS;
         items = new ToolItem[4];
         lastFocusId = lastArrowId = lastHotId = -1;
+        getValue().markDirty(VToolBar.ITEMS);
     }
 
     @Override
@@ -280,6 +282,7 @@ public class DartToolBar extends DartComposite implements IToolBar {
         }
         ((DartToolItem) item.getImpl()).id = -1;
         layoutItems();
+        getValue().markDirty(VToolBar.ITEMS);
     }
 
     @Override

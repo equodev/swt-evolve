@@ -10,6 +10,7 @@ import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
+import '../gen/widget.dart';
 import '../impl/viewform_evolve.dart';
 import 'widgets.dart';
 
@@ -29,14 +30,7 @@ class VViewForm extends VComposite {
     swt = "ViewForm";
   }
 
-  bool? borderVisible;
-  VControl? content;
-  VControl? topCenter;
-  bool? topCenterSeparate;
-  VControl? topLeft;
-  VControl? topRight;
-
   factory VViewForm.fromJson(Map<String, dynamic> json) =>
-      _$VViewFormFromJson(json);
+      _$VViewFormFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VViewFormToJson(this);
 }

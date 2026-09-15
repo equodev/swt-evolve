@@ -27,6 +27,7 @@ public class VShell extends VDecorations {
         ((DartShell) impl).alpha = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getDarkThemePreferred() {
         return ((DartShell) impl).darkThemePreferred;
     }
@@ -44,13 +45,6 @@ public class VShell extends VDecorations {
         ((DartShell) impl).dialogs = value;
     }
 
-    public Boolean getEnabledEffective() {
-        return ((DartShell) impl).isEnabled();
-    }
-
-    public void setEnabledEffective(Boolean value) {
-    }
-
     public boolean getFullScreen() {
         return ((DartShell) impl).getFullScreen();
     }
@@ -59,6 +53,7 @@ public class VShell extends VDecorations {
         ((DartShell) impl).fullScreen = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getImeInputMode() {
         return ((DartShell) impl).getImeInputMode();
     }
@@ -91,6 +86,7 @@ public class VShell extends VDecorations {
         ((DartShell) impl).modified = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Shell[] getShells() {
         Shell[] values = ((DartShell) impl).shells;
         if (values == null)
@@ -103,6 +99,43 @@ public class VShell extends VDecorations {
 
     public void setShells(Shell[] value) {
         ((DartShell) impl).shells = value;
+    }
+
+    public static final String ALPHA = "alpha";
+
+    public static final String DIALOGS = "dialogs";
+
+    public static final String FULL_SCREEN = "fullScreen";
+
+    public static final String MAXIMUM_SIZE = "maximumSize";
+
+    public static final String MINIMUM_SIZE = "minimumSize";
+
+    public static final String MODIFIED = "modified";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "alpha":
+                Serializer.writeKeyValue(writer, "alpha", getAlpha());
+                return;
+            case "dialogs":
+                Serializer.writeKeyValue(writer, "dialogs", getDialogs());
+                return;
+            case "fullScreen":
+                Serializer.writeKeyValue(writer, "fullScreen", getFullScreen());
+                return;
+            case "maximumSize":
+                Serializer.writeKeyValue(writer, "maximumSize", getMaximumSize());
+                return;
+            case "minimumSize":
+                Serializer.writeKeyValue(writer, "minimumSize", getMinimumSize());
+                return;
+            case "modified":
+                Serializer.writeKeyValue(writer, "modified", getModified());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = Shell.class)

@@ -20,6 +20,10 @@ class SerializerDisposedWidgetTest extends SerializeTestBase {
     // `disposed` check in Serializer.writeWithId) — the early-return path below must stay valid
     // JSON, since one bad node poisons the whole ancestor payload. `style` belongs to the stub:
     // every generated Dart decoder reads it as a non-nullable num.
+    //
+    // No write stamp, which is the load-bearing part: a stub says which widget, not what it holds,
+    // and this side never counts it delivered. Stamping it had the far side record a state it was
+    // never given, so every later update read as computed from a state it did not hold.
     @Test
     void writeWithId_on_a_disposed_widget_does_not_emit_a_trailing_comma() {
         Button w = new Button(swtShell(), SWT.NONE);
@@ -30,6 +34,6 @@ class SerializerDisposedWidgetTest extends SerializeTestBase {
 
         assertThat(json).matches("\\{[^{}]*\\}");
         assertThat(json).doesNotContain(",}");
-        assertThatJson(json).isObject().containsOnlyKeys("id", "swt", "seq", "style");
+        assertThatJson(json).isObject().containsOnlyKeys("id", "swt", "style");
     }
 }

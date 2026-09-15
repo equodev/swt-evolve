@@ -27,12 +27,16 @@ class MenuSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Menu")
                .containsEntry("style", w.getStyle());
-        assertJ.satisfies(node("defaultItem").equalsTo(w.getDefaultItem(), orAbsentIfNull));
         assertJ.satisfies(node("enabled").equalsTo(w.getEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("location").equalsTo(value(w).getLocation(), orAbsentIfNull));
         assertJ.satisfies(node("orientation").equalsTo(w.getOrientation(), orAbsentIf0));
-        assertJ.satisfies(node("parentMenu").equalsTo(w.getParentMenu(), orAbsentIfNull));
         assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
+    }
+
+    @Test
+    void should_name_every_change_Menu() {
+        Menu w = new Menu(control());
+        assertNamesEveryChange(w);
     }
 
     VMenu value(Menu w) {

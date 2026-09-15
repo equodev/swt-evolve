@@ -10,6 +10,7 @@ import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollable.dart';
 import '../gen/scrollbar.dart';
+import '../gen/widget.dart';
 import '../impl/composite_evolve.dart';
 import 'widgets.dart';
 
@@ -31,10 +32,37 @@ class VComposite extends VScrollable {
 
   int? backgroundMode;
   List<VControl>? children;
-  bool? layoutDeferred;
-  List<VControl>? tabList;
+
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VComposite) {
+      backgroundMode = other.backgroundMode;
+      children = other.children;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'backgroundMode':
+        backgroundMode = (json['backgroundMode'] as num?)?.toInt();
+      case 'children':
+        children = (json['children'] as List<dynamic>?)
+            ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
+            .toList();
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
+  @override
+  void adoptChildren(VWidget Function(VWidget) adopt) {
+    super.adoptChildren(adopt);
+    VWidget.adoptEach(children, adopt);
+  }
 
   factory VComposite.fromJson(Map<String, dynamic> json) =>
-      _$VCompositeFromJson(json);
+      _$VCompositeFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VCompositeToJson(this);
 }

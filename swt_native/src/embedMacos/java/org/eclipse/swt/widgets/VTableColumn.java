@@ -25,6 +25,7 @@ public class VTableColumn extends VItem {
         ((DartTableColumn) impl).setAlignment(value);
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getMoveable() {
         return ((DartTableColumn) impl).getMoveable();
     }
@@ -41,6 +42,7 @@ public class VTableColumn extends VItem {
         ((DartTableColumn) impl).resizable = value;
     }
 
+    @JsonAttribute(ignore = true)
     public String getToolTipText() {
         return ((DartTableColumn) impl).getToolTipText();
     }
@@ -55,6 +57,28 @@ public class VTableColumn extends VItem {
 
     public void setWidth(int value) {
         ((DartTableColumn) impl).width = value;
+    }
+
+    public static final String ALIGNMENT = "alignment";
+
+    public static final String RESIZABLE = "resizable";
+
+    public static final String WIDTH = "width";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "alignment":
+                Serializer.writeKeyValue(writer, "alignment", getAlignment());
+                return;
+            case "resizable":
+                Serializer.writeKeyValue(writer, "resizable", getResizable());
+                return;
+            case "width":
+                Serializer.writeKeyValue(writer, "width", getWidth());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = TableColumn.class)

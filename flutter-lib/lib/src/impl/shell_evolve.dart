@@ -137,13 +137,17 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
   @override
   void setValue(V value) {
     _opacityNotifier.value = (value.alpha ?? 255) / 255.0;
-    final sameExceptAlpha = _sameJsonExceptAlpha(state, value);
-    if (sameExceptAlpha) {
-      state = value;
-      return;
-    }
-    final prevDialogs = state.dialogs ?? [];
-    final wasVisible = state.visible ?? true;
+    final change = lastChange;
+    // An alpha-only delivery is an animation frame: the notifier above has already carried it, and
+    // rebuilding the shell for each one is the cost this bypass exists to avoid.
+    if (change != null && change.isOnly(const {'alpha'})) return;
+    // A value is changed in place, so there is no earlier copy to compare against - what the
+    // delivery named is all there is to reason with. A delivery that never mentioned the dialogs
+    // did not change them; one that mentions nothing was a whole widget, and then anything may have.
+    final prevDialogs =
+        (change != null && !change.touches('dialogs')) ? (value.dialogs ?? []) : const <VDialog>[];
+    final wasVisible =
+        (change != null && change.touches('visible')) ? false : (value.visible ?? true);
     super.setValue(value);
     final newDialogs = value.dialogs ?? [];
     _openedDialogIds.removeWhere((id) => !newDialogs.any((d) => d.id == id));
@@ -157,17 +161,6 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     }
     if (!wasVisible && (value.visible ?? true)) {
       _autoFocusRequested = false;
-    }
-  }
-
-  bool _sameJsonExceptAlpha(V a, V b) {
-    if (identical(a, b)) return true;
-    try {
-      final aJson = Map<String, dynamic>.from(a.toJson())..remove('alpha');
-      final bJson = Map<String, dynamic>.from(b.toJson())..remove('alpha');
-      return jsonEncode(aJson) == jsonEncode(bJson);
-    } catch (_) {
-      return false;
     }
   }
 

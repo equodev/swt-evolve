@@ -117,6 +117,7 @@ public class DartList extends DartScrollable implements IList {
         items[itemCount++] = string;
         updateRowCount();
         setScrollWidth(string);
+        getValue().markDirty(VList.ITEMS);
     }
 
     /**
@@ -162,6 +163,7 @@ public class DartList extends DartScrollable implements IList {
         if (index != itemCount)
             fixSelection(index, true);
         setScrollWidth(string);
+        getValue().markDirty(VList.ITEMS);
     }
 
     /**
@@ -209,6 +211,7 @@ public class DartList extends DartScrollable implements IList {
     void createWidget() {
         super.createWidget();
         items = new String[4];
+        getValue().markDirty(VList.ITEMS);
     }
 
     @Override
@@ -650,6 +653,7 @@ public class DartList extends DartScrollable implements IList {
         updateRowCount();
         if (fixScroll)
             setScrollWidth();
+        getValue().markDirty(VList.ITEMS);
     }
 
     /**
@@ -698,6 +702,7 @@ public class DartList extends DartScrollable implements IList {
         itemCount -= removeCount;
         updateRowCount();
         setScrollWidth();
+        getValue().markDirty(VList.ITEMS);
     }
 
     /**
@@ -780,6 +785,7 @@ public class DartList extends DartScrollable implements IList {
         itemCount = 0;
         updateRowCount();
         setScrollWidth();
+        getValue().markDirty(VList.ITEMS);
     }
 
     /**
@@ -886,7 +892,7 @@ public class DartList extends DartScrollable implements IList {
         int[] newValue = new int[count];
         System.arraycopy(indices, 0, newValue, 0, count);
         if (!java.util.Objects.equals(this.selection, newValue)) {
-            dirty();
+            getValue().markDirty(VList.SELECTION);
         }
         ignoreSelect = true;
         ignoreSelect = false;
@@ -944,6 +950,7 @@ public class DartList extends DartScrollable implements IList {
         if (!(0 <= index && index < itemCount))
             error(SWT.ERROR_INVALID_RANGE);
         items[index] = string;
+        getValue().markDirty(VList.ITEMS);
         setScrollWidth(string);
     }
 
@@ -962,7 +969,7 @@ public class DartList extends DartScrollable implements IList {
      * </ul>
      */
     public void setItems(String... items) {
-        dirty();
+        getValue().markDirty(VList.ITEMS);
         checkWidget();
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -1009,7 +1016,7 @@ public class DartList extends DartScrollable implements IList {
      * @see List#select(int)
      */
     public void setSelection(int index) {
-        dirty();
+        getValue().markDirty(VList.SELECTION);
         ;
         checkWidget();
         deselectAll();

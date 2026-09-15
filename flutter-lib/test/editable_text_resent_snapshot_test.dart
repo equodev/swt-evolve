@@ -23,6 +23,8 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/styledtext.dart';
 import 'package:swtflutter/src/impl/styledtext_evolve.dart';
 
+import 'delivery/support/deliver.dart';
+
 void main() {
   late GlobalKey<StyledTextImpl> key;
   late int nonce;
@@ -38,6 +40,7 @@ void main() {
     // A field the editor does not read, varied so two pushes of the same text are two
     // distinct values here; over the wire every push is its own payload regardless.
     ..topPixel = nonce++
+    ..seq = nonce
     ..bounds = (VRectangle()
       ..x = 0
       ..y = 0
@@ -53,11 +56,17 @@ void main() {
         ),
       );
 
+  /// What Java pushing a state looks like: a frame on the widget's own channel.
+  Future<void> push(WidgetTester tester, String text) async {
+    await deliverWhole(value(text));
+    await tester.pump();
+  }
+
   Future<void> startEditing(WidgetTester tester) async {
     await tester.pumpWidget(appWith(value('')));
     // initState doesn't run extraSetState, so a second push builds the text shape the tap
     // enters edit mode on (in production Java always sends this push).
-    await tester.pumpWidget(appWith(value('')));
+    await push(tester, '');
     await tester.tap(find.byType(StyledTextSwt<VStyledText>));
     await tester.pump();
   }
@@ -83,16 +92,14 @@ void main() {
     expect(key.currentState!.state.text, 'ab', reason: 'sanity: keystrokes landed');
 
     // Java catches up and acknowledges the current state.
-    await tester.pumpWidget(appWith(value('ab')));
-    await tester.pump();
+    await push(tester, 'ab');
 
     await type(tester, LogicalKeyboardKey.keyC, 'c');
     expect(key.currentState!.state.text, 'abc', reason: 'sanity: keystrokes landed');
 
     // A repaint-driven push re-sends Java's current state — still 'ab', because the Modify
     // carrying 'c' has not been applied yet.
-    await tester.pumpWidget(appWith(value('ab')));
-    await tester.pump();
+    await push(tester, 'ab');
 
     expect(key.currentState!.state.text, 'abc',
         reason: 'a second push of an already-acknowledged state is still our own echo, '
@@ -106,8 +113,7 @@ void main() {
     expect(key.currentState!.state.text, 'a', reason: 'sanity: keystroke landed');
 
     // A programmatic setText mid-edit — SWT swaps the content even while the user types.
-    await tester.pumpWidget(appWith(value('replaced')));
-    await tester.pump();
+    await push(tester, 'replaced');
 
     expect(key.currentState!.state.text, 'replaced',
         reason: 'keeping the acknowledged baseline must not swallow a genuine external '
@@ -119,13 +125,11 @@ void main() {
     await startEditing(tester);
     await type(tester, LogicalKeyboardKey.keyA, 'a');
     await type(tester, LogicalKeyboardKey.keyB, 'b');
-    await tester.pumpWidget(appWith(value('ab')));
-    await tester.pump();
+    await push(tester, 'ab');
     expect(key.currentState!.state.text, 'ab', reason: 'sanity: acknowledged');
 
     // Java-side undo returns the document to a state older than the baseline we hold.
-    await tester.pumpWidget(appWith(value('')));
-    await tester.pump();
+    await push(tester, '');
 
     expect(key.currentState!.state.text, '',
         reason: 'an undo lands on a value no longer in flight, so it reads as the external '

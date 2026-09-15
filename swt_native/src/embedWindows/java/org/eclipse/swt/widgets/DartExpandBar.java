@@ -153,6 +153,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
         if (focusItem == null)
             focusItem = item;
         layoutItems(index, true);
+        getValue().markDirty(VExpandBar.ITEMS);
     }
 
     @Override
@@ -163,6 +164,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
         if (!isAppThemed()) {
             backgroundMode = SWT.INHERIT_DEFAULT;
         }
+        getValue().markDirty(VExpandBar.ITEMS);
     }
 
     @Override
@@ -194,6 +196,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
         items[itemCount] = null;
         ((DartExpandItem) item.getImpl()).redraw(true);
         layoutItems(index, true);
+        getValue().markDirty(VExpandBar.ITEMS);
     }
 
     @Override
@@ -454,7 +457,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
         if (spacing < 0)
             return;
         if (!java.util.Objects.equals(this.spacing, spacing)) {
-            dirty();
+            getValue().markDirty(VExpandBar.SPACING);
         }
         if (spacing == this.spacing)
             return;

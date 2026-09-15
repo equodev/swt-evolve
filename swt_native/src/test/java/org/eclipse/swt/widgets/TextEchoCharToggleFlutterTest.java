@@ -78,12 +78,20 @@ class TextEchoCharToggleFlutterTest {
         pump();
 
         // the user types while the field is revealed (Dart forwards a Modify)
+        bridge.comm.sent.clear();
         Event modify = new Event();
         modify.text = "secret";
         modify.start = 6;
         bridge.comm.fireContaining("Modify/Modify", modify);
         pump();
         assertThat(password.getText()).isEqualTo("secret");
+
+        // The typing is when the text changed, so it is the update that has to carry it. A later
+        // push does not repeat what the client already holds - that is the point of an update -
+        // so the assertion is that the client was told, not that it is told every time.
+        assertThat(framesFor(password))
+                .as("the edit must carry the real text")
+                .anyMatch(f -> f.json.contains("\"text\":\"secret\""));
 
         // "Show Password" unchecked: re-mask
         bridge.comm.sent.clear();
@@ -96,17 +104,13 @@ class TextEchoCharToggleFlutterTest {
                 .isNotEmpty();
         String payload = frames.get(frames.size() - 1).json;
         assertThat(payload)
-                .as("the pushed state must carry the real text")
-                .contains("\"text\":\"secret\"");
-        assertThat(payload)
                 .as("the pushed state must carry the echo char as a number the Dart "
                         + "VText.echoCharacter (int?) can read")
                 .contains("\"echoCharacter\":8226");
-        // The Dart VText types hiddenText as List<int>; a JSON string here makes the whole
-        // payload fail to deserialize, so the re-mask silently never happens.
+        // The masked form is derived where it is drawn, from the real text and the echo character
+        // that both already travel, so pushing it as well would be sending the same thing twice.
         assertThat(payload)
-                .as("hiddenText must be pushed as an array of code units, not a JSON string")
-                .doesNotContain("\"hiddenText\":\"secret\"")
-                .contains("\"hiddenText\":[115,101,99,114,101,116]");
+                .as("the masked text is derived on the far side rather than pushed")
+                .doesNotContain("hiddenText");
     }
 }

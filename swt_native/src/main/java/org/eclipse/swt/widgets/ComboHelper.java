@@ -137,7 +137,7 @@ public class ComboHelper {
             combo.error(SWT.ERROR_INVALID_RANGE);
         }
 
-        combo.dirty();
+        combo.getValue().markDirty(VCombo.ITEMS);
 
         int removeCount = end - start + 1;
 

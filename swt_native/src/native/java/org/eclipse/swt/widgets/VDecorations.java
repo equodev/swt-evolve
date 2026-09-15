@@ -17,6 +17,7 @@ public class VDecorations extends VCanvas {
         super(impl);
     }
 
+    @JsonAttribute(ignore = true)
     public Button getDefaultButton() {
         Button val = ((DartDecorations) impl).defaultButton;
         if (val != null && !(val.getImpl() instanceof DartButton))
@@ -28,7 +29,7 @@ public class VDecorations extends VCanvas {
         ((DartDecorations) impl).defaultButton = value;
     }
 
-    @JsonAttribute(nullable = true)
+    @JsonAttribute(ignore = true)
     public Image getImage() {
         Image val = ((DartDecorations) impl).image;
         if (val != null && !(val.getImpl() instanceof DartImage))
@@ -40,6 +41,7 @@ public class VDecorations extends VCanvas {
         ((DartDecorations) impl).image = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Image[] getImages() {
         Image[] values = ((DartDecorations) impl).images;
         if (values == null)
@@ -54,6 +56,7 @@ public class VDecorations extends VCanvas {
         ((DartDecorations) impl).images = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getMaximized() {
         return ((DartDecorations) impl).getMaximized();
     }
@@ -73,6 +76,7 @@ public class VDecorations extends VCanvas {
         ((DartDecorations) impl).menuBar = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getMinimized() {
         return ((DartDecorations) impl).getMinimized();
     }
@@ -88,6 +92,23 @@ public class VDecorations extends VCanvas {
 
     public void setText(String value) {
         ((DartDecorations) impl).text = value;
+    }
+
+    public static final String MENU_BAR = "menuBar";
+
+    public static final String TEXT = "text";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "menuBar":
+                Serializer.writeKeyValue(writer, "menuBar", getMenuBar());
+                return;
+            case "text":
+                Serializer.writeKeyValue(writer, "text", getText());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = Decorations.class)

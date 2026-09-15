@@ -502,9 +502,6 @@ public class DartDecorations extends DartCanvas implements IDecorations {
      */
     public void setDefaultButton(Button button) {
         checkWidget();
-        if (!java.util.Objects.equals(this.defaultButton, button)) {
-            dirty();
-        }
         if (button != null) {
             if (button.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -541,9 +538,6 @@ public class DartDecorations extends DartCanvas implements IDecorations {
     public void setImage(Image image) {
         image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
-        if (!java.util.Objects.equals(this.image, image)) {
-            dirty();
-        }
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         this.image = image;
@@ -577,9 +571,6 @@ public class DartDecorations extends DartCanvas implements IDecorations {
      */
     public void setImages(Image[] images) {
         checkWidget();
-        if (!java.util.Objects.equals(this.images, images)) {
-            dirty();
-        }
         if (images == null)
             error(SWT.ERROR_INVALID_ARGUMENT);
         for (int i = 0; i < images.length; i++) {
@@ -616,9 +607,6 @@ public class DartDecorations extends DartCanvas implements IDecorations {
      */
     public void setMaximized(boolean maximized) {
         checkWidget();
-        if (!java.util.Objects.equals(this.maximized, maximized)) {
-            dirty();
-        }
         this.maximized = maximized;
     }
 
@@ -640,7 +628,7 @@ public class DartDecorations extends DartCanvas implements IDecorations {
     public void setMenuBar(Menu menu) {
         checkWidget();
         if (!java.util.Objects.equals(this.menuBar, menu)) {
-            dirty();
+            getValue().markDirty(VDecorations.MENU_BAR);
         }
         if (menuBar == menu)
             return;
@@ -680,9 +668,6 @@ public class DartDecorations extends DartCanvas implements IDecorations {
      */
     public void setMinimized(boolean minimized) {
         checkWidget();
-        if (!java.util.Objects.equals(this.minimized, minimized)) {
-            dirty();
-        }
         this.minimized = minimized;
     }
 
@@ -712,7 +697,7 @@ public class DartDecorations extends DartCanvas implements IDecorations {
     public void setText(String string) {
         checkWidget();
         if (!java.util.Objects.equals(this.text, string)) {
-            dirty();
+            getValue().markDirty(VDecorations.TEXT);
         }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);

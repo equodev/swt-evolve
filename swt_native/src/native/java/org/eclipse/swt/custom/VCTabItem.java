@@ -28,6 +28,7 @@ public class VCTabItem extends VItem {
         ((DartCTabItem) impl).control = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Image getDisabledImage() {
         Image val = ((DartCTabItem) impl).disabledImage;
         if (val != null && !(val.getImpl() instanceof DartImage))
@@ -74,6 +75,7 @@ public class VCTabItem extends VItem {
         ((DartCTabItem) impl).showClose = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getShowDirty() {
         return ((DartCTabItem) impl).getShowDirty();
     }
@@ -95,6 +97,48 @@ public class VCTabItem extends VItem {
 
     public void setToolTipText(String value) {
         ((DartCTabItem) impl).toolTipText = value;
+    }
+
+    public static final String CONTROL = "control";
+
+    public static final String FONT = "font";
+
+    public static final String FOREGROUND = "foreground";
+
+    public static final String SELECTION_FOREGROUND = "selectionForeground";
+
+    public static final String SHOW_CLOSE = "showClose";
+
+    public static final String SHOWING = "showing";
+
+    public static final String TOOL_TIP_TEXT = "toolTipText";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "control":
+                Serializer.writeKeyValue(writer, "control", getControl());
+                return;
+            case "font":
+                Serializer.writeKeyValue(writer, "font", getFont());
+                return;
+            case "foreground":
+                Serializer.writeKeyValue(writer, "foreground", getForeground());
+                return;
+            case "selectionForeground":
+                Serializer.writeKeyValue(writer, "selectionForeground", getSelectionForeground());
+                return;
+            case "showClose":
+                Serializer.writeKeyValue(writer, "showClose", getShowClose());
+                return;
+            case "showing":
+                Serializer.writeKeyValue(writer, "showing", getShowing());
+                return;
+            case "toolTipText":
+                Serializer.writeKeyValue(writer, "toolTipText", getToolTipText());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = CTabItem.class)

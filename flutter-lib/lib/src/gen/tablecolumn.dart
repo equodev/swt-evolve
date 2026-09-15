@@ -3,6 +3,7 @@ import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
 import '../gen/image.dart';
 import '../gen/item.dart';
+import '../gen/widget.dart';
 import '../impl/tablecolumn_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
@@ -41,12 +42,34 @@ class VTableColumn extends VItem {
   }
 
   int? alignment;
-  bool? moveable;
   bool? resizable;
-  String? toolTipText;
   int? width;
 
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VTableColumn) {
+      alignment = other.alignment;
+      resizable = other.resizable;
+      width = other.width;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'alignment':
+        alignment = (json['alignment'] as num?)?.toInt();
+      case 'resizable':
+        resizable = json['resizable'] as bool?;
+      case 'width':
+        width = (json['width'] as num?)?.toInt();
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
   factory VTableColumn.fromJson(Map<String, dynamic> json) =>
-      _$VTableColumnFromJson(json);
+      _$VTableColumnFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VTableColumnToJson(this);
 }

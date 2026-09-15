@@ -56,6 +56,7 @@ public class VControl extends VWidget {
         ((DartControl) impl).bounds = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getCapture() {
         return ((DartControl) impl).capture;
     }
@@ -75,6 +76,7 @@ public class VControl extends VWidget {
         ((DartControl) impl).cursor = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getDragDetect() {
         return ((DartControl) impl).getDragDetect();
     }
@@ -105,13 +107,6 @@ public class VControl extends VWidget {
 
     public void setEnabled(Boolean value) {
         ((DartControl) impl).enabled = Boolean.TRUE.equals(value);
-    }
-
-    public Boolean getEnabledEffective() {
-        return ((DartControl) impl).isEnabled();
-    }
-
-    public void setEnabledEffective(Boolean value) {
     }
 
     public Font getFont() {
@@ -153,6 +148,7 @@ public class VControl extends VWidget {
         ((DartControl) impl).menu = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getOrientation() {
         return ((DartControl) impl).getOrientation();
     }
@@ -161,6 +157,7 @@ public class VControl extends VWidget {
         ((DartControl) impl).setOrientation(value);
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getRedraw() {
         return ((DartControl) impl).redraw;
     }
@@ -178,6 +175,7 @@ public class VControl extends VWidget {
         ((DartControl) impl).region = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getTextDirection() {
         return ((DartControl) impl).getTextDirection();
     }
@@ -194,6 +192,7 @@ public class VControl extends VWidget {
         ((DartControl) impl).toolTipText = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getTouchEnabled() {
         return ((DartControl) impl).getTouchEnabled();
     }
@@ -208,6 +207,78 @@ public class VControl extends VWidget {
 
     public void setVisible(Boolean value) {
         ((DartControl) impl).getApi().state = Boolean.TRUE.equals(value) ? (((DartControl) impl).getApi().state & ~DartWidget.HIDDEN) : (((DartControl) impl).getApi().state | DartWidget.HIDDEN);
+    }
+
+    public static final String BACKGROUND = "background";
+
+    public static final String BACKGROUND_IMAGE = "backgroundImage";
+
+    public static final String BOUNDS = "bounds";
+
+    public static final String CURSOR = "cursor";
+
+    public static final String DRAG_SOURCE = "dragSource";
+
+    public static final String DROP_TARGET_ID = "dropTargetId";
+
+    public static final String ENABLED = "enabled";
+
+    public static final String FONT = "font";
+
+    public static final String FOREGROUND = "foreground";
+
+    public static final String HAS_OWN_BACKGROUND = "hasOwnBackground";
+
+    public static final String MENU = "menu";
+
+    public static final String TOOL_TIP_TEXT = "toolTipText";
+
+    public static final String VISIBLE = "visible";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "background":
+                Serializer.writeKeyValue(writer, "background", getBackground());
+                return;
+            case "backgroundImage":
+                Serializer.writeKeyValue(writer, "backgroundImage", getBackgroundImage());
+                return;
+            case "bounds":
+                Serializer.writeKeyValue(writer, "bounds", getBounds());
+                return;
+            case "cursor":
+                Serializer.writeKeyValue(writer, "cursor", getCursor());
+                return;
+            case "dragSource":
+                Serializer.writeKeyValue(writer, "dragSource", getDragSource());
+                return;
+            case "dropTargetId":
+                Serializer.writeKeyValue(writer, "dropTargetId", getDropTargetId());
+                return;
+            case "enabled":
+                Serializer.writeKeyValue(writer, "enabled", getEnabled());
+                return;
+            case "font":
+                Serializer.writeKeyValue(writer, "font", getFont());
+                return;
+            case "foreground":
+                Serializer.writeKeyValue(writer, "foreground", getForeground());
+                return;
+            case "hasOwnBackground":
+                Serializer.writeKeyValue(writer, "hasOwnBackground", getHasOwnBackground());
+                return;
+            case "menu":
+                Serializer.writeKeyValue(writer, "menu", getMenu());
+                return;
+            case "toolTipText":
+                Serializer.writeKeyValue(writer, "toolTipText", getToolTipText());
+                return;
+            case "visible":
+                Serializer.writeKeyValue(writer, "visible", getVisible());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = Control.class)

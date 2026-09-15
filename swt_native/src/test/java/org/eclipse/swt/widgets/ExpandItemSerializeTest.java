@@ -33,6 +33,12 @@ class ExpandItemSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
     }
 
+    @Test
+    void should_name_every_change_ExpandItem() {
+        ExpandItem w = new ExpandItem(expandBar(), SWT.NONE);
+        assertNamesEveryChange(w);
+    }
+
     VExpandItem value(ExpandItem w) {
         return ((DartExpandItem) w.getImpl()).getValue();
     }

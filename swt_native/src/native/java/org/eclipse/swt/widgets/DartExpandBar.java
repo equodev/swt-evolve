@@ -199,6 +199,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
             focusItem = item;
         ((DartExpandItem) item.getImpl()).width = Math.max(0, getClientArea().width - spacing * 2);
         layoutItems(index, true);
+        getValue().markDirty(VExpandBar.ITEMS);
     }
 
     void destroyItem(ExpandItem item) {
@@ -225,6 +226,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
         items[itemCount] = null;
         ((DartExpandItem) item.getImpl()).redraw();
         layoutItems(index, true);
+        getValue().markDirty(VExpandBar.ITEMS);
     }
 
     int getBandHeight() {
@@ -458,7 +460,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
     public void setSpacing(int spacing) {
         checkWidget();
         if (!java.util.Objects.equals(this.spacing, spacing)) {
-            dirty();
+            getValue().markDirty(VExpandBar.SPACING);
         }
         if (spacing < 0)
             return;
@@ -503,6 +505,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
         font = null;
         foreground = null;
         focusItem = null;
+        getValue().markDirty(VExpandBar.ITEMS);
     }
 
     void onFocus() {

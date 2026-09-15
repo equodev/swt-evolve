@@ -4,6 +4,11 @@ import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
 import org.eclipse.swt.widgets.VComposite;
 
+/**
+ * Hand-written rather than generated, and with no {@code writeProperty}: this value cannot write a
+ * single property, only the whole thing. So its impl schedules with {@code dirty()} rather than
+ * naming what changed - naming a property here would produce an update the writer has no case for.
+ */
 @CompiledJson()
 public class VBrowser extends VComposite {
 

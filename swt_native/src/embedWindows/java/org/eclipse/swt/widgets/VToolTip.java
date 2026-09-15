@@ -17,6 +17,7 @@ public class VToolTip extends VWidget {
         super(impl);
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getAutoHide() {
         return ((DartToolTip) impl).getAutoHide();
     }
@@ -56,6 +57,33 @@ public class VToolTip extends VWidget {
 
     public void setVisible(boolean value) {
         ((DartToolTip) impl).visible = value;
+    }
+
+    public static final String LOCATION = "location";
+
+    public static final String MESSAGE = "message";
+
+    public static final String TEXT = "text";
+
+    public static final String VISIBLE = "visible";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "location":
+                Serializer.writeKeyValue(writer, "location", getLocation());
+                return;
+            case "message":
+                Serializer.writeKeyValue(writer, "message", getMessage());
+                return;
+            case "text":
+                Serializer.writeKeyValue(writer, "text", getText());
+                return;
+            case "visible":
+                Serializer.writeKeyValue(writer, "visible", getVisible());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = ToolTip.class)

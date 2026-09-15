@@ -191,6 +191,15 @@ public class TreeHelper {
 
         ((DartTreeItem) item.getImpl()).items = new TreeItem[4];
 
+        // The list that changed belongs to the parent item when there is one, and to the Tree when
+        // the new item is at the root. Nothing else records it, and an unrecorded list is one the
+        // far side is never told about.
+        if (parentItem != null) {
+            ((DartTreeItem) parentItem.getImpl()).getValue().markDirty(VTreeItem.ITEMS);
+        } else if (parent.getImpl() instanceof DartTree dartTree) {
+            dartTree.getValue().markDirty(VTree.ITEMS);
+        }
+
         // Only fire EmptinessChanged for root items when tree becomes non-empty
         if (parentItem == null) {
             int treeCount = parent.getImpl().getItemCount();
@@ -425,7 +434,6 @@ public class TreeHelper {
             TreeItem item = getVisibleItemAtIndex(tree, event.index);
             if (item != null) {
                 item.setText(event.text);
-                tree.dirty();
             }
         }
     }

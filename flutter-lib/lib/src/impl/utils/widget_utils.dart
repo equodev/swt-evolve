@@ -307,6 +307,36 @@ Widget wrapBackgroundInheritanceScope({
   );
 }
 
+/// Whether the enclosing part of the SWT tree is enabled.
+///
+/// SWT's `isEnabled()` is a widget's own flag AND every ancestor's, so it describes a *position in
+/// the tree* rather than a widget. That makes it a poor thing to send: disabling one Composite
+/// changes the answer for every descendant, and nothing on the Java side can name that in an update
+/// without walking the whole subtree to say so.
+///
+/// Here it costs nothing, because the tree the answer depends on is the tree being built. Each
+/// Control publishes its own effective enablement for the subtree below it, and anything that needs
+/// the answer — including items drawn inline by a parent, which have no Control of their own — reads
+/// it from where it is standing.
+class EnabledScope extends InheritedWidget {
+  final bool enabled;
+
+  const EnabledScope({
+    super.key,
+    required this.enabled,
+    required super.child,
+  });
+
+  /// Whether ancestors leave this position enabled; true when nothing said otherwise.
+  static bool of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<EnabledScope>()?.enabled ??
+      true;
+
+  @override
+  bool updateShouldNotify(EnabledScope oldWidget) =>
+      enabled != oldWidget.enabled;
+}
+
 /// Depth of the nearest Control ancestor in the SWT widget tree (root Shell
 /// is 0), used by HoverExclusivityArbiter to pick the deepest hovered one.
 class ControlNestingScope extends InheritedWidget {

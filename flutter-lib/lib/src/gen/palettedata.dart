@@ -1,5 +1,4 @@
 import 'package:json_annotation/json_annotation.dart';
-import '../gen/rgb.dart';
 
 part 'palettedata.g.dart';
 
@@ -7,9 +6,6 @@ part 'palettedata.g.dart';
 class VPaletteData {
   VPaletteData() : this.empty();
   VPaletteData.empty();
-
-  List<VRGB>? RGBs;
-  int pixel = 0;
 
   factory VPaletteData.fromJson(Map<String, dynamic> json) =>
       _$VPaletteDataFromJson(json);

@@ -17,12 +17,13 @@ import 'package:swtflutter/src/gen/control.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/button_evolve.dart';
 
+import 'delivery/support/deliver.dart';
+
 VButton _button(int id, {required bool enabled, required int seq}) => VButton()
   ..id = id
   ..style = SWT.CHECK
   ..seq = seq
   ..enabled = enabled
-  ..enabledEffective = enabled
   ..text = "Output to file:";
 
 VComposite _row(
@@ -35,8 +36,9 @@ VComposite _row(
       ..id = id
       ..style = SWT.NONE
       ..seq = seq
-      ..enabled = true
-      ..enabledEffective = enabledEffective
+      // Effective enablement is derived from the tree now, so a row that is effectively disabled
+      // is simply a disabled row: what its subtree sees is the same either way.
+      ..enabled = enabledEffective
       ..children = children;
 
 void main() {
@@ -67,15 +69,15 @@ void main() {
 
     // The leaf's own channel delivers the enable BEFORE the parent's rebuild — the real ordering:
     // Java flushes the parent first (seq 11 above) and each leaf afterwards, with a higher seq.
-    child.setValue(_button(200, enabled: true, seq: 30));
+    await deliverWhole(_button(200, enabled: true, seq: 30));
     await tester.pumpAndSettle();
     expect(child.state.enabled, isTrue);
 
-    // Now the parent rebuild lands, still carrying its older nested copy of the leaf (seq 11).
-    await tester.pumpWidget(host(_row(100,
+    // Now the parent's own update lands, still carrying its older nested copy of the leaf (seq 11).
+    await deliverWhole(_row(100,
         enabledEffective: true,
         seq: 20,
-        children: [_button(200, enabled: false, seq: 11)])));
+        children: [_button(200, enabled: false, seq: 11)]));
     await tester.pumpAndSettle();
 
     // Same State object: the block must not have remounted the subtree...

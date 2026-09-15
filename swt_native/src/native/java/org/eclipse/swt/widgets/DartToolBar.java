@@ -180,6 +180,7 @@ public class DartToolBar extends DartComposite implements IToolBar {
         System.arraycopy(items, index, items, index + 1, itemCount++ - index);
         items[index] = item;
         relayout();
+        getValue().markDirty(VToolBar.ITEMS);
     }
 
     @Override
@@ -187,6 +188,7 @@ public class DartToolBar extends DartComposite implements IToolBar {
         super.createWidget();
         items = new ToolItem[4];
         itemCount = 0;
+        getValue().markDirty(VToolBar.ITEMS);
     }
 
     @Override
@@ -208,6 +210,7 @@ public class DartToolBar extends DartComposite implements IToolBar {
         System.arraycopy(items, index + 1, items, index, --itemCount - index);
         items[itemCount] = null;
         relayout();
+        getValue().markDirty(VToolBar.ITEMS);
     }
 
     @Override

@@ -346,18 +346,26 @@ class _ExpandItemWidgetState extends State<_ExpandItemWidget>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header
-            MouseRegion(
-              onEnter: (_) => setState(() => _isHovering = true),
-              onExit: (_) => setState(() => _isHovering = false),
-              child: GestureDetector(
-                onTap: _handleTap,
-                child: AnimatedContainer(
-                  duration: itemTheme.animationDuration,
-                  curve: itemTheme.animationCurve,
-                  color: headerBackgroundColor,
-                  padding: itemTheme.headerPadding,
-                  child: headerContent,
+            // Header. Its own semantics node, so the item's node has a child - and therefore a
+            // settled role - from the first frame. A tappable node with no children is a button to
+            // Flutter Web, and it turns into a plain container as soon as the expanded body brings
+            // children; the engine answers that role change by rebuilding the node's DOM element
+            // and writing back only the properties that changed with it, silently dropping the
+            // `flt-semantics-identifier` this item is found by.
+            Semantics(
+              container: true,
+              child: MouseRegion(
+                onEnter: (_) => setState(() => _isHovering = true),
+                onExit: (_) => setState(() => _isHovering = false),
+                child: GestureDetector(
+                  onTap: _handleTap,
+                  child: AnimatedContainer(
+                    duration: itemTheme.animationDuration,
+                    curve: itemTheme.animationCurve,
+                    color: headerBackgroundColor,
+                    padding: itemTheme.headerPadding,
+                    child: headerContent,
+                  ),
                 ),
               ),
             ),

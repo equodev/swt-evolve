@@ -19,6 +19,30 @@ class VItem extends VWidget {
   VImage? image;
   String? text;
 
-  factory VItem.fromJson(Map<String, dynamic> json) => _$VItemFromJson(json);
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VItem) {
+      image = other.image;
+      text = other.text;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'image':
+        image = json['image'] == null
+            ? null
+            : VImage.fromJson(json['image'] as Map<String, dynamic>);
+      case 'text':
+        text = json['text'] as String?;
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
+  factory VItem.fromJson(Map<String, dynamic> json) =>
+      _$VItemFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VItemToJson(this);
 }

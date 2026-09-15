@@ -9,13 +9,9 @@ part of 'menu.dart';
 VMenu _$VMenuFromJson(Map<String, dynamic> json) => VMenu()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
-  ..seq = (json['seq'] as num?)?.toInt() ?? 0
-  ..style = (json['style'] as num).toInt()
-  ..defaultItem = json['defaultItem'] == null
-      ? null
-      : VMenuItem.fromJson(json['defaultItem'] as Map<String, dynamic>)
+  ..seq = (json['_s'] as num?)?.toInt() ?? 0
+  ..style = (json['style'] as num?)?.toInt() ?? 0
   ..enabled = json['enabled'] as bool?
-  ..enabledEffective = json['enabledEffective'] as bool?
   ..items = (json['items'] as List<dynamic>?)
       ?.map((e) => VMenuItem.fromJson(e as Map<String, dynamic>))
       .toList()
@@ -23,21 +19,15 @@ VMenu _$VMenuFromJson(Map<String, dynamic> json) => VMenu()
       ? null
       : VPoint.fromJson(json['location'] as Map<String, dynamic>)
   ..orientation = (json['orientation'] as num?)?.toInt()
-  ..parentMenu = json['parentMenu'] == null
-      ? null
-      : VMenu.fromJson(json['parentMenu'] as Map<String, dynamic>)
   ..visible = json['visible'] as bool?;
 
 Map<String, dynamic> _$VMenuToJson(VMenu instance) => <String, dynamic>{
   'swt': instance.swt,
   'id': instance.id,
   'style': instance.style,
-  'defaultItem': ?instance.defaultItem,
   'enabled': ?instance.enabled,
-  'enabledEffective': ?instance.enabledEffective,
   'items': ?instance.items,
   'location': ?instance.location,
   'orientation': ?instance.orientation,
-  'parentMenu': ?instance.parentMenu,
   'visible': ?instance.visible,
 };

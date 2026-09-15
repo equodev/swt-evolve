@@ -40,6 +40,23 @@ public class VExpandBar extends VComposite {
         ((DartExpandBar) impl).spacing = value;
     }
 
+    public static final String ITEMS = "items";
+
+    public static final String SPACING = "spacing";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "items":
+                Serializer.writeKeyValue(writer, "items", getItems());
+                return;
+            case "spacing":
+                Serializer.writeKeyValue(writer, "spacing", getSpacing());
+                return;
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = ExpandBar.class)
     public static class ExpandBarJson implements Configuration {
 

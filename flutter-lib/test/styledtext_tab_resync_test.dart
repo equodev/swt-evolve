@@ -20,6 +20,8 @@ import 'package:swtflutter/src/gen/styledtext.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/styledtext_evolve.dart';
 
+import 'delivery/support/deliver.dart';
+
 void main() {
   VStyledText value(String text, int caretOffset, {int style = 0}) => VStyledText()
     ..swt = 'StyledText'
@@ -85,7 +87,7 @@ void main() {
         reason: 'Tab must not traverse out of a multi-line editable StyledText');
 
     // Java applies the tab itself and pushes the tabbed text back.
-    await tester.pumpWidget(appWith(key, value('a\t', 2), sibling));
+    await deliverWhole(value('a\t', 2)..seq = 2);
     await tester.pump();
 
     await simulateKeyDownEvent(LogicalKeyboardKey.keyB, character: 'b');

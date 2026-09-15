@@ -784,7 +784,7 @@ public class DartList extends DartScrollable implements IList {
     void select(int[] indices, boolean scroll) {
         int[] newValue = indices;
         if (!java.util.Objects.equals(this.selection, newValue)) {
-            dirty();
+            getValue().markDirty(VList.SELECTION);
         }
         int i = 0;
         while (i < indices.length) {
@@ -817,7 +817,7 @@ public class DartList extends DartScrollable implements IList {
     }
 
     void select(int index, boolean scroll) {
-        dirty();
+        getValue().markDirty(VList.SELECTION);
         int[] newValue = new int[] { index };
         if (index < 0)
             return;
@@ -874,7 +874,7 @@ public class DartList extends DartScrollable implements IList {
     }
 
     void select(int start, int end, boolean scroll) {
-        dirty();
+        getValue().markDirty(VList.SELECTION);
         int[] newValue = new int[] { start };
         /*
 	* Note that when start = end, LB_SELITEMRANGEEX
@@ -943,6 +943,7 @@ public class DartList extends DartScrollable implements IList {
         if (isSelected)
             select(index, false);
         setTopIndex(topIndex);
+        getValue().markDirty(VList.ITEMS);
     }
 
     /**
@@ -960,7 +961,7 @@ public class DartList extends DartScrollable implements IList {
      * </ul>
      */
     public void setItems(String... items) {
-        dirty();
+        getValue().markDirty(VList.ITEMS);
         String[] newValue = items;
         checkWidget();
         if (items == null)
@@ -1173,9 +1174,6 @@ public class DartList extends DartScrollable implements IList {
      */
     public void setTopIndex(int index) {
         int newValue = index;
-        if (!java.util.Objects.equals(this.topIndex, newValue)) {
-            dirty();
-        }
         checkWidget();
         this.topIndex = newValue;
     }

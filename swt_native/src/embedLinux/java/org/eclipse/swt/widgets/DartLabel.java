@@ -342,7 +342,6 @@ public class DartLabel extends DartControl implements ILabel {
      * </ul>
      */
     public void setAlignment(int alignment) {
-        dirty();
         checkWidget();
         if ((getApi().style & SWT.SEPARATOR) != 0)
             return;
@@ -433,7 +432,7 @@ public class DartLabel extends DartControl implements ILabel {
         image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
         if (!java.util.Objects.equals(this.image, image)) {
-            dirty();
+            getValue().markDirty(VLabel.IMAGE);
         }
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -480,7 +479,7 @@ public class DartLabel extends DartControl implements ILabel {
     public void setText(String string) {
         checkWidget();
         if (!java.util.Objects.equals(this.text, string)) {
-            dirty();
+            getValue().markDirty(VLabel.TEXT);
         }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);

@@ -25,7 +25,11 @@ public class ConfigDyn {
             return new DartSideBar(parent, style, composite);
         if (mainCompositeImpl == Impl.equo && isMainComposite(Composite.class, parent))
             return new DartMainComposite(parent, style, composite);
-        if (defaultImpl == Impl.eclipse || forceEclipse)
+        // A global eclipse default keeps composites native, because the implicit rules in
+        // Config.isEquo(Class, Widget) (ancestor and caller heuristics) would otherwise pull them
+        // into Dart inside an otherwise native tree. An explicit per-widget override still wins,
+        // as it does for every other widget.
+        if (forceEclipse || (defaultImpl == Impl.eclipse && isForced(Composite.class) != Impl.equo))
             return new SwtComposite(parent, style, composite);
         if (Config.isEquo(composite.getClass(), parent))
             return new DartComposite(parent, style, composite);

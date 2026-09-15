@@ -61,6 +61,7 @@ public class VTableItem extends VItem {
         ((DartTableItem) impl).grayed = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getImageIndent() {
         return ((DartTableItem) impl).getImageIndent();
     }
@@ -83,6 +84,48 @@ public class VTableItem extends VItem {
 
     public void setTexts(String[] value) {
         ((DartTableItem) impl).strings = value;
+    }
+
+    public static final String BACKGROUND = "background";
+
+    public static final String CHECKED = "checked";
+
+    public static final String FONT = "font";
+
+    public static final String FOREGROUND = "foreground";
+
+    public static final String GRAYED = "grayed";
+
+    public static final String IMAGES = "images";
+
+    public static final String TEXTS = "texts";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "background":
+                Serializer.writeKeyValue(writer, "background", getBackground());
+                return;
+            case "checked":
+                Serializer.writeKeyValue(writer, "checked", getChecked());
+                return;
+            case "font":
+                Serializer.writeKeyValue(writer, "font", getFont());
+                return;
+            case "foreground":
+                Serializer.writeKeyValue(writer, "foreground", getForeground());
+                return;
+            case "grayed":
+                Serializer.writeKeyValue(writer, "grayed", getGrayed());
+                return;
+            case "images":
+                Serializer.writeKeyValue(writer, "images", getImages());
+                return;
+            case "texts":
+                Serializer.writeKeyValue(writer, "texts", getTexts());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = TableItem.class)

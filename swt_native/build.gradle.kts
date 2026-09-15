@@ -398,6 +398,10 @@ tasks.test {
             "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED",
             "--add-exports", "jdk.unsupported.desktop/jdk.swing.interop=ALL-UNNAMED")
     systemProperty("harness.client", "native")
+    // Lets a run choose how state is delivered, so the two modes can be compared against each
+    // other on the same suite. Read once at class-load, so it has to reach the test JVM itself
+    // rather than only the Gradle one.
+    System.getProperty("equo.swt.diff")?.let { systemProperty("equo.swt.diff", it) }
     systemProperty("swt.library.path", layout.buildDirectory.dir("natives/$currentPlatform").get().toString())
     if (System.getProperty("test.debug") != null)
         jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
@@ -436,7 +440,9 @@ tasks.register<Test>("nativeTest") {
     // mode; harmless (unused) for the default headless-browser web client.
     if (org.gradle.internal.os.OperatingSystem.current().isMacOsX)
         jvmArgs = listOf("-XstartOnFirstThread")
-    forwardSystemProperties("harness.client", "harness.web.headless", "harness.web.console", "harness.readyTimeoutMs", "harness.queryTimeoutMs", "harness.holdMs", "equo.swt.browser", "dev.equo.swt.mode", "harness.bootAttempts", "harness.bootAttemptMs", "harness.web.failBoots")
+    // equo.swt.diff: lets this suite run against either way of delivering state, so the whole
+    // end-to-end path can be compared between them rather than only the Java side.
+    forwardSystemProperties("harness.client", "harness.web.headless", "harness.web.console", "harness.readyTimeoutMs", "harness.queryTimeoutMs", "harness.holdMs", "equo.swt.browser", "dev.equo.swt.mode", "harness.bootAttempts", "harness.bootAttemptMs", "harness.web.failBoots", "equo.swt.diff")
 }
 
 // Config shared by both bench Test tasks (native `benchmark` + browser `webBenchmark`): the

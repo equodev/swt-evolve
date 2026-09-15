@@ -20,6 +20,7 @@ public class VImage extends VResource {
         super(impl);
     }
 
+    @JsonAttribute(ignore = true)
     public Color getBackground() {
         return ((DartImage) impl).background;
     }
@@ -73,6 +74,43 @@ public class VImage extends VResource {
     }
 
     public void setWidth(int value) {
+    }
+
+    public static final String FILENAME = "filename";
+
+    public static final String HEIGHT = "height";
+
+    public static final String IMAGE_DATA = "imageData";
+
+    public static final String REMOTE_REF = "remoteRef";
+
+    public static final String SVG_CONTENT = "svgContent";
+
+    public static final String WIDTH = "width";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "filename":
+                Serializer.writeKeyValue(writer, "filename", getFilename());
+                return;
+            case "height":
+                Serializer.writeKeyValue(writer, "height", getHeight());
+                return;
+            case "imageData":
+                Serializer.writeKeyValue(writer, "imageData", getImageData());
+                return;
+            case "remoteRef":
+                Serializer.writeKeyValue(writer, "remoteRef", getRemoteRef());
+                return;
+            case "svgContent":
+                Serializer.writeKeyValue(writer, "svgContent", getSvgContent());
+                return;
+            case "width":
+                Serializer.writeKeyValue(writer, "width", getWidth());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = Image.class)

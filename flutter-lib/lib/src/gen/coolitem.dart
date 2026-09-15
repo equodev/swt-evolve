@@ -5,6 +5,7 @@ import '../gen/control.dart';
 import '../gen/image.dart';
 import '../gen/item.dart';
 import '../gen/point.dart';
+import '../gen/widget.dart';
 import '../impl/coolitem_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
@@ -34,10 +35,40 @@ class VCoolItem extends VItem {
   }
 
   VControl? control;
-  VPoint? minimumSize;
   VPoint? preferredSize;
 
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VCoolItem) {
+      control = other.control;
+      preferredSize = other.preferredSize;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'control':
+        control = json['control'] == null
+            ? null
+            : VControl.fromJson(json['control'] as Map<String, dynamic>);
+      case 'preferredSize':
+        preferredSize = json['preferredSize'] == null
+            ? null
+            : VPoint.fromJson(json['preferredSize'] as Map<String, dynamic>);
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
+  @override
+  void adoptChildren(VWidget Function(VWidget) adopt) {
+    super.adoptChildren(adopt);
+    control = VWidget.adoptOne(control, adopt);
+  }
+
   factory VCoolItem.fromJson(Map<String, dynamic> json) =>
-      _$VCoolItemFromJson(json);
+      _$VCoolItemFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VCoolItemToJson(this);
 }

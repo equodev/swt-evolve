@@ -7559,7 +7559,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             }
             content.replaceTextRange(event.start, replacedLength, event.text);
             this.text = content.getTextRange(0, content.getCharCount());
-            dirty();
+            getValue().markDirty(VStyledText.TEXT);
             // set the caret position prior to sending the modify event.
             // fixes 1GBB8NJ
             if (updateCaret && !(blockSelection && blockXLocation != -1)) {
@@ -8673,9 +8673,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setAlignment(int alignment) {
         checkWidget();
-        if (!java.util.Objects.equals(this.alignment, alignment)) {
-            dirty();
-        }
         alignment &= (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         if (alignment == 0 || this.alignment == alignment)
             return;
@@ -8705,7 +8702,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     public void setAlwaysShowScrollBars(boolean show) {
         checkWidget();
         if (!java.util.Objects.equals(this.alwaysShowScroll, show)) {
-            dirty();
+            getValue().markDirty(VStyledText.ALWAYS_SHOW_SCROLL_BARS);
         }
         if (show == alwaysShowScroll)
             return;
@@ -8750,9 +8747,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setBlockSelection(boolean blockSelection) {
         checkWidget();
-        if (!java.util.Objects.equals(this.blockSelection, blockSelection)) {
-            dirty();
-        }
         if ((getStyle() & SWT.SINGLE) != 0)
             return;
         if (blockSelection == this.blockSelection)
@@ -8817,7 +8811,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      * @since 3.5
      */
     public void setBlockSelectionBounds(int x, int y, int width, int height) {
-        dirty();
         Rectangle newValue = new Rectangle(x, y, width, height);
         checkWidget();
         int verticalScrollOffset = getVerticalScrollOffset();
@@ -8937,9 +8930,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     @Deprecated
     public void setBidiColoring(boolean mode) {
         checkWidget();
-        if (!java.util.Objects.equals(this.bidiColoring, mode)) {
-            dirty();
-        }
         bidiColoring = mode;
     }
 
@@ -8957,7 +8947,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     public void setBottomMargin(int bottomMargin) {
         checkWidget();
         if (!java.util.Objects.equals(this.bottomMargin, bottomMargin)) {
-            dirty();
+            getValue().markDirty(VStyledText.BOTTOM_MARGIN);
         }
         setMargins(getLeftMargin(), topMargin, rightMargin, bottomMargin);
     }
@@ -9114,7 +9104,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     }
 
     void setCaretOffsets(int[] newOffsets, int alignment) {
-        dirty();
+        getValue().markDirty(VStyledText.CARET_OFFSET);
         if (newOffsets.length > 1) {
             newOffsets = Arrays.stream(newOffsets).distinct().sorted().toArray();
         }
@@ -9193,9 +9183,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setContent(StyledTextContent newContent) {
         checkWidget();
-        if (!java.util.Objects.equals(this.content, newContent)) {
-            dirty();
-        }
         if (newContent == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
@@ -9242,14 +9229,13 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     public void setDoubleClickEnabled(boolean enable) {
         checkWidget();
         if (!java.util.Objects.equals(this.doubleClickEnabled, enable)) {
-            dirty();
+            getValue().markDirty(VStyledText.DOUBLE_CLICK_ENABLED);
         }
         doubleClickEnabled = enable;
     }
 
     @Override
     public void setDragDetect(boolean dragDetect) {
-        dirty();
         checkWidget();
         this.dragDetect = dragDetect;
     }
@@ -9267,7 +9253,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     public void setEditable(boolean editable) {
         checkWidget();
         if (!java.util.Objects.equals(this.editable, editable)) {
-            dirty();
+            getValue().markDirty(VStyledText.EDITABLE);
         }
         this.editable = editable;
     }
@@ -9321,9 +9307,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setFixedLineMetrics(FontMetrics metrics) {
         FontMetrics newValue = metrics;
-        if (!java.util.Objects.equals(this.fixedLineMetrics, newValue)) {
-            dirty();
-        }
         this.fixedLineMetrics = newValue;
         renderer.setFixedLineMetrics(metrics);
     }
@@ -9409,9 +9392,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setHorizontalIndex(int offset) {
         int newValue = offset;
-        if (!java.util.Objects.equals(this.horizontalIndex, newValue)) {
-            dirty();
-        }
         checkWidget();
         if (getCharCount() == 0) {
             return;
@@ -9456,7 +9436,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     public void setHorizontalPixel(int pixel) {
         checkWidget();
         if (!java.util.Objects.equals(this.horizontalScrollOffset, pixel)) {
-            dirty();
+            getValue().markDirty(VStyledText.HORIZONTAL_PIXEL);
         }
         if (getCharCount() == 0) {
             return;
@@ -9500,9 +9480,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setIndent(int indent) {
         checkWidget();
-        if (!java.util.Objects.equals(this.indent, indent)) {
-            dirty();
-        }
         if (this.indent == indent || indent < 0)
             return;
         this.indent = indent;
@@ -9527,9 +9504,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setJustify(boolean justify) {
         checkWidget();
-        if (!java.util.Objects.equals(this.justify, justify)) {
-            dirty();
-        }
         if (this.justify == justify)
             return;
         this.justify = justify;
@@ -9608,7 +9582,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     public void setLeftMargin(int leftMargin) {
         checkWidget();
         if (!java.util.Objects.equals(this.leftMargin, leftMargin)) {
-            dirty();
+            getValue().markDirty(VStyledText.LEFT_MARGIN);
         }
         setMargins(leftMargin, topMargin, rightMargin, bottomMargin);
     }
@@ -9861,9 +9835,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setLineVerticalIndent(int lineIndex, int verticalLineIndent) {
         checkWidget();
-        if (!java.util.Objects.equals(this.verticalScrollOffset, lineIndex)) {
-            dirty();
-        }
         if (isListening(ST.LineGetStyle))
             return;
         if (lineIndex < 0 || lineIndex >= content.getLineCount()) {
@@ -9982,9 +9953,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setLineSpacing(int lineSpacing) {
         checkWidget();
-        if (!java.util.Objects.equals(this.lineSpacing, lineSpacing)) {
-            dirty();
-        }
         if (this.lineSpacing == lineSpacing || lineSpacing < 0)
             return;
         this.lineSpacing = lineSpacing;
@@ -10167,7 +10135,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         color = GraphicsUtils.copyColor(color);
         checkWidget();
         if (!java.util.Objects.equals(this.marginColor, color)) {
-            dirty();
+            getValue().markDirty(VStyledText.MARGIN_COLOR);
         }
         if (color != null && color.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -10192,16 +10160,16 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     public void setMargins(int leftMargin, int topMargin, int rightMargin, int bottomMargin) {
         checkWidget();
         if (!java.util.Objects.equals(this.topMargin, topMargin)) {
-            dirty();
+            getValue().markDirty(VStyledText.TOP_MARGIN);
         }
         if (!java.util.Objects.equals(this.rightMargin, rightMargin)) {
-            dirty();
+            getValue().markDirty(VStyledText.RIGHT_MARGIN);
         }
         if (!java.util.Objects.equals(this.leftMargin, leftMargin)) {
-            dirty();
+            getValue().markDirty(VStyledText.LEFT_MARGIN);
         }
         if (!java.util.Objects.equals(this.bottomMargin, bottomMargin)) {
-            dirty();
+            getValue().markDirty(VStyledText.BOTTOM_MARGIN);
         }
         this.leftMargin = Math.max(0, leftMargin) + alignmentMargin;
         this.topMargin = Math.max(0, topMargin);
@@ -10229,9 +10197,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setMouseNavigatorEnabled(boolean enabled) {
         boolean newValue = enabled;
-        if (!java.util.Objects.equals(this.mouseNavigatorEnabled, newValue)) {
-            dirty();
-        }
         checkWidget();
         if ((enabled && mouseNavigator != null) || (!enabled && mouseNavigator == null)) {
             return;
@@ -10295,7 +10260,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     public void setRightMargin(int rightMargin) {
         checkWidget();
         if (!java.util.Objects.equals(this.rightMargin, rightMargin)) {
-            dirty();
+            getValue().markDirty(VStyledText.RIGHT_MARGIN);
         }
         setMargins(getLeftMargin(), topMargin, rightMargin, bottomMargin);
     }
@@ -10418,7 +10383,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         color = GraphicsUtils.copyColor(color);
         checkWidget();
         if (!java.util.Objects.equals(this.selectionBackground, color)) {
-            dirty();
+            getValue().markDirty(VStyledText.SELECTION_BACKGROUND);
         }
         if (color != null) {
             if (color.isDisposed())
@@ -10453,7 +10418,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         color = GraphicsUtils.copyColor(color);
         checkWidget();
         if (!java.util.Objects.equals(this.selectionForeground, color)) {
-            dirty();
+            getValue().markDirty(VStyledText.SELECTION_FOREGROUND);
         }
         if (color != null) {
             if (color.isDisposed())
@@ -10487,7 +10452,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      * </ul>
      */
     public void setSelection(int start, int end) {
-        dirty();
         setSelectionRange(start, end - start);
         //showSelection();
         ;
@@ -10508,7 +10472,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      * 	the selection is reset.
      */
     void setSelection(int[] regions, boolean sendEvent, boolean doBlock) {
-        dirty();
         if (regions.length == 2 && selection.length == 1) {
             // single range before/after
             int start = regions[0];
@@ -10646,7 +10609,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      * </ul>
      */
     public void setSelectionRange(int start, int length) {
-        dirty();
         if (selectionRange == null) {
             selectionRange = new Point(start, start + length);
         } else {
@@ -10654,6 +10616,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             selectionRange.y = start + length;
         }
         setSelectionRanges(new int[] { start, length });
+        getValue().markDirty(VStyledText.SELECTION_RANGE);
     }
 
     /**
@@ -10835,14 +10798,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     }
 
     void setStyleRanges(int start, int length, int[] ranges, StyleRange[] styles, boolean reset) {
-        dirty();
         int charCount = content.getCharCount();
-        if (!java.util.Objects.equals(this.columnX, start)) {
-            dirty();
-        }
-        if (!java.util.Objects.equals(this.columnX, start)) {
-            dirty();
-        }
         if (reset) {
             start = 0;
             length = charCount;
@@ -11089,7 +11045,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     public void setTabs(int tabs) {
         checkWidget();
         if (!java.util.Objects.equals(this.tabLength, tabs)) {
-            dirty();
+            getValue().markDirty(VStyledText.TABS);
         }
         tabLength = tabs;
         ((DartStyledTextRenderer) renderer.getImpl()).setFont(null, tabs);
@@ -11120,9 +11076,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setTabStops(int[] tabs) {
         checkWidget();
-        if (!java.util.Objects.equals(this.tabs, tabs)) {
-            dirty();
-        }
         if (tabs != null) {
             int pos = 0;
             int[] newTabs = new int[tabs.length];
@@ -11165,7 +11118,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     public void setText(String text) {
         String newValue = text;
         if (!java.util.Objects.equals(this.text, newValue)) {
-            dirty();
+            getValue().markDirty(VStyledText.TEXT);
         }
         checkWidget();
         if (text == null) {
@@ -11247,9 +11200,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setTextLimit(int limit) {
         checkWidget();
-        if (!java.util.Objects.equals(this.textLimit, limit)) {
-            dirty();
-        }
         if (limit == 0) {
             SWT.error(SWT.ERROR_CANNOT_BE_ZERO);
         }
@@ -11276,9 +11226,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setTopIndex(int topIndex) {
         checkWidget();
-        if (!java.util.Objects.equals(this.topIndex, topIndex)) {
-            dirty();
-        }
         if (getCharCount() == 0) {
             return;
         }
@@ -11317,7 +11264,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     public void setTopMargin(int topMargin) {
         checkWidget();
         if (!java.util.Objects.equals(this.topMargin, topMargin)) {
-            dirty();
+            getValue().markDirty(VStyledText.TOP_MARGIN);
         }
         setMargins(getLeftMargin(), topMargin, rightMargin, bottomMargin);
     }
@@ -11343,7 +11290,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     public void setTopPixel(int pixel) {
         int newValue = pixel;
         if (!java.util.Objects.equals(this.topPixel, newValue)) {
-            dirty();
+            getValue().markDirty(VStyledText.TOP_PIXEL);
         }
         checkWidget();
         if (getCharCount() == 0) {
@@ -11381,7 +11328,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     public void setWordWrap(boolean wrap) {
         checkWidget();
         if (!java.util.Objects.equals(this.wordWrap, wrap)) {
-            dirty();
+            getValue().markDirty(VStyledText.WORD_WRAP);
         }
         if ((getStyle() & SWT.SINGLE) != 0)
             return;
@@ -11424,9 +11371,6 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public void setWrapIndent(int wrapIndent) {
         checkWidget();
-        if (!java.util.Objects.equals(this.wrapIndent, wrapIndent)) {
-            dirty();
-        }
         if (this.wrapIndent == wrapIndent || wrapIndent < 0)
             return;
         this.wrapIndent = wrapIndent;

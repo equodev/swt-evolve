@@ -466,7 +466,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      * </ul>
      */
     public void setAlignment(int alignment) {
-        dirty();
+        getValue().markDirty(VTreeColumn.ALIGNMENT);
         checkWidget();
         if ((alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) == 0)
             return;
@@ -515,7 +515,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
     public void setMoveable(boolean moveable) {
         boolean newValue = moveable;
         if (!java.util.Objects.equals(this.moveable, newValue)) {
-            dirty();
+            getValue().markDirty(VTreeColumn.MOVEABLE);
         }
         checkWidget();
         this.moveable = newValue;
@@ -543,9 +543,6 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public void setResizable(boolean resizable) {
         boolean newValue = resizable;
-        if (!java.util.Objects.equals(this.resizable, newValue)) {
-            dirty();
-        }
         checkWidget();
         this.resizable = newValue;
     }
@@ -590,9 +587,6 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public void setToolTipText(String string) {
         checkWidget();
-        if (!java.util.Objects.equals(this.toolTipText, string)) {
-            dirty();
-        }
         toolTipText = string;
         setToolTipText(buttonHandle, string);
     }
@@ -610,7 +604,7 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
     public void setWidth(int width) {
         checkWidget();
         if (!java.util.Objects.equals(this.lastWidth, width)) {
-            dirty();
+            getValue().markDirty(VTreeColumn.WIDTH);
         }
         if (width < 0)
             return;

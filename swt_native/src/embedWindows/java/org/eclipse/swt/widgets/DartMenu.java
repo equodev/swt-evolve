@@ -1008,9 +1008,6 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public void setDefaultItem(MenuItem item) {
         MenuItem newValue = item;
-        if (!java.util.Objects.equals(this.defaultItem, newValue)) {
-            dirty();
-        }
         checkWidget();
         int newID = -1;
         if (item != null) {
@@ -1040,7 +1037,7 @@ public class DartMenu extends DartWidget implements IMenu {
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
         if (!java.util.Objects.equals(this.enabled, newValue)) {
-            dirty();
+            getValue().markDirty(VMenu.ENABLED);
         }
         checkWidget();
         getApi().state &= ~DISABLED;
@@ -1110,7 +1107,7 @@ public class DartMenu extends DartWidget implements IMenu {
     public void setLocation(Point location) {
         Point newValue = location;
         if (!java.util.Objects.equals(this.location, newValue)) {
-            dirty();
+            getValue().markDirty(VMenu.LOCATION);
         }
         checkWidget();
         if (location == null)
@@ -1141,7 +1138,7 @@ public class DartMenu extends DartWidget implements IMenu {
     }
 
     void _setOrientation(int orientation) {
-        dirty();
+        getValue().markDirty(VMenu.ORIENTATION);
         int flags = SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT;
         if ((orientation & flags) == 0 || (orientation & flags) == flags)
             return;
@@ -1172,7 +1169,7 @@ public class DartMenu extends DartWidget implements IMenu {
     public void setVisible(boolean visible) {
         boolean newValue = visible;
         if (!java.util.Objects.equals(this.visible, newValue)) {
-            dirty();
+            getValue().markDirty(VMenu.VISIBLE);
         }
         checkWidget();
         if ((getApi().style & (SWT.BAR | SWT.DROP_DOWN)) != 0)
@@ -1315,10 +1312,15 @@ public class DartMenu extends DartWidget implements IMenu {
         return null;
     }
 
+    /**
+     * A menu with an owner control has no channel of its own - it travels as that control's
+     * menu - so a change to it is a change to the control's menu, and saying so is what
+     * keeps the control from being sent whole every time a menu item moves.
+     */
     @Override
     protected void dirty() {
         if (ownerControl != null && ownerControl.getImpl() instanceof DartControl) {
-            ((DartControl) ownerControl.getImpl()).dirty();
+            ((DartControl) ownerControl.getImpl()).getValue().markDirty(VControl.MENU);
         } else {
             super.dirty();
         }

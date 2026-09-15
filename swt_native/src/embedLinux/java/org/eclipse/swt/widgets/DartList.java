@@ -791,7 +791,7 @@ public class DartList extends DartScrollable implements IList {
      * </ul>
      */
     public void select(int index) {
-        dirty();
+        getValue().markDirty(VList.SELECTION);
         int[] newValue = new int[] { index };
         checkWidget();
         if ((getApi().style & SWT.SINGLE) != 0) {
@@ -822,7 +822,7 @@ public class DartList extends DartScrollable implements IList {
      * @see List#setSelection(int,int)
      */
     public void select(int start, int end) {
-        dirty();
+        getValue().markDirty(VList.SELECTION);
         int[] newValue = new int[] { start };
         checkWidget();
         if (end < 0 || start > end || ((getApi().style & SWT.SINGLE) != 0 && start != end))
@@ -860,7 +860,7 @@ public class DartList extends DartScrollable implements IList {
     public void select(int[] indices) {
         int[] newValue = indices;
         if (!java.util.Objects.equals(this.selection, newValue)) {
-            dirty();
+            getValue().markDirty(VList.SELECTION);
         }
         checkWidget();
         if (indices == null)
@@ -920,6 +920,7 @@ public class DartList extends DartScrollable implements IList {
         checkWidget();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        getValue().markDirty(VList.ITEMS);
     }
 
     /**
@@ -937,7 +938,7 @@ public class DartList extends DartScrollable implements IList {
      * </ul>
      */
     public void setItems(String... items) {
-        dirty();
+        getValue().markDirty(VList.ITEMS);
         String[] newValue = items;
         checkWidget();
         if (items == null)
@@ -968,7 +969,7 @@ public class DartList extends DartScrollable implements IList {
      * @see List#select(int)
      */
     public void setSelection(int index) {
-        dirty();
+        getValue().markDirty(VList.SELECTION);
         int[] newValue = new int[] { index };
         checkWidget();
         deselectAll();
@@ -1118,9 +1119,6 @@ public class DartList extends DartScrollable implements IList {
      */
     public void setTopIndex(int index) {
         checkWidget();
-        if (!java.util.Objects.equals(this.topIndex, index)) {
-            dirty();
-        }
         topIndex = index;
     }
 

@@ -1,5 +1,4 @@
 import 'package:json_annotation/json_annotation.dart';
-import '../gen/stylerange.dart';
 
 part 'bullet.g.dart';
 
@@ -7,10 +6,6 @@ part 'bullet.g.dart';
 class VBullet {
   VBullet() : this.empty();
   VBullet.empty();
-
-  VStyleRange? style;
-  String text = "";
-  int type = 0;
 
   factory VBullet.fromJson(Map<String, dynamic> json) =>
       _$VBulletFromJson(json);

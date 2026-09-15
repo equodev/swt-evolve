@@ -612,7 +612,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
     public void setAlignment(int align) {
         checkWidget();
         if (!java.util.Objects.equals(this.align, align)) {
-            dirty();
+            getValue().markDirty(VCLabel.ALIGNMENT);
         }
         if (align != SWT.LEFT && align != SWT.RIGHT && align != SWT.CENTER) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -703,11 +703,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      *  @since 3.0
      */
     public void setBackground(Color[] colors, int[] percents, boolean vertical) {
-        dirty();
         checkWidget();
-        if (!java.util.Objects.equals(this.gradientColors, colors)) {
-            dirty();
-        }
         if (colors != null) {
             if (percents == null || percents.length != colors.length - 1) {
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -779,7 +775,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
         if (!java.util.Objects.equals(this.backgroundImage, image)) {
-            dirty();
+            getValue().markDirty(VCLabel.BACKGROUND_IMAGE);
             ControlHelper.markDamaged(this);
         }
         if (image == backgroundImage)
@@ -807,7 +803,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
     public void setBottomMargin(int bottomMargin) {
         checkWidget();
         if (!java.util.Objects.equals(this.bottomMargin, bottomMargin)) {
-            dirty();
+            getValue().markDirty(VCLabel.BOTTOM_MARGIN);
         }
         if (this.bottomMargin == bottomMargin || bottomMargin < 0)
             return;
@@ -836,7 +832,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
         if (!java.util.Objects.equals(this.image, image)) {
-            dirty();
+            getValue().markDirty(VCLabel.IMAGE);
         }
         if (image != this.image) {
             this.image = image;
@@ -859,7 +855,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
     public void setLeftMargin(int leftMargin) {
         checkWidget();
         if (!java.util.Objects.equals(this.leftMargin, leftMargin)) {
-            dirty();
+            getValue().markDirty(VCLabel.LEFT_MARGIN);
         }
         if (this.leftMargin == leftMargin || leftMargin < 0)
             return;
@@ -884,16 +880,16 @@ public class DartCLabel extends DartCanvas implements ICLabel {
     public void setMargins(int leftMargin, int topMargin, int rightMargin, int bottomMargin) {
         checkWidget();
         if (!java.util.Objects.equals(this.topMargin, topMargin)) {
-            dirty();
+            getValue().markDirty(VCLabel.TOP_MARGIN);
         }
         if (!java.util.Objects.equals(this.rightMargin, rightMargin)) {
-            dirty();
+            getValue().markDirty(VCLabel.RIGHT_MARGIN);
         }
         if (!java.util.Objects.equals(this.leftMargin, leftMargin)) {
-            dirty();
+            getValue().markDirty(VCLabel.LEFT_MARGIN);
         }
         if (!java.util.Objects.equals(this.bottomMargin, bottomMargin)) {
-            dirty();
+            getValue().markDirty(VCLabel.BOTTOM_MARGIN);
         }
         this.leftMargin = Math.max(0, leftMargin);
         this.topMargin = Math.max(0, topMargin);
@@ -917,7 +913,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
     public void setRightMargin(int rightMargin) {
         checkWidget();
         if (!java.util.Objects.equals(this.rightMargin, rightMargin)) {
-            dirty();
+            getValue().markDirty(VCLabel.RIGHT_MARGIN);
         }
         if (this.rightMargin == rightMargin || rightMargin < 0)
             return;
@@ -952,7 +948,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
     public void setText(String text) {
         checkWidget();
         if (!java.util.Objects.equals(this.text, text)) {
-            dirty();
+            getValue().markDirty(VCLabel.TEXT);
         }
         //$NON-NLS-1$
         if (text == null)
@@ -984,7 +980,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
     public void setTopMargin(int topMargin) {
         checkWidget();
         if (!java.util.Objects.equals(this.topMargin, topMargin)) {
-            dirty();
+            getValue().markDirty(VCLabel.TOP_MARGIN);
         }
         if (this.topMargin == topMargin || topMargin < 0)
             return;

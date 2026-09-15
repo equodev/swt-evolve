@@ -28,6 +28,7 @@ public class VCoolItem extends VItem {
         ((DartCoolItem) impl).control = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Point getMinimumSize() {
         return ((DartCoolItem) impl).getMinimumSize();
     }
@@ -42,6 +43,23 @@ public class VCoolItem extends VItem {
 
     public void setPreferredSize(Point value) {
         ((DartCoolItem) impl).setPreferredSize(value);
+    }
+
+    public static final String CONTROL = "control";
+
+    public static final String PREFERRED_SIZE = "preferredSize";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "control":
+                Serializer.writeKeyValue(writer, "control", getControl());
+                return;
+            case "preferredSize":
+                Serializer.writeKeyValue(writer, "preferredSize", getPreferredSize());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = CoolItem.class)

@@ -35,6 +35,23 @@ public class VLink extends VControl {
         ((DartLink) impl).text = value;
     }
 
+    public static final String LINK_FOREGROUND = "linkForeground";
+
+    public static final String TEXT = "text";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "linkForeground":
+                Serializer.writeKeyValue(writer, "linkForeground", getLinkForeground());
+                return;
+            case "text":
+                Serializer.writeKeyValue(writer, "text", getText());
+                return;
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = Link.class)
     public static class LinkJson implements Configuration {
 

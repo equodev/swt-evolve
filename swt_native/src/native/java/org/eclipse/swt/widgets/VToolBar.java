@@ -32,6 +32,18 @@ public class VToolBar extends VComposite {
         ((DartToolBar) impl).items = value;
     }
 
+    public static final String ITEMS = "items";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "items":
+                Serializer.writeKeyValue(writer, "items", getItems());
+                return;
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = ToolBar.class)
     public static class ToolBarJson implements Configuration {
 

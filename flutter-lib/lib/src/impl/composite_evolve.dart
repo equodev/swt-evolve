@@ -272,7 +272,10 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
       child: NoLayout(children: children, composite: state),
     );
     if (state.visible != null && !state.visible!) {
-      return Visibility(visible: false, maintainState: true, child: rawLayout);
+      // Dropped, not kept alive out of sight: what a hidden control holds lives in the registry and
+      // goes on being updated with nothing rendering it, so there is nothing to preserve here and
+      // no reason to go on building and laying out a subtree nobody can see.
+      return const SizedBox.shrink();
     }
 
     final Widget inner;

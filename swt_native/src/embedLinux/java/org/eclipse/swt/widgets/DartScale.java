@@ -244,9 +244,6 @@ public class DartScale extends DartControl implements IScale {
      */
     public void setIncrement(int increment) {
         int newValue = increment;
-        if (!java.util.Objects.equals(this.increment, newValue)) {
-            dirty();
-        }
         checkWidget();
         if (increment < 1)
             return;
@@ -270,9 +267,11 @@ public class DartScale extends DartControl implements IScale {
         checkWidget();
         if (minimum < value) {
             maximum = value;
-            if (selection > maximum)
+            getValue().markDirty(VScale.MAXIMUM);
+            if (selection > maximum) {
                 selection = maximum;
-            dirty();
+                getValue().markDirty(VScale.SELECTION);
+            }
         }
     }
 
@@ -293,9 +292,11 @@ public class DartScale extends DartControl implements IScale {
         checkWidget();
         if (0 <= value && value < maximum) {
             minimum = value;
-            if (selection < minimum)
+            getValue().markDirty(VScale.MINIMUM);
+            if (selection < minimum) {
                 selection = minimum;
-            dirty();
+                getValue().markDirty(VScale.SELECTION);
+            }
         }
     }
 
@@ -314,9 +315,6 @@ public class DartScale extends DartControl implements IScale {
      */
     public void setPageIncrement(int pageIncrement) {
         int newValue = pageIncrement;
-        if (!java.util.Objects.equals(this.pageIncrement, newValue)) {
-            dirty();
-        }
         checkWidget();
         if (pageIncrement < 1)
             return;
@@ -338,7 +336,7 @@ public class DartScale extends DartControl implements IScale {
         checkWidget();
         int clamped = Math.max(minimum, Math.min(maximum, value));
         if (this.selection != clamped)
-            dirty();
+            getValue().markDirty(VScale.SELECTION);
         this.selection = clamped;
     }
 

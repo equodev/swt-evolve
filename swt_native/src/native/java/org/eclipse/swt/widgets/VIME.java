@@ -17,6 +17,7 @@ public class VIME extends VWidget {
         super(impl);
     }
 
+    @JsonAttribute(ignore = true)
     public int getCompositionOffset() {
         return ((DartIME) impl).getCompositionOffset();
     }
@@ -25,6 +26,7 @@ public class VIME extends VWidget {
         ((DartIME) impl).startOffset = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int[] getRanges() {
         return ((DartIME) impl).ranges;
     }
@@ -33,6 +35,7 @@ public class VIME extends VWidget {
         ((DartIME) impl).ranges = value;
     }
 
+    @JsonAttribute(ignore = true)
     public TextStyle[] getStyles() {
         TextStyle[] values = ((DartIME) impl).styles;
         if (values == null)
@@ -45,6 +48,13 @@ public class VIME extends VWidget {
 
     public void setStyles(TextStyle[] value) {
         ((DartIME) impl).styles = value;
+    }
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = IME.class)

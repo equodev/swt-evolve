@@ -7,7 +7,6 @@ import org.eclipse.swt.graphics.*;
 import com.dslplatform.json.*;
 import dev.equo.swt.Serializer;
 import java.io.IOException;
-import dev.equo.swt.CharArrayConverter;
 
 @CompiledJson()
 public class VText extends VScrollable {
@@ -27,6 +26,7 @@ public class VText extends VScrollable {
         ((DartText) impl).caretPosition = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getDoubleClickEnabled() {
         return ((DartText) impl).getDoubleClickEnabled();
     }
@@ -51,7 +51,7 @@ public class VText extends VScrollable {
         ((DartText) impl).editable = value;
     }
 
-    @JsonAttribute(converter = CharArrayConverter.class)
+    @JsonAttribute(ignore = true)
     public char[] getHiddenText() {
         return ((DartText) impl).hiddenText;
     }
@@ -76,6 +76,7 @@ public class VText extends VScrollable {
         ((DartText) impl).selection = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getTabs() {
         return ((DartText) impl).getTabs();
     }
@@ -93,7 +94,7 @@ public class VText extends VScrollable {
         ((DartText) impl).text = value;
     }
 
-    @JsonAttribute(converter = CharArrayConverter.class)
+    @JsonAttribute(ignore = true)
     public char[] getTextChars() {
         return ((DartText) impl).textChars;
     }
@@ -110,12 +111,55 @@ public class VText extends VScrollable {
         ((DartText) impl).textLimit = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getTopIndex() {
         return ((DartText) impl).getTopIndex();
     }
 
     public void setTopIndex(int value) {
         ((DartText) impl).topIndex = value;
+    }
+
+    public static final String CARET_POSITION = "caretPosition";
+
+    public static final String ECHO_CHARACTER = "echoCharacter";
+
+    public static final String EDITABLE = "editable";
+
+    public static final String MESSAGE = "message";
+
+    public static final String SELECTION = "selection";
+
+    public static final String TEXT = "text";
+
+    public static final String TEXT_LIMIT = "textLimit";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "caretPosition":
+                Serializer.writeKeyValue(writer, "caretPosition", getCaretPosition());
+                return;
+            case "echoCharacter":
+                Serializer.writeKeyValue(writer, "echoCharacter", getEchoCharacter());
+                return;
+            case "editable":
+                Serializer.writeKeyValue(writer, "editable", getEditable());
+                return;
+            case "message":
+                Serializer.writeKeyValue(writer, "message", getMessage());
+                return;
+            case "selection":
+                Serializer.writeKeyValue(writer, "selection", getSelection());
+                return;
+            case "text":
+                Serializer.writeKeyValue(writer, "text", getText());
+                return;
+            case "textLimit":
+                Serializer.writeKeyValue(writer, "textLimit", getTextLimit());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = Text.class)

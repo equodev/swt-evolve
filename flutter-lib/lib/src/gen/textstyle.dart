@@ -1,7 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 import '../gen/color.dart';
 import '../gen/font.dart';
-import '../gen/glyphmetrics.dart';
 
 part 'textstyle.g.dart';
 
@@ -11,12 +10,8 @@ class VTextStyle {
   VTextStyle.empty();
 
   VColor? background;
-  VColor? borderColor;
-  int? borderStyle;
   VFont? font;
   VColor? foreground;
-  VGlyphMetrics? metrics;
-  int? rise;
   bool? strikeout;
   VColor? strikeoutColor;
   bool? underline;

@@ -1,7 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
-import '../gen/menu.dart';
 import '../gen/menuitem.dart';
 import '../gen/point.dart';
 import '../gen/widget.dart';
@@ -37,15 +36,53 @@ class VMenu extends VWidget {
     swt = "Menu";
   }
 
-  VMenuItem? defaultItem;
   bool? enabled;
-  bool? enabledEffective;
   List<VMenuItem>? items;
   VPoint? location;
   int? orientation;
-  VMenu? parentMenu;
   bool? visible;
 
-  factory VMenu.fromJson(Map<String, dynamic> json) => _$VMenuFromJson(json);
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VMenu) {
+      enabled = other.enabled;
+      items = other.items;
+      location = other.location;
+      orientation = other.orientation;
+      visible = other.visible;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'enabled':
+        enabled = json['enabled'] as bool?;
+      case 'items':
+        items = (json['items'] as List<dynamic>?)
+            ?.map((e) => VMenuItem.fromJson(e as Map<String, dynamic>))
+            .toList();
+      case 'location':
+        location = json['location'] == null
+            ? null
+            : VPoint.fromJson(json['location'] as Map<String, dynamic>);
+      case 'orientation':
+        orientation = (json['orientation'] as num?)?.toInt();
+      case 'visible':
+        visible = json['visible'] as bool?;
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
+  @override
+  void adoptChildren(VWidget Function(VWidget) adopt) {
+    super.adoptChildren(adopt);
+    VWidget.adoptEach(items, adopt);
+  }
+
+  factory VMenu.fromJson(Map<String, dynamic> json) =>
+      _$VMenuFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VMenuToJson(this);
 }

@@ -143,12 +143,14 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
         itemCount++;
         ((DartExpandItem) item.getImpl()).width = Math.max(0, getClientAreaInPixels().width - spacing * 2);
         layoutItems();
+        getValue().markDirty(VExpandBar.ITEMS);
     }
 
     @Override
     void createWidget(int index) {
         super.createWidget(index);
         items = new ExpandItem[4];
+        getValue().markDirty(VExpandBar.ITEMS);
     }
 
     void destroyItem(ExpandItem item) {
@@ -163,6 +165,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
         System.arraycopy(items, index + 1, items, index, --itemCount - index);
         items[itemCount] = null;
         layoutItems();
+        getValue().markDirty(VExpandBar.ITEMS);
     }
 
     @Override
@@ -390,7 +393,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
     public void setSpacing(int spacing) {
         checkWidget();
         if (!java.util.Objects.equals(this.spacing, spacing)) {
-            dirty();
+            getValue().markDirty(VExpandBar.SPACING);
         }
         if (spacing < 0)
             return;

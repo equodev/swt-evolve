@@ -34,8 +34,13 @@ class TableItemSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("grayed").equalsTo(w.getGrayed(), orAbsentIfFalse));
-        assertJ.satisfies(node("imageIndent").equalsTo(w.getImageIndent(), orAbsentIf0));
         assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
+    }
+
+    @Test
+    void should_name_every_change_TableItem() {
+        TableItem w = new TableItem(table(), SWT.NONE);
+        assertNamesEveryChange(w);
     }
 
     VTableItem value(TableItem w) {

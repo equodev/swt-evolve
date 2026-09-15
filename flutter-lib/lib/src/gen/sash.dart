@@ -9,6 +9,7 @@ import '../gen/image.dart';
 import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
+import '../gen/widget.dart';
 import '../impl/sash_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
@@ -37,6 +38,7 @@ class VSash extends VControl {
     swt = "Sash";
   }
 
-  factory VSash.fromJson(Map<String, dynamic> json) => _$VSashFromJson(json);
+  factory VSash.fromJson(Map<String, dynamic> json) =>
+      _$VSashFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VSashToJson(this);
 }

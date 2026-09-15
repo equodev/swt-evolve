@@ -1,8 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
-import '../gen/control.dart';
-import '../gen/transfer.dart';
 import '../gen/widget.dart';
 import '../impl/droptarget_evolve.dart';
 import 'event.dart';
@@ -49,10 +47,7 @@ class VDropTarget extends VWidget {
     swt = "DropTarget";
   }
 
-  VControl? control;
-  List<VTransfer>? transfer;
-
   factory VDropTarget.fromJson(Map<String, dynamic> json) =>
-      _$VDropTargetFromJson(json);
+      _$VDropTargetFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VDropTargetToJson(this);
 }

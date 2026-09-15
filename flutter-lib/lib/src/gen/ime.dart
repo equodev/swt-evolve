@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
-import '../gen/textstyle.dart';
 import '../gen/widget.dart';
 import '../impl/ime_evolve.dart';
 import 'widgets.dart';
@@ -21,10 +20,7 @@ class VIME extends VWidget {
     swt = "IME";
   }
 
-  int? compositionOffset;
-  List<int>? ranges;
-  List<VTextStyle>? styles;
-
-  factory VIME.fromJson(Map<String, dynamic> json) => _$VIMEFromJson(json);
+  factory VIME.fromJson(Map<String, dynamic> json) =>
+      _$VIMEFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VIMEToJson(this);
 }

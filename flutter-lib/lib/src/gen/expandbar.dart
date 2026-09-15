@@ -12,6 +12,7 @@ import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
+import '../gen/widget.dart';
 import '../impl/expandbar_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
@@ -43,7 +44,36 @@ class VExpandBar extends VComposite {
   List<VExpandItem>? items;
   int? spacing;
 
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VExpandBar) {
+      items = other.items;
+      spacing = other.spacing;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'items':
+        items = (json['items'] as List<dynamic>?)
+            ?.map((e) => VExpandItem.fromJson(e as Map<String, dynamic>))
+            .toList();
+      case 'spacing':
+        spacing = (json['spacing'] as num?)?.toInt();
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
+  @override
+  void adoptChildren(VWidget Function(VWidget) adopt) {
+    super.adoptChildren(adopt);
+    VWidget.adoptEach(items, adopt);
+  }
+
   factory VExpandBar.fromJson(Map<String, dynamic> json) =>
-      _$VExpandBarFromJson(json);
+      _$VExpandBarFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VExpandBarToJson(this);
 }

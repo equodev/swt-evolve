@@ -86,4 +86,45 @@ class RadioGroupDeliveryTest {
                         + "Frames: " + bridge.comm.sent.size())
                 .isTrue();
     }
+
+    @Test
+    @DisplayName("web path: the radio that was picked must be communicated as selected")
+    void selectionDeliveredOnWebPath() {
+        Shell shell = Mocks.swtShell();
+        Composite group = new Composite(shell, SWT.NONE);
+        Button r1 = new Button(group, SWT.RADIO);
+        r1.setText("Option 1");
+        Button r2 = new Button(group, SWT.RADIO);
+        r2.setText("Option 2");
+
+        for (Widget w : new Widget[] { group, r1, r2 }) w.setData("dev.equo.swt.new", false);
+        FlutterBridge.update();
+
+        bridge.comm.sent.clear();
+        click(r1);
+        // Mimic the WEB-only behaviour of selectRadio(): also dirty the parent Composite.
+        bridge.dirty((DartWidget) group.getImpl());
+        FlutterBridge.update();
+
+        assertThat(r1.getSelection()).as("r1 selected in Java").isTrue();
+
+        String r1Id = String.valueOf(r1.hashCode());
+        boolean ownChannelSaysSelected = bridge.comm.sent.stream()
+                .filter(f -> f.event.startsWith("Button/" + r1Id))
+                .anyMatch(f -> f.json.contains("\"selection\":true"));
+        RecordingComm.Frame parentFrame = bridge.comm.sent.stream()
+                .filter(f -> f.event.startsWith("Composite/" + group.hashCode()))
+                .reduce((a, b) -> b).orElse(null);
+        boolean parentCarriesR1Selected = parentFrame != null
+                && parentFrame.json.contains("\"id\":" + r1Id)
+                && parentFrame.json.substring(parentFrame.json.indexOf("\"id\":" + r1Id))
+                        .contains("\"selection\":true");
+
+        assertThat(ownChannelSaysSelected || parentCarriesR1Selected)
+                .as("the radio the user picked must be communicated as selected (own channel, or "
+                        + "carried selected in the parent payload), otherwise nothing in the group "
+                        + "renders selected at all. Frames: "
+                        + bridge.comm.sent.stream().map(f -> f.event).toList())
+                .isTrue();
+    }
 }

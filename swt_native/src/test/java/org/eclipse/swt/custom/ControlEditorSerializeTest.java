@@ -24,7 +24,6 @@ class ControlEditorSerializeTest extends SerializeTestBase {
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.isNotEmpty();
-        assertJ.satisfies(node("editor").equalsTo(w.getEditor(), orAbsentIfNull));
     }
 
     VControlEditor value(ControlEditor w) {

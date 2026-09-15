@@ -48,7 +48,7 @@ VComposite _parent(int seq, List<VControl> children) => VComposite()
 /// What Java puts on the wire: the value's own JSON plus the write stamp, which the serializer
 /// emits separately (`seq` is out of `toJson` so it never affects value equality).
 Map<String, dynamic> _pushed({required int seq, required bool selection}) =>
-    {..._box(seq: seq, selection: selection).toJson(), 'seq': seq};
+    {..._box(seq: seq, selection: selection).toJson(), '_s': seq};
 
 /// Delivers an inbound frame exactly as the transport would (2-byte name length, name, JSON body).
 void _receive(String actionId, Object payload) {

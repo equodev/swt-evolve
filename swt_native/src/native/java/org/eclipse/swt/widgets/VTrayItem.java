@@ -17,6 +17,7 @@ public class VTrayItem extends VItem {
         super(impl);
     }
 
+    @JsonAttribute(ignore = true)
     public Image getHighlightImage() {
         Image val = ((DartTrayItem) impl).highlightImage;
         if (val != null && !(val.getImpl() instanceof DartImage))
@@ -28,6 +29,7 @@ public class VTrayItem extends VItem {
         ((DartTrayItem) impl).highlightImage = value;
     }
 
+    @JsonAttribute(ignore = true)
     public ToolTip getToolTip() {
         ToolTip val = ((DartTrayItem) impl).toolTip;
         if (val != null && !(val.getImpl() instanceof DartToolTip))
@@ -39,6 +41,7 @@ public class VTrayItem extends VItem {
         ((DartTrayItem) impl).toolTip = value;
     }
 
+    @JsonAttribute(ignore = true)
     public String getToolTipText() {
         return ((DartTrayItem) impl).getToolTipText();
     }
@@ -47,12 +50,20 @@ public class VTrayItem extends VItem {
         ((DartTrayItem) impl).toolTipText = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getVisible() {
         return ((DartTrayItem) impl).getVisible();
     }
 
     public void setVisible(boolean value) {
         ((DartTrayItem) impl).visible = value;
+    }
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = TrayItem.class)

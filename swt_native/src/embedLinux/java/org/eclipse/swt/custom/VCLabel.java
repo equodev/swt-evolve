@@ -47,6 +47,7 @@ public class VCLabel extends VCanvas {
         ((DartCLabel) impl).bottomMargin = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Color[] getGradientColors() {
         Color[] values = ((DartCLabel) impl).gradientColors;
         if (values == null)
@@ -61,6 +62,7 @@ public class VCLabel extends VCanvas {
         ((DartCLabel) impl).gradientColors = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int[] getGradientPercents() {
         return ((DartCLabel) impl).gradientPercents;
     }
@@ -69,6 +71,7 @@ public class VCLabel extends VCanvas {
         ((DartCLabel) impl).gradientPercents = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getGradientVertical() {
         return ((DartCLabel) impl).gradientVertical;
     }
@@ -119,6 +122,53 @@ public class VCLabel extends VCanvas {
 
     public void setTopMargin(int value) {
         ((DartCLabel) impl).topMargin = value;
+    }
+
+    public static final String ALIGNMENT = "alignment";
+
+    public static final String BACKGROUND_IMAGE = "backgroundImage";
+
+    public static final String BOTTOM_MARGIN = "bottomMargin";
+
+    public static final String IMAGE = "image";
+
+    public static final String LEFT_MARGIN = "leftMargin";
+
+    public static final String RIGHT_MARGIN = "rightMargin";
+
+    public static final String TEXT = "text";
+
+    public static final String TOP_MARGIN = "topMargin";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "alignment":
+                Serializer.writeKeyValue(writer, "alignment", getAlignment());
+                return;
+            case "backgroundImage":
+                Serializer.writeKeyValue(writer, "backgroundImage", getBackgroundImage());
+                return;
+            case "bottomMargin":
+                Serializer.writeKeyValue(writer, "bottomMargin", getBottomMargin());
+                return;
+            case "image":
+                Serializer.writeKeyValue(writer, "image", getImage());
+                return;
+            case "leftMargin":
+                Serializer.writeKeyValue(writer, "leftMargin", getLeftMargin());
+                return;
+            case "rightMargin":
+                Serializer.writeKeyValue(writer, "rightMargin", getRightMargin());
+                return;
+            case "text":
+                Serializer.writeKeyValue(writer, "text", getText());
+                return;
+            case "topMargin":
+                Serializer.writeKeyValue(writer, "topMargin", getTopMargin());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = CLabel.class)

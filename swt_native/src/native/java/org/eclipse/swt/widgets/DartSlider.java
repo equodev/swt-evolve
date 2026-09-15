@@ -328,7 +328,7 @@ public class DartSlider extends DartControl implements ISlider {
     public void setIncrement(int value) {
         checkWidget();
         if (!java.util.Objects.equals(this.increment, value)) {
-            dirty();
+            getValue().markDirty(VSlider.INCREMENT);
         }
         if (value < 1)
             return;
@@ -351,7 +351,7 @@ public class DartSlider extends DartControl implements ISlider {
     public void setMaximum(int value) {
         checkWidget();
         if (!java.util.Objects.equals(this.maximum, value)) {
-            dirty();
+            getValue().markDirty(VSlider.MAXIMUM);
         }
         if (value < 0)
             return;
@@ -381,7 +381,7 @@ public class DartSlider extends DartControl implements ISlider {
     public void setMinimum(int value) {
         checkWidget();
         if (!java.util.Objects.equals(this.minimum, value)) {
-            dirty();
+            getValue().markDirty(VSlider.MINIMUM);
         }
         if (value < 0)
             return;
@@ -411,7 +411,7 @@ public class DartSlider extends DartControl implements ISlider {
     public void setPageIncrement(int value) {
         checkWidget();
         if (!java.util.Objects.equals(this.pageIncrement, value)) {
-            dirty();
+            getValue().markDirty(VSlider.PAGE_INCREMENT);
         }
         if (value < 1)
             return;
@@ -434,7 +434,7 @@ public class DartSlider extends DartControl implements ISlider {
         checkWidget();
         int clamped = Math.max(minimum, Math.min(maximum - thumb, value));
         if (this.selection != clamped)
-            dirty();
+            getValue().markDirty(VSlider.SELECTION);
         this.selection = clamped;
     }
 
@@ -447,7 +447,7 @@ public class DartSlider extends DartControl implements ISlider {
     void updateBar(int selection, int minimum, int maximum, int thumb) {
         int clamped = Math.max(minimum, Math.min(maximum - thumb, selection));
         if (this.selection != clamped)
-            dirty();
+            getValue().markDirty(VSlider.SELECTION);
         this.selection = clamped;
     }
 
@@ -471,7 +471,7 @@ public class DartSlider extends DartControl implements ISlider {
     public void setThumb(int value) {
         checkWidget();
         if (!java.util.Objects.equals(this.thumb, value)) {
-            dirty();
+            getValue().markDirty(VSlider.THUMB);
         }
         if (value < 1)
             return;
@@ -504,19 +504,19 @@ public class DartSlider extends DartControl implements ISlider {
     public void setValues(int selection, int minimum, int maximum, int thumb, int increment, int pageIncrement) {
         checkWidget();
         if (!java.util.Objects.equals(this.thumb, thumb)) {
-            dirty();
+            getValue().markDirty(VSlider.THUMB);
         }
         if (!java.util.Objects.equals(this.pageIncrement, pageIncrement)) {
-            dirty();
+            getValue().markDirty(VSlider.PAGE_INCREMENT);
         }
         if (!java.util.Objects.equals(this.minimum, minimum)) {
-            dirty();
+            getValue().markDirty(VSlider.MINIMUM);
         }
         if (!java.util.Objects.equals(this.maximum, maximum)) {
-            dirty();
+            getValue().markDirty(VSlider.MAXIMUM);
         }
         if (!java.util.Objects.equals(this.increment, increment)) {
-            dirty();
+            getValue().markDirty(VSlider.INCREMENT);
         }
         if (minimum < 0)
             return;

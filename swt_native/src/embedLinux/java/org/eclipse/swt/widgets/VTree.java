@@ -19,6 +19,7 @@ public class VTree extends VComposite {
         super(impl);
     }
 
+    @JsonAttribute(ignore = true)
     public int[] getColumnOrder() {
         return ((DartTree) impl).columnOrder;
     }
@@ -57,6 +58,7 @@ public class VTree extends VComposite {
         ((DartTree) impl).headerBackground = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Color getHeaderForeground() {
         return ((DartTree) impl).headerForeground;
     }
@@ -109,6 +111,7 @@ public class VTree extends VComposite {
         ((DartTree) impl).selection = value;
     }
 
+    @JsonAttribute(ignore = true)
     public TreeColumn getSortColumn() {
         TreeColumn val = ((DartTree) impl).sortColumn;
         if (val != null && !(val.getImpl() instanceof DartTreeColumn))
@@ -120,6 +123,7 @@ public class VTree extends VComposite {
         ((DartTree) impl).sortColumn = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getSortDirection() {
         return ((DartTree) impl).getSortDirection();
     }
@@ -128,6 +132,7 @@ public class VTree extends VComposite {
         ((DartTree) impl).sortDirection = value;
     }
 
+    @JsonAttribute(ignore = true)
     public TreeItem getTopItem() {
         TreeItem val = ((DartTree) impl).topItem;
         if (val != null && !(val.getImpl() instanceof DartTreeItem))
@@ -137,6 +142,48 @@ public class VTree extends VComposite {
 
     public void setTopItem(TreeItem value) {
         ((DartTree) impl).topItem = value;
+    }
+
+    public static final String COLUMNS = "columns";
+
+    public static final String EDITORS = "editors";
+
+    public static final String HEADER_BACKGROUND = "headerBackground";
+
+    public static final String HEADER_VISIBLE = "headerVisible";
+
+    public static final String ITEMS = "items";
+
+    public static final String LINES_VISIBLE = "linesVisible";
+
+    public static final String SELECTION = "selection";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "columns":
+                Serializer.writeKeyValue(writer, "columns", getColumns());
+                return;
+            case "editors":
+                Serializer.writeKeyValue(writer, "editors", getEditors());
+                return;
+            case "headerBackground":
+                Serializer.writeKeyValue(writer, "headerBackground", getHeaderBackground());
+                return;
+            case "headerVisible":
+                Serializer.writeKeyValue(writer, "headerVisible", getHeaderVisible());
+                return;
+            case "items":
+                Serializer.writeKeyValue(writer, "items", getItems());
+                return;
+            case "linesVisible":
+                Serializer.writeKeyValue(writer, "linesVisible", getLinesVisible());
+                return;
+            case "selection":
+                Serializer.writeKeyValue(writer, "selection", getSelection());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = Tree.class)

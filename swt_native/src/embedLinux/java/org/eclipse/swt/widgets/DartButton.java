@@ -486,7 +486,10 @@ public class DartButton extends DartControl implements IButton {
     }
 
     void _setAlignment(int alignment) {
-        dirty();
+        if (((getApi().style ^ alignment) & (SWT.LEFT | SWT.RIGHT | SWT.CENTER | SWT.UP | SWT.DOWN)) != 0)
+            getValue().markDirty(VButton.ALIGNMENT);
+        //getValue().markDirty(VButton.ALIGNMENT);
+        ;
         if ((getApi().style & SWT.ARROW) != 0) {
             if ((getApi().style & (SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT)) == 0)
                 return;
@@ -576,7 +579,7 @@ public class DartButton extends DartControl implements IButton {
     public void setGrayed(boolean grayed) {
         checkWidget();
         if (!java.util.Objects.equals(this.grayed, grayed)) {
-            dirty();
+            getValue().markDirty(VButton.GRAYED);
         }
         if ((getApi().style & SWT.CHECK) == 0)
             return;
@@ -603,7 +606,7 @@ public class DartButton extends DartControl implements IButton {
         image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
         if (!java.util.Objects.equals(this.image, image)) {
-            dirty();
+            getValue().markDirty(VButton.IMAGE);
         }
         if ((getApi().style & SWT.ARROW) != 0)
             return;
@@ -658,7 +661,7 @@ public class DartButton extends DartControl implements IButton {
     public void setSelection(boolean selected) {
         boolean newValue = selected;
         if (!java.util.Objects.equals(this.selection, newValue)) {
-            dirty();
+            getValue().markDirty(VButton.SELECTION);
         }
         checkWidget();
         if ((getApi().style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
@@ -707,7 +710,7 @@ public class DartButton extends DartControl implements IButton {
     public void setText(String string) {
         checkWidget();
         if (!java.util.Objects.equals(this.text, string)) {
-            dirty();
+            getValue().markDirty(VButton.TEXT);
         }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);

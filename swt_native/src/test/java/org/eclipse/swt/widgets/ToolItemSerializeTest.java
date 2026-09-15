@@ -39,6 +39,12 @@ class ToolItemSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
     }
 
+    @Test
+    void should_name_every_change_ToolItem() {
+        ToolItem w = new ToolItem(toolBar(), SWT.NONE);
+        assertNamesEveryChange(w);
+    }
+
     VToolItem value(ToolItem w) {
         return ((DartToolItem) w.getImpl()).getValue();
     }

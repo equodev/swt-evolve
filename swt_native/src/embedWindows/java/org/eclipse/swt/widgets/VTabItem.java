@@ -35,6 +35,23 @@ public class VTabItem extends VItem {
         ((DartTabItem) impl).toolTipText = value;
     }
 
+    public static final String CONTROL = "control";
+
+    public static final String TOOL_TIP_TEXT = "toolTipText";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "control":
+                Serializer.writeKeyValue(writer, "control", getControl());
+                return;
+            case "toolTipText":
+                Serializer.writeKeyValue(writer, "toolTipText", getToolTipText());
+                return;
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = TabItem.class)
     public static class TabItemJson implements Configuration {
 

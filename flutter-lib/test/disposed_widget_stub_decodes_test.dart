@@ -16,9 +16,9 @@ void main() {
     final canvas = VCanvas.fromJson({
       'id': 1,
       'swt': 'Canvas',
-      'seq': 2,
+      '_s': 2,
       'style': 33554432,
-      'menu': {'id': 3, 'swt': 'Menu', 'seq': 4, 'style': 0},
+      'menu': {'id': 3, 'swt': 'Menu', '_s': 4, 'style': 0},
       'children': <dynamic>[],
     });
 
@@ -30,11 +30,11 @@ void main() {
     final composite = VComposite.fromJson({
       'id': 1,
       'swt': 'Composite',
-      'seq': 2,
+      '_s': 2,
       'style': 0,
       'children': [
-        {'id': 3, 'swt': 'Button', 'seq': 4, 'style': 8},
-        {'id': 5, 'swt': 'Button', 'seq': 6, 'style': 8, 'text': 'live'},
+        {'id': 3, 'swt': 'Button', '_s': 4, 'style': 8},
+        {'id': 5, 'swt': 'Button', '_s': 6, 'style': 8, 'text': 'live'},
       ],
     });
 

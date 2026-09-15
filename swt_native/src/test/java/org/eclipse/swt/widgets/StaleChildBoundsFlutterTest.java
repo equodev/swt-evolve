@@ -19,14 +19,15 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Flutter lays a Composite's children out from the PARENT's copy of them — {@code NoLayout}'s
- * delegate constrains each child tightly to the {@code bounds} it finds in {@code state.children} —
- * so a parent payload that reaches Dart still carrying pre-layout children pins them at that size.
- * At 0x0 the child is invisible, unpainted, and has no semantics node at all.
+ * A Composite lays its children out from the bounds it finds on them, so a child whose bounds never
+ * reach Dart is laid out at whatever was last known — at 0x0, invisible, unpainted, and with no
+ * semantics node at all.
  *
- * <p>These tests cover the Java half of that contract: the bounds a child gets after its parent was
- * already sent must still reach Dart, and a widget marked dirty while a flush is running must not
- * be dropped by that flush's bookkeeping.
+ * <p>These tests cover the Java half of that: the bounds a child gets after its parent was already
+ * sent must still reach Dart, and a widget marked dirty while a flush is running must not be
+ * dropped by that flush's bookkeeping. Neither says by which route it arrives — on the child's own
+ * channel or inside an ancestor's payload — because that is the delivery layer's business and has
+ * changed more than once.
  */
 @Tag("flutter-it")
 class StaleChildBoundsFlutterTest {
@@ -161,7 +162,7 @@ class StaleChildBoundsFlutterTest {
     }
 
     @Test
-    void childLaidOutAfterItsParentWasSent_reachesDartInsideTheParentPayload() {
+    void childLaidOutAfterItsParentWasSent_reachesDart() {
         Shell shell = new Shell(display);
         shell.setSize(1000, 1000);
         Composite part = new Composite(shell, SWT.NONE);
@@ -172,15 +173,11 @@ class StaleChildBoundsFlutterTest {
         grid.setBounds(5, 5, 960, 816); // what the example's own layout does, after that first send
         pump();
 
-        JsonObject parentPayload = lastPayloadFor(part)
-                .orElseThrow(() -> new AssertionError("the parent composite was never sent to Dart; frames: "
+        JsonObject state = lastStateAnywhereFor(grid)
+                .orElseThrow(() -> new AssertionError("the child's bounds never reached Dart; frames: "
                         + bridge.comm.sent.stream().map(f -> f.event + "=" + f.json).toList()));
-        JsonObject childCopy = childOf(parentPayload, grid.hashCode());
-        assertThat(childCopy)
-                .as("the parent's payload must carry its child -- Flutter lays children out from this copy")
-                .isNotNull();
-        JsonObject bounds = childCopy.getAsJsonObject("bounds");
-        assertThat(bounds).as("child bounds inside the parent payload").isNotNull();
+        JsonObject bounds = state.getAsJsonObject("bounds");
+        assertThat(bounds).as("child bounds as Dart last saw them").isNotNull();
         assertThat(bounds.get("width").getAsInt()).as("child width as Flutter will lay it out").isEqualTo(960);
         assertThat(bounds.get("height").getAsInt()).as("child height as Flutter will lay it out").isEqualTo(816);
     }

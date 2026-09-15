@@ -84,6 +84,60 @@ public class SerializeTestBase {
         }
     }
 
+    /**
+     * Asserts that what {@code w}'s setters said changed is what actually changed.
+     *
+     * <p>Two independent sources, on purpose. One is the widget's own record, filled by its setters
+     * calling {@code markDirty}. The other is derived by comparing the widget's serialized state
+     * before and after, which knows nothing about flags. A setter that forgets to flag drops its
+     * property from every future update — silently, for that one property — and only a check that
+     * does not consult the flags can see it.
+     *
+     * <p>Driven by {@code setAll}, so this covers every property the widget can be given a value
+     * for rather than the ones someone thought to name. A property with no usable setter is not
+     * reachable from an application either, so there is nothing to miss.
+     */
+    protected void assertNamesEveryChange(Widget w) {
+        Widget target = w;
+        firstSend(target);
+        String before = dev.equo.swt.delivery.Canon.canon(serialize(target));
+
+        setAll(target);
+
+        // Read the flags before serializing again: writing a widget whole is what marks it as no
+        // longer outstanding, so the second serialize clears the very thing being measured.
+        java.util.Set<String> flagged = new java.util.LinkedHashSet<>(flagsOf(target));
+        String after = dev.equo.swt.delivery.Canon.canon(serialize(target));
+
+        java.util.Set<String> changed = dev.equo.swt.delivery.DeliveryAudit.changedKeys(before, after);
+
+        // Completeness is the property that matters, and the only one asserted: a change that was
+        // not named is a change that never ships, silently, for as long as the widget lives.
+        org.assertj.core.api.Assertions.assertThat(flagged)
+                .as("%s: these changed but nothing named them, so they would never be sent",
+                        w.getClass().getSimpleName())
+                .containsAll(changed);
+
+        // Being named without having changed only costs bytes, so it is measured rather than
+        // failed on - the number is what says whether the saving is real, and it belongs in the
+        // record next to the payload sizes rather than in a red build.
+        java.util.Set<String> spurious = new java.util.LinkedHashSet<>(flagged);
+        spurious.removeAll(changed);
+        if (!spurious.isEmpty()) {
+            System.out.printf("over-named %-22s %d of %d: %s%n", w.getClass().getSimpleName(),
+                    spurious.size(), flagged.size(), spurious);
+        }
+    }
+
+    /** Puts the widget in the state the check measures from: sent whole, nothing outstanding. */
+    private void firstSend(Widget w) {
+        serialize(w);
+    }
+
+    private static java.util.Set<String> flagsOf(Widget w) {
+        return ((DartWidget) w.getImpl()).getValue().changedKeys();
+    }
+
     protected void setAll(Widget w) {
         InstancioObjectApi<Widget> inst = Instancio.ofObject(w)
                 .withSettings(settings)

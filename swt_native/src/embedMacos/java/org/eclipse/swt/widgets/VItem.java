@@ -36,6 +36,23 @@ public class VItem extends VWidget {
         ((DartItem) impl).text = value;
     }
 
+    public static final String IMAGE = "image";
+
+    public static final String TEXT = "text";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "image":
+                Serializer.writeKeyValue(writer, "image", getImage());
+                return;
+            case "text":
+                Serializer.writeKeyValue(writer, "text", getText());
+                return;
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = Item.class)
     public static class ItemJson implements Configuration {
 

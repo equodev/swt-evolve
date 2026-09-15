@@ -190,22 +190,25 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
       child: column,
     );
 
+    // SWT reads enablement down the parent chain - `isEnabled()` is this control's own flag and
+    // every ancestor's - so a disabled folder disables the pages it holds. This build does not go
+    // through `wrap()`, so it owes them that answer itself.
     if (constraints != null) {
-      return tagSemantics(ParentForegroundScope(
+      return tagSemantics(blockWhenDisabled(ParentForegroundScope(
         foreground: state.foreground,
         font: state.font,
         selectionForeground: state.selectionForeground,
         child: ConstrainedBox(constraints: constraints, child: framed),
-      ));
+      )));
     }
 
     // The tabs letter and colour in the folder's own font/foreground when they carry none.
-    return tagSemantics(ParentForegroundScope(
+    return tagSemantics(blockWhenDisabled(ParentForegroundScope(
       foreground: state.foreground,
       font: state.font,
       selectionForeground: state.selectionForeground,
       child: framed,
-    ));
+    )));
   }
 
   void _handleTabSelection(int index) {
@@ -793,7 +796,12 @@ class _CTabBarState extends State<_CTabBar> {
           : BorderSide.none,
     );
 
-    return Semantics(identifier: '${tab.vItem.swt}/${tab.vItem.id}', child: MouseRegion(
+    // The tab body gets a semantics node of its own, so the tab's node has a child - and
+    // therefore a settled role - from the first frame. A tappable node with no children is a
+    // button to Flutter Web, and it turns into a plain container once children turn up; the
+    // engine answers that role change by rebuilding the node's DOM element and writing back only
+    // the properties that changed with it, silently dropping the identifier the tab is found by.
+    return Semantics(identifier: '${tab.vItem.swt}/${tab.vItem.id}', child: Semantics(container: true, child: MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       onEnter: (_) => onHoverEnter(),
       onExit: (_) => onHoverExit(),
@@ -849,7 +857,7 @@ class _CTabBarState extends State<_CTabBar> {
           ),
         ),
       ),
-    ));
+    )));
   }
 
   Widget _buildAdvancedTab({
@@ -977,7 +985,12 @@ class _CTabBarState extends State<_CTabBar> {
           : BorderSide.none,
     );
 
-    return Semantics(identifier: '${tab.vItem.swt}/${tab.vItem.id}', child: MouseRegion(
+    // The tab body gets a semantics node of its own, so the tab's node has a child - and
+    // therefore a settled role - from the first frame. A tappable node with no children is a
+    // button to Flutter Web, and it turns into a plain container once children turn up; the
+    // engine answers that role change by rebuilding the node's DOM element and writing back only
+    // the properties that changed with it, silently dropping the identifier the tab is found by.
+    return Semantics(identifier: '${tab.vItem.swt}/${tab.vItem.id}', child: Semantics(container: true, child: MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       onEnter: (_) => onHoverEnter(),
       onExit: (_) => onHoverExit(),
@@ -1090,7 +1103,7 @@ class _CTabBarState extends State<_CTabBar> {
           ),
         ),
       ),
-    ));
+    )));
   }
 
   Widget _buildChevronButton(CTabFolderThemeExtension widgetTheme) {

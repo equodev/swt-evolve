@@ -9,8 +9,8 @@ part of 'ctabitem.dart';
 VCTabItem _$VCTabItemFromJson(Map<String, dynamic> json) => VCTabItem()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
-  ..seq = (json['seq'] as num?)?.toInt() ?? 0
-  ..style = (json['style'] as num).toInt()
+  ..seq = (json['_s'] as num?)?.toInt() ?? 0
+  ..style = (json['style'] as num?)?.toInt() ?? 0
   ..image = json['image'] == null
       ? null
       : VImage.fromJson(json['image'] as Map<String, dynamic>)
@@ -18,9 +18,6 @@ VCTabItem _$VCTabItemFromJson(Map<String, dynamic> json) => VCTabItem()
   ..control = json['control'] == null
       ? null
       : VControl.fromJson(json['control'] as Map<String, dynamic>)
-  ..disabledImage = json['disabledImage'] == null
-      ? null
-      : VImage.fromJson(json['disabledImage'] as Map<String, dynamic>)
   ..font = json['font'] == null
       ? null
       : VFont.fromJson(json['font'] as Map<String, dynamic>)
@@ -31,7 +28,6 @@ VCTabItem _$VCTabItemFromJson(Map<String, dynamic> json) => VCTabItem()
       ? null
       : VColor.fromJson(json['selectionForeground'] as Map<String, dynamic>)
   ..showClose = json['showClose'] as bool?
-  ..showDirty = json['showDirty'] as bool?
   ..showing = json['showing'] as bool?
   ..toolTipText = json['toolTipText'] as String?;
 
@@ -42,12 +38,10 @@ Map<String, dynamic> _$VCTabItemToJson(VCTabItem instance) => <String, dynamic>{
   'image': ?instance.image,
   'text': ?instance.text,
   'control': ?instance.control,
-  'disabledImage': ?instance.disabledImage,
   'font': ?instance.font,
   'foreground': ?instance.foreground,
   'selectionForeground': ?instance.selectionForeground,
   'showClose': ?instance.showClose,
-  'showDirty': ?instance.showDirty,
   'showing': ?instance.showing,
   'toolTipText': ?instance.toolTipText,
 };

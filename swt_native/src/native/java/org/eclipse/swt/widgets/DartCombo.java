@@ -166,7 +166,7 @@ public class DartCombo extends DartComposite implements ICombo {
             error(SWT.ERROR_NULL_ARGUMENT);
         if (index < 0 || index > items.length)
             error(SWT.ERROR_INVALID_RANGE);
-        dirty();
+        getValue().markDirty(VCombo.ITEMS);
         String[] newItems = new String[items.length + 1];
         System.arraycopy(items, 0, newItems, 0, index);
         newItems[index] = string;
@@ -957,7 +957,7 @@ public class DartCombo extends DartComposite implements ICombo {
         int count = getItemCount();
         if (0 > index || index >= count)
             error(SWT.ERROR_INVALID_RANGE);
-        dirty();
+        getValue().markDirty(VCombo.ITEMS);
         String[] newItems = new String[items.length - 1];
         System.arraycopy(items, 0, newItems, 0, index);
         System.arraycopy(items, index + 1, newItems, index, items.length - index - 1);
@@ -1046,7 +1046,7 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public void removeAll() {
         checkWidget();
-        dirty();
+        getValue().markDirty(VCombo.ITEMS);
         items = new String[0];
         selectedIndex = -1;
         ignoreSelection = true;
@@ -1183,7 +1183,6 @@ public class DartCombo extends DartComposite implements ICombo {
         if (0 <= index && index < count) {
             if (index == getSelectionIndex())
                 return;
-            dirty();
             selectedIndex = index;
             ignoreSelection = true;
             if ((getApi().style & SWT.READ_ONLY) != 0) {
@@ -1237,8 +1236,9 @@ public class DartCombo extends DartComposite implements ICombo {
         int count = getItemCount();
         if (0 > index || index >= count)
             error(SWT.ERROR_INVALID_RANGE);
-        dirty();
+        getValue().markDirty(VCombo.ITEMS);
         items[index] = string;
+        getValue().markDirty(VCombo.ITEMS);
         int selection = getSelectionIndex();
         ignoreSelection = true;
         if ((getApi().style & SWT.READ_ONLY) != 0) {
@@ -1264,7 +1264,7 @@ public class DartCombo extends DartComposite implements ICombo {
      * </ul>
      */
     public void setItems(String... items) {
-        dirty();
+        getValue().markDirty(VCombo.ITEMS);
         String[] newValue = items;
         checkWidget();
         if (items == null)
@@ -1307,7 +1307,7 @@ public class DartCombo extends DartComposite implements ICombo {
     public void setListVisible(boolean visible) {
         checkWidget();
         if (!java.util.Objects.equals(this.listVisible, visible)) {
-            dirty();
+            getValue().markDirty(VCombo.LIST_VISIBLE);
         }
         if ((getApi().style & SWT.READ_ONLY) != 0) {
         } else {
@@ -1329,7 +1329,6 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     @Override
     public void setOrientation(int orientation) {
-        dirty();
         checkWidget();
     }
 
@@ -1364,7 +1363,6 @@ public class DartCombo extends DartComposite implements ICombo {
         end = Math.min(Math.max(end, 0), length);
         Point newValue = new Point(start, end);
         if (!java.util.Objects.equals(this.selection, newValue)) {
-            dirty();
         }
         this.selection = newValue;
         if ((getApi().style & SWT.READ_ONLY) == 0) {
@@ -1414,7 +1412,7 @@ public class DartCombo extends DartComposite implements ICombo {
             }
         }
         if (!java.util.Objects.equals(this.text, string)) {
-            dirty();
+            getValue().markDirty(VCombo.TEXT);
         }
         if ((getApi().style & SWT.READ_ONLY) != 0) {
             int index = indexOf(string);
@@ -1452,9 +1450,6 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public void setTextLimit(int limit) {
         checkWidget();
-        if (!java.util.Objects.equals(this.textLimit, limit)) {
-            dirty();
-        }
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
         textLimit = limit;
@@ -1479,9 +1474,6 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public void setVisibleItemCount(int count) {
         int newValue = count;
-        if (!java.util.Objects.equals(this.visibleItemCount, newValue)) {
-            dirty();
-        }
         checkWidget();
         if (count < 0)
             return;
@@ -1591,7 +1583,7 @@ public class DartCombo extends DartComposite implements ICombo {
                     int idx = indexOf(e.text);
                     if (idx >= 0 && idx != selectedIndex) {
                         selectedIndex = idx;
-                        dirty();
+                        getValue().markDirty(VCombo.TEXT);
                     }
                 }
                 sendEvent(SWT.Modify);

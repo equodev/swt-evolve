@@ -481,7 +481,7 @@ public class DartTableColumn extends DartItem implements ITableColumn {
      * </ul>
      */
     public void setAlignment(int alignment) {
-        dirty();
+        getValue().markDirty(VTableColumn.ALIGNMENT);
         checkWidget();
         if ((alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) == 0)
             return;
@@ -523,7 +523,7 @@ public class DartTableColumn extends DartItem implements ITableColumn {
     public void setResizable(boolean resizable) {
         boolean newValue = resizable;
         if (!java.util.Objects.equals(this.resizable, newValue)) {
-            dirty();
+            getValue().markDirty(VTableColumn.RESIZABLE);
         }
         checkWidget();
         this.resizable = newValue;
@@ -552,9 +552,6 @@ public class DartTableColumn extends DartItem implements ITableColumn {
      */
     public void setMoveable(boolean moveable) {
         boolean newValue = moveable;
-        if (!java.util.Objects.equals(this.moveable, newValue)) {
-            dirty();
-        }
         checkWidget();
         this.moveable = newValue;
     }
@@ -607,9 +604,6 @@ public class DartTableColumn extends DartItem implements ITableColumn {
      */
     public void setToolTipText(String string) {
         checkWidget();
-        if (!java.util.Objects.equals(this.toolTipText, string)) {
-            dirty();
-        }
         toolTipText = string;
         setToolTipText(buttonHandle, string);
     }
@@ -627,7 +621,7 @@ public class DartTableColumn extends DartItem implements ITableColumn {
     public void setWidth(int width) {
         checkWidget();
         if (!java.util.Objects.equals(this.lastWidth, width)) {
-            dirty();
+            getValue().markDirty(VTableColumn.WIDTH);
         }
         if (width < 0)
             return;

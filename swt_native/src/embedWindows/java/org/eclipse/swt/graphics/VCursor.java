@@ -24,7 +24,7 @@ public class VCursor extends VResource {
         ((DartCursor) impl).cursorStyle = value;
     }
 
-    @JsonAttribute(nullable = true)
+    @JsonAttribute(ignore = true)
     public Image getImage() {
         Image val = ((DartCursor) impl).image;
         if (val != null && !(val.getImpl() instanceof DartImage))
@@ -34,6 +34,18 @@ public class VCursor extends VResource {
 
     public void setImage(Image value) {
         ((DartCursor) impl).image = value;
+    }
+
+    public static final String CURSOR_STYLE = "cursorStyle";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "cursorStyle":
+                Serializer.writeKeyValue(writer, "cursorStyle", getCursorStyle());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = Cursor.class)

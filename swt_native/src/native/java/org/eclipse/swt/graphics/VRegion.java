@@ -23,6 +23,18 @@ public class VRegion extends VResource {
     public void setRects(int[] value) {
     }
 
+    public static final String RECTS = "rects";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "rects":
+                Serializer.writeKeyValue(writer, "rects", getRects());
+                return;
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = Region.class)
     public static class RegionJson implements Configuration {
 

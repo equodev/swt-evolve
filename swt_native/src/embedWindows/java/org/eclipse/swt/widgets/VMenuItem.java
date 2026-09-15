@@ -17,7 +17,7 @@ public class VMenuItem extends VItem {
         super(impl);
     }
 
-    @JsonAttribute(name = "ID")
+    @JsonAttribute(ignore = true)
     public int getID() {
         return ((DartMenuItem) impl).getID();
     }
@@ -41,13 +41,6 @@ public class VMenuItem extends VItem {
 
     public void setEnabled(boolean value) {
         ((DartMenuItem) impl).enabled = value;
-    }
-
-    public Boolean getEnabledEffective() {
-        return ((DartMenuItem) impl).isEnabled();
-    }
-
-    public void setEnabledEffective(Boolean value) {
     }
 
     public Menu getMenu() {
@@ -75,6 +68,38 @@ public class VMenuItem extends VItem {
 
     public void setToolTipText(String value) {
         ((DartMenuItem) impl).toolTipText = value;
+    }
+
+    public static final String ACCELERATOR = "accelerator";
+
+    public static final String ENABLED = "enabled";
+
+    public static final String MENU = "menu";
+
+    public static final String SELECTION = "selection";
+
+    public static final String TOOL_TIP_TEXT = "toolTipText";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "accelerator":
+                Serializer.writeKeyValue(writer, "accelerator", getAccelerator());
+                return;
+            case "enabled":
+                Serializer.writeKeyValue(writer, "enabled", getEnabled());
+                return;
+            case "menu":
+                Serializer.writeKeyValue(writer, "menu", getMenu());
+                return;
+            case "selection":
+                Serializer.writeKeyValue(writer, "selection", getSelection());
+                return;
+            case "toolTipText":
+                Serializer.writeKeyValue(writer, "toolTipText", getToolTipText());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = MenuItem.class)

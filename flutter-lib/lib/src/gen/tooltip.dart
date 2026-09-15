@@ -31,13 +31,41 @@ class VToolTip extends VWidget {
     swt = "ToolTip";
   }
 
-  bool? autoHide;
   VPoint? location;
   String? message;
   String? text;
   bool? visible;
 
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VToolTip) {
+      location = other.location;
+      message = other.message;
+      text = other.text;
+      visible = other.visible;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'location':
+        location = json['location'] == null
+            ? null
+            : VPoint.fromJson(json['location'] as Map<String, dynamic>);
+      case 'message':
+        message = json['message'] as String?;
+      case 'text':
+        text = json['text'] as String?;
+      case 'visible':
+        visible = json['visible'] as bool?;
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
   factory VToolTip.fromJson(Map<String, dynamic> json) =>
-      _$VToolTipFromJson(json);
+      _$VToolTipFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VToolTipToJson(this);
 }

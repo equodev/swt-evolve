@@ -60,6 +60,7 @@ public class VScrolledComposite extends VComposite {
         ((DartScrolledComposite) impl).minHeight = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getMinSize() {
         return ((DartScrolledComposite) impl).minWidth;
     }
@@ -76,6 +77,7 @@ public class VScrolledComposite extends VComposite {
         ((DartScrolledComposite) impl).minWidth = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Point getOrigin() {
         return ((DartScrolledComposite) impl).getOrigin();
     }
@@ -84,12 +86,50 @@ public class VScrolledComposite extends VComposite {
         ((DartScrolledComposite) impl).origin = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getShowFocusedControl() {
         return ((DartScrolledComposite) impl).getShowFocusedControl();
     }
 
     public void setShowFocusedControl(boolean value) {
         ((DartScrolledComposite) impl).showFocusedControl = value;
+    }
+
+    public static final String ALWAYS_SHOW_SCROLL_BARS = "alwaysShowScrollBars";
+
+    public static final String CONTENT = "content";
+
+    public static final String EXPAND_HORIZONTAL = "expandHorizontal";
+
+    public static final String EXPAND_VERTICAL = "expandVertical";
+
+    public static final String MIN_HEIGHT = "minHeight";
+
+    public static final String MIN_WIDTH = "minWidth";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "alwaysShowScrollBars":
+                Serializer.writeKeyValue(writer, "alwaysShowScrollBars", getAlwaysShowScrollBars());
+                return;
+            case "content":
+                Serializer.writeKeyValue(writer, "content", getContent());
+                return;
+            case "expandHorizontal":
+                Serializer.writeKeyValue(writer, "expandHorizontal", getExpandHorizontal());
+                return;
+            case "expandVertical":
+                Serializer.writeKeyValue(writer, "expandVertical", getExpandVertical());
+                return;
+            case "minHeight":
+                Serializer.writeKeyValue(writer, "minHeight", getMinHeight());
+                return;
+            case "minWidth":
+                Serializer.writeKeyValue(writer, "minWidth", getMinWidth());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = ScrolledComposite.class)

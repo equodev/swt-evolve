@@ -87,7 +87,6 @@ void main() {
       // onChanged -> onTextChanged; that is the per-keystroke Modify path the guard covers.
       ..style = SWT.SIMPLE
       ..enabled = true
-      ..editable = true
       ..items = const []
       ..text = text
       ..bounds = _bounds(200, 40);

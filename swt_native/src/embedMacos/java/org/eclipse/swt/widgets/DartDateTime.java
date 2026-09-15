@@ -493,7 +493,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
     public void setDay(int day) {
         int newValue = day;
         if (!java.util.Objects.equals(this.day, newValue)) {
-            dirty();
+            getValue().markDirty(VDateTime.DAY);
         }
         checkWidget();
         this.day = newValue;
@@ -525,7 +525,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
     public void setHours(int hours) {
         int newValue = hours;
         if (!java.util.Objects.equals(this.hours, newValue)) {
-            dirty();
+            getValue().markDirty(VDateTime.HOURS);
         }
         checkWidget();
         if (hours < 0 || hours > 23)
@@ -549,7 +549,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
     public void setMinutes(int minutes) {
         int newValue = minutes;
         if (!java.util.Objects.equals(this.minutes, newValue)) {
-            dirty();
+            getValue().markDirty(VDateTime.MINUTES);
         }
         checkWidget();
         if (minutes < 0 || minutes > 59)
@@ -576,7 +576,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
     public void setMonth(int month) {
         int newValue = month;
         if (!java.util.Objects.equals(this.month, newValue)) {
-            dirty();
+            getValue().markDirty(VDateTime.MONTH);
         }
         checkWidget();
         this.month = newValue;
@@ -598,7 +598,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
     public void setSeconds(int seconds) {
         int newValue = seconds;
         if (!java.util.Objects.equals(this.seconds, newValue)) {
-            dirty();
+            getValue().markDirty(VDateTime.SECONDS);
         }
         checkWidget();
         if (seconds < 0 || seconds > 59)
@@ -649,7 +649,7 @@ public class DartDateTime extends DartComposite implements IDateTime {
     public void setYear(int year) {
         int newValue = year;
         if (!java.util.Objects.equals(this.year, newValue)) {
-            dirty();
+            getValue().markDirty(VDateTime.YEAR);
         }
         checkWidget();
         if (year < MIN_YEAR || year > MAX_YEAR)

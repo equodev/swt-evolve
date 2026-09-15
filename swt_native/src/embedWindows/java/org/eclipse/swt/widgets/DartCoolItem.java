@@ -299,7 +299,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
     public void setControl(Control control) {
         checkWidget();
         if (!java.util.Objects.equals(this.control, control)) {
-            dirty();
+            getValue().markDirty(VCoolItem.CONTROL);
         }
         if (control != null) {
             if (control.isDisposed())
@@ -382,7 +382,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
     }
 
     void setPreferredSizeInPixels(int width, int height) {
-        dirty();
+        getValue().markDirty(VCoolItem.PREFERRED_SIZE);
         Point newValue = new Point(width, height);
         int index = parent.indexOf(this.getApi());
         if (index == -1)
@@ -476,7 +476,6 @@ public class DartCoolItem extends DartItem implements ICoolItem {
     }
 
     void setSizeInPixels(int width, int height) {
-        dirty();
         int index = parent.indexOf(this.getApi());
         if (index == -1)
             return;
@@ -574,7 +573,6 @@ public class DartCoolItem extends DartItem implements ICoolItem {
     }
 
     void setMinimumSizeInPixels(int width, int height) {
-        dirty();
         Point newValue = new Point(width, height);
         int index = parent.indexOf(this.getApi());
         if (index == -1)

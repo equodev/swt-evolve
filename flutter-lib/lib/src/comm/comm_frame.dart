@@ -64,7 +64,7 @@ class UserEventCallback {
 /// frame, and implements [rawSend] to put bytes on the wire.
 abstract class EquoCommBase {
   final Map<String, UserEventCallback> _handlers = {};
-  final Map<String, dynamic> _pending = {};
+  final Map<String, List<dynamic>> _pending = {};
   final Map<String, FutureOr<void> Function(Uint8List)> _rawHandlers = {};
   final Map<String, Uint8List> _rawPending = {};
   final Map<String, bool Function(Uint8List)> _arrivalHandlers = {};
@@ -73,6 +73,12 @@ abstract class EquoCommBase {
   bool _everOpened = false;
   bool _reopenScheduled = false;
   int _reopenAttempt = 0;
+
+  /// Cap on frames held for one channel nothing is listening on yet. Reached only by a channel
+  /// that is written to repeatedly and never claimed, which a whole frame would have emptied - so
+  /// the run is dropped rather than trimmed: half a run of partial frames is not applicable, and
+  /// the far side answers a widget it cannot place by asking for it again.
+  static const int maxPendingPerChannel = 64;
 
   /// Cap on frames buffered while the socket is down. An outage lasts as long as the
   /// other end is away while the UI keeps producing frames, so an uncapped buffer grows
@@ -212,7 +218,7 @@ abstract class EquoCommBase {
     // Neither on() nor onBytes() has registered yet for this actionId (or the body isn't valid
     // JSON, meaning it's a raw-bytes payload). Buffer both ways so whichever registers first
     // can claim it.
-    if (jsonOk) _pending[actionId] = payload;
+    if (jsonOk) _hold(actionId, payload);
     _rawPending[actionId] = body ?? Uint8List(0);
     return null;
   }
@@ -223,11 +229,33 @@ abstract class EquoCommBase {
       final name = entry[0] as String;
       final delivered = _deliverDecoded(name, entry[1]);
       if (delivered == null) {
-        _pending[name] = entry[1];
+        _hold(name, entry[1]);
       } else {
         await delivered;
       }
     }
+  }
+
+  /// Keeps a frame for a channel nothing is listening on yet, to be replayed when something is.
+  ///
+  /// A run, not a slot. Frames on one channel are a sequence: a widget arrives whole and is then
+  /// described by what changed since, and a change is meaningless without the state it was computed
+  /// from. Keeping only the newest frame drops the whole widget and replays the change alone, which
+  /// the far side can only answer by asking for the widget all over again.
+  ///
+  /// A whole frame does not replace the run either. What it does not carry is the widgets nested in
+  /// the frames before it: the sender counts those delivered by writing them once, and from then on
+  /// names them rather than describing them, so dropping the earlier frames loses the only
+  /// description they will ever get. Every frame is dated and the gate refuses the ones that
+  /// describe the past, so replaying the run in order costs a little work and settles on the same
+  /// state.
+  void _hold(String actionId, dynamic payload) {
+    final run = _pending.putIfAbsent(actionId, () => []);
+    if (run.length >= maxPendingPerChannel) {
+      run.clear();
+      return;
+    }
+    run.add(payload);
   }
 
   /// Channel a fused run of frames arrives on.
@@ -311,21 +339,13 @@ abstract class EquoCommBase {
       args: args,
       token: token,
     );
-    final pending = _pending.remove(actionId);
-    if (pending != null) {
-      if (_isWidgetStateChannel(actionId)) {
-        // A widget-state payload buffered while the widget was unmounted is
-        // ambiguous: it may be older than the state the widget just mounted
-        // with (a stale pre-reveal snapshot — replaying it blanked the whole
-        // subtree) or newer (a dialog Shell's content sent right after
-        // the Display embed that mounted it — dropping it left the dialog
-        // empty). Instead of guessing, ask Java to re-serialize the widget:
-        // the response carries the live state and arrives after the mount, so
-        // it is authoritative either way.
-        send(widgetRefreshChannel, actionId.substring(actionId.indexOf('/') + 1));
-      } else {
-        _deliver(actionId, onSuccess, pending);
-      }
+    // Replayed in arrival order. Whether a buffered payload is older or newer than what the widget
+    // holds is not something this layer can tell - and does not have to: every frame is dated, and
+    // the delivery gate refuses one that describes the widget as it used to be. Asking Java to
+    // re-serialize instead, which this did while that could not be told apart, was a round trip for
+    // every widget described before it was mounted.
+    for (final pending in _pending.remove(actionId) ?? const []) {
+      _deliver(actionId, onSuccess, pending);
     }
     return token;
   }
@@ -334,21 +354,6 @@ abstract class EquoCommBase {
   /// FlutterBridge.handleWidgetRefresh).
   static const widgetRefreshChannel = 'swt.evolve.widget.refresh';
 
-  /// A per-widget state channel: `{SwtClass}/{id}` with a numeric id, e.g.
-  /// "Table/123" or "Shell/9". Excludes `Display/*` (a Display is not in
-  /// Java's widget registry and its single pre-subscribe payload is always the
-  /// newest, so the plain replay stays correct) and multi-segment event
-  /// channels like "Button/1/Selection".
-  static bool _isWidgetStateChannel(String actionId) {
-    final slash = actionId.indexOf('/');
-    if (slash <= 0 || actionId.startsWith('Display/')) return false;
-    final id = actionId.substring(slash + 1);
-    if (id.isEmpty) return false;
-    for (final c in id.codeUnits) {
-      if (c < 0x30 || c > 0x39) return false;
-    }
-    return true;
-  }
 
   /// Typed handler: decodes the payload into the widget value object before delivery.
   Object onWidget<V extends VWidget>(String actionId, CommCallback<V> onSuccess) {

@@ -28,12 +28,17 @@ class MenuItemSerializeTest extends SerializeTestBase {
                .containsEntry("swt", "MenuItem")
                .containsEntry("toolTipText", json(w.getToolTipText()))
                .containsEntry("style", w.getStyle());
-        assertJ.satisfies(node("ID").equalsTo(w.getID(), orAbsentIf0));
         assertJ.satisfies(node("accelerator").equalsTo(w.getAccelerator(), orAbsentIf0));
         assertJ.satisfies(node("enabled").equalsTo(w.getEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
         assertJ.satisfies(node("selection").equalsTo(w.getSelection(), orAbsentIfFalse));
         assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
+    }
+
+    @Test
+    void should_name_every_change_MenuItem() {
+        MenuItem w = new MenuItem(menu(), SWT.NONE);
+        assertNamesEveryChange(w);
     }
 
     VMenuItem value(MenuItem w) {

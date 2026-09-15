@@ -188,6 +188,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
     void createWidget(int index) {
         super.createWidget(index);
         items = new TabItem[4];
+        getValue().markDirty(VTabFolder.ITEMS);
     }
 
     void createItem(TabItem item, int index) {
@@ -216,6 +217,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
             sendSelectionEvent(SWT.Selection, event, false);
             // the widget could be destroyed at this point
         }
+        getValue().markDirty(VTabFolder.ITEMS);
     }
 
     void destroyItem(TabItem item) {
@@ -230,6 +232,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
             error(SWT.ERROR_ITEM_NOT_REMOVED);
         System.arraycopy(items, index + 1, items, index, --itemCount - index);
         items[itemCount] = null;
+        getValue().markDirty(VTabFolder.ITEMS);
     }
 
     @Override
@@ -593,7 +596,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
      * </ul>
      */
     public void setSelection(int index) {
-        dirty();
+        getValue().markDirty(VTabFolder.SELECTION);
         checkWidget();
         if (!(0 <= index && index < getItemCount()))
             return;
@@ -606,7 +609,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
         } else {
             this.selection = new TabItem[] { items[index] };
         }
-        dirty();
+        getValue().markDirty(VTabFolder.SELECTION);
         if (index < 0)
             return;
     }

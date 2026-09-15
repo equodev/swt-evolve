@@ -18,6 +18,7 @@ public class VTracker extends VWidget {
         super(impl);
     }
 
+    @JsonAttribute(ignore = true)
     public Cursor getCursor() {
         Cursor val = ((DartTracker) impl).clientCursor;
         if (val != null && !(val.getImpl() instanceof DartCursor))
@@ -29,6 +30,7 @@ public class VTracker extends VWidget {
         ((DartTracker) impl).clientCursor = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Rectangle[] getRectangles() {
         Rectangle[] values = ((DartTracker) impl).rectangles;
         if (values == null)
@@ -43,12 +45,20 @@ public class VTracker extends VWidget {
         ((DartTracker) impl).rectangles = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getStippled() {
         return ((DartTracker) impl).getStippled();
     }
 
     public void setStippled(boolean value) {
         ((DartTracker) impl).stippled = value;
+    }
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = Tracker.class)

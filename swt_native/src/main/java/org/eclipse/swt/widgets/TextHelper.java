@@ -322,13 +322,23 @@ public class TextHelper {
 
     public static void setEditText(DartText text, char[] chars) {
         int length = Math.min(chars.length, text.textLimit);
+        char[] hidden = null;
         if ((text.getApi().style & SWT.PASSWORD) == 0 && text.echoCharacter != '\0') {
-            text.hiddenText = new char[length];
-            System.arraycopy(chars, 0, text.hiddenText, 0, length);
-        } else {
-            text.hiddenText = null;
+            hidden = new char[length];
+            System.arraycopy(chars, 0, hidden, 0, length);
         }
-        text.text = new String(chars, 0, length);
+        String updated = new String(chars, 0, length);
+        // Recorded, because this is written straight to the field rather than through the setter
+        // that would do it. An update names what changed, so a change nothing records is a change
+        // the client is never told about: the content it shows stays whatever it last heard, which
+        // here is the text from before this edit.
+        //
+        // hiddenText is kept for the Java side to read but is not recorded: it does not travel, the
+        // far side masking the real text with the echo character it already has.
+        if (!java.util.Objects.equals(text.text, updated))
+            text.getValue().markDirty(VText.TEXT);
+        text.hiddenText = hidden;
+        text.text = updated;
     }
 
     private static char[] withCrLf(char[] string) {

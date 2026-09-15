@@ -27,9 +27,12 @@ class CaretSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Caret")
                .containsEntry("style", w.getStyle());
-        assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
-        assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
-        assertJ.satisfies(node("visible").equalsTo(w.getVisible(), orAbsentIfFalse));
+    }
+
+    @Test
+    void should_name_every_change_Caret() {
+        Caret w = new Caret(canvas(), SWT.NONE);
+        assertNamesEveryChange(w);
     }
 
     VCaret value(Caret w) {

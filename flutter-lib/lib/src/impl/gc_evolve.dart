@@ -12,6 +12,19 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   late GCDrawer _drawer;
   List<Shape> _snapshot = [];
 
+  // Guards against overlapping Paint request/response round-trips for the same
+  // Canvas (e.g. a Shell fade animation and a hover-driven redraw both asking to
+  // repaint close together): shapes.clear()+addAll() on gcDispose isn't safe if a
+  // second request's ops are still arriving when the first one commits.
+  bool _awaitingDispose = false;
+  bool get hasPendingPaint => _awaitingDispose;
+  void markPaintRequested() => _awaitingDispose = true;
+
+  // Set when a VGC arrives on this GC's own channel. Until then the widget's value is the
+  // placeholder VGC its parent synthesizes on every build, so holding a value proves nothing
+  // about Java having drawn through this GC.
+  bool _stateDelivered = false;
+
   @override
   void initState() {
     super.initState();
@@ -70,6 +83,12 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   @override
+  void setValue(V value) {
+    _stateDelivered = true;
+    super.setValue(value);
+  }
+
+  @override
   void extraSetState() {
     super.extraSetState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -88,12 +107,21 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     });
   }
 
+  /// Attaches this GC to the parent that owns it: hands the drawer the parent's paint boundary
+  /// and, once the GC has something to show, promotes the overlay from Offstage.
+  ///
+  /// Readiness is a property of the GC, not of the parent's build count: extraSetState also runs
+  /// from didUpdateWidget, so any rebuild of the parent reaches here carrying the parent's
+  /// placeholder VGC. Promoting on that would make a control that was merely updated render a
+  /// different structure than the same control freshly mounted with the same state.
   void _notifyParentGCReady() {
+    final bool ready =
+        _stateDelivered || _drawer.shapes.isNotEmpty || _snapshot.isNotEmpty;
     context.visitAncestorElements((element) {
       if (element is StatefulElement && element.state is WidgetSwtState) {
         final parentState = element.state as WidgetSwtState;
         if (parentState.gcOverlayKey == widget.key) {
-          parentState.notifyGCReady(state as VGC);
+          if (ready) parentState.notifyGCReady(state as VGC);
           _drawer.widgetBoundaryKey = parentState.widgetBoundaryKey;
           return false;
         }

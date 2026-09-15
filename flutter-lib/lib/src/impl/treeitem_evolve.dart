@@ -745,6 +745,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         margin: EdgeInsets.only(right: theme.checkboxSpacing),
         child: _CheckboxButtonWrapper(
           key: ValueKey('checkbox_${state.id}_$checked'),
+          ownerId: state.id,
           checked: checked,
           grayed: grayed,
           enabled: enabled,
@@ -1129,6 +1130,12 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 }
 
 class _CheckboxButtonWrapper extends StatefulWidget {
+  /// The id of the item this checkbox belongs to.
+  ///
+  /// A synthesized value still needs an identity: state is held per widget, keyed by swt and id, so
+  /// every checkbox built with the same placeholder id resolved to one shared object and every row
+  /// rendered whichever one mounted first.
+  final int ownerId;
   final bool checked;
   final bool grayed;
   final bool enabled;
@@ -1136,6 +1143,7 @@ class _CheckboxButtonWrapper extends StatefulWidget {
 
   const _CheckboxButtonWrapper({
     Key? key,
+    required this.ownerId,
     required this.checked,
     required this.grayed,
     required this.enabled,
@@ -1153,7 +1161,7 @@ class _CheckboxButtonWrapperState extends State<_CheckboxButtonWrapper> {
   void initState() {
     super.initState();
     buttonValue = VButton.empty()
-      ..id = -1
+      ..id = widget.ownerId
       ..style = SWT.CHECK
       ..enabled = widget.enabled
       ..selection = widget.checked

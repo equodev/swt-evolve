@@ -1,5 +1,4 @@
 import 'package:json_annotation/json_annotation.dart';
-import '../gen/color.dart';
 import '../gen/imagedata.dart';
 
 part 'image.g.dart';
@@ -9,7 +8,6 @@ class VImage {
   VImage() : this.empty();
   VImage.empty();
 
-  VColor? background;
   String? filename;
   int? height;
   VImageData? imageData;

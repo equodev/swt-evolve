@@ -61,6 +61,43 @@ public class VPattern extends VResource {
         ((DartPattern) impl).startY = value;
     }
 
+    public static final String COLOR1 = "color1";
+
+    public static final String COLOR2 = "color2";
+
+    public static final String END_X = "endX";
+
+    public static final String END_Y = "endY";
+
+    public static final String START_X = "startX";
+
+    public static final String START_Y = "startY";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "color1":
+                Serializer.writeKeyValue(writer, "color1", getColor1());
+                return;
+            case "color2":
+                Serializer.writeKeyValue(writer, "color2", getColor2());
+                return;
+            case "endX":
+                Serializer.writeKeyValue(writer, "endX", getEndX());
+                return;
+            case "endY":
+                Serializer.writeKeyValue(writer, "endY", getEndY());
+                return;
+            case "startX":
+                Serializer.writeKeyValue(writer, "startX", getStartX());
+                return;
+            case "startY":
+                Serializer.writeKeyValue(writer, "startY", getStartY());
+                return;
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = Pattern.class)
     public static class PatternJson implements Configuration {
 

@@ -26,13 +26,17 @@ class TableColumnSerializeTest extends SerializeTestBase {
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "TableColumn")
-               .containsEntry("toolTipText", json(w.getToolTipText()))
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("alignment").equalsTo(w.getAlignment(), orAbsentIf0));
-        assertJ.satisfies(node("moveable").equalsTo(w.getMoveable(), orAbsentIfFalse));
         assertJ.satisfies(node("resizable").equalsTo(w.getResizable(), orAbsentIfFalse));
         assertJ.satisfies(node("width").equalsTo(w.getWidth(), orAbsentIf0));
         assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
+    }
+
+    @Test
+    void should_name_every_change_TableColumn() {
+        TableColumn w = new TableColumn(table(), SWT.NONE);
+        assertNamesEveryChange(w);
     }
 
     VTableColumn value(TableColumn w) {

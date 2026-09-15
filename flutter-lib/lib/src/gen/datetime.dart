@@ -11,6 +11,7 @@ import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
+import '../gen/widget.dart';
 import '../impl/datetime_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
@@ -46,7 +47,40 @@ class VDateTime extends VComposite {
   int? seconds;
   int? year;
 
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VDateTime) {
+      day = other.day;
+      hours = other.hours;
+      minutes = other.minutes;
+      month = other.month;
+      seconds = other.seconds;
+      year = other.year;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'day':
+        day = (json['day'] as num?)?.toInt();
+      case 'hours':
+        hours = (json['hours'] as num?)?.toInt();
+      case 'minutes':
+        minutes = (json['minutes'] as num?)?.toInt();
+      case 'month':
+        month = (json['month'] as num?)?.toInt();
+      case 'seconds':
+        seconds = (json['seconds'] as num?)?.toInt();
+      case 'year':
+        year = (json['year'] as num?)?.toInt();
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
   factory VDateTime.fromJson(Map<String, dynamic> json) =>
-      _$VDateTimeFromJson(json);
+      _$VDateTimeFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VDateTimeToJson(this);
 }

@@ -784,7 +784,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     void enableWidget(boolean enabled) {
         updateCursorRects(isEnabled());
-        FlutterBridge.update();
     }
 
     boolean equals(double[] color1, double[] color2) {
@@ -2460,7 +2459,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public boolean setAutoscalingMode(AutoscalingMode autoscalingMode) {
         AutoscalingMode newValue = autoscalingMode;
         if (!java.util.Objects.equals(this.autoscalingMode, newValue)) {
-            dirty();
         }
         this.autoscalingMode = newValue;
         return false;
@@ -2509,7 +2507,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
         if (!java.util.Objects.equals(this._background, newValue)) {
-            dirty();
+            getValue().markDirty(VControl.BACKGROUND);
             ControlHelper.markDamaged(this);
         }
         if (color != null) {
@@ -2551,7 +2549,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         image = GraphicsUtils.copyImage(getDisplay(), image);
         checkWidget();
         if (!java.util.Objects.equals(this.backgroundImage, image)) {
-            dirty();
+            getValue().markDirty(VControl.BACKGROUND_IMAGE);
             ControlHelper.markDamaged(this);
         }
         if (image != null && image.isDisposed())
@@ -2602,7 +2600,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         Rectangle newValue = new Rectangle(finalX, finalY, finalWidth, finalHeight);
         boolean boundsChanged = !this.bounds.equals(newValue);
         if (boundsChanged)
-            dirty();
+            getValue().markDirty(VControl.BOUNDS);
         /*
 	* Bug in Cocoa. On Mac 10.8, a text control loses and gains focus
 	* when its bounds changes.  The fix is to ignore these events.
@@ -2622,8 +2620,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             resized();
             ControlHelper.markDamaged(this);
         }
-        if (boundsChanged && parent != null && parent.getImpl() instanceof DartWidget pw)
-            pw.dirty();
         ((DartDisplay) display.getImpl()).ignoreFocusControl = oldIgnoreFocusControl;
         ;
     }
@@ -2673,9 +2669,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setCapture(boolean capture) {
         boolean newValue = capture;
-        if (!java.util.Objects.equals(this.capture, newValue)) {
-            dirty();
-        }
         this.capture = newValue;
         checkWidget();
     }
@@ -2702,7 +2695,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setCursor(Cursor cursor) {
         checkWidget();
         if (!java.util.Objects.equals(this.cursor, cursor)) {
-            dirty();
+            getValue().markDirty(VControl.CURSOR);
         }
         if (cursor != null && cursor.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -2735,9 +2728,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setDragDetect(boolean dragDetect) {
         boolean newValue = dragDetect;
-        if (!java.util.Objects.equals(this.dragDetect, newValue)) {
-            dirty();
-        }
         checkWidget();
         this.dragDetect = newValue;
         if (dragDetect) {
@@ -2804,7 +2794,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         font = GraphicsUtils.copyFont(font);
         checkWidget();
         if (!java.util.Objects.equals(this.font, font)) {
-            dirty();
+            getValue().markDirty(VControl.FONT);
             ControlHelper.markDamaged(this);
         }
         if (font != null) {
@@ -2835,7 +2825,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
         if (!java.util.Objects.equals(this._foreground, newValue)) {
-            dirty();
+            getValue().markDirty(VControl.FOREGROUND);
             ControlHelper.markDamaged(this);
         }
         checkWidget();
@@ -2885,7 +2875,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setLocation(int x, int y) {
-        dirty();
         checkWidget();
         setBounds(x, y, 0, 0, true, false);
     }
@@ -2908,7 +2897,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setLocation(Point location) {
-        dirty();
         checkWidget();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -2943,7 +2931,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setMenu(Menu menu) {
         checkWidget();
         if (!java.util.Objects.equals(this.menu, menu)) {
-            dirty();
+            getValue().markDirty(VControl.MENU);
         }
         if (menu != null) {
             if (menu.isDisposed())
@@ -2982,7 +2970,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         getApi().style &= ~flags;
         getApi().style |= orientation & flags;
         this.orientation = orientation;
-        dirty();
+        getValue().markDirty(VWidget.STYLE);
     }
 
     /**
@@ -3049,9 +3037,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setRedraw(boolean redraw) {
         boolean newValue = redraw;
-        if (!java.util.Objects.equals(this.redraw, newValue)) {
-            dirty();
-        }
         checkWidget();
         this.redraw = newValue;
         if (redraw) {
@@ -3088,7 +3073,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setRegion(Region region) {
         checkWidget();
         if (!java.util.Objects.equals(this.region, region)) {
-            dirty();
+            getValue().markDirty(VControl.REGION);
             ControlHelper.markDamaged(this);
         }
         if (region != null && region.isDisposed())
@@ -3139,7 +3124,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setSize(int width, int height) {
-        dirty();
         checkWidget();
         setBounds(0, 0, Math.max(0, width), Math.max(0, height), false, true);
     }
@@ -3168,7 +3152,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      * </ul>
      */
     public void setSize(Point size) {
-        dirty();
         checkWidget();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -3214,9 +3197,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setTextDirection(int textDirection) {
         int newValue = textDirection;
-        if (!java.util.Objects.equals(this.textDirection, newValue)) {
-            dirty();
-        }
         this.textDirection = newValue;
         checkWidget();
         textDirection &= (SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT);
@@ -3256,7 +3236,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setToolTipText(String string) {
         checkWidget();
         if (!java.util.Objects.equals(this.toolTipText, string)) {
-            dirty();
+            getValue().markDirty(VControl.TOOL_TIP_TEXT);
         }
         if (!Objects.equals(string, toolTipText)) {
             toolTipText = string;
@@ -3283,9 +3263,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setTouchEnabled(boolean enabled) {
         checkWidget();
-        if (!java.util.Objects.equals(this.touchEnabled, enabled)) {
-            dirty();
-        }
         touchEnabled = enabled;
     }
 
@@ -3308,7 +3285,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setVisible(boolean visible) {
         boolean newValue = visible;
         if (!java.util.Objects.equals(getVisible(), newValue)) {
-            dirty();
+            getValue().markDirty(VControl.VISIBLE);
             if (parent != null && parent.getImpl() instanceof DartTable table)
                 table.dirty();
         }

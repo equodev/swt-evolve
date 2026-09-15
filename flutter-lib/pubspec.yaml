@@ -63,6 +63,9 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  # Resolved-AST scanning for tool/unused_value_properties.dart, which reports the generated
+  # value-class properties nothing on this side reads.
+  analyzer: ^7.7.1
   build_runner: ^2.3.3
   json_serializable: ^6.8.0
   theme_tailor: ^3.1.1

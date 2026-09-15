@@ -12,6 +12,7 @@ import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
+import '../gen/widget.dart';
 import '../impl/ctabfolder_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
@@ -69,13 +70,8 @@ class VCTabFolder extends VComposite {
     swt = "CTabFolder";
   }
 
-  bool? MRUVisible;
   bool? borderVisible;
   bool? chevronVisible;
-  bool? dirtyIndicatorStyle;
-  List<VColor>? gradientColors;
-  List<int>? gradientPercents;
-  bool? gradientVertical;
   bool? highlight;
   bool? highlightEnabled;
   List<VCTabItem>? items;
@@ -90,21 +86,125 @@ class VCTabFolder extends VComposite {
   int? selectionBarThickness;
   VImage? selectionBgImage;
   VColor? selectionForeground;
-  List<VColor>? selectionGradientColors;
-  List<int>? selectionGradientPercents;
-  bool? selectionGradientVertical;
   bool? showChevron;
   int? showListPopupSeq;
-  bool? simple;
   bool? single;
-  int? tabHeight;
   int? tabPosition;
   VControl? topRight;
   int? topRightAlignment;
   bool? unselectedCloseVisible;
   bool? unselectedImageVisible;
 
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VCTabFolder) {
+      borderVisible = other.borderVisible;
+      chevronVisible = other.chevronVisible;
+      highlight = other.highlight;
+      highlightEnabled = other.highlightEnabled;
+      items = other.items;
+      maximizeVisible = other.maximizeVisible;
+      maximized = other.maximized;
+      minimizeVisible = other.minimizeVisible;
+      minimized = other.minimized;
+      minimumCharacters = other.minimumCharacters;
+      selectedImageVisible = other.selectedImageVisible;
+      selection = other.selection;
+      selectionBackground = other.selectionBackground;
+      selectionBarThickness = other.selectionBarThickness;
+      selectionBgImage = other.selectionBgImage;
+      selectionForeground = other.selectionForeground;
+      showChevron = other.showChevron;
+      showListPopupSeq = other.showListPopupSeq;
+      single = other.single;
+      tabPosition = other.tabPosition;
+      topRight = other.topRight;
+      topRightAlignment = other.topRightAlignment;
+      unselectedCloseVisible = other.unselectedCloseVisible;
+      unselectedImageVisible = other.unselectedImageVisible;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'borderVisible':
+        borderVisible = json['borderVisible'] as bool?;
+      case 'chevronVisible':
+        chevronVisible = json['chevronVisible'] as bool?;
+      case 'highlight':
+        highlight = json['highlight'] as bool?;
+      case 'highlightEnabled':
+        highlightEnabled = json['highlightEnabled'] as bool?;
+      case 'items':
+        items = (json['items'] as List<dynamic>?)
+            ?.map((e) => VCTabItem.fromJson(e as Map<String, dynamic>))
+            .toList();
+      case 'maximizeVisible':
+        maximizeVisible = json['maximizeVisible'] as bool?;
+      case 'maximized':
+        maximized = json['maximized'] as bool?;
+      case 'minimizeVisible':
+        minimizeVisible = json['minimizeVisible'] as bool?;
+      case 'minimized':
+        minimized = json['minimized'] as bool?;
+      case 'minimumCharacters':
+        minimumCharacters = (json['minimumCharacters'] as num?)?.toInt();
+      case 'selectedImageVisible':
+        selectedImageVisible = json['selectedImageVisible'] as bool?;
+      case 'selection':
+        selection = (json['selection'] as num?)?.toInt();
+      case 'selectionBackground':
+        selectionBackground = json['selectionBackground'] == null
+            ? null
+            : VColor.fromJson(
+                json['selectionBackground'] as Map<String, dynamic>,
+              );
+      case 'selectionBarThickness':
+        selectionBarThickness = (json['selectionBarThickness'] as num?)
+            ?.toInt();
+      case 'selectionBgImage':
+        selectionBgImage = json['selectionBgImage'] == null
+            ? null
+            : VImage.fromJson(json['selectionBgImage'] as Map<String, dynamic>);
+      case 'selectionForeground':
+        selectionForeground = json['selectionForeground'] == null
+            ? null
+            : VColor.fromJson(
+                json['selectionForeground'] as Map<String, dynamic>,
+              );
+      case 'showChevron':
+        showChevron = json['showChevron'] as bool?;
+      case 'showListPopupSeq':
+        showListPopupSeq = (json['showListPopupSeq'] as num?)?.toInt();
+      case 'single':
+        single = json['single'] as bool?;
+      case 'tabPosition':
+        tabPosition = (json['tabPosition'] as num?)?.toInt();
+      case 'topRight':
+        topRight = json['topRight'] == null
+            ? null
+            : VControl.fromJson(json['topRight'] as Map<String, dynamic>);
+      case 'topRightAlignment':
+        topRightAlignment = (json['topRightAlignment'] as num?)?.toInt();
+      case 'unselectedCloseVisible':
+        unselectedCloseVisible = json['unselectedCloseVisible'] as bool?;
+      case 'unselectedImageVisible':
+        unselectedImageVisible = json['unselectedImageVisible'] as bool?;
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
+  @override
+  void adoptChildren(VWidget Function(VWidget) adopt) {
+    super.adoptChildren(adopt);
+    VWidget.adoptEach(items, adopt);
+    topRight = VWidget.adoptOne(topRight, adopt);
+  }
+
   factory VCTabFolder.fromJson(Map<String, dynamic> json) =>
-      _$VCTabFolderFromJson(json);
+      _$VCTabFolderFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VCTabFolderToJson(this);
 }

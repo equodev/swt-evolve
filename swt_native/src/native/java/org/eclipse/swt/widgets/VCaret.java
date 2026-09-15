@@ -16,6 +16,7 @@ public class VCaret extends VWidget {
         super(impl);
     }
 
+    @JsonAttribute(ignore = true)
     public Font getFont() {
         Font val = ((DartCaret) impl).font;
         if (val != null && !(val.getImpl() instanceof DartFont))
@@ -27,7 +28,7 @@ public class VCaret extends VWidget {
         ((DartCaret) impl).font = value;
     }
 
-    @JsonAttribute(nullable = true)
+    @JsonAttribute(ignore = true)
     public Image getImage() {
         Image val = ((DartCaret) impl).image;
         if (val != null && !(val.getImpl() instanceof DartImage))
@@ -39,12 +40,20 @@ public class VCaret extends VWidget {
         ((DartCaret) impl).image = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getVisible() {
         return ((DartCaret) impl).getVisible();
     }
 
     public void setVisible(boolean value) {
         ((DartCaret) impl).isVisible = value;
+    }
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = Caret.class)

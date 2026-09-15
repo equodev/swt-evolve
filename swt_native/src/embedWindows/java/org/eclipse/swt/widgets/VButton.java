@@ -79,6 +79,43 @@ public class VButton extends VControl {
         ((DartButton) impl).text = value;
     }
 
+    public static final String ALIGNMENT = "alignment";
+
+    public static final String GRAYED = "grayed";
+
+    public static final String IMAGE = "image";
+
+    public static final String PRIMARY = "primary";
+
+    public static final String SELECTION = "selection";
+
+    public static final String TEXT = "text";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "alignment":
+                Serializer.writeKeyValue(writer, "alignment", getAlignment());
+                return;
+            case "grayed":
+                Serializer.writeKeyValue(writer, "grayed", getGrayed());
+                return;
+            case "image":
+                Serializer.writeKeyValue(writer, "image", getImage());
+                return;
+            case "primary":
+                Serializer.writeKeyValue(writer, "primary", getPrimary());
+                return;
+            case "selection":
+                Serializer.writeKeyValue(writer, "selection", getSelection());
+                return;
+            case "text":
+                Serializer.writeKeyValue(writer, "text", getText());
+                return;
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = Button.class)
     public static class ButtonJson implements Configuration {
 

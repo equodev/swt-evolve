@@ -10,6 +10,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/custom/toolbar_composite.dart';
 import 'package:swtflutter/src/gen/composite.dart';
@@ -123,6 +124,10 @@ Future<void> _pumpShell(
   required DecorationsAlign align,
   required bool systemMenuBar,
 }) async {
+  // Each pump is a fresh app, so it must not inherit the widgets the last one registered: a value
+  // is held per widget id for as long as that widget exists, and pumping a second shell that reuses
+  // an id would otherwise be told it already knows that widget and keep the first one's bounds.
+  VRegistry.instance.clear();
   setConfigFlags(ConfigFlags()
     ..decorations_align = align
     ..system_menu_bar = systemMenuBar);

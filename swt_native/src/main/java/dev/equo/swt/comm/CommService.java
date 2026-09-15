@@ -26,6 +26,22 @@ public interface CommService {
 
     void remove(String eventName);
 
+    /**
+     * Identifies the client that will receive whatever is sent now.
+     *
+     * <p>Delivery is recorded against this rather than against the widget, because "already sent"
+     * is a fact about one client: a frame written before anyone connected, or written for another
+     * engine, tells this client nothing. A frame buffered while nobody is connected still counts
+     * for the client that drains it, so the id is stable across that wait and changes only when a
+     * different client takes over - which is what makes a reconnecting client be told everything
+     * again instead of being handed names it cannot resolve.
+     *
+     * <p>Transports that never serve more than one client can leave this at its default.
+     */
+    default int connectionId() {
+        return 1;
+    }
+
     int getPort();
 
     void stop();

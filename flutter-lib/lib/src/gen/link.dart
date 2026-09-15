@@ -9,6 +9,7 @@ import '../gen/image.dart';
 import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
+import '../gen/widget.dart';
 import '../impl/link_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
@@ -40,6 +41,30 @@ class VLink extends VControl {
   VColor? linkForeground;
   String? text;
 
-  factory VLink.fromJson(Map<String, dynamic> json) => _$VLinkFromJson(json);
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VLink) {
+      linkForeground = other.linkForeground;
+      text = other.text;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'linkForeground':
+        linkForeground = json['linkForeground'] == null
+            ? null
+            : VColor.fromJson(json['linkForeground'] as Map<String, dynamic>);
+      case 'text':
+        text = json['text'] as String?;
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
+  factory VLink.fromJson(Map<String, dynamic> json) =>
+      _$VLinkFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VLinkToJson(this);
 }

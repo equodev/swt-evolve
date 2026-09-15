@@ -29,13 +29,17 @@ class CTabItemSerializeTest extends SerializeTestBase {
                .containsEntry("toolTipText", json(w.getToolTipText()))
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("control").equalsTo(w.getControl(), orAbsentIfNull));
-        assertJ.satisfies(node("disabledImage").equalsTo(w.getDisabledImage(), orAbsentIfNull));
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("selectionForeground").equalsTo(w.getSelectionForeground(), orAbsentIfNull));
         assertJ.satisfies(node("showClose").equalsTo(w.getShowClose(), orAbsentIfFalse));
-        assertJ.satisfies(node("showDirty").equalsTo(w.getShowDirty(), orAbsentIfFalse));
         assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
+    }
+
+    @Test
+    void should_name_every_change_CTabItem() {
+        CTabItem w = new CTabItem(cTabFolder(), SWT.NONE);
+        assertNamesEveryChange(w);
     }
 
     VCTabItem value(CTabItem w) {

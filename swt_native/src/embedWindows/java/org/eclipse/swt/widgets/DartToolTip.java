@@ -320,9 +320,6 @@ public class DartToolTip extends DartWidget implements IToolTip {
      */
     public void setAutoHide(boolean autoHide) {
         checkWidget();
-        if (!java.util.Objects.equals(this.autoHide, autoHide)) {
-            dirty();
-        }
         this.autoHide = autoHide;
         //TODO - update when visible
     }
@@ -345,7 +342,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
      * </ul>
      */
     public void setLocation(int x, int y) {
-        dirty();
+        getValue().markDirty(VToolTip.LOCATION);
         Point newValue = new Point(x, y);
         checkWidget();
         int zoom = getAutoscalingZoom();
@@ -405,7 +402,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
     public void setMessage(String string) {
         checkWidget();
         if (!java.util.Objects.equals(this.message, string)) {
-            dirty();
+            getValue().markDirty(VToolTip.MESSAGE);
         }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -430,7 +427,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
     public void setText(String string) {
         checkWidget();
         if (!java.util.Objects.equals(this.text, string)) {
-            dirty();
+            getValue().markDirty(VToolTip.TEXT);
         }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
@@ -458,7 +455,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
     public void setVisible(boolean visible) {
         checkWidget();
         if (!java.util.Objects.equals(this.visible, visible)) {
-            dirty();
+            getValue().markDirty(VToolTip.VISIBLE);
         }
         if (visible == getVisible())
             return;

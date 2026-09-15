@@ -16,6 +16,7 @@ public class VLabel extends VControl {
         super(impl);
     }
 
+    @JsonAttribute(ignore = true)
     public int getAlignment() {
         return ((DartLabel) impl).getAlignment();
     }
@@ -43,6 +44,23 @@ public class VLabel extends VControl {
 
     public void setText(String value) {
         ((DartLabel) impl).text = value;
+    }
+
+    public static final String IMAGE = "image";
+
+    public static final String TEXT = "text";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "image":
+                Serializer.writeKeyValue(writer, "image", getImage());
+                return;
+            case "text":
+                Serializer.writeKeyValue(writer, "text", getText());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = Label.class)

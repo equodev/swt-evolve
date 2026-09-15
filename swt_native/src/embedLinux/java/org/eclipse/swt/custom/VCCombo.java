@@ -29,6 +29,7 @@ public class VCCombo extends VComposite {
         ((DartCCombo) impl).alignment = value;
     }
 
+    @JsonAttribute(ignore = true)
     public boolean getEditable() {
         return ((DartCCombo) impl).getEditable();
     }
@@ -98,12 +99,55 @@ public class VCCombo extends VComposite {
         ((DartCCombo) impl).textLimit = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getVisibleItemCount() {
         return ((DartCCombo) impl).getVisibleItemCount();
     }
 
     public void setVisibleItemCount(int value) {
         ((DartCCombo) impl).visibleItemCount = value;
+    }
+
+    public static final String ALIGNMENT = "alignment";
+
+    public static final String ITEM_TOOLTIPS = "itemTooltips";
+
+    public static final String ITEMS = "items";
+
+    public static final String LIST_VISIBLE = "listVisible";
+
+    public static final String SELECTION = "selection";
+
+    public static final String TEXT = "text";
+
+    public static final String TEXT_LIMIT = "textLimit";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "alignment":
+                Serializer.writeKeyValue(writer, "alignment", getAlignment());
+                return;
+            case "itemTooltips":
+                Serializer.writeKeyValue(writer, "itemTooltips", getItemTooltips());
+                return;
+            case "items":
+                Serializer.writeKeyValue(writer, "items", getItems());
+                return;
+            case "listVisible":
+                Serializer.writeKeyValue(writer, "listVisible", getListVisible());
+                return;
+            case "selection":
+                Serializer.writeKeyValue(writer, "selection", getSelection());
+                return;
+            case "text":
+                Serializer.writeKeyValue(writer, "text", getText());
+                return;
+            case "textLimit":
+                Serializer.writeKeyValue(writer, "textLimit", getTextLimit());
+                return;
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = CCombo.class)

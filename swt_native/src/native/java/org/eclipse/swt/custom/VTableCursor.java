@@ -19,6 +19,13 @@ public class VTableCursor extends VCanvas {
         super(impl);
     }
 
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = TableCursor.class)
     public static class TableCursorJson implements Configuration {
 

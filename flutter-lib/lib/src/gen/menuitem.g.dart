@@ -9,16 +9,14 @@ part of 'menuitem.dart';
 VMenuItem _$VMenuItemFromJson(Map<String, dynamic> json) => VMenuItem()
   ..swt = json['swt'] as String
   ..id = (json['id'] as num).toInt()
-  ..seq = (json['seq'] as num?)?.toInt() ?? 0
-  ..style = (json['style'] as num).toInt()
+  ..seq = (json['_s'] as num?)?.toInt() ?? 0
+  ..style = (json['style'] as num?)?.toInt() ?? 0
   ..image = json['image'] == null
       ? null
       : VImage.fromJson(json['image'] as Map<String, dynamic>)
   ..text = json['text'] as String?
-  ..ID = (json['ID'] as num?)?.toInt()
   ..accelerator = (json['accelerator'] as num?)?.toInt()
   ..enabled = json['enabled'] as bool?
-  ..enabledEffective = json['enabledEffective'] as bool?
   ..menu = json['menu'] == null
       ? null
       : VMenu.fromJson(json['menu'] as Map<String, dynamic>)
@@ -31,10 +29,8 @@ Map<String, dynamic> _$VMenuItemToJson(VMenuItem instance) => <String, dynamic>{
   'style': instance.style,
   'image': ?instance.image,
   'text': ?instance.text,
-  'ID': ?instance.ID,
   'accelerator': ?instance.accelerator,
   'enabled': ?instance.enabled,
-  'enabledEffective': ?instance.enabledEffective,
   'menu': ?instance.menu,
   'selection': ?instance.selection,
   'toolTipText': ?instance.toolTipText,

@@ -329,6 +329,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     return Container(
       margin: EdgeInsets.only(right: theme.cellPadding.left),
       child: _TableCheckboxButtonWrapper(
+        ownerId: state.id,
         checked: checked,
         grayed: grayed,
         enabled: enabled,
@@ -429,6 +430,12 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
 }
 
 class _TableCheckboxButtonWrapper extends StatefulWidget {
+  /// The id of the item this checkbox belongs to.
+  ///
+  /// A synthesized value still needs an identity: state is held per widget, keyed by swt and id, so
+  /// every checkbox built with the same placeholder id resolved to one shared object and every row
+  /// rendered whichever one mounted first.
+  final int ownerId;
   final bool checked;
   final bool grayed;
   final bool enabled;
@@ -436,6 +443,7 @@ class _TableCheckboxButtonWrapper extends StatefulWidget {
 
   const _TableCheckboxButtonWrapper({
     Key? key,
+    required this.ownerId,
     required this.checked,
     required this.grayed,
     required this.enabled,
@@ -455,7 +463,7 @@ class _TableCheckboxButtonWrapperState
   void initState() {
     super.initState();
     buttonValue = VButton.empty()
-      ..id = -1
+      ..id = widget.ownerId
       ..style = SWT.CHECK
       ..enabled = widget.enabled
       ..selection = widget.checked

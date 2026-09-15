@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import '../comm/v_registry.dart';
 import '../gen/animatedprogress.dart';
 import '../gen/browser.dart';
 import '../gen/button.dart';
@@ -64,6 +65,12 @@ import '../gen/viewform.dart';
 import '../gen/widget.dart';
 
 VWidget mapWidgetValue(Map<String, dynamic> child) {
+  // Marked before it is handed on: a reference decodes into an object like any other, and
+  // the only thing that says it carries no state is the key it arrived with.
+  return _mapWidgetValue(child)..isReference = child.containsKey('_r');
+}
+
+VWidget _mapWidgetValue(Map<String, dynamic> child) {
   var type = child['swt'];
   return switch (type) {
     "Shell" => VShell.fromJson(child),
@@ -138,6 +145,16 @@ VWidget mapWidgetValue(Map<String, dynamic> child) {
 }
 
 Widget mapWidgetFromValue(VWidget child) {
+  // Nothing to render for a widget that has only been named. Until the request the registry
+  // already sent is answered, its value is an identity stub - no bounds, no content - and
+  // building from it paints an empty widget that is replaced a frame later. Beyond the
+  // flicker: rendering the same widget in two shapes reshapes the semantics tree, and
+  // Flutter Web rebuilds the DOM element of a node whose engine role changes while
+  // re-applying only the properties that changed with it. The identifier did not change,
+  // so it is never written again and the widget loses its test tag for good.
+  if (VRegistry.instance.isAwaiting(VRegistry.channelOf(child))) {
+    return const SizedBox.shrink();
+  }
   var type = child.swt;
   var id = child.id;
   return switch (child) {

@@ -65,6 +65,43 @@ public class VSlider extends VControl {
         ((DartSlider) impl).thumb = value;
     }
 
+    public static final String INCREMENT = "increment";
+
+    public static final String MAXIMUM = "maximum";
+
+    public static final String MINIMUM = "minimum";
+
+    public static final String PAGE_INCREMENT = "pageIncrement";
+
+    public static final String SELECTION = "selection";
+
+    public static final String THUMB = "thumb";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "increment":
+                Serializer.writeKeyValue(writer, "increment", getIncrement());
+                return;
+            case "maximum":
+                Serializer.writeKeyValue(writer, "maximum", getMaximum());
+                return;
+            case "minimum":
+                Serializer.writeKeyValue(writer, "minimum", getMinimum());
+                return;
+            case "pageIncrement":
+                Serializer.writeKeyValue(writer, "pageIncrement", getPageIncrement());
+                return;
+            case "selection":
+                Serializer.writeKeyValue(writer, "selection", getSelection());
+                return;
+            case "thumb":
+                Serializer.writeKeyValue(writer, "thumb", getThumb());
+                return;
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = Slider.class)
     public static class SliderJson implements Configuration {
 

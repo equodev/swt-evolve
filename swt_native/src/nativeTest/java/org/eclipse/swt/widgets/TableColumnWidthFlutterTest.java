@@ -200,13 +200,14 @@ class TableColumnWidthFlutterTest {
     }
 
     /**
-     * Columns have no widget of their own on the Dart side — the Table renders them inline from its
-     * own {@code columns} list, and nothing listens on a {@code TableColumn/<id>} channel. So a
-     * column-only change (the widths TableLayout distributes, or a header re-label) has to re-send
-     * the parent Table, or it never reaches the renderer.
+     * A column has no renderer of its own — the Table draws the headers from its own list — so a
+     * column-only change (the widths a TableLayout distributes, or a header re-label) has to reach
+     * the client somehow. It used to have to re-send the whole Table, which is why this test was
+     * once about the Table's channel; the client now redraws whatever holds a value nothing renders,
+     * so the column travels as itself and the rows are left alone.
      */
     @Test
-    void columnOnlyMutationIsDeliveredOnTheTableChannel() {
+    void columnOnlyMutationIsDelivered() {
         Shell shell = new Shell(display);
         shell.setLayout(new GridLayout());
         shell.setSize(800, 600);
@@ -226,7 +227,11 @@ class TableColumnWidthFlutterTest {
             if (i++ >= before) channels.add(frame.event);
         }
         assertThat(channels)
-                .as("the Table itself must be re-sent, not only the TableColumn: %s", channels)
-                .anyMatch(c -> c.startsWith("Table/") || c.startsWith("Shell/") || c.startsWith("Composite/"));
+                .as("a column-only change has to reach the client: %s", channels)
+                .anyMatch(c -> c.startsWith("TableColumn/") || c.startsWith("Table/")
+                        || c.startsWith("Shell/") || c.startsWith("Composite/"));
+        assertThat(channels)
+                .as("and it must not cost a re-send of every row in the table: %s", channels)
+                .noneMatch(c -> c.startsWith("Table/"));
     }
 }

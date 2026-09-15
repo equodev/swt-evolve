@@ -1,5 +1,4 @@
 import 'package:json_annotation/json_annotation.dart';
-import '../gen/image.dart';
 
 part 'cursor.g.dart';
 
@@ -9,7 +8,6 @@ class VCursor {
   VCursor.empty();
 
   int? cursorStyle;
-  VImage? image;
 
   factory VCursor.fromJson(Map<String, dynamic> json) =>
       _$VCursorFromJson(json);

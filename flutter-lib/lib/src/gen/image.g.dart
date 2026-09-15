@@ -7,9 +7,6 @@ part of 'image.dart';
 // **************************************************************************
 
 VImage _$VImageFromJson(Map<String, dynamic> json) => VImage()
-  ..background = json['background'] == null
-      ? null
-      : VColor.fromJson(json['background'] as Map<String, dynamic>)
   ..filename = json['filename'] as String?
   ..height = (json['height'] as num?)?.toInt()
   ..imageData = json['imageData'] == null
@@ -20,7 +17,6 @@ VImage _$VImageFromJson(Map<String, dynamic> json) => VImage()
   ..width = (json['width'] as num?)?.toInt();
 
 Map<String, dynamic> _$VImageToJson(VImage instance) => <String, dynamic>{
-  'background': ?instance.background,
   'filename': ?instance.filename,
   'height': ?instance.height,
   'imageData': ?instance.imageData,

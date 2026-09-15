@@ -1215,7 +1215,7 @@ public class DartShell extends DartDecorations implements IShell {
     public void setAlpha(int alpha) {
         int newValue = alpha;
         if (!java.util.Objects.equals(this.alpha, newValue)) {
-            dirty();
+            getValue().markDirty(VShell.ALPHA);
         }
         checkWidget();
         alpha &= 0xFF;
@@ -1279,7 +1279,7 @@ public class DartShell extends DartDecorations implements IShell {
     public void setFullScreen(boolean fullScreen) {
         checkWidget();
         if (!java.util.Objects.equals(this.fullScreen, fullScreen)) {
-            dirty();
+            getValue().markDirty(VShell.FULL_SCREEN);
         }
         if (_getFullScreen() == fullScreen)
             return;
@@ -1323,9 +1323,6 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setImeInputMode(int mode) {
         int newValue = mode;
-        if (!java.util.Objects.equals(this.imeInputMode, newValue)) {
-            dirty();
-        }
         this.imeInputMode = newValue;
         checkWidget();
     }
@@ -1361,7 +1358,7 @@ public class DartShell extends DartDecorations implements IShell {
      * @since 3.116
      */
     public void setMaximumSize(int width, int height) {
-        dirty();
+        getValue().markDirty(VShell.MAXIMUM_SIZE);
         Point newValue = new Point(width, height);
         checkWidget();
         this.maximumSize = newValue;
@@ -1426,7 +1423,7 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setMinimumSize(int width, int height) {
         checkWidget();
-        dirty();
+        getValue().markDirty(VShell.MINIMUM_SIZE);
         this.minimumSize = new Point(width, height);
     }
 
@@ -1469,7 +1466,7 @@ public class DartShell extends DartDecorations implements IShell {
     public void setModified(boolean modified) {
         boolean newValue = modified;
         if (!java.util.Objects.equals(this.modified, newValue)) {
-            dirty();
+            getValue().markDirty(VShell.MODIFIED);
         }
         checkWidget();
         this.modified = newValue;
@@ -1516,7 +1513,7 @@ public class DartShell extends DartDecorations implements IShell {
      */
     @Override
     public void setRegion(Region region) {
-        dirty();
+        getValue().markDirty(VShell.REGION);
         checkWidget();
         if ((getApi().style & SWT.NO_TRIM) == 0)
             return;
@@ -1546,9 +1543,6 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setDarkThemePreferred(boolean preferred) {
         boolean newValue = preferred;
-        if (!java.util.Objects.equals(this.darkThemePreferred, newValue)) {
-            dirty();
-        }
         checkWidget();
         this.darkThemePreferred = newValue;
     }
@@ -1871,7 +1865,7 @@ public class DartShell extends DartDecorations implements IShell {
         for (int i = 0; i < dialogs.length; i++) next[i] = dialogs[i];
         next[dialogs.length] = (Dialog) d.getApi();
         dialogs = next;
-        dirty();
+        getValue().markDirty(VShell.DIALOGS);
     }
 
     public void removeDialog(DartDialog d) {
@@ -1881,7 +1875,7 @@ public class DartShell extends DartDecorations implements IShell {
         for (Dialog x : dialogs) if (x != api)
             next[j++] = x;
         dialogs = next;
-        dirty();
+        getValue().markDirty(VShell.DIALOGS);
     }
 
     public Dialog[] getDialogs() {

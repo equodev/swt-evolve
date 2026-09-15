@@ -545,7 +545,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
     public void setDigits(int value) {
         checkWidget();
         if (!java.util.Objects.equals(this.digits, value)) {
-            dirty();
+            getValue().markDirty(VSpinner.DIGITS);
         }
         if (value < 0)
             error(SWT.ERROR_INVALID_ARGUMENT);
@@ -576,7 +576,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
     public void setIncrement(int value) {
         int newValue = value;
         if (!java.util.Objects.equals(this.increment, newValue)) {
-            dirty();
+            getValue().markDirty(VSpinner.INCREMENT);
         }
         checkWidget();
         if (value < 1)
@@ -598,7 +598,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
      * </ul>
      */
     public void setMaximum(int value) {
-        dirty();
+        getValue().markDirty(VSpinner.MAXIMUM);
         checkWidget();
         if (value < this.minimum)
             return;
@@ -619,7 +619,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
      * </ul>
      */
     public void setMinimum(int value) {
-        dirty();
+        getValue().markDirty(VSpinner.MINIMUM);
         checkWidget();
         if (value > this.maximum)
             return;
@@ -641,7 +641,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
     public void setPageIncrement(int value) {
         checkWidget();
         if (!java.util.Objects.equals(this.pageIncrement, value)) {
-            dirty();
+            getValue().markDirty(VSpinner.PAGE_INCREMENT);
         }
         if (value < 1)
             return;
@@ -706,7 +706,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
     public void setTextLimit(int limit) {
         checkWidget();
         if (!java.util.Objects.equals(this.textLimit, limit)) {
-            dirty();
+            getValue().markDirty(VSpinner.TEXT_LIMIT);
         }
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);

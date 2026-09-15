@@ -9,11 +9,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * The "Show Password" toggle scenario: a plain single-line Text re-masked at runtime via
- * setEchoChar after text was typed. The Dart VText types echoCharacter as int and hiddenText
- * as List&lt;int&gt;, so both must serialize as numbers — a JSON string for either makes the
- * whole state push fail to deserialize and the re-mask silently never happens.
- * Whether hiddenText is populated by setEchoChar differs per backend (the GTK/Win32-mirroring
- * ones keep it empty), so it is asserted against the widget's own state, not a literal.
+ * setEchoChar after text was typed. echoCharacter must serialize as a number - a JSON string
+ * makes the whole state push fail to deserialize and the re-mask silently never happens.
+ * The masked text itself does not travel: the far side already has the real text and the
+ * character to mask it with, and derives the masked form where it draws it.
  */
 class TextEchoCharSerializeTest extends SerializeTestBase {
 
@@ -31,12 +30,9 @@ class TextEchoCharSerializeTest extends SerializeTestBase {
         assertThat(json)
                 .as("char[] state must never serialize as a JSON string")
                 .doesNotContain("\"hiddenText\":\"");
-        assertThatJson(json).isObject().satisfies(
-                node("hiddenText").equalsTo(codeUnits(value(w).getHiddenText()), orAbsentIfNull));
-    }
-
-    private VText value(Text w) {
-        return ((DartText) w.getImpl()).getValue();
+        assertThat(json)
+                .as("the masked form is derived where it is drawn, so sending it is redundant")
+                .doesNotContain("\"hiddenText\"");
     }
 
     @Test

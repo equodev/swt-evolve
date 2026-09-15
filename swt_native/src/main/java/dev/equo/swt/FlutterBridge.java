@@ -103,9 +103,16 @@ public abstract class FlutterBridge {
         if (w == null || isDisposed(w)) return;
         FlutterBridge bridge = getBridge(w);
         if (bridge == null) return;
+        // The request says this client holds nothing for the widget, so what it has been sent
+        // before is worth nothing to it: forget that, or the answer is a description of what
+        // changed since a state it does not have.
         // dirty() is safe off the display thread; the next dispatch flushes the fresh state.
-        if (w instanceof DartWidget widget) bridge.dirty(widget);
-        else if (w instanceof DartResource resource) bridge.dirty(resource);
+        if (w instanceof DartWidget widget) {
+            Serializer.forgetDelivery(widget.getValue());
+            bridge.dirty(widget);
+        } else if (w instanceof DartResource resource) {
+            bridge.dirty(resource);
+        }
     }
 
     /** The shared desktop comm, created (and started) on first access. */
@@ -222,16 +229,96 @@ public abstract class FlutterBridge {
         return null;
     }
 
+    /**
+     * The widgets that go on their own channel, out of everything that is dirty.
+     *
+     * <p>A widget is left out only when an ancestor is going to be sent in a form that contains
+     * it: whole, or as an update that names its child list. Sending both would then be the same
+     * state twice. An update naming anything else carries nothing about what is beneath it, so a
+     * descendant left out on its account would simply never arrive.
+     *
+     * <p>That is also where the saving is. Two changes at different depths of one subtree used to
+     * force the ancestor to go whole to carry the deeper one, dragging every node in between along
+     * in full. Now each travels as itself, the nodes in between are not sent at all, and the batch
+     * puts them in one message anyway.
+     */
     static Set<Object> filterWidgetsWithDirtyAncestors(Set<Object> dirtySet) {
         Set<Object> filtered = new HashSet<>();
 
         for (Object widget : dirtySet) {
-            if (isFlutterRoot(widget) || isShell(widget) || !hasAncestorInSet(widget, dirtySet)) {
+            if (isFlutterRoot(widget) || isShell(widget) || !hasAncestorCarrying(widget, dirtySet)) {
                 filtered.add(widget);
             }
         }
 
         return filtered;
+    }
+
+    /**
+     * The order one flush's frames go out in: the display first, then parents before children.
+     *
+     * <p>The set they come from is a hash set, so without this they leave in identity-hash order -
+     * arbitrary, and different between runs of the same code. The frames of one flush travel as one
+     * message and are applied in the order they were written, so that hash order was the delivery
+     * order.
+     *
+     * <p>What has to come first is the display: its frame carries the shell list, which is how the
+     * far side learns a shell exists at all, and sent after the widgets beneath those shells it
+     * arrives too late for them to be placed.
+     *
+     * <p>Only that, and deliberately. Ordering the widgets among themselves by depth as well would
+     * be the complete answer, but it costs a walk up the parent chain per widget - and a parent's
+     * getter is guarded, so the walk is far from free: measured over a workbench-sized flush it was
+     * a third again of what the whole flush costs, on work that runs every turn of the event loop.
+     * The children whose parent is carrying them have already been dropped from this set by
+     * {@link #filterWidgetsWithDirtyAncestors}, so what is left is mostly siblings, where the order
+     * between them decides nothing.
+     */
+    private static java.util.List<Object> flushOrder(Set<Object> flush) {
+        java.util.List<Object> ordered = new ArrayList<>(flush.size());
+        for (Object o : flush) {
+            if (o instanceof DirtyState) ordered.add(o);
+        }
+        for (Object o : flush) {
+            if (!(o instanceof DirtyState)) ordered.add(o);
+        }
+        return ordered;
+    }
+
+    /**
+     * Whether some ancestor of [widget] is going to be sent in a form that contains it.
+     *
+     * <p>The search stops at the widget's own Shell: a Shell's payload holds its own subtree and
+     * nothing of another's, so a control in a dialog is not carried by the main window however
+     * dirty that window is — and the main window repaints constantly, so it almost always is.
+     */
+    private static boolean hasAncestorCarrying(Object widget, Set<Object> dirtySet) {
+        for (Object parent = getParent(widget); parent != null; parent = getParent(parent)) {
+            if (dirtySet.contains(parent) && carriesItsChildren(parent)) return true;
+            if (isShell(parent)) return false;
+        }
+        return false;
+    }
+
+    /**
+     * Whether what this widget is about to send contains the widgets beneath it.
+     *
+     * <p>Two ways it can. Sent whole, it is every property including the children. Sent as an
+     * update that names {@code children}, it carries that list — and a child in it that has changed
+     * is written out in full, so the subtree comes with it.
+     *
+     * <p>An update that names anything else contains nothing but the properties it names. A
+     * descendant left out on the strength of one of those would never arrive, and one left out on
+     * the strength of one of these would arrive twice.
+     */
+    private static boolean carriesItsChildren(Object widget) {
+        if (!(widget instanceof DartWidget w)) return true;
+        // Asked of the client this widget is written for. The filter runs before the walk that
+        // names it, so there is no addressee in scope to inherit - and reading it as "no client"
+        // would answer that every widget is sent whole, which drops the children of one that is
+        // not.
+        if (!Serializer.canDiff(w, connectionOf(widget))) return true;
+        return w.getValue().changedKeys().contains("children");
     }
 
     private static boolean isShell(Object widget) {
@@ -244,6 +331,50 @@ public abstract class FlutterBridge {
             return bridge != null && bridge.forWidget() == widget;
         }
         return false;
+    }
+
+    /**
+     * The widgets that are being sent on behalf of a descendant as well as themselves.
+     *
+     * <p>A dirty widget with a dirty ancestor is not sent on its own channel: the ancestor's
+     * payload contains it, so sending both would be the same state twice. That holds only while a
+     * payload is the whole widget. An update describing just the ancestor's own changed properties
+     * carries nothing of its children, so a child dropped in its favour would simply never be sent
+     * — a layout pass would move five hundred children and report only the parent's own bounds.
+     *
+     * <p>These therefore go out whole. Naming the descendants instead is the shape the subtree work
+     * takes, and until then this is the line between "smaller" and "wrong".
+     */
+    private static Set<Object> ancestorsCarryingOthers(Set<Object> allDirty, Set<Object> beingSent) {
+        Set<Object> carrying = new HashSet<>();
+        for (Object widget : allDirty) {
+            if (beingSent.contains(widget)) continue;
+            for (Object parent = getParent(widget); parent != null; parent = getParent(parent)) {
+                if (beingSent.contains(parent)) {
+                    carrying.add(parent);
+                    break;
+                }
+            }
+        }
+        return carrying;
+    }
+
+    /**
+     * Every widget a change has to travel through: the dirty ones, and every ancestor of them.
+     *
+     * <p>A dirty widget whose ancestor is also being sent is not sent on its own channel — the
+     * ancestor's payload contains it. That payload is the only copy of the change, so nothing on
+     * the way down to it may be written as a name rather than a description: an unchanged composite
+     * between the two is unchanged and still load-bearing.
+     */
+    private static Set<VWidget> pathsToDirty(Set<Object> dirtySet) {
+        Set<VWidget> required = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        for (Object widget : dirtySet) {
+            for (Object node = widget; node != null; node = getParent(node)) {
+                if (node instanceof DartWidget w) required.add(w.getValue());
+            }
+        }
+        return required;
     }
 
     static boolean hasAncestorInSet(Object widget, Set<Object> dirtySet) {
@@ -325,6 +456,8 @@ public abstract class FlutterBridge {
             dirty.clear();
         }
         Set<Object> filteredDirty = filterWidgetsWithDirtyAncestors(dirtySnapshot);
+        Set<Object> carryingDescendants = ancestorsCarryingOthers(dirtySnapshot, filteredDirty);
+        Serializer.describeInFull(pathsToDirty(dirtySnapshot));
 
         for (Object widget : dirtySnapshot) {
             if (!filteredDirty.contains(widget)) {
@@ -333,7 +466,21 @@ public abstract class FlutterBridge {
         }
 
         long now = System.nanoTime();
-        for (Object widget : filteredDirty) {
+        // Everything this flush sends belongs to one moment, so it travels as one message. Only the
+        // sends made inline are caught: a widget still waiting on clientReady sends when it can.
+        Map<CommService, PendingSends> batching = new java.util.LinkedHashMap<>();
+        flushSends.set(batching);
+        try {
+        for (Object widget : flushOrder(filteredDirty)) {
+            // Non-widget state (the Display) sends itself, and does so without waiting on
+            // clientReady: its frame is what gives a connecting client its first content, and the
+            // comm buffers it until the socket opens. Gating it here is what once left a workbench
+            // showing an empty window — the re-push needed the UI thread, which was parked in the
+            // native event pump.
+            if (widget instanceof DirtyState state) {
+                if (!state.isStale()) state.flush();
+                continue;
+            }
             if (isDisposed(widget)) continue;
             // No bridge (Display already gone) -> nothing to send; skip to avoid NPE below.
             if (getBridge(widget) == null) continue;
@@ -354,8 +501,26 @@ public abstract class FlutterBridge {
                             dirty.remove(widget);
                         }
                         String event = event(widget);
+                        CommService comm = commFor(widget);
                         try {
-                            serializeAndSend(commFor(widget), event, getApi(widget));
+                            // Written for one client, so say which before writing: whether a nested
+                            // widget can travel as a name depends on whether that client holds it.
+                            Serializer.targeting(comm == null ? 0 : comm.connectionId(), () -> {
+                                try {
+                                    // A widget already sent whole can be described by what changed
+                                    // since. Decided here rather than inside the writer because it
+                                    // is a property of the frame: a widget nested in an ancestor's
+                                    // payload is still written whole, since the far side has
+                                    // nothing to merge a nested change into yet.
+                                    if (widget instanceof DartWidget w && Serializer.canDiff(w)
+                                            && !carryingDescendants.contains(widget))
+                                        sendBytes(comm, event, serializer.toDiff(w));
+                                    else
+                                        serializeAndSend(comm, event, getApi(widget));
+                                } catch (IOException e) {
+                                    throw new java.io.UncheckedIOException(e);
+                                }
+                            });
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -369,13 +534,36 @@ public abstract class FlutterBridge {
             CompletableFuture<Void> future = getBridge(widget).clientReady.thenRun(() -> runOnDisplayThread(widget, send));
             futures.add(future);
         }
+        } finally {
+            Serializer.describeNormally();
+            flushSends.remove();
+            for (Map.Entry<CommService, PendingSends> entry : batching.entrySet()) {
+                entry.getValue().send(entry.getKey());
+            }
+        }
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 
+    /**
+     * Whether the client has never been told about this widget.
+     *
+     * <p>New is about the client's knowledge, so the write stamp is what answers it: a widget that
+     * has been written has been delivered, whether on its own channel or inside an ancestor's
+     * payload. The flag alone did not say that — it is only set for widgets this flush considered,
+     * so a child created quietly and delivered inside its parent stayed "new" for good, and every
+     * later update of its own was dropped here as one the client could not place.
+     */
     private static boolean isNew(Object widget) {
-        if (widget instanceof DartWidget)
-            return ((DartWidget) widget).getData(DEV_EQU_SWT_NEW) == null;
+        if (widget instanceof DartWidget w)
+            return w.getData(DEV_EQU_SWT_NEW) == null
+                    && w.getValue().sentSeq(connectionOf(widget)) == 0;
         return false;
+    }
+
+    /** The client {@code widget} is written for, or 0 when it has no comm to be written to. */
+    private static int connectionOf(Object widget) {
+        CommService comm = commFor(widget);
+        return comm == null ? 0 : comm.connectionId();
     }
 
     private static boolean isDisposed(Object w) {
@@ -424,10 +612,152 @@ public abstract class FlutterBridge {
         serializeAndSend(comm(), eventName, args);
     }
 
+    /**
+     * State that belongs in the dirty set but is not a widget — today only the {@code Display},
+     * whose value has its own channel and no place in the widget tree.
+     *
+     * <p>It joins the same set so that "what still has to be sent" has one answer rather than two,
+     * and so the per-property work that will apply to widgets applies to it by construction instead
+     * of needing a parallel implementation.
+     */
+    public interface DirtyState {
+        /** True once it can no longer be sent — dropped from the set rather than flushed. */
+        boolean isStale();
+
+        void flush();
+    }
+
+    /** Enrols non-widget state for the next flush. */
+    public static void dirty(DirtyState state) {
+        if (state == null) return;
+        synchronized (dirty) {
+            dirty.add(state);
+        }
+    }
+
+    /**
+     * Flushes enrolled {@link DirtyState} only, leaving widgets to their normal flush.
+     *
+     * <p>Exists so enrolling the Display does not also change when widgets are sent. Its callers
+     * push immediately today; when Display frames are allowed to coalesce into the ordinary flush,
+     * those calls go away and nothing else has to move.
+     */
+    public static void flushDirtyStates() {
+        List<DirtyState> due = new ArrayList<>();
+        synchronized (dirty) {
+            dirty.removeIf(entry -> {
+                if (!(entry instanceof DirtyState state)) return false;
+                due.add(state);
+                return true;
+            });
+        }
+        for (DirtyState state : due) {
+            if (!state.isStale()) state.flush();
+        }
+    }
+
+    /**
+     * Sees every outbound frame as it is sent. Unset in production; a verification harness installs
+     * one to check what the widget tree actually puts on the wire against what changed in Java —
+     * a question no assertion inside the harness can answer, because only this point sees every
+     * frame as it is sent.
+     */
+    public interface SendObserver {
+        void onSend(String eventName, byte[] payload);
+    }
+
+    private static volatile SendObserver sendObserver;
+
+    /** Installs (or, with null, removes) the outbound-frame observer. */
+    public static void setSendObserver(SendObserver observer) {
+        sendObserver = observer;
+    }
+
     private static void serializeAndSend(CommService comm, String eventName, Object args) throws IOException {
-        byte[] bytes = serializer.to(args);
+        // Named here as well as at the flush, so a send from anywhere else - an event reply, a
+        // pre-connect push, a draw op - is credited to the client it actually goes to.
+        if (Serializer.targetConnection() != 0) {
+            sendBytes(comm, eventName, serializer.to(args));
+            return;
+        }
+        byte[][] bytes = new byte[1][];
+        java.io.IOException[] failed = new java.io.IOException[1];
+        Serializer.targeting(comm == null ? 0 : comm.connectionId(), () -> {
+            try {
+                bytes[0] = serializer.to(args);
+            } catch (IOException e) {
+                failed[0] = e;
+                return;
+            }
+            sendBytes(comm, eventName, bytes[0]);
+        });
+        if (failed[0] != null) throw failed[0];
+    }
+
+    /** The tail of a send, for callers that already have the bytes. */
+    private static void sendBytes(CommService comm, String eventName, byte[] bytes) {
+        // The bytes are going out, so what was written counts as delivered. Serializing on its own
+        // does not: a widget can be written to be read rather than sent.
+        Serializer.markDelivered();
         DebugLog.logSend(eventName, bytes);
+        SendObserver observer = sendObserver;
+        if (observer != null) observer.onSend(eventName, bytes);
+        Map<CommService, PendingSends> open = flushSends.get();
+        if (open != null) {
+            open.computeIfAbsent(comm, c -> new PendingSends()).add(comm, eventName, bytes);
+            return;
+        }
         comm.send(eventName, bytes);
+    }
+
+    /**
+     * What one flush has produced so far, per comm, while that flush is running.
+     *
+     * <p>Null outside a flush, which is what makes a send from anywhere else — an event reply, a
+     * draw op, a pre-connect push finishing on another thread — go straight out as it always did.
+     * Thread-local for the same reason: only the sends this flush makes inline belong to it.
+     */
+    private static final ThreadLocal<Map<CommService, PendingSends>> flushSends = new ThreadLocal<>();
+
+    /**
+     * A flush's frames on their way to one comm.
+     *
+     * <p>A layout pass touches every child of a composite, and each of them is a frame. Sending
+     * them one at a time is one socket message, one handler dispatch and one rebuild each, for
+     * changes that all belong to the same moment. Fusing them costs a few bytes of framing and
+     * saves all of that — but only from the second frame on, so a lone frame still travels alone
+     * rather than paying the wrapper for nothing.
+     */
+    private static final class PendingSends {
+        private String soloEvent;
+        private byte[] soloBytes;
+        private MessageBatch batch;
+
+        void add(CommService comm, String eventName, byte[] bytes) {
+            if (batch == null && soloEvent == null) {
+                soloEvent = eventName;
+                soloBytes = bytes;
+                return;
+            }
+            if (batch == null) {
+                batch = new MessageBatch();
+                batch.add(soloEvent, soloBytes);
+                soloEvent = null;
+                soloBytes = null;
+            }
+            batch.add(eventName, bytes);
+            // A flush big enough to be worth splitting: one unbounded message would stall the
+            // client's decode as surely as the frames it replaced stalled its event loop.
+            if (batch.byteSize() >= MAX_BATCH_BYTES) send(comm);
+        }
+
+        void send(CommService comm) {
+            if (batch != null && !batch.isEmpty()) comm.send(batch);
+            else if (soloEvent != null) comm.send(soloEvent, soloBytes);
+            batch = null;
+            soloEvent = null;
+            soloBytes = null;
+        }
     }
 
     private static void setNotNew(Object control) {
@@ -754,6 +1084,18 @@ public abstract class FlutterBridge {
             dirty.add(widget);
         }
         wakeForDirty();
+    }
+
+    /**
+     * Records a widget that has just been delivered, so a later request for it can be answered.
+     *
+     * <p>Everything the far side may be asked to resolve by name has been through here: a name is
+     * written only for a widget that was delivered, and delivery is what this records. Scheduling
+     * alone used to be the only way in, which left every widget delivered only inside an ancestor
+     * unanswerable — it would be named, asked for, and never heard about again.
+     */
+    static void registerDelivered(Object impl) {
+        if (impl != null) registerForRefresh(impl);
     }
 
     /**

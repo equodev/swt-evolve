@@ -601,7 +601,7 @@ public class DartLink extends DartControl implements ILink {
         color = GraphicsUtils.copyColor(color);
         checkWidget();
         if (!java.util.Objects.equals(this.linkColor, color)) {
-            dirty();
+            getValue().markDirty(VLink.LINK_FOREGROUND);
         }
         if (color != null) {
             if (color.isDisposed())
@@ -665,7 +665,7 @@ public class DartLink extends DartControl implements ILink {
     public void setText(String string) {
         checkWidget();
         if (!java.util.Objects.equals(this.text, string)) {
-            dirty();
+            getValue().markDirty(VLink.TEXT);
         }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);

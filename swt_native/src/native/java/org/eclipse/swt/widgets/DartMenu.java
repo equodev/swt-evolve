@@ -336,6 +336,7 @@ public class DartMenu extends DartWidget implements IMenu {
         System.arraycopy(items, index, items, index + 1, itemCount++ - index);
         items[index] = item;
         ;
+        getValue().markDirty(VMenu.ITEMS);
     }
 
     @Override
@@ -343,6 +344,7 @@ public class DartMenu extends DartWidget implements IMenu {
         checkOrientation(parent);
         super.createWidget();
         items = new MenuItem[4];
+        getValue().markDirty(VMenu.ITEMS);
     }
 
     @Override
@@ -365,6 +367,7 @@ public class DartMenu extends DartWidget implements IMenu {
             items = new MenuItem[4];
         if (((DartDisplay) display.getImpl()).menuBar == this.getApi()) {
         }
+        getValue().markDirty(VMenu.ITEMS);
     }
 
     public void fixMenus(Decorations newParent) {
@@ -816,9 +819,6 @@ public class DartMenu extends DartWidget implements IMenu {
      */
     public void setDefaultItem(MenuItem item) {
         checkWidget();
-        if (!java.util.Objects.equals(this.defaultItem, item)) {
-            dirty();
-        }
         if (item != null && item.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         defaultItem = item;
@@ -840,7 +840,7 @@ public class DartMenu extends DartWidget implements IMenu {
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
         if (!java.util.Objects.equals(this.enabled, newValue)) {
-            dirty();
+            getValue().markDirty(VMenu.ENABLED);
         }
         checkWidget();
         if (enabled) {
@@ -886,7 +886,7 @@ public class DartMenu extends DartWidget implements IMenu {
         hasLocation = true;
         if (location == null || location.x != x || location.y != y) {
             location = new Point(x, y);
-            dirty();
+            getValue().markDirty(VMenu.LOCATION);
         }
     }
 
@@ -917,7 +917,7 @@ public class DartMenu extends DartWidget implements IMenu {
     public void setLocation(Point location) {
         Point newValue = location;
         if (!java.util.Objects.equals(this.location, newValue)) {
-            dirty();
+            getValue().markDirty(VMenu.LOCATION);
         }
         checkWidget();
         if (location == null)
@@ -942,7 +942,7 @@ public class DartMenu extends DartWidget implements IMenu {
     public void setOrientation(int orientation) {
         int newValue = orientation;
         if (!java.util.Objects.equals(this.orientation, newValue)) {
-            dirty();
+            getValue().markDirty(VMenu.ORIENTATION);
         }
         this.orientation = newValue;
         checkWidget();
@@ -967,7 +967,7 @@ public class DartMenu extends DartWidget implements IMenu {
     public void setVisible(boolean visible) {
         boolean newValue = visible;
         if (!java.util.Objects.equals(this.visible, newValue)) {
-            dirty();
+            getValue().markDirty(VMenu.VISIBLE);
         }
         checkWidget();
         if ((getApi().style & (SWT.BAR | SWT.DROP_DOWN)) != 0)
@@ -988,7 +988,7 @@ public class DartMenu extends DartWidget implements IMenu {
                     y = menuLocation.y;
                     location = menuLocation;
                     hasLocation = true;
-                    dirty();
+                    getValue().markDirty(VMenu.LOCATION);
                 }
             }
             hasLocation = false;
@@ -1077,10 +1077,15 @@ public class DartMenu extends DartWidget implements IMenu {
         return null;
     }
 
+    /**
+     * A menu with an owner control has no channel of its own - it travels as that control's
+     * menu - so a change to it is a change to the control's menu, and saying so is what
+     * keeps the control from being sent whole every time a menu item moves.
+     */
     @Override
     protected void dirty() {
         if (ownerControl != null && ownerControl.getImpl() instanceof DartControl) {
-            ((DartControl) ownerControl.getImpl()).dirty();
+            ((DartControl) ownerControl.getImpl()).getValue().markDirty(VControl.MENU);
         } else {
             super.dirty();
         }

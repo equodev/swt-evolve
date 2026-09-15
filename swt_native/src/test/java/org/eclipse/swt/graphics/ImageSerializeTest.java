@@ -26,7 +26,6 @@ class ImageSerializeTest extends SerializeTestBase {
         String json = serialize(w);
         JsonMapAssert assertJ = assertThatJson(json).isObject();
         assertJ.isNotEmpty();
-        assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("imageData").equalsTo(w.getImageData(), orAbsentIfNull));
     }
 

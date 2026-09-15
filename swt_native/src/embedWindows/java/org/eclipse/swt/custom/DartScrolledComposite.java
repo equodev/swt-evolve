@@ -438,7 +438,6 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      * @since 2.0
      */
     public void setOrigin(int x, int y) {
-        dirty();
         Point newValue = new Point(x, y);
         checkWidget();
         if (content == null)
@@ -478,7 +477,7 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
     public void setAlwaysShowScrollBars(boolean show) {
         checkWidget();
         if (!java.util.Objects.equals(this.alwaysShowScroll, show)) {
-            dirty();
+            getValue().markDirty(VScrolledComposite.ALWAYS_SHOW_SCROLL_BARS);
         }
         if (show == alwaysShowScroll)
             return;
@@ -505,7 +504,7 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
     public void setContent(Control content) {
         checkWidget();
         if (!java.util.Objects.equals(this.content, content)) {
-            dirty();
+            getValue().markDirty(VScrolledComposite.CONTENT);
         }
         if (this.content != null && !this.content.isDisposed()) {
             this.content.removeListener(SWT.Resize, contentListener);
@@ -554,7 +553,7 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
     public void setExpandHorizontal(boolean expand) {
         checkWidget();
         if (!java.util.Objects.equals(this.expandHorizontal, expand)) {
-            dirty();
+            getValue().markDirty(VScrolledComposite.EXPAND_HORIZONTAL);
         }
         if (expand == expandHorizontal)
             return;
@@ -580,7 +579,7 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
     public void setExpandVertical(boolean expand) {
         checkWidget();
         if (!java.util.Objects.equals(this.expandVertical, expand)) {
-            dirty();
+            getValue().markDirty(VScrolledComposite.EXPAND_VERTICAL);
         }
         if (expand == expandVertical)
             return;
@@ -624,7 +623,7 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
     public void setMinHeight(int height) {
         setMinSize(minWidth, height);
         if (!java.util.Objects.equals(this.minHeight, height)) {
-            dirty();
+            getValue().markDirty(VScrolledComposite.MIN_HEIGHT);
         }
     }
 
@@ -663,11 +662,10 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      */
     public void setMinSize(int width, int height) {
         checkWidget();
+        if (!java.util.Objects.equals(this.minHeight, height))
+            getValue().markDirty(VScrolledComposite.MIN_HEIGHT);
         if (!java.util.Objects.equals(this.minWidth, width)) {
-            dirty();
-        }
-        if (!java.util.Objects.equals(this.minWidth, width)) {
-            dirty();
+            getValue().markDirty(VScrolledComposite.MIN_WIDTH);
         }
         if (width == minWidth && height == minHeight)
             return;
@@ -691,7 +689,7 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
     public void setMinWidth(int width) {
         setMinSize(width, minHeight);
         if (!java.util.Objects.equals(this.minWidth, width)) {
-            dirty();
+            getValue().markDirty(VScrolledComposite.MIN_WIDTH);
         }
     }
 
@@ -713,9 +711,6 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      */
     public void setShowFocusedControl(boolean show) {
         checkWidget();
-        if (!java.util.Objects.equals(this.showFocusedControl, show)) {
-            dirty();
-        }
         if (showFocusedControl == show)
             return;
         Display display = getDisplay();

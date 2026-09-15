@@ -70,7 +70,7 @@ void main() {
 
     // Any unrelated state push for this Combo. It carries listVisible exactly as Java always
     // sends it -- Java never learns the user opened the list.
-    _receive('Combo/$_comboId', {..._readOnlyCombo(seq: 2).toJson(), 'seq': 2});
+    _receive('Combo/$_comboId', {..._readOnlyCombo(seq: 2).toJson(), '_s': 2});
     await tester.pumpAndSettle();
 
     expect(find.text('Combo B'), findsOneWidget,
@@ -86,10 +86,10 @@ void main() {
     expect(find.text('Combo B'), findsOneWidget);
 
     _receive('Combo/$_comboId',
-        {..._readOnlyCombo(seq: 2, listVisible: true).toJson(), 'seq': 2});
+        {..._readOnlyCombo(seq: 2, listVisible: true).toJson(), '_s': 2});
     await tester.pumpAndSettle();
     _receive('Combo/$_comboId',
-        {..._readOnlyCombo(seq: 3, listVisible: false).toJson(), 'seq': 3});
+        {..._readOnlyCombo(seq: 3, listVisible: false).toJson(), '_s': 3});
     await tester.pumpAndSettle();
 
     expect(find.text('Combo B'), findsNothing,

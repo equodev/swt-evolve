@@ -25,6 +25,8 @@ import 'package:swtflutter/src/impl/decorations_align.dart';
 import 'package:swtflutter/src/impl/decorations_evolve.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
+import 'delivery/support/deliver.dart';
+
 const double _viewportWidth = 800;
 const double _viewportHeight = 300;
 
@@ -102,6 +104,9 @@ Future<void> _pumpShell(
   required VMenu? menuBar,
 }) async {
   setConfigFlags(ConfigFlags()..decorations_align = align);
+  // Each call mounts a scenario of its own rather than updating the one before it, and a widget's
+  // state outlives the tree that rendered it - so this is a new client, not just a new tree.
+  freshClient();
   await tester.pumpWidget(EvolveApp(
     theme: ThemeMode.light,
     contentWidget: SizedBox(

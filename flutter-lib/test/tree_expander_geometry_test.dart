@@ -17,6 +17,8 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/tree.dart';
 import 'package:swtflutter/src/gen/treeitem.dart';
 
+import 'delivery/support/deliver.dart';
+
 /// Width shared with `TreeGetItemOverExpanderTest` on the Java side.
 const double treeWidth = 300;
 
@@ -86,6 +88,11 @@ void main() {
   late Rect treeRect;
 
   Future<void> pumpTree(WidgetTester tester) async {
+    // A tree from scratch every time, including when a test mounts a second one to start over: the
+    // state of a widget outlives the tree that rendered it, so this has to be a new client rather
+    // than a new set of objects under the same ids.
+    await tester.pumpWidget(const SizedBox.shrink());
+    freshClient();
     value = _nestedTree();
     tree = _CapturingTree(value: value);
     await tester.pumpWidget(_wrap(tree));

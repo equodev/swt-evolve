@@ -273,7 +273,7 @@ public class DartGroup extends DartComposite implements IGroup {
     public void setText(String string) {
         checkWidget();
         if (!java.util.Objects.equals(this.text, string)) {
-            dirty();
+            getValue().markDirty(VGroup.TEXT);
         }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);

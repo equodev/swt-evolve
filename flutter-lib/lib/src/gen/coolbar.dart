@@ -12,6 +12,7 @@ import '../gen/point.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
+import '../gen/widget.dart';
 import '../impl/coolbar_evolve.dart';
 import 'widgets.dart';
 
@@ -34,10 +35,50 @@ class VCoolBar extends VComposite {
   List<int>? itemOrder;
   List<VPoint>? itemSizes;
   List<VCoolItem>? items;
-  bool? locked;
   List<int>? wrapIndices;
 
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VCoolBar) {
+      itemOrder = other.itemOrder;
+      itemSizes = other.itemSizes;
+      items = other.items;
+      wrapIndices = other.wrapIndices;
+    }
+  }
+
+  @override
+  void readProperty(String key, Map<String, dynamic> json) {
+    switch (key) {
+      case 'itemOrder':
+        itemOrder = (json['itemOrder'] as List<dynamic>?)
+            ?.map((e) => (e as num).toInt())
+            .toList();
+      case 'itemSizes':
+        itemSizes = (json['itemSizes'] as List<dynamic>?)
+            ?.map((e) => VPoint.fromJson(e as Map<String, dynamic>))
+            .toList();
+      case 'items':
+        items = (json['items'] as List<dynamic>?)
+            ?.map((e) => VCoolItem.fromJson(e as Map<String, dynamic>))
+            .toList();
+      case 'wrapIndices':
+        wrapIndices = (json['wrapIndices'] as List<dynamic>?)
+            ?.map((e) => (e as num).toInt())
+            .toList();
+      default:
+        super.readProperty(key, json);
+    }
+  }
+
+  @override
+  void adoptChildren(VWidget Function(VWidget) adopt) {
+    super.adoptChildren(adopt);
+    VWidget.adoptEach(items, adopt);
+  }
+
   factory VCoolBar.fromJson(Map<String, dynamic> json) =>
-      _$VCoolBarFromJson(json);
+      _$VCoolBarFromJson(json)..isReference = json.containsKey('_r');
   Map<String, dynamic> toJson() => _$VCoolBarToJson(this);
 }

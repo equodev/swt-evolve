@@ -25,6 +25,18 @@ public class VTransform extends VResource {
         ((DartTransform) impl).setElements(value[0], value[1], value[2], value[3], value[4], value[5]);
     }
 
+    public static final String ELEMENTS = "elements";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "elements":
+                Serializer.writeKeyValue(writer, "elements", getElements());
+                return;
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = Transform.class)
     public static class TransformJson implements Configuration {
 

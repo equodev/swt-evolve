@@ -16,6 +16,7 @@ public class VTaskItem extends VItem {
         super(impl);
     }
 
+    @JsonAttribute(ignore = true)
     public Menu getMenu() {
         Menu val = ((DartTaskItem) impl).menu;
         if (val != null && !(val.getImpl() instanceof DartMenu))
@@ -27,6 +28,7 @@ public class VTaskItem extends VItem {
         ((DartTaskItem) impl).menu = value;
     }
 
+    @JsonAttribute(ignore = true)
     public Image getOverlayImage() {
         Image val = ((DartTaskItem) impl).overlayImage;
         if (val != null && !(val.getImpl() instanceof DartImage))
@@ -38,6 +40,7 @@ public class VTaskItem extends VItem {
         ((DartTaskItem) impl).overlayImage = value;
     }
 
+    @JsonAttribute(ignore = true)
     public String getOverlayText() {
         return ((DartTaskItem) impl).getOverlayText();
     }
@@ -46,6 +49,7 @@ public class VTaskItem extends VItem {
         ((DartTaskItem) impl).overlayText = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getProgress() {
         return ((DartTaskItem) impl).getProgress();
     }
@@ -54,12 +58,20 @@ public class VTaskItem extends VItem {
         ((DartTaskItem) impl).progress = value;
     }
 
+    @JsonAttribute(ignore = true)
     public int getProgressState() {
         return ((DartTaskItem) impl).getProgressState();
     }
 
     public void setProgressState(int value) {
         ((DartTaskItem) impl).progressState = value;
+    }
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+        }
+        super.writeProperty(writer, key);
     }
 
     @JsonConverter(target = TaskItem.class)

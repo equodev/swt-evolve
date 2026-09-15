@@ -43,6 +43,28 @@ public class VExpandItem extends VItem {
         ((DartExpandItem) impl).height = value;
     }
 
+    public static final String CONTROL = "control";
+
+    public static final String EXPANDED = "expanded";
+
+    public static final String HEIGHT = "height";
+
+    @Override
+    protected void writeProperty(JsonWriter writer, String key) {
+        switch(key) {
+            case "control":
+                Serializer.writeKeyValue(writer, "control", getControl());
+                return;
+            case "expanded":
+                Serializer.writeKeyValue(writer, "expanded", getExpanded());
+                return;
+            case "height":
+                Serializer.writeKeyValue(writer, "height", getHeight());
+                return;
+        }
+        super.writeProperty(writer, key);
+    }
+
     @JsonConverter(target = ExpandItem.class)
     public static class ExpandItemJson implements Configuration {
 

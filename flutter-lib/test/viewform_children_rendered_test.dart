@@ -34,8 +34,7 @@ VViewForm _viewForm() {
     ..style = SWT.NONE
     ..enabled = true
     ..bounds = _rect(0, 0, 300, 200)
-    ..children = [content]
-    ..content = content;
+    ..children = [content];
 }
 
 void main() {
