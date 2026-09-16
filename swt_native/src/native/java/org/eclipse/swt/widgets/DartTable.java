@@ -201,7 +201,7 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     boolean checkData(TableItem item) {
-        return true;
+        return checkData(item, indexOf(item));
     }
 
     boolean checkData(TableItem item, int index) {
@@ -211,6 +211,7 @@ public class DartTable extends DartComposite implements ITable {
             ((DartTableItem) item.getImpl()).cached = true;
             Event event = new Event();
             event.item = item;
+            event.index = indexOf(item);
             currentItem = item;
             sendEvent(SWT.SetData, event);
             //widget could be disposed at this point
@@ -2307,6 +2308,9 @@ public class DartTable extends DartComposite implements ITable {
             error(SWT.ERROR_NULL_ARGUMENT);
         if (item.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
+        int index = indexOf(item);
+        if (index != -1)
+            showIndex(index);
     }
 
     /**

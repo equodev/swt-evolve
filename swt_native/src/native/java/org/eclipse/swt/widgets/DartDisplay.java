@@ -939,7 +939,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     public Widget findWidget(long handle) {
         checkDevice();
-        return null;
+        return getWidget(handle);
     }
 
     /**
@@ -968,7 +968,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     public Widget findWidget(long handle, long id) {
         checkDevice();
-        return null;
+        return getWidget(handle);
     }
 
     /**

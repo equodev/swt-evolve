@@ -267,7 +267,9 @@ public class DartTree extends DartComposite implements ITree {
         if ((getApi().style & SWT.VIRTUAL) != 0) {
             ((DartTreeItem) item.getImpl()).cached = true;
             Event event = new Event();
+            TreeItem parentItem = item.getParentItem();
             event.item = item;
+            event.index = parentItem == null ? indexOf(item) : parentItem.indexOf(item);
             ignoreRedraw = true;
             sendEvent(SWT.SetData, event);
             //widget could be disposed at this point

@@ -1239,6 +1239,11 @@ public class DartText extends DartScrollable implements IText {
 
     @Override
     boolean sendKeyEvent(int type, Event event) {
+        boolean result = super.sendKeyEvent(type, event);
+        if (!result)
+            return result;
+        if (type != SWT.KeyDown)
+            return result;
         if ((event.stateMask & SWT.COMMAND) != 0) {
             switch(event.keyCode) {
                 case 'z':
@@ -1247,7 +1252,7 @@ public class DartText extends DartScrollable implements IText {
         }
         if (isDisposed())
             return false;
-        return false;
+        return result;
     }
 
     @Override

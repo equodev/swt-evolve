@@ -2085,6 +2085,7 @@ public final class DartGC extends DartResource implements IGC {
             setAlpha(0xFF);
             setAntialias(SWT.DEFAULT);
             setBackgroundPattern(null);
+            setClipping((Rectangle) null);
             setForegroundPattern(null);
             setInterpolation(SWT.DEFAULT);
             setTextAntialias(SWT.DEFAULT);
