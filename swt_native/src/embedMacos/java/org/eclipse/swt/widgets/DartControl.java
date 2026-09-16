@@ -3997,7 +3997,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     boolean enabled = true;
 
-    Color _foreground = new Color(0, 0, 0);
+    Color _foreground;
 
     int orientation;
 

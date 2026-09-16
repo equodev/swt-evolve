@@ -61,6 +61,10 @@ public class DartMocks {
         when(d.getDPI()).thenReturn(new Point(96, 96));
         Color systemColor = new Color(d, red(), green(), blue());
         when(d.getSystemColor(anyInt())).thenReturn(systemColor);
+        // A control with no colour of its own resolves one through defaultForeground(), which asks
+        // the impl rather than the API. Unstubbed it answers null, and the control hands that to
+        // whatever reads its handle.
+        when(dartDisplay.getWidgetColor(anyInt())).thenReturn(systemColor);
         when(d.getSystemCursor(anyInt())).thenReturn(mock(Cursor.class));
         when(dartDisplay.getThread()).thenCallRealMethod();
         Monitor monitor = mock(Monitor.class);

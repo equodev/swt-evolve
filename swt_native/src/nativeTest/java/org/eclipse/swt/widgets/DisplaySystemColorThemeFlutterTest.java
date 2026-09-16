@@ -28,14 +28,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@code getSystemColor()} call time, so it's mirrored here as a literal rather than computed — but
  * it's the literal the theme actually uses, not an approximation.
  *
- * <p>{@code COLOR_WIDGET_FOREGROUND} and {@code COLOR_LIST_FOREGROUND} are deliberately NOT covered
- * here: {@code DartControl}'s generator-added {@code _foreground} field defaults to a hardcoded
- * {@code Color(0, 0, 0)} (unlike {@code _background}, which defaults to {@code null}), so
- * {@code Control.getForeground()} almost never actually reaches {@code defaultForeground()} —
- * making either foreground constant dark-theme-aware broke upstream-parity coverage
- * ({@code Test_org_eclipse_swt_widgets_Text#test_setForegroundAfterBackground}, which — on Cocoa —
- * exercises {@code COLOR_LIST_FOREGROUND}, not {@code COLOR_WIDGET_FOREGROUND}) without fixing
- * anything real. Follow-up, not in scope here.
+ * <p>The foregrounds are covered too, which they once were not: {@code DartControl}'s
+ * generator-added {@code _foreground} field used to default to a hardcoded {@code Color(0, 0, 0)}
+ * (unlike {@code _background}, which defaults to {@code null}), so {@code Control.getForeground()}
+ * never reached {@code defaultForeground()} and making the constants theme-aware changed nothing a
+ * control reported. On Cocoa the field is now left unset, so the fallback runs and a foreground is
+ * read from the same scheme as the background it is drawn on — without which content drawn from a
+ * {@code Paint} listener inherits black onto the dark surface above.
  */
 @Tag("flutter-it")
 class DisplaySystemColorThemeFlutterTest {
@@ -68,13 +67,23 @@ class DisplaySystemColorThemeFlutterTest {
     }
 
     @Test
-    void widgetForegroundStaysFixedRegardlessOfTheme() {
+    void widgetForegroundFollowsDarkForceTheme() {
         forceTheme("dark");
 
         Color foreground = display.getSystemColor(SWT.COLOR_WIDGET_FOREGROUND);
 
         assertThat(new int[] { foreground.getRed(), foreground.getGreen(), foreground.getBlue() })
-                .as("COLOR_WIDGET_FOREGROUND stays fixed — see the class Javadoc for why")
+                .as("a foreground must come from the same scheme as the background it sits on")
+                .isEqualTo(new int[] { 249, 250, 251 });
+    }
+
+    @Test
+    void widgetForegroundKeepsBlackUnderLightForceTheme() {
+        forceTheme("light");
+
+        Color foreground = display.getSystemColor(SWT.COLOR_WIDGET_FOREGROUND);
+
+        assertThat(new int[] { foreground.getRed(), foreground.getGreen(), foreground.getBlue() })
                 .isEqualTo(new int[] { 0, 0, 0 });
     }
 
@@ -106,13 +115,22 @@ class DisplaySystemColorThemeFlutterTest {
     }
 
     @Test
-    void listForegroundStaysFixedRegardlessOfTheme() {
+    void listForegroundFollowsDarkForceTheme() {
         forceTheme("dark");
 
         Color foreground = display.getSystemColor(SWT.COLOR_LIST_FOREGROUND);
 
         assertThat(new int[] { foreground.getRed(), foreground.getGreen(), foreground.getBlue() })
-                .as("COLOR_LIST_FOREGROUND stays fixed — see the class Javadoc for why")
+                .isEqualTo(new int[] { 249, 250, 251 });
+    }
+
+    @Test
+    void listForegroundKeepsBlackUnderLightForceTheme() {
+        forceTheme("light");
+
+        Color foreground = display.getSystemColor(SWT.COLOR_LIST_FOREGROUND);
+
+        assertThat(new int[] { foreground.getRed(), foreground.getGreen(), foreground.getBlue() })
                 .isEqualTo(new int[] { 0, 0, 0 });
     }
 

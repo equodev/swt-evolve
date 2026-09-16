@@ -54,7 +54,9 @@ class DisplaySystemColorFallbackFlutterTest {
     @Test
     void mappedIdsKeepTheirColours() {
         assertThat(display.getSystemColor(SWT.COLOR_RED).getRGB()).isEqualTo(new RGB(255, 0, 0));
-        assertThat(display.getSystemColor(SWT.COLOR_WIDGET_FOREGROUND).getRGB()).isEqualTo(new RGB(0, 0, 0));
+        // A widget-family id, to show the mapping is not only for the palette constants. Not a
+        // foreground: those follow the theme now, and this test runs under whichever one the host has.
+        assertThat(display.getSystemColor(SWT.COLOR_LIST_SELECTION).getRGB()).isEqualTo(new RGB(51, 153, 255));
         assertThat(rgba(display.getSystemColor(SWT.COLOR_TRANSPARENT)))
                 .as("COLOR_TRANSPARENT is a mapped id and stays fully transparent")
                 .isEqualTo(new int[] { 0, 0, 0, 0 });

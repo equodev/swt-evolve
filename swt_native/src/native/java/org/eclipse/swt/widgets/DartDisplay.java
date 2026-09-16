@@ -1585,8 +1585,16 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
                 new Color(this.getApi(), 192, 192, 192);
             case SWT.COLOR_WIDGET_HIGHLIGHT_SHADOW ->
                 new Color(this.getApi(), 224, 224, 224);
+            // A foreground is only legible against the background it is paired with, so it
+            // has to come from the same scheme: an application that sets neither -- the
+            // common case for owner-drawn content -- inherits both from here.
             case SWT.COLOR_WIDGET_FOREGROUND ->
-                new Color(this.getApi(), 0, 0, 0);
+                {
+                    if (!isSystemDarkTheme())
+                        yield new Color(this.getApi(), 0, 0, 0);
+                    dev.equo.swt.size.CanvasTheme t = dev.equo.swt.size.CanvasTheme.getDarkOnSurface();
+                    yield new Color(this.getApi(), t.red(), t.green(), t.blue());
+                }
             case SWT.COLOR_WIDGET_BACKGROUND ->
                 {
                     if (!isSystemDarkTheme())
@@ -1597,7 +1605,12 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
             case SWT.COLOR_WIDGET_BORDER ->
                 new Color(this.getApi(), 0, 0, 0);
             case SWT.COLOR_LIST_FOREGROUND ->
-                new Color(this.getApi(), 0, 0, 0);
+                {
+                    if (!isSystemDarkTheme())
+                        yield new Color(this.getApi(), 0, 0, 0);
+                    dev.equo.swt.size.CanvasTheme t = dev.equo.swt.size.CanvasTheme.getDarkOnSurface();
+                    yield new Color(this.getApi(), t.red(), t.green(), t.blue());
+                }
             case SWT.COLOR_LIST_BACKGROUND ->
                 {
                     if (!isSystemDarkTheme())
