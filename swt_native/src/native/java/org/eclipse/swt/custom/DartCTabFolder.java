@@ -3399,8 +3399,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         }
         showItem(selection);
         redraw();
-        if (getBridge() instanceof EmbeddedBridge b)
-            b.setBoundsCTabFolder(this, getBounds(), true);
+        if (getBridge() instanceof EmbeddedBridge)
+            ((EmbeddedBridge) getBridge()).setBoundsCTabFolder(this, getBounds(), true);
     }
 
     void setSelection(int index, boolean notify) {
@@ -4737,12 +4737,14 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     int showListPopupSeq = 0;
 
     private void paintChildrenRecursively(Control control) {
-        if (control instanceof Composite composite) {
+        if (control instanceof Composite) {
+            Composite composite = (Composite) control;
             Control[] children = composite.getChildren();
             if (children == null)
                 return;
             for (Control child : children) {
-                if (child.getImpl() instanceof DartControl dc && dc.getDisplay() != null) {
+                if (child.getImpl() instanceof DartControl && ((DartControl) child.getImpl()).getDisplay() != null) {
+                    DartControl dc = (DartControl) child.getImpl();
                     ControlHelper.paint(dc);
                 }
                 paintChildrenRecursively(child);

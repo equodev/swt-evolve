@@ -11,9 +11,8 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URLDecoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -60,31 +59,35 @@ public class WebFlutterServer {
     private static final Logger LOG = Logger.getLogger(WebFlutterServer.class.getName());
 
     // Default MIME types for Flutter web files
-    private static final Map<String, String> MIME_TYPES = Map.ofEntries(
-            Map.entry("html", "text/html; charset=utf-8"),
-            Map.entry("htm", "text/html; charset=utf-8"),
-            Map.entry("js", "application/javascript"),
-            Map.entry("mjs", "application/javascript"),
-            Map.entry("wasm", "application/wasm"),
-            Map.entry("css", "text/css"),
-            Map.entry("json", "application/json"),
-            Map.entry("png", "image/png"),
-            Map.entry("jpg", "image/jpeg"),
-            Map.entry("jpeg", "image/jpeg"),
-            Map.entry("gif", "image/gif"),
-            Map.entry("svg", "image/svg+xml"),
-            Map.entry("ico", "image/x-icon"),
-            Map.entry("webp", "image/webp"),
-            Map.entry("woff", "font/woff"),
-            Map.entry("woff2", "font/woff2"),
-            Map.entry("ttf", "font/ttf"),
-            Map.entry("otf", "font/otf"),
-            Map.entry("eot", "application/vnd.ms-fontobject"),
-            Map.entry("map", "application/json"),
-            Map.entry("txt", "text/plain"),
-            Map.entry("xml", "application/xml"),
-            Map.entry("webmanifest", "application/manifest+json")
-    );
+    private static final Map<String, String> MIME_TYPES;
+
+    static {
+        Map<String, String> m = new java.util.LinkedHashMap<>();
+        m.put("html", "text/html; charset=utf-8");
+        m.put("htm", "text/html; charset=utf-8");
+        m.put("js", "application/javascript");
+        m.put("mjs", "application/javascript");
+        m.put("wasm", "application/wasm");
+        m.put("css", "text/css");
+        m.put("json", "application/json");
+        m.put("png", "image/png");
+        m.put("jpg", "image/jpeg");
+        m.put("jpeg", "image/jpeg");
+        m.put("gif", "image/gif");
+        m.put("svg", "image/svg+xml");
+        m.put("ico", "image/x-icon");
+        m.put("webp", "image/webp");
+        m.put("woff", "font/woff");
+        m.put("woff2", "font/woff2");
+        m.put("ttf", "font/ttf");
+        m.put("otf", "font/otf");
+        m.put("eot", "application/vnd.ms-fontobject");
+        m.put("map", "application/json");
+        m.put("txt", "text/plain");
+        m.put("xml", "application/xml");
+        m.put("webmanifest", "application/manifest+json");
+        MIME_TYPES = java.util.Collections.unmodifiableMap(m);
+    }
 
     private static final String DEFAULT_MIME = "application/octet-stream";
 
@@ -409,7 +412,7 @@ public class WebFlutterServer {
                 }
 
                 if (file.getName().equals("index.html")) {
-                    String content = Files.readString(file.toPath(), java.nio.charset.StandardCharsets.UTF_8);
+                    String content = new String(java.nio.file.Files.readAllBytes(file.toPath()), java.nio.charset.StandardCharsets.UTF_8);
                     content = content
                             .replace("{{EQUO_COMM_PORT}}", String.valueOf(commPort))
                             .replace("{{EQUO_COMM_URL}}", "")
@@ -426,7 +429,7 @@ public class WebFlutterServer {
                     exchange.sendResponseHeaders(200, file.length());
                     try (OutputStream os = exchange.getResponseBody();
                          InputStream is = Files.newInputStream(file.toPath())) {
-                        is.transferTo(os);
+                        Java8.copy(is, os);
                     }
                 }
             } catch (IOException e) {
@@ -572,7 +575,7 @@ public class WebFlutterServer {
      */
     static boolean proxyEnabled() {
         String p = System.getProperty("dev.equo.swt.web.proxy");
-        return p != null && !p.isBlank();
+        return p != null && !p.trim().isEmpty();
     }
 
     /**
@@ -593,7 +596,7 @@ public class WebFlutterServer {
         if (host == null) return false;
         if (isLoopbackHost(host)) return true;
         String p = System.getProperty("dev.equo.swt.web.proxy");
-        if (p == null || p.isBlank()) return false;
+        if (p == null || p.trim().isEmpty()) return false;
         if ("all".equalsIgnoreCase(p.trim())) return true;
         for (String allowed : p.split(",")) {
             allowed = allowed.trim();
@@ -619,7 +622,7 @@ public class WebFlutterServer {
         for (String pair : rawQuery.split("&")) {
             int eq = pair.indexOf('=');
             if (eq > 0 && pair.substring(0, eq).equals(name)) {
-                return URLDecoder.decode(pair.substring(eq + 1), StandardCharsets.UTF_8);
+                return Java8.urlDecode(pair.substring(eq + 1), StandardCharsets.UTF_8);
             }
         }
         return null;
@@ -641,8 +644,7 @@ public class WebFlutterServer {
      */
     private static class ProxyHandler implements HttpHandler {
 
-        private final HttpClient client =
-                HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+        private static final int MAX_REDIRECTS = 5;
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -650,12 +652,11 @@ public class WebFlutterServer {
                 String target = queryParam(exchange.getRequestURI().getRawQuery(), "url");
                 if (target == null || !proxyAllowed(target)) { sendPlain(exchange, 403, "url not allowed"); return; }
 
-                HttpRequest req = HttpRequest.newBuilder(URI.create(target)).GET().build();
-                HttpResponse<byte[]> resp = client.send(req, HttpResponse.BodyHandlers.ofByteArray());
-                String contentType = resp.headers().firstValue("content-type").orElse("text/html; charset=utf-8");
-                byte[] body = resp.body();
+                Fetched resp = fetch(target);
+                String contentType = resp.contentType != null ? resp.contentType : "text/html; charset=utf-8";
+                byte[] body = resp.body;
                 if (contentType.toLowerCase().contains("html")) {
-                    body = injectBaseHref(new String(body, StandardCharsets.UTF_8), resp.uri().toString())
+                    body = injectBaseHref(new String(body, StandardCharsets.UTF_8), resp.finalUrl)
                             .getBytes(StandardCharsets.UTF_8);
                 }
                 // Serve from this origin; deliberately do NOT copy X-Frame-Options / CSP frame-ancestors.
@@ -670,6 +671,50 @@ public class WebFlutterServer {
             } finally {
                 exchange.close();
             }
+        }
+
+        /** What the proxied GET came back with, plus the URL it ended on. */
+        private static final class Fetched {
+            final String finalUrl;
+            final byte[] body;
+            final String contentType;
+
+            Fetched(String finalUrl, byte[] body, String contentType) {
+                this.finalUrl = finalUrl;
+                this.body = body;
+                this.contentType = contentType;
+            }
+        }
+
+        /**
+         * A GET that follows redirects itself. HttpURLConnection will not follow one that changes
+         * protocol (the http -> https hop most sites open with), and the URL the response ended on
+         * is what the injected base href has to name, which it does not report either.
+         */
+        private static Fetched fetch(String target) throws IOException {
+            String url = target;
+            for (int hop = 0; hop <= MAX_REDIRECTS; hop++) {
+                HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+                conn.setRequestMethod("GET");
+                conn.setInstanceFollowRedirects(false);
+                int code = conn.getResponseCode();
+                if (code >= 300 && code < 400) {
+                    String location = conn.getHeaderField("Location");
+                    conn.disconnect();
+                    if (location == null) throw new IOException("redirect with no Location from " + url);
+                    url = new URL(new URL(url), location).toString();
+                    continue;
+                }
+                InputStream in = code >= 400 ? conn.getErrorStream() : conn.getInputStream();
+                try {
+                    byte[] body = in == null ? new byte[0] : Java8.readAllBytes(in);
+                    return new Fetched(url, body, conn.getContentType());
+                } finally {
+                    if (in != null) in.close();
+                    conn.disconnect();
+                }
+            }
+            throw new IOException("too many redirects for " + target);
         }
 
         private static String injectBaseHref(String html, String finalUrl) {
@@ -711,7 +756,7 @@ public class WebFlutterServer {
                     sendJson(exchange, 405, "{\"error\":\"method not allowed\"}");
                     return;
                 }
-                String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                String body = new String(Java8.readAllBytes(exchange.getRequestBody()), StandardCharsets.UTF_8);
                 Object parsed = EvalJson.parse(body);
                 if (!(parsed instanceof Map)) {
                     sendJson(exchange, 400, "{\"error\":\"bad request\"}");
@@ -784,7 +829,7 @@ public class WebFlutterServer {
                 // Decode as a path segment, not form data: escape literal '+' first so
                 // URLDecoder (which otherwise turns '+' into ' ') doesn't mangle
                 // filenames that contain a real '+' character.
-                String relative = URLDecoder.decode(
+                String relative = Java8.urlDecode(
                         rest.substring(slash + 1).replace("+", "%2B"), StandardCharsets.UTF_8);
 
                 File file = LocalFileServing.resolve(token, relative);
@@ -830,7 +875,7 @@ public class WebFlutterServer {
             exchange.sendResponseHeaders(200, file.length());
             try (OutputStream os = exchange.getResponseBody();
                  InputStream is = Files.newInputStream(file.toPath())) {
-                is.transferTo(os);
+                Java8.copy(is, os);
             }
         }
 

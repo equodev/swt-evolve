@@ -675,7 +675,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (accessible == null) {
             Widget current = this.getApi();
             while (current != null) {
-                if (current instanceof Control ctrl) {
+                if (current instanceof Control) {
+                    Control ctrl = (Control) current;
                     if (ctrl.handle != 0) {
                         this.getApi().handle = ctrl.handle;
                         break;

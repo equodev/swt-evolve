@@ -39,8 +39,8 @@ public class VWidget {
      */
     public void markDirty(String key) {
         changed.add(key);
-        if (impl instanceof DartWidget d)
-            d.dirty();
+        if (impl instanceof DartWidget)
+            ((DartWidget) impl).dirty();
     }
 
     /**

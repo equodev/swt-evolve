@@ -318,7 +318,7 @@ public abstract class DartDialog implements IDialog {
                 done[0] = true;
             });
         }
-        DartShell shell = (parent != null && parent.getImpl() instanceof DartShell s) ? s : null;
+        DartShell shell = (parent != null && parent.getImpl() instanceof DartShell) ? (DartShell) parent.getImpl() : null;
         if (shell != null)
             shell.addDialog(this);
         while (!done[0]) {

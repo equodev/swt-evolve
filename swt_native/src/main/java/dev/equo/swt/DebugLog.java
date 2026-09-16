@@ -52,7 +52,7 @@ final class DebugLog {
     };
 
     /** Binary/heavy string fields whose value is replaced by {@code "-ignore-"} instead of stripped. */
-    private static final Set<String> REDACT_KEYS = Set.of("data", "alphaData", "svgContent");
+    private static final Set<String> REDACT_KEYS = Java8.set("data", "alphaData", "svgContent");
 
     /** Explicit field names to strip (from {@code simple} + {@code hide}); color matching is separate. */
     private static final Set<String> HIDE_KEYS = buildHideKeys();
@@ -241,7 +241,7 @@ final class DebugLog {
     }
 
     private static String indent(int level) {
-        return "  ".repeat(level);
+        return Java8.repeat("  ", level);
     }
 
     // ---- config helpers ----------------------------------------------------

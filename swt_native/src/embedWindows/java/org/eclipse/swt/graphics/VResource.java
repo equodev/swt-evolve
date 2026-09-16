@@ -32,8 +32,8 @@ public class VResource {
      */
     public void markDirty(String key) {
         changed.add(key);
-        if (impl instanceof DartResource d)
-            d.dirty();
+        if (impl instanceof DartResource)
+            ((DartResource) impl).dirty();
     }
 
     /**

@@ -1030,7 +1030,8 @@ public class SwtToolBar extends SwtComposite implements IToolBar {
 
     @Override
     void setBoundsInPixels(int x, int y, int width, int height, int flags) {
-        if (parent.getImpl() instanceof SwtComposite swtParent && swtParent.lpwp != null) {
+        if (parent.getImpl() instanceof SwtComposite && ((SwtComposite) parent.getImpl()).lpwp != null) {
+            SwtComposite swtParent = (SwtComposite) parent.getImpl();
             if (getDrawing() && OS.IsWindowVisible(getApi().handle)) {
                 swtParent.setResizeChildren(false);
                 swtParent.setResizeChildren(true);

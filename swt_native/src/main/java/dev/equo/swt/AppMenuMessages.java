@@ -20,14 +20,19 @@ import java.util.Set;
 public final class AppMenuMessages {
 
     /** Modern key to the name upstream passed for it before 3.119, which is the English label. */
-    private static final Map<String, String> LEGACY_KEYS = Map.of(
-            "SWT_About", "About",
-            "SWT_Preferences", "Preferences...",
-            "SWT_Services", "Services",
-            "SWT_Hide", "Hide",
-            "SWT_HideOthers", "Hide Others",
-            "SWT_ShowAll", "Show All",
-            "SWT_Quit", "Quit");
+    private static final Map<String, String> LEGACY_KEYS;
+
+    static {
+        Map<String, String> m = new java.util.LinkedHashMap<>();
+        m.put("SWT_About", "About");
+        m.put("SWT_Preferences", "Preferences...");
+        m.put("SWT_Services", "Services");
+        m.put("SWT_Hide", "Hide");
+        m.put("SWT_HideOthers", "Hide Others");
+        m.put("SWT_ShowAll", "Show All");
+        m.put("SWT_Quit", "Quit");
+        LEGACY_KEYS = java.util.Collections.unmodifiableMap(m);
+    }
 
     private AppMenuMessages() {
     }

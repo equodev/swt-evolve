@@ -158,7 +158,7 @@ public class ControlHelper {
         widget.sendEvent(SWT.Traverse, e);
         // An Alt+letter mnemonic that a Traverse listener/filter didn't veto activates the matching
         // widget (Button click, Label→next focus, Group→first child, TabItem select) in the shell.
-        if (mnemonic && e.doit && widget instanceof DartControl dc && !dc.getApi().isDisposed()) {
+        if (mnemonic && e.doit && widget instanceof DartControl && !((DartControl) widget).getApi().isDisposed()) { DartControl dc = (DartControl) widget;
             MnemonicHelper.dispatch(dc.getApi(), (char) keyEvent.keyCode);
         }
         return e.doit;
@@ -166,7 +166,7 @@ public class ControlHelper {
 
     /** Answers the client's held context menu after the MenuDetect listeners have run. */
     public static void sendMenuDetectVerdict(DartWidget widget, Event e) {
-        dev.equo.swt.FlutterBridge.send(widget, "menu/verdict", java.util.Map.of("doit", e.doit));
+        dev.equo.swt.FlutterBridge.send(widget, "menu/verdict", dev.equo.swt.Java8.map("doit", e.doit));
     }
 
     /**
@@ -328,8 +328,8 @@ public class ControlHelper {
         if (!c.hooks(SWT.PaintItem)) {
             return;
         }
-        if (c instanceof DartTable table) {
-            TableHelper.nameOwnerDrawnCells(table);
+        if (c instanceof DartTable) {
+            TableHelper.nameOwnerDrawnCells((DartTable) c);
         }
     }
 
@@ -551,14 +551,14 @@ public class ControlHelper {
                 return;
             // A Dart control can sit inside a natively-backed ancestor; that one already gets its
             // activation from the OS, so walk past it rather than assuming the whole chain is ours.
-            if (widget.getImpl() instanceof DartWidget impl) {
+            if (widget.getImpl() instanceof DartWidget) { DartWidget impl = (DartWidget) widget.getImpl();
                 Event event = new Event();
                 event.detail = detail;
                 impl.sendEvent(SWT.Activate, event);
             }
             if (widget instanceof Shell)
                 return;
-            widget = (widget instanceof Control c) ? c.getParent() : null;
+            widget = (widget instanceof Control) ? ((Control) widget).getParent() : null;
         }
     }
 
@@ -585,14 +585,15 @@ public class ControlHelper {
         for (Widget widget = previous; widget != null; ) {
             if (widget.isDisposed() || isAncestorOfOrSame(widget, now))
                 return;
-            if (widget.getImpl() instanceof DartWidget impl) {
+            if (widget.getImpl() instanceof DartWidget) {
+                DartWidget impl = (DartWidget) widget.getImpl();
                 Event event = new Event();
                 event.detail = detail;
                 impl.sendEvent(SWT.Deactivate, event);
             }
             if (widget instanceof Shell)
                 return;
-            widget = (widget instanceof Control c) ? c.getParent() : null;
+            widget = (widget instanceof Control) ? ((Control) widget).getParent() : null;
         }
     }
 

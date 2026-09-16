@@ -272,8 +272,9 @@ public final class DartFontData implements IFontData {
     public boolean equals(Object object) {
         if (object == this.getApi())
             return true;
-        if (!(object instanceof FontData data))
+        if (!(object instanceof FontData))
             return false;
+        FontData data = (FontData) object;
         if (this.name == null) {
             if (data.getName() != null)
                 return false;

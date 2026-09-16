@@ -16,8 +16,8 @@ public class DartSideBar extends DartComposite {
         // On the 0<->30 flip, re-dirty the parent so its NoLayout snapshot re-serializes with the new slot.
         if (width != this.bounds.width) {
             FlutterBridge bridge = getBridge();
-            if (bridge != null && parent != null && parent.getImpl() instanceof DartWidget dw)
-                bridge.dirty(dw);
+            if (bridge != null && parent != null && parent.getImpl() instanceof DartWidget)
+                bridge.dirty(((DartWidget) parent.getImpl()));
         }
         return new Point(width, width == 0 ? 0 : 20);
     }

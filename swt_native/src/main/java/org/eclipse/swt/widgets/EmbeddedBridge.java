@@ -42,12 +42,12 @@ public abstract class EmbeddedBridge extends FlutterBridge {
         // _hookEvents (before register() runs), this can be invoked twice per
         // widget. Returning the cached bridge avoids creating a duplicate
         // bridge + duplicate addSelectionListener side effects.
-        if (widget.bridge instanceof EmbeddedBridge cached) return cached;
-        if (widget instanceof DartControl dartControl && !(dartControl.parent.getImpl() instanceof DartComposite)) {
+        if (widget.bridge instanceof EmbeddedBridge) return ((EmbeddedBridge) widget.bridge);
+        if (widget instanceof DartControl && !(((DartControl) widget).parent.getImpl() instanceof DartComposite)) { DartControl dartControl = (DartControl) widget;
             EmbeddedBridge bridge = factory.get();
             widget.bridge = bridge;
             bridge.initFlutterView(dartControl.parent, dartControl);
-            if (widget instanceof DartCTabFolder t) { // workaround
+            if (widget instanceof DartCTabFolder) { DartCTabFolder t = (DartCTabFolder) widget; // workaround
                 t.addSelectionListener(SelectionListener.widgetSelectedAdapter(e -> {
                     Rectangle bounds = t.getBounds();
                     bridge.setBoundsCTabFolder(t, bounds, true);
@@ -55,7 +55,7 @@ public abstract class EmbeddedBridge extends FlutterBridge {
             }
             return bridge;
         }
-        if (widget instanceof DartControl dartControl && dartControl.parent.getImpl() instanceof DartComposite c) {
+        if (widget instanceof DartControl && ((DartControl) widget).parent.getImpl() instanceof DartComposite) { DartComposite c = (DartComposite) ((DartControl) widget).parent.getImpl(); DartControl dartControl = (DartControl) widget;
             FlutterBridge bridge = c.getBridge();
             // Cache the parent's bridge on the child so future getBridge(widget)
             // lookups short-circuit instead of walking the parent chain again.
@@ -196,7 +196,7 @@ public abstract class EmbeddedBridge extends FlutterBridge {
 
     @Override
     public void destroy(DartWidget control) {
-        if (control instanceof DartControl dartControl && control == forWidget) {
+        if (control instanceof DartControl && control == forWidget) { DartControl dartControl = (DartControl) control;
             super.destroy(control);
             // Dispose Flutter context FIRST to handle view disconnection
             FlutterNative.dispose(context);
@@ -212,7 +212,7 @@ public abstract class EmbeddedBridge extends FlutterBridge {
     public void setBounds(DartControl dartControl, Rectangle bounds) {
         if (dartControl.bridge != null && forWidget == dartControl) {
             System.out.println("SET BOUNDS: " + dartControl + " Rectangle {" + bounds.x + ", " + bounds.y + ", " + bounds.width + ", " + bounds.height + "}");
-            if (dartControl instanceof DartCTabFolder folder) {
+            if (dartControl instanceof DartCTabFolder) { DartCTabFolder folder = (DartCTabFolder) dartControl;
                 setBoundsCTabFolder(folder, bounds, false);
             } else {
                 FlutterNative.setBounds(context, bounds.x, bounds.y, bounds.width, bounds.height,
@@ -221,12 +221,12 @@ public abstract class EmbeddedBridge extends FlutterBridge {
 
             //dartControl.resized();
             //dartControl.sendEvent(SWT.Resize);
-            if (dartControl instanceof DartComposite c && c.layout != null) {
+            if (dartControl instanceof DartComposite && ((DartComposite) dartControl).layout != null) { DartComposite c = (DartComposite) dartControl;
                 c.markLayout(false, false);
                 c.updateLayout(false);
             }
         } else {
-            if (dartControl instanceof DartComposite c && c.layout != null) {
+            if (dartControl instanceof DartComposite && ((DartComposite) dartControl).layout != null) { DartComposite c = (DartComposite) dartControl;
                 c.markLayout(false, false);
                 c.updateLayout(false);
             }

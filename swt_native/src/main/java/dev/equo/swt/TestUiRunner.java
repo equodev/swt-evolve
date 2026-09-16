@@ -67,11 +67,11 @@ final class TestUiRunner {
         d.asyncExec(() -> {
             try {
                 switch (action) {
-                    case "openPreferences" -> openPreferences(m);
-                    case "listPrefPages" -> listPrefPages(comm, m);
-                    case "openProject" -> openProject(m);
-                    case "openFile" -> openFile(m);
-                    default -> DebugLog.checkpoint(CHANNEL, "unknown action:", action);
+                    case "openPreferences": openPreferences(m); break;
+                    case "listPrefPages": listPrefPages(comm, m); break;
+                    case "openProject": openProject(m); break;
+                    case "openFile": openFile(m); break;
+                    default: DebugLog.checkpoint(CHANNEL, "unknown action:", action);
                 }
             } catch (Throwable t) {
                 DebugLog.checkpoint(CHANNEL, action + " failed:", t);
@@ -371,12 +371,12 @@ final class TestUiRunner {
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
             switch (c) {
-                case '"' -> b.append("\\\"");
-                case '\\' -> b.append("\\\\");
-                case '\n' -> b.append("\\n");
-                case '\r' -> b.append("\\r");
-                case '\t' -> b.append("\\t");
-                default -> {
+                case '"': b.append("\\\""); break;
+                case '\\': b.append("\\\\"); break;
+                case '\n': b.append("\\n"); break;
+                case '\r': b.append("\\r"); break;
+                case '\t': b.append("\\t"); break;
+                default: {
                     if (c < 0x20) b.append(String.format("\\u%04x", (int) c));
                     else b.append(c);
                 }

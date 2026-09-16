@@ -804,9 +804,11 @@ public class DartComposite extends DartScrollable implements IComposite {
         if (!super.redrawChildren())
             return false;
         for (Control element : _getChildren()) {
-            if (element.getImpl() instanceof DartControl dartControl) {
+            if (element.getImpl() instanceof DartControl) {
+                DartControl dartControl = (DartControl) element.getImpl();
                 dartControl.redrawChildren();
-            } else if (element.getImpl() instanceof SwtControl swtControl) {
+            } else if (element.getImpl() instanceof SwtControl) {
+                SwtControl swtControl = (SwtControl) element.getImpl();
                 swtControl.redrawChildren();
             }
         }
@@ -815,7 +817,8 @@ public class DartComposite extends DartScrollable implements IComposite {
 
     @Override
     void releaseParent() {
-        if (parent != null && parent.getImpl() instanceof DartComposite p) {
+        if (parent != null && parent.getImpl() instanceof DartComposite) {
+            DartComposite p = (DartComposite) parent.getImpl();
             p.updateChildren();
         }
         super.releaseParent();
@@ -1125,7 +1128,8 @@ public class DartComposite extends DartScrollable implements IComposite {
         super.updateBackgroundColor();
         Control[] children = _getChildren();
         for (Control child : children) {
-            if ((child.state & PARENT_BACKGROUND) != 0 && child.getImpl() instanceof DartControl dc) {
+            if ((child.state & PARENT_BACKGROUND) != 0 && child.getImpl() instanceof DartControl) {
+                DartControl dc = (DartControl) child.getImpl();
                 dc.updateBackgroundColor();
             }
         }
@@ -1136,7 +1140,8 @@ public class DartComposite extends DartScrollable implements IComposite {
         super.updateBackgroundImage();
         Control[] children = _getChildren();
         for (Control child : children) {
-            if ((child.state & PARENT_BACKGROUND) != 0 && child.getImpl() instanceof DartControl dc) {
+            if ((child.state & PARENT_BACKGROUND) != 0 && child.getImpl() instanceof DartControl) {
+                DartControl dc = (DartControl) child.getImpl();
                 dc.updateBackgroundImage();
             }
         }

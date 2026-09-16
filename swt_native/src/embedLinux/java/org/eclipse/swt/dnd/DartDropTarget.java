@@ -755,29 +755,35 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
             if (found != null)
                 return found;
         }
-        if (control instanceof Table table && e.index >= 0 && e.index < table.getItemCount()) {
+        if (control instanceof Table && e.index >= 0 && e.index < ((Table) control).getItemCount()) {
+            Table table = (Table) control;
             return table.getItem(e.index);
-        } else if (control instanceof Tree tree && e.index >= 0 && e.index < tree.getItemCount()) {
+        } else if (control instanceof Tree && e.index >= 0 && e.index < ((Tree) control).getItemCount()) {
+            Tree tree = (Tree) control;
             return tree.getItem(e.index);
-        } else if (control instanceof org.eclipse.swt.custom.CTabFolder folder && e.index >= 0 && e.index < folder.getItemCount()) {
+        } else if (control instanceof org.eclipse.swt.custom.CTabFolder && e.index >= 0 && e.index < ((org.eclipse.swt.custom.CTabFolder) control).getItemCount()) {
+            org.eclipse.swt.custom.CTabFolder folder = (org.eclipse.swt.custom.CTabFolder) control;
             return folder.getItem(e.index);
         }
         return null;
     }
 
     private Widget findItemById(Control control, long id) {
-        if (control instanceof Table table) {
+        if (control instanceof Table) {
+            Table table = (Table) control;
             for (TableItem item : table.getItems()) {
                 if (FlutterBridge.id(item) == id)
                     return item;
             }
-        } else if (control instanceof Tree tree) {
+        } else if (control instanceof Tree) {
+            Tree tree = (Tree) control;
             for (TreeItem item : tree.getItems()) {
                 Widget found = findTreeItemById(item, id);
                 if (found != null)
                     return found;
             }
-        } else if (control instanceof org.eclipse.swt.custom.CTabFolder folder) {
+        } else if (control instanceof org.eclipse.swt.custom.CTabFolder) {
+            org.eclipse.swt.custom.CTabFolder folder = (org.eclipse.swt.custom.CTabFolder) control;
             for (org.eclipse.swt.custom.CTabItem item : folder.getItems()) {
                 if (FlutterBridge.id(item) == id)
                     return item;

@@ -58,7 +58,7 @@ public class SVGFileFormat extends FileFormat {
     @Override
     List<ElementAtZoom<ImageData>> loadFromByteStream(int fileZoom, int targetZoom) {
         if (RASTERIZER == null) {
-            return List.of(new ElementAtZoom<>(SVGFileFormatHelper.fallbackImageData(inputStream, false), targetZoom));
+            return java.util.Collections.singletonList(new ElementAtZoom<ImageData>(SVGFileFormatHelper.fallbackImageData(inputStream, false), targetZoom));
         }
         if (targetZoom <= 0) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT, null, " [Cannot rasterize SVG for zoom <= 0]");

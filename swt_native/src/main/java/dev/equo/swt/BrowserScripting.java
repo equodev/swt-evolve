@@ -59,7 +59,7 @@ public final class BrowserScripting {
             }
         });
         FlutterBridge.send(widget, "evaluate",
-                Map.of("script", asFunctionBody(script), "reqId", reqId));
+                Java8.map("script", asFunctionBody(script), "reqId", reqId));
         Display d = display != null ? display : Display.getCurrent();
         long end = System.currentTimeMillis() + TIMEOUT_MS;
         while (!future.isDone() && System.currentTimeMillis() < end) {

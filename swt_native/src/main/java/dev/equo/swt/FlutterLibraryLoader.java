@@ -375,7 +375,7 @@ public class FlutterLibraryLoader {
     static String firstBundleBaseDir(Iterable<ExternalBundleProvider> providers) {
         for (ExternalBundleProvider p : providers) {
             String base = p.extractAndGetBundleBaseDir();
-            if (base != null && !base.isBlank()) {
+            if (base != null && !base.trim().isEmpty()) {
                 return base;
             }
         }
@@ -389,7 +389,7 @@ public class FlutterLibraryLoader {
      */
     private static void applyExternalBundleOverride() {
         String dir = System.getProperty(EXTERNAL_BUNDLE_DIR);
-        if (dir == null || dir.isBlank()) {
+        if (dir == null || dir.trim().isEmpty()) {
             // Production: no dev build dir. Discover the external bundle owner (EWT) via SPI,
             // which extracts the combined bundle and returns its base. Publish it back into the
             // property so EWT's NativeLibLoader (which reads the same property to attach-load

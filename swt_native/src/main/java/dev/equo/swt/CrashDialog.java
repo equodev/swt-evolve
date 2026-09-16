@@ -134,7 +134,7 @@ class CrashDialog {
 
             boolean success = CrashReporter.sendReport(
                     descriptionText.getText(),
-                    emailText.getText().isBlank() ? null : emailText.getText().trim(),
+                    emailText.getText().trim().isEmpty() ? null : emailText.getText().trim(),
                     crashLog,
                     eclipseLog
             );

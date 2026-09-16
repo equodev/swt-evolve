@@ -24,7 +24,7 @@ public class VTray extends VWidget {
         ArrayList<TrayItem> result = new ArrayList<>(values.length);
         for (TrayItem v : values) if (v != null)
             result.add(v);
-        return result.toArray(TrayItem[]::new);
+        return result.toArray(new TrayItem[0]);
     }
 
     public void setItems(TrayItem[] value) {

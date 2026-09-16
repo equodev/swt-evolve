@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import static java.util.Map.entry;
 
 public class Config {
 
@@ -39,33 +38,33 @@ public class Config {
 
     static {
         try {
-            equoEnabled = Map.ofEntries(
-                    entry(Button.class, Impl.equo),
-                    entry(Label.class, Impl.equo),
-                    entry(CTabFolder.class, Impl.equo),
-                    entry(CTabItem.class, Impl.equo),
-                    entry(CTabFolderRenderer.class, Impl.equo),
-                    entry(Class.forName("org.eclipse.swt.custom.CTabFolderLayout"), Impl.equo),
-                    entry(StyledText.class, Impl.equo),
-                    entry(Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo),
-                    entry(Table.class, Impl.equo),
-                    entry(TableItem.class, Impl.equo),
-                    entry(TableColumn.class, Impl.equo),
-                    entry(Text.class, Impl.equo),
-                    entry(Link.class, Impl.equo),
+            java.util.Map<Class<?>, Impl> enabled = new java.util.LinkedHashMap<>();
+            enabled.put(Button.class, Impl.equo);
+            enabled.put(Label.class, Impl.equo);
+            enabled.put(CTabFolder.class, Impl.equo);
+            enabled.put(CTabItem.class, Impl.equo);
+            enabled.put(CTabFolderRenderer.class, Impl.equo);
+            enabled.put(Class.forName("org.eclipse.swt.custom.CTabFolderLayout"), Impl.equo);
+            enabled.put(StyledText.class, Impl.equo);
+            enabled.put(Class.forName("org.eclipse.swt.custom.StyledTextRenderer"), Impl.equo);
+            enabled.put(Table.class, Impl.equo);
+            enabled.put(TableItem.class, Impl.equo);
+            enabled.put(TableColumn.class, Impl.equo);
+            enabled.put(Text.class, Impl.equo);
+            enabled.put(Link.class, Impl.equo);
                     //entry(Group.class, Impl.equo),
                     //entry(ExpandBar.class, Impl.equo),
                     //entry(ExpandItem.class, Impl.equo),
                     //entry(Sash.class, Impl.equo),
-                    entry(List.class, Impl.equo),
-                    entry(Combo.class, Impl.equo),
-                    entry(CCombo.class, Impl.equo),
-                    entry(CLabel.class, Impl.equo),
-                    entry(ToolBar.class, Impl.equo),
-                    entry(Tree.class, Impl.equo),
-                    entry(TreeItem.class, Impl.equo),
-                    entry(TreeColumn.class, Impl.equo),
-                    entry(Canvas.class, Impl.equo)
+            enabled.put(List.class, Impl.equo);
+            enabled.put(Combo.class, Impl.equo);
+            enabled.put(CCombo.class, Impl.equo);
+            enabled.put(CLabel.class, Impl.equo);
+            enabled.put(ToolBar.class, Impl.equo);
+            enabled.put(Tree.class, Impl.equo);
+            enabled.put(TreeItem.class, Impl.equo);
+            enabled.put(TreeColumn.class, Impl.equo);
+            enabled.put(Canvas.class, Impl.equo);
                     //entry(Cursor.class, Impl.equo),
                     //entry(ScrolledComposite.class, Impl.equo)
                     //entry(Menu.class, Impl.equo)
@@ -83,7 +82,7 @@ public class Config {
                     //entry(DateTime.class, Impl.equo),
                     //entry(Tray.class, Impl.equo),
                     //entry(TrayItem.class, Impl.equo)
-            );
+            equoEnabled = java.util.Collections.unmodifiableMap(enabled);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -99,27 +98,27 @@ public class Config {
      * When any widget in a group is activated via system property, all other widgets in the
      * same group are also activated (unless explicitly disabled).
      */
-    static final java.util.List<Set<String>> WIDGET_DEPENDENCY_GROUPS = java.util.List.of(
+    static final java.util.List<Set<String>> WIDGET_DEPENDENCY_GROUPS = Java8.list(
             // TabFolder group
-            Set.of("TabFolder", "TabItem"),
+            Java8.set("TabFolder", "TabItem"),
             // CTabFolder group
-            Set.of("CTabFolder", "CTabItem", "CTabFolderLayout", "CTabFolderRenderer"),
+            Java8.set("CTabFolder", "CTabItem", "CTabFolderLayout", "CTabFolderRenderer"),
             // Table group
-            Set.of("Table", "TableColumn", "TableItem"),
+            Java8.set("Table", "TableColumn", "TableItem"),
             // Tree group
-            Set.of("Tree", "TreeColumn", "TreeItem"),
+            Java8.set("Tree", "TreeColumn", "TreeItem"),
             // ToolBar group
-            Set.of("ToolBar", "ToolItem"),
+            Java8.set("ToolBar", "ToolItem"),
             // CoolBar group
-            Set.of("CoolBar", "CoolItem"),
+            Java8.set("CoolBar", "CoolItem"),
             // Menu group
-            Set.of("Menu", "MenuItem"),
+            Java8.set("Menu", "MenuItem"),
             // ExpandBar group
-            Set.of("ExpandBar", "ExpandItem"),
+            Java8.set("ExpandBar", "ExpandItem"),
             // StyledText group
-            Set.of("StyledText", "StyledTextRenderer"),
+            Java8.set("StyledText", "StyledTextRenderer"),
             // TaskBar group
-            Set.of("TaskBar", "TaskItem")
+            Java8.set("TaskBar", "TaskItem")
     );
 
     /** Cache mapping widget simple names to their dependency group */
@@ -219,10 +218,8 @@ public class Config {
     }
 
     private static boolean isCreatedInsideDart() {
-        StackWalker walker = StackWalker.getInstance();
-
         for (int skip : new int[]{3, 4}) {
-            StackWalker.StackFrame frame = walker.walk(stream -> stream.skip(skip).findFirst().orElse(null));
+            StackTraceElement frame = Jdk9.STACK_FRAMES.at(skip);
             if (frame != null && frame.getFileName() != null && frame.getFileName().startsWith(DART)) {
                 return true;
             }
@@ -294,7 +291,7 @@ public class Config {
         if (forceEclipse) return false;
 
         // Per-id override
-        if (parent instanceof Composite c) {
+        if (parent instanceof Composite) { Composite c = (Composite) parent;
             String id = getId(clazz, c);
             String forcedImpl = System.getProperty(PROPERTY_PREFIX+id);
             if (forcedImpl != null) {
@@ -331,8 +328,7 @@ public class Config {
             return true;
         // Special handling for Canvas: use Equo implementation when created from FigureCanvas
         if (clazz == Canvas.class) {
-            StackWalker.StackFrame caller = StackWalker.getInstance()
-                    .walk(stream -> stream.skip(2).findFirst().orElse(null));
+            StackTraceElement caller = Jdk9.STACK_FRAMES.at(2);
             if (caller != null && caller.getClassName().contains("FigureCanvas"))
                 return true;
         }
@@ -352,7 +348,7 @@ public class Config {
     }
 
     private static boolean isSplash(Widget parentWidget) {
-        if (parentWidget instanceof Scrollable parent) {
+        if (parentWidget instanceof Scrollable) { Scrollable parent = (Scrollable) parentWidget;
             while (parent != null) {
                 if (parent.getClass().getName().equals("org.eclipse.ui.splash.BasicSplashHandler$AbsolutePositionProgressMonitorPart"))
                     return true;
@@ -376,7 +372,8 @@ public class Config {
 
     /** Returns the e4 TrimmedPartLayout instance if {@code parent} is the main Shell, else null. */
     private static Object trimLayout(Composite parent) {
-        if (!(parent instanceof Shell shell)) return null;
+        if (!(parent instanceof Shell)) return null;
+        Shell shell = (Shell) parent;
         Layout layout = shell.getLayout();
         if (layout == null) return null;
         return E4_TOOLBAR_CLASS.equals(layout.getClass().getName()) ? layout : null;
@@ -495,14 +492,14 @@ public class Config {
     }
 
     public static boolean isSwtCTabFolderBody(Class<?> clazz, Widget parent) {
-        return Composite.class.isAssignableFrom(clazz) && parent instanceof CTabFolder ct && !(ct.getParent().getImpl() instanceof DartWidget);
+        return Composite.class.isAssignableFrom(clazz) && parent instanceof CTabFolder && !(((CTabFolder) parent).getParent().getImpl() instanceof DartWidget);
     }
 
     static boolean isCustomAncestor(Widget parentWidget) {
         // Common path stays pure instanceof (no reflection). Only a DartMainToolbar impl can be the top
         // trim, or the ambiguous first-horizontal that may actually be the bottom (status) trim — so we
         // confirm the real side via reflection only in that rare case, not for every ancestor.
-        if (parentWidget instanceof Scrollable parent) {
+        if (parentWidget instanceof Scrollable) { Scrollable parent = (Scrollable) parentWidget;
             while (parent != null) {
                 if (parent.getImpl() instanceof DartMainToolbar
                         && trimSide(parent.getParent(), parent) == SWT.TOP)
@@ -514,7 +511,7 @@ public class Config {
     }
 
     private static boolean isAncestorOf(Widget parentWidget, Class<?> classType) {
-        if (parentWidget instanceof Scrollable parent) {
+        if (parentWidget instanceof Scrollable) { Scrollable parent = (Scrollable) parentWidget;
             while (parent != null) {
                 if (classType.isInstance(parent.getImpl()))
                     return true;
@@ -553,23 +550,26 @@ public class Config {
         return isInStackTrace(className, null);
     }
 
-    private static boolean isInStackTrace(String className, String methodName) {
-        StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-
-        return walker.walk(frames ->
-                frames.anyMatch(f -> className.equals(f.getClassName()) &&
-                        (methodName == null || methodName.equals(f.getMethodName())))
-        );
+    /**
+     * Hosts a Swing scene on the Flutter surface, or null when this fragment was built without the
+     * Swing bridge (see {@link Jdk9}). SWT_AWT calls this and falls back to native reparenting.
+     */
+    public static java.awt.Frame newSwingFrame(org.eclipse.swt.widgets.Composite parent) {
+        if (Jdk9.SWING_HOST_NEW_FRAME == null) return null;
+        try {
+            return (java.awt.Frame) Jdk9.SWING_HOST_NEW_FRAME.invoke(null, parent);
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException) throw (RuntimeException) cause;
+            if (cause instanceof Error) throw (Error) cause;
+            throw new RuntimeException(cause);
+        } catch (IllegalAccessException e) {
+            return null;
+        }
     }
 
-    private static boolean isInStackTraceAtSkip(String className, String methodName, int skip) {
-        StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-
-        StackWalker.StackFrame frame = walker.walk(stream ->
-                stream.skip(skip).findFirst().orElse(null));
-
-        return frame != null && className.equals(frame.getClassName()) &&
-                methodName.equals(frame.getMethodName());
+    private static boolean isInStackTrace(String className, String methodName) {
+        return Jdk9.STACK_FRAMES.anyMatch(className, methodName);
     }
 
     private static final String E4_CLASS = "org.eclipse.e4.ui.workbench.renderers.swt.StackRenderer";
@@ -592,7 +592,7 @@ public class Config {
             }
             int position;
             if (idParent == null || idParent.getChildren() == null) {
-                if (child instanceof Shell shell) {
+                if (child instanceof Shell) { Shell shell = (Shell) child;
                     if (shell.getLayout() != null && shell.getLayout().toString().contains("org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout")) {
                         position = 0; // Main Shell
                     } else {
@@ -661,7 +661,7 @@ public class Config {
             configFlags.disable_hover_zoom = Boolean.getBoolean("swt.evolve.disable_hover_zoom");
             configFlags.show_theme_color_palette = Boolean.getBoolean("swt.evolve.show_theme_color_palette");
             String focusIndicators = System.getProperty("swt.evolve.focus_indicators");
-            configFlags.focus_indicators = focusIndicators == null || focusIndicators.isBlank()
+            configFlags.focus_indicators = focusIndicators == null || focusIndicators.trim().isEmpty()
                     ? null
                     : Boolean.parseBoolean(focusIndicators.trim());
             configFlags.show_scaling_control = Boolean.getBoolean("swt.evolve.show_scaling_control");
@@ -796,7 +796,7 @@ public class Config {
         if (clazz.isAnonymousClass())
             target = clazz.getSuperclass();
         while (target.getSuperclass() != null) {
-            String pkg = target.getPackageName();
+            String pkg = Java8.packageName(target);
             if (pkg.startsWith("org.eclipse.swt.widgets") ||
                     pkg.startsWith("org.eclipse.swt.custom")) {
                 break;

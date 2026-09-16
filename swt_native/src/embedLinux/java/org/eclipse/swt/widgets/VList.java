@@ -25,7 +25,7 @@ public class VList extends VScrollable {
         ArrayList<String> result = new ArrayList<>(values.length);
         for (String v : values) if (v != null)
             result.add(v);
-        return result.toArray(String[]::new);
+        return result.toArray(new String[0]);
     }
 
     public void setItems(String[] value) {

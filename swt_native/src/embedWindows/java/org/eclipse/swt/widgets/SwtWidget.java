@@ -187,8 +187,8 @@ public abstract class SwtWidget implements IWidget {
         this.getApi().style = style;
         this.getApi().nativeZoom = parent != null ? parent.nativeZoom : DPIUtil.getNativeDeviceZoom();
         display = parent.getImpl()._display();
-        if (parent.getImpl() instanceof DynWidget dyn)
-            dyn.convert();
+        if (parent.getImpl() instanceof DynWidget)
+            ((DynWidget) parent.getImpl()).convert();
         reskinWidget();
         notifyCreationTracker();
         registerDPIChangeListener();

@@ -58,9 +58,12 @@ public class WebDisplayBridge extends DisplayBridge {
      * Returns null when the display is null, isn't a web surface, or has no web server yet.
      */
     static String lookupWebServerUrl(Object displayObj) {
-        if (!(displayObj instanceof Display display)) return null;
-        if (!(display.getImpl() instanceof DartDisplay dartDisplay)) return null;
-        if (!(dartDisplay.displayBridge instanceof WebDisplayBridge bridge)) return null;
+        if (!(displayObj instanceof Display)) return null;
+        Display display = (Display) displayObj;
+        if (!(display.getImpl() instanceof DartDisplay)) return null;
+        DartDisplay dartDisplay = (DartDisplay) display.getImpl();
+        if (!(dartDisplay.displayBridge instanceof WebDisplayBridge)) return null;
+        WebDisplayBridge bridge = (WebDisplayBridge) dartDisplay.displayBridge;
         if (bridge.webServer == null) return null;
         return bridge.webServer.getApplicationUrl();
     }
@@ -71,10 +74,12 @@ public class WebDisplayBridge extends DisplayBridge {
      * right comm. Returns -1 when unavailable.
      */
     static int lookupCommPort(Object displayObj) {
-        if (!(displayObj instanceof Display display)) return -1;
-        if (!(display.getImpl() instanceof DartDisplay dartDisplay)) return -1;
-        if (!(dartDisplay.displayBridge instanceof WebDisplayBridge bridge)) return -1;
-        CommService c = bridge.comm();
+        if (!(displayObj instanceof Display)) return -1;
+        Display display = (Display) displayObj;
+        if (!(display.getImpl() instanceof DartDisplay)) return -1;
+        DartDisplay dartDisplay = (DartDisplay) display.getImpl();
+        if (!(dartDisplay.displayBridge instanceof WebDisplayBridge)) return -1;
+        CommService c = ((WebDisplayBridge) dartDisplay.displayBridge).comm();
         return c != null ? c.getPort() : -1;
     }
 
@@ -109,7 +114,7 @@ public class WebDisplayBridge extends DisplayBridge {
         // its own Flutter web build (with any extension hooks installed) instead of the one
         // extracted from Evolve's jar. Set via -Ddev.equo.swt.web.dir=<absolute dir>.
         String webDirOverride = System.getProperty("dev.equo.swt.web.dir");
-        if (webDirOverride != null && !webDirOverride.isBlank()) {
+        if (webDirOverride != null && !webDirOverride.trim().isEmpty()) {
             serverBuilder.webDirectory(new java.io.File(webDirOverride));
         }
         webServer = serverBuilder.build();
@@ -190,7 +195,7 @@ public class WebDisplayBridge extends DisplayBridge {
     private void launchFlutterRunDev(int commPort, long widgetId, String widgetName) {
         String flutterLibDir = System.getProperty("dev.equo.swt.flutterLibDir");
         String flutterCmd = System.getProperty("dev.equo.swt.flutterCmd", "flutter");
-        if (flutterLibDir == null || flutterLibDir.isBlank()) {
+        if (flutterLibDir == null || flutterLibDir.trim().isEmpty()) {
             System.err.println("[WebDisplayBridge] dartDebug set but dev.equo.swt.flutterLibDir is missing; "
                     + "cannot launch `flutter run`. Run via :examples:runWebExample -PdartDebug.");
             return;
@@ -198,7 +203,7 @@ public class WebDisplayBridge extends DisplayBridge {
         boolean dartDriver = Boolean.getBoolean("dev.equo.swt.dartDriver");
         java.util.List<String> cmd = new java.util.ArrayList<>();
         for (String tok : flutterCmd.trim().split("\\s+"))
-            if (!tok.isBlank()) cmd.add(tok);
+            if (!tok.trim().isEmpty()) cmd.add(tok);
         cmd.add("run");
         if (dartDriver) {
             cmd.add("-t");
@@ -319,11 +324,11 @@ public class WebDisplayBridge extends DisplayBridge {
     private void refirePaints(Control c) {
         if (c == null || c.isDisposed()) return;
         // Only paint-listening controls emit GC ops; skip the rest to avoid needless GC churn.
-        if (c.isListening(SWT.Paint) && c.getImpl() instanceof DartControl dc) {
-            ControlHelper.paint(dc);
+        if (c.isListening(SWT.Paint) && c.getImpl() instanceof DartControl) {
+            ControlHelper.paint((DartControl) c.getImpl());
         }
-        if (c instanceof Composite comp) {
-            for (Control child : comp.getChildren()) {
+        if (c instanceof Composite) {
+            for (Control child : ((Composite) c).getChildren()) {
                 refirePaints(child);
             }
         }
@@ -375,8 +380,8 @@ public class WebDisplayBridge extends DisplayBridge {
      */
     private boolean isChromiumWindow(DartControl control) {
         return hasNativeWindow()
-                && control instanceof DartShell dartShell
-                && isMainShell(forDisplay, (Shell) dartShell.getApi());
+                && control instanceof DartShell
+                && isMainShell(forDisplay, (Shell) ((DartShell) control).getApi());
     }
 
     /** Whether a real OS window (Chromium standalone) is hosting this Display (false in tests / pure web). */

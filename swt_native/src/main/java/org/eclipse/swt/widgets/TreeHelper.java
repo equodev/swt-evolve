@@ -196,8 +196,8 @@ public class TreeHelper {
         // far side is never told about.
         if (parentItem != null) {
             ((DartTreeItem) parentItem.getImpl()).getValue().markDirty(VTreeItem.ITEMS);
-        } else if (parent.getImpl() instanceof DartTree dartTree) {
-            dartTree.getValue().markDirty(VTree.ITEMS);
+        } else if (parent.getImpl() instanceof DartTree) {
+            ((DartTree) parent.getImpl()).getValue().markDirty(VTree.ITEMS);
         }
 
         // Only fire EmptinessChanged for root items when tree becomes non-empty

@@ -49,7 +49,7 @@ public class VDecorations extends VCanvas {
         ArrayList<Image> result = new ArrayList<>(values.length);
         for (Image v : values) if (v != null)
             result.add(v);
-        return result.toArray(Image[]::new);
+        return result.toArray(new Image[0]);
     }
 
     public void setImages(Image[] value) {

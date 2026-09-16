@@ -27,7 +27,7 @@ public class VClipboard {
         ArrayList<String> result = new ArrayList<>(values.length);
         for (String v : values) if (v != null)
             result.add(v);
-        return result.toArray(String[]::new);
+        return result.toArray(new String[0]);
     }
 
     public void setAvailableTypeNames(String[] value) {
@@ -41,7 +41,7 @@ public class VClipboard {
         ArrayList<TransferData> result = new ArrayList<>(values.length);
         for (TransferData v : values) if (v != null)
             result.add(v);
-        return result.toArray(TransferData[]::new);
+        return result.toArray(new TransferData[0]);
     }
 
     public void setAvailableTypes(TransferData[] value) {

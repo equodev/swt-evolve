@@ -344,7 +344,8 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
         if (srcSwt.filename != null) {
             this.filename = srcSwt.filename;
         }
-        if (srcImage.getImpl() instanceof DartImage dartSrc) {
+        if (srcImage.getImpl() instanceof DartImage) {
+            DartImage dartSrc = (DartImage) srcImage.getImpl();
             this.imageProvider = new PlainImageDataProviderWrapper(dartSrc.getImageData());
             init(dartSrc.getImageData(), 100);
             init();
@@ -1231,8 +1232,8 @@ public final class SwtImage extends SwtResource implements Drawable, IImage {
      */
     @Override
     public boolean equals(Object object) {
-        if (object != null && ((Image) object).getImpl() instanceof DartImage dartImage)
-            return (this.getImageData().equals(dartImage.getImageData()));
+        if (object != null && ((Image) object).getImpl() instanceof DartImage)
+            return (this.getImageData().equals(((DartImage) ((Image) object).getImpl()).getImageData()));
         if (object == this.getApi())
             return true;
         if (!(object instanceof Image))

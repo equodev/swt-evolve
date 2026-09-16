@@ -20,8 +20,8 @@ public class ControlEditorHelper {
             return false;
         boolean released = false;
         for (T editor : editors) {
-            if (editor != null && editor.getImpl() instanceof DartControlEditor impl
-                    && impl.releaseEditor(control)) {
+            if (editor != null && editor.getImpl() instanceof DartControlEditor
+                    && ((DartControlEditor) editor.getImpl()).releaseEditor(control)) {
                 released = true;
             }
         }

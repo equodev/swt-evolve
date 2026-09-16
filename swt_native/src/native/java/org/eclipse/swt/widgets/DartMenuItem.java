@@ -1083,8 +1083,8 @@ public class DartMenuItem extends DartItem implements IMenuItem {
         if (p != null)
             return ((DartWidget) p.getImpl()).getBridge();
         Display display = getDisplay();
-        if (display != null && display.getImpl() instanceof DartDisplay dd)
-            return dd.getDisplayBridge();
+        if (display != null && display.getImpl() instanceof DartDisplay)
+            return ((DartDisplay) display.getImpl()).getDisplayBridge();
         return null;
     }
 

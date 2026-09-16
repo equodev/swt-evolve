@@ -39,14 +39,14 @@ public final class MnemonicHelper {
                 return true;
             // Recurse into composites that did not themselves match (a Group whose own mnemonic
             // matched has already been handled and returned above).
-            if (c instanceof Composite comp && walk(comp, target))
+            if (c instanceof Composite && walk(((Composite) c), target))
                 return true;
         }
         return false;
     }
 
     private static boolean activate(Control c, char target) {
-        if (c instanceof Button b) {
+        if (c instanceof Button) { Button b = (Button) c;
             if (!matches(b.getText(), target))
                 return false;
             b.setFocus();
@@ -55,21 +55,21 @@ public final class MnemonicHelper {
             b.notifyListeners(SWT.Selection, new Event());
             return true;
         }
-        if (c instanceof Label l) {
+        if (c instanceof Label) { Label l = (Label) c;
             // A label cannot take focus; its mnemonic moves focus to the control it labels — the
             // next control in tab order.
             return matches(l.getText(), target) && focusAfter(l);
         }
-        if (c instanceof Group g) {
+        if (c instanceof Group) { Group g = (Group) c;
             return matches(g.getText(), target) && focusFirstChild(g);
         }
-        if (c instanceof Link link) {
+        if (c instanceof Link) { Link link = (Link) c;
             // A Link carries its mnemonic in its text (before any <a> markup). It is focusable, so
             // its mnemonic gives it focus — matching native SWT, where the checkbox/Link coupling
             // (e.g. a preference "&Enable …" row) is app-side listener logic, not the widget model.
             return matches(link.getText(), target) && link.setFocus();
         }
-        if (c instanceof TabFolder tf) {
+        if (c instanceof TabFolder) { TabFolder tf = (TabFolder) c;
             for (TabItem item : tf.getItems()) {
                 if (item == null || item.isDisposed() || !matches(item.getText(), target))
                     continue;

@@ -51,14 +51,14 @@ public class IdWidgetTracker implements WidgetSpy.WidgetTracker {
 
     @Override
     public void widgetCreated(Widget widget) {
-        if (widget instanceof Control c && c.getImpl()._parent() != null) {
+        if (widget instanceof Control && ((Control) widget).getImpl()._parent() != null) { Control c = (Control) widget;
             widgetCreated(widget, c.getImpl()._parent());
         }
     }
 
     void widgetCreated(Widget widget, Widget parent) {
         boolean isTracked = isTracked(widget);
-        if (isTracked && parent instanceof Composite c) {
+        if (isTracked && parent instanceof Composite) { Composite c = (Composite) parent;
             nonDisposedWidgets.put(widget, Config.getId(widget.getClass(), c));
         }
     }
@@ -134,7 +134,7 @@ public class IdWidgetTracker implements WidgetSpy.WidgetTracker {
         sb.append(">>> ").append(widgetClassName(widget)).append(" <<<");
         sb.append("  ").append(widget);
         appendBoundsInfo(sb, widget);
-        if (widget instanceof Composite comp) {
+        if (widget instanceof Composite) { Composite comp = (Composite) widget;
             appendLayoutInfo(sb, comp);
         }
         sb.append("\n");
@@ -142,7 +142,7 @@ public class IdWidgetTracker implements WidgetSpy.WidgetTracker {
 
         sb.append("=== Parent Hierarchy ===\n");
         List<Composite> ancestors = new ArrayList<>();
-        if (widget instanceof Control control) {
+        if (widget instanceof Control) { Control control = (Control) widget;
             Composite parent = control.getParent();
             while (parent != null) {
                 ancestors.add(parent);
@@ -152,7 +152,7 @@ public class IdWidgetTracker implements WidgetSpy.WidgetTracker {
         Collections.reverse(ancestors);
         for (int i = 0; i < ancestors.size(); i++) {
             Composite ancestor = ancestors.get(i);
-            String indent = "  ".repeat(i);
+            String indent = Java8.repeat("  ", i);
             sb.append(indent).append("- ").append(widgetClassName(ancestor));
             sb.append("  ").append(ancestor);
             appendBoundsInfo(sb, ancestor);
@@ -165,7 +165,7 @@ public class IdWidgetTracker implements WidgetSpy.WidgetTracker {
         }
         sb.append("\n");
 
-        if (widget instanceof Composite composite) {
+        if (widget instanceof Composite) { Composite composite = (Composite) widget;
             Control[] children = composite.getChildren();
             if (children.length > 0) {
                 sb.append("=== Children (").append(children.length).append(") ===\n");
@@ -181,11 +181,11 @@ public class IdWidgetTracker implements WidgetSpy.WidgetTracker {
     }
 
     private void appendWidgetTree(StringBuilder sb, Control widget, int depth, int maxDepth) {
-        String indent = "  ".repeat(depth);
+        String indent = Java8.repeat("  ", depth);
         sb.append(indent).append("- ").append(widgetClassName(widget));
         sb.append("  ").append(widget);
         appendBoundsInfo(sb, widget);
-        if (widget instanceof Composite comp) {
+        if (widget instanceof Composite) { Composite comp = (Composite) widget;
             appendLayoutInfo(sb, comp);
         }
         sb.append("\n");
@@ -195,7 +195,7 @@ public class IdWidgetTracker implements WidgetSpy.WidgetTracker {
             sb.append(indent).append(childId).append("\n");
         }
 
-        if (depth < maxDepth && widget instanceof Composite composite) {
+        if (depth < maxDepth && widget instanceof Composite) { Composite composite = (Composite) widget;
             for (Control child : composite.getChildren()) {
                 appendWidgetTree(sb, child, depth + 1, maxDepth);
             }
@@ -203,7 +203,7 @@ public class IdWidgetTracker implements WidgetSpy.WidgetTracker {
     }
 
     private void appendBoundsInfo(StringBuilder sb, Widget widget) {
-        if (widget instanceof Control control) {
+        if (widget instanceof Control) { Control control = (Control) widget;
             Rectangle bounds = control.getBounds();
             sb.append("  [").append(bounds.x).append(", ").append(bounds.y)
                     .append(" - ").append(bounds.width).append("x").append(bounds.height).append("]");

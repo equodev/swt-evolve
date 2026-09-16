@@ -85,7 +85,7 @@ public class VTreeItem extends VItem {
         ArrayList<TreeItem> result = new ArrayList<>(values.length);
         for (TreeItem v : values) if (v != null)
             result.add(v);
-        return result.toArray(TreeItem[]::new);
+        return result.toArray(new TreeItem[0]);
     }
 
     public void setItems(TreeItem[] value) {

@@ -19,7 +19,37 @@ package dev.equo.swt.size;
  * <p>The two are a pair: a system foreground color must be read from the same scheme as the
  * background it is drawn on, or an application that sets neither inherits one of each theme.
  */
-public record CanvasTheme(int red, int green, int blue) {
+public final class CanvasTheme {
+    private final int red;
+    private final int green;
+    private final int blue;
+
+    public CanvasTheme(int red, int green, int blue) {
+        this.red = red;
+        this.green = green;
+        this.blue = blue;
+    }
+
+    public int red() { return red; }
+    public int green() { return green; }
+    public int blue() { return blue; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof CanvasTheme)) return false;
+        CanvasTheme other = (CanvasTheme) o;
+        return red == other.red
+            && green == other.green
+            && blue == other.blue;
+    }
+
+    @Override
+    public int hashCode() { return java.util.Objects.hash(red, green, blue); }
+
+    @Override
+    public String toString() { return "CanvasTheme[red=" + red + ", green=" + green + ", blue=" + blue + "]"; }
+
     public static CanvasTheme getDarkSurface() {
         return new CanvasTheme(31, 41, 55);
     }

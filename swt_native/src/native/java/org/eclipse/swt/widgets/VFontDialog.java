@@ -52,7 +52,7 @@ public class VFontDialog extends VDialog {
         ArrayList<FontData> result = new ArrayList<>(values.length);
         for (FontData v : values) if (v != null)
             result.add(v);
-        return result.toArray(FontData[]::new);
+        return result.toArray(new FontData[0]);
     }
 
     public void setFontList(FontData[] value) {

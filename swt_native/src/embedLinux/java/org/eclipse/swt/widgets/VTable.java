@@ -35,7 +35,7 @@ public class VTable extends VComposite {
         ArrayList<TableColumn> result = new ArrayList<>(values.length);
         for (TableColumn v : values) if (v != null)
             result.add(v);
-        return result.toArray(TableColumn[]::new);
+        return result.toArray(new TableColumn[0]);
     }
 
     public void setColumns(TableColumn[] value) {
@@ -81,7 +81,7 @@ public class VTable extends VComposite {
         ArrayList<TableItem> result = new ArrayList<>(values.length);
         for (TableItem v : values) if (v != null)
             result.add(v);
-        return result.toArray(TableItem[]::new);
+        return result.toArray(new TableItem[0]);
     }
 
     public void setItems(TableItem[] value) {

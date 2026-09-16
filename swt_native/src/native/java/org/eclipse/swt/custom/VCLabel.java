@@ -55,7 +55,7 @@ public class VCLabel extends VCanvas {
         ArrayList<Color> result = new ArrayList<>(values.length);
         for (Color v : values) if (v != null)
             result.add(v);
-        return result.toArray(Color[]::new);
+        return result.toArray(new Color[0]);
     }
 
     public void setGradientColors(Color[] value) {

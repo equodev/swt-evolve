@@ -1,3 +1,4 @@
+import java.util.zip.ZipFile
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.kotlin.dsl.*
 import java.io.File
@@ -196,6 +197,18 @@ dependencies {
 
 val nativeFlutterExcludes = listOf("dev/equo/swt/ConfigDyn.java", "**/GraphicsUtilsSwt.java")
 
+// Classes that need a JDK newer than Java 8 and have no Java 8 equivalent to fall back on:
+// dev/equo/swt/awt is built on jdk.swing.interop (added in 9) and dev/equo/swt/jdk9 on StackWalker.
+// Everything reaches them through dev.equo.swt.Jdk9, which resolves them reflectively, so a fragment
+// built for an older SWT release can leave them out and still work -- SWT_AWT falls back to native
+// reparenting, Config to a Throwable-based stack read. Excluding them is what lets the rest of the
+// tree compile at --release 8, where those packages are not visible at all.
+val jdk9OnlySources = listOf("**/dev/equo/swt/awt/**", "**/dev/equo/swt/jdk9/**")
+
+// The oldest JDK the SWT release being built for supports, from gradle/versions/{ver}.properties.
+val targetJavaRelease = (project.findProperty("minJavaVersion") as String?)?.toIntOrNull()?.takeIf { it < 21 }
+val dropJdk9Sources = targetJavaRelease != null && targetJavaRelease < 9
+
 sourceSets {
     main {
         java {
@@ -205,6 +218,7 @@ sourceSets {
                 "src/native${currentOs.replaceFirstChar { it.titlecase() }}/java"
             ))
             exclude(nativeFlutterExcludes)
+            if (dropJdk9Sources) exclude(jdk9OnlySources)
         }
     }
 
@@ -233,6 +247,7 @@ sourceSets {
                 if (os.startsWith("native") || os == "web") {
                     exclude(nativeFlutterExcludes)
                 }
+                if (dropJdk9Sources) exclude(jdk9OnlySources)
             }
             annotationProcessorPath += sourceSets.main.get().annotationProcessorPath
             compileClasspath += sourceSets.main.get().compileClasspath
@@ -354,6 +369,26 @@ if (chromiumMode) {
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
     options.compilerArgs.add("-parameters")
+    // Compile AT the level this jar has to run on rather than compiling at 21 and rewriting the
+    // bytecode afterwards. The generator copies each SWT release's sources at that release's own
+    // level and src/main is written to the lowest one, so there is nothing left to downgrade.
+    //
+    // Two ways of saying it, because javac refuses --add-exports on a system module together with
+    // --release, at ANY level. Below 9 the Swing bridge that needs those exports is excluded anyway
+    // (jdk.swing.interop does not exist there), so --release applies and brings its API check with
+    // it. From 9 up the bridge ships, so the level is set with -source/-target and the API check is
+    // left to checkJavaApiLevel, which excludes the bridge and can therefore use --release.
+    when {
+        targetJavaRelease == null -> {}
+        dropJdk9Sources -> options.release.set(targetJavaRelease)
+        else -> {
+            sourceCompatibility = targetJavaRelease.toString()
+            targetCompatibility = targetJavaRelease.toString()
+            // -source/-target compiles against THIS JDK's API, so javac warns it cannot verify the
+            // result runs on the older one. checkJavaApiLevel is what actually verifies it.
+            options.compilerArgs.add("-Xlint:-options")
+        }
+    }
     // The Evolve SWT_AWT bridge (dev.equo.swt.awt.*) hosts Swing off-screen through
     // sun.swing.JLightweightFrame / LightweightContent — the same internal contract
     // JavaFX's SwingNode uses. These packages are not exported by default.
@@ -363,11 +398,114 @@ tasks.withType<JavaCompile> {
     // event loop DartDisplay never pumps, so posted tasks never run). The runtime JVM this
     // actually executes under also needs the matching --add-exports on its own command line
     // (the deployment's own -vmargs), independent of this compile-time one.
-    options.compilerArgs.addAll(listOf(
+    // Only meaningful from 9 on: below that there are no modules to export from, javac rejects the
+    // flag outright, and the Swing bridge that needs them is excluded from the build anyway.
+    if (!dropJdk9Sources) options.compilerArgs.addAll(listOf(
         "--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
         "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED",
         "--add-exports", "jdk.unsupported.desktop/jdk.swing.interop=ALL-UNNAMED"
     ))
+}
+
+// Guards the Java level of everything we hand to an older SWT release. The generator copies each
+// release's sources at that release's own level, and src/main is shared across all of them, so the
+// only way a Java 9+ construct reaches a fragment built for SWT 3.114 (minJavaVersion=8) is from our
+// own code. Compiling at --release 8 is what proves it: unlike -source/-target it checks the API
+// surface too, so Map.ofEntries or String.isBlank fail here instead of at a customer's runtime.
+//
+// dev/equo/swt/awt (and the SWT_AWT that calls into it) is excluded: the Swing bridge is built on
+// sun.swing / jdk.swing.interop, which --release hides because they are not documented API. That
+// pair is the one thing still standing between this check and dropping the bytecode downgrader --
+// either the bridge leaves the fragments built for pre-9 releases, or it keeps them on -source 8
+// with no API check.
+// Only has something to say on a build targeting an older release; on the default (21) it skips.
+val checkJavaApiLevel by tasks.registering(JavaCompile::class) {
+    group = "verification"
+    description = "Compiles the embedded backend at the target release's minJavaVersion, to catch newer-Java API leaking into an older SWT release"
+    onlyIf {
+        if (targetJavaRelease == null) logger.lifecycle("No minJavaVersion below 21 - nothing to check.")
+        targetJavaRelease != null
+    }
+    val backend = sourceSets.getByName("embed${currentOs.replaceFirstChar { it.titlecase() }}")
+    source = backend.java.asFileTree.matching { exclude(jdk9OnlySources) }
+    classpath = backend.compileClasspath
+    destinationDirectory.set(layout.buildDirectory.dir("java-api-check"))
+    options.encoding = "UTF-8"
+    options.release.set(targetJavaRelease ?: 21)
+    // -Xlint:-options silences the "source value 8 is obsolete" pair; -proc:none keeps the dsl-json
+    // annotation processor out (it targets 21 and has nothing to say about the Java level).
+    options.compilerArgs.addAll(listOf("-Xlint:-options", "-proc:none"))
+    // The withType<JavaCompile> block below adds --add-exports for the Swing bridge; javac refuses
+    // it together with target 8, and this task excludes the bridge anyway.
+    doFirst {
+        options.compilerArgs.removeAll { it == "--add-exports" || it.endsWith("=ALL-UNNAMED") }
+    }
+}
+
+// checkJavaApiLevel proves the SOURCE stays inside the release's API. This proves the ARTIFACT:
+// --release / -target are supposed to stamp the class-file version, but until something reads the
+// jar back nobody has confirmed they did, and a shaded dependency can carry a newer class in behind
+// them. Runs in swt_build, per version, once the jars exist.
+val ourPackages = listOf("org/eclipse/swt/", "dev/equo/swt/")
+
+val verifyJarJavaLevel by tasks.registering {
+    group = "verification"
+    description = "Reads the built jars back and checks every class against the target release's class-file version"
+    // The jars are the subject, so this can never be considered up to date on their behalf.
+    outputs.upToDateWhen { false }
+    val libsDir = layout.buildDirectory.dir("libs")
+    val release = targetJavaRelease ?: 21
+    val expected = release + 44 // Java 8 -> 52, 11 -> 55, 17 -> 61, 21 -> 65
+    doLast {
+        val jars = libsDir.get().asFile
+            .listFiles { f: File -> f.name.startsWith("swt_evolve-") && f.name.endsWith(".jar") }
+            ?.sortedBy { it.name }.orEmpty()
+        if (jars.isEmpty())
+            throw GradleException("No swt_evolve-*.jar under ${libsDir.get().asFile} - the jars must be built first, " +
+                    "or this check passes while verifying nothing.")
+
+        val problems = mutableListOf<String>()
+        jars.forEach { jar ->
+            var checked = 0
+            ZipFile(jar).use { zip ->
+                for (entry in zip.entries()) {
+                    // A multi-release overlay is invisible to the older JVM by design, so its
+                    // class-file version says nothing about what that JVM will load.
+                    if (!entry.name.endsWith(".class") || entry.name.startsWith("META-INF/versions/")) continue
+                    val major = zip.getInputStream(entry).use { ins ->
+                        val head = ByteArray(8)
+                        var read = 0
+                        while (read < head.size) {
+                            val n = ins.read(head, read, head.size - read)
+                            if (n < 0) break
+                            read += n
+                        }
+                        if (read < head.size) -1
+                        else ((head[6].toInt() and 0xFF) shl 8) or (head[7].toInt() and 0xFF)
+                    }
+                    if (major < 0) {
+                        problems += "${jar.name}: ${entry.name} is truncated"
+                        continue
+                    }
+                    // Anything above the target simply will not load there - bundled dependencies included.
+                    if (major > expected) problems += "${jar.name}: ${entry.name} is major $major, above $expected"
+                    // Our own classes must sit exactly on it: a lower one would mean the compile
+                    // targeted something other than what this version declares.
+                    if (ourPackages.any { entry.name.startsWith(it) }) {
+                        checked++
+                        if (major != expected) problems += "${jar.name}: ${entry.name} is major $major, expected $expected"
+                    }
+                }
+            }
+            if (checked == 0) problems += "${jar.name}: holds no ${ourPackages.joinToString(" or ")} classes"
+            else logger.lifecycle("${jar.name}: $checked classes at major $expected (Java $release)")
+        }
+        if (problems.isNotEmpty()) {
+            val shown = problems.take(20).joinToString("\n  ")
+            val rest = if (problems.size > 20) "\n  ... and ${problems.size - 20} more" else ""
+            throw GradleException("Class-file version check failed for Java $release:\n  $shown$rest")
+        }
+    }
 }
 
 // Coverage is only consumed from nativeTest (the web backend, merged into swt_eclipse_tests' combined

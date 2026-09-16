@@ -4660,7 +4660,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             ((SwtControl) parent.getImpl()).contentView().addSubview(topView, OS.NSWindowBelow, null);
         } else if (parent.getImpl() instanceof DartComposite) {
             Object cv = ((DartComposite) parent.getImpl()).contentView();
-            if (cv instanceof NSView nsView) {
+            if (cv instanceof NSView) {
+                NSView nsView = (NSView) cv;
                 nsView.addSubview(topView, OS.NSWindowBelow, null);
             }
             // else: Flutter-backed composite has no native NSView; skip native z-ordering

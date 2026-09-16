@@ -32,7 +32,7 @@ public class VCoolBar extends VComposite {
         ArrayList<Point> result = new ArrayList<>(values.length);
         for (Point v : values) if (v != null)
             result.add(v);
-        return result.toArray(Point[]::new);
+        return result.toArray(new Point[0]);
     }
 
     public void setItemSizes(Point[] value) {
@@ -46,7 +46,7 @@ public class VCoolBar extends VComposite {
         ArrayList<CoolItem> result = new ArrayList<>(values.length);
         for (CoolItem v : values) if (v != null)
             result.add(v);
-        return result.toArray(CoolItem[]::new);
+        return result.toArray(new CoolItem[0]);
     }
 
     public void setItems(CoolItem[] value) {

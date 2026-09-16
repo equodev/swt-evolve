@@ -43,7 +43,7 @@ public class EvolveBrowser extends WebBrowser {
 
     @Override
     public boolean back() {
-        FlutterBridge.send(getDartWidget(), "back", java.util.Map.of());
+        FlutterBridge.send(getDartWidget(), "back", dev.equo.swt.Java8.map());
         return true;
     }
 
@@ -205,7 +205,7 @@ public class EvolveBrowser extends WebBrowser {
 
     @Override
     public boolean execute(String script) {
-        FlutterBridge.send(getDartWidget(), "execute", java.util.Map.of("script", script));
+        FlutterBridge.send(getDartWidget(), "execute", dev.equo.swt.Java8.map("script", script));
         return true;
     }
 
@@ -231,7 +231,7 @@ public class EvolveBrowser extends WebBrowser {
 
     @Override
     public boolean forward() {
-        FlutterBridge.send(getDartWidget(), "forward", java.util.Map.of());
+        FlutterBridge.send(getDartWidget(), "forward", dev.equo.swt.Java8.map());
         return true;
     }
 
@@ -262,7 +262,7 @@ public class EvolveBrowser extends WebBrowser {
 
     @Override
     public void refresh() {
-        FlutterBridge.send(getDartWidget(), "reload", java.util.Map.of());
+        FlutterBridge.send(getDartWidget(), "reload", dev.equo.swt.Java8.map());
     }
 
     @Override

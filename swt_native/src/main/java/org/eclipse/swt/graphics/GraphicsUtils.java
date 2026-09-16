@@ -43,11 +43,14 @@ public class GraphicsUtils {
         }
         ImageData transformed;
         switch (styleFlag) {
-            case SWT.IMAGE_DISABLE -> transformed = applyDisableImageData(image.imageData);
-            case SWT.IMAGE_GRAY -> transformed = applyGrayImageData(image.imageData);
-            default -> {
+            case SWT.IMAGE_DISABLE:
+                transformed = applyDisableImageData(image.imageData);
+                break;
+            case SWT.IMAGE_GRAY:
+                transformed = applyGrayImageData(image.imageData);
+                break;
+            default:
                 return;
-            }
         }
         image.imageData = transformed;
         // image_utils.dart resolves an image by svgContent, then by filename (asset replacement and
@@ -220,7 +223,7 @@ public class GraphicsUtils {
                 }
             }
             return dartImage.getApi();
-        } else if (image.getImpl() instanceof DartImage di) {
+        } else if (image.getImpl() instanceof DartImage) { DartImage di = (DartImage) image.getImpl();
             if (!Config.getConfigFlags().image_disable_icons_replacement && di.filename != null) {
                 if (tryApplyReplacement(di.filename, di)) {
                     di.filename = null;
@@ -251,9 +254,9 @@ public class GraphicsUtils {
      * @return the image to put on the wire, as {@link #copyImage}
      */
     public static Image copyImageForDraw(Display display, Image image) {
-        if (image != null && !image.isDisposed() && image.getImpl() instanceof DartImage di) {
+        if (image != null && !image.isDisposed() && image.getImpl() instanceof DartImage) { DartImage di = (DartImage) image.getImpl();
             GC openGc = di._memGC();
-            if (openGc != null && !openGc.isDisposed() && openGc.getImpl() instanceof DartGC dgc) {
+            if (openGc != null && !openGc.isDisposed() && openGc.getImpl() instanceof DartGC) { DartGC dgc = (DartGC) openGc.getImpl();
                 dgc.requestRenderSnapshotAndWait();
             }
         }
@@ -290,7 +293,7 @@ public class GraphicsUtils {
         if (assetFilesCache != null) return;
         assetFilesCache = new java.util.HashMap<>();
         String assetsPath = Config.getConfigFlags().assets_path;
-        if (assetsPath == null || assetsPath.isBlank()) return;
+        if (assetsPath == null || assetsPath.trim().isEmpty()) return;
         assetsPath = assetsPath.replace("\"", "");
         java.io.File dir = new java.io.File(assetsPath);
         if (!dir.isAbsolute()) {

@@ -216,7 +216,8 @@ final class MacApplicationMenu {
      */
     static long contributedProc(long targetId, long sel, long sender) {
         MenuItem item = contribution((int) new NSMenuItem(sender).tag());
-        if (item != null && item.getImpl() instanceof DartMenuItem dart) {
+        if (item != null && item.getImpl() instanceof DartMenuItem) {
+            DartMenuItem dart = (DartMenuItem) item.getImpl();
             dart.sendSelection();
             return 0;
         }

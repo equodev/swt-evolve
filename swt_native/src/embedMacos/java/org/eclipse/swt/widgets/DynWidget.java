@@ -88,7 +88,8 @@ public abstract class DynWidget implements IWidget {
         setApi(api);
         api.style = style;
         display = parent.getImpl()._display();
-        if (parent.getImpl() instanceof DynWidget dyn) {
+        if (parent.getImpl() instanceof DynWidget) {
+            DynWidget dyn = (DynWidget) parent.getImpl();
             if (Config.isDebug())
                 System.out.println("+++ CONVERTING DynComposite from Dyn child #" + parent.hashCode());
             dyn.convert();

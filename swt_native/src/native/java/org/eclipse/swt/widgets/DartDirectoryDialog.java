@@ -181,7 +181,7 @@ public class DartDirectoryDialog extends DartDialog implements IDirectoryDialog 
             configuredPath = new java.io.File(java.net.URI.create(configuredUri)).getPath();
         }
         if (configuredPath != null) {
-            directoryPath = configuredPath.isBlank() ? null : configuredPath;
+            directoryPath = configuredPath.trim().isEmpty() ? null : configuredPath;
             return Optional.ofNullable(directoryPath);
         }
         if (method_performKeyEquivalent != 0) {

@@ -94,7 +94,7 @@ public class VShell extends VDecorations {
         ArrayList<Shell> result = new ArrayList<>(values.length);
         for (Shell v : values) if (v != null)
             result.add(v);
-        return result.toArray(Shell[]::new);
+        return result.toArray(new Shell[0]);
     }
 
     public void setShells(Shell[] value) {

@@ -24,7 +24,7 @@ public class VTaskBar extends VWidget {
         ArrayList<TaskItem> result = new ArrayList<>(values.length);
         for (TaskItem v : values) if (v != null)
             result.add(v);
-        return result.toArray(TaskItem[]::new);
+        return result.toArray(new TaskItem[0]);
     }
 
     public void setItems(TaskItem[] value) {

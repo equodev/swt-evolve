@@ -24,7 +24,7 @@ public class VToolBar extends VComposite {
         ArrayList<ToolItem> result = new ArrayList<>(values.length);
         for (ToolItem v : values) if (v != null)
             result.add(v);
-        return result.toArray(ToolItem[]::new);
+        return result.toArray(new ToolItem[0]);
     }
 
     public void setItems(ToolItem[] value) {

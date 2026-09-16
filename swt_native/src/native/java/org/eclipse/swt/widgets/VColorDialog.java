@@ -34,7 +34,7 @@ public class VColorDialog extends VDialog {
         ArrayList<RGB> result = new ArrayList<>(values.length);
         for (RGB v : values) if (v != null)
             result.add(v);
-        return result.toArray(RGB[]::new);
+        return result.toArray(new RGB[0]);
     }
 
     public void setRGBs(RGB[] value) {

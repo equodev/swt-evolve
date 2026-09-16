@@ -32,7 +32,7 @@ public class VComposite extends VScrollable {
         ArrayList<Control> result = new ArrayList<>(values.length);
         for (Control v : values) if (v != null && v.getImpl() instanceof DartControl)
             result.add(v);
-        return result.toArray(Control[]::new);
+        return result.toArray(new Control[0]);
     }
 
     public void setChildren(Control[] value) {
@@ -56,7 +56,7 @@ public class VComposite extends VScrollable {
         ArrayList<Control> result = new ArrayList<>(values.length);
         for (Control v : values) if (v != null && v.getImpl() instanceof DartControl)
             result.add(v);
-        return result.toArray(Control[]::new);
+        return result.toArray(new Control[0]);
     }
 
     public void setTabList(Control[] value) {

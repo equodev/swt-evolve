@@ -241,8 +241,8 @@ public final class DartRegion extends DartResource implements IRegion {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (region.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        if (region.getImpl() instanceof DartRegion dr)
-            RegionHelper.addRegion(rects, dr.rects);
+        if (region.getImpl() instanceof DartRegion)
+            RegionHelper.addRegion(rects, ((DartRegion) region.getImpl()).rects);
     }
 
     /**
@@ -423,8 +423,8 @@ public final class DartRegion extends DartResource implements IRegion {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (region.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        if (region.getImpl() instanceof DartRegion dr)
-            RegionHelper.intersectRegion(rects, dr.rects);
+        if (region.getImpl() instanceof DartRegion)
+            RegionHelper.intersectRegion(rects, ((DartRegion) region.getImpl()).rects);
     }
 
     /**
@@ -602,8 +602,8 @@ public final class DartRegion extends DartResource implements IRegion {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (region.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        if (region.getImpl() instanceof DartRegion dr)
-            RegionHelper.subtractRegion(rects, dr.rects);
+        if (region.getImpl() instanceof DartRegion)
+            RegionHelper.subtractRegion(rects, ((DartRegion) region.getImpl()).rects);
     }
 
     /**

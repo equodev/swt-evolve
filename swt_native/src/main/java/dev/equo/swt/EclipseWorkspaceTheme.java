@@ -51,7 +51,7 @@ public final class EclipseWorkspaceTheme {
                 props.load(fis);
             }
             String themeId = props.getProperty("themeid");
-            return themeId == null || themeId.isBlank() ? null : themeId;
+            return themeId == null || themeId.trim().isEmpty() ? null : themeId;
         } catch (Exception e) {
             return null;
         }
@@ -131,7 +131,7 @@ public final class EclipseWorkspaceTheme {
             process = new ProcessBuilder(command).redirectErrorStream(false).start();
             String output;
             try (InputStream in = process.getInputStream()) {
-                output = new String(in.readAllBytes(), StandardCharsets.UTF_8).trim();
+                output = new String(Java8.readAllBytes(in), StandardCharsets.UTF_8).trim();
             }
             if (!process.waitFor(2, TimeUnit.SECONDS)) {
                 return null;

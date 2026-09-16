@@ -553,8 +553,8 @@ public class DartTree extends DartComposite implements ITree {
         if (parentItem != null && ((DartTreeItem) parentItem.getImpl()).itemCount == 1 && ((DartTreeItem) parentItem.getImpl()).expanded) {
         }
         ignoreExpand = false;
-        if (parentItem != null && parentItem.getImpl() instanceof DartTreeItem dti)
-            dti.getValue().markDirty(VTreeItem.ITEMS);
+        if (parentItem != null && parentItem.getImpl() instanceof DartTreeItem)
+            ((DartTreeItem) parentItem.getImpl()).getValue().markDirty(VTreeItem.ITEMS);
         else
             getValue().markDirty(VTree.ITEMS);
         if (parentItem == null && this.itemCount == 1) {
@@ -766,8 +766,8 @@ public class DartTree extends DartComposite implements ITree {
         } else {
             reloadPending = true;
         }
-        if (parentItem != null && parentItem.getImpl() instanceof DartTreeItem dti) {
-            dti.getValue().markDirty(VTree.ITEMS);
+        if (parentItem != null && parentItem.getImpl() instanceof DartTreeItem) {
+            ((DartTreeItem) parentItem.getImpl()).getValue().markDirty(VTree.ITEMS);
         } else {
             getValue().markDirty(VTree.ITEMS);
         }

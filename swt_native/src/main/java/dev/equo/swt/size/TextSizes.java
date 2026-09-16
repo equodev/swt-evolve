@@ -48,7 +48,7 @@ public class TextSizes {
     private static PointD computeText(DartText widget, Measure m, boolean emptyTextAffectsSizing) {
         String text = widget.getText();
         if (text != null && hasFlags(widget.getStyle(), SWT.PASSWORD)) {
-            text = "*".repeat(text.length());
+            text = dev.equo.swt.Java8.repeat("*", text.length());
         }
         if (text != null && (emptyTextAffectsSizing || !text.isEmpty())) {
             if (!Config.getConfigFlags().use_swt_fonts || widget.getExplicitFont() == null) {

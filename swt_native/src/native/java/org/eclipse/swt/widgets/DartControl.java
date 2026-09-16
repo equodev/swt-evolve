@@ -3289,8 +3289,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         boolean newValue = visible;
         if (!java.util.Objects.equals(getVisible(), newValue)) {
             getValue().markDirty(VControl.VISIBLE);
-            if (parent != null && parent.getImpl() instanceof DartTable table)
-                table.dirty();
+            if (parent != null && parent.getImpl() instanceof DartTable)
+                ((DartTable) parent.getImpl()).dirty();
         }
         checkWidget();
         if (visible) {
@@ -4135,8 +4135,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (p != null)
             return ((DartWidget) p.getImpl()).getBridge();
         Display display = getDisplay();
-        if (display != null && display.getImpl() instanceof DartDisplay dd)
-            return dd.getDisplayBridge();
+        if (display != null && display.getImpl() instanceof DartDisplay)
+            return ((DartDisplay) display.getImpl()).getDisplayBridge();
         return null;
     }
 

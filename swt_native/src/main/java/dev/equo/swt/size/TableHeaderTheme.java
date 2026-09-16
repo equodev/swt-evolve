@@ -1,6 +1,28 @@
 package dev.equo.swt.size;
 
-public record TableHeaderTheme (TextStyle textStyle) {
+public final class TableHeaderTheme {
+    private final TextStyle textStyle;
+
+    public TableHeaderTheme(TextStyle textStyle) {
+        this.textStyle = textStyle;
+    }
+
+    public TextStyle textStyle() { return textStyle; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof TableHeaderTheme)) return false;
+        TableHeaderTheme other = (TableHeaderTheme) o;
+        return java.util.Objects.equals(textStyle, other.textStyle);
+    }
+
+    @Override
+    public int hashCode() { return java.util.Objects.hash(textStyle); }
+
+    @Override
+    public String toString() { return "TableHeaderTheme[textStyle=" + textStyle + "]"; }
+
     public static TableHeaderTheme get() {
         return Themes.getTheme().tableHeader;
     }

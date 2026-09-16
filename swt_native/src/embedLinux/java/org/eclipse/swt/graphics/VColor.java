@@ -94,8 +94,8 @@ public class VColor extends VResource {
         public static void write(JsonWriter writer, Color api) {
             if (api == null)
                 writer.writeNull();
-            else if (api.getImpl() instanceof SwtColor s)
-                writer.serializeObject(new VColor(s));
+            else if (api.getImpl() instanceof SwtColor)
+                writer.serializeObject(new VColor((SwtColor) api.getImpl()));
             else
                 writer.serializeObject(api.getImpl());
         }

@@ -41,7 +41,7 @@ public class CTabFolderHelper {
         if (folder.getBridge() instanceof org.eclipse.swt.widgets.EmbeddedBridge)
             folder.redraw();
         else
-            FlutterBridge.send(folder, "activation", java.util.Map.of("active", folder._highlight()));
+            FlutterBridge.send(folder, "activation", dev.equo.swt.Java8.map("active", folder._highlight()));
     }
 
     /**
@@ -58,8 +58,8 @@ public class CTabFolderHelper {
         if (obj.isDisposed() || previous != obj.getSelectionIndex()) return;
         CTabItem selected = obj.getSelection();
         Control content = selected == null || selected.isDisposed() ? null : selected.getControl();
-        DartControl target = content != null && !content.isDisposed() && content.getImpl() instanceof DartControl dart
-                ? dart
+        DartControl target = content != null && !content.isDisposed() && content.getImpl() instanceof DartControl
+                ? (DartControl) content.getImpl()
                 : obj;
         FlutterBridge bridge = target.getBridge();
         if (bridge != null && bridge.hasFocus(target)) return;

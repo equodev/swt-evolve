@@ -18,7 +18,7 @@ public class ToolItemHelper {
         ToolBar parent = item.getApi().getParent();
         if (parent == null || parent.isDisposed())
             return;
-        if (parent.getImpl() instanceof DartControl bar)
-            ControlHelper.sendActivateToAncestors(bar, SWT.MouseDown);
+        if (parent.getImpl() instanceof DartControl)
+            ControlHelper.sendActivateToAncestors(((DartControl) parent.getImpl()), SWT.MouseDown);
     }
 }

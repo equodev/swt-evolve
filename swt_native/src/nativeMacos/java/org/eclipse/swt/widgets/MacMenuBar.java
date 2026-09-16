@@ -246,7 +246,8 @@ final class MacMenuBar {
         Menu swt = resolve(mirror);
         if (swt == null)
             return;
-        if (sendShow && swt.getImpl() instanceof DartMenu dart) {
+        if (sendShow && swt.getImpl() instanceof DartMenu) {
+            DartMenu dart = (DartMenu) swt.getImpl();
             // An application fills a drop-down from here, and that work can throw -- a contribution
             // whose enablement expression fails, say. Mirror whatever it did manage to add rather
             // than letting the menu come up empty, and never let it reach Cocoa (see the procs).
@@ -426,8 +427,8 @@ final class MacMenuBar {
     static long actionProc(long targetId, long sel, long sender) {
         try {
             MenuItem item = items.get(new NSMenuItem(sender).tag());
-            if (item != null && !item.isDisposed() && item.getImpl() instanceof DartMenuItem dart)
-                dart.sendSelection();
+            if (item != null && !item.isDisposed() && item.getImpl() instanceof DartMenuItem)
+                ((DartMenuItem) item.getImpl()).sendSelection();
         } catch (RuntimeException | Error e) {
             e.printStackTrace();
         }
@@ -454,8 +455,8 @@ final class MacMenuBar {
         try {
             Mirror mirror = mirrors.get(new NSMenu(menu).id);
             Menu swt = mirror != null ? mirror.swt() : null;
-            if (swt != null && swt.getImpl() instanceof DartMenu dart)
-                dart.sendEvent(SWT.Hide);
+            if (swt != null && swt.getImpl() instanceof DartMenu)
+                ((DartMenu) swt.getImpl()).sendEvent(SWT.Hide);
         } catch (RuntimeException | Error e) {
             e.printStackTrace();
         }

@@ -22,16 +22,16 @@ public class CrashReporter {
     private static Path getCleanShutdownMarker() {
         String suffix = "";
         String installArea = System.getProperty("osgi.install.area");
-        if (installArea != null && !installArea.isBlank()) {
+        if (installArea != null && !installArea.trim().isEmpty()) {
             suffix = "_" + Integer.toHexString(installArea.hashCode());
         }
-        return Path.of(System.getProperty("user.home"), ".equo", ".clean_shutdown" + suffix);
+        return java.nio.file.Paths.get(System.getProperty("user.home"), ".equo", ".clean_shutdown" + suffix);
     }
 
     static void init() {
         if (Boolean.getBoolean("dev.equo.swt.crashReport.disabled")) return;
         String url = System.getProperty("dev.equo.swt.crashReportUrl");
-        if (url == null || url.isBlank()) return;
+        if (url == null || url.trim().isEmpty()) return;
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> handleCrash(throwable));
         Thread initThread = new Thread(() -> {
             boolean cleanShutdown = checkAndWriteSessionMarker();
@@ -62,13 +62,13 @@ public class CrashReporter {
         try {
             boolean wasClean;
             if (Files.exists(marker)) {
-                String content = Files.readString(marker).trim();
+                String content = new String(Files.readAllBytes(marker), java.nio.charset.StandardCharsets.UTF_8).trim();
                 wasClean = content.isEmpty() || "clean".equals(content);
             } else {
                 wasClean = true; // first launch
             }
             Files.createDirectories(marker.getParent());
-            Files.writeString(marker, "started");
+            Files.write(marker, ("started").getBytes(java.nio.charset.StandardCharsets.UTF_8));
             return wasClean;
         } catch (IOException e) {
             return true;
@@ -78,11 +78,11 @@ public class CrashReporter {
     public static void writeCleanShutdownMarker() {
         if (Boolean.getBoolean("dev.equo.swt.crashReport.disabled")) return;
         String url = System.getProperty("dev.equo.swt.crashReportUrl");
-        if (url == null || url.isBlank()) return;
+        if (url == null || url.trim().isEmpty()) return;
         try {
             Path marker = getCleanShutdownMarker();
             Files.createDirectories(marker.getParent());
-            Files.writeString(marker, "clean");
+            Files.write(marker, ("clean").getBytes(java.nio.charset.StandardCharsets.UTF_8));
         } catch (IOException e) {
             // silently skip
         }
@@ -153,13 +153,13 @@ public class CrashReporter {
 
     static File writeCrashLog(Throwable throwable) {
         try {
-            Path dir = Path.of(System.getProperty("user.home"), ".equo");
+            Path dir = java.nio.file.Paths.get(System.getProperty("user.home"), ".equo");
             Files.createDirectories(dir);
 
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
             File logFile = dir.resolve("crash-" + timestamp + ".log").toFile();
 
-            try (PrintWriter pw = new PrintWriter(new FileWriter(logFile, StandardCharsets.UTF_8))) {
+            try (PrintWriter pw = new PrintWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(logFile, true), StandardCharsets.UTF_8))) {
                 pw.println("=== Equo SWT Crash Report ===");
                 pw.println("Timestamp: " + LocalDateTime.now());
                 pw.println();
@@ -181,7 +181,7 @@ public class CrashReporter {
                 pw.println();
 
                 pw.println("=== All Thread Dumps ===");
-                for (var entry : Thread.getAllStackTraces().entrySet()) {
+                for (java.util.Map.Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet()) {
                     pw.println("Thread: " + entry.getKey().getName() + " (state=" + entry.getKey().getState() + ")");
                     for (StackTraceElement ste : entry.getValue()) {
                         pw.println("    at " + ste);
@@ -200,7 +200,7 @@ public class CrashReporter {
         try {
             // 1. osgi.logfile — direct path to the log file, most reliable
             String logfile = System.getProperty("osgi.logfile");
-            if (logfile != null && !logfile.isBlank()) {
+            if (logfile != null && !logfile.trim().isEmpty()) {
                 File f = new File(logfile);
                 if (f.exists()) return f;
             }
@@ -233,7 +233,7 @@ public class CrashReporter {
 
     static boolean sendReport(String description, String email, File crashLog, File eclipseLog) {
         String url = System.getProperty("dev.equo.swt.crashReportUrl");
-        if (url == null || url.isBlank()) return false;
+        if (url == null || url.trim().isEmpty()) return false;
 
         String boundary = "----EquoCrashReport" + System.currentTimeMillis();
 
@@ -287,7 +287,7 @@ public class CrashReporter {
     }
 
     private static String summarize(String description, File crashLog) {
-        if (description != null && !description.isBlank()) {
+        if (description != null && !description.trim().isEmpty()) {
             return summarizeDescription(description);
         }
         if (crashLog != null && crashLog.exists()) {
@@ -297,18 +297,19 @@ public class CrashReporter {
     }
 
     private static String summarizeDescription(String description) {
-        String trimmed = description.strip();
+        String trimmed = description.trim();
         // Take the first sentence: split on sentence-ending punctuation or newline
-        String firstSentence = trimmed.split("[.!?\\n]")[0].strip();
+        String firstSentence = trimmed.split("[.!?\\n]")[0].trim();
         if (firstSentence.isEmpty()) {
-            firstSentence = trimmed.lines().findFirst().orElse(trimmed).strip();
+            String[] trimmedLines = trimmed.split("\\R", 2);
+            firstSentence = (trimmedLines.length > 0 ? trimmedLines[0] : trimmed).trim();
         }
         if (firstSentence.length() <= 100) return firstSentence;
         return firstSentence.substring(0, 97) + "...";
     }
 
     private static String summarizeFromCrashLog(File crashLog) {
-        try (BufferedReader reader = new BufferedReader(new FileReader(crashLog, StandardCharsets.UTF_8))) {
+        try (BufferedReader reader = new BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream(crashLog), StandardCharsets.UTF_8))) {
             String firstLine = reader.readLine();
             // Detect hs_err format: first line starts with '#' and contains "fatal error"
             if (firstLine != null && firstLine.startsWith("#") && firstLine.toLowerCase().contains("fatal error")) {
@@ -333,7 +334,7 @@ public class CrashReporter {
             if (inExceptionSection) {
                 while ((line = reader.readLine()) != null) {
                     if (line.startsWith("Thread:")) continue;
-                    String trimmed = line.strip();
+                    String trimmed = line.trim();
                     if (!trimmed.isEmpty()) {
                         if (trimmed.length() <= 120) return trimmed;
                         return trimmed.substring(0, 117) + "...";
@@ -352,14 +353,14 @@ public class CrashReporter {
         String line;
         while ((line = reader.readLine()) != null) {
             if (line.startsWith("#") && (line.contains("SIG") || line.contains("EXCEPTION_"))) {
-                String signal = line.substring(1).strip();
+                String signal = line.substring(1).trim();
                 if (signal.length() > 100) signal = signal.substring(0, 97) + "...";
                 return "Native crash: " + signal;
             }
             // Stop after the header section (lines not starting with #)
             if (!line.startsWith("#")) break;
         }
-        return "Native crash: " + firstLine.substring(1).strip();
+        return "Native crash: " + firstLine.substring(1).trim();
     }
 
     // --- Native crash file detection ---
@@ -370,18 +371,18 @@ public class CrashReporter {
         long cutoff = System.currentTimeMillis() - CRASH_FILE_MAX_AGE_MS;
 
         // 1. Working directory
-        scanDirectory(Path.of(System.getProperty("user.dir")), cutoff, scannedDirs, found);
+        scanDirectory(java.nio.file.Paths.get(System.getProperty("user.dir")), cutoff, scannedDirs, found);
 
         // 2. Temp directory
-        scanDirectory(Path.of(System.getProperty("java.io.tmpdir")), cutoff, scannedDirs, found);
+        scanDirectory(java.nio.file.Paths.get(System.getProperty("java.io.tmpdir")), cutoff, scannedDirs, found);
 
         // 3. /tmp — JVM fallback location for hs_err files (java.io.tmpdir may differ, e.g. macOS)
-        scanDirectory(Path.of("/tmp"), cutoff, scannedDirs, found);
+        scanDirectory(java.nio.file.Paths.get("/tmp"), cutoff, scannedDirs, found);
 
         // 4. Directory from -XX:ErrorFile JVM arg
         String customPath = getCustomErrorFilePath();
         if (customPath != null) {
-            Path parent = Path.of(customPath).getParent();
+            Path parent = java.nio.file.Paths.get(customPath).getParent();
             if (parent != null) {
                 scanDirectory(parent, cutoff, scannedDirs, found);
             }
@@ -390,7 +391,7 @@ public class CrashReporter {
         // 5. Directory from Eclipse .ini file
         String iniPath = getErrorFileFromIni();
         if (iniPath != null) {
-            Path parent = Path.of(iniPath).getParent();
+            Path parent = java.nio.file.Paths.get(iniPath).getParent();
             if (parent != null) {
                 scanDirectory(parent, cutoff, scannedDirs, found);
             }
@@ -474,7 +475,7 @@ public class CrashReporter {
 
     private static void moveToEquoDir(File file) {
         try {
-            Path equoDir = Path.of(System.getProperty("user.home"), ".equo");
+            Path equoDir = java.nio.file.Paths.get(System.getProperty("user.home"), ".equo");
             Files.createDirectories(equoDir);
 
             Path target = equoDir.resolve(file.getName());
@@ -522,7 +523,7 @@ public class CrashReporter {
                 homeLocation = homeLocation.substring(5);
             }
 
-            Path homeDir = Path.of(homeLocation);
+            Path homeDir = java.nio.file.Paths.get(homeLocation);
             // Find .ini file — typically named after the launcher executable
             File[] iniFiles;
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(homeDir, "*.ini")) {
@@ -536,10 +537,10 @@ public class CrashReporter {
             // Parse the first .ini file found
             File iniFile = iniFiles[0];
             boolean afterVmargs = false;
-            try (BufferedReader reader = new BufferedReader(new FileReader(iniFile, StandardCharsets.UTF_8))) {
+            try (BufferedReader reader = new BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream(iniFile), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    line = line.strip();
+                    line = line.trim();
                     if ("-vmargs".equals(line)) {
                         afterVmargs = true;
                         continue;

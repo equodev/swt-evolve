@@ -806,9 +806,9 @@ public class DartTracker extends DartWidget implements ITracker {
         // toolbar out of its own dock does exactly that -- would otherwise announce itself
         // on a channel nothing is listening to, and the loop would never see the pointer.
         Shell shell = parent.getShell();
-        if (shell != null && !shell.isDisposed() && shell.getImpl() instanceof DartWidget shellHost)
-            return shellHost;
-        return parent.getImpl() instanceof DartWidget parentHost ? parentHost : null;
+        if (shell != null && !shell.isDisposed() && shell.getImpl() instanceof DartWidget)
+            return (DartWidget) shell.getImpl();
+        return parent.getImpl() instanceof DartWidget ? (DartWidget) parent.getImpl() : null;
     }
 
     void openOnFlutter() {

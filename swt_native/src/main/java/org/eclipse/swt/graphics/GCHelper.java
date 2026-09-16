@@ -108,11 +108,42 @@ public class GCHelper {
      * Result of {@link #setupImageGC}, holding values that DartGC needs to set up
      * the bridge callback and assign to its fields.
      */
-    public record ImageGCContext(
-            Drawable resolvedDrawable,
-            Image swtSource,
-            Image dartImage,
-            java.util.concurrent.CompletableFuture<Void> renderFuture) {}
+    public static final class ImageGCContext {
+        private final Drawable resolvedDrawable;
+        private final Image swtSource;
+        private final Image dartImage;
+        private final java.util.concurrent.CompletableFuture<Void> renderFuture;
+
+        public ImageGCContext(Drawable resolvedDrawable, Image swtSource, Image dartImage, java.util.concurrent.CompletableFuture<Void> renderFuture) {
+            this.resolvedDrawable = resolvedDrawable;
+            this.swtSource = swtSource;
+            this.dartImage = dartImage;
+            this.renderFuture = renderFuture;
+        }
+
+        public Drawable resolvedDrawable() { return resolvedDrawable; }
+        public Image swtSource() { return swtSource; }
+        public Image dartImage() { return dartImage; }
+        public java.util.concurrent.CompletableFuture<Void> renderFuture() { return renderFuture; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof ImageGCContext)) return false;
+            ImageGCContext other = (ImageGCContext) o;
+            return java.util.Objects.equals(resolvedDrawable, other.resolvedDrawable)
+                && java.util.Objects.equals(swtSource, other.swtSource)
+                && java.util.Objects.equals(dartImage, other.dartImage)
+                && java.util.Objects.equals(renderFuture, other.renderFuture);
+        }
+
+        @Override
+        public int hashCode() { return java.util.Objects.hash(resolvedDrawable, swtSource, dartImage, renderFuture); }
+
+        @Override
+        public String toString() { return "ImageGCContext[resolvedDrawable=" + resolvedDrawable + ", swtSource=" + swtSource + ", dartImage=" + dartImage + ", renderFuture=" + renderFuture + "]"; }
+
+}
 
     /**
      * Resolves the target image, sets memGC references and pendingRenderFutures.
@@ -121,7 +152,7 @@ public class GCHelper {
      *         if {@code drawable} is not image-backed.
      */
     public static ImageGCContext setupImageGC(Drawable drawable, GCData data, GC gcApi) {
-        Image image = drawable instanceof Image img ? img : data.image;
+        Image image = drawable instanceof Image ? (Image) drawable : data.image;
         if (image == null) return null;
         // Deliberately not gated on the Flutter client being connected. The Display's GC comm is
         // safe to hand out before that -- the comm layer buffers pre-connect sends and flushes them
@@ -132,7 +163,7 @@ public class GCHelper {
 
         data.image = image;
         Image swtSource = null;
-        if (image.getImpl() instanceof DartImage di) {
+        if (image.getImpl() instanceof DartImage) { DartImage di = (DartImage) image.getImpl();
             di.memGC = gcApi;
         } else if (!(image.getImpl() instanceof DartImage)) {
             swtSource = image;
@@ -143,8 +174,8 @@ public class GCHelper {
             drawable = dartCopy;
         }
 
-        var renderFuture = new java.util.concurrent.CompletableFuture<Void>();
-        if (data.image.getImpl() instanceof DartImage di) {
+        java.util.concurrent.CompletableFuture<Void> renderFuture = new java.util.concurrent.CompletableFuture<>();
+        if (data.image.getImpl() instanceof DartImage) { DartImage di = (DartImage) data.image.getImpl();
             di.pendingRenderFuture = renderFuture;
         }
         if (swtSource != null && !(swtSource.getImpl() instanceof DartImage)) {
@@ -162,7 +193,7 @@ public class GCHelper {
         if (pngBytes == null) return;
         try {
             ImageData newData = new ImageData(new java.io.ByteArrayInputStream(pngBytes));
-            if (dartImage.getImpl() instanceof DartImage di) {
+            if (dartImage.getImpl() instanceof DartImage) { DartImage di = (DartImage) dartImage.getImpl();
                 di._updateImageData(newData);
             }
             if (swtSource != null && !(swtSource.getImpl() instanceof DartImage)) {
@@ -213,10 +244,10 @@ public class GCHelper {
 
     private static byte[] requestRemotePixels(Device device, dev.equo.swt.comm.CommService comm, long remoteRef, long timeoutMs) {
         if (comm == null) return null;
-        Display display = device instanceof Display d ? d : Display.getCurrent();
+        Display display = device instanceof Display ? (Display) device : Display.getCurrent();
         String resultEvent = "Image/" + remoteRef + "/pixelsResult";
         byte[][] result = new byte[1][];
-        var answered = new java.util.concurrent.CompletableFuture<Void>();
+        java.util.concurrent.CompletableFuture<Void> answered = new java.util.concurrent.CompletableFuture<Void>();
         comm.on(resultEvent, byte[].class, bytes -> {
             comm.remove(resultEvent);
             result[0] = bytes;
@@ -274,17 +305,17 @@ public class GCHelper {
                                           java.util.function.Consumer<byte[]> handler, long timeoutMs) {
         Display display = displayOf(widget);
         String receiveEvent = eventName + RESPONSE_SUFFIX;
-        var future = new java.util.concurrent.CompletableFuture<Void>();
+        java.util.concurrent.CompletableFuture<Void> future = new java.util.concurrent.CompletableFuture<>();
         dev.equo.swt.FlutterBridge.onPayload(widget, receiveEvent, p -> {
             dev.equo.swt.FlutterBridge.removeEvent(widget, receiveEvent);
             handler.accept(p);
             future.complete(null);
             if (display != null && !display.isDisposed()) display.wake();
         });
-        if (widget instanceof org.eclipse.swt.widgets.DartWidget w)
-            dev.equo.swt.FlutterBridge.send(w, eventName, args);
-        else if (widget instanceof DartResource r)
-            dev.equo.swt.FlutterBridge.send(r, eventName, args);
+        if (widget instanceof org.eclipse.swt.widgets.DartWidget)
+            dev.equo.swt.FlutterBridge.send((org.eclipse.swt.widgets.DartWidget) widget, eventName, args);
+        else if (widget instanceof DartResource)
+            dev.equo.swt.FlutterBridge.send(((DartResource) widget), eventName, args);
         // Batched until the paint ends, and we are about to wait for this one's answer.
         dev.equo.swt.FlutterBridge.flushOps(widget);
         long deadline = System.currentTimeMillis() + timeoutMs;
@@ -297,8 +328,9 @@ public class GCHelper {
     }
 
     private static Display displayOf(Object widget) {
-        if (widget instanceof org.eclipse.swt.widgets.DartWidget w) return w.getDisplay();
-        if (widget instanceof DartGC gc) return gc.getDisplay();
+        if (widget instanceof org.eclipse.swt.widgets.DartWidget)
+            return ((org.eclipse.swt.widgets.DartWidget) widget).getDisplay();
+        if (widget instanceof DartGC) return ((DartGC) widget).getDisplay();
         return null;
     }
 }

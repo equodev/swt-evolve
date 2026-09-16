@@ -559,7 +559,7 @@ public class Serializer {
         // (gap/border/shadow). The construction-time path check (Config.isMainComposite)
         // misses perspectives that nest the sash container differently, and the layout is only
         // set after construction, so this resolves it here at serialize time.
-        if (api instanceof Composite composite && Config.isMainSashComposite(composite)) {
+        if (api instanceof Composite && Config.isMainSashComposite(((Composite) api))) { Composite composite = (Composite) api;
             return "MainComposite";
         }
         return apiName;

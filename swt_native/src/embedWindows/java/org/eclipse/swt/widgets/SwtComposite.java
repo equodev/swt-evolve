@@ -921,9 +921,11 @@ public class SwtComposite extends SwtScrollable implements IComposite {
         if (!super.redrawChildren())
             return false;
         for (Control element : _getChildren()) {
-            if (element.getImpl() instanceof SwtControl swtControl) {
+            if (element.getImpl() instanceof SwtControl) {
+                SwtControl swtControl = (SwtControl) element.getImpl();
                 swtControl.redrawChildren();
-            } else if (element.getImpl() instanceof DartControl dartControl) {
+            } else if (element.getImpl() instanceof DartControl) {
+                DartControl dartControl = (DartControl) element.getImpl();
                 dartControl.redrawChildren();
             }
         }

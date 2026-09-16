@@ -23,7 +23,7 @@ public final class ImageDataCodec {
      * many distinct images doesn't grow this without limit.
      */
     private static final int CACHE_CAPACITY = 4000;
-    private static final Map<Long, byte[]> encodedCache = new LinkedHashMap<>(256, 0.75f, true) {
+    private static final Map<Long, byte[]> encodedCache = new LinkedHashMap<Long, byte[]>(256, 0.75f, true) {
         @Override
         protected boolean removeEldestEntry(Map.Entry<Long, byte[]> eldest) {
             return size() > CACHE_CAPACITY;
@@ -75,14 +75,18 @@ public final class ImageDataCodec {
             ImageLoader ldr = new ImageLoader();
             ldr.data = new ImageData[]{ img };
 
-            int fmt = switch (img.type) {
-                case SWT.IMAGE_JPEG,
-                     SWT.IMAGE_PNG,
-                     SWT.IMAGE_GIF,
-                     SWT.IMAGE_BMP,
-                     SWT.IMAGE_ICO  -> img.type;
-                default -> SWT.IMAGE_PNG;
-            };
+            int fmt;
+            switch (img.type) {
+                case SWT.IMAGE_JPEG:
+                case SWT.IMAGE_PNG:
+                case SWT.IMAGE_GIF:
+                case SWT.IMAGE_BMP:
+                case SWT.IMAGE_ICO:
+                    fmt = img.type;
+                    break;
+                default:
+                    fmt = SWT.IMAGE_PNG;
+            }
 
             byte[] bytes;
             try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {

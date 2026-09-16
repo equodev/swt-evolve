@@ -83,7 +83,7 @@ public class VStyledTextRenderer {
         ArrayList<Bullet> result = new ArrayList<>(values.length);
         for (Bullet v : values) if (v != null)
             result.add(v);
-        return result.toArray(Bullet[]::new);
+        return result.toArray(new Bullet[0]);
     }
 
     public void setBullets(Bullet[] value) {
@@ -165,7 +165,7 @@ public class VStyledTextRenderer {
         ArrayList<TextLayout> result = new ArrayList<>(values.length);
         for (TextLayout v : values) if (v != null)
             result.add(v);
-        return result.toArray(TextLayout[]::new);
+        return result.toArray(new TextLayout[0]);
     }
 
     public void setLayouts(TextLayout[] value) {
@@ -335,7 +335,7 @@ public class VStyledTextRenderer {
         ArrayList<StyleRange> result = new ArrayList<>(values.length);
         for (StyleRange v : values) if (v != null)
             result.add(v);
-        return result.toArray(StyleRange[]::new);
+        return result.toArray(new StyleRange[0]);
     }
 
     public void setStyles(StyleRange[] value) {
@@ -350,7 +350,7 @@ public class VStyledTextRenderer {
         ArrayList<StyleRange> result = new ArrayList<>(values.length);
         for (StyleRange v : values) if (v != null)
             result.add(v);
-        return result.toArray(StyleRange[]::new);
+        return result.toArray(new StyleRange[0]);
     }
 
     public void setStylesSet(StyleRange[] value) {

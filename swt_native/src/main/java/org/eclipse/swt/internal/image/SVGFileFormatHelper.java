@@ -46,7 +46,7 @@ public final class SVGFileFormatHelper {
 
     private static String readSvgContent(InputStream stream) {
         try {
-            byte[] bytes = stream.readAllBytes();
+            byte[] bytes = dev.equo.swt.Java8.readAllBytes(stream);
             return new String(bytes, StandardCharsets.UTF_8);
         } catch (IOException e) {
             return null;

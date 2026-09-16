@@ -268,7 +268,8 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         if (selectionBackground != null && selectionBackground.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        if (gc.getImpl() instanceof DartGC dartGc && dartGc.textCapture != null) {
+        if (gc.getImpl() instanceof DartGC && ((DartGC) gc.getImpl()).textCapture != null) {
+            DartGC dartGc = (DartGC) gc.getImpl();
             dartGc.textCapture.accept(text);
             return;
         }

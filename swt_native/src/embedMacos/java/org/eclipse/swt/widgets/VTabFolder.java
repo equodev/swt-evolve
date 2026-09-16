@@ -25,7 +25,7 @@ public class VTabFolder extends VComposite {
         ArrayList<TabItem> result = new ArrayList<>(values.length);
         for (TabItem v : values) if (v != null)
             result.add(v);
-        return result.toArray(TabItem[]::new);
+        return result.toArray(new TabItem[0]);
     }
 
     public void setItems(TabItem[] value) {
@@ -39,7 +39,7 @@ public class VTabFolder extends VComposite {
         ArrayList<TabItem> result = new ArrayList<>(values.length);
         for (TabItem v : values) if (v != null)
             result.add(v);
-        return result.toArray(TabItem[]::new);
+        return result.toArray(new TabItem[0]);
     }
 
     public void setSelection(TabItem[] value) {

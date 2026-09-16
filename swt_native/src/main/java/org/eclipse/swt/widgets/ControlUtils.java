@@ -10,7 +10,7 @@ public class ControlUtils {
     }
 
     public static void addToParentChildren(DartControl obj) {
-        if (obj.parent.getImpl() instanceof DartComposite p ) {
+        if (obj.parent.getImpl() instanceof DartComposite ) { DartComposite p = (DartComposite) obj.parent.getImpl();
             Control[] newArray = p.children != null ? Arrays.copyOf(p.children, p.children.length + 1) : new Control[1];
             newArray[newArray.length - 1] = obj.getApi();
             p.children = newArray;
@@ -23,7 +23,7 @@ public class ControlUtils {
     }
     
     public static void addToParentChildren(IControl obj) {
-        if (obj._parent().getImpl() instanceof DartComposite p ) {
+        if (obj._parent().getImpl() instanceof DartComposite ) { DartComposite p = (DartComposite) obj._parent().getImpl();
             Control[] newArray = p.children != null ? Arrays.copyOf(p.children, p.children.length + 1) : new Control[1];
             newArray[newArray.length - 1] = obj.getApi();
             p.children = newArray;
@@ -48,9 +48,10 @@ public class ControlUtils {
             return;
         }
 
-        if (!(parent.getImpl() instanceof DartComposite parentImpl)) {
+        if (!(parent.getImpl() instanceof DartComposite)) {
             return;
         }
+        DartComposite parentImpl = (DartComposite) parent.getImpl();
 
         if (parentImpl.children == null) {
             return;
@@ -119,7 +120,7 @@ public class ControlUtils {
     }
 
     private static void removeFromParentChildren(DartControl obj) {
-        if (obj.parent.getImpl() instanceof DartComposite p) {
+        if (obj.parent.getImpl() instanceof DartComposite) { DartComposite p = (DartComposite) obj.parent.getImpl();
             for (int i = 0; i < p.children.length; i++) {
                 if (p.children[i] == obj.getApi()) {
                     Control[] newChildren = new Control[p.children.length - 1];

@@ -293,7 +293,7 @@ public class TextHelper {
         }
         if (text.hooks(SWT.Verify) || text.filters(SWT.Verify)) {
             dev.equo.swt.FlutterBridge.send(text, "modify/verdict",
-                    java.util.Map.of("doit", applied));
+                    dev.equo.swt.Java8.map("doit", applied));
         }
     }
 

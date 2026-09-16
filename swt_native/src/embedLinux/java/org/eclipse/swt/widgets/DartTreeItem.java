@@ -930,10 +930,12 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         Tree tmpParent = parent;
         TreeItem tmpParentItem = parentItem;
         super.dispose();
-        if (tmpParent.getImpl() instanceof DartTree p) {
+        if (tmpParent.getImpl() instanceof DartTree) {
+            DartTree p = (DartTree) tmpParent.getImpl();
             p.updateChildItems();
         }
-        if (tmpParentItem.getImpl() instanceof DartTreeItem p) {
+        if (tmpParentItem.getImpl() instanceof DartTreeItem) {
+            DartTreeItem p = (DartTreeItem) tmpParentItem.getImpl();
             p.updateChildItems();
         }
     }

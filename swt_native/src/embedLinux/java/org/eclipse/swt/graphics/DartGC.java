@@ -456,10 +456,13 @@ public final class DartGC extends DartResource implements IGC {
         long clipRgn = data.clipRgn;
         Image image = data.image;
         if (image != null) {
-            if (image.getImpl() instanceof DartImage di) {
+            if (image.getImpl() instanceof DartImage) {
+                DartImage di = (DartImage) image.getImpl();
                 di.memGC = null;
-                if (bridge instanceof GCImageDrawer drawer) {
-                    if (swtImageSource != null && swtImageSource.getImpl() instanceof SwtImage si) {
+                if (bridge instanceof GCImageDrawer) {
+                    GCImageDrawer drawer = (GCImageDrawer) bridge;
+                    if (swtImageSource != null && swtImageSource.getImpl() instanceof SwtImage) {
+                        SwtImage si = (SwtImage) swtImageSource.getImpl();
                         si.memGC = null;
                     }
                     if (skipRenderOnDispose) {
@@ -486,7 +489,17 @@ public final class DartGC extends DartResource implements IGC {
         }
         data.drawable = data.clipRgn = 0;
         if (drawable instanceof Control && !silentDispose) {
-            FlutterBridge.send(this, "gcDispose", paintDamage == null ? java.util.Map.of("fullRepaint", fullRepaint) : java.util.Map.of("fullRepaint", fullRepaint, "damage", java.util.Map.of("x", paintDamage.x, "y", paintDamage.y, "width", paintDamage.width, "height", paintDamage.height)));
+            java.util.Map<String, Object> gcDisposePayload = new java.util.HashMap<>();
+            gcDisposePayload.put("fullRepaint", fullRepaint);
+            if (paintDamage != null) {
+                java.util.Map<String, Object> gcDisposeDamage = new java.util.HashMap<>();
+                gcDisposeDamage.put("x", paintDamage.x);
+                gcDisposeDamage.put("y", paintDamage.y);
+                gcDisposeDamage.put("width", paintDamage.width);
+                gcDisposeDamage.put("height", paintDamage.height);
+                gcDisposePayload.put("damage", gcDisposeDamage);
+            }
+            FlutterBridge.send(this, "gcDispose", gcDisposePayload);
         }
         drawable = null;
         getApi().handle = 0;
@@ -2039,7 +2052,8 @@ public final class DartGC extends DartResource implements IGC {
         if (data.font != null)
             data.state &= ~FONT;
         if (data.font == null) {
-            if (drawable instanceof Control control && control.getFont() != null) {
+            if (drawable instanceof Control && ((Control) drawable).getFont() != null) {
+                Control control = (Control) drawable;
                 this.font = data.font = control.getFont();
             } else {
                 this.font = data.font = Display.getCurrent().getSystemFont();
@@ -2064,7 +2078,8 @@ public final class DartGC extends DartResource implements IGC {
         }
         this.drawable = drawable;
         this.data = data;
-        if (drawable instanceof Control control) {
+        if (drawable instanceof Control) {
+            Control control = (Control) drawable;
             DartWidget widget = (DartWidget) control.getImpl();
             if (widget != null) {
                 this.bridge = widget.getBridge();
@@ -3532,8 +3547,9 @@ public final class DartGC extends DartResource implements IGC {
     public boolean skipRenderOnDispose;
 
     public void requestRenderSnapshotAndWait() {
-        if (!(bridge instanceof GCImageDrawer drawer))
+        if (!(bridge instanceof GCImageDrawer))
             return;
+        GCImageDrawer drawer = (GCImageDrawer) bridge;
         Image target = data != null ? data.image : null;
         if (target == null)
             return;

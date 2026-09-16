@@ -165,8 +165,7 @@ public class GCImageDrawer extends EmbeddedBridge {
             return;
         }
         // An isolated off-screen engine has to boot before it can be addressed at all.
-        super.onReady(this, Void.class)
-                .orTimeout(CLIENT_READY_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        Java8.orTimeout(super.onReady(this, Void.class), CLIENT_READY_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .whenComplete((ignored, err) -> {
                     if (err != null) {
                         System.err.println("[GCImageDrawer] Engine did not answer ClientReady within "
@@ -196,15 +195,15 @@ public class GCImageDrawer extends EmbeddedBridge {
      *  if there is none (embed mode, or the Device isn't a Display) — see
      *  {@link FlutterBridge#resolveDisplayGcComm}. */
     private static CommService resolveSharedComm(Image dartImage) {
-        if (dartImage == null || dartImage.isDisposed() || !(dartImage.getDevice() instanceof Display display)) {
+        if (dartImage == null || dartImage.isDisposed() || !(dartImage.getDevice() instanceof Display)) {
             return null;
         }
-        return FlutterBridge.resolveDisplayGcComm(display);
+        return FlutterBridge.resolveDisplayGcComm((Display) dartImage.getDevice());
     }
 
     private static void cancelAndWake(Image dartImage) {
-        if (dartImage != null && dartImage.getImpl() instanceof org.eclipse.swt.graphics.DartImage di) {
-            di.cancelRenderFuture();
+        if (dartImage != null && dartImage.getImpl() instanceof org.eclipse.swt.graphics.DartImage) {
+            ((org.eclipse.swt.graphics.DartImage) dartImage.getImpl()).cancelRenderFuture();
         }
     }
 
@@ -248,8 +247,8 @@ public class GCImageDrawer extends EmbeddedBridge {
             // The Image was abandoned mid-construction (its drawer threw), so nothing will ever
             // dispose it and release the ref the render is about to register. Release it here.
             queueOp(() -> c.send("Image/releaseRemoteRef", ByteBuffer.allocate(8).putLong(remoteRef).array()));
-        } else if (image.getImpl() instanceof DartImage di) {
-            di._adoptRemoteRender(remoteRef, c);
+        } else if (image.getImpl() instanceof DartImage) {
+            ((DartImage) image.getImpl())._adoptRemoteRender(remoteRef, c);
         }
         return wantPixels;
     }
@@ -307,8 +306,8 @@ public class GCImageDrawer extends EmbeddedBridge {
             // The UI thread is parked waiting for this answer; without a wake it only notices on its
             // next timed park.
             Image image = dartImage;
-            if (image != null && image.getDevice() instanceof Display display && !display.isDisposed())
-                display.wake();
+            if (image != null && image.getDevice() instanceof Display && !((Display) image.getDevice()).isDisposed())
+                ((Display) image.getDevice()).wake();
         });
         queueOp(() -> c.send("GC/" + gcId + "/renderSnapshot"));
     }

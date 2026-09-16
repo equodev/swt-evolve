@@ -1537,119 +1537,119 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     @Override
     public Color getSystemColor(int id) {
-        return switch(id) {
-            case SWT.COLOR_WHITE ->
-                new Color(this.getApi(), 255, 255, 255);
-            case SWT.COLOR_BLACK ->
-                new Color(this.getApi(), 0, 0, 0);
-            case SWT.COLOR_RED ->
-                new Color(this.getApi(), 255, 0, 0);
-            case SWT.COLOR_DARK_RED ->
-                new Color(this.getApi(), 128, 0, 0);
-            case SWT.COLOR_GREEN ->
-                new Color(this.getApi(), 0, 255, 0);
-            case SWT.COLOR_DARK_GREEN ->
-                new Color(this.getApi(), 0, 128, 0);
-            case SWT.COLOR_YELLOW ->
-                new Color(this.getApi(), 255, 255, 0);
-            case SWT.COLOR_DARK_YELLOW ->
-                new Color(this.getApi(), 128, 128, 0);
-            case SWT.COLOR_BLUE ->
-                new Color(this.getApi(), 0, 0, 255);
-            case SWT.COLOR_DARK_BLUE ->
-                new Color(this.getApi(), 0, 0, 128);
-            case SWT.COLOR_MAGENTA ->
-                new Color(this.getApi(), 255, 0, 255);
-            case SWT.COLOR_DARK_MAGENTA ->
-                new Color(this.getApi(), 128, 0, 128);
-            case SWT.COLOR_CYAN ->
-                new Color(this.getApi(), 0, 255, 255);
-            case SWT.COLOR_DARK_CYAN ->
-                new Color(this.getApi(), 0, 128, 128);
-            case SWT.COLOR_GRAY ->
-                new Color(this.getApi(), 192, 192, 192);
-            case SWT.COLOR_DARK_GRAY ->
-                new Color(this.getApi(), 128, 128, 128);
-            default ->
-                getWidgetColor(id);
-        };
+        switch(id) {
+            case SWT.COLOR_WHITE:
+                return new Color(this.getApi(), 255, 255, 255);
+            case SWT.COLOR_BLACK:
+                return new Color(this.getApi(), 0, 0, 0);
+            case SWT.COLOR_RED:
+                return new Color(this.getApi(), 255, 0, 0);
+            case SWT.COLOR_DARK_RED:
+                return new Color(this.getApi(), 128, 0, 0);
+            case SWT.COLOR_GREEN:
+                return new Color(this.getApi(), 0, 255, 0);
+            case SWT.COLOR_DARK_GREEN:
+                return new Color(this.getApi(), 0, 128, 0);
+            case SWT.COLOR_YELLOW:
+                return new Color(this.getApi(), 255, 255, 0);
+            case SWT.COLOR_DARK_YELLOW:
+                return new Color(this.getApi(), 128, 128, 0);
+            case SWT.COLOR_BLUE:
+                return new Color(this.getApi(), 0, 0, 255);
+            case SWT.COLOR_DARK_BLUE:
+                return new Color(this.getApi(), 0, 0, 128);
+            case SWT.COLOR_MAGENTA:
+                return new Color(this.getApi(), 255, 0, 255);
+            case SWT.COLOR_DARK_MAGENTA:
+                return new Color(this.getApi(), 128, 0, 128);
+            case SWT.COLOR_CYAN:
+                return new Color(this.getApi(), 0, 255, 255);
+            case SWT.COLOR_DARK_CYAN:
+                return new Color(this.getApi(), 0, 128, 128);
+            case SWT.COLOR_GRAY:
+                return new Color(this.getApi(), 192, 192, 192);
+            case SWT.COLOR_DARK_GRAY:
+                return new Color(this.getApi(), 128, 128, 128);
+            default:
+                return getWidgetColor(id);
+        }
     }
 
     Color getWidgetColor(int id) {
-        return switch(id) {
-            case SWT.COLOR_WIDGET_DARK_SHADOW ->
-                new Color(this.getApi(), 64, 64, 64);
-            case SWT.COLOR_WIDGET_NORMAL_SHADOW ->
-                new Color(this.getApi(), 128, 128, 128);
-            case SWT.COLOR_WIDGET_LIGHT_SHADOW ->
-                new Color(this.getApi(), 192, 192, 192);
-            case SWT.COLOR_WIDGET_HIGHLIGHT_SHADOW ->
-                new Color(this.getApi(), 224, 224, 224);
+        switch(id) {
+            case SWT.COLOR_WIDGET_DARK_SHADOW:
+                return new Color(this.getApi(), 64, 64, 64);
+            case SWT.COLOR_WIDGET_NORMAL_SHADOW:
+                return new Color(this.getApi(), 128, 128, 128);
+            case SWT.COLOR_WIDGET_LIGHT_SHADOW:
+                return new Color(this.getApi(), 192, 192, 192);
+            case SWT.COLOR_WIDGET_HIGHLIGHT_SHADOW:
+                return new Color(this.getApi(), 224, 224, 224);
             // A foreground is only legible against the background it is paired with, so it
             // has to come from the same scheme: an application that sets neither -- the
             // common case for owner-drawn content -- inherits both from here.
-            case SWT.COLOR_WIDGET_FOREGROUND ->
+            case SWT.COLOR_WIDGET_FOREGROUND:
                 {
                     if (!isSystemDarkTheme())
-                        yield new Color(this.getApi(), 0, 0, 0);
+                        return new Color(this.getApi(), 0, 0, 0);
                     dev.equo.swt.size.CanvasTheme t = dev.equo.swt.size.CanvasTheme.getDarkOnSurface();
-                    yield new Color(this.getApi(), t.red(), t.green(), t.blue());
+                    return new Color(this.getApi(), t.red(), t.green(), t.blue());
                 }
-            case SWT.COLOR_WIDGET_BACKGROUND ->
+            case SWT.COLOR_WIDGET_BACKGROUND:
                 {
                     if (!isSystemDarkTheme())
-                        yield new Color(this.getApi(), 240, 240, 240);
+                        return new Color(this.getApi(), 240, 240, 240);
                     dev.equo.swt.size.CanvasTheme t = dev.equo.swt.size.CanvasTheme.getDarkSurface();
-                    yield new Color(this.getApi(), t.red(), t.green(), t.blue());
+                    return new Color(this.getApi(), t.red(), t.green(), t.blue());
                 }
-            case SWT.COLOR_WIDGET_BORDER ->
-                new Color(this.getApi(), 0, 0, 0);
-            case SWT.COLOR_LIST_FOREGROUND ->
+            case SWT.COLOR_WIDGET_BORDER:
+                return new Color(this.getApi(), 0, 0, 0);
+            case SWT.COLOR_LIST_FOREGROUND:
                 {
                     if (!isSystemDarkTheme())
-                        yield new Color(this.getApi(), 0, 0, 0);
+                        return new Color(this.getApi(), 0, 0, 0);
                     dev.equo.swt.size.CanvasTheme t = dev.equo.swt.size.CanvasTheme.getDarkOnSurface();
-                    yield new Color(this.getApi(), t.red(), t.green(), t.blue());
+                    return new Color(this.getApi(), t.red(), t.green(), t.blue());
                 }
-            case SWT.COLOR_LIST_BACKGROUND ->
+            case SWT.COLOR_LIST_BACKGROUND:
                 {
                     if (!isSystemDarkTheme())
-                        yield new Color(this.getApi(), 255, 255, 255);
+                        return new Color(this.getApi(), 255, 255, 255);
                     dev.equo.swt.size.CanvasTheme t = dev.equo.swt.size.CanvasTheme.getDarkSurface();
-                    yield new Color(this.getApi(), t.red(), t.green(), t.blue());
+                    return new Color(this.getApi(), t.red(), t.green(), t.blue());
                 }
-            case SWT.COLOR_LIST_SELECTION ->
-                new Color(this.getApi(), 51, 153, 255);
-            case SWT.COLOR_LIST_SELECTION_TEXT ->
-                new Color(this.getApi(), 255, 255, 255);
-            case SWT.COLOR_INFO_FOREGROUND ->
-                new Color(this.getApi(), 0, 0, 0);
-            case SWT.COLOR_INFO_BACKGROUND ->
-                new Color(this.getApi(), 255, 255, 225);
-            case SWT.COLOR_TITLE_FOREGROUND ->
-                new Color(this.getApi(), 255, 255, 255);
-            case SWT.COLOR_TITLE_BACKGROUND ->
-                new Color(this.getApi(), 51, 102, 204);
-            case SWT.COLOR_TITLE_BACKGROUND_GRADIENT ->
-                new Color(this.getApi(), 102, 153, 255);
-            case SWT.COLOR_TITLE_INACTIVE_FOREGROUND ->
-                new Color(this.getApi(), 128, 128, 128);
-            case SWT.COLOR_TITLE_INACTIVE_BACKGROUND ->
-                new Color(this.getApi(), 192, 192, 192);
-            case SWT.COLOR_TITLE_INACTIVE_BACKGROUND_GRADIENT ->
-                new Color(this.getApi(), 213, 213, 213);
-            case SWT.COLOR_LINK_FOREGROUND ->
-                new Color(this.getApi(), 0, 102, 204);
-            case SWT.COLOR_TRANSPARENT ->
-                new Color(this.getApi(), 0, 0, 0, 0);
-            case SWT.COLOR_TEXT_DISABLED_BACKGROUND ->
-                new Color(this.getApi(), 240, 240, 240);
-            case SWT.COLOR_WIDGET_DISABLED_FOREGROUND ->
-                new Color(this.getApi(), 128, 128, 128);
+            case SWT.COLOR_LIST_SELECTION:
+                return new Color(this.getApi(), 51, 153, 255);
+            case SWT.COLOR_LIST_SELECTION_TEXT:
+                return new Color(this.getApi(), 255, 255, 255);
+            case SWT.COLOR_INFO_FOREGROUND:
+                return new Color(this.getApi(), 0, 0, 0);
+            case SWT.COLOR_INFO_BACKGROUND:
+                return new Color(this.getApi(), 255, 255, 225);
+            case SWT.COLOR_TITLE_FOREGROUND:
+                return new Color(this.getApi(), 255, 255, 255);
+            case SWT.COLOR_TITLE_BACKGROUND:
+                return new Color(this.getApi(), 51, 102, 204);
+            case SWT.COLOR_TITLE_BACKGROUND_GRADIENT:
+                return new Color(this.getApi(), 102, 153, 255);
+            case SWT.COLOR_TITLE_INACTIVE_FOREGROUND:
+                return new Color(this.getApi(), 128, 128, 128);
+            case SWT.COLOR_TITLE_INACTIVE_BACKGROUND:
+                return new Color(this.getApi(), 192, 192, 192);
+            case SWT.COLOR_TITLE_INACTIVE_BACKGROUND_GRADIENT:
+                return new Color(this.getApi(), 213, 213, 213);
+            case SWT.COLOR_LINK_FOREGROUND:
+                return new Color(this.getApi(), 0, 102, 204);
+            case SWT.COLOR_TRANSPARENT:
+                return new Color(this.getApi(), 0, 0, 0, 0);
+            case SWT.COLOR_TEXT_DISABLED_BACKGROUND:
+                return new Color(this.getApi(), 240, 240, 240);
+            case SWT.COLOR_WIDGET_DISABLED_FOREGROUND:
+                return new Color(this.getApi(), 128, 128, 128);
             // Device.getSystemColor falls back to black for any id it does not map; throwing here would escape into the caller's listener.
-            default ->
-                new Color(this.getApi(), 0, 0, 0);
-        };
+            default:
+                return new Color(this.getApi(), 0, 0, 0);
+        }
     }
 
     double[] getWidgetColorRGB(int id) {

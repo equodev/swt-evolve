@@ -918,7 +918,8 @@ public class DartShell extends DartDecorations implements IShell {
         if (savedFocus != null && savedFocus.isDisposed()) {
             savedFocus = null;
         }
-        if (getBridge() instanceof org.eclipse.swt.widgets.DisplayBridge db) {
+        if (getBridge() instanceof org.eclipse.swt.widgets.DisplayBridge) {
+            org.eclipse.swt.widgets.DisplayBridge db = (org.eclipse.swt.widgets.DisplayBridge) getBridge();
             if (savedFocus != null) {
                 db.setFocus((DartControl) savedFocus.getImpl());
             } else if (!focusFirstFocusable()) {
@@ -1045,7 +1046,8 @@ public class DartShell extends DartDecorations implements IShell {
         lastActive = null;
         if (savedDisplay != null && !savedDisplay.isDisposed()) {
             savedDisplay.asyncExec(() -> {
-                Shell toActivate = (savedParent instanceof Shell sp && !sp.isDisposed() && sp.isVisible()) ? sp : savedDisplay.getActiveShell();
+                Shell savedParentShell = savedParent instanceof Shell ? (Shell) savedParent : null;
+                Shell toActivate = (savedParentShell != null && !savedParentShell.isDisposed() && savedParentShell.isVisible()) ? savedParentShell : savedDisplay.getActiveShell();
                 if (toActivate != null && !toActivate.isDisposed()) {
                     Shell topmost = null;
                     for (Shell s : savedDisplay.getShells()) {
@@ -1284,8 +1286,8 @@ public class DartShell extends DartDecorations implements IShell {
         if (_getFullScreen() == fullScreen)
             return;
         this.fullScreen = fullScreen;
-        if (getBridge() instanceof dev.equo.swt.WindowBridge wb)
-            wb.setWindowFullScreen(this, fullScreen);
+        if (getBridge() instanceof dev.equo.swt.WindowBridge)
+            ((dev.equo.swt.WindowBridge) getBridge()).setWindowFullScreen(this, fullScreen);
         if (fullScreen) {
             if (getMonitor().equals(display.getPrimaryMonitor())) {
                 if (menuBar != null) {
@@ -1331,8 +1333,8 @@ public class DartShell extends DartDecorations implements IShell {
     public void setMaximized(boolean maximized) {
         checkWidget();
         super.setMaximized(maximized);
-        if (getBridge() instanceof dev.equo.swt.WindowBridge wb)
-            wb.setWindowMaximized(this, maximized);
+        if (getBridge() instanceof dev.equo.swt.WindowBridge)
+            ((dev.equo.swt.WindowBridge) getBridge()).setWindowMaximized(this, maximized);
         if (maximized)
             bounds = display.getBounds();
     }
@@ -1397,8 +1399,8 @@ public class DartShell extends DartDecorations implements IShell {
     public void setMinimized(boolean minimized) {
         checkWidget();
         super.setMinimized(minimized);
-        if (getBridge() instanceof dev.equo.swt.WindowBridge wb)
-            wb.setWindowMinimized(this, minimized);
+        if (getBridge() instanceof dev.equo.swt.WindowBridge)
+            ((dev.equo.swt.WindowBridge) getBridge()).setWindowMinimized(this, minimized);
         if (!getVisible())
             return;
         if (minimized) {
@@ -1553,8 +1555,8 @@ public class DartShell extends DartDecorations implements IShell {
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         super.setText(string);
-        if (getBridge() instanceof dev.equo.swt.WindowBridge wb)
-            wb.setWindowTitle(this, string);
+        if (getBridge() instanceof dev.equo.swt.WindowBridge)
+            ((dev.equo.swt.WindowBridge) getBridge()).setWindowTitle(this, string);
     }
 
     @Override
@@ -1883,16 +1885,17 @@ public class DartShell extends DartDecorations implements IShell {
     }
 
     boolean focusFirstFocusable() {
-        if (!(getBridge() instanceof org.eclipse.swt.widgets.DisplayBridge db))
+        if (!(getBridge() instanceof org.eclipse.swt.widgets.DisplayBridge))
             return false;
+        org.eclipse.swt.widgets.DisplayBridge db = (org.eclipse.swt.widgets.DisplayBridge) getBridge();
         java.util.List<org.eclipse.swt.widgets.Control> stack = new java.util.ArrayList<>();
         for (org.eclipse.swt.widgets.Control c : _getChildren()) stack.add(c);
         while (!stack.isEmpty()) {
             org.eclipse.swt.widgets.Control c = stack.remove(0);
             if (c == null || c.isDisposed())
                 continue;
-            if (c instanceof org.eclipse.swt.widgets.Composite comp && !(comp.getImpl() instanceof DartCanvas)) {
-                org.eclipse.swt.widgets.Control[] kids = ((DartComposite) comp.getImpl())._getChildren();
+            if (c instanceof org.eclipse.swt.widgets.Composite && !(((org.eclipse.swt.widgets.Composite) c).getImpl() instanceof DartCanvas)) {
+                org.eclipse.swt.widgets.Control[] kids = ((DartComposite) ((org.eclipse.swt.widgets.Composite) c).getImpl())._getChildren();
                 for (int i = kids.length - 1; i >= 0; i--) stack.add(0, kids[i]);
             } else if (c.getVisible() && c.isEnabled() && (c.getStyle() & SWT.NO_FOCUS) == 0) {
                 db.setFocus((DartControl) c.getImpl());

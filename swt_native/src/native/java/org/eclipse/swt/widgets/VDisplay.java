@@ -62,7 +62,7 @@ public class VDisplay {
                 live.add(s);
             }
         }
-        v.shells = live.toArray(Shell[]::new);
+        v.shells = live.toArray(new Shell[0]);
         Menu[] displayPopups = display.popups;
         ArrayList<Menu> popupList = new ArrayList<>();
         if (displayPopups != null) {
@@ -72,7 +72,7 @@ public class VDisplay {
                 }
             }
         }
-        v.popups = popupList.toArray(Menu[]::new);
+        v.popups = popupList.toArray(new Menu[0]);
         Menu appMenu = DisplayBridgePlatform.systemMenu(display.getApi());
         v.systemMenu = appMenu != null && !appMenu.isDisposed() ? appMenu : null;
         ToolTip[] allTooltips = display._activeTooltips();
@@ -84,7 +84,7 @@ public class VDisplay {
                 }
             }
         }
-        v.tooltips = tooltipList.toArray(ToolTip[]::new);
+        v.tooltips = tooltipList.toArray(new ToolTip[0]);
         return v;
     }
 

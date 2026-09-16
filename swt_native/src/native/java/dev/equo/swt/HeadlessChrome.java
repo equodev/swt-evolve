@@ -114,10 +114,38 @@ public final class HeadlessChrome implements AutoCloseable {
         if (io == Io.INHERIT) {
             pb.inheritIO();
         } else {
-            pb.redirectOutput(ProcessBuilder.Redirect.DISCARD);
-            pb.redirectError(ProcessBuilder.Redirect.DISCARD);
+            pb.redirectOutput(ProcessBuilder.Redirect.to(NULL_DEVICE));
+            pb.redirectError(ProcessBuilder.Redirect.to(NULL_DEVICE));
         }
         return new HeadlessChrome(pb.start(), profileDir);
+    }
+
+    /** Redirect.DISCARD is Java 9; the platform's null device is the same thing on every release. */
+    private static final File NULL_DEVICE =
+            new File(System.getProperty("os.name", "").toLowerCase().contains("win") ? "NUL" : "/dev/null");
+
+    /**
+     * Kills the helpers Chrome spawned. ProcessHandle arrived in Java 9 and the fragments built for
+     * older SWT releases target Java 8, where nothing walks a process tree - there the helpers are
+     * left to the OS, which is what {@code destroy()} alone did before any of this existed.
+     */
+    private static void destroyDescendants(Process process) {
+        try {
+            Object handle = Process.class.getMethod("toHandle").invoke(process);
+            Class<?> processHandle = Class.forName("java.lang.ProcessHandle");
+            java.util.stream.Stream<?> kids =
+                    (java.util.stream.Stream<?>) processHandle.getMethod("descendants").invoke(handle);
+            java.lang.reflect.Method destroyForcibly = processHandle.getMethod("destroyForcibly");
+            kids.forEach(kid -> {
+                try {
+                    destroyForcibly.invoke(kid);
+                } catch (ReflectiveOperationException ignored) {
+                    // Already gone, or refused - destroyForcibly on the parent still follows.
+                }
+            });
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            // Java 8, or a JDK that does not expose it: the parent kill below is all we get.
+        }
     }
 
     /**
@@ -128,7 +156,7 @@ public final class HeadlessChrome implements AutoCloseable {
     @Override
     public void close() {
         if (process != null) {
-            process.descendants().forEach(ProcessHandle::destroyForcibly);
+            destroyDescendants(process);
             process.destroyForcibly();
             try {
                 process.waitFor(3, TimeUnit.SECONDS);
@@ -139,7 +167,7 @@ public final class HeadlessChrome implements AutoCloseable {
         }
         if (profileDir != null) {
             // The process is dead (awaited above), so it has released the profile; delete it depth-first.
-            try (var paths = Files.walk(profileDir)) {
+            try (java.util.stream.Stream<Path> paths = Files.walk(profileDir)) {
                 paths.sorted(Comparator.reverseOrder()).forEach(p -> p.toFile().delete());
             } catch (Exception ignored) {
                 // temp dir; the OS will reap it if we couldn't.

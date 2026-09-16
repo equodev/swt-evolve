@@ -563,9 +563,10 @@ public class TableHelper {
             return;
         }
         for (TableItem row : rows) {
-            if (row == null || row.isDisposed() || !(row.getImpl() instanceof DartTableItem item)) {
+            if (row == null || row.isDisposed() || !(row.getImpl() instanceof DartTableItem)) {
                 continue;
             }
+            DartTableItem item = (DartTableItem) row.getImpl();
             item.getValue().markDirty(VTableItem.IMAGES);
             item.getValue().markDirty(VTableItem.TEXTS);
         }

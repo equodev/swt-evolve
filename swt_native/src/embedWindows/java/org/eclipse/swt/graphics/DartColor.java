@@ -324,8 +324,9 @@ public final class DartColor extends DartResource implements IColor {
     public boolean equals(Object object) {
         if (object == this.getApi())
             return true;
-        if (!(object instanceof Color color))
+        if (!(object instanceof Color))
             return false;
+        Color color = (Color) object;
         if (isDisposed() || color.isDisposed())
             return false;
         if (this.getRed() != color.getRed())

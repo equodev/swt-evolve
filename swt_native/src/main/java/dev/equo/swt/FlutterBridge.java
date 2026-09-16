@@ -107,11 +107,12 @@ public abstract class FlutterBridge {
         // before is worth nothing to it: forget that, or the answer is a description of what
         // changed since a state it does not have.
         // dirty() is safe off the display thread; the next dispatch flushes the fresh state.
-        if (w instanceof DartWidget widget) {
+        if (w instanceof DartWidget) {
+            DartWidget widget = (DartWidget) w;
             Serializer.forgetDelivery(widget.getValue());
             bridge.dirty(widget);
-        } else if (w instanceof DartResource resource) {
-            bridge.dirty(resource);
+        } else if (w instanceof DartResource) {
+            bridge.dirty((DartResource) w);
         }
     }
 
@@ -312,7 +313,8 @@ public abstract class FlutterBridge {
      * the strength of one of these would arrive twice.
      */
     private static boolean carriesItsChildren(Object widget) {
-        if (!(widget instanceof DartWidget w)) return true;
+        if (!(widget instanceof DartWidget)) return true;
+        DartWidget w = (DartWidget) widget;
         // Asked of the client this widget is written for. The filter runs before the walk that
         // names it, so there is no addressee in scope to inherit - and reading it as "no client"
         // would answer that every widget is sent whole, which drops the children of one that is
@@ -322,11 +324,11 @@ public abstract class FlutterBridge {
     }
 
     private static boolean isShell(Object widget) {
-        return widget instanceof DartControl d && d.getApi() instanceof Shell;
+        return widget instanceof DartControl && ((DartControl) widget).getApi() instanceof Shell;
     }
 
     private static boolean isFlutterRoot(Object widget) {
-        if (widget instanceof DartControl d) {
+        if (widget instanceof DartControl) { DartControl d = (DartControl) widget;
             FlutterBridge bridge = d.getBridge();
             return bridge != null && bridge.forWidget() == widget;
         }
@@ -371,7 +373,7 @@ public abstract class FlutterBridge {
         Set<VWidget> required = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
         for (Object widget : dirtySet) {
             for (Object node = widget; node != null; node = getParent(node)) {
-                if (node instanceof DartWidget w) required.add(w.getValue());
+                if (node instanceof DartWidget) required.add(((DartWidget) node).getValue());
             }
         }
         return required;
@@ -419,8 +421,8 @@ public abstract class FlutterBridge {
      * one widget where the saving is worth that.
      */
     private static boolean coalescible(Object widget) {
-        return widget instanceof DartControl control
-                && control.getApi() instanceof org.eclipse.swt.widgets.Table;
+        return widget instanceof DartControl
+                && ((DartControl) widget).getApi() instanceof org.eclipse.swt.widgets.Table;
     }
 
     private static boolean pushDue(Object widget, long now) {
@@ -477,7 +479,8 @@ public abstract class FlutterBridge {
             // comm buffers it until the socket opens. Gating it here is what once left a workbench
             // showing an empty window — the re-push needed the UI thread, which was parked in the
             // native event pump.
-            if (widget instanceof DirtyState state) {
+            if (widget instanceof DirtyState) {
+                DirtyState state = (DirtyState) widget;
                 if (!state.isStale()) state.flush();
                 continue;
             }
@@ -494,7 +497,8 @@ public abstract class FlutterBridge {
             Runnable send = () -> {
                 try {
                     if (isDisposed(widget)) return; // widget may have been disposed while waiting for clientReady
-                    boolean isHidden = (widget instanceof org.eclipse.swt.widgets.DartControl dc) && !dc.getVisible();
+                    boolean isHidden = (widget instanceof org.eclipse.swt.widgets.DartControl)
+                            && !((org.eclipse.swt.widgets.DartControl) widget).getVisible();
                     if (!isNew(widget) || widget instanceof DartToolTip || widget instanceof DartMenu || isHidden) { // send with the parent
                         setNotNew(widget);
                         synchronized (dirty) { // undirty if it was dirtied while waiting foe clientReady
@@ -512,10 +516,10 @@ public abstract class FlutterBridge {
                                     // is a property of the frame: a widget nested in an ancestor's
                                     // payload is still written whole, since the far side has
                                     // nothing to merge a nested change into yet.
-                                    if (widget instanceof DartWidget w && Serializer.canDiff(w)
+                                    if (widget instanceof DartWidget && Serializer.canDiff((DartWidget) widget)
                                             && !carryingDescendants.contains(widget)) {
                                         byte[] header = CommService.frameHeader(event);
-                                        serializer.toDiff(header, w, (buffer, length) ->
+                                        serializer.toDiff(header, (DartWidget) widget, (buffer, length) ->
                                                 sendBytes(comm, event, buffer, header.length, length));
                                     } else
                                         serializeAndSend(comm, event, getApi(widget));
@@ -557,9 +561,11 @@ public abstract class FlutterBridge {
      * later update of its own was dropped here as one the client could not place.
      */
     private static boolean isNew(Object widget) {
-        if (widget instanceof DartWidget w)
+        if (widget instanceof DartWidget) {
+            DartWidget w = (DartWidget) widget;
             return w.getData(DEV_EQU_SWT_NEW) == null
                     && w.getValue().sentSeq(connectionOf(widget)) == 0;
+        }
         return false;
     }
 
@@ -649,8 +655,8 @@ public abstract class FlutterBridge {
         List<DirtyState> due = new ArrayList<>();
         synchronized (dirty) {
             dirty.removeIf(entry -> {
-                if (!(entry instanceof DirtyState state)) return false;
-                due.add(state);
+                if (!(entry instanceof DirtyState)) return false;
+                due.add((DirtyState) entry);
                 return true;
             });
         }
@@ -833,7 +839,7 @@ public abstract class FlutterBridge {
 
     public static void send(DartResource resource, String event, Object args) {
         CommService comm = commFor(resource);
-        if (getBridge(resource) instanceof GCImageDrawer drawer) {
+        if (getBridge(resource) instanceof GCImageDrawer) { GCImageDrawer drawer = (GCImageDrawer) getBridge(resource);
             // Serialize eagerly (captures current GC state: colors, font, etc.) then
             // queue the send so it is dispatched only after Flutter's GCDrawer.standalone
             // has registered its listeners — fixing the macOS race condition where ops
@@ -865,7 +871,7 @@ public abstract class FlutterBridge {
             }
             return;
         }
-        if (resource instanceof DartGC gc) {
+        if (resource instanceof DartGC) { DartGC gc = (DartGC) resource;
             bufferOp(comm, gc, event, args);
             return;
         }
@@ -921,11 +927,13 @@ public abstract class FlutterBridge {
 
     /** Puts a GC's buffered ops on the wire, for a caller about to block on an answer to one. */
     public static void flushOps(Object resource) {
-        if (!(resource instanceof DartGC gc)) return;
+        if (!(resource instanceof DartGC)) return;
+        DartGC gc = (DartGC) resource;
         flushOpBatch(gc);
         // An Image-backed GC buffers its ops until the drawer is started, and only a caller
         // wanting an answer starts it.
-        if (getBridge(gc) instanceof GCImageDrawer drawer) drawer.startForPendingReply();
+        FlutterBridge gcBridge = getBridge(gc);
+        if (gcBridge instanceof GCImageDrawer) ((GCImageDrawer) gcBridge).startForPendingReply();
     }
 
     private static void flushOpBatch(DartGC gc) {
@@ -1043,10 +1051,10 @@ public abstract class FlutterBridge {
     }
 
     private void dirty(Object obj) {
-        if (obj instanceof DartControl c)
-            dirty(c);
-        if (obj instanceof DartResource r)
-            dirty(r);
+        if (obj instanceof DartControl)
+            dirty(((DartControl) obj));
+        if (obj instanceof DartResource)
+            dirty(((DartResource) obj));
     }
 
     /** The widget whose state the client itself is currently reporting, if any. */

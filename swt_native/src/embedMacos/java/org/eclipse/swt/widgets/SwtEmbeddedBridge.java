@@ -26,7 +26,8 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
     }
 
     protected long getHandle(Control control) {
-        if (control.getImpl() instanceof SwtComposite composite) {
+        if (control.getImpl() instanceof SwtComposite) {
+            SwtComposite composite = (SwtComposite) control.getImpl();
             if (composite.contentView() != null)
                 return composite.contentView().id;
             return 0;
@@ -124,7 +125,8 @@ public class SwtEmbeddedBridge extends EmbeddedBridge {
                 ((SwtComposite) parent.getImpl()).contentView().addSubview(topView, above ? org.eclipse.swt.internal.cocoa.OS.NSWindowAbove : org.eclipse.swt.internal.cocoa.OS.NSWindowBelow, otherView);
             } else if (parent.getImpl() instanceof DartComposite) {
                 Object cv = ((DartComposite) parent.getImpl()).contentView();
-                if (cv instanceof org.eclipse.swt.internal.cocoa.NSView nsView) {
+                if (cv instanceof org.eclipse.swt.internal.cocoa.NSView) {
+                    org.eclipse.swt.internal.cocoa.NSView nsView = (org.eclipse.swt.internal.cocoa.NSView) cv;
                     nsView.addSubview(topView, above ? org.eclipse.swt.internal.cocoa.OS.NSWindowAbove : org.eclipse.swt.internal.cocoa.OS.NSWindowBelow, otherView);
                 }
                 // else: Flutter-backed composite has no native NSView; z-order is managed by Flutter

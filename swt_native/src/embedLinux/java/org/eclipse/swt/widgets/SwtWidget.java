@@ -418,8 +418,8 @@ public abstract class SwtWidget implements IWidget {
         checkParent(parent);
         this.getApi().style = style;
         display = parent.getImpl()._display();
-        if (parent.getImpl() instanceof DynWidget dyn)
-            dyn.convert();
+        if (parent.getImpl() instanceof DynWidget)
+            ((DynWidget) parent.getImpl()).convert();
         reskinWidget();
         notifyCreationTracker();
     }

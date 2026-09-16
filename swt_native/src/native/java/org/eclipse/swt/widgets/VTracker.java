@@ -38,7 +38,7 @@ public class VTracker extends VWidget {
         ArrayList<Rectangle> result = new ArrayList<>(values.length);
         for (Rectangle v : values) if (v != null)
             result.add(v);
-        return result.toArray(Rectangle[]::new);
+        return result.toArray(new Rectangle[0]);
     }
 
     public void setRectangles(Rectangle[] value) {

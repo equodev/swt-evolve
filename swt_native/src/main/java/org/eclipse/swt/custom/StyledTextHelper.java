@@ -71,7 +71,7 @@ public class StyledTextHelper {
             return;
         if (Boolean.TRUE.equals(keyVetoPublished.get(styledText))) {
             FlutterBridge.send(styledText, "verifyKey/verdict",
-                    Map.of("doit", doit, "keyCode", verifyEvent.keyCode));
+                    dev.equo.swt.Java8.map("doit", doit, "keyCode", verifyEvent.keyCode));
         }
     }
 
@@ -95,7 +95,7 @@ public class StyledTextHelper {
         if (published != null && published == vetoable)
             return;
         keyVetoPublished.put(styledText, vetoable);
-        FlutterBridge.send(styledText, "verifyKey/vetoable", Map.of("value", vetoable));
+        FlutterBridge.send(styledText, "verifyKey/vetoable", dev.equo.swt.Java8.map("value", vetoable));
     }
 
     public static boolean consumeVerifyKeyVeto(DartStyledText styledText) {
@@ -186,14 +186,16 @@ public class StyledTextHelper {
 
     static void applyTextGeometry(DartStyledText styledText, Map<String, Object> map) {
         Object linesObj = map.get("lines");
-        if (!(linesObj instanceof List<?> lineMaps)) return;
+        if (!(linesObj instanceof List<?>)) return;
+        List<?> lineMaps = (List<?>) linesObj;
         TextGeometry g = new TextGeometry();
         g.charCount = asInt(map.get("charCount"), -1);
         g.contentWidth = asDouble(map.get("contentWidth"), 0);
         g.contentHeight = asDouble(map.get("contentHeight"), 0);
         List<VisualLine> lines = new ArrayList<>(lineMaps.size());
         for (Object o : lineMaps) {
-            if (!(o instanceof Map<?, ?> lm)) return;
+            if (!(o instanceof Map<?, ?>)) return;
+            Map<?, ?> lm = (Map<?, ?>) o;
             VisualLine v = new VisualLine();
             v.logicalLine = asInt(lm.get("l"), -1);
             v.start = asInt(lm.get("s"), -1);
@@ -204,7 +206,8 @@ public class StyledTextHelper {
             v.h = asDouble(lm.get("h"), 0);
             v.vi = asDouble(lm.get("vi"), 0);
             if (v.logicalLine < 0 || v.start < 0 || v.end < v.start) return;
-            if (lm.get("cx") instanceof List<?> cx) {
+            if (lm.get("cx") instanceof List<?>) {
+                List<?> cx = (List<?>) lm.get("cx");
                 if (cx.size() != v.end - v.start + 1) return;
                 v.charX = new double[cx.size()];
                 for (int i = 0; i < cx.size(); i++) v.charX[i] = asDouble(cx.get(i), 0);
@@ -252,10 +255,10 @@ public class StyledTextHelper {
     private static void repaintTree(Control control) {
         if (control.isDisposed()) return;
         if (control.isListening(SWT.Paint)
-                && control.getImpl() instanceof org.eclipse.swt.widgets.DartControl dc) {
-            ControlHelper.paint(dc);
+                && control.getImpl() instanceof org.eclipse.swt.widgets.DartControl) {
+            ControlHelper.paint((org.eclipse.swt.widgets.DartControl) control.getImpl());
         }
-        if (control instanceof Composite composite) {
+        if (control instanceof Composite) { Composite composite = (Composite) control;
             for (Control child : composite.getChildren()) {
                 repaintTree(child);
             }
@@ -287,11 +290,11 @@ public class StyledTextHelper {
     }
 
     private static int asInt(Object o, int def) {
-        return o instanceof Number n ? n.intValue() : def;
+        return o instanceof Number ? ((Number) o).intValue() : def;
     }
 
     private static double asDouble(Object o, double def) {
-        return o instanceof Number n ? n.doubleValue() : def;
+        return o instanceof Number ? ((Number) o).doubleValue() : def;
     }
 
     /** The pushed geometry, or null when absent or stale relative to the current content. */

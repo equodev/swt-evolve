@@ -46,7 +46,7 @@ public class VMenu extends VWidget {
         ArrayList<MenuItem> result = new ArrayList<>(values.length);
         for (MenuItem v : values) if (v != null)
             result.add(v);
-        return result.toArray(MenuItem[]::new);
+        return result.toArray(new MenuItem[0]);
     }
 
     public void setItems(MenuItem[] value) {

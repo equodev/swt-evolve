@@ -85,7 +85,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     // sends and flushes them on connect (see sendDisplayUpdate); the caller's own onReady() gates
     // anything that actually needs the client to be listening.
     private static CommService sharedCommFor(Display display) {
-        if (!(display.getImpl() instanceof DartDisplay dd) || dd.displayBridge == null) {
+        if (!(display.getImpl() instanceof DartDisplay)) {
+            return null;
+        }
+        DartDisplay dd = (DartDisplay) display.getImpl();
+        if (dd.displayBridge == null) {
             return null;
         }
         DisplayBridge db = dd.displayBridge;
@@ -103,11 +107,13 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         // A test/bench harness may inject a global bridge (FlutterBridge.set) that owns the comm;
         // every widget routes through it instead of the per-Display bridge.
         FlutterBridge injected = injected();
-        if (widget instanceof DartControl dartControl) {
+        if (widget instanceof DartControl) {
+            DartControl dartControl = (DartControl) widget;
             Display display = dartControl._display();
             if (display != null) {
                 DartDisplay dartDisplay = (DartDisplay) display.getImpl();
-                if (widget instanceof DartShell dartShell) {
+                if (widget instanceof DartShell) {
+                    DartShell dartShell = (DartShell) widget;
                     dartDisplay.addShell((Shell) dartShell.getApi());
                     if (injected == null) {
                         if (dartShell.parent == null) {
@@ -213,15 +219,16 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             if (api.isDisposed())
                 return;
             Control focus = api.getFocusControl();
-            if (focus == null || focus.isDisposed() || !(focus.getImpl() instanceof DartControl dc))
+            if (focus == null || focus.isDisposed() || !(focus.getImpl() instanceof DartControl))
                 return;
+            DartControl dc = (DartControl) focus.getImpl();
             if (type == org.eclipse.swt.SWT.KeyDown) {
                 boolean vetoable = focus.isListening(org.eclipse.swt.SWT.KeyDown);
                 ev.doit = true;
                 ControlHelper.sendDisplayRoutedKeyDown(dc, ev);
                 if (vetoable) {
                     dev.equo.swt.FlutterBridge.send(dc, "key/verdict",
-                            java.util.Map.of("doit", ev.doit));
+                            dev.equo.swt.Java8.map("doit", ev.doit));
                 }
                 // Surface the traversal (Tab/arrows/Esc/Enter/Page) as SWT.Traverse too, so a Display
                 // Traverse filter (Eclipse command bindings) and TraverseListeners see it.
@@ -280,12 +287,32 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     }
 
     /**
-     * The Display's entry in the shared dirty set. A record so repeated enrolments of the same
-     * Display collapse to one entry, which is what lets several state changes in a turn produce one
-     * frame once these stop being flushed on the spot.
+     * The Display's entry in the shared dirty set. Equal by (bridge, display) so repeated
+     * enrolments of the same Display collapse to one entry, which is what lets several state
+     * changes in a turn produce one frame once these stop being flushed on the spot.
      */
-    private record DisplayFlush(DisplayBridge bridge, DartDisplay display)
-            implements FlutterBridge.DirtyState {
+    private static final class DisplayFlush implements FlutterBridge.DirtyState {
+
+        private final DisplayBridge bridge;
+        private final DartDisplay display;
+
+        DisplayFlush(DisplayBridge bridge, DartDisplay display) {
+            this.bridge = bridge;
+            this.display = display;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof DisplayFlush)) return false;
+            DisplayFlush other = (DisplayFlush) o;
+            return bridge == other.bridge && display == other.display;
+        }
+
+        @Override
+        public int hashCode() {
+            return System.identityHashCode(bridge) * 31 + System.identityHashCode(display);
+        }
 
         @Override
         public boolean isStale() {
@@ -467,8 +494,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     @Override
     public void destroy(DartWidget control) {
-        if (control instanceof DartShell dartShell && forDisplay != null) {
-            forDisplay.removeShell((Shell) dartShell.getApi());
+        if (control instanceof DartShell && forDisplay != null) {
+            forDisplay.removeShell((Shell) ((DartShell) control).getApi());
             sendDisplayUpdate(forDisplay);
         }
     }
@@ -545,16 +572,32 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             return;
         try {
             serializeAndSend("Display/" + display.getApi().hashCode() + "/" + gate,
-                    java.util.Map.of(key, value));
+                    dev.equo.swt.Java8.map(key, value));
         } catch (java.io.IOException e) {
             e.printStackTrace();
         }
     }
 
     /** Gates armed per focus. Arming keeps the round trip off the path where no veto is possible. */
-    private record FocusGate(String channel, int eventType, Class<? extends DartControl> impl) {}
+    private static final class FocusGate {
+        private final String channel;
+        private final int eventType;
+        private final Class<? extends DartControl> impl;
 
-    private static final java.util.List<FocusGate> FOCUS_GATES = java.util.List.of(
+        FocusGate(String channel, int eventType, Class<? extends DartControl> impl) {
+            this.channel = channel;
+            this.eventType = eventType;
+            this.impl = impl;
+        }
+
+        String channel() { return channel; }
+
+        int eventType() { return eventType; }
+
+        Class<? extends DartControl> impl() { return impl; }
+    }
+
+    private static final java.util.List<FocusGate> FOCUS_GATES = dev.equo.swt.Java8.list(
             new FocusGate("key", org.eclipse.swt.SWT.KeyDown, DartControl.class),
             new FocusGate("modify", org.eclipse.swt.SWT.Verify, DartText.class));
 
@@ -567,7 +610,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             for (FocusGate gate : FOCUS_GATES) {
                 if (gate.impl().isInstance(widget) && api.isListening(gate.eventType())) {
                     dev.equo.swt.FlutterBridge.send(widget, gate.channel() + "/vetoable",
-                            java.util.Map.of("value", true));
+                            dev.equo.swt.Java8.map("value", true));
                 }
             }
         }
@@ -606,7 +649,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         long id = FlutterBridge.id(widget);
         FlutterBridge.update().whenComplete((result, error) -> {
             try {
-                serializeAndSend(FOCUS_CHANNEL, java.util.Map.of("id", id));
+                serializeAndSend(FOCUS_CHANNEL, dev.equo.swt.Java8.map("id", id));
             } catch (java.io.IOException e) {
                 e.printStackTrace();
             }
@@ -627,13 +670,15 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      */
     private static boolean isCellEditorControl(Control control) {
         Composite parent = control.getParent();
-        if (parent instanceof Table table && table.getImpl() instanceof DartTable dartTable) {
+        if (parent instanceof Table && ((Table) parent).getImpl() instanceof DartTable) {
+            DartTable dartTable = (DartTable) ((Table) parent).getImpl();
             for (org.eclipse.swt.custom.TableEditor editor : dartTable._editors()) {
                 if (editor != null && editor.getEditor() == control)
                     return true;
             }
         }
-        if (parent instanceof Tree tree && tree.getImpl() instanceof DartTree dartTree) {
+        if (parent instanceof Tree && ((Tree) parent).getImpl() instanceof DartTree) {
+            DartTree dartTree = (DartTree) ((Tree) parent).getImpl();
             for (org.eclipse.swt.custom.TreeEditor editor : dartTree._editors()) {
                 if (editor != null && editor.getEditor() == control)
                     return true;
@@ -666,8 +711,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     @Override
     public void setVisible(DartControl control, boolean visible) {
-        if (control instanceof DartShell dartShell) {
-            Shell shell = (Shell) dartShell.getApi();
+        if (control instanceof DartShell) {
+            Shell shell = (Shell) ((DartShell) control).getApi();
             if (visible && forDisplay != null) {
                 if (isMainShell(forDisplay, shell)) {
                     // Fill the viewport on show even if the shell opened at a stale, non-origin

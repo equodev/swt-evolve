@@ -3998,8 +3998,8 @@ public abstract class SwtControl extends SwtWidget implements Drawable, IControl
             // OLE objects are always embedded by windows
             return true;
         }
-        if (this.getApi() instanceof Composite comp)
-            return Stream.of(comp.getChildren()).map(Control::getImpl).filter(SwtControl.class::isInstance).map(SwtControl.class::cast).anyMatch(SwtControl::embedsWin32Control);
+        if (this.getApi() instanceof Composite)
+            return Stream.of(((Composite) this.getApi()).getChildren()).map(Control::getImpl).filter(SwtControl.class::isInstance).map(SwtControl.class::cast).anyMatch(SwtControl::embedsWin32Control);
         return false;
     }
 

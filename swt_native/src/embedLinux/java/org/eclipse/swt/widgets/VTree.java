@@ -35,7 +35,7 @@ public class VTree extends VComposite {
         ArrayList<TreeColumn> result = new ArrayList<>(values.length);
         for (TreeColumn v : values) if (v != null)
             result.add(v);
-        return result.toArray(TreeColumn[]::new);
+        return result.toArray(new TreeColumn[0]);
     }
 
     public void setColumns(TreeColumn[] value) {
@@ -82,7 +82,7 @@ public class VTree extends VComposite {
         ArrayList<TreeItem> result = new ArrayList<>(values.length);
         for (TreeItem v : values) if (v != null)
             result.add(v);
-        return result.toArray(TreeItem[]::new);
+        return result.toArray(new TreeItem[0]);
     }
 
     public void setItems(TreeItem[] value) {
@@ -104,7 +104,7 @@ public class VTree extends VComposite {
         ArrayList<TreeItem> result = new ArrayList<>(values.length);
         for (TreeItem v : values) if (v != null)
             result.add(v);
-        return result.toArray(TreeItem[]::new);
+        return result.toArray(new TreeItem[0]);
     }
 
     public void setSelection(TreeItem[] value) {

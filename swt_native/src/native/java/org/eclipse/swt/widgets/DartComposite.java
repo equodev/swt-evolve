@@ -1014,7 +1014,8 @@ public class DartComposite extends DartScrollable implements IComposite {
         super.updateBackgroundColor();
         Control[] children = _getChildren();
         for (Control child : children) {
-            if ((child.state & PARENT_BACKGROUND) != 0 && child.getImpl() instanceof DartControl dc) {
+            if ((child.state & PARENT_BACKGROUND) != 0 && child.getImpl() instanceof DartControl) {
+                DartControl dc = (DartControl) child.getImpl();
                 dc.updateBackgroundColor();
             }
         }
@@ -1025,7 +1026,8 @@ public class DartComposite extends DartScrollable implements IComposite {
         super.updateBackgroundImage();
         Control[] children = _getChildren();
         for (Control child : children) {
-            if ((child.state & PARENT_BACKGROUND) != 0 && child.getImpl() instanceof DartControl dc) {
+            if ((child.state & PARENT_BACKGROUND) != 0 && child.getImpl() instanceof DartControl) {
+                DartControl dc = (DartControl) child.getImpl();
                 dc.updateBackgroundImage();
             }
         }

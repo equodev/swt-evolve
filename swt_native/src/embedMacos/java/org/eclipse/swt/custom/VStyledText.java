@@ -274,7 +274,7 @@ public class VStyledText extends VCanvas {
         ArrayList<StyleRange> result = new ArrayList<>(values.length);
         for (StyleRange v : values) if (v != null)
             result.add(v);
-        return result.toArray(StyleRange[]::new);
+        return result.toArray(new StyleRange[0]);
     }
 
     public void setStyleRanges(StyleRange[] value) {

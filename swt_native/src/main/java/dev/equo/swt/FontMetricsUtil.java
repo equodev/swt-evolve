@@ -124,7 +124,7 @@ public final class FontMetricsUtil {
 
     /** Key 0-8 to match gen_fonts.dart weightKey (FontWeight.index). 400->3, 700->6. */
     public static String getId(String name, boolean italic, int weight) {
-        if (name == null || name.isBlank())
+        if (name == null || name.trim().isEmpty())
             name = "System";
         name = substituteFontName(name);
         int key = (weight >= 100 && weight <= 900) ? ((weight - 100) / 100) : (weight >= 600 ? 6 : 3);
@@ -136,17 +136,13 @@ public final class FontMetricsUtil {
     }
 
     public static boolean isBold(FontData f) {
-        return switch (f.getStyle()) {
-            case SWT.BOLD, SWT.BOLD | SWT.ITALIC -> true;
-            default -> false;
-        };
+        int style = f.getStyle();
+        return style == SWT.BOLD || style == (SWT.BOLD | SWT.ITALIC);
     }
 
     public static boolean isItalic(FontData f) {
-        return switch (f.getStyle()) {
-            case SWT.ITALIC, SWT.BOLD | SWT.ITALIC -> true;
-            default -> false;
-        };
+        int style = f.getStyle();
+        return style == SWT.ITALIC || style == (SWT.BOLD | SWT.ITALIC);
     }
 
     public static PointD getFontSize(String text, Font font) {

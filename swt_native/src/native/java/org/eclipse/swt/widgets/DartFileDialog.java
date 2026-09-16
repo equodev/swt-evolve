@@ -280,7 +280,7 @@ public class DartFileDialog extends DartDialog implements IIFileDialog {
             configuredPath = new java.io.File(java.net.URI.create(configuredUri)).getPath();
         }
         if (configuredPath != null) {
-            if (configuredPath.isBlank()) {
+            if (configuredPath.trim().isEmpty()) {
                 return Optional.empty();
             }
             java.io.File file = new java.io.File(configuredPath);

@@ -25,7 +25,7 @@ public class VExpandBar extends VComposite {
         ArrayList<ExpandItem> result = new ArrayList<>(values.length);
         for (ExpandItem v : values) if (v != null)
             result.add(v);
-        return result.toArray(ExpandItem[]::new);
+        return result.toArray(new ExpandItem[0]);
     }
 
     public void setItems(ExpandItem[] value) {

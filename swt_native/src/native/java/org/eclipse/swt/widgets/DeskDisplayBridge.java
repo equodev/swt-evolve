@@ -261,9 +261,9 @@ public class DeskDisplayBridge extends DisplayBridge {
      */
     @Override
     public void setVisible(DartControl control, boolean visible) {
-        if (control instanceof DartShell dartShell) {
+        if (control instanceof DartShell) {
             if (visible) {
-                ((Shell) dartShell.getApi()).layout(true, true);
+                ((Shell) ((DartShell) control).getApi()).layout(true, true);
             }
             sendDisplayUpdate(forDisplay);
         }
@@ -292,8 +292,8 @@ public class DeskDisplayBridge extends DisplayBridge {
      */
     private boolean isMainWindow(DartControl control) {
         return hasNativeWindow()
-                && control instanceof DartShell dartShell
-                && isMainShell(forDisplay, (Shell) dartShell.getApi());
+                && control instanceof DartShell
+                && isMainShell(forDisplay, (Shell) ((DartShell) control).getApi());
     }
 
     /** The Shell already given the window's view, so this is done once and not on every pass. */

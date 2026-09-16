@@ -163,8 +163,11 @@ public class SWT_AWT {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         long handle = parent.embeddedHandle;
-        if (dev.equo.swt.Config.isEquo(Composite.class, parent))
-            return dev.equo.swt.awt.EvolveSwingHost.newFrame(parent);
+        if (dev.equo.swt.Config.isEquo(Composite.class, parent)) {
+            java.awt.Frame evolveFrame = dev.equo.swt.Config.newSwingFrame(parent);
+            if (evolveFrame != null)
+                return evolveFrame;
+        }
         /*
 	 * Some JREs have implemented the embedded frame constructor to take an integer
 	 * and other JREs take a long.  To handle this binary incompatibility, use

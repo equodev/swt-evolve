@@ -246,7 +246,7 @@ public final class LocalFileServing {
 
     /** Percent-encodes one path segment the way the {@code /local-file/} handler decodes it. */
     private static String encodeSegment(String name) {
-        return URLEncoder.encode(name, StandardCharsets.UTF_8).replace("+", "%20");
+        return Java8.urlEncode(name, StandardCharsets.UTF_8).replace("+", "%20");
     }
 
     /**
@@ -399,7 +399,7 @@ public final class LocalFileServing {
         File direct = new File(rawPath);
         if (direct.exists()) return direct.toPath();
         try {
-            File decoded = new File(java.net.URLDecoder.decode(rawPath, StandardCharsets.UTF_8));
+            File decoded = new File(Java8.urlDecode(rawPath, StandardCharsets.UTF_8));
             if (decoded.exists()) return decoded.toPath();
         } catch (Exception ignored) {
             // Not percent-encoded (or not validly so); fall through to the literal path.

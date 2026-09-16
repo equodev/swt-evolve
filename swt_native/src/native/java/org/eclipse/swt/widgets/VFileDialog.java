@@ -31,7 +31,7 @@ public class VFileDialog extends VDialog {
         ArrayList<String> result = new ArrayList<>(values.length);
         for (String v : values) if (v != null)
             result.add(v);
-        return result.toArray(String[]::new);
+        return result.toArray(new String[0]);
     }
 
     public void setFileNames(String[] value) {
@@ -45,7 +45,7 @@ public class VFileDialog extends VDialog {
         ArrayList<String> result = new ArrayList<>(values.length);
         for (String v : values) if (v != null)
             result.add(v);
-        return result.toArray(String[]::new);
+        return result.toArray(new String[0]);
     }
 
     public void setFilterExtensions(String[] value) {
@@ -67,7 +67,7 @@ public class VFileDialog extends VDialog {
         ArrayList<String> result = new ArrayList<>(values.length);
         for (String v : values) if (v != null)
             result.add(v);
-        return result.toArray(String[]::new);
+        return result.toArray(new String[0]);
     }
 
     public void setFilterNames(String[] value) {

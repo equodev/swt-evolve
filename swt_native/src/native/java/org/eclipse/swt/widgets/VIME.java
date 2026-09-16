@@ -43,7 +43,7 @@ public class VIME extends VWidget {
         ArrayList<TextStyle> result = new ArrayList<>(values.length);
         for (TextStyle v : values) if (v != null)
             result.add(v);
-        return result.toArray(TextStyle[]::new);
+        return result.toArray(new TextStyle[0]);
     }
 
     public void setStyles(TextStyle[] value) {

@@ -661,8 +661,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             imageGcDrawer.drawOn(gc, width, height);
             drawn = true;
         } finally {
-            if (!drawn && gc.getImpl() instanceof DartGC dgc)
-                dgc.skipRenderOnDispose = true;
+            if (!drawn && gc.getImpl() instanceof DartGC)
+                ((DartGC) gc.getImpl()).skipRenderOnDispose = true;
             gc.dispose();
             if (!drawn)
                 getApi().dispose();
@@ -887,7 +887,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     public ImageData getImageData(int zoom) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (memGC != null && !memGC.isDisposed() && memGC.getImpl() instanceof DartGC dgc) {
+        if (memGC != null && !memGC.isDisposed() && memGC.getImpl() instanceof DartGC) {
+            DartGC dgc = (DartGC) memGC.getImpl();
             // A GC is still actively drawing on this image (no dispose() yet) — this backend
             // only renders in response to an explicit signal (see GCImageDrawer), unlike real
             // SWT where GC draws are immediately visible, so ask it to render the current
@@ -1290,7 +1291,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     }
 
     private void _releaseRemoteRefOnDart(Long ref) {
-        if (ref != null && device instanceof Display disp) {
+        if (ref != null && device instanceof Display) {
+            Display disp = (Display) device;
             dev.equo.swt.comm.CommService c = dev.equo.swt.FlutterBridge.resolveDisplayGcComm(disp);
             if (c != null) {
                 dev.equo.swt.FlutterBridge.awaitPendingDeferredSends().whenComplete((r, e) -> c.send("Image/releaseRemoteRef", java.nio.ByteBuffer.allocate(8).putLong(ref).array()));
