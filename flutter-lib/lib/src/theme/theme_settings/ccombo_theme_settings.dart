@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../impl/widget_config.dart';
 import '../theme_extensions/ccombo_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
 import '../../gen/ccombo.dart';
@@ -53,6 +54,8 @@ CComboThemeExtension _getCComboTheme({
     
     // Border colors
     borderColor: colorSchemeExtension.primaryBorder,
+    focusedBorderColor: focusIndicators ? colorSchemeExtension.surfaceBorderFocused : colorSchemeExtension.primaryBorder,
+    itemHoverBackgroundColor: colorSchemeExtension.stateDefaultEnabled,
     disabledBorderColor: colorScheme.outlineVariant,
     
     // Icon colors
@@ -110,3 +113,35 @@ double getCComboBorderWidth(VCCombo state, CComboThemeExtension widgetTheme) {
 Color getCComboItemBackgroundColor(CComboThemeExtension widgetTheme, bool isSelected) {
   return isSelected ? widgetTheme.selectedItemBackgroundColor : Colors.transparent;
 }
+
+/// A list entry's style: a theme with a solid item hover paints it as the row's fill instead of a tint.
+ButtonStyle getCComboEntryStyle(
+  CComboThemeExtension widgetTheme,
+  TextStyle textStyle,
+  double width,
+  bool isSelected,
+) {
+  final resting = getCComboItemBackgroundColor(widgetTheme, isSelected);
+  final style = MenuItemButton.styleFrom(
+    foregroundColor: textStyle.color,
+    minimumSize: Size(width, widgetTheme.itemHeight),
+    padding: widgetTheme.textFieldPadding,
+    overlayColor: widgetTheme.hoverBackgroundColor,
+    backgroundColor: resting,
+  );
+  final hover = widgetTheme.itemHoverBackgroundColor;
+  if (hover.a == 0) return style;
+  return style.copyWith(
+    overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+    backgroundColor: WidgetStateProperty.resolveWith(
+      (states) => states.contains(WidgetState.hovered) || states.contains(WidgetState.focused)
+          ? hover
+          : resting,
+    ),
+  );
+}
+
+Color getCComboSimpleItemHoverColor(CComboThemeExtension widgetTheme) =>
+    widgetTheme.itemHoverBackgroundColor.a > 0
+        ? widgetTheme.itemHoverBackgroundColor
+        : widgetTheme.hoverBackgroundColor.withOpacity(0.1);

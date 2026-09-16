@@ -10,6 +10,9 @@ TabItemThemeExtension _$TabItemThemeExtensionFromJson(
   Map<String, dynamic> json,
 ) => TabItemThemeExtension(
   textColor: const ColorConverter().fromJson(json['textColor'] as String),
+  selectedTextColor: const ColorConverter().fromJson(
+    json['selectedTextColor'] as String,
+  ),
   disabledTextColor: const ColorConverter().fromJson(
     json['disabledTextColor'] as String,
   ),
@@ -33,6 +36,9 @@ Map<String, dynamic> _$TabItemThemeExtensionToJson(
   TabItemThemeExtension instance,
 ) => <String, dynamic>{
   'textColor': const ColorConverter().toJson(instance.textColor),
+  'selectedTextColor': const ColorConverter().toJson(
+    instance.selectedTextColor,
+  ),
   'disabledTextColor': const ColorConverter().toJson(
     instance.disabledTextColor,
   ),

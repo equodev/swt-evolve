@@ -1043,6 +1043,11 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                         : -widgetTheme.itemSelectedBorderWidth,
                   )
                 : null,
+            foregroundDecoration: getTreeItemFocusRingDecoration(
+              widgetTheme,
+              selected: selected,
+              treeFocused: _context?.treeFocused ?? false,
+            ),
             decoration: BoxDecoration(
               color: bgColor,
               borderRadius: hasMultiColumn

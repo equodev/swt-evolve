@@ -45,6 +45,7 @@ ComboThemeExtension _getComboTheme({
     backgroundColor: colorScheme.surface,
     textColor: textTheme.bodyMedium?.color ?? colorScheme.onSurface,
     borderColor: colorSchemeExtension.primaryBorder,
+    focusedBorderColor: focusIndicators ? colorSchemeExtension.surfaceBorderFocused : colorSchemeExtension.primaryBorder,
     iconColor: colorScheme.onSurfaceVariant,
     selectedItemBackgroundColor: colorScheme.primary,
     hoverBackgroundColor: colorSchemeExtension.secondaryBold,

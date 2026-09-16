@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../impl/widget_config.dart';
 import '../theme_extensions/canvas_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
 
@@ -55,7 +56,7 @@ CanvasThemeExtension _getCanvasTheme({
     pointColor: colorScheme.onSurface,
     // Softer than the text — at the text's tone, a dense grid of lines reads as heavy.
     lineColor: colorScheme.outline,
-    focusColor: colorScheme.primary,
+    focusColor: focusIndicators ? colorSchemeExtension.surfaceBorderFocused : colorScheme.primary,
     // Starts on the accent container rather than inside the surface family, whose whole range is
     // ~7 points of lightness: an application asking for a gradient wants the ramp seen.
     gradientStartColor: colorScheme.primaryContainer,

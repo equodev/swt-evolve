@@ -66,6 +66,8 @@ TreeThemeExtension _getTreeTheme({
     itemHoverBackgroundColor: colorScheme.surfaceVariant,
     itemSelectedBorderColor: colorSchemeExtension.stateDefaultEnabled,
     itemSelectedBorderWidth: 0.0,
+    itemFocusRingColor: focusIndicators ? colorSchemeExtension.surfaceBorderFocused : colorSchemeExtension.stateDefaultEnabled,
+    itemFocusRingWidth: 2.0,
     
     headerBackgroundColor: colorScheme.surfaceContainerLow,
     headerTextColor: colorScheme.onSurface,
@@ -239,3 +241,16 @@ Color getTreeItemBackgroundColor(
   ) ?? defaultColor;
 }
 
+bool showsTreeItemFocusRing(TreeThemeExtension theme) => theme.itemFocusRingColor.a > 0;
+
+/// The ring painted over a selected row while its tree holds focus.
+BoxDecoration getTreeItemFocusRingDecoration(
+  TreeThemeExtension theme, {
+  required bool selected,
+  required bool treeFocused,
+}) =>
+    BoxDecoration(
+      border: selected && treeFocused && showsTreeItemFocusRing(theme)
+          ? Border.all(color: theme.itemFocusRingColor, width: theme.itemFocusRingWidth)
+          : null,
+    );

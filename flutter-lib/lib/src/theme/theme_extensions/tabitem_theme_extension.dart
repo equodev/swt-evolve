@@ -15,6 +15,7 @@ part 'tabitem_theme_extension.g.dart';
 class TabItemThemeExtension extends ThemeExtension<TabItemThemeExtension> with _$TabItemThemeExtensionTailorMixin {
   // Text colors
   final Color textColor;
+  final Color selectedTextColor;
   final Color disabledTextColor;
   
   // Icon properties
@@ -31,6 +32,7 @@ class TabItemThemeExtension extends ThemeExtension<TabItemThemeExtension> with _
   
   const TabItemThemeExtension({
     required this.textColor,
+    required this.selectedTextColor,
     required this.disabledTextColor,
     required this.iconSize,
     required this.containerPadding,

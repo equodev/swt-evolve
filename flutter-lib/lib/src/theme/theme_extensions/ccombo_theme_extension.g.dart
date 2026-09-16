@@ -26,6 +26,12 @@ CComboThemeExtension _$CComboThemeExtensionFromJson(
     json['disabledTextColor'] as String,
   ),
   borderColor: const ColorConverter().fromJson(json['borderColor'] as String),
+  focusedBorderColor: const ColorConverter().fromJson(
+    json['focusedBorderColor'] as String,
+  ),
+  itemHoverBackgroundColor: const ColorConverter().fromJson(
+    json['itemHoverBackgroundColor'] as String,
+  ),
   disabledBorderColor: const ColorConverter().fromJson(
     json['disabledBorderColor'] as String,
   ),
@@ -69,6 +75,12 @@ Map<String, dynamic> _$CComboThemeExtensionToJson(
   'borderColor': const ColorConverter().toJson(instance.borderColor),
   'disabledBorderColor': const ColorConverter().toJson(
     instance.disabledBorderColor,
+  ),
+  'focusedBorderColor': const ColorConverter().toJson(
+    instance.focusedBorderColor,
+  ),
+  'itemHoverBackgroundColor': const ColorConverter().toJson(
+    instance.itemHoverBackgroundColor,
   ),
   'iconColor': const ColorConverter().toJson(instance.iconColor),
   'disabledIconColor': const ColorConverter().toJson(

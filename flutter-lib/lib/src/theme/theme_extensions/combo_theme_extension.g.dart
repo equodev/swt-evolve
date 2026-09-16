@@ -14,6 +14,9 @@ ComboThemeExtension _$ComboThemeExtensionFromJson(
   ),
   textColor: const ColorConverter().fromJson(json['textColor'] as String),
   borderColor: const ColorConverter().fromJson(json['borderColor'] as String),
+  focusedBorderColor: const ColorConverter().fromJson(
+    json['focusedBorderColor'] as String,
+  ),
   iconColor: const ColorConverter().fromJson(json['iconColor'] as String),
   selectedItemBackgroundColor: const ColorConverter().fromJson(
     json['selectedItemBackgroundColor'] as String,
@@ -75,6 +78,9 @@ Map<String, dynamic> _$ComboThemeExtensionToJson(
   ),
   'disabledBorderColor': const ColorConverter().toJson(
     instance.disabledBorderColor,
+  ),
+  'focusedBorderColor': const ColorConverter().toJson(
+    instance.focusedBorderColor,
   ),
   'borderRadius': instance.borderRadius,
   'borderWidth': instance.borderWidth,

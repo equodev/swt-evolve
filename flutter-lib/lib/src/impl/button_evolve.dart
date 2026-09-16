@@ -13,6 +13,8 @@ import 'widget_config.dart';
 
 class ButtonImpl<T extends ButtonSwt, V extends VButton>
     extends ControlImpl<T, V> {
+  bool _hasFocus = false;
+
   static IconData _getArrowIcon(int alignment) {
     switch (alignment) {
       case SWT.UP:
@@ -71,18 +73,27 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     final enabled = state.enabled ?? false;
     final text = stripAccelerators(state.text);
 
+    final Widget button;
     if (hasStyle(state.style, SWT.CHECK)) {
-      return _buildCheckBox(context, widgetTheme, enabled, text);
+      button = _buildCheckBox(context, widgetTheme, enabled, text);
     } else if (hasStyle(state.style, SWT.RADIO)) {
-      return _buildRadioButton(context, widgetTheme, enabled, text);
+      button = _buildRadioButton(context, widgetTheme, enabled, text);
     } else if (hasStyle(state.style, SWT.TOGGLE)) {
-      return _buildToggleButton(context, widgetTheme, enabled, text);
+      button = _buildToggleButton(context, widgetTheme, enabled, text);
     } else if (hasStyle(state.style, SWT.ARROW)) {
-      return _buildArrowButton(context, widgetTheme, enabled, text);
+      button = _buildArrowButton(context, widgetTheme, enabled, text);
     } else {
-      return _buildPushButton(context, widgetTheme, enabled, text);
+      button = _buildPushButton(context, widgetTheme, enabled, text);
     }
+    return _withFocusRing(widgetTheme, button);
   }
+
+  // Always a DecoratedBox, so gaining focus never remounts the button and drops that focus.
+  Widget _withFocusRing(ButtonThemeExtension widgetTheme, Widget button) => DecoratedBox(
+        position: DecorationPosition.foreground,
+        decoration: getButtonFocusRingDecoration(widgetTheme, focused: _hasFocus),
+        child: button,
+      );
 
   Widget _buildPushButton(
     BuildContext context,
@@ -620,6 +631,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
   }
 
   void _onFocusChange(bool hasFocus) {
+    if (mounted && _hasFocus != hasFocus) setState(() => _hasFocus = hasFocus);
     if (hasFocus) {
       widget.sendFocusFocusIn(state, null);
     } else {

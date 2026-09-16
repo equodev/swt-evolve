@@ -20,6 +20,7 @@ mixin _$MenuThemeExtensionTailorMixin on ThemeExtension<MenuThemeExtension> {
   Color get disabledTextColor;
   Color get borderColor;
   Color get menuBarBorderColor;
+  Color get popupBorderColor;
   double get borderWidth;
   double get borderRadius;
   Color get disabledBorderColor;
@@ -44,6 +45,7 @@ mixin _$MenuThemeExtensionTailorMixin on ThemeExtension<MenuThemeExtension> {
     Color? disabledTextColor,
     Color? borderColor,
     Color? menuBarBorderColor,
+    Color? popupBorderColor,
     double? borderWidth,
     double? borderRadius,
     Color? disabledBorderColor,
@@ -69,6 +71,7 @@ mixin _$MenuThemeExtensionTailorMixin on ThemeExtension<MenuThemeExtension> {
       disabledTextColor: disabledTextColor ?? this.disabledTextColor,
       borderColor: borderColor ?? this.borderColor,
       menuBarBorderColor: menuBarBorderColor ?? this.menuBarBorderColor,
+      popupBorderColor: popupBorderColor ?? this.popupBorderColor,
       borderWidth: borderWidth ?? this.borderWidth,
       borderRadius: borderRadius ?? this.borderRadius,
       disabledBorderColor: disabledBorderColor ?? this.disabledBorderColor,
@@ -122,6 +125,11 @@ mixin _$MenuThemeExtensionTailorMixin on ThemeExtension<MenuThemeExtension> {
       menuBarBorderColor: Color.lerp(
         menuBarBorderColor,
         other.menuBarBorderColor,
+        t,
+      )!,
+      popupBorderColor: Color.lerp(
+        popupBorderColor,
+        other.popupBorderColor,
         t,
       )!,
       borderWidth: t < 0.5 ? borderWidth : other.borderWidth,
@@ -187,6 +195,10 @@ mixin _$MenuThemeExtensionTailorMixin on ThemeExtension<MenuThemeExtension> {
               other.menuBarBorderColor,
             ) &&
             const DeepCollectionEquality().equals(
+              popupBorderColor,
+              other.popupBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
               borderWidth,
               other.borderWidth,
             ) &&
@@ -243,6 +255,7 @@ mixin _$MenuThemeExtensionTailorMixin on ThemeExtension<MenuThemeExtension> {
       const DeepCollectionEquality().hash(disabledTextColor),
       const DeepCollectionEquality().hash(borderColor),
       const DeepCollectionEquality().hash(menuBarBorderColor),
+      const DeepCollectionEquality().hash(popupBorderColor),
       const DeepCollectionEquality().hash(borderWidth),
       const DeepCollectionEquality().hash(borderRadius),
       const DeepCollectionEquality().hash(disabledBorderColor),
@@ -272,6 +285,7 @@ extension MenuThemeExtensionBuildContextProps on BuildContext {
   Color get disabledTextColor => menuThemeExtension.disabledTextColor;
   Color get borderColor => menuThemeExtension.borderColor;
   Color get menuBarBorderColor => menuThemeExtension.menuBarBorderColor;
+  Color get popupBorderColor => menuThemeExtension.popupBorderColor;
   double get borderWidth => menuThemeExtension.borderWidth;
   double get borderRadius => menuThemeExtension.borderRadius;
   Color get disabledBorderColor => menuThemeExtension.disabledBorderColor;

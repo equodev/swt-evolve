@@ -660,6 +660,10 @@ public class Config {
             // like native SWT:  -Dswt.evolve.disable_hover_zoom=true
             configFlags.disable_hover_zoom = Boolean.getBoolean("swt.evolve.disable_hover_zoom");
             configFlags.show_theme_color_palette = Boolean.getBoolean("swt.evolve.show_theme_color_palette");
+            String focusIndicators = System.getProperty("swt.evolve.focus_indicators");
+            configFlags.focus_indicators = focusIndicators == null || focusIndicators.isBlank()
+                    ? null
+                    : Boolean.parseBoolean(focusIndicators.trim());
             configFlags.show_scaling_control = Boolean.getBoolean("swt.evolve.show_scaling_control");
             configFlags.decorations_align = DecorationsAlign.fromString(System.getProperty("swt.evolve.decorations_align", "vleft"));
             configFlags.print_move = Boolean.getBoolean("dev.equo.swt.printMove");

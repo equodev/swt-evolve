@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../impl/widget_config.dart';
 import '../theme_extensions/tabfolder_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
 
@@ -50,6 +51,8 @@ TabFolderThemeExtension _getTabFolderTheme({
     // Tab border colors
     tabBorderColor: colorSchemeExtension.surfaceBorderEnabled,
     tabSelectedBorderColor: colorScheme.primary,
+    tabFocusRingColor: focusIndicators ? colorSchemeExtension.surfaceBorderFocused : colorSchemeExtension.stateDefaultEnabled,
+    tabFocusRingWidth: 2.0,
     tabHoverBorderColor: colorSchemeExtension.surfaceBorderHovered,
     tabDisabledBorderColor: colorSchemeExtension.surfaceBorderDisabled,
     
@@ -83,3 +86,14 @@ TabFolderThemeExtension _getTabFolderTheme({
   );
 }
 
+/// The ring painted over the tab holding keyboard focus.
+BoxDecoration getTabFocusRingDecoration(
+  TabFolderThemeExtension theme, {
+  required bool focused,
+  required bool enabled,
+}) {
+  final ring = theme.tabFocusRingColor;
+  return BoxDecoration(
+    border: focused && enabled && ring.a > 0 ? Border.all(color: ring, width: theme.tabFocusRingWidth) : null,
+  );
+}

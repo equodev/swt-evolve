@@ -36,6 +36,9 @@ MenuThemeExtension _$MenuThemeExtensionFromJson(Map<String, dynamic> json) =>
       menuBarBorderColor: const ColorConverter().fromJson(
         json['menuBarBorderColor'] as String,
       ),
+      popupBorderColor: const ColorConverter().fromJson(
+        json['popupBorderColor'] as String,
+      ),
       borderWidth: (json['borderWidth'] as num).toDouble(),
       borderRadius: (json['borderRadius'] as num).toDouble(),
       disabledBorderColor: const ColorConverter().fromJson(
@@ -84,6 +87,7 @@ Map<String, dynamic> _$MenuThemeExtensionToJson(
   'menuBarBorderColor': const ColorConverter().toJson(
     instance.menuBarBorderColor,
   ),
+  'popupBorderColor': const ColorConverter().toJson(instance.popupBorderColor),
   'borderWidth': instance.borderWidth,
   'borderRadius': instance.borderRadius,
   'disabledBorderColor': const ColorConverter().toJson(

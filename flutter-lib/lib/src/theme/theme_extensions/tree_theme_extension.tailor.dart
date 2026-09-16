@@ -98,6 +98,8 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
   TextStyle? get itemTextStyleWithCols;
   Color get columnTextColorWithCols;
   Color get rowSeparatorColorWithCols;
+  Color get itemFocusRingColor;
+  double get itemFocusRingWidth;
   double get rowSeparatorWidthWithCols;
   double get eventDefaultWidth;
   double get eventDefaultHeight;
@@ -195,6 +197,8 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
     TextStyle? itemTextStyleWithCols,
     Color? columnTextColorWithCols,
     Color? rowSeparatorColorWithCols,
+    Color? itemFocusRingColor,
+    double? itemFocusRingWidth,
     double? rowSeparatorWidthWithCols,
     double? eventDefaultWidth,
     double? eventDefaultHeight,
@@ -328,6 +332,8 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
           columnTextColorWithCols ?? this.columnTextColorWithCols,
       rowSeparatorColorWithCols:
           rowSeparatorColorWithCols ?? this.rowSeparatorColorWithCols,
+      itemFocusRingColor: itemFocusRingColor ?? this.itemFocusRingColor,
+      itemFocusRingWidth: itemFocusRingWidth ?? this.itemFocusRingWidth,
       rowSeparatorWidthWithCols:
           rowSeparatorWidthWithCols ?? this.rowSeparatorWidthWithCols,
       eventDefaultWidth: eventDefaultWidth ?? this.eventDefaultWidth,
@@ -601,6 +607,14 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
         other.rowSeparatorColorWithCols,
         t,
       )!,
+      itemFocusRingColor: Color.lerp(
+        itemFocusRingColor,
+        other.itemFocusRingColor,
+        t,
+      )!,
+      itemFocusRingWidth: t < 0.5
+          ? itemFocusRingWidth
+          : other.itemFocusRingWidth,
       rowSeparatorWidthWithCols: t < 0.5
           ? rowSeparatorWidthWithCols
           : other.rowSeparatorWidthWithCols,
@@ -971,6 +985,14 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
               other.rowSeparatorColorWithCols,
             ) &&
             const DeepCollectionEquality().equals(
+              itemFocusRingColor,
+              other.itemFocusRingColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              itemFocusRingWidth,
+              other.itemFocusRingWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
               rowSeparatorWidthWithCols,
               other.rowSeparatorWidthWithCols,
             ) &&
@@ -1088,6 +1110,8 @@ mixin _$TreeThemeExtensionTailorMixin on ThemeExtension<TreeThemeExtension> {
       const DeepCollectionEquality().hash(itemTextStyleWithCols),
       const DeepCollectionEquality().hash(columnTextColorWithCols),
       const DeepCollectionEquality().hash(rowSeparatorColorWithCols),
+      const DeepCollectionEquality().hash(itemFocusRingColor),
+      const DeepCollectionEquality().hash(itemFocusRingWidth),
       const DeepCollectionEquality().hash(rowSeparatorWidthWithCols),
       const DeepCollectionEquality().hash(eventDefaultWidth),
       const DeepCollectionEquality().hash(eventDefaultHeight),
@@ -1214,6 +1238,8 @@ extension TreeThemeExtensionBuildContextProps on BuildContext {
       treeThemeExtension.columnTextColorWithCols;
   Color get rowSeparatorColorWithCols =>
       treeThemeExtension.rowSeparatorColorWithCols;
+  Color get itemFocusRingColor => treeThemeExtension.itemFocusRingColor;
+  double get itemFocusRingWidth => treeThemeExtension.itemFocusRingWidth;
   double get rowSeparatorWidthWithCols =>
       treeThemeExtension.rowSeparatorWidthWithCols;
   double get eventDefaultWidth => treeThemeExtension.eventDefaultWidth;

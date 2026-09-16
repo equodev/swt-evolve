@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/theme_settings/ctabitem_theme_settings.dart';
 import 'package:flutter/material.dart' as material;
 import 'package:flutter/widgets.dart';
 import '../gen/ctabitem.dart';
@@ -65,11 +66,15 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     final tabItemContext = TabItemContext.of(context);
     final isSelected = tabItemContext?.isSelected ?? false;
     final isEnabled = tabItemContext?.isEnabled ?? true;
-    final themeTextColor = !isEnabled
-        ? itemTheme.tabItemDisabledTextColor
-        : (isSelected
-              ? itemTheme.tabItemSelectedTextColor
-              : itemTheme.tabItemTextColor);
+    final isActive = tabItemContext?.isActive ?? false;
+    final isDimmed = tabItemContext?.isDimmed ?? false;
+    final themeTextColor = getCTabItemTextColor(
+      itemTheme,
+      selected: isSelected,
+      enabled: isEnabled,
+      active: isActive,
+      dimmed: isDimmed,
+    );
     // SWT draws a selected tab in selectionForeground only -- the folder's foreground was chosen
     // against the folder's background, and the selected tab does not sit on it. An unselected
     // tab takes its own colour, else the folder's.
@@ -83,11 +88,15 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
     final baseStyle = isSelected
         ? folderTheme.tabSelectedTextStyle
         : folderTheme.tabTextStyle;
-    final textStyle = getTextStyle(
-      context: context,
-      font: state.font ?? ParentForegroundScope.fontOf(context),
-      textColor: textColor,
-      baseTextStyle: baseStyle ?? itemTheme.tabItemTextStyle,
+    final textStyle = getCTabItemTextStyle(
+      itemTheme,
+      getTextStyle(
+        context: context,
+        font: state.font ?? ParentForegroundScope.fontOf(context),
+        textColor: textColor,
+        baseTextStyle: baseStyle ?? itemTheme.tabItemTextStyle,
+      ),
+      active: isActive,
     );
     final imageWidget = _buildImageWidget(
       context,

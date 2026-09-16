@@ -34,3 +34,21 @@ ThemeColorPaletteThemeExtension _buildThemeColorPaletteTheme({
     sampleHexCsv: _kDefaultSampleHexCsv,
   );
 }
+
+/// A swatch split between a mode's surface and its primary, or a flat [color] when no surface is given.
+BoxDecoration getThemePaletteSwatchDecoration(
+  ThemeColorPaletteThemeExtension palette, {
+  required Color color,
+  Color? background,
+}) =>
+    BoxDecoration(
+      color: background == null ? color : null,
+      gradient: background == null
+          ? null
+          : LinearGradient(
+              colors: [background, background, color, color],
+              stops: const [0, 0.5, 0.5, 1],
+            ),
+      borderRadius: BorderRadius.circular(palette.swatchBorderRadius),
+      border: Border.all(color: palette.swatchBorderColor),
+    );

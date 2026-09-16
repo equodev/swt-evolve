@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/theme_settings/menu_theme_settings.dart';
 import '../comm/comm.dart';
 import '../gen/menu.dart';
 import '../gen/menuitem.dart';
@@ -337,6 +338,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       controller: _menuController,
       style: MenuStyle(
         backgroundColor: WidgetStateProperty.all(backgroundColor),
+        side: getMenuPopupSide(widgetTheme),
         elevation: WidgetStateProperty.all(widgetTheme.popupElevation),
         padding: WidgetStateProperty.all(widgetTheme.popupPadding),
         shape: WidgetStateProperty.all(
@@ -562,6 +564,7 @@ class _MenuBarItemState extends State<_MenuBarItem> {
           backgroundColor: WidgetStateProperty.all(
             widget.widgetTheme.popupBackgroundColor,
           ),
+          side: getMenuPopupSide(widget.widgetTheme),
           elevation: WidgetStateProperty.all(widget.widgetTheme.popupElevation),
           padding: WidgetStateProperty.all(widget.widgetTheme.popupPadding),
           shape: WidgetStateProperty.all(

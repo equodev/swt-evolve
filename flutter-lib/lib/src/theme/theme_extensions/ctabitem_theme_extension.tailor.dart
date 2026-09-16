@@ -14,6 +14,8 @@ mixin _$CTabItemThemeExtensionTailorMixin
   Color get tabItemTextColor;
   Color get tabItemSelectedTextColor;
   Color get tabItemDisabledTextColor;
+  Color get tabItemActiveTextColor;
+  FontWeight get tabItemActiveFontWeight;
   TextStyle? get tabItemTextStyle;
   TextStyle? get tabItemSelectedTextStyle;
   double get tabItemHorizontalPadding;
@@ -25,6 +27,8 @@ mixin _$CTabItemThemeExtensionTailorMixin
     Color? tabItemTextColor,
     Color? tabItemSelectedTextColor,
     Color? tabItemDisabledTextColor,
+    Color? tabItemActiveTextColor,
+    FontWeight? tabItemActiveFontWeight,
     TextStyle? tabItemTextStyle,
     TextStyle? tabItemSelectedTextStyle,
     double? tabItemHorizontalPadding,
@@ -37,6 +41,10 @@ mixin _$CTabItemThemeExtensionTailorMixin
           tabItemSelectedTextColor ?? this.tabItemSelectedTextColor,
       tabItemDisabledTextColor:
           tabItemDisabledTextColor ?? this.tabItemDisabledTextColor,
+      tabItemActiveTextColor:
+          tabItemActiveTextColor ?? this.tabItemActiveTextColor,
+      tabItemActiveFontWeight:
+          tabItemActiveFontWeight ?? this.tabItemActiveFontWeight,
       tabItemTextStyle: tabItemTextStyle ?? this.tabItemTextStyle,
       tabItemSelectedTextStyle:
           tabItemSelectedTextStyle ?? this.tabItemSelectedTextStyle,
@@ -71,6 +79,14 @@ mixin _$CTabItemThemeExtensionTailorMixin
         other.tabItemDisabledTextColor,
         t,
       )!,
+      tabItemActiveTextColor: Color.lerp(
+        tabItemActiveTextColor,
+        other.tabItemActiveTextColor,
+        t,
+      )!,
+      tabItemActiveFontWeight: t < 0.5
+          ? tabItemActiveFontWeight
+          : other.tabItemActiveFontWeight,
       tabItemTextStyle: TextStyle.lerp(
         tabItemTextStyle,
         other.tabItemTextStyle,
@@ -111,6 +127,14 @@ mixin _$CTabItemThemeExtensionTailorMixin
               other.tabItemDisabledTextColor,
             ) &&
             const DeepCollectionEquality().equals(
+              tabItemActiveTextColor,
+              other.tabItemActiveTextColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabItemActiveFontWeight,
+              other.tabItemActiveFontWeight,
+            ) &&
+            const DeepCollectionEquality().equals(
               tabItemTextStyle,
               other.tabItemTextStyle,
             ) &&
@@ -139,6 +163,8 @@ mixin _$CTabItemThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(tabItemTextColor),
       const DeepCollectionEquality().hash(tabItemSelectedTextColor),
       const DeepCollectionEquality().hash(tabItemDisabledTextColor),
+      const DeepCollectionEquality().hash(tabItemActiveTextColor),
+      const DeepCollectionEquality().hash(tabItemActiveFontWeight),
       const DeepCollectionEquality().hash(tabItemTextStyle),
       const DeepCollectionEquality().hash(tabItemSelectedTextStyle),
       const DeepCollectionEquality().hash(tabItemHorizontalPadding),
@@ -156,6 +182,10 @@ extension CTabItemThemeExtensionBuildContextProps on BuildContext {
       cTabItemThemeExtension.tabItemSelectedTextColor;
   Color get tabItemDisabledTextColor =>
       cTabItemThemeExtension.tabItemDisabledTextColor;
+  Color get tabItemActiveTextColor =>
+      cTabItemThemeExtension.tabItemActiveTextColor;
+  FontWeight get tabItemActiveFontWeight =>
+      cTabItemThemeExtension.tabItemActiveFontWeight;
   TextStyle? get tabItemTextStyle => cTabItemThemeExtension.tabItemTextStyle;
   TextStyle? get tabItemSelectedTextStyle =>
       cTabItemThemeExtension.tabItemSelectedTextStyle;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/theme_settings/menu_theme_settings.dart';
 import 'package:flutter/services.dart';
 import '../comm/comm.dart';
 import '../gen/menu.dart';
@@ -523,6 +524,7 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> {
           ),
           menuStyle: MenuStyle(
             backgroundColor: WidgetStateProperty.all(widget.menuTheme.popupBackgroundColor),
+            side: getMenuPopupSide(widget.menuTheme),
             elevation: WidgetStateProperty.all(widget.menuTheme.popupElevation),
             padding: WidgetStateProperty.all(widget.menuTheme.popupPadding),
             shape: WidgetStateProperty.all(

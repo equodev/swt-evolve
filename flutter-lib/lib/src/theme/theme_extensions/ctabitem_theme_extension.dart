@@ -11,11 +11,16 @@ part 'ctabitem_theme_extension.g.dart';
 @ColorConverter()
 @DurationConverter()
 @TextStyleConverter()
+@FontWeightConverter()
 class CTabItemThemeExtension extends ThemeExtension<CTabItemThemeExtension> with _$CTabItemThemeExtensionTailorMixin {
   // Tab item text colors
   final Color tabItemTextColor;
   final Color tabItemSelectedTextColor;
   final Color tabItemDisabledTextColor;
+
+  // Selected tab of the folder that holds focus
+  final Color tabItemActiveTextColor;
+  final FontWeight tabItemActiveFontWeight;
   
   // Tab item typography
   final TextStyle? tabItemTextStyle;
@@ -32,6 +37,8 @@ class CTabItemThemeExtension extends ThemeExtension<CTabItemThemeExtension> with
     required this.tabItemTextColor,
     required this.tabItemSelectedTextColor,
     required this.tabItemDisabledTextColor,
+    required this.tabItemActiveTextColor,
+    required this.tabItemActiveFontWeight,
     this.tabItemTextStyle,
     this.tabItemSelectedTextStyle,
     required this.tabItemHorizontalPadding,

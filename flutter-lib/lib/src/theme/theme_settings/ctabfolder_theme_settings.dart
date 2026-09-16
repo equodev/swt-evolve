@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../impl/widget_config.dart';
 import '../theme_extensions/ctabfolder_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
 
@@ -74,6 +75,8 @@ CTabFolderThemeExtension _getCTabFolderTheme({
     
     // Highlight color (for selected tab top border)
     tabHighlightColor: highlightColor,
+    tabFocusRingColor: focusIndicators ? colorSchemeExtension.surfaceBorderFocused : colorSchemeExtension.stateDefaultEnabled,
+    tabFocusRingWidth: 2.0,
     
     // Tab border properties
     tabBorderWidth: 0.0,
@@ -199,3 +202,16 @@ Color getCTabCloseButtonColor(CTabFolderThemeExtension widgetTheme, bool isSelec
         : widgetTheme.tabCloseButtonUnselectedOpacity,
   );
 }
+
+bool showsCTabFocusRing(CTabFolderThemeExtension theme) => theme.tabFocusRingColor.a > 0;
+
+/// The ring side for the selected tab of the active folder, or null when no ring is drawn.
+BorderSide? getCTabFocusRingSide(
+  CTabFolderThemeExtension theme, {
+  required bool selected,
+  required bool enabled,
+  required bool active,
+}) =>
+    selected && enabled && active && showsCTabFocusRing(theme)
+        ? BorderSide(color: theme.tabFocusRingColor, width: theme.tabFocusRingWidth)
+        : null;

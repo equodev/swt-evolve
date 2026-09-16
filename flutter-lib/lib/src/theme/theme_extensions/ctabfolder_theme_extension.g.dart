@@ -61,6 +61,10 @@ CTabFolderThemeExtension _$CTabFolderThemeExtensionFromJson(
   tabHighlightColor: const ColorConverter().fromJson(
     json['tabHighlightColor'] as String,
   ),
+  tabFocusRingColor: const ColorConverter().fromJson(
+    json['tabFocusRingColor'] as String,
+  ),
+  tabFocusRingWidth: (json['tabFocusRingWidth'] as num).toDouble(),
   tabBorderWidth: (json['tabBorderWidth'] as num).toDouble(),
   tabSelectedBorderWidth: (json['tabSelectedBorderWidth'] as num).toDouble(),
   tabHighlightBorderWidth: (json['tabHighlightBorderWidth'] as num).toDouble(),
@@ -178,6 +182,10 @@ Map<String, dynamic> _$CTabFolderThemeExtensionToJson(
   'tabHighlightColor': const ColorConverter().toJson(
     instance.tabHighlightColor,
   ),
+  'tabFocusRingColor': const ColorConverter().toJson(
+    instance.tabFocusRingColor,
+  ),
+  'tabFocusRingWidth': instance.tabFocusRingWidth,
   'tabBorderWidth': instance.tabBorderWidth,
   'tabSelectedBorderWidth': instance.tabSelectedBorderWidth,
   'tabHighlightBorderWidth': instance.tabHighlightBorderWidth,

@@ -65,6 +65,10 @@ TabFolderThemeExtension _$TabFolderThemeExtensionFromJson(
   tabContentBorderColor: const ColorConverter().fromJson(
     json['tabContentBorderColor'] as String,
   ),
+  tabFocusRingColor: const ColorConverter().fromJson(
+    json['tabFocusRingColor'] as String,
+  ),
+  tabFocusRingWidth: (json['tabFocusRingWidth'] as num).toDouble(),
 );
 
 Map<String, dynamic> _$TabFolderThemeExtensionToJson(
@@ -122,4 +126,8 @@ Map<String, dynamic> _$TabFolderThemeExtensionToJson(
   'tabContentBorderColor': const ColorConverter().toJson(
     instance.tabContentBorderColor,
   ),
+  'tabFocusRingColor': const ColorConverter().toJson(
+    instance.tabFocusRingColor,
+  ),
+  'tabFocusRingWidth': instance.tabFocusRingWidth,
 };

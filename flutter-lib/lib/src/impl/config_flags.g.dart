@@ -26,6 +26,7 @@ ConfigFlags _$ConfigFlagsFromJson(Map<String, dynamic> json) => ConfigFlags()
         (k, e) => MapEntry(k, e as String),
       )
   ..show_theme_color_palette = json['show_theme_color_palette'] as bool?
+  ..focus_indicators = json['focus_indicators'] as bool?
   ..use_special_dropdown_button = json['use_special_dropdown_button'] as bool?
   ..preserve_icon_colors = json['preserve_icon_colors'] as bool?
   ..disable_hover_zoom = json['disable_hover_zoom'] as bool?
@@ -58,6 +59,7 @@ Map<String, dynamic> _$ConfigFlagsToJson(
   'theme_color': ?instance.theme_color,
   'theme_colors_by_widget': ?instance.theme_colors_by_widget,
   'show_theme_color_palette': ?instance.show_theme_color_palette,
+  'focus_indicators': ?instance.focus_indicators,
   'use_special_dropdown_button': ?instance.use_special_dropdown_button,
   'preserve_icon_colors': ?instance.preserve_icon_colors,
   'disable_hover_zoom': ?instance.disable_hover_zoom,

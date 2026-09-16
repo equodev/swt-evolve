@@ -170,9 +170,11 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
       enabled: isEnabled,
     );
     final Color textColor = getComboTextColor(context, state, theme, enabled: isEnabled);
-    final Color borderColor = isEnabled && (_isFocused || _isHovered)
-        ? theme.borderColor
-        : (isEnabled ? theme.dividerColor : theme.disabledBorderColor);
+    final Color borderColor = !isEnabled
+        ? theme.disabledBorderColor
+        : (_isFocused
+            ? theme.focusedBorderColor
+            : (_isHovered ? theme.borderColor : theme.dividerColor));
     final Color iconColor = getComboIconColor(theme, enabled: isEnabled);
 
     final textStyle = getTextStyle(

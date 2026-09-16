@@ -23,6 +23,7 @@ class ComboThemeExtension extends ThemeExtension<ComboThemeExtension> with _$Com
   final Color disabledBackgroundColor;
   final Color disabledTextColor;
   final Color disabledBorderColor;
+  final Color focusedBorderColor;
 
   // Border radius
   final double borderRadius;
@@ -54,6 +55,7 @@ class ComboThemeExtension extends ThemeExtension<ComboThemeExtension> with _$Com
     required this.backgroundColor,
     required this.textColor,
     required this.borderColor,
+    required this.focusedBorderColor,
     required this.iconColor,
     required this.selectedItemBackgroundColor,
     required this.hoverBackgroundColor,

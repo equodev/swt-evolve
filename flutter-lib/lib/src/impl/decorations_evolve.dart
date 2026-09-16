@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/theme_settings/menu_theme_settings.dart';
 import '../gen/decorations.dart';
 import '../gen/menu.dart';
 import '../gen/menuitem.dart';
@@ -94,6 +95,7 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
       controller: _controller,
       style: MenuStyle(
         backgroundColor: WidgetStateProperty.all(menuTheme.popupBackgroundColor),
+        side: getMenuPopupSide(menuTheme),
         elevation: WidgetStateProperty.all(menuTheme.popupElevation),
         padding: WidgetStateProperty.all(menuTheme.popupPadding),
         shape: WidgetStateProperty.all(

@@ -30,6 +30,7 @@ class MenuThemeExtension extends ThemeExtension<MenuThemeExtension> with _$MenuT
   // Border colors
   final Color borderColor;
   final Color menuBarBorderColor;
+  final Color popupBorderColor;
 
   // Border styling
   final double borderWidth;
@@ -60,6 +61,7 @@ class MenuThemeExtension extends ThemeExtension<MenuThemeExtension> with _$MenuT
     required this.disabledTextColor,
     required this.borderColor,
     required this.menuBarBorderColor,
+    required this.popupBorderColor,
     required this.borderWidth,
     required this.borderRadius,
     required this.disabledBorderColor,

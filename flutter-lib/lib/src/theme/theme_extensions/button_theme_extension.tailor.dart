@@ -71,6 +71,8 @@ mixin _$ButtonThemeExtensionTailorMixin
   EdgeInsets get pushButtonPadding;
   Color get disabledBackgroundColor;
   Color get disabledForegroundColor;
+  Color get focusRingColor;
+  double get focusRingWidth;
 
   @override
   ButtonThemeExtension copyWith({
@@ -134,6 +136,8 @@ mixin _$ButtonThemeExtensionTailorMixin
     EdgeInsets? pushButtonPadding,
     Color? disabledBackgroundColor,
     Color? disabledForegroundColor,
+    Color? focusRingColor,
+    double? focusRingWidth,
   }) {
     return ButtonThemeExtension(
       buttonPressDelay: buttonPressDelay ?? this.buttonPressDelay,
@@ -232,6 +236,8 @@ mixin _$ButtonThemeExtensionTailorMixin
           disabledBackgroundColor ?? this.disabledBackgroundColor,
       disabledForegroundColor:
           disabledForegroundColor ?? this.disabledForegroundColor,
+      focusRingColor: focusRingColor ?? this.focusRingColor,
+      focusRingWidth: focusRingWidth ?? this.focusRingWidth,
     );
   }
 
@@ -474,6 +480,8 @@ mixin _$ButtonThemeExtensionTailorMixin
         other.disabledForegroundColor,
         t,
       )!,
+      focusRingColor: Color.lerp(focusRingColor, other.focusRingColor, t)!,
+      focusRingWidth: t < 0.5 ? focusRingWidth : other.focusRingWidth,
     );
   }
 
@@ -721,6 +729,14 @@ mixin _$ButtonThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               disabledForegroundColor,
               other.disabledForegroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              focusRingColor,
+              other.focusRingColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              focusRingWidth,
+              other.focusRingWidth,
             ));
   }
 
@@ -788,6 +804,8 @@ mixin _$ButtonThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(pushButtonPadding),
       const DeepCollectionEquality().hash(disabledBackgroundColor),
       const DeepCollectionEquality().hash(disabledForegroundColor),
+      const DeepCollectionEquality().hash(focusRingColor),
+      const DeepCollectionEquality().hash(focusRingWidth),
     ]);
   }
 }
@@ -888,4 +906,6 @@ extension ButtonThemeExtensionBuildContextProps on BuildContext {
       buttonThemeExtension.disabledBackgroundColor;
   Color get disabledForegroundColor =>
       buttonThemeExtension.disabledForegroundColor;
+  Color get focusRingColor => buttonThemeExtension.focusRingColor;
+  double get focusRingWidth => buttonThemeExtension.focusRingWidth;
 }

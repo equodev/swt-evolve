@@ -481,17 +481,23 @@ class EvolveApp extends StatelessWidget {
         final ThemeData darkTheme;
         if (namedTheme != null) {
           final darkScheme = namedTheme.darkColorScheme ?? namedTheme.lightColorScheme;
-          lightTheme = createLightNonDefaultTheme(
-            backgroundColor,
-            overrideColorScheme: namedTheme.lightColorScheme,
-            overrideColorSchemeExtension: namedTheme.lightColorSchemeExtension
-                ?? createColorSchemeExtension(namedTheme.lightColorScheme),
+          lightTheme = namedTheme.applyWidgetOverrides(
+            createLightNonDefaultTheme(
+              backgroundColor,
+              overrideColorScheme: namedTheme.lightColorScheme,
+              overrideColorSchemeExtension: namedTheme.lightColorSchemeExtension
+                  ?? createColorSchemeExtension(namedTheme.lightColorScheme),
+            ),
+            dark: false,
           );
-          darkTheme = createDarkNonDefaultTheme(
-            backgroundColor,
-            overrideColorScheme: darkScheme,
-            overrideColorSchemeExtension: namedTheme.darkColorSchemeExtension
-                ?? createColorSchemeExtension(darkScheme),
+          darkTheme = namedTheme.applyWidgetOverrides(
+            createDarkNonDefaultTheme(
+              backgroundColor,
+              overrideColorScheme: darkScheme,
+              overrideColorSchemeExtension: namedTheme.darkColorSchemeExtension
+                  ?? createColorSchemeExtension(darkScheme),
+            ),
+            dark: true,
           );
         } else {
           lightTheme = createLightDefaultTheme(backgroundColor, seedColor: seedColor);

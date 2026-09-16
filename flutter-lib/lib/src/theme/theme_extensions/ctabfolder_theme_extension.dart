@@ -46,6 +46,10 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
   
   // Highlight color (for selected tab top border)
   final Color tabHighlightColor;
+
+  // Ring around the selected tab while its folder is active
+  final Color tabFocusRingColor;
+  final double tabFocusRingWidth;
   
   // Tab border properties
   final double tabBorderWidth;
@@ -132,6 +136,8 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
     required this.tabCloseButtonSelectedOpacity,
     required this.tabCloseButtonUnselectedOpacity,
     required this.tabHighlightColor,
+    required this.tabFocusRingColor,
+    required this.tabFocusRingWidth,
     required this.tabBorderWidth,
     required this.tabSelectedBorderWidth,
     required this.tabHighlightBorderWidth,

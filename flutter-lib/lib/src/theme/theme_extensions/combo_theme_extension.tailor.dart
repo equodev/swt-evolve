@@ -19,6 +19,7 @@ mixin _$ComboThemeExtensionTailorMixin on ThemeExtension<ComboThemeExtension> {
   Color get disabledBackgroundColor;
   Color get disabledTextColor;
   Color get disabledBorderColor;
+  Color get focusedBorderColor;
   double get borderRadius;
   double get borderWidth;
   EdgeInsets get textFieldPadding;
@@ -43,6 +44,7 @@ mixin _$ComboThemeExtensionTailorMixin on ThemeExtension<ComboThemeExtension> {
     Color? disabledBackgroundColor,
     Color? disabledTextColor,
     Color? disabledBorderColor,
+    Color? focusedBorderColor,
     double? borderRadius,
     double? borderWidth,
     EdgeInsets? textFieldPadding,
@@ -68,6 +70,7 @@ mixin _$ComboThemeExtensionTailorMixin on ThemeExtension<ComboThemeExtension> {
           disabledBackgroundColor ?? this.disabledBackgroundColor,
       disabledTextColor: disabledTextColor ?? this.disabledTextColor,
       disabledBorderColor: disabledBorderColor ?? this.disabledBorderColor,
+      focusedBorderColor: focusedBorderColor ?? this.focusedBorderColor,
       borderRadius: borderRadius ?? this.borderRadius,
       borderWidth: borderWidth ?? this.borderWidth,
       textFieldPadding: textFieldPadding ?? this.textFieldPadding,
@@ -119,6 +122,11 @@ mixin _$ComboThemeExtensionTailorMixin on ThemeExtension<ComboThemeExtension> {
         other.disabledBorderColor,
         t,
       )!,
+      focusedBorderColor: Color.lerp(
+        focusedBorderColor,
+        other.focusedBorderColor,
+        t,
+      )!,
       borderRadius: t < 0.5 ? borderRadius : other.borderRadius,
       borderWidth: t < 0.5 ? borderWidth : other.borderWidth,
       textFieldPadding: t < 0.5 ? textFieldPadding : other.textFieldPadding,
@@ -168,6 +176,10 @@ mixin _$ComboThemeExtensionTailorMixin on ThemeExtension<ComboThemeExtension> {
             const DeepCollectionEquality().equals(
               disabledBorderColor,
               other.disabledBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              focusedBorderColor,
+              other.focusedBorderColor,
             ) &&
             const DeepCollectionEquality().equals(
               borderRadius,
@@ -226,6 +238,7 @@ mixin _$ComboThemeExtensionTailorMixin on ThemeExtension<ComboThemeExtension> {
       const DeepCollectionEquality().hash(disabledBackgroundColor),
       const DeepCollectionEquality().hash(disabledTextColor),
       const DeepCollectionEquality().hash(disabledBorderColor),
+      const DeepCollectionEquality().hash(focusedBorderColor),
       const DeepCollectionEquality().hash(borderRadius),
       const DeepCollectionEquality().hash(borderWidth),
       const DeepCollectionEquality().hash(textFieldPadding),
@@ -256,6 +269,7 @@ extension ComboThemeExtensionBuildContextProps on BuildContext {
       comboThemeExtension.disabledBackgroundColor;
   Color get disabledTextColor => comboThemeExtension.disabledTextColor;
   Color get disabledBorderColor => comboThemeExtension.disabledBorderColor;
+  Color get focusedBorderColor => comboThemeExtension.focusedBorderColor;
   double get borderRadius => comboThemeExtension.borderRadius;
   double get borderWidth => comboThemeExtension.borderWidth;
   EdgeInsets get textFieldPadding => comboThemeExtension.textFieldPadding;

@@ -41,6 +41,8 @@ CTabItemThemeExtension _getCTabItemTheme({
     tabItemTextColor: colorScheme.onSurfaceVariant,
     tabItemSelectedTextColor: colorScheme.onSurface,
     tabItemDisabledTextColor: colorSchemeExtension.onSurfaceVariantDisabled,
+    tabItemActiveTextColor: colorScheme.onSurface,
+    tabItemActiveFontWeight: FontWeight.w700,
     
     // Tab item typography
     tabItemTextStyle: baseTextStyle.copyWith(
@@ -61,3 +63,19 @@ CTabItemThemeExtension _getCTabItemTheme({
   );
 }
 
+/// A tab label's theme colour: strongest on the active folder's selected tab, unselected on a selected tab whose folder has no focus.
+Color getCTabItemTextColor(
+  CTabItemThemeExtension theme, {
+  required bool selected,
+  required bool enabled,
+  required bool active,
+  bool dimmed = false,
+}) {
+  if (!enabled) return theme.tabItemDisabledTextColor;
+  if (active) return theme.tabItemActiveTextColor;
+  if (dimmed) return theme.tabItemTextColor;
+  return selected ? theme.tabItemSelectedTextColor : theme.tabItemTextColor;
+}
+
+TextStyle getCTabItemTextStyle(CTabItemThemeExtension theme, TextStyle style, {required bool active}) =>
+    active ? style.copyWith(fontWeight: theme.tabItemActiveFontWeight) : style;

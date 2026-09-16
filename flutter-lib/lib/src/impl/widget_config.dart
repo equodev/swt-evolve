@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:swtflutter/src/theme/named_themes.dart';
 import 'package:flutter/gestures.dart' show kDoubleTapTimeout;
 import 'package:flutter/material.dart';
 import 'package:swtflutter/src/gen/menu.dart';
@@ -92,6 +93,12 @@ bool get preserveIconColors => getConfigFlags().preserve_icon_colors ?? false;
 /// which it does unless the application opts out. How far and how fast are theme values, per widget:
 /// ToolItemThemeExtension.hoverZoom* and TableThemeExtension.cellHoverZoom*.
 bool get hoverZoom => !(getConfigFlags().disable_hover_zoom ?? false);
+
+/// Focus rings and focus-coloured borders: `-Dswt.evolve.focus_indicators` when set, else the named theme's default.
+bool get focusIndicators {
+  final flags = getConfigFlags();
+  return flags.focus_indicators ?? kNamedThemes[flags.theme_name?.trim()]?.focusIndicators ?? false;
+}
 
 /// True when the bundled icon set may stand in for an image the application blits with
 /// `GC#drawImage`. Off by default: the set is keyed by the bare filename stem, so an application

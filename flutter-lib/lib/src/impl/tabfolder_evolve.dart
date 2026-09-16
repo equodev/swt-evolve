@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/theme_settings/tabfolder_theme_settings.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import '../gen/event.dart';
@@ -17,6 +18,7 @@ import 'widget_config.dart';
 class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     extends CompositeImpl<T, V> {
   late int _selectedIndex;
+  int? _focusedTab;
   final DoubleTapDetector _tabTap = DoubleTapDetector();
 
   @override
@@ -185,11 +187,19 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
         color: Colors.transparent,
         child: InkWell(
           onTap: enabled ? () => _handleTabTap(index, onTap) : null,
+          onFocusChange: (focused) => setState(() {
+            if (focused) {
+              _focusedTab = index;
+            } else if (_focusedTab == index) {
+              _focusedTab = null;
+            }
+          }),
           child: _Overhang(
             bottom: isSelected && enabled ? widgetTheme.tabSelectedBorderWidth : 0,
             child: Container(
             padding: EdgeInsets.symmetric(horizontal: widgetTheme.tabPadding),
             constraints: const BoxConstraints(minHeight: 0),
+            foregroundDecoration: getTabFocusRingDecoration(widgetTheme, focused: _focusedTab == index, enabled: enabled),
             decoration: BoxDecoration(
               color: backgroundColor,
               border: Border(

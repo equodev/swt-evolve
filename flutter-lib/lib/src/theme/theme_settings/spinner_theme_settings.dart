@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../impl/widget_config.dart';
 import '../theme_extensions/spinner_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
 import '../../gen/spinner.dart';
@@ -54,7 +55,7 @@ SpinnerThemeExtension _getSpinnerTheme({
 
     // Border colors
     borderColor: colorScheme.outline,
-    focusedBorderColor: colorScheme.primary,
+    focusedBorderColor: focusIndicators ? colorSchemeExtension.surfaceBorderFocused : colorScheme.primary,
     disabledBorderColor: colorScheme.outlineVariant,
 
     // Icon colors

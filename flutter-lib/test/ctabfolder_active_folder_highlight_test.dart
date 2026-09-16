@@ -1,6 +1,6 @@
-// The frame around a CTabFolder is the only cue for which stack keyboard input will reach, so
-// with several folders open exactly the active one draws it. highlightEnabled is true on every
-// folder; upstream's shouldHighlight also requires the folder to be the active one.
+// The active tab's emphasis is the cue for which stack keyboard input will reach, so with several
+// folders open only the active one marks its selected tab. Every folder here has highlightEnabled, and
+// upstream's shouldHighlight also requires the folder to be the active one.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,6 +11,7 @@ import 'package:swtflutter/src/gen/ctabitem.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 // ignore: unused_import
 import 'package:swtflutter/src/impl/ctabfolder_evolve.dart';
+import 'package:swtflutter/src/theme/theme_extensions/ctabitem_theme_extension.dart';
 
 VCTabFolder _folder({
   required int id,
@@ -41,16 +42,17 @@ Widget _host(List<Widget> children) => EvolveApp(
       contentWidget: Column(children: children),
     );
 
-/// The frame the folder paints over itself, or null when it paints none.
-BoxBorder? _frameAround(WidgetTester tester, String label) {
-  final container = tester.widget<Container>(
-    find.ancestor(of: find.text(label), matching: find.byType(Container)).last,
-  );
-  return (container.foregroundDecoration as BoxDecoration?)?.border;
-}
+Text _label(WidgetTester tester, String label) => tester.widget<Text>(find.text(label).first);
+
+/// Whether the selected tab's label is drawn with the active emphasis.
+bool _emphasised(WidgetTester tester, String label) =>
+    _label(tester, label).style?.fontWeight == FontWeight.w700;
+
+CTabItemThemeExtension _itemTheme(WidgetTester tester, String label) =>
+    Theme.of(tester.element(find.text(label).first)).extension<CTabItemThemeExtension>()!;
 
 void main() {
-  testWidgets('only the folder that holds focus is framed',
+  testWidgets('only the folder that holds focus emphasises its selected tab',
       (WidgetTester tester) async {
     await tester.pumpWidget(_host([
       _stack(_folder(id: 1000, label: 'Active', highlight: true)),
@@ -58,13 +60,16 @@ void main() {
     ]));
     while (tester.takeException() != null) {}
 
-    expect(_frameAround(tester, 'Active'), isNotNull,
-        reason: 'the folder that holds focus must be framed');
-    expect(_frameAround(tester, 'Idle'), isNull,
+    expect(_emphasised(tester, 'Active'), isTrue,
+        reason: 'the folder that holds focus must mark its selected tab');
+    expect(_emphasised(tester, 'Idle'), isFalse,
         reason: 'a folder that was never activated must not look focused');
+    expect(_label(tester, 'Active').style?.color, _itemTheme(tester, 'Active').tabItemActiveTextColor);
+    expect(_label(tester, 'Idle').style?.color, _itemTheme(tester, 'Idle').tabItemTextColor,
+        reason: 'a selected tab in a folder without focus is dimmed, so only the active one stands out');
   });
 
-  testWidgets('highlightEnabled=false opts the folder out of the frame',
+  testWidgets('highlightEnabled=false opts the folder out of the emphasis',
       (WidgetTester tester) async {
     await tester.pumpWidget(_host([
       _stack(_folder(id: 3000, label: 'Opted out', highlight: true)
@@ -72,8 +77,11 @@ void main() {
     ]));
     while (tester.takeException() != null) {}
 
-    expect(_frameAround(tester, 'Opted out'), isNull,
+    expect(_emphasised(tester, 'Opted out'), isFalse,
         reason: 'setHighlightEnabled(false) opts the folder out of the '
             'active-folder rendering, active or not');
+    expect(_label(tester, 'Opted out').style?.color,
+        _itemTheme(tester, 'Opted out').tabItemSelectedTextColor,
+        reason: 'a folder outside activation keeps its selected tab in the selected colour');
   });
 }

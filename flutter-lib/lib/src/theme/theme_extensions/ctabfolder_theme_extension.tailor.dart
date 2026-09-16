@@ -30,6 +30,8 @@ mixin _$CTabFolderThemeExtensionTailorMixin
   double get tabCloseButtonSelectedOpacity;
   double get tabCloseButtonUnselectedOpacity;
   Color get tabHighlightColor;
+  Color get tabFocusRingColor;
+  double get tabFocusRingWidth;
   double get tabBorderWidth;
   double get tabSelectedBorderWidth;
   double get tabHighlightBorderWidth;
@@ -87,6 +89,8 @@ mixin _$CTabFolderThemeExtensionTailorMixin
     double? tabCloseButtonSelectedOpacity,
     double? tabCloseButtonUnselectedOpacity,
     Color? tabHighlightColor,
+    Color? tabFocusRingColor,
+    double? tabFocusRingWidth,
     double? tabBorderWidth,
     double? tabSelectedBorderWidth,
     double? tabHighlightBorderWidth,
@@ -153,6 +157,8 @@ mixin _$CTabFolderThemeExtensionTailorMixin
           tabCloseButtonUnselectedOpacity ??
           this.tabCloseButtonUnselectedOpacity,
       tabHighlightColor: tabHighlightColor ?? this.tabHighlightColor,
+      tabFocusRingColor: tabFocusRingColor ?? this.tabFocusRingColor,
+      tabFocusRingWidth: tabFocusRingWidth ?? this.tabFocusRingWidth,
       tabBorderWidth: tabBorderWidth ?? this.tabBorderWidth,
       tabSelectedBorderWidth:
           tabSelectedBorderWidth ?? this.tabSelectedBorderWidth,
@@ -297,6 +303,12 @@ mixin _$CTabFolderThemeExtensionTailorMixin
         other.tabHighlightColor,
         t,
       )!,
+      tabFocusRingColor: Color.lerp(
+        tabFocusRingColor,
+        other.tabFocusRingColor,
+        t,
+      )!,
+      tabFocusRingWidth: t < 0.5 ? tabFocusRingWidth : other.tabFocusRingWidth,
       tabBorderWidth: t < 0.5 ? tabBorderWidth : other.tabBorderWidth,
       tabSelectedBorderWidth: t < 0.5
           ? tabSelectedBorderWidth
@@ -483,6 +495,14 @@ mixin _$CTabFolderThemeExtensionTailorMixin
               other.tabHighlightColor,
             ) &&
             const DeepCollectionEquality().equals(
+              tabFocusRingColor,
+              other.tabFocusRingColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabFocusRingWidth,
+              other.tabFocusRingWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
               tabBorderWidth,
               other.tabBorderWidth,
             ) &&
@@ -647,6 +667,8 @@ mixin _$CTabFolderThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(tabCloseButtonSelectedOpacity),
       const DeepCollectionEquality().hash(tabCloseButtonUnselectedOpacity),
       const DeepCollectionEquality().hash(tabHighlightColor),
+      const DeepCollectionEquality().hash(tabFocusRingColor),
+      const DeepCollectionEquality().hash(tabFocusRingWidth),
       const DeepCollectionEquality().hash(tabBorderWidth),
       const DeepCollectionEquality().hash(tabSelectedBorderWidth),
       const DeepCollectionEquality().hash(tabHighlightBorderWidth),
@@ -719,6 +741,8 @@ extension CTabFolderThemeExtensionBuildContextProps on BuildContext {
   double get tabCloseButtonUnselectedOpacity =>
       cTabFolderThemeExtension.tabCloseButtonUnselectedOpacity;
   Color get tabHighlightColor => cTabFolderThemeExtension.tabHighlightColor;
+  Color get tabFocusRingColor => cTabFolderThemeExtension.tabFocusRingColor;
+  double get tabFocusRingWidth => cTabFolderThemeExtension.tabFocusRingWidth;
   double get tabBorderWidth => cTabFolderThemeExtension.tabBorderWidth;
   double get tabSelectedBorderWidth =>
       cTabFolderThemeExtension.tabSelectedBorderWidth;

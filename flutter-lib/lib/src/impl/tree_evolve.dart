@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/theme_settings/tree_theme_settings.dart';
 import 'package:flutter/services.dart';
 import 'package:swtflutter/src/styles.dart';
 import 'package:swtflutter/src/gen/treecolumn.dart';
@@ -343,6 +344,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
             // so the part that owns the tree never reactivates, and actions bound to it
             // (opening the double-clicked file) silently do nothing.
             onFocusChange: (hasFocus) {
+              if (showsTreeItemFocusRing(widgetTheme)) setState(() {});
               if (hasFocus) {
                 widget.sendFocusFocusIn(state, null);
               } else {
@@ -1105,6 +1107,8 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     }
     return currentIndex;
   }
+
+  bool get hasFocus => _focusNode.hasFocus;
 
   bool isItemSelected(Object itemId) {
     return state.selection?.any((item) => item.id == itemId) ?? false;
@@ -1936,6 +1940,7 @@ class TreeItemContext {
   final int checkboxUpdateCounter;
   final double? treeWidth;
   final bool renderChildItems;
+  final bool treeFocused;
 
   TreeItemContext({
     required this.level,
@@ -1948,6 +1953,7 @@ class TreeItemContext {
     this.checkboxUpdateCounter = 0,
     this.treeWidth,
     this.renderChildItems = true,
+    this.treeFocused = false,
   });
 
   static TreeItemContext? of(BuildContext context) {
@@ -1982,6 +1988,7 @@ class TreeItemContextProvider extends InheritedWidget {
          checkboxUpdateCounter: treeImpl?.checkboxUpdateCounter ?? 0,
          treeWidth: treeWidth,
          renderChildItems: renderChildItems,
+         treeFocused: treeImpl?.hasFocus ?? false,
        ),
        super(key: key, child: child);
 
@@ -2005,7 +2012,8 @@ class TreeItemContextProvider extends InheritedWidget {
     return context.level != oldWidget.context.level ||
         context.isCheckMode != oldWidget.context.isCheckMode ||
         selectionChanged ||
-        checkboxChanged;
+        checkboxChanged ||
+        context.treeFocused != oldWidget.context.treeFocused;
   }
 }
 

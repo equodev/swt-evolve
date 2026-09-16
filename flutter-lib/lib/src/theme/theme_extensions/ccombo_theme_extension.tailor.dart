@@ -19,6 +19,8 @@ mixin _$CComboThemeExtensionTailorMixin
   Color get disabledTextColor;
   Color get borderColor;
   Color get disabledBorderColor;
+  Color get focusedBorderColor;
+  Color get itemHoverBackgroundColor;
   Color get iconColor;
   Color get disabledIconColor;
   Color get selectedItemBackgroundColor;
@@ -42,6 +44,8 @@ mixin _$CComboThemeExtensionTailorMixin
     Color? disabledTextColor,
     Color? borderColor,
     Color? disabledBorderColor,
+    Color? focusedBorderColor,
+    Color? itemHoverBackgroundColor,
     Color? iconColor,
     Color? disabledIconColor,
     Color? selectedItemBackgroundColor,
@@ -65,6 +69,9 @@ mixin _$CComboThemeExtensionTailorMixin
       disabledTextColor: disabledTextColor ?? this.disabledTextColor,
       borderColor: borderColor ?? this.borderColor,
       disabledBorderColor: disabledBorderColor ?? this.disabledBorderColor,
+      focusedBorderColor: focusedBorderColor ?? this.focusedBorderColor,
+      itemHoverBackgroundColor:
+          itemHoverBackgroundColor ?? this.itemHoverBackgroundColor,
       iconColor: iconColor ?? this.iconColor,
       disabledIconColor: disabledIconColor ?? this.disabledIconColor,
       selectedItemBackgroundColor:
@@ -110,6 +117,16 @@ mixin _$CComboThemeExtensionTailorMixin
       disabledBorderColor: Color.lerp(
         disabledBorderColor,
         other.disabledBorderColor,
+        t,
+      )!,
+      focusedBorderColor: Color.lerp(
+        focusedBorderColor,
+        other.focusedBorderColor,
+        t,
+      )!,
+      itemHoverBackgroundColor: Color.lerp(
+        itemHoverBackgroundColor,
+        other.itemHoverBackgroundColor,
         t,
       )!,
       iconColor: Color.lerp(iconColor, other.iconColor, t)!,
@@ -169,6 +186,14 @@ mixin _$CComboThemeExtensionTailorMixin
               disabledBorderColor,
               other.disabledBorderColor,
             ) &&
+            const DeepCollectionEquality().equals(
+              focusedBorderColor,
+              other.focusedBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              itemHoverBackgroundColor,
+              other.itemHoverBackgroundColor,
+            ) &&
             const DeepCollectionEquality().equals(iconColor, other.iconColor) &&
             const DeepCollectionEquality().equals(
               disabledIconColor,
@@ -222,6 +247,8 @@ mixin _$CComboThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(disabledTextColor),
       const DeepCollectionEquality().hash(borderColor),
       const DeepCollectionEquality().hash(disabledBorderColor),
+      const DeepCollectionEquality().hash(focusedBorderColor),
+      const DeepCollectionEquality().hash(itemHoverBackgroundColor),
       const DeepCollectionEquality().hash(iconColor),
       const DeepCollectionEquality().hash(disabledIconColor),
       const DeepCollectionEquality().hash(selectedItemBackgroundColor),
@@ -250,6 +277,9 @@ extension CComboThemeExtensionBuildContextProps on BuildContext {
   Color get disabledTextColor => cComboThemeExtension.disabledTextColor;
   Color get borderColor => cComboThemeExtension.borderColor;
   Color get disabledBorderColor => cComboThemeExtension.disabledBorderColor;
+  Color get focusedBorderColor => cComboThemeExtension.focusedBorderColor;
+  Color get itemHoverBackgroundColor =>
+      cComboThemeExtension.itemHoverBackgroundColor;
   Color get iconColor => cComboThemeExtension.iconColor;
   Color get disabledIconColor => cComboThemeExtension.disabledIconColor;
   Color get selectedItemBackgroundColor =>

@@ -21,6 +21,7 @@ class ConfigFlags {
   String? theme_color;
   Map<String, String>? theme_colors_by_widget;
   bool? show_theme_color_palette;
+  bool? focus_indicators;
   bool? use_special_dropdown_button;
   bool? preserve_icon_colors;
   bool? disable_hover_zoom;

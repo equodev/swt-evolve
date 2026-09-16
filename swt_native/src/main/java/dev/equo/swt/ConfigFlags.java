@@ -93,6 +93,9 @@ public class ConfigFlags {
     public Map<String, String> theme_colors_by_widget;
     public boolean show_theme_color_palette;
 
+    /** Focus rings and focus-coloured borders; null leaves it to the named theme's default. */
+    public Boolean focus_indicators;
+
     public boolean show_scaling_control;
     public DecorationsAlign decorations_align;
 
@@ -143,6 +146,7 @@ public class ConfigFlags {
                 ", theme_color='" + theme_color + '\'' +
                 ", theme_colors_by_widget=" + theme_colors_by_widget +
                 ", show_theme_color_palette=" + show_theme_color_palette +
+                ", focus_indicators=" + focus_indicators +
                 ", preserve_icon_colors=" + preserve_icon_colors +
                 ", disable_hover_zoom=" + disable_hover_zoom +
                 ", show_scaling_control=" + show_scaling_control +

@@ -18,6 +18,12 @@ CTabItemThemeExtension _$CTabItemThemeExtensionFromJson(
   tabItemDisabledTextColor: const ColorConverter().fromJson(
     json['tabItemDisabledTextColor'] as String,
   ),
+  tabItemActiveTextColor: const ColorConverter().fromJson(
+    json['tabItemActiveTextColor'] as String,
+  ),
+  tabItemActiveFontWeight: const FontWeightConverter().fromJson(
+    (json['tabItemActiveFontWeight'] as num).toInt(),
+  ),
   tabItemTextStyle: const TextStyleConverter().fromJson(
     json['tabItemTextStyle'] as Map<String, dynamic>?,
   ),
@@ -39,6 +45,12 @@ Map<String, dynamic> _$CTabItemThemeExtensionToJson(
   ),
   'tabItemDisabledTextColor': const ColorConverter().toJson(
     instance.tabItemDisabledTextColor,
+  ),
+  'tabItemActiveTextColor': const ColorConverter().toJson(
+    instance.tabItemActiveTextColor,
+  ),
+  'tabItemActiveFontWeight': const FontWeightConverter().toJson(
+    instance.tabItemActiveFontWeight,
   ),
   'tabItemTextStyle': ?const TextStyleConverter().toJson(
     instance.tabItemTextStyle,

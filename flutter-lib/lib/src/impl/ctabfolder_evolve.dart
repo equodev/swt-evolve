@@ -36,8 +36,6 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   late int _selectedIndex;
   int? _lastShowListPopupSeq;
   int? _pendingTabIndex;
-  // Activation also arrives on its own channel, so the frame repaints without re-sending the folder.
-  final ValueNotifier<bool> _active = ValueNotifier(false);
   Object? _activationToken;
 
   String get _activationChannel => "${state.swt}/${state.id}/activation";
@@ -48,13 +46,13 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     // -1 means genuinely unselected (not Java's skipDefaultValues null=0); fall back to item 0.
     final selection = state.selection;
     _selectedIndex = (selection != null && selection >= 0) ? selection : 0;
-    _active.value = state.highlight ?? false;
     _activationToken = EquoCommService.onRaw(_activationChannel, (args) {
       final decoded = args is String ? jsonDecode(args) : args;
       if (mounted && decoded is Map && decoded['active'] is bool) {
         // Kept on the state too, or a rebuild re-reads the last push's stale flag in extraSetState.
         state.highlight = decoded['active'] as bool;
-        _active.value = state.highlight!;
+        // The active tab's label and ring belong to the tab bar, so the folder rebuilds.
+        setState(() {});
       }
     });
   }
@@ -62,14 +60,12 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   @override
   void dispose() {
     EquoCommService.remove(_activationChannel, _activationToken);
-    _active.dispose();
     super.dispose();
   }
 
   @override
   void extraSetState() {
     super.extraSetState();
-    _active.value = state.highlight ?? false;
     final itemCount = state.items?.length ?? 0;
 
     if (_pendingTabIndex != null) {
@@ -196,32 +192,6 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
       ],
     );
 
-    // Upstream's shouldHighlight(): with several stacks open, the frame is the only cue for
-    // which one keyboard input will reach. foregroundDecoration so it is painted over the
-    // folder instead of taking a border's worth of space away from its content.
-    final widgetTheme = Theme.of(context).extension<CTabFolderThemeExtension>()!;
-    final highlightEnabled = state.highlightEnabled ?? false;
-    // Only the frame listens to activation, so it never rebuilds the folder's content.
-    Widget framed = ValueListenableBuilder<bool>(
-      valueListenable: _active,
-      child: column,
-      builder: (context, active, column) {
-        final isActive = highlightEnabled && active;
-        // Never null: toggling it inserts a DecoratedBox, remounting the content and dropping its focus.
-        return Container(
-          foregroundDecoration: BoxDecoration(
-            border: isActive
-                ? Border.all(
-                    color: widgetTheme.tabHighlightColor,
-                    width: widgetTheme.tabHighlightBorderWidth,
-                  )
-                : null,
-          ),
-          child: column,
-        );
-      },
-    );
-
     // SWT reads enablement down the parent chain - `isEnabled()` is this control's own flag and
     // every ancestor's - so a disabled folder disables the pages it holds. This build does not go
     // through `wrap()`, so it owes them that answer itself.
@@ -230,7 +200,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
         foreground: state.foreground,
         font: state.font,
         selectionForeground: state.selectionForeground,
-        child: ConstrainedBox(constraints: constraints, child: framed),
+        child: ConstrainedBox(constraints: constraints, child: column),
       )));
     }
 
@@ -239,7 +209,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
       foreground: state.foreground,
       font: state.font,
       selectionForeground: state.selectionForeground,
-      child: framed,
+      child: column,
     )));
   }
 
@@ -917,6 +887,7 @@ class _CTabBarState extends State<_CTabBar> {
     final showHighlight = widget.state.highlightEnabled ?? false;
     final enabled = widget.state.enabled ?? false;
     final useDefaultTheme = getConfigFlags().theme_name == null;
+    final active = showHighlight && (widget.state.highlight ?? false);
 
     final resolvedSelectionForeground = getForegroundColor(
       foreground: widget.state.selectionForeground,
@@ -1031,7 +1002,15 @@ class _CTabBarState extends State<_CTabBar> {
         onSecondaryTapDown: (details) =>
             widget.onSecondaryTap?.call(details.globalPosition),
         child: CustomPaint(
-          foregroundPainter: _RectangularSides(border),
+          foregroundPainter: _RectangularSides(
+            border,
+            ring: getCTabFocusRingSide(
+              widgetTheme,
+              selected: isSelected,
+              enabled: enabled,
+              active: active,
+            ),
+          ),
           child: AnimatedContainer(
           duration: widgetTheme.hoverRevealDuration,
           curve: Curves.easeOut,
@@ -1060,6 +1039,8 @@ class _CTabBarState extends State<_CTabBar> {
                   ? TabItemContextProvider(
                       isSelected: isSelected,
                       isEnabled: enabled,
+                      isActive: isSelected && enabled && active,
+                      isDimmed: isSelected && enabled && showHighlight && !active,
                       child: tab.customContent!,
                     )
                   : Row(
@@ -1896,8 +1877,17 @@ class _HoverReveal extends StatelessWidget {
 class TabItemContext {
   final bool isSelected;
   final bool isEnabled;
+  // The selected tab of the folder that holds focus.
+  final bool isActive;
+  // The selected tab of a folder that takes part in activation but does not hold focus.
+  final bool isDimmed;
 
-  TabItemContext({required this.isSelected, required this.isEnabled});
+  TabItemContext({
+    required this.isSelected,
+    required this.isEnabled,
+    this.isActive = false,
+    this.isDimmed = false,
+  });
 
   static TabItemContext? of(BuildContext context) {
     final provider = context
@@ -1913,14 +1903,23 @@ class TabItemContextProvider extends InheritedWidget {
     Key? key,
     required bool isSelected,
     required bool isEnabled,
+    bool isActive = false,
+    bool isDimmed = false,
     required Widget child,
-  }) : context = TabItemContext(isSelected: isSelected, isEnabled: isEnabled),
+  }) : context = TabItemContext(
+         isSelected: isSelected,
+         isEnabled: isEnabled,
+         isActive: isActive,
+         isDimmed: isDimmed,
+       ),
        super(key: key, child: child);
 
   @override
   bool updateShouldNotify(TabItemContextProvider oldWidget) {
     return context.isSelected != oldWidget.context.isSelected ||
-        context.isEnabled != oldWidget.context.isEnabled;
+        context.isEnabled != oldWidget.context.isEnabled ||
+        context.isActive != oldWidget.context.isActive ||
+        context.isDimmed != oldWidget.context.isDimmed;
   }
 }
 
@@ -1929,19 +1928,28 @@ class TabItemContextProvider extends InheritedWidget {
 /// build refuses that combination in a BoxDecoration, so the sides are painted here instead.
 class _RectangularSides extends CustomPainter {
   final Border border;
+  // Painted after the sides, which would otherwise cover it.
+  final BorderSide? ring;
 
-  const _RectangularSides(this.border);
-
-  @override
-  void paint(Canvas canvas, Size size) => paintBorder(
-        canvas,
-        Offset.zero & size,
-        top: border.top,
-        right: border.right,
-        bottom: border.bottom,
-        left: border.left,
-      );
+  const _RectangularSides(this.border, {this.ring});
 
   @override
-  bool shouldRepaint(_RectangularSides oldDelegate) => oldDelegate.border != border;
+  void paint(Canvas canvas, Size size) {
+    paintBorder(
+      canvas,
+      Offset.zero & size,
+      top: border.top,
+      right: border.right,
+      bottom: border.bottom,
+      left: border.left,
+    );
+    final ring = this.ring;
+    if (ring != null) {
+      paintBorder(canvas, Offset.zero & size, top: ring, right: ring, bottom: ring, left: ring);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RectangularSides oldDelegate) =>
+      oldDelegate.border != border || oldDelegate.ring != ring;
 }

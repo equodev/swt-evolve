@@ -52,6 +52,7 @@ MenuThemeExtension _getMenuTheme({
     // Border colors
     borderColor: colorScheme.outline,
     menuBarBorderColor: colorScheme.outlineVariant,
+    popupBorderColor: colorSchemeExtension.stateDefaultEnabled,
 
     // Border styling
     borderWidth: 1.0,
@@ -72,3 +73,9 @@ MenuThemeExtension _getMenuTheme({
     textStyle: textTheme.bodyMedium?.copyWith(fontSize: 14),
   );
 }
+
+/// The popup's outline, or null when the theme draws none: a transparent side still takes room.
+WidgetStateProperty<BorderSide?>? getMenuPopupSide(MenuThemeExtension widgetTheme) =>
+    widgetTheme.popupBorderColor.a == 0
+        ? null
+        : WidgetStateProperty.all(BorderSide(color: widgetTheme.popupBorderColor));

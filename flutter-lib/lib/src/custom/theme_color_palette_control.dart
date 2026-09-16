@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/theme_settings/theme_color_palette_theme_settings.dart';
 
 import '../comm/comm.dart';
 import '../impl/widget_config.dart';
@@ -96,6 +97,7 @@ class ThemeColorToolbarPaletteControl extends StatelessWidget {
         _swatch(
           palette: palette,
           color: scheme.primary,
+          background: scheme.surface,
           label: pick.label,
           onTap: () => _syncThemeName(pick.key, forceTheme: pick.forceTheme),
         ),
@@ -106,6 +108,7 @@ class ThemeColorToolbarPaletteControl extends StatelessWidget {
   Widget _swatch({
     required ThemeColorPaletteThemeExtension palette,
     required Color color,
+    Color? background,
     required String label,
     required VoidCallback onTap,
   }) =>
@@ -119,11 +122,7 @@ class ThemeColorToolbarPaletteControl extends StatelessWidget {
             child: Container(
               width: palette.swatchSize,
               height: palette.swatchSize,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(palette.swatchBorderRadius),
-                border: Border.all(color: palette.swatchBorderColor),
-              ),
+              decoration: getThemePaletteSwatchDecoration(palette, color: color, background: background),
             ),
           ),
         ),

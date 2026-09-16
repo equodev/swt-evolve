@@ -49,6 +49,10 @@ class TabFolderThemeExtension extends ThemeExtension<TabFolderThemeExtension> wi
   // Tab content area
   final Color tabContentBackgroundColor;
   final Color tabContentBorderColor;
+
+  // Ring around the tab holding keyboard focus
+  final Color tabFocusRingColor;
+  final double tabFocusRingWidth;
   
   const TabFolderThemeExtension({
     required this.tabBarBackgroundColor,
@@ -73,6 +77,8 @@ class TabFolderThemeExtension extends ThemeExtension<TabFolderThemeExtension> wi
     this.tabSelectedTextStyle,
     required this.tabContentBackgroundColor,
     required this.tabContentBorderColor,
+    required this.tabFocusRingColor,
+    required this.tabFocusRingWidth,
   });
 
   factory TabFolderThemeExtension.fromJson(Map<String, dynamic> json) =>

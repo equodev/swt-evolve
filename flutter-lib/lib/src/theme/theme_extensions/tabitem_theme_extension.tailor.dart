@@ -12,6 +12,7 @@ part of 'tabitem_theme_extension.dart';
 mixin _$TabItemThemeExtensionTailorMixin
     on ThemeExtension<TabItemThemeExtension> {
   Color get textColor;
+  Color get selectedTextColor;
   Color get disabledTextColor;
   double get iconSize;
   EdgeInsets get containerPadding;
@@ -23,6 +24,7 @@ mixin _$TabItemThemeExtensionTailorMixin
   @override
   TabItemThemeExtension copyWith({
     Color? textColor,
+    Color? selectedTextColor,
     Color? disabledTextColor,
     double? iconSize,
     EdgeInsets? containerPadding,
@@ -33,6 +35,7 @@ mixin _$TabItemThemeExtensionTailorMixin
   }) {
     return TabItemThemeExtension(
       textColor: textColor ?? this.textColor,
+      selectedTextColor: selectedTextColor ?? this.selectedTextColor,
       disabledTextColor: disabledTextColor ?? this.disabledTextColor,
       iconSize: iconSize ?? this.iconSize,
       containerPadding: containerPadding ?? this.containerPadding,
@@ -51,6 +54,11 @@ mixin _$TabItemThemeExtensionTailorMixin
     if (other is! TabItemThemeExtension) return this as TabItemThemeExtension;
     return TabItemThemeExtension(
       textColor: Color.lerp(textColor, other.textColor, t)!,
+      selectedTextColor: Color.lerp(
+        selectedTextColor,
+        other.selectedTextColor,
+        t,
+      )!,
       disabledTextColor: Color.lerp(
         disabledTextColor,
         other.disabledTextColor,
@@ -71,6 +79,10 @@ mixin _$TabItemThemeExtensionTailorMixin
         (other.runtimeType == runtimeType &&
             other is TabItemThemeExtension &&
             const DeepCollectionEquality().equals(textColor, other.textColor) &&
+            const DeepCollectionEquality().equals(
+              selectedTextColor,
+              other.selectedTextColor,
+            ) &&
             const DeepCollectionEquality().equals(
               disabledTextColor,
               other.disabledTextColor,
@@ -100,6 +112,7 @@ mixin _$TabItemThemeExtensionTailorMixin
     return Object.hash(
       runtimeType.hashCode,
       const DeepCollectionEquality().hash(textColor),
+      const DeepCollectionEquality().hash(selectedTextColor),
       const DeepCollectionEquality().hash(disabledTextColor),
       const DeepCollectionEquality().hash(iconSize),
       const DeepCollectionEquality().hash(containerPadding),
@@ -115,6 +128,7 @@ extension TabItemThemeExtensionBuildContextProps on BuildContext {
   TabItemThemeExtension get tabItemThemeExtension =>
       Theme.of(this).extension<TabItemThemeExtension>()!;
   Color get textColor => tabItemThemeExtension.textColor;
+  Color get selectedTextColor => tabItemThemeExtension.selectedTextColor;
   Color get disabledTextColor => tabItemThemeExtension.disabledTextColor;
   double get iconSize => tabItemThemeExtension.iconSize;
   EdgeInsets get containerPadding => tabItemThemeExtension.containerPadding;

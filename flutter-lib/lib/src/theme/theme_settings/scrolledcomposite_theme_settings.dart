@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../impl/widget_config.dart';
 import '../theme_extensions/scrolledcomposite_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
 import '../../gen/scrolledcomposite.dart';
@@ -51,7 +52,7 @@ ScrolledCompositeThemeExtension _getScrolledCompositeTheme({
 
     // Border colors
     borderColor: colorScheme.outline,
-    focusedBorderColor: colorScheme.primary,
+    focusedBorderColor: focusIndicators ? colorSchemeExtension.surfaceBorderFocused : colorScheme.primary,
 
     // Border styling
     borderWidth: 0.0,

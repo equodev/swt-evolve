@@ -133,6 +133,8 @@ class TreeThemeExtension extends ThemeExtension<TreeThemeExtension> with _$TreeT
   final TextStyle? itemTextStyleWithCols;
   final Color columnTextColorWithCols;
   final Color rowSeparatorColorWithCols;
+  final Color itemFocusRingColor;
+  final double itemFocusRingWidth;
   final double rowSeparatorWidthWithCols;
 
   // Event defaults
@@ -232,6 +234,8 @@ class TreeThemeExtension extends ThemeExtension<TreeThemeExtension> with _$TreeT
     required this.columnTextColorWithCols,
     required this.rowSeparatorColorWithCols,
     required this.rowSeparatorWidthWithCols,
+    required this.itemFocusRingColor,
+    required this.itemFocusRingWidth,
     required this.eventDefaultWidth,
     required this.eventDefaultHeight,
     required this.eventDefaultX,

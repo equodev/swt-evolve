@@ -137,6 +137,8 @@ ButtonThemeExtension _getButtonTheme({
     // Disabled colors
     disabledBackgroundColor: colorSchemeExtension.primaryVariantDisabled,
     disabledForegroundColor: colorScheme.onSurfaceVariant,
+    focusRingColor: focusIndicators ? colorSchemeExtension.surfaceBorderFocused : colorSchemeExtension.stateDefaultEnabled,
+    focusRingWidth: 2.0,
   );
 }
 
@@ -266,3 +268,11 @@ double getRadioButtonSize(
   return widgetTheme.radioButtonSize;
 }
 
+/// The ring painted over a focused button; no border while unfocused or when the theme sets no ring colour.
+BoxDecoration getButtonFocusRingDecoration(ButtonThemeExtension theme, {required bool focused}) {
+  final ring = theme.focusRingColor;
+  return BoxDecoration(
+    border: focused && ring.a > 0 ? Border.all(color: ring, width: theme.focusRingWidth) : null,
+    borderRadius: BorderRadius.circular(theme.pushButtonBorderRadius),
+  );
+}

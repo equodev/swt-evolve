@@ -1,4 +1,4 @@
-// Activation reaches a CTabFolder on its own channel, so moving between stacks repaints the frame
+// Activation reaches a CTabFolder on its own channel, so moving between stacks re-marks the active tab
 // without re-sending the folder and the view nested inside it.
 
 import 'dart:convert';
@@ -107,28 +107,28 @@ Future<void> _activate(WidgetTester tester, int folderId, bool active) async {
   while (tester.takeException() != null) {}
 }
 
-bool _framed(WidgetTester tester, int folderId) {
-  final frame = tester.widget<Container>(
-    find.descendant(of: _folderWidget(folderId), matching: find.byType(Container)).first,
+bool _emphasised(WidgetTester tester, int folderId) {
+  final label = tester.widget<Text>(
+    find.descendant(of: _folderWidget(folderId), matching: find.text('tab $folderId')).first,
   );
-  return (frame.foregroundDecoration as BoxDecoration?)?.border != null;
+  return label.style?.fontWeight == FontWeight.w700;
 }
 
 void main() {
-  testWidgets('the activation message moves the frame with no value push',
+  testWidgets('the activation message moves the active tab emphasis with no value push',
       (WidgetTester tester) async {
     await _pump(tester, [_left, _right]);
 
     await _activate(tester, _left, true);
-    expect(_framed(tester, _left), isTrue,
+    expect(_emphasised(tester, _left), isTrue,
         reason: 'Java activated the left stack; its pushed highlight is still false');
-    expect(_framed(tester, _right), isFalse);
+    expect(_emphasised(tester, _right), isFalse);
 
     await _activate(tester, _left, false);
     await _activate(tester, _right, true);
-    expect(_framed(tester, _right), isTrue);
-    expect(_framed(tester, _left), isFalse,
-        reason: 'the stack Java deactivated must drop its frame');
+    expect(_emphasised(tester, _right), isTrue);
+    expect(_emphasised(tester, _left), isFalse,
+        reason: 'the stack Java deactivated must drop its emphasis');
   });
 
   testWidgets('the activation message keeps focus inside the folder',
@@ -138,12 +138,12 @@ void main() {
     await _focus(tester, _right + 2);
     await _activate(tester, _right, true);
 
-    expect(_framed(tester, _right), isTrue);
+    expect(_emphasised(tester, _right), isTrue);
     expect(_focusInside(_right + 2), isTrue,
-        reason: 'framing the folder must not remount its content and drop the focus it holds');
+        reason: 'marking the active tab must not remount the content and drop the focus it holds');
   });
 
-  testWidgets('a pushed highlight still frames the folder and keeps its focus',
+  testWidgets('a pushed highlight still emphasises the tab and keeps its focus',
       (WidgetTester tester) async {
     await _pump(tester, [_left]);
 
@@ -154,8 +154,8 @@ void main() {
     await tester.pump();
     while (tester.takeException() != null) {}
 
-    expect(_framed(tester, _left), isTrue);
+    expect(_emphasised(tester, _left), isTrue);
     expect(_focusInside(_left + 2), isTrue,
-        reason: 'framing the folder must not remount its content and drop the focus it holds');
+        reason: 'marking the active tab must not remount the content and drop the focus it holds');
   });
 }

@@ -39,6 +39,7 @@ TabItemThemeExtension _getTabItemTheme({
   return TabItemThemeExtension(
     // Text colors
     textColor: colorScheme.onSurfaceVariant,
+    selectedTextColor: colorScheme.onSurfaceVariant,
     disabledTextColor: colorSchemeExtension.onSurfaceVariantDisabled,
     
     // Icon properties

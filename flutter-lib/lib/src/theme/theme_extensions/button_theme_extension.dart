@@ -107,6 +107,10 @@ class ButtonThemeExtension extends ThemeExtension<ButtonThemeExtension> with _$B
   // Disabled colors
   final Color disabledBackgroundColor;
   final Color disabledForegroundColor;
+
+  // Ring around a focused button
+  final Color focusRingColor;
+  final double focusRingWidth;
   
   const ButtonThemeExtension({
     required this.buttonPressDelay,
@@ -169,6 +173,8 @@ class ButtonThemeExtension extends ThemeExtension<ButtonThemeExtension> with _$B
     required this.pushButtonPadding,
     required this.disabledBackgroundColor,
     required this.disabledForegroundColor,
+    required this.focusRingColor,
+    required this.focusRingWidth,
   });
 
   factory ButtonThemeExtension.fromJson(Map<String, dynamic> json) =>

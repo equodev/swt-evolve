@@ -62,7 +62,9 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
 
     final Color currentBorderColor = !isEnabled
         ? widgetTheme.disabledBorderColor
-        : (isActive ? widgetTheme.borderColor : Colors.transparent);
+        : (_isFocused
+            ? widgetTheme.focusedBorderColor
+            : (isActive ? widgetTheme.borderColor : Colors.transparent));
 
     final textColor = !isEnabled
         ? widgetTheme.disabledTextColor
@@ -397,13 +399,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
             html: tooltip,
             child: labelWidget,
           ),
-          style: MenuItemButton.styleFrom(
-            foregroundColor: textStyle.color,
-            minimumSize: Size(width, widgetTheme.itemHeight),
-            padding: widgetTheme.textFieldPadding,
-            overlayColor: widgetTheme.hoverBackgroundColor,
-            backgroundColor: getCComboItemBackgroundColor(widgetTheme, isSelected),
-          ),
+          style: getCComboEntryStyle(widgetTheme, textStyle, width, isSelected),
         );
       }).toList(),
     );
@@ -542,7 +538,7 @@ class _StyledSimpleCCombo extends StatelessWidget {
             ...items.map((item) {
               final bool isSelected = item == state.text;
               return InkWell(
-                hoverColor: widgetTheme.hoverBackgroundColor.withOpacity(0.1),
+                hoverColor: getCComboSimpleItemHoverColor(widgetTheme),
                 onTap: enabled ? () => onChanged?.call(item) : null,
                 child: Container(
                   height: widgetTheme.itemHeight,

@@ -33,6 +33,8 @@ mixin _$TabFolderThemeExtensionTailorMixin
   TextStyle? get tabSelectedTextStyle;
   Color get tabContentBackgroundColor;
   Color get tabContentBorderColor;
+  Color get tabFocusRingColor;
+  double get tabFocusRingWidth;
 
   @override
   TabFolderThemeExtension copyWith({
@@ -58,6 +60,8 @@ mixin _$TabFolderThemeExtensionTailorMixin
     TextStyle? tabSelectedTextStyle,
     Color? tabContentBackgroundColor,
     Color? tabContentBorderColor,
+    Color? tabFocusRingColor,
+    double? tabFocusRingWidth,
   }) {
     return TabFolderThemeExtension(
       tabBarBackgroundColor:
@@ -91,6 +95,8 @@ mixin _$TabFolderThemeExtensionTailorMixin
           tabContentBackgroundColor ?? this.tabContentBackgroundColor,
       tabContentBorderColor:
           tabContentBorderColor ?? this.tabContentBorderColor,
+      tabFocusRingColor: tabFocusRingColor ?? this.tabFocusRingColor,
+      tabFocusRingWidth: tabFocusRingWidth ?? this.tabFocusRingWidth,
     );
   }
 
@@ -186,6 +192,12 @@ mixin _$TabFolderThemeExtensionTailorMixin
         other.tabContentBorderColor,
         t,
       )!,
+      tabFocusRingColor: Color.lerp(
+        tabFocusRingColor,
+        other.tabFocusRingColor,
+        t,
+      )!,
+      tabFocusRingWidth: t < 0.5 ? tabFocusRingWidth : other.tabFocusRingWidth,
     );
   }
 
@@ -281,6 +293,14 @@ mixin _$TabFolderThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               tabContentBorderColor,
               other.tabContentBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabFocusRingColor,
+              other.tabFocusRingColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabFocusRingWidth,
+              other.tabFocusRingWidth,
             ));
   }
 
@@ -310,6 +330,8 @@ mixin _$TabFolderThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(tabSelectedTextStyle),
       const DeepCollectionEquality().hash(tabContentBackgroundColor),
       const DeepCollectionEquality().hash(tabContentBorderColor),
+      const DeepCollectionEquality().hash(tabFocusRingColor),
+      const DeepCollectionEquality().hash(tabFocusRingWidth),
     ]);
   }
 }
@@ -351,4 +373,6 @@ extension TabFolderThemeExtensionBuildContextProps on BuildContext {
       tabFolderThemeExtension.tabContentBackgroundColor;
   Color get tabContentBorderColor =>
       tabFolderThemeExtension.tabContentBorderColor;
+  Color get tabFocusRingColor => tabFolderThemeExtension.tabFocusRingColor;
+  double get tabFocusRingWidth => tabFolderThemeExtension.tabFocusRingWidth;
 }

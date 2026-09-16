@@ -155,6 +155,10 @@ ButtonThemeExtension _$ButtonThemeExtensionFromJson(
   disabledForegroundColor: const ColorConverter().fromJson(
     json['disabledForegroundColor'] as String,
   ),
+  focusRingColor: const ColorConverter().fromJson(
+    json['focusRingColor'] as String,
+  ),
+  focusRingWidth: (json['focusRingWidth'] as num).toDouble(),
 );
 
 Map<String, dynamic> _$ButtonThemeExtensionToJson(
@@ -292,4 +296,6 @@ Map<String, dynamic> _$ButtonThemeExtensionToJson(
   'disabledForegroundColor': const ColorConverter().toJson(
     instance.disabledForegroundColor,
   ),
+  'focusRingColor': const ColorConverter().toJson(instance.focusRingColor),
+  'focusRingWidth': instance.focusRingWidth,
 };

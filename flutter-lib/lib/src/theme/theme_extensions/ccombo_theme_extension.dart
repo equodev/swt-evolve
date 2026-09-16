@@ -28,6 +28,9 @@ class CComboThemeExtension extends ThemeExtension<CComboThemeExtension> with _$C
   // Border colors
   final Color borderColor;
   final Color disabledBorderColor;
+  final Color focusedBorderColor;
+  // Solid fill for a hovered list item; transparent keeps the default tint.
+  final Color itemHoverBackgroundColor;
   
   // Icon colors
   final Color iconColor;
@@ -61,6 +64,8 @@ class CComboThemeExtension extends ThemeExtension<CComboThemeExtension> with _$C
     required this.textColor,
     required this.disabledTextColor,
     required this.borderColor,
+    required this.focusedBorderColor,
+    required this.itemHoverBackgroundColor,
     required this.disabledBorderColor,
     required this.iconColor,
     required this.disabledIconColor,

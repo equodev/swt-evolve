@@ -1,4 +1,5 @@
 import '../../impl/utils/widget_utils.dart';
+import '../../impl/widget_config.dart';
 import '../../gen/color.dart';
 import 'package:flutter/material.dart';
 import '../theme_extensions/list_theme_extension.dart';
@@ -50,7 +51,7 @@ ListThemeExtension _getListTheme({
     
     // Border colors
     borderColor: colorScheme.outline,
-    focusedBorderColor: colorScheme.primary,
+    focusedBorderColor: focusIndicators ? colorSchemeExtension.surfaceBorderFocused : colorScheme.primary,
     
     // Border styling
     borderWidth: 1.0,

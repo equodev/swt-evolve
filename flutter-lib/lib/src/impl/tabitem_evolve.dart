@@ -38,7 +38,9 @@ class TabItemImpl<T extends TabItemSwt, V extends VTabItem>
     // against the folder's background, and applying it there is what leaves text unreadable.
     final textColor = getForegroundColor(
       foreground: isSelected ? null : ParentForegroundScope.of(context),
-      defaultColor: isEnabled ? widgetTheme.textColor : widgetTheme.disabledTextColor,
+      defaultColor: !isEnabled
+          ? widgetTheme.disabledTextColor
+          : (isSelected ? widgetTheme.selectedTextColor : widgetTheme.textColor),
       context: context,
     );
     final textStyle = getTextStyle(

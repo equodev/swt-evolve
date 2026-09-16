@@ -209,6 +209,10 @@ TreeThemeExtension _$TreeThemeExtensionFromJson(
   ),
   rowSeparatorWidthWithCols: (json['rowSeparatorWidthWithCols'] as num)
       .toDouble(),
+  itemFocusRingColor: const ColorConverter().fromJson(
+    json['itemFocusRingColor'] as String,
+  ),
+  itemFocusRingWidth: (json['itemFocusRingWidth'] as num).toDouble(),
   eventDefaultWidth: (json['eventDefaultWidth'] as num).toDouble(),
   eventDefaultHeight: (json['eventDefaultHeight'] as num).toDouble(),
   eventDefaultX: (json['eventDefaultX'] as num).toInt(),
@@ -378,6 +382,10 @@ Map<String, dynamic> _$TreeThemeExtensionToJson(
   'rowSeparatorColorWithCols': const ColorConverter().toJson(
     instance.rowSeparatorColorWithCols,
   ),
+  'itemFocusRingColor': const ColorConverter().toJson(
+    instance.itemFocusRingColor,
+  ),
+  'itemFocusRingWidth': instance.itemFocusRingWidth,
   'rowSeparatorWidthWithCols': instance.rowSeparatorWidthWithCols,
   'eventDefaultWidth': instance.eventDefaultWidth,
   'eventDefaultHeight': instance.eventDefaultHeight,

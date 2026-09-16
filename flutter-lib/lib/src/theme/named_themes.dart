@@ -1,6 +1,19 @@
 import 'package:flutter/material.dart';
 import 'theme_extensions/color_scheme_extension.dart';
 import 'theme.dart';
+import 'theme_extensions/button_theme_extension.dart';
+import 'theme_extensions/ccombo_theme_extension.dart';
+import 'theme_extensions/combo_theme_extension.dart';
+import 'theme_extensions/ctabfolder_theme_extension.dart';
+import 'theme_extensions/ctabitem_theme_extension.dart';
+import 'theme_extensions/menu_theme_extension.dart';
+import 'theme_extensions/menuitem_theme_extension.dart';
+import 'theme_extensions/scale_theme_extension.dart';
+import 'theme_extensions/slider_theme_extension.dart';
+import 'theme_extensions/table_theme_extension.dart';
+import 'theme_extensions/tabfolder_theme_extension.dart';
+import 'theme_extensions/tabitem_theme_extension.dart';
+import 'theme_extensions/tree_theme_extension.dart';
 
 class NamedTheme {
   final ColorScheme lightColorScheme;
@@ -14,6 +27,13 @@ class NamedTheme {
   final Color? lightTitleBarColor;
   final Color? darkTitleBarColor;
 
+  /// Adjusts the per-widget extensions for design values no colour-scheme slot expresses.
+  final ThemeData Function(ThemeData theme)? lightWidgetOverrides;
+  final ThemeData Function(ThemeData theme)? darkWidgetOverrides;
+
+  /// Whether focus rings and focus-coloured borders show when the flag is not set.
+  final bool focusIndicators;
+
   const NamedTheme({
     required this.lightColorScheme,
     this.darkColorScheme,
@@ -21,10 +41,16 @@ class NamedTheme {
     this.darkColorSchemeExtension,
     this.lightTitleBarColor,
     this.darkTitleBarColor,
+    this.lightWidgetOverrides,
+    this.darkWidgetOverrides,
+    this.focusIndicators = false,
   });
 
   /// The title-bar colour for [dark], or null when this theme does not specify one.
   Color? titleBarColor(bool dark) => dark ? darkTitleBarColor : lightTitleBarColor;
+
+  ThemeData applyWidgetOverrides(ThemeData theme, {required bool dark}) =>
+      (dark ? darkWidgetOverrides : lightWidgetOverrides)?.call(theme) ?? theme;
 }
 
 final Map<String, NamedTheme> kNamedThemes = {
@@ -39,14 +65,50 @@ final Map<String, NamedTheme> kNamedThemes = {
   'hb': NamedTheme(
     lightColorScheme: _hbLightScheme(),
     darkColorScheme: _hbDarkScheme(),
-    // primaryHovered is the one slot createColorSchemeExtension does not derive from the
-    // scheme — it returns a fixed blue, which is what push buttons hover to.
     lightColorSchemeExtension: createColorSchemeExtension(_hbLightScheme()).copyWith(
-      primaryHovered: const Color(0xFFA30000),
+      primaryHovered: const Color(0xFF74647F),
+      primaryVariantDisabled: const Color(0xFFEFECF3),
+      secondaryPressed: const Color(0xFFCAC5D2),
+      surfaceBorderEnabled: const Color(0xFFCAC5D2),
+      surfaceBorderHovered: const Color(0xFF9A91A2),
+      surfaceBorderFocused: const Color(0xFFE0338A),
+      surfaceBorderDisabled: const Color(0xFFE3E0E8),
+      surfacePlaceholder: const Color(0xFF8B8293),
+      onSurfaceVariantDisabled: const Color(0xFFA7A2AC),
+      labelInputDefault: const Color(0xFF1D1C1F),
+      labelInputDisabled: const Color(0xFFA7A2AC),
+      surfaceToolbar: const Color(0xFFF6F5F8),
+      toolbarDivider: const Color(0xFFE3E0E8),
+      ctabFolderHighlightColor: const Color(0xFF5D4D68),
+      ctabFolderSelectedTextColor: const Color(0xFF1D1C1F),
+      ctabFolderUnselectedColor: const Color(0xFFEFECF3),
+      compositePanelBorderColor: const Color(0xFFE3E0E8),
+      neutral: const Color(0xFFEFECF3),
     ),
     darkColorSchemeExtension: createColorSchemeExtension(_hbDarkScheme()).copyWith(
-      primaryHovered: const Color(0xFFE37272),
+      primaryHovered: const Color(0xFF74647F),
+      primaryVariantDisabled: const Color(0x66000000),
+      secondaryPressed: const Color(0xFF5A4F62),
+      surfaceBorderEnabled: const Color(0xFF57515C),
+      surfaceBorderHovered: const Color(0xFFA7A2AC),
+      surfaceBorderFocused: const Color(0xFFFF52A8),
+      surfaceBorderDisabled: const Color(0xFF323134),
+      surfacePlaceholder: const Color(0xFFA7A2AC),
+      onSurfaceVariantDisabled: const Color(0xFF545356),
+      labelInputDefault: const Color(0xFFF6F5F8),
+      labelInputDisabled: const Color(0xFF545356),
+      surfaceToolbar: const Color(0xFF131214),
+      toolbarDivider: const Color(0xFF342F39),
+      ctabFolderHighlightColor: const Color(0xFFD9D5E1),
+      ctabFolderSelectedTextColor: const Color(0xFFE3E0E8),
+      ctabFolderUnselectedColor: const Color(0xFF131214),
+      compositePanelBorderColor: const Color(0xFF342F39),
+      neutral: const Color(0xFF323134),
     ),
+    darkTitleBarColor: const Color(0xFF000000),
+    lightWidgetOverrides: _hbLightWidgets,
+    darkWidgetOverrides: _hbDarkWidgets,
+    focusIndicators: true,
   ),
   'cursor': NamedTheme(
     lightColorScheme: _cursorLightScheme(),
@@ -125,24 +187,55 @@ final Map<String, NamedTheme> kNamedThemes = {
   ),
 };
 
-// Same neutral scheme as 'nondefault', with its violet accents swapped for reds.
-// Dark mode lifts the primary so it reads on a dark surface.
+// Dark-first muted violet; light is derived, with the focus pink darkened for 3:1 on white.
 ColorScheme _hbLightScheme() => createLightColorScheme().copyWith(
-  primary: const Color(0xFFCC0000),
-  secondary: const Color(0xFFF9DEDE),
-  onSecondary: const Color(0xFF961B24),
-  secondaryContainer: const Color(0xFFF9DEDE),
-  onSecondaryContainer: const Color(0xFF961B24),
-  onTertiary: const Color(0xFF43494E),
+  primary: const Color(0xFF5D4D68),
+  onPrimary: const Color(0xFFFFFFFF),
+  primaryContainer: const Color(0xFF4A3D53),
+  onPrimaryContainer: const Color(0xFFFFFFFF),
+  secondary: const Color(0xFFE4E0EA),
+  onSecondary: const Color(0xFF3A343E),
+  secondaryContainer: const Color(0xFFD9D5E1),
+  onSecondaryContainer: const Color(0xFF1D1C1F),
+  surface: const Color(0xFFFFFFFF),
+  onSurface: const Color(0xFF1D1C1F),
+  onSurfaceVariant: const Color(0xFF57515C),
+  surfaceVariant: const Color(0xFFECE9F0),
+  surfaceContainerLow: const Color(0xFFF6F5F8),
+  surfaceContainer: const Color(0xFFF6F5F8),
+  surfaceContainerHigh: const Color(0xFFEFECF3),
+  surfaceContainerHighest: const Color(0xFFE5E0EB),
+  outline: const Color(0xFFCAC5D2),
+  outlineVariant: const Color(0xFFE3E0E8),
+  error: const Color(0xFFA94F4D),
+  onError: const Color(0xFFFFFFFF),
+  errorContainer: const Color(0xFFF9E3E2),
+  onErrorContainer: const Color(0xFF5A2220),
 );
 
 ColorScheme _hbDarkScheme() => createDarkColorScheme().copyWith(
-  primary: const Color(0xFFDE5959),
-  onPrimary: const Color(0xFF141414),
-  secondary: const Color(0xFF961B24),
-  onSecondary: const Color(0xFFFFFFFF),
-  secondaryContainer: const Color(0xFF5A1219),
-  onSecondaryContainer: const Color(0xFFF9DEDE),
+  primary: const Color(0xFF5D4D68),
+  onPrimary: const Color(0xFFE5E0EB),
+  primaryContainer: const Color(0xFF80708B),
+  onPrimaryContainer: const Color(0xFFFFFFFF),
+  secondary: const Color(0xFF3A343E),
+  onSecondary: const Color(0xFFBAB3C0),
+  secondaryContainer: const Color(0xFF514659),
+  onSecondaryContainer: const Color(0xFFF6F5F8),
+  surface: const Color(0xFF1D1C1F),
+  onSurface: const Color(0xFFF6F5F8),
+  onSurfaceVariant: const Color(0xFFA7A2AC),
+  surfaceVariant: const Color(0xFF433D47),
+  surfaceContainerLow: const Color(0xFF131214),
+  surfaceContainer: const Color(0xFF28232C),
+  surfaceContainerHigh: const Color(0xFF323134),
+  surfaceContainerHighest: const Color(0xFF342F39),
+  outline: const Color(0xFF57515C),
+  outlineVariant: const Color(0xFF323134),
+  error: const Color(0xFFC16E6C),
+  onError: const Color(0xFFF6F5F8),
+  errorContainer: const Color(0xFF4A2A29),
+  onErrorContainer: const Color(0xFFF2D4D3),
 );
 
 // Same neutral scheme as 'nondefault', with its violet accents swapped for the pinkFd brand
@@ -453,3 +546,174 @@ ColorScheme _greenDarkScheme() => ColorScheme.fromSeed(
   shadow: const Color(0xFF000000),
   scrim: const Color(0xFF000000),
 );
+
+ThemeData _withExtensions(ThemeData theme, List<ThemeExtension<dynamic>?> replacements) {
+  final merged = Map<Object, ThemeExtension<dynamic>>.of(theme.extensions);
+  for (final extension in replacements) {
+    if (extension != null) merged[extension.type] = extension;
+  }
+  return theme.copyWith(extensions: merged.values);
+}
+
+const _transparent = Color(0x00000000);
+
+ThemeData _hbDarkWidgets(ThemeData t) {
+  return _withExtensions(t, [
+    t.extension<CTabFolderThemeExtension>()?.copyWith(
+      tabBarBorderColor: _transparent,
+      tabSelectedBackgroundColor: const Color(0xFF433D47),
+      tabHoverBackgroundColor: const Color(0xFF3A343E),
+    ),
+    t.extension<CTabItemThemeExtension>()?.copyWith(
+      tabItemTextColor: const Color(0xFFBAB3C0),
+      tabItemSelectedTextColor: const Color(0xFFE3E0E8),
+      tabItemDisabledTextColor: const Color(0xFF545356),
+    ),
+    t.extension<TabFolderThemeExtension>()?.copyWith(
+      tabBarBackgroundColor: const Color(0xFF131214),
+      tabBackgroundColor: const Color(0xFF131214),
+      tabSelectedBackgroundColor: const Color(0xFF433D47),
+      tabBarBorderColor: _transparent,
+      tabBorderColor: _transparent,
+      tabSelectedBorderColor: const Color(0xFFD9D5E1),
+    ),
+    t.extension<TabItemThemeExtension>()?.copyWith(
+      textColor: const Color(0xFFBAB3C0),
+      selectedTextColor: const Color(0xFFE3E0E8),
+      disabledTextColor: const Color(0xFF545356),
+    ),
+    t.extension<TableThemeExtension>()?.copyWith(
+      selectedBackgroundColor: const Color(0xFF4E4853),
+      rowSelectedBorderColor: _transparent,
+      alternateRowBackgroundColor: const Color(0xFF323134),
+      headerBackgroundColor: const Color(0xFF433D47),
+      headerTextColor: const Color(0xFFA7A2AC),
+      headerBorderColor: const Color(0xFF57515C),
+      rowSeparatorColor: const Color(0xFF57515C),
+      linesColor: const Color(0xFF57515C),
+      borderColor: const Color(0xFF57515C),
+    ),
+    t.extension<TreeThemeExtension>()?.copyWith(
+      selectedBackgroundColor: const Color(0xFF323134),
+      itemHoverBackgroundColor: const Color(0xFF262528),
+      itemSelectedTextColor: const Color(0xFFF6F5F8),
+    ),
+    t.extension<MenuThemeExtension>()?.copyWith(
+      popupBackgroundColor: const Color(0xFF131214),
+      hoverBackgroundColor: const Color(0xFF3A343E),
+      popupBorderColor: const Color(0xFF342F39),
+    ),
+    t.extension<MenuItemThemeExtension>()?.copyWith(
+      hoverBackgroundColor: const Color(0xFF3A343E),
+      textColor: const Color(0xFFBAB3C0),
+    ),
+    t.extension<ComboThemeExtension>()?.copyWith(
+      hoverBackgroundColor: const Color(0xFF3A343E),
+      selectedItemBackgroundColor: const Color(0xFF3A343E),
+    ),
+    t.extension<CComboThemeExtension>()?.copyWith(
+      itemHoverBackgroundColor: const Color(0xFF3A343E),
+      selectedItemBackgroundColor: const Color(0xFF3A343E),
+    ),
+    t.extension<ButtonThemeExtension>()?.copyWith(
+      checkboxBorderColor: const Color(0xFF9A91A2),
+      checkboxSelectedColor: const Color(0xFFAF9EBC),
+      checkboxCheckmarkColor: const Color(0xFF1D1C1F),
+      radioButtonBorderColor: const Color(0xFF9A91A2),
+      radioButtonSelectedColor: const Color(0xFFAF9EBC),
+      radioButtonSelectedHoverColor: const Color(0xFFADA0B8),
+    ),
+    // The rail is the track colour at the design's 60% opacity.
+    t.extension<ScaleThemeExtension>()?.copyWith(
+      activeTrackColor: const Color(0xFF9F8EAD),
+      thumbColor: const Color(0xFF9F8EAD),
+      thumbHoverColor: const Color(0xFF776284),
+      inactiveTrackColor: const Color(0x999F8EAD),
+    ),
+    t.extension<SliderThemeExtension>()?.copyWith(
+      activeTrackColor: const Color(0xFF9F8EAD),
+      thumbColor: const Color(0xFF9F8EAD),
+      inactiveTrackColor: const Color(0x999F8EAD),
+    ),
+  ]);
+}
+
+ThemeData _hbLightWidgets(ThemeData t) {
+  return _withExtensions(t, [
+    t.extension<CTabFolderThemeExtension>()?.copyWith(
+      tabBarBorderColor: _transparent,
+      tabSelectedBackgroundColor: const Color(0xFFFFFFFF),
+      tabHoverBackgroundColor: const Color(0xFFE4E0EA),
+    ),
+    t.extension<CTabItemThemeExtension>()?.copyWith(
+      tabItemTextColor: const Color(0xFF57515C),
+      tabItemSelectedTextColor: const Color(0xFF1D1C1F),
+      tabItemDisabledTextColor: const Color(0xFFA7A2AC),
+    ),
+    t.extension<TabFolderThemeExtension>()?.copyWith(
+      tabBarBackgroundColor: const Color(0xFFF6F5F8),
+      tabBackgroundColor: const Color(0xFFF6F5F8),
+      tabSelectedBackgroundColor: const Color(0xFFFFFFFF),
+      tabBarBorderColor: _transparent,
+      tabBorderColor: _transparent,
+      tabSelectedBorderColor: const Color(0xFF5D4D68),
+    ),
+    t.extension<TabItemThemeExtension>()?.copyWith(
+      textColor: const Color(0xFF57515C),
+      selectedTextColor: const Color(0xFF1D1C1F),
+      disabledTextColor: const Color(0xFFA7A2AC),
+    ),
+    t.extension<TableThemeExtension>()?.copyWith(
+      selectedBackgroundColor: const Color(0xFFE5E0EB),
+      rowSelectedBorderColor: _transparent,
+      alternateRowBackgroundColor: const Color(0xFFF6F5F8),
+      headerBackgroundColor: const Color(0xFFEFECF3),
+      headerTextColor: const Color(0xFF57515C),
+      headerBorderColor: const Color(0xFFE3E0E8),
+      rowSeparatorColor: const Color(0xFFE3E0E8),
+      linesColor: const Color(0xFFE3E0E8),
+      borderColor: const Color(0xFFE3E0E8),
+    ),
+    t.extension<TreeThemeExtension>()?.copyWith(
+      selectedBackgroundColor: const Color(0xFFEFECF3),
+      itemHoverBackgroundColor: const Color(0xFFF6F5F8),
+      itemSelectedTextColor: const Color(0xFF1D1C1F),
+    ),
+    t.extension<MenuThemeExtension>()?.copyWith(
+      popupBackgroundColor: const Color(0xFFFFFFFF),
+      hoverBackgroundColor: const Color(0xFFEFECF3),
+      popupBorderColor: const Color(0xFFE3E0E8),
+    ),
+    t.extension<MenuItemThemeExtension>()?.copyWith(
+      hoverBackgroundColor: const Color(0xFFEFECF3),
+      textColor: const Color(0xFF3A343E),
+    ),
+    t.extension<ComboThemeExtension>()?.copyWith(
+      hoverBackgroundColor: const Color(0xFFEFECF3),
+      selectedItemBackgroundColor: const Color(0xFFE5E0EB),
+    ),
+    t.extension<CComboThemeExtension>()?.copyWith(
+      itemHoverBackgroundColor: const Color(0xFFEFECF3),
+      selectedItemBackgroundColor: const Color(0xFFE5E0EB),
+    ),
+    t.extension<ButtonThemeExtension>()?.copyWith(
+      checkboxBorderColor: const Color(0xFF8B8293),
+      checkboxSelectedColor: const Color(0xFF5D4D68),
+      checkboxCheckmarkColor: const Color(0xFFFFFFFF),
+      radioButtonBorderColor: const Color(0xFF8B8293),
+      radioButtonSelectedColor: const Color(0xFF5D4D68),
+      radioButtonSelectedHoverColor: const Color(0xFF74647F),
+    ),
+    t.extension<ScaleThemeExtension>()?.copyWith(
+      activeTrackColor: const Color(0xFF5D4D68),
+      thumbColor: const Color(0xFF5D4D68),
+      thumbHoverColor: const Color(0xFF74647F),
+      inactiveTrackColor: const Color(0x995D4D68),
+    ),
+    t.extension<SliderThemeExtension>()?.copyWith(
+      activeTrackColor: const Color(0xFF5D4D68),
+      thumbColor: const Color(0xFF5D4D68),
+      inactiveTrackColor: const Color(0x995D4D68),
+    ),
+  ]);
+}
