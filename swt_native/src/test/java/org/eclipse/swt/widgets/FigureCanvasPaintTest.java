@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,9 +34,29 @@ class FigureCanvasPaintTest extends SerializeTestBase {
         DartCanvas impl = mock(DartCanvas.class);
         when(impl.getApi()).thenReturn(api);
         when(impl.getBounds()).thenReturn(bounds);
+        // LightweightSystem.addListeners() hooks SWT.Paint on the canvas, and FigureCanvas's
+        // constructor is what calls it -- so a real one is already listening when this arrives.
+        when(impl.hooks(SWT.Paint)).thenReturn(true);
 
         ControlHelper.paint(impl, null);
 
         verify(impl).sendEvent(eq(SWT.Paint), any(Event.class));
+    }
+
+    // The guard that keeps the request above affordable now that every Control makes it.
+    @Test
+    void a_control_that_listens_for_no_paint_is_sent_none() {
+        Mocks.swtDisplay();
+
+        Rectangle bounds = new Rectangle(0, 0, 100, 100);
+        Canvas api = mock(Canvas.class);
+        DartCanvas impl = mock(DartCanvas.class);
+        when(impl.getApi()).thenReturn(api);
+        when(impl.getBounds()).thenReturn(bounds);
+        when(impl.hooks(SWT.Paint)).thenReturn(false);
+
+        ControlHelper.paint(impl, null);
+
+        verify(impl, never()).sendEvent(eq(SWT.Paint), any(Event.class));
     }
 }

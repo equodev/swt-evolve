@@ -133,44 +133,6 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     return color.withOpacity(_alpha / 255.0);
   }
 
-  // Java schedules every later repaint; it cannot schedule the first, having no mount event.
-  bool _sentInitialPaintRequest = false;
-
-  // Java drops a Paint request while the control still has 0x0 bounds, so retry once they arrive.
-  bool _requestedWithValidBounds = false;
-
-  // Subclasses push what the Java-side SWT.Paint listeners must already have when they run (e.g.
-  // StyledText's text geometry); the same ordered channel carries both, so it lands first.
-  void beforePaintRequest() {}
-
-  // The overlay registers the GC op channels in its own initState, a build after this one. A run of
-  // ops that lands before that is buffered one-per-channel and replayed out of order, which is not a
-  // display list -- so the request waits until the overlay says it is listening.
-  bool _gcOverlaySubscribed = false;
-
-  void onGCOverlaySubscribed() {
-    if (_gcOverlaySubscribed) return;
-    _gcOverlaySubscribed = true;
-    _requestInitialPaint();
-  }
-
-  /// Asks Java for a full-area Paint. The GC drawer calls this when scoped repaints have stacked
-  /// deep enough to be worth collapsing back into a single display list.
-  void requestFullRepaint() {
-    if (!mounted) return;
-    beforePaintRequest();
-    widget.sendPaintPaint(state, null);
-  }
-
-  void _requestInitialPaint() {
-    final boundsValid = hasBounds(state.bounds);
-    if (_sentInitialPaintRequest && (!boundsValid || _requestedWithValidBounds)) return;
-    _sentInitialPaintRequest = true;
-    if (boundsValid) _requestedWithValidBounds = true;
-    beforePaintRequest();
-    widget.sendPaintPaint(state, null);
-  }
-
   @override
   void initState() {
     super.initState();
@@ -195,8 +157,6 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       }
       _prevVBarSel = vSel;
     }
-
-    if (_gcOverlaySubscribed) _requestInitialPaint();
 
     final widgetTheme = _theme;
     final hasValidBounds = hasBounds(state.bounds);

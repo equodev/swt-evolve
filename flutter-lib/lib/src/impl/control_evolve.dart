@@ -118,6 +118,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   void setValue(V value) {
     _resolveSentinelBounds(value);
     super.setValue(value);
+    // Bounds arrive here, not through didUpdateWidget: a parent's copy of a child carries identity
+    // only, so a changed value reaches the widget on its own channel.
+    if (_gcOverlaySubscribed) _requestInitialPaint();
   }
 
   @override
@@ -126,6 +129,47 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     // actually holds.
     _resolveSentinelBounds(state);
     super.didUpdateWidget(oldWidget);
+  }
+
+  // Java schedules every later repaint; it cannot schedule the first, having no mount event. Every
+  // Control carries a GC overlay, not just a Canvas, so every Control has to make that first
+  // request -- an application that draws a plain Composite from a Paint listener otherwise stays
+  // blank until some unrelated damage happens to make Java paint it.
+  bool _sentInitialPaintRequest = false;
+
+  // Java drops a Paint request while the control still has 0x0 bounds, so retry once they arrive.
+  bool _requestedWithValidBounds = false;
+
+  // Subclasses push what the Java-side SWT.Paint listeners must already have when they run (e.g.
+  // StyledText's text geometry); the same ordered channel carries both, so it lands first.
+  void beforePaintRequest() {}
+
+  // The overlay registers the GC op channels in its own initState, a build after this one. A run of
+  // ops that lands before that is buffered one-per-channel and replayed out of order, which is not a
+  // display list -- so the request waits until the overlay says it is listening.
+  bool _gcOverlaySubscribed = false;
+
+  void onGCOverlaySubscribed() {
+    if (_gcOverlaySubscribed) return;
+    _gcOverlaySubscribed = true;
+    _requestInitialPaint();
+  }
+
+  /// Asks Java for a full-area Paint. The GC drawer calls this when scoped repaints have stacked
+  /// deep enough to be worth collapsing back into a single display list.
+  void requestFullRepaint() {
+    if (!mounted) return;
+    beforePaintRequest();
+    widget.sendPaintPaint(state, null);
+  }
+
+  void _requestInitialPaint() {
+    final boundsValid = hasBounds(state.bounds);
+    if (_sentInitialPaintRequest && (!boundsValid || _requestedWithValidBounds)) return;
+    _sentInitialPaintRequest = true;
+    if (boundsValid) _requestedWithValidBounds = true;
+    beforePaintRequest();
+    widget.sendPaintPaint(state, null);
   }
 
   /// SWT's `stateMask` for a pointer event: the buttons held during the move, plus the live

@@ -6,6 +6,7 @@ import 'utils/widget_utils.dart';
 import '../theme/theme_extensions/canvas_theme_extension.dart';
 import '../theme/theme_extensions/composite_theme_extension.dart';
 import 'canvas_evolve.dart';
+import 'control_evolve.dart';
 import 'gcdrawer_evolve.dart';
 
 class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
@@ -59,7 +60,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
       if (element is StatefulElement && element.state is WidgetSwtState) {
         final parentState = element.state as WidgetSwtState;
         if (parentState.gcOverlayKey == widget.key) {
-          if (parentState is CanvasImpl) parentState.onGCOverlaySubscribed();
+          if (parentState is ControlImpl) parentState.onGCOverlaySubscribed();
           return false;
         }
       }
@@ -99,8 +100,8 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   void _requestFullRepaintFromParent() {
     if (!mounted) return;
     context.visitAncestorElements((element) {
-      if (element is StatefulElement && element.state is CanvasImpl) {
-        (element.state as CanvasImpl).requestFullRepaint();
+      if (element is StatefulElement && element.state is ControlImpl) {
+        (element.state as ControlImpl).requestFullRepaint();
         return false;
       }
       return true;

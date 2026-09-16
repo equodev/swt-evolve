@@ -281,6 +281,10 @@ public class ControlHelper {
         Collections.newSetFromMap(new WeakHashMap<>());
 
     static void paint(DartControl c, Event e) {
+        // The client asks for this paint from every Control it mounts, having no way to know which
+        // ones paint themselves. Answering one that listens for nothing still builds a GC and
+        // disposes it -- a whole VGC push per control, for no drawing.
+        if (!c.hooks(SWT.Paint)) return;
         if (c.drawCount > 0 || paintQueued.contains(c)) return;
         damageAll(c);
         firePaint(c);
