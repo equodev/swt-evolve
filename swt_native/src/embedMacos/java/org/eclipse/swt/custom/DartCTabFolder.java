@@ -717,7 +717,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             if (lastIndex != -1) {
                 CTabItem lastItem = items[lastIndex];
                 int w = ((DartCTabItem) lastItem.getImpl()).x + ((DartCTabItem) lastItem.getImpl()).width + SPACING;
-                rects[controls.length - 1].x = w;
+                rects[controls.length - 1].x = Math.min(w, rects[controls.length - 1].x);
             }
         }
         if (position != null)

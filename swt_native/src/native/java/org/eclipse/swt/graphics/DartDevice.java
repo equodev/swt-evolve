@@ -706,7 +706,7 @@ public abstract class DartDevice implements Drawable, IDevice {
      * @see #destroy
      */
     public void release() {
-        if (systemFont != null)
+        if (systemFont != null && !org.eclipse.swt.internal.cloudready.DefaultDisplayResolver.isSet())
             systemFont.dispose();
         systemFont = null;
         COLOR_BLACK = COLOR_DARK_RED = COLOR_DARK_GREEN = COLOR_DARK_YELLOW = COLOR_DARK_BLUE = COLOR_DARK_MAGENTA = COLOR_DARK_CYAN = COLOR_GRAY = COLOR_DARK_GRAY = COLOR_RED = COLOR_GREEN = COLOR_YELLOW = COLOR_BLUE = COLOR_MAGENTA = COLOR_CYAN = COLOR_WHITE = null;

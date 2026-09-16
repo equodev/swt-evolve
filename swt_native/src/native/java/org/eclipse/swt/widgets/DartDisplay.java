@@ -2676,10 +2676,11 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         if (caretTimer != null)
             timerExec(-1, caretTimer);
         caretTimer = null;
-        /* Release the System Cursors */
-        for (int i = 0; i < cursors.length; i++) {
-            if (cursors[i] != null)
-                cursors[i].dispose();
+        if (!org.eclipse.swt.internal.cloudready.DefaultDisplayResolver.isSet()) {
+            for (int i = 0; i < cursors.length; i++) {
+                if (cursors[i] != null)
+                    cursors[i].dispose();
+            }
         }
         cursors = null;
         modalShells = null;
