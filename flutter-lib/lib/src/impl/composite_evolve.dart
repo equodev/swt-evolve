@@ -113,6 +113,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         }
       },
       onPointerUp: (e) {
+        impl.forgetDragDetect(e.pointer);
         // Re-testing hitsAnyChild here would drop the MouseUp once a drag moves onto a sibling's rect.
         if (!impl.capturedPointerDowns.remove(e.pointer)) return;
         final event = VEvent()
@@ -125,9 +126,11 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         impl.widget.sendMouseMouseUp(state, event);
       },
       onPointerCancel: (e) {
+        impl.forgetDragDetect(e.pointer);
         impl.capturedPointerDowns.remove(e.pointer);
       },
       onPointerMove: (e) {
+        impl.maybeSendDragDetect(e);
         // Same exclusivity as onPointerDown above, which already refuses a press that landed
         // on a child. Without it every composite between the Shell and the control under the
         // pointer forwarded its own copy of each move: measured on a workbench diagram, 274

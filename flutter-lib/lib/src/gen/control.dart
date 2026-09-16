@@ -112,6 +112,7 @@ class VControl extends VWidget {
   VImage? backgroundImage;
   VRectangle? bounds;
   VCursor? cursor;
+  bool? dragDetect;
   bool? dragSource;
   int? dropTargetId;
   bool? enabled;
@@ -131,6 +132,7 @@ class VControl extends VWidget {
       backgroundImage = other.backgroundImage;
       bounds = other.bounds;
       cursor = other.cursor;
+      dragDetect = other.dragDetect;
       dragSource = other.dragSource;
       dropTargetId = other.dropTargetId;
       enabled = other.enabled;
@@ -163,6 +165,8 @@ class VControl extends VWidget {
         cursor = json['cursor'] == null
             ? null
             : VCursor.fromJson(json['cursor'] as Map<String, dynamic>);
+      case 'dragDetect':
+        dragDetect = json['dragDetect'] as bool?;
       case 'dragSource':
         dragSource = json['dragSource'] as bool?;
       case 'dropTargetId':

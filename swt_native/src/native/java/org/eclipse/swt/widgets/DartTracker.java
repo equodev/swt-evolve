@@ -798,7 +798,17 @@ public class DartTracker extends DartWidget implements ITracker {
     private final java.util.concurrent.Semaphore clientInput = new java.util.concurrent.Semaphore(0);
 
     private DartWidget flutterHost() {
-        return parent != null && !parent.isDisposed() && parent.getImpl() instanceof DartWidget host ? host : null;
+        if (parent == null || parent.isDisposed())
+            return null;
+        // The Shell rather than the immediate parent: the Shell is what subscribes to the
+        // Tracker channel and what knows how to convert a pointer position into display
+        // coordinates. A Tracker opened on a plain Composite -- an application dragging a
+        // toolbar out of its own dock does exactly that -- would otherwise announce itself
+        // on a channel nothing is listening to, and the loop would never see the pointer.
+        Shell shell = parent.getShell();
+        if (shell != null && !shell.isDisposed() && shell.getImpl() instanceof DartWidget shellHost)
+            return shellHost;
+        return parent.getImpl() instanceof DartWidget parentHost ? parentHost : null;
     }
 
     void openOnFlutter() {

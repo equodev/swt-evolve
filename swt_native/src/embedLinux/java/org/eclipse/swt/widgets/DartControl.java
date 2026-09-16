@@ -3494,6 +3494,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setDragDetect(boolean dragDetect) {
         boolean newValue = dragDetect;
+        if (!java.util.Objects.equals(this.dragDetect, newValue)) {
+            getValue().markDirty(VControl.DRAG_DETECT);
+        }
         checkWidget();
         this.dragDetect = newValue;
         if (dragDetect) {

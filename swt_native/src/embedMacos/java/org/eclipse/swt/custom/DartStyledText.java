@@ -9195,6 +9195,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
 
     @Override
     public void setDragDetect(boolean dragDetect) {
+        getValue().markDirty(VStyledText.DRAG_DETECT);
         checkWidget();
         this.dragDetect = dragDetect;
     }

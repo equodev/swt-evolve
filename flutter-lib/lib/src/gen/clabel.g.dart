@@ -20,6 +20,7 @@ VCLabel _$VCLabelFromJson(Map<String, dynamic> json) => VCLabel()
   ..cursor = json['cursor'] == null
       ? null
       : VCursor.fromJson(json['cursor'] as Map<String, dynamic>)
+  ..dragDetect = json['dragDetect'] as bool?
   ..dragSource = json['dragSource'] as bool?
   ..dropTargetId = (json['dropTargetId'] as num?)?.toInt()
   ..enabled = json['enabled'] as bool?
@@ -68,6 +69,7 @@ Map<String, dynamic> _$VCLabelToJson(VCLabel instance) => <String, dynamic>{
   'background': ?instance.background,
   'bounds': ?instance.bounds,
   'cursor': ?instance.cursor,
+  'dragDetect': ?instance.dragDetect,
   'dragSource': ?instance.dragSource,
   'dropTargetId': ?instance.dropTargetId,
   'enabled': ?instance.enabled,

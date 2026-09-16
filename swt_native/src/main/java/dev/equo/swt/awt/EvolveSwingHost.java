@@ -24,12 +24,14 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.PaletteData;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Shell;
 
 import sun.swing.JLightweightFrame;
 import sun.swing.LightweightContent;
@@ -106,8 +108,22 @@ public final class EvolveSwingHost {
         // report 0×0; the Resize listener re-sizes the frame once it's laid out.
         Rectangle area = canvas.getClientArea();
         frame.setSize(Math.max(1, area.width), Math.max(1, area.height));
+        syncFrameLocation(canvas, frame);
         frame.setVisible(true);
         return frame;
+    }
+
+    /**
+     * Put the frame where the canvas actually is. A lightweight frame has no peer to tell it where
+     * it ended up, so AWT leaves it at the origin and every {@code getLocationOnScreen()} inside the
+     * embedding comes back short by the canvas's own screen position — far enough that embedded
+     * content mapping its geometry back into SWT, {@code Display.map(null, control, p)}, can get a
+     * negative coordinate and be clamped against an edge by whatever consumes it.
+     */
+    static void syncFrameLocation(Canvas canvas, Frame frame) {
+        if (canvas.isDisposed()) return;
+        Point onScreen = canvas.toDisplay(0, 0);
+        EventQueue.invokeLater(() -> frame.setLocation(onScreen.x, onScreen.y));
     }
 
     /**
@@ -410,9 +426,17 @@ public final class EvolveSwingHost {
                 Rectangle a = canvas.getClientArea();
                 final int w = Math.max(1, a.width), h = Math.max(1, a.height);
                 EventQueue.invokeLater(() -> frame.setSize(w, h));
+                syncFrameLocation(canvas, frame);
                 scheduleStaggeredRepaints(forceRepaint, 200, 600, 1500);
             });
+            canvas.addListener(SWT.Move, e -> syncFrameLocation(canvas, frame));
+            // The canvas raises neither Move nor Resize when an ancestor moves, and the window
+            // moving changes where it sits on screen just the same.
+            Shell shell = canvas.getShell();
+            Listener shellMoved = e -> syncFrameLocation(canvas, frame);
+            shell.addListener(SWT.Move, shellMoved);
             canvas.addListener(SWT.Dispose, e -> {
+                if (!shell.isDisposed()) shell.removeListener(SWT.Move, shellMoved);
                 forgetEmbed(contentRoot);
                 disposeFrame(frame);
             });

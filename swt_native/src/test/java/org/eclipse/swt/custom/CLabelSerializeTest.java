@@ -41,6 +41,7 @@ class CLabelSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("backgroundImage").equalsTo(w.getBackgroundImage(), orAbsentIfNull));
         assertJ.satisfies(node("bounds").equalsTo(value(w).getBounds(), orAbsentIfNull));
         assertJ.satisfies(node("cursor").equalsTo(w.getCursor(), orAbsentIfNull));
+        assertJ.satisfies(node("dragDetect").equalsTo(w.getDragDetect(), orAbsentIfFalse));
         assertJ.satisfies(node("enabled").equalsTo(w.getEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));

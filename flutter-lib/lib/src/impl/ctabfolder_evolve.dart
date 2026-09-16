@@ -31,8 +31,18 @@ import 'utils/image_utils.dart';
 import 'utils/widget_utils.dart';
 import 'color_utils.dart';
 
+/// Width of the frame a folder draws around its page, on the three edges the tab strip does not
+/// take. Java reserves the same width in `Sizes.getClientArea(DartCTabFolder)`, so a page laid out
+/// in the client area Java reports lands exactly inside this frame rather than under it.
+double ctabFolderBodyBorderWidth(int? style) =>
+    (style != null && (style & SWT.BORDER) != 0) ? 3 : 2;
+
 class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     extends CompositeImpl<T, V> {
+  // The tab row raises DragDetect from its own Draggable, with the dragged tab's coordinates.
+  @override
+  bool get raisesDragDetectFromPointer => false;
+
   late int _selectedIndex;
   int? _lastShowListPopupSeq;
   int? _pendingTabIndex;
@@ -139,6 +149,12 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
     final constraints = getConstraintsFromBounds(state.bounds);
 
+    final widgetTheme = Theme.of(context).extension<CTabFolderThemeExtension>()!;
+    final bodyFrame = BorderSide(
+      color: widgetTheme.tabContentBorderColor,
+      width: ctabFolderBodyBorderWidth(state.style),
+    );
+
     Widget column = Column(
       children: [
         if (!isTabBottom)
@@ -165,9 +181,19 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
         // gets a tab-strip-height bounds (Expanded → ~0 height); an E4 minimized-stack
         // fly-out gets a full client area and must show its content.
         Expanded(
-          child: IndexedStack(
-            index: _selectedIndex < tabBodies.length ? _selectedIndex : 0,
-            children: tabBodies,
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(
+                left: bodyFrame,
+                right: bodyFrame,
+                top: isTabBottom ? bodyFrame : BorderSide.none,
+                bottom: isTabBottom ? BorderSide.none : bodyFrame,
+              ),
+            ),
+            child: IndexedStack(
+              index: _selectedIndex < tabBodies.length ? _selectedIndex : 0,
+              children: tabBodies,
+            ),
           ),
         ),
         if (isTabBottom)

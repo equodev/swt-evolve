@@ -76,7 +76,6 @@ public class VControl extends VWidget {
         ((DartControl) impl).cursor = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getDragDetect() {
         return ((DartControl) impl).getDragDetect();
     }
@@ -217,6 +216,8 @@ public class VControl extends VWidget {
 
     public static final String CURSOR = "cursor";
 
+    public static final String DRAG_DETECT = "dragDetect";
+
     public static final String DRAG_SOURCE = "dragSource";
 
     public static final String DROP_TARGET_ID = "dropTargetId";
@@ -249,6 +250,9 @@ public class VControl extends VWidget {
                 return;
             case "cursor":
                 Serializer.writeKeyValue(writer, "cursor", getCursor());
+                return;
+            case "dragDetect":
+                Serializer.writeKeyValue(writer, "dragDetect", getDragDetect());
                 return;
             case "dragSource":
                 Serializer.writeKeyValue(writer, "dragSource", getDragSource());

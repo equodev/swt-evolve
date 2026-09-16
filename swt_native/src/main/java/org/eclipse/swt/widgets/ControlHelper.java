@@ -228,13 +228,18 @@ public class ControlHelper {
                 return null;
             }
             Composite parent = current.getParent();
-            // Only the vertical trim. Sizes.getClientArea(DartGroup) reports the client origin as
-            // (GROUP_BORDER, 0) whenever the Group has a title, so the layout already gave the
-            // child the horizontal inset in its bounds, while the title height the Group draws
-            // above its content is reported by nobody -- without it every popup a JFace viewer
-            // opens inside a Group came up a title-height too high. A Composite with no trim
-            // yields zero here and is unaffected. The Shell's own inset is the branch above.
-            if (parent != null && !(parent instanceof Shell)) {
+            // Only a Group, and only the vertical trim. Sizes.getClientArea(DartGroup) reports the
+            // client origin as (GROUP_BORDER, 0) whenever the Group has a title, so the layout
+            // already gave the child the horizontal inset in its bounds, while the title height the
+            // Group draws above its content is reported by nobody -- without it every popup a JFace
+            // viewer opens inside a Group came up a title-height too high.
+            //
+            // Every other container lays its children out in its own coordinates, so their bounds
+            // already carry whatever the container draws above them: a CTabFolder's page sits at
+            // y = the tab strip's height, and computeTrim reports that same height again. Applying
+            // this there adds the strip a second time, once per folder in the chain, and everything
+            // mapped through it lands that much too low.
+            if (parent instanceof Group) {
                 offset[1] -= parent.computeTrim(0, 0, 0, 0).y;
             }
             current = parent;

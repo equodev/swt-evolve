@@ -23,7 +23,6 @@ public class Sizes {
     private static final double HORIZONTAL_PADDING = 12.0;
 
     public static Point compute(DartCTabFolder impl) {
-        final int TAB_BAR_HEIGHT = 32;
         int tabsWidth = impl.getItems().length * 80;
         int contentWidth = 0;
         int contentHeight = 0;
@@ -37,9 +36,10 @@ public class Sizes {
                 contentHeight = size.y;
             }
         }
-        int width = Math.max(tabsWidth, contentWidth);
-        int height = TAB_BAR_HEIGHT + contentHeight;
-        return new Point(width, height);
+        // Through computeTrim, so the strip and the frame a folder reserves for its page are the
+        // same numbers it asks for when it is sized to that page.
+        Rectangle trim = computeTrim(impl, 0, 0, Math.max(tabsWidth, contentWidth), contentHeight);
+        return new Point(trim.width, trim.height);
     }
 
     public static Point compute(DartMenu c) {
@@ -510,6 +510,21 @@ public class Sizes {
         return new Point(width, height);
     }
 
+    /**
+     * What the platform measures around a ToolItem's content. Asymmetric -- it is not one inset
+     * applied twice -- and read off native Win32 rather than chosen: an image of any size comes back
+     * that much wider and that much taller.
+     */
+    private static final int TOOL_ITEM_PAD_W = 7;
+
+    private static final int TOOL_ITEM_PAD_H = 6;
+
+    /** The room a drop-down's arrow takes beyond the item's own padded width. Size-independent. */
+    private static final int TOOL_ITEM_ARROW = 15;
+
+    /** A separator's thickness across the bar when the application set no width of its own. */
+    private static final int TOOL_ITEM_SEPARATOR = 8;
+
     public static Point computeSize(DartToolItem w) {
         int width = 0, height = 0;
         boolean isSeparator = (w.getApi().style & SWT.SEPARATOR) != 0;
@@ -517,17 +532,17 @@ public class Sizes {
         boolean hasImage = w.image != null && !w.image.isDisposed();
 
         if (isSeparator) {
-            // In the unified toolbar case the width is ignored if 0, DEFAULT, or SEPARATOR_FILL.
+            // A separator is thick across the bar and thin along it. In a vertical bar it claims no
+            // width at all: claiming a full item's width would widen the whole bar, which is as wide
+            // as its widest item.
             if ((w.parent.style & SWT.HORIZONTAL) != 0) {
                 width = w.getWidth();
                 if (width <= 0)
-                    width = 6;
+                    width = TOOL_ITEM_SEPARATOR;
                 height = DartToolItem.DEFAULT_HEIGHT;
             } else {
-                width = DartToolItem.DEFAULT_WIDTH;
-                height = w.getWidth();
-                if (height <= 0)
-                    height = 6;
+                width = Math.max(0, w.getWidth());
+                height = TOOL_ITEM_SEPARATOR;
             }
             if (w.control != null) {
                 height = Math.max(height, 0);
@@ -571,21 +586,17 @@ public class Sizes {
                     height = textHeight;
                 }
 
-                // Add padding/inset around the content
-                width += DartToolItem.INSET * 2;
-                height += DartToolItem.INSET * 2;
-
-                // Ensure minimum size
-                width = Math.max(width, DartToolItem.DEFAULT_WIDTH);
-                height = Math.max(height, DartToolItem.DEFAULT_HEIGHT);
+                // No minimum is applied here: an item that has content is measured from it, and a
+                // small icon legitimately yields an item smaller than the one an empty item gets.
+                width += TOOL_ITEM_PAD_W;
+                height += TOOL_ITEM_PAD_H;
             } else {
                 width = DartToolItem.DEFAULT_WIDTH;
                 height = DartToolItem.DEFAULT_HEIGHT;
             }
 
             if ((w.getApi().style & SWT.DROP_DOWN) != 0) {
-                // Add space for dropdown arrow
-                width += DartToolItem.ARROW_WIDTH + DartToolItem.INSET;
+                width += TOOL_ITEM_ARROW;
             }
         }
         return new Point(width, height);
@@ -777,24 +788,37 @@ public class Sizes {
         return new Rectangle(0, 28, b.width, b.height-28);
     }
 
-    public static Rectangle getClientArea(DartCTabFolder widget) {
-        Rectangle b = widget.getBounds();
-        boolean onBottom = widget.getTabPosition() == SWT.BOTTOM;
-        if (onBottom) {
-            return new Rectangle(0, 0, b.width, b.height - 32);
-        } else {
-            return new Rectangle(0, 32, b.width, b.height - 32);
-        }
+    /** Height of the tab strip a CTabFolder renders beside its page. Pinned to the render side. */
+    public static final int CTAB_FOLDER_TAB_STRIP_HEIGHT = 32;
+
+    /**
+     * The frame a CTabFolder draws around its page, on the three edges the tab strip does not take.
+     * Native reports 2, and 3 with SWT.BORDER; a folder that hands its page the full width lays it
+     * — and everything the page positions from its own client area — that much too far left.
+     */
+    private static int cTabFolderBodyBorder(DartCTabFolder widget) {
+        return (widget.getApi().getStyle() & SWT.BORDER) != 0 ? 3 : 2;
     }
 
-    // Inverse of getClientArea(DartCTabFolder): adds the tab strip back on top, matching native.
-    public static Rectangle computeTrim(DartCTabFolder widget, int x, int y, int width, int height) {
+    public static Rectangle getClientArea(DartCTabFolder widget) {
+        Rectangle b = widget.getBounds();
+        int border = cTabFolderBodyBorder(widget);
         boolean onBottom = widget.getTabPosition() == SWT.BOTTOM;
-        if (onBottom) {
-            return new Rectangle(x, y, width, height + 32);
-        } else {
-            return new Rectangle(x, y - 32, width, height + 32);
-        }
+        int top = onBottom ? border : CTAB_FOLDER_TAB_STRIP_HEIGHT;
+        int bottom = onBottom ? CTAB_FOLDER_TAB_STRIP_HEIGHT : border;
+        return new Rectangle(border, top,
+                Math.max(0, b.width - border * 2),
+                Math.max(0, b.height - top - bottom));
+    }
+
+    // Inverse of getClientArea(DartCTabFolder): adds the tab strip and the frame back on.
+    public static Rectangle computeTrim(DartCTabFolder widget, int x, int y, int width, int height) {
+        int border = cTabFolderBodyBorder(widget);
+        boolean onBottom = widget.getTabPosition() == SWT.BOTTOM;
+        int top = onBottom ? border : CTAB_FOLDER_TAB_STRIP_HEIGHT;
+        int bottom = onBottom ? CTAB_FOLDER_TAB_STRIP_HEIGHT : border;
+        return new Rectangle(x - border, y - top,
+                width + border * 2, height + top + bottom);
     }
 
     /**

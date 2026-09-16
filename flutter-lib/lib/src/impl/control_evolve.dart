@@ -45,11 +45,16 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   Offset? _lastClickPosition;
   int _lastMouseMoveMs = 0;
   int _lastDragMoveMs = 0;
+  int? _dragDetectPointer;
+  Offset? _dragDetectOrigin;
+  bool _dragDetectSent = false;
   // Shared by every ControlImpl: the pointer whose MenuDetect walk up the parent chain has
   // already been stopped by a control owning a menu (see [handleMenuDetect]).
   static int? _menuDetectHandledPointer;
   static const int _mouseMoveThrottleMs = 15;
   static const int _dragMoveThrottleMs = 15;
+  // Win32's SM_CXDRAG/SM_CYDRAG default, which is what SWT's own drag detection uses.
+  static const double _dragThresholdPx = 4.0;
   // Matches DartDisplay.getToolTipTime() — fires SWT.MouseHover after stillness
   static const int _hoverDelayMs = 560;
   Timer? _hoverTimer;
@@ -360,6 +365,48 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     _lastClickStamp = e.timeStamp;
     _lastClickPosition = e.position;
     _lastButton = button;
+    _dragDetectPointer = e.pointer;
+    _dragDetectOrigin = e.localPosition;
+    _dragDetectSent = false;
+  }
+
+  /// Whether a drag over this control is announced from its own pointer handling. False for a
+  /// control that runs its own Draggable and raises DragDetect from there, or the gesture would be
+  /// announced twice.
+  bool get raisesDragDetectFromPointer => true;
+
+  /// Raises SWT.DragDetect once the pointer has moved past the platform drag threshold.
+  ///
+  /// SWT.DragDetect is a Control-level event, not a DnD one: a Control with no DragSource still
+  /// receives it, and an application starts its own drag from it -- typically by opening a Tracker,
+  /// which is how a hand-drawn toolbar is dragged out of its dock. A Control that is itself a
+  /// DragSource is served by the DnD Draggable instead, which raises it with the payload that path
+  /// needs.
+  void maybeSendDragDetect(PointerMoveEvent e) {
+    if (_dragDetectSent) return;
+    if (e.pointer != _dragDetectPointer) return;
+    if (!raisesDragDetectFromPointer) return;
+    if (state.dragDetect == false) return;
+    if (state.dragSource == true) return;
+    final origin = _dragDetectOrigin;
+    if (origin == null) return;
+    if ((e.localPosition - origin).distance < _dragThresholdPx) return;
+    _dragDetectSent = true;
+    widget.sendDragDetectDragDetect(
+      state,
+      VEvent()
+        ..x = origin.dx.round()
+        ..y = origin.dy.round()
+        ..button = swtButton
+        ..stateMask = swtStateMask(released: false, flutterButtons: e.buttons),
+    );
+  }
+
+  void forgetDragDetect(int pointer) {
+    if (pointer != _dragDetectPointer) return;
+    _dragDetectPointer = null;
+    _dragDetectOrigin = null;
+    _dragDetectSent = false;
   }
 
   /// SWT's button number for a Flutter button bitfield: 1 left, 2 middle, 3 right, 4/5 the
@@ -592,6 +639,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         }
       },
       onPointerUp: (e) {
+        forgetDragDetect(e.pointer);
         final event = VEvent()
           ..button = swtButton
           ..x = e.localPosition.dx.round()
@@ -600,7 +648,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
           ..stateMask = swtStateMask(released: true, flutterButtons: e.buttons);
         this.widget.sendMouseMouseUp(state, event);
       },
+      onPointerCancel: (e) => forgetDragDetect(e.pointer),
       onPointerMove: (e) {
+        maybeSendDragDetect(e);
         final event = VEvent()
           ..x = e.localPosition.dx.round()
           ..y = e.localPosition.dy.round();
