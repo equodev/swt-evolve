@@ -11,13 +11,21 @@ public class DartSideBar extends DartComposite {
 
     @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
+        return railSize(this);
+    }
+
+    /**
+     * Size of a vertical trim rail. Shared with {@link DartStatusBar}, which a window whose trim
+     * bars are not built in the canonical order can land on a side slot.
+     */
+    static Point railSize(DartComposite rail) {
         // Empty rail (no minimized views) reserves no space; a fixed 30px left a phantom strip on load.
-        int width = _getChildren().length == 0 ? 0 : 30;
+        int width = rail._getChildren().length == 0 ? 0 : 30;
         // On the 0<->30 flip, re-dirty the parent so its NoLayout snapshot re-serializes with the new slot.
-        if (width != this.bounds.width) {
-            FlutterBridge bridge = getBridge();
-            if (bridge != null && parent != null && parent.getImpl() instanceof DartWidget)
-                bridge.dirty(((DartWidget) parent.getImpl()));
+        if (width != rail.bounds.width) {
+            FlutterBridge bridge = rail.getBridge();
+            if (bridge != null && rail.parent != null && rail.parent.getImpl() instanceof DartWidget)
+                bridge.dirty(((DartWidget) rail.parent.getImpl()));
         }
         return new Point(width, width == 0 ? 0 : 20);
     }

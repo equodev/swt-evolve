@@ -417,11 +417,15 @@ public class Config {
     }
 
     /**
-     * Classifies the trim composite currently being constructed under {@code parent} by elimination
-     * over the sibling trim fields already assigned. Returns SWT.TOP/BOTTOM/LEFT/RIGHT, or -1 when it
-     * is not an e4 trim composite. Deterministic for the 2nd horizontal trim and the verticals; the
-     * first horizontal is inherently ambiguous (both horizontals still null) and is provisionally
-     * reported TOP — {@link DartMainToolbar} is side-aware and corrects its own sizing at layout time.
+     * Classifies the trim composite currently being constructed under {@code parent}. Returns
+     * SWT.TOP/BOTTOM/LEFT/RIGHT, or -1 when it is not an e4 trim composite.
+     *
+     * <p>The side is read from the e4 model when the Shell carries it (see {@link #modelTrimSide}),
+     * because the layout fields cannot tell a trim that is not built yet from one that is never
+     * built: a window whose model does not render its bottom trim would classify both rails as the
+     * bottom one. Without the model the side falls back to elimination over the fields already
+     * assigned, where the first horizontal is ambiguous and reported TOP — {@link DartMainToolbar}
+     * is side-aware and corrects its own sizing at layout time.
      */
     static int classifyTrimSide(Composite parent) {
         if (!isInStackTrace(E4_TOOLBAR_CLASS, E4_TOOLBAR_METHOD)) return -1;
@@ -430,6 +434,10 @@ public class Config {
         java.lang.reflect.Field[] f = trimFields(layout);
         if (f == null) return -1;
         try {
+            int fromModel = modelTrimSide(parent);
+            // A side whose field is already assigned cannot be the one under construction.
+            if (fromModel != -1 && f[indexOfTrimSide(fromModel)].get(layout) == null) return fromModel;
+
             boolean top    = f[0].get(layout) != null;
             boolean bottom = f[1].get(layout) != null;
             boolean left   = f[2].get(layout) != null;
@@ -442,6 +450,55 @@ public class Config {
         } catch (Throwable t) {
             return -1;
         }
+    }
+
+    /** Widget data key under which e4 binds a rendered widget to its model element. */
+    private static final String E4_MODEL_ELEMENT_KEY = "modelElement";
+
+    /**
+     * Side of the e4 trim bar whose composite is being constructed under {@code parent}, read from
+     * the {@code MTrimmedWindow} bound to that Shell, or -1 when it cannot be told apart.
+     *
+     * <p>e4 assigns an element's renderer right before asking it for a widget, binds the widget only
+     * once it is created, and clears both when the element is unrendered. The bar under construction
+     * is therefore the only one with a renderer and no widget. List order is not enough: a bar added
+     * while the window renders is rendered before the bars still pending ahead of it.
+     */
+    private static int modelTrimSide(Composite parent) {
+        Object window = parent.getData(E4_MODEL_ELEMENT_KEY);
+        if (window == null) return -1;
+        try {
+            Object bars = window.getClass().getMethod("getTrimBars").invoke(window);
+            if (!(bars instanceof java.util.List)) return -1;
+            java.util.List<?> list = (java.util.List<?>) bars;
+            Object building = null;
+            for (Object bar : list) {
+                Class<?> barClass = bar.getClass();
+                if (barClass.getMethod("getRenderer").invoke(bar) == null) continue;
+                if (barClass.getMethod("getWidget").invoke(bar) != null) continue;
+                if (building != null) return -1;
+                building = bar;
+            }
+            if (building == null) return -1;
+            Object side = building.getClass().getMethod("getSide").invoke(building);
+            return side instanceof Enum ? trimSideNamed(((Enum<?>) side).name()) : -1;
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+        }
+        return -1;
+    }
+
+    private static int trimSideNamed(String name) {
+        for (int i = 0; i < TRIM_FIELD_NAMES.length; i++) {
+            if (TRIM_FIELD_NAMES[i].equalsIgnoreCase(name)) return TRIM_SIDES[i];
+        }
+        return -1;
+    }
+
+    private static int indexOfTrimSide(int side) {
+        for (int i = 0; i < TRIM_SIDES.length; i++) {
+            if (TRIM_SIDES[i] == side) return i;
+        }
+        throw new IllegalArgumentException("not a trim side: " + side);
     }
 
     /** True when running as the Eclipse IDE workbench (vs. other e4/RCP hosts that nest one level less). */
