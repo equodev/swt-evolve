@@ -6,22 +6,27 @@ public class SpinnerHelper {
 
     public static String getText(DartSpinner c) {
         c.checkWidget();
-        if (c.digits > 0) {
-            String string = String.valueOf(c.selection);
-            int index = string.length() - c.digits;
-            StringBuilder buffer = new StringBuilder();
-            if (index > 0) {
-                buffer.append(string, 0, index);
-                buffer.append(".");
-                buffer.append(string.substring(index));
-            } else {
-                buffer.append("0.");
-                while (index++ < 0) buffer.append("0");
-                buffer.append(string);
-            }
-            return buffer.toString();
+        return format(c.selection, c.digits);
+    }
+
+    /** Renders a spinner value the way its text field shows it: {@code digits} decimal places. */
+    static String format(int value, int digits) {
+        if (digits <= 0) {
+            return String.valueOf(value);
         }
-        return String.valueOf(c.selection);
+        String string = String.valueOf(value);
+        int index = string.length() - digits;
+        StringBuilder buffer = new StringBuilder();
+        if (index > 0) {
+            buffer.append(string, 0, index);
+            buffer.append(".");
+            buffer.append(string.substring(index));
+        } else {
+            buffer.append("0.");
+            while (index++ < 0) buffer.append("0");
+            buffer.append(string);
+        }
+        return buffer.toString();
     }
 
     static void setSelection(DartSpinner c, int value, boolean setPos, boolean setText, boolean notify) {

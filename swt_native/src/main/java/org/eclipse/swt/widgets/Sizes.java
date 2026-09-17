@@ -422,8 +422,39 @@ public class Sizes {
         return SliderSizes.computeSize(c, wHint, hHint, changed);
     }
 
+    // The stepper column, the field border and the text field's own horizontal padding are drawn
+    // outside the number: spinner_evolve.dart lays the text field out in what is left of the
+    // widget bounds once it has taken them. Mirrors spinner_theme_settings.dart, which has to
+    // agree with this for the stepper to land inside the width a layout gives the spinner.
+    private static final int SPINNER_BUTTON_WIDTH = 20;
+    private static final int SPINNER_BORDER_WIDTH = 1;
+    private static final int SPINNER_TEXT_PADDING = 8;
+    private static final int SPINNER_MIN_HEIGHT = 32;
+
+    public static Rectangle computeTrim(DartSpinner widget, int x, int y, int width, int height) {
+        return new Rectangle(
+            x - SPINNER_BORDER_WIDTH - SPINNER_TEXT_PADDING,
+            y - SPINNER_BORDER_WIDTH,
+            width + SPINNER_BUTTON_WIDTH + 2 * (SPINNER_BORDER_WIDTH + SPINNER_TEXT_PADDING),
+            height + 2 * SPINNER_BORDER_WIDTH);
+    }
+
     public static Point computeSize(DartSpinner c, int wHint, int hHint, boolean changed) {
-        return new Point(120, 32);
+        Point text = GCHelper.textExtent(widestSpinnerValue(c), 0, c.getFont());
+        int width = wHint != SWT.DEFAULT ? wHint : text.x;
+        int height = hHint != SWT.DEFAULT ? hHint : text.y;
+        Rectangle trim = computeTrim(c, 0, 0, width, height);
+        if (hHint == SWT.DEFAULT) {
+            trim.height = Math.max(trim.height, SPINNER_MIN_HEIGHT);
+        }
+        return new Point(trim.width, trim.height);
+    }
+
+    /** The longest value string the spinner's range can put in its text field. */
+    private static String widestSpinnerValue(DartSpinner c) {
+        String min = SpinnerHelper.format(c._minimum(), c._digits());
+        String max = SpinnerHelper.format(c._maximum(), c._digits());
+        return max.length() >= min.length() ? max : min;
     }
 
     public static Point computeSize(DartTable c, int wHint, int hHint, boolean changed) {
