@@ -273,25 +273,57 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
             dartGc.textCapture.accept(text);
             return;
         }
-        try {
-            computeRuns();
-            int length = translateOffset(text.length());
-            if (length == 0 && flags == 0)
-                return;
-            y += getVerticalIndent();
-            boolean hasSelection = selectionStart <= selectionEnd && selectionStart != -1 && selectionEnd != -1;
-            if (hasSelection || ((flags & SWT.LAST_LINE_SELECTION) != 0 && (flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0)) {
-                if (selectionBackground == null)
-                    selectionBackground = device.getSystemColor(SWT.COLOR_LIST_SELECTION);
-                if (hasSelection) {
+        computeRuns();
+        if (text == null || text.length() == 0)
+            return;
+        y += getVerticalIndent();
+        int lineHeight = _effLineHeight();
+        int[] offs = getLineOffsets();
+        org.eclipse.swt.graphics.Font gcFont = gc.getFont();
+        Color gcForeground = gc.getForeground();
+        Color gcBackground = gc.getBackground();
+        for (int line = 0; line + 1 < offs.length; line++) {
+            int ls = offs[line];
+            int le = offs[line + 1];
+            while (le > ls && (text.charAt(le - 1) == '\n' || text.charAt(le - 1) == '\r')) le--;
+            if (le <= ls)
+                continue;
+            int lineX = x + _alignShift(ls, le);
+            int lineY = y + line * lineHeight;
+            int runStart = ls;
+            while (runStart < le) {
+                if (text.charAt(runStart) == '\t') {
+                    runStart++;
+                    continue;
                 }
-                //TODO draw full selection for wrapped text and delimiter selection for hard breaks
-                if ((flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0 && (/*hasSelection ||*/
-                (flags & SWT.LAST_LINE_SELECTION) != 0)) {
+                TextStyle style = _styleFor(runStart);
+                int runEnd = runStart + 1;
+                while (runEnd < le && text.charAt(runEnd) != '\t' && _styleFor(runEnd) == style) runEnd++;
+                int runX = lineX + (int) Math.round(_measureRange(ls, runStart));
+                org.eclipse.swt.graphics.Font runFont = _fontFor(runStart);
+                gc.setFont(runFont != null ? runFont : gcFont);
+                gc.setForeground(style != null && style.foreground != null ? style.foreground : gcForeground);
+                boolean opaque = style != null && style.background != null;
+                if (opaque)
+                    gc.setBackground(style.background);
+                gc.drawString(text.substring(runStart, runEnd), runX, lineY, !opaque);
+                if (style != null && (style.underline || style.strikeout)) {
+                    int runWidth = (int) Math.round(_measureRange(runStart, runEnd));
+                    if (style.underline) {
+                        int underlineY = lineY + lineHeight - 1;
+                        gc.drawLine(runX, underlineY, runX + runWidth, underlineY);
+                    }
+                    if (style.strikeout) {
+                        int strikeoutY = lineY + lineHeight / 2;
+                        gc.drawLine(runX, strikeoutY, runX + runWidth, strikeoutY);
+                    }
                 }
+                runStart = runEnd;
             }
-        } finally {
         }
+        gc.setFont(gcFont);
+        gc.setForeground(gcForeground);
+        gc.setBackground(gcBackground);
     }
 
     void freeRuns() {
