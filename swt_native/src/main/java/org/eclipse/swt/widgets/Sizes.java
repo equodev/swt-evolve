@@ -799,19 +799,34 @@ public class Sizes {
     public static Rectangle getBounds(DartToolItem item) {
         Point size = computeSize(item);
         ToolBar toolbar = item.parent;
+        int x = 0, y = 0;
         if (toolbar != null) {
+            boolean isVertical = (toolbar.getStyle() & SWT.VERTICAL) != 0;
             Composite container = toolbar.getParent();
             if (container != null) {
                 Rectangle toolbarBounds = toolbar.getBounds();
-                boolean isVertical = (toolbar.getStyle() & SWT.VERTICAL) != 0;
                 if (isVertical) {
                     size.x = Math.min(size.x, Math.max(1, container.getBounds().width - toolbarBounds.x));
                 } else {
                     size.y = Math.min(size.y, Math.max(1, container.getBounds().height - toolbarBounds.y));
                 }
             }
+            // An item sits at the running total of the items before it -- the same run
+            // computeSize(DartToolBar) sums the bar's own extent from.
+            for (ToolItem sibling : toolbar.getItems()) {
+                if (sibling == item.getApi())
+                    break;
+                if (!(sibling.getImpl() instanceof DartToolItem))
+                    continue;
+                Point siblingSize = computeSize((DartToolItem) sibling.getImpl());
+                if (isVertical) {
+                    y += siblingSize.y;
+                } else {
+                    x += siblingSize.x;
+                }
+            }
         }
-        return new Rectangle(0, 0, size.x, size.y);
+        return new Rectangle(x, y, size.x, size.y);
     }
 
     public static Rectangle getClientArea(DartCoolItem widget) {
