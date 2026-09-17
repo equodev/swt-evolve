@@ -383,6 +383,20 @@ public class FlutterLibraryLoader {
     }
 
     /**
+     * Web analogue of {@link #firstBundleBaseDir}: the first provider's non-blank web directory, or
+     * null. The real caller passes {@code ServiceLoader.load(ExternalWebBundleProvider.class)}.
+     */
+    public static String firstExternalWebDir(Iterable<ExternalWebBundleProvider> providers) {
+        for (ExternalWebBundleProvider p : providers) {
+            String dir = p.extractAndGetWebDir();
+            if (dir != null && !dir.trim().isEmpty()) {
+                return dir;
+            }
+        }
+        return null;
+    }
+
+    /**
      * When an external combined bundle is configured, hand its path to the native bridge so
      * the engine boots that libapp.so / flutter_assets instead of the bridge-relative one.
      * No-op (legacy behavior) when the property is absent.

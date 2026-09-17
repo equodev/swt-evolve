@@ -110,10 +110,16 @@ public class WebDisplayBridge extends DisplayBridge {
                 .commPort(port)
                 .widgetId(displayId)
                 .widgetName("Display");
-        // Optional override of the served web build directory, so a combined/host app can serve
-        // its own Flutter web build (with any extension hooks installed) instead of the one
-        // extracted from Evolve's jar. Set via -Ddev.equo.swt.web.dir=<absolute dir>.
+        // Optional override of the served web build directory, so a combined/host app can serve its
+        // own Flutter web build (with any extension hooks installed) instead of the one extracted from
+        // Evolve's jar. Set via -Ddev.equo.swt.web.dir=<absolute dir>; otherwise, in a packaged product,
+        // discover the external web bundle owner (EWT) via the ExternalWebBundleProvider SPI (mirrors
+        // the desktop ExternalBundleProvider path). Standalone Evolve finds no provider.
         String webDirOverride = System.getProperty("dev.equo.swt.web.dir");
+        if (webDirOverride == null || webDirOverride.trim().isEmpty()) {
+            webDirOverride = dev.equo.swt.FlutterLibraryLoader.firstExternalWebDir(
+                    java.util.ServiceLoader.load(dev.equo.swt.ExternalWebBundleProvider.class));
+        }
         if (webDirOverride != null && !webDirOverride.trim().isEmpty()) {
             serverBuilder.webDirectory(new java.io.File(webDirOverride));
         }
