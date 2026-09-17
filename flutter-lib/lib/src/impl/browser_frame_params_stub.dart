@@ -13,7 +13,7 @@ String browserAppBasePath() => '/';
 
 String browserAppBaseUrl() => '';
 
-String browserProxyRewrite(String url) => url;
+String browserProxyRewrite(String url, [Map<String, String>? headers]) => url;
 
 String localFileRewrite(String tokenPath) => tokenPath;
 

@@ -125,13 +125,20 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
               widget.sendProgresscompleted(state, null);
             },
             // Mirror SWT's cancellable LocationListener.changing: ask Java
-            // whether to proceed and honour event.doit.
+            // whether to proceed and honour event.doit. On native SWT this dispatch is
+            // synchronous and in-process, so it never blocks visible navigation; here it is a
+            // round trip over the comm channel, so every navigation -- including one with no
+            // LocationListener registered at all, the common case -- stalls for up to this
+            // timeout before proceeding. Java's asyncExec reply normally lands in single-digit
+            // milliseconds, so 300ms is generous headroom for real UI-thread queueing while
+            // bounding the worst case (previously 2s, and a Browser can issue several
+            // navigations back-to-back for one logical "open", each paying this wait).
             onNavigationRequest: (request) async {
               _locationChangingCompleter = Completer<bool>();
               widget.sendLocationchanging(
                   state, VEvent()..text = _unproxyUrl(request.url));
               final doit = await _locationChangingCompleter!.future.timeout(
-                const Duration(seconds: 2),
+                const Duration(milliseconds: 300),
                 onTimeout: () {
                   _locationChangingCompleter = null;
                   return true;
@@ -207,7 +214,9 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
             _controller.loadRequest(Uri.parse(localFileRewrite(localFilePath)));
           } else {
             _loadedLocalFile = false;
-            final resolved = _resolveLoadUri(url, uri);
+            final headers = _parseHeaders(m["headers"]);
+            final resolved =
+                _resolveLoadUri(url, uri, headers.isEmpty ? null : headers);
             _expectSameOrigin = resolved.toString() != url;
             _controller.loadRequest(resolved);
           }
@@ -464,7 +473,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   /// same-origin /proxy endpoint when the proxy is enabled (so the iframe
   /// content is scriptable for execute/evaluate/BrowserFunction); otherwise
   /// loads directly. No-op on non-web.
-  Uri _resolveLoadUri(String url, Uri uri) {
+  Uri _resolveLoadUri(String url, Uri uri, [Map<String, String>? headers]) {
     // Content the app server itself serves (a /local-file/ document reported back as the
     // Browser's location, say) is same-origin already; proxying it would only ask the server to
     // fetch itself through whatever address the page was opened at.
@@ -473,7 +482,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       return uri;
     }
     if (browserProxyEnabled(url) && (uri.scheme == 'http' || uri.scheme == 'https')) {
-      return Uri.parse(browserProxyRewrite(url));
+      return Uri.parse(browserProxyRewrite(url, headers));
     }
     return uri;
   }

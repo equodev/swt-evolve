@@ -10,13 +10,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.net.URLDecoder;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -148,7 +144,14 @@ public class WebFlutterServer {
         httpServer.createContext("/proxy", new ProxyHandler());
         httpServer.createContext("/equo-browser-function", new BrowserFunctionHandler());
         httpServer.createContext("/local-file", new LocalFileHandler());
-        httpServer.setExecutor(Executors.newFixedThreadPool(4, r -> {
+        // ProxyHandler's sibling-wait (see TARGET_AUTH_CACHE) can block a worker thread for up to a
+        // few seconds while a concurrent request for the same target populates the auth cache. A
+        // single page load fires a dozen-plus /proxy requests at once (the document, its stylesheet,
+        // every script, every icon/font that stylesheet references) alongside this app's own asset
+        // requests on the same pool, so a small pool risks every worker blocked waiting on a sibling
+        // whose own request is queued behind them -- a self-inflicted stall. Sized for headroom, not
+        // sustained concurrency: this is a local, low-traffic embedded server.
+        httpServer.setExecutor(Executors.newFixedThreadPool(16, r -> {
             Thread t = new Thread(r, "WebFlutterServer-worker");
             t.setDaemon(true);
             return t;
@@ -309,7 +312,7 @@ public class WebFlutterServer {
      * Handles HTTP requests by serving static files from the Flutter web directory.
      * Adds cross-origin isolation headers required for WASM SharedArrayBuffer.
      */
-    private static class StaticFileHandler implements HttpHandler {
+    static class StaticFileHandler implements HttpHandler {
 
         private final Path rootDir;
         private final int commPort;
@@ -615,124 +618,6 @@ public class WebFlutterServer {
 
     private static final Pattern LOOPBACK_V4 =
             Pattern.compile("127(?:\\.(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}");
-
-    /** Extracts a single URL-decoded query parameter from a raw query string. */
-    private static String queryParam(String rawQuery, String name) {
-        if (rawQuery == null) return null;
-        for (String pair : rawQuery.split("&")) {
-            int eq = pair.indexOf('=');
-            if (eq > 0 && pair.substring(0, eq).equals(name)) {
-                return Java8.urlDecode(pair.substring(eq + 1), StandardCharsets.UTF_8);
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Fetches an external URL server-side and re-serves it from this origin, so the Browser's iframe
-     * content becomes same-origin (enabling eval/execute/BrowserFunction). Strips framing-blocking
-     * headers and injects a {@code <base href>} so the page's relative sub-resources still resolve
-     * against the original site.
-     *
-     * <p>Every response here carries this app's own cross-origin isolation headers. When the app is
-     * served cross-origin isolated, a nested document that does not itself declare a
-     * {@code Cross-Origin-Embedder-Policy} is refused by the browser even when it is same-origin —
-     * the frame shows "refused to connect" instead of the page. {@code credentialless} is what makes
-     * that work: the proxied document's own sub-resources still come from the original site (via the
-     * injected {@code <base href>}) and would need {@code Cross-Origin-Resource-Policy} headers we
-     * cannot add on its behalf under {@code require-corp}.
-     */
-    private static class ProxyHandler implements HttpHandler {
-
-        private static final int MAX_REDIRECTS = 5;
-
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            try {
-                String target = queryParam(exchange.getRequestURI().getRawQuery(), "url");
-                if (target == null || !proxyAllowed(target)) { sendPlain(exchange, 403, "url not allowed"); return; }
-
-                Fetched resp = fetch(target);
-                String contentType = resp.contentType != null ? resp.contentType : "text/html; charset=utf-8";
-                byte[] body = resp.body;
-                if (contentType.toLowerCase().contains("html")) {
-                    body = injectBaseHref(new String(body, StandardCharsets.UTF_8), resp.finalUrl)
-                            .getBytes(StandardCharsets.UTF_8);
-                }
-                // Serve from this origin; deliberately do NOT copy X-Frame-Options / CSP frame-ancestors.
-                exchange.getResponseHeaders().set("Content-Type", contentType);
-                exchange.getResponseHeaders().set("Cache-Control", "no-store");
-                StaticFileHandler.setCrossOriginHeaders(exchange);
-                exchange.sendResponseHeaders(200, body.length);
-                try (OutputStream os = exchange.getResponseBody()) { os.write(body); }
-            } catch (Exception e) {
-                LOG.log(Level.WARNING, "proxy error for " + exchange.getRequestURI(), e);
-                try { sendPlain(exchange, 502, "proxy error"); } catch (IOException ignored) { }
-            } finally {
-                exchange.close();
-            }
-        }
-
-        /** What the proxied GET came back with, plus the URL it ended on. */
-        private static final class Fetched {
-            final String finalUrl;
-            final byte[] body;
-            final String contentType;
-
-            Fetched(String finalUrl, byte[] body, String contentType) {
-                this.finalUrl = finalUrl;
-                this.body = body;
-                this.contentType = contentType;
-            }
-        }
-
-        /**
-         * A GET that follows redirects itself. HttpURLConnection will not follow one that changes
-         * protocol (the http -> https hop most sites open with), and the URL the response ended on
-         * is what the injected base href has to name, which it does not report either.
-         */
-        private static Fetched fetch(String target) throws IOException {
-            String url = target;
-            for (int hop = 0; hop <= MAX_REDIRECTS; hop++) {
-                HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
-                conn.setRequestMethod("GET");
-                conn.setInstanceFollowRedirects(false);
-                int code = conn.getResponseCode();
-                if (code >= 300 && code < 400) {
-                    String location = conn.getHeaderField("Location");
-                    conn.disconnect();
-                    if (location == null) throw new IOException("redirect with no Location from " + url);
-                    url = new URL(new URL(url), location).toString();
-                    continue;
-                }
-                InputStream in = code >= 400 ? conn.getErrorStream() : conn.getInputStream();
-                try {
-                    byte[] body = in == null ? new byte[0] : Java8.readAllBytes(in);
-                    return new Fetched(url, body, conn.getContentType());
-                } finally {
-                    if (in != null) in.close();
-                    conn.disconnect();
-                }
-            }
-            throw new IOException("too many redirects for " + target);
-        }
-
-        private static String injectBaseHref(String html, String finalUrl) {
-            String baseTag = "<base href=\"" + finalUrl.replace("\"", "%22") + "\">";
-            Matcher m = Pattern.compile("<head[^>]*>", Pattern.CASE_INSENSITIVE).matcher(html);
-            return m.find() ? html.substring(0, m.end()) + baseTag + html.substring(m.end())
-                            : baseTag + html;
-        }
-
-        /** Refusals need the isolation headers too, or the frame shows a browser error instead of why. */
-        private static void sendPlain(HttpExchange exchange, int code, String msg) throws IOException {
-            byte[] b = msg.getBytes(StandardCharsets.UTF_8);
-            exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=utf-8");
-            StaticFileHandler.setCrossOriginHeaders(exchange);
-            exchange.sendResponseHeaders(code, b.length);
-            try (OutputStream os = exchange.getResponseBody()) { os.write(b); }
-        }
-    }
 
     // -------------------------------------------------------------------------
     // BrowserFunction bridge (same-origin, synchronous)

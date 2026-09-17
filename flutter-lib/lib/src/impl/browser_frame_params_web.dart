@@ -63,9 +63,25 @@ String browserAppBasePath() => appBasePath(web.document.baseURI);
 String browserAppBaseUrl() =>
     '${web.window.location.origin}${browserAppBasePath()}';
 
-/// Rewrites an absolute http(s) URL to go through the app server's /proxy endpoint.
-String browserProxyRewrite(String url) {
-  return '${browserAppBaseUrl()}proxy?url=${Uri.encodeComponent(url)}';
+/// Rewrites an absolute http(s) URL to go through the app server's /proxy endpoint. [headers], if
+/// given (from `Browser.setUrl(url, postData, headers)`), is forwarded as repeated `header` params
+/// so the server-side fetch can attach them — an iframe's own navigation cannot carry custom
+/// request headers at all, so a target that gates a GET on one (an auth token, say) is otherwise
+/// unreachable through a plain src= load.
+String browserProxyRewrite(String url, [Map<String, String>? headers]) {
+  final buffer = StringBuffer('${browserAppBaseUrl()}proxy?url=${Uri.encodeComponent(url)}');
+  headers?.forEach((name, value) {
+    buffer.write('&header=${Uri.encodeComponent('$name: $value')}');
+  });
+  // Also mirror the target's own query params verbatim on our wrapper URL. A page that treats its
+  // location as opaque never notices; one that reads its own location.search (e.g. to pick which
+  // widget/component to bootstrap from an editorId param) would otherwise see only our url=/header=
+  // additions and find none of its own -- silently building nothing rather than erroring, which
+  // reads as "loads forever" from outside the iframe.
+  Uri.tryParse(url)?.queryParameters.forEach((name, value) {
+    buffer.write('&${Uri.encodeQueryComponent(name)}=${Uri.encodeQueryComponent(value)}');
+  });
+  return buffer.toString();
 }
 
 String localFileRewrite(String tokenPath) {
