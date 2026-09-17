@@ -4,6 +4,7 @@ import 'gen/composite.dart';
 import 'gen/control.dart';
 import 'gen/rectangle.dart';
 import 'comm/v_registry.dart';
+import 'gen/toolbar.dart';
 import 'gen/widget.dart';
 import 'gen/widgets.dart';
 import 'gen/widgets.dart' as gen;
@@ -62,25 +63,29 @@ class NoLayout extends StatelessWidget {
               id: child.id,
               child: isPanelLayout
                   ? _wrapAsPanel(_buildChild(child), theme!)
-                  : _clipToBounds(context, _buildChild(child)),
+                  : _clipToBounds(context, child, _buildChild(child)),
             )
         ],
       ),
     );
   }
 
-  /// A control is clipped to its own bounds, which is what SWT does. The hover zoom is a paint-time
-  /// transform, so a control sized to exactly its icon -- a one-item ToolBar in a GridLayout cell,
-  /// say -- would have the grown icon cut off at that boundary instead of growing. With the zoom on,
-  /// the clip is inflated by the room the zoom needs, so the icon reaches into the surrounding
-  /// pixels the way an icon with padding to spare already does. Still a clip, so a control cannot
-  /// bleed arbitrarily.
-  static Widget _clipToBounds(BuildContext context, Widget child) {
+  /// A control is clipped to its own bounds, which is what SWT does: a child that reaches past its
+  /// parent is cut at the parent's edge, not drawn beyond it.
+  ///
+  /// A ToolBar is the one exception. The hover zoom is a paint-time transform, so a bar sized to
+  /// exactly its icons -- a one-item ToolBar in a GridLayout cell, say -- would have the grown icon
+  /// cut off at that boundary instead of growing; its clip is inflated by the room the zoom needs.
+  /// Only a ToolBar gets that. Inflating every child let any control bleed [_InflatedBounds.margin]
+  /// past its parent, which is how a 2px-tall Composite leaked a slice of a 20px child that SWT
+  /// clips away completely.
+  static Widget _clipToBounds(BuildContext context, VControl child, Widget built) {
+    if (child is! VToolBar) return ClipRect(child: built);
     final theme = Theme.of(context).extension<ToolItemThemeExtension>();
-    if (theme == null || !theme.hoverZoomEnabled) return ClipRect(child: child);
+    if (theme == null || !theme.hoverZoomEnabled) return ClipRect(child: built);
     return ClipRect(
       clipper: _InflatedBounds(theme.defaultIconSize * (theme.hoverZoomScale - 1) / 2),
-      child: child,
+      child: built,
     );
   }
 
