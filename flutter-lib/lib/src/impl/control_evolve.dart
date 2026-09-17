@@ -20,6 +20,7 @@ import '../impl/key_forwarding.dart';
 import '../impl/key_mapping.dart';
 import '../impl/menu_evolve.dart';
 import 'utils/hosted_context_menu.dart';
+import '../custom/rich_tooltip.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
 import '../theme/theme_extensions/tooltip_theme_extension.dart';
 import 'utils/dnd_session.dart';
@@ -215,6 +216,12 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       _showTooltipAtPointer();
     });
   }
+
+  /// Whether this control's tooltip is drawn as a card instead of the plain panel, when the custom
+  /// tooltip is on. Off for a control that already says what it is through a label or an item; a
+  /// control that paints its own content overrides it, since its tooltip is the only thing that can
+  /// name what the pointer is over.
+  bool get usesCustomTooltipCard => false;
 
   /// Opens the control's tooltip at the pointer, the way the platform places one: its top-left
   /// corner just below and right of the cursor. Flutter's Tooltip centres the panel on its child
@@ -689,6 +696,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   Widget _tooltipOverlay(BuildContext context, String message, Offset pointer) {
     final tooltipTheme = Theme.of(context).extension<TooltipThemeExtension>();
     final displayTheme = Theme.of(context).extension<DisplayThemeExtension>();
+    // A control that paints its own content has no ToolItem to read, so the card is built here from
+    // the tooltip the application set and placed by the same pointer layout as the plain panel.
+    final card =
+        usesCustomTooltipCard ? EvolveToolTip.maybeCard(context, toolTipText: message) : null;
     return Positioned.fill(
       child: IgnorePointer(
         child: CustomSingleChildLayout(
@@ -700,7 +711,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
             ),
             screenMargin: tooltipTheme?.screenMargin ?? 0,
           ),
-          child: Container(
+          child: card ??
+              Container(
             padding: tooltipTheme?.hoverPadding,
             decoration: tooltipTheme == null
                 ? null
@@ -732,7 +744,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
                   .copyWith(decoration: TextDecoration.none),
               child: Text(message, maxLines: tooltipTheme?.messageMaxLines),
             ),
-          ),
+              ),
         ),
       ),
     );

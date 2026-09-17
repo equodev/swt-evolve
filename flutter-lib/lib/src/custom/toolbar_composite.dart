@@ -19,6 +19,8 @@ import '../impl/widget_config.dart';
 import '../impl/decorations_evolve.dart';
 import 'csd/csd_drag_view.dart';
 import 'csd/window_controls.dart';
+import 'main_toolbar_scope.dart';
+import 'toast.dart';
 import '../nolayout.dart';
 import '../theme/theme_extensions/clabel_theme_extension.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
@@ -58,6 +60,22 @@ class ToolbarComposite extends CompositeSwt<VComposite> {
 class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposite> {
   final _vmBtnAtStartKey = GlobalKey();
 
+  bool get _isRootToolbar => widget.value.swt == "MainToolbar";
+
+  @override
+  void dispose() {
+    if (_isRootToolbar) ToastHost.reset();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final built = super.build(context);
+    // Marks the whole toolbar subtree, so a ToolItem anywhere under it can ask whether it is in the
+    // main toolbar without knowing how it got there.
+    return _isRootToolbar ? MainToolbarScope(child: built) : built;
+  }
+
   @override
   Widget buildComposite() {
     final children = state.children;
@@ -96,7 +114,7 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
     final widgetTheme = Theme.of(context).extension<ToolBarThemeExtension>();
     final backgroundColor = widget.backgroundColor ?? widgetTheme!.toolbarBackgroundColor;
     final visibleChildren = children.where((child) => child.visible != false).toList();
-    final isRootToolbar = widget.value.swt == "MainToolbar";
+    final isRootToolbar = _isRootToolbar;
 
     // Client-Side-Decoration window controls live in the MainToolbar when placement is
     // "toolbar": leading (macOS traffic lights) or trailing (Windows/Linux).

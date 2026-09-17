@@ -100,6 +100,14 @@ bool get focusIndicators {
   return flags.focus_indicators ?? kNamedThemes[flags.theme_name?.trim()]?.focusIndicators ?? false;
 }
 
+/// True when a main-toolbar ToolItem draws its tooltip as a card instead of the one-line strip.
+/// Scope is checked separately, so both have to hold -- see `EvolveToolTip.maybeWrap`.
+bool get customToolTip => getConfigFlags().custom_tooltip ?? false;
+
+/// True when clicking a main-toolbar item raises a notification card. See
+/// `EvolveNotification.maybeRaiseFor`.
+bool get notificationPopup => getConfigFlags().notification_popup ?? false;
+
 /// True when the bundled icon set may stand in for an image the application blits with
 /// `GC#drawImage`. Off by default: the set is keyed by the bare filename stem, so an application
 /// image sharing a name with one of ours would otherwise be replaced by it.

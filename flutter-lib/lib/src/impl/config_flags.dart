@@ -25,6 +25,8 @@ class ConfigFlags {
   bool? use_special_dropdown_button;
   bool? preserve_icon_colors;
   bool? disable_hover_zoom;
+  bool? custom_tooltip;
+  bool? notification_popup;
   bool? show_scaling_control;
   @JsonKey(fromJson: DecorationsAlign.fromJson, toJson: DecorationsAlign.toJson)
   DecorationsAlign? decorations_align;

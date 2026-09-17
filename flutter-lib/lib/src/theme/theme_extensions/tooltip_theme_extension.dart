@@ -59,6 +59,30 @@ class TooltipThemeExtension extends ThemeExtension<TooltipThemeExtension>
   final double shadowBlurRadius;
   final double shadowOffsetY;
 
+  /// The rich tooltip -- the card a main-toolbar ToolItem opens when `swt.evolve.rich_tooltips` is
+  /// on. It is a wider, taller surface than the hover strip above, so it carries its own geometry
+  /// and text styles; severity colours and the shadow are shared with the plain tooltip.
+  final double richMaxWidth;
+
+  /// Sized against the card's own text, not against the balloon's [iconSize] -- a 24px glyph beside
+  /// a 13px title reads as two unrelated things stacked next to each other.
+  final double richIconSize;
+  final EdgeInsets richPadding;
+  final double richBorderRadius;
+  final Color richBackgroundColor;
+
+  /// Vertical distance between the item and the top of the card.
+  final double richGap;
+  final double richTitleBodySpacing;
+  final TextStyle? richTitleTextStyle;
+  final TextStyle? richBodyTextStyle;
+
+  final TextStyle? richShortcutTextStyle;
+  final Color richShortcutBackgroundColor;
+  final Color richShortcutBorderColor;
+  final EdgeInsets richShortcutPadding;
+  final double richShortcutBorderRadius;
+
   const TooltipThemeExtension({
     required this.waitDuration,
     required this.fadeInDuration,
@@ -93,6 +117,20 @@ class TooltipThemeExtension extends ThemeExtension<TooltipThemeExtension>
     required this.shadowColor,
     required this.shadowBlurRadius,
     required this.shadowOffsetY,
+    required this.richMaxWidth,
+    required this.richIconSize,
+    required this.richPadding,
+    required this.richBorderRadius,
+    required this.richBackgroundColor,
+    required this.richGap,
+    required this.richTitleBodySpacing,
+    this.richTitleTextStyle,
+    this.richBodyTextStyle,
+    this.richShortcutTextStyle,
+    required this.richShortcutBackgroundColor,
+    required this.richShortcutBorderColor,
+    required this.richShortcutPadding,
+    required this.richShortcutBorderRadius,
   });
 
   factory TooltipThemeExtension.fromJson(Map<String, dynamic> json) =>

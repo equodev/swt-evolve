@@ -1,3 +1,5 @@
+import 'dart:ui' show FontFeature;
+
 import 'package:flutter/material.dart';
 import '../theme_extensions/tooltip_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
@@ -72,5 +74,35 @@ TooltipThemeExtension _getTooltipTheme({
     shadowColor: Colors.black.withOpacity(0.3),
     shadowBlurRadius: 10.0,
     shadowOffsetY: 3.0,
+
+    richMaxWidth: 360.0,
+    // Sized to be read at a glance from a toolbar: the card is a reading surface, not a strip, so it
+    // runs a step above the body text elsewhere rather than matching it.
+    richIconSize: 22.0,
+    richPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    richBorderRadius: 6.0,
+    richBackgroundColor: colorScheme.surface,
+    richGap: 6.0,
+    richTitleBodySpacing: 7.0,
+    richTitleTextStyle: textTheme.bodyMedium?.copyWith(
+      color: colorScheme.onSurface,
+      fontSize: 15,
+      fontWeight: FontWeight.w600,
+    ),
+    richBodyTextStyle: textTheme.bodySmall?.copyWith(
+      color: colorScheme.onSurfaceVariant,
+      fontSize: 14,
+      height: 1.35,
+    ),
+    richShortcutTextStyle: textTheme.bodySmall?.copyWith(
+      color: colorScheme.onSurfaceVariant,
+      fontSize: 13,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    ),
+    // A keycap sits a step above the card it is on, which is what this container level is for.
+    richShortcutBackgroundColor: colorScheme.surfaceContainerHigh,
+    richShortcutBorderColor: colorScheme.outlineVariant,
+    richShortcutPadding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+    richShortcutBorderRadius: 3.0,
   );
 }

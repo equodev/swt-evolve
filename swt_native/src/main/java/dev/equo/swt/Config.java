@@ -659,6 +659,9 @@ public class Config {
             // Toolbar icons and table cells grow under the pointer by default; opt out to render
             // like native SWT:  -Dswt.evolve.disable_hover_zoom=true
             configFlags.disable_hover_zoom = Boolean.getBoolean("swt.evolve.disable_hover_zoom");
+            //   -Dswt.evolve.custom_tooltip=true   -Dswt.evolve.notification_popup=true
+            configFlags.custom_tooltip = Boolean.getBoolean("swt.evolve.custom_tooltip");
+            configFlags.notification_popup = Boolean.getBoolean("swt.evolve.notification_popup");
             configFlags.show_theme_color_palette = Boolean.getBoolean("swt.evolve.show_theme_color_palette");
             String focusIndicators = System.getProperty("swt.evolve.focus_indicators");
             configFlags.focus_indicators = focusIndicators == null || focusIndicators.trim().isEmpty()

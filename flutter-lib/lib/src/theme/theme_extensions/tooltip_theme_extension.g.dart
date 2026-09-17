@@ -68,6 +68,37 @@ TooltipThemeExtension _$TooltipThemeExtensionFromJson(
   shadowColor: const ColorConverter().fromJson(json['shadowColor'] as String),
   shadowBlurRadius: (json['shadowBlurRadius'] as num).toDouble(),
   shadowOffsetY: (json['shadowOffsetY'] as num).toDouble(),
+  richMaxWidth: (json['richMaxWidth'] as num).toDouble(),
+  richIconSize: (json['richIconSize'] as num).toDouble(),
+  richPadding: const EdgeInsetsConverter().fromJson(
+    json['richPadding'] as Map<String, dynamic>,
+  ),
+  richBorderRadius: (json['richBorderRadius'] as num).toDouble(),
+  richBackgroundColor: const ColorConverter().fromJson(
+    json['richBackgroundColor'] as String,
+  ),
+  richGap: (json['richGap'] as num).toDouble(),
+  richTitleBodySpacing: (json['richTitleBodySpacing'] as num).toDouble(),
+  richTitleTextStyle: const TextStyleConverter().fromJson(
+    json['richTitleTextStyle'] as Map<String, dynamic>?,
+  ),
+  richBodyTextStyle: const TextStyleConverter().fromJson(
+    json['richBodyTextStyle'] as Map<String, dynamic>?,
+  ),
+  richShortcutTextStyle: const TextStyleConverter().fromJson(
+    json['richShortcutTextStyle'] as Map<String, dynamic>?,
+  ),
+  richShortcutBackgroundColor: const ColorConverter().fromJson(
+    json['richShortcutBackgroundColor'] as String,
+  ),
+  richShortcutBorderColor: const ColorConverter().fromJson(
+    json['richShortcutBorderColor'] as String,
+  ),
+  richShortcutPadding: const EdgeInsetsConverter().fromJson(
+    json['richShortcutPadding'] as Map<String, dynamic>,
+  ),
+  richShortcutBorderRadius: (json['richShortcutBorderRadius'] as num)
+      .toDouble(),
 );
 
 Map<String, dynamic> _$TooltipThemeExtensionToJson(
@@ -116,4 +147,32 @@ Map<String, dynamic> _$TooltipThemeExtensionToJson(
   'shadowColor': const ColorConverter().toJson(instance.shadowColor),
   'shadowBlurRadius': instance.shadowBlurRadius,
   'shadowOffsetY': instance.shadowOffsetY,
+  'richMaxWidth': instance.richMaxWidth,
+  'richIconSize': instance.richIconSize,
+  'richPadding': const EdgeInsetsConverter().toJson(instance.richPadding),
+  'richBorderRadius': instance.richBorderRadius,
+  'richBackgroundColor': const ColorConverter().toJson(
+    instance.richBackgroundColor,
+  ),
+  'richGap': instance.richGap,
+  'richTitleBodySpacing': instance.richTitleBodySpacing,
+  'richTitleTextStyle': ?const TextStyleConverter().toJson(
+    instance.richTitleTextStyle,
+  ),
+  'richBodyTextStyle': ?const TextStyleConverter().toJson(
+    instance.richBodyTextStyle,
+  ),
+  'richShortcutTextStyle': ?const TextStyleConverter().toJson(
+    instance.richShortcutTextStyle,
+  ),
+  'richShortcutBackgroundColor': const ColorConverter().toJson(
+    instance.richShortcutBackgroundColor,
+  ),
+  'richShortcutBorderColor': const ColorConverter().toJson(
+    instance.richShortcutBorderColor,
+  ),
+  'richShortcutPadding': const EdgeInsetsConverter().toJson(
+    instance.richShortcutPadding,
+  ),
+  'richShortcutBorderRadius': instance.richShortcutBorderRadius,
 };

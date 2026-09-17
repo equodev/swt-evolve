@@ -12,6 +12,9 @@ import '../gen/image.dart';
 import '../impl/item_evolve.dart';
 import './utils/image_utils.dart';
 import './utils/widget_utils.dart';
+import '../custom/main_toolbar_scope.dart';
+import '../custom/rich_tooltip.dart';
+import '../custom/toast.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import 'toolbar_evolve.dart';
@@ -236,6 +239,39 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     return button;
   }
 
+  /// The custom tooltip card when this item gets one, the plain one-line strip otherwise.
+  Widget _withTooltip(
+    BuildContext context, {
+    required ToolItemThemeExtension widgetTheme,
+    required String message,
+    required Widget child,
+  }) =>
+      EvolveToolTip.maybeWrap(
+        context,
+        item: state,
+        message: message,
+        leading: _itemArtwork(widgetTheme),
+        child: child,
+      ) ??
+      Tooltip(
+        message: message,
+        preferBelow: widgetTheme.tooltipPreferBelow,
+        verticalOffset: widgetTheme.tooltipVerticalOffset,
+        margin: widgetTheme.tooltipMargin,
+        waitDuration: widgetTheme.tooltipWaitDuration,
+        child: child,
+      );
+
+  /// The item's own icon, so a card can lead with it. Null for an item that has no image, which
+  /// then gets a text-only card.
+  Widget? _itemArtwork(ToolItemThemeExtension widgetTheme) {
+    final enabled = state.enabled ?? false;
+    final image = _getImageForState(enabled);
+    if (image == null) return null;
+    return _buildImage(
+      image, enabled, null, widgetTheme.iconSize, widgetTheme.enabledColor, widgetTheme);
+  }
+
   Widget _buildToolbarButton({
     required BuildContext context,
     required ToolItemThemeExtension widgetTheme,
@@ -402,12 +438,10 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
       builder: (_, incoming) => buildHoverable(incoming.maxWidth),
     );
 
-    hoverableContent = Tooltip(
+    hoverableContent = _withTooltip(
+      context,
+      widgetTheme: widgetTheme,
       message: tooltip ?? state.toolTipText ?? '',
-      preferBelow: widgetTheme.tooltipPreferBelow,
-      verticalOffset: widgetTheme.tooltipVerticalOffset,
-      margin: widgetTheme.tooltipMargin,
-      waitDuration: widgetTheme.tooltipWaitDuration,
       child: hoverableContent,
     );
 
@@ -688,10 +722,12 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
   }
 
   void onPressed() {
+    EvolveNotification.maybeRaiseFor(context, state);
     widget.sendSelectionSelection(state, null);
   }
 
   void openMenu() {
+    EvolveNotification.maybeRaiseFor(context, state);
     widget.sendSelectionOpenMenu(state, toolItemGeometryEvent(context));
   }
 }

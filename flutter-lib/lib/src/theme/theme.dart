@@ -32,6 +32,7 @@ import 'theme_settings/menu_theme_settings.dart';
 import 'theme_settings/menuitem_theme_settings.dart';
 import 'theme_settings/coolbar_theme_settings.dart';
 import 'theme_settings/coolitem_theme_settings.dart';
+import 'theme_settings/toast_theme_settings.dart';
 import 'theme_settings/tooltip_theme_settings.dart';
 import 'theme_settings/sash_theme_settings.dart';
 import 'theme_settings/canvas_theme_settings.dart';
@@ -690,6 +691,11 @@ ThemeData createLightDefaultTheme(int? backgroundColor, {Color? seedColor}) {
     textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('tooltip', colorScheme, Brightness.light),
   );
+  final toastTheme = getToastLightTheme(
+    colorScheme: _resolveWidgetColorScheme('toast', colorScheme, Brightness.light),
+    textTheme: materialTextTheme,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('toast', colorScheme, Brightness.light),
+  );
   final sashTheme = getSashLightTheme(
     colorScheme: _resolveWidgetColorScheme('sash', colorScheme, Brightness.light),
     textTheme: materialTextTheme,
@@ -762,6 +768,7 @@ ThemeData createLightDefaultTheme(int? backgroundColor, {Color? seedColor}) {
       coolBarTheme,
       coolItemTheme,
       tooltipTheme,
+      toastTheme,
       sashTheme,
       canvasTheme,
       styledTextTheme,
@@ -937,6 +944,11 @@ ThemeData createLightNonDefaultTheme(
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final toastTheme = getToastLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   final sashTheme = getSashLightTheme(
     colorScheme: colorScheme,
     textTheme: materialTextTheme,
@@ -1010,6 +1022,7 @@ ThemeData createLightNonDefaultTheme(
       coolBarTheme,
       coolItemTheme,
       tooltipTheme,
+      toastTheme,
       sashTheme,
       canvasTheme,
       styledTextTheme,
@@ -1185,6 +1198,11 @@ ThemeData createDarkDefaultTheme(int? backgroundColor, {Color? seedColor}) {
     textTheme: materialTextTheme,
     colorSchemeExtension: _resolveWidgetColorSchemeExtension('tooltip', colorScheme, Brightness.dark),
   );
+  final toastTheme = getToastDarkTheme(
+    colorScheme: _resolveWidgetColorScheme('toast', colorScheme, Brightness.dark),
+    textTheme: materialTextTheme,
+    colorSchemeExtension: _resolveWidgetColorSchemeExtension('toast', colorScheme, Brightness.dark),
+  );
   final sashTheme = getSashDarkTheme(
     colorScheme: _resolveWidgetColorScheme('sash', colorScheme, Brightness.dark),
     textTheme: materialTextTheme,
@@ -1257,6 +1275,7 @@ ThemeData createDarkDefaultTheme(int? backgroundColor, {Color? seedColor}) {
       coolBarTheme,
       coolItemTheme,
       tooltipTheme,
+      toastTheme,
       sashTheme,
       canvasTheme,
       styledTextTheme,
@@ -1432,6 +1451,11 @@ ThemeData createDarkNonDefaultTheme(
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final toastTheme = getToastDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   final sashTheme = getSashDarkTheme(
     colorScheme: colorScheme,
     textTheme: materialTextTheme,
@@ -1505,6 +1529,7 @@ ThemeData createDarkNonDefaultTheme(
       coolBarTheme,
       coolItemTheme,
       tooltipTheme,
+      toastTheme,
       sashTheme,
       canvasTheme,
       styledTextTheme,

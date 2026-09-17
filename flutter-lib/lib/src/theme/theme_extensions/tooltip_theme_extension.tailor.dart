@@ -44,6 +44,20 @@ mixin _$TooltipThemeExtensionTailorMixin
   Color get shadowColor;
   double get shadowBlurRadius;
   double get shadowOffsetY;
+  double get richMaxWidth;
+  double get richIconSize;
+  EdgeInsets get richPadding;
+  double get richBorderRadius;
+  Color get richBackgroundColor;
+  double get richGap;
+  double get richTitleBodySpacing;
+  TextStyle? get richTitleTextStyle;
+  TextStyle? get richBodyTextStyle;
+  TextStyle? get richShortcutTextStyle;
+  Color get richShortcutBackgroundColor;
+  Color get richShortcutBorderColor;
+  EdgeInsets get richShortcutPadding;
+  double get richShortcutBorderRadius;
 
   @override
   TooltipThemeExtension copyWith({
@@ -80,6 +94,20 @@ mixin _$TooltipThemeExtensionTailorMixin
     Color? shadowColor,
     double? shadowBlurRadius,
     double? shadowOffsetY,
+    double? richMaxWidth,
+    double? richIconSize,
+    EdgeInsets? richPadding,
+    double? richBorderRadius,
+    Color? richBackgroundColor,
+    double? richGap,
+    double? richTitleBodySpacing,
+    TextStyle? richTitleTextStyle,
+    TextStyle? richBodyTextStyle,
+    TextStyle? richShortcutTextStyle,
+    Color? richShortcutBackgroundColor,
+    Color? richShortcutBorderColor,
+    EdgeInsets? richShortcutPadding,
+    double? richShortcutBorderRadius,
   }) {
     return TooltipThemeExtension(
       waitDuration: waitDuration ?? this.waitDuration,
@@ -117,6 +145,24 @@ mixin _$TooltipThemeExtensionTailorMixin
       shadowColor: shadowColor ?? this.shadowColor,
       shadowBlurRadius: shadowBlurRadius ?? this.shadowBlurRadius,
       shadowOffsetY: shadowOffsetY ?? this.shadowOffsetY,
+      richMaxWidth: richMaxWidth ?? this.richMaxWidth,
+      richIconSize: richIconSize ?? this.richIconSize,
+      richPadding: richPadding ?? this.richPadding,
+      richBorderRadius: richBorderRadius ?? this.richBorderRadius,
+      richBackgroundColor: richBackgroundColor ?? this.richBackgroundColor,
+      richGap: richGap ?? this.richGap,
+      richTitleBodySpacing: richTitleBodySpacing ?? this.richTitleBodySpacing,
+      richTitleTextStyle: richTitleTextStyle ?? this.richTitleTextStyle,
+      richBodyTextStyle: richBodyTextStyle ?? this.richBodyTextStyle,
+      richShortcutTextStyle:
+          richShortcutTextStyle ?? this.richShortcutTextStyle,
+      richShortcutBackgroundColor:
+          richShortcutBackgroundColor ?? this.richShortcutBackgroundColor,
+      richShortcutBorderColor:
+          richShortcutBorderColor ?? this.richShortcutBorderColor,
+      richShortcutPadding: richShortcutPadding ?? this.richShortcutPadding,
+      richShortcutBorderRadius:
+          richShortcutBorderRadius ?? this.richShortcutBorderRadius,
     );
   }
 
@@ -188,6 +234,50 @@ mixin _$TooltipThemeExtensionTailorMixin
       shadowColor: Color.lerp(shadowColor, other.shadowColor, t)!,
       shadowBlurRadius: t < 0.5 ? shadowBlurRadius : other.shadowBlurRadius,
       shadowOffsetY: t < 0.5 ? shadowOffsetY : other.shadowOffsetY,
+      richMaxWidth: t < 0.5 ? richMaxWidth : other.richMaxWidth,
+      richIconSize: t < 0.5 ? richIconSize : other.richIconSize,
+      richPadding: t < 0.5 ? richPadding : other.richPadding,
+      richBorderRadius: t < 0.5 ? richBorderRadius : other.richBorderRadius,
+      richBackgroundColor: Color.lerp(
+        richBackgroundColor,
+        other.richBackgroundColor,
+        t,
+      )!,
+      richGap: t < 0.5 ? richGap : other.richGap,
+      richTitleBodySpacing: t < 0.5
+          ? richTitleBodySpacing
+          : other.richTitleBodySpacing,
+      richTitleTextStyle: TextStyle.lerp(
+        richTitleTextStyle,
+        other.richTitleTextStyle,
+        t,
+      ),
+      richBodyTextStyle: TextStyle.lerp(
+        richBodyTextStyle,
+        other.richBodyTextStyle,
+        t,
+      ),
+      richShortcutTextStyle: TextStyle.lerp(
+        richShortcutTextStyle,
+        other.richShortcutTextStyle,
+        t,
+      ),
+      richShortcutBackgroundColor: Color.lerp(
+        richShortcutBackgroundColor,
+        other.richShortcutBackgroundColor,
+        t,
+      )!,
+      richShortcutBorderColor: Color.lerp(
+        richShortcutBorderColor,
+        other.richShortcutBorderColor,
+        t,
+      )!,
+      richShortcutPadding: t < 0.5
+          ? richShortcutPadding
+          : other.richShortcutPadding,
+      richShortcutBorderRadius: t < 0.5
+          ? richShortcutBorderRadius
+          : other.richShortcutBorderRadius,
     );
   }
 
@@ -309,6 +399,59 @@ mixin _$TooltipThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               shadowOffsetY,
               other.shadowOffsetY,
+            ) &&
+            const DeepCollectionEquality().equals(
+              richMaxWidth,
+              other.richMaxWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              richIconSize,
+              other.richIconSize,
+            ) &&
+            const DeepCollectionEquality().equals(
+              richPadding,
+              other.richPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              richBorderRadius,
+              other.richBorderRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
+              richBackgroundColor,
+              other.richBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(richGap, other.richGap) &&
+            const DeepCollectionEquality().equals(
+              richTitleBodySpacing,
+              other.richTitleBodySpacing,
+            ) &&
+            const DeepCollectionEquality().equals(
+              richTitleTextStyle,
+              other.richTitleTextStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              richBodyTextStyle,
+              other.richBodyTextStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              richShortcutTextStyle,
+              other.richShortcutTextStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              richShortcutBackgroundColor,
+              other.richShortcutBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              richShortcutBorderColor,
+              other.richShortcutBorderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              richShortcutPadding,
+              other.richShortcutPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              richShortcutBorderRadius,
+              other.richShortcutBorderRadius,
             ));
   }
 
@@ -349,6 +492,20 @@ mixin _$TooltipThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(shadowColor),
       const DeepCollectionEquality().hash(shadowBlurRadius),
       const DeepCollectionEquality().hash(shadowOffsetY),
+      const DeepCollectionEquality().hash(richMaxWidth),
+      const DeepCollectionEquality().hash(richIconSize),
+      const DeepCollectionEquality().hash(richPadding),
+      const DeepCollectionEquality().hash(richBorderRadius),
+      const DeepCollectionEquality().hash(richBackgroundColor),
+      const DeepCollectionEquality().hash(richGap),
+      const DeepCollectionEquality().hash(richTitleBodySpacing),
+      const DeepCollectionEquality().hash(richTitleTextStyle),
+      const DeepCollectionEquality().hash(richBodyTextStyle),
+      const DeepCollectionEquality().hash(richShortcutTextStyle),
+      const DeepCollectionEquality().hash(richShortcutBackgroundColor),
+      const DeepCollectionEquality().hash(richShortcutBorderColor),
+      const DeepCollectionEquality().hash(richShortcutPadding),
+      const DeepCollectionEquality().hash(richShortcutBorderRadius),
     ]);
   }
 }
@@ -396,4 +553,32 @@ extension TooltipThemeExtensionBuildContextProps on BuildContext {
   Color get shadowColor => tooltipThemeExtension.shadowColor;
   double get shadowBlurRadius => tooltipThemeExtension.shadowBlurRadius;
   double get shadowOffsetY => tooltipThemeExtension.shadowOffsetY;
+
+  /// The rich tooltip -- the card a main-toolbar ToolItem opens when `swt.evolve.rich_tooltips` is
+  /// on. It is a wider, taller surface than the hover strip above, so it carries its own geometry
+  /// and text styles; severity colours and the shadow are shared with the plain tooltip.
+  double get richMaxWidth => tooltipThemeExtension.richMaxWidth;
+
+  /// Sized against the card's own text, not against the balloon's [iconSize] -- a 24px glyph beside
+  /// a 13px title reads as two unrelated things stacked next to each other.
+  double get richIconSize => tooltipThemeExtension.richIconSize;
+  EdgeInsets get richPadding => tooltipThemeExtension.richPadding;
+  double get richBorderRadius => tooltipThemeExtension.richBorderRadius;
+  Color get richBackgroundColor => tooltipThemeExtension.richBackgroundColor;
+
+  /// Vertical distance between the item and the top of the card.
+  double get richGap => tooltipThemeExtension.richGap;
+  double get richTitleBodySpacing => tooltipThemeExtension.richTitleBodySpacing;
+  TextStyle? get richTitleTextStyle => tooltipThemeExtension.richTitleTextStyle;
+  TextStyle? get richBodyTextStyle => tooltipThemeExtension.richBodyTextStyle;
+  TextStyle? get richShortcutTextStyle =>
+      tooltipThemeExtension.richShortcutTextStyle;
+  Color get richShortcutBackgroundColor =>
+      tooltipThemeExtension.richShortcutBackgroundColor;
+  Color get richShortcutBorderColor =>
+      tooltipThemeExtension.richShortcutBorderColor;
+  EdgeInsets get richShortcutPadding =>
+      tooltipThemeExtension.richShortcutPadding;
+  double get richShortcutBorderRadius =>
+      tooltipThemeExtension.richShortcutBorderRadius;
 }

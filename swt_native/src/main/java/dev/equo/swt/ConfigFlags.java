@@ -86,7 +86,24 @@ public class ConfigFlags {
      * flags.
      */
     public boolean disable_hover_zoom;
-    
+
+    /**
+     * Draws a main-toolbar {@code ToolItem}'s tooltip as a card -- icon, title, body and
+     * keyboard-shortcut hint -- instead of the one-line strip {@code setToolTipText} gets
+     * elsewhere. Off by default, and scoped to the main toolbar: everything outside it keeps the
+     * plain tooltip either way. Colours, type and geometry are theme values
+     * ({@code TooltipThemeExtension.rich*}), not flags.
+     */
+    public boolean custom_tooltip;
+
+    /**
+     * Raises a transient card in the corner of the window when a main-toolbar item is clicked. SWT
+     * has no such widget, so there is nothing for an application to ask for -- this is the whole
+     * feature, and it is off by default. The item's own action is untouched: the card is raised
+     * alongside it, never instead of it.
+     */
+    public boolean notification_popup;
+
     public String force_theme;
     public String theme_name;
     public String theme_color;
@@ -149,6 +166,8 @@ public class ConfigFlags {
                 ", focus_indicators=" + focus_indicators +
                 ", preserve_icon_colors=" + preserve_icon_colors +
                 ", disable_hover_zoom=" + disable_hover_zoom +
+                ", custom_tooltip=" + custom_tooltip +
+                ", notification_popup=" + notification_popup +
                 ", show_scaling_control=" + show_scaling_control +
                 ", decorations_align='" + decorations_align + '\'' +
                 ", csd_placement='" + csd_placement + '\'' +

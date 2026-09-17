@@ -31,6 +31,12 @@ const double _kBarSize = 17.0;
 
 class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     extends CompositeImpl<T, V> {
+  /// A canvas is whatever the application painted on it -- an icon here has no label, no image and
+  /// no item, so its tooltip is the only thing that can name it. Everywhere, not only in the main
+  /// toolbar: a canvas in a view has the same problem.
+  @override
+  bool get usesCustomTooltipCard => true;
+
   bool _scrollbarDragging = false;
   int _dragEndMs = 0;
   double _localVScrollPx = 0.0;
