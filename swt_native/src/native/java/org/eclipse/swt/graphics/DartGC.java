@@ -1930,6 +1930,8 @@ public final class DartGC extends DartResource implements IGC {
             if (widget != null) {
                 this.bridge = widget.getBridge();
                 this.display = widget.getDisplay();
+                // Flutter keeps the previous GC's state on this control's channel; replace it before the first op.
+                dirty();
             }
         }
     }
