@@ -4,12 +4,16 @@ import dev.equo.swt.Config;
 
 class Impls {
 
-    static IIFileDialog newFileDialog(Shell parent, org.eclipse.swt.widgets.FileDialog api) {
-        return Config.isEquo(org.eclipse.swt.widgets.FileDialog.class, parent) ? new DartFileDialog(parent, api) : new SwtFileDialog(parent, api);
+    static IDialog newDialog(Shell parent, org.eclipse.swt.widgets.Dialog api) {
+        return Config.isEquo(org.eclipse.swt.widgets.Dialog.class, parent) ? new DartDialog(parent, api) {
+        } : new SwtDialog(parent, api) {
+        };
     }
 
-    static IIFileDialog newFileDialog(Shell parent, int style, org.eclipse.swt.widgets.FileDialog api) {
-        return Config.isEquo(org.eclipse.swt.widgets.FileDialog.class, parent) ? new DartFileDialog(parent, style, api) : new SwtFileDialog(parent, style, api);
+    static IDialog newDialog(Shell parent, int style, org.eclipse.swt.widgets.Dialog api) {
+        return Config.isEquo(org.eclipse.swt.widgets.Dialog.class, parent) ? new DartDialog(parent, style, api) {
+        } : new SwtDialog(parent, style, api) {
+        };
     }
 
     static IDirectoryDialog newDirectoryDialog(Shell parent, org.eclipse.swt.widgets.DirectoryDialog api) {
@@ -18,5 +22,13 @@ class Impls {
 
     static IDirectoryDialog newDirectoryDialog(Shell parent, int style, org.eclipse.swt.widgets.DirectoryDialog api) {
         return Config.isEquo(org.eclipse.swt.widgets.DirectoryDialog.class, parent) ? new DartDirectoryDialog(parent, style, api) : new SwtDirectoryDialog(parent, style, api);
+    }
+
+    static IIFileDialog newFileDialog(Shell parent, org.eclipse.swt.widgets.FileDialog api) {
+        return Config.isEquo(org.eclipse.swt.widgets.FileDialog.class, parent) ? new DartFileDialog(parent, api) : new SwtFileDialog(parent, api);
+    }
+
+    static IIFileDialog newFileDialog(Shell parent, int style, org.eclipse.swt.widgets.FileDialog api) {
+        return Config.isEquo(org.eclipse.swt.widgets.FileDialog.class, parent) ? new DartFileDialog(parent, style, api) : new SwtFileDialog(parent, style, api);
     }
 }

@@ -95,6 +95,8 @@ public abstract class Dialog {
      * </ul>
      */
     public Dialog(Shell parent) {
+        this((IDialog) null);
+        setImpl(Impls.newDialog(parent, this));
     }
 
     /**
@@ -124,6 +126,8 @@ public abstract class Dialog {
      * @see SWT#SYSTEM_MODAL
      */
     public Dialog(Shell parent, int style) {
+        this((IDialog) null);
+        setImpl(Impls.newDialog(parent, style, this));
     }
 
     /**
