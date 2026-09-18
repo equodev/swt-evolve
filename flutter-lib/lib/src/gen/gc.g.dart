@@ -36,7 +36,11 @@ VGC _$VGCFromJson(Map<String, dynamic> json) => VGC()
       ? null
       : VColor.fromJson(json['foreground'] as Map<String, dynamic>)
   ..lineCap = (json['lineCap'] as num?)?.toInt()
+  ..lineDash = (json['lineDash'] as List<dynamic>?)
+      ?.map((e) => (e as num).toInt())
+      .toList()
   ..lineJoin = (json['lineJoin'] as num?)?.toInt()
+  ..lineStyle = (json['lineStyle'] as num?)?.toInt()
   ..lineWidth = (json['lineWidth'] as num?)?.toInt()
   ..transform = json['transform'] == null
       ? null
@@ -57,7 +61,9 @@ Map<String, dynamic> _$VGCToJson(VGC instance) => <String, dynamic>{
   'font': ?instance.font,
   'foreground': ?instance.foreground,
   'lineCap': ?instance.lineCap,
+  'lineDash': ?instance.lineDash,
   'lineJoin': ?instance.lineJoin,
+  'lineStyle': ?instance.lineStyle,
   'lineWidth': ?instance.lineWidth,
   'transform': ?instance.transform,
 };

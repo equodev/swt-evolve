@@ -319,6 +319,77 @@ class GCDrawer extends GCDrawerBase {
   int get lineCap => state.lineCap ?? 1;
   int get lineJoin => state.lineJoin ?? 1;
 
+  PathFillType get _fillType =>
+      (state.fillRule ?? SWT.FILL_EVEN_ODD) == SWT.FILL_WINDING
+          ? PathFillType.nonZero
+          : PathFillType.evenOdd;
+
+  /// The dash lengths of the current line style, or null when it strokes solid.
+  ///
+  /// A built-in style is a pattern in line-width units, with a fixed one standing in at width 0;
+  /// LINE_CUSTOM carries its own lengths and is taken as given.
+  List<double>? get _dashPattern {
+    final width = (state.lineWidth ?? 0).toDouble();
+    final hairline = width == 0;
+    final List<double>? pattern = switch (state.lineStyle ?? SWT.LINE_SOLID) {
+      SWT.LINE_DASH => hairline ? const [18.0, 6.0] : const [3.0, 1.0],
+      SWT.LINE_DOT => hairline ? const [3.0, 3.0] : const [1.0, 1.0],
+      SWT.LINE_DASHDOT =>
+        hairline ? const [9.0, 6.0, 3.0, 6.0] : const [3.0, 1.0, 1.0, 1.0],
+      SWT.LINE_DASHDOTDOT => hairline
+          ? const [9.0, 3.0, 3.0, 3.0, 3.0, 3.0]
+          : const [3.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+      SWT.LINE_CUSTOM => state.lineDash?.map((d) => d.toDouble()).toList(),
+      _ => null,
+    };
+    if (pattern == null || pattern.isEmpty) return null;
+    final scaled = state.lineStyle == SWT.LINE_CUSTOM || hairline
+        ? pattern
+        : pattern.map((d) => d * width).toList();
+    return scaled.fold(0.0, (sum, d) => sum + d) > 0 ? scaled : null;
+  }
+
+  /// Emits [outline] stroked as the current line style, and answers whether it did: a solid style
+  /// has no pattern to walk, and the caller draws its own shape instead.
+  bool _addDashedStroke(Path Function() outline, Color color) {
+    final pattern = _dashPattern;
+    if (pattern == null) return false;
+    _addShape(PathShape(_dashed(outline(), pattern), color, lineWidth, lineCap,
+        lineJoin,
+        clipRect: _childClip));
+    return true;
+  }
+
+  /// The outline [points] describe, as a path: pairs of device-space coordinates.
+  Path _polygonPath(List<int> points, {required bool close}) {
+    final path = Path()..moveTo(points[0].toDouble(), points[1].toDouble());
+    for (var i = 2; i < points.length; i += 2) {
+      path.lineTo(points[i].toDouble(), points[i + 1].toDouble());
+    }
+    if (close) path.close();
+    return path;
+  }
+
+  /// A path holding the "on" runs of [pattern] along [source] - Flutter strokes a path solid, so
+  /// the gaps have to be left out of the geometry rather than asked for on the Paint.
+  Path _dashed(Path source, List<double> pattern) {
+    final out = Path();
+    for (final metric in source.computeMetrics()) {
+      var distance = 0.0;
+      var index = 0;
+      while (distance < metric.length) {
+        final length = pattern[index % pattern.length];
+        if (index.isEven) {
+          out.addPath(
+              metric.extractPath(distance, distance + length), Offset.zero);
+        }
+        distance += length;
+        index++;
+      }
+    }
+    return out;
+  }
+
   Rect? get clipping {
     if (state.clipping == null) return null;
     final width = state.clipping!.width?.toDouble() ?? 0;
@@ -440,6 +511,13 @@ class GCDrawer extends GCDrawerBase {
     final rect = _getRectFromArgs(x, y, width, height);
     final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
     final strokeWidth = isFilled ? 0.0 : lineWidth;
+    if (!isFilled &&
+        _addDashedStroke(
+            () => Path()
+              ..addRRect(RRect.fromRectXY(rect, arcWidth / 2.0, arcHeight / 2.0)),
+            color)) {
+      return;
+    }
     _addShape(RoundRectShape(
         rect, arcWidth / 2.0, arcHeight / 2.0, color, strokeWidth, lineCap, lineJoin,
         isFilled: isFilled, clipRect: _childClip));
@@ -455,6 +533,7 @@ class GCDrawer extends GCDrawerBase {
     final rect = _getRectFromArgs(x, y, width, height);
     final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
     final strokeWidth = isFilled ? 0.0 : lineWidth;
+    if (!isFilled && _addDashedStroke(() => Path()..addOval(rect), color)) return;
     _addShape(OvalShape(rect, color, strokeWidth,
         isFilled: isFilled, clipRect: _childClip));
   }
@@ -481,6 +560,7 @@ class GCDrawer extends GCDrawerBase {
     } else {
       final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
       final strokeWidth = isFilled ? 0.0 : lineWidth;
+      if (!isFilled && _addDashedStroke(() => Path()..addRect(rect), color)) return;
       _addShape(RectShape(rect, color, strokeWidth, lineCap, lineJoin,
           isFilled: isFilled, clipRect: _childClip));
     }
@@ -494,8 +574,12 @@ class GCDrawer extends GCDrawerBase {
     if (points.length >= minPoints && points.length % 2 == 0) {
       final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
       final strokeWidth = isFilled ? 0.0 : lineWidth;
+      if (!isFilled &&
+          _addDashedStroke(() => _polygonPath(points, close: true), color)) {
+        return;
+      }
       _addShape(PolygonShape(points, color, strokeWidth, lineCap, lineJoin,
-          isFilled: isFilled, clipRect: _childClip));
+          isFilled: isFilled, fillType: _fillType, clipRect: _childClip));
     }
   }
 
@@ -507,6 +591,10 @@ class GCDrawer extends GCDrawerBase {
     if (points.length >= minPoints && points.length % 2 == 0) {
       final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
       final strokeWidth = isFilled ? 0.0 : lineWidth;
+      if (!isFilled &&
+          _addDashedStroke(() => _polygonPath(points, close: false), color)) {
+        return;
+      }
       _addShape(PolylineShape(points, color, strokeWidth, lineCap, lineJoin,
           isFilled: isFilled, clipRect: _childClip));
     }
@@ -516,6 +604,7 @@ class GCDrawer extends GCDrawerBase {
     final built = _buildPath(path);
     if (built == null) return;
     final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
+    if (!isFilled && _addDashedStroke(() => built, color)) return;
     _addShape(PathShape(built, color, isFilled ? 0.0 : lineWidth, lineCap, lineJoin,
         isFilled: isFilled, clipRect: _childClip));
   }
@@ -531,10 +620,7 @@ class GCDrawer extends GCDrawerBase {
     final points = pathData?.points;
     if (types == null || points == null || types.isEmpty) return null;
     final path = Path()
-      ..fillType = fillType ??
-          ((state.fillRule ?? SWT.FILL_EVEN_ODD) == SWT.FILL_WINDING
-              ? PathFillType.nonZero
-              : PathFillType.evenOdd);
+      ..fillType = fillType ?? _fillType;
     var i = 0;
     bool has(int n) => i + n <= points.length;
     for (final type in types) {
@@ -572,6 +658,14 @@ class GCDrawer extends GCDrawerBase {
     final rect = _getRectFromArgs(x, y, width, height);
     final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
     final strokeWidth = isFilled ? 0.0 : lineWidth;
+    if (!isFilled &&
+        _addDashedStroke(
+            () => Path()
+              ..addArc(rect, _degToRad(-startAngle.toDouble()),
+                  _degToRad(-arcAngle.toDouble())),
+            color)) {
+      return;
+    }
     _addShape(ArcShape(
         rect,
         _degToRad(-startAngle.toDouble()),
@@ -785,7 +879,7 @@ class GCDrawer extends GCDrawerBase {
       PolygonShape s => PolygonShape(
           _translatePoints(s.points, offset), s.color, s.strokeWidth,
           s.lineCap, s.lineJoin,
-          isFilled: s.isFilled, clipRect: clipArea),
+          isFilled: s.isFilled, fillType: s.fillType, clipRect: clipArea),
       ArcShape s => ArcShape(
           s.rect.translate(offset.dx, offset.dy), s.startAngle, s.sweepAngle,
           s.color, s.strokeWidth, s.lineCap, s.lineJoin,
@@ -935,10 +1029,17 @@ class GCDrawer extends GCDrawerBase {
 
   @override
   void onDrawLineintintintint(VGCDrawLineintintintint o) {
+    final from = Offset(o.x1.toDouble(), o.y1.toDouble());
+    final to = Offset(o.x2.toDouble(), o.y2.toDouble());
+    if (_addDashedStroke(
+        () => Path()
+          ..moveTo(from.dx, from.dy)
+          ..lineTo(to.dx, to.dy),
+        applyAlpha(lineColor))) {
+      return;
+    }
     _addShape(LineShape(
-        Offset(o.x1.toDouble(), o.y1.toDouble()),
-        Offset(o.x2.toDouble(), o.y2.toDouble()),
-        applyAlpha(lineColor), lineWidth, lineCap, lineJoin, _childClip));
+        from, to, applyAlpha(lineColor), lineWidth, lineCap, lineJoin, _childClip));
   }
 
   @override
@@ -1559,13 +1660,17 @@ class PathShape extends Shape {
 
 class PolygonShape extends Shape {
   PolygonShape(this.points, this.color, this.strokeWidth, this.lineCap,
-      this.lineJoin, {this.isFilled = false, this.clipRect});
+      this.lineJoin,
+      {this.isFilled = false,
+      this.fillType = PathFillType.evenOdd,
+      this.clipRect});
   final List<int> points;
   final Color color;
   final double strokeWidth;
   final int lineCap;
   final int lineJoin;
   final bool isFilled;
+  final PathFillType fillType;
   @override
   final Rect? clipRect;
 
@@ -1574,6 +1679,7 @@ class PolygonShape extends Shape {
     if (points.length < 6) return;
     if (clipRect != null) { c.save(); c.clipRect(clipRect!); }
     final path = Path()
+      ..fillType = fillType
       ..moveTo(points[0].toDouble(), points[1].toDouble());
     for (int i = 2; i < points.length; i += 2) {
       path.lineTo(points[i].toDouble(), points[i + 1].toDouble());

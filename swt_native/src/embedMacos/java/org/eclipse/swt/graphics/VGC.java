@@ -157,7 +157,6 @@ public class VGC extends VResource {
         ((DartGC) impl).lineCap = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int[] getLineDash() {
         return ((DartGC) impl).lineDash;
     }
@@ -174,7 +173,6 @@ public class VGC extends VResource {
         ((DartGC) impl).lineJoin = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getLineStyle() {
         return ((DartGC) impl).getLineStyle();
     }
@@ -572,7 +570,11 @@ public class VGC extends VResource {
 
     public static final String LINE_CAP = "lineCap";
 
+    public static final String LINE_DASH = "lineDash";
+
     public static final String LINE_JOIN = "lineJoin";
+
+    public static final String LINE_STYLE = "lineStyle";
 
     public static final String LINE_WIDTH = "lineWidth";
 
@@ -611,8 +613,14 @@ public class VGC extends VResource {
             case "lineCap":
                 Serializer.writeKeyValue(writer, "lineCap", getLineCap());
                 return;
+            case "lineDash":
+                Serializer.writeKeyValue(writer, "lineDash", getLineDash());
+                return;
             case "lineJoin":
                 Serializer.writeKeyValue(writer, "lineJoin", getLineJoin());
+                return;
+            case "lineStyle":
+                Serializer.writeKeyValue(writer, "lineStyle", getLineStyle());
                 return;
             case "lineWidth":
                 Serializer.writeKeyValue(writer, "lineWidth", getLineWidth());

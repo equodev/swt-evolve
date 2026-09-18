@@ -1900,8 +1900,10 @@ public final class DartGC extends DartResource implements IGC {
             if (drawable instanceof Control && ((Control) drawable).getFont() != null) {
                 Control control = (Control) drawable;
                 this.font = data.font = control.getFont();
+                getValue().markDirty(VGC.FONT);
             } else {
                 this.font = data.font = Display.getCurrent().getSystemFont();
+                getValue().markDirty(VGC.FONT);
             }
         }
         data.state &= ~DRAW_OFFSET;
@@ -2199,6 +2201,7 @@ public final class DartGC extends DartResource implements IGC {
         if (color.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         data.backgroundPattern = null;
+        getValue().markDirty(VGC.BACKGROUND_PATTERN);
         data.state &= ~BACKGROUND;
     }
 
@@ -2632,9 +2635,13 @@ public final class DartGC extends DartResource implements IGC {
         if (mask == 0)
             return;
         data.lineWidth = lineWidth;
+        getValue().markDirty(VGC.LINE_WIDTH);
         data.lineStyle = lineStyle;
+        getValue().markDirty(VGC.LINE_STYLE);
         data.lineCap = cap;
+        getValue().markDirty(VGC.LINE_CAP);
         data.lineJoin = join;
+        getValue().markDirty(VGC.LINE_JOIN);
         data.lineDashes = dashes;
         data.lineDashesOffset = dashOffset;
         data.lineMiterLimit = miterLimit;
@@ -2697,6 +2704,9 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setLineDash(int[] dashes) {
         int[] newValue = dashes;
+        if (!java.util.Objects.equals(this.lineDash, newValue)) {
+            getValue().markDirty(VGC.LINE_DASH);
+        }
         float[] lineDashes = data.lineDashes;
         if (dashes != null && dashes.length > 0) {
             boolean changed = data.lineStyle != SWT.LINE_CUSTOM || lineDashes == null || lineDashes.length != dashes.length;
@@ -2714,11 +2724,13 @@ public final class DartGC extends DartResource implements IGC {
                 data.lineDashes[i] = dashes[i];
             }
             data.lineStyle = SWT.LINE_CUSTOM;
+            getValue().markDirty(VGC.LINE_STYLE);
         } else {
             if (data.lineStyle == SWT.LINE_SOLID && (lineDashes == null || lineDashes.length == 0))
                 return;
             data.lineDashes = null;
             data.lineStyle = SWT.LINE_SOLID;
+            getValue().markDirty(VGC.LINE_STYLE);
         }
         this.lineDash = newValue;
         data.state &= ~LINE_STYLE;
@@ -2778,6 +2790,9 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setLineStyle(int lineStyle) {
         int newValue = lineStyle;
+        if (!java.util.Objects.equals(this.lineStyle, newValue)) {
+            getValue().markDirty(VGC.LINE_STYLE);
+        }
         if (data.lineStyle == lineStyle)
             return;
         switch(lineStyle) {

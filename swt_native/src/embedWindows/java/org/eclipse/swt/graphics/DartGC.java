@@ -3142,14 +3142,18 @@ public final class DartGC extends DartResource implements IGC {
         }
         if (data.font != null) {
             data.state &= ~FONT;
+            getValue().markDirty(VGC.FONT);
         } else {
+            getValue().markDirty(VGC.FONT);
         }
         if (data.font == null) {
             if (drawable instanceof Control && ((Control) drawable).getFont() != null) {
                 Control control = (Control) drawable;
                 this.font = data.font = control.getFont();
+                getValue().markDirty(VGC.FONT);
             } else {
                 this.font = data.font = Display.getCurrent().getSystemFont();
+                getValue().markDirty(VGC.FONT);
             }
         }
         GCHelper.ImageGCContext imageCtx = GCHelper.setupImageGC(drawable, data, this.getApi());
@@ -4112,8 +4116,11 @@ public final class DartGC extends DartResource implements IGC {
             return;
         data.lineWidth = lineWidth;
         data.lineStyle = lineStyle;
+        getValue().markDirty(VGC.LINE_STYLE);
         data.lineCap = cap;
+        getValue().markDirty(VGC.LINE_CAP);
         data.lineJoin = join;
+        getValue().markDirty(VGC.LINE_JOIN);
         data.lineDashes = dashes;
         data.lineDashesOffset = dashOffset;
         data.lineMiterLimit = miterLimit;
@@ -4190,6 +4197,9 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setLineDash(int[] dashes) {
         int[] newValue = dashes;
+        if (!java.util.Objects.equals(this.lineDash, newValue)) {
+            getValue().markDirty(VGC.LINE_DASH);
+        }
         checkNonDisposed();
         this.lineDash = newValue;
         storeAndApplyOperationForExistingHandle(new SetLineDashOperation(dashes));
@@ -4298,6 +4308,9 @@ public final class DartGC extends DartResource implements IGC {
      */
     public void setLineStyle(int lineStyle) {
         int newValue = lineStyle;
+        if (!java.util.Objects.equals(this.lineStyle, newValue)) {
+            getValue().markDirty(VGC.LINE_STYLE);
+        }
         checkNonDisposed();
         this.lineStyle = newValue;
         storeAndApplyOperationForExistingHandle(new SetLineStyleOperation(lineStyle));

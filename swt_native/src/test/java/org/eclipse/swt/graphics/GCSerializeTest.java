@@ -32,7 +32,9 @@ class GCSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("lineCap").equalsTo(w.getLineCap(), orAbsentIf0));
+        assertJ.satisfies(node("lineDash").equalsTo(w.getLineDash(), orAbsentIfNull));
         assertJ.satisfies(node("lineJoin").equalsTo(w.getLineJoin(), orAbsentIf0));
+        assertJ.satisfies(node("lineStyle").equalsTo(w.getLineStyle(), orAbsentIf0));
         assertJ.satisfies(node("lineWidth").equalsTo(w.getLineWidth(), orAbsentIf0));
     }
 

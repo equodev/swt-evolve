@@ -44,7 +44,9 @@ class VGC extends VWidget {
   VFont? font;
   VColor? foreground;
   int? lineCap;
+  List<int>? lineDash;
   int? lineJoin;
+  int? lineStyle;
   int? lineWidth;
   VTransform? transform;
 
@@ -63,7 +65,9 @@ class VGC extends VWidget {
       font = other.font;
       foreground = other.foreground;
       lineCap = other.lineCap;
+      lineDash = other.lineDash;
       lineJoin = other.lineJoin;
+      lineStyle = other.lineStyle;
       lineWidth = other.lineWidth;
       transform = other.transform;
     }
@@ -110,8 +114,14 @@ class VGC extends VWidget {
             : VColor.fromJson(json['foreground'] as Map<String, dynamic>);
       case 'lineCap':
         lineCap = (json['lineCap'] as num?)?.toInt();
+      case 'lineDash':
+        lineDash = (json['lineDash'] as List<dynamic>?)
+            ?.map((e) => (e as num).toInt())
+            .toList();
       case 'lineJoin':
         lineJoin = (json['lineJoin'] as num?)?.toInt();
+      case 'lineStyle':
+        lineStyle = (json['lineStyle'] as num?)?.toInt();
       case 'lineWidth':
         lineWidth = (json['lineWidth'] as num?)?.toInt();
       case 'transform':
