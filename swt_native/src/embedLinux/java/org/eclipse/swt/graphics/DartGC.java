@@ -1627,19 +1627,17 @@ public final class DartGC extends DartResource implements IGC {
      * </ul>
      */
     public void getClipping(Region region) {
-        if (getApi().handle == 0)
-            SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (region == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (region.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        long clipRgn = data.clipRgn;
-        if (clipRgn == 0) {
-            int[] width = new int[1], height = new int[1];
-            getSize(width, height);
+        region.subtract(region);
+        Rectangle bounds = getClipping();
+        if (clippingRects != null && clippingRects.length >= 4) {
+            for (int i = 0; i + 3 < clippingRects.length; i += 4) region.add(clippingRects[i], clippingRects[i + 1], clippingRects[i + 2], clippingRects[i + 3]);
+            region.intersect(bounds);
         } else {
-        }
-        if (data.damageRgn != 0) {
+            region.add(bounds);
         }
     }
 

@@ -1541,9 +1541,13 @@ public final class DartGC extends DartResource implements IGC {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (region.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        try {
-            region.subtract(region);
-        } finally {
+        region.subtract(region);
+        Rectangle bounds = getClipping();
+        if (clippingRects != null && clippingRects.length >= 4) {
+            for (int i = 0; i + 3 < clippingRects.length; i += 4) region.add(clippingRects[i], clippingRects[i + 1], clippingRects[i + 2], clippingRects[i + 3]);
+            region.intersect(bounds);
+        } else {
+            region.add(bounds);
         }
     }
 

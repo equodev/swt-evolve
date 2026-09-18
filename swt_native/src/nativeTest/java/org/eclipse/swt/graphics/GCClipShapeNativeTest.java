@@ -94,6 +94,51 @@ class GCClipShapeNativeTest {
     }
 
     @Test
+    @DisplayName("reading the clip into a region on an unclipped GC yields the drawable's bounds")
+    void unclippedGcReportsDrawableBoundsIntoRegion() {
+        GC gc = freshGc();
+        Region region = new Region(gc.getDevice());
+        gc.getClipping(region);
+        assertThat(region.getBounds()).isEqualTo(new Rectangle(0, 0, 200, 100));
+        region.dispose();
+        gc.dispose();
+    }
+
+    @Test
+    @DisplayName("reading the clip into a region yields the rectangles of the region clip in force")
+    void regionClipReadsBackIntoRegion() {
+        GC gc = freshGc();
+        Region clip = new Region(gc.getDevice());
+        clip.add(new Rectangle(10, 20, 30, 40));
+        clip.add(new Rectangle(60, 20, 30, 40));
+        gc.setClipping(clip);
+        clip.dispose();
+        Region read = new Region(gc.getDevice());
+        gc.getClipping(read);
+        assertThat(read.contains(15, 25)).isTrue();
+        assertThat(read.contains(65, 25)).isTrue();
+        assertThat(read.contains(50, 25)).as("the gap between the rectangles stays outside").isFalse();
+        read.dispose();
+        gc.dispose();
+    }
+
+    @Test
+    @DisplayName("restoring a clip saved with getClipping(Region) does not blank later drawing")
+    void savedRegionClipRestoresTheFullClip() {
+        GC gc = freshGc();
+        Region saved = new Region(gc.getDevice());
+        gc.getClipping(saved);
+        Region narrow = new Region(gc.getDevice());
+        narrow.add(new Rectangle(10, 10, 20, 20));
+        gc.setClipping(narrow);
+        gc.setClipping(saved);
+        assertThat(gc.getClipping()).isEqualTo(new Rectangle(0, 0, 200, 100));
+        narrow.dispose();
+        saved.dispose();
+        gc.dispose();
+    }
+
+    @Test
     @DisplayName("a path clip travels as geometry, not only as its bounding box")
     void pathGeometryReachesTheWire() {
         GC gc = freshGc();
