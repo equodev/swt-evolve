@@ -59,6 +59,11 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
   double _arrowCell(ComboThemeExtension theme, bool isSimple) =>
       isSimple ? 0 : theme.iconSpacing + theme.iconSize;
 
+  /// The arrow glyph alone -- the one inset, besides the border, that a pinned
+  /// width cannot take back.
+  double _arrowGlyph(ComboThemeExtension theme, bool isSimple) =>
+      isSimple ? 0 : theme.iconSize;
+
   /// The width of the value on display, with the slack [_maxTextSize] leaves.
   double _selectedTextWidth(TextStyle style) {
     final painter = TextPainter(
@@ -199,19 +204,27 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
         ? state.bounds!.height.toDouble()
         : (isSimple ? null : preferredSize.height);
 
+    // What the pinned width leaves the insets that can yield, once the border
+    // and the arrow glyph -- the ones that cannot -- are out. The gap ahead of
+    // the arrow yields first, the text padding takes the rest of the deficit;
+    // a width an application pins below the preferred one (GridData.widthHint)
+    // then shows as much of the value as native SWT does in the same box.
+    final double? insetRoom = hasFixedSize
+        ? width -
+              theme.borderWidth * 2 -
+              _arrowGlyph(theme, isSimple) -
+              _selectedTextWidth(textStyle)
+        : null;
+    final double arrowSpacing = insetRoom == null
+        ? theme.iconSpacing
+        : insetRoom.clamp(0.0, theme.iconSpacing);
+
     final EdgeInsets textPadding = _fitTextPadding(
       theme.textFieldPadding,
       verticalRoom: height == null
           ? null
           : height - theme.borderWidth * 2 - textSize.height,
-      // Only the arrow cell and the border stand between the pinned width and
-      // the text; the preferred width is free to keep its full padding.
-      horizontalRoom: hasFixedSize
-          ? width -
-                theme.borderWidth * 2 -
-                _arrowCell(theme, isSimple) -
-                _selectedTextWidth(textStyle)
-          : null,
+      horizontalRoom: insetRoom == null ? null : insetRoom - arrowSpacing,
     );
 
     final Widget content = isSimple
@@ -247,6 +260,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
             onToggleOverlay: _toggleOverlay,
             width: width,
             textPadding: textPadding,
+            arrowSpacing: arrowSpacing,
           );
 
     return tagSemantics(DoubleClickWordSelector(
@@ -311,6 +325,7 @@ class _DropdownComboLayout extends StatelessWidget {
   final VoidCallback onToggleOverlay;
   final double width;
   final EdgeInsets textPadding;
+  final double arrowSpacing;
 
   const _DropdownComboLayout({
     required this.state,
@@ -330,6 +345,7 @@ class _DropdownComboLayout extends StatelessWidget {
     required this.onToggleOverlay,
     required this.width,
     required this.textPadding,
+    required this.arrowSpacing,
   });
 
   @override
@@ -372,8 +388,13 @@ class _DropdownComboLayout extends StatelessWidget {
                           style: textStyle,
                           cursorColor: textStyle.color ?? theme.textColor,
                           backgroundCursorColor: bgColor,
-                          selectionColor: DefaultSelectionStyle.of(context).selectionColor ??
-                              Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                          // A READ_ONLY Combo has no editable text to select,
+                          // so the word selection a double-click leaves behind
+                          // must not be painted: native SWT shows none.
+                          selectionColor: isReadOnly
+                              ? const Color(0x00000000)
+                              : (DefaultSelectionStyle.of(context).selectionColor ??
+                                  Theme.of(context).colorScheme.primary.withOpacity(0.4)),
                         ),
                       ),
                     ),
@@ -387,7 +408,7 @@ class _DropdownComboLayout extends StatelessWidget {
                   // Right-only: the text field's own right padding already
                   // separates text from arrow; a left inset here eats viewport
                   // width the preferred size doesn't account for.
-                  padding: EdgeInsets.only(right: theme.iconSpacing),
+                  padding: EdgeInsets.only(right: arrowSpacing),
                   child: Icon(
                     Icons.arrow_drop_down,
                     color: iconColor,
@@ -411,37 +432,45 @@ class _DropdownComboLayout extends StatelessWidget {
         followerAnchor: Alignment.topLeft,
         child: pointerInterceptor(TapRegion(
           onTapOutside: (_) => overlayController.hide(),
-          child: Container(
-            width: width,
-            decoration: BoxDecoration(
-              // The drop-down is part of the Combo, so it carries the Combo's own ground: the
-              // closed field already did, and the list looked like a different widget.
-              color: getBackgroundColor(
-                    background: state.background,
-                    defaultColor: theme.backgroundColor,
-                  ) ??
-                  theme.backgroundColor,
-              borderRadius: BorderRadius.circular(theme.borderRadius),
-              border: Border.all(
-                color: theme.dividerColor,
-                width: theme.borderWidth,
+          // SWT sizes the list to its widest item and never narrower than the
+          // field. Pinning it to the field's width wraps every item of a Combo
+          // an application hinted below its preferred width, and the list then
+          // grows down over whatever follows it.
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: width),
+            child: Container(
+              decoration: BoxDecoration(
+                // The drop-down is part of the Combo, so it carries the Combo's own ground: the
+                // closed field already did, and the list looked like a different widget.
+                color: getBackgroundColor(
+                      background: state.background,
+                      defaultColor: theme.backgroundColor,
+                    ) ??
+                    theme.backgroundColor,
+                borderRadius: BorderRadius.circular(theme.borderRadius),
+                border: Border.all(
+                  color: theme.dividerColor,
+                  width: theme.borderWidth,
+                ),
               ),
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: (state.items ?? [])
-                    .map(
-                      (item) => _ComboItem(
-                        text: item,
-                        isSelected: item == state.text,
-                        theme: theme,
-                        textStyle: textStyle,
-                        onTap: () => onSelected(item),
-                      ),
-                    )
-                    .toList(),
+              child: SingleChildScrollView(
+                child: IntrinsicWidth(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: (state.items ?? [])
+                        .map(
+                          (item) => _ComboItem(
+                            text: item,
+                            isSelected: item == state.text,
+                            theme: theme,
+                            textStyle: textStyle,
+                            onTap: () => onSelected(item),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
               ),
             ),
           ),
@@ -575,7 +604,14 @@ class _ComboItemState extends State<_ComboItem> {
           duration: widget.theme.animationDuration,
           padding: widget.theme.itemPadding,
           color: bgColor,
-          child: Text(widget.text, style: widget.textStyle),
+          // An SWT Combo item is a single line on every platform: it is the
+          // list that widens, never the item that wraps.
+          child: Text(
+            widget.text,
+            style: widget.textStyle,
+            softWrap: false,
+            maxLines: 1,
+          ),
         ),
       ),
     );
