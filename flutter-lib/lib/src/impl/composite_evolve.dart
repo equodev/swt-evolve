@@ -28,6 +28,7 @@ bool _hitsAnyChild(VComposite state, Offset pos) {
   final children = state.children;
   if (children == null || children.isEmpty) return false;
   for (final child in children) {
+    if (child.visible == false) continue;
     final b = child.bounds;
     if (b == null) continue;
     final rect = Rect.fromLTWH(

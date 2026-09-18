@@ -261,6 +261,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     final kids = state.children;
     if (kids == null) return false;
     for (final child in kids) {
+      if (child.visible == false) continue;
       final b = child.bounds;
       if (b == null) continue;
       final rect = Rect.fromLTWH(
