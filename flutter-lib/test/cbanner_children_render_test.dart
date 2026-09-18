@@ -21,6 +21,10 @@ VRectangle _rect(int x, int y, int w, int h) => VRectangle()
 
 /// The Eclipse 3.x shape: the banner's `left` control is the trim composite that hosts the
 /// workbench CoolBar. CBannerLayout runs in Java, so the child arrives with its final bounds.
+///
+/// `left`/`right`/`bottom` are deliberately off the wire — `VCBanner`'s Java getters carry
+/// `@JsonAttribute(ignore = true)` — so the control reaches Dart only as a child, which is also the
+/// only thing the render path reads.
 VCBanner _banner() {
   final left = VComposite()
     ..id = 2
@@ -41,7 +45,6 @@ VCBanner _banner() {
     ..enabled = true
     ..visible = true
     ..bounds = _rect(0, 0, 600, 28)
-    ..left = left
     ..children = [left];
 }
 
