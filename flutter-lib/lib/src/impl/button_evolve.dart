@@ -142,6 +142,19 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       hasFlat: hasFlat,
       enabled: enabled,
       constraints: constraints,
+      padding: _fitContentPadding(
+        widgetTheme.pushButtonPadding,
+        horizontalRoom: hasValidBounds
+            ? state.bounds!.width.toDouble() -
+                  widgetTheme.pushButtonBorderWidth * 2 -
+                  _pushContentWidth(
+                    context,
+                    text,
+                    widgetTheme.pushButtonFontStyle,
+                    getPushButtonTextColor(widgetTheme, isPrimary, enabled),
+                  )
+            : null,
+      ),
       widgetTheme: widgetTheme,
       onPressed: enabled ? _onPressed : null,
       onHover: _onHover,
@@ -159,6 +172,58 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     );
 
     return wrap(_wrapWithSwtBackground(context, button));
+  }
+
+  /// The width the content row wants: the label in the style it will actually
+  /// be painted in, plus the image cell the row puts before it.
+  double _pushContentWidth(
+    BuildContext context,
+    String? text,
+    TextStyle? baseTextStyle,
+    Color textColor,
+  ) {
+    double width = 0;
+    final imageData = state.image?.imageData;
+    if (imageData != null) {
+      width += imageData.width?.toDouble() ?? 0;
+    }
+    if (text != null && text.isNotEmpty) {
+      final painter = TextPainter(
+        text: TextSpan(
+          text: text,
+          style: getTextStyle(
+            context: context,
+            font: state.font,
+            textColor: textColor,
+            baseTextStyle: baseTextStyle,
+          ),
+        ),
+        maxLines: 1,
+        textDirection: TextDirection.ltr,
+      )..layout();
+      width += painter.width;
+    }
+    return width;
+  }
+
+  /// The padding is a fixed inset, so a width an application pins below the
+  /// preferred one leaves the label a viewport narrower than the text and it
+  /// renders ellipsized. Applications size a button from their own font through
+  /// GC.textExtent, while the label is painted in the (wider) theme font, so
+  /// that pinned width is routinely a few pixels short. The label keeps its
+  /// full extent and the padding absorbs the deficit, down to none at all.
+  ///
+  /// [horizontalRoom] is what the pinned width leaves the content; null where
+  /// nothing is pinned.
+  EdgeInsets _fitContentPadding(
+    EdgeInsets padding, {
+    double? horizontalRoom,
+  }) {
+    if (horizontalRoom == null || horizontalRoom >= padding.horizontal) {
+      return padding;
+    }
+    final double half = horizontalRoom > 0 ? horizontalRoom / 2 : 0;
+    return padding.copyWith(left: half, right: half);
   }
 
   Widget _buildToggleButton(
@@ -649,6 +714,7 @@ class _HoverableButton extends StatefulWidget {
   final bool hasFlat;
   final bool enabled;
   final BoxConstraints? constraints;
+  final EdgeInsets padding;
   final ButtonThemeExtension widgetTheme;
   final VoidCallback? onPressed;
   final ValueChanged<bool> onHover;
@@ -665,6 +731,7 @@ class _HoverableButton extends StatefulWidget {
     required this.hasFlat,
     required this.enabled,
     this.constraints,
+    required this.padding,
     required this.widgetTheme,
     this.onPressed,
     required this.onHover,
@@ -724,7 +791,7 @@ class _HoverableButtonState extends State<_HoverableButton> {
                 width: widget.widgetTheme.pushButtonBorderWidth,
               ),
             ),
-            padding: widget.widgetTheme.pushButtonPadding,
+            padding: widget.padding,
             child: widget.child,
           ),
         ),
