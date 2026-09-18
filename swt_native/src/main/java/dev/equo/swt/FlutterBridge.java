@@ -1,5 +1,6 @@
 package dev.equo.swt;
 
+import dev.equo.swt.comm.AbstractBinaryCommService;
 import dev.equo.swt.comm.BinaryCommService;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.comm.JettyBinaryCommService;
@@ -1171,12 +1172,27 @@ public abstract class FlutterBridge {
 
     public static String widgetName(Object w) {
         if (w instanceof DartWidget) {
-            return w.getClass().getSimpleName().substring(4);
+            return Config.presentedName((DartWidget) w, w.getClass().getSimpleName().substring(4));
         }
         if (w instanceof DartResource) {
             return w.getClass().getSimpleName().substring(4);
         }
         return w.getClass().getSimpleName();
+    }
+
+    static {
+        AbstractBinaryCommService.setAlternateName(FlutterBridge::alternateAddress);
+    }
+
+    /**
+     * A plain Composite is named Composite when its handlers are registered at construction and
+     * MainComposite once it becomes the main sash area ({@link Config#presentedName}), and it can
+     * go back. A message addressed under either name belongs to the same widget.
+     */
+    static String alternateAddress(String eventName) {
+        if (eventName.startsWith("MainComposite/")) return "Composite/" + eventName.substring("MainComposite/".length());
+        if (eventName.startsWith("Composite/")) return "MainComposite/" + eventName.substring("Composite/".length());
+        return null;
     }
 
     public static String eventName(Object w, String event) {

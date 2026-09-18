@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 /**
  * Transport-agnostic core of the binary comm protocol shared by every {@link CommService}
@@ -123,8 +124,23 @@ public abstract class AbstractBinaryCommService implements CommService {
         dispatch(eventName, data, payloadStart, payloadLen);
     }
 
+    /**
+     * The other name a message may be registered under when none is registered under the one it
+     * arrived with, or null. A widget's handlers are registered under the name it had when it was
+     * built, while the client addresses it by the name its latest description carries.
+     */
+    private static volatile UnaryOperator<String> alternateName = name -> null;
+
+    public static void setAlternateName(UnaryOperator<String> resolver) {
+        alternateName = resolver;
+    }
+
     private void dispatch(String eventName, byte[] data, int offset, int length) {
         TypedHandler<?> typed = typedHandlers.get(eventName);
+        if (typed == null) {
+            String alternate = alternateName.apply(eventName);
+            if (alternate != null) typed = typedHandlers.get(alternate);
+        }
         if (typed != null) {
             typed.handle(data, offset, length, serializer, logTag());
             return;

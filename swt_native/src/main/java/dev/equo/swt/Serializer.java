@@ -585,13 +585,8 @@ public class Serializer {
         // A composite whose layout is the e4 SashLayout and whose direct children are the
         // part-stacks is the main workbench area regardless of how deep the perspective nests
         // it -- serialize it as a MainComposite so the parts get the panel treatment
-        // (gap/border/shadow). The construction-time path check (Config.isMainComposite)
-        // misses perspectives that nest the sash container differently, and the layout is only
-        // set after construction, so this resolves it here at serialize time.
-        if (api instanceof Composite && Config.isMainSashComposite(((Composite) api))) { Composite composite = (Composite) api;
-            return "MainComposite";
-        }
-        return apiName;
+        // (gap/border/shadow). FlutterBridge.widgetName addresses it by the same rule.
+        return Config.presentedName(impl, apiName);
     }
 
     private static boolean isOwnPackage(Class<? extends Widget> aClass) {

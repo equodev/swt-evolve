@@ -522,7 +522,7 @@ public class Config {
      * (the {@code panelChildGap}, border and shadow that {@code MainComposite} gives its
      * children) -- the web-mode "part separators vanish after a perspective switch" defect
      * The SashLayout is only assigned after the composite is constructed, so
-     * this is consulted at serialize time ({@link Serializer#swtWidgetName}), not in
+     * this is consulted whenever the widget is named ({@link #presentedName}), not in
      * {@link #getCompositeImpl}.
      */
     static boolean isMainSashComposite(Composite c) {
@@ -532,17 +532,38 @@ public class Config {
         // (which would wrap the whole area as one panel and leave the real parts blended, the
         // symptom after a perspective switch). A perspective nests these at varying depths, so
         // key off "SashLayout that directly arranges part-stacks" rather than a fixed path.
-        return c != null && !c.isDisposed() && hasSashLayout(c) && hasChildOfType(c, CTabFolder.class);
+        if (c == null || c.isDisposed()) return false;
+        if (c.getImpl() instanceof DartComposite) return isMainSashComposite((DartComposite) c.getImpl());
+        return isSashLayout(c.getLayout()) && hasChildOfType(c.getChildren(), CTabFolder.class);
     }
 
-    private static boolean hasSashLayout(Composite c) {
-        Layout layout = c.getLayout();
+    /**
+     * The same rule read off the impl's own fields rather than the checked getters, so it also
+     * answers off the UI thread: {@link #presentedName} runs wherever a message is addressed.
+     */
+    private static boolean isMainSashComposite(DartComposite impl) {
+        return isSashLayout(impl._layout()) && hasChildOfType(impl._getChildren(), CTabFolder.class);
+    }
+
+    /**
+     * The name a Dart widget is described and addressed under. A plain Composite that is the main
+     * sash area is described as a MainComposite, and has to be addressed the same way: the client
+     * subscribes to a widget under the name its description carries, so a message sent under the
+     * class name instead reaches nothing.
+     */
+    public static String presentedName(DartWidget impl, String name) {
+        if ("Composite".equals(name) && impl instanceof DartComposite && !impl.isDisposed()
+                && isMainSashComposite((DartComposite) impl))
+            return "MainComposite";
+        return name;
+    }
+
+    private static boolean isSashLayout(Layout layout) {
         return layout != null
                 && layout.toString().contains("org.eclipse.e4.ui.workbench.renderers.swt.SashLayout");
     }
 
-    private static boolean hasChildOfType(Composite c, Class<?> type) {
-        Control[] children = c.getChildren();
+    private static boolean hasChildOfType(Control[] children, Class<?> type) {
         if (children == null) return false;
         for (Control child : children) if (type.isInstance(child)) return true;
         return false;
