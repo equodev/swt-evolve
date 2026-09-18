@@ -1,5 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 import '../gen/color.dart';
+import '../gen/image.dart';
 
 part 'pattern.g.dart';
 
@@ -12,6 +13,7 @@ class VPattern {
   VColor? color2;
   double? endX;
   double? endY;
+  VImage? image;
   double? startX;
   double? startY;
 

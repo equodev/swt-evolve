@@ -50,7 +50,7 @@ class GCDrawer extends GCDrawerBase {
   ui.Image? _baseImage;
   int _imgWidth = 0;
   int _imgHeight = 0;
-  final List<Future<ImageShape>> _pendingImages = [];
+  final List<Future<Shape>> _pendingImages = [];
   Completer<void>? _baseImageCompleter;
 
   // Set by GCImpl when the parent WidgetSwtState provides a RepaintBoundary key.
@@ -164,7 +164,7 @@ class GCDrawer extends GCDrawerBase {
       final cycleStaging = _staging;
       _staging = [];
 
-      final pending = List<Future<ImageShape>>.from(_pendingImages);
+      final pending = List<Future<Shape>>.from(_pendingImages);
       _pendingImages.clear();
 
       final previousCommit = _commitChain;
@@ -461,11 +461,30 @@ class GCDrawer extends GCDrawerBase {
     return color.withOpacity(alpha / 255.0);
   }
 
-  Alignment _patternAlignment(double px, double py, Rect rect) {
-    if (rect.width <= 0 || rect.height <= 0) return Alignment.center;
-    final ax = (px - rect.left - rect.width / 2) / (rect.width / 2);
-    final ay = (py - rect.top - rect.height / 2) / (rect.height / 2);
-    return Alignment(ax, ay);
+  /// Fills [path] with the GC's background pattern. False when no pattern is set.
+  bool _addPatternFill(Path path) {
+    final pattern = state.backgroundPattern;
+    if (pattern == null) return false;
+    final alpha = state.alpha ?? 255;
+    final clip = _childClip;
+    final vImage = pattern.image;
+    if (vImage != null) {
+      _stageAsync(ImageUtils.decodeVImageToUIImage(vImage).then((image) =>
+          image == null ? _PlaceholderShape() : PatternFillShape.image(path, image, alpha, clip)));
+      return true;
+    }
+    final from = _themed(pattern.color1, _canvasTheme?.patternStartColor,
+        colorFromVColor(pattern.color1));
+    final to = _themed(pattern.color2, _canvasTheme?.patternEndColor,
+        colorFromVColor(pattern.color2));
+    final start = Offset(pattern.startX ?? 0, pattern.startY ?? 0);
+    final end = Offset(pattern.endX ?? 0, pattern.endY ?? 0);
+    // A zero-length gradient has no direction; the native backends paint its first color.
+    _addShape(start == end
+        ? PathShape(path, applyAlpha(from), 0, lineCap, lineJoin, isFilled: true, clipRect: clip)
+        : PatternFillShape(path,
+            ui.Gradient.linear(start, end, [from, to], null, TileMode.repeated), alpha, clip));
+    return true;
   }
 
   // ── Shape helpers ───────────────────────────────────────────────────────
@@ -546,24 +565,12 @@ class GCDrawer extends GCDrawerBase {
     required bool isFilled,
   }) {
     final rect = _getRectFromArgs(x, y, width, height);
-    final pattern = isFilled ? state.backgroundPattern : null;
-    if (pattern != null) {
-      final c1 = _themed(pattern.color1, _canvasTheme?.patternStartColor,
-          colorFromVColor(pattern.color1));
-      final c2 = _themed(pattern.color2, _canvasTheme?.patternEndColor,
-          colorFromVColor(pattern.color2));
-      final begin = _patternAlignment(
-          pattern.startX ?? 0, pattern.startY ?? 0, rect);
-      final end = _patternAlignment(
-          pattern.endX ?? 0, pattern.endY ?? 0, rect);
-      _addShape(GradientRectShape.aligned(rect, c1, c2, begin, end, _childClip));
-    } else {
-      final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
-      final strokeWidth = isFilled ? 0.0 : lineWidth;
-      if (!isFilled && _addDashedStroke(() => Path()..addRect(rect), color)) return;
-      _addShape(RectShape(rect, color, strokeWidth, lineCap, lineJoin,
-          isFilled: isFilled, clipRect: _childClip));
-    }
+    if (isFilled && _addPatternFill(Path()..addRect(rect))) return;
+    final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
+    final strokeWidth = isFilled ? 0.0 : lineWidth;
+    if (!isFilled && _addDashedStroke(() => Path()..addRect(rect), color)) return;
+    _addShape(RectShape(rect, color, strokeWidth, lineCap, lineJoin,
+        isFilled: isFilled, clipRect: _childClip));
   }
 
   void _addPolygonShape({
@@ -603,6 +610,7 @@ class GCDrawer extends GCDrawerBase {
   void _addPathShape(VPath? path, {required bool isFilled}) {
     final built = _buildPath(path);
     if (built == null) return;
+    if (isFilled && _addPatternFill(built)) return;
     final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
     if (!isFilled && _addDashedStroke(() => built, color)) return;
     _addShape(PathShape(built, color, isFilled ? 0.0 : lineWidth, lineCap, lineJoin,
@@ -891,6 +899,7 @@ class GCDrawer extends GCDrawerBase {
       PathShape s => PathShape(
           s.path.shift(offset), s.color, s.strokeWidth, s.lineCap, s.lineJoin,
           isFilled: s.isFilled, clipRect: clipArea),
+      PatternFillShape s => s.translated(offset, clipArea),
       ClipPathShape s => ClipPathShape(
           s.path.shift(offset)..fillType = s.path.fillType,
           s.children.map((c) => _translateShapeWithClip(c, offset, srcArea)).toList()),
@@ -993,6 +1002,13 @@ class GCDrawer extends GCDrawerBase {
 
   void _processImageAsync(
       VImage vImage, VGCDrawImageImageintintintintintintintint opArgs) {
+    _stageAsync(ImageShape.fromVImageDetailed(vImage, opArgs, _childClip,
+        tint: imageTintColor, glyphLimits: glyphTintLimits,
+        alpha: state.alpha ?? 255));
+  }
+
+  /// Stages a shape that resolves after its op, in that op's slot.
+  void _stageAsync(Future<Shape> f) {
     // Capture the staging list this op belongs to: gcDispose() may reassign
     // `_staging` to a fresh list for the next paint cycle before this image
     // finishes decoding, and _onImageLoaded must write back into the list it
@@ -1004,9 +1020,6 @@ class GCDrawer extends GCDrawerBase {
     final deviceClip = transform == null ? null : clipping;
     final idx = stagingList.length;
     stagingList.add(_PlaceholderShape());
-    final f = ImageShape.fromVImageDetailed(vImage, opArgs, _childClip,
-        tint: imageTintColor, glyphLimits: glyphTintLimits,
-        alpha: state.alpha ?? 255);
     _pendingImages.add(f);
     // The clip is read at op time too: the state may have moved on by the time the image resolves.
     final shapeClip = clipShape;
@@ -1262,6 +1275,13 @@ void disposeShapeImages(List<Shape> shapes, {Set<ui.Image>? seen, Set<ui.Image>?
         img.dispose();
       }
       s.image = null;
+    } else if (s is PatternFillShape && s.image != null) {
+      final img = s.image!;
+      if (keep != null && keep.contains(img)) continue;
+      if (disposed.add(img)) {
+        img.dispose();
+      }
+      s.image = null;
     } else if (s is TransformShape) {
       disposeShapeImages(s.children, seen: disposed, keep: keep);
     } else if (s is RegionShape) {
@@ -1275,6 +1295,8 @@ void disposeShapeImages(List<Shape> shapes, {Set<ui.Image>? seen, Set<ui.Image>?
 void collectShapeImages(List<Shape> shapes, Set<ui.Image> out) {
   for (final s in shapes) {
     if (s is ImageShape && s.type == ImageType.raster && s.image != null) {
+      out.add(s.image!);
+    } else if (s is PatternFillShape && s.image != null) {
       out.add(s.image!);
     } else if (s is TransformShape) {
       collectShapeImages(s.children, out);
@@ -1628,6 +1650,52 @@ class GradientRectShape extends Shape {
 
   @override
   String toString() => 'GradientRect $rect';
+}
+
+/// A fill painted with a GC pattern. The shader is laid out in GC coordinates, as the native
+/// backends lay out theirs, so the pattern does not move with the shape it fills.
+class PatternFillShape extends Shape {
+  PatternFillShape(this.path, this.shader, this.alpha, this.clipRect,
+      {this.image, this.offset = Offset.zero});
+
+  PatternFillShape.image(Path path, ui.Image image, int alpha, Rect? clipRect)
+      : this(path, ui.ImageShader(image, TileMode.repeated, TileMode.repeated,
+              Matrix4.identity().storage),
+            alpha, clipRect, image: image);
+
+  final Path path;
+  final ui.Shader shader;
+  final int alpha;
+  @override
+  final Rect? clipRect;
+
+  /// The tile of an image pattern, released with the shape.
+  ui.Image? image;
+
+  /// A copyArea shift, applied to the pattern along with the path.
+  final Offset offset;
+
+  PatternFillShape translated(Offset by, Rect clipArea) =>
+      PatternFillShape(path, shader, alpha, clipArea, image: image, offset: offset + by);
+
+  @override
+  Rect? get paintedBounds => path.getBounds().shift(offset);
+
+  @override
+  void draw(ui.Canvas c) {
+    // Released with its commit cycle: the tile it would sample is gone.
+    if (image == null && shader is ui.ImageShader) return;
+    c.save();
+    if (clipRect != null) c.clipRect(clipRect!);
+    c.translate(offset.dx, offset.dy);
+    c.drawPath(path, Paint()
+      ..shader = shader
+      ..color = Color.fromARGB(alpha, 0, 0, 0));
+    c.restore();
+  }
+
+  @override
+  String toString() => 'PatternFill ${path.getBounds()}';
 }
 
 class PathShape extends Shape {

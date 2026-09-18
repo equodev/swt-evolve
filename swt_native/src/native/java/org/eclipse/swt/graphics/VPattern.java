@@ -45,6 +45,18 @@ public class VPattern extends VResource {
         ((DartPattern) impl).endY = value;
     }
 
+    @JsonAttribute(nullable = true)
+    public Image getImage() {
+        Image val = ((DartPattern) impl).image;
+        if (val != null && !(val.getImpl() instanceof DartImage))
+            return null;
+        return val;
+    }
+
+    public void setImage(Image value) {
+        ((DartPattern) impl).image = value;
+    }
+
     public float getStartX() {
         return ((DartPattern) impl).startX;
     }
@@ -69,6 +81,8 @@ public class VPattern extends VResource {
 
     public static final String END_Y = "endY";
 
+    public static final String IMAGE = "image";
+
     public static final String START_X = "startX";
 
     public static final String START_Y = "startY";
@@ -87,6 +101,9 @@ public class VPattern extends VResource {
                 return;
             case "endY":
                 Serializer.writeKeyValue(writer, "endY", getEndY());
+                return;
+            case "image":
+                Serializer.writeKeyValue(writer, "image", getImage());
                 return;
             case "startX":
                 Serializer.writeKeyValue(writer, "startX", getStartX());
