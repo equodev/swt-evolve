@@ -16,6 +16,8 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/table.dart';
 import 'package:swtflutter/src/gen/tablecolumn.dart';
 import 'package:swtflutter/src/gen/tableitem.dart';
+import 'package:swtflutter/src/impl/config_flags.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 
 class _RecordingTableSwt extends TableSwt<VTable> {
   final List<String> calls;
@@ -60,8 +62,18 @@ List<int?> _countsOf(List<String> calls, String event) => calls
     .toList();
 
 void main() {
+  setUp(resetConfigFlags);
+  tearDown(resetConfigFlags);
+
   testWidgets('the second click of a row double-click reports count=2',
       (tester) async {
+    // What is under test is how SWT numbers the clicks, not how fast they arrive.
+    // DoubleTapDetector.registerTap() compares DateTime.now() against a real-time
+    // window while testWidgets drives a fake clock, so the default 300ms couples
+    // this assertion to how loaded the machine is: on a busy runner the two taps
+    // below stop pairing and the second reports 1. Widen the window instead.
+    setConfigFlags(ConfigFlags()..double_click_timeout_ms = 60000);
+
     final calls = <String>[];
     await tester.pumpWidget(EvolveApp(
       theme: ThemeMode.light,
