@@ -3087,9 +3087,13 @@ public final class DartGC extends DartResource implements IGC {
 
     private void init(Drawable drawable, GCData data, long hDC) {
         if (this.background == null) {
-            Color white = new Color(255, 255, 255);
-            data.background = white.handle;
-            this.background = white;
+            // A control GC starts from the control's own background
+            // (Control#internal_new_GC fills data.background before this runs). The
+            // white below is the Drawable-less default -- a GC on an Image -- not an
+            // override of what the drawable supplied.
+            Color inheritedBg = drawable instanceof Control ? ((Control) drawable).getBackground() : null;
+            this.background = inheritedBg != null ? inheritedBg : new Color(255, 255, 255);
+            data.background = this.background.handle;
         }
         if (this.foreground == null) {
             Color black = new Color(0, 0, 0);
@@ -3121,9 +3125,13 @@ public final class DartGC extends DartResource implements IGC {
 
     private void init(Drawable drawable, GCData data, long hDC, DartImage.ImageHandle imageHandle) {
         if (this.background == null) {
-            Color white = new Color(255, 255, 255);
-            data.background = white.handle;
-            this.background = white;
+            // A control GC starts from the control's own background
+            // (Control#internal_new_GC fills data.background before this runs). The
+            // white below is the Drawable-less default -- a GC on an Image -- not an
+            // override of what the drawable supplied.
+            Color inheritedBg = drawable instanceof Control ? ((Control) drawable).getBackground() : null;
+            this.background = inheritedBg != null ? inheritedBg : new Color(255, 255, 255);
+            data.background = this.background.handle;
         }
         if (this.foreground == null) {
             Color black = new Color(0, 0, 0);

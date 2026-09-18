@@ -34,6 +34,7 @@ VSash _$VSashFromJson(Map<String, dynamic> json) => VSash()
       ? null
       : VColor.fromJson(json['foreground'] as Map<String, dynamic>)
   ..hasOwnBackground = json['hasOwnBackground'] as bool?
+  ..inheritsBackground = json['inheritsBackground'] as bool?
   ..menu = json['menu'] == null
       ? null
       : VMenu.fromJson(json['menu'] as Map<String, dynamic>)
@@ -58,6 +59,7 @@ Map<String, dynamic> _$VSashToJson(VSash instance) => <String, dynamic>{
   'font': ?instance.font,
   'foreground': ?instance.foreground,
   'hasOwnBackground': ?instance.hasOwnBackground,
+  'inheritsBackground': ?instance.inheritsBackground,
   'menu': ?instance.menu,
   'region': ?instance.region,
   'toolTipText': ?instance.toolTipText,

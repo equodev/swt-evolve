@@ -2043,8 +2043,10 @@ public final class DartGC extends DartResource implements IGC {
     }
 
     void init(Drawable drawable, GCData data, long gdkGC) {
-        if (this.background == null)
-            this.background = new Color(255, 255, 255);
+        if (this.background == null) {
+            Color inheritedBg = drawable instanceof Control ? ((Control) drawable).getBackground() : null;
+            this.background = inheritedBg != null ? inheritedBg : new Color(255, 255, 255);
+        }
         if (this.foreground == null)
             this.foreground = new Color(0, 0, 0);
         if (data.font != null)

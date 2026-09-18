@@ -530,6 +530,32 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void checkBackground() {
+        Shell shell = getShell();
+        if (this.getApi() == shell)
+            return;
+        getApi().state &= ~PARENT_BACKGROUND;
+        // Null-safe where upstream walks unconditionally: a Dart-backed control nested in
+        // an SWT parent has no parent on this side, so the chain can end at any level.
+        Composite composite = parent;
+        while (composite != null) {
+            int mode = composite.getImpl()._backgroundMode();
+            if (mode != 0) {
+                if (mode == SWT.INHERIT_DEFAULT) {
+                    Control control = this.getApi();
+                    while (control != null && control != composite) {
+                        if ((control.state & THEME_BACKGROUND) == 0) {
+                            return;
+                        }
+                        control = control.getImpl()._parent();
+                    }
+                }
+                getApi().state |= PARENT_BACKGROUND;
+                return;
+            }
+            if (composite == shell)
+                break;
+            composite = composite.getImpl()._parent();
+        }
     }
 
     void checkBorder() {

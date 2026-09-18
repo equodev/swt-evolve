@@ -34,6 +34,7 @@ VTableCursor _$VTableCursorFromJson(Map<String, dynamic> json) => VTableCursor()
       ? null
       : VColor.fromJson(json['foreground'] as Map<String, dynamic>)
   ..hasOwnBackground = json['hasOwnBackground'] as bool?
+  ..inheritsBackground = json['inheritsBackground'] as bool?
   ..menu = json['menu'] == null
       ? null
       : VMenu.fromJson(json['menu'] as Map<String, dynamic>)
@@ -69,6 +70,7 @@ Map<String, dynamic> _$VTableCursorToJson(VTableCursor instance) =>
       'font': ?instance.font,
       'foreground': ?instance.foreground,
       'hasOwnBackground': ?instance.hasOwnBackground,
+      'inheritsBackground': ?instance.inheritsBackground,
       'menu': ?instance.menu,
       'region': ?instance.region,
       'toolTipText': ?instance.toolTipText,

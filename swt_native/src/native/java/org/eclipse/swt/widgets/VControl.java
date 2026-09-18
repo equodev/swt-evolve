@@ -137,6 +137,13 @@ public class VControl extends VWidget {
     public void setHasOwnBackground(boolean value) {
     }
 
+    public boolean getInheritsBackground() {
+        return ((DartControl) impl).getInheritsBackground();
+    }
+
+    public void setInheritsBackground(boolean value) {
+    }
+
     public Menu getMenu() {
         Menu val = ((DartControl) impl).menu;
         if (val != null && !(val.getImpl() instanceof DartMenu))
@@ -233,6 +240,8 @@ public class VControl extends VWidget {
 
     public static final String HAS_OWN_BACKGROUND = "hasOwnBackground";
 
+    public static final String INHERITS_BACKGROUND = "inheritsBackground";
+
     public static final String MENU = "menu";
 
     public static final String REGION = "region";
@@ -276,6 +285,9 @@ public class VControl extends VWidget {
                 return;
             case "hasOwnBackground":
                 Serializer.writeKeyValue(writer, "hasOwnBackground", getHasOwnBackground());
+                return;
+            case "inheritsBackground":
+                Serializer.writeKeyValue(writer, "inheritsBackground", getInheritsBackground());
                 return;
             case "menu":
                 Serializer.writeKeyValue(writer, "menu", getMenu());

@@ -287,6 +287,12 @@ class ParentBackgroundScope extends InheritedWidget {
 /// doesn't leak a distant ancestor's color to its own children; INHERIT_DEFAULT/FORCE passes this
 /// composite's own effective color onward instead.
 ///
+/// [inheritsBackground] is Java's resolved answer to "does this control take its background from an
+/// ancestor?" -- SWT's PARENT_BACKGROUND bit, which setBackgroundMode() propagates down the whole
+/// subtree. It has to override the INHERIT_NONE stop above: a composite left at the default mode
+/// still inherits when an ancestor forced, and treating its own mode as the whole answer would cut
+/// the chain at that level and leave its children painting their own color instead.
+///
 /// backgroundImage is a different concern -- purely "don't repaint/occlude what an ancestor
 /// already tiled" -- and is not gated by backgroundMode: it always keeps propagating (this
 /// composite's own image if it set one, otherwise whatever was already in scope), so a plain,
@@ -298,8 +304,10 @@ Widget wrapBackgroundInheritanceScope({
   required Color effectiveBackground,
   required VImage? backgroundImage,
   required Widget child,
+  bool inheritsBackground = false,
 }) {
-  final inheritable = (backgroundMode ?? SWT.INHERIT_NONE) != SWT.INHERIT_NONE;
+  final inheritable =
+      (backgroundMode ?? SWT.INHERIT_NONE) != SWT.INHERIT_NONE || inheritsBackground;
   return ParentBackgroundScope(
     background: inheritable ? effectiveBackground : null,
     backgroundImage: backgroundImage ?? ParentBackgroundScope.backgroundImageOf(context),

@@ -270,6 +270,7 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     final rawLayout = wrapBackgroundInheritanceScope(
       context: context,
       backgroundMode: state.backgroundMode,
+      inheritsBackground: state.inheritsBackground ?? false,
       effectiveBackground: backgroundColor,
       backgroundImage: state.backgroundImage,
       child: NoLayout(children: children, composite: state),

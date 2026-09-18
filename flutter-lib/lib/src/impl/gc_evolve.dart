@@ -157,7 +157,13 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
       }
       final forced = ParentBackgroundScope.backgroundOf(context);
       if (forced != null) return forced;
-      if (state.background != null) return _drawer.bg;
+      // The erase is not part of the application's drawing -- it is the surface that drawing
+      // lands on -- so it follows the Canvas's own background, resolved by the same rule as
+      // every other control. The GC's colors stay with the shapes: taking them here made an
+      // owner-drawn control erase in the application's color while the trim around it used the
+      // theme's, leaving the control as a visible block against its host.
+      final canvasState = context.findAncestorStateOfType<CanvasImpl>();
+      if (canvasState != null) return canvasState.bg;
       return Theme.of(context).extension<CompositeThemeExtension>()!.backgroundColor;
     }
     return Colors.transparent;

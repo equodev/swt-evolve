@@ -119,6 +119,7 @@ class VControl extends VWidget {
   VFont? font;
   VColor? foreground;
   bool? hasOwnBackground;
+  bool? inheritsBackground;
   VMenu? menu;
   VRegion? region;
   String? toolTipText;
@@ -139,6 +140,7 @@ class VControl extends VWidget {
       font = other.font;
       foreground = other.foreground;
       hasOwnBackground = other.hasOwnBackground;
+      inheritsBackground = other.inheritsBackground;
       menu = other.menu;
       region = other.region;
       toolTipText = other.toolTipText;
@@ -183,6 +185,8 @@ class VControl extends VWidget {
             : VColor.fromJson(json['foreground'] as Map<String, dynamic>);
       case 'hasOwnBackground':
         hasOwnBackground = json['hasOwnBackground'] as bool?;
+      case 'inheritsBackground':
+        inheritsBackground = json['inheritsBackground'] as bool?;
       case 'menu':
         menu = json['menu'] == null
             ? null

@@ -297,6 +297,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     final rawLayout = wrapBackgroundInheritanceScope(
       context: context,
       backgroundMode: state.backgroundMode,
+      inheritsBackground: state.inheritsBackground ?? false,
       effectiveBackground: bg,
       backgroundImage: state.backgroundImage,
       child: !canvasUsesThemeColors && hostsAppColoredContent

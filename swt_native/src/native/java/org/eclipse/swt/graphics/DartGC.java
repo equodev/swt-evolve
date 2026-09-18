@@ -1885,9 +1885,13 @@ public final class DartGC extends DartResource implements IGC {
     void init(Drawable drawable, GCData data, long context) {
         data.nativeZoom = ((DartDevice) data.device.getImpl()).getDeviceZoom();
         if (this.background == null) {
-            Color white = new Color(255, 255, 255);
-            data.background = white.handle;
-            this.background = white;
+            // A control GC starts from the control's own background
+            // (Control#internal_new_GC fills data.background before this runs). The
+            // white below is the Drawable-less default -- a GC on an Image -- not an
+            // override of what the drawable supplied.
+            Color inheritedBg = drawable instanceof Control ? ((Control) drawable).getBackground() : null;
+            this.background = inheritedBg != null ? inheritedBg : new Color(255, 255, 255);
+            data.background = this.background.handle;
         }
         if (this.foreground == null) {
             Color black = new Color(0, 0, 0);

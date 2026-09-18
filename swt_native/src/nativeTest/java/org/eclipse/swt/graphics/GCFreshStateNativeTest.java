@@ -83,7 +83,11 @@ class GCFreshStateNativeTest {
 
         String state = stateBeforeFirstOp();
         assertThat(state).as("the fill must not be drawn with the previous paint's state").isNotNull();
-        assertThat(state).contains("\"background\":{\"alpha\":255,\"blue\":255,\"green\":255,\"red\":255}");
+        // The canvas's own background: a control GC starts from the control it was opened
+        // on, so the literal that used to stand here only matched while the GC ignored it.
+        Color canvasBg = canvas.getBackground();
+        assertThat(state).contains(String.format("\"background\":{\"alpha\":255,\"blue\":%d,\"green\":%d,\"red\":%d}",
+                canvasBg.getBlue(), canvasBg.getGreen(), canvasBg.getRed()));
         assertThat(state).contains("\"foreground\":{\"alpha\":255,\"blue\":0,\"green\":0,\"red\":0}");
         assertThat(state).contains("\"alpha\":255");
         assertThat(state).doesNotContain("\"clipping\":").doesNotContain("\"transform\"");
