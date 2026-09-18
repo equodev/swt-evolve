@@ -968,10 +968,15 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               return;
             }
 
-            final pressedKeys = RawKeyboard.instance.keysPressed;
-            final isControlPressed =
-                pressedKeys.contains(LogicalKeyboardKey.controlLeft) ||
-                pressedKeys.contains(LogicalKeyboardKey.controlRight);
+            // HardwareKeyboard, not the deprecated RawKeyboard: on the web a modifier
+            // released while the page has no focus (Cmd+Tab, any browser shortcut) leaves
+            // no keyup for the page, and only HardwareKeyboard is repaired for it — the
+            // engine's PointerBinding re-reads the modifier flags off every mouse event
+            // and synthesizes the missing key-ups. RawKeyboard's snapshot rides on the
+            // legacy key channel, which pointer events never touch, so it stays stuck
+            // until the next keystroke and turns every plain click into a toggle click.
+            final keyboard = HardwareKeyboard.instance;
+            final isControlPressed = keyboard.isControlPressed;
 
             if (defaultTargetPlatform == TargetPlatform.macOS &&
                 isControlPressed) {
@@ -995,13 +1000,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               return;
             }
 
-            final isCtrlPressed =
-                isControlPressed ||
-                pressedKeys.contains(LogicalKeyboardKey.metaLeft) ||
-                pressedKeys.contains(LogicalKeyboardKey.metaRight);
-            final isShiftPressed =
-                pressedKeys.contains(LogicalKeyboardKey.shiftLeft) ||
-                pressedKeys.contains(LogicalKeyboardKey.shiftRight);
+            final isCtrlPressed = isControlPressed || keyboard.isMetaPressed;
+            final isShiftPressed = keyboard.isShiftPressed;
 
             _context?.treeImpl?.handleTreeItemSelection(
               state.id,
