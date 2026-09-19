@@ -90,8 +90,20 @@ public class CTabFolderHelper {
         obj.setItemOrder(indices);
     }
 
-        public static void handleShowList(DartCTabFolder obj, Event e) {
+    /**
+     * {@code CTabFolderEvent(Widget)} only fills {@code TypedEvent.widget} in newer SWT releases;
+     * older ones record the folder as the EventObject source alone. Listeners read the field (e4's
+     * MinMaxAddon resolves the part stack through it on the first line of minimize/maximize/restore),
+     * so it is assigned here, as upstream CTabFolder does at each call site.
+     */
+    private static CTabFolderEvent folderEvent(DartCTabFolder obj) {
         CTabFolderEvent event = new CTabFolderEvent(obj.getApi());
+        event.widget = obj.getApi();
+        return event;
+    }
+
+        public static void handleShowList(DartCTabFolder obj, Event e) {
+        CTabFolderEvent event = folderEvent(obj);
         event.x = e.x;
         event.y = e.y;
         event.width = e.width;
@@ -112,7 +124,7 @@ public class CTabFolderHelper {
         if (obj.isDisposed()) return;
         if (e.index >= 0 && e.index < obj.items.length) {
             CTabItem item = obj.items[e.index];
-            CTabFolderEvent closeEvent = new CTabFolderEvent(obj.getApi());
+            CTabFolderEvent closeEvent = folderEvent(obj);
             closeEvent.item = item;
             closeEvent.doit = true;
             for (CTabFolder2Listener listener : obj.folderListeners) {
@@ -130,7 +142,7 @@ public class CTabFolderHelper {
     // stack maximized=true so its one remaining button acts as restore. Assigning here overwrites that.
     public static void handleMinimize(DartCTabFolder obj, Event e) {
         if (obj.isDisposed()) return;
-        CTabFolderEvent minimizeEvent = new CTabFolderEvent(obj.getApi());
+        CTabFolderEvent minimizeEvent = folderEvent(obj);
         for (CTabFolder2Listener listener : obj.folderListeners) {
             listener.minimize(minimizeEvent);
         }
@@ -138,7 +150,7 @@ public class CTabFolderHelper {
 
     public static void handleMaximize(DartCTabFolder obj, Event e) {
         if (obj.isDisposed()) return;
-        CTabFolderEvent maximizeEvent = new CTabFolderEvent(obj.getApi());
+        CTabFolderEvent maximizeEvent = folderEvent(obj);
         for (CTabFolder2Listener listener : obj.folderListeners) {
             listener.maximize(maximizeEvent);
         }
@@ -146,7 +158,7 @@ public class CTabFolderHelper {
 
     public static void handleRestore(DartCTabFolder obj, Event e) {
         if (obj.isDisposed()) return;
-        CTabFolderEvent restoreEvent = new CTabFolderEvent(obj.getApi());
+        CTabFolderEvent restoreEvent = folderEvent(obj);
         for (CTabFolder2Listener listener : obj.folderListeners) {
             listener.restore(restoreEvent);
         }
