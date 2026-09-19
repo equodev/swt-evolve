@@ -651,6 +651,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         if (imageFileNameProvider.getImagePath(100) == null) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT, null, ": ImageFileNameProvider [" + imageFileNameProvider + "] returns null fileName at 100% zoom.");
         }
+        this.imageData = new ImageData(imageFileNameProvider.getImagePath(100));
         init();
         ((SwtDevice) this.device.getImpl()).registerResourceWithZoomSupport(this.getApi());
     }
@@ -686,9 +687,11 @@ public final class DartImage extends DartResource implements Drawable, IImage {
      */
     public DartImage(Device device, ImageDataProvider imageDataProvider, Image api) {
         super(device, api);
-        if (imageDataProvider.getImageData(100) == null) {
+        ImageData data = imageDataProvider.getImageData(100);
+        if (data == null) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT, null, ": ImageDataProvider [" + imageDataProvider + "] returns null ImageData at 100% zoom.");
         }
+        this.imageData = GraphicsUtils.copyImageData(data);
         init();
         ((SwtDevice) this.device.getImpl()).registerResourceWithZoomSupport(this.getApi());
     }
