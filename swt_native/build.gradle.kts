@@ -192,6 +192,12 @@ dependencies {
         compileOnly("org.openjfx:javafx-base:$javafxVersion:$javafxClassifier")
         compileOnly("org.openjfx:javafx-graphics:$javafxVersion:$javafxClassifier")
         compileOnly("org.openjfx:javafx-controls:$javafxVersion:$javafxClassifier")
+        // compileOnly keeps the FX jars out of the platform jars; it also leaves them off the
+        // test classpath, where FXCanvas then cannot be loaded at all. Tests get them too — the
+        // flattening above is unaffected, and no test starts the FX toolkit, so no native loads.
+        testImplementation("org.openjfx:javafx-base:$javafxVersion:$javafxClassifier")
+        testImplementation("org.openjfx:javafx-graphics:$javafxVersion:$javafxClassifier")
+        testImplementation("org.openjfx:javafx-controls:$javafxVersion:$javafxClassifier")
     }
 }
 
@@ -797,8 +803,10 @@ val chromiumImportPackage = "com.equo.chromium;resolution:=optional," +
         "com.equo.chromium.utils;resolution:=optional," +
         "com.equo.chromium.events;resolution:=optional"
 val fxImportPackges = "javafx.application;resolution:=optional," +
+        "javafx.geometry;resolution:=optional," +
         "javafx.scene;resolution:=optional," +
         "javafx.scene.image;resolution:=optional," +
+        "javafx.scene.transform;resolution:=optional," +
         "com.sun.javafx.cursor;resolution:=optional," +
         "com.sun.javafx.embed;resolution:=optional," +
         "com.sun.javafx.stage;resolution:=optional"
