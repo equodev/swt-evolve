@@ -92,6 +92,12 @@ public class BinaryCommService extends AbstractBinaryCommService {
 
         @Override
         public void onMessage(WebSocket conn, ByteBuffer blob) {
+            // Java-WebSocket allocates a buffer for each message and never touches it again after
+            // this callback, so its array can be handed over as it is.
+            if (blob.hasArray() && blob.arrayOffset() == 0 && blob.position() == 0) {
+                onBinaryMessage(blob.array(), 0, blob.remaining());
+                return;
+            }
             byte[] data = new byte[blob.remaining()];
             blob.get(data);
             onBinaryMessage(data, 0, data.length);

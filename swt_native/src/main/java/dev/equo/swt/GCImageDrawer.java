@@ -44,7 +44,7 @@ public class GCImageDrawer extends EmbeddedBridge {
     private volatile CommService resolvedComm;
     // Recorded by initFlutterView, consumed by start().
     private volatile Image dartImage;
-    private volatile Consumer<byte[]> onImageResult;
+    private volatile Consumer<ByteBuffer> onImageResult;
     private boolean started;
 
     /** Ops buffered until Flutter's GCDrawer listeners are registered. */
@@ -117,7 +117,7 @@ public class GCImageDrawer extends EmbeddedBridge {
         pendingOps.clear();
     }
 
-    public void initFlutterView(long gcId, Image dartImage, Consumer<byte[]> onImageResult) {
+    public void initFlutterView(long gcId, Image dartImage, Consumer<ByteBuffer> onImageResult) {
         this.gcId = gcId;
         this.dartImage = dartImage;
         this.onImageResult = onImageResult;
@@ -230,9 +230,9 @@ public class GCImageDrawer extends EmbeddedBridge {
         long remoteRef = flutterOwns ? org.eclipse.swt.graphics.GCHelper.nextRemoteRef() : 0L;
         if (wantPixels) {
             String resultEvent = "GC/" + gcId + "/imageResult";
-            c.on(resultEvent, byte[].class, bytes -> {
+            c.on(resultEvent, ByteBuffer.class, bytes -> {
                 c.remove(resultEvent); // the shared comm outlives this one-shot render
-                Consumer<byte[]> sink = onImageResult;
+                Consumer<ByteBuffer> sink = onImageResult;
                 if (sink != null) sink.accept(bytes);
             });
         }
@@ -296,11 +296,11 @@ public class GCImageDrawer extends EmbeddedBridge {
      * only paints in response to an explicit signal, unlike real SWT where GC draws are
      * immediately visible in the image.
      */
-    public void requestRenderSnapshot(Consumer<byte[]> onSnapshot) {
+    public void requestRenderSnapshot(Consumer<ByteBuffer> onSnapshot) {
         start();
         CommService c = resolvedComm != null ? resolvedComm : super.comm();
         String snapshotEvent = "GC/" + gcId + "/imageSnapshotResult";
-        c.on(snapshotEvent, byte[].class, bytes -> {
+        c.on(snapshotEvent, ByteBuffer.class, bytes -> {
             c.remove(snapshotEvent);
             onSnapshot.accept(bytes);
             // The UI thread is parked waiting for this answer; without a wake it only notices on its

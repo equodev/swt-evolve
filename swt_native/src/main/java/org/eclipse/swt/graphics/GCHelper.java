@@ -191,8 +191,28 @@ public class GCHelper {
      */
     public static void updateImageFromPngBytes(Image dartImage, Image swtSource, byte[] pngBytes) {
         if (pngBytes == null) return;
+        updateImageFrom(dartImage, swtSource, new java.io.ByteArrayInputStream(pngBytes));
+    }
+
+    /**
+     * Same, from a buffer the comm lends for the call: the PNG is decoded where it arrived, so the
+     * payload is not copied out first.
+     */
+    public static void updateImageFromPngBytes(Image dartImage, Image swtSource, java.nio.ByteBuffer pngBytes) {
+        if (pngBytes == null || !pngBytes.hasRemaining()) return;
+        if (!pngBytes.hasArray()) {
+            byte[] copy = new byte[pngBytes.remaining()];
+            pngBytes.duplicate().get(copy);
+            updateImageFromPngBytes(dartImage, swtSource, copy);
+            return;
+        }
+        updateImageFrom(dartImage, swtSource, new java.io.ByteArrayInputStream(pngBytes.array(),
+                pngBytes.arrayOffset() + pngBytes.position(), pngBytes.remaining()));
+    }
+
+    private static void updateImageFrom(Image dartImage, Image swtSource, java.io.InputStream png) {
         try {
-            ImageData newData = new ImageData(new java.io.ByteArrayInputStream(pngBytes));
+            ImageData newData = new ImageData(png);
             if (dartImage.getImpl() instanceof DartImage) { DartImage di = (DartImage) dartImage.getImpl();
                 di._updateImageData(newData);
             }
@@ -228,6 +248,11 @@ public class GCHelper {
      * Pulls a client-owned image's pixels back over {@code comm} as PNG bytes, or {@code null} if
      * nothing is registered under that ref or it did not answer in time. The one place rendered
      * pixels cross back, reached only from {@code Image#getImageData()}.
+     *
+     * <p>The bytes are copied out of the comm's buffer rather than decoded in the dispatch: the
+     * decode costs tens to hundreds of times the copy (a 192 KB PNG: 6 us to copy, 785 us to
+     * decode), and doing it here would hold the connection's inbound dispatch for that long and
+     * count against the caller's timeout.
      */
     public static byte[] fetchRemotePixels(Device device, dev.equo.swt.comm.CommService comm, long remoteRef, long timeoutMs) {
         byte[] png = requestRemotePixels(device, comm, remoteRef, timeoutMs);

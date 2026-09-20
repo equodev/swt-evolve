@@ -109,7 +109,10 @@ public abstract class AbstractBinaryCommService implements CommService {
         }
     }
 
-    /** Subclasses call this with each received binary frame (which may be a slice of a buffer). */
+    /**
+     * Subclasses call this with each received binary frame. {@code data[0, offset + length)} is
+     * handed over: decoding may overwrite it, so it must not be read again or shared.
+     */
     protected void onBinaryMessage(byte[] data, int offset, int length) {
         if (length < NAME_LENGTH_BYTES) return;
         int nameLen = ((data[offset] & 0xFF) << 8) | (data[offset + 1] & 0xFF);
@@ -156,6 +159,12 @@ public abstract class AbstractBinaryCommService implements CommService {
 
         @SuppressWarnings("unchecked")
         void handle(byte[] data, int offset, int length, Serializer serializer, String tag) {
+            // ByteBuffer.class is the passthrough that copies nothing: the frame is ours for the
+            // length of the dispatch, so a handler that reads it here and keeps nothing takes a view.
+            if (cls == java.nio.ByteBuffer.class) {
+                callback.accept((T) java.nio.ByteBuffer.wrap(data, offset, length));
+                return;
+            }
             // byte[].class is a passthrough: deliver the raw frame bytes (a copy, since the handler
             // may outlive this dispatch) with no deserialization — used for already-binary payloads.
             if (cls == byte[].class) {
@@ -167,7 +176,11 @@ public abstract class AbstractBinaryCommService implements CommService {
                 return;
             }
             try {
-                T value = serializer.from(cls, data, offset, length);
+                // dsl-json's byte reader only starts at index 0. The frame is ours and its name has
+                // been read, so blanking everything before the body lets the parser skip it as
+                // whitespace instead of the body being copied out.
+                Arrays.fill(data, 0, offset, (byte) ' ');
+                T value = serializer.from(cls, data, 0, offset + length);
                 callback.accept(value);
             } catch (IOException e) {
                 System.err.println(tag + " Deserialization failed: " + e.getMessage());

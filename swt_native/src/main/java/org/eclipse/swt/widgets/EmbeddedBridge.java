@@ -143,7 +143,7 @@ public abstract class EmbeddedBridge extends FlutterBridge {
      * Usage in DartGC.init() when drawable is an Image:
      *   this.bridge = EmbeddedBridge.of(gcId, dartImage, onImageResult);
      */
-    public static GCImageDrawer of(long gcId, Image dartImage, Consumer<byte[]> onImageResult) {
+    public static GCImageDrawer of(long gcId, Image dartImage, Consumer<java.nio.ByteBuffer> onImageResult) {
         GCImageDrawer drawer = new GCImageDrawer();
         drawer.initFlutterView(gcId, dartImage, onImageResult);
         return drawer;
