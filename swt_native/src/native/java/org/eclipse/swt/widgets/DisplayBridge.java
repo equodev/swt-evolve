@@ -812,6 +812,15 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         Thread.sleep(millis);
     }
 
+    /**
+     * Ends an idle {@link #sleep(int)} from another thread. Only a surface parked inside an OS event
+     * loop needs it: SWT's wake signal is a Java semaphore, which that wait cannot observe, so the
+     * wake has to reach the native loop itself. A surface that parks on the semaphore is already
+     * woken by it, hence the no-op default.
+     */
+    public void wake() {
+    }
+
     @Override
     public void destroy(DartWidget control) {
         if (control instanceof DartShell dartShell && forDisplay != null) {

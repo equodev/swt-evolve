@@ -42,6 +42,9 @@ JNIEXPORT void JNICALL
 Java_dev_equo_swt_FlutterNative_WaitEvents(JNIEnv *env, jclass cls, jlong context, jint millis);
 
 JNIEXPORT void JNICALL
+Java_dev_equo_swt_FlutterNative_Wake(JNIEnv *env, jclass cls, jlong context);
+
+JNIEXPORT void JNICALL
 Java_dev_equo_swt_FlutterNative_SetTitle(JNIEnv *env, jclass cls, jlong context, jstring title);
 
 JNIEXPORT void JNICALL

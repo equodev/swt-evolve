@@ -1,8 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.comm.CommService;
-import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,8 +9,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,11 +25,11 @@ import static org.mockito.Mockito.doAnswer;
 @Tag("native-unit")
 class ButtonSelectionDeliveryNativeTest {
 
-    private CapturingBridge bridge;
+    private RecordingBridge bridge;
 
     @BeforeEach
     void setUp() {
-        bridge = new CapturingBridge();
+        bridge = new RecordingBridge();
         FlutterBridge.set(bridge);
     }
 
@@ -110,33 +107,5 @@ class ButtonSelectionDeliveryNativeTest {
 
         assertThat(radio.getSelection()).as("Java's own copy after the click").isTrue();
         assertThat(pushedToFlutter(radio)).isTrue();
-    }
-
-    private static final class CapturingBridge extends FlutterBridge {
-        final RecordingComm comm = new RecordingComm();
-        final List<Object> dirtied = new CopyOnWriteArrayList<>();
-
-        CapturingBridge() {
-            clientReady.complete(true);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        public void dirty(DartWidget widget) {
-            dirtied.add(widget);
-            super.dirty(widget);
-        }
-
-        @Override
-        public void initFlutterView(Composite parent, DartControl control) {
-        }
-
-        @Override
-        public void destroy(DartWidget control) {
-        }
     }
 }

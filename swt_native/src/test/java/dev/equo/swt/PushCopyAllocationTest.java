@@ -1,15 +1,13 @@
 package dev.equo.swt;
 
 import dev.equo.swt.comm.BinaryCommService;
-import dev.equo.swt.comm.CommService;
 import dev.equo.swt.comm.MessageBatch;
+import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.DartControl;
 import org.eclipse.swt.widgets.DartWidget;
 import org.eclipse.swt.widgets.Mocks;
-import org.eclipse.swt.widgets.Shell;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.junit.jupiter.api.AfterAll;
@@ -50,7 +48,7 @@ class PushCopyAllocationTest {
 
     private BinaryCommService comm;
     private Client client;
-    private WireBridge bridge;
+    private RecordingBridge bridge;
 
     @BeforeAll
     static void useEquo() {
@@ -70,7 +68,7 @@ class PushCopyAllocationTest {
         // The server registers the session on its own thread; a frame arriving proves it has.
         comm.send("probe");
         client.awaitBytes(1);
-        bridge = new WireBridge(comm);
+        bridge = new RecordingBridge(comm);
         FlutterBridge.set(bridge);
     }
 
@@ -180,29 +178,6 @@ class PushCopyAllocationTest {
         long allocated = THREADS.getCurrentThreadAllocatedBytes() - before;
         long wire = client.awaitBytes(receivedBefore + 1) - receivedBefore;
         return new long[]{allocated, wire};
-    }
-
-    /** A bridge whose comm is a real socket rather than a recording, so the transport's copy counts. */
-    private static final class WireBridge extends FlutterBridge {
-        private final CommService comm;
-
-        WireBridge(CommService comm) {
-            this.comm = comm;
-            clientReady.complete(true);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        public void initFlutterView(Composite parent, DartControl control) {
-        }
-
-        @Override
-        public void destroy(DartWidget control) {
-        }
     }
 
     private static final class Client extends WebSocketClient {

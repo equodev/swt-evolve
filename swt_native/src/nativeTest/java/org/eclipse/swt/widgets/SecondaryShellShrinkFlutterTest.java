@@ -2,6 +2,7 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.comm.CommService;
+import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
@@ -38,7 +39,7 @@ class SecondaryShellShrinkFlutterTest {
     }
 
     private <B extends DisplayBridge> B install(java.util.function.Function<DartDisplay, B> factory) {
-        FlutterBridge.set(new NoopBridge());
+        FlutterBridge.set(new RecordingBridge());
         display = new Display();
         FlutterBridge.set(null);
         DartDisplay dd = dartDisplay();
@@ -182,27 +183,6 @@ class SecondaryShellShrinkFlutterTest {
         @Override
         protected void forwardWindowBounds(Rectangle bounds) {
             forwarded.add(bounds);
-        }
-    }
-
-    private static final class NoopBridge extends FlutterBridge {
-        final RecordingComm comm = new RecordingComm();
-
-        NoopBridge() {
-            clientReady.complete(true);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        public void initFlutterView(Composite parent, DartControl control) {
-        }
-
-        @Override
-        public void destroy(DartWidget control) {
         }
     }
 

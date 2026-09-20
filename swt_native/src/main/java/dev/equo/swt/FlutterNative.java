@@ -92,6 +92,16 @@ public final class FlutterNative {
         WaitEvents(context, millis);
     }
 
+    /**
+     * Ends a {@link #waitEvents} early, by giving the OS loop something to return for: an
+     * application-defined event on Cocoa, a context wakeup on GTK, a thread message on Win32 — what
+     * native SWT's {@code Display#wake} posts. Callable from any thread, which is the whole point:
+     * the UI thread is the one blocked inside the wait.
+     */
+    public static void wake(long context) {
+        Wake(context);
+    }
+
     /** Sets a window surface's title. No-op for an embedded surface. */
     public static void setTitle(long context, String title) {
         SetTitle(context, title);
@@ -173,6 +183,8 @@ public final class FlutterNative {
     private static native int Pump(long context);
 
     private static native void WaitEvents(long context, int millis);
+
+    private static native void Wake(long context);
 
     private static native void SetTitle(long context, String title);
 

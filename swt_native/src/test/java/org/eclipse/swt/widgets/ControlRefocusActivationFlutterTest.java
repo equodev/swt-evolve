@@ -2,7 +2,7 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.FocusTrackingBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Event;
 import org.junit.jupiter.api.*;
@@ -21,28 +21,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @Tag("flutter-it")
 class ControlRefocusActivationFlutterTest {
-
-    /** Tracks the focus holder like the whole-tree DisplayBridge does; the base RecordingBridge doesn't. */
-    static final class FocusTrackingBridge extends RecordingBridge {
-        private DartControl focused;
-
-        @Override
-        public boolean setFocus(DartControl control) {
-            focused = control;
-            return true;
-        }
-
-        @Override
-        public boolean hasFocus(DartControl control) {
-            return control == focused;
-        }
-
-        @Override
-        public void clearFocus(DartControl control) {
-            if (focused == control)
-                focused = null;
-        }
-    }
 
     private FocusTrackingBridge bridge;
     private Display display;

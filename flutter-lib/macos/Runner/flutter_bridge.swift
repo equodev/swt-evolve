@@ -576,6 +576,26 @@ public func FlutterNative_waitEvents(env: UnsafeMutablePointer<JNIEnv?>, cls: jc
     surfaceFrom(context)?.waitForEvent(millis: millis)
 }
 
+/// Wakes the main run loop so a `waitForEvent` in progress returns now. Called from a non-UI thread
+/// (the comm thread posting an SWT `asyncExec`), hence no `@MainActor`: it only hops to the main
+/// queue, which is what breaks the wait. `nextEvent` needs an event to hand back, so the hop posts
+/// one; a pump that already consumed the wake dispatches it harmlessly to no window.
+@_cdecl("Java_dev_equo_swt_FlutterNative_Wake")
+public func FlutterNative_wake(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong) {
+    DispatchQueue.main.async {
+        guard let wakeEvent = NSEvent.otherEvent(with: .applicationDefined,
+                                                 location: .zero,
+                                                 modifierFlags: [],
+                                                 timestamp: ProcessInfo.processInfo.systemUptime,
+                                                 windowNumber: 0,
+                                                 context: nil,
+                                                 subtype: 0,
+                                                 data1: 0,
+                                                 data2: 0) else { return }
+        NSApp.postEvent(wakeEvent, atStart: true)
+    }
+}
+
 @MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_SetTitle")
 public func FlutterNative_setTitle(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong, title: jstring) {
     surfaceFrom(context)?.setTitle(jstringToSwift(env, title))

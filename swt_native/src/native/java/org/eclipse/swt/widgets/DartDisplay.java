@@ -3697,6 +3697,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
 
     void wakeThread() {
         _wakeSignal.release();
+        if (displayBridge != null && displayBridge.needsPump())
+            displayBridge.wake();
     }
 
     Control findControl(boolean checkTrim) {

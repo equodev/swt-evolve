@@ -4,6 +4,7 @@ import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.comm.CommService;
+import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -104,7 +105,7 @@ class DisplayConfigFlagsFlutterTest {
     /** See {@code DisplayResizeFlutterTest.install} — a Display whose bridge is the test bridge. */
     private <B extends DisplayBridge> B install(Function<DartDisplay, B> factory) {
         savedMode = System.getProperty("dev.equo.swt.mode");
-        FlutterBridge.set(new NoopBridge());
+        FlutterBridge.set(new RecordingBridge());
         display = new Display();
         FlutterBridge.set(null);
         DartDisplay dd = dartDisplay();
@@ -124,28 +125,6 @@ class DisplayConfigFlagsFlutterTest {
         p.height = height;
         p.isFirst = isFirst;
         comm.fireContaining("ClientReady", p);
-    }
-
-    /** A stub injected only so {@code Display.init()} skips creating a real surface bridge. */
-    private static final class NoopBridge extends FlutterBridge {
-        final RecordingComm comm = new RecordingComm();
-
-        NoopBridge() {
-            clientReady.complete(true);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        public void initFlutterView(Composite parent, DartControl control) {
-        }
-
-        @Override
-        public void destroy(DartWidget control) {
-        }
     }
 
     private static final class TestWebBridge extends WebDisplayBridge {

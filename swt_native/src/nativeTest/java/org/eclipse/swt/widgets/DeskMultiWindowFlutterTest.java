@@ -473,6 +473,11 @@ class DeskMultiWindowFlutterTest {
         }
 
         @Override
+        protected void wakeNativeWindow() {
+            // a stood-in window has no handle to post into
+        }
+
+        @Override
         protected void forwardWindowBounds(Rectangle bounds) {
         }
 

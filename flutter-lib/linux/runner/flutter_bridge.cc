@@ -656,6 +656,14 @@ Java_dev_equo_swt_FlutterNative_WaitEvents(JNIEnv *env, jclass cls, jlong contex
   g_source_unref(timeout);
 }
 
+// Ends a WaitEvents in progress from another thread — the SWT wake permit is a Java semaphore the
+// GTK wait cannot observe. g_main_context_wakeup is the thread-safe half of the GLib API and is what
+// native SWT's Display#wake calls.
+JNIEXPORT void JNICALL
+Java_dev_equo_swt_FlutterNative_Wake(JNIEnv *env, jclass cls, jlong context) {
+  g_main_context_wakeup(g_main_context_default());
+}
+
 JNIEXPORT void JNICALL
 Java_dev_equo_swt_FlutterNative_SetTitle(JNIEnv *env, jclass cls, jlong context, jstring title) {
   FlutterWindow *w = reinterpret_cast<FlutterWindow *>(context);

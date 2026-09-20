@@ -1,15 +1,12 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.comm.CommService;
-import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -25,7 +22,7 @@ class ControlVisibilityDirtyFlutterTest {
         FlutterBridge.set(null);
     }
 
-    private Composite openMessageArea(CapturingBridge bridge) {
+    private Composite openMessageArea(RecordingBridge bridge) {
         FlutterBridge.set(bridge);
         display = new Display();
         Shell shell = new Shell(display);
@@ -36,7 +33,7 @@ class ControlVisibilityDirtyFlutterTest {
 
     @Test
     void firstHideOfAFreshlyCreatedControlIsPushedToTheClient() {
-        CapturingBridge bridge = new CapturingBridge();
+        RecordingBridge bridge = new RecordingBridge();
         Composite messageArea = openMessageArea(bridge);
 
         assertThat(messageArea.getVisible())
@@ -57,7 +54,7 @@ class ControlVisibilityDirtyFlutterTest {
 
     @Test
     void redundantShowOfAnAlreadyVisibleControlIsNotPushed() {
-        CapturingBridge bridge = new CapturingBridge();
+        RecordingBridge bridge = new RecordingBridge();
         Composite messageArea = openMessageArea(bridge);
 
         bridge.dirtied.clear();
@@ -70,7 +67,7 @@ class ControlVisibilityDirtyFlutterTest {
 
     @Test
     void everyVisibilityFlipOfAMessageAreaIsPushedToTheClient() {
-        CapturingBridge bridge = new CapturingBridge();
+        RecordingBridge bridge = new RecordingBridge();
         Composite messageArea = openMessageArea(bridge);
 
         assertVisibilityFlipIsPushed(bridge, messageArea, false);
@@ -78,7 +75,7 @@ class ControlVisibilityDirtyFlutterTest {
         assertVisibilityFlipIsPushed(bridge, messageArea, false);
     }
 
-    private static void assertVisibilityFlipIsPushed(CapturingBridge bridge, Control control, boolean visible) {
+    private static void assertVisibilityFlipIsPushed(RecordingBridge bridge, Control control, boolean visible) {
         bridge.dirtied.clear();
         control.setVisible(visible);
 
@@ -88,33 +85,5 @@ class ControlVisibilityDirtyFlutterTest {
         assertThat(bridge.dirtied)
                 .as("setVisible(%s) flipped the state, so it must reach the client", visible)
                 .contains(control.getImpl());
-    }
-
-    private static final class CapturingBridge extends FlutterBridge {
-        final RecordingComm comm = new RecordingComm();
-        final List<Object> dirtied = new CopyOnWriteArrayList<>();
-
-        CapturingBridge() {
-            clientReady.complete(true);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        public void dirty(DartWidget widget) {
-            dirtied.add(widget);
-            super.dirty(widget);
-        }
-
-        @Override
-        public void initFlutterView(Composite parent, DartControl control) {
-        }
-
-        @Override
-        public void destroy(DartWidget control) {
-        }
     }
 }

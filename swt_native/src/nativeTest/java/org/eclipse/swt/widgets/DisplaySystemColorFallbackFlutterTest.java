@@ -1,8 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.comm.CommService;
-import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.RGB;
@@ -26,7 +25,7 @@ class DisplaySystemColorFallbackFlutterTest {
 
     @BeforeEach
     void setUp() {
-        FlutterBridge.set(new NoopBridge());
+        FlutterBridge.set(new RecordingBridge());
         display = new Display();
         FlutterBridge.set(null);
     }
@@ -64,27 +63,5 @@ class DisplaySystemColorFallbackFlutterTest {
 
     private static int[] rgba(Color color) {
         return new int[] { color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha() };
-    }
-
-    /** A stub injected only so {@code Display.init()} skips creating a real surface bridge. */
-    private static final class NoopBridge extends FlutterBridge {
-        final RecordingComm comm = new RecordingComm();
-
-        NoopBridge() {
-            clientReady.complete(true);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        public void initFlutterView(Composite parent, DartControl control) {
-        }
-
-        @Override
-        public void destroy(DartWidget control) {
-        }
     }
 }

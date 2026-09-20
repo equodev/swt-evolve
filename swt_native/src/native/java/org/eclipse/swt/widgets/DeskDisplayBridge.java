@@ -380,6 +380,30 @@ public class DeskDisplayBridge extends DisplayBridge {
     }
 
     /**
+     * Posts into the OS event loop so {@link #sleep(int)} returns now. Work handed to the UI thread
+     * from elsewhere — every Flutter event, since the comm thread delivers them with
+     * {@code asyncExec} — otherwise waits out the deadline: SWT's wake permit is a Java semaphore,
+     * and the native wait cannot see it.
+     */
+    @Override
+    public void wake() {
+        if (hasNativeWindow()) {
+            wakeNativeWindow();
+        }
+    }
+
+    /** Posts the wake into the OS event loop. Seam: tests stand a window in without JNI. */
+    protected void wakeNativeWindow() {
+        FlutterNative.wake(windowContext);
+    }
+
+    /** State dirtied off the UI thread has to interrupt the wait too, or the flush waits for it. */
+    @Override
+    protected void wakeForDirty() {
+        wake();
+    }
+
+    /**
      * The user asked the OS window to close (title-bar X, Alt+F4, Cmd+W) and the runner vetoed the OS
      * teardown, so the window is <em>still up</em>. Answer with SWT's contract on the main shell:
      * {@code Shell.close()} fires {@code SWT.Close} while there is still a window to render into, so an

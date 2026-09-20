@@ -310,10 +310,23 @@ JNIEXPORT jint JNICALL Java_dev_equo_swt_FlutterNative_Pump(JNIEnv* env, jclass 
     return count;
 }
 
+// The thread parked in WaitEvents, so Wake knows where to post. Written before each wait and read
+// from another thread; a stale or zero value costs a failed post, never a wrong wake-up.
+static volatile DWORD g_wait_thread_id = 0;
+
 // Blocks until a message/input is available or up to |millis| ms, WITHOUT removing it (the idle sleep).
 JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_WaitEvents(JNIEnv* env, jclass cls, jlong context, jint millis) {
     DWORD timeout = millis < 0 ? 0 : (DWORD)millis;
+    g_wait_thread_id = ::GetCurrentThreadId();
     ::MsgWaitForMultipleObjectsEx(0, nullptr, timeout, QS_ALLINPUT, MWMO_INPUTAVAILABLE);
+}
+
+// Ends a WaitEvents in progress from another thread — the SWT wake permit is a Java semaphore the
+// Win32 wait cannot observe. A posted thread message satisfies QS_POSTMESSAGE, which QS_ALLINPUT
+// covers, which is how native SWT's Display#wake does it.
+JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_Wake(JNIEnv* env, jclass cls, jlong context) {
+    DWORD target = g_wait_thread_id;
+    if (target != 0) ::PostThreadMessage(target, WM_NULL, 0, 0);
 }
 
 JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetTitle(JNIEnv* env, jclass cls, jlong context, jstring title) {
